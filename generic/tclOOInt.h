@@ -209,9 +209,9 @@ typedef struct Object {
 				 * references; this mechanism exists to
 				 * avoid Tcl_Preserve. */
     int flags;
-    Tcl_Size creationEpoch;		/* Unique value to make comparisons of objects
+    Tcl_Size creationEpoch;	/* Unique value to make comparisons of objects
 				 * easier. */
-    Tcl_Size epoch;			/* Per-object epoch, incremented when the way
+    Tcl_Size epoch;		/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
     Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
@@ -472,7 +472,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
+MODULE_SCOPE int		TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOObjDefObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineConstructorObjCmd;
@@ -507,6 +507,7 @@ MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Eval;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Unknown;
 MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_VarName;
+MODULE_SCOPE Tcl_MethodCallProc TclOO_Configurable_Configure;
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
@@ -518,17 +519,17 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
-MODULE_SCOPE int    TclMethodIsType(Tcl_Method method,
-                        const Tcl_MethodType *typePtr,
-                        void **clientDataPtr);
+MODULE_SCOPE int	TclMethodIsType(Tcl_Method method,
+			    const Tcl_MethodType *typePtr,
+			    void **clientDataPtr);
 MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
-                        Tcl_Object object, Tcl_Obj *nameObj,
-                        int flags, const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Object object, Tcl_Obj *nameObj,
+			    int flags, const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
-                        Tcl_Obj *nameObj, int flags,
-                        const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Obj *nameObj, int flags,
+			    const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, Tcl_Size objc,
@@ -550,7 +551,7 @@ MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllClassProperties(Class *clsPtr,
 			    int writable, int *allocated);
 MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
-			    int writable, int *allocated);
+			    int writable);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,

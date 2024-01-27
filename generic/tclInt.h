@@ -257,8 +257,8 @@ typedef struct Namespace {
 				 * synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    void *clientData;	/* An arbitrary value associated with this
-				 * namespace. */
+    void *clientData;		/* An arbitrary value associated with this
+				 * namespace. (Used by TclOO!) */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Procedure invoked when deleting the
 				 * namespace to, e.g., free clientData. */
@@ -279,7 +279,7 @@ typedef struct Namespace {
 #else
     unsigned long nsId;
 #endif
-    Tcl_Interp *interp;	/* The interpreter containing this
+    Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
@@ -312,12 +312,12 @@ typedef struct Namespace {
 				 * registered using "namespace export". */
     Tcl_Size maxExportPatterns;	/* Number of export patterns for which space
 				 * is currently allocated. */
-    Tcl_Size cmdRefEpoch;		/* Incremented if a newly added command
+    Tcl_Size cmdRefEpoch;	/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    Tcl_Size resolverEpoch;		/* Incremented whenever (a) the name
+    Tcl_Size resolverEpoch;	/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -444,7 +444,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    Tcl_Size epoch;			/* The epoch at which this ensemble's table of
+    Tcl_Size epoch;		/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -501,7 +501,7 @@ typedef struct EnsembleConfig {
 				 * core, presumably because the ensemble
 				 * itself has been updated. */
     Tcl_Obj *parameterList;	/* List of ensemble parameter names. */
-    Tcl_Size numParameters;		/* Cached number of parameters. This is either
+    Tcl_Size numParameters;	/* Cached number of parameters. This is either
 				 * 0 (if the parameterList field is NULL) or
 				 * the length of the list in the parameterList
 				 * field. */
@@ -970,9 +970,9 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    Tcl_Size nameLength;		/* The number of bytes in local variable's name.
+    Tcl_Size nameLength;	/* The number of bytes in local variable's name.
 				 * Among others used to speed up var lookups. */
-    Tcl_Size frameIndex;		/* Index in the array of compiler-assigned
+    Tcl_Size frameIndex;	/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
 #if TCL_MAJOR_VERSION < 9
     int flags;
@@ -993,7 +993,7 @@ typedef struct CompiledLocal {
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
 				 * and VAR_RESOLVED make sense. */
 #endif
-    char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
+    char name[TCLFLEXARRAY];	/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
 				 * enough to hold the name. MUST BE THE LAST
@@ -1055,7 +1055,7 @@ typedef struct Trace {
 #else
     Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
 #endif
-    void *clientData;	/* Arbitrary value to pass to proc. */
+    void *clientData;		/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
 				 * Tcl_CreateObjTrace for details. */
@@ -1247,7 +1247,7 @@ typedef struct CallFrame {
 				 * If FRAME_IS_PROC is set, the frame was
 				 * pushed to execute a Tcl procedure and may
 				 * have local vars. */
-    Tcl_Size objc;			/* This and objv below describe the arguments
+    Tcl_Size objc;		/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
     struct CallFrame *callerPtr;
@@ -1261,7 +1261,7 @@ typedef struct CallFrame {
 				 * callerPtr unless an "uplevel" command or
 				 * something equivalent was active in the
 				 * caller). */
-    Tcl_Size level;			/* Level of this procedure, for "uplevel"
+    Tcl_Size level;		/* Level of this procedure, for "uplevel"
 				 * purposes (i.e. corresponds to nesting of
 				 * callerVarPtr's, not callerPtr's). 1 for
 				 * outermost procedure, 0 for top-level. */
@@ -1281,7 +1281,7 @@ typedef struct CallFrame {
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
-    void *clientData;	/* Pointer to some context that is used by
+    void *clientData;		/* Pointer to some context that is used by
 				 * object systems. The meaning of the contents
 				 * of this field is defined by the code that
 				 * sets it, and it should only ever be set by
@@ -1381,7 +1381,7 @@ typedef struct CmdFrame {
     } data;
     Tcl_Obj *cmdObj;
     const char *cmd;		/* The executed command, if possible... */
-    Tcl_Size len;			/* ... and its length. */
+    Tcl_Size len;		/* ... and its length. */
     const struct CFWordBC *litarg;
 				/* Link to set of literal arguments which have
 				 * ben pushed on the lineLABCPtr stack by
@@ -1391,16 +1391,16 @@ typedef struct CmdFrame {
 
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
-    Tcl_Size word;			/* Index of the word in the command. */
+    Tcl_Size word;		/* Index of the word in the command. */
     Tcl_Size refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
 
 typedef struct CFWordBC {
     CmdFrame *framePtr;		/* CmdFrame to access. */
-    Tcl_Size pc;			/* Instruction pointer of a command in
+    Tcl_Size pc;		/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
-    Tcl_Size word;			/* Index of word in
+    Tcl_Size word;		/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
@@ -1429,7 +1429,7 @@ typedef struct CFWordBC {
 #define CLL_END		(-1)
 
 typedef struct ContLineLoc {
-    Tcl_Size num;			/* Number of entries in loc, not counting the
+    Tcl_Size num;		/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
     Tcl_Size loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
@@ -1472,14 +1472,14 @@ typedef struct ContLineLoc {
 typedef Tcl_Obj * (GetFrameInfoValueProc)(void *clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
+    GetFrameInfoValueProc *proc;/* Function to generate a Tcl_Obj* from the
 				 * clientData, or just use the clientData
 				 * directly (after casting) if NULL. */
-    void *clientData;	/* Context for above function, or Tcl_Obj* if
+    void *clientData;		/* Context for above function, or Tcl_Obj* if
 				 * proc field is NULL. */
 } ExtraFrameInfoField;
 typedef struct {
-    Tcl_Size length;			/* Length of array. */
+    Tcl_Size length;		/* Length of array. */
     ExtraFrameInfoField fields[2];
 				/* Really as long as necessary, but this is
 				 * long enough for nearly anything. */
@@ -1571,12 +1571,14 @@ typedef int (CompileHookProc)(Tcl_Interp *interp,
  */
 
 typedef struct ExecStack {
-    struct ExecStack *prevPtr;
-    struct ExecStack *nextPtr;
+    struct ExecStack *prevPtr;	/* Previous stack in list. */
+    struct ExecStack *nextPtr;	/* Next stack in list. */
     Tcl_Obj **markerPtr;
-    Tcl_Obj **endPtr;
-    Tcl_Obj **tosPtr;
+    Tcl_Obj **endPtr;		/* Where the end is. */
+    Tcl_Obj **tosPtr;		/* Where the top of stack is. */
     Tcl_Obj *stackWords[TCLFLEXARRAY];
+				/* The actual stack space, following this
+				 * structure in memory. */
 } ExecStack;
 
 /*
@@ -1604,20 +1606,20 @@ typedef struct CoroutineData {
 				 * coroutine. */
     CorContext caller;
     CorContext running;
-    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
+    Tcl_HashTable *lineLABCPtr;	/* See Interp.lineLABCPtr */
     void *stackLevel;
-    Tcl_Size auxNumLevels;		/* While the coroutine is running the
+    Tcl_Size auxNumLevels;	/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    Tcl_Size nargs;                  /* Number of args required for resuming this
-				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL means "0 or 1"
-				 * (default), COROUTINE_ARGUMENTS_ARBITRARY means "any" */
+    Tcl_Size nargs;		/* Number of args required for resuming this
+				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL
+				 * means "0 or 1" (default),
+				 * COROUTINE_ARGUMENTS_ARBITRARY means "any" */
     Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
 				 * order to reset splice point in
 				 * TclNRCoroutineActivateCallback if the
-				 * coroutine is busy.
-				*/
+				 * coroutine is busy. */
 } CoroutineData;
 
 typedef struct ExecEnv {
@@ -1691,10 +1693,10 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    size_t numExecutions;		/* Number of ByteCodes executed. */
+    size_t numExecutions;	/* Number of ByteCodes executed. */
     size_t numCompilations;	/* Number of ByteCodes created. */
     size_t numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    size_t instructionCount[256];	/* Number of times each instruction was
+    size_t instructionCount[256]; /* Number of times each instruction was
 				 * executed. */
 
     double totalSrcBytes;	/* Total source bytes ever compiled. */
@@ -1702,7 +1704,7 @@ typedef struct ByteCodeStats {
     double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
 
-    size_t srcCount[32];		/* Source size distribution: # of srcs of
+    size_t srcCount[32];	/* Source size distribution: # of srcs of
 				 * size [2**(n-1)..2**n), n in [0..32). */
     size_t byteCodeCount[32];	/* ByteCode size distribution. */
     size_t lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
@@ -1961,8 +1963,7 @@ typedef struct Interp {
 				 * enabled extensions check for a NULL pointer value
 				 * and for a TCL_STUBS_MAGIC value to verify they
 				 * are not [load]ing into one of those pre-stubs
-				 * interps.
-				 */
+				 * interps. */
 
     TclHandle handle;		/* Handle used to keep track of when this
 				 * interp is deleted. */
@@ -2098,7 +2099,8 @@ typedef struct Interp {
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
 
-    Tcl_Size tracesForbiddingInline;	/* Count of traces (in the list headed by
+    Tcl_Size tracesForbiddingInline;
+				/* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation. */
 
@@ -2128,7 +2130,7 @@ typedef struct Interp {
 				 * as flag values the same as the 'active'
 				 * field. */
 
-	Tcl_Size cmdCount;		/* Limit for how many commands to execute in
+	Tcl_Size cmdCount;	/* Limit for how many commands to execute in
 				 * the interpreter. */
 	LimitHandler *cmdHandlers;
 				/* Handlers to execute when the limit is
@@ -2164,9 +2166,10 @@ typedef struct Interp {
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
 				 * processing an ensemble. */
-	Tcl_Size numRemovedObjs;	/* How many arguments have been stripped off
+	Tcl_Size numRemovedObjs;/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	Tcl_Size numInsertedObjs;	/* How many of the current arguments were
+	Tcl_Size numInsertedObjs;
+				/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
@@ -2226,8 +2229,7 @@ typedef struct Interp {
 				 * used by function ...() in the same file.
 				 * It does for the eval/direct path of script
 				 * execution what CompileEnv.clLoc does for
-				 * the bytecode compiler.
-				 */
+				 * the bytecode compiler. */
     /*
      * TIP #268. The currently active selection mode, i.e. the package require
      * preferences.
@@ -2299,7 +2301,7 @@ typedef struct Interp {
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
     Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
     Tcl_Obj *innerContext;	/* cached list for fast reallocation */
-    int resetErrorStack;        /* controls cleaning up of ::errorStack */
+    int resetErrorStack;	/* controls cleaning up of ::errorStack */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2565,17 +2567,17 @@ typedef enum TclEolTranslation {
  *
  */
 typedef struct ListStore {
-    Tcl_Size firstUsed;    /* Index of first slot in use within slots[] */
-    Tcl_Size numUsed;      /* Number of slots in use (starting firstUsed) */
-    Tcl_Size numAllocated; /* Total number of slots[] array slots. */
-    size_t refCount;           /* Number of references to this instance */
-    int flags;              /* LISTSTORE_* flags */
-    Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
+    Tcl_Size firstUsed;		/* Index of first slot in use within slots[] */
+    Tcl_Size numUsed;		/* Number of slots in use (starting firstUsed) */
+    Tcl_Size numAllocated;	/* Total number of slots[] array slots. */
+    size_t refCount;		/* Number of references to this instance */
+    int flags;			/* LISTSTORE_* flags */
+    Tcl_Obj *slots[TCLFLEXARRAY]; /* Variable size array. Grown as needed */
 } ListStore;
 
-#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
-                                   store have their string representation
-                                   derived from the list representation */
+#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this store have
+				 * their string representation derived from
+				 * the list representation. */
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
@@ -2590,11 +2592,11 @@ typedef struct ListStore {
  * See comments above for ListStore
  */
 typedef struct ListSpan {
-    Tcl_Size spanStart;    /* Starting index of the span */
-    Tcl_Size spanLength;   /* Number of elements in the span */
-    size_t refCount;     /* Count of references to this span record */
+    Tcl_Size spanStart;		/* Starting index of the span */
+    Tcl_Size spanLength;	/* Number of elements in the span */
+    size_t refCount;		/* Count of references to this span record */
 } ListSpan;
-#ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
+#ifndef LIST_SPAN_THRESHOLD	/* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
 #endif
 
@@ -2603,9 +2605,11 @@ typedef struct ListSpan {
  * See comments above for ListStore
  */
 typedef struct ListRep {
-    ListStore *storePtr;/* element array shared amongst different lists */
-    ListSpan *spanPtr;  /* If not NULL, the span holds the range of slots
-                           within *storePtr that contain this list elements. */
+    ListStore *storePtr;	/* Element array shared amongst different
+				 * lists. */
+    ListSpan *spanPtr;		/* If not NULL, the span holds the range of
+				 * slots within *storePtr that contain this
+				 * list elements. */
 } ListRep;
 
 /*
@@ -2909,7 +2913,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *len
  */
 
 typedef struct ProcessGlobalValue {
-    Tcl_Size epoch;			/* Epoch counter to detect changes in the
+    Tcl_Size epoch;		/* Epoch counter to detect changes in the
 				 * global value. */
     TCL_HASH_TYPE numBytes;	/* Length of the global string. */
     char *value;		/* The global string value. */
@@ -2968,6 +2972,7 @@ typedef struct ProcessGlobalValue {
 
 /*
  *----------------------------------------------------------------------
+ *
  * Common functions for calculating overallocation. Trivial but allows for
  * experimenting with growth factors without having to change code in
  * multiple places. See TclAttemptAllocElemsEx and similar for usage
@@ -2977,23 +2982,29 @@ typedef struct ProcessGlobalValue {
  *
  *----------------------------------------------------------------------
  */
+
 static inline Tcl_Size
-TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /* oldSize. For future experiments with
-				     * some growth algorithms that use this
-				     * information. */,
-	       Tcl_Size needed,
-	       Tcl_Size limit)
+TclUpsizeAlloc(
+    TCL_UNUSED(Tcl_Size),	/* oldSize. For future experiments with
+				 * some growth algorithms that use this
+				 * information. */
+    Tcl_Size needed,
+    Tcl_Size limit)
 {
     /* assert (oldCapacity < needed <= limit) */
     if (needed < (limit - needed/2)) {
 	return needed + needed / 2;
-    }
-    else {
+    } else {
 	return limit;
     }
 }
-static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
-	/* assert (needed < lastAttempt) */
+
+static inline Tcl_Size 
+TclUpsizeRetry(
+    Tcl_Size needed, 
+    Tcl_Size lastAttempt)
+{
+    /* assert (needed < lastAttempt) */
     if (needed < lastAttempt - 1) {
 	/* (needed+lastAttempt)/2 but that formula may overflow Tcl_Size */
 	return needed + (lastAttempt - needed) / 2;
@@ -3001,37 +3012,64 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 	return needed;
     }
 }
-MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
-			Tcl_Size leadSize, Tcl_Size *capacityPtr);
-MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			Tcl_Size elemSize, Tcl_Size leadSize,
-			Tcl_Size *capacityPtr);
-MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
-			Tcl_Size elemCount, Tcl_Size elemSize,
-			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+
+MODULE_SCOPE void *	TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
+			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
+MODULE_SCOPE void *	TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
+			    Tcl_Size elemSize, Tcl_Size leadSize,
+			    Tcl_Size *capacityPtr);
+MODULE_SCOPE void *	TclAttemptReallocElemsEx(void *oldPtr,
+			    Tcl_Size elemCount, Tcl_Size elemSize,
+			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
+
 /* Alloc elemCount elements of size elemSize with leadSize header
  * returning actual capacity (in elements) in *capacityPtr. */
-static inline void *TclAttemptAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
-			Tcl_Size leadSize, Tcl_Size *capacityPtr) {
+static inline void *
+TclAttemptAllocElemsEx(
+    Tcl_Size elemCount,
+    Tcl_Size elemSize,
+    Tcl_Size leadSize,
+    Tcl_Size *capacityPtr)
+{
     return TclAttemptReallocElemsEx(
 	NULL, elemCount, elemSize, leadSize, capacityPtr);
 }
-/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *TclAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr) {
-    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
-}
+
 /* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
 static inline void *
-TclAttemptAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr)
+TclAllocEx(
+    Tcl_Size numBytes,
+    Tcl_Size *capacityPtr)
+{
+    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
+}
+
+/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
+static inline void *
+TclAttemptAllocEx(
+    Tcl_Size numBytes,
+    Tcl_Size *capacityPtr)
 {
     return TclAttemptAllocElemsEx(numBytes, 1, 0, capacityPtr);
 }
+
 /* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *TclReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+static inline void *
+TclReallocEx(
+    void *oldPtr,
+    Tcl_Size numBytes,
+    Tcl_Size *capacityPtr)
+{
     return TclReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
 }
+
 /* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
-static inline void *TclAttemptReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+static inline void *
+TclAttemptReallocEx(
+    void *oldPtr,
+    Tcl_Size numBytes,
+    Tcl_Size *capacityPtr)
+{
     return TclAttemptReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
 }
 
@@ -3052,13 +3090,12 @@ MODULE_SCOPE TclPlatformType tclPlatform;
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 MODULE_SCOPE Tcl_Encoding tclUtf8Encoding;
-MODULE_SCOPE int
-TclEncodingProfileNameToId(Tcl_Interp *interp,
-			   const char *profileName,
-			   int *profilePtr);
+MODULE_SCOPE int	TclEncodingProfileNameToId(Tcl_Interp *interp,
+			    const char *profileName,
+			    int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
-						    int profileId);
-MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
+			    int profileId);
+MODULE_SCOPE void 	TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -3178,7 +3215,7 @@ typedef struct ForIterData {
     Tcl_Obj *body;		/* Loop body. */
     Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
     const char *msg;		/* Error message part. */
-    Tcl_Size word;			/* Index of the body script in the command */
+    Tcl_Size word;		/* Index of the body script in the command */
 } ForIterData;
 
 /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
@@ -3458,7 +3495,7 @@ MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesP
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
-MODULE_SCOPE void *TclpNotifierData(void);
+MODULE_SCOPE void *	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
 MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
@@ -3487,7 +3524,7 @@ MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
-MODULE_SCOPE void *TclpInitNotifier(void);
+MODULE_SCOPE void *	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3575,7 +3612,7 @@ MODULE_SCOPE Tcl_Size	TclTrimLeft(const char *bytes, Tcl_Size numBytes,
 MODULE_SCOPE Tcl_Size	TclTrimRight(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim);
 MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
-MODULE_SCOPE int TclObjInterpProc(void *clientData,
+MODULE_SCOPE int	TclObjInterpProc(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
@@ -3607,13 +3644,13 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #else
 #   ifdef _WIN32
 #	define TCL_WIDE_CLICKS 1
-MODULE_SCOPE long long TclpGetWideClicks(void);
+MODULE_SCOPE long long	TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #	define		TclpWideClicksToNanoseconds(clicks) \
 				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
 #   endif
 #endif
-MODULE_SCOPE long long TclpGetMicroseconds(void);
+MODULE_SCOPE long long	TclpGetMicroseconds(void);
 
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
@@ -4004,13 +4041,13 @@ MODULE_SCOPE int	TclFullFinalizationRequested(void);
  * TIP #542
  */
 
-MODULE_SCOPE size_t TclUniCharLen(const Tcl_UniChar *uniStr);
-MODULE_SCOPE int TclUniCharNcmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE int TclUniCharNcasecmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
-				const Tcl_UniChar *uniPattern, int nocase);
+MODULE_SCOPE size_t	TclUniCharLen(const Tcl_UniChar *uniStr);
+MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *ucs,
+			    const Tcl_UniChar *uct, size_t numChars);
+MODULE_SCOPE int	TclUniCharNcasecmp(const Tcl_UniChar *ucs,
+			    const Tcl_UniChar *uct, size_t numChars);
+MODULE_SCOPE int	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
+			    const Tcl_UniChar *uniPattern, int nocase);
 
 
 /*
@@ -4049,7 +4086,7 @@ MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
-MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
+MODULE_SCOPE int	TclClose(Tcl_Interp *,	Tcl_Channel chan);
 
 /*
  * TIP #508: [array default]
@@ -4070,7 +4107,8 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 /*
  * Error message utility functions
  */
-MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
+MODULE_SCOPE int	TclCommandWordLimitError(
+			    Tcl_Interp *interp, Tcl_Size count);
 
 #endif /* TCL_MAJOR_VERSION > 8 */
 

@@ -1468,10 +1468,9 @@ ConsoleEventProc(
 
 static void
 ConsoleWatchProc(
-    void *instanceData,	/* Console state. */
+    void *instanceData,		/* Console state. */
     int newMask)		/* What events to watch for, one of
-				 * of TCL_READABLE, TCL_WRITABLE
-				 */
+				 * of TCL_READABLE, TCL_WRITABLE */
 {
     ConsoleChannelInfo **nextPtrPtr, *ptr;
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;

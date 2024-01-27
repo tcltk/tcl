@@ -1107,9 +1107,8 @@ TclGetLoadedLibraries(
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
-    const char *prefix)	/* Prefix or NULL. If NULL, return info
-				 * for all prefixes.
-				 */
+    const char *prefix)		/* Prefix or NULL. If NULL, return info
+				 * for all prefixes. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;
