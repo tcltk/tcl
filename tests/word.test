@@ -64,7 +64,7 @@ test word-2.6 {tcl_startOfPreviousWord} -body {
 test word-2.7 {tcl_startOfPreviousWord} -body {
     tcl_startOfPreviousWord "ab cd" end
 } -result 3
-test word-2.8 {tcl_startOfPreviousWord, bug [16e25e1402]} -constraints knownBug -body {
+test word-2.8 {tcl_startOfPreviousWord, bug [16e25e1402]} -body {
     tcl_startOfPreviousWord "ab cd" end-1
 } -result 0
 
