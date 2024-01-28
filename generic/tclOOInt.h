@@ -488,6 +488,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOInstallStdPropertyImpls;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
