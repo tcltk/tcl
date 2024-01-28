@@ -3510,7 +3510,7 @@ TclOOInstallStdPropertyImpls(
     }
     propName = objv[1];
     name = Tcl_GetStringFromObj(propName, &len);
-    if (Tcl_StringMatch("-*", name)) {
+    if (Tcl_StringMatch(name, "-*")) {
 	reason = "must not begin with -";
 	goto badProp;
     }
@@ -3518,11 +3518,11 @@ TclOOInstallStdPropertyImpls(
 	reason = "must be a simple word";
 	goto badProp;
     }
-    if (Tcl_StringMatch("*::*", name)) {
+    if (Tcl_StringMatch(name, "*::*")) {
 	reason = "must not contain namespace separators";
 	goto badProp;
     }
-    if (Tcl_StringMatch("*[()]*", name)) {
+    if (Tcl_StringMatch(name, "*[()]*")) {
 	reason = "must not contain parentheses";
 	goto badProp;
     }

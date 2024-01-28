@@ -486,36 +486,15 @@
 	#
 	# ------------------------------------------------------------------
 
-	proc PropertyImpl {readslot writeslot args} {
+	proc PropertyImpl {stdInstaller readslot writeslot args} {
 	    for {set i 0} {$i < [llength $args]} {incr i} {
 		# Parse the property name
 		set prop [lindex $args $i]
-		if {[string match "-*" $prop]} {
-		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\": must not begin with -"
-		}
-		if {$prop ne [list $prop]} {
-		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\": must be a simple word"
-		}
-		if {[string first "::" $prop] != -1} {
-		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\": must not contain namespace separators"
-		}
-		if {[string match {*[()]*} $prop]} {
-		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
-			"bad property name \"$prop\": must not contain parentheses"
-		}
 		set realprop [string cat "-" $prop]
-		set getter [format {::set [my varname %s]} $prop]
-		set setter [format {::set [my varname %s] $value} $prop]
+		unset -nocomplain getter setter
 		set kind readwrite
 
-		# Parse the extra options
+		# Parse the extra options for the property
 		while {[set next [lindex $args [expr {$i + 1}]]
 			string match "-*" $next]} {
 		    set arg [lindex $args [incr i 2]]
@@ -552,26 +531,36 @@
 		    }
 		}
 
-		# Install the option
+		# Install the property
 		set reader <ReadProp$realprop>
 		set writer <WriteProp$realprop>
+		set addReader [expr {$kind ne "writable" && ![info exist getter]}]
+		set addWriter [expr {$kind ne "readable" && ![info exist setter]}]
+		try {
+		    uplevel 2 [list $stdInstaller $prop $addReader $addWriter]
+		} on error {msg opt} {
+		    return -code error -level 2 \
+			    -errorcode [dict get $opt -errorcode] $msg
+		}
 		switch $kind {
 		    readable {
 			uplevel 2 [list $readslot -append $realprop]
 			uplevel 2 [list $writeslot -remove $realprop]
-			uplevel 2 [list method $reader -unexport {} $getter]
 		    }
 		    writable {
 			uplevel 2 [list $readslot -remove $realprop]
 			uplevel 2 [list $writeslot -append $realprop]
-			uplevel 2 [list method $writer -unexport {value} $setter]
 		    }
 		    readwrite {
 			uplevel 2 [list $readslot -append $realprop]
 			uplevel 2 [list $writeslot -append $realprop]
-			uplevel 2 [list method $reader -unexport {} $getter]
-			uplevel 2 [list method $writer -unexport {value} $setter]
 		    }
+		}
+		if {[info exist getter]} {
+		    uplevel 2 [list method $reader -unexport {} $getter]
+		}
+		if {[info exist setter]} {
+		    uplevel 2 [list method $writer -unexport {value} $setter]
 		}
 	    }
 	}
@@ -589,6 +578,7 @@
 	namespace eval configurableclass {
 	    ::proc property args {
 		::oo::configuresupport::PropertyImpl \
+		    ::oo::configuresupport::StdClassProperties \
 		    ::oo::configuresupport::readableproperties \
 		    ::oo::configuresupport::writableproperties {*}$args
 	    }
@@ -601,6 +591,7 @@
 	namespace eval configurableobject {
 	    ::proc property args {
 		::oo::configuresupport::PropertyImpl \
+		    ::oo::configuresupport::StdObjectProperties \
 		    ::oo::configuresupport::objreadableproperties \
 		    ::oo::configuresupport::objwritableproperties {*}$args
 	    }
