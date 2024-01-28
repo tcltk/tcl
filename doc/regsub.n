@@ -269,9 +269,9 @@ set decoded [\fBregsub\fR -all -command $RE $string {apply {{- p h} {
 The \fB\-command\fR option can also be useful for restricting the range of
 commands such as \fBstring totitle\fR:
 .PP
-.CE
+.CS
 set message "the quIck broWn fOX JUmped oVer the laZy dogS..."
-puts [\fBregsub\fR -all -command {\ew+} $message {string totitle}] 
+puts [\fBregsub\fR -all -command {\ew+} $message {string totitle}]
 # \(-> \fIThe Quick Brown Fox Jumped Over The Lazy Dogs..\fR
 .CE
 .VE 8.7
