@@ -440,6 +440,10 @@ InitFoundation(
 	TclOONewBasicMethod(interp, ((Object *) cfgCls)->classPtr,
 		&cfgMethods[i]);
     }
+    Tcl_CreateObjCommand(interp, "::oo::configuresupport::StdObjectProperties",
+	    TclOOInstallStdPropertyImpls, (void *) 1, NULL);
+    Tcl_CreateObjCommand(interp, "::oo::configuresupport::StdClassProperties",
+	    TclOOInstallStdPropertyImpls, (void *) 0, NULL);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
