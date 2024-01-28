@@ -1778,19 +1778,19 @@ static Tcl_MethodType SetterType = {
 void
 TclOOImplementObjectProperty(
     Tcl_Object targetObject,
-    Tcl_Obj *propNamePtr,
+    Tcl_Obj *propNamePtr,	/* Property name, without leading - */
     int installGetter,
     int installSetter)
 {
     if (installGetter) {
-	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propNamePtr));
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp-%s>", TclGetString(propNamePtr));
 	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr);
 	TclNewInstanceMethod(NULL, targetObject, methodName, 0, &GetterType, propNamePtr);
 	Tcl_DecrRefCount(methodName);
     }
     if (installSetter) {
-	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propNamePtr));
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp-%s>", TclGetString(propNamePtr));
 	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr);
 	TclNewInstanceMethod(NULL, targetObject, methodName, 0, &SetterType, propNamePtr);
@@ -1801,19 +1801,19 @@ TclOOImplementObjectProperty(
 void
 TclOOImplementClassProperty(
     Tcl_Class targetClass,
-    Tcl_Obj *propNamePtr,
+    Tcl_Obj *propNamePtr,	/* Property name, without leading - */
     int installGetter,
     int installSetter)
 {
     if (installGetter) {
-	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propNamePtr));
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp-%s>", TclGetString(propNamePtr));
 	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr);
 	TclNewMethod(NULL, targetClass, methodName, 0, &GetterType, propNamePtr);
 	Tcl_DecrRefCount(methodName);
     }
     if (installSetter) {
-	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propNamePtr));
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp-%s>", TclGetString(propNamePtr));
 	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr);
 	TclNewMethod(NULL, targetClass, methodName, 0, &SetterType, propNamePtr);
