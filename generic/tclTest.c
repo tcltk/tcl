@@ -8304,7 +8304,7 @@ TestparseargsCmd(
     static int foo = 0;
     Tcl_Size count = objc;
     Tcl_Obj **remObjv, *result[3];
-    Tcl_ArgvInfo argTable[] = {
+    const Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
         TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };
