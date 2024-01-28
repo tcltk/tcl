@@ -569,6 +569,12 @@ MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
+MODULE_SCOPE void	TclOOImplementObjectProperty(Tcl_Object targetObject,
+			    Tcl_Obj *propNamePtr, int installGetter,
+			    int installSetter);
+MODULE_SCOPE void	TclOOImplementClassProperty(Tcl_Class targetObject,
+			    Tcl_Obj *propNamePtr, int installGetter,
+			    int installSetter);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,

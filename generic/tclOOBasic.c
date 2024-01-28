@@ -720,34 +720,22 @@ TclOO_Object_LinkVar(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOO_Object_VarName --
+ * LookupObjectVar --
  *
- *	Implementation of the oo::object->varname method.
+ *	Look up a variable in an object. Tricky because of private variables.
  *
  * ----------------------------------------------------------------------
  */
 
-int
-TclOO_Object_VarName(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Interpreter in which to create the object;
-				 * also used for error reporting. */
-    Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* The actual arguments. */
+static Tcl_Var
+LookupObjectVar(
+    Tcl_Interp *interp,
+    Tcl_Object object,
+    Tcl_Obj *varName,
+    Tcl_Var *aryPtr)
 {
-    Var *varPtr, *aryVar;
-    Tcl_Obj *varNamePtr, *argPtr;
-    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
-    const char *arg;
-
-    if ((int)Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"varName");
-	return TCL_ERROR;
-    }
-    argPtr = objv[objc-1];
-    arg = TclGetString(argPtr);
+    const char *arg = TclGetString(varName);
+    Tcl_Obj *varNamePtr;
 
     /*
      * Convert the variable name to fully-qualified form if it wasn't already.
@@ -759,10 +747,10 @@ TclOO_Object_VarName(
      */
 
     if (arg[0] == ':' && arg[1] == ':') {
-	varNamePtr = argPtr;
+	varNamePtr = varName;
     } else {
-	Tcl_Namespace *namespacePtr =
-		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
+	Tcl_Namespace *namespacePtr = Tcl_GetObjectNamespace(object);
+	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
 	/*
 	 * Private method handling. [TIP 500]
@@ -775,7 +763,7 @@ TclOO_Object_VarName(
 	 */
 
 	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+	    Object *oPtr = (Object *) object;
 	    CallContext *callerContext = (CallContext *)framePtr->clientData;
 	    Method *mPtr = callerContext->callPtr->chain[
 		    callerContext->index].mPtr;
@@ -785,8 +773,8 @@ TclOO_Object_VarName(
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
 		    if (!strcmp(TclGetString(pvPtr->variableObj),
-			    TclGetString(argPtr))) {
-			argPtr = pvPtr->fullNameObj;
+			    TclGetString(varName))) {
+			varName = pvPtr->fullNameObj;
 			break;
 		    }
 		}
@@ -807,8 +795,8 @@ TclOO_Object_VarName(
 		if (isInstance) {
 		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
 			if (!strcmp(TclGetString(pvPtr->variableObj),
-				TclGetString(argPtr))) {
-			    argPtr = pvPtr->fullNameObj;
+				TclGetString(varName))) {
+			    varName = pvPtr->fullNameObj;
 			    break;
 			}
 		    }
@@ -816,16 +804,53 @@ TclOO_Object_VarName(
 	    }
 	}
 
+	// The namespace isn't the global one; necessarily true for any object!
 	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
 	Tcl_AppendToObj(varNamePtr, "::", 2);
-	Tcl_AppendObjToObj(varNamePtr, argPtr);
+	Tcl_AppendObjToObj(varNamePtr, varName);
     }
     Tcl_IncrRefCount(varNamePtr);
-    varPtr = TclObjLookupVar(interp, varNamePtr, NULL,
-	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1, &aryVar);
+    Tcl_Var var = (Tcl_Var) TclObjLookupVar(interp, varNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1,
+	    (Var **) aryPtr);
     Tcl_DecrRefCount(varNamePtr);
+    if (var == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *) NULL);
+    }
+    return var;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Object_VarName --
+ *
+ *	Implementation of the oo::object->varname method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Object_VarName(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Var varPtr, aryVar;
+    Tcl_Obj *varNamePtr;
+
+    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"varName");
+	return TCL_ERROR;
+    }
+
+    varPtr = LookupObjectVar(interp, Tcl_ObjectContextObject(context),
+	    objv[objc - 1], &aryVar);
     if (varPtr == NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -836,18 +861,16 @@ TclOO_Object_VarName(
 
     TclNewObj(varNamePtr);
     if (aryVar != NULL) {
-	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
+	Tcl_GetVariableFullName(interp, aryVar, varNamePtr);
 
 	/*
 	 * WARNING! This code pokes inside the implementation of hash tables!
 	 */
 
-	Tcl_AppendToObj(varNamePtr, "(", -1);
-	Tcl_AppendObjToObj(varNamePtr, ((VarInHash *)
-		varPtr)->entry.key.objPtr);
-	Tcl_AppendToObj(varNamePtr, ")", -1);
+	Tcl_AppendPrintfToObj(varNamePtr, "(%s)", Tcl_GetString(
+		((VarInHash *) varPtr)->entry.key.objPtr));
     } else {
-	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+	Tcl_GetVariableFullName(interp, varPtr, varNamePtr);
     }
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
@@ -1627,6 +1650,174 @@ TclOO_Configurable_Configure(
 	}
 	ReleasePropertyNameCache(interp, &cache);
 	return code;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Configurable_Getter, Configurable_Setter --
+ *
+ *	Standard property implementation. The clientData is a simple Tcl_Obj*
+ *	that contains the name of the property.
+ *
+ * TclOOImplementObjectProperty, TclOOImplementClassProperty --
+ *
+ *	Installs a basic property implementation for a property, either on
+ *	an instance or on a class. It's up to the code that calls these
+ *	to ensure that the property name is syntactically valid.
+ * 
+ * ----------------------------------------------------------------------
+ */
+
+static int
+Configurable_Getter(
+    void *clientData,		/* Which property to read.
+				 * Actually a Tcl_Obj* reference. */
+    Tcl_Interp *interp,		/* Interpreter used for the result, error
+				 * reporting, etc. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
+    Tcl_Var varPtr, aryVar;
+    Tcl_Obj *valuePtr;
+
+    if ((int) Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+		objv, NULL);
+	return TCL_ERROR;
+    }
+
+    varPtr = LookupObjectVar(interp, Tcl_ObjectContextObject(context),
+	    propNamePtr, &aryVar);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    valuePtr = TclPtrGetVar(interp, varPtr, aryVar, propNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG);
+    if (valuePtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, valuePtr);
+    return TCL_OK;
+}
+
+static int
+Configurable_Setter(
+    void *clientData,		/* Which property to write.
+				 * Actually a Tcl_Obj* reference. */
+    Tcl_Interp *interp,		/* Interpreter used for the result, error
+				 * reporting, etc. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
+    Tcl_Var varPtr, aryVar;
+
+    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+		objv, "value");
+	return TCL_ERROR;
+    }
+
+    varPtr = LookupObjectVar(interp, Tcl_ObjectContextObject(context),
+	    propNamePtr, &aryVar);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (TclPtrSetVar(interp, varPtr, aryVar, propNamePtr, NULL,
+	    objv[objc - 1], TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+// Simple support functions
+void DetailsDeleter(
+    void *clientData)
+{
+    // Just drop the reference count
+    Tcl_Obj *propNamePtr = (Tcl_Obj *) clientData;
+    Tcl_DecrRefCount(propNamePtr);
+}
+
+int DetailsCloner(
+    TCL_UNUSED(Tcl_Interp *),
+    void *oldClientData,
+    void **newClientData)
+{
+    // Just add another reference to this name; easy!
+    Tcl_Obj *propNamePtr = (Tcl_Obj *) oldClientData;
+    Tcl_IncrRefCount(propNamePtr);
+    *newClientData = propNamePtr;
+    return TCL_OK;
+}
+
+// Method descriptors
+static Tcl_MethodType GetterType = {
+    TCL_OO_METHOD_VERSION_1,
+    "PropertyGetter",
+    Configurable_Getter,
+    DetailsDeleter,
+    DetailsCloner
+};
+
+static Tcl_MethodType SetterType = {
+    TCL_OO_METHOD_VERSION_1,
+    "PropertySetter",
+    Configurable_Setter,
+    DetailsDeleter,
+    DetailsCloner
+};
+
+void
+TclOOImplementObjectProperty(
+    Tcl_Object targetObject,
+    Tcl_Obj *propNamePtr,
+    int installGetter,
+    int installSetter)
+{
+    if (installGetter) {
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propNamePtr));
+	Tcl_IncrRefCount(methodName);
+	Tcl_IncrRefCount(propNamePtr);
+	TclNewInstanceMethod(NULL, targetObject, methodName, 0, &GetterType, propNamePtr);
+	Tcl_DecrRefCount(methodName);
+    }
+    if (installSetter) {
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propNamePtr));
+	Tcl_IncrRefCount(methodName);
+	Tcl_IncrRefCount(propNamePtr);
+	TclNewInstanceMethod(NULL, targetObject, methodName, 0, &SetterType, propNamePtr);
+	Tcl_DecrRefCount(methodName);
+    }
+}
+
+void
+TclOOImplementClassProperty(
+    Tcl_Class targetClass,
+    Tcl_Obj *propNamePtr,
+    int installGetter,
+    int installSetter)
+{
+    if (installGetter) {
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propNamePtr));
+	Tcl_IncrRefCount(methodName);
+	Tcl_IncrRefCount(propNamePtr);
+	TclNewMethod(NULL, targetClass, methodName, 0, &GetterType, propNamePtr);
+	Tcl_DecrRefCount(methodName);
+    }
+    if (installSetter) {
+	Tcl_Obj *methodName = Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propNamePtr));
+	Tcl_IncrRefCount(methodName);
+	Tcl_IncrRefCount(propNamePtr);
+	TclNewMethod(NULL, targetClass, methodName, 0, &SetterType, propNamePtr);
+	Tcl_DecrRefCount(methodName);
     }
 }
 
