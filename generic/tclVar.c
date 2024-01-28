@@ -1277,10 +1277,10 @@ Tcl_Obj *
 Tcl_ObjGetVar2(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
+    Tcl_Obj *part1Ptr,		/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    Tcl_Obj *part2Ptr,	/* If non-null, points to an object holding
+    Tcl_Obj *part2Ptr,		/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
@@ -1336,7 +1336,7 @@ TclPtrGetVar(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     if (varPtr == NULL) {
@@ -1375,14 +1375,14 @@ Tcl_Obj *
 TclPtrGetVarIdx(
     Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    Var *varPtr,	/* The variable to be read.*/
+    Var *varPtr,		/* The variable to be read.*/
     Var *arrayPtr,		/* NULL for scalar variables, pointer to the
 				 * containing array otherwise. */
     Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
     int index)			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
@@ -1483,7 +1483,7 @@ TclPtrGetVarIdx(
 int
 Tcl_SetObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
