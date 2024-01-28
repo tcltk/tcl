@@ -108,6 +108,7 @@ namespace eval makeHeader {
     proc updateTemplateFile {headerFile scriptLines} {
 	set f [open $headerFile "r+"]
 	try {
+	    chan configure $f -translation {auto lf}
 	    set content [split [chan read -nonewline $f] "\n"]
 	    updateTemplate content [stripSurround $scriptLines]
 	    chan seek $f 0
