@@ -1640,7 +1640,7 @@ AppendUnicodeToUtfRep(
  *	None.
  *
  * Side effects:
- *	objPtr's internal rep is reallocated.
+ *	objPtr's internal rep is reallocated and string rep is cleaned.
  *
  *----------------------------------------------------------------------
  */
@@ -1676,7 +1676,7 @@ AppendUtfToUnicodeRep(
  *	None.
  *
  * Side effects:
- *	objPtr's internal rep is reallocated.
+ *	objPtr's string rep is reallocated (by TCL STRING GROWTH ALGORITHM).
  *
  *----------------------------------------------------------------------
  */
@@ -1751,6 +1751,39 @@ AppendUtfToUtfRep(
     }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendUtfToUtf -- 
+ *
+ *	This function appends "numBytes" bytes of "bytes" to the UTF string
+ *	rep of "objPtr" (objPtr's internal rep converted to string on demand).
+ *	numBytes must be non-negative.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	objPtr's string rep is reallocated (by TCL STRING GROWTH ALGORITHM).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAppendUtfToUtf(
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
+    const char *bytes,		/* String to append (or NULL to enlarge buffer). */
+    Tcl_Size numBytes)		/* Number of bytes of "bytes" to append. */
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "TclAppendUtfToUtf");
+    }
+
+    SetStringFromAny(NULL, objPtr);
+
+    AppendUtfToUtfRep(objPtr, bytes, numBytes);
 }
 
 /*
