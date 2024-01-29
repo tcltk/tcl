@@ -3092,7 +3092,7 @@ MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE void	TclAppendUtfToUtf(Tcl_Obj *objPtr,
-			    const char *bytes, int numBytes);
+			    const char *bytes, Tcl_Size numBytes);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
 MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
