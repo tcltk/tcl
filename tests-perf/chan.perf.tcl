@@ -38,7 +38,7 @@ proc _get_test_chan {{bufSize 4096}} {
     set i 0; while {$i < int((10*1e6 + 10*2e6 + 10*10e6 + 1*20e6)/4e3)} {
       #puts -nonewline stdout $i\t
       puts stdout $buf
-      flush stdout
+      #flush stdout; # don't flush to use full buffer
       incr i
     }
   } &
