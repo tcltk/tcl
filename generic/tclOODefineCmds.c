@@ -3491,6 +3491,21 @@ ObjWPropsSet(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOInstallStdPropertyImpls --
+ *
+ *	Implementations of the "StdClassProperties" hidden definition for
+ *	classes and the "StdObjectProperties" hidden definition for
+ *	instances. Both are located in the ::oo::configuresupport namespace.
+ *
+ *	Validates a (dashless) property name, and installs implementation
+ *	methods if asked to do so (readable and writable flags).
+ *
+ * ----------------------------------------------------------------------
+ */
+
 int
 TclOOInstallStdPropertyImpls(
     void *useInstance,
@@ -3503,6 +3518,14 @@ TclOOInstallStdPropertyImpls(
     const char *name, *reason;
     Tcl_Size len;
     char flag = TCL_DONT_QUOTE_HASH;
+
+    /*
+     * Parse the arguments and validate the property name. Note that just
+     * calling TclScanElement() is cheaper than actually formatting a list
+     * and comparing the string version of that with the original, as
+     * TclScanElement() is one of the core parts of doing that; this skips
+     * a whole load of irrelevant memory allocations!
+     */
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "propName readable writable");
@@ -3533,6 +3556,10 @@ TclOOInstallStdPropertyImpls(
 	return TCL_ERROR;
     }
 
+    /*
+     * Install the implementations... if asked to do so.
+     */
+
     if (useInstance) {
 	Tcl_Object object = TclOOGetDefineCmdContext(interp);
 	if (!object) {
@@ -3554,7 +3581,6 @@ TclOOInstallStdPropertyImpls(
     Tcl_SetErrorCode(interp, "TCLOO", "PROPERTY_FORMAT", NULL);
     return TCL_ERROR;    
 }
-
 
 /*
  * Local Variables:
