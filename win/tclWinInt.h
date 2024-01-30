@@ -74,7 +74,7 @@ typedef struct TclPipeThreadInfo {
 				 * to do read/write operation. Additionally
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
-    void *clientData;	/* Referenced data of the main thread */
+    void *clientData;		/* Referenced data of the main thread */
     HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
 

@@ -34,7 +34,7 @@
  */
 
 typedef struct FilesystemRecord {
-    void *clientData;	/* Client-specific data for the filesystem
+    void *clientData;		/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -46,18 +46,18 @@ typedef struct FilesystemRecord {
 } FilesystemRecord;
 
 /*
+ * Cache of CWD info per thread so we don't need to hold a global lock so
+ * often.
  */
 
 typedef struct {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
-				 * determine whether cwdPathPtr is stale.
-				 */
+				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
-				 * changed.
-				 */
+				 * changed. */
     void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
@@ -200,7 +200,6 @@ static size_t theFilesystemEpoch = 1;
 /*
  * The linked list of filesystems.  To minimize locking each thread maintains a
  * local copy of this list.
- *
  */
 
 static FilesystemRecord *filesystemList = &nativeFilesystemRecord;
@@ -328,8 +327,8 @@ Tcl_Stat(
 /* Obsolete */
 int
 Tcl_Access(
-    const char *path,		/* Pathname of file to access (in current CP).
-				*/
+    const char *path,		/* Pathname of file to access (in
+				 * current CP). */
     int mode)			/* Permission setting. */
 {
     int ret;
@@ -459,7 +458,7 @@ TclFSCwdIsNative(void)
 }
 
 /*
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  *
  * TclFSCwdPointerEquals --
  *	Determine whether the given pathname is equal to the current working
@@ -476,7 +475,8 @@ TclFSCwdIsNative(void)
  *
  *	If *pathPtrPtr is not null its reference count is decremented
  *	before it is replaced.
- *----------------------------------------------------------------------
+ *
+ * ----------------------------------------------------------------------
  */
 
 int
@@ -716,7 +716,7 @@ FsUpdateCwd(
 }
 
 /*
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  *
  * TclFinalizeFilesystem --
  *
@@ -732,7 +732,7 @@ FsUpdateCwd(
  * Side effects:
  *	Frees memory allocated for the filesystem.
  *
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  */
 
 void
@@ -743,7 +743,7 @@ TclFinalizeFilesystem(void)
     /*
      * Assume that only one thread is active. Otherwise mutexes would be needed
      * around this code.
-     * TO DO:  This assumption is false, isn't it?
+     * TODO: This assumption is false, isn't it?
      */
 
     if (cwdPathPtr != NULL) {
@@ -844,7 +844,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    void *clientData,	/* Client-specific data for this filesystem. */
+    void *clientData,		/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -1099,13 +1099,13 @@ Tcl_FSMatchInDirectory(
 
 static void
 FsAddMountsToGlobResult(
-    Tcl_Obj *resultPtr,		/* The current list of matching pathnames. Must
-				 * not be shared. */
+    Tcl_Obj *resultPtr,		/* The current list of matching pathnames.
+				 * Must not be shared. */
     Tcl_Obj *pathPtr,		/* The directory that was searched. */
     const char *pattern,	/* Pattern to match mounts against. */
-    Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
-				 * directory flag is particularly significant.
-				 */
+    Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL.  The
+				 * directory flag is particularly
+				 * significant. */
 {
     Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
@@ -1150,9 +1150,9 @@ FsAddMountsToGlobResult(
 	    Tcl_Size len, mlen;
 
 	    /*
-	     * mElt is normalized and lies inside pathPtr so
-	     * add to the result the right representation of mElt,
-	     * i.e. the representation relative to pathPtr.
+	     * mElt is normalized and lies inside pathPtr so add to the
+	     * result the right representation of mElt, i.e. the
+	     * representation relative to pathPtr.
 	     */
 
 	    norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
@@ -2909,7 +2909,6 @@ Tcl_FSChdir(
     }
 
     if (retVal == 0) {
-
 	 /* Assume that the cwd was actually changed to the normalized value
 	  * just calculated, and cache that information.  */
 
@@ -3012,8 +3011,8 @@ Tcl_FSChdir(
 int
 Tcl_FSLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic shared object.
-				 */
+    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic 
+				 * shared object. */
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
@@ -3082,7 +3081,6 @@ Tcl_FSLoadFile(
  * Doing the unlink is also an issue within docker containers, whose AUFS
  * bungles this as well, see
  *     https://github.com/dotcloud/docker/issues/1911
- *
  */
 
 #ifdef _WIN32
@@ -3100,14 +3098,11 @@ skipUnlink(
      * Unlinking is not performed in the following cases:
      *
      * 1. The operating system is HPUX.
-     *
-     * 2.   If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
-     * set to true (an integer > 0)
-     *
-     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS filesystem can be detected (using statfs, if available).
-     *
+     * 2. If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
+     *    set to true (an integer > 0)
+     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS
+     *    filesystem can be detected (using statfs, if available).
      */
-
 
 #ifdef hpux
     (void)shlibFile;
@@ -3122,9 +3117,10 @@ skipUnlink(
 #ifndef TCL_TEMPLOAD_NO_UNLINK
     (void)shlibFile;
 #else
-/* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
- * this automatic overriding of unlink is included.
- */
+    /*
+     * At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control
+     * whether this automatic overriding of unlink is included.
+     */
 #ifndef NO_FSTATFS
     {
 	struct statfs fs;
@@ -3136,9 +3132,10 @@ skipUnlink(
 	 * Better reference will be gladly accepted.
 	 */
 #ifndef AUFS_SUPER_MAGIC
-/* AUFS_SUPER_MAGIC can disable/override the AUFS detection, i.e. for
- * testing if a newer AUFS does not have the bug any more.
-*/
+	/*
+	 * AUFS_SUPER_MAGIC can disable/override the AUFS detection, i.e. for
+	 * testing if a newer AUFS does not have the bug any more.
+	 */
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
 	if ((statfs(TclGetString(shlibFile), &fs) == 0)
@@ -3462,7 +3459,7 @@ Tcl_LoadFile(
 
 static void *
 DivertFindSymbol(
-    Tcl_Interp *interp, 	/* The relevant interpreter. */
+    Tcl_Interp *interp,	/* The relevant interpreter. */
     Tcl_LoadHandle loadHandle,	/* A handle to the diverted module. */
     const char *symbol)		/* The name of symbol to resolve. */
 {
@@ -3647,9 +3644,7 @@ Tcl_FSUnloadFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/*
-				 * NULL or the pathname of a file to link to.
-				 */
+    Tcl_Obj *toPtr,		/* NULL or the pathname of a file to link to. */
     int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -3899,7 +3894,8 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,
+				/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
@@ -3954,8 +3950,7 @@ TclFSNonnativePathType(
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
     Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
-				 * the volume name if the pathname is absolute.
-				 */
+				 * the volume name if the pathname is absolute. */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
 				 * an object having its its refCount already
 				 * incremented, and contining the name of the
@@ -4071,7 +4066,7 @@ TclFSNonnativePathType(
 int
 Tcl_FSRenameFile(
     Tcl_Obj *srcPathPtr,	/* The pathname of a file or directory to be
-				   renamed. */
+				 * renamed. */
     Tcl_Obj *destPathPtr)	/* The new pathname for the file. */
 {
     int retVal = -1;
@@ -4346,16 +4341,14 @@ Tcl_FSCopyDirectory(
 
 int
 Tcl_FSRemoveDirectory(
-    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed.
-                                 */
+    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed. */
     int recursive,		/* If zero, removes only an empty directory.
 				 * Otherwise, removes the directory and all its
 				 * contents.  */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
 				 * place to store a a pointer to a new
 				 * object having a refCount of 1 and containing
-				 * the name of the file that produced an error.
-				 * */
+				 * the name of the file that produced an error. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 

@@ -1004,7 +1004,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
@@ -1044,7 +1044,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,	/* The pipe to close. */
+    void *instanceData,		/* The pipe to close. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -1141,7 +1141,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int toRead,			/* How much space is available in the
 				 * buffer? */
@@ -1192,7 +1192,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
@@ -1251,7 +1251,7 @@ PipeWatchNotifyChannelWrapper(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1299,9 +1299,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     PipeState *psPtr = (PipeState *)instanceData;
 

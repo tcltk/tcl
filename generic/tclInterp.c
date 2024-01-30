@@ -186,7 +186,7 @@ struct LimitHandler {
     int flags;			/* The state of this particular handler. */
     Tcl_LimitHandlerProc *handlerProc;
 				/* The handler callback. */
-    void *clientData;	/* Opaque argument to the handler callback. */
+    void *clientData;		/* Opaque argument to the handler callback. */
     Tcl_LimitHandlerDeleteProc *deleteProc;
 				/* How to delete the clientData. */
     LimitHandler *prevPtr;	/* Previous item in linked list of
@@ -1198,7 +1198,7 @@ Tcl_CreateAlias(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    Tcl_Size argc,			/* How many additional arguments? */
+    Tcl_Size argc,		/* How many additional arguments? */
     const char *const *argv)	/* These are the additional args. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
@@ -1253,7 +1253,7 @@ Tcl_CreateAliasObj(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    Tcl_Size objc,			/* How many additional arguments? */
+    Tcl_Size objc,		/* How many additional arguments? */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
@@ -1821,7 +1821,7 @@ AliasList(
 
 static int
 AliasNRCmd(
-    void *clientData,	/* Alias record. */
+    void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -1874,7 +1874,7 @@ AliasNRCmd(
 
 int
 TclAliasObjCmd(
-    void *clientData,	/* Alias record. */
+    void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -1965,7 +1965,7 @@ TclAliasObjCmd(
 
 int
 TclLocalAliasObjCmd(
-    void *clientData,	/* Alias record. */
+    void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -2050,7 +2050,7 @@ TclLocalAliasObjCmd(
 
 static void
 AliasObjCmdDeleteProc(
-    void *clientData)	/* The alias record for this alias. */
+    void *clientData)		/* The alias record for this alias. */
 {
     Alias *aliasPtr = (Alias *)clientData;
     Target *targetPtr;
@@ -2551,7 +2551,7 @@ ChildCreate(
 
 int
 TclChildObjCmd(
-    void *clientData,	/* Child interpreter. */
+    void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2561,7 +2561,7 @@ TclChildObjCmd(
 
 static int
 NRChildCmd(
-    void *clientData,	/* Child interpreter. */
+    void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2765,7 +2765,7 @@ NRChildCmd(
 
 static void
 ChildObjCmdDeleteProc(
-    void *clientData)	/* The ChildRecord for the command. */
+    void *clientData)		/* The ChildRecord for the command. */
 {
     Child *childPtr;		/* Interim storage for Child record. */
     Tcl_Interp *childInterp = (Tcl_Interp *)clientData;

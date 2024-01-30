@@ -1520,7 +1520,7 @@ Tcl_CallWhenDeleted(
     Tcl_Interp *interp,		/* Interpreter to watch. */
     Tcl_InterpDeleteProc *proc,	/* Function to call when interpreter is about
 				 * to be deleted. */
-    void *clientData)	/* One-word value to pass to proc. */
+    void *clientData)		/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
@@ -1568,7 +1568,7 @@ Tcl_DontCallWhenDeleted(
     Tcl_Interp *interp,		/* Interpreter to watch. */
     Tcl_InterpDeleteProc *proc,	/* Function to call when interpreter is about
 				 * to be deleted. */
-    void *clientData)	/* One-word value to pass to proc. */
+    void *clientData)		/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTablePtr;
@@ -1616,7 +1616,7 @@ Tcl_SetAssocData(
     const char *name,		/* Name for association. */
     Tcl_InterpDeleteProc *proc,	/* Proc to call when interpreter is about to
 				 * be deleted. */
-    void *clientData)	/* One-word value to pass to proc. */
+    void *clientData)		/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
@@ -2493,7 +2493,7 @@ Tcl_CreateCommand(
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
     Tcl_CmdProc *proc,		/* Function to associate with cmdName. */
-    void *clientData,	/* Arbitrary value passed to string proc. */
+    void *clientData,		/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
@@ -2682,14 +2682,14 @@ Tcl_CreateCommand(
 
 typedef struct {
     Tcl_ObjCmdProc2 *proc;
-    void *clientData; /* Arbitrary value to pass to proc function. */
+    void *clientData;		/* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
-    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    void *deleteData;		/* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc2 *nreProc;
 } CmdWrapperInfo;
 
-
-static int cmdWrapperProc(void *clientData,
+static int cmdWrapperProc(
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj * const *objv)
@@ -2722,7 +2722,7 @@ Tcl_CreateObjCommand2(
 				 * the global namespace. */
     Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
 				 * name. */
-    void *clientData,	/* Arbitrary value to pass to object
+    void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
     Tcl_CmdDeleteProc *deleteProc
 				/* If not NULL, gives a function to call when
@@ -2750,7 +2750,7 @@ Tcl_CreateObjCommand(
 				 * the global namespace. */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
-    void *clientData,	/* Arbitrary value to pass to object
+    void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
     Tcl_CmdDeleteProc *deleteProc
 				/* If not NULL, gives a function to call when
@@ -2800,7 +2800,7 @@ TclCreateObjCommandInNs(
     Tcl_Namespace *namesp,   /* The namespace to create the command in */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
-    void *clientData,	/* Arbitrary value to pass to object
+    void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
@@ -2969,9 +2969,9 @@ TclCreateObjCommandInNs(
 
 int
 InvokeStringCommand(
-    void *clientData,	/* Points to command's Command structure. */
+    void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
@@ -3257,7 +3257,7 @@ Tcl_SetCommandInfo(
 
 static int
 invokeObj2Command(
-    void *clientData,	/* Points to command's Command structure. */
+    void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3909,7 +3909,7 @@ CallCommandTraces(
 
 static int
 CancelEvalProc(
-    void *clientData,	/* Interp to cancel the script in progress. */
+    void *clientData,		/* Interp to cancel the script in progress. */
     TCL_UNUSED(Tcl_Interp *),
     int code)			/* Current return code from command. */
 {
@@ -3987,7 +3987,7 @@ CancelEvalProc(
 
 void
 TclCleanupCommand(
-    Command *cmdPtr)	/* Points to the Command structure to
+    Command *cmdPtr)		/* Points to the Command structure to
 				 * be freed. */
 {
     if (cmdPtr->refCount-- <= 1) {
@@ -4235,7 +4235,7 @@ Tcl_CancelEval(
 				 * script. */
     Tcl_Obj *resultObjPtr,	/* The script cancellation error message or
 				 * NULL for a default error message. */
-    void *clientData,	/* Passed to CancelEvalProc. */
+    void *clientData,		/* Passed to CancelEvalProc. */
     int flags)			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
 				 * TCL_CANCEL_UNWIND is currently
@@ -5060,7 +5060,7 @@ Tcl_EvalTokensStandard(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    Tcl_Size count)			/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count)		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
@@ -5115,7 +5115,7 @@ TclEvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
     Tcl_Size line,		/* The line the script starts on. */
-    Tcl_Size *clNextOuter,		/* Information about an outer context for */
+    Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
@@ -5159,7 +5159,7 @@ TclEvalEx(
     Tcl_Size *linesStack = (Tcl_Size *)TclStackAlloc(interp, minObjs * sizeof(Tcl_Size));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
-    Tcl_Size *clNext = NULL;		/* Pointer for the tracking of invisible
+    Tcl_Size *clNext = NULL;	/* Pointer for the tracking of invisible
 				 * continuation lines. Initialized only if the
 				 * caller gave us a table of locations to
 				 * track, via scriptCLLocPtr. It always refers
@@ -6645,7 +6645,7 @@ int
 TclObjInvoke(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    Tcl_Size objc,			/* Count of arguments. */
+    Tcl_Size objc,		/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
@@ -7236,7 +7236,7 @@ ExprSqrtFunc(
 
 static int
 ExprUnaryFunc(
-    void *clientData,	/* Contains the address of a function that
+    void *clientData,		/* Contains the address of a function that
 				 * takes one double argument and returns a
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
@@ -7300,7 +7300,7 @@ CheckDoubleResult(
 
 static int
 ExprBinaryFunc(
-    void *clientData,	/* Contains the address of a function that
+    void *clientData,		/* Contains the address of a function that
 				 * takes two double arguments and returns a
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
@@ -8592,7 +8592,7 @@ Tcl_NRCreateCommand(
 				 * calls. */
     Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
 				 * name, provides NR implementation */
-    void *clientData,	/* Arbitrary value to pass to object
+    void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
@@ -8641,7 +8641,7 @@ int
 Tcl_NREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    Tcl_Size objc,			/* Number of words in command. */
+    Tcl_Size objc,		/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -8822,7 +8822,7 @@ TclNRTailcallObjCmd(
 
         nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
         listPtr = Tcl_NewListObj(objc, objv);
- 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
         iPtr->varFramePtr->tailcallPtr = listPtr;
     }

@@ -85,7 +85,7 @@ static const Tcl_ObjType ensembleCmdType = {
     TCL_OBJTYPE_V0
 };
 
-#define ECRSetInternalRep(objPtr, ecRepPtr)					\
+#define ECRSetInternalRep(objPtr, ecRepPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
@@ -93,11 +93,11 @@ static const Tcl_ObjType ensembleCmdType = {
 	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
     } while (0)
 
-#define ECRGetInternalRep(objPtr, ecRepPtr)					\
+#define ECRGetInternalRep(objPtr, ecRepPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);		\
-	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);	\
+	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)irPtr->twoPtrValue.ptr1 : NULL; \
     } while (0)
 
 /*
@@ -106,14 +106,14 @@ static const Tcl_ObjType ensembleCmdType = {
  */
 
 typedef struct {
-    Tcl_Size epoch;               /* Used to confirm when the data in this
-                                 * really structure matches up with the
-                                 * ensemble. */
-    Command *token;             /* Reference to the command for which this
-                                 * structure is a cache of the resolution. */
-    Tcl_Obj *fix;               /* Corrected spelling, if needed. */
-    Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand hash
-                                 * table. */
+    Tcl_Size epoch;		/* Used to confirm when the data in this
+				 * really structure matches up with the
+				 * ensemble. */
+    Command *token;		/* Reference to the command for which this
+				 * structure is a cache of the resolution. */
+    Tcl_Obj *fix;		/* Corrected spelling, if needed. */
+    Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand hash
+				 * table. */
 } EnsembleCmdRep;
 
 static inline Tcl_Obj *
@@ -1818,8 +1818,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	const char *subcmdName; /* Name of the subcommand or unique prefix of
-				 * it (a non-unique prefix produces an error).
-				 */
+				 * it (a non-unique prefix produces an error). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
 	Tcl_Size stringLength, i;
 	Tcl_Size tableLength = ensemblePtr->subcommandTable.numEntries;
@@ -2228,8 +2227,8 @@ Tcl_Obj *const *TclEnsembleGetRewriteValues(
  *
  * TclFetchEnsembleRoot --
  *
- *	Returns the root of ensemble rewriting, if any.
- *	If no root exists, returns objv instead.
+ *	Returns the root of ensemble rewriting, if any. If no root exists,
+ *	returns objv instead.
  *
  * Results:
  *	None.

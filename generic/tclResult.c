@@ -760,7 +760,7 @@ TclProcessReturn(
 
             Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
                     valueObjv);
- 	}
+	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE],
                 &valuePtr);
 	if (valuePtr != NULL) {

@@ -156,7 +156,7 @@ int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1340,7 +1340,7 @@ InitLocalCache(
 
 static int
 InitArgsAndLocals(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
@@ -1504,9 +1504,9 @@ InitArgsAndLocals(
 
 int
 TclPushProcCallFrame(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
@@ -1599,9 +1599,9 @@ TclPushProcCallFrame(
 
 int
 TclObjInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1616,11 +1616,11 @@ TclObjInterpProc(
 
 int
 TclNRInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1637,9 +1637,9 @@ static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp, 	/* Interpreter in which procedure was
+    Tcl_Interp *interp,	/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,		/* Count of number of arguments to this
+    int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1690,10 +1690,10 @@ ObjInterpProc2(
 
 int
 TclNRInterpProcCore(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    Tcl_Size skip,			/* Number of initial arguments to be skipped,
+    Tcl_Size skip,		/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -2112,7 +2112,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)	/* Procedure to be deleted. */
+    void *clientData)		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 
@@ -2405,7 +2405,7 @@ ProcBodyFree(
 static void
 DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
@@ -2420,7 +2420,7 @@ DupLambdaInternalRep(
 
 static void
 FreeLambdaInternalRep(
-    Tcl_Obj *objPtr)	/* CmdName object with internal representation
+    Tcl_Obj *objPtr)		/* CmdName object with internal representation
 				 * to free. */
 {
     Proc *procPtr;
@@ -2438,7 +2438,7 @@ FreeLambdaInternalRep(
 static int
 SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
     const char *name;

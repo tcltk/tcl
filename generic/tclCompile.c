@@ -687,9 +687,11 @@ static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
 static void		EnterCmdExtentData(CompileEnv *envPtr,
-			    Tcl_Size cmdNumber, Tcl_Size numSrcBytes, Tcl_Size numCodeBytes);
+			    Tcl_Size cmdNumber, Tcl_Size numSrcBytes,
+			    Tcl_Size numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
-			    Tcl_Size cmdNumber, Tcl_Size srcOffset, Tcl_Size codeOffset);
+			    Tcl_Size cmdNumber, Tcl_Size srcOffset,
+			    Tcl_Size codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -779,7 +781,7 @@ TclSetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
-    void *clientData)	/* Hook procedure private data. */
+    void *clientData)		/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
@@ -3034,7 +3036,7 @@ TclInitByteCodeObj(
 
 Tcl_Size
 TclFindCompiledLocal(
-    const char *name,	/* Points to first character of the name of a
+    const char *name,		/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
@@ -3213,7 +3215,7 @@ EnterCmdStartData(
     Tcl_Size cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
     Tcl_Size srcOffset,		/* Offset of first char of the command. */
-    Tcl_Size codeOffset)		/* Offset of first byte of command code. */
+    Tcl_Size codeOffset)	/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3291,8 +3293,8 @@ EnterCmdExtentData(
 				 * location information. */
     Tcl_Size cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    Tcl_Size numSrcBytes,		/* Number of command source chars. */
-    Tcl_Size numCodeBytes)		/* Offset of last byte of command code. */
+    Tcl_Size numSrcBytes,	/* Number of command source chars. */
+    Tcl_Size numCodeBytes)	/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3415,7 +3417,7 @@ EnterCmdWordData(
 Tcl_Size
 TclCreateExceptRange(
     ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
-    CompileEnv *envPtr)/* Points to CompileEnv for which to create a
+    CompileEnv *envPtr)		/* Points to CompileEnv for which to create a
 				 * new ExceptionRange structure. */
 {
     ExceptionRange *rangePtr;
@@ -3775,11 +3777,11 @@ TclFinalizeLoopExceptionRange(
 
 Tcl_Size
 TclCreateAuxData(
-    void *clientData,	/* The compilation auxiliary data to store in
+    void *clientData,		/* The compilation auxiliary data to store in
 				 * the new aux data record. */
     const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
-    CompileEnv *envPtr)/* Points to the CompileEnv for which a new
+    CompileEnv *envPtr)		/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
     Tcl_Size index;		/* Index for the new AuxData structure. */

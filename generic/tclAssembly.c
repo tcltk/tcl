@@ -51,7 +51,7 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_CAUGHT 		/* Block is within a catch context and
+    BBCS_CAUGHT			/* Block is within a catch context and
 				 * may be executed after an exception fires */
 } BasicBlockCatchState;
 
@@ -222,9 +222,9 @@ typedef struct AssemblyEnv {
     Tcl_HashTable labelHash;	/* Hash table whose keys are labels and whose
 				 * values are 'label' objects storing the code
 				 * offsets of the labels. */
-    Tcl_Size cmdLine;	/* Current line number within the assembly
+    Tcl_Size cmdLine;		/* Current line number within the assembly
 				 * code */
-    Tcl_Size* clNext;	/* Invisible continuation line for
+    Tcl_Size* clNext;		/* Invisible continuation line for
 				 * [info frame] */
     BasicBlock* head_bb;	/* First basic block in the code */
     BasicBlock* curr_bb;	/* Current basic block */
@@ -1272,7 +1272,7 @@ AssembleOneLine(
     Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
-    Tcl_Size localVar;	/* LVT index of a local variable */
+    Tcl_Size localVar;		/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
     JumptableInfo* jtPtr;	/* Pointer to a jumptable */
     int infoIndex;		/* Index of the jumptable in auxdata */
@@ -1936,7 +1936,7 @@ MoveExceptionRangesToBasicBlock(
     curr_bb->foreignExceptionBase = savedExceptArrayNext;
     curr_bb->foreignExceptionCount = exceptionCount;
     curr_bb->foreignExceptions =
-    		(ExceptionRange*)Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
+		(ExceptionRange*)Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
     memcpy(curr_bb->foreignExceptions,
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
@@ -1969,7 +1969,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    Tcl_Size objc;			/* Number of elements in the 'jumps' list */
+    Tcl_Size objc;		/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -2004,7 +2004,7 @@ CreateMirrorJumpTable(
      * Allocate the jumptable.
      */
 
-    jtPtr = (JumptableInfo*)Tcl_Alloc(sizeof(JumptableInfo));
+    jtPtr = (JumptableInfo*) Tcl_Alloc(sizeof(JumptableInfo));
     jtHashPtr = &jtPtr->hashTable;
     Tcl_InitHashTable(jtHashPtr, TCL_STRING_KEYS);
 
@@ -2023,7 +2023,8 @@ CreateMirrorJumpTable(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"duplicate entry in jump table for \"%s\"",
 			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPJUMPTABLEENTRY", (void *)NULL);
+		Tcl_SetErrorCode(interp,
+			"TCL", "ASSEM", "DUPJUMPTABLEENTRY", (void *)NULL);
 		DeleteMirrorJumpTable(jtPtr);
 		return TCL_ERROR;
 	    }

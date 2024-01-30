@@ -420,20 +420,20 @@ Tcl_LoadObjCmd(
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
+	libraryPtr->safeInitProc   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
 	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
+	libraryPtr->safeUnloadProc = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
-	libraryPtr->interpRefCount	   = 0;
+	libraryPtr->interpRefCount = 0;
 	libraryPtr->safeInterpRefCount = 0;
 
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		   = firstLibraryPtr;
+	libraryPtr->nextPtr	   = firstLibraryPtr;
 	firstLibraryPtr		   = libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
 
@@ -753,7 +753,6 @@ Tcl_UnloadObjCmd(
     }
     return code;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -771,15 +770,15 @@ Tcl_UnloadObjCmd(
  *
  *----------------------------------------------------------------------
  */
+
 static int
 UnloadLibrary(
-	Tcl_Interp *interp,
-	Tcl_Interp *target,
-	LoadedLibrary *libraryPtr,
-	int keepLibrary,
-	const char *fullFileName,
-	int interpExiting
-)
+    Tcl_Interp *interp,
+    Tcl_Interp *target,
+    LoadedLibrary *libraryPtr,
+    int keepLibrary,
+    const char *fullFileName,
+    int interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -1001,7 +1000,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix. */
+    const char *prefix,		/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
@@ -1036,19 +1035,19 @@ Tcl_StaticLibrary(
      */
 
     if (libraryPtr == NULL) {
-	libraryPtr = (LoadedLibrary *)Tcl_Alloc(sizeof(LoadedLibrary));
-	libraryPtr->fileName	= (char *)Tcl_Alloc(1);
+	libraryPtr = (LoadedLibrary *) Tcl_Alloc(sizeof(LoadedLibrary));
+	libraryPtr->fileName = (char *) Tcl_Alloc(1);
 	libraryPtr->fileName[0]	= 0;
-	libraryPtr->prefix	= (char *)Tcl_Alloc(strlen(prefix) + 1);
+	libraryPtr->prefix = (char *)Tcl_Alloc(strlen(prefix) + 1);
 	strcpy(libraryPtr->prefix, prefix);
 	libraryPtr->loadHandle	= NULL;
-	libraryPtr->initProc	= initProc;
-	libraryPtr->safeInitProc	= safeInitProc;
+	libraryPtr->initProc = initProc;
+	libraryPtr->safeInitProc = safeInitProc;
 	libraryPtr->unloadProc = NULL;
 	libraryPtr->safeUnloadProc = NULL;
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		= firstLibraryPtr;
-	firstLibraryPtr		= libraryPtr;
+	libraryPtr->nextPtr = firstLibraryPtr;
+	firstLibraryPtr = libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
     }
 
@@ -1107,9 +1106,8 @@ TclGetLoadedLibraries(
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
-    const char *prefix)	/* Prefix or NULL. If NULL, return info
-				 * for all prefixes.
-				 */
+    const char *prefix)		/* Prefix or NULL. If NULL, return info
+				 * for all prefixes. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;

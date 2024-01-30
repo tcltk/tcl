@@ -34,9 +34,9 @@ typedef struct {
     Tcl_EncodingFreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    void *clientData;	/* Arbitrary value associated with encoding
+    void *clientData;		/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
-    Tcl_Size nullSize;	/* Number of 0x00 bytes that signify
+    Tcl_Size nullSize;		/* Number of 0x00 bytes that signify
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
@@ -1157,14 +1157,13 @@ Tcl_ExternalToUtfDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    Tcl_Size srcLen,			/* Source string length in bytes, or < 0 for
+    Tcl_Size srcLen,		/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
-    Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                   (or TCL_INDEX_NONE if no error). May
-				   be NULL. */
+    Tcl_Size *errorLocPtr)      /* Where to store the error location (or
+                                 * TCL_INDEX_NONE if no error). May be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
@@ -1492,9 +1491,8 @@ Tcl_UtfToExternalDStringEx(
     int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
-    Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                   (or TCL_INDEX_NONE if no error). May
-				   be NULL. */
+    Tcl_Size *errorLocPtr)      /* Where to store the error location (or
+				 * TCL_INDEX_NONE if no error). May be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
@@ -2633,7 +2631,7 @@ UtfToUtfProc(
 
 static int
 Utf32ToUtfProc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,		/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2761,7 +2759,7 @@ Utf32ToUtfProc(
 
 static int
 UtfToUtf32Proc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,		/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2860,7 +2858,7 @@ UtfToUtf32Proc(
 
 static int
 Utf16ToUtfProc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,		/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -3038,7 +3036,7 @@ Utf16ToUtfProc(
 
 static int
 UtfToUtf16Proc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,		/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -3146,7 +3144,7 @@ UtfToUtf16Proc(
 
 static int
 UtfToUcs2Proc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,		/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -3250,7 +3248,7 @@ UtfToUcs2Proc(
 
 static int
 TableToUtfProc(
-    void *clientData,	/* TableEncodingData that specifies
+    void *clientData,		/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -3375,7 +3373,7 @@ TableToUtfProc(
 
 static int
 TableFromUtfProc(
-    void *clientData,	/* TableEncodingData that specifies
+    void *clientData,		/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -3667,7 +3665,7 @@ Iso88591FromUtfProc(
 
 static void
 TableFreeProc(
-    void *clientData)	/* TableEncodingData that specifies
+    void *clientData)		/* TableEncodingData that specifies
 				 * encoding. */
 {
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
@@ -3702,7 +3700,7 @@ TableFreeProc(
 
 static int
 EscapeToUtfProc(
-    void *clientData,	/* EscapeEncodingData that specifies
+    void *clientData,		/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -3915,7 +3913,7 @@ EscapeToUtfProc(
 
 static int
 EscapeFromUtfProc(
-    void *clientData,	/* EscapeEncodingData that specifies
+    void *clientData,		/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -4126,7 +4124,7 @@ EscapeFromUtfProc(
 
 static void
 EscapeFreeProc(
-    void *clientData)	/* EscapeEncodingData that specifies
+    void *clientData)		/* EscapeEncodingData that specifies
 				 * encoding. */
 {
     EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
@@ -4331,7 +4329,7 @@ int
 TclEncodingProfileNameToId(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     const char *profileName,	/* Name of profile */
-    int *profilePtr)  		/* Output */
+    int *profilePtr)		/* Output */
 {
     size_t i;
     size_t numProfiles = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);

@@ -563,7 +563,7 @@ TclpFinalizeSockets(void)
 
 static int
 TcpBlockModeProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
@@ -794,7 +794,7 @@ WaitForConnect(
 
 static int
 TcpInputProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -927,7 +927,7 @@ TcpInputProc(
 
 static int
 TcpOutputProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
@@ -1031,7 +1031,7 @@ TcpOutputProc(
 
 static int
 TcpCloseProc(
-    void *instanceData,	/* The socket to close. */
+    void *instanceData,		/* The socket to close. */
     TCL_UNUSED(Tcl_Interp *))
 {
     TcpState *statePtr = (TcpState *)instanceData;
@@ -1117,7 +1117,7 @@ TcpCloseProc(
 
 static int
 TcpClose2Proc(
-    void *instanceData,	/* The socket to close. */
+    void *instanceData,		/* The socket to close. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -1167,7 +1167,7 @@ TcpClose2Proc(
 
 static int
 TcpSetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to set. */
     const char *value)		/* New value for option. */
@@ -1250,7 +1250,7 @@ TcpSetOptionProc(
 
 static int
 TcpGetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
@@ -1546,7 +1546,7 @@ TcpGetOptionProc(
 
 static void
 TcpWatchProc(
-    void *instanceData,	/* The socket state. */
+    void *instanceData,		/* The socket state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1600,9 +1600,9 @@ TcpWatchProc(
 
 static int
 TcpGetHandleProc(
-    void *instanceData,	/* The socket state. */
-    TCL_UNUSED(int) /*direction*/,
-    void **handlePtr)	/* Where to store the handle. */
+    void *instanceData,		/* The socket state. */
+    TCL_UNUSED(int),		/* direction */
+    void **handlePtr)		/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
 
@@ -2056,7 +2056,7 @@ Tcl_OpenTcpClient(
 
 Tcl_Channel
 Tcl_MakeTcpClientChannel(
-    void *sock)		/* The socket to wrap up into a channel. */
+    void *sock)			/* The socket to wrap up into a channel. */
 {
     TcpState *statePtr;
     char channelName[SOCK_CHAN_LENGTH];
@@ -2307,9 +2307,9 @@ Tcl_OpenTcpServerEx(
 
 static void
 TcpAccept(
-    TcpFdList *fds,	/* Server socket that accepted newSocket. */
-    SOCKET newSocket,   /* Newly accepted socket. */
-    address addr)       /* Address of new socket. */
+    TcpFdList *fds,		/* Server socket that accepted newSocket. */
+    SOCKET newSocket,		/* Newly accepted socket. */
+    address addr)		/* Address of new socket. */
 {
     TcpState *newInfoPtr;
     TcpState *statePtr = fds->statePtr;
@@ -2844,7 +2844,6 @@ AddSocketInfoFd(
     fds->next = NULL;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2862,7 +2861,8 @@ AddSocketInfoFd(
  */
 
 static TcpState *
-NewSocketInfo(SOCKET socket)
+NewSocketInfo(
+    SOCKET socket)
 {
     TcpState *statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
 
@@ -2899,10 +2899,9 @@ NewSocketInfo(SOCKET socket)
 
 static int
 WaitForSocketEvent(
-    TcpState *statePtr,	/* Information about this socket. */
+    TcpState *statePtr,		/* Information about this socket. */
     int events,			/* Events to look for. May be one of
-				 * FD_READ or FD_WRITE.
-				 */
+				 * FD_READ or FD_WRITE. */
     int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;

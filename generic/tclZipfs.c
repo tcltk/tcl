@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				   -1 for zip64 */
+				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				   -1 for zip64 */
+				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -258,8 +258,8 @@ typedef struct ZipChannel {
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
-				   may point *inside* the block) */
+				 * need freeing. Else memory to free (ubuf
+				 * may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
@@ -972,9 +972,10 @@ DecodeZipEntryText(
  *------------------------------------------------------------------------
  */
 static int
-NormalizeMountPoint(Tcl_Interp *interp,
-		    const char *mountPath,
-		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
+NormalizeMountPoint(
+    Tcl_Interp *interp,
+    const char *mountPath,
+    Tcl_DString *dsPtr)		/* Must be initialized by caller! */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1029,8 +1030,8 @@ NormalizeMountPoint(Tcl_Interp *interp,
 
 invalidMountPath:
     if (interp) {
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("Invalid mount path \"%s\"", mountPath));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Invalid mount path \"%s\"", mountPath));
 	ZIPFS_ERROR_CODE(interp, "MOUNT_PATH");
     }
 
@@ -1059,11 +1060,12 @@ errorReturn:
  *------------------------------------------------------------------------
  */
 static char *
-MapPathToZipfs(Tcl_Interp *interp,
-	       const char *mountPath,	/* Must be fully normalized */
-	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
-	                                   by caller */
+MapPathToZipfs(
+    Tcl_Interp *interp,
+    const char *mountPath,	/* Must be fully normalized */
+    const char *path,		/* Archive content path to map */
+    Tcl_DString *dsPtr)		/* Must be initialized and cleared
+				 * by caller. */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1199,7 +1201,9 @@ ZipFSLookupZip(
  *------------------------------------------------------------------------
  */
 static int
-ContainsMountPoint (const char *path, int pathLen)
+ContainsMountPoint(
+    const char *path,
+    int pathLen)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -2218,7 +2222,8 @@ ListMountPoints(
  *------------------------------------------------------------------------
  */
 static void
-CleanupMount(ZipFile *zf)        /* Mount point */
+CleanupMount(
+    ZipFile *zf)		/* Mount point */
 {
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
@@ -3272,7 +3277,7 @@ ComputeNameInArchive(
 				 * archive */
     const char *strip,		/* A prefix to strip; may be NULL if no
 				 * stripping need be done. */
-    Tcl_Size slen)			/* The length of the prefix; must be 0 if no
+    Tcl_Size slen)		/* The length of the prefix; must be 0 if no
 				 * stripping need be done. */
 {
     const char *name;
@@ -4746,9 +4751,9 @@ ZipChannelOpen(
     if ((ZipFS.wrmax <= 0) && wr) {
 	Tcl_SetErrno(EACCES);
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("writes not permitted: %s",
-					   Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "writes not permitted: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -4756,11 +4761,10 @@ ZipChannelOpen(
     if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
 	Tcl_SetErrno(EINVAL);
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Invalid flags 0x%x. O_APPEND and "
-					   "O_TRUNC require write access: %s",
-					   mode,
-					   Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid flags 0x%x. O_APPEND and "
+		    "O_TRUNC require write access: %s",
+		    mode, Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -4774,11 +4778,10 @@ ZipChannelOpen(
     if (!z) {
 	Tcl_SetErrno(wr ? ENOTSUP : ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("file \"%s\" not %s: %s",
-					   filename,
-					   wr ? "created" : "found",
-					   Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" not %s: %s",
+		    filename, wr ? "created" : "found",
+		    Tcl_PosixError(interp)));
 	}
 	goto error;
     }
@@ -6511,7 +6514,7 @@ TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
     TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
+    TCL_UNUSED(const char *))	/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
     ZIPFS_ERROR(interp, "no zlib available");

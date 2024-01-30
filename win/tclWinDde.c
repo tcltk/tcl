@@ -310,10 +310,10 @@ Initialize(void)
 static const WCHAR *
 DdeSetServerName(
     Tcl_Interp *interp,
-    const WCHAR *name, /* The name that will be used to refer to the
+    const WCHAR *name,		/* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int flags,		/* DDE_FLAG_FORCE or 0 */
+    int flags,			/* DDE_FLAG_FORCE or 0 */
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
@@ -515,7 +515,7 @@ DdeGetRegistrationPtr(
 
 static void
 DeleteProc(
-    void *clientData)	/* The interp we are deleting. */
+    void *clientData)		/* The interp we are deleting. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
     RegisteredInterp *searchPtr, *prevPtr;
@@ -1256,7 +1256,7 @@ DdeGetServicesList(
 
 static void
 SetDdeError(
-    Tcl_Interp *interp)	    /* The interp to put the message in. */
+    Tcl_Interp *interp)		/* The interp to put the message in. */
 {
     const char *errorMessage, *errorCode;
 
@@ -1303,9 +1303,9 @@ SetDdeError(
 
 static int
 DdeObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
-    Tcl_Size objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {
@@ -1588,11 +1588,13 @@ DdeObjCmd(
 	if (ddeData != NULL) {
 	    if (flags & DDE_FLAG_ASYNC) {
 		DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0,
-			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
 		DdeAbandonTransaction(ddeInstance, hConv, ddeResult);
 	    } else {
 		ddeReturn = DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF,
-			hConv, 0, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_EXECUTE, 30000, NULL);
+			hConv, 0, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_EXECUTE, 30000, NULL);
 		if (ddeReturn == 0) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;
@@ -1635,7 +1637,8 @@ DdeObjCmd(
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(NULL, 0, hConv, ddeItem,
-			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_REQUEST, 5000, NULL);
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_REQUEST, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;
@@ -1713,7 +1716,8 @@ DdeObjCmd(
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(dataString, (DWORD) length,
-			hConv, ddeItem, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_POKE, 5000, NULL);
+			hConv, ddeItem, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_POKE, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;

@@ -657,7 +657,7 @@ Tcl_HashStats(
 static Tcl_HashEntry *
 AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)			/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_HashEntry *hPtr;
     size_t count = tablePtr->keyType * sizeof(int);
@@ -693,7 +693,7 @@ AllocArrayEntry(
 
 static int
 CompareArrayKeys(
-    void *keyPtr,			/* New key to compare. */
+    void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     size_t count = hPtr->tablePtr->keyType * sizeof(int);
@@ -722,7 +722,7 @@ CompareArrayKeys(
 static size_t
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)				/* Key from which to compute hash value. */
+    void *keyPtr)		/* Key from which to compute hash value. */
 {
     const int *array = (const int *) keyPtr;
     size_t result;
@@ -754,7 +754,7 @@ HashArrayKey(
 static Tcl_HashEntry *
 AllocStringEntry(
     TCL_UNUSED(Tcl_HashTable *),
-    void *keyPtr)			/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
@@ -790,7 +790,7 @@ AllocStringEntry(
 
 static int
 CompareStringKeys(
-    void *keyPtr,			/* New key to compare. */
+    void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     return !strcmp((char *)keyPtr, hPtr->key.string);
@@ -816,7 +816,7 @@ CompareStringKeys(
 static size_t
 HashStringKey(
     TCL_UNUSED(Tcl_HashTable *),
-    void *keyPtr)			/* Key from which to compute hash value. */
+    void *keyPtr)		/* Key from which to compute hash value. */
 {
     const char *string = (const char *)keyPtr;
     size_t result;

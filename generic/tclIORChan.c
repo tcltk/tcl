@@ -64,7 +64,7 @@ static void     TimerRunWrite(void *clientData);
 static const Tcl_ChannelType tclRChannelType = {
     "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    NULL,	   /* Close channel, clean instance data	  */
+    NULL,		   /* Close channel, clean instance data	  */
     ReflectInput,	   /* Handle read request			  */
     ReflectOutput,	   /* Handle write request			  */
     NULL,
@@ -96,8 +96,7 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
     Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
@@ -113,16 +112,12 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-			        */
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-			        */
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is readable. */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is writable. */
 
     /*
      * Note regarding the usage of timers.
@@ -266,7 +261,7 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    Tcl_Size toRead;			/* I: #bytes to read,
+    Tcl_Size toRead;		/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
@@ -403,25 +398,25 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
+	if ((p)->base.mustFree) {				\
+	    Tcl_Free((p)->base.msgStr);				\
 	}
-#define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
+#define PassReceivedErrorInterp(i, p) \
+	if ((i) != NULL) {					\
+	    Tcl_SetChannelErrorInterp((i),			\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	}							\
 	FreeReceivedError(p)
 #define PassReceivedError(c,p) \
 	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
 	FreeReceivedError(p)
-#define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
+#define ForwardSetStaticError(p, emsg) \
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 0;					\
 	(p)->base.msgStr = (char *) (emsg)
-#define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
+#define ForwardSetDynamicError(p, emsg) \
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 1;					\
 	(p)->base.msgStr = (char *) (emsg)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
@@ -513,7 +508,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -1169,7 +1164,7 @@ static int
 ReflectClose(
     void *clientData,
     Tcl_Interp *interp,
-	int flags)
+    int flags)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     int result;			/* Result code for 'close' */
@@ -1835,7 +1830,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1907,7 +1902,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -2060,7 +2055,7 @@ ReflectGetOption(
 
 static int
 ReflectTruncate(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     long long length)		/* Length to truncate to. */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -2143,7 +2138,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    Tcl_Size listc;			/* #elements in eventspec list */
+    Tcl_Size listc;		/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2619,13 +2614,13 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
 #if TCL_THREADS
@@ -2770,7 +2765,8 @@ GetThreadReflectedChannelMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rcmPtr) {
-	tsdPtr->rcmPtr = (ReflectedChannelMap *)Tcl_Alloc(sizeof(ReflectedChannelMap));
+	tsdPtr->rcmPtr = (ReflectedChannelMap *)
+		Tcl_Alloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&tsdPtr->rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedChannelMap, NULL);
     }
@@ -2889,8 +2885,9 @@ DeleteThreadReflectedChannelMap(
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
-	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
-	ReflectedChannel *rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
+	Tcl_Channel chan = (Tcl_Channel) Tcl_GetHashValue(hPtr);
+	ReflectedChannel *rcPtr = (ReflectedChannel *)
+		Tcl_GetChannelInstanceData(chan);
 
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -2935,8 +2932,8 @@ ForwardOpToHandlerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *)Tcl_Alloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *)Tcl_Alloc(sizeof(ForwardingResult));
+    evPtr = (ForwardingEvent *) Tcl_Alloc(sizeof(ForwardingEvent));
+    resultPtr = (ForwardingResult *) Tcl_Alloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;

@@ -367,9 +367,9 @@ TclRegExpRangeUniChar(
 				 * > 0 means give the range of a matching
 				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    Tcl_Size *startPtr,	/* Store address of first character in
+    Tcl_Size *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    Tcl_Size *endPtr)	/* Store address of character just after last
+    Tcl_Size *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -445,7 +445,7 @@ Tcl_RegExpExecObj(
     Tcl_Obj *textObj,		/* Text against which to match re. */
     Tcl_Size offset,		/* Character index that marks where matching
 				 * should begin. */
-    Tcl_Size nmatches,	/* How many subexpression matches (counting
+    Tcl_Size nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */

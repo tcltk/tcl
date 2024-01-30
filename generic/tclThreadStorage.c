@@ -48,7 +48,7 @@ static struct {
  */
 
 typedef struct {
-    void **tablePtr;	/* The table of Tcl TSDs. */
+    void **tablePtr;		/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */
 } TSDTable;

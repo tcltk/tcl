@@ -1360,7 +1360,7 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,	/* As obtained from Tcl_ZlibStreamInit */
     Tcl_Obj *data,		/* A place to append the data. */
-    Tcl_Size count)			/* Number of bytes to grab as a maximum, you
+    Tcl_Size count)		/* Number of bytes to grab as a maximum, you
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
@@ -2988,7 +2988,7 @@ static int
 ZlibTransformClose(
     void *instanceData,
     Tcl_Interp *interp,
-	int flags)
+    int flags)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
     int e, result = TCL_OK;
@@ -3109,7 +3109,7 @@ ZlibTransformInput(
     gotBytes = 0;
     readBytes = cd->inStream.avail_in; /* how many bytes in buffer now */
     while (!(cd->flags & STREAM_DONE) && toRead > 0) {
-    	unsigned int n; int decBytes;
+	unsigned int n; int decBytes;
 
 	/* if starting from scratch or continuation after full decompression */
 	if (!cd->inStream.avail_in) {

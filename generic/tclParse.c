@@ -1039,7 +1039,7 @@ ParseComment(
 
 static int
 ParseTokens(
-    const char *src,	/* First character to parse. */
+    const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose

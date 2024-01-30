@@ -312,7 +312,7 @@ TclClockInit(
 
 static int
 ClockConvertlocaltoutcObjCmd(
-    void *clientData,	/* Client data */
+    void *clientData,		/* Client data */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -404,7 +404,7 @@ ClockConvertlocaltoutcObjCmd(
 
 int
 ClockGetdatefieldsObjCmd(
-    void *clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -560,7 +560,7 @@ FetchIntField(
 
 static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
-    void *clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -644,7 +644,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 
 static int
 ClockGetjuliandayfromerayearweekdayObjCmd(
-    void *clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,		/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -730,7 +730,7 @@ ConvertLocalToUTC(
     Tcl_Obj *tzdata,		/* Time zone data */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    Tcl_Size rowc;			/* Number of rows in tzdata */
+    Tcl_Size rowc;		/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
 
     /*
@@ -775,7 +775,7 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    Tcl_Size rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,		/* Number of points at which time changes */
     Tcl_Obj *const rowv[])	/* Points at which time changes */
 {
     Tcl_Obj *row;
@@ -933,7 +933,7 @@ ConvertUTCToLocal(
     Tcl_Obj *tzdata,		/* Time zone data */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    Tcl_Size rowc;			/* Number of rows in tzdata */
+    Tcl_Size rowc;		/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
 
     /*
@@ -978,12 +978,12 @@ static int
 ConvertUTCToLocalUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Fields of the date */
-    Tcl_Size rowc,			/* Number of rows in the conversion table
+    Tcl_Size rowc,		/* Number of rows in the conversion table
 				 * (>= 1) */
     Tcl_Obj *const rowv[])	/* Rows of the conversion table */
 {
     Tcl_Obj *row;		/* Row containing the current information */
-    Tcl_Size cellc;			/* Count of cells in the row (must be 4) */
+    Tcl_Size cellc;		/* Count of cells in the row (must be 4) */
     Tcl_Obj **cellv;		/* Pointers to the cells */
 
     /*
@@ -1118,7 +1118,7 @@ static Tcl_Obj *
 LookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
-    Tcl_Size rowc,			/* Number of rows of tzdata */
+    Tcl_Size rowc,		/* Number of rows of tzdata */
     Tcl_Obj *const *rowv)	/* Rows in tzdata */
 {
     Tcl_Size l;
@@ -1873,7 +1873,7 @@ ClockMicrosecondsObjCmd(
 
 static int
 ClockParseformatargsObjCmd(
-    void *clientData,	/* Client data containing literal pool */
+    void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
@@ -2094,7 +2094,7 @@ TzsetIfNecessary(void)
 
 static void
 ClockDeleteCmdProc(
-    void *clientData)	/* Opaque pointer to the client data */
+    void *clientData)		/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
     int i;

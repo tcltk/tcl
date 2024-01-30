@@ -28,7 +28,7 @@ typedef struct ChannelHandler {
     int mask;			/* Mask of desired events. */
     Tcl_ChannelProc *proc;	/* Procedure to call in the type of
 				 * Tcl_CreateChannelHandler. */
-    void *clientData;	/* Argument to pass to procedure. */
+    void *clientData;		/* Argument to pass to procedure. */
     struct ChannelHandler *nextPtr;
 				/* Next one in list of registered handlers. */
 } ChannelHandler;
@@ -103,7 +103,7 @@ typedef struct CopyState {
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
     Tcl_Size bufSize;		/* Size of appended buffer. */
-    char buffer[TCLFLEXARRAY];		/* Copy buffer, this must be the last
+    char buffer[TCLFLEXARRAY];	/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
 
@@ -141,10 +141,11 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 typedef struct CloseCallback {
-    Tcl_CloseProc *proc;		/* The procedure to call. */
+    Tcl_CloseProc *proc;	/* The procedure to call. */
     void *clientData;		/* Arbitrary one-word data to pass
-					 * to the callback. */
-    struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
+				 * to the callback. */
+    struct CloseCallback *nextPtr;
+				/* For chaining close callbacks. */
 } CloseCallback;
 
 /*
@@ -174,7 +175,7 @@ static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		DeleteTimerHandler(ChannelState *statePtr);
-int				Lossless(ChannelState *inStatePtr,
+int			Lossless(ChannelState *inStatePtr,
 			    ChannelState *outStatePtr, long long toRead);
 static int		MoveBytes(CopyState *csPtr);
 
@@ -231,9 +232,9 @@ static void		CutChannel(Tcl_Channel chan);
 static int              WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+	Write(chanPtr, src, srcLen, chanPtr->state->encoding)
 #define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+	Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -333,8 +334,8 @@ static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
-    FreeChannelInternalRep,		/* freeIntRepProc */
-    DupChannelInternalRep,		/* dupIntRepProc */
+    FreeChannelInternalRep,	/* freeIntRepProc */
+    DupChannelInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
@@ -343,24 +344,24 @@ static const Tcl_ObjType chanObjType = {
 #define GetIso88591() \
     (binaryEncoding ? Tcl_GetEncoding(NULL, "iso8859-1") : binaryEncoding)
 
-#define ChanSetInternalRep(objPtr, resPtr)					\
+#define ChanSetInternalRep(objPtr, resPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(resPtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (resPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);		\
     } while (0)
 
-#define ChanGetInternalRep(objPtr, resPtr)					\
+#define ChanGetInternalRep(objPtr, resPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
+	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL; \
     } while (0)
 
 #define BUSY_STATE(st, fl) \
-     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
+     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) ||			\
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
@@ -847,7 +848,7 @@ Tcl_CreateCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The callback routine to call when the
 				 * channel will be closed. */
-    void *clientData)	/* Arbitrary data to pass to the close
+    void *clientData)		/* Arbitrary data to pass to the close
 				 * callback. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -885,7 +886,7 @@ Tcl_DeleteCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The procedure for the callback to
 				 * remove. */
-    void *clientData)	/* The callback data for the callback to
+    void *clientData)		/* The callback data for the callback to
 				 * remove. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -984,7 +985,7 @@ GetChannelTable(
 
 static void
 DeleteChannelTable(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     Tcl_HashTable *hTblPtr;	/* The hash table. */
@@ -1527,8 +1528,8 @@ TclGetChannelFromObj(
     ChanGetInternalRep(objPtr, resPtr);
     if (resPtr) {
 	/*
- 	 * Confirm validity of saved lookup results.
- 	 */
+	 * Confirm validity of saved lookup results.
+	 */
 
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
@@ -1598,7 +1599,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    void *instanceData,	/* Instance specific data. */
+    void *instanceData,		/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1817,7 +1818,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    void *instanceData,	/* Instance specific data for the new
+    void *instanceData,		/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -2415,7 +2416,7 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    void **handlePtr)	/* Where to store handle */
+    void **handlePtr)		/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
     void *handle;
@@ -2510,7 +2511,7 @@ Tcl_RemoveChannelMode(
 
 static ChannelBuffer *
 AllocChannelBuffer(
-    Tcl_Size length)			/* Desired length of channel buffer. */
+    Tcl_Size length)		/* Desired length of channel buffer. */
 {
     ChannelBuffer *bufPtr;
     Tcl_Size n;
@@ -4049,7 +4050,7 @@ Tcl_Size
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    Tcl_Size srcLen)			/* Length of data in bytes, or TCL_INDEX_NONE for
+    Tcl_Size srcLen)		/* Length of data in bytes, or TCL_INDEX_NONE for
 				 * strlen(). */
 {
     /*
@@ -4161,7 +4162,7 @@ Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    Tcl_Size len)			/* Length of string in bytes, or TCL_INDEX_NONE for
+    Tcl_Size len)		/* Length of string in bytes, or TCL_INDEX_NONE for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -4495,15 +4496,15 @@ Write(
 	    flushed += statePtr->bufSize;
 
 	    /*
- 	     * We just flushed.  So if we have needNlFlush set to record that
- 	     * we need to flush because there is a (translated) newline in the
- 	     * buffer, that's likely not true any more.  But there is a tricky
- 	     * exception.  If we have saved bytes that did not really get
- 	     * flushed and those bytes came from a translation of a newline as
- 	     * the last thing taken from the src array, then needNlFlush needs
- 	     * to remain set to flag that the next buffer still needs a
- 	     * newline flush.
- 	     */
+	     * We just flushed.  So if we have needNlFlush set to record that
+	     * we need to flush because there is a (translated) newline in the
+	     * buffer, that's likely not true any more.  But there is a tricky
+	     * exception.  If we have saved bytes that did not really get
+	     * flushed and those bytes came from a translation of a newline as
+	     * the last thing taken from the src array, then needNlFlush needs
+	     * to remain set to flag that the next buffer still needs a
+	     * newline flush.
+	     */
 
 	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
@@ -5706,7 +5707,7 @@ Tcl_Size
 Tcl_Read(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *dst,			/* Where to store input read. */
-    Tcl_Size bytesToRead)		/* Maximum number of bytes to read. */
+    Tcl_Size bytesToRead)	/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
@@ -5751,7 +5752,7 @@ Tcl_Size
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *readBuf,		/* Where to store input read. */
-    Tcl_Size bytesToRead)		/* Maximum number of bytes to read. */
+    Tcl_Size bytesToRead)	/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
@@ -6793,7 +6794,7 @@ Tcl_Size
 Tcl_Ungets(
     Tcl_Channel chan,		/* The channel for which to add the input. */
     const char *str,		/* The input itself. */
-    Tcl_Size len,			/* The length of the input. */
+    Tcl_Size len,		/* The length of the input. */
     int atEnd)			/* If non-zero, add at end of queue; otherwise
 				 * add at head of queue. */
 {
@@ -7741,7 +7742,7 @@ Tcl_ChannelBuffered(
 void
 Tcl_SetChannelBufferSize(
     Tcl_Channel chan,		/* The channel whose buffer size to set. */
-    Tcl_Size sz)			/* The size to set. */
+    Tcl_Size sz)		/* The size to set. */
 {
     ChannelState *statePtr;	/* State of real channel structure. */
 
@@ -8850,7 +8851,7 @@ Tcl_CreateChannelHandler(
 				 * handler. */
     Tcl_ChannelProc *proc,	/* Procedure to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ChannelHandler *chPtr;
     Channel *chanPtr = (Channel *) chan;
@@ -8922,7 +8923,7 @@ Tcl_DeleteChannelHandler(
     Tcl_Channel chan,		/* The channel for which to remove the
 				 * callback. */
     Tcl_ChannelProc *proc,	/* The procedure in the callback to delete. */
-    void *clientData)	/* The client data in the callback to
+    void *clientData)		/* The client data in the callback to
 				 * delete. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -9128,7 +9129,7 @@ CreateScriptRecord(
 
 void
 TclChannelEventScriptInvoker(
-    void *clientData,	/* The script+interp record. */
+    void *clientData,		/* The script+interp record. */
     TCL_UNUSED(int) /*mask*/)
 {
     EventScriptRecord *esPtr = (EventScriptRecord *)clientData;
@@ -10014,12 +10015,12 @@ CopyData(
  *
  * Results:
  *	The number of bytes actually stored (<= bytesToRead),
- * 	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
- * 	Tcl_GetErrno() to retrieve the error code for the error
+ *	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
+ *	Tcl_GetErrno() to retrieve the error code for the error
  *	that occurred.
  *
  *	The number of bytes stored can be less than the number
- * 	requested when
+ *	requested when
  *	  - EOF is reached on the channel; or
  *	  - the channel is non-blocking, and we've read all we can
  *	    without blocking.
@@ -10035,7 +10036,7 @@ static Tcl_Size
 DoRead(
     Channel *chanPtr,		/* The channel from which to read. */
     char *dst,			/* Where to store input read. */
-    Tcl_Size bytesToRead,		/* Maximum number of bytes to read. */
+    Tcl_Size bytesToRead,	/* Maximum number of bytes to read. */
     int allowShortReads)	/* Allow half-blocking (pipes,sockets) */
 {
     ChannelState *statePtr = chanPtr->state;
@@ -10098,7 +10099,7 @@ DoRead(
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
-		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */

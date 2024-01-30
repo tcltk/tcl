@@ -125,7 +125,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  * Definitions of the parts of an IEEE754-format floating point number.
  */
 
-#define SIGN_BIT 	0x80000000
+#define SIGN_BIT	0x80000000
 				/* Mask for the sign bit in the first word of
 				 * a double. */
 #define EXP_MASK	0x7FF00000
@@ -309,7 +309,7 @@ static double		MakeNaN(int signum, Tcl_WideUInt tag);
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
 static mp_err	MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
-static int 		NormalizeRightward(Tcl_WideUInt *);
+static int		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
 static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
 			    int *);
@@ -2210,7 +2210,7 @@ RefineApproximation(
 
 static inline mp_err
 MulPow5(
-    mp_int *base, 		/* Number to multiply. */
+    mp_int *base,		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
     mp_int *result)		/* Place to store the result. */
 {
@@ -2707,7 +2707,7 @@ SetPrecisionLimits(
 
 static inline char *
 BumpUp(
-    char *s,		    	/* Cursor pointing one past the end of the
+    char *s,			/* Cursor pointing one past the end of the
 				 * string. */
     char *retval,		/* Start of the string of digits. */
     int *kPtr)			/* Position of the decimal point. */
@@ -4154,7 +4154,7 @@ StrictBignumConversion(
     }
     err = mp_mul_2d(&b, b2, &b);
     if (err == MP_OKAY) {
- 	err = mp_init_set(&S, 1);
+	err = mp_init_set(&S, 1);
     }
     if (err == MP_OKAY) {
 	err = MulPow5(&S, s5, &S);

@@ -1662,9 +1662,9 @@ Tcl_GetString(
 #if !defined(TCL_NO_DEPRECATED)
 char *
 TclGetStringFromObj(
-    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
+    Tcl_Obj *objPtr,		/* Object whose string rep byte pointer should
 				 * be returned. */
-    void *lengthPtr)	/* If non-NULL, the location where the string
+    void *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1707,7 +1707,7 @@ TclGetStringFromObj(
 #undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
-    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
+    Tcl_Obj *objPtr,		/* Object whose string rep byte pointer should
 				 * be returned. */
     Tcl_Size *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
@@ -2147,7 +2147,7 @@ TclSetBooleanFromAny(
 
 static int
 ParseBoolean(
-    Tcl_Obj *objPtr)	/* The object to parse/convert. */
+    Tcl_Obj *objPtr)		/* The object to parse/convert. */
 {
     int newBool;
     char lowerCase[6];
@@ -3143,9 +3143,9 @@ TclGetWideBitsFromObj(
  */
 int
 Tcl_GetSizeIntFromObj(
-    Tcl_Interp *interp, /* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,	/* The object from which to get a int. */
-    Tcl_Size *sizePtr)  /* Place to store resulting int. */
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,		/* The object from which to get a int. */
+    Tcl_Size *sizePtr)		/* Place to store resulting int. */
 {
     if (sizeof(Tcl_Size) == sizeof(int)) {
 	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
@@ -3455,7 +3455,7 @@ int
 Tcl_GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
-    void *bignumValue)	/* Returned bignum value. */
+    void *bignumValue)		/* Returned bignum value. */
 {
     return GetBignumFromObj(interp, objPtr, 1, (mp_int *)bignumValue);
 }
@@ -3490,7 +3490,7 @@ int
 Tcl_TakeBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
-    void *bignumValue)	/* Returned bignum value. */
+    void *bignumValue)		/* Returned bignum value. */
 {
     return GetBignumFromObj(interp, objPtr, 0, (mp_int *)bignumValue);
 }
@@ -3515,7 +3515,7 @@ Tcl_TakeBignumFromObj(
 void
 Tcl_SetBignumObj(
     Tcl_Obj *objPtr,		/* Object to set */
-    void *big)	/* Value to store */
+    void *big)			/* Value to store */
 {
     Tcl_WideUInt value = 0;
     size_t numBytes;

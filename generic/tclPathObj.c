@@ -2348,7 +2348,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)		/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     Tcl_Size cwdLen;
@@ -2570,7 +2570,7 @@ TclGetHomeDirObj(
  */
 Tcl_Obj *
 TclResolveTildePath(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     Tcl_Obj *pathObj)
 {
     const char *path;

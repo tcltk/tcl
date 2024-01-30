@@ -791,7 +791,7 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    void *clientData)	/* Reference to the object whose [my] has been
+    void *clientData)		/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
@@ -822,7 +822,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    void *clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -1135,7 +1135,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    void *clientData)	/* Pointer to the class whose namespace is
+    void *clientData)		/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1150,7 +1150,7 @@ ObjectNamespaceDeleted(
 
     if (Destructing(oPtr)) {
 	/*
-	 * TODO:  Can ObjectNamespaceDeleted ever be called twice?  If not,
+	 * TODO: Can ObjectNamespaceDeleted ever be called twice?  If not,
 	 * this guard could be removed.
 	 */
 
@@ -1715,10 +1715,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)		/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;

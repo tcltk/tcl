@@ -561,7 +561,7 @@ SerialCheckProc(
 
 static int
 SerialBlockProc(
-    void *instanceData,    /* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -600,7 +600,7 @@ SerialBlockProc(
 
 static int
 SerialCloseProc(
-    void *instanceData,    /* Pointer to SerialInfo structure. */
+    void *instanceData,		/* Pointer to SerialInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -855,7 +855,7 @@ SerialBlockingWrite(
 
 static int
 SerialInputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -962,7 +962,7 @@ SerialInputProc(
 
 static int
 SerialOutputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -1192,7 +1192,7 @@ SerialEventProc(
 
 static void
 SerialWatchProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1249,9 +1249,9 @@ SerialWatchProc(
 
 static int
 SerialGetHandleProc(
-    void *instanceData,	/* The serial state. */
-    TCL_UNUSED(int) /*direction*/,
-    void **handlePtr)	/* Where to store the handle. */
+    void *instanceData,		/* The serial state. */
+    TCL_UNUSED(int),		/* Direction. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
 
@@ -1613,7 +1613,7 @@ SerialModemStatusStr(
 
 static int
 SerialSetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -2037,7 +2037,7 @@ SerialSetOptionProc(
 
 static int
 SerialGetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */

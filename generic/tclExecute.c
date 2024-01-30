@@ -3954,7 +3954,7 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
-    	if (TclIsVarConstant(varPtr)) {
+	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND(("\n"));
 	    NEXT_INST_V(pcAdjustment, cleanup, 0);
 	}
@@ -8006,26 +8006,26 @@ ExecuteExtendedBinaryMathOp(
     Tcl_Obj *value2Ptr)		/* The second operand on the stack. */
 {
 #define WIDE_RESULT(w) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewWideIntObj(w);		\
-    } else {					\
-	TclSetIntObj(valuePtr, (w));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewWideIntObj(w);					\
+    } else {								\
+	TclSetIntObj(valuePtr, (w));					\
+	return NULL;							\
     }
 #define BIG_RESULT(b) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewBignumObj(b);		\
-    } else {					\
-	Tcl_SetBignumObj(valuePtr, (b));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewBignumObj(b);					\
+    } else {								\
+	Tcl_SetBignumObj(valuePtr, (b));				\
+	return NULL;							\
     }
 #define DOUBLE_RESULT(d) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	TclNewDoubleObj(objResultPtr, (d));	\
-	return objResultPtr;			\
-    } else {					\
-	Tcl_SetDoubleObj(valuePtr, (d));	\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	TclNewDoubleObj(objResultPtr, (d));				\
+	return objResultPtr;						\
+    } else {								\
+	Tcl_SetDoubleObj(valuePtr, (d));				\
+	return NULL;							\
     }
 
     int type1, type2;
@@ -8991,13 +8991,20 @@ PrintByteCodeInfo(
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
-    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp 0x%p (epoch %" TCL_Z_MODIFIER "u)\n",
+    fprintf(stdout,
+	    "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, "
+	    "epoch %" TCL_Z_MODIFIER "u, interp 0x%p "
+	    "(epoch %" TCL_Z_MODIFIER "u)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
 	    iPtr->compileEpoch);
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
 
-    fprintf(stdout, "\n  Cmds %" TCL_Z_MODIFIER "u, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %" TCL_Z_MODIFIER "u, aux %" TCL_Z_MODIFIER "u, stkDepth %" TCL_Z_MODIFIER "u, code/src %.2f\n",
+    fprintf(stdout,
+	    "\n  Cmds %" TCL_Z_MODIFIER "u, "
+	    "src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, "
+	    "litObjs %" TCL_Z_MODIFIER "u, aux %" TCL_Z_MODIFIER "u, "
+	    "stkDepth %" TCL_Z_MODIFIER "u, code/src %.2f\n",
 	    codePtr->numCommands, codePtr->numSrcBytes,
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
 	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
@@ -9008,8 +9015,11 @@ PrintByteCodeInfo(
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_Z_MODIFIER
-        "u+litObj %" TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_Z_MODIFIER "u\n",
+    fprintf(stdout,
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+"
+	    "inst %" TCL_Z_MODIFIER "u+litObj %" TCL_Z_MODIFIER "u+"
+	    "exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+"
+	    "cmdMap %" TCL_Z_MODIFIER "u\n",
 	    codePtr->structureSize,
 	    offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
@@ -9020,7 +9030,9 @@ PrintByteCodeInfo(
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
-		"  Proc 0x%p, refCt %" TCL_Z_MODIFIER "u, args %" TCL_Z_MODIFIER "u, compiled locals %" TCL_Z_MODIFIER "u\n",
+		"  Proc 0x%p, refCt %" TCL_Z_MODIFIER "u, "
+		"args %" TCL_Z_MODIFIER "u, c"
+		"ompiled locals %" TCL_Z_MODIFIER "u\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		procPtr->numCompiledLocals);
     }
@@ -9073,16 +9085,18 @@ ValidatePcAndStackTop(
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
     }
     if (opCode >= LAST_INST_OPCODE) {
-	fprintf(stderr, "\nBad opcode %u at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode\n",
+	fprintf(stderr,
+		"\nBad opcode %u at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode\n",
 		opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack &&
-	    (stackTop > stackUpperBound)) {
+    if (checkStack && (stackTop > stackUpperBound)) {
 	Tcl_Size numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
-	fprintf(stderr, "\nBad stack top %" TCL_Z_MODIFIER "u at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode (min 0, max %" TCL_Z_MODIFIER "u)",
+	fprintf(stderr,
+		"\nBad stack top %" TCL_Z_MODIFIER "u at pc %" TCL_Z_MODIFIER "u "
+		"in TclNRExecuteByteCode (min 0, max %" TCL_Z_MODIFIER "u)",
 		stackTop, relativePc, stackUpperBound);
 	if (cmd != NULL) {
 	    Tcl_Obj *message;
@@ -9690,7 +9704,9 @@ EvalStatsCmd(
 	    statsPtr->totalByteCodeBytes);
     Tcl_AppendPrintfToObj(objPtr, "    Literal bytes\t\t%.6g\n",
 	    totalLiteralBytes);
-    Tcl_AppendPrintfToObj(objPtr, "      table %" TCL_Z_MODIFIER "u + bkts %" TCL_Z_MODIFIER "u + entries %" TCL_Z_MODIFIER "u + objects %" TCL_Z_MODIFIER "u + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr,
+	    "      table %" TCL_Z_MODIFIER "u + bkts %" TCL_Z_MODIFIER "u + "
+	    "entries %" TCL_Z_MODIFIER "u + objects %" TCL_Z_MODIFIER "u + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    statsPtr->numLiteralsCreated * sizeof(LiteralEntry),
@@ -9711,7 +9727,9 @@ EvalStatsCmd(
 	    statsPtr->currentByteCodeBytes);
     Tcl_AppendPrintfToObj(objPtr, "    Literal bytes\t\t%.6g\n",
 	    currentLiteralBytes);
-    Tcl_AppendPrintfToObj(objPtr, "      table %" TCL_Z_MODIFIER "u + bkts %" TCL_Z_MODIFIER "u + entries %" TCL_Z_MODIFIER "u + objects %" TCL_Z_MODIFIER "u + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr,
+	    "      table %" TCL_Z_MODIFIER "u + bkts %" TCL_Z_MODIFIER "u + "
+	    "entries %" TCL_Z_MODIFIER "u + objects %" TCL_Z_MODIFIER "u + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),

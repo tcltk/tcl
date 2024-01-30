@@ -30,9 +30,9 @@ static Tcl_NRPostProc	TryPostFinal;
 static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
-static int	StringCmpOpts(Tcl_Interp *interp, int objc,
-		    Tcl_Obj *const objv[], int *nocase,
-		    Tcl_Size *reqlength);
+static int		StringCmpOpts(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int *nocase,
+			    Tcl_Size *reqlength);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -2769,9 +2769,9 @@ StringCmpOpts(
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)wreqlength > TCL_SIZE_MAX) {
-	    	*reqlength = -1;
+		*reqlength = -1;
 	    } else {
-	    	*reqlength = wreqlength;
+		*reqlength = wreqlength;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(

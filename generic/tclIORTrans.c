@@ -511,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -1377,8 +1377,8 @@ ReflectSeekWide(
 	*errorCodePtr = EINVAL;
 	curPos = -1;
     } else {
-    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-    		seekMode, errorCodePtr);
+	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
+		seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
@@ -1492,7 +1492,7 @@ ReflectBlock(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1534,7 +1534,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -2108,7 +2108,7 @@ GetReflectedTransformMap(
 
 static void
 DeleteReflectedTransformMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */

@@ -131,7 +131,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    size_t epoch; 	/* Epoch counter */
+    size_t epoch;		/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -2058,7 +2058,7 @@ DictSizeCmd(
     Tcl_Obj *const *objv)
 {
     int result;
-	Tcl_Size size;
+    Tcl_Size size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");

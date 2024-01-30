@@ -3793,7 +3793,7 @@ TestlinkarrayCmd(
 	    i++;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i++], LinkType, "type", 0,
- 		&typeIndex) != TCL_OK) {
+		&typeIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
@@ -3808,7 +3808,7 @@ TestlinkarrayCmd(
 
 	if (i < objc) {
 	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
- 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong address value", -1));
 		return TCL_ERROR;
 	    }
@@ -8520,15 +8520,15 @@ InterpCompiledVarResolver(
     Tcl_ResolvedVarInfo **rPtr)
 {
     if (*name == 'T') {
- 	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
+	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
 
- 	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
- 	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
- 	resVarInfo->var = NULL;
- 	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
- 	Tcl_IncrRefCount(resVarInfo->nameObj);
- 	*rPtr = &resVarInfo->vInfo;
- 	return TCL_OK;
+	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
+	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
+	resVarInfo->var = NULL;
+	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
+	Tcl_IncrRefCount(resVarInfo->nameObj);
+	*rPtr = &resVarInfo->vInfo;
+	return TCL_OK;
     }
     return TCL_CONTINUE;
 }
@@ -8646,7 +8646,7 @@ int TestApplyLambdaObjCmd (
      *    representation of ByteCode and thus will not be compiled again
      */
     evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so
-     				no need for IncrRef */
+				no need for IncrRef */
     result = Tcl_EvalObjv(interp, 2, evalObjs, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(evalObjs[0]);
     Tcl_DecrRefCount(lambdaObj);

@@ -42,11 +42,11 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    Tcl_Size numWords, Tcl_Token **bodyToken,
-				Tcl_Size *bodyLines, Tcl_Size **bodyNext);
+			    Tcl_Size *bodyLines, Tcl_Size **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int numWords,
-				Tcl_Token **bodyToken, Tcl_Size *bodyLines,
-				Tcl_Size **bodyContLines);
+			    Tcl_Token **bodyToken, Tcl_Size *bodyLines,
+			    Tcl_Size **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -2120,7 +2120,7 @@ IssueSwitchChainedTests(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
@@ -2368,7 +2368,7 @@ IssueSwitchJumpTable(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {

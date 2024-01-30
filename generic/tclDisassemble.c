@@ -324,7 +324,9 @@ DisassembleByteCodeObj(
 	Tcl_Size numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "d, args %" TCL_SIZE_MODIFIER "d, compiled locals %" TCL_SIZE_MODIFIER "d\n",
+		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "d, "
+		"args %" TCL_SIZE_MODIFIER "d, "
+		"compiled locals %" TCL_SIZE_MODIFIER "d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -355,24 +357,31 @@ DisassembleByteCodeObj(
      */
 
     if ((int)codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_SIZE_MODIFIER "d, depth %" TCL_SIZE_MODIFIER "d:\n",
+	Tcl_AppendPrintfToObj(bufferObj,
+		"  Exception ranges %" TCL_SIZE_MODIFIER "d, "
+		"depth %" TCL_SIZE_MODIFIER "d:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
 	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
-		    "      %" TCL_SIZE_MODIFIER "d: level %" TCL_SIZE_MODIFIER "d, %s, pc %" TCL_SIZE_MODIFIER "d-%" TCL_SIZE_MODIFIER "d, ",
+		    "      %" TCL_SIZE_MODIFIER "d: "
+		    "level %" TCL_SIZE_MODIFIER "d, %s, "
+		    "pc %" TCL_SIZE_MODIFIER "d-%" TCL_SIZE_MODIFIER "d, ",
 		    i, rangePtr->nestingLevel,
 		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
 		    rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
 	    switch (rangePtr->type) {
 	    case LOOP_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "continue %" TCL_SIZE_MODIFIER "d, break %" TCL_SIZE_MODIFIER "d\n",
+		Tcl_AppendPrintfToObj(bufferObj, 
+			"continue %" TCL_SIZE_MODIFIER "d, "
+			"break %" TCL_SIZE_MODIFIER "d\n",
 			rangePtr->continueOffset, rangePtr->breakOffset);
 		break;
 	    case CATCH_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "catch %" TCL_SIZE_MODIFIER "d\n",
+		Tcl_AppendPrintfToObj(bufferObj, 
+			"catch %" TCL_SIZE_MODIFIER "d\n",
 			rangePtr->catchOffset);
 		break;
 	    default:
@@ -446,7 +455,8 @@ DisassembleByteCodeObj(
 	    srcLengthNext++;
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "%s%4" TCL_SIZE_MODIFIER "d: pc %d-%d, src %d-%d",
+	Tcl_AppendPrintfToObj(bufferObj, 
+		"%s%4" TCL_SIZE_MODIFIER "d: pc %d-%d, src %d-%d",
 		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
@@ -505,7 +515,8 @@ DisassembleByteCodeObj(
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "  Command %" TCL_SIZE_MODIFIER "d: ", i+1);
+	Tcl_AppendPrintfToObj(bufferObj,
+		"  Command %" TCL_SIZE_MODIFIER "d: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
 	Tcl_AppendToObj(bufferObj, "\n", -1);
@@ -572,22 +583,26 @@ FormatInstruction(
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		snprintf(suffixBuffer+strlen(suffixBuffer), sizeof(suffixBuffer) - strlen(suffixBuffer),
+		snprintf(suffixBuffer + strlen(suffixBuffer), 
+			sizeof(suffixBuffer) - strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_OFFSET1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
-	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
+	    snprintf(suffixBuffer, sizeof(suffixBuffer),
+		    "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		snprintf(suffixBuffer, sizeof(suffixBuffer), "next cmd at pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), 
+			"next cmd at pc %u", pcOffset+opnd);
 	    } else {
-		snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer),
+			"pc %u", pcOffset+opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
@@ -626,7 +641,8 @@ FormatInstruction(
 	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
-		    Tcl_Panic("FormatInstruction: bad local var index %u (%" TCL_SIZE_MODIFIER "d locals)",
+		    Tcl_Panic("FormatInstruction: bad local var index "
+			    "%u (%" TCL_SIZE_MODIFIER "d locals)",
 			    opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
@@ -1269,7 +1285,7 @@ DisassembleByteCodeAsDicts(
 
 int
 Tcl_DisassembleObjCmd(
-    void *clientData,	/* What type of operation. */
+    void *clientData,		/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

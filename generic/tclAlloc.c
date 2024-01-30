@@ -511,7 +511,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloc'ed block. */
-    size_t numBytes)	/* New size of memory. */
+    size_t numBytes)		/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
@@ -694,7 +694,7 @@ mstats(
 #undef TclpAlloc
 void *
 TclpAlloc(
-    size_t numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)		/* Number of bytes to allocate. */
 {
     return malloc(numBytes);
 }
@@ -743,7 +743,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloced block. */
-    size_t numBytes)	/* New size of memory. */
+    size_t numBytes)		/* New size of memory. */
 {
     return realloc(oldPtr, numBytes);
 }

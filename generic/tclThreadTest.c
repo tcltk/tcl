@@ -985,7 +985,7 @@ ThreadCancel(
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ResetResult(interp);
     return Tcl_CancelEval(tsdPtr->interp,
-    	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
+	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
 }
 
 /*

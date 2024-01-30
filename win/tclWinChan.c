@@ -358,7 +358,7 @@ FileEventProc(
 
 static int
 FileBlockProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -397,7 +397,7 @@ FileBlockProc(
 
 static int
 FileCloseProc(
-    void *instanceData,	/* Pointer to FileInfo structure. */
+    void *instanceData,		/* Pointer to FileInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -475,7 +475,7 @@ FileCloseProc(
 
 static long long
 FileWideSeekProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
@@ -527,7 +527,7 @@ FileWideSeekProc(
 
 static int
 FileTruncateProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
@@ -603,7 +603,7 @@ FileTruncateProc(
 
 static int
 FileInputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
@@ -658,7 +658,7 @@ FileInputProc(
 
 static int
 FileOutputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -705,7 +705,7 @@ FileOutputProc(
 
 static void
 FileWatchProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     int mask)			/* What events to watch for; OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -744,9 +744,9 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle.  */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
 
@@ -894,7 +894,7 @@ StatOpenFile(
 
 static int
 FileGetOptionProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     Tcl_Interp *interp,		/* For error reporting. */
     const char *optionName,	/* What option to read, or NULL for all. */
     Tcl_DString *dsPtr)		/* Where to write the value read. */
@@ -1192,7 +1192,7 @@ TclpOpenFileChannel(
 
 Tcl_Channel
 Tcl_MakeFileChannel(
-    void *rawHandle,	/* OS level handle */
+    void *rawHandle,		/* OS level handle */
     int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {

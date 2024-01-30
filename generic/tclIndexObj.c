@@ -55,7 +55,7 @@ const Tcl_ObjType tclIndexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    Tcl_Size offset;	/* Offset between table entries */
+    Tcl_Size offset;		/* Offset between table entries */
     Tcl_Size index;		/* Selected index into table. */
 } IndexRep;
 
@@ -806,7 +806,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments to print from objv. */
+    Tcl_Size objc,		/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -1009,13 +1009,13 @@ Tcl_ParseArgsObjv(
 				/* Descriptor that matches current argument */
     Tcl_Obj *curArg;		/* Current argument */
     const char *str = NULL;
-    char c;		/* Second character of current arg (used for
+    char c;			/* Second character of current arg (used for
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    Tcl_Size srcIndex;	/* Location from which to read next argument
+    Tcl_Size srcIndex;		/* Location from which to read next argument
 				 * from objv. */
-    Tcl_Size dstIndex;	/* Used to keep track of current arguments
+    Tcl_Size dstIndex;		/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
     Tcl_Size objc;		/* # arguments in objv still to process. */

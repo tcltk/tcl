@@ -38,7 +38,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static Tcl_ExitProc		FinalizeIOCmdTSD;
-static Tcl_TcpAcceptProc 	AcceptCallbackProc;
+static Tcl_TcpAcceptProc	AcceptCallbackProc;
 static Tcl_ObjCmdProc		ChanPendingObjCmd;
 static Tcl_ObjCmdProc		ChanTruncateObjCmd;
 static void			RegisterTcpServerInterpCleanup(
@@ -368,8 +368,8 @@ Tcl_ReadObjCmd(
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
-    Tcl_WideInt toRead;			/* How many bytes to read? */
-    Tcl_Size charactersRead;		/* How many characters were read? */
+    Tcl_WideInt toRead;		/* How many bytes to read? */
+    Tcl_Size charactersRead;	/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -1199,7 +1199,7 @@ Tcl_OpenObjCmd(
 
 static void
 TcpAcceptCallbacksDeleteProc(
-    void *clientData,	/* Data which was passed when the assocdata
+    void *clientData,		/* Data which was passed when the assocdata
 				 * was registered. */
     TCL_UNUSED(Tcl_Interp *))
 {
@@ -1327,7 +1327,7 @@ UnregisterTcpServerInterpCleanupProc(
 
 static void
 AcceptCallbackProc(
-    void *callbackData,	/* The data stored when the callback was
+    void *callbackData,		/* The data stored when the callback was
 				 * created in the call to
 				 * Tcl_OpenTcpServer. */
     Tcl_Channel chan,		/* Channel for the newly accepted
@@ -1418,7 +1418,7 @@ AcceptCallbackProc(
 
 static void
 TcpServerCloseProc(
-    void *callbackData)	/* The data passed in the call to
+    void *callbackData)		/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
     AcceptCallback *acceptCallbackPtr = (AcceptCallback *)callbackData;

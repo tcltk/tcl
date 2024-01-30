@@ -570,7 +570,7 @@ Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    Tcl_Size *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */

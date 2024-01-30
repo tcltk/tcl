@@ -206,13 +206,11 @@ Invalid(
 
 Tcl_Size
 Tcl_UniCharToUtf(
-    int ch,	/* The Tcl_UniChar to be stored in the
-		 * buffer. Can be or'ed with flag TCL_COMBINE.
-		 */
-    char *buf)	/* Buffer in which the UTF-8 representation of
-		 * ch is stored. Must be large enough to hold the UTF-8
-		 * character (at most 4 bytes).
-		 */
+    int ch,			/* The Tcl_UniChar to be stored in the buffer.
+				 * Can be or'ed with flag TCL_COMBINE. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * ch is stored. Must be large enough to hold
+				 * the UTF-8 character (at most 4 bytes). */
 {
     int flags = ch;
 
@@ -310,9 +308,9 @@ three:
 
 char *
 Tcl_UniCharToUtfDString(
-    const int *uniStr,	/* Unicode string to convert to UTF-8. */
+    const int *uniStr,		/* Unicode string to convert to UTF-8. */
     Tcl_Size uniLength,		/* Length of Unicode string. Negative for nul
-    				 * terminated string */
+				 * terminated string */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -441,9 +439,9 @@ static const unsigned short cp1252[32] = {
 
 Tcl_Size
 Tcl_UtfToUniChar(
-    const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the Unicode character represented by
-				 * the UTF-8 string. */
+    const char *src,		/* The UTF-8 string. */
+    int *chPtr)			/* Filled with the Unicode character
+				 * represented by the UTF-8 string. */
 {
     int byte;
 
@@ -524,9 +522,10 @@ Tcl_UtfToUniChar(
 
 Tcl_Size
 Tcl_UtfToChar16(
-    const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
-				 * the UTF-8 string. This could be a surrogate too. */
+    const char *src,		/* The UTF-8 string. */
+    unsigned short *chPtr)	/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a
+				 * surrogate too. */
 {
     unsigned short byte;
 
@@ -802,9 +801,9 @@ Tcl_UtfCharComplete(
 
 Tcl_Size
 Tcl_NumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative value for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative value for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     Tcl_Size i = 0;
@@ -854,9 +853,9 @@ Tcl_NumUtfChars(
 
 Tcl_Size
 TclNumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative for strlen(src). */
 {
     unsigned short ch = 0;
     Tcl_Size i = 0;
@@ -1178,8 +1177,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1214,8 +1213,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
@@ -1227,8 +1226,8 @@ Tcl_UtfAtIndex(
 
 const char *
 TclUtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
     Tcl_Size len = 0;
@@ -1491,7 +1490,7 @@ int
 TclpUtfNcmp2(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)		/* Number of *bytes* to compare. */
 {
     const char *cs = (const char *)csPtr;
     const char *ct = (const char *)ctPtr;
@@ -1540,7 +1539,7 @@ int
 TclUtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1578,7 +1577,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1626,7 +1625,7 @@ int
 TclUtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1661,7 +1660,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1882,7 +1881,8 @@ Tcl_UniCharToTitle(
 
 Tcl_Size
 Tcl_Char16Len(
-    const unsigned short *uniStr)	/* Unicode string to find length of. */
+    const unsigned short *uniStr)
+				/* Unicode string to find length of. */
 {
     Tcl_Size len = 0;
 
@@ -1912,7 +1912,7 @@ Tcl_Char16Len(
 
 Tcl_Size
 Tcl_UniCharLen(
-    const int *uniStr)	/* Unicode string to find length of. */
+    const int *uniStr)		/* Unicode string to find length of. */
 {
     Tcl_Size len = 0;
 
@@ -1944,7 +1944,7 @@ int
 TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
 #if defined(WORDS_BIGENDIAN)
     /*
@@ -1989,7 +1989,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {

@@ -293,9 +293,9 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
@@ -1430,7 +1430,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

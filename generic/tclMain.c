@@ -283,7 +283,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    Tcl_Size argc,			/* Number of arguments. */
+    Tcl_Size argc,		/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -350,7 +350,7 @@ Tcl_MainEx(
     } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-    	appName = Tcl_NewStringObj("tclsh", -1);
+	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
@@ -747,7 +747,7 @@ TclFullFinalizationRequested(void)
 
 static void
 StdinProc(
-    void *clientData,	/* The state of interactive cmd line */
+    void *clientData,		/* The state of interactive cmd line */
     TCL_UNUSED(int) /*mask*/)
 {
     int code;

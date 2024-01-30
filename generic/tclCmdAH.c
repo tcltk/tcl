@@ -30,7 +30,7 @@ struct ForeachState {
     Tcl_Size j, maxj;		/* Number of loop iterations. */
     Tcl_Size numLists;		/* Count of value lists. */
     Tcl_Size *index;		/* Array of value list indices. */
-    Tcl_Size *varcList; 	/* # loop variables per list. */
+    Tcl_Size *varcList;		/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
     Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
     Tcl_Size *argcList;		/* Array of value list sizes. */
@@ -530,7 +530,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -630,7 +630,7 @@ EncodingConverttoObjCmd(
     Tcl_Obj *data;		/* String to convert */
     Tcl_DString ds;		/* Buffer to hold the byte array */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length;			/* Length of the string being converted */
+    Tcl_Size length;		/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     int result;
     int flags;

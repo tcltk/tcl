@@ -158,7 +158,7 @@ TclLengthOne(
  *	\u000A	\n	NEWLINE
  *	\u000B	\v	VERTICAL TAB
  *	\u000C	\f	FORM FEED
- * 	\u000D	\r	CARRIAGE RETURN
+ *	\u000D	\r	CARRIAGE RETURN
  *	\u0020		SPACE
  *
  * NOTE: differences between this and other places where Tcl defines a role
@@ -276,7 +276,7 @@ TclLengthOne(
  *	* The command terminating character,
  *		\u003b	;	SEMICOLON
  *	  must be BRACEd, QUOTEd, or escaped so that it does not terminate the
- * 	  command prematurely.
+ *	  command prematurely.
  *	* Any of the characters that begin substitutions in scripts,
  *		\u0024	$	DOLLAR
  *		\u005b	[	OPEN BRACKET
@@ -1036,7 +1036,7 @@ TclScanElement(
     Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;	/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1323,9 +1323,9 @@ TclScanElement(
 
 Tcl_Size
 Tcl_ConvertElement(
-    const char *src,	/* Source information for list element. */
-    char *dst,		/* Place to put list-ified element. */
-    int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,		/* Source information for list element. */
+    char *dst,			/* Place to put list-ified element. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, TCL_INDEX_NONE, dst, flags);
 }
@@ -1353,7 +1353,7 @@ Tcl_ConvertElement(
 
 Tcl_Size
 Tcl_ConvertCountedElement(
-    const char *src,	/* Source information for list element. */
+    const char *src,		/* Source information for list element. */
     Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1386,7 +1386,7 @@ Tcl_ConvertCountedElement(
 
 Tcl_Size
 TclConvertElement(
-    const char *src,	/* Source information for list element. */
+    const char *src,		/* Source information for list element. */
     Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1567,7 +1567,7 @@ TclConvertElement(
 
 char *
 Tcl_Merge(
-    Tcl_Size argc,			/* How many strings to merge. */
+    Tcl_Size argc,		/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
@@ -1644,14 +1644,14 @@ Tcl_Merge(
 
 Tcl_Size
 TclTrimRight(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim)	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim)		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
     int ch1, ch2;
@@ -1672,7 +1672,7 @@ TclTrimRight(
 	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
- 	    pInc = Tcl_UtfToUniChar(pp, &ch1);
+	    pInc = Tcl_UtfToUniChar(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1723,14 +1723,14 @@ TclTrimRight(
 
 Tcl_Size
 TclTrimLeft(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim)	/* ...and its length in bytes */
-			/* Calls to TclUtfToUniChar() in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim)		/* ...and its length in bytes */
+				/* Calls to TclUtfToUniChar() in this routine
+				 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
     int ch1, ch2;
@@ -1797,14 +1797,14 @@ TclTrimLeft(
 
 Tcl_Size
 TclTrim(
-    const char *bytes,	/* String to be trimmed... */
-    Tcl_Size numBytes,	/* ...and its length in bytes */
-			/* Calls in this routine
-			 * rely on (bytes[numBytes] == '\0'). */
-    const char *trim,	/* String of trim characters... */
-    Tcl_Size numTrim,	/* ...and its length in bytes */
-			/* Calls in this routine
-			 * rely on (trim[numTrim] == '\0'). */
+    const char *bytes,		/* String to be trimmed... */
+    Tcl_Size numBytes,		/* ...and its length in bytes */
+				/* Calls in this routine
+				 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,		/* String of trim characters... */
+    Tcl_Size numTrim,		/* ...and its length in bytes */
+				/* Calls in this routine
+				 * rely on (trim[numTrim] == '\0'). */
     Tcl_Size *trimRightPtr)	/* Offset from the end of the string. */
 {
     Tcl_Size trimLeft = 0, trimRight = 0;
@@ -1859,7 +1859,7 @@ TclTrim(
 
 char *
 Tcl_Concat(
-    Tcl_Size argc,			/* Number of strings to concatenate. */
+    Tcl_Size argc,		/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
     Tcl_Size i, needSpace = 0, bytesNeeded = 0;
@@ -1881,7 +1881,7 @@ Tcl_Concat(
 
     for (i = 0;  i < argc;  i++) {
 	bytesNeeded += strlen(argv[i]);
-    	if (bytesNeeded < 0) {
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
 	}
     }
@@ -2337,11 +2337,11 @@ Tcl_StringCaseMatch(
 int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
-    Tcl_Size strLen,			/* Length of String */
+    Tcl_Size strLen,		/* Length of String */
     const unsigned char *pattern,
 				/* Pattern, which may contain special
 				 * characters. */
-    Tcl_Size ptnLen,			/* Length of Pattern */
+    Tcl_Size ptnLen,		/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -2809,7 +2809,7 @@ Tcl_DStringAppendElement(
 void
 Tcl_DStringSetLength(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    Tcl_Size length)			/* New length for dynamic string. */
+    Tcl_Size length)		/* New length for dynamic string. */
 {
     Tcl_Size newsize;
 
@@ -3298,7 +3298,7 @@ Tcl_Size
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
-    Tcl_WideInt n)			/* The integer to format. */
+    Tcl_WideInt n)		/* The integer to format. */
 {
     Tcl_WideUInt intVal;
     int i = 0, numFormatted, j;
@@ -3413,19 +3413,19 @@ GetWideForIndex(
  *	list.
  *
  * Results:
- * 	TCL_OK
+ *	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ *	    The index is stored at the address given by by 'indexPtr'.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
  *
- * 	    The value of 'objPtr' does not have one of the expected formats. If
- * 	    'interp' is non-NULL, an error message is left in the interpreter's
- * 	    result object.
+ *	    The value of 'objPtr' does not have one of the expected formats. If
+ *	    'interp' is non-NULL, an error message is left in the interpreter's
+ *	    result object.
  *
  * Side effects:
  *
- * 	The internal representation contained within objPtr may shimmer.
+ *	The internal representation contained within objPtr may shimmer.
  *
  *----------------------------------------------------------------------
  */
@@ -3799,11 +3799,11 @@ GetEndOffsetFromObj(
 
 int
 TclIndexEncode(
-    Tcl_Interp *interp,	/* For error reporting, may be NULL */
-    Tcl_Obj *objPtr,	/* Index value to parse */
-    int before,		/* Value to return for index before beginning */
-    int after,		/* Value to return for index after end */
-    int *indexPtr)	/* Where to write the encoded answer, not NULL */
+    Tcl_Interp *interp,		/* For error reporting, may be NULL */
+    Tcl_Obj *objPtr,		/* Index value to parse */
+    int before,			/* Value to return for index before beginning */
+    int after,			/* Value to return for index after end */
+    int *indexPtr)		/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
@@ -3947,8 +3947,8 @@ rangeerror:
 
 Tcl_Size
 TclIndexDecode(
-    int encoded,	/* Value to decode */
-    Tcl_Size endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    int encoded,		/* Value to decode */
+    Tcl_Size endValue)		/* Meaning of "end" to use, > TCL_INDEX_END */
 {
     if (encoded > TCL_INDEX_END) {
 	return encoded;
@@ -3977,24 +3977,20 @@ TclIndexDecode(
  */
 int
 TclCommandWordLimitError (
-    Tcl_Interp *interp,   /* May be NULL */
-    Tcl_Size count)       /* If <= 0, "unknown" */
+    Tcl_Interp *interp,		/* May be NULL */
+    Tcl_Size count)		/* If <= 0, "unknown" */
 {
     if (interp) {
 	if (count > 0) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Number of words (%" TCL_SIZE_MODIFIER
-			      "d) in command exceeds limit %" TCL_SIZE_MODIFIER
-			      "d.",
-			      count,
-			      (Tcl_Size)INT_MAX));
-	}
-	else {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Number of words in command exceeds "
-					   "limit %" TCL_SIZE_MODIFIER "d.",
-					   (Tcl_Size)INT_MAX));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words (%" TCL_SIZE_MODIFIER
+		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
+		    count, (Tcl_Size)INT_MAX));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words in command exceeds "
+		    "limit %" TCL_SIZE_MODIFIER "d.",
+		    (Tcl_Size)INT_MAX));
 	}
     }
     return TCL_ERROR; /* Always */
