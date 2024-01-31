@@ -254,7 +254,7 @@ static const crange alphaRangeTable[] = {
 #endif
 };
 
-#define NUM_ALPHA_RANGE (sizeof(alphaRangeTable)/sizeof(crange))
+#define NUM_ALPHA_RANGE ((int)(sizeof(alphaRangeTable)/sizeof(crange)))
 
 static const chr alphaCharTable[] = {
     0xAA, 0xB5, 0xBA, 0x2EC, 0x2EE, 0x376, 0x377, 0x37F, 0x386,
@@ -291,7 +291,7 @@ static const chr alphaCharTable[] = {
 #endif
 };
 
-#define NUM_ALPHA_CHAR (sizeof(alphaCharTable)/sizeof(chr))
+#define NUM_ALPHA_CHAR ((int)(sizeof(alphaCharTable)/sizeof(chr)))
 
 /*
  * Unicode: control characters.
@@ -299,14 +299,13 @@ static const chr alphaCharTable[] = {
 
 static const crange controlRangeTable[] = {
     {0x0, 0x1F}, {0x7F, 0x9F}, {0x600, 0x605}, {0x200B, 0x200F},
-    {0x202A, 0x202E}, {0x2060, 0x2064}, {0x2066, 0x206F}, {0xE000, 0xF8FF},
-    {0xFFF9, 0xFFFB}
+    {0x202A, 0x202E}, {0x2060, 0x2064}, {0x2066, 0x206F}, {0xFFF9, 0xFFFB}
 #if CHRBITS > 16
     ,{0x13430, 0x1343F}, {0x1BCA0, 0x1BCA3}, {0x1D173, 0x1D17A}, {0xE0020, 0xE007F}
 #endif
 };
 
-#define NUM_CONTROL_RANGE (sizeof(controlRangeTable)/sizeof(crange))
+#define NUM_CONTROL_RANGE ((int)(sizeof(controlRangeTable)/sizeof(crange)))
 
 static const chr controlCharTable[] = {
     0xAD, 0x61C, 0x6DD, 0x70F, 0x890, 0x891, 0x8E2, 0x180E, 0xFEFF
@@ -315,7 +314,7 @@ static const chr controlCharTable[] = {
 #endif
 };
 
-#define NUM_CONTROL_CHAR (sizeof(controlCharTable)/sizeof(chr))
+#define NUM_CONTROL_CHAR ((int)(sizeof(controlCharTable)/sizeof(chr)))
 
 /*
  * Unicode: decimal digit characters.
@@ -343,7 +342,7 @@ static const crange digitRangeTable[] = {
 #endif
 };
 
-#define NUM_DIGIT_RANGE (sizeof(digitRangeTable)/sizeof(crange))
+#define NUM_DIGIT_RANGE ((int)(sizeof(digitRangeTable)/sizeof(crange)))
 
 /*
  * no singletons of digit characters.
@@ -380,7 +379,7 @@ static const crange punctRangeTable[] = {
 #endif
 };
 
-#define NUM_PUNCT_RANGE (sizeof(punctRangeTable)/sizeof(crange))
+#define NUM_PUNCT_RANGE ((int)(sizeof(punctRangeTable)/sizeof(crange)))
 
 static const chr punctCharTable[] = {
     0x3A, 0x3B, 0x3F, 0x40, 0x5F, 0x7B, 0x7D, 0xA1, 0xA7,
@@ -405,7 +404,7 @@ static const chr punctCharTable[] = {
 #endif
 };
 
-#define NUM_PUNCT_CHAR (sizeof(punctCharTable)/sizeof(chr))
+#define NUM_PUNCT_CHAR ((int)(sizeof(punctCharTable)/sizeof(chr)))
 
 /*
  * Unicode: white space characters.
@@ -415,14 +414,14 @@ static const crange spaceRangeTable[] = {
     {0x9, 0xD}, {0x2000, 0x200B}
 };
 
-#define NUM_SPACE_RANGE (sizeof(spaceRangeTable)/sizeof(crange))
+#define NUM_SPACE_RANGE ((int)(sizeof(spaceRangeTable)/sizeof(crange)))
 
 static const chr spaceCharTable[] = {
     0x20, 0x85, 0xA0, 0x1680, 0x180E, 0x2028, 0x2029, 0x202F, 0x205F,
     0x2060, 0x3000, 0xFEFF
 };
 
-#define NUM_SPACE_CHAR (sizeof(spaceCharTable)/sizeof(chr))
+#define NUM_SPACE_CHAR ((int)(sizeof(spaceCharTable)/sizeof(chr)))
 
 /*
  * Unicode: lowercase characters.
@@ -456,7 +455,7 @@ static const crange lowerRangeTable[] = {
 #endif
 };
 
-#define NUM_LOWER_RANGE (sizeof(lowerRangeTable)/sizeof(crange))
+#define NUM_LOWER_RANGE ((int)(sizeof(lowerRangeTable)/sizeof(crange)))
 
 static const chr lowerCharTable[] = {
     0xB5, 0x101, 0x103, 0x105, 0x107, 0x109, 0x10B, 0x10D, 0x10F,
@@ -529,7 +528,7 @@ static const chr lowerCharTable[] = {
 #endif
 };
 
-#define NUM_LOWER_CHAR (sizeof(lowerCharTable)/sizeof(chr))
+#define NUM_LOWER_CHAR ((int)(sizeof(lowerCharTable)/sizeof(chr)))
 
 /*
  * Unicode: uppercase characters.
@@ -559,7 +558,7 @@ static const crange upperRangeTable[] = {
 #endif
 };
 
-#define NUM_UPPER_RANGE (sizeof(upperRangeTable)/sizeof(crange))
+#define NUM_UPPER_RANGE ((int)(sizeof(upperRangeTable)/sizeof(crange)))
 
 static const chr upperCharTable[] = {
     0x100, 0x102, 0x104, 0x106, 0x108, 0x10A, 0x10C, 0x10E, 0x110,
@@ -633,7 +632,7 @@ static const chr upperCharTable[] = {
 #endif
 };
 
-#define NUM_UPPER_CHAR (sizeof(upperCharTable)/sizeof(chr))
+#define NUM_UPPER_CHAR ((int)(sizeof(upperCharTable)/sizeof(chr)))
 
 /*
  * Unicode: unicode print characters excluding space.
@@ -792,7 +791,7 @@ static const crange graphRangeTable[] = {
 #endif
 };
 
-#define NUM_GRAPH_RANGE (sizeof(graphRangeTable)/sizeof(crange))
+#define NUM_GRAPH_RANGE ((int)(sizeof(graphRangeTable)/sizeof(crange)))
 
 static const chr graphCharTable[] = {
     0x38C, 0x85E, 0x98F, 0x990, 0x9B2, 0x9C7, 0x9C8, 0x9D7, 0x9DC,
@@ -820,7 +819,7 @@ static const chr graphCharTable[] = {
 #endif
 };
 
-#define NUM_GRAPH_CHAR (sizeof(graphCharTable)/sizeof(chr))
+#define NUM_GRAPH_CHAR ((int)(sizeof(graphCharTable)/sizeof(chr)))
 
 /*
  *	End of auto-generated Unicode character ranges declarations.
@@ -1002,11 +1001,12 @@ cclass(
     const chr *endp,		/* just past the end of the name */
     int cases)			/* case-independent? */
 {
-    size_t i, len;
+    size_t len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
+    int i;
 
     /*
      * The following arrays define the valid character class names.
@@ -1101,8 +1101,9 @@ cclass(
 	addchr(cv, ' ');
 	break;
     case CC_CNTRL:
-	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE);
+	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE+1);
 	if (cv) {
+	    addrange(cv, 0xE000, 0xF8FF); /* private */
 	    for (i=0 ; i<NUM_CONTROL_RANGE ; i++) {
 		addrange(cv, controlRangeTable[i].start,
 			controlRangeTable[i].end);
