@@ -623,15 +623,15 @@ Tcl_HashStats(
      */
 
     result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
-    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+    snprintf(result, 60, "%" TCL_SIZE_MODIFIER "u entries in table, %" TCL_SIZE_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_SIZE_MODIFIER "u entries: %" TCL_SIZE_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_SIZE_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     snprintf(p, 60, "average search distance for entry: %.1f", average);
