@@ -131,8 +131,8 @@ const Tcl_ObjType tclStringType = {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    int needed,
-    int flag)
+    int needed,    /* Not including terminating nul */
+    int flag)      /* If 0, try to overallocate */
 {
     /*
      * Preconditions:
@@ -2136,6 +2136,20 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+	} else if (ch == 'I') {
+	    if ((format[1] == '6') && (format[2] == '4')) {
+		format += (step + 2);
+		step = TclUtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+		useWide = 1;
+#endif
+	    } else if ((format[1] == '3') && (format[2] == '2')) {
+		format += (step + 2);
+		step = TclUtfToUniChar(format, &ch);
+	    } else {
+		format += step;
+		step = TclUtfToUniChar(format, &ch);
+	    }
 	}
 
 	format += step;
@@ -2761,6 +2775,10 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
 			    va_arg(argList, long)));
 		    break;
+		case 2:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+			    va_arg(argList, Tcl_WideInt)));
+		    break;
 		}
 		break;
 	    case 'e':
@@ -2789,9 +2807,20 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for wide (and bignum?) arguments */
+	    /* TODO: support for bignum arguments */
 	    case 'l':
-		size = 1;
+		++size;
+		p++;
+		break;
+	    case 'I':
+		if (p[1]=='6' && p[2]=='4') {
+		    p += 2;
+		    size = 2;
+		} else if (p[1]=='3' && p[2]=='2') {
+		    p += 2;
+		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
 		p++;
 		break;
 	    case 'h':
@@ -2900,6 +2929,7 @@ TclGetStringStorage(
     *sizePtr = stringPtr->allocated;
     return objPtr->bytes;
 }
+
 /*
  *---------------------------------------------------------------------------
  *
