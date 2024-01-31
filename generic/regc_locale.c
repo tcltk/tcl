@@ -110,7 +110,7 @@ static const struct cname {
     {"right-brace",	'}'},
     {"right-curly-bracket", '}'},
     {"tilde",		'~'},
-    {"DEL",		'\177'},
+    {"DEL",		'\x7F'},
     {NULL,		0}
 };
 
@@ -824,8 +824,6 @@ static const chr graphCharTable[] = {
 /*
  *	End of auto-generated Unicode character ranges declarations.
  */
-
-#define	CH	NOCELT
 
 /*
  - element - map collating-element name to celt
@@ -918,9 +916,9 @@ range(
 
     for (c=a; c<=b; c++) {
 	addchr(cv, c);
-	lc = Tcl_UniCharToLower((chr)c);
-	uc = Tcl_UniCharToUpper((chr)c);
-	tc = Tcl_UniCharToTitle((chr)c);
+	lc = Tcl_UniCharToLower(c);
+	uc = Tcl_UniCharToUpper(c);
+	tc = Tcl_UniCharToTitle(c);
 	if (c != lc) {
 	    addchr(cv, lc);
 	}
@@ -969,11 +967,11 @@ eclass(
 
     if ((v->cflags&REG_FAKE) && c == 'x') {
 	cv = getcvec(v, 4, 0);
-	addchr(cv, (chr)'x');
-	addchr(cv, (chr)'y');
+	addchr(cv, 'x');
+	addchr(cv, 'y');
 	if (cases) {
-	    addchr(cv, (chr)'X');
-	    addchr(cv, (chr)'Y');
+	    addchr(cv, 'X');
+	    addchr(cv, 'Y');
 	}
 	return cv;
     }
@@ -987,7 +985,7 @@ eclass(
     }
     cv = getcvec(v, 1, 0);
     assert(cv != NULL);
-    addchr(cv, (chr)c);
+    addchr(cv, c);
     return cv;
 }
 
@@ -1008,7 +1006,7 @@ cclass(
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    int i, index;
+    int i;
 
     /*
      * The following arrays define the valid character class names.
@@ -1020,9 +1018,10 @@ cclass(
     };
 
     enum classes {
+	CC_NULL = -1,
 	CC_ALNUM, CC_ALPHA, CC_ASCII, CC_BLANK, CC_CNTRL, CC_DIGIT, CC_GRAPH,
 	CC_LOWER, CC_PRINT, CC_PUNCT, CC_SPACE, CC_UPPER, CC_XDIGIT
-    };
+    } index;
 
 
     /*
@@ -1031,24 +1030,20 @@ cclass(
 
     len = endp - startp;
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = Tcl_UniCharToUtfDString(startp, len, &ds);
 
     /*
      * Map the name to the corresponding enumerated value.
      */
 
-    index = -1;
+    index = CC_NULL;
     for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
-	    index = i;
+	    index = (enum classes)i;
 	    break;
 	}
     }
     Tcl_DStringFree(&ds);
-    if (index == -1) {
-	ERR(REG_ECTYPE);
-	return NULL;
-    }
 
     /*
      * Remap lower and upper to alpha if the match is case insensitive.
@@ -1062,7 +1057,10 @@ cclass(
      * Now compute the character class contents.
      */
 
-    switch((enum classes) index) {
+    switch (index) {
+    case CC_NULL:
+	ERR(REG_ECTYPE);
+	return NULL;
     case CC_ALNUM:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE);
 	if (cv) {
@@ -1242,9 +1240,9 @@ allcases(
     chr c = (chr)pc;
     chr lc, uc, tc;
 
-    lc = Tcl_UniCharToLower((chr)c);
-    uc = Tcl_UniCharToUpper((chr)c);
-    tc = Tcl_UniCharToTitle((chr)c);
+    lc = Tcl_UniCharToLower(c);
+    uc = Tcl_UniCharToUpper(c);
+    tc = Tcl_UniCharToTitle(c);
 
     if (tc != uc) {
 	cv = getcvec(v, 3, 0);
