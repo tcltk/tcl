@@ -308,8 +308,8 @@ core formatting engine used by \fBTcl_Format\fR.  This means the set of
 supported conversion specifiers is that of the \fBformat\fR command but
 the behavior is as similar as possible to \fBsprintf\fR. The "hh" and
 (Microsoft-specific) "w" format specifiers are not supported. The "L"
-format specifier means that an "mp_int *" argument is expected (in combination
-with "d"/"i"/"u"/"o"/"x"/"X", it cannot be used for long doubles). When a
+format specifier means that an "mp_int *" argument is expected (or a
+"long double" in combination with \fB[aAeEgGaA]\fR). When a
 conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
 the value is taken as a number of bytes, as \fBsprintf\fR does, and not
 as a number of characters, as \fBformat\fR does.  This is done on the
