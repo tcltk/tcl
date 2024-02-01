@@ -1756,7 +1756,7 @@ AppendUtfToUtfRep(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendUtfToUtf -- 
+ * TclAppendUtfToUtf --
  *
  *	This function appends "numBytes" bytes of "bytes" to the UTF string
  *	rep of "objPtr" (objPtr's internal rep converted to string on demand).
@@ -2664,6 +2664,28 @@ Tcl_Format(
  *---------------------------------------------------------------------------
  */
 
+static Tcl_Obj *
+NewIntObj(
+    char c,
+    Tcl_WideUInt max,
+	Tcl_WideInt value)
+{
+    if (!((max+1) & (Tcl_WideUInt)value)) {
+	/* sign-bit is not set, so handle the positive value */
+	return Tcl_NewWideIntObj(value & (Tcl_WideInt)max);
+    }
+
+    if (strchr("puoxX", c) && (max == WIDE_MAX)) {
+	/* Value > WIDE_MAX, so we need to use bignum */
+	mp_int bignumValue;
+	if (mp_init_u64(&bignumValue, (uint64_t)value) != MP_OKAY) {
+	    Tcl_Panic("%s: memory overflow", "AppendPrintfToObjVA");
+	}
+	return Tcl_NewBignumObj(&bignumValue);
+    }
+    return Tcl_NewWideIntObj(value | ~(Tcl_WideInt)max);
+}
+
 static void
 AppendPrintfToObjVA(
     Tcl_Obj *objPtr,
@@ -2747,15 +2769,15 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, INT_MAX,
 			    va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, LONG_MAX,
 			    va_arg(argList, long)));
 		    break;
 		case 2:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewWideIntObj(
+		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, WIDE_MAX,
 			    va_arg(argList, Tcl_WideInt)));
 		    break;
 		case 3:
