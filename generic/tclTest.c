@@ -4384,16 +4384,17 @@ TestprintObjCmd(
 {
     Tcl_WideInt argv1 = 0;
     size_t argv2;
+    long argv3;
 
-    if (objc < 2 || objc > 3) {
+    if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
+	return TCL_OK;
     }
 
-    if (objc > 1) {
-	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
-    }
+    Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
     argv2 = (size_t)argv1;
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
+    argv3 = (long)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv3, argv3));
     return TCL_OK;
 }
 
