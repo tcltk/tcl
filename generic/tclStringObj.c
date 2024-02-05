@@ -2677,6 +2677,23 @@ Tcl_Format(
  *---------------------------------------------------------------------------
  */
 
+static Tcl_Obj *
+NewLongObj(
+    char c,
+	long value)
+{
+    if ((value < 0) && strchr("puoxX", c)) {
+#ifdef TCL_WIDE_INT_IS_LONG
+	mp_int bignumValue;
+	mp_init_u64(&bignumValue, (unsigned long)value);
+	return Tcl_NewBignumObj(&bignumValue);
+#else
+	return Tcl_NewWideIntObj((unsigned long)value | ~(unsigned long)LONG_MAX);
+#endif
+    }
+    return Tcl_NewLongObj(value);
+}
+
 static void
 AppendPrintfToObjVA(
     Tcl_Obj *objPtr,
@@ -2755,10 +2772,10 @@ AppendPrintfToObjVA(
 		case -1:
 		case 0:
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
-			    (long) va_arg(argList, int)));
+			    (long)va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
 			    va_arg(argList, long)));
 		    break;
 		}
