@@ -3018,25 +3018,29 @@ Tcl_Format(
  */
 
 static Tcl_Obj *
-NewIntObj(
+NewLongObj(
     char c,
-    Tcl_WideUInt max,
-	Tcl_WideInt value)
+    long value)
 {
-    if (!((max+1) & (Tcl_WideUInt)value)) {
-	/* sign-bit is not set, so handle the positive value */
-	return Tcl_NewWideIntObj(value & (Tcl_WideInt)max);
+    if ((value < 0) && strchr("puoxX", c)) {
+	Tcl_Obj *obj;
+	TclNewUIntObj(obj, (unsigned long)value);
+	return obj;
     }
+    return Tcl_NewWideIntObj((long)value);
+}
 
-    if (strchr("puoxX", c) && (max == WIDE_MAX)) {
-	/* Value > WIDE_MAX, so we need to use bignum */
-	mp_int bignumValue;
-	if (mp_init_u64(&bignumValue, (uint64_t)value) != MP_OKAY) {
-	    Tcl_Panic("%s: memory overflow", "AppendPrintfToObjVA");
-	}
-	return Tcl_NewBignumObj(&bignumValue);
+static Tcl_Obj *
+NewWideIntObj(
+    char c,
+    Tcl_WideInt value)
+{
+    if ((value < 0) && strchr("puoxX", c)) {
+	Tcl_Obj *obj;
+	TclNewUIntObj(obj, (Tcl_WideUInt)value);
+	return obj;
     }
-    return Tcl_NewWideIntObj(value | ~(Tcl_WideInt)max);
+    return Tcl_NewWideIntObj(value);
 }
 
 static void
@@ -3122,15 +3126,15 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, INT_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(
 			    va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, LONG_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
 			    va_arg(argList, long)));
 		    break;
 		case 2:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, WIDE_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, NewWideIntObj(*p,
 			    va_arg(argList, Tcl_WideInt)));
 		    break;
 		case 3:
