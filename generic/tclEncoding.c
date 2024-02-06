@@ -2592,16 +2592,8 @@ UtfToUtfProc(
 		*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
 		*dst++ = (char) ((ch | 0x80) & 0xBF);
 		continue;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (!(flags & ENCODING_INPUT)) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_UNKNOWN;
-		src = saveSrc;
-		break;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (flags & ENCODING_INPUT) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_SYNTAX;
+	    } else if (PROFILE_STRICT(profile) && SURROGATE(ch)) {
+		result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
 	    }
