@@ -2485,7 +2485,6 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-
     profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
@@ -2596,6 +2595,8 @@ UtfToUtfProc(
 		result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
+	    } else if (PROFILE_REPLACE(profile) && SURROGATE(ch)) {
+		ch = UNICODE_REPLACE_CHAR;
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
