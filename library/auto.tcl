@@ -140,13 +140,13 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	# source everything when in a safe interpreter because we have a
 	# source command, but no file exists command
 
-        if {[interp issafe] || [file exists $file]} {
-            if {![catch {uplevel #0 [list source $file]} msg opts]} {
-                return
-            }
+	if {[interp issafe] || [file exists $file]} {
+	    if {![catch {uplevel #0 [list source $file]} msg opts]} {
+		return
+	    }
 	    append errors "$file: $msg\n"
 	    append errors [dict get $opts -errorinfo]\n
-        }
+	}
     }
     unset -nocomplain the_library
     set msg "Can't find a usable $initScript in the following directories: \n"
@@ -240,7 +240,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
-	    fconfigure $f -eofchar "\032 {}"
+	    fconfigure $f -eofchar "\x1A {}"
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -351,7 +351,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
-    fconfigure $fid -eofchar "\032 {}"
+    fconfigure $fid -eofchar "\x1A {}"
     set contents [read $fid]
     close $fid
 
