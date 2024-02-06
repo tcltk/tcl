@@ -2668,16 +2668,8 @@ cesu8:
 		    dst += Tcl_UniCharToUtf(ch, dst);
 		    ch = low;
 		}
-	    } else if (PROFILE_STRICT(profile) &&
-		       (!(flags & ENCODING_INPUT)) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_UNKNOWN;
-		src = saveSrc;
-		break;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (flags & ENCODING_INPUT) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_SYNTAX;
+	    } else if (PROFILE_STRICT(profile) && SURROGATE(ch)) {
+		result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
 	    }
