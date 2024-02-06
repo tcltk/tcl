@@ -371,7 +371,10 @@ proc unknown args {
 	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
 	}
 
-	set ret [catch {set candidates [info commands $name*]} msg]
+	set ret [catch [list uplevel 1 [list info commands $name*]] msg]
+	if {$ret == 0} {
+	    set candidates $msg
+	}
 	if {$name eq "::"} {
 	    set name ""
 	}
