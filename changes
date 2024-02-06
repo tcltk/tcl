@@ -9167,3 +9167,86 @@ Update bundled libtommath
 Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 - Released 8.6.13, Nov 22, 2022 - details at https://core.tcl-lang.org/tcl/ -
+
+2022-12-01 Backport TIP #402: path name starting with '//' not
+	replaced by '/' also on Cygwin and QNX (nijtmans)
+
+2022-12-12 Windows binaries licence metadata changed to  University of
+	California to match licence (nadkarni)
+
+2022-12-16 check mknod, tcdrain and uname in build script for VxWorks or others
+	(nijtmans)
+
+2022-12-16 32-bit cygwin is dead, so --enable-64bit in a Cygwin build no longer
+	needed (nijtmans)
+
+2023-01-01 (bug)[8e811b] Wrong formatting of arguments in man page (nijtmans)
+
+2023-01-06 (bug) [0f19ed]: Windows 11 not reported in  tcl_platform(osVersion)
+	(nijtmans)
+
+2023-01-15 (bug) [8f7fde] string compare failing on big endian (coulter)
+
+2023-01-22 (bug) [3e8074] y2k38 problem in [interp limit time -seconds]
+	(nijtmans)
+
+2023-01-22 (bug)  [e3dcab] crash with tcl_precision equal 15..18 (kenny)
+
+2023-02-22 (bug) [d19fe0] output replacement character on incomplete sequences
+	in unicode encoding (nijtmans)
+2023-02-22 (bug) [534172] Sporadic crash in memchan thread cleanup.
+	(neumann,nijtmans)
+
+2023-03-05 [9c5a00]. Fix ~user on Windows
+
+2023-03-13 (bug) [ea69b0], crash when using a channel transformation on TCP
+	lient socket
+
+2023-03-30 (bug) [0cb355] macOS 13 SDK deprecates sprintf()
+
+2023-05-02 (bug) [ab123c] scan ubsan.
+
+2023-05-02 (bug) [784bef] tailcall crash
+
+2023-06-03 (bug) [af3ebc] clock scan and clock add bugs in error cases / with
+	abbreviated options.
+
+2023-06-19 Fix hardcoded port numbers causing Windows failures with hyperv.
+	Disable file perm test for WSL.
+
+2023-08-29 Update zlib to version 1.3
+
+2023-09-05 (bug) [60cacf] Fix tclvfs tkt Segmentation Fault at interpreter exit
+	when tclvfs loaded.
+2023-09-05 (bug) [b5ac3e] Tcl_GetUniChar reads beyond string length for ASCII
+	strings
+
+2023-09-06 (bug) [d3465c] Update install-sh to version "2020-11-14.01".
+
+2023-09-08 Unicode 15.1
+
+2023-09-13 (bug) [43b065] MS Windows: files with emojis are found by glob but
+	not recognized by file exists or open
+
+2023-09-13 (bug) [a1f11d] VC6 compilation error of core-8-6-branch: error C2065:
+	'int16_t' : undeclared identifier
+
+2023-09-14 (bug) [00655c] ClockGetdatefieldsObjCmd(): avoid signed integer
+	overflow and platform-dependent behavior
+
+2023-10-01 (bug) [7b3167] tclOO.c: initialize fakeObject.refCount
+
+2023-10-04 (bug) [7371b6] AddressSanitizer use-after-return detection breaks NRE
+	ests, coroutines
+
+2023-12-06 (bug) [db4f28] fixes SF by BO in ReadChars (and Tcl_ReadChars with
+	append)
+
+2023-12-30 (rfe) [0ac9d0] Don't call getsockname(2) in Tcl_MakeFileChannel(3)
+	unless absolutely necessary. Permits better constraining of Tcl/tclsh via
+	OpenBSD's pledge(2) or similar mechanisms. Minor rewrite.
+
+2024-01-11 (bug) [fd27ad] doc change of Tcl_PkgRequire & friends: version string
+	specification refers to "package require".
+
+- Released 8.6.14, Jan ??, 2024 - details at https://core.tcl-lang.org/tcl/ -
