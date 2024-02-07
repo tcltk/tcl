@@ -260,6 +260,7 @@ static Tcl_ObjCmdProc	TestparseargsCmd;
 static Tcl_ObjCmdProc	TestparserObjCmd;
 static Tcl_ObjCmdProc	TestparsevarObjCmd;
 static Tcl_ObjCmdProc	TestparsevarnameObjCmd;
+static Tcl_ObjCmdProc	TestprintObjCmd;
 static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
@@ -556,6 +557,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testprint", TestprintObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
@@ -3949,6 +3952,44 @@ TestparsevarnameObjCmd(
     parse.commandSize = 0;
     PrintParse(interp, &parse);
     Tcl_FreeParse(&parse);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestprintObjCmd --
+ *
+ *	This procedure implements the "testprint" command.  It is
+ *	used for being able to test the Tcl_ObjPrintf() function.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestprintObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_WideInt argv1 = 0;
+    long argv2;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "format longint");
+	return TCL_OK;
+    }
+
+    Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
+    argv2 = (long)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv2, argv2, argv2, argv2));
     return TCL_OK;
 }
 
