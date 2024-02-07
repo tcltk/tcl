@@ -112,7 +112,7 @@ lappend encInvalidBytes {*}{
     ascii 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
     ascii 80 replace \uFFFD -1 {} {Smallest invalid byte}
     ascii 80 strict  {}      0 {} {Smallest invalid byte}
-    ascii 81 tcl8    \u0081 -1 {knownBug} {map to cp1252}
+    ascii 81 tcl8    \u0081 -1 {} {map to cp1252}
     ascii 82 tcl8    \u201A -1 {knownBug} {map to cp1252}
     ascii 83 tcl8    \u0192 -1 {knownBug} {map to cp1252}
     ascii 84 tcl8    \u201E -1 {knownBug} {map to cp1252}
@@ -124,10 +124,10 @@ lappend encInvalidBytes {*}{
     ascii 8A tcl8    \u0160 -1 {knownBug} {map to cp1252}
     ascii 8B tcl8    \u2039 -1 {knownBug} {map to cp1252}
     ascii 8C tcl8    \u0152 -1 {knownBug} {map to cp1252}
-    ascii 8D tcl8    \u008D -1 {knownBug} {map to cp1252}
+    ascii 8D tcl8    \u008D -1 {} {map to cp1252}
     ascii 8E tcl8    \u017D -1 {knownBug} {map to cp1252}
-    ascii 8F tcl8    \u008F -1 {knownBug} {map to cp1252}
-    ascii 90 tcl8    \u0090 -1 {knownBug} {map to cp1252}
+    ascii 8F tcl8    \u008F -1 {} {map to cp1252}
+    ascii 90 tcl8    \u0090 -1 {} {map to cp1252}
     ascii 91 tcl8    \u2018 -1 {knownBug} {map to cp1252}
     ascii 92 tcl8    \u2019 -1 {knownBug} {map to cp1252}
     ascii 93 tcl8    \u201C -1 {knownBug} {map to cp1252}
@@ -140,7 +140,7 @@ lappend encInvalidBytes {*}{
     ascii 9A tcl8    \u0161 -1 {knownBug} {map to cp1252}
     ascii 9B tcl8    \u203A -1 {knownBug} {map to cp1252}
     ascii 9C tcl8    \u0153 -1 {knownBug} {map to cp1252}
-    ascii 9D tcl8    \u009D -1 {knownBug} {map to cp1252}
+    ascii 9D tcl8    \u009D -1 {} {map to cp1252}
     ascii 9E tcl8    \u017E -1 {knownBug} {map to cp1252}
     ascii 9F tcl8    \u0178 -1 {knownBug} {map to cp1252}
 
@@ -554,20 +554,20 @@ lappend encInvalidBytes {*}{
     utf-16le 41      strict    {}      0 {solo tail} {Truncated}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
     utf-16le 00D8    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
-    utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
+    utf-16le 00D8    strict    {}      0 {} {Missing low surrogate}
     utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
     utf-16le 00DC    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
-    utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
+    utf-16le 00DC    strict    {}      0 {} {Missing high surrogate}
 
     utf-16be 41      tcl8      \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      strict    {}      0 {solo tail} {Truncated}
     utf-16be D800    tcl8      \uD800 -1 {} {Missing low surrogate}
     utf-16be D800    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
-    utf-16be D800    strict    {}      0 {knownBug} {Missing low surrogate}
+    utf-16be D800    strict    {}      0 {} {Missing low surrogate}
     utf-16be DC00    tcl8      \uDC00 -1 {} {Missing high surrogate}
     utf-16be DC00    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
-    utf-16be DC00    strict    {}      0 {knownBug} {Missing high surrogate}
+    utf-16be DC00    strict    {}      0 {} {Missing high surrogate}
 }
 
 # utf32-le and utf32-be test cases. Note utf32 cases are automatically generated
@@ -641,10 +641,12 @@ lappend encUnencodableStrings {*}{
     iso8859-1 \u0141 tcl8    3f -1 {} unencodable
     iso8859-1 \u0141 strict  {}  0 {} unencodable
 
-    utf-8 \uD800 tcl8    eda080 -1 {} High-surrogate
-    utf-8 \uD800 strict  {}      0 {} High-surrogate
+    utf-8 \uD800 tcl8    eda080 -1 {} Low-surrogate
+    utf-8 \uD800 replace efbfbd -1 {} Low-surrogate
+    utf-8 \uD800 strict  {}      0 {} Low-surrogate
     utf-8 \uDC00 tcl8    edb080 -1 {} High-surrogate
     utf-8 \uDC00 strict  {}      0 {} High-surrogate
+    utf-8 \uDC00 replace efbfbd -1 {} High-surrogate
 }
 
 
