@@ -109,40 +109,40 @@ set encInvalidBytes {}; # Reset the table
 # 80-9F which is treated as cp1252.
 # This tests the TableToUtfProc code path.
 lappend encInvalidBytes {*}{
-    ascii 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
+    ascii 80 tcl8    \u20AC -1 {} {map to cp1252}
     ascii 80 replace \uFFFD -1 {} {Smallest invalid byte}
     ascii 80 strict  {}      0 {} {Smallest invalid byte}
     ascii 81 tcl8    \u0081 -1 {} {map to cp1252}
-    ascii 82 tcl8    \u201A -1 {knownBug} {map to cp1252}
-    ascii 83 tcl8    \u0192 -1 {knownBug} {map to cp1252}
-    ascii 84 tcl8    \u201E -1 {knownBug} {map to cp1252}
-    ascii 85 tcl8    \u2026 -1 {knownBug} {map to cp1252}
-    ascii 86 tcl8    \u2020 -1 {knownBug} {map to cp1252}
-    ascii 87 tcl8    \u2021 -1 {knownBug} {map to cp1252}
-    ascii 88 tcl8    \u0276 -1 {knownBug} {map to cp1252}
-    ascii 89 tcl8    \u2030 -1 {knownBug} {map to cp1252}
-    ascii 8A tcl8    \u0160 -1 {knownBug} {map to cp1252}
-    ascii 8B tcl8    \u2039 -1 {knownBug} {map to cp1252}
-    ascii 8C tcl8    \u0152 -1 {knownBug} {map to cp1252}
+    ascii 82 tcl8    \u201A -1 {} {map to cp1252}
+    ascii 83 tcl8    \u0192 -1 {} {map to cp1252}
+    ascii 84 tcl8    \u201E -1 {} {map to cp1252}
+    ascii 85 tcl8    \u2026 -1 {} {map to cp1252}
+    ascii 86 tcl8    \u2020 -1 {} {map to cp1252}
+    ascii 87 tcl8    \u2021 -1 {} {map to cp1252}
+    ascii 88 tcl8    \u02C6 -1 {} {map to cp1252}
+    ascii 89 tcl8    \u2030 -1 {} {map to cp1252}
+    ascii 8A tcl8    \u0160 -1 {} {map to cp1252}
+    ascii 8B tcl8    \u2039 -1 {} {map to cp1252}
+    ascii 8C tcl8    \u0152 -1 {} {map to cp1252}
     ascii 8D tcl8    \u008D -1 {} {map to cp1252}
-    ascii 8E tcl8    \u017D -1 {knownBug} {map to cp1252}
+    ascii 8E tcl8    \u017D -1 {} {map to cp1252}
     ascii 8F tcl8    \u008F -1 {} {map to cp1252}
     ascii 90 tcl8    \u0090 -1 {} {map to cp1252}
-    ascii 91 tcl8    \u2018 -1 {knownBug} {map to cp1252}
-    ascii 92 tcl8    \u2019 -1 {knownBug} {map to cp1252}
-    ascii 93 tcl8    \u201C -1 {knownBug} {map to cp1252}
-    ascii 94 tcl8    \u201D -1 {knownBug} {map to cp1252}
-    ascii 95 tcl8    \u2022 -1 {knownBug} {map to cp1252}
-    ascii 96 tcl8    \u2013 -1 {knownBug} {map to cp1252}
-    ascii 97 tcl8    \u2014 -1 {knownBug} {map to cp1252}
-    ascii 98 tcl8    \u02DC -1 {knownBug} {map to cp1252}
-    ascii 99 tcl8    \u2122 -1 {knownBug} {map to cp1252}
-    ascii 9A tcl8    \u0161 -1 {knownBug} {map to cp1252}
-    ascii 9B tcl8    \u203A -1 {knownBug} {map to cp1252}
-    ascii 9C tcl8    \u0153 -1 {knownBug} {map to cp1252}
+    ascii 91 tcl8    \u2018 -1 {} {map to cp1252}
+    ascii 92 tcl8    \u2019 -1 {} {map to cp1252}
+    ascii 93 tcl8    \u201C -1 {} {map to cp1252}
+    ascii 94 tcl8    \u201D -1 {} {map to cp1252}
+    ascii 95 tcl8    \u2022 -1 {} {map to cp1252}
+    ascii 96 tcl8    \u2013 -1 {} {map to cp1252}
+    ascii 97 tcl8    \u2014 -1 {} {map to cp1252}
+    ascii 98 tcl8    \u02DC -1 {} {map to cp1252}
+    ascii 99 tcl8    \u2122 -1 {} {map to cp1252}
+    ascii 9A tcl8    \u0161 -1 {} {map to cp1252}
+    ascii 9B tcl8    \u203A -1 {} {map to cp1252}
+    ascii 9C tcl8    \u0153 -1 {} {map to cp1252}
     ascii 9D tcl8    \u009D -1 {} {map to cp1252}
-    ascii 9E tcl8    \u017E -1 {knownBug} {map to cp1252}
-    ascii 9F tcl8    \u0178 -1 {knownBug} {map to cp1252}
+    ascii 9E tcl8    \u017E -1 {} {map to cp1252}
+    ascii 9F tcl8    \u0178 -1 {} {map to cp1252}
 
     ascii FF tcl8    \u00FF -1 {} {Largest invalid byte}
     ascii FF replace \uFFFD -1 {} {Largest invalid byte}
