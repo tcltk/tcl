@@ -641,10 +641,12 @@ lappend encUnencodableStrings {*}{
     iso8859-1 \u0141 tcl8    3f -1 {} unencodable
     iso8859-1 \u0141 strict  {}  0 {} unencodable
 
-    utf-8 \uD800 tcl8    eda080 -1 {} High-surrogate
-    utf-8 \uD800 strict  {}      0 {} High-surrogate
+    utf-8 \uD800 tcl8    eda080 -1 {} Low-surrogate
+    utf-8 \uD800 replace efbfbd -1 {} Low-surrogate
+    utf-8 \uD800 strict  {}      0 {} Low-surrogate
     utf-8 \uDC00 tcl8    edb080 -1 {} High-surrogate
     utf-8 \uDC00 strict  {}      0 {} High-surrogate
+    utf-8 \uDC00 replace efbfbd -1 {} High-surrogate
 }
 
 
