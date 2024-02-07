@@ -575,9 +575,9 @@ Tcl_GetUniChar(
 	if (stringPtr->numChars == -1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-        if (index >= stringPtr->numChars) {
-            return 0xFFFD;
-        }
+	if (index >= stringPtr->numChars) {
+	    return 0xFFFD;
+	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
 	}
@@ -634,11 +634,11 @@ TclGetUCS4(
 	if (stringPtr->numChars == -1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-        if (index >= stringPtr->numChars) {
-            return -1;
-        }
+	if (index >= stringPtr->numChars) {
+	    return -1;
+	}
 	if (stringPtr->numChars == objPtr->length) {
-            /* Pure ascii, can directly index bytes */
+	    /* Pure ascii, can directly index bytes */
 	    return (unsigned char) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
@@ -1671,7 +1671,7 @@ AppendUnicodeToUtfRep(
  *	None.
  *
  * Side effects:
- *	objPtr's internal rep is reallocated.
+ *	objPtr's internal rep is reallocated and string rep is cleaned.
  *
  *----------------------------------------------------------------------
  */
@@ -1707,7 +1707,7 @@ AppendUtfToUnicodeRep(
  *	None.
  *
  * Side effects:
- *	objPtr's internal rep is reallocated.
+ *	objPtr's string rep is reallocated (by TCL STRING GROWTH ALGORITHM).
  *
  *----------------------------------------------------------------------
  */
@@ -1782,6 +1782,39 @@ AppendUtfToUtfRep(
     }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendUtfToUtf --
+ *
+ *	This function appends "numBytes" bytes of "bytes" to the UTF string
+ *	rep of "objPtr" (objPtr's internal rep converted to string on demand).
+ *	numBytes must be non-negative.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	objPtr's string rep is reallocated (by TCL STRING GROWTH ALGORITHM).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAppendUtfToUtf(
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
+    const char *bytes,		/* String to append (or NULL to enlarge buffer). */
+    int numBytes)		/* Number of bytes of "bytes" to append. */
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "TclAppendUtfToUtf");
+    }
+
+    SetStringFromAny(NULL, objPtr);
+
+    AppendUtfToUtfRep(objPtr, bytes, numBytes);
 }
 
 /*
@@ -2644,6 +2677,23 @@ Tcl_Format(
  *---------------------------------------------------------------------------
  */
 
+static Tcl_Obj *
+NewLongObj(
+    char c,
+    long value)
+{
+    if ((value < 0) && strchr("puoxX", c)) {
+#ifdef TCL_WIDE_INT_IS_LONG
+	mp_int bignumValue;
+	mp_init_u64(&bignumValue, (unsigned long)value);
+	return Tcl_NewBignumObj(&bignumValue);
+#else
+	return Tcl_NewWideIntObj((unsigned long)value | ~(unsigned long)LONG_MAX);
+#endif
+    }
+    return Tcl_NewLongObj(value);
+}
+
 static void
 AppendPrintfToObjVA(
     Tcl_Obj *objPtr,
@@ -2722,10 +2772,10 @@ AppendPrintfToObjVA(
 		case -1:
 		case 0:
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
-			    (long) va_arg(argList, int)));
+			    (long)va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
 			    va_arg(argList, long)));
 		    break;
 		}

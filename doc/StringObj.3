@@ -316,9 +316,10 @@ sprintf(buf, format, ...);
 but with greater convenience and no need to
 determine \fBSOME_SUITABLE_LENGTH\fR. The formatting is done with the same
 core formatting engine used by \fBTcl_Format\fR.  This means the set of
-supported conversion specifiers is that of the \fBformat\fR command and
-not that of the \fBsprintf\fR routine where the two sets differ. When a
-conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
+supported conversion specifiers is that of the \fBformat\fR command but
+the behavior is as similar as possible to \fBsprintf\fR. Format specifiers
+which were added by C99 (like "hh", "ll", "j", "z", "t", "L") are not supported.
+When a conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
 the value is taken as a number of bytes, as \fBsprintf\fR does, and not
 as a number of characters, as \fBformat\fR does.  This is done on the
 assumption that C code is more likely to know how many bytes it is
