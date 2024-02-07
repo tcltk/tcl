@@ -21,6 +21,7 @@ set auto_index(::auto_mkindex_parser::commandInit) [list ::tcl::Pkg::source [fil
 set auto_index(::auto_mkindex_parser::fullname) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(foreachLine) [list ::tcl::Pkg::source [file join $dir foreachline.tcl]]
 set auto_index(history) [list ::tcl::Pkg::source [file join $dir history.tcl]]
+set auto_index(::tcl::history) [list ::tcl::Pkg::source [file join $dir history.tcl]]
 set auto_index(::tcl::HistAdd) [list ::tcl::Pkg::source [file join $dir history.tcl]]
 set auto_index(::tcl::HistKeep) [list ::tcl::Pkg::source [file join $dir history.tcl]]
 set auto_index(::tcl::HistClear) [list ::tcl::Pkg::source [file join $dir history.tcl]]
