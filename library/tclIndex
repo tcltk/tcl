@@ -20,6 +20,7 @@ set auto_index(::auto_mkindex_parser::command) [list source [file join $dir auto
 set auto_index(::auto_mkindex_parser::commandInit) [list source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::fullname) [list source [file join $dir auto.tcl]]
 set auto_index(history) [list source [file join $dir history.tcl]]
+set auto_index(::tcl::history) [list source [file join $dir history.tcl]]
 set auto_index(::tcl::HistAdd) [list source [file join $dir history.tcl]]
 set auto_index(::tcl::HistKeep) [list source [file join $dir history.tcl]]
 set auto_index(::tcl::HistClear) [list source [file join $dir history.tcl]]
