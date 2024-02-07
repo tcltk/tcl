@@ -9194,25 +9194,35 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2023-02-22 (bug) [d19fe0] output replacement character on incomplete sequences
 	in unicode encoding (nijtmans)
-2023-02-22 (bug) [534172] Sporadic crash in memchan thread cleanup.
+
+2023-02-22 (bug) [534172] sporadic crash in memchan thread cleanup.
 	(neumann,nijtmans)
 
-2023-03-05 [9c5a00]. Fix ~user on Windows
+2023-02-28 (bug) [f9eafc] throw error in zip command when file comment/filename
+	to long or not iso-latin-1 (nijtmans)
 
-2023-03-13 (bug) [ea69b0], crash when using a channel transformation on TCP
-	lient socket
+2023-03-04 (bug) [1b8df1] fix usec on windows returned by Tcl_GetTime (nadkarni)
 
-2023-03-30 (bug) [0cb355] macOS 13 SDK deprecates sprintf()
+2023-03-05 (bug) [9c5a00]. Fix ~ and ~user path prefix on Windows (nadkarni)
 
-2023-05-02 (bug) [ab123c] scan ubsan.
+2023-03-14 (bug) [ea69b0], crash when using a channel transformation on TCP
+	client socket (coulter)
 
-2023-05-02 (bug) [784bef] tailcall crash
+2023-03-30 (rfe) Allow empty mode in [chan create] to allow refchan version of
+	[socket -server] (max)
+
+2023-03-30 [0cb355] macOS 13 SDK deprecates sprintf() (chavez)
+
+2023-05-02 (bug) [ab123c] argument position overflow in [scan %num$mode]
+	(nadkarni)
+
+2023-05-02 (bug) [784bef] tailcall crash (nadkarni)
 
 2023-06-03 (bug) [af3ebc] clock scan and clock add bugs in error cases / with
-	abbreviated options.
+	abbreviated options (ade)
 
-2023-06-19 Fix hardcoded port numbers causing Windows failures with hyperv.
-	Disable file perm test for WSL.
+2023-07-05 (bug) [66ffaf] incomplete double byte encoding sequences ignored like
+	in [encoding convertfrom gb12345 x] (nadkarni)
 
 2023-08-29 Update zlib to version 1.3
 
@@ -9245,6 +9255,9 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2023-12-30 (rfe) [0ac9d0] Don't call getsockname(2) in Tcl_MakeFileChannel(3)
 	unless absolutely necessary. Permits better constraining of Tcl/tclsh via
 	OpenBSD's pledge(2) or similar mechanisms. Minor rewrite.
+
+2024-01-24 [db4f28] Cure performance issues by 8.6.13 bugfix for channel read
+	with large data (brester)
 
 2024-01-11 (bug) [fd27ad] doc change of Tcl_PkgRequire & friends: version string
 	specification refers to "package require".
