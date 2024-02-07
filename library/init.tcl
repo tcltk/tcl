@@ -371,14 +371,14 @@ proc unknown args {
 	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
 	}
 
-	set ret [catch {set candidates [info commands $name*]} msg]
+	set ret [catch [list uplevel 1 [list info commands $name*]] candidates]
 	if {$name eq "::"} {
 	    set name ""
 	}
 	if {$ret != 0} {
 	    dict append opts -errorinfo \
 		    "\n    (expanding command prefix \"$name\" in unknown)"
-	    return -options $opts $msg
+	    return -options $opts $candidates
 	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]
@@ -494,7 +494,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -eofchar "\032 {}"
+		fconfigure $f -eofchar "\x1A {}"
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
