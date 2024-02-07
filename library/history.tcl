@@ -53,7 +53,7 @@ proc ::history {args} {
     }
 
     # Tricky stuff needed to make stack and errors come out right!
-    tailcall apply {arglist {tailcall history {*}$arglist} ::tcl} $args
+    tailcall apply {arglist {tailcall ::tcl::history {*}$arglist} ::tcl} $args
 }
 
 # (unnamed) --

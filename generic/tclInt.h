@@ -2861,6 +2861,8 @@ struct Tcl_LoadHandle_ {
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
+MODULE_SCOPE void	TclAppendUtfToUtf(Tcl_Obj *objPtr,
+			    const char *bytes, int numBytes);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
