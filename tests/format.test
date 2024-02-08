@@ -545,7 +545,7 @@ test format-17.4 {testing %l with non-integer} {
 } 1.000000
 test format-17.5 {testing %llu with positive bignum} -body {
     format %llu 0xabcdef0123456789abcdef
-} -returnCodes 1 -result {unsigned bignum format is invalid}
+} -result {207698809136909011942886895}
 test format-17.6 {testing %llu with negative number} -body {
     format %llu -1
 } -returnCodes 1 -result {unsigned bignum format is invalid}

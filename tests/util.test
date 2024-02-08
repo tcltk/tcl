@@ -4067,29 +4067,38 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
     0x4400000000000000 0xc400000000000000
 }]
 
-test util-18.1 {Tcl_ObjPrintf} {testprint longIs32bit} {
-    testprint %ld [expr {2**32-1}]
-} {-1}
+test util-18.5 {Tcl_ObjPrintf} {testprint} {
+    testprint %lld [expr {-2**63}]
+} {-9223372036854775808}
 
-test util-18.2 {Tcl_ObjPrintf} {testprint longIs64bit} {
-    testprint %ld [expr {2**32-1}]
-} {4294967295}
+test util-18.6 {Tcl_ObjPrintf} {testprint} {
+    testprint %I64d [expr {-2**63}]
+} {-9223372036854775808}
 
-test util-18.3 {Tcl_ObjPrintf} {testprint} {
-    testprint %lu [expr {2**32-1}]
-} {4294967295}
+test util-18.9 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d" [expr {-2**63+2}]
+} {-9223372036854775806}
 
-test util-18.4 {Tcl_ObjPrintf} {testprint} {
-    testprint %ld [expr {2**64-1}]
-} {-1}
+test util-18.10 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d" 65535
+} {65535}
 
-test util-18.5 {Tcl_ObjPrintf} {testprint longIs32bit} {
-    testprint %lu [expr {2**64-1}]
-} {4294967295}
+test util-18.11 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d" 65536
+} {65536}
 
-test util-18.6 {Tcl_ObjPrintf} {testprint longIs64bit} {
-    testprint %lu [expr {2**64-1}]
-} {18446744073709551615}
+test util-18.12 {Tcl_ObjPrintf} {testprint} {
+    testprint "%I64d" 65537
+} {65537}
+
+test util-18.13 {Tcl_ObjPrintf} -constraints {testprint longIs64bit} -body {
+    testprint "%llu %lu" -1
+} -result {18446744073709551615 18446744073709551615}
+
+test util-18.14 {Tcl_ObjPrintf} -constraints {testprint longIs64bit} -body {
+    testprint "%llu %lu" -1
+} -result {18446744073709551615 18446744073709551615}
+
 
 set ::tcl_precision $saved_precision
 

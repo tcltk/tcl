@@ -3983,13 +3983,13 @@ TestprintObjCmd(
     long argv2;
 
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "format longint");
+	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
 	return TCL_OK;
     }
 
     Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
     argv2 = (long)argv1;
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv2, argv2, argv2, argv2));
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2, argv2, argv2));
     return TCL_OK;
 }
 
