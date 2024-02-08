@@ -895,7 +895,7 @@ where \fBT\fR is the literal
 .QW "\fICCyymmdd hhmmss\fR" ,
 .QW "\fICCyymmdd\fBT\fIhh:mm:ss\fR" ,
 or
-.QW "\fICCyy-mm-dd\fBT\fIhh\fB:\fImm\fB:\fIss\fR" .
+.QW "\fICCyy-mm-dd\fBT\fIhh:mm:ss\fR" .
 Note that only these four formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
 specifications specified in ISO8601.  Other formats can be recognized by
