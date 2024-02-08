@@ -2009,7 +2009,7 @@ ParseBoolean(
     char lowerCase[6];
     const char *str = TclGetStringFromObj(objPtr, &length);
 
-    if ((length == 0) || (length > 5)) {
+    if ((length < 1) || (length > 5)) {
 	/*
          * Longest valid boolean string rep. is "false".
          */
