@@ -566,13 +566,13 @@ ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
     Tcl_Size num,
-    int *loc)
+    Tcl_Size *loc)
 {
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(Tcl_Size));
 
     if (!newEntry) {
 	/*
@@ -600,7 +600,7 @@ TclContinuationsEnter(
     }
 
     clLocPtr->num = num;
-    memcpy(&clLocPtr->loc, loc, num*sizeof(int));
+    memcpy(&clLocPtr->loc, loc, num*sizeof(Tcl_Size));
     clLocPtr->loc[num] = CLL_END;       /* Sentinel */
     Tcl_SetHashValue(hPtr, clLocPtr);
 
@@ -629,12 +629,12 @@ TclContinuationsEnter(
 void
 TclContinuationsEnterDerived(
     Tcl_Obj *objPtr,
-    int start,
-    int *clNext)
+    Tcl_Size start,
+    Tcl_Size *clNext)
 {
     Tcl_Size length;
-    int end, num;
-    int *wordCLLast = clNext;
+    Tcl_Size end, num;
+    Tcl_Size *wordCLLast = clNext;
 
     /*
      * We have to handle invisible continuations lines here as well, despite
@@ -677,7 +677,7 @@ TclContinuationsEnterDerived(
 
     num = wordCLLast - clNext;
     if (num) {
-	int i;
+	Tcl_Size i;
 	ContLineLoc *clLocPtr = TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
@@ -2282,7 +2282,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length <= 0) || (length > 5)) {
+    if ((length < 1) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */
@@ -4001,7 +4001,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    int numBytes,
+    Tcl_Size numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
