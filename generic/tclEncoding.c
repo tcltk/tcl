@@ -3387,6 +3387,7 @@ TableToUtfProc(
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
+		    /* For prefix bytes, we don't fallback to cp1252, see [1355b9a874] */
 		    ch = (Tcl_UniChar)byte;
 		}
 	    } else {
@@ -3407,7 +3408,9 @@ TableToUtfProc(
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
-		ch = (Tcl_UniChar)byte;
+		char chbuf[2];
+		chbuf[0] = byte; chbuf[1] = 0;
+		Tcl_UtfToUniChar(chbuf, &ch);
 	    }
 	}
 
