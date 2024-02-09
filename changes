@@ -9224,42 +9224,62 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2023-07-05 (bug) [66ffaf] incomplete double byte encoding sequences ignored like
 	in [encoding convertfrom gb12345 x] (nadkarni)
 
-2023-08-29 Update zlib to version 1.3
+2023-07-26 (rfe) [c54e4a] fork multithreading performance by using vfork/spawn
+	when supported (neumann)
+
+2023-08-17 TIP #662: Tcl_VarEval is not depreciated any more (nijtmans)
+
+2023-08-29 Update zlib to version 1.3 (nijtmans)
+
+2023-09-04 Update libtommath to version 1.2.1 (nijtmans)
 
 2023-09-05 (bug) [60cacf] Fix tclvfs tkt Segmentation Fault at interpreter exit
 	when tclvfs loaded.
 2023-09-05 (bug) [b5ac3e] Tcl_GetUniChar reads beyond string length for ASCII
-	strings
+	strings (nadkarni)
 
-2023-09-06 (bug) [d3465c] Update install-sh to version "2020-11-14.01".
+2023-09-06 (bug) [d3465c] Update install-sh to version 2020-11-14.01 (nijtmans)
 
-2023-09-08 Unicode 15.1
+2023-09-08 Unicode 15.1 (nijtmans)
+
+2023-09-12 Remove option utf16 from win/makefile.vc (nijtmans)
 
 2023-09-13 (bug) [43b065] MS Windows: files with emojis are found by glob but
-	not recognized by file exists or open
+	not recognized by file exists or open (nijtmans)
 
 2023-09-13 (bug) [a1f11d] VC6 compilation error of core-8-6-branch: error C2065:
-	'int16_t' : undeclared identifier
+	'int16_t' : undeclared identifier (nijtmans)
 
 2023-09-14 (bug) [00655c] ClockGetdatefieldsObjCmd(): avoid signed integer
-	overflow and platform-dependent behavior
+	overflow and platform-dependent behavior (nijtmans)
 
-2023-10-01 (bug) [7b3167] tclOO.c: initialize fakeObject.refCount
+2023-10-01 (bug) [7b3167] tclOO.c: initialize fakeObject.refCount (nijtmans)
 
 2023-10-04 (bug) [7371b6] AddressSanitizer use-after-return detection breaks NRE
-	ests, coroutines
+	tests, coroutines (nijtmans)
 
-2023-12-06 (bug) [db4f28] fixes SF by BO in ReadChars (and Tcl_ReadChars with
-	append)
+2023-11-30 (bug) [fb2fa9],[21b062] reallow [exec %var%] on MS-Windows. It was
+	forbidden in 8.6.13 (brester)
 
 2023-12-30 (rfe) [0ac9d0] Don't call getsockname(2) in Tcl_MakeFileChannel(3)
 	unless absolutely necessary. Permits better constraining of Tcl/tclsh via
 	OpenBSD's pledge(2) or similar mechanisms. Minor rewrite.
 
-2024-01-24 [db4f28] Cure performance issues by 8.6.13 bugfix for channel read
-	with large data (brester)
+2024-01-24 [db4f28] segfault when Tcl_ReadChars is called with unicode object
+	(brester)
 
 2024-01-11 (bug) [fd27ad] doc change of Tcl_PkgRequire & friends: version string
 	specification refers to "package require".
 
-- Released 8.6.14, Jan ??, 2024 - details at https://core.tcl-lang.org/tcl/ -
+2024-01-27 (bug) [16e25e] error for [tcl_startOfPreviousWord string end-1]
+	(nijtmans)
+
+2024-01-29 Update to zlib 1.3.1 (nijtmans)
+
+2024-02-05 fix/document Tcl_ObjPrintf with "ll" modifier (nijtmans)
+
+2024-02-06 [8e666d] endless loop when redefining proc ::history (nash)
+
+2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
+
+- Released 8.6.14, Feb ??, 2024 - details at https://core.tcl-lang.org/tcl/ -
