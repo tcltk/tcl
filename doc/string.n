@@ -181,13 +181,6 @@ zero width no-break space (U+feff) (=BOM).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
-.IP \fBunicode\fR 12
-Any Unicode character, except surrogates and noncharacters.
-.RS
-.PP
-\fIWarning: this option is under discussion and may be renamed or replaced
-by another solution within the Tcl 9.0 series.\fR
-.RE
 .IP \fBupper\fR 12
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
