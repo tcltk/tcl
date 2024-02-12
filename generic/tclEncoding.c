@@ -192,7 +192,7 @@ Tcl_Encoding tclUtf8Encoding = NULL;
  * Names of encoding profiles and corresponding integer values.
  * Keep alphabetical order for error messages.
  */
-static struct TclEncodingProfiles {
+static const struct TclEncodingProfiles {
     const char *name;
     int value;
 } encodingProfiles[] = {
@@ -200,6 +200,7 @@ static struct TclEncodingProfiles {
     {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
+
 #define PROFILE_TCL8(flags_)                                           \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)
 
@@ -1266,9 +1267,9 @@ Tcl_ExternalToUtfDStringEx(
 	    return result;
 	}
 
+	/* Expand space and continue */
 	flags &= ~TCL_ENCODING_START;
 	srcLen -= srcChunkRead;
-
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
 	}
@@ -1368,9 +1369,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-        if (dstLen < 1) {
-            return TCL_CONVERT_NOSPACE;
-        }
+	if (dstLen < 1) {
+	    return TCL_CONVERT_NOSPACE;
+	}
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1994,7 +1995,7 @@ LoadTableEncoding(
     };
 
     Tcl_DStringInit(&lineString);
-    if (Tcl_Gets(chan, &lineString) == TCL_IO_FAILURE) {
+    if (Tcl_Gets(chan, &lineString) < 0) {
 	return NULL;
     }
     line = Tcl_DStringValue(&lineString);
@@ -2278,7 +2279,7 @@ LoadEscapeEncoding(
 	Tcl_DString lineString;
 
 	Tcl_DStringInit(&lineString);
-	if (Tcl_Gets(chan, &lineString) == TCL_IO_FAILURE) {
+	if (Tcl_Gets(chan, &lineString) < 0) {
 	    break;
 	}
 	line = Tcl_DStringValue(&lineString);
@@ -2523,7 +2524,8 @@ UtfToUtfProc(
 		}
 	    } else {
 		/*
-		 * For output convert 0xC080 to a real null.
+		 * Convert 0xC080 to real nulls when we are in output mode,
+		 * irrespective of the profile.
 		 */
 		*dst++ = 0;
 		src += 2;
@@ -2532,10 +2534,10 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
-		 * Always check before using Tcl_UtfToUniChar. Not doing so can cause it
-		 * run beyond the end of the buffer! If we happen on such an incomplete
-		 * char its bytes are made to represent themselves unless the user has
-		 * explicitly asked to be told.
+	     * Always check before using Tcl_UtfToUniChar. Not doing so can cause
+	     * it to run beyond the end of the buffer! If we happen on such an
+	     * incomplete char its bytes are made to represent themselves unless
+	     * the user has explicitly asked to be told.
 	     */
 
 	    if (flags & ENCODING_INPUT) {
@@ -2715,9 +2717,11 @@ Utf32ToUtfProc(
      * fragment AND profile is not "strict", stick FFFD in its place.
      */
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a code fragment left-over at the end */
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
+	    /* destination is not full, so we really are at the end now */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {
@@ -2961,7 +2965,7 @@ Utf16ToUtfProc(
 	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
-		result = TCL_CONVERT_UNKNOWN;
+		result = TCL_CONVERT_SYNTAX;
 		break;
 	    } else {
 		/* PROFILE_REPLACE */
@@ -3431,7 +3435,7 @@ TableFromUtfProc(
 	if (ch & 0xFFFF0000) {
 	    word = 0;
 	} else {
-	word = fromUnicode[(ch >> 8)][ch & 0xFF];
+	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 	}
 
 	if ((word == 0) && (ch != 0)) {
