@@ -2534,10 +2534,10 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
-		 * Always check before using Tcl_UtfToUniChar. Not doing so can cause it
-		 * run beyond the end of the buffer! If we happen on such an incomplete
-		 * char its bytes are made to represent themselves unless the user has
-		 * explicitly asked to be told.
+	     * Always check before using Tcl_UtfToUniChar. Not doing so can cause
+	     * it to run beyond the end of the buffer! If we happen on such an
+	     * incomplete char its bytes are made to represent themselves unless
+	     * the user has explicitly asked to be told.
 	     */
 
 	    if (flags & ENCODING_INPUT) {
