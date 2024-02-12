@@ -35,7 +35,7 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclStringRep.h"
-#include "assert.h"
+#include <assert.h>
 /*
  * Prototypes for functions defined later in this file:
  */
@@ -571,9 +571,9 @@ Tcl_GetUniChar(
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
 	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
-        if (index >= stringPtr->numChars) {
-            return -1;
-        }
+	if (index >= stringPtr->numChars) {
+	    return -1;
+	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
 	}
@@ -1257,7 +1257,7 @@ Tcl_AppendLimitedToObj(
 	Tcl_GetUnicode(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (stringPtr->hasUnicode && (stringPtr->numChars) > 0) {
+    if (stringPtr->hasUnicode && (stringPtr->numChars > 0)) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
 	AppendUtfToUtfRep(objPtr, bytes, toCopy);
@@ -1268,7 +1268,7 @@ Tcl_AppendLimitedToObj(
     }
 
     stringPtr = GET_STRING(objPtr);
-    if (stringPtr->hasUnicode && (stringPtr->numChars) > 0) {
+    if (stringPtr->hasUnicode && (stringPtr->numChars > 0)) {
 	AppendUtfToUnicodeRep(objPtr, ellipsis, eLen);
     } else {
 	AppendUtfToUtfRep(objPtr, ellipsis, eLen);
@@ -2665,25 +2665,29 @@ Tcl_Format(
  */
 
 static Tcl_Obj *
-NewIntObj(
+NewLongObj(
     char c,
-    Tcl_WideUInt max,
-	Tcl_WideInt value)
+    long value)
 {
-    if (!((max+1) & (Tcl_WideUInt)value)) {
-	/* sign-bit is not set, so handle the positive value */
-	return Tcl_NewWideIntObj(value & (Tcl_WideInt)max);
+    if ((value < 0) && strchr("puoxX", c)) {
+	Tcl_Obj *obj;
+	TclNewUIntObj(obj, (unsigned long)value);
+	return obj;
     }
+    return Tcl_NewWideIntObj((long)value);
+}
 
-    if (strchr("puoxX", c) && (max == WIDE_MAX)) {
-	/* Value > WIDE_MAX, so we need to use bignum */
-	mp_int bignumValue;
-	if (mp_init_u64(&bignumValue, (uint64_t)value) != MP_OKAY) {
-	    Tcl_Panic("%s: memory overflow", "AppendPrintfToObjVA");
-	}
-	return Tcl_NewBignumObj(&bignumValue);
+static Tcl_Obj *
+NewWideIntObj(
+    char c,
+    Tcl_WideInt value)
+{
+    if ((value < 0) && strchr("puoxX", c)) {
+	Tcl_Obj *obj;
+	TclNewUIntObj(obj, (Tcl_WideUInt)value);
+	return obj;
     }
-    return Tcl_NewWideIntObj(value | ~(Tcl_WideInt)max);
+    return Tcl_NewWideIntObj(value);
 }
 
 static void
@@ -2769,15 +2773,15 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, INT_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(
 			    va_arg(argList, int)));
 		    break;
 		case 1:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, LONG_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
 			    va_arg(argList, long)));
 		    break;
 		case 2:
-		    Tcl_ListObjAppendElement(NULL, list, NewIntObj(*p, WIDE_MAX,
+		    Tcl_ListObjAppendElement(NULL, list, NewWideIntObj(*p,
 			    va_arg(argList, Tcl_WideInt)));
 		    break;
 		case 3:
@@ -2989,8 +2993,6 @@ TclStringRepeat(
     int binary = TclIsPureByteArray(objPtr);
     Tcl_Size maxCount;
 
-    /* assert (count >= 2) */
-
     /*
      * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
@@ -3066,8 +3068,8 @@ TclStringRepeat(
 	    objResultPtr = objPtr;
 	}
 
-        /* TODO - overflow check */
-        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	/* TODO - overflow check */
+	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %"
@@ -3095,8 +3097,8 @@ TclStringRepeat(
 	    TclFreeInternalRep(objPtr);
 	    objResultPtr = objPtr;
 	}
-        /* TODO - overflow check */
-        if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
+	/* TODO - overflow check */
+	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"string size overflow: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
@@ -3148,8 +3150,6 @@ TclStringCat(
     Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
-    /* assert ( objc >= 0 ) */
-
     if (objc <= 1) {
 	if (objc != 1) {
 	    /* Negative (shouldn't be) no objects; return empty */
@@ -3160,8 +3160,6 @@ TclStringCat(
 	/* One object; return first */
 	return objv[0];
     }
-
-    /* assert ( objc >= 2 ) */
 
     /*
      * Analyze to determine what representation result should be.
@@ -3193,7 +3191,6 @@ TclStringCat(
 		}
 	    }
 	} else {
-	    /* assert (objPtr->typePtr != NULL) -- stork! */
 	    binary = 0;
 	    if (TclHasInternalRep(objPtr, &tclStringType)) {
 		/* Have a pure Unicode value; ask to preserve it */
@@ -3275,9 +3272,6 @@ TclStringCat(
 	     */
 
 	    do {
-		/* assert ( pendingPtr == NULL ) */
-		/* assert ( length == 0 ) */
-
 		Tcl_Obj *objPtr = *ov++;
 
 		if (objPtr->bytes == NULL
@@ -3300,8 +3294,6 @@ TclStringCat(
 
 	    if (oc && (length == 0)) {
 		Tcl_Size numBytes;
-
-		/* assert ( pendingPtr != NULL ) */
 
 		/*
 		 * There's a pending value followed by more values.  Loop over
@@ -3334,8 +3326,6 @@ TclStringCat(
 	while (oc) {
 	    Tcl_Size numBytes;
 	    Tcl_Obj *objPtr = *ov++;
-
-	    /* assert ( length > 0 && pendingPtr == NULL )  */
 
 	    TclGetString(objPtr); /* PANIC? */
 	    numBytes = objPtr->length;
@@ -3466,7 +3456,6 @@ TclStringCat(
 	    }
 	    dst = TclGetString(objResultPtr) + start;
 
-	    /* assert ( length > start ) */
 	    TclFreeInternalRep(objResultPtr);
 	} else {
 	    TclNewObj(objResultPtr);	/* PANIC? */

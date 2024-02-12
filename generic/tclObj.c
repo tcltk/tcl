@@ -1319,7 +1319,7 @@ TclFreeObj(
      * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
      * and so on, is always a sign of a botch in the caller.
      */
-    if (objPtr->refCount == (Tcl_Size)-2) {
+    if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
     /*
@@ -1743,7 +1743,6 @@ Tcl_GetStringFromObj(
     }
     return objPtr->bytes;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2154,7 +2153,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length <= 0) || (length > 5)) {
+    if ((length < 1) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */
@@ -2506,7 +2505,7 @@ UpdateStringOfDouble(
 {
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
-    TclOOM(dst, (size_t)TCL_DOUBLE_SPACE + 1);
+    TclOOM(dst, TCL_DOUBLE_SPACE + 1);
 
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
     (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
@@ -2620,7 +2619,7 @@ UpdateStringOfInt(
 {
     char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
 
-    TclOOM(dst, (size_t)TCL_INTEGER_SPACE + 1);
+    TclOOM(dst, TCL_INTEGER_SPACE + 1);
     (void) Tcl_InitStringRep(objPtr, NULL,
 	    TclFormatInt(dst, objPtr->internalRep.wideValue));
 }
@@ -4584,7 +4583,7 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "u,"
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_SIZE_MODIFIER "d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);

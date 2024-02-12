@@ -21,7 +21,7 @@ testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
 testConstraint testprint [llength [info commands testprint]]
-testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -2232,11 +2232,11 @@ test util-18.12 {Tcl_ObjPrintf} {testprint} {
     testprint "%I64d %Id" 65537
 } {65537 65537}
 
-test util-18.13 {Tcl_ObjPrintf} -constraints {testprint pointerIs64bit} -body {
+test util-18.13 {Tcl_ObjPrintf} -constraints {testprint longIs64bit} -body {
     testprint "%llu %ju %lu" -1
 } -result {18446744073709551615 18446744073709551615 18446744073709551615}
 
-test util-18.14 {Tcl_ObjPrintf} -constraints {testprint pointerIs64bit} -body {
+test util-18.14 {Tcl_ObjPrintf} -constraints {testprint longIs64bit} -body {
     testprint "%llu %zu %lu" -1
 } -result {18446744073709551615 18446744073709551615 18446744073709551615}
 

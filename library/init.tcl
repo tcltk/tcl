@@ -311,14 +311,14 @@ proc unknown args {
 	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
 	}
 
-	set ret [catch {set candidates [info commands $name*]} msg]
+	set ret [catch [list uplevel 1 [list info commands $name*]] candidates]
 	if {$name eq "::"} {
 	    set name ""
 	}
 	if {$ret != 0} {
 	    dict append opts -errorinfo \
 		    "\n    (expanding command prefix \"$name\" in unknown)"
-	    return -options $opts $msg
+	    return -options $opts $candidates
 	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]

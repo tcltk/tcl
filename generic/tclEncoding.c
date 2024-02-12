@@ -2485,7 +2485,6 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-
     profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
@@ -2592,18 +2591,12 @@ UtfToUtfProc(
 		*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
 		*dst++ = (char) ((ch | 0x80) & 0xBF);
 		continue;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (!(flags & ENCODING_INPUT)) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_UNKNOWN;
+	    } else if (PROFILE_STRICT(profile) && SURROGATE(ch)) {
+		result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (flags & ENCODING_INPUT) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_SYNTAX;
-		src = saveSrc;
-		break;
+	    } else if (PROFILE_REPLACE(profile) && SURROGATE(ch)) {
+		ch = UNICODE_REPLACE_CHAR;
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -3313,6 +3306,7 @@ TableToUtfProc(
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
+		    /* For prefix bytes, we don't fallback to cp1252, see [1355b9a874] */
 		    ch = (Tcl_UniChar)byte;
 		}
 	    } else {
@@ -3333,7 +3327,9 @@ TableToUtfProc(
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
-		ch = (Tcl_UniChar)byte;
+		char chbuf[2];
+		chbuf[0] = byte; chbuf[1] = 0;
+		Tcl_UtfToUniChar(chbuf, &ch);
 	    }
 	}
 

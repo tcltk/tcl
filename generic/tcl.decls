@@ -2437,9 +2437,11 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
-declare 657 {
-    int Tcl_UniCharIsUnicode(int ch)
-}
+# Removed by TIP #652
+#
+#declare 657 {
+#    int Tcl_UniCharIsUnicode(int ch)
+#}
 
 # TIP 656
 declare 658 {
