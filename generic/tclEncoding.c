@@ -200,11 +200,15 @@ static const struct TclEncodingProfiles {
     {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
+
 #define PROFILE_STRICT(flags_)                                         \
     ((flags_) & TCL_ENCODING_PROFILE_STRICT)
 
 #define PROFILE_REPLACE(flags_)                                         \
     ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) && !PROFILE_STRICT(flags_))
+
+#define PROFILE_TCL8(flags_)                                         \
+    ((ENCODING_PROFILE_GET(flags_) != TCL_ENCODING_PROFILE_REPLACE) && !PROFILE_STRICT(flags_))
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -3012,7 +3016,7 @@ Utf16ToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; src += 2, numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3031,9 +3035,23 @@ Utf16ToUtfProc(
 		dst--; /* Also undo writing a single byte too much */
 		numChars--;
 		break;
-	    }
+	    } else if (PROFILE_REPLACE(flags)) {
+		/*
+		 * Previous loop wrote a single byte to mark the high surrogate.
+		 * Replace it with the replacement character. Further, restart
+		 * current loop iteration since need to recheck destination space
+		 * and reset processing of current character.
+		 */
+		ch = UNICODE_REPLACE_CHAR;
+		dst--;
+		dst += Tcl_UniCharToUtf(ch, dst);
+		src -= 2;
+		numChars--;
+		continue;
+	    } else {
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
-	    dst += Tcl_UniCharToUtf(-1, dst);
+		dst += Tcl_UniCharToUtf(-1, dst);
+	    }
 	}
 
 	/*
@@ -3045,15 +3063,19 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch, dst);
-	} else if (LOW_SURROGATE(ch) && PROFILE_STRICT(flags)) {
-	    /* Lo surrogate not preceded by Hi surrogate */
-	    result = TCL_CONVERT_SYNTAX;
-	    break;
+	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
+	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    } else {
+		/* PROFILE_REPLACE */
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+	    }
 	} else {
 	    *dst = 0; /* In case of lower surrogate, don't try to combine */
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
-	src += sizeof(unsigned short);
     }
 
     if (HIGH_SURROGATE(ch)) {
@@ -3062,6 +3084,9 @@ Utf16ToUtfProc(
 	    src -= 2;
 	    dst--;
 	    numChars--;
+	} else if (PROFILE_REPLACE(flags)) {
+	    dst--;
+	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 	} else {
 	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
