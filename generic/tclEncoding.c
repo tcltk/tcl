@@ -2044,7 +2044,7 @@ LoadTableEncoding(
     };
 
     Tcl_DStringInit(&lineString);
-    if (Tcl_Gets(chan, &lineString) == TCL_IO_FAILURE) {
+    if (Tcl_Gets(chan, &lineString) < 0) {
 	return NULL;
     }
     line = Tcl_DStringValue(&lineString);
@@ -2583,10 +2583,10 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
-	     * Always check before using Tcl_UtfToUniChar. Not doing can so
-	     * cause it run beyond the end of the buffer! If we happen such an
-	     * incomplete char its bytes are made to represent themselves
-	     * unless the user has explicitly asked to be told.
+	     * Always check before using Tcl_UtfToUniChar. Not doing so can cause
+	     * it to run beyond the end of the buffer! If we happen on such an
+	     * incomplete char its bytes are made to represent themselves unless
+	     * the user has explicitly asked to be told.
 	     */
 
 	    if (flags & ENCODING_INPUT) {
@@ -3536,8 +3536,9 @@ TableFromUtfProc(
 	/* Unicode chars > +U0FFFF cannot be represented in any table encoding */
 	if (ch & 0xFFFF0000) {
 	    word = 0;
-	} else
+	} else {
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
+	}
 
 	if ((word == 0) && (ch != 0)) {
 	    if (PROFILE_STRICT(flags)) {
@@ -3723,8 +3724,7 @@ Iso88591FromUtfProc(
 	 * Check for illegal characters.
 	 */
 
-	if (ch > 0xFF
-		) {
+	if (ch > 0xFF) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
