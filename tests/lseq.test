@@ -773,6 +773,25 @@ test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
     expr {[string match *purify* [tcl::build-info]] || ($postmem - $premem < 10) ? 1 : ($postmem - $premem)}
 } -result 1
 
+test lseq-bug-578b7e273c03-1 {Arithmetic Series Objects get wrong precision when end value is not specified} -body {
+    set bl [expr {2.8 in [lseq 0 count 100 by .1]}]
+    lappend bl [expr {2.8 in [lseq 0 count 200 by .1]}]
+    lappend bl [expr {0.28 in [lseq 0 count 100 by .01]}]
+    lappend bl [expr {0.28 in [lseq 0 count 200 by .01]}]
+    lappend bl [expr {0.286 in [lseq 0 count 100 by .011]}]
+    lappend bl [expr {0.286 in [lseq 0 count 200 by .011]}]
+} -result {1 1 1 1 1 1}
+
+test lseq-bug-578b7e273c03-2 {Arithmetic Series Objects get wrong precision when end value is not specified} -body {
+    set ll [llength [lseq 0 count 100 by .1]]
+    lappend ll [llength [lseq 0 count 200 by .1]]
+    lappend ll [llength [lseq 0 count 100 by .01]]
+    lappend ll [llength [lseq 0 count 200 by .01]]
+    lappend ll [llength [lseq 0 count 100 by .011]]
+    lappend ll [llength [lseq 0 count 200 by .011]]
+} -result {100 200 100 200 100 200}
+
+
 # cleanup
 ::tcltest::cleanupTests
 
