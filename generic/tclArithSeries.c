@@ -553,8 +553,12 @@ TclNewArithSeriesObj(
 
     if (!endObj) {
 	if (useDoubles) {
+            // Compute precision based on given command argument values
+            int precision = maxPrecision(dstart,len,dstep);
 	    dend = dstart + (dstep * (len-1));
-	    end = dend;
+            // Make computed end value match argument(s) precision
+            dend = ArithRound(dend, precision);
+            end = dend;
 	} else {
 	    end = start + (step * (len-1));
 	    dend = end;
