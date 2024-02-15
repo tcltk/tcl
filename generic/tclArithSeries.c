@@ -245,7 +245,7 @@ DupArithSeriesInternalRep(
 	ArithSeriesDbl *srcArithSeriesDblRepPtr =
 	    (ArithSeriesDbl *)srcArithSeriesRepPtr;
 	ArithSeriesDbl *copyArithSeriesDblRepPtr =
-	    (ArithSeriesDbl *) ckalloc(sizeof(ArithSeriesDbl));
+	    (ArithSeriesDbl *)ckalloc(sizeof(ArithSeriesDbl));
 	*copyArithSeriesDblRepPtr = *srcArithSeriesDblRepPtr;
 	copyArithSeriesDblRepPtr->elements = NULL;
 	copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesDblRepPtr;
@@ -327,7 +327,7 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
 	return arithSeriesObj;
     }
 
-    arithSeriesRepPtr = (ArithSeries*) ckalloc(sizeof (ArithSeries));
+    arithSeriesRepPtr = (ArithSeries*)ckalloc(sizeof (ArithSeries));
     arithSeriesRepPtr->isDouble = 0;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->end = end;
@@ -381,7 +381,7 @@ NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
 	return arithSeriesObj;
     }
 
-    arithSeriesRepPtr = (ArithSeriesDbl*) ckalloc(sizeof (ArithSeriesDbl));
+    arithSeriesRepPtr = (ArithSeriesDbl*)ckalloc(sizeof (ArithSeriesDbl));
     arithSeriesRepPtr->isDouble = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->end = end;
@@ -533,7 +533,11 @@ TclNewArithSeriesObj(
 
     if (!endObj) {
 	if (useDoubles) {
+	    // Compute precision based on given command argument values
+	    int precision = maxPrecision(dstart,len,dstep);
 	    dend = dstart + (dstep * (len-1));
+	    // Make computed end value match argument(s) precision
+	    dend = ArithRound(dend, precision);
 	    end = dend;
 	} else {
 	    end = start + (step * (len-1));
@@ -642,6 +646,7 @@ Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
  * 	None.
  *----------------------------------------------------------------------
  */
+
 Tcl_Obj *
 ArithSeriesObjStep(
     Tcl_Obj *arithSeriesObj)
@@ -1094,7 +1099,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     if (length > 0) arithSeriesObjPtr->bytes[length-1] = '\0';
     arithSeriesObjPtr->length = length-1;
 }
-
+
 /*
  * Local Variables:
  * mode: c
