@@ -403,7 +403,7 @@ InitFoundation(
     fPtr->objectCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
     /*
-     * Corresponding TclOODecrRefCount in KillFoudation.
+     * Corresponding TclOODecrRefCount in KillFoundation.
      */
 
     AddRef(fPtr->objectCls->thisPtr);
@@ -429,7 +429,7 @@ InitFoundation(
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
 
     /*
-     * Corresponding TclOODecrRefCount in KillFoudation.
+     * Corresponding TclOODecrRefCount in KillFoundation.
      */
 
     AddRef(fPtr->classCls->thisPtr);
