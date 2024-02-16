@@ -1476,8 +1476,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
-
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
 
