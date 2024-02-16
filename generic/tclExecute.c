@@ -9187,8 +9187,9 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_MULT:
-		if ((type1 != TCL_NUMBER_LONG) || (type2 != TCL_NUMBER_LONG)
-			|| (sizeof(Tcl_WideInt) < 2*sizeof(long))) {
+		if ((sizeof(Tcl_WideInt) < 2*sizeof(long))
+			|| (type1 != TCL_NUMBER_LONG)
+			|| (type2 != TCL_NUMBER_LONG)) {
 		    goto overflowBasic;
 		}
 		wResult = w1 * w2;
