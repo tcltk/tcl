@@ -2026,8 +2026,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
-
+    TclWinGenerateChannelName(channelName, "sock", statePtr);
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
@@ -2060,7 +2059,7 @@ Tcl_OpenTcpClient(
 
 Tcl_Channel
 Tcl_MakeTcpClientChannel(
-    void *sock)		/* The socket to wrap up into a channel. */
+    void *sock)			/* The socket to wrap up into a channel. */
 {
     TcpState *statePtr;
     char channelName[SOCK_CHAN_LENGTH];
@@ -2085,7 +2084,7 @@ Tcl_MakeTcpClientChannel(
     statePtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendSelectMessage(tsdPtr, SELECT, statePtr);
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
+    TclWinGenerateChannelName(channelName, "sock", statePtr);
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, statePtr->channel, "-translation", "auto crlf");
@@ -2257,7 +2256,7 @@ Tcl_OpenTcpServerEx(
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;
-	snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
+	TclWinGenerateChannelName(channelName, "sock", statePtr);
 	statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 		statePtr, 0);
 	/*
@@ -2311,9 +2310,9 @@ Tcl_OpenTcpServerEx(
 
 static void
 TcpAccept(
-    TcpFdList *fds,	/* Server socket that accepted newSocket. */
-    SOCKET newSocket,   /* Newly accepted socket. */
-    address addr)       /* Address of new socket. */
+    TcpFdList *fds,		/* Server socket that accepted newSocket. */
+    SOCKET newSocket,		/* Newly accepted socket. */
+    address addr)		/* Address of new socket. */
 {
     TcpState *newInfoPtr;
     TcpState *statePtr = fds->statePtr;
@@ -2342,7 +2341,7 @@ TcpAccept(
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
     SendSelectMessage(tsdPtr, SELECT, newInfoPtr);
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, newInfoPtr);
+    TclWinGenerateChannelName(channelName, "sock", statePtr);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
