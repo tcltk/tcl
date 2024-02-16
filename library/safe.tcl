@@ -20,7 +20,7 @@
 #
 
 # Needed utilities package
-package require opt 0.4.8
+package require opt 0.4.9
 
 # Create the safe namespace
 namespace eval ::safe {
