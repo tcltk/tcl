@@ -654,4 +654,4 @@ lappend encUnencodableStrings {*}{
 # and generates test vectors for the above tables for various encodings
 # based on ICU UCM files.
 # TODO - commented out for now as generating a lot of mismatches.
-# source [file join [file dirname [info script]] icuUcmTests.tcl]
+source [file join [file dirname [info script]] icuUcmTests.tcl]
