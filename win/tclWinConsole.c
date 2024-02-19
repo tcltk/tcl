@@ -1630,9 +1630,16 @@ ConsoleReaderThread(
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
-    char inputChars[200]; /* Temporary buffer */
     Tcl_Size inputLen = 0;
     Tcl_Size inputOffset = 0;
+    Tcl_Size lastReadSize = 0;
+    DWORD sleepTime;
+    /*
+     * ReadConsole will limit input to the greater of 256 characters
+     * and the size of the input buffer. 8.6 used 8192 (4096 chars)
+     * and so do we.
+     */
+    char inputChars[8192];
 
     /*
      * Keep looping until one of the following happens.
@@ -1666,7 +1673,6 @@ ConsoleReaderThread(
 		Tcl_Size nStored;
 
 		assert((inputLen - inputOffset) > 0);
-
 		nStored = RingBufferIn(&handleInfoPtr->buffer,
 				       inputOffset + inputChars,
 				       inputLen - inputOffset,
@@ -1713,21 +1719,27 @@ ConsoleReaderThread(
 	    continue;
 	}
 
+	assert(inputLen == 0);
+
 	/*
-	 * Both shared buffer and private buffer are empty. Need to go get
-	 * data from console but do not want to read ahead because the
-	 * interp thread might change the read mode, e.g. turning off echo
-	 * for password input. So only do so if at least one interpreter has
-	 * requested data.
+	 * Read more data in two cases:
+	 * 1. The previous read filled the buffer and there could be more
+	 *    data in the console internal *text* buffer. Note
+	 *    ConsolePendingInput (checked in ConsoleDataAvailable) will NOT
+	 *    show this. It holds input events not yet translated to text.
+	 * 2. Tcl threads want more data AND there is data in the
+	 *    ConsolePendingInput buffer. The latter check necessary because
+	 *    we do not want to read ahead because the interp thread might
+	 *    change the read mode, e.g. turning off echo for password
+	 *    input. So only do so if at least one interpreter has requested
+	 *    data.
 	 */
-	if ((handleInfoPtr->flags & CONSOLE_DATA_AWAITED)
-	    && ConsoleDataAvailable(handleInfoPtr->console)) {
+	if (lastReadSize == sizeof(inputChars)
+	    || ((handleInfoPtr->flags & CONSOLE_DATA_AWAITED)
+		&& ConsoleDataAvailable(handleInfoPtr->console))) {
 	    DWORD error;
 	    /* Do not hold the lock while blocked in console */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	    /*
-	     * Note - the temporary buffer serves two purposes. It
-	     */
 	    error = ReadConsoleChars(handleInfoPtr->console,
 				     (WCHAR *)inputChars,
 				     sizeof(inputChars) / sizeof(WCHAR),
@@ -1735,17 +1747,21 @@ ConsoleReaderThread(
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
 	    if (error == 0) {
 		inputLen *= sizeof(WCHAR);
-	    } else {
+		lastReadSize = inputLen;
+	    }
+	    else {
 		/*
 		 * We only store the last error. It is up to channel
 		 * handlers whether to close or not in case of errors.
 		 */
+		lastReadSize = 0;
 		handleInfoPtr->lastError = error;
 		if (handleInfoPtr->lastError == ERROR_INVALID_HANDLE) {
 		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
 		}
 	    }
-	} else {
+	}
+	else {
 	    /*
 	     * Either no one was asking for data, or no data was available.
 	     * In the former case, wait until someone wakes us asking for
@@ -1753,7 +1769,6 @@ ConsoleReaderThread(
 	     * poll since ReadConsole does not support async operation.
 	     * So sleep for a short while and loop back to retry.
 	     */
-	    DWORD sleepTime;
 	    sleepTime =
 		handleInfoPtr->flags & CONSOLE_DATA_AWAITED ? 50 : INFINITE;
 	    SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
