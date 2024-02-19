@@ -81,7 +81,7 @@
 #define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
+#define SOCK_CHAN_LENGTH        (16 + TCL_INTEGER_SPACE)
 #define SOCK_TEMPLATE           "sock%p"
 
 /*
