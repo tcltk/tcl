@@ -31,7 +31,7 @@ namespace eval ucm {
         cp865     java-Cp865-1.3_P
         cp866     java-Cp866-1.3_P
         cp869     java-Cp869-1.3_P
-        cp874     java-Cp874-1.3_P
+        cp874     hpux-cp874-11.11
         cp1250    glibc-CP1250-2.1.2
         cp1251    glibc-CP1251-2.1.2
         cp1252    glibc-CP1252-2.1.2
@@ -57,6 +57,28 @@ namespace eval ucm {
         iso8859-14 glibc-ISO_8859_14-2.1.2
         iso8859-15 glibc-ISO_8859_15-2.1.2
         iso8859-16 glibc-ISO_8859_16-2.3.3
+        koi8-r     glibc-KOI8_R-2.3.3
+        koi8-u     glibc-KOI8_U-2.3.3
+        macCentEuro macos-29-10.2
+        macCroatian macos-36_2-10.2
+        macCyrillic macos-7_3-10.2
+        macDingbats macos-34-10.2
+        macGreek   macos-6_2-10.4
+        macIceland macos-37_4-10.2
+        macRoman   macos-0_2-10.2
+        macRomania macos-38_2-10.2
+        macThai    windows-10021-2000
+        macTurkish macos-35-10.2
+        macUkraine macos-7_2-10.2
+    }
+
+    # Encodings known to be broken
+    variable brokenEncodings
+    array set brokenEncodings {
+        koi8-u     {0xb4->0403, should be 0404. Typo in original RFC}
+        macDingbats {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/DINGBATS.TXT}
+        macGreek {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/GREEK.TXT}
+        macRomania {Current encoding is from 1995. Needs update to https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMANIAN.TXT}
     }
 
     # Array keyed by Tcl encoding name. Each element contains mapping of
@@ -217,6 +239,7 @@ proc ucm::generate_tests {} {
     variable outputPath
     variable outputChan
     variable encSubchar
+    variable brokenEncodings
 
     if {[info exists outputPath]} {
         set outputChan [open $outputPath w]
@@ -238,15 +261,22 @@ proc ucm::generate_tests {} {
         }
         unset tclNames($encName)
 
+        if {[info exists brokenEncodings($encName)]} {
+            set constraints " -constraints icuMismatch "
+        } else {
+            set constraints ""
+        }
+
         # Print the valid tests
         print "\n#\n# $encName (generated from $encNameMap($encName))"
-        print "\ntest encoding-convertfrom-ucmCompare-$encName {Compare against ICU UCM} -body \{"
+        print "\ntest encoding-convertfrom-ucmCompare-$encName {Compare against ICU UCM} $constraints -body \{"
         print "    ucmConvertfromMismatches $encName {$charMap($encName)}"
         print "\} -result {}"
-        print "\ntest encoding-convertto-ucmCompare-$encName {Compare against ICU UCM} -body \{"
+        print "\ntest encoding-convertto-ucmCompare-$encName {Compare against ICU UCM} $constraints -body \{"
         print "    ucmConverttoMismatches $encName {$charMap($encName)}"
         print "\} -result {}"
         if {0} {
+            # TODO - enable these tests under a constraint?
             # This will generate individual tests for every char
             # and test in lead, tail, middle, solo configurations
             # but takes considerable time
