@@ -70,14 +70,23 @@
 static int gInitialized = 0;
 
 /*
- * Permit CONSOLE_BUFFER_SIZE to be defined on build command for stress test.
- *
+ * INPUT_BUFFER_SIZE is size of buffer passed to ReadConsole in bytes.
+ * Note that ReadConsole will only allow reading of line lengths up to the
+ * max of 256 and buffer size passed to it. So dropping this below 512
+ * means user can type at most 256 chars.
+ */
+#ifndef INPUT_BUFFER_SIZE
+#define INPUT_BUFFER_SIZE 8192 /* In bytes, so 4096 chars */
+#endif
+
+/*
+ * CONSOLE_BUFFER_SIZE is size of storage used in ring buffers.
  * In theory, at least sizeof(WCHAR) but note the Tcl channel bug
  * https://core.tcl-lang.org/tcl/tktview/b3977d199b08e3979a8da970553d5209b3042e9c
  * will cause failures in test suite if close to max input line in the suite.
  */
 #ifndef CONSOLE_BUFFER_SIZE
-#define CONSOLE_BUFFER_SIZE 8000 /* In bytes */
+#define CONSOLE_BUFFER_SIZE 8192 /* In bytes */
 #endif
 
 /*
@@ -1143,15 +1152,22 @@ ConsoleInputProc(
 
 	/*
 	 * Blocking read. Just get data from directly from console. There
-	 * is a small complication in that we can only read even number
-	 * of bytes (wide-character API) and the destination buffer should be
-	 * WCHAR aligned. If either condition is not met, we defer to the
-	 * reader thread which handles these case rather than dealing with
+	 * is a small complication in that
+	 * 1. The destination buffer should be WCHAR aligned.
+	 * 2. We can only read even number of bytes (wide-character API).
+	 * 3. Caller has large enough buffer (else length of line user can
+	 *    enter will be limited)
+	 * If any condition is not met, we defer to the
+	 * reader thread which handles these cases rather than dealing with
 	 * them here (which is a little trickier than it might sound.)
+	 *
+	 * TODO - not clear this block is a useful optimization. bufSize by
+	 * default is 4K which is < INPUT_BUFFER_SIZE and will rarely be
+	 * increased on stdin.
 	 */
 	if ((1 & (size_t)bufPtr) == 0 /* aligned buffer */
-	    && bufSize > 1         /* Not single byte read */
-	) {
+	    && (1 & bufSize) == 0     /* Even number of bytes */
+	    && bufSize > INPUT_BUFFER_SIZE) {
 	    DWORD lastError;
 	    Tcl_Size numChars;
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
@@ -1634,12 +1650,7 @@ ConsoleReaderThread(
     Tcl_Size inputOffset = 0;
     Tcl_Size lastReadSize = 0;
     DWORD sleepTime;
-    /*
-     * ReadConsole will limit input to the greater of 256 characters
-     * and the size of the input buffer. 8.6 used 8192 (4096 chars)
-     * and so do we.
-     */
-    char inputChars[8192];
+    char inputChars[INPUT_BUFFER_SIZE];
 
     /*
      * Keep looping until one of the following happens.
