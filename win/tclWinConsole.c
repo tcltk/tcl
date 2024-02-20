@@ -1335,7 +1335,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    snprintf(channelName, TCL_INTEGER_SPACE + 4, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
 	    infoPtr, permissions);
