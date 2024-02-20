@@ -159,7 +159,7 @@ occurs while parsing the command then \fBTCL_ERROR\fR is returned, an
 error message is left in \fIinterp\fR's result (if \fIinterp\fR is not
 NULL), and no information is left at \fI*parsePtr\fR.
 .PP
-\fBTcl_ParseVar\fR parse a Tcl variable reference such as \fB$abc\fR
+\fBTcl_ParseVar\fR parses a Tcl variable reference such as \fB$abc\fR
 or \fB$x([expr {$index + 1}])\fR from the beginning of its \fIstart\fR
 argument.  The first character of \fIstart\fR must be \fB$\fR.  If
 the variable name is parsed successfully, \fBTcl_ParseVar\fR returns a
