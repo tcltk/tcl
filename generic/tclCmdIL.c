@@ -1839,9 +1839,6 @@ InfoProcsCmd(
     const char *cmdName, *pattern;
     const char *simplePattern;
     Namespace *nsPtr;
-#ifdef INFO_PROCS_SEARCH_GLOBAL_NS
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-#endif
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
@@ -1893,7 +1890,6 @@ InfoProcsCmd(
      */
 
     listPtr = Tcl_NewListObj(0, NULL);
-#ifndef INFO_PROCS_SEARCH_GLOBAL_NS
     if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
 	entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
 	if (entryPtr != NULL) {
@@ -1917,9 +1913,7 @@ InfoProcsCmd(
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
 	}
-    } else
-#endif /* !INFO_PROCS_SEARCH_GLOBAL_NS */
-    {
+    } else {
 	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	while (entryPtr != NULL) {
 	    cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -1947,46 +1941,6 @@ InfoProcsCmd(
 	    }
 	    entryPtr = Tcl_NextHashEntry(&search);
 	}
-
-	/*
-	 * If the effective namespace isn't the global :: namespace, and a
-	 * specific namespace wasn't requested in the pattern, then add in all
-	 * global :: procs that match the simple pattern. Of course, we add in
-	 * only those procs that aren't hidden by a proc in the effective
-	 * namespace.
-	 */
-
-#ifdef INFO_PROCS_SEARCH_GLOBAL_NS
-	/*
-	 * If "info procs" worked like "info commands", returning the commands
-	 * also seen in the global namespace, then you would include this
-	 * code. As this could break backwards compatibility with 8.0-8.2, we
-	 * decided not to "fix" it in 8.3, leaving the behavior slightly
-	 * different.
-	 */
-
-	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
-	    while (entryPtr != NULL) {
-		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
-		if ((simplePattern == NULL)
-			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
-			cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
-			realCmdPtr = (Command *) TclGetOriginalCommand(
-				(Tcl_Command) cmdPtr);
-
-			if (TclIsProc(cmdPtr) || ((realCmdPtr != NULL)
-				&& TclIsProc(realCmdPtr))) {
-			    Tcl_ListObjAppendElement(interp, listPtr,
-				    Tcl_NewStringObj(cmdName, -1));
-			}
-		    }
-		}
-		entryPtr = Tcl_NextHashEntry(&search);
-	    }
-	}
-#endif
     }
 
     Tcl_SetObjResult(interp, listPtr);
