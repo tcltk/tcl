@@ -9271,6 +9271,9 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 	unless absolutely necessary. Permits better constraining of Tcl/tclsh
 	via OpenBSD's pledge(2) or similar mechanisms. Minor rewrite.
 
+2024-01-09 (feature) Adapt tcltest to support Tcl 9.
+=> tcltest 2.5.7
+
 2024-01-11 (bug) [fd27ad] doc change of Tcl_PkgRequire & friends: version string
 	specification refers to "package require".
 
@@ -9290,4 +9293,4 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
 
-- Released 8.6.14, Feb 21, 2024 - details at https://core.tcl-lang.org/tcl/ -
+- Released 8.6.14, Feb 28, 2024 - details at https://core.tcl-lang.org/tcl/ -
