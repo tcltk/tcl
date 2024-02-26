@@ -740,7 +740,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    if (opts->localeObj == NULL) {
 		Tcl_SetObjResult(opts->interp,
 		    Tcl_NewStringObj("locale not specified and no default locale set", -1));
-		Tcl_SetErrorCode(opts->interp, "CLOCK", "badOption", NULL);
+		Tcl_SetErrorCode(opts->interp, "CLOCK", "badOption", (char *)NULL);
 		return NULL;
 	    }
 	    opts->flags |= CLF_LOCALE_USED;
@@ -1007,7 +1007,7 @@ ClockConfigureObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i++], options,
 	    "option", 0, &optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i-1]), NULL);
+		    Tcl_GetString(objv[i-1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -2370,7 +2370,7 @@ ConvertUTCToLocalUsingC(
     if ((Tcl_WideInt) tock != fields->seconds) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"number too large to represent as a Posix time", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", (char *)NULL);
 	return TCL_ERROR;
     }
     TzsetIfNecessary();
@@ -2379,7 +2379,7 @@ ConvertUTCToLocalUsingC(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"localtime failed (clock value may be too "
 		"large/small to represent)", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3062,18 +3062,16 @@ ClockGetenvObjCmd(
     varName = (const WCHAR *)Tcl_WinUtfToTChar(TclGetString(objv[1]), -1, &ds);
     varValue = _wgetenv(varName);
 	Tcl_DStringFree(&ds);
-    if (varValue == NULL) {
-	varValue = L"";
+    if (varValue != NULL) {
+	Tcl_WinTCharToUtf((TCHAR *)varValue, -1, &ds);
+	Tcl_DStringResult(interp, &ds);
     }
-    Tcl_WinTCharToUtf((TCHAR *)varValue, -1, &ds);
-    Tcl_DStringResult(interp, &ds);
 #else
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
-    if (varValue == NULL) {
-	varValue = "";
+    if (varValue != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
 #endif
     return TCL_OK;
 }
@@ -3408,7 +3406,7 @@ ClockParseFmtScnArgs(
     if ((saw & (1 << CLC_ARGS_GMT))
 	    && (saw & (1 << CLC_ARGS_TIMEZONE))) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot use -gmt and -timezone in same call", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", (char *)NULL);
 	return TCL_ERROR;
     }
     if (gmtFlag) {
@@ -3457,7 +3455,7 @@ ClockParseFmtScnArgs(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer but got \"%s\"",
 		    Tcl_GetString(baseObj)));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    i = 1;
 	    goto badOption;
 	}
@@ -3519,7 +3517,7 @@ badOptionMsg:
 badOption:
 
     Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-	    i < objc ? Tcl_GetString(objv[i]) : NULL, NULL);
+	    (i < objc) ? Tcl_GetString(objv[i]) : (char *)NULL, (char *)NULL);
 
     return TCL_ERROR;
 }
@@ -3564,7 +3562,7 @@ ClockFormatObjCmd(
     /* even number of arguments */
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, syntax);
-	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3641,7 +3639,7 @@ ClockScanObjCmd(
     /* even number of arguments */
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, syntax);
-	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3669,7 +3667,7 @@ ClockScanObjCmd(
 	if (opts.localeObj != NULL) {
 	    Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("legacy [clock scan] does not support -locale", -1));
-	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", NULL);
+	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", (char *)NULL);
 	    ret = TCL_ERROR;
 	    goto done;
 	}
@@ -3758,7 +3756,7 @@ ClockScanCommit(
 	if (curJDN > dataPtr->maxJDN) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 		"requested date too large to represent", -1));
-	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
+	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -3943,7 +3941,7 @@ ClockValidDate(
   error:
     Tcl_SetObjResult(opts->interp,
 	Tcl_ObjPrintf("unable to convert input string: %s", errMsg));
-    Tcl_SetErrorCode(opts->interp, "CLOCK", "invInpStr", errCode, NULL);
+    Tcl_SetErrorCode(opts->interp, "CLOCK", "invInpStr", errCode, (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -4393,7 +4391,7 @@ ClockAddObjCmd(
     /* even number of arguments */
     if ((objc & 1) == 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, syntax);
-	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4574,7 +4572,7 @@ ClockSafeCatchCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    typedef struct InterpState {
+    typedef struct {
         int status;			/* return code status */
         int flags;			/* Each remaining field saves the */
         int returnLevel;		/* corresponding field of the Interp */
