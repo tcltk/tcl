@@ -356,10 +356,16 @@ proc test-other {{reptime 1000}} {
     # Scan : julian day (overflow)
     {catch {clock scan 5373485 -format %J}}
 
+    setup {set _(org-reptime) $_(reptime); lset _(reptime) 1 50}
+
     # Scan : test rotate of GC objects (format is dynamic, so tcl-obj removed with last reference)
-    {set i 0; time { clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
+    setup {set i -1}
+    {clock scan "[incr i] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1}
     # Scan : test reusability of GC objects (format is dynamic, so tcl-obj removed with last reference)
-    {set i 50; time { clock scan "[incr i -1] - 25.11.2015" -format "$i - %d.%m.%Y" -base 0 -gmt 1 } 50}
+    setup {incr i; set j $i}
+    {clock scan "[incr j -1] - 25.11.2015" -format "$j - %d.%m.%Y" -base 0 -gmt 1}
+    setup {set _(reptime) $_(org-reptime); set j $i}
+    {clock scan "[incr j -1] - 25.11.2015" -format "$j - %d.%m.%Y" -base 0 -gmt 1; if {!$j} {set j $i}}
   }
 }
 
