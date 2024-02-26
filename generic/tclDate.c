@@ -2850,24 +2850,24 @@ TclClockFreeScan(
 	}
 	if (msg) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	} else {
 	    Tcl_SetObjResult(interp,
 		info->messages ? info->messages : Tcl_NewObj());
 	    info->messages = NULL;
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", (char *)NULL);
 	}
 	status = TCL_ERROR;
     } else if (status == 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	status = TCL_ERROR;
     } else if (status != 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
 						  "from date parser. Please "
 						  "report this error as a "
 						  "bug in Tcl.", -1));
-	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "BUG", (char *)NULL);
 	status = TCL_ERROR;
     }
     if (info->messages) {
