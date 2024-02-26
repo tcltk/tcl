@@ -942,6 +942,7 @@ TclpCreateProcess(
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
     char execPath[MAX_PATH * TCL_UTF_MAX];
     WinFile *filePtr;
+    int closeQuote = 0;
 
     PipeInit();
 
@@ -1109,7 +1110,13 @@ TclpCreateProcess(
 	    startInfo.wShowWindow = SW_HIDE;
 	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	    createFlags = CREATE_NEW_CONSOLE;
-	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
+	    /*
+	     * bug [f91ab723f3]: put /c argument in double quotes.
+	     * This results in consecutive double quotes, if the called path
+	     * contains spaces.
+	     */
+	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c \"");
+	    closeQuote = 1;
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	}
@@ -1149,6 +1156,11 @@ TclpCreateProcess(
      */
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
+    
+    /* Close the quote opened by cmd.exe /c " prefix */
+    if (closeQuote) {
+	TclDStringAppendLiteral(&cmdLine, "\"");
+    }
 
     if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
