@@ -290,7 +290,6 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclWinGetPlatformId 0
 #   define TclWinResetInterfaces 0
 #   define TclWinSetInterfaces 0
-#   define TclWinGetPlatformId 0
 #   define Tcl_Backslash 0
 #   define Tcl_GetDefaultEncodingDir 0
 #   define Tcl_SetDefaultEncodingDir 0
