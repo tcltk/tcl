@@ -73,10 +73,6 @@ declare 15 {
 declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
-# Removed in 9.0
-#declare 17 {
-#    mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r)
-#}
 declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
@@ -140,14 +136,6 @@ declare 37 {
 declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
-# Removed in 9.0
-#declare 39 {
-#    void TclBN_mp_set(mp_int *a, unsigned int b)
-#}
-# Removed in 9.0
-#declare 40 {nostub {is private function in libtommath}} {
-#    mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b)
-#}
 declare 41 {
     mp_err MP_WUR TclBN_mp_sqrt(const mp_int *a, mp_int *b)
 }
@@ -157,19 +145,6 @@ declare 42 {
 declare 43 {
     mp_err MP_WUR TclBN_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c)
 }
-# Removed in 9.0
-#declare 44 {
-#    mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
-#}
-# Removed in 9.0
-#declare 45 {
-#    mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b,
-#	    unsigned long *outlen)
-#}
-# Removed in 9.0
-#declare 46 {
-#    mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
-#}
 declare 47 {
     size_t MP_WUR TclBN_mp_ubin_size(const mp_int *a)
 }
@@ -179,21 +154,9 @@ declare 48 {
 declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
-# Removed in 9.0
-#declare 61 {
-#    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
-#}
-# Removed in 9.0
-#declare 62 {
-#    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
-#}
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
-# Removed in 9.0
-#declare 64 {
-#    int TclBN_mp_init_l(mp_int *bignum, long initVal)
-#}
 declare 65 {
     int MP_WUR TclBN_mp_init_i64(mp_int *bignum, int64_t initVal)
 }
@@ -201,11 +164,6 @@ declare 66 {
     int MP_WUR TclBN_mp_init_u64(mp_int *bignum, uint64_t initVal)
 }
 
-# Removed in 9.0
-#declare 67 {
-#    mp_err TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
-#}
-# Added in libtommath 1.0.1
 declare 68 {
     void TclBN_mp_set_u64(mp_int *a, uint64_t i)
 }
@@ -224,19 +182,6 @@ declare 72 {
 	    size_t size, mp_endian endian, size_t nails, const mp_int *op)
 }
 
-# Added in libtommath 1.1.0
-# No longer in use: replaced by mp_and()
-#declare 73 {
-#    int TclBN_mp_tc_and(const mp_int *a, const mp_int *b, mp_int *c)
-#}
-# No longer in use: replaced by mp_or()
-#declare 74 {
-#    int TclBN_mp_tc_or(const mp_int *a, const mp_int *b, mp_int *c)
-#}
-# No longer in use: replaced by mp_xor()
-#declare 75 {
-#    int TclBN_mp_tc_xor(const mp_int *a, const mp_int *b, mp_int *c)
-#}
 declare 76 {
     mp_err MP_WUR TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
 }
@@ -248,10 +193,6 @@ declare 77 {
 declare 78 {
     int MP_WUR TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written)
 }
-# Removed in 9.0
-#declare 79 {
-#    mp_err MP_WUR TclBN_mp_div_ld(const mp_int *a, mp_digit b, mp_int *q, mp_digit *r)
-#}
 declare 80 {
     int MP_WUR TclBN_mp_to_radix(const mp_int *a, char *str, size_t maxlen, size_t *written, int radix)
 }
