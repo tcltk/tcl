@@ -170,7 +170,7 @@ declare 40 {
     CONST86 Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -185,7 +185,7 @@ declare 44 {
 }
 declare 45 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int *objcPtr, Tcl_Obj ***objvPtr)
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index,
@@ -193,7 +193,7 @@ declare 46 {
 }
 declare 47 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int *lengthPtr)
+	    Tcl_Size *lengthPtr)
 }
 declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first,
@@ -854,12 +854,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
 	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
 }
 declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
     void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
@@ -1493,10 +1493,10 @@ declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
     int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
 	    const unsigned short *uniPattern, int nocase)
 }
-declare 421 {
+declare 421 {deprecated {}} {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
 }
-declare 422 {
+declare 422 {deprecated {}} {
     Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
 	    const void *key, int *newPtr)
 }
@@ -1544,7 +1544,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -1643,7 +1643,7 @@ declare 460 {
     Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, Tcl_Size elements)
 }
 declare 461 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
@@ -1782,7 +1782,7 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -2211,7 +2211,7 @@ declare 603 {
 # TIP#265 (option parser) dkf for Sam Bromley
 declare 604 {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP#336 (manipulate the error line) dgp
@@ -2409,7 +2409,7 @@ declare 648 {
 # TIP #568
 declare 649 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *numBytesPtr)
+	    Tcl_Size *numBytesPtr)
 }
 
 # TIP #575
@@ -2422,11 +2422,6 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
-# Removed by TIP #652
-#
-#declare 657 {
-#    int Tcl_UniCharIsUnicode(int ch)
-#}
 
 # TIP 656
 declare 658 {
@@ -2529,21 +2524,6 @@ interface tclPlat
 #   (none)
 
 ################################
-# Windows specific functions
-
-# Added in Tcl 8.1
-
-declare 0 win {
-    TCHAR *Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
-}
-declare 1 win {
-    char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
-}
-declare 3 win {
-    void Tcl_WinConvertError(unsigned errCode)
-}
-
-################################
 # Mac OS X specific functions
 
 declare 0 macosx {
@@ -2558,6 +2538,21 @@ declare 1 macosx {
 }
 declare 2 macosx {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+
+################################
+# Windows specific functions
+
+# Added in Tcl 8.1
+
+declare 0 win {
+    TCHAR *Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
+}
+declare 1 win {
+    char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+}
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
 }
 
 ##############################################################################
