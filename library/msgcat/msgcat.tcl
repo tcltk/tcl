@@ -1222,7 +1222,7 @@ proc msgcat::mcutil::ConvertLocale {value} {
 proc ::msgcat::PackageNamespaceGet {} {
     set ns [uplevel 2 { namespace current }]
     
-    if {![regexp -- {^::oo::} $ns]} {
+    if {![string match {::oo::*} $ns]} {
 	# Not in object environment
 	return $ns
     }
