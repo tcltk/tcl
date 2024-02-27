@@ -1096,7 +1096,7 @@ TclpCreateProcess(
      */
 
     if (HasConsole()) {
-	    createFlags = 0;
+	createFlags = 0;
     } else if (applType == APPL_DOS) {
 	/*
 	 * Under NT, 16-bit DOS applications will not run unless they can
