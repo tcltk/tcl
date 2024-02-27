@@ -15,11 +15,11 @@
 #
 #----------------------------------------------------------------------
 
-# We must have message catalogs that support the root locale, and we need
-# access to the Registry on Windows systems.
+# msgcat 1.7 features are used. We need access to the Registry on Windows
+# systems.
 
 uplevel \#0 {
-    package require msgcat 1.6
+    package require msgcat 1.7
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    namespace eval ::tcl::clock [list variable NoRegistry {}]
