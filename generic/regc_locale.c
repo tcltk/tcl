@@ -1101,9 +1101,8 @@ cclass(
 	addchr(cv, ' ');
 	break;
     case CC_CNTRL:
-	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE+1);
+	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE);
 	if (cv) {
-	    addrange(cv, 0xE000, 0xF8FF); /* private */
 	    for (i=0 ; i<NUM_CONTROL_RANGE ; i++) {
 		addrange(cv, controlRangeTable[i].start,
 			controlRangeTable[i].end);
