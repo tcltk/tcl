@@ -4,7 +4,7 @@
  *	This file contains the Unicode locale specific regexp routines.
  *	This file is #included by regcomp.c.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,51 +14,51 @@
 
 static const struct cname {
     const char *name;
-    const char code;
+    char code;
 } cnames[] = {
-    {"NUL",		'\0'},
-    {"SOH",		'\001'},
-    {"STX",		'\002'},
-    {"ETX",		'\003'},
-    {"EOT",		'\004'},
-    {"ENQ",		'\005'},
-    {"ACK",		'\006'},
-    {"BEL",		'\007'},
-    {"alert",		'\007'},
-    {"BS",		'\010'},
-    {"backspace",	'\b'},
-    {"HT",		'\011'},
-    {"tab",		'\t'},
-    {"LF",		'\012'},
-    {"newline",		'\n'},
-    {"VT",		'\013'},
-    {"vertical-tab",	'\v'},
-    {"FF",		'\014'},
-    {"form-feed",	'\f'},
-    {"CR",		'\015'},
-    {"carriage-return",	'\r'},
-    {"SO",		'\016'},
-    {"SI",		'\017'},
-    {"DLE",		'\020'},
-    {"DC1",		'\021'},
-    {"DC2",		'\022'},
-    {"DC3",		'\023'},
-    {"DC4",		'\024'},
-    {"NAK",		'\025'},
-    {"SYN",		'\026'},
-    {"ETB",		'\027'},
-    {"CAN",		'\030'},
-    {"EM",		'\031'},
-    {"SUB",		'\032'},
-    {"ESC",		'\033'},
-    {"IS4",		'\034'},
-    {"FS",		'\034'},
-    {"IS3",		'\035'},
-    {"GS",		'\035'},
-    {"IS2",		'\036'},
-    {"RS",		'\036'},
-    {"IS1",		'\037'},
-    {"US",		'\037'},
+    {"NUL",		'\x00'},
+    {"SOH",		'\x01'},
+    {"STX",		'\x02'},
+    {"ETX",		'\x03'},
+    {"EOT",		'\x04'},
+    {"ENQ",		'\x05'},
+    {"ACK",		'\x06'},
+    {"BEL",		'\x07'},
+    {"alert",		'\x07'},
+    {"BS",		'\x08'},
+    {"backspace",	'\x08'},
+    {"HT",		'\x09'},
+    {"tab",		'\x09'},
+    {"LF",		'\x0A'},
+    {"newline",		'\x0A'},
+    {"VT",		'\x0B'},
+    {"vertical-tab",	'\x0B'},
+    {"FF",		'\x0C'},
+    {"form-feed",	'\x0C'},
+    {"CR",		'\x0D'},
+    {"carriage-return",	'\x0D'},
+    {"SO",		'\x0E'},
+    {"SI",		'\x0F'},
+    {"DLE",		'\x10'},
+    {"DC1",		'\x11'},
+    {"DC2",		'\x12'},
+    {"DC3",		'\x13'},
+    {"DC4",		'\x14'},
+    {"NAK",		'\x15'},
+    {"SYN",		'\x16'},
+    {"ETB",		'\x17'},
+    {"CAN",		'\x18'},
+    {"EM",		'\x19'},
+    {"SUB",		'\x1A'},
+    {"ESC",		'\x1B'},
+    {"IS4",		'\x1C'},
+    {"FS",		'\x1C'},
+    {"IS3",		'\x1D'},
+    {"GS",		'\x1D'},
+    {"IS2",		'\x1E'},
+    {"RS",		'\x1E'},
+    {"IS1",		'\x1F'},
+    {"US",		'\x1F'},
     {"space",		' '},
     {"exclamation-mark",'!'},
     {"quotation-mark",	'"'},
@@ -110,8 +110,8 @@ static const struct cname {
     {"right-brace",	'}'},
     {"right-curly-bracket", '}'},
     {"tilde",		'~'},
-    {"DEL",		'\177'},
-    {NULL,		0}
+    {"DEL",		'\x7F'},
+    {NULL,		'\x00'}
 };
 
 /*
@@ -254,7 +254,7 @@ static const crange alphaRangeTable[] = {
 #endif
 };
 
-#define NUM_ALPHA_RANGE (sizeof(alphaRangeTable)/sizeof(crange))
+#define NUM_ALPHA_RANGE ((int)(sizeof(alphaRangeTable)/sizeof(crange)))
 
 static const chr alphaCharTable[] = {
     0xAA, 0xB5, 0xBA, 0x2EC, 0x2EE, 0x376, 0x377, 0x37F, 0x386,
@@ -291,7 +291,7 @@ static const chr alphaCharTable[] = {
 #endif
 };
 
-#define NUM_ALPHA_CHAR (sizeof(alphaCharTable)/sizeof(chr))
+#define NUM_ALPHA_CHAR ((int)(sizeof(alphaCharTable)/sizeof(chr)))
 
 /*
  * Unicode: control characters.
@@ -299,14 +299,13 @@ static const chr alphaCharTable[] = {
 
 static const crange controlRangeTable[] = {
     {0x0, 0x1F}, {0x7F, 0x9F}, {0x600, 0x605}, {0x200B, 0x200F},
-    {0x202A, 0x202E}, {0x2060, 0x2064}, {0x2066, 0x206F}, {0xE000, 0xF8FF},
-    {0xFFF9, 0xFFFB}
+    {0x202A, 0x202E}, {0x2060, 0x2064}, {0x2066, 0x206F}, {0xFFF9, 0xFFFB}
 #if CHRBITS > 16
     ,{0x13430, 0x1343F}, {0x1BCA0, 0x1BCA3}, {0x1D173, 0x1D17A}, {0xE0020, 0xE007F}
 #endif
 };
 
-#define NUM_CONTROL_RANGE (sizeof(controlRangeTable)/sizeof(crange))
+#define NUM_CONTROL_RANGE ((int)(sizeof(controlRangeTable)/sizeof(crange)))
 
 static const chr controlCharTable[] = {
     0xAD, 0x61C, 0x6DD, 0x70F, 0x890, 0x891, 0x8E2, 0x180E, 0xFEFF
@@ -315,7 +314,7 @@ static const chr controlCharTable[] = {
 #endif
 };
 
-#define NUM_CONTROL_CHAR (sizeof(controlCharTable)/sizeof(chr))
+#define NUM_CONTROL_CHAR ((int)(sizeof(controlCharTable)/sizeof(chr)))
 
 /*
  * Unicode: decimal digit characters.
@@ -343,7 +342,7 @@ static const crange digitRangeTable[] = {
 #endif
 };
 
-#define NUM_DIGIT_RANGE (sizeof(digitRangeTable)/sizeof(crange))
+#define NUM_DIGIT_RANGE ((int)(sizeof(digitRangeTable)/sizeof(crange)))
 
 /*
  * no singletons of digit characters.
@@ -380,7 +379,7 @@ static const crange punctRangeTable[] = {
 #endif
 };
 
-#define NUM_PUNCT_RANGE (sizeof(punctRangeTable)/sizeof(crange))
+#define NUM_PUNCT_RANGE ((int)(sizeof(punctRangeTable)/sizeof(crange)))
 
 static const chr punctCharTable[] = {
     0x3A, 0x3B, 0x3F, 0x40, 0x5F, 0x7B, 0x7D, 0xA1, 0xA7,
@@ -405,7 +404,7 @@ static const chr punctCharTable[] = {
 #endif
 };
 
-#define NUM_PUNCT_CHAR (sizeof(punctCharTable)/sizeof(chr))
+#define NUM_PUNCT_CHAR ((int)(sizeof(punctCharTable)/sizeof(chr)))
 
 /*
  * Unicode: white space characters.
@@ -415,14 +414,14 @@ static const crange spaceRangeTable[] = {
     {0x9, 0xD}, {0x2000, 0x200B}
 };
 
-#define NUM_SPACE_RANGE (sizeof(spaceRangeTable)/sizeof(crange))
+#define NUM_SPACE_RANGE ((int)(sizeof(spaceRangeTable)/sizeof(crange)))
 
 static const chr spaceCharTable[] = {
     0x20, 0x85, 0xA0, 0x1680, 0x180E, 0x2028, 0x2029, 0x202F, 0x205F,
     0x2060, 0x3000, 0xFEFF
 };
 
-#define NUM_SPACE_CHAR (sizeof(spaceCharTable)/sizeof(chr))
+#define NUM_SPACE_CHAR ((int)(sizeof(spaceCharTable)/sizeof(chr)))
 
 /*
  * Unicode: lowercase characters.
@@ -456,7 +455,7 @@ static const crange lowerRangeTable[] = {
 #endif
 };
 
-#define NUM_LOWER_RANGE (sizeof(lowerRangeTable)/sizeof(crange))
+#define NUM_LOWER_RANGE ((int)(sizeof(lowerRangeTable)/sizeof(crange)))
 
 static const chr lowerCharTable[] = {
     0xB5, 0x101, 0x103, 0x105, 0x107, 0x109, 0x10B, 0x10D, 0x10F,
@@ -529,7 +528,7 @@ static const chr lowerCharTable[] = {
 #endif
 };
 
-#define NUM_LOWER_CHAR (sizeof(lowerCharTable)/sizeof(chr))
+#define NUM_LOWER_CHAR ((int)(sizeof(lowerCharTable)/sizeof(chr)))
 
 /*
  * Unicode: uppercase characters.
@@ -559,7 +558,7 @@ static const crange upperRangeTable[] = {
 #endif
 };
 
-#define NUM_UPPER_RANGE (sizeof(upperRangeTable)/sizeof(crange))
+#define NUM_UPPER_RANGE ((int)(sizeof(upperRangeTable)/sizeof(crange)))
 
 static const chr upperCharTable[] = {
     0x100, 0x102, 0x104, 0x106, 0x108, 0x10A, 0x10C, 0x10E, 0x110,
@@ -633,7 +632,7 @@ static const chr upperCharTable[] = {
 #endif
 };
 
-#define NUM_UPPER_CHAR (sizeof(upperCharTable)/sizeof(chr))
+#define NUM_UPPER_CHAR ((int)(sizeof(upperCharTable)/sizeof(chr)))
 
 /*
  * Unicode: unicode print characters excluding space.
@@ -792,7 +791,7 @@ static const crange graphRangeTable[] = {
 #endif
 };
 
-#define NUM_GRAPH_RANGE (sizeof(graphRangeTable)/sizeof(crange))
+#define NUM_GRAPH_RANGE ((int)(sizeof(graphRangeTable)/sizeof(crange)))
 
 static const chr graphCharTable[] = {
     0x38C, 0x85E, 0x98F, 0x990, 0x9B2, 0x9C7, 0x9C8, 0x9D7, 0x9DC,
@@ -820,13 +819,11 @@ static const chr graphCharTable[] = {
 #endif
 };
 
-#define NUM_GRAPH_CHAR (sizeof(graphCharTable)/sizeof(chr))
+#define NUM_GRAPH_CHAR ((int)(sizeof(graphCharTable)/sizeof(chr)))
 
 /*
  *	End of auto-generated Unicode character ranges declarations.
  */
-
-#define	CH	NOCELT
 
 /*
  - element - map collating-element name to celt
@@ -860,7 +857,7 @@ element(
      */
 
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = Tcl_UniCharToUtfDString(startp, len, &ds);
     for (cn=cnames; cn->name!=NULL; cn++) {
 	if (strlen(cn->name)==len && strncmp(cn->name, np, len)==0) {
 	    break;			/* NOTE BREAK OUT */
@@ -919,9 +916,9 @@ range(
 
     for (c=a; c<=b; c++) {
 	addchr(cv, c);
-	lc = Tcl_UniCharToLower((chr)c);
-	uc = Tcl_UniCharToUpper((chr)c);
-	tc = Tcl_UniCharToTitle((chr)c);
+	lc = Tcl_UniCharToLower(c);
+	uc = Tcl_UniCharToUpper(c);
+	tc = Tcl_UniCharToTitle(c);
 	if (c != lc) {
 	    addchr(cv, lc);
 	}
@@ -970,11 +967,11 @@ eclass(
 
     if ((v->cflags&REG_FAKE) && c == 'x') {
 	cv = getcvec(v, 4, 0);
-	addchr(cv, (chr)'x');
-	addchr(cv, (chr)'y');
+	addchr(cv, 'x');
+	addchr(cv, 'y');
 	if (cases) {
-	    addchr(cv, (chr)'X');
-	    addchr(cv, (chr)'Y');
+	    addchr(cv, 'X');
+	    addchr(cv, 'Y');
 	}
 	return cv;
     }
@@ -988,7 +985,7 @@ eclass(
     }
     cv = getcvec(v, 1, 0);
     assert(cv != NULL);
-    addchr(cv, (chr)c);
+    addchr(cv, c);
     return cv;
 }
 
@@ -1009,7 +1006,7 @@ cclass(
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    int i, index;
+    int i;
 
     /*
      * The following arrays define the valid character class names.
@@ -1021,9 +1018,10 @@ cclass(
     };
 
     enum classes {
+	CC_NULL = -1,
 	CC_ALNUM, CC_ALPHA, CC_ASCII, CC_BLANK, CC_CNTRL, CC_DIGIT, CC_GRAPH,
 	CC_LOWER, CC_PRINT, CC_PUNCT, CC_SPACE, CC_UPPER, CC_XDIGIT
-    };
+    } index;
 
 
     /*
@@ -1032,24 +1030,20 @@ cclass(
 
     len = endp - startp;
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = Tcl_UniCharToUtfDString(startp, len, &ds);
 
     /*
      * Map the name to the corresponding enumerated value.
      */
 
-    index = -1;
+    index = CC_NULL;
     for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
-	    index = i;
+	    index = (enum classes)i;
 	    break;
 	}
     }
     Tcl_DStringFree(&ds);
-    if (index == -1) {
-	ERR(REG_ECTYPE);
-	return NULL;
-    }
 
     /*
      * Remap lower and upper to alpha if the match is case insensitive.
@@ -1063,18 +1057,21 @@ cclass(
      * Now compute the character class contents.
      */
 
-    switch((enum classes) index) {
+    switch (index) {
+    case CC_NULL:
+	ERR(REG_ECTYPE);
+	return NULL;
     case CC_ALNUM:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1083,11 +1080,11 @@ cclass(
     case CC_ALPHA:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
 	}
@@ -1104,13 +1101,14 @@ cclass(
 	addchr(cv, ' ');
 	break;
     case CC_CNTRL:
-	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE);
+	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE+1);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_CONTROL_RANGE ; i++) {
+	    addrange(cv, 0xE000, 0xF8FF); /* private */
+	    for (i=0 ; i<NUM_CONTROL_RANGE ; i++) {
 		addrange(cv, controlRangeTable[i].start,
 			controlRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_CONTROL_CHAR ; i++) {
+	    for (i=0 ; i<NUM_CONTROL_CHAR ; i++) {
 		addchr(cv, controlCharTable[i]);
 	    }
 	}
@@ -1118,7 +1116,7 @@ cclass(
     case CC_DIGIT:
 	cv = getcvec(v, 0, NUM_DIGIT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1127,11 +1125,11 @@ cclass(
     case CC_PUNCT:
 	cv = getcvec(v, NUM_PUNCT_CHAR, NUM_PUNCT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_PUNCT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_RANGE ; i++) {
 		addrange(cv, punctRangeTable[i].start,
 			punctRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_PUNCT_CHAR ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_CHAR ; i++) {
 		addchr(cv, punctCharTable[i]);
 	    }
 	}
@@ -1156,11 +1154,11 @@ cclass(
     case CC_SPACE:
 	cv = getcvec(v, NUM_SPACE_CHAR, NUM_SPACE_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+	    for (i=0 ; i<NUM_SPACE_RANGE ; i++) {
 		addrange(cv, spaceRangeTable[i].start,
 			spaceRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
 		addchr(cv, spaceCharTable[i]);
 	    }
 	}
@@ -1168,11 +1166,11 @@ cclass(
     case CC_LOWER:
 	cv  = getcvec(v, NUM_LOWER_CHAR, NUM_LOWER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_LOWER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_LOWER_RANGE ; i++) {
 		addrange(cv, lowerRangeTable[i].start,
 			lowerRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_LOWER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_LOWER_CHAR ; i++) {
 		addchr(cv, lowerCharTable[i]);
 	    }
 	}
@@ -1180,11 +1178,11 @@ cclass(
     case CC_UPPER:
 	cv  = getcvec(v, NUM_UPPER_CHAR, NUM_UPPER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_UPPER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_UPPER_RANGE ; i++) {
 		addrange(cv, upperRangeTable[i].start,
 			upperRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_UPPER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_UPPER_CHAR ; i++) {
 		addchr(cv, upperCharTable[i]);
 	    }
 	}
@@ -1192,18 +1190,18 @@ cclass(
     case CC_PRINT:
     	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
     	if (cv) {
-    	    for (i=1 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+    	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
     		addrange(cv, spaceRangeTable[i].start,
     				spaceRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
     		addchr(cv, spaceCharTable[i]);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
     		addrange(cv, graphRangeTable[i].start,
     				graphRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
     		addchr(cv, graphCharTable[i]);
     	    }
     	}
@@ -1211,11 +1209,11 @@ cclass(
     case CC_GRAPH:
 	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
 		addrange(cv, graphRangeTable[i].start,
 			graphRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
 		addchr(cv, graphCharTable[i]);
 	    }
 	}
@@ -1242,9 +1240,9 @@ allcases(
     chr c = (chr)pc;
     chr lc, uc, tc;
 
-    lc = Tcl_UniCharToLower((chr)c);
-    uc = Tcl_UniCharToUpper((chr)c);
-    tc = Tcl_UniCharToTitle((chr)c);
+    lc = Tcl_UniCharToLower(c);
+    uc = Tcl_UniCharToUpper(c);
+    tc = Tcl_UniCharToTitle(c);
 
     if (tc != uc) {
 	cv = getcvec(v, 3, 0);
@@ -1272,7 +1270,7 @@ cmp(
     const chr *x, const chr *y,	/* strings to compare */
     size_t len)			/* exact length of comparison */
 {
-    return memcmp(VS(x), VS(y), len*sizeof(chr));
+    return memcmp((void*)(x), (void*)(y), len*sizeof(chr));
 }
 
 /*
