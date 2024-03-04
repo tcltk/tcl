@@ -358,7 +358,7 @@ Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
 results are fully qualified.
 .RS
 .PP
-A variable that has been declared but not yet given a value will be included in 
+A variable that has been declared but not yet given a value will be included in
 the results.
 .RE
 .SS "CLASS INTROSPECTION"
