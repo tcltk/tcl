@@ -6,7 +6,9 @@
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2004 Kevin B. Kenny.
+#
+# All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -49,6 +51,7 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
+
 namespace eval tcl {
     if {![interp issafe]} {
 	variable Dir
@@ -423,16 +426,20 @@ proc unknown args {
 proc auto_load {cmd {namespace {}}} {
     global auto_index auto_path
 
+    # qualify names:
     if {$namespace eq ""} {
 	set namespace [uplevel 1 [list ::namespace current]]
     }
     set nameList [auto_qualify $cmd $namespace]
     # workaround non canonical auto_index entries that might be around
     # from older auto_mkindex versions
-    lappend nameList $cmd
-    foreach name $nameList {
+    if {$cmd ni $nameList} {lappend nameList $cmd}
+
+    # try to load (and create sub-cmd handler "_sub_load_cmd" for further usage):
+    foreach name $nameList [set _sub_load_cmd {
+	# via auto_index:
 	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
+	    namespace inscope :: $auto_index($name)
 	    # There's a couple of ways to look for a command of a given
 	    # name.  One is to use
 	    #    info commands $name
@@ -444,22 +451,19 @@ proc auto_load {cmd {namespace {}}} {
 		return 1
 	    }
 	}
-    }
+    }]
+
+    # load auto_index if possible:
     if {![info exists auto_path]} {
 	return 0
     }
-
     if {![auto_load_index]} {
 	return 0
     }
-    foreach name $nameList {
-	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
-	    if {[namespace which -command $name] ne ""} {
-		return 1
-	    }
-	}
-    }
+
+    # try again (something new could be loaded):
+    foreach name $nameList $_sub_load_cmd
+
     return 0
 }
 
@@ -610,7 +614,7 @@ proc auto_import {pattern} {
         foreach name [array names auto_index $pattern] {
             if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace eval :: $auto_index($name)
+                namespace inscope :: $auto_index($name)
             }
         }
     }
@@ -673,17 +677,14 @@ proc auto_execok name {
 	return ""
     }
 
-    set path "[file dirname [info nameof]];.;"
+    set path "[file dirname [info nameofexecutable]];.;"
     if {[info exists env(SystemRoot)]} {
 	set windir $env(SystemRoot)
     } elseif {[info exists env(WINDIR)]} {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	if {$tcl_platform(os) eq "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
+	append path "$windir/system32;$windir/system;$windir;"
     }
 
     foreach var {PATH Path path} {
