@@ -1221,7 +1221,7 @@ proc msgcat::mcutil::ConvertLocale {value} {
 # - called from a classless oo object
 proc ::msgcat::PackageNamespaceGet {} {
     set ns [uplevel 2 { namespace current }]
-    
+
     if {![string match {::oo::*} $ns]} {
 	# Not in object environment
 	return $ns
