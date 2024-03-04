@@ -357,19 +357,6 @@ else
     RC_DEFINES=""
 fi
 
-#--------------------------------------------------------------------
-#	The statements below define the symbol TCL_PACKAGE_PATH, which
-#	gives a list of directories that may contain packages.  The list
-#	consists of one directory for machine-dependent binaries and
-#	another for platform-independent scripts.
-#--------------------------------------------------------------------
-
-if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
-else
-    TCL_PACKAGE_PATH="{${prefix}/lib}"
-fi
-
 # The tclsh.exe.manifest requires these
 # TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
 # the release level, and must account for interim release versioning
@@ -450,7 +437,6 @@ AC_SUBST(MAKE_DLL)
 AC_SUBST(MAKE_EXE)
 
 AC_SUBST(TCL_BUILD_LIB_SPEC)
-AC_SUBST(TCL_PACKAGE_PATH)
 
 # win only
 AC_SUBST(TCL_DDE_VERSION)
