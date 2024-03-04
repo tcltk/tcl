@@ -10,7 +10,7 @@
 #----------------------------------------------------------------------
 #
 # Copyright © 2004-2007 Kevin B. Kenny
-# Copyright (c) 2015 by Sergey G. Brester aka sebres.
+# Copyright © 2015 by Sergey G. Brester aka sebres.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
@@ -223,7 +223,7 @@ proc ::tcl::clock::Initialize {} {
 
     ::msgcat::mcset ru GREGORIAN_CHANGE_DATE 2421639
 
-    # Romania (Transylvania changed earler - perhaps de_RO should show the
+    # Romania (Transylvania changed earlier - perhaps de_RO should show the
     # earlier date?)
 
     ::msgcat::mcset ro GREGORIAN_CHANGE_DATE 2422063
@@ -317,28 +317,28 @@ proc ::tcl::clock::Initialize {} {
 	{-43200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Kwajalein
 	{-39600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}	 :Pacific/Midway
 	{-36000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Honolulu
-        {-32400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Anchorage
-        {-28800 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Los_Angeles
-        {-28800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Tijuana
-        {-25200 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Denver
-        {-25200 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Chihuahua
+	{-32400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Anchorage
+	{-28800 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Los_Angeles
+	{-28800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Tijuana
+	{-25200 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Denver
+	{-25200 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Chihuahua
 	{-25200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Phoenix
 	{-21600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Regina
 	{-21600 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Chicago
-        {-21600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Mexico_City
+	{-21600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Mexico_City
 	{-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/New_York
 	{-18000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Indianapolis
 	{-14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Caracas
-        {-14400 0 3600 0 3 6 2 23 59 59 999 0 10 6 2 23 59 59 999}
+	{-14400 0 3600 0 3 6 2 23 59 59 999 0 10 6 2 23 59 59 999}
 							 :America/Santiago
-        {-14400 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Manaus
-        {-14400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Halifax
+	{-14400 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Manaus
+	{-14400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Halifax
 	{-12600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/St_Johns
 	{-10800 0 3600 0 2 0 2 2 0 0 0 0 10 0 3 2 0 0 0} :America/Sao_Paulo
 	{-10800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Godthab
 	{-10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Buenos_Aires
-        {-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Bahia
-        {-10800 0 3600 0 3 0 2 2 0 0 0 0 10 0 1 2 0 0 0} :America/Montevideo
+	{-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Bahia
+	{-10800 0 3600 0 3 0 2 2 0 0 0 0 10 0 1 2 0 0 0} :America/Montevideo
 	{-7200 0 3600 0 9 0 5 2 0 0 0 0 3 0 5 2 0 0 0}   :America/Noronha
 	{-3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Atlantic/Azores
 	{-3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Atlantic/Cape_Verde
@@ -346,22 +346,22 @@ proc ::tcl::clock::Initialize {} {
 	{0 0 3600 0 10 0 5 2 0 0 0 0 3 0 5 1 0 0 0}      :Europe/London
 	{3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Kinshasa
 	{3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :CET
-        {7200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Harare
-        {7200 0 3600 0 9 4 5 23 59 59 0 0 4 4 5 23 59 59 0}
+	{7200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Harare
+	{7200 0 3600 0 9 4 5 23 59 59 0 0 4 4 5 23 59 59 0}
 			      				 :Africa/Cairo
 	{7200 0 3600 0 10 0 5 4 0 0 0 0 3 0 5 3 0 0 0}   :Europe/Helsinki
-        {7200 0 3600 0 9 0 3 2 0 0 0 0 3 5 5 2 0 0 0}    :Asia/Jerusalem
+	{7200 0 3600 0 9 0 3 2 0 0 0 0 3 5 5 2 0 0 0}    :Asia/Jerusalem
 	{7200 0 3600 0 9 0 5 1 0 0 0 0 3 0 5 0 0 0 0}    :Europe/Bucharest
 	{7200 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :Europe/Athens
-        {7200 0 3600 0 9 5 5 1 0 0 0 0 3 4 5 0 0 0 0}    :Asia/Amman
-        {7200 0 3600 0 10 6 5 23 59 59 999 0 3 0 5 0 0 0 0}
+	{7200 0 3600 0 9 5 5 1 0 0 0 0 3 4 5 0 0 0 0}    :Asia/Amman
+	{7200 0 3600 0 10 6 5 23 59 59 999 0 3 0 5 0 0 0 0}
 							 :Asia/Beirut
-        {7200 0 -3600 0 4 0 1 2 0 0 0 0 9 0 1 2 0 0 0}   :Africa/Windhoek
+	{7200 0 -3600 0 4 0 1 2 0 0 0 0 9 0 1 2 0 0 0}   :Africa/Windhoek
 	{10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Riyadh
 	{10800 0 3600 0 10 0 1 4 0 0 0 0 4 0 1 3 0 0 0}  :Asia/Baghdad
 	{10800 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Europe/Moscow
 	{12600 0 3600 0 9 2 4 2 0 0 0 0 3 0 1 2 0 0 0}   :Asia/Tehran
-        {14400 0 3600 0 10 0 5 5 0 0 0 0 3 0 5 4 0 0 0}  :Asia/Baku
+	{14400 0 3600 0 10 0 5 5 0 0 0 0 3 0 5 4 0 0 0}  :Asia/Baku
 	{14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Muscat
 	{14400 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Tbilisi
 	{16200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Kabul
@@ -447,8 +447,8 @@ proc ::tcl::clock::Initialize {} {
 	jst	+0900 \
 	kst     +0900 \
 	cast	+0930 \
-        jdt     +1000 \
-        kdt     +1000 \
+	jdt     +1000 \
+	kdt     +1000 \
 	cadt	+1030 \
 	east	+1000 \
 	eadt	+1030 \
@@ -547,7 +547,7 @@ proc ::tcl::clock::mcget {loc} {
 	set loclist [msgcat::mcutil::getpreferences $loc]
 	dict set $mcLocales $loc $loclist
 	# restore:
-        if {$prevloc ne $loc} {
+	if {$prevloc ne $loc} {
 	   mcpackagelocale set $prevloc
 	}
     }
@@ -611,7 +611,7 @@ proc ::tcl::clock::mcMerge {locales} {
 #	Returns the system locale.
 #
 # Side effects:
-#	None
+#	None.
 #
 #----------------------------------------------------------------------
 
@@ -742,8 +742,8 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 		M    %N
 		yyyy %Y
 		yy   %y
-                y    %y
-                gg   {}
+		y    %y
+		gg   {}
 	    } $unquoted]
 	    if { $quoted eq {} } {
 		set quote '
@@ -772,8 +772,8 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 		M    %N
 		yyyy %Y
 		yy   %y
-                y    %y
-                gg   {}
+		y    %y
+		gg   {}
 	    } $unquoted]
 	    if { $quoted eq {} } {
 		set quote '
@@ -886,7 +886,7 @@ proc ::tcl::clock::LocalizeFormat { locale format mcd } {
     # using another locales). To prevent this return a duplicate (but
     # it may be slower).
     if {$locfmt eq $format} {
-        set locfmt $format
+	set locfmt $format
     }
 
     return $locfmt
@@ -906,7 +906,7 @@ proc ::tcl::clock::LocalizeFormat { locale format mcd } {
 #	Returns the system time zone.
 #
 # Side effects:
-#	Stores the sustem time zone in engine configuration, since
+#	Stores the system time zone in engine configuration, since
 #	determining it may be an expensive process.
 #
 #----------------------------------------------------------------------
@@ -919,16 +919,15 @@ proc ::tcl::clock::GetSystemTimeZone {} {
     } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
     } else {
-        # ask engine for the cached timezone:
-        set timezone [configure -system-tz]
-        if { $timezone ne "" } {
-            return $timezone
-        }
-	if { $::tcl_platform(platform) eq {windows} } {
+	# ask engine for the cached timezone:
+	set timezone [configure -system-tz]
+	if { $timezone ne "" } {
+	    return $timezone
+	} elseif { $::tcl_platform(platform) eq {windows} } {
 	    set timezone [GuessWindowsTimeZone]
 	} elseif { [file exists /etc/localtime]
-	           && ![catch {ReadZoneinfoFile \
-	                           Tcl/Localtime /etc/localtime}] } {
+		   && ![catch {ReadZoneinfoFile \
+				   Tcl/Localtime /etc/localtime}] } {
 	    set timezone :Tcl/Localtime
 	} else {
 	    set timezone :localtime
@@ -1328,7 +1327,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     close $f
 
     # The file begins with a magic number, sixteen reserved bytes, and then
-    # six 4-byte integers giving counts of fileds in the file.
+    # six 4-byte integers giving counts of fields in the file.
 
     binary scan $d a4a1x15IIIIII \
 	magic version nIsGMT nIsStd nLeap nTime nType nChar
@@ -1535,7 +1534,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 	    # 4 - Standard time zone offset, minutes
 	    : ([[:digit:]]{1,2})
 	    (?:
-	        # 5 - Standard time zone offset, seconds
+		# 5 - Standard time zone offset, seconds
 		: ([[:digit:]]{1,2} )
 	    )?
 	)?
@@ -1543,7 +1542,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 	    # 6 - DST time zone name
 	    ([[:alpha:]]+ | <[-+[:alnum:]]+>)
 	    (?:
-	        (?:
+		(?:
 		    # 7 - DST time zone offset, signum
 		    ([-+]?)
 		    # 8 - DST time zone offset, hours
@@ -1552,17 +1551,17 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 			# 9 - DST time zone offset, minutes
 			: ([[:digit:]]{1,2})
 			(?:
-		            # 10 - DST time zone offset, seconds
+			    # 10 - DST time zone offset, seconds
 			    : ([[:digit:]]{1,2})
 			)?
 		    )?
 		)?
-	        (?:
+		(?:
 		    ,
 		    (?:
 			# 11 - Optional J in n and Jn form 12 - Day of year
-		        ( J ? )	( [[:digit:]]+ )
-                        | M
+			( J ? )	( [[:digit:]]+ )
+			| M
 			# 13 - Month number 14 - Week of month 15 - Day of week
 			( [[:digit:]] + )
 			[.] ( [[:digit:]] + )
@@ -1571,7 +1570,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 		    (?:
 			# 16 - Start time of DST - hours
 			/ ( [[:digit:]]{1,2} )
-		        (?:
+			(?:
 			    # 17 - Start time of DST - minutes
 			    : ( [[:digit:]]{1,2} )
 			    (?:
@@ -1583,8 +1582,8 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 		    ,
 		    (?:
 			# 19 - Optional J in n and Jn form 20 - Day of year
-		        ( J ? )	( [[:digit:]]+ )
-                        | M
+			( J ? )	( [[:digit:]]+ )
+			| M
 			# 21 - Month number 22 - Week of month 23 - Day of week
 			( [[:digit:]] + )
 			[.] ( [[:digit:]] + )
@@ -1593,7 +1592,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 		    (?:
 			# 24 - End time of DST - hours
 			/ ( [[:digit:]]{1,2} )
-		        (?:
+			(?:
 			    # 25 - End time of DST - minutes
 			    : ( [[:digit:]]{1,2} )
 			    (?:
@@ -1602,9 +1601,9 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 			    )?
 			)?
 		    )?
-                )?
+		)?
 	    )?
-        )?
+	)?
 	$
     } $tz -> x(stdName) x(stdSignum) x(stdHours) x(stdMinutes) x(stdSeconds) \
 	     x(dstName) x(dstSignum) x(dstHours) x(dstMinutes) x(dstSeconds) \
@@ -2057,7 +2056,6 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ChangeCurrentLocale {args} {
-
     configure -current-locale [lindex $args 0]
 }
 
