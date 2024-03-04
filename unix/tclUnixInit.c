@@ -100,7 +100,7 @@ typedef struct {
  * defined by Makefile.
  */
 
-static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
+static const char defaultLibraryDir[] = TCL_LIBRARY;
 
 /*
  * Directory in which to look for packages (each package is typically
@@ -108,7 +108,7 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
  * Makefile.
  */
 
-static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
+static const char pkgPath[] = TCL_PACKAGE_PATH;
 
 /*
  * The following table is used to map from Unix locale strings to encoding
@@ -783,7 +783,8 @@ TclpSetVariables(
     struct utsname name;
 #endif
     int unameOK;
-    Tcl_DString ds;
+    const char *p, *q;
+    Tcl_Obj *pkgListObj = Tcl_NewObj();
 
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
@@ -799,29 +800,20 @@ TclpSetVariables(
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
 	const char *str;
 	CFBundleRef bundleRef;
+	Tcl_DString ds;
 
 	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
 	if ((str != NULL) && (str[0] != '\0')) {
-	    char *p = Tcl_DStringValue(&ds);
-
-	    /*
-	     * Convert DYLD_FRAMEWORK_PATH from colon to space separated.
-	     */
-
-	    do {
-		if (*p == ':') {
-		    *p = ' ';
-		}
-	    } while (*p++);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+	    p = Tcl_DStringValue(&ds);
+	    while ((q = strchr(p, ':')) != NULL) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+		p = q+1;
+	    }
+	    if (*p) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+	    }
 	    Tcl_DStringFree(&ds);
 	}
 	bundleRef = CFBundleGetMainBundle();
@@ -835,10 +827,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -848,21 +837,22 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-    } else
-#endif /* HAVE_COREFOUNDATION */
-    {
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
+#endif /* HAVE_COREFOUNDATION */
+    p = pkgPath;
+    while ((q = strchr(p, ':')) != NULL) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+	p = q+1;
+    }
+    if (*p) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+    }
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
 
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
@@ -901,6 +891,7 @@ TclpSetVariables(
 #elif !defined NO_UNAME
     if (uname(&name) >= 0) {
 	const char *native;
+	Tcl_DString ds;
 
 	unameOK = 1;
 
@@ -962,6 +953,7 @@ TclpSetVariables(
     {
 	struct passwd *pwEnt = TclpGetPwUid(getuid());
 	const char *user;
+	Tcl_DString ds;
 
 	if (pwEnt == NULL) {
 	    user = "";
