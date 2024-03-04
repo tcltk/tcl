@@ -15,10 +15,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# This test intentionally written in pre-7.5 Tcl
-if {[info commands package] == ""} {
-    error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
-}
 package require -exact tcl 8.7a6
 
 # Compute the auto path to use in this interpreter.
