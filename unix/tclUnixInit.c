@@ -4,7 +4,7 @@
  *	Contains the Unix-specific interpreter initialization functions.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright (c) 1999 Scriptics Corporation.
  * All rights reserved.
  */
 
@@ -110,7 +110,7 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
  * Makefile.
  */
 
-static char pkgPath1[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
+static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
 /*
  * The following table is used to map from Unix locale strings to encoding
@@ -371,13 +371,13 @@ TclpInitPlatform(void)
      * Make sure, that the standard FDs exist. [Bug 772288]
      */
 
-    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(0, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_RDONLY);
     }
-    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(1, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
-    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(2, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
 
@@ -853,7 +853,7 @@ TclpSetVariables(
 	}
     }
 #endif /* HAVE_COREFOUNDATION */
-	p = pkgPath1;
+	p = pkgPath;
 	while ((q = strchr(p, ':')) != NULL) {
 		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
 		p = q+1;
@@ -900,6 +900,7 @@ TclpSetVariables(
 #elif !defined NO_UNAME
     if (uname(&name) >= 0) {
 	const char *native;
+	Tcl_DString ds;
 
 	unameOK = 1;
 
