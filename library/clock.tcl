@@ -1230,8 +1230,8 @@ proc ::tcl::clock::scan { args } {
 	    default {
 		return -code error \
 		    -errorcode [list CLOCK badOption $flag] \
-		    "bad option \"$flag\",\
-		     must be -base, -format, -gmt, -locale or -timezone"
+		    "bad option \"$flag\":\
+		     must be -base, -format, -gmt, -locale, or -timezone"
 	    }
 	}
     }
@@ -4277,7 +4277,7 @@ proc ::tcl::clock::add { clockval args } {
 		}
 		default {
 		    throw [list CLOCK badOption $a] \
-			"bad option \"$a\",\
+			"bad option \"$a\":\
 			 must be -gmt, -locale or -timezone"
 		}
 	    }
