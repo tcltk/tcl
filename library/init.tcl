@@ -15,10 +15,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# This test intentionally written in pre-7.5 Tcl
-if {[info commands package] == ""} {
-    error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
-}
 package require -exact tcl 9.0b1
 
 # Compute the auto path to use in this interpreter.
@@ -385,7 +381,7 @@ proc auto_load {cmd {namespace {}}} {
 
     # try to load (and create sub-cmd handler "_sub_load_cmd" for further usage):
     foreach name $nameList [set _sub_load_cmd {
-    	# via auto_index:
+	# via auto_index:
 	if {[info exists auto_index($name)]} {
 	    namespace inscope :: $auto_index($name)
 	    # There's a couple of ways to look for a command of a given
@@ -653,7 +649,7 @@ proc auto_execok name {
 	return ""
     }
 
-    set path "[file dirname [info nameof]];.;"
+    set path "[file dirname [info nameofexecutable]];.;"
     if {[info exists env(SystemRoot)]} {
 	set windir $env(SystemRoot)
     } elseif {[info exists env(WINDIR)]} {
