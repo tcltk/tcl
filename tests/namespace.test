@@ -3047,6 +3047,15 @@ test namespace-52.12 {unknown: error case must not reset handler} -body {
 } -cleanup {
     namespace delete foo
 } -result ok
+test namespace-52.13 {unknown: invocation outside of NS doesn't evade namespace unknown, bug 910d67a229fe7f65} -body {
+    namespace eval ::foo::bar {
+	proc _unknown args {list ::foo:bar:_unknown [uplevel {namespace current}] $args}
+	namespace unknown [namespace current]::_unknown
+    }
+    list [namespace inscope ::foo::bar {xxx}] [namespace inscope ::foo {bar::xxx}] [::foo::bar::xxx]
+} -cleanup {
+    namespace delete ::foo
+} -result {{::foo:bar:_unknown ::foo::bar xxx} {::foo:bar:_unknown ::foo bar::xxx} {::foo:bar:_unknown :: ::foo::bar::xxx}}
 
 # TIP 314 - ensembles with parameters
 test namespace-53.1 {ensembles: parameters} {
