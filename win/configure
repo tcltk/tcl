@@ -653,6 +653,7 @@ TCL_REG_VERSION
 TCL_DDE_MINOR_VERSION
 TCL_DDE_MAJOR_VERSION
 TCL_DDE_VERSION
+TCL_PACKAGE_PATH
 TCL_EXP_FILE
 TCL_BUILD_EXP_FILE
 TCL_LD_SEARCH_FLAGS
@@ -5921,6 +5922,19 @@ else
     RC_DEFINES=""
 fi
 
+#--------------------------------------------------------------------
+#	The statements below define the symbol TCL_PACKAGE_PATH, which
+#	gives a list of directories that may contain packages.  The list
+#	consists of one directory for machine-dependent binaries and
+#	another for platform-independent scripts.
+#--------------------------------------------------------------------
+
+if test "$prefix/lib" != "$libdir"; then
+    TCL_PACKAGE_PATH="${libdir};${prefix}\\lib"
+else
+    TCL_PACKAGE_PATH="${prefix}\\lib"
+fi
+
 # The tclsh.exe.manifest requires these
 # TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
 # the release level, and must account for interim release versioning
@@ -6001,6 +6015,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win, but needs sub'ing
+
 
 
 
