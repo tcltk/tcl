@@ -1771,8 +1771,7 @@ EXTERN int		Tcl_UtfCharComplete(const char *src, Tcl_Size length);
 EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
-/* 657 */
-EXTERN int		Tcl_UniCharIsUnicode(int ch);
+/* Slot 657 is reserved */
 /* 658 */
 EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -2544,7 +2543,7 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, Tcl_Size length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
-    int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
+    void (*reserved657)(void);
     int (*tcl_ExternalToUtfDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 658 */
     int (*tcl_UtfToExternalDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 659 */
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
@@ -3840,8 +3839,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
-#define Tcl_UniCharIsUnicode \
-	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
+/* Slot 657 is reserved */
 #define Tcl_ExternalToUtfDStringEx \
 	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 658 */
 #define Tcl_UtfToExternalDStringEx \

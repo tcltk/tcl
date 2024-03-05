@@ -1101,7 +1101,7 @@ TclpCreateProcess(
      */
 
     if (HasConsole()) {
-	    createFlags = 0;
+	createFlags = 0;
     } else if (applType == APPL_DOS) {
 	/*
 	 * Under NT, 16-bit DOS applications will not run unless they can
@@ -1837,7 +1837,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 

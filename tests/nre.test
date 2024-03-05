@@ -1,4 +1,4 @@
-# Commands covered:  proc, apply, [interp alias], [namespce import]
+# Commands covered:  proc, apply, [interp alias], [namespace import]
 #
 # This file contains a collection of tests for the non-recursive executor that
 # avoids recursive calls to TEBC. Only the NRE behaviour is tested here, the

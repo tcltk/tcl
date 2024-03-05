@@ -6716,7 +6716,7 @@ AppendLocals(
  *
  * TclInfoConstantCmd --
  *
- *	Called to implement the "info constant" command that wests whether a
+ *	Called to implement the "info constant" command that tests whether a
  *	specific variable is a constant. Handles the following syntax:
  *
  *	    info constant varName

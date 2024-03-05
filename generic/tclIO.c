@@ -1609,18 +1609,9 @@ Tcl_CreateChannel(
     char *tmp;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    /*
-     * With the change of the Tcl_ChannelType structure to use a version in
-     * 8.3.2+, we have to make sure that our assumption that the structure
-     * remains a binary compatible size is true.
-     *
-     * If this assertion fails on some system, then it can be removed only if
-     * the user recompiles code with older channel drivers in the new system
-     * as well.
-     */
-
-    assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
-    assert(typePtr->typeName != NULL);
+    if (typePtr->typeName == NULL) {
+	Tcl_Panic("channel does not have a type name");
+    }
     if (Tcl_ChannelVersion(typePtr) != TCL_CHANNEL_VERSION_5) {
 	Tcl_Panic("channel type %s must be version TCL_CHANNEL_VERSION_5", typePtr->typeName);
     }

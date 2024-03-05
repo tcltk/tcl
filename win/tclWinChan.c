@@ -145,6 +145,33 @@ static const Tcl_ChannelType fileChannelType = {
 /*
  *----------------------------------------------------------------------
  *
+ * TclWinGenerateChannelName --
+ *
+ *	This function generates names for channels.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Creates a new window and creates an exit handler.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclWinGenerateChannelName(
+    char channelName[],		/* Buffer to accept the name. */
+    const char *channelTypeName,/* Name of type of channel. */
+    void *channelImpl)		/* Pointer to channel implementation
+				 * structure, used to generate a unique
+				 * ID. */
+{
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "%s%" TCL_Z_MODIFIER "x",
+	    channelTypeName, (size_t) channelImpl);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FileInit --
  *
  *	This function creates the window used to simulate file events.
@@ -1488,7 +1515,8 @@ OpenFileChannel(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
-	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask)
+		    ? infoPtr->channel : NULL;
 	}
     }
 
@@ -1506,8 +1534,7 @@ OpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
-
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
 

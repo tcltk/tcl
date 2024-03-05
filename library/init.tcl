@@ -15,10 +15,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# This test intentionally written in pre-7.5 Tcl
-if {[info commands package] == ""} {
-    error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
-}
 package require -exact tcl 9.1a0
 
 # Compute the auto path to use in this interpreter.
@@ -60,6 +56,7 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
+
 namespace eval tcl {
     if {![interp issafe]} {
 	variable Dir
@@ -363,16 +360,20 @@ proc unknown args {
 proc auto_load {cmd {namespace {}}} {
     global auto_index auto_path
 
+    # qualify names:
     if {$namespace eq ""} {
 	set namespace [uplevel 1 [list ::namespace current]]
     }
     set nameList [auto_qualify $cmd $namespace]
     # workaround non canonical auto_index entries that might be around
     # from older auto_mkindex versions
-    lappend nameList $cmd
-    foreach name $nameList {
+    if {$cmd ni $nameList} {lappend nameList $cmd}
+
+    # try to load (and create sub-cmd handler "_sub_load_cmd" for further usage):
+    foreach name $nameList [set _sub_load_cmd {
+	# via auto_index:
 	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
+	    namespace inscope :: $auto_index($name)
 	    # There's a couple of ways to look for a command of a given
 	    # name.  One is to use
 	    #    info commands $name
@@ -384,22 +385,19 @@ proc auto_load {cmd {namespace {}}} {
 		return 1
 	    }
 	}
-    }
+    }]
+
+    # load auto_index if possible:
     if {![info exists auto_path]} {
 	return 0
     }
-
     if {![auto_load_index]} {
 	return 0
     }
-    foreach name $nameList {
-	if {[info exists auto_index($name)]} {
-	    namespace eval :: $auto_index($name)
-	    if {[namespace which -command $name] ne ""} {
-		return 1
-	    }
-	}
-    }
+
+    # try again (something new could be loaded):
+    foreach name $nameList $_sub_load_cmd
+
     return 0
 }
 
@@ -566,7 +564,7 @@ proc auto_import {pattern} {
         foreach name [array names auto_index $pattern] {
             if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace eval :: $auto_index($name)
+                namespace inscope :: $auto_index($name)
             }
         }
     }
@@ -629,7 +627,7 @@ proc auto_execok name {
 	return ""
     }
 
-    set path "[file dirname [info nameof]];.;"
+    set path "[file dirname [info nameofexecutable]];.;"
     if {[info exists env(SystemRoot)]} {
 	set windir $env(SystemRoot)
     } elseif {[info exists env(WINDIR)]} {
