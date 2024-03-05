@@ -144,7 +144,7 @@ TCL_SRC_DIR='@TCL_SRC_DIR@'
 # List of standard directories in which to look for packages during
 # "package require" commands.  Contains the "prefix" directory plus also
 # the "exec_prefix" directory, if it is different.
-TCL_PACKAGE_PATH=''
+TCL_PACKAGE_PATH='@TCL_PACKAGE_PATH@'
 
 # Tcl supports stub.
 TCL_SUPPORTS_STUBS=1
