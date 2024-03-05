@@ -5,7 +5,7 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1265,7 +1265,7 @@ test if-10.6 {double invocation of variable traces} -body {
            set var "$counter + [concat $extraargs]"
        }
     }
-    trace variable iftracevar r [list iftraceproc 10]
+    trace add variable iftracevar read [list iftraceproc 10]
     list [catch {if "$iftracevar + 20" {}} a] $a \
         [catch {if "$iftracevar + 20" {}} b] $b
 } -cleanup {

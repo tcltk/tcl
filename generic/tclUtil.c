@@ -1228,7 +1228,7 @@ TclScanElement(
 	     * If we are quoting solely due to ] or internal " characters use
 	     * the CONVERT_MASK mode where we escape all special characters
 	     * except for braces. "extra" counted space needed to escape
-	     * braces too, so substract "braceCount" to get our actual needs.
+	     * braces too, so subtract "braceCount" to get our actual needs.
 	     */
 
 	    bytesNeeded += (extra - braceCount);
@@ -2058,7 +2058,7 @@ Tcl_ConcatObj(
      * Something cannot be determined to be safe, so build the concatenation
      * the slow way, using the string representations.
      *
-     * First try to pre-allocate the size required.
+     * First try to preallocate the size required.
      */
 
     for (i = 0;  i < objc;  i++) {
@@ -2649,7 +2649,7 @@ Tcl_DStringInit(
  * Side effects:
  *	Length bytes from "bytes" (or all of "bytes" if length is less than
  *	zero) are added to the current value of the string. Memory gets
- *	reallocated if needed to accomodate the string's new size.
+ *	reallocated if needed to accommodate the string's new size.
  *
  *----------------------------------------------------------------------
  */
@@ -2753,7 +2753,7 @@ TclDStringAppendDString(
  *
  * Side effects:
  *	String is reformatted as a list element and added to the current value
- *	of the string. Memory gets reallocated if needed to accomodate the
+ *	of the string. Memory gets reallocated if needed to accommodate the
  *	string's new size.
  *
  *----------------------------------------------------------------------
@@ -3320,9 +3320,9 @@ Tcl_PrintDouble(
 	 */
 
 	if (*precisionPtr == 0) {
-	    sprintf(dst, "e%+d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+d", exponent);
 	} else {
-	    sprintf(dst, "e%+03d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+03d", exponent);
 	}
     } else {
 	/*
@@ -3958,12 +3958,12 @@ TclIndexEncode(
          */
         if (idx > 0) {
             /*
-             * All end+postive or end-negative expressions
+             * All end+positive or end-negative expressions
              * always indicate "after the end".
              */
             idx = after;
         } else if (idx < INT_MIN - TCL_INDEX_END) {
-            /* These indices always indicate "before the beginning */
+            /* These indices always indicate "before the beginning" */
             idx = before;
         } else {
             /* Encoded end-positive (or end+negative) are offset */

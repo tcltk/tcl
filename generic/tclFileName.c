@@ -89,7 +89,7 @@ SetResultLength(
  * Results:
  *	Returns the position in the path immediately after the root including
  *	any trailing slashes. Appends a cleaned up version of the root to the
- *	Tcl_DString at the specified offest.
+ *	Tcl_DString at the specified offset.
  *
  * Side effects:
  *	Modifies the specified Tcl_DString.
@@ -1897,7 +1897,7 @@ TclGlob(
      * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
-     * error messsages.
+     * error messages.
      */
 
     savedResultObj = Tcl_GetObjResult(interp);
@@ -2138,7 +2138,7 @@ DoGlob(
     Tcl_GlobTypeData *types)	/* List object containing list of acceptable
 				 * types. May be NULL. */
 {
-    int baseLength, quoted, count;
+    int baseLength, quoted;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar;
     Tcl_Obj *joinedPtr;
@@ -2148,7 +2148,6 @@ DoGlob(
      * past the last initial separator.
      */
 
-    count = 0;
     name = pattern;
     for (; *pattern != '\0'; pattern++) {
 	if (*pattern == '\\') {
@@ -2168,7 +2167,6 @@ DoGlob(
 	} else if (strchr(separators, *pattern) == NULL) {
 	    break;
 	}
-	count++;
     }
 
     /*

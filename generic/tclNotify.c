@@ -987,12 +987,12 @@ Tcl_DoOneEvent(
 	}
 
 	/*
-	 * If Tcl_WaitForEvent has returned 1, indicating that one system
-	 * event has been dispatched (and thus that some Tcl code might have
-	 * been indirectly executed), we break out of the loop. We do this to
-	 * give VwaitCmd for instance a chance to check if that system event
-	 * had the side effect of changing the variable (so the vwait can
-	 * return and unwind properly).
+	 * If Tcl_WaitForEvent has returned 1, indicating that one system event
+	 * has been dispatched (and thus that some Tcl code might have been
+	 * indirectly executed), we break out of the loop in order, e.g.  to
+	 * give vwait a chance to determine whether that system event had the
+	 * side effect of changing the variable (so the vwait can return and
+	 * unwind properly).
 	 *
 	 * NB: We will process idle events if any first, because otherwise we
 	 *     might never do the idle events if the notifier always gets
@@ -1040,7 +1040,7 @@ Tcl_ServiceAll(void)
     }
 
     /*
-     * We need to turn off event servicing like we to in Tcl_DoOneEvent, to
+     * We need to turn off event servicing like we do in Tcl_DoOneEvent, to
      * avoid recursive calls.
      */
 

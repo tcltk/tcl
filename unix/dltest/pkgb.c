@@ -13,18 +13,10 @@
 
 #undef STATIC_BUILD
 #include "tcl.h"
+#if defined(_WIN32) && defined(_MSC_VER)
+#   define snprintf _snprintf
+#endif
 
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgb_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_DemoObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
 /*
  *----------------------------------------------------------------------
  *
@@ -63,8 +55,8 @@ Pkgb_SubObjCmd(
     if ((Tcl_GetIntFromObj(interp, objv[1], &first) != TCL_OK)
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%d", Tcl_GetErrorLine(interp));
-	Tcl_AppendResult(interp, " in line: ", buf, NULL);
+	snprintf(buf, sizeof(buf), "%d", Tcl_GetErrorLine(interp));
+	Tcl_AppendResult(interp, " in line: ", buf, (void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
@@ -109,11 +101,11 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
-    Tcl_Obj *first;
     (void)dummy;
     (void)objc;
     (void)objv;
+#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
+    Tcl_Obj *first;
 
     if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
 	    == TCL_OK) {

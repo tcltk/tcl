@@ -486,6 +486,38 @@ test zlib-8.18 {Bug dd260aaf: fconfigure} -setup {
     catch {close $inSide}
     catch {close $outSide}
 } -result {{one two} {one two}}
+test zlib-8.19 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list comment [string repeat A 500]]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Comment too large for zip}
+test zlib-8.20 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list filename [string repeat A 5000]]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Filename too large for zip}
+test zlib-8.21 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list comment \u100]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Comment contains characters > 0xFF}
+test zlib-8.22 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list filename \u100]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Filename contains characters > 0xFF}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]

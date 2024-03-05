@@ -4,12 +4,12 @@
  *	This file contains procedures that execute byte-compiled Tcl commands.
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2002-2010 by Miguel Sofer.
- * Copyright (c) 2005-2007 by Donal K. Fellows.
+ * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright (c) 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright (c) 2002-2010 Miguel Sofer.
+ * Copyright (c) 2005-2007 Donal K. Fellows.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2006-2008 Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -836,11 +836,11 @@ ReleaseDictIterator(
      * that we were holding.
      */
 
-    searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    searchPtr = (Tcl_DictSearch *)objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_DictObjDone(searchPtr);
     ckfree(searchPtr);
 
-    dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    dictPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
 
     objPtr->typePtr = NULL;
@@ -913,8 +913,8 @@ TclCreateExecEnv(
     int size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(TclOffset(ExecStack, stackWords)
+    ExecEnv *eePtr = (ExecEnv *)ckalloc(sizeof(ExecEnv));
+    ExecStack *esPtr = (ExecStack *)ckalloc(TclOffset(ExecStack, stackWords)
 	    + size * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -1183,7 +1183,7 @@ GrowEvaluationStack(
     newBytes = TclOffset(ExecStack, stackWords) + newElems * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = ckalloc(newBytes);
+    esPtr = (ExecStack *)ckalloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -1428,8 +1428,8 @@ CopyCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **resultPtrPtr = data[0];
-    Tcl_Obj *resultPtr = data[1];
+    Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1486,8 +1486,8 @@ ExprObjCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_InterpState state = data[0];
-    Tcl_Obj *resultPtr = data[1];
+    Tcl_InterpState state = (Tcl_InterpState)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
@@ -1537,7 +1537,7 @@ CompileExprObj(
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1577,7 +1577,7 @@ CompileExprObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1649,7 +1649,7 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
     if (codePtr->refCount-- <= 1) {
@@ -1751,7 +1751,7 @@ TclCompileObj(
 	 * Future optimizations ...
 	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
 	 *     case we recompile once per location of the literal, but not
-	 *     continously, because the moment we have all locations we do not
+	 *     continuously, because the moment we have all locations we do not
 	 *     need to recompile any longer.
 	 *
 	 * (2) Alternative: Do not recompile, tell the execution engine the
@@ -1849,7 +1849,7 @@ TclCompileObj(
  *
  * TclIncrObj --
  *
- *	Increment an integeral value in a Tcl_Obj by an integeral value held
+ *	Increment an integral value in a Tcl_Obj by an integral value held
  *	in another Tcl_Obj. Caller is responsible for making sure we can
  *	update the first object.
  *
@@ -1859,7 +1859,7 @@ TclCompileObj(
  *	of course).
  *
  * Side effects:
- *	valuePtr gets the new incrmented value.
+ *	valuePtr gets the new incremented value.
  *
  *----------------------------------------------------------------------
  */
@@ -2800,7 +2800,7 @@ TEBCresume(
 	/*
 	 * If the first object is shared, we need a new obj for the result;
 	 * otherwise, we can reuse the first object. In any case, make sure it
-	 * has enough room to accomodate all the concatenated bytes. Note that
+	 * has enough room to accommodate all the concatenated bytes. Note that
 	 * if it is unshared its bytes are copied by ckrealloc, so that we set
 	 * the loop parameters to avoid copying them again: p points to the
 	 * end of the already copied bytes, currPtr to the second object.
@@ -3818,7 +3818,7 @@ TEBCresume(
      *	   Start of INST_INCR instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
-     * instructions set the value of some variables and then jump to somme
+     * instructions set the value of some variables and then jump to some
      * common execution code.
      */
 
@@ -5354,7 +5354,7 @@ TEBCresume(
 	}
 
 	if (fromIdx <= toIdx) {
-	    /* Construct the subsquence list */
+	    /* Construct the subsequence list */
 	    /* unshared optimization */
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
@@ -5569,7 +5569,7 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/*
-	 * Get char length to calulate what 'end' means.
+	 * Get char length to calculate what 'end' means.
 	 */
 
 	length = Tcl_GetCharLength(valuePtr);
@@ -5772,7 +5772,7 @@ TEBCresume(
 	}
 
 	/*
-	 * Get the unicode representation; this is where we guarantee to lose
+	 * Get the Unicode representation; this is where we guarantee to lose
 	 * bytearrays.
 	 */
 
@@ -6314,7 +6314,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (l2 >= (long)(CHAR_BIT*sizeof(long))) {
+		    if (l2 >= (long)(CHAR_BIT*sizeof(l1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -6382,9 +6382,9 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if (((size_t) shift < CHAR_BIT*sizeof(long))
+		    if (((size_t) shift < CHAR_BIT*sizeof(l1))
 			    && !((l1>0 ? l1 : ~l1) &
-				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+				-(1UL<<(CHAR_BIT*sizeof(l1) - 1 - shift)))) {
 			lResult = (unsigned long)l1 << shift;
 			goto longResultOfArithmetic;
 		    }
@@ -7654,7 +7654,7 @@ TEBCresume(
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 
 	/*
-	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
+	 * The INST_DICT_FIRST and INST_DICT_NEXT instructions are always
 	 * followed by a conditional jump, so we can take advantage of this to
 	 * do some peephole optimization (note that we're careful to not close
 	 * out someone doing something else).
@@ -8502,7 +8502,7 @@ ExecuteExtendedBinaryMathOp(
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
     int invalid, zero;
-    long shift;
+    int shift;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
@@ -9187,8 +9187,9 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_MULT:
-		if ((type1 != TCL_NUMBER_LONG) || (type2 != TCL_NUMBER_LONG)
-			|| (sizeof(Tcl_WideInt) < 2*sizeof(long))) {
+		if ((sizeof(Tcl_WideInt) < 2*sizeof(long))
+			|| (type1 != TCL_NUMBER_LONG)
+			|| (type2 != TCL_NUMBER_LONG)) {
 		    goto overflowBasic;
 		}
 		wResult = w1 * w2;

@@ -466,11 +466,13 @@ ClockGetdatefieldsObjCmd(
     }
 
     /*
-     * Extract Julian day.
+     * Extract Julian day. Always round the quotient down by subtracting 1
+     * when the remainder is negative (i.e. if the quotient was rounded up).
      */
 
-    fields.julianDay = (int) ((fields.localSeconds + JULIAN_SEC_POSIX_EPOCH)
-	    / SECONDS_PER_DAY);
+    fields.julianDay = (int) ((fields.localSeconds / SECONDS_PER_DAY) -
+	    ((fields.localSeconds % SECONDS_PER_DAY) < 0) +
+	    JULIAN_DAY_POSIX_EPOCH);
 
     /*
      * Convert to Julian or Gregorian calendar.
@@ -911,7 +913,7 @@ ConvertLocalToUTCUsingC(
     Tcl_MutexLock(&clockMutex);
     errno = 0;
     fields->seconds = (Tcl_WideInt) mktime(&timeVal);
-    localErrno = errno;
+    localErrno = (fields->seconds == -1) ? errno : 0;
     Tcl_MutexUnlock(&clockMutex);
 
     /*
@@ -1105,12 +1107,12 @@ ConvertUTCToLocalUsingC(
     } else {
 	*buffer = '+';
     }
-    sprintf(buffer+1, "%02d", diff / 3600);
+    snprintf(buffer+1, sizeof(buffer) - 1, "%02d", diff / 3600);
     diff %= 3600;
-    sprintf(buffer+3, "%02d", diff / 60);
+    snprintf(buffer+3, sizeof(buffer) - 3, "%02d", diff / 60);
     diff %= 60;
     if (diff > 0) {
-	sprintf(buffer+5, "%02d", diff);
+	snprintf(buffer+5, sizeof(buffer) - 5, "%02d", diff);
     }
     fields->tzName = Tcl_NewStringObj(buffer, -1);
     Tcl_IncrRefCount(fields->tzName);
@@ -1712,7 +1714,7 @@ ThreadSafeLocalTime(
 
     struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
-    localtime_r(timePtr, tmPtr);
+    tmPtr = localtime_r(timePtr, tmPtr);
 #else
     struct tm *sysTmPtr;
 
@@ -1722,7 +1724,7 @@ ThreadSafeLocalTime(
 	Tcl_MutexUnlock(&clockMutex);
 	return NULL;
     }
-    memcpy(tmPtr, localtime(timePtr), sizeof(struct tm));
+    memcpy(tmPtr, sysTmPtr, sizeof(struct tm));
     Tcl_MutexUnlock(&clockMutex);
 #endif
     return tmPtr;

@@ -174,6 +174,15 @@
 /* Define to 1 if you have the `OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
+/* Define to 1 if you have the `posix_spawnattr_setflags' function. */
+#undef HAVE_POSIX_SPAWNATTR_SETFLAGS
+
+/* Define to 1 if you have the `posix_spawnp' function. */
+#undef HAVE_POSIX_SPAWNP
+
+/* Define to 1 if you have the `posix_spawn_file_actions_adddup2' function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2
+
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
@@ -272,6 +281,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
 
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
@@ -452,9 +464,6 @@
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
-/* Should we use vfork() instead of fork()? */
-#undef USE_VFORK
-
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
@@ -475,9 +484,6 @@
 
 /* Add the _LARGEFILE64_SOURCE flag when building */
 #undef _LARGEFILE64_SOURCE
-
-/* Add the _LARGEFILE_SOURCE64 flag when building */
-#undef _LARGEFILE_SOURCE64
 
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS

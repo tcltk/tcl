@@ -491,7 +491,7 @@ TclMacOSXCopyFileAttributes(
  *
  * Results:
  *	The return value is 1, 0 or -1 indicating whether the file matches the
- *	given criteria, does not match them, or an error occurred (in wich
+ *	given criteria, does not match them, or an error occurred (in which
  *	case an error is left in interp).
  *
  * Side effects:

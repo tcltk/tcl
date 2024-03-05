@@ -7,10 +7,10 @@
  *
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
+ * Copyright (c) 2001, 2002 Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2006-2008 Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -23,7 +23,42 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
+
+/*
+ * Bug 7371b6270b: to check C call stack depth, prefer an approach which is
+ * compatible with AddressSanitizer (ASan) use-after-return detection.
+ */
 
+#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#include <intrin.h> /* for _AddressOfReturnAddress() */
+#endif
+
+/*
+ * As suggested by
+ * https://clang.llvm.org/docs/LanguageExtensions.html#has-builtin
+ */
+#ifndef __has_builtin
+#define __has_builtin(x) 0 /* for non-clang compilers */
+#endif
+
+void *
+TclGetCStackPtr(void)
+{
+#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
+  return __builtin_frame_address(0);
+#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+  return _AddressOfReturnAddress();
+#else
+  size_t unused = 0;
+  /*
+   * LLVM recommends using volatile:
+   * https://github.com/llvm/llvm-project/blob/llvmorg-10.0.0-rc1/clang/lib/Basic/Stack.cpp#L31
+   */
+  size_t *volatile stackLevel = &unused;
+  return (void *)stackLevel;
+#endif
+}
+
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
 
@@ -71,7 +106,7 @@ typedef struct {
 } CancelInfo;
 static Tcl_HashTable cancelTable;
 static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
+TCL_DECLARE_MUTEX(cancelLock);
 
 /*
  * Declarations for managing contexts for non-recursive coroutines. Contexts
@@ -101,7 +136,7 @@ static int		CancelEvalProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
 static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(ClientData clientData);
-static void		DeleteInterpProc(Tcl_Interp *interp);
+static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(ClientData clientData);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
@@ -857,7 +892,7 @@ Tcl_CreateInterp(void)
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * pre-existing command by the same name). If a command has a Tcl_CmdProc
+     * preexisting command by the same name). If a command has a Tcl_CmdProc
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
      * TclInvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
@@ -1195,7 +1230,7 @@ Tcl_CallWhenDeleted(
     AssocData *dPtr = (AssocData *)ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    snprintf(buffer, sizeof(buffer), "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
@@ -1337,11 +1372,11 @@ Tcl_DeleteAssocData(
 	return;
     }
     dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+    Tcl_DeleteHashEntry(hPtr);
     if (dPtr->proc != NULL) {
 	dPtr->proc(dPtr->clientData, interp);
     }
     ckfree(dPtr);
-    Tcl_DeleteHashEntry(hPtr);
 }
 
 /*
@@ -1462,7 +1497,7 @@ Tcl_DeleteInterp(
      * Ensure that the interpreter is eventually deleted.
      */
 
-    Tcl_EventuallyFree(interp, (Tcl_FreeProc *) DeleteInterpProc);
+    Tcl_EventuallyFree(interp, DeleteInterpProc);
 }
 
 /*
@@ -1488,8 +1523,9 @@ Tcl_DeleteInterp(
 
 static void
 DeleteInterpProc(
-    Tcl_Interp *interp)		/* Interpreter to delete. */
+    char *blockPtr)		/* Interpreter to delete. */
 {
+    Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1911,15 +1947,15 @@ Tcl_HideCommand(
     }
 
     /*
-     * NB: This code is currently 'like' a rename to a specialy set apart name
+     * NB: This code is currently 'like' a rename to a special separate name
      * table. Changes here and in TclRenameCommand must be kept in synch until
      * the common parts are actually factorized out.
      */
 
     /*
      * Remove the hash entry for the command from the interpreter command
-     * table. This is like deleting the command, so bump its command epoch;
-     * this invalidates any cached references that point to the command.
+     * table. This is like deleting the command, so bump its command epoch
+     * to invalidate any cached references that point to the command.
      */
 
     if (cmdPtr->hPtr != NULL) {
@@ -2040,7 +2076,7 @@ Tcl_ExposeCommand(
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	/*
-	 * This case is theoritically impossible, we might rather Tcl_Panic
+	 * This case is theoretically impossible, we might rather Tcl_Panic
 	 * than 'nicely' erroring out ?
 	 */
 
@@ -2146,7 +2182,7 @@ Tcl_ExposeCommand(
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
- *	(TclInvokeStringCommand) that eventially calls proc. When the command
+ *	(TclInvokeStringCommand) that eventually calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
@@ -3521,7 +3557,7 @@ CallCommandTraces(
  *	The value given for the code argument.
  *
  * Side effects:
- *	Transfers a message from the cancelation message to the interpreter.
+ *	Transfers a message from the cancellation message to the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -3630,7 +3666,7 @@ TclCleanupCommand(
  *	the builtin functions. Redefining a builtin function forces all
  *	existing code to be invalidated since that code may be compiled using
  *	an instruction specific to the replaced function. In addition,
- *	redefioning a non-builtin function will force existing code to be
+ *	redefining a non-builtin function will force existing code to be
  *	invalidated if the number of arguments has changed.
  *
  *----------------------------------------------------------------------
@@ -3641,7 +3677,7 @@ Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
 				 * available. */
     const char *name,		/* Name of function (e.g. "sin"). */
-    int numArgs,		/* Nnumber of arguments required by
+    int numArgs,		/* Number of arguments required by
 				 * function. */
     Tcl_ValueType *argTypes,	/* Array of types acceptable for each
 				 * argument. */
@@ -4816,7 +4852,7 @@ TEOV_NotFound(
 
     /*
      * Get the list of words for the unknown handler and allocate enough space
-     * to hold both the handler prefix and all words of the command invokation
+     * to hold both the handler prefix and all words of the command invocation
      * itself.
      */
 
@@ -5159,7 +5195,7 @@ TclEvalEx(
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
-				 * the embedded command, which is refered to
+				 * the embedded command, which is referred to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
 				 * continuation lines in this "main script",
@@ -5724,8 +5760,8 @@ TclArgumentEnter(
 	/*
 	 * Ignore argument words without line information (= dynamic). If they
 	 * are variables they may have location information associated with
-	 * that, either through globally recorded 'set' invokations, or
-	 * literals in bytecode. Eitehr way there is no need to record
+	 * that, either through globally recorded 'set' invocations, or
+	 * literals in bytecode. Either way there is no need to record
 	 * something here.
 	 */
 
@@ -6453,7 +6489,7 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
+    snprintf(buf, sizeof(buf), "%d", returnCode);
     Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 
@@ -7162,7 +7198,7 @@ int
 Tcl_SetRecursionLimit(
     Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    int depth)			/* New value for maximimum depth. */
+    int depth)			/* New value for maximum depth. */
 {
     Interp *iPtr = (Interp *) interp;
     int old;
@@ -8929,8 +8965,8 @@ TclNRCoroutineActivateCallback(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     int type = PTR2INT(data[1]);
-    int numLevels, unused;
-    int *stackLevel = &unused;
+    int numLevels;
+    void *stackLevel = TclGetCStackPtr();
 
     if (!corPtr->stackLevel) {
         /*

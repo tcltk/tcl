@@ -490,7 +490,7 @@ removeFile [file join pkg pkg2_b.tcl]
 
 makeFile {
 #  This package requires circ2, and circ2 requires circ3, which in turn
-#  requires circ1.  In case of cirularities, pkg_mkIndex should give up when
+#  requires circ1.  In case of circularities, pkg_mkIndex should give up when
 #  it gets stuck.
 package require circ2 1.0
 package provide circ1 1.0
@@ -652,7 +652,7 @@ test pkgMkIndex-12.1 {same name procs in different namespace} {
 
 removeFile [file join pkg samename.tcl]
 
-# Proc names with embedded spaces are properly listed (ie, correct number of
+# Proc names with embedded spaces are properly listed (i.e. correct number of
 # braces) in result
 makeFile {
 package provide spacename 1.0

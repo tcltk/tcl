@@ -388,7 +388,7 @@
 	the beginning of the test run
 
 	* tests/basic.test: Use version information defined in tcltest instead
-	of hardcoded version number
+	of hard-coded version number
 
 	* tests/socket.test: package require tcltest before attempting to use
 	variable defined in tcltest namespace
@@ -2596,7 +2596,7 @@
 
 	* tclUtf.c: added Unicode character table support
 
-	* tclInt.h: added TclUniCharIsWordChar
+	* tclInt.h: added Tcl_UniCharIsWordChar
 
 	* tclCmdMZ.c (Tcl_StringObjCmd): added "totitle" subcommand, changed
 	"wordend" and "wordstart" to properly handle Unicode word characters

@@ -83,22 +83,13 @@ test format-1.11.1 {integer formatting} longIs64bit {
 test format-1.12 {integer formatting} {
     format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
 } {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
-test format-1.13 {integer formatting} longIs32bit {
+test format-1.13 {integer formatting} {
     format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
 } {0 6 34 16923 -12}
-test format-1.13.1 {integer formatting} longIs64bit {
-    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
-} {0 6 34 16923 -12}
-test format-1.14 {integer formatting} longIs32bit {
+test format-1.14 {integer formatting} {
     format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
 } {    0                    6                   34                16923                  -12}
-test format-1.14.1 {integer formatting} longIs64bit {
-    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
-} {    0                    6                   34                16923                  -12}
-test format-1.15 {integer formatting} longIs32bit {
-    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
-} {0     6                    34                   16923                -12                 }
-test format-1.15.1 {integer formatting} longIs64bit {
+test format-1.15 {integer formatting} {
     format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
 } {0     6                    34                   16923                -12                 }
 
@@ -119,14 +110,14 @@ test format-2.5 {string formatting, embedded nulls} {
     format "%10s" abc\0def
 } "   abc\0def"
 test format-2.6 {string formatting, international chars} {
-    format "%10s" abc\ufeffdef
-} "   abc\ufeffdef"
+    format "%10s" abc\uFEFFdef
+} "   abc\uFEFFdef"
 test format-2.7 {string formatting, international chars} {
-    format "%.5s" abc\ufeffdef
-} "abc\ufeffd"
+    format "%.5s" abc\uFEFFdef
+} "abc\uFEFFd"
 test format-2.8 {string formatting, international chars} {
-    format "foo\ufeffbar%s" baz
-} "foo\ufeffbarbaz"
+    format "foo\uFEFFbar%s" baz
+} "foo\uFEFFbarbaz"
 test format-2.9 {string formatting, width} {
     format "a%5sa" f
 } "a    fa"
@@ -373,9 +364,9 @@ test format-8.19 {error conditions} {
     catch {format %q x}
 } 1
 test format-8.20 {error conditions} {
-    catch {format %q x} msg
+    catch {format %r x} msg
     set msg
-} {bad field specifier "q"}
+} {bad field specifier "r"}
 test format-8.21 {error conditions} {
     catch {format %d}
 } 1

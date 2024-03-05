@@ -3028,7 +3028,7 @@ in case of errors is required for proper cleanup by the user of fcopy. (BW)
 	x eval rename foo blotz
 	x alias foo {}
 The problem was that the interp code was not using the actual current name
-of the command to be deleted as a result of un-aliasing foo. (JL)
+of the command to be deleted as a result of unaliasing foo. (JL)
 
 6/19/97 (feature change) Pass interp down to the ChannelOption and
 driver specific calls so system errors can be differentiated from syntax
@@ -4167,7 +4167,7 @@ Only.)  This fix included:
 the location of the encoding files and libraries.  This fix included:
     - Adding the TclSetPerInitScript routine.
     - Modifying the Tcl_Init routines to evaluate the non-NULL
-      pre-init script.
+      preinit script.
     - Adding the Tcl_SetdefaultEncodingDir and Tcl_GetDefaultEncodingDir
       routines.
     - Modifying the TclpInitLibrary routines to append the default
@@ -6977,7 +6977,7 @@ of traced command do not fire (sofer)
 
 2007-08-16 (bug fix)[1773040] ::errorInfo trace crash (janssen,porter)
 
-2007-08-16 (performance)[1564517] pre-compile constant expressions (porter)
+2007-08-16 (performance)[1564517] precompile constant expressions (porter)
 
 2007-08-21 (bug fix)[1775878] 'puts \' in interactive tclsh failed to move to
 prompt for continuation line (porter)
@@ -8685,7 +8685,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
 
-2016-07-09 [ae61a6] [file] handling of Win hardcoded names (CON) (nadkarni)
+2016-07-09 [ae61a6] [file] handling of Win hard-coded names (CON) (nadkarni)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)
@@ -9167,3 +9167,130 @@ Update bundled libtommath
 Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 - Released 8.6.13, Nov 22, 2022 - details at https://core.tcl-lang.org/tcl/ -
+
+2022-12-01 Backport TIP #402: path name starting with '//' not
+	replaced by '/' also on Cygwin and QNX (nijtmans)
+
+2022-12-12 Windows binaries licence metadata changed to  University of
+	California to match licence (nadkarni)
+
+2022-12-16 check mknod, tcdrain and uname in build script for VxWorks or others
+	(nijtmans)
+
+2022-12-16 32-bit cygwin is dead, so --enable-64bit in a Cygwin build no longer
+	needed (nijtmans)
+
+2023-01-01 (bug)[8e811b] Wrong formatting of arguments in man page (nijtmans)
+
+2023-01-06 (bug) [0f19ed]: Windows 11 not reported in  tcl_platform(osVersion)
+	(nijtmans)
+
+2023-01-15 (bug) [8f7fde] string compare failing on big endian (coulter)
+
+2023-01-22 (bug) [3e8074] y2k38 problem in [interp limit time -seconds]
+	(nijtmans)
+
+2023-01-22 (bug)  [e3dcab] crash with tcl_precision equal 15..18 (kenny)
+
+2023-02-22 (bug) [d19fe0] output replacement character on incomplete sequences
+	in unicode encoding (nijtmans)
+
+2023-02-22 (bug) [534172] sporadic crash in memchan thread cleanup.
+	(neumann,nijtmans)
+
+2023-02-28 (bug) [f9eafc] throw error in zip command when file comment/filename
+	to long or not iso-latin-1 (nijtmans)
+
+2023-03-04 (bug) [1b8df1] fix usec on windows returned by Tcl_GetTime (nadkarni)
+
+2023-03-05 (bug) [9c5a00]. Fix ~ and ~user path prefix on Windows (nadkarni)
+
+2023-03-13 (bug)[183a1a] Prevent BO by Tcl_UtfToExternal (nadkarni)
+
+2023-03-14 (bug) [ea69b0], crash when using a channel transformation on TCP
+	client socket (coulter)
+
+2023-03-22 (bug)[026575] Prevent invalid read in Tcl_UtfToUniChar (nijtmans)
+
+2023-03-30 (rfe) Allow empty mode in [chan create] to allow refchan version of
+	[socket -server] (max)
+
+2023-03-30 [0cb355] macOS 13 SDK deprecates sprintf() (chavez)
+
+2023-05-02 (bug) [ab123c] argument position overflow in [scan %num$mode]
+	(nadkarni)
+
+2023-05-02 (bug) [784bef] tailcall crash (nadkarni)
+
+2023-06-03 (bug) [af3ebc] clock scan and clock add bugs in error cases / with
+	abbreviated options (ade)
+
+2023-07-05 (bug) [66ffaf] incomplete double byte encoding sequences ignored like
+	in [encoding convertfrom gb12345 x] (nadkarni)
+
+2023-07-26 (rfe) [c54e4a] fork multithreading performance by using vfork/spawn
+	when supported (neumann)
+
+2023-08-29 Update zlib to version 1.3 (nijtmans)
+
+2023-09-04 Update libtommath to version 1.2.1 (nijtmans)
+
+2023-09-05 (bug) [60cacf] Fix tclvfs tkt Segmentation Fault at interpreter exit
+	when tclvfs loaded.
+2023-09-05 (bug) [b5ac3e] Tcl_GetUniChar reads beyond string length for ASCII
+	strings (nadkarni)
+
+2023-09-06 (bug) [d3465c] Update install-sh to version 2020-11-14.01 (nijtmans)
+
+2023-09-08 Unicode 15.1 (nijtmans)
+
+2023-09-12 Remove option utf16 from win/makefile.vc (nijtmans)
+
+2023-09-13 (bug) [43b065] MS Windows: files with emojis are found by glob but
+	not recognized by file exists or open (nijtmans)
+
+2023-09-13 (bug) [a1f11d] VC6 compilation error of core-8-6-branch: error C2065:
+	'int16_t' : undeclared identifier (nijtmans)
+
+2023-09-14 (bug) [00655c] ClockGetdatefieldsObjCmd(): avoid signed integer
+	overflow and platform-dependent behavior (nijtmans)
+
+2023-09-28 TIP #662: Tcl_VarEval is not depreciated any more (nijtmans)
+
+2023-10-01 (bug) [7b3167] tclOO.c: initialize fakeObject.refCount (nijtmans)
+
+2023-10-04 (bug) [7371b6] AddressSanitizer use-after-return detection breaks NRE
+	tests, coroutines (nijtmans)
+
+2023-11-20 (bug)[32b889] prevent spurious errors from [clock format] (gahr)
+
+2023-11-30 (bug) [fb2fa9],[21b062] reallow [exec %var%] on MS-Windows. It was
+	forbidden in 8.6.13 (brester)
+
+2023-12-30 (rfe) [0ac9d0] Don't call getsockname(2) in Tcl_MakeFileChannel(3)
+	unless absolutely necessary. Permits better constraining of Tcl/tclsh
+	via OpenBSD's pledge(2) or similar mechanisms. Minor rewrite.
+
+2024-01-09 (feature) Adapt tcltest to support Tcl 9.
+=> tcltest 2.5.7
+
+2024-01-11 (bug) [fd27ad] doc change of Tcl_PkgRequire & friends: version string
+	specification refers to "package require".
+
+2024-01-27 (bug) [16e25e] error for [tcl_startOfPreviousWord string end-1]
+	(nijtmans)
+
+2024-01-29 Update to zlib 1.3.1 (nijtmans)
+
+2024-01-29 [db4f28] segfault when Tcl_ReadChars is called with unicode object
+	(brester)
+
+2024-02-04 tzdata updated to Olson's tzdata2024a (nijtmans)
+
+2024-02-05 fix/document Tcl_ObjPrintf with "ll" modifier (nijtmans)
+
+2024-02-06 [8e666d] endless loop when redefining proc ::history (nash)
+
+2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
+
+- Released 8.6.14, Feb 28, 2024 - details at https://core.tcl-lang.org/tcl/ -

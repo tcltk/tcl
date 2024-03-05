@@ -211,6 +211,38 @@ test dstring-2.15 {appending list elements} -constraints testdstring -setup {
 } -cleanup {
     testdstring free
 } -result {x  #}
+test dstring-2.16 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\n"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result \\\\\\n
+test dstring-2.17 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\{"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \{]]
+test dstring-2.18 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\}"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \}]]
+test dstring-2.19 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\\"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \\]]
 
 test dstring-3.1 {nested sublists} -constraints testdstring -setup {
     testdstring free
@@ -382,6 +414,21 @@ test dstring-4.2 {truncation} -constraints testdstring -setup {
 } -body {
     testdstring append "xyzzy" -1
     testdstring trunc 0
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{} 0}
+test dstring-4.3 {truncation} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "xwvut" -1
+    # Pass a negative length to Tcl_DStringSetLength();
+    # if not caught, causing '\0' to be written out-of-bounds,
+    # try corrupting dsPtr->length which begins
+    # 2*sizeof(int) bytes before dsPtr->staticSpace[],
+    # so that the result is -256 (on little endian systems)
+    # rather than e.g. -8.
+    testdstring trunc -8
     list [testdstring get] [testdstring length]
 } -cleanup {
     testdstring free

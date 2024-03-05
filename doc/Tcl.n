@@ -182,7 +182,7 @@ Vertical tab (Unicode U+00000B).
 .
 A single space character replaces the backslash, newline, and all spaces
 and tabs after the newline.  This backslash sequence is unique in that it
-is replaced in a separate pre-pass before the command is actually parsed.
+is replaced in a separate prepass before the command is actually parsed.
 This means that it will be replaced even when it occurs between braces,
 and the resulting space will be treated as a word separator if it is not
 in braces or quotes.

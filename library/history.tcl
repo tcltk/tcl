@@ -53,7 +53,7 @@ proc ::history {args} {
     }
 
     # Tricky stuff needed to make stack and errors come out right!
-    tailcall apply {arglist {tailcall history {*}$arglist} ::tcl} $args
+    tailcall apply {arglist {tailcall ::tcl::history {*}$arglist} ::tcl} $args
 }
 
 # (unnamed) --
@@ -268,7 +268,7 @@ proc ::tcl::HistIndex {event} {
 	return -code error "event \"$event\" is too far in the past"
     }
     if {$i > $history(nextid)} {
-	return -code error "event \"$event\" hasn't occured yet"
+	return -code error "event \"$event\" hasn't occurred yet"
     }
     return $i
 }

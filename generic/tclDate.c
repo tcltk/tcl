@@ -64,7 +64,6 @@
 #define yylex           TclDatelex
 #define yyerror         TclDateerror
 #define yydebug         TclDatedebug
-#define yynerrs         TclDatenerrs
 
 
 /* Copy the first part of user declarations.  */
@@ -1295,9 +1294,6 @@ static YYLTYPE yyloc_default
 ;
 YYLTYPE yylloc = yyloc_default;
 
-    /* Number of syntax errors so far.  */
-    int yynerrs;
-
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
     int yyerrstatus;
@@ -1361,7 +1357,6 @@ YYLTYPE yylloc = yyloc_default;
 
   yystate = 0;
   yyerrstatus = 0;
-  yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
   yylsp[0] = yylloc;
   goto yysetstate;
@@ -2099,7 +2094,6 @@ yyerrlab:
   /* If not already recovering from an error, report this error.  */
   if (!yyerrstatus)
     {
-      ++yynerrs;
 #if ! YYERROR_VERBOSE
       yyerror (&yylloc, info, YY_("syntax error"));
 #else
@@ -2426,7 +2420,7 @@ static const TABLE TimezoneTable[] = {
     { "ist",	tZONE,	  -HOUR(11/2) },    /* Indian Standard */
     { "zp6",	tZONE,	  -HOUR( 6) },	    /* USSR Zone 5 */
 #if	0
-    /* For completeness.  NST is also Newfoundland Stanard, nad SST is
+    /* For completeness.  NST is also Newfoundland Standard, and SST is
      * also Swedish Summer. */
     { "nst",	tZONE,	  -HOUR(13/2) },    /* North Sumatra */
     { "sst",	tZONE,	  -HOUR( 7) },	    /* South Sumatra, USSR Zone 6 */

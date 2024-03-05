@@ -625,14 +625,14 @@ the test suite is being run on a Unix platform.
 .PP
 Each \fBtest\fR should include whatever \fB\-constraints\fR are
 required to constrain it to run only where appropriate.  Several
-constraints are pre-defined in the \fBtcltest\fR package, listed
+constraints are predefined in the \fBtcltest\fR package, listed
 below.  The registration of user-defined constraints is performed
 by the \fBtestConstraint\fR command.  User-defined constraints
 may appear within a test file, or within the script specified
 by the \fBconfigure \-load\fR or \fBconfigure \-loadfile\fR
 options.
 .PP
-The following is a list of constraints pre-defined by the
+The following is a list of constraints predefined by the
 \fBtcltest\fR package itself:
 .TP
 \fIsingleTestInterp\fR

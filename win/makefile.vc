@@ -17,11 +17,11 @@
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
 # For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md)
-# or examine Sections 6-8 in rules.vc.
+# or examine Sections 7-9 in rules.vc.
 #
-# Possible values of TARGET are:
+# Possible values for TARGET are:
 #	release  -- Builds the core, the shell and the dlls. (default)
-#	dlls     -- Just builds the windows extensions
+#	dlls     -- Just builds the windows extensions.
 #	shell    -- Just builds the shell and the core.
 #	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
@@ -47,12 +47,12 @@
 # Visual Studio/Windows SDK for the appropriate target architecture.
 #
 # NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-# SDK (not expressly needed), run setenv.bat after
-# vcvars32.bat according to the instructions for it.  This can also
-# turn on the 64-bit compiler, if your SDK has it.
+# SDK (not expressly needed), run setenv.bat after vcvars32.bat
+# according to the instructions for it.  This can also turn on the
+# 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,time64bit,unchecked,utf16,none
+#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,time64bit,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -77,7 +77,6 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utf16     = Forces a build using UTF-16 representation internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -109,7 +108,7 @@
 #		Hooks to allow the intermediate and output directories to be
 #		changed.  $(OUT_DIR) is assumed to be
 #		$(BINROOT)\(Release|Debug) based on if symbols are requested.
-#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#		$(TMP_DIR) will be $(OUT_DIR)\<buildtype> by default.
 #
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
@@ -134,10 +133,10 @@ PROJECT = tcl
 # rules.vc file will set up "all" as the target.
 DEFAULT_BUILD_TARGET = release
 
-# We want to use our own resource file, not the standard template one.
+# We have a custom resource file
 RCFILE = tcl.rc
 
-# The rules.vc file does most of the hard work in terms of defining
+# The rules.vc file does much of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
 
@@ -188,7 +187,7 @@ TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
-TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 CAT32		= $(OUT_DIR)\cat32.exe
 
 TCLSHOBJS = \
@@ -213,7 +212,8 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclWinDde.obj \
 !endif
 !endif
-	$(TMP_DIR)\testMain.obj
+	$(TMP_DIR)\testMain.obj \
+	$(TMP_DIR)\tcltest.res
 
 COREOBJS = \
 	$(TMP_DIR)\regcomp.obj \
@@ -494,10 +494,12 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 
 !if $(STATIC_BUILD)
@@ -693,7 +695,6 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
 @TCL_DBGX@           $(SUFX)
 @TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
-@TCL_NEEDS_EXP_FILE@
 @LIBS@               $(baselibs) $(PRJ_LIBS)
 @prefix@             $(_INSTALLDIR)
 @exec_prefix@        $(BIN_INSTALL_DIR)
@@ -711,13 +712,12 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_LD_SEARCH_FLAGS@
 @LIBOBJS@
 @RANLIB@
-@TCL_LIB_FLAG@
-@TCL_BUILD_LIB_SPEC@
+@TCL_LIB_FLAG@       $(PROJECT)$(VERSION)$(SUFX).lib
+@TCL_BUILD_LIB_SPEC@ $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
-@TCL_LIB_VERSIONS_OK@
 @TCL_SRC_DIR@        $(ROOT)
-@TCL_PACKAGE_PATH@
+@TCL_PACKAGE_PATH@   $(LIB_INSTALL_DIR)
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
@@ -725,7 +725,6 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
 @TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
 @TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
-@CFG_TCL_EXPORT_FILE_SUFFIX@  $(VERSION)$(SUFX).lib
 @CFG_TCL_SHARED_LIB_SUFFIX@   $(VERSION)$(SUFX).dll
 @CFG_TCL_UNSHARED_LIB_SUFFIX@ $(VERSION)$(SUFX).lib
 !if $(STATIC_BUILD)
@@ -733,6 +732,7 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 !else
 @TCL_SHARED_BUILD@   1
 !endif
+@TCL_ZLIB_LIB_NAME@ zdll.lib
 <<
 
 
@@ -887,6 +887,7 @@ $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
 
+$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 #---------------------------------------------------------------------
 # Installation.

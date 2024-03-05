@@ -364,7 +364,7 @@ test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
     testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     trace var int w x
     testlink update 32 4.0 3 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
-    trace vdelete int w x
+    trace remove variable int write x
     return $x
 } {{int {} w} 32 -2.0 0 xyzzy 995511}
 test link-8.2 {Tcl_UpdateLinkedVar procedure} {testlink} {
@@ -378,7 +378,7 @@ test link-8.2 {Tcl_UpdateLinkedVar procedure} {testlink} {
     testlink delete
     trace var int w x
     testlink update 32 4.0 6 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
-    trace vdelete int w x
+    trace remove variable int write x
     return $x
 } {}
 test link-8.3 {Tcl_UpdateLinkedVar procedure, read-only variable} {testlink} {

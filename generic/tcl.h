@@ -41,20 +41,25 @@ extern "C" {
  * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
- * README		(sections 0 and 2, with and without separator)
+ * README.md		(sections 0 and 2, with and without separator)
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
-#define TCL_MAJOR_VERSION   8
+#if !defined(TCL_MAJOR_VERSION)
+#   define TCL_MAJOR_VERSION   8
+#endif
+#if TCL_MAJOR_VERSION != 8
+#   error "This header-file is for Tcl 8 only"
+#endif
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  13
+#define TCL_RELEASE_SERIAL  14
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.13"
+#define TCL_PATCH_LEVEL	    "8.6.14"
 
 /*
  *----------------------------------------------------------------------------
@@ -131,7 +136,7 @@ extern "C" {
  */
 
 #include <stdarg.h>
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
@@ -393,7 +398,7 @@ typedef long LONG;
  *
  * Note on converting between Tcl_WideInt and strings. This implementation (in
  * tclObj.c) depends on the function
- * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
+ * snprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
@@ -505,7 +510,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  */
 
 typedef struct Tcl_Interp
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
@@ -1134,7 +1139,7 @@ typedef struct Tcl_DString {
  * give the flag)
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 #   define TCL_PARSE_PART1	0x400
 #endif /* !TCL_NO_DEPRECATED */
 
@@ -2181,8 +2186,7 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values should be 3, 4 or 6
- * (or perhaps 1 if we want to support a non-unicode enabled core). If 3 or
+ * Unicode character in UTF-8. The valid values should be 3, 4 or 6. If 3 or
  * 4, then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If 6,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
  * is the default and recommended mode. UCS-4 is experimental and not

@@ -512,7 +512,7 @@ test scan-5.10 {integer scanning} -setup {
     list [scan "1 2 " "%hd %d %d %d" a b c d] $a $b $c $d
 } -result {2 1 2 {} {}}
 #
-# The behavior for scaning intergers larger than MAX_INT is not defined by the
+# The behavior for scanning integers larger than MAX_INT is not defined by the
 # ANSI spec.  Some implementations wrap the input (-16) some return MAX_INT.
 #
 test scan-5.11 {integer scanning} -constraints {nonPortable} -setup {
@@ -852,6 +852,11 @@ test scan-13.8 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
     set msg [scan "10 20 30" {%100$d %5$d %200$d}]
     list [llength $msg] [lindex $msg 99] [lindex $msg 4] [lindex $msg 199]
 } {200 10 20 30}
+test scan-13.9 {Tcl_ScanObjCmd, inline XPG case limit error} -body {
+    # Note this applies to 64-bit builds as well so long as max number of
+    # command line arguments allowed for scan command is INT_MAX
+    scan abc {%2147483648$s}
+} -result {"%n$" argument index out of range} -returnCodes error
 
 # scan infinities - not working
 

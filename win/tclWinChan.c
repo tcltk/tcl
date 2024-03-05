@@ -98,6 +98,9 @@ static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
+static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+			    int permissions, int appendMode);
+
 /*
  * This structure describes the channel type structure for file based IO.
  */
@@ -174,6 +177,8 @@ static void
 FileChannelExitHandler(
     ClientData clientData)	/* Old window proc */
 {
+    (void)clientData;
+
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
 
@@ -202,6 +207,7 @@ FileSetupProc(
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)data;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -245,6 +251,7 @@ FileCheckProc(
     FileEvent *evPtr;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    (void)data;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -259,7 +266,7 @@ FileCheckProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask && !(infoPtr->flags & FILE_PENDING)) {
 	    infoPtr->flags |= FILE_PENDING;
-	    evPtr = ckalloc(sizeof(FileEvent));
+	    evPtr = (FileEvent *)ckalloc(sizeof(FileEvent));
 	    evPtr->header.proc = FileEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -342,7 +349,7 @@ FileBlockProc(
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
 
     /*
      * Files on Windows can not be switched between blocking and nonblocking,
@@ -380,10 +387,11 @@ FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
     Tcl_Interp *interp)		/* Not used. */
 {
-    FileInfo *fileInfoPtr = instanceData;
+    FileInfo *fileInfoPtr = (FileInfo *)instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
+    (void)interp;
 
     /*
      * Remove the file from the watch list.
@@ -467,7 +475,7 @@ FileSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
     DWORD moveMethod;
 
@@ -485,7 +493,7 @@ FileSeekProc(
      */
 
     oldPosHigh = 0;
-    oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
+    oldPos = (int)SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
     if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
@@ -497,7 +505,7 @@ FileSeekProc(
     }
 
     newPosHigh = (offset < 0 ? -1 : 0);
-    newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
+    newPos = (int)SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
     if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
@@ -545,7 +553,7 @@ FileWideSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD moveMethod;
     LONG newPos, newPosHigh;
 
@@ -559,7 +567,7 @@ FileWideSeekProc(
     }
 
     newPosHigh = Tcl_WideAsLong(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
+    newPos = (int)SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
 	    &newPosHigh, moveMethod);
     if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -594,7 +602,7 @@ FileTruncateProc(
     ClientData instanceData,	/* File state. */
     Tcl_WideInt length)		/* Length to truncate at. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
 
     /*
@@ -602,7 +610,7 @@ FileTruncateProc(
      */
 
     oldPosHigh = 0;
-    oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
+    oldPos = (int)SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
     if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
@@ -616,7 +624,7 @@ FileTruncateProc(
      */
 
     newPosHigh = Tcl_WideAsLong(length >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
+    newPos = (int)SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
 	    &newPosHigh, FILE_BEGIN);
     if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -670,7 +678,7 @@ FileInputProc(
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD bytesRead;
 
     *errorCode = 0;
@@ -689,7 +697,7 @@ FileInputProc(
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    (LPOVERLAPPED) NULL) != FALSE) {
-	return bytesRead;
+	return (int)bytesRead;
     }
 
     TclWinConvertError(GetLastError());
@@ -725,7 +733,7 @@ FileOutputProc(
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     DWORD bytesWritten;
 
     *errorCode = 0;
@@ -746,7 +754,7 @@ FileOutputProc(
 	return -1;
     }
     infoPtr->dirty = 1;
-    return bytesWritten;
+    return (int)bytesWritten;
 }
 
 /*
@@ -772,7 +780,7 @@ FileWatchProc(
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
     Tcl_Time blockTime = { 0, 0 };
 
     /*
@@ -810,7 +818,7 @@ FileGetHandleProc(
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
     ClientData *handlePtr)	/* Where to store the handle.  */
 {
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = (FileInfo *)instanceData;
 
     if (direction & infoPtr->validMask) {
 	*handlePtr = (ClientData) infoPtr->handle;
@@ -855,7 +863,7 @@ TclpOpenFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
 
-    nativeName = Tcl_FSGetNativePath(pathPtr);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "couldn't open \"",
@@ -927,7 +935,7 @@ TclpOpenFileChannel(
 	}
 
 	/*
-	* For natively named Windows serial ports we are done.
+	* For natively-named Windows serial ports we are done.
 	*/
 	channel = TclWinOpenSerialChannel(handle, channelName,
 		channelPermissions);
@@ -1022,7 +1030,7 @@ TclpOpenFileChannel(
     case FILE_TYPE_CHAR:
     case FILE_TYPE_DISK:
     case FILE_TYPE_UNKNOWN:
-	channel = TclWinOpenFileChannel(handle, channelName,
+	channel = OpenFileChannel(handle, channelName,
 		channelPermissions, (mode & O_APPEND) ? FILE_APPEND : 0);
 	break;
 
@@ -1063,7 +1071,7 @@ TclpOpenFileChannel(
 Tcl_Channel
 Tcl_MakeFileChannel(
     ClientData rawHandle,	/* OS level handle */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
@@ -1099,7 +1107,7 @@ Tcl_MakeFileChannel(
 
     case FILE_TYPE_DISK:
     case FILE_TYPE_CHAR:
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
 	break;
 
     case FILE_TYPE_UNKNOWN:
@@ -1233,7 +1241,7 @@ Tcl_MakeFileChannel(
 	 * is valid to something.
 	 */
 
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
     }
 
     return channel;
@@ -1322,7 +1330,7 @@ TclpGetDefaultStdChannel(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinOpenFileChannel --
+ * OpenFileChannel --
  *
  *	Constructs a File channel for the specified standard OS handle. This
  *	is a helper function to break up the construction of channels into
@@ -1339,7 +1347,7 @@ TclpGetDefaultStdChannel(
  */
 
 Tcl_Channel
-TclWinOpenFileChannel(
+OpenFileChannel(
     HANDLE handle,		/* Win32 HANDLE to swallow */
     char *channelName,		/* Buffer to receive channel name */
     int permissions,		/* OR'ed combination of TCL_READABLE,
@@ -1363,7 +1371,7 @@ TclWinOpenFileChannel(
 	}
     }
 
-    infoPtr = ckalloc(sizeof(FileInfo));
+    infoPtr = (FileInfo *)ckalloc(sizeof(FileInfo));
 
     /*
      * TIP #218. Removed the code inserting the new structure into the global
@@ -1377,7 +1385,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
@@ -1454,7 +1462,7 @@ FileThreadActionProc(
     int action)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    FileInfo *infoPtr = instanceData;
+    FileInfo *infoPtr = ( FileInfo *)instanceData;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
 	infoPtr->nextPtr = tsdPtr->firstFilePtr;
@@ -1557,7 +1565,7 @@ NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
-    int i, len = wcslen(p);
+    int i, len = (int)wcslen(p);
 
     /*
      * 1. Look for com[1-9]:?

@@ -433,7 +433,7 @@ TclWinDriveLetterForVolMountPoint(
 	    if (!alreadyStored) {
 		dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep(Target);
-		dlPtr2->driveLetter = (char) drive[0];
+		dlPtr2->driveLetter = (WCHAR) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
 	    }
@@ -459,7 +459,7 @@ TclWinDriveLetterForVolMountPoint(
 
     dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
     dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
-    dlPtr2->driveLetter = -1;
+    dlPtr2->driveLetter = (WCHAR)-1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
     Tcl_MutexUnlock(&mountPointMap);
@@ -600,7 +600,7 @@ Tcl_WinTCharToUtf(
 	return NULL;
     }
     if (len < 0) {
-	len = wcslen((WCHAR *)string);
+	len = (int)wcslen((WCHAR *)string);
     } else {
 	len /= 2;
     }
@@ -663,7 +663,7 @@ TclWinCPUID(
 
 #if defined(HAVE_INTRIN_H) && defined(_WIN64) && defined(HAVE_CPUID)
 
-    __cpuid((int *)regsPtr, index);
+    __cpuid((int *)regsPtr, (int)index);
     status = TCL_OK;
 
 #elif defined(__GNUC__) && defined(HAVE_CPUID)

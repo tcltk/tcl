@@ -1382,7 +1382,7 @@ a better first place to look now.
 
 2012-05-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* compat/zlib/*: Upgrade to zlib 1.2.7 (pre-built dll is still 1.2.5,
+	* compat/zlib/*: Upgrade to zlib 1.2.7 (prebuilt dll is still 1.2.5,
 	will be upgraded as soon as the official build is available)
 
 2012-05-03  Don Porter  <dgp@users.sourceforge.net>
@@ -5482,7 +5482,7 @@ a better first place to look now.
 	* generic/tclIORChan.c (ReflectClose, ReflectInput, ReflectOutput,
 	(ReflectSeekWide, ReflectWatch, ReflectBlock, ReflectSetOption,
 	(ReflectGetOption, ForwardProc): [Bug 2978773]: Preserve
-	ReflectedChannel* structures across handler invokations, to avoid
+	ReflectedChannel* structures across handler invocations, to avoid
 	crashes when the handler implementation induces nested callbacks and
 	destruction of the channel deep inside such a nesting.
 
@@ -6363,7 +6363,7 @@ a better first place to look now.
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/Makefile.in (trace-shell, trace-test): [FRQ 1083288]: Added
-	targets to allow easier tracing of shell and test invokations.
+	targets to allow easier tracing of shell and test invocations.
 
 	* unix/configure.in: [Bug 942170]:	Detect the st_blocks field of
 	* generic/tclCmdAH.c (StoreStatData):	'struct stat' correctly.
@@ -6847,7 +6847,7 @@ a better first place to look now.
 
 	* unix/tclUnixChan.c (TtyParseMode): Partial undo of Donal's tidy-up
 	from a few days ago (2009-11-9, not in ChangeLog). It seems that
-	strchr is apparently a macro on AIX and reacts badly to pre-processor
+	strchr is apparently a macro on AIX and reacts badly to preprocessor
 	directives in its arguments.
 
 2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
@@ -7141,7 +7141,7 @@ a better first place to look now.
 	package-* that were for building Solaris packages.  Appears that the
 	pieces needed for these targets to function have never been present in
 	the current era of Tcl development and belong completely to Tcl
-	pre-history.
+	prehistory.
 
 2009-10-19  Don Porter  <dgp@users.sourceforge.net>
 
@@ -8709,7 +8709,7 @@ a better first place to look now.
 2009-01-19  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/build.vc.bat: Improved tools detection and error message
-	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into seperate
+	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into separate
 	parts for easier maintenance. Matched all sources built using -GL to
 	both $(lib) and $(link) to use -LTCG and avoid a warning message.
 	Addressed the over-building nature of the htmlhelp target by moving

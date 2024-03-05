@@ -203,7 +203,7 @@ test resolver-2.1 {compiled var resolver: Bug #3383616} -setup {
 # resolver-agnostic).
 #
 # In order to make the test cases for the per-interpreter cmd literal pool
-# reproducable and to minimize interactions between test cases, we use a child
+# reproducible and to minimize interactions between test cases, we use a child
 # interpreter per test-case.
 #
 #

@@ -108,7 +108,7 @@ it immediately upon \fBpackage require\fR.  This is not compatible with
 the use of \fIauto_reset\fR, and therefore its use is discouraged.
 .TP 15
 \fB\-load \fIpkgPat\fR
-The index process will pre-load any packages that exist in the
+The index process will preload any packages that exist in the
 current interpreter and match \fIpkgPat\fR into the child interpreter used to
 generate the index.  The pattern match uses string match rules, but without
 making case distinctions.

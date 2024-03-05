@@ -1,5 +1,12 @@
 name: Windows
-on: [push]
+on:
+  push:
+    branches:
+    - "main"
+    - "core-8-branch"
+    - "core-8-6-branch"
+    tags:
+    - "core-**"
 permissions:
   contents: read
 env:
@@ -13,7 +20,7 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
           - "--enable-symbols"
@@ -26,21 +33,30 @@ jobs:
         with:
           msystem: MINGW64
           install: git mingw-w64-x86_64-toolchain make
+        timeout-minutes: 10
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
+          CFGOPT: --enable-64bit ${{ matrix.config }}
+        timeout-minutes: 5
       - name: Build
         run: make all
+        timeout-minutes: 5
       - name: Build Test Harness
         run: make tcltest
+        timeout-minutes: 5
       - name: Run Tests
         run: make test
+        timeout-minutes: 30
+
+# If you add builds with Wine, be sure to define the environment variable
+# CI_USING_WINE when running them so that broken tests know not to run.

@@ -18600,6 +18600,20 @@ test clock-7.9 {Julian Day, two values} {
     clock scan {2440588 2440589} -format {%J %J} -gmt true
 } 86400
 
+test clock-7.10 {Julian Day, negative amount} {
+    # Note: %J does not accept negative input;
+    # add negative amounts to Julian day 0 instead
+    set s0 [clock scan 0 -format %J -gmt true]
+    set J0 [scan [clock format $s0 -format %J -gmt true] %lld]
+    set s0m1d [clock add $s0 -1 days -timezone :UTC]
+    set s0m24h [clock add $s0 -24 hours -timezone :UTC]
+    set J0m24h [scan [clock format $s0m24h -format %J -gmt true] %lld]
+    set s0m1s [clock add $s0 -1 seconds -timezone :UTC]
+    set J0m1s [scan [clock format $s0m1s -format %J -gmt true] %lld]
+    list $s0m1d $s0m24h $J0m24h $s0m1s $J0m1s $s0 $J0 \
+	[::tcl::mathop::== $s0m1d $s0m24h] [::tcl::mathop::== $J0m24h $J0m1s]
+} [list -210866889600 -210866889600 -1 -210866803201 -1 -210866803200 0 1 1]
+
 # BEGIN testcases8
 
 # Test parsing of ccyymmdd
@@ -36047,7 +36061,7 @@ test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
     } \
     -result {-0500}
 
-# 43.1 was a bad test - mktime returning -1 is an error according to posix.
+# 43.1 was a bad test - mktime returning -1 is an error according to Posix.
 
 test clock-44.1 {regression test - time zone name containing hyphen } \
     -setup {
@@ -36772,6 +36786,14 @@ test clock-57.1 {clock scan - abbreviated options} {
     clock scan 1970-01-01 -f %Y-%m-%d -g true
 } 0
 
+test clock-57.2 {clock scan - not -gmt and -timezone in the same call} {
+    catch {clock scan 1970-01-01 -format %Y-%m-%d -gmt true -timezone :Europe/Berlin}
+} 1
+
+test clock-57.3 {clock scan - not -g and -timezone in the same call} {
+    catch {clock scan 1970-01-01 -format %Y-%m-%d -g true -timezone :Europe/Berlin}
+} 1
+
 test clock-58.1 {clock l10n - Japanese localisation} {*}{
     -setup {
 	proc backslashify { string } {
@@ -36982,6 +37004,15 @@ test clock-65.1 {clock add, bad option [Bug 2481670]} {*}{
     -match glob
     -returnCodes error
     -result {bad option "-foo"*}
+}
+
+test clock-65.2 {clock add with both -timezone and -gmt} {*}{
+    -body {
+	clock add 0 1 year -timezone :CET -gmt true
+    }
+    -match glob
+    -returnCodes error
+    -result {cannot use -gmt and -timezone in same call}
 }
 
 test clock-66.1 {clock scan, no date, never-before-seen timezone} {*}{

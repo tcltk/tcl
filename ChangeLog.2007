@@ -1426,7 +1426,7 @@
 	initialization assumptions of the TIP 280 code in CompileWord().
 
 	* generic/tclCompExpr.c:	Suppress the attempt to convert to
-	numeric when pre-compiling a constant expresion indicates an error.
+	numeric when precompiling a constant expression indicates an error.
 
 2007-08-22  Miguel Sofer  <msofer@users.sf.net>
 
@@ -2827,8 +2827,8 @@
 2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* win/tclWinThrd.c: Thread exit handler marks the current thread as
-	un-initialized. This allows exit handlers that are registered later to
-	re-initialize this subsystem in case they need to use some sync
+	uninitialized. This allows exit handlers that are registered later to
+	reinitialize this subsystem in case they need to use some sync
 	primitives (cond variables) from this file again.
 
 2007-03-23  Miguel Sofer  <msofer@users.sf.net>
@@ -4938,7 +4938,7 @@
 
 	Misc patches to make code more efficient. [Bug 1530474] (afredd)
 	* generic/*.c, macosx/tclMacOSXNotify.c, unix/tclUnixNotfy.c,
-	* win/tclWinThrd.c: Tidy up invokations of Tcl_Panic() to promote
+	* win/tclWinThrd.c: Tidy up invocations of Tcl_Panic() to promote
 	string constant sharing and consistent style.
 	* generic/tclBasic.c (Tcl_CreateInterp): More efficient handling of
 	* generic/tclClock.c (TclClockInit):	 registration of commands not
@@ -5016,7 +5016,7 @@
 
 2006-07-24  Don Porter	<dgp@users.sourceforge.net>
 
-	* win/tclWinSock.c:	Correct un-initialized Tcl_DString. Thanks to
+	* win/tclWinSock.c:	Correct uninitialized Tcl_DString. Thanks to
 	afredd. [Bug 1518166]
 
 2006-07-21  Miguel Sofer  <msofer@users.sf.net>

@@ -56,7 +56,7 @@ void
 \fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
 .sp
 void
-\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *) NULL\fR)
+\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *)NULL\fR)
 .sp
 void
 \fBTcl_AppendStringsToObjVA\fR(\fIobjPtr, argList\fR)
@@ -221,12 +221,14 @@ to bytes) in the string value.
 \fBTcl_AppendToObj\fR appends the data given by \fIbytes\fR and
 \fIlength\fR to the string representation of the value specified by
 \fIobjPtr\fR.  If the value has an invalid string representation,
-then an attempt is made to convert \fIbytes\fR is to the Unicode
+then an attempt is made to convert \fIbytes\fR to the Unicode
 format.  If the conversion is successful, then the converted form of
 \fIbytes\fR is appended to the value's Unicode representation.
 Otherwise, the value's Unicode representation is invalidated and
 converted to the UTF format, and \fIbytes\fR is appended to the
 value's new string representation.
+Eventually buffer growth is done by large allocations to optimize
+multiple calls.
 .PP
 \fBTcl_AppendUnicodeToObj\fR appends the Unicode string given by
 \fIunicode\fR and \fInumChars\fR to the value specified by
@@ -314,9 +316,10 @@ sprintf(buf, format, ...);
 but with greater convenience and no need to
 determine \fBSOME_SUITABLE_LENGTH\fR. The formatting is done with the same
 core formatting engine used by \fBTcl_Format\fR.  This means the set of
-supported conversion specifiers is that of the \fBformat\fR command and
-not that of the \fBsprintf\fR routine where the two sets differ. When a
-conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
+supported conversion specifiers is that of the \fBformat\fR command but
+the behavior is as similar as possible to \fBsprintf\fR. Format specifiers
+which were added by C99 (like "hh", "ll", "j", "z", "t", "L") are not supported.
+When a conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
 the value is taken as a number of bytes, as \fBsprintf\fR does, and not
 as a number of characters, as \fBformat\fR does.  This is done on the
 assumption that C code is more likely to know how many bytes it is

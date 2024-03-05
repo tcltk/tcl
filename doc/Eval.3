@@ -37,7 +37,7 @@ int
 \fBTcl_GlobalEvalObj\fR(\fIinterp, objPtr\fR)
 .sp
 int
-\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fB(char *) NULL\fR)
+\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fB(char *)NULL\fR)
 .sp
 int
 \fBTcl_VarEvalVA\fR(\fIinterp, argList\fR)
@@ -49,7 +49,7 @@ modified to hold the result or error message from the script.
 .AP Tcl_Obj *objPtr in
 A Tcl value containing the script to execute.
 .AP int flags in
-ORed combination of flag bits that specify additional options.
+OR'ed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR and \fBTCL_EVAL_DIRECT\fR are currently supported.
 .AP "const char" *fileName in
 Name of a file containing a Tcl script.
@@ -109,7 +109,7 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
-\fBTcl_EvalObjv\fR executes a single pre-parsed command instead of a
+\fBTcl_EvalObjv\fR executes a single preparsed command instead of a
 script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values
 of the words for the Tcl command, one word in each value in
 \fIobjv\fR.  \fBTcl_EvalObjv\fR evaluates the command and returns
@@ -152,15 +152,15 @@ then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
 It returns the result of the command and also modifies
 \fIinterp->result\fR in the same way as \fBTcl_Eval\fR.
 The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
-of arguments.  \fBTcl_VarEval\fR is now deprecated.
+of arguments.
 .PP
 \fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that
 instead of taking a variable number of arguments it takes an argument
-list. Like \fBTcl_VarEval\fR, \fBTcl_VarEvalVA\fR is deprecated.
+list.  \fBTcl_VarEvalVA\fR is now deprecated.
 
 .SH "FLAG BITS"
 .PP
-Any ORed combination of the following values may be used for the
+Any OR'ed combination of the following values may be used for the
 \fIflags\fR argument to procedures such as \fBTcl_EvalObjEx\fR:
 .TP 23
 \fBTCL_EVAL_DIRECT\fR

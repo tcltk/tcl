@@ -126,7 +126,7 @@ test oo-nextto-1.3 {basic nextto functionality: constructors} -setup {
 	variable result
 	constructor {p q r} {
 	    lappend result ==C== p=$p,q=$q,r=$r
-	    # Route arguments to superclasses, in non-trival pattern
+	    # Route arguments to superclasses, in non-trivial pattern
 	    nextto B $q
 	    nextto A $p $r
 	}

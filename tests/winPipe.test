@@ -313,7 +313,7 @@ test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
     lappend x [catch {close $f} msg] $msg
 } {writable timeout 0 {}}
 
-proc _testExecArgs {single args} {
+proc _testExecArgs {flags args} {
     variable path
     if {![info exists path(echoArgs.tcl)] || ![file exists $path(echoArgs.tcl)]} {
 	set path(echoArgs.tcl) [makeFile {
@@ -324,19 +324,21 @@ proc _testExecArgs {single args} {
 	set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" "echoArgs.bat"]
     }
     set cmds [list [list [interpreter] $path(echoArgs.tcl)]]
-    if {!($single & 2)} {
-	lappend cmds [list $path(echoArgs.bat)]
-    } else {
-	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
-	    set path(echoArgs2.bat) [makeFile \
-		"@[file native [interpreter]] $path(echoArgs.tcl) %*" \
-		"echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
+    if {"exe-only" ni $flags} {
+	if {"batch2" ni $flags} {
+	    lappend cmds [list $path(echoArgs.bat)]
+	} else {
+	    if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
+		set path(echoArgs2.bat) [makeFile \
+		    "@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		    "echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
+	    }
+	    lappend cmds [list $path(echoArgs2.bat)]
 	}
-	lappend cmds [list $path(echoArgs2.bat)]
     }
     set broken {}
     foreach args $args {
-	if {$single & 1} {
+	if {"enclose" in $flags} {
 	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated
 	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
 	    set args [list "1st" $args "3rd"]
@@ -350,12 +352,15 @@ proc _testExecArgs {single args} {
 	    } r]} {
 		set r "ERROR: $r"
 	    }
+	    if {[file extension [lindex $cmd 0]] eq ".bat"} {
+		set evm {}; foreach ev [lsort -unique [regexp -inline -all {%[A-Z]+%} $e]] {
+		    set ev [string range $ev 1 end-1]
+		    if {[info exists ::env($ev)]} { lappend evm %$ev% $::env($ev) }
+		}
+		set e [string map $evm $e]
+	    }
 	    if {$r ne $e} {
 		append broken "\[ERROR\]: exec [file extension [lindex $cmd 0]] on $args\n  -- result:\n$r\n  -- expected:\n$e\n"
-	    }
-	    if {$single & 8} {
-		# if test exe only:
-		break
 	    }
 	}
     }
@@ -489,7 +494,7 @@ set injectList {
 ###
 test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: dumped arguments are equal original} \
 -constraints {win exec} -body {
-    _testExecArgs 0 \
+    _testExecArgs {} \
 	[list foo "" bar] \
 	[list foo {} bar] \
 	[list foo "\"" bar] \
@@ -513,12 +518,12 @@ test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: dumped arguments are
 
 test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (particular)} \
 -constraints {win exec slowTest} -body {
-    _testExecArgs 1 {*}$injectList
+    _testExecArgs enclose {*}$injectList
 } -result {}
 
 test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (jointly)} \
 -constraints {win exec} -body {
-    _testExecArgs 0 \
+    _testExecArgs {} \
 	[list START     {*}$injectList END] \
 	[list "START\"" {*}$injectList END] \
 	[list START     {*}$injectList "\"END"] \
@@ -527,7 +532,7 @@ test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 
 test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (command/jointly args)} \
 -constraints {win exec} -body {
-    _testExecArgs 2 \
+    _testExecArgs batch2 \
 	[list START     {*}$injectList END] \
 	[list "START\"" {*}$injectList END] \
 	[list START     {*}$injectList "\"END"] \
@@ -559,7 +564,7 @@ test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 	} 20
 	lappend lst $args
     } 10
-    _testExecArgs 0 {*}$lst
+    _testExecArgs {} {*}$lst
 } -result {} -cleanup {
     unset -nocomplain lst args a map maps
 }
@@ -576,7 +581,7 @@ test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quote
 -constraints {win exec} -body {
     # test exe only, because currently there is no proper way to escape a new-line char resp.
     # to supply a new-line to the batch-files within arguments (command line is truncated).
-    _testExecArgs 8 \
+    _testExecArgs exe-only \
 	[list START     {*}$injectList END] \
 	[list "START\"" {*}$injectList END] \
 	[list START     {*}$injectList "\"END"] \
@@ -586,7 +591,7 @@ test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quote
 test winpipe-8.7 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args (batch)} \
 -constraints {win exec knownBug} -body {
     # this will fail if executed batch-file, because currently there is no proper way to escape a new-line char.
-    _testExecArgs 0 $injectList
+    _testExecArgs {} $injectList
 } -result {}
 
 

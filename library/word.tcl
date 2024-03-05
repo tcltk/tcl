@@ -5,7 +5,7 @@
 # properly for different platforms.
 #
 # Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998 Scritpics Corporation.
+# Copyright (c) 1998 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,7 +14,7 @@
 # interpreted as white space.
 
 if {$::tcl_platform(platform) eq "windows"} {
-    # Windows style - any but a unicode space char
+    # Windows style - any but a Unicode space char
     if {![info exists ::tcl_wordchars]} {
 	set ::tcl_wordchars {\S}
     }
@@ -22,7 +22,7 @@ if {$::tcl_platform(platform) eq "windows"} {
 	set ::tcl_nonwordchars {\s}
     }
 } else {
-    # Motif style - any unicode word char (number, letter, or underscore)
+    # Motif style - any Unicode word char (number, letter, or underscore)
     if {![info exists ::tcl_wordchars]} {
 	set ::tcl_wordchars {\w}
     }
@@ -147,7 +147,7 @@ proc tcl_startOfPreviousWord {str start} {
     variable ::tcl::WordBreakRE
     set word {-1 -1}
     if {$start > 0} {
-	regexp -indices -- $WordBreakRE(previous) [string range $str 0 $start-1] \
+	regexp -indices -- $WordBreakRE(previous) [string range [string range $str 0 $start] 0 end-1] \
 		result word
     }
     return [lindex $word 0]

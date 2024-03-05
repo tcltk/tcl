@@ -667,7 +667,7 @@ TclpInetNtoa(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     unsigned char *b = (unsigned char*) &addr.s_addr;
 
-    sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+    snprintf(tsdPtr->nabuf, sizeof(tsdPtr->nabuf), "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
     return tsdPtr->nabuf;
 #else
     return inet_ntoa(addr);

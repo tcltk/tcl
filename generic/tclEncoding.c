@@ -537,8 +537,8 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        char c;
-        short s;
+	char c;
+	short s;
     } isLe;
 
     if (encodingsInitialized) {
@@ -856,7 +856,7 @@ FreeEncoding(
  *
  * Tcl_GetEncodingName --
  *
- *	Given an encoding, return the name that was used to constuct the
+ *	Given an encoding, return the name that was used to construct the
  *	encoding.
  *
  * Results:
@@ -1233,6 +1233,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
+	if (dstLen < 1) {
+	    return TCL_CONVERT_NOSPACE;
+	}
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC080). To get
@@ -1241,6 +1244,10 @@ Tcl_ExternalToUtf(
 	 */
 
 	dstLen--;
+    } else {
+	if (dstLen < 0) {
+	    return TCL_CONVERT_NOSPACE;
+	}
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -1415,10 +1422,17 @@ Tcl_UtfToExternal(
 	dstCharsPtr = &dstChars;
     }
 
+    if (dstLen < encodingPtr->nullSize) {
+	return TCL_CONVERT_NOSPACE;
+    }
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
 	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
 	    dstCharsPtr);
+    /*
+     * Buffer is terminated irrespective of result. Not sure this is
+     * reasonable but keep for historical/compatibility reasons.
+     */
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
     }
@@ -2244,9 +2258,9 @@ UtfExtToUtfIntProc(
  *
  * UtfToUtfProc --
  *
- *	Convert from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
- *	is not a no-op, because it will turn a stream of improperly formed
- *	UTF-8 into a properly formed stream.
+ *	Converts from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
+ *	is not a no-op, because it turns a stream of improperly formed
+ *	UTF-8 into a properly-formed stream.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
@@ -2457,21 +2471,27 @@ UnicodeToUtfProc(
     }
     result = TCL_OK;
 
-    /* check alignment with utf-16 (2 == sizeof(UTF-16)) */
+    /*
+     * Check alignment with utf-16 (2 == sizeof(UTF-16))
+     */
+
     if ((srcLen % 2) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
 
+#if TCL_UTF_MAX > 3
     /*
-     * If last code point is a high surrogate, we cannot handle that yet.
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
      */
 
-    if ((srcLen >= 2) &&
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 2) &&
 	    ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
+#endif
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2504,6 +2524,18 @@ UnicodeToUtfProc(
 	src += sizeof(unsigned short);
     }
 
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    result = TCL_OK;
+	    dst += Tcl_UniCharToUtf(0xFFFD, dst);
+	    numChars++;
+	    src++;
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2699,17 +2731,26 @@ TableToUtfProc(
 	}
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
-	    src++;
-	    if (src >= srcEnd) {
-		src--;
-		result = TCL_CONVERT_MULTIBYTE;
-		break;
+	    if (src >= srcEnd-1) {
+		/* Prefix byte but nothing after it */
+		if (!(flags & TCL_ENCODING_END)) {
+		    /* More data to come */
+		    result = TCL_CONVERT_MULTIBYTE;
+		    break;
+		} else if (flags & TCL_ENCODING_STOPONERROR) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else {
+		    ch = (Tcl_UniChar)byte;
+		}
+	    } else {
+		ch = toUnicode[byte][*((unsigned char *)++src)];
 	    }
-	    ch = toUnicode[byte][*((unsigned char *) src)];
 	} else {
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
+	    /* Prefix+suffix pair is invalid */
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -2717,14 +2758,14 @@ TableToUtfProc(
 	    if (prefixBytes[byte]) {
 		src--;
 	    }
-	    ch = (Tcl_UniChar) byte;
+	    ch = (Tcl_UniChar)byte;
 	}
 
 	/*
-	 * Special case for 1-byte utf chars for speed.
+	 * Special case for 1-byte Utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -2931,7 +2972,7 @@ Iso88591ToUtfProc(
 	 * Special case for 1-byte utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);

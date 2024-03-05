@@ -1430,7 +1430,7 @@ CheckVersionAndConvert(
     int hasunstable = 0;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
-     * 4+ to have spce for an additional -2 at the end
+     * 4+ to have space for an additional -2 at the end
      */
     char *ibuf = ckalloc(4 + 4*strlen(string));
     char *ip = ibuf;
@@ -1541,7 +1541,7 @@ CompareVersions(
 				 * of version numbers). */
     int *isMajorPtr)		/* If non-null, the word pointed to is filled
 				 * in with a 0/1 value. 1 means that the
-				 * difference occured in the first element. */
+				 * difference occurred in the first element. */
 {
     int thisIsMajor, res, flip;
     char *s1, *e1, *s2, *e2, o1, o2;
@@ -1994,7 +1994,7 @@ RequirementSatisfied(
 
     /*
      * We have both min and max, and generate their internal reps. When
-     * identical we compare as is, otherwise we pad with 'a0' to ove the range
+     * identical we compare as is, otherwise we pad with 'a0' to over the range
      * a bit.
      */
 

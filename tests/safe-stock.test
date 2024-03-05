@@ -40,8 +40,8 @@ proc mapList {map listIn} {
     return $listOut
 }
 
-# Force actual loading of the safe package because we use un-exported (and
-# thus un-autoindexed) APIs in this test result arguments:
+# Force actual loading of the safe package because we use unexported (and
+# thus unautoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
 # high level general test

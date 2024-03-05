@@ -183,7 +183,7 @@ TclDumpMemoryInfo(
     if (clientData == NULL) {
         return 0;
     }
-    sprintf(buf,
+    snprintf(buf, sizeof(buf),
 	    "total mallocs             %10d\n"
 	    "total frees               %10d\n"
 	    "current packets allocated %10d\n"
@@ -380,7 +380,7 @@ Tcl_DumpActiveMemory(
  * Tcl_DbCkalloc - debugging ckalloc
  *
  *	Allocate the requested amount of space plus some extra for guard bands
- *	at both ends of the request, plus a size, panicing if there isn't
+ *	at both ends of the request, plus a size, panicking if there isn't
  *	enough space, then write in the guard bands and return the address of
  *	the space in the middle that the user asked for.
  *

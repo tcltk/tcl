@@ -59,7 +59,7 @@ declare 8 {
 	    const char *file, int line)
 }
 
-# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
+# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on Unix,
 # but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
@@ -143,7 +143,7 @@ declare 32 {
 	    int *intPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -202,7 +202,7 @@ declare 49 {
     Tcl_Obj *Tcl_NewBooleanObj(int intValue)
 }
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -598,8 +598,8 @@ declare 166 {
 # generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
-	    int checkUsage, ClientData *filePtr)
+    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID,
+	    int forWriting, int checkUsage, ClientData *filePtr)
 }
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
 # and therefore usually faster.
@@ -2138,8 +2138,8 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-	    int flags)
+    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
     int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
@@ -2272,7 +2272,8 @@ declare 618 {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
 }
 declare 619 {
-    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count)
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data,
+	    int count)
 }
 declare 620 {
     int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)
@@ -2326,11 +2327,9 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 687 {
+declare 688 {
     void TclUnusedStubEntry(void)
 }
-
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 ##############################################################################
 
@@ -2355,7 +2354,7 @@ declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 declare 3 win {
-    void TclUnusedStubEntry(void)
+    void TclWinConvertError_(unsigned errCode)
 }
 
 ################################
@@ -2372,7 +2371,7 @@ declare 1 macosx {
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
-    void TclUnusedStubEntry(void)
+    void TclMacOSXNotifierAddRunLoopMode_(const void *runLoopMode)
 }
 
 ##############################################################################

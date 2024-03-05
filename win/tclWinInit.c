@@ -4,7 +4,7 @@
  *	Contains the Windows-specific interpreter initialization functions.
  *
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -64,12 +64,6 @@ static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
-
-#if TCL_UTF_MAX < 4
-static void		ToUtf(const WCHAR *wSrc, char *dst);
-#else
-#define ToUtf(wSrc, dst) WideCharToMultiByte(CP_UTF8, 0, wSrc, -1, dst, MAX_PATH * TCL_UTF_MAX, NULL, NULL)
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -163,13 +157,13 @@ TclpInitLibraryPath(
      * installed DLL.
      */
 
-    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+    snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     AppendEnvironment(pathPtr, installLib);
@@ -246,16 +240,12 @@ AppendEnvironment(
     }
 
     /*
-     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++ that
-     * this is a unicode string.
+     * The "L" preceding the TCL_LIBRARY string is used to tell VC++ that
+     * this is a Unicode string.
      */
 
-    if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
-	buf[0] = '\0';
-	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
-    } else {
-	ToUtf(wBuf, buf);
-    }
+    GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
 	objPtr = Tcl_NewStringObj(buf, -1);
@@ -317,11 +307,8 @@ InitializeDefaultLibraryDir(
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR)) == 0) {
-	GetModuleFileNameA(hModule, name, sizeof(name));
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -332,7 +319,7 @@ InitializeDefaultLibraryDir(
     *end = '\\';
 
     TclWinNoBackslash(name);
-    sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
+    snprintf(end + 1, LIBRARY_SIZE, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
     *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
@@ -368,11 +355,8 @@ InitializeSourceLibraryDir(
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR)) == 0) {
-	GetModuleFileNameA(hModule, name, sizeof(name));
-    } else {
-	ToUtf(wName, name);
-    }
+    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -383,42 +367,12 @@ InitializeSourceLibraryDir(
     *end = '\\';
 
     TclWinNoBackslash(name);
-    sprintf(end + 1, "../library");
+    snprintf(end + 1, LIBRARY_SIZE, "../library");
     *lengthPtr = strlen(name);
     *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
-
-/*
- *---------------------------------------------------------------------------
- *
- * ToUtf --
- *
- *	Convert a wchar string to a UTF string.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-#if TCL_UTF_MAX < 4
-static void
-ToUtf(
-    const WCHAR *wSrc,
-    char *dst)
-{
-    while (*wSrc != '\0') {
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
-	wSrc++;
-    }
-    *dst = '\0';
-}
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -471,7 +425,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	Tcl_DStringAppend(bufPtr, "utf-8", 5);
     } else {
 	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-	wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
+	snprintf(Tcl_DStringValue(bufPtr), 2+TCL_INTEGER_SPACE, "cp%d", GetACP());
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);
@@ -552,7 +506,10 @@ TclpSetVariables(
 	    TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "os",
 	    "Windows NT", TCL_GLOBAL_ONLY);
-    wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
+    }
+    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",

@@ -40,7 +40,7 @@ typedef union {
 } address;
 
 /*
- * This structure describes per-instance state of a tcp based channel.
+ * This structure describes per-instance state of a tcp-based channel.
  */
 
 typedef struct TcpState TcpState;
@@ -54,7 +54,7 @@ typedef struct TcpFdList {
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
     TcpFdList fds;		/* The file descriptors of the sockets. */
-    int flags;			/* ORed combination of the bitfields defined
+    int flags;			/* OR'ed combination of the bitfields defined
 				 * below. */
     int interest;		/* Event types of interest */
 
@@ -81,7 +81,7 @@ struct TcpState {
 };
 
 /*
- * These bits may be ORed together into the "flags" field of a TcpState
+ * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
 
@@ -138,7 +138,7 @@ static int		TcpOutputProc(void *instanceData,
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
-static void		WrapNotify(void *clientData, int mask);
+static Tcl_FileProc	WrapNotify;
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -399,17 +399,17 @@ TcpBlockModeProc(
  *
  *	Check the state of an async connect process. If a connection attempt
  *	terminated, process it, which may finalize it or may start the next
- *	attempt. If a connect error occures, it is saved in
+ *	attempt. If a connect error occurs, it is saved in
  *	statePtr->connectError to be reported by 'fconfigure -error'.
  *
  *	There are two modes of operation, defined by errorCodePtr:
- *	 *  non-NULL: Called by explicite read/write command. Blocks if the
+ *	 *  non-NULL: Called by explicit read/write command. Blocks if the
  *	    socket is blocking.
  *	    May return two error codes:
  *	     *	EWOULDBLOCK: if connect is still in progress
  *	     *	ENOTCONN: if connect failed. This would be the error message
- *		of a rect or sendto syscall so this is emulated here.
- *	 *  NULL: Called by a backround operation. Do not block and do not
+ *		of a recv or sendto syscall so this is emulated here.
+ *	 *  NULL: Called by a background operation. Do not block and do not
  *	    return any error code.
  *
  * Results:
@@ -441,7 +441,7 @@ WaitForConnect(
     }
 
     /*
-     * Check if an async connect is running. If not return ok
+     * Check if an async connect is running. If not return ok.
      */
 
     if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
@@ -564,7 +564,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
 	return written;
@@ -807,7 +807,7 @@ TcpHostPortList(
 
 static int
 TcpGetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
@@ -909,8 +909,8 @@ TcpGetOptionProc(
     if ((len == 0) || ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	TcpFdList *fds;
-        address sockname;
-        socklen_t size;
+	address sockname;
+	socklen_t size;
 	int found = 0;
 
 	if (len == 0) {
@@ -1079,7 +1079,7 @@ TcpWatchProc(
 	 * socket file descriptor is writable when the other end of the socket
 	 * is closed.  This is in contrast to the guarantees Tcl makes that
 	 * its channels become writable and fire writable events on an error
-	 * conditon.  This has caused a leak of file descriptors in a state of
+	 * condition.  This has caused a leak of file descriptors in a state of
 	 * background flushing.  See Tcl ticket 1758a0b603.
 	 *
 	 * As a workaround, when our caller indicates an interest in writable
@@ -1093,10 +1093,10 @@ TcpWatchProc(
 	 */
 
 	statePtr->interest = mask;
-        Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
-                (Tcl_FileProc *) WrapNotify, statePtr);
+	Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
+		WrapNotify, statePtr);
     } else {
-        Tcl_DeleteFileHandler(statePtr->fds.fd);
+	Tcl_DeleteFileHandler(statePtr->fds.fd);
     }
 }
 
@@ -1428,7 +1428,7 @@ Tcl_OpenTcpClient(
         return NULL;
     }
 
-    sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, (long)statePtr);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
             statePtr, TCL_READABLE | TCL_WRITABLE);
@@ -1484,7 +1484,7 @@ Tcl_MakeTcpClientChannel(
 void *
 TclpMakeTcpClientChannelMode(
     void *sock,		/* The socket to wrap up into a channel. */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
     TcpState *statePtr;
@@ -1495,7 +1495,7 @@ TclpMakeTcpClientChannelMode(
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
 
-    sprintf(channelName, SOCK_TEMPLATE, (long)statePtr);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, (long)statePtr);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, mode);
@@ -1654,7 +1654,7 @@ Tcl_OpenTcpServer(
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
-            sprintf(channelName, SOCK_TEMPLATE, (long) statePtr);
+            snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, (long) statePtr);
             newfds = &statePtr->fds;
         } else {
             newfds = (TcpFdList *)ckalloc(sizeof(TcpFdList));
@@ -1747,7 +1747,7 @@ TcpAccept(
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;
 
-    sprintf(channelName, SOCK_TEMPLATE, (long)newSockState);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, (long)newSockState);
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newSockState, TCL_READABLE | TCL_WRITABLE);
 

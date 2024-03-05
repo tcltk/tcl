@@ -71,14 +71,14 @@ The name of the ensemble command to be created.
 The namespace to which the ensemble command is to be bound, or NULL
 for the current namespace.
 .AP int ensFlags in
-An ORed set of flag bits describing the basic configuration of the
+An OR'ed set of flag bits describing the basic configuration of the
 ensemble. Currently only one bit has meaning, \fBTCL_ENSEMBLE_PREFIX\fR,
 which is present when the ensemble command should also match
 unambiguous prefixes of subcommands.
 .AP Tcl_Obj *cmdNameObj in
 A value holding the name of the ensemble command to look up.
 .AP int flags in
-An ORed set of flag bits controlling the behavior of
+An OR'ed set of flag bits controlling the behavior of
 \fBTcl_FindEnsemble\fR. Currently only \fBTCL_LEAVE_ERR_MSG\fR is supported.
 .AP Tcl_Command token in
 A normal command token that refers to an ensemble command, or which

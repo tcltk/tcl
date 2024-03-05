@@ -17,9 +17,8 @@
 /*
  * For TestplatformChmod on Windows
  */
-#ifdef _WIN32
 #include <aclapi.h>
-#endif
+#include <sddl.h>
 
 /*
  * MinGW 3.4.2 does not define this.
@@ -32,21 +31,14 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static int		TesteventloopCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestvolumetypeCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestSizeCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TesteventloopCmd;
+static Tcl_ObjCmdProc	TestvolumetypeCmd;
+static Tcl_ObjCmdProc	TestwinclockCmd;
+static Tcl_ObjCmdProc	TestwinsleepCmd;
+static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -112,6 +104,7 @@ TesteventloopCmd(
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
+    (void)clientData;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
@@ -301,6 +294,7 @@ TestwinsleepCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
+    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ms");
@@ -386,6 +380,7 @@ TestExceptionCmd(
 	EXCEPTION_GUARD_PAGE, EXCEPTION_INVALID_HANDLE, CONTROL_C_EXIT
     };
     int cmd;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
@@ -412,180 +407,192 @@ TestExceptionCmd(
     /* SMASH! */
     RaiseException(exceptions[cmd], EXCEPTION_NONCONTINUABLE, 0, NULL);
 
-    /* NOTREACHED */
     return TCL_OK;
 }
 
+/*
+ * This "chmod" works sufficiently for test script purposes. Do not expect
+ * it to be exact emulation of Unix chmod (not sure if that's even possible)
+ */
 static int
 TestplatformChmod(
     const char *nativePath,
     int pmode)
 {
-    static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION
-	    | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
-    /* don't reset change permissions mask (WRITE_DAC, allow test-cases restore it to cleanup) */
-    static const DWORD readOnlyMask = FILE_DELETE_CHILD | FILE_ADD_FILE
-	    | FILE_ADD_SUBDIRECTORY | FILE_WRITE_EA | FILE_APPEND_DATA
-	    | FILE_WRITE_DATA
-	    | DELETE;
-
     /*
-     * References to security functions (only available on NT and later).
+     * Note FILE_DELETE_CHILD missing from dirWriteMask because we do
+     * not want overriding of child's delete setting when testing
      */
+    static const DWORD dirWriteMask =
+	FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA |
+	FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY | STANDARD_RIGHTS_WRITE | DELETE |
+	SYNCHRONIZE;
+    static const DWORD dirReadMask =
+	FILE_READ_ATTRIBUTES | FILE_READ_EA | FILE_LIST_DIRECTORY |
+	STANDARD_RIGHTS_READ | SYNCHRONIZE;
+    /* Note - default user privileges allow ignoring TRAVERSE setting */
+    static const DWORD dirExecuteMask =
+	FILE_TRAVERSE | STANDARD_RIGHTS_READ | SYNCHRONIZE;
 
-    const BOOL set_readOnly = !(pmode & 0222);
-    BOOL acl_readOnly_found = FALSE, curAclPresent, curAclDefaulted;
-    SID_IDENTIFIER_AUTHORITY userSidAuthority = {
-	SECURITY_WORLD_SID_AUTHORITY
-    };
-    BYTE *secDesc = 0;
-    DWORD secDescLen, attr, newAclSize;
-    ACL_SIZE_INFORMATION ACLSize;
-    PACL curAcl, newAcl = 0;
-    WORD j;
-    SID *userSid = 0;
-    char *userDomain = 0;
+    static const DWORD fileWriteMask =
+	FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA | FILE_WRITE_DATA |
+	FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | DELETE | SYNCHRONIZE;
+    static const DWORD fileReadMask =
+	FILE_READ_ATTRIBUTES | FILE_READ_EA | FILE_READ_DATA |
+	STANDARD_RIGHTS_READ | SYNCHRONIZE;
+    static const DWORD fileExecuteMask =
+	FILE_EXECUTE | STANDARD_RIGHTS_READ | SYNCHRONIZE;
+
+    DWORD attr, newAclSize;
+    PACL newAcl = NULL;
     int res = 0;
 
-    /*
-     * Process the chmod request.
-     */
+    HANDLE hToken = NULL;
+    int i;
+    int nSids = 0;
+    struct {
+	PSID pSid;
+	DWORD mask;
+	DWORD sidLen;
+    } aceEntry[3];
+    DWORD dw;
+    int isDir;
+    TOKEN_USER *pTokenUser = NULL;
+
+    res = -1; /* Assume failure */
 
     attr = GetFileAttributesA(nativePath);
-
-    /*
-     * nativePath not found
-     */
-
     if (attr == 0xFFFFFFFF) {
-	res = -1;
+	goto done; /* Not found */
+    }
+
+    isDir = (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
 	goto done;
     }
 
-    /*
-     * If nativePath is not a directory, there is no special handling.
-     */
-
-    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+    /* Get process SID */
+    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
+	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
-
+    pTokenUser = (TOKEN_USER *)ckalloc(dw);
+    if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dw, &dw)) {
+	goto done;
+    }
+    aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
+    aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+    if (!CopySid(aceEntry[nSids].sidLen,
+		 aceEntry[nSids].pSid,
+		 pTokenUser->User.Sid)) {
+	ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	goto done;
+    }
     /*
-     * Set the result to error, if the ACL change is successful it will be
-     * reset to 0.
+     * Always include DACL modify rights so we don't get locked out
      */
+    aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
+			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+    if (pmode & 0700) {
+	/* Owner permissions. Assumes current process is owner */
+	if (pmode & 0400) {
+	    aceEntry[nSids].mask |= isDir ? dirReadMask : fileReadMask;
+	}
+	if (pmode & 0200) {
+	    aceEntry[nSids].mask |= isDir ? dirWriteMask : fileWriteMask;
+	}
+	if (pmode & 0100) {
+	    aceEntry[nSids].mask |= isDir ? dirExecuteMask : fileExecuteMask;
+	}
+    }
+    ++nSids;
 
-    res = -1;
+    if (pmode & 0070) {
+	/* Group permissions. */
 
-    /*
-     * Read the security descriptor for the directory. Note the first call
-     * obtains the size of the security descriptor.
-     */
+	TOKEN_PRIMARY_GROUP *pTokenGroup;
 
-    if (!GetFileSecurityA(nativePath, infoBits, NULL, 0, &secDescLen)) {
-	DWORD secDescLen2 = 0;
-
-	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+	/* Get primary group SID */
+	if (!GetTokenInformation(
+		hToken, TokenPrimaryGroup, NULL, 0, &dw) &&
+		GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	    goto done;
 	}
-
-	secDesc = ckalloc(secDescLen);
-	if (!GetFileSecurityA(nativePath, infoBits,
-		(PSECURITY_DESCRIPTOR) secDesc, secDescLen, &secDescLen2)
-		|| (secDescLen < secDescLen2)) {
+	pTokenGroup = (TOKEN_PRIMARY_GROUP *)ckalloc(dw);
+	if (!GetTokenInformation(hToken, TokenPrimaryGroup, pTokenGroup, dw, &dw)) {
+	    ckfree(pTokenGroup);
 	    goto done;
 	}
+	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
+	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
+	    ckfree(pTokenGroup);
+	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	    goto done;
+	}
+	ckfree(pTokenGroup);
+
+	/* Generate mask for group ACL */
+
+	aceEntry[nSids].mask = 0;
+	if (pmode & 0040) {
+	    aceEntry[nSids].mask |= isDir ? dirReadMask : fileReadMask;
+	}
+	if (pmode & 0020) {
+	    aceEntry[nSids].mask |= isDir ? dirWriteMask : fileWriteMask;
+	}
+	if (pmode & 0010) {
+	    aceEntry[nSids].mask |= isDir ? dirExecuteMask : fileExecuteMask;
+	}
+	++nSids;
     }
 
-    /*
-     * Get the World SID.
-     */
+    if (pmode & 0007) {
+	/* World permissions */
+	PSID pWorldSid;
+	if (!ConvertStringSidToSidA("S-1-1-0", &pWorldSid)) {
+	    goto done;
+	}
+	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
+	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
+	    LocalFree(pWorldSid);
+	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	    goto done;
+	}
+	LocalFree(pWorldSid);
 
-    userSid = ckalloc(GetSidLengthRequired((UCHAR) 1));
-    InitializeSid(userSid, &userSidAuthority, (BYTE) 1);
-    *(GetSidSubAuthority(userSid, 0)) = SECURITY_WORLD_RID;
+	/* Generate mask for world ACL */
 
-    /*
-     * If curAclPresent == false then curAcl and curAclDefaulted not valid.
-     */
-
-    if (!GetSecurityDescriptorDacl((PSECURITY_DESCRIPTOR) secDesc,
-	    &curAclPresent, &curAcl, &curAclDefaulted)) {
-	goto done;
+	aceEntry[nSids].mask = 0;
+	if (pmode & 0004) {
+	    aceEntry[nSids].mask |= isDir ? dirReadMask : fileReadMask;
+	}
+	if (pmode & 0002) {
+	    aceEntry[nSids].mask |= isDir ? dirWriteMask : fileWriteMask;
+	}
+	if (pmode & 0001) {
+	    aceEntry[nSids].mask |= isDir ? dirExecuteMask : fileExecuteMask;
+	}
+	++nSids;
     }
-    if (!curAclPresent || !curAcl) {
-	ACLSize.AclBytesInUse = 0;
-	ACLSize.AceCount = 0;
-    } else if (!GetAclInformation(curAcl, &ACLSize, sizeof(ACLSize),
-	    AclSizeInformation)) {
-	goto done;
+
+    /* Allocate memory and initialize the new ACL. */
+
+    newAclSize = sizeof(ACL);
+    /* Add in size required for each ACE entry in the ACL */
+    for (i = 0; i < nSids; ++i) {
+	newAclSize +=
+	    TclOffset(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
-
-    /*
-     * Allocate memory for the new ACL.
-     */
-
-    newAclSize = ACLSize.AclBytesInUse + sizeof(ACCESS_DENIED_ACE)
-	    + GetLengthSid(userSid) - sizeof(DWORD);
-    newAcl = ckalloc(newAclSize);
-
-    /*
-     * Initialize the new ACL.
-     */
-
+    newAcl = (PACL)ckalloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
 	goto done;
     }
 
-    /*
-     * Add denied to make readonly, this will be known as a "read-only tag".
-     */
-
-    if (set_readOnly && !AddAccessDeniedAce(newAcl, ACL_REVISION,
-	    readOnlyMask, userSid)) {
-	goto done;
-    }
-
-    acl_readOnly_found = FALSE;
-    for (j = 0; j < ACLSize.AceCount; j++) {
-	LPVOID pACE2;
-	ACE_HEADER *phACE2;
-
-	if (!GetAce(curAcl, j, &pACE2)) {
-	    goto done;
-	}
-
-	phACE2 = (ACE_HEADER *) pACE2;
-
-	/*
-	 * Do NOT propagate inherited ACEs.
-	 */
-
-	if (phACE2->AceFlags & INHERITED_ACE) {
-	    continue;
-	}
-
-	/*
-	 * Skip the "read-only tag" restriction (either added above, or it is
-	 * being removed).
-	 */
-
-	if (phACE2->AceType == ACCESS_DENIED_ACE_TYPE) {
-	    ACCESS_DENIED_ACE *pACEd = (ACCESS_DENIED_ACE *) phACE2;
-
-	    if (pACEd->Mask == readOnlyMask
-		    && EqualSid(userSid, (PSID) &pACEd->SidStart)) {
-		acl_readOnly_found = TRUE;
-		continue;
-	    }
-	}
-
-	/*
-	 * Copy the current ACE from the old to the new ACL.
-	 */
-
-	if (!AddAce(newAcl, ACL_REVISION, MAXDWORD, (PACL *) pACE2,
-		((PACE_HEADER) pACE2)->AceSize)) {
+    for (i = 0; i < nSids; ++i) {
+	if (!AddAccessAllowedAce(newAcl, ACL_REVISION, aceEntry[i].mask, aceEntry[i].pSid)) {
 	    goto done;
 	}
     }
@@ -595,35 +602,36 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (set_readOnly == acl_readOnly_found || SetNamedSecurityInfoA(
-	    (LPSTR) nativePath, SE_FILE_OBJECT,
-	    DACL_SECURITY_INFORMATION /*| PROTECTED_DACL_SECURITY_INFORMATION*/,
-	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
+    if (SetNamedSecurityInfoA((LPSTR)nativePath,
+			      SE_FILE_OBJECT,
+			      DACL_SECURITY_INFORMATION |
+				  PROTECTED_DACL_SECURITY_INFORMATION,
+			      NULL,
+			      NULL,
+			      newAcl,
+			      NULL) == ERROR_SUCCESS) {
 	res = 0;
     }
 
   done:
-    if (secDesc) {
-	ckfree(secDesc);
+    if (pTokenUser) {
+	ckfree(pTokenUser);
+    }
+    if (hToken) {
+	CloseHandle(hToken);
     }
     if (newAcl) {
 	ckfree(newAcl);
     }
-    if (userSid) {
-	ckfree(userSid);
-    }
-    if (userDomain) {
-	ckfree(userDomain);
+    for (i = 0; i < nSids; ++i) {
+	ckfree(aceEntry[i].pSid);
     }
 
     if (res != 0) {
 	return res;
     }
 
-    /*
-     * Run normal chmod command.
-     */
-
+    /* Run normal chmod command */
     return chmod(nativePath, pmode);
 }
 
@@ -654,6 +662,7 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

@@ -11,7 +11,7 @@
 package require Tcl 8.5-
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.8
+package provide opt 0.4.9
 
 namespace eval ::tcl {
 
@@ -75,7 +75,7 @@ namespace eval ::tcl {
     variable OptDescN 0
 
 # Inside algorithm/mechanism description:
-# (not for the faint hearted ;-)
+# (not for the faint-hearted ;-)
 #
 # The argument description is parsed into a "program tree"
 # It is called a "program" because it is the program used by
@@ -134,9 +134,9 @@ namespace eval ::tcl {
 # they should start to be much faster.
 # But this code use a lot of helper procs (like Lvarset)
 # which are quite slow and would be helpfully optimized
-# for instance by being written in C. Also our struture
+# for instance by being written in C. Also our structure
 # is complex and there is maybe some places where the
-# string rep might be calculated at great exense. to be checked.
+# string rep might be calculated at great expense. to be checked.
 
 #
 # Parse a given description and saves it here under the given key
@@ -226,7 +226,7 @@ proc ::tcl::OptKeyDelete {key} {
         set OptDesc($descKey)
     }
 
-# Parse entry point for ppl who don't want to register with a key,
+# Parse entry point for people who don't want to register with a key,
 # for instance because the description changes dynamically.
 #  (otherwise one should really use OptKeyRegister once + OptKeyParse
 #   as it is way faster or simply OptProc which does it all)
@@ -328,18 +328,18 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    return $start
 	}
     }
-    # Set the value field of the current instruction
+    # Set the value field of the current instruction.
     proc OptCurSetValue {descriptionsName value} {
 	upvar $descriptionsName descriptions
-	# get the current item full adress
+	# Get the current item full address.
         set adress [OptCurAddr $descriptions]
-	# use the 3th field of the item  (see OptValue / OptNewInst)
+	# Use the 3rd field of the item  (see OptValue / OptNewInst).
 	lappend adress 2
 	Lvarset descriptions $adress [list 1 $value]
 	#                                  ^hasBeenSet flag
     }
 
-    # empty state means done/paste the end of the program
+    # Empty state means done/paste the end of the program.
     proc OptState {item} {
         lindex $item 0
     }
@@ -352,11 +352,11 @@ proc ::tcl::OptProcArgGiven {argname} {
     #######
     # Arguments manipulation
 
-    # Returns the argument that has to be processed now
+    # Returns the argument that has to be processed now.
     proc OptCurrentArg {lst} {
         lindex $lst 0
     }
-    # Advance to next argument
+    # Advance to next argument.
     proc OptNextArg {argsName} {
         uplevel 1 [list Lvarpop1 $argsName]
     }
@@ -553,7 +553,7 @@ proc ::tcl::OptKeyParse {descKey arglist} {
 		if {[OptHasBeenSet $item]} {
 #		    puts "adding $vname"
 		    # lets use the input name for the returned list
-		    # it is more usefull, for instance you can check that
+		    # it is more useful, for instance you can check that
 		    # no flags at all was given with expr
 		    # {![string match "*-*" $Args]}
 		    lappend vnamesLst [OptName $item]

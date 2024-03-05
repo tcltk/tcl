@@ -425,7 +425,7 @@ TclFileDeleteCmd(
     if (result != TCL_OK) {
 	if (errfile == NULL) {
 	    /*
-	     * We try to accomodate poor error results from our Tcl_FS calls.
+	     * We try to accommodate poor error results from our Tcl_FS calls.
 	     */
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1226,7 +1226,7 @@ TclFileLinkCmd(
 	if (contents == NULL) {
 	    /*
 	     * We handle three common error cases specially, and for all other
-	     * errors, we use the standard posix error message.
+	     * errors, we use the standard Posix error message.
 	     */
 
 	    if (errno == EEXIST) {

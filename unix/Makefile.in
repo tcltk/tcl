@@ -150,8 +150,8 @@ SHELL			= @MAKEFILE_SHELL@
 # around; better to use the install-sh script that comes with the
 # distribution, which is slower but guaranteed to work.
 
-INSTALL_STRIP_PROGRAM	= -s
-INSTALL_STRIP_LIBRARY	= -S -x
+INSTALL_STRIP_PROGRAM	= strip
+INSTALL_STRIP_LIBRARY	= strip -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -270,6 +270,8 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
+shquotequote = $(subst ",\",$(subst ',\',$(1)))
+shquotesingle = $(subst ','\'',$(1))
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
 # modify it and you shouldn't need to modify it either.
@@ -813,9 +815,12 @@ test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
+	@printf '%s ' set env @LD_LIBRARY_PATH_VAR@=\"`pwd`$${@LD_LIBRARY_PATH_VAR@:+:$${@LD_LIBRARY_PATH_VAR}}\" > gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set env TCL_LIBRARY=\'$(call shquotesingle,${TCL_BUILDTIME_LIBRARY})\' >> gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set args $(call shquotequote,$(TOP_DIR))/tests/all.tcl\
+		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
 	rm gdb.run
 
@@ -883,8 +888,8 @@ install: $(INSTALL_TARGETS)
 
 install-strip:
 	$(MAKE) $(INSTALL_TARGETS) \
-		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
-		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
+		INSTALL_PROGRAM="STRIPPROG='${INSTALL_STRIP_PROGRAM}' $(INSTALL_PROGRAM) -s" \
+		INSTALL_LIBRARY="STRIPPROG='${INSTALL_STRIP_LIBRARY}' $(INSTALL_LIBRARY) -s"
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
@@ -956,9 +961,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.5/msgcat-1.6.1.tm"
-	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.7 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.7.tm"
 	@echo "Installing package platform 1.0.19 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.19.tm"
@@ -971,7 +976,7 @@ install-libraries: libraries
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
-	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
+	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
 	        "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
@@ -1911,6 +1916,8 @@ dist-packages: configure-packages
 # the name of the .y file so that make doesn't try to automatically regenerate
 # the .c file.
 
+#
+# Remark: see [54a305cb88]. tclDate.c is manually edited, removing the unused "yynerrs" variable
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 		--no-lines \

@@ -22,7 +22,7 @@ namespace eval ::testmathop2 {
 }
 
 # Helper to test math ops.
-# Test different invokation variants and see that they do the same thing.
+# Test different invocation variants and see that they do the same thing.
 # Byte compiled / non byte compiled version
 # Shared / unshared arguments
 # Original / imported

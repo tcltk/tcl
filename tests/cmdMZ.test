@@ -59,8 +59,8 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     file delete -force $foodir
     file mkdir $foodir
     cd $foodir
-} -constraints {unix nonPortable} -body {
-    # This test fails on various unix platforms (eg Linux) where permissions
+} -constraints {Unix nonPortable} -body {
+    # This test fails on various Unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
     file attr . -permissions 0o000
@@ -405,7 +405,7 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} -body {
+test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measurement} -body {
     set m1 [timerate {_nrt_sleep 0.01} 50]
     set m2 [timerate {_nrt_sleep 1.00} 50]
     list [list \

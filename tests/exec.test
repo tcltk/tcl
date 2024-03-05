@@ -25,7 +25,7 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
 unset -nocomplain path
 
-# Utilities that are like bourne shell stalwarts, but cross-platform.
+# Utilities that are like Bourne shell stalwarts, but cross-platform.
 set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {

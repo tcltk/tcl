@@ -17,7 +17,7 @@
 #include "tclInt.h"
 
 /*
- * This structure is used to keep track of the notifier info for a a
+ * This structure is used to keep track of the notifier info for a
  * registered file.
  */
 

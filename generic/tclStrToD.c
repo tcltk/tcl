@@ -263,34 +263,35 @@ static const int log2pow5[27] = {
 };
 #define N_LOG2POW5 27
 
-static const Tcl_WideUInt wuipow5[27] = {
-    (Tcl_WideUInt) 1,		/* 5**0 */
-    (Tcl_WideUInt) 5,
-    (Tcl_WideUInt) 25,
-    (Tcl_WideUInt) 125,
-    (Tcl_WideUInt) 625,
-    (Tcl_WideUInt) 3125,	/* 5**5 */
-    (Tcl_WideUInt) 3125*5,
-    (Tcl_WideUInt) 3125*25,
-    (Tcl_WideUInt) 3125*125,
-    (Tcl_WideUInt) 3125*625,
-    (Tcl_WideUInt) 3125*3125,	/* 5**10 */
-    (Tcl_WideUInt) 3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125, /* 5**15 */
-    (Tcl_WideUInt) 3125*3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125*3125,	/* 5**20 */
-    (Tcl_WideUInt) 3125*3125*3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125*3125*3125,  /* 5**25 */
-    (Tcl_WideUInt) 3125*3125*3125*3125*3125*5 /* 5**26 */
+static const Tcl_WideUInt wuipow5[] = {
+    (Tcl_WideUInt) 1U,		/* 5**0 */
+    (Tcl_WideUInt) 5U,
+    (Tcl_WideUInt) 25U,
+    (Tcl_WideUInt) 125U,
+    (Tcl_WideUInt) 625U,
+    (Tcl_WideUInt) 3125U,	/* 5**5 */
+    (Tcl_WideUInt) 3125U*5U,
+    (Tcl_WideUInt) 3125U*25U,
+    (Tcl_WideUInt) 3125U*125U,
+    (Tcl_WideUInt) 3125U*625U,
+    (Tcl_WideUInt) 3125U*3125U,	/* 5**10 */
+    (Tcl_WideUInt) 3125U*3125U*5U,
+    (Tcl_WideUInt) 3125U*3125U*25U,
+    (Tcl_WideUInt) 3125U*3125U*125U,
+    (Tcl_WideUInt) 3125U*3125U*625U,
+    (Tcl_WideUInt) 3125U*3125U*3125U, /* 5**15 */
+    (Tcl_WideUInt) 3125U*3125U*3125U*5U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*25U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*125U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*625U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U,	/* 5**20 */
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*5U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*25U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*125U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*625U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U,  /* 5**25 */
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U*5U,
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U*25U /* 5**27 */
 };
 
 /*
@@ -1699,7 +1700,7 @@ MakeLowPrecisionDouble(
     }
 
     /*
-     * All the easy cases have failed. Promote ths significand to bignum and
+     * All the easy cases have failed. Promote the significand to bignum and
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
@@ -1995,7 +1996,7 @@ RefineApproximation(
     /*
      * Compute twoMd as 2*M*d, where d is the exact value.
      * This is done by multiplying by 5**(M5+exponent) and then multiplying
-     * by 2**(M5+exponent+1), which is, of couse, a left shift.
+     * by 2**(M5+exponent+1), which is, of course, a left shift.
      */
 
     mp_init_copy(&twoMd, exactSignificand);
@@ -2199,7 +2200,7 @@ NormalizeRightward(
  *
  * RequiredPrecision --
  *
- *	Determines the number of bits needed to hold an intger.
+ *	Determines the number of bits needed to hold an integer.
  *
  * Results:
  *	Returns the position of the most significant bit (0 - 63).  Returns 0
@@ -4395,7 +4396,7 @@ TclDoubleDigits(
 	    ++m2plus;
 	}
 
-	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] <= 64) {
+	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {
 	    /*
 	     * If 10*2**s2*5**s5 == 2**(s2+1)+5**(s5+1) fits in a 64-bit word,
 	     * then all our intermediate calculations can be done using exact
@@ -4452,7 +4453,7 @@ TclDoubleDigits(
 	    s2 -= b2; b2 = 0;
 	}
 
-	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] <= 64) {
+	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {
 	    /*
 	     * If 10*2**s2*5**s5 == 2**(s2+1)+5**(s5+1) fits in a 64-bit word,
 	     * then all our intermediate calculations can be done using exact
@@ -5144,7 +5145,7 @@ TclFormatNaN(
     *buffer++ = 'N';
     bitwhack.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
+	snprintf(buffer, TCL_DOUBLE_SPACE, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

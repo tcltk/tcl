@@ -585,7 +585,7 @@ CmpStr(
     const char **strPtr1 = (const char **) ptr1;
     const char **strPtr2 = (const char **) ptr2;
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
+    return TclUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
 }
 
 /*
@@ -1299,7 +1299,7 @@ TclOOGetStereotypeCallChain(
     /*
      * Check to see if the method has no implementation. If so, we probably
      * need to add in a call to the unknown method. Otherwise, set up the
-     * cacheing of the method implementation (if relevant).
+     * caching of the method implementation (if relevant).
      */
 
     if (count == callPtr->numChain) {

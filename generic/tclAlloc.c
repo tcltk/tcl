@@ -8,7 +8,7 @@
  *
  * Copyright (c) 1983 Regents of the University of California.
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
  *
@@ -116,7 +116,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
 
 /*
  * The allocator is protected by a special mutex that must be explicitly
- * initialized. Futhermore, because Tcl_Alloc may be used before anything else
+ * initialized. Furthermore, because Tcl_Alloc may be used before anything else
  * in Tcl, we make this module self-initializing after all with the allocInit
  * variable.
  */
@@ -275,7 +275,7 @@ TclpAlloc(
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
 	    bigBlockPtr = (struct block *) TclpSysAlloc(
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+		    sizeof(struct block) + OVERHEAD + numBytes, 0);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -385,10 +385,10 @@ TclpAlloc(
 
 static void
 MoreCore(
-    int bucket)			/* What bucket to allocat to. */
+    int bucket)			/* Bucket to allocate to. */
 {
     union overhead *overPtr;
-    long size;		/* size of desired block */
+    long size;			/* size of desired block */
     long amount;		/* amount to allocate */
     int numBlocks;		/* how many blocks we get */
     struct block *blockPtr;
@@ -511,7 +511,7 @@ TclpFree(
 
 char *
 TclpRealloc(
-    char *oldPtr,		/* Pointer to alloced block. */
+    char *oldPtr,		/* Pointer to alloc'ed block. */
     unsigned int numBytes)	/* New size of memory. */
 {
     int i;
@@ -610,7 +610,7 @@ TclpRealloc(
     }
 
     /*
-     * Ok, we don't have to copy, it fits as-is
+     * No need to copy. It fits as-is.
      */
 
 #ifndef NDEBUG
@@ -748,6 +748,8 @@ TclpRealloc(
 }
 
 #endif /* !USE_TCLALLOC */
+#else
+TCL_MAC_EMPTY_FILE(generic_tclAlloc_c)
 #endif /* !TCL_THREADS */
 
 /*

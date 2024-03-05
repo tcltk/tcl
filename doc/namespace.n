@@ -14,7 +14,7 @@
 .SH NAME
 namespace \- create and manipulate contexts for commands and variables
 .SH SYNOPSIS
-\fBnamespace \fR?\fIsubcommand\fR? ?\fIarg ...\fR?
+\fBnamespace \fR\fIsubcommand\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -161,7 +161,7 @@ this command first finds the matching exported commands.
 It then checks whether any of those commands
 were previously imported by the current namespace.
 If so, this command deletes the corresponding imported commands.
-In effect, this un-does the action of a \fBnamespace import\fR command.
+In effect, this undoes the action of a \fBnamespace import\fR command.
 .TP
 \fBnamespace import \fR?\fB\-force\fR? ?\fIpattern\fR \fIpattern ...\fR?
 .

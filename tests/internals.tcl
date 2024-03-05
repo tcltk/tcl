@@ -36,7 +36,7 @@ proc testWithLimit args {
 	# with limited address space:
 	if {[info exists in(-addmem)] || [info exists in(-maxmem)]} {
 	    if {[info exists in(-addmem)]} {
-		# as differnce to normal usage, so try to retrieve current memory usage:
+		# as difference to normal usage, so try to retrieve current memory usage:
 		if {[catch {
 		    # using ps (vsz is in KB):
 		    incr in(-addmem) [expr {[lindex [exec ps -hq $ppid -o vsz] end] * 1024}]

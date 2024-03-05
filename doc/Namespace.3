@@ -46,10 +46,10 @@ Tcl_Command
 \fBTcl_FindCommand\fR(\fIinterp, name, contextNsPtr, flags\fR)
 .sp
 Tcl_Obj *
-\fBTcl_GetNamespaceUnknownHandler(\fIinterp, nsPtr\fR)
+\fBTcl_GetNamespaceUnknownHandler\fR(\fIinterp, nsPtr\fR)
 .sp
 int
-\fBTcl_SetNamespaceUnknownHandler(\fIinterp, nsPtr, handlerPtr\fR)
+\fBTcl_SetNamespaceUnknownHandler\fR(\fIinterp, nsPtr, handlerPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_NamespaceDeleteProc allowOverwrite in/out
 .AP Tcl_Interp *interp in/out
@@ -133,7 +133,7 @@ is true.
 .PP
 \fBTcl_Import\fR imports commands matching a pattern into a
 namespace.  Note that the pattern must include the name of the
-namespace to import from.  This function returns an error if
+namespace to import from.  This function returns TCL_ERROR if
 an attempt to import a command over an existing command is made,
 unless the \fIallowOverwrite\fR flag has been set.
 .PP

@@ -417,7 +417,7 @@ static ReflectedTransform * NewReflectedTransform(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj,
 			    Tcl_Channel parentChan);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedTransform(ReflectedTransform *rtPtr);
+static Tcl_FreeProc	FreeReflectedTransform;
 static void		FreeReflectedTransformArgs(ReflectedTransform *rtPtr);
 static int		InvokeTclMethod(ReflectedTransform *rtPtr,
 			    const char *method, Tcl_Obj *argOneObj,
@@ -639,7 +639,7 @@ TclChanPushObjCmd(
     /*
      * Mode tell us what the parent channel supports. The methods tell us what
      * the handler supports. We remove the non-supported bits from the mode
-     * and check that the channel is not completely inacessible. Afterward the
+     * and check that the channel is not completely inaccessible. Afterward the
      * mode tells us which methods are still required, and these methods will
      * also be supported by the handler, by design of the check.
      */
@@ -718,7 +718,7 @@ TclChanPushObjCmd(
      * structure.
      */
 
-    Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
 
 #undef CHAN
@@ -872,7 +872,7 @@ UnmarshallErrorResult(
  *	driver specific instance data.
  *
  * Results:
- *	A posix error.
+ *	A Posix error.
  *
  * Side effects:
  *	Releases memory. Arbitrary, as it calls upon a script.
@@ -924,7 +924,7 @@ ReflectClose(
 	}
 #endif /* TCL_THREADS */
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 	return EOK;
     }
 
@@ -941,7 +941,7 @@ ReflectClose(
 #ifdef TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -955,7 +955,7 @@ ReflectClose(
 #ifdef TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -975,7 +975,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -986,7 +986,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
 
     /*
-     * Do the actual invokation of "finalize" now; we're in the right thread.
+     * Do the actual invocation of "finalize" now; we're in the right thread.
      */
 
     result = InvokeTclMethod(rtPtr, "finalize", NULL, NULL, &resObj);
@@ -1034,7 +1034,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
     }
 
-    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
 }
 
@@ -1497,7 +1497,7 @@ ReflectWatch(
  *	is required of it.
  *
  * Results:
- *	A posix error number.
+ *	A Posix error number.
  *
  * Side effects:
  *	Allocates memory. Arbitrary, as it calls upon a script.
@@ -1584,7 +1584,7 @@ static int
 ReflectGetOption(
     ClientData clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
-    const char *optionName,	/* Name of reuqested option */
+    const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
@@ -1639,7 +1639,7 @@ ReflectHandle(
 
     /*
      * Transformations have no handle of their own. As such we simply query
-     * the parent channel for it. This way the qery will ripple down through
+     * the parent channel for it. This way the query will ripple down through
      * all transformations until reaches the base channel. Which then returns
      * its handle, or fails. The former will then ripple up the stack.
      *
@@ -1673,7 +1673,7 @@ ReflectNotify(
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
-     * An event occured in the underlying channel.
+     * An event occurred in the underlying channel.
      *
      * We delete our timer. It was not fired, yet we are here, so the channel
      * below generated such an event and we don't have to. The renewal of the
@@ -1920,8 +1920,9 @@ FreeReflectedTransformArgs(
 
 static void
 FreeReflectedTransform(
-    ReflectedTransform *rtPtr)
+    char *blockPtr)
 {
+    ReflectedTransform *rtPtr = (ReflectedTransform *) blockPtr;
     TimerKill(rtPtr);
     ResultClear(&rtPtr->result);
 
@@ -1937,7 +1938,7 @@ FreeReflectedTransform(
  * InvokeTclMethod --
  *
  *	This function is used to invoke the Tcl level of a reflected channel.
- *	It handles all the command assembly, invokation, and generic state and
+ *	It handles all the command assembly, invocation, and generic state and
  *	result mgmt. It does *not* handle thread redirection; that is the
  *	responsibility of clients of this function.
  *
@@ -1969,8 +1970,8 @@ InvokeTclMethod(
     int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
-    int result;			/* Result code of method invokation */
-    Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    int result;			/* Result code of method invocation */
+    Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
 
     if (rtPtr->dead) {
 	/*
@@ -1994,7 +1995,7 @@ InvokeTclMethod(
      */
 
     /*
-     * Insert method into the pre-allocated area, after the command prefix,
+     * Insert method into the preallocated area, after the command prefix,
      * before the channel id.
      */
 
@@ -2021,7 +2022,7 @@ InvokeTclMethod(
     }
 
     /*
-     * And run the handler... This is done in auch a manner which leaves any
+     * And run the handler... This is done in a manner which leaves any
      * existing state intact.
      */
 
@@ -2923,7 +2924,7 @@ TimerRun(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.

@@ -19,20 +19,20 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_WinTCharToUtf((TCHAR *)tenvstr, len, dstr)
-#  define utf2tenvirondstr(str, len, dstr) \
-		(const WCHAR *)Tcl_WinUtfToTChar(str, len, dstr)
+#  define tenviron2utfdstr(str, dsPtr) \
+		Tcl_WinTCharToUtf((TCHAR *)str, -1, dsPtr)
+#  define utf2tenvirondstr(str, dsPtr) \
+		(const WCHAR *)Tcl_WinUtfToTChar(str, -1, dsPtr)
 #  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
 #else
 #  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#  define utf2tenvirondstr(str, len, dstr) \
-		Tcl_UtfToExternalDString(NULL, str, len, dstr)
+#  define tenviron2utfdstr(str, dsPtr) \
+		Tcl_ExternalToUtfDString(NULL, str, -1, dsPtr)
+#  define utf2tenvirondstr(str, dsPtr) \
+		Tcl_UtfToExternalDString(NULL, str, -1, dsPtr)
 #  define techar char
 #endif
 
@@ -159,7 +159,7 @@ TclSetupEnv(
 	    const char *p1;
 	    char *p2;
 
-	    p1 = tenviron2utfdstr(tenviron[i], -1, &envString);
+	    p1 = tenviron2utfdstr(tenviron[i], &envString);
 	    p2 = (char *)strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
@@ -301,7 +301,7 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	oldEnv = tenviron2utfdstr(tenviron[index], -1, &envString);
+	oldEnv = tenviron2utfdstr(tenviron[index], &envString);
 	if (strcmp(value, oldEnv + (length + 1)) == 0) {
 	    Tcl_DStringFree(&envString);
 	    Tcl_MutexUnlock(&envMutex);
@@ -324,7 +324,7 @@ TclSetEnv(
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
-    p2 = utf2tenvirondstr(p, -1, &envString);
+    p2 = utf2tenvirondstr(p, &envString);
 
     /*
      * Copy the native string to heap memory.
@@ -411,7 +411,7 @@ Tcl_PutEnv(
     }
 
     /*
-     * First convert the native string to UTF. Then separate the string into
+     * First convert the native string to Utf. Then separate the string into
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
@@ -462,8 +462,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    int length;
-    int index;
+    int length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -512,7 +511,7 @@ TclUnsetEnv(
     string[length] = '\0';
 #endif /* _WIN32 */
 
-    utf2tenvirondstr(string, -1, &envString);
+    utf2tenvirondstr(string, &envString);
     string = (char *)ckrealloc(string, Tcl_DStringLength(&envString) + tNTL);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString) + tNTL);
@@ -587,7 +586,7 @@ TclGetEnv(
     if (index != -1) {
 	Tcl_DString envStr;
 
-	result = tenviron2utfdstr(tenviron[index], -1, &envStr);
+	result = tenviron2utfdstr(tenviron[index], &envStr);
 	result += length;
 	if (*result == '=') {
 	    result++;
@@ -624,7 +623,6 @@ TclGetEnv(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static char *
 EnvTraceProc(
     ClientData clientData,	/* Not used. */

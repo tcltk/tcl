@@ -64,7 +64,7 @@ test eval-3.2 {concatenating eval and pure lists} {
 } {1 2 3 4 5}
 test eval-3.3 {eval and canonical lists} {
     set cmd [list list 1 2 3 4 5]
-    # Force existance of utf-8 rep
+    # Force existence of utf-8 rep
     set dummy($cmd) $cmd
     unset dummy
     eval $cmd
@@ -72,7 +72,7 @@ test eval-3.3 {eval and canonical lists} {
 test eval-3.4 {concatenating eval and canonical lists} {
     set cmd  [list list 1]
     set cmd2 [list 2 3 4 5]
-    # Force existance of utf-8 rep
+    # Force existence of utf-8 rep
     set dummy($cmd) $cmd
     set dummy($cmd2) $cmd2
     unset dummy

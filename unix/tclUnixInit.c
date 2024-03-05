@@ -4,7 +4,7 @@
  *	Contains the Unix-specific interpreter initialization functions.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright (c) 1999 Scriptics Corporation.
  * All rights reserved.
  */
 
@@ -371,13 +371,13 @@ TclpInitPlatform(void)
      * Make sure, that the standard FDs exist. [Bug 772288]
      */
 
-    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(0, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_RDONLY);
     }
-    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(1, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
-    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(2, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
 
@@ -479,7 +479,7 @@ TclpInitLibraryPath(
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
@@ -500,7 +500,7 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
@@ -792,7 +792,8 @@ TclpSetVariables(
     struct utsname name;
 #endif
     int unameOK;
-    Tcl_DString ds;
+    const char *p, *q;
+    Tcl_Obj *pkgListObj = Tcl_NewObj();
 
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
@@ -808,29 +809,20 @@ TclpSetVariables(
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
 	const char *str;
 	CFBundleRef bundleRef;
+	Tcl_DString ds;
 
 	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
 	if ((str != NULL) && (str[0] != '\0')) {
-	    char *p = Tcl_DStringValue(&ds);
-
-	    /*
-	     * Convert DYLD_FRAMEWORK_PATH from colon to space separated.
-	     */
-
-	    do {
-		if (*p == ':') {
-		    *p = ' ';
-		}
-	    } while (*p++);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+	    p = Tcl_DStringValue(&ds);
+	    while ((q = strchr(p, ':')) != NULL) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+		p = q+1;
+	    }
+	    if (*p) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+	    }
 	    Tcl_DStringFree(&ds);
 	}
 	bundleRef = CFBundleGetMainBundle();
@@ -844,10 +836,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -857,21 +846,22 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-    } else
-#endif /* HAVE_COREFOUNDATION */
-    {
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
+#endif /* HAVE_COREFOUNDATION */
+	p = pkgPath;
+	while ((q = strchr(p, ':')) != NULL) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+		p = q+1;
+	}
+	if (*p) {
+	    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+	}
+	Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
 
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
@@ -895,8 +885,11 @@ TclpSetVariables(
 
     GetSystemInfo(&sysInfo);
 
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
+    }
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -907,6 +900,7 @@ TclpSetVariables(
 #elif !defined NO_UNAME
     if (uname(&name) >= 0) {
 	const char *native;
+	Tcl_DString ds;
 
 	unameOK = 1;
 
@@ -968,6 +962,7 @@ TclpSetVariables(
     {
 	struct passwd *pwEnt = TclpGetPwUid(getuid());
 	const char *user;
+	Tcl_DString ds;
 
 	if (pwEnt == NULL) {
 	    user = "";
@@ -993,7 +988,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensetive, on Windows this matches mixed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name

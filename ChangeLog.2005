@@ -229,7 +229,7 @@
 	***POTENTIAL INCOMPATIBILITY*** for bytecode savers/loaders. See below
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Arrange for very simple
-	[switch] invokations to be compiled into hash lookups into jump tables;
+	[switch] invocations to be compiled into hash lookups into jump tables;
 	only a very specific kind of [switch] can be safely compiled this way,
 	but that happens to be the most common kind. This makes around 5-10%
 	difference to the speed of execution of clock.test.

@@ -434,7 +434,7 @@ typedef struct ByteCode {
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
     unsigned int flags;		/* flags describing state for the codebyte.
-				 * this variable holds ORed values from the
+				 * this variable holds OR'ed values from the
 				 * TCL_BYTECODE_ masks defined above */
     const char *source;		/* The source string from which this ByteCode
 				 * was compiled. Note that this pointer is not
@@ -1183,18 +1183,10 @@ TclReleaseByteCode(
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_ObjCmdProc TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -1841,7 +1833,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     FILE *tclDTraceDebugLog = NULL;				\
     void TclDTraceOpenDebugLog(void) {				\
 	char n[35];						\
-	sprintf(n, "/tmp/tclDTraceDebug-%lu.log",		\
+	snprintf(n, sizeof(n), "/tmp/tclDTraceDebug-%lu.log",		\
 		(unsigned long) getpid());			\
 	tclDTraceDebugLog = fopen(n, "a");			\
     }

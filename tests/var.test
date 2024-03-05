@@ -9,7 +9,7 @@
 # No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -596,10 +596,10 @@ test var-8.1 {TclDeleteVars, "unset" traces are called with fully-qualified var 
             variable info
             set info [concat $info [list $name1 $name2 $op]]
         }
-        trace var v u [namespace code traceUnset]
+        trace add var v unset [namespace code traceUnset]
     }
     list [unset test_ns_var::v] $test_ns_var::info
-} -result {{} {test_ns_var::v {} u}}
+} -result {{} {test_ns_var::v {} unset}}
 test var-8.2 {TclDeleteNamespaceVars, "unset" traces on ns delete are called with fully-qualified var names} -setup {
     catch {namespace delete test_ns_var}
     catch {unset a}
@@ -607,13 +607,13 @@ test var-8.2 {TclDeleteNamespaceVars, "unset" traces on ns delete are called wit
     set info ""
     namespace eval test_ns_var {
         variable v 123 1
-        trace var v u ::traceUnset
+        trace add var v unset ::traceUnset
     }
     proc traceUnset {name1 name2 op} {
 	set ::info [concat $::info [list $name1 $name2 $op]]
     }
     list [namespace delete test_ns_var] $::info
-} -result {{} {::test_ns_var::v {} u}}
+} -result {{} {::test_ns_var::v {} unset}}
 
 test var-8.3 {TclDeleteNamespaceVars, mem leak} -constraints memory -setup {
     proc ::t {a i o} {
@@ -623,7 +623,7 @@ test var-8.3 {TclDeleteNamespaceVars, mem leak} -constraints memory -setup {
     leaktest {
 	namespace eval n {
 	    variable v 123
-	    trace variable v u ::t
+	    trace add variable v unset ::t
 	}
 	namespace delete n
     }
@@ -702,8 +702,8 @@ test var-9.9 {behaviour of TclGetVar read trace success} -setup {
 } -constraints testsetnoerr -body {
     proc resetvar {val name elem op} {upvar 1 $name v; set v $val}
     set u 10
-    trace var u r [list resetvar 1]
-    trace var v r [list resetvar 2]
+    trace add var u read [list resetvar 1]
+    trace add var v read [list resetvar 2]
     list \
 	[testsetnoerr u] \
 	[testseterr v]
@@ -711,7 +711,7 @@ test var-9.9 {behaviour of TclGetVar read trace success} -setup {
 test var-9.10 {behaviour of TclGetVar read trace error} testsetnoerr {
     proc writeonly args {error "write-only"}
     set v 456
-    trace var v r writeonly
+    trace add var v read writeonly
     list \
 	[catch {testsetnoerr v} msg] $msg \
 	[catch {testseterr v} msg] $msg
@@ -722,8 +722,8 @@ test var-9.11 {behaviour of TclSetVar write trace success} -setup {
 } -constraints testsetnoerr -body {
     proc doubleval {name elem op} {upvar 1 $name v; set v [expr {2 * $v}]}
     set v 1
-    trace var v w doubleval
-    trace var u w doubleval
+    trace add var v write doubleval
+    trace add var u write doubleval
     list \
 	[testsetnoerr u 2] \
 	[testseterr v 3]
@@ -731,7 +731,7 @@ test var-9.11 {behaviour of TclSetVar write trace success} -setup {
 test var-9.12 {behaviour of TclSetVar write trace error} testsetnoerr {
     proc readonly args {error "read-only"}
     set v 456
-    trace var v w readonly
+    trace add var v write readonly
     list \
 	[catch {testsetnoerr v 2} msg] $msg $v \
 	[catch {testseterr v 3} msg] $msg $v
@@ -793,7 +793,7 @@ test var-13.1 {Tcl_UnsetVar2, unset array with trace set on element} -setup {
     }
     namespace eval :: {
 	set t(1) 1
-	trace variable t(1) u foo
+	trace add variable t(1) unset foo
 	unset t
     }
     set x "If you see this, it worked"

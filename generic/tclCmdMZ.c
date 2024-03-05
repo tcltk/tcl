@@ -137,7 +137,7 @@ Tcl_RegexpObjCmd(
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		NULL
     };
-    enum options {
+    enum regexpoptions {
 	REGEXP_ALL,	REGEXP_ABOUT,	REGEXP_INDICES,	REGEXP_INLINE,
 	REGEXP_EXPANDED,REGEXP_LINE,	REGEXP_LINESTOP,REGEXP_LINEANCHOR,
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
@@ -162,7 +162,7 @@ Tcl_RegexpObjCmd(
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
-	switch ((enum options) index) {
+	switch ((enum regexpoptions) index) {
 	case REGEXP_ALL:
 	    all = 1;
 	    break;
@@ -324,7 +324,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
@@ -427,7 +427,7 @@ Tcl_RegexpObjCmd(
 	 * match. We always increment the offset by at least one to prevent
 	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
 	 * when we match the NULL string at the end of the input string, we
-	 * will loop indefinately (because the length of the match is 0, so
+	 * will loop indefinitely (because the length of the match is 0, so
 	 * offset never changes).
 	 */
 
@@ -1094,18 +1094,18 @@ Tcl_SplitObjCmd(
 
 		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
-		objPtr = Tcl_GetHashValue(hPtr);
+		objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
 	Tcl_DeleteHashTable(&charReuseTable);
 
     } else if (splitCharLen == 1) {
-	char *p;
+	const char *p;
 
 	/*
 	 * Handle the special case of splitting on a single character. This is
-	 * only true for the one-char ASCII case, as one unicode char is > 1
+	 * only true for the one-char ASCII case, as one Unicode char is > 1
 	 * byte in length.
 	 */
 
@@ -1240,7 +1240,7 @@ StringFirstCmd(
 	     */
 
 	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
-		    (unsigned long) needleLen) == 0)) {
+		    needleLen) == 0)) {
 		match = p - haystackStr;
 		break;
 	    }
@@ -1392,7 +1392,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get the char length to calulate what 'end' means.
+     * Get the char length to calculate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -1513,7 +1513,7 @@ StringIsCmd(
     /*
      * We get the objPtr so that we can short-cut for some classes by checking
      * the object type (int and double), but we need the string otherwise,
-     * because we don't want any conversion of type occuring (as, for example,
+     * because we don't want any conversion of type occurring (as, for example,
      * Tcl_Get*FromObj would do).
      */
 
@@ -1900,7 +1900,7 @@ StringMapCmd(
 	 * adapt this code...
 	 */
 
-	mapElemv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
+	mapElemv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
 	for (i=2 ; i<mapElemc ; i+=2) {
@@ -1953,7 +1953,7 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
+    strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
     /*
      * Force result to be Unicode
@@ -2005,16 +2005,16 @@ StringMapCmd(
 	int *mapLens;
 
 	/*
-	 * Precompute pointers to the unicode string and length. This saves us
+	 * Precompute pointers to the Unicode string and length. This saves us
 	 * repeated function calls later, significantly speeding up the
 	 * algorithm. We only need the lowercase first char in the nocase
 	 * case.
 	 */
 
-	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
-	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
+	mapStrings = (Tcl_UniChar **)TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
+	mapLens = (int *)TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = (Tcl_UniChar *)TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2054,7 +2054,7 @@ StringMapCmd(
 		    ustring1 = p - 1;
 
 		    /*
-		     * Append the map value to the unicode string.
+		     * Append the map value to the Unicode string.
 		     */
 
 		    Tcl_AppendUnicodeToObj(resultPtr,
@@ -2272,7 +2272,7 @@ StringReptCmd(
      * Include space for the NUL.
      */
 
-    string2 = attemptckalloc(length2 + 1);
+    string2 = (char *)attemptckalloc(length2 + 1);
     if (string2 == NULL) {
 	/*
 	 * Alloc failed. Note that in this case we try to do an error message
@@ -2629,7 +2629,7 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2702,8 +2702,8 @@ TclStringCmp(
     Tcl_Obj *value2Ptr,
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
-    int reqlength)		/* requested length; -1 to compare whole
-				 * strings */
+    int reqlength)		/* requested length in characters; -1 to
+				 * compare whole strings */
 {
     const char *s1, *s2;
     int empty, length, match, s1len, s2len;
@@ -2731,16 +2731,16 @@ TclStringCmp(
     } else if ((value1Ptr->typePtr == &tclStringType)
 	    && (value2Ptr->typePtr == &tclStringType)) {
 	/*
-	 * Do a unicode-specific comparison if both of the args are of String
+	 * Do a Unicode-specific comparison if both of the args are of String
 	 * type. If the char length == byte length, we can do a memcmp. In
 	 * benchmark testing this proved the most efficient check between the
-	 * unicode and string comparison operations.
+	 * Unicode and string comparison operations.
 	 */
 
 	if (nocase) {
 	    s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-	    memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
+	    memCmpFn = TclUniCharNcasecmp;
 	} else {
 	    s1len = Tcl_GetCharLength(value1Ptr);
 	    s2len = Tcl_GetCharLength(value2Ptr);
@@ -2748,6 +2748,9 @@ TclStringCmp(
 		    && (value1Ptr->bytes != NULL)
 		    && (s2len == value2Ptr->length)
 		    && (value2Ptr->bytes != NULL)) {
+		/* each byte represents one character so s1l3n, s2l3n, and
+		 * reqlength are in both bytes and characters
+		 */
 		s1 = value1Ptr->bytes;
 		s2 = value2Ptr->bytes;
 		memCmpFn = memcmp;
@@ -2756,16 +2759,19 @@ TclStringCmp(
 		s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		if (
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
-			1
+		    1
 #else
-			checkEq
+		    checkEq
 #endif /* WORDS_BIGENDIAN */
-		        ) {
+		) {
 		    memCmpFn = memcmp;
 		    s1len *= sizeof(Tcl_UniChar);
 		    s2len *= sizeof(Tcl_UniChar);
+		    if (reqlength > 0) {
+			reqlength *= sizeof(Tcl_UniChar);
+		    }
 		} else {
-		    memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+		    memCmpFn = TclUniCharNcmp;
 		}
 	    }
 	}
@@ -2805,7 +2811,7 @@ TclStringCmp(
 	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 	}
 
-	if (!nocase && checkEq) {
+	if (!nocase && checkEq && reqlength < 0) {
 	    /*
 	     * When we have equal-length we can check only for (in)equality.
 	     * We can use memcmp() in all (n)eq cases because we don't need to
@@ -2816,34 +2822,37 @@ TclStringCmp(
 	    /*
 	     * As a catch-all we will work with UTF-8. We cannot use memcmp()
 	     * as that is unsafe with any string containing NUL (\xC0\x80 in
-	     * Tcl's utf rep). We can use the more efficient TclpUtfNcmp2 if
+	     * Tcl's utf rep). We can use the more efficient TclUtfNcmp if
 	     * we are case-sensitive and no specific length was requested.
 	     */
 
 	    if ((reqlength < 0) && !nocase) {
-		memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		memCmpFn = TclUtfNcmp2;
 	    } else {
 		s1len = Tcl_NumUtfChars(s1, s1len);
 		s2len = Tcl_NumUtfChars(s2, s2len);
-		memCmpFn = (memCmpFn_t)
-			(nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+		memCmpFn = nocase ? TclUtfNcasecmp : TclUtfNcmp;
 	    }
 	}
     }
+
+    /* At this point s1len, s2len, and reqlength should by now have been
+     * adjusted so that they are all in the units expected by the selected
+     * comparison function.
+     */
 
     length = (s1len < s2len) ? s1len : s2len;
     if (reqlength > 0 && reqlength < length) {
 	length = reqlength;
     } else if (reqlength < 0) {
 	/*
-	 * The requested length is negative, so we ignore it by setting it to
-	 * length + 1 so we correct the match var.
+	 * The requested length is negative, so ignore it by setting it to
+	 * length + 1 to correct the match var.
 	 */
-
 	reqlength = length + 1;
     }
 
-    if (checkEq && (s1len != s2len)) {
+    if (checkEq && reqlength < 0 && (s1len != s2len)) {
 	match = 1;		/* This will be reversed below. */
     } else {
 	/*
@@ -3982,7 +3991,7 @@ TclNRSwitchObjCmd(
      */
 
   matchFound:
-    ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+    ctxPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     *ctxPtr = *iPtr->cmdFramePtr;
 
     if (splitObjs) {
@@ -4012,7 +4021,7 @@ TclNRSwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
 	    int bline = ctxPtr->line[bidx];
 
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
+	    ctxPtr->line = (int *)ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
@@ -4026,7 +4035,7 @@ TclNRSwitchObjCmd(
 
 	    int k;
 
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
+	    ctxPtr->line = (int *)ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
@@ -4066,9 +4075,9 @@ SwitchPostProc(
     /* Unpack the preserved data */
 
     int splitObjs = PTR2INT(data[0]);
-    CmdFrame *ctxPtr = data[1];
+    CmdFrame *ctxPtr = (CmdFrame *)data[1];
     int pc = PTR2INT(data[2]);
-    const char *pattern = data[3];
+    const char *pattern = (const char *)data[3];
     int patternLength = strlen(pattern);
 
     /*
@@ -5042,9 +5051,9 @@ TryPostBody(
     int i, dummy, code, objc;
     int numHandlers = 0;
 
-    handlersObj = data[0];
-    finallyObj = data[1];
-    objv = data[2];
+    handlersObj = (Tcl_Obj *)data[0];
+    finallyObj = (Tcl_Obj *)data[1];
+    objv = (Tcl_Obj **)data[2];
     objc = PTR2INT(data[3]);
 
     cmdObj = objv[0];
@@ -5257,9 +5266,9 @@ TryPostHandler(
     Tcl_Obj *finallyObj;
     int finallyIndex;
 
-    objv = data[0];
-    options = data[1];
-    handlerKindObj = data[2];
+    objv = (Tcl_Obj **)data[0];
+    options = (Tcl_Obj *)data[1];
+    handlerKindObj = (Tcl_Obj *)data[2];
     finallyIndex = PTR2INT(data[3]);
 
     cmdObj = objv[0];
@@ -5341,9 +5350,9 @@ TryPostFinal(
 {
     Tcl_Obj *resultObj, *options, *cmdObj;
 
-    resultObj = data[0];
-    options = data[1];
-    cmdObj = data[2];
+    resultObj = (Tcl_Obj *)data[0];
+    options = (Tcl_Obj *)data[1];
+    cmdObj = (Tcl_Obj *)data[2];
 
     /*
      * If the result wasn't OK, we need to adjust the result options.

@@ -924,7 +924,7 @@ test error-18.12 {variable assignment unaffected by exception in finally} {
     list $em [dict get $opts -errorcode]
 } {bar FOO}
 
-# try tests - fallthough body cases
+# try tests - fall-through body cases
 
 test error-19.1 {try with fallthrough body #1} {
     set RES {}

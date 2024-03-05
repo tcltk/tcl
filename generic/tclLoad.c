@@ -1015,7 +1015,7 @@ Tcl_StaticPackage(
  * TclGetLoadedPackages --
  *
  *	This function returns information about all of the files that are
- *	loaded (either in a particular intepreter, or for all interpreters).
+ *	loaded (either in a particular interpreter, or for all interpreters).
  *
  * Results:
  *	The return value is a standard Tcl completion code. If successful, a

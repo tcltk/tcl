@@ -15,15 +15,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgd_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgd_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkgd_SubObjCmd --

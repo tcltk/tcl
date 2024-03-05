@@ -1,5 +1,12 @@
 name: macOS
-on: [push]
+on:
+  push:
+    branches:
+    - "main"
+    - "core-8-branch"
+    - "core-8-6-branch"
+    tags:
+    - "core-**"
 permissions:
   contents: read
 jobs:
@@ -11,23 +18,26 @@ jobs:
         working-directory: macosx
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
       - name: Build
         run: make all
+        timeout-minutes: 15
       - name: Run Tests
         run: make test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15
   clang:
     runs-on: macos-11
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
           - "--enable-symbols"
@@ -39,23 +49,27 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
           mkdir "$HOME/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         # Note that macOS is always a 64 bit platform
         run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
-          CFGOPT: ${{ matrix.cfgopt }}
+          CFGOPT: ${{ matrix.config }}
+        timeout-minutes: 5
       - name: Build
         run: |
           make all tcltest
+        timeout-minutes: 15
       - name: Run Tests
         run: |
           make test
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15

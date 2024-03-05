@@ -6,7 +6,7 @@
  *	provide the functionality of joining threads.  This code is currently
  *	not necessary on Unix.
  *
- * Copyright (c) 2000 by Scriptics Corporation
+ * Copyright (c) 2000 Scriptics Corporation
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -211,8 +211,8 @@ TclJoinThread(
  *
  * TclRememberJoinableThread --
  *
- *	This procedure remebers a thread as joinable. Only a call to
- *	TclJoinThread will remove the structre created (and initialized) here.
+ *	This procedure remembers a thread as joinable. Only a call to
+ *	TclJoinThread will remove the structure created (and initialized) here.
  *	IOW, not waiting upon a joinable thread will cause memory leaks.
  *
  * Results:
@@ -230,7 +230,7 @@ TclRememberJoinableThread(
 {
     JoinableThread *threadPtr;
 
-    threadPtr = ckalloc(sizeof(JoinableThread));
+    threadPtr = (JoinableThread *)ckalloc(sizeof(JoinableThread));
     threadPtr->id = id;
     threadPtr->done = 0;
     threadPtr->waitedUpon = 0;
@@ -305,6 +305,8 @@ TclSignalExitThread(
 
     Tcl_MutexUnlock(&threadPtr->threadMutex);
 }
+#else
+TCL_MAC_EMPTY_FILE(generic_tclThreadJoin_c)
 #endif /* _WIN32 */
 
 /*

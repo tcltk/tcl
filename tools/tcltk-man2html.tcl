@@ -221,14 +221,14 @@ proc css-stylesheet {} {
 	font-size: 11px;
     }
     css-style ".keylist dt" ".arguments dt" {
-	width: 20em;
+	width: 25em;
 	float: left;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }
     css-style ".keylist dt" { font-weight: bold; }
     css-style ".keylist dd" ".arguments dd" {
-	margin-left: 20em;
+	margin-left: 25em;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }
@@ -442,12 +442,12 @@ proc make-man-pages {html args} {
 proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
-	if {[file exists $tcltkdir/$root/README]} {
-	    set f [open $tcltkdir/$root/README]
+	if {[file exists $tcltkdir/$root/README.md]} {
+	    set f [open $tcltkdir/$root/README.md]
 	    fconfigure $f -encoding utf-8
 	    set d [read $f]
 	    close $f
-	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	    if {[regexp {This is the \*\*\w+ (\S+)\*\* source distribution} $d -> version]} {
 	       append name ", version $version"
 	    }
 	}

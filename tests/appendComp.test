@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -250,7 +250,7 @@ test appendComp-7.1 {lappendComp-created var and error in trace on that var} -se
 } -body {
     proc bar {} {
 	global x
-	trace variable x w foo
+	trace add variable x write foo
 	proc foo {} {global x; unset x}
 	catch {lappend x 1}
 	proc foo {args} {global x; unset x}
@@ -265,19 +265,19 @@ test appendComp-7.2 {lappend var triggers read trace, index var} -setup {
     unset -nocomplain ::result
 } -body {
     proc bar {} {
-	trace variable myvar r foo
+	trace add variable myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend myvar a
 	return $::result
     }
     bar
-} -result {myvar {} r} -constraints {bug-3057639}
+} -result {myvar {} read} -constraints {bug-3057639}
 test appendComp-7.3 {lappend var triggers read trace, stack var} -setup {
     unset -nocomplain ::result
     unset -nocomplain ::myvar
 } -body {
     proc bar {} {
-	trace variable ::myvar r foo
+	trace add variable ::myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend ::myvar a
 	return $::result
@@ -290,67 +290,67 @@ test appendComp-7.4 {lappend var triggers read trace, array var} -setup {
     # The behavior of read triggers on lappend changed in 8.0 to not trigger
     # them. Maybe not correct, but been there a while.
     proc bar {} {
-	trace variable myvar r foo
+	trace add variable myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend myvar(b) a
 	return $::result
     }
     bar
-} -result {myvar b r} -constraints {bug-3057639}
+} -result {myvar b read} -constraints {bug-3057639}
 test appendComp-7.5 {lappend var triggers read trace, array var} -setup {
     unset -nocomplain ::result
 } -body {
     # The behavior of read triggers on lappend changed in 8.0 to not trigger
     # them. Maybe not correct, but been there a while.
     proc bar {} {
-	trace variable myvar r foo
+	trace add variable myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend myvar(b) a b
 	return $::result
     }
     bar
-} -result {myvar b r}
+} -result {myvar b read}
 test appendComp-7.6 {lappend var triggers read trace, array var exists} -setup {
     unset -nocomplain ::result
 } -body {
     proc bar {} {
 	set myvar(0) 1
-	trace variable myvar r foo
+	trace add variable myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend myvar(b) a
 	return $::result
     }
     bar
-} -result {myvar b r} -constraints {bug-3057639}
+} -result {myvar b read} -constraints {bug-3057639}
 test appendComp-7.7 {lappend var triggers read trace, array stack var} -setup {
     unset -nocomplain ::myvar
     unset -nocomplain ::result
 } -body {
     proc bar {} {
-	trace variable ::myvar r foo
+	trace add variable ::myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend ::myvar(b) a
 	return $::result
     }
     bar
-} -result {::myvar b r} -constraints {bug-3057639}
+} -result {::myvar b read} -constraints {bug-3057639}
 test appendComp-7.8 {lappend var triggers read trace, array stack var} -setup {
     unset -nocomplain ::myvar
     unset -nocomplain ::result
 } -body {
     proc bar {} {
-	trace variable ::myvar r foo
+	trace add variable ::myvar read foo
 	proc foo {args} {append ::result $args}
 	lappend ::myvar(b) a b
 	return $::result
     }
     bar
-} -result {::myvar b r}
+} -result {::myvar b read}
 test appendComp-7.9 {append var does not trigger read trace} -setup {
     unset -nocomplain ::result
 } -body {
     proc bar {} {
-	trace variable myvar r foo
+	trace add variable myvar read foo
 	proc foo {args} {append ::result $args}
 	append myvar a
 	info exists ::result
@@ -384,7 +384,7 @@ test appendComp-8.1 {defer error to runtime} -setup {
 # patch (no read traces run for lappend, append). The compiled tests are
 # failing for lappend (9.0/1) before the patch, showing how it invokes read
 # traces in the compiled path. The append tests are good (9.2/3). After the
-# patch the failues are gone.
+# patch the failures are gone.
 
 test appendComp-9.0 {bug 3057639, lappend compiled, read trace on non-existing array variable element} -setup {
     unset -nocomplain myvar

@@ -5,7 +5,7 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -356,7 +356,7 @@ test expr-8.11 {CompileEqualityExpr: error compiling equality arm} -body {
     expr 2!=x
 } -returnCodes error -match glob -result *
 test expr-8.12 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
-test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \u00fc]}} 1
+test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \xFC]}} 1
 test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
 test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
@@ -802,7 +802,7 @@ test expr-20.2 {double invocation of variable traces} -body {
            set var "$counter + [concat $extraargs]"
        }
     }
-    trace variable exprtracevar r [list exprtraceproc 10]
+    trace add variable exprtracevar read [list exprtraceproc 10]
     list [catch {expr "$exprtracevar + 20"} a] $a \
         [catch {expr "$exprtracevar + 20"} b] $b \
         [unset exprtracevar exprtracecounter]
@@ -1451,6 +1451,7 @@ test expr-24.8 {expr edge cases; shifting} {expr wide(10<<63)} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
 
 test expr-24.10 {INST_LSHIFT: Bug 1567222} {expr 500000000000000<<28} 134217728000000000000000
+test expr-24.11 {INST_LSHIFT: Bug 84a5355235} {expr -549755813888>>32} -128
 
 # List membership tests
 test expr-25.1 {'in' operator} {expr {"a" in "a b c"}} 1
@@ -7277,6 +7278,43 @@ test expr-52.1 {
 		::tcl::unsupported::representation $a]]
 } {0 0 1 1}
 
+# Bug e3dcab1d14
+proc do-one-test-expr-63 {e p float athreshold} {
+    # e - power of 2 to test
+    # p - tcl_precision to test with
+    # float - floating point value 2**-$p
+    # athreshold - tolerable absolute error (1/2 decimal digit in
+    #              least significant place plus 1/2 least significant bit)
+    set trouble {}
+    set ::tcl_precision $p
+    set xfmt x[expr $float]
+    set ::tcl_precision 0
+    set fmt [string range $xfmt 1 end]
+    set aerror [expr {abs($fmt - $float)}]
+    if {$aerror > $athreshold} {
+        return "Result $fmt is more than $athreshold away from $float"
+    } else {
+        return {}
+    }
+}
+
+proc run-test-expr-63 {} {
+    for {set e 0} {$e <= 1023} {incr e} {
+        set pt [expr {floor($e*log(2)/log(10))}]
+        for {set p 6} {$p <= 17} {incr p} {
+            set athreshold [expr {0.5*10.0**-($pt+$p) + 2.0**-($e+53)}]
+            set numer [expr {5**$e}]
+            set xfloat x[expr {2.**-$e}]
+            set float [string range $xfloat 1 end]
+            test expr-63.$p.$e "convert 2**-$e to decimal at precision $p" {
+                do-one-test-expr-63 $e $p $float $athreshold
+            } {}
+        }
+    }
+    rename do-one-test-expr-63 {}
+    rename run-test-expr-63 {}
+}
+run-test-expr-63
 
 
 # cleanup

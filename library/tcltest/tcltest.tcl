@@ -16,19 +16,21 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
-package require Tcl 8.5-		;# -verbose line uses [info frame]
 namespace eval tcltest {
 
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.5
+    variable Version 2.5.7
 
     # Compatibility support for dumb variables defined in tcltest 1
-    # Do not use these.  Call [package provide Tcl] and [info patchlevel]
+    # Do not use these.  Call [package require] and [info patchlevel]
     # yourself.  You don't need tcltest to wrap it for you.
-    variable version [package provide Tcl]
+    variable version [package require Tcl 8.5-]
     variable patchLevel [info patchlevel]
+
+    # Detect if we can use code points >= \U10000
+    variable fullutf [package vsatisfies $version 8.7-]
 
 ##### Export the public tcltest procs; several categories
     #
@@ -41,7 +43,7 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    if {!$fullutf} {
 	namespace export bytestring	;# dups [encoding convertfrom identity]
     }
     namespace export debug		;#	[configure -debug]
@@ -153,7 +155,7 @@ namespace eval tcltest {
     }
 
 ##### Initialize internal arrays of tcltest, but only if the caller
-    # has not already pre-initialized them.  This is done to support
+    # has not already preinitialized them.  This is done to support
     # compatibility with older tests that directly access internals
     # rather than go through command interfaces.
     #
@@ -163,7 +165,7 @@ namespace eval tcltest {
 	    return
 	}
 	if {[info exists $varName]} {
-	    # Pre-initialized value is a scalar: destroy it!
+	    # Preinitialized value is a scalar:  Destroy it!
 	    unset $varName
 	}
 	array set $varName $value
@@ -196,7 +198,7 @@ namespace eval tcltest {
     ArrayDefault testConstraints {}
 
 ##### Initialize internal variables of tcltest, but only if the caller
-    # has not already pre-initialized them.  This is done to support
+    # has not already preinitialized them.  This is done to support
     # compatibility with older tests that directly access internals
     # rather than go through command interfaces.
     #
@@ -229,7 +231,7 @@ namespace eval tcltest {
     # check the current working dir for files created by the tests.
     # filesMade keeps track of such files created using the makeFile and
     # makeDirectory procedures.  filesExisted stores the names of
-    # pre-existing files.
+    # preexisting files.
     #
     # Note that $filesExisted lists only those files that exist in
     # the original [temporaryDirectory].
@@ -298,7 +300,7 @@ namespace eval tcltest {
     # keep track of test level for nested test commands
     variable testLevel 0
 
-    # the variables and procs that existed when saveState was called are
+    # the variables and procedures that existed when saveState was called are
     # stored in a variable of the same name
     Default saveState {}
 
@@ -345,6 +347,7 @@ namespace eval tcltest {
     proc outputChannel { {filename ""} } {
 	variable outputChannel
 	variable ChannelsWeOpened
+	variable fullutf
 
 	# This is very subtle and tricky, so let me try to explain.
 	# (Hopefully this longer comment will be clear when I come
@@ -354,12 +357,12 @@ namespace eval tcltest {
 	# be kept in sync with the [configure -outfile] configuration
 	# option ( and underlying variable Option(-outfile) ).  This is
 	# accomplished with a write trace on Option(-outfile) that will
-	# update [outputChannel] whenver a new value is written.  That
+	# update [outputChannel] whenever a new value is written.  That
 	# much is easy.
 	#
 	# The trick is that in order to maintain compatibility with
 	# version 1 of tcltest, we must allow every configuration option
-	# to get its inital value from command line arguments.  This is
+	# to get its initial value from command line arguments.  This is
 	# accomplished by setting initial read traces on all the
 	# configuration options to parse the command line option the first
 	# time they are read.  These traces are cancelled whenever the
@@ -399,8 +402,8 @@ namespace eval tcltest {
 	    }
 	    default {
 		set outputChannel [open $filename a]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $outputChannel -encoding utf-8
+		if {$fullutf} {
+		    fconfigure $outputChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($outputChannel) 1
 
@@ -427,6 +430,7 @@ namespace eval tcltest {
     proc errorChannel { {filename ""} } {
 	variable errorChannel
 	variable ChannelsWeOpened
+	variable fullutf
 
 	# This is subtle and tricky.  See the comment above in
 	# [outputChannel] for a detailed explanation.
@@ -446,8 +450,8 @@ namespace eval tcltest {
 	    }
 	    default {
 		set errorChannel [open $filename a]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $errorChannel -encoding utf-8
+		if {$fullutf} {
+		    fconfigure $errorChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($errorChannel) 1
 
@@ -482,7 +486,7 @@ namespace eval tcltest {
 
     # Initialize the default values of the configurable options that are
     # historically associated with an exported variable.  If that variable
-    # is already set, support compatibility by accepting its pre-set value.
+    # is already set, support compatibility by accepting its preset value.
     # Use [trace] to establish ongoing connection between the deprecated
     # exported variable and the modern option kept as a true internal var.
     # Also set up usage string and value testing for the option.
@@ -761,7 +765,7 @@ namespace eval tcltest {
 		# even if the directory is not writable
 		return $directory
 	    }
-	    return -code error "\"$directory\" is not writeable"
+	    return -code error "\"$directory\" is not writable"
 	}
 	return $directory
     }
@@ -789,10 +793,12 @@ namespace eval tcltest {
     }
     proc ReadLoadScript {args} {
 	variable Option
+	variable fullutf
+
 	if {$Option(-loadfile) eq {}} {return}
 	set tmp [open $Option(-loadfile) r]
-	if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	    fconfigure $tmp -encoding utf-8
+	if {$fullutf} {
+	    fconfigure $tmp -profile tcl8 -encoding utf-8
 	}
 	loadScript [read $tmp]
 	close $tmp
@@ -852,7 +858,7 @@ namespace eval tcltest {
 # tcltest::Debug* --
 #
 #     Internal helper procedures to write out debug information
-#     dependent on the chosen level. A test shell may overide
+#     dependent on the chosen level. A test shell may override
 #     them, f.e. to redirect the output into a different
 #     channel, or even into a GUI.
 
@@ -1134,6 +1140,37 @@ proc tcltest::SafeFetch {n1 n2 op} {
     }
 }
 
+# tcltest::Asciify --
+#
+#       Transforms the passed string to contain only printable ascii characters.
+#       Useful for printing to terminals. Non-printables are mapped to
+#       \x, \u or \U sequences, except \n.
+#
+# Arguments:
+#       s - string to transform
+#
+# Results:
+#       The transformed strings
+#
+# Side effects:
+#       None.
+
+proc tcltest::Asciify {s} {
+    set print ""
+    foreach c [split $s ""] {
+        if {(($c < "\x7F") && [string is print $c]) || ($c eq "\n")} {
+            append print $c
+        } elseif {$c < "\u0100"} {
+            append print \\x[format %02X [scan $c %c]]
+        } elseif {$c > "\uFFFF"} {
+            append print \\U[format %08X [scan $c %c]]
+        } else {
+            append print \\u[format %04X [scan $c %c]]
+        }
+    }
+    return $print
+}
+
 # tcltest::ConstraintInitializer --
 #
 #	Get or set a script that when evaluated in the tcltest namespace
@@ -1337,10 +1374,12 @@ proc tcltest::DefineConstraintInitializers {} {
     }
 
     ConstraintInitializer stdio {
+	variable fullutf
+
 	set code 0
 	if {![catch {set f [open "|[list [interpreter]]" w]}]} {
-	    if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		fconfigure $f -encoding utf-8
+	    if {$fullutf} {
+		fconfigure $f -profile tcl8 -encoding utf-8
 	    }
 	    if {![catch {puts $f exit}]} {
 		if {![catch {close $f}]} {
@@ -1758,7 +1797,7 @@ proc tcltest::SubstArguments {argList} {
     # We need to split the argList up into tokens but cannot use list
     # operations as they throw away some significant quoting, and
     # [split] ignores braces as it should.  Therefore what we do is
-    # gradually build up a string out of whitespace seperated strings.
+    # gradually build up a string out of whitespace-separated strings.
     # We cannot use [split] to split the argList into whitespace
     # separated strings as it throws away the whitespace which maybe
     # important so we have to do it all by hand.
@@ -1865,7 +1904,7 @@ proc tcltest::SubstArguments {argList} {
 #   match -             specifies type of matching to do on result,
 #                       output, errorOutput; this must be a string
 #			previously registered by a call to [customMatch].
-#			The strings exact, glob, and regexp are pre-registered
+#			The strings exact, glob, and regexp are preregistered
 #			by the tcltest package.  Default value is exact.
 #
 # Arguments:
@@ -1884,6 +1923,8 @@ proc tcltest::test {name description args} {
     global tcl_platform
     variable testLevel
     variable coreModTime
+    variable fullutf
+
     DebugPuts 3 "test $name $args"
     DebugDo 1 {
 	variable TestNames
@@ -1896,7 +1937,7 @@ proc tcltest::test {name description args} {
     FillFilesExisted
     incr testLevel
 
-    # Pre-define everything to null except output and errorOutput.  We
+    # Predefine everything to null except output and errorOutput.  We
     # determine whether or not to trap output based on whether or not
     # these variables (output & errorOutput) are defined.
     lassign {} constraints setup cleanup body result returnCodes errorCode match
@@ -2189,8 +2230,8 @@ proc tcltest::test {name description args} {
 	    set testFile [file normalize [uplevel 1 {info script}]]
 	    if {[file readable $testFile]} {
 		set testFd [open $testFile r]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $testFd -encoding utf-8
+		if {$fullutf} {
+		    fconfigure $testFd -profile tcl8 -encoding utf-8
 		}
 		set testLine [expr {[lsearch -regexp \
 			[split [read $testFd] "\n"] \
@@ -2221,9 +2262,13 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
-	    puts [outputChannel] "---- Result was:\n$actualAnswer"
+	    if {[catch {
+		puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
+	    } errMsg]} {
+		puts [outputChannel] "\n---- Result was:\n<error printing result: $errMsg>"
+	    }
 	    puts [outputChannel] "---- Result should have been\
-		    ($match matching):\n$result"
+		    ($match matching):\n[Asciify $result]"
 	}
     }
     if {$errorCodeFailure} {
@@ -2365,6 +2410,7 @@ proc tcltest::Skipped {name constraints} {
 	# make sure that the constraints are satisfied.
 
 	set doTest 0
+        set constraints [string trim $constraints]
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 [list expr $constraints]]}
@@ -2491,7 +2537,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 
     # Remove files and directories created by the makeFile and
     # makeDirectory procedures.  Record the names of files in
-    # workingDirectory that were not pre-existing, and associate them
+    # workingDirectory that were not preexisting, and associate them
     # with the test file that created them.
 
     if {!$calledFromAllFile} {
@@ -2582,7 +2628,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# loop is running, which is the real issue.
 	# Actually, this doesn't belong here at all.  A package
 	# really has no business [exit]-ing an application.
-	if {![catch {package present Tk}] && ![testConstraint interactive]} {
+	if {[info exists ::tk_version] && ![testConstraint interactive]} {
 	    exit
 	}
     } else {
@@ -2815,6 +2861,7 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
+    variable fullutf
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2900,8 +2947,8 @@ proc tcltest::runAllTests { {shell ""} } {
 	    if {[catch {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $pipeFd -encoding utf-8
+		if {$fullutf} {
+		    fconfigure $pipeFd -profile tcl8 -encoding utf-8
 		}
 		while {[gets $pipeFd line] >= 0} {
 		    if {[regexp [join {
@@ -3087,6 +3134,8 @@ proc tcltest::normalizeMsg {msg} {
 
 proc tcltest::makeFile {contents name {directory ""}} {
     variable filesMade
+    variable fullutf
+
     FillFilesExisted
 
     if {[llength [info level 0]] == 3} {
@@ -3100,8 +3149,8 @@ proc tcltest::makeFile {contents name {directory ""}} {
 
     set fd [open $fullName w]
     fconfigure $fd -translation lf
-    if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	fconfigure $fd -encoding utf-8
+    if {$fullutf} {
+	fconfigure $fd -profile tcl8 -encoding utf-8
     }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
@@ -3245,14 +3294,16 @@ proc tcltest::removeDirectory {name {directory ""}} {
 #	None.
 
 proc tcltest::viewFile {name {directory ""}} {
+    variable fullutf
+
     FillFilesExisted
     if {[llength [info level 0]] == 2} {
 	set directory [temporaryDirectory]
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
-    if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	fconfigure $f -encoding utf-8
+    if {$fullutf} {
+	fconfigure $f -profile tcl8 -encoding utf-8
     }
     set data [read -nonewline $f]
     close $f
@@ -3287,7 +3338,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-if {![package vsatisfies [package provide Tcl] 8.7-]} {
+if {!$::tcltest::fullutf} {
     proc tcltest::bytestring {string} {
 	return [encoding convertfrom identity $string]
     }
@@ -3449,7 +3500,7 @@ proc tcltest::threadReap {} {
 
 # Initialize the constraints and set up command line arguments
 namespace eval tcltest {
-    # Define initializers for all the built-in contraint definitions
+    # Define initializers for all the built-in constraint definitions
     DefineConstraintInitializers
 
     # Set up the constraints in the testConstraints array to be lazily
@@ -3458,7 +3509,7 @@ namespace eval tcltest {
     trace add variable testConstraints read [namespace code SafeFetch]
 
     # Only initialize constraints at package load time if an
-    # [initConstraintsHook] has been pre-defined.  This is only
+    # [initConstraintsHook] has been predefined.  This is only
     # for compatibility support.  The modern way to add a custom
     # test constraint is to just call the [testConstraint] command
     # straight away, without all this "hook" nonsense.

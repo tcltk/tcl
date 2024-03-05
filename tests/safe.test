@@ -50,8 +50,8 @@ proc mapAndSortList {map listIn} {
     lsort $listOut
 }
 
-# Force actual loading of the safe package because we use un-exported (and
-# thus un-autoindexed) APIs in this test result arguments:
+# Force actual loading of the safe package because we use unexported (and
+# thus unautoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
 # testing that nested and statics do what is advertised (we use a static

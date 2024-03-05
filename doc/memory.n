@@ -41,7 +41,7 @@ of packets and bytes allocated.
 .TP
 \fBmemory init \fR[\fBon\fR|\fBoff\fR]
 .
-Turn on or off the pre-initialization of all allocated memory
+Turn on or off the preinitialization of all allocated memory
 with bogus bytes.  Useful for detecting the use of uninitialized
 values.
 .TP

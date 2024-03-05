@@ -1452,7 +1452,7 @@ AtForkChild(void)
 
 	    /*
 	     * The tsdPtr from before the fork is copied as well.  But since
-	     * we are paranoic, we don't trust its condvar and reset it.
+	     * we are paranoiac, we don't trust its condvar and reset it.
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
@@ -1483,6 +1483,8 @@ AtForkChild(void)
 
 #endif /* TCL_THREADS */
 
+#else
+TCL_MAC_EMPTY_FILE(unix_tclUnixNotfy_c)
 #endif /* !HAVE_COREFOUNDATION */
 
 /*

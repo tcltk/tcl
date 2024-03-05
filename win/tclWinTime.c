@@ -598,7 +598,7 @@ NativeGetMicroseconds(void)
 
 	if (curCounter.QuadPart <= perfCounterLastCall) {
 	    /*
-	     * Calibrated file-time is saved from posix in 100-ns ticks
+	     * Calibrated file-time is saved from Posix in 100-ns ticks
 	     */
 
 	    return fileTimeLastCall / 10;
@@ -617,7 +617,7 @@ NativeGetMicroseconds(void)
 	if (curCounter.QuadPart - perfCounterLastCall <
 		11 * curCounterFreq * timeInfo.calibrationInterv / 10
 	) {
-	    /* Calibrated file-time is saved from posix in 100-ns ticks */
+	    /* Calibrated file-time is saved from Posix in 100-ns ticks */
 	    return NativeCalc100NsTicks(fileTimeLastCall,
 		perfCounterLastCall, curCounterFreq, curCounter.QuadPart) / 10;
 	}
@@ -754,7 +754,7 @@ TclpGetDate(
 	 */
 
 	/*
-	 * Hm, Borland's localtime manages to return NULL under certain
+	 * Hmm, Borland's localtime manages to return NULL under certain
 	 * circumstances (e.g. wintime.test, test 1.2). Nobody tests for this,
 	 * since 'localtime' isn't supposed to do this, possibly leading to
 	 * crashes.
@@ -985,7 +985,7 @@ CalibrationThread(
     QueryPerformanceFrequency(&timeInfo.curCounterFreq);
     timeInfo.fileTimeLastCall.LowPart = curFileTime.dwLowDateTime;
     timeInfo.fileTimeLastCall.HighPart = curFileTime.dwHighDateTime;
-    /* Calibrated file-time will be saved from posix in 100-ns ticks */
+    /* Calibrated file-time will be saved from Posix in 100-ns ticks */
     timeInfo.fileTimeLastCall.QuadPart -= timeInfo.posixEpoch.QuadPart;
 
     ResetCounterSamples(timeInfo.fileTimeLastCall.QuadPart,
@@ -1058,7 +1058,7 @@ UpdateTimeEachSecond(void)
 				 * step over 1 second. */
 
     /*
-     * Sample performance counter and system time (from posix epoch).
+     * Sample performance counter and system time (from Posix epoch).
      */
 
     GetSystemTimeAsFileTime(&curSysTime);
@@ -1078,7 +1078,7 @@ UpdateTimeEachSecond(void)
     lastFileTime.QuadPart = curFileTime.QuadPart;
 
     /*
-     * We devide by timeInfo.curCounterFreq.QuadPart in several places. That
+     * We divide by timeInfo.curCounterFreq.QuadPart in several places. That
      * value should always be positive on a correctly functioning system. But
      * it is good to be defensive about such matters. So if something goes
      * wrong and the value does goes to zero, we clear the

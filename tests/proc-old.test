@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -137,25 +137,25 @@ test proc-old-3.7 {local and global arrays} {
     proc t1 {args} {global info; set info 1}
     catch {unset a}
     set info {}
-    do {global a; trace var a(1) w t1}
+    do {global a; trace add var a(1) write t1}
     set a(1) 44
     set info
 } 1
 test proc-old-3.8 {local and global arrays} {
     proc t1 {args} {global info; set info 1}
     catch {unset a}
-    trace var a(1) w t1
+    trace add var a(1) write t1
     set info {}
-    do {global a; trace vdelete a(1) w t1}
+    do {global a; trace remove variable a(1) write t1}
     set a(1) 44
     set info
 } {}
 test proc-old-3.9 {local and global arrays} {
     proc t1 {args} {global info; set info 1}
     catch {unset a}
-    trace var a(1) w t1
-    do {global a; trace vinfo a(1)}
-} {{w t1}}
+    trace add var a(1) write t1
+    do {global a; trace info var a(1)}
+} {{write t1}}
 catch {unset a}
 
 test proc-old-30.1 {arguments and defaults} {
@@ -349,7 +349,7 @@ test proc-old-5.16 {error conditions} {
     }
     proc tproc {} {
 	set x 44
-	trace var x u foo
+	trace add var x unset foo
 	while {$x < 100} {
 	    error "Nested error"
 	}
@@ -361,7 +361,7 @@ test proc-old-5.16 {error conditions} {
 "error "Nested error""
     (procedure "tproc" line 5)
     invoked from within
-"tproc"} {foo was called: x {} u}}
+"tproc"} {foo was called: x {} unset}}
 
 # The tests below will really only be useful when run under Purify or
 # some other system that can detect accesses to freed memory...

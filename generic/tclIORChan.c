@@ -10,7 +10,7 @@
  *
  *	See TIP #219 for the specification of this functionality.
  *
- * Copyright (c) 2004-2005 ActiveState, a divison of Sophos
+ * Copyright (c) 2004-2005 ActiveState, a division of Sophos
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -120,7 +120,7 @@ typedef struct {
      * data in buffers is flushed out through the generation of fake file
      * events.
      *
-     * See 'rechan', 'memchan', etc.
+     * See 'refchan', 'memchan', etc.
      *
      * Here this is _not_ required. Interest in events is posted to the Tcl
      * level via 'watch'. And posting of events is possible from the Tcl level
@@ -131,7 +131,7 @@ typedef struct {
 } ReflectedChannel;
 
 /*
- * Structure of the table maping from channel handles to reflected
+ * Structure of the table mapping from channel handles to reflected
  * channels. Each interpreter which has the handler command for one or more
  * reflected channels records them in such a table, so that 'chan postevent'
  * is able to find them even if the actual channel was moved to a different
@@ -430,7 +430,7 @@ static Tcl_Obj *	DecodeEventMask(int mask);
 static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
+static Tcl_FreeProc	FreeReflectedChannel;
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    MethodName method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -532,7 +532,7 @@ TclChanCreateObjCmd(
 
     /*
      * First argument is a list of modes. Allowed entries are "read", "write".
-     * Expect at least one list element. Abbreviations are ok.
+     * Empty list is uncommon, but allowed. Abbreviations are ok.
      */
 
     modeObj = objv[MODE];
@@ -870,8 +870,8 @@ TclChanPostEventObjCmd(
      * handles of reflected channels, and only of such whose handler is
      * defined in this interpreter.
      *
-     * We keep the old checks for both, for paranioa, but abort now instead of
-     * throwing errors, as failure now means that our internal datastructures
+     * We keep the old checks for both, for paranoia, but abort now instead of
+     * throwing errors, as failure now means that our internal data structures
      * have gone seriously haywire.
      */
 
@@ -903,6 +903,11 @@ TclChanPostEventObjCmd(
      */
 
     if (EncodeEventMask(interp, "event", objv[EVENT], &events) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (events == 0) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -1012,7 +1017,7 @@ UnmarshallErrorResult(
      * Syntax = (option value)... ?message?
      *
      * Bad syntax causes a panic. This is OK because the other side uses
-     * Tcl_GetReturnOptions and list construction functions to marshall the
+     * Tcl_GetReturnOptions and list construction functions to marshal the
      * information; if we panic here, something has gone badly wrong already.
      */
 
@@ -1103,7 +1108,7 @@ TclChanCaughtErrorBypass(
  *	driver specific instance data.
  *
  * Results:
- *	A posix error.
+ *	A Posix error.
  *
  * Side effects:
  *	Releases memory. Arbitrary, as it calls upon a script.
@@ -1128,8 +1133,8 @@ ReflectClose(
 	/*
 	 * This call comes from TclFinalizeIOSystem. There are no
 	 * interpreters, and therefore we cannot call upon the handler command
-	 * anymore. Threading is irrelevant as well. We simply clean up all
-	 * our C level data structures and leave the Tcl level to the other
+	 * anymore. Threading is irrelevant as well. Simply clean up all
+	 * the C level data structures and leave the Tcl level to the other
 	 * finalization functions.
 	 */
 
@@ -1165,7 +1170,7 @@ ReflectClose(
 	    ckfree((char *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
 	}
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+        Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
 	return EOK;
     }
 
@@ -1234,7 +1239,7 @@ ReflectClose(
 	    ckfree((char *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
     }
-    Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+    Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -1677,7 +1682,7 @@ ReflectWatch(
  *	is required of it.
  *
  * Results:
- *	A posix error number.
+ *	A Posix error number.
  *
  * Side effects:
  *	Allocates memory. Arbitrary, as it calls upon a script.
@@ -2007,10 +2012,10 @@ ReflectGetOption(
  * EncodeEventMask --
  *
  *	This function takes a list of event items and constructs the
- *	equivalent internal bitmask. The list must contain at least one
- *	element. Elements are "read", "write", or any unique abbreviation of
- *	them. Note that the bitmask is not changed if problems are
- *	encountered.
+ *	equivalent internal bitmask. The list may be empty but will usually
+ *	contain at least one element. Valid elements are "read", "write", or
+ *	any unique abbreviation of them. Note that the bitmask is not changed
+ *	if problems are encountered.
  *
  * Results:
  *	A standard Tcl error code. A bitmask where TCL_READABLE and/or
@@ -2037,12 +2042,6 @@ EncodeEventMask(
 				 * list. */
 
     if (TclListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (listc < 1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "bad %s list: is empty", objName));
 	return TCL_ERROR;
     }
 
@@ -2180,7 +2179,7 @@ NewReflectedChannel(
  *	refcount of the returned object is -- zero --.
  *
  * Side effects:
- *	May allocate memory. Mutex protected critical section locks out other
+ *	May allocate memory. Mutex-protected critical section locks out other
  *	threads for a short time.
  *
  *----------------------------------------------------------------------
@@ -2211,8 +2210,9 @@ NextHandle(void)
 
 static void
 FreeReflectedChannel(
-    ReflectedChannel *rcPtr)
+    char *blockPtr)
 {
+    ReflectedChannel *rcPtr = (ReflectedChannel *) blockPtr;
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);
@@ -2234,7 +2234,7 @@ FreeReflectedChannel(
  * InvokeTclMethod --
  *
  *	This function is used to invoke the Tcl level of a reflected channel.
- *	It handles all the command assembly, invokation, and generic state and
+ *	It handles all the command assembly, invocation, and generic state and
  *	result mgmt. It does *not* handle thread redirection; that is the
  *	responsibility of clients of this function.
  *
@@ -2262,8 +2262,8 @@ InvokeTclMethod(
 {
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
-    int result;			/* Result code of method invokation */
-    Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    int result;			/* Result code of method invocation */
+    Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
     Tcl_Obj *cmd;
 
     if (rcPtr->dead) {
@@ -2483,7 +2483,7 @@ GetReflectedChannelMap(
  *
  * Side effects:
  *	Deletes the hash table of channels. May close channels. May flush
- *	output on closed channels. Removes any channeEvent handlers that were
+ *	output on closed channels. Removes any channelEvent handlers that were
  *	registered in this interpreter.
  *
  *----------------------------------------------------------------------
@@ -2697,6 +2697,7 @@ DeleteThreadReflectedChannelMap(
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedChannelMap *rcmPtr; /* The map */
     ForwardingResult *resultPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     (void)dummy;
 
     /*
@@ -2777,6 +2778,7 @@ DeleteThreadReflectedChannelMap(
      */
 
     rcmPtr = GetThreadReflectedChannelMap();
+    tsdPtr->rcmPtr = NULL;
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
@@ -3083,10 +3085,10 @@ ForwardProc(
                 (paramPtr->seek.seekMode==SEEK_SET) ? "start" :
                 (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
 
-        Tcl_IncrRefCount(offObj);
-        Tcl_IncrRefCount(baseObj);
+	Tcl_IncrRefCount(offObj);
+	Tcl_IncrRefCount(baseObj);
 
-        Tcl_Preserve(rcPtr);
+	Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, METH_SEEK, offObj, baseObj, &resObj)!=TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->seek.offset = -1;
@@ -3208,7 +3210,7 @@ ForwardProc(
 		 */
 
 		char *buf = (char *)ckalloc(200);
-		sprintf(buf,
+		snprintf(buf, 200,
 			"{Expected list with even number of elements, got %d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 

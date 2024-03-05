@@ -1117,7 +1117,7 @@ test dict-19.2 {dict: testing for leaks} -constraints memory -body {
     # This test is made to stress object reference management
     memtest {
 	apply {{} {
-	    # A shared invalid dictinary
+	    # A shared invalid dictionary
 	    set apa {a {}b c d}
 	    set bepa $apa
 	    catch {dict replace $apa e f}

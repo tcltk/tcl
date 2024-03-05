@@ -590,7 +590,6 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #		TCL_THREADS
 #		_REENTRANT
 #		_THREAD_SAFE
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_THREADS], [
@@ -1194,9 +1193,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}.dll.a'
-	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$[@].a"
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,
 		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -1529,16 +1525,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    do64bit_ok=yes
 			]);;
-		    arm64|arm64e)
-			AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
-				tcl_cv_cc_arch_arm64e, [
+		    arm64)
+			AC_CACHE_CHECK([if compiler accepts -arch arm64 flag],
+				tcl_cv_cc_arch_arm64, [
 			    hold_cflags=$CFLAGS
-			    CFLAGS="$CFLAGS -arch arm64e"
+			    CFLAGS="$CFLAGS -arch arm64"
 			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-				    [tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+				    [tcl_cv_cc_arch_arm64=yes],[tcl_cv_cc_arch_arm64=no])
 			    CFLAGS=$hold_cflags])
-			AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
-			    CFLAGS="$CFLAGS -arch arm64e"
+			AS_IF([test $tcl_cv_cc_arch_arm64 = yes], [
+			    CFLAGS="$CFLAGS -arch arm64"
 			    do64bit_ok=yes
 			]);;
 		    *)
@@ -1546,7 +1542,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		esac
 	    ], [
 		# Check for combined 32-bit and 64-bit fat build
-		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
+		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '], [
 		    fat_32_64=yes])
 	    ])
@@ -1582,7 +1578,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    LD_LIBRARY_PATH_VAR="DYLD_FALLBACK_LIBRARY_PATH"
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
@@ -1994,7 +1990,7 @@ dnl # preprocessing tests use only CPPFLAGS.
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
         MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)";if test -f $(LIB_FILE).a; then $(INSTALL_DATA) $(LIB_FILE).a "$(LIB_INSTALL_DIR)"; fi;'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
         ], [
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
@@ -2055,6 +2051,9 @@ dnl # preprocessing tests use only CPPFLAGS.
     else
 	CFLAGS_NOLTO=""
     fi
+
+    # Check for vfork, posix_spawnp() and friends unconditionally
+    AC_CHECK_FUNCS(vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
@@ -2460,19 +2459,18 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 #	Might define the following vars:
 #		_ISOC99_SOURCE
 #		_LARGEFILE64_SOURCE
-#		_LARGEFILE_SOURCE64
 #
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_EARLY_FLAG],[
     AC_CACHE_VAL([tcl_cv_flag_]translit($1,[A-Z],[a-z]),
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[$2]], [[$3]])],
-	    [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[[#define ]$1[ 1
+	    [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[[#define ]$1[ ]m4_default([$4],[1])[
 ]$2]], [[$3]])],
 	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=yes,
 	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=no)]))
     if test ["x${tcl_cv_flag_]translit($1,[A-Z],[a-z])[}" = "xyes"] ; then
-	AC_DEFINE($1, 1, [Add the ]$1[ flag when building])
+	AC_DEFINE($1, m4_default([$4],[1]), [Add the ]$1[ flag when building])
 	tcl_flags="$tcl_flags $1"
     fi
 ])
@@ -2484,8 +2482,6 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 	[char *p = (char *)strtoll; char *q = (char *)strtoull;])
     SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
 	[struct stat64 buf; int i = stat64("/", &buf);])
-    SC_TCL_EARLY_FLAG(_LARGEFILE_SOURCE64,[#include <sys/stat.h>],
-	[char *p = (char *)open64;])
     if test "x${tcl_flags}" = "x" ; then
 	AC_MSG_RESULT([none])
     else

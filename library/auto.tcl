@@ -119,7 +119,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			      $basename$patch library]
 	}
     }
-    # uniquify $dirs in order
+    # make $dirs unique, preserving order
     array set seen {}
     foreach i $dirs {
 	# Make sure $i is unique under normalization. Avoid repeated [source].
@@ -140,13 +140,13 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	# source everything when in a safe interpreter because we have a
 	# source command, but no file exists command
 
-        if {[interp issafe] || [file exists $file]} {
-            if {![catch {uplevel #0 [list source $file]} msg opts]} {
-                return
-            }
+	if {[interp issafe] || [file exists $file]} {
+	    if {![catch {uplevel #0 [list source $file]} msg opts]} {
+		return
+	    }
 	    append errors "$file: $msg\n"
 	    append errors [dict get $opts -errorinfo]\n
-        }
+	}
     }
     unset -nocomplain the_library
     set msg "Can't find a usable $initScript in the following directories: \n"
@@ -240,7 +240,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
-	    fconfigure $f -eofchar "\032 {}"
+	    fconfigure $f -eofchar "\x1A {}"
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -317,7 +317,7 @@ namespace eval auto_mkindex_parser {
 	    $parser expose eval
 	    $parser invokehidden rename eval _%@eval
 
-	    # Install all the registered psuedo-command implementations
+	    # Install all the registered pseudo-command implementations
 
 	    foreach cmd $initCommands {
 		eval $cmd
@@ -351,7 +351,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
-    fconfigure $fid -eofchar "\032 {}"
+    fconfigure $fid -eofchar "\x1A {}"
     set contents [read $fid]
     close $fid
 
@@ -570,7 +570,7 @@ auto_mkindex_parser::hook {
 	load {} tbcload $auto_mkindex_parser::parser
 
 	# AUTO MKINDEX:  tbcload::bcproc name arglist body
-	# Adds an entry to the auto index list for the given pre-compiled
+	# Adds an entry to the auto index list for the given precompiled
 	# procedure name.
 
 	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
@@ -625,7 +625,7 @@ auto_mkindex_parser::command namespace {op args} {
 		    }
 		    regsub -all ::+ $name :: name
 		}
-		# create artifical proc to force an entry in the tclIndex
+		# create artificial proc to force an entry in the tclIndex
 		$parser eval [list ::proc $name {} {}]
 	    }
 	}

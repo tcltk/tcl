@@ -151,7 +151,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char *const subcmds[] = {
+    static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
     };
     enum options {
@@ -624,7 +624,7 @@ TestindexobjCmd(
 
     /*
      * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
-     * that its address is different for each index object. If we accidently
+     * that its address is different for each index object. If we accidentally
      * allocate a table at the same address as that cached in the index
      * object, clear out the object's cached state.
      */
@@ -876,7 +876,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    const char* subcommands[] = {
+    static const char *const subcommands[] = {
 	"set",
 	"get",
 	"replace"
@@ -1535,7 +1535,7 @@ CheckIfVarUnset(
     if (varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
 
-	sprintf(buf, "variable %d is unset (NULL)", varIndex);
+	snprintf(buf, sizeof(buf), "variable %d is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
 	return 1;

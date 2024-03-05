@@ -169,7 +169,7 @@ proc ::safe::interpConfigure {args} {
 		    # it is most probably a set in fact but we would need
 		    # then to jump to the set part and it is not *sure*
 		    # that it is a set action that the user want, so force
-		    # it to use the unambigous -statics ?value? instead:
+		    # it to use the unambiguous -statics ?value? instead:
 		    return -code error\
 			"ambigous query (get or set -noStatics ?)\
 				use -statics instead"
@@ -220,7 +220,7 @@ proc ::safe::interpConfigure {args} {
 	    }
 	    # we can now reconfigure :
 	    InterpSetConfig $slave $accessPath $statics $nested $deleteHook
-	    # auto_reset the child (to completly synch the new access_path)
+	    # auto_reset the child (to completely synch the new access_path)
 	    if {$doreset} {
 		if {[catch {::interp eval $slave {auto_reset}} msg]} {
 		    Log $slave "auto_reset failed: $msg"
@@ -332,7 +332,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook} {
 			moved it to front of slave's access_path" NOTICE
 	}
 
-	# Add 1st level sub dirs (will searched by auto loading from tcl
+	# Add 1st level subdirs (will searched by auto loading from tcl
 	# code in the child using glob and thus fail, so we add them here
 	# so by default it works the same).
 	set access_path [AddSubDirs $access_path]
@@ -602,7 +602,7 @@ proc ::safe::interpDelete {child} {
     }
 
     # If the child has a cleanup hook registered, call it.  Check the
-    # existance because we might be called to delete an interp which has
+    # existence because we might be called to delete an interp which has
     # not been registered with us at all
 
     if {[info exists state(cleanupHook)]} {
@@ -636,7 +636,7 @@ proc ::safe::interpDelete {child} {
     return
 }
 
-# Set (or get) the logging mecanism
+# Set (or get) the logging mechanism
 
 proc ::safe::setLogCmd {args} {
     variable Log
@@ -982,7 +982,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -eofchar "\032 {}"
+	fconfigure $f -eofchar "\x1A {}"
 	if {$encoding ne ""} {
 	    fconfigure $f -encoding $encoding
 	}

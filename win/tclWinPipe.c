@@ -402,7 +402,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = ckalloc(sizeof(PipeEvent));
+	    evPtr = (PipeEvent *)ckalloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -433,7 +433,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = ckalloc(sizeof(WinFile));
+    filePtr = (WinFile *)ckalloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -922,12 +922,12 @@ TclpCreateProcess(
 				 * receive no standard input. */
     TclFile outputFile,		/* If non-NULL, gives the file that receives
 				 * output from the child process. If
-				 * outputFile file is not writeable or is
+				 * outputFile file is not writable or is
 				 * NULL, output from the child will be
 				 * discarded. */
     TclFile errorFile,		/* If non-NULL, gives the file that receives
 				 * errors from the child process. If errorFile
-				 * file is not writeable or is NULL, errors
+				 * file is not writable or is NULL, errors
 				 * from the child will be discarded. errorFile
 				 * may be the same as outputFile. */
     Tcl_Pid *pidPtr)		/* If this function is successful, pidPtr is
@@ -1094,40 +1094,23 @@ TclpCreateProcess(
      * detached processes. The GUI window will still pop up to the foreground.
      */
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	if (HasConsole()) {
-	    createFlags = 0;
-	} else if (applType == APPL_DOS) {
-	    /*
-	     * Under NT, 16-bit DOS applications will not run unless they can
-	     * be attached to a console. If we are running without a console,
-	     * run the 16-bit program as an normal process inside of a hidden
-	     * console application, and then run that hidden console as a
-	     * detached process.
-	     */
+    if (HasConsole()) {
+	createFlags = 0;
+    } else if (applType == APPL_DOS) {
+	/*
+	 * Under NT, 16-bit DOS applications will not run unless they can
+	 * be attached to a console. If we are running without a console,
+	 * run the 16-bit program as an normal process inside of a hidden
+	 * console application, and then run that hidden console as a
+	 * detached process.
+	 */
 
-	    startInfo.wShowWindow = SW_HIDE;
-	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
-	    createFlags = CREATE_NEW_CONSOLE;
-	    TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
+	startInfo.wShowWindow = SW_HIDE;
+	startInfo.dwFlags |= STARTF_USESHOWWINDOW;
+	createFlags = CREATE_NEW_CONSOLE;
+	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
     } else {
-	if (HasConsole()) {
-	    createFlags = 0;
-	} else {
-	    createFlags = DETACHED_PROCESS;
-	}
-
-	if (applType == APPL_DOS) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "DOS application process not supported on this platform",
-		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "DOS_APP",
-		    NULL);
-	    goto end;
-	}
+	createFlags = DETACHED_PROCESS;
     }
 
     /*
@@ -1557,12 +1540,20 @@ BuildCommandLine(
     const char *arg, *start, *special, *bspos;
     int quote = 0, i;
     Tcl_DString ds;
+#ifdef TCL_WIN_PIPE_FULLESC
+    /* full escape inclusive %-subst avoidance */
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
 				 * quote flag set. */
     static const char specMetaChars2[] = "%";
 				/* Character to enclose in quotes in any case
 				 * (regardless of unpaired-flag). */
+#else
+    /* escape considering quotation only (no %-subst avoidance) */
+    static const char specMetaChars[] = "&|^<>!()";
+				/* Characters to enclose in quotes if unpaired
+				 * quote flag set. */
+#endif
     /*
      * Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1700,7 +1691,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
-
+#ifdef TCL_WIN_PIPE_FULLESC
 		/*
 		 * Special case for % - should be enclosed always (paired
 		 * also)
@@ -1717,6 +1708,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
+#endif
 
 		/*
 		 * Other not special (and not meta) character
@@ -1775,7 +1767,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = (PipeInfo *)ckalloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1834,7 +1826,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -1929,7 +1921,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
@@ -2315,7 +2307,7 @@ PipeOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = (char *)ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2723,7 +2715,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     unsigned long id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo *)ckalloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2823,7 +2815,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3156,7 +3148,7 @@ PipeThreadActionProc(
     /*
      * We do not access firstPipePtr in the thread structures. This is not for
      * all pipes managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 
@@ -3243,7 +3235,7 @@ TclpOpenTemporaryFile(
     do {
 	char number[TCL_INTEGER_SPACE + 4];
 
-	sprintf(number, "%d.TMP", counter);
+	snprintf(number, sizeof(number), "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	Tcl_WinUtfToTChar(number, strlen(number), &buf);
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
@@ -3295,9 +3287,9 @@ TclPipeThreadCreateTI(
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)ckalloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;

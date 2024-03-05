@@ -487,7 +487,7 @@ freearc(
 /*
  * changearctarget - flip an arc to have a different to state
  *
- * Caller must have verified that there is no pre-existing duplicate arc.
+ * Caller must have verified that there is no preexisting duplicate arc.
  *
  * Note that because we store arcs in their from state, we can't easily have
  * a similar changearcsource function.
@@ -1515,7 +1515,7 @@ pullback(
  * Returns 1 if successful (which it always is unless the source is the
  * start state or we have an internal error), 0 if nothing happened.
  *
- * A significant property of this function is that it deletes no pre-existing
+ * A significant property of this function is that it deletes no preexisting
  * states, and no outarcs of the constraint's from state other than the given
  * constraint arc.  This makes the loops in pullback() safe, at the cost that
  * we may leave useless states behind.  Therefore, we leave it to pullback()
@@ -1694,7 +1694,7 @@ pushfwd(
  * Returns 1 if successful (which it always is unless the destination is the
  * post state or we have an internal error), 0 if nothing happened.
  *
- * A significant property of this function is that it deletes no pre-existing
+ * A significant property of this function is that it deletes no preexisting
  * states, and no inarcs of the constraint's to state other than the given
  * constraint arc.  This makes the loops in pushfwd() safe, at the cost that
  * we may leave useless states behind.  Therefore, we leave it to pushfwd()
@@ -2467,7 +2467,7 @@ breakconstraintloop(struct nfa * nfa, struct state * sinitial)
  * have multiple redundant arc pathways).  Each donemap is a char array
  * indexed by state number.  The donemaps are all of the same size "nstates",
  * which is nfa->nstates as of the start of the recursion.  This is enough to
- * have entries for all pre-existing states, but *not* entries for clone
+ * have entries for all preexisting states, but *not* entries for clone
  * states created during the recursion.  That's okay since we have no need to
  * mark those.
  *
@@ -2774,7 +2774,7 @@ markcanreach(
  - analyze - ascertain potentially-useful facts about an optimized NFA
  ^ static long analyze(struct nfa *);
  */
-static long			/* re_info bits to be ORed in */
+static long			/* re_info bits to be OR'ed in */
 analyze(
     struct nfa *nfa)
 {

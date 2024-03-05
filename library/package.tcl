@@ -69,7 +69,7 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
 #			than lazily when the first reference to an exported
 #			procedure in the package is made.
 # -verbose		(optional) Verbose output; the name of each file that
-#			was successfully rocessed is printed out. Additionally,
+#			was successfully processed is printed out. Additionally,
 #			if processing of a file failed a message is printed.
 # -load pat		(optional) Preload any packages whose names match
 #			the pattern.  Used to handle DLLs that depend on
@@ -206,7 +206,7 @@ proc pkg_mkIndex {args} {
 	    package unknown tclPkgUnknown
 
 	    # Stub out the unknown command so package can call into each other
-	    # during their initialilzation.
+	    # during their initialization.
 
 	    proc unknown {args} {}
 
@@ -720,7 +720,7 @@ proc ::tcl::Pkg::Create {args} {
 	error $err(noLoadOrSource)
     }
 
-    # OK, now everything is good.  Generate the package ifneeded statment.
+    # OK, now everything is good.  Generate the package ifneeded statement.
     set cmdline "package ifneeded $opts(-name) $opts(-version) "
 
     set cmdList {}

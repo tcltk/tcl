@@ -582,7 +582,7 @@ TclGetBgErrorHandler(
  *
  *	This function is associated with the "tclBgError" assoc data for an
  *	interpreter; it is invoked when the interpreter is deleted in order to
- *	free the information assoicated with any pending error reports.
+ *	free the information associated with any pending error reports.
  *
  * Results:
  *	None.
@@ -950,7 +950,7 @@ Tcl_Exit(
     /*
      * Warning: this function SHOULD NOT return, as there is code that depends
      * on Tcl_Exit never returning. In fact, we will Tcl_Panic if anyone
-     * returns, so critical is this dependcy.
+     * returns, so critical is this dependency.
      *
      * If subsystems are not (yet) initialized, proper Tcl-finalization is
      * impossible, so fallback to system exit, see bug-[f8a33ce3db5d8cc2].
@@ -1120,7 +1120,7 @@ TclInitSubsystems(void)
 
     if (subsystemsInitialized == 0) {
 	/*
-	 * Double check inside the mutex. There are definitly calls back into
+	 * Double check inside the mutex. There are definitely calls back into
 	 * this routine from some of the functions below.
 	 */
 
