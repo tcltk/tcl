@@ -4732,7 +4732,7 @@ TEOV_NotFound(
 
     currNsPtr = varFramePtr->nsPtr;
     if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL) ||
-	(qualLen > 2 && (*qualName == ':') && (*(qualName+1) == ':'))
+	(qualLen > 2 && memchr(qualName, ':', qualLen)) /* fast check for NS:: */
     ) {
 	/* 
 	 * first try to find namespace unknown handler of the namespace

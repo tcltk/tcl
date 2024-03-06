@@ -3052,10 +3052,10 @@ test namespace-52.13 {unknown: invocation outside of NS doesn't evade namespace 
 	proc _unknown args {list ::foo:bar:_unknown [uplevel {namespace current}] $args}
 	namespace unknown [namespace current]::_unknown
     }
-    list [namespace inscope ::foo::bar {xxx}] [namespace inscope ::foo {bar::xxx}] [::foo::bar::xxx]
+    list [namespace inscope ::foo::bar {xxx}] [namespace inscope ::foo {bar::xxx}] [::foo::bar::xxx] [namespace inscope :: {foo::bar::xxx}]
 } -cleanup {
     namespace delete ::foo
-} -result {{::foo:bar:_unknown ::foo::bar xxx} {::foo:bar:_unknown ::foo bar::xxx} {::foo:bar:_unknown :: ::foo::bar::xxx}}
+} -result {{::foo:bar:_unknown ::foo::bar xxx} {::foo:bar:_unknown ::foo bar::xxx} {::foo:bar:_unknown :: ::foo::bar::xxx} {::foo:bar:_unknown :: foo::bar::xxx}}
 
 # TIP 314 - ensembles with parameters
 test namespace-53.1 {ensembles: parameters} {
