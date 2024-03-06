@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 8.7a6
+package require -exact tcl 8.7b1
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
