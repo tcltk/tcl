@@ -4744,12 +4744,15 @@ TEOV_NotFound(
 	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
 	    TCL_NAMESPACE_ONLY | TCL_FIND_IF_NOT_SIMPLE, &currNsPtr,
 	    &dummyNsPtr, &dummyNsPtr, &simpleName);
-	while ((currNsPtr == NULL) || (simpleName == NULL) ||
-	    currNsPtr->unknownHandlerPtr == NULL ||
+	if ((currNsPtr == NULL) || (simpleName == NULL)) {
+	   goto globNS;
+	}
+	while (currNsPtr->unknownHandlerPtr == NULL ||
 	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
 	) {
 	    /* traverse to alive parent namespace containing handler */
-	    if (!currNsPtr || !(currNsPtr = currNsPtr->parentPtr)) {
+	    if (!(currNsPtr = currNsPtr->parentPtr)) {
+	      globNS:
 		/* fallback to the global unknown */
 		currNsPtr = iPtr->globalNsPtr;
 		if (currNsPtr == NULL) {
