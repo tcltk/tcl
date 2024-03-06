@@ -2280,11 +2280,8 @@ TclGetNamespaceForQualName(
 	    if (flags & TCL_FIND_ONLY_NS) {
 		nsName = start;
 	    } else {
-		*nsPtrPtr = nsPtr;
-		*altNsPtrPtr = altNsPtr;
 		*simpleNamePtr = start;
-		Tcl_DStringFree(&buffer);
-		return TCL_OK;
+		goto done;
 	    }
 	} else {
 	    /*
@@ -2334,6 +2331,15 @@ TclGetNamespaceForQualName(
 		}
 	    } else {			/* Namespace not found and was not
 					 * created. */
+		if (flags & TCL_FIND_IF_NOT_SIMPLE) {
+		    /* 
+		     * return last found NS and not simple name relative it,
+		     * e. g. ::A::B::C::D -> ::A::B and C::D, if
+		     * namespace C cannot be found in ::A::B
+		     */
+		    *simpleNamePtr = start;
+		    goto done;
+		}
 		nsPtr = NULL;
 	    }
 	}
@@ -2364,11 +2370,8 @@ TclGetNamespaceForQualName(
 	 */
 
 	if ((nsPtr == NULL) && (altNsPtr == NULL)) {
-	    *nsPtrPtr = NULL;
-	    *altNsPtrPtr = NULL;
 	    *simpleNamePtr = NULL;
-	    Tcl_DStringFree(&buffer);
-	    return TCL_OK;
+	    goto done;
 	}
 
 	start = end;
@@ -2398,6 +2401,7 @@ TclGetNamespaceForQualName(
 	nsPtr = NULL;
     }
 
+done:
     *nsPtrPtr = nsPtr;
     *altNsPtrPtr = altNsPtr;
     Tcl_DStringFree(&buffer);
