@@ -2280,11 +2280,8 @@ TclGetNamespaceForQualName(
 	    if (flags & TCL_FIND_ONLY_NS) {
 		nsName = start;
 	    } else {
-		*nsPtrPtr = nsPtr;
-		*altNsPtrPtr = altNsPtr;
 		*simpleNamePtr = start;
-		Tcl_DStringFree(&buffer);
-		return TCL_OK;
+		goto done;
 	    }
 	} else {
 	    /*
@@ -2364,11 +2361,8 @@ TclGetNamespaceForQualName(
 	 */
 
 	if ((nsPtr == NULL) && (altNsPtr == NULL)) {
-	    *nsPtrPtr = NULL;
-	    *altNsPtrPtr = NULL;
 	    *simpleNamePtr = NULL;
-	    Tcl_DStringFree(&buffer);
-	    return TCL_OK;
+	    goto done;
 	}
 
 	start = end;
@@ -2398,6 +2392,7 @@ TclGetNamespaceForQualName(
 	nsPtr = NULL;
     }
 
+done:
     *nsPtrPtr = nsPtr;
     *altNsPtrPtr = altNsPtr;
     Tcl_DStringFree(&buffer);
