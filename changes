@@ -4976,7 +4976,7 @@ msgcat package (duperval, krone, nelson)
 	trace {add|remove|list} {variable|command} name ops command
 (darley, melski)
 
-2000-09-06 (cross-platform feature) Set ^Z (\32) as default EOF char. (hobbs)
+2000-09-06 (cross-platform feature) Set ^Z (\x1A) as default EOF char. (hobbs)
 
 2000-09-07 partial fix for bug 2460 to prevent exec mem leak on Windows for the
 common case (gravereaux)
