@@ -9587,3 +9587,10 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
 
 - Released 8.6.14, Feb 28, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+Changes to 9.0b2 include all changes to the 8.6 line through 8.6.14
+and all changes to the 8.7 line through 8.7a5
+plus the following, which focuses on the high-level feature changes
+in this changeset (new major version) rather than bug fixes:
+
+- Released 9.0b2, Mar ??, 2024 - details at https://core.tcl-lang.org/tcl/ -
