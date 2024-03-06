@@ -54,11 +54,11 @@ extern "C" {
 #   error "This header-file is for Tcl 8 only"
 #endif
 #define TCL_MINOR_VERSION   7
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  6
+#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a6"
+#define TCL_PATCH_LEVEL	    "8.7b1"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
