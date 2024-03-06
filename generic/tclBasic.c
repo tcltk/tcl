@@ -4741,27 +4741,21 @@ TEOV_NotFound(
 	Namespace *dummyNsPtr;
 	const char *simpleName;
 
-    tryParentNS:
 	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
 	    TCL_NAMESPACE_ONLY | TCL_FIND_IF_NOT_SIMPLE, &currNsPtr,
 	    &dummyNsPtr, &dummyNsPtr, &simpleName);
-	if ((currNsPtr == NULL) || (simpleName == NULL) ||
+	while ((currNsPtr == NULL) || (simpleName == NULL) ||
 	    currNsPtr->unknownHandlerPtr == NULL ||
 	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
 	) {
 	    /* traverse to alive parent namespace containing handler */
-	    if (currNsPtr) {
-		qualName = currNsPtr->fullName;
-		qualLen = strlen(qualName);
-		if (qualLen > 2 && memchr(qualName, ':', qualLen)) {
-		    currNsPtr = iPtr->globalNsPtr;
-		    goto tryParentNS;
+	    if (!currNsPtr || !(currNsPtr = currNsPtr->parentPtr)) {
+		/* fallback to the global unknown */
+		currNsPtr = iPtr->globalNsPtr;
+		if (currNsPtr == NULL) {
+		    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
 		}
-	    }
-	    /* fallback to the global unknown */
-	    currNsPtr = iPtr->globalNsPtr;
-	    if (currNsPtr == NULL) {
-		Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
+		break;
 	    }
 	}
     }
