@@ -4804,12 +4804,40 @@ TEOV_NotFound(
 				 * unknown command handler for the current
 				 * namespace (TIP 181). */
     Namespace *savedNsPtr = NULL;
+    
+    int qualLen;
+    const char *qualName = TclGetStringFromObj(objv[0], &qualLen);
 
     currNsPtr = varFramePtr->nsPtr;
-    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
-	currNsPtr = iPtr->globalNsPtr;
-	if (currNsPtr == NULL) {
-	    Tcl_Panic("Tcl_EvalObjv: NULL global namespace pointer");
+    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL) ||
+	(qualLen > 2 && memchr(qualName, ':', qualLen)) /* fast check for NS:: */
+    ) {
+	/* 
+	 * first try to find namespace unknown handler of the namespace
+	 * of executed command if available:
+	 */
+	Namespace *dummyNsPtr;
+	const char *simpleName;
+
+	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
+	    TCL_NAMESPACE_ONLY | TCL_FIND_IF_NOT_SIMPLE, &currNsPtr,
+	    &dummyNsPtr, &dummyNsPtr, &simpleName);
+	if ((currNsPtr == NULL) || (simpleName == NULL)) {
+	   goto globNS;
+	}
+	while (currNsPtr->unknownHandlerPtr == NULL ||
+	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
+	) {
+	    /* traverse to alive parent namespace containing handler */
+	    if (!(currNsPtr = currNsPtr->parentPtr)) {
+	      globNS:
+		/* fallback to the global unknown */
+		currNsPtr = iPtr->globalNsPtr;
+		if (currNsPtr == NULL) {
+		    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
+		}
+		break;
+	    }
 	}
     }
 
