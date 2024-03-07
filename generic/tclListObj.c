@@ -2637,7 +2637,7 @@ TclLindexFlat(
     if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
 	Tcl_Size listLen = TclArithSeriesObjLength(listObj);
 	Tcl_Size index;
-	Tcl_Obj *elemObj = NULL;
+	Tcl_Obj *elemObj = listObj; /* for lindex without indices return list */
 	for (i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 				   &index) == TCL_OK) {
