@@ -2332,6 +2332,15 @@ TclGetNamespaceForQualName(
 		}
 	    } else {			/* Namespace not found and was not
 					 * created. */
+		if (flags & TCL_FIND_IF_NOT_SIMPLE) {
+		    /* 
+		     * return last found NS and not simple name relative it,
+		     * e. g. ::A::B::C::D -> ::A::B and C::D, if
+		     * namespace C cannot be found in ::A::B
+		     */
+		    *simpleNamePtr = start;
+		    goto done;
+		}
 		nsPtr = NULL;
 	    }
 	}
@@ -2893,8 +2902,8 @@ GetNamespaceFromObj(
 	resNamePtr = (ResolvedNsName *)objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
 	refNsPtr = resNamePtr->refNsPtr;
-	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
-		(!refNsPtr || ((interp == refNsPtr->interp) &&
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp)
+		&& (!refNsPtr || ((interp == refNsPtr->interp) &&
 		(refNsPtr == (Namespace *)Tcl_GetCurrentNamespace(interp))))){
 	    *nsPtrPtr = (Tcl_Namespace *)nsPtr;
 	    return TCL_OK;
