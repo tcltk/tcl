@@ -1296,13 +1296,13 @@ Tcl_GetAlias(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *argcPtr,		/* (Return) count of addnl args. */
+    Tcl_Size *argcPtr,		/* (Return) count of addnl args. */
     const char ***argvPtr)	/* (Return) additional arguments. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int i, objc;
+    Tcl_Size i, objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
@@ -1358,13 +1358,13 @@ Tcl_GetAliasObj(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *objcPtr,		/* (Return) count of addnl args. */
+    Tcl_Size *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
