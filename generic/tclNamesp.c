@@ -2234,7 +2234,7 @@ TclGetNamespaceForQualName(
 				 * TCL_FIND_ONLY_NS was specified. */
 {
     Interp *iPtr = (Interp *) interp;
-    Namespace *nsPtr = cxtNsPtr;
+    Namespace *nsPtr = cxtNsPtr, *lastNsPtr = NULL, *lastAltNsPtr = NULL;
     Namespace *altNsPtr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
     const char *start, *end;
@@ -2375,17 +2375,12 @@ TclGetNamespaceForQualName(
 		if (nsPtr == NULL) {
 		    Tcl_Panic("Could not create namespace '%s'", nsName);
 		}
-	    } else {			/* Namespace not found and was not
-					 * created. */
-		if (flags & TCL_FIND_IF_NOT_SIMPLE) {
-		    /*
-		     * return last found NS and not simple name relative it,
-		     * e. g. ::A::B::C::D -> ::A::B and C::D, if
-		     * namespace C cannot be found in ::A::B
-		     */
-		    *simpleNamePtr = start;
-		    goto done;
-		}
+	    } else {
+		/* 
+		 * Namespace not found and was not created.
+		 * Remember last found namespace for TCL_FIND_IF_NOT_SIMPLE.
+		 */
+		lastNsPtr = nsPtr;
 		nsPtr = NULL;
 	    }
 	}
@@ -2407,6 +2402,8 @@ TclGetNamespaceForQualName(
 	    if (entryPtr != NULL) {
 		altNsPtr = (Namespace *)Tcl_GetHashValue(entryPtr);
 	    } else {
+		/* Remember last found in alternate path */
+		lastAltNsPtr = altNsPtr;
 		altNsPtr = NULL;
 	    }
 	}
@@ -2416,6 +2413,17 @@ TclGetNamespaceForQualName(
 	 */
 
 	if ((nsPtr == NULL) && (altNsPtr == NULL)) {
+	    if (flags & TCL_FIND_IF_NOT_SIMPLE) {
+		/* 
+		 * return last found NS, regardless simple name or not,
+		 * e. g. ::A::B::C::D -> ::A::B and C::D, if namespace C
+		 * cannot be found in ::A::B
+		 */
+		nsPtr = lastNsPtr;
+		altNsPtr = lastAltNsPtr;
+		*simpleNamePtr = start;
+		goto done;
+	    }
 	    *simpleNamePtr = NULL;
 	    goto done;
 	}
