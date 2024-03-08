@@ -3149,6 +3149,23 @@ test namespace-52.14 {unknown: invocation outside of NS doesn't evade namespace 
 } -result [lrepeat 2 \
   {::foo:bar:_unknown ::foo::bar xxx::yyy} {::foo:bar:_unknown ::foo bar::xxx::yyy} {::foo:bar:_unknown :: ::foo::bar::xxx::yyy} {::foo:bar:_unknown :: foo::bar::xxx::yyy}
 ]
+test namespace-52.14 {unknown: it must consider alternate search path (relative global NS), bug 910d67a229fe7f65} -body {
+    namespace eval ::foo::bar {}
+    namespace eval ::xxx::yyy {
+	proc _unknown args {list ::xxx:yyy:_unknown [uplevel {namespace current}] $args}
+	namespace unknown [namespace current]::_unknown
+    }
+    set res {}
+    lappend res [namespace inscope ::foo::bar {xxx::yyy::cmd}] [namespace inscope ::foo {xxx::yyy::cmd}]
+    namespace eval ::foo::bar::xxx {}
+    lappend res [namespace inscope ::foo::bar {xxx::yyy::cmd}] [namespace inscope ::foo {xxx::yyy::cmd}]
+    namespace eval ::foo::bar::xxx::yyy {}
+    lappend res [namespace inscope ::foo::bar {xxx::yyy::cmd}] [namespace inscope ::foo {xxx::yyy::cmd}]
+} -cleanup {
+    namespace delete ::foo
+    namespace delete ::xxx
+    unset -nocomplain res
+} -result [lrepeat 3 {::xxx:yyy:_unknown ::foo::bar xxx::yyy::cmd} {::xxx:yyy:_unknown ::foo xxx::yyy::cmd}]
 
 # TIP 314 - ensembles with parameters
 test namespace-53.1 {ensembles: parameters} {
