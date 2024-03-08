@@ -2378,7 +2378,7 @@ TclGetNamespaceForQualName(
 	    } else {			/* Namespace not found and was not
 					 * created. */
 		if (flags & TCL_FIND_IF_NOT_SIMPLE) {
-		    /* 
+		    /*
 		     * return last found NS and not simple name relative it,
 		     * e. g. ::A::B::C::D -> ::A::B and C::D, if
 		     * namespace C cannot be found in ::A::B
