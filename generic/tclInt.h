@@ -418,10 +418,13 @@ struct NamespacePathEntry {
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
  * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
  * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
+ * TCL_FIND_IF_NOT_SIMPLE       - Retrieve last namespace even if the rest of
+ *                                name is not simple name (contains ::).
  */
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
+#define TCL_FIND_IF_NOT_SIMPLE		0x2000
 
 /*
  * The client data for an ensemble command. This consists of the table of
