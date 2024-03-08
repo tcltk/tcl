@@ -38,7 +38,7 @@ static CRITICAL_SECTION initLock;
 
 /*
  * allocLock is used by Tcl's version of malloc for synchronization. For
- * obvious reasons, cannot use any dyamically allocated storage.
+ * obvious reasons, cannot use any dynamically allocated storage.
  */
 
 #if TCL_THREADS
@@ -458,7 +458,7 @@ TclpGlobalUnlock(void)
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
- *	use by the memory allocator. The alloctor must use this lock, because
+ *	use by the memory allocator. The allocator must use this lock, because
  *	all other locks are allocated...
  *
  * Results:
