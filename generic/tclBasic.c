@@ -4816,20 +4816,35 @@ TEOV_NotFound(
 	 * first try to find namespace unknown handler of the namespace
 	 * of executed command if available:
 	 */
-	Namespace *dummyNsPtr;
+	Namespace *altNsPtr, *dummyNsPtr;
 	const char *simpleName;
 
 	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
-	    TCL_NAMESPACE_ONLY | TCL_FIND_IF_NOT_SIMPLE, &currNsPtr,
-	    &dummyNsPtr, &dummyNsPtr, &simpleName);
-	if ((currNsPtr == NULL) || (simpleName == NULL)) {
-	   goto globNS;
+	    TCL_FIND_IF_NOT_SIMPLE, &currNsPtr, &altNsPtr,
+	    &dummyNsPtr, &simpleName);
+	if (!simpleName) {
+	    goto globNS;
+	}
+	if (!currNsPtr || (currNsPtr == iPtr->globalNsPtr)) {
+	    if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
+		goto globNS;
+	    }
+	    currNsPtr = altNsPtr;
 	}
 	while (currNsPtr->unknownHandlerPtr == NULL ||
 	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
 	) {
 	    /* traverse to alive parent namespace containing handler */
-	    if (!(currNsPtr = currNsPtr->parentPtr)) {
+	    if (!(currNsPtr = currNsPtr->parentPtr) || 
+		 (currNsPtr == iPtr->globalNsPtr)
+	    ) {
+		/* continue from alternate NS if available */
+		if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
+		    goto globNS;
+		}
+		currNsPtr = altNsPtr;
+		altNsPtr = NULL;
+		continue;
 	      globNS:
 		/* fallback to the global unknown */
 		currNsPtr = iPtr->globalNsPtr;
