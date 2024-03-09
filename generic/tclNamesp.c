@@ -2379,7 +2379,7 @@ TclGetNamespaceForQualName(
 		    Tcl_Panic("Could not create namespace '%s'", nsName);
 		}
 	    } else {
-		/* 
+		/*
 		 * Namespace not found and was not created.
 		 * Remember last found namespace for TCL_FIND_IF_NOT_SIMPLE.
 		 */
@@ -2417,7 +2417,7 @@ TclGetNamespaceForQualName(
 
 	if ((nsPtr == NULL) && (altNsPtr == NULL)) {
 	    if (flags & TCL_FIND_IF_NOT_SIMPLE) {
-		/* 
+		/*
 		 * return last found NS, regardless simple name or not,
 		 * e. g. ::A::B::C::D -> ::A::B and C::D, if namespace C
 		 * cannot be found in ::A::B
