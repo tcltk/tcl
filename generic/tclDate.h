@@ -148,8 +148,6 @@ typedef enum ClockMsgCtLiteral {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
-typedef enum {BCE=1, CE=0} ERA_ENUM;
-
 typedef struct TclDateFields {
 
     /* Cacheable fields:	 */
@@ -161,7 +159,7 @@ typedef struct TclDateFields {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    ERA_ENUM era;		/* Era */
+    int isBce;			/* 1 if BCE */
     int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
