@@ -2710,7 +2710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL="b2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -6402,16 +6402,12 @@ fi
 
 	    case $system in
 	    DragonFly-*|FreeBSD-*)
-		if test "${TCL_THREADS}" = "1"
-then :
-
-		    # The -pthread needs to go in the LDFLAGS, not LIBS
-		    LIBS=`echo $LIBS | sed s/-pthread//`
-		    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-fi
+		# The -pthread needs to go in the LDFLAGS, not LIBS
+		LIBS=`echo $LIBS | sed s/-pthread//`
+		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 	    ;;
-            esac
+	    esac
 
 	    if test $doRpath = yes
 then :

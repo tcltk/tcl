@@ -653,6 +653,7 @@ TCL_REG_VERSION
 TCL_DDE_MINOR_VERSION
 TCL_DDE_MAJOR_VERSION
 TCL_DDE_VERSION
+TCL_PACKAGE_PATH
 TCL_BUILD_LIB_SPEC
 MAKE_EXE
 MAKE_DLL
@@ -2410,7 +2411,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL="b2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -5894,6 +5895,19 @@ else
     RC_DEFINES=""
 fi
 
+#--------------------------------------------------------------------
+#	The statements below define the symbol TCL_PACKAGE_PATH, which
+#	gives a list of directories that may contain packages.  The list
+#	consists of one directory for machine-dependent binaries and
+#	another for platform-independent scripts.
+#--------------------------------------------------------------------
+
+if test "$prefix/lib" != "$libdir"; then
+    TCL_PACKAGE_PATH="${libdir};${prefix}\\lib"
+else
+    TCL_PACKAGE_PATH="${prefix}\\lib"
+fi
+
 # The tclsh.exe.manifest requires these
 # TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
 # the release level, and must account for interim release versioning
@@ -5945,6 +5959,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # win/tcl.m4 doesn't set (LDFLAGS)
+
 
 
 
