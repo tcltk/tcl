@@ -194,22 +194,6 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     *(int *)objcPtr = (int)n;
     return result;
 }
-int TclGetAlias(Tcl_Interp *interp, const char *childCmd,
-	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	int *argcPtr, const char ***argvPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, argvPtr);
-    if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	*argcPtr = (int)n;
-    }
-    return result;
-}
 int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	int *objcPtr, Tcl_Obj ***objv) {
@@ -973,11 +957,11 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    Tcl_GetAlias, /* 144 */
+    0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     Tcl_GetAliasObj, /* 147 */
-    TclGetAlias, /* 148 */
+    0, /* 148 */
     TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */

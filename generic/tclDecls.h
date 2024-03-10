@@ -420,12 +420,7 @@ EXTERN int		Tcl_ExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 EXTERN int		Tcl_ExprString(Tcl_Interp *interp, const char *expr);
 /* 143 */
 EXTERN void		Tcl_Finalize(void);
-/* 144 */
-EXTERN int		Tcl_GetAlias(Tcl_Interp *interp,
-				const char *childCmd,
-				Tcl_Interp **targetInterpPtr,
-				const char **targetCmdPtr, Tcl_Size *argcPtr,
-				const char ***argvPtr);
+/* Slot 144 is reserved */
 /* 145 */
 EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 				Tcl_HashSearch *searchPtr);
@@ -437,11 +432,7 @@ EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, Tcl_Size *objcPtr,
 				Tcl_Obj ***objvPtr);
-/* 148 */
-EXTERN int		TclGetAlias(Tcl_Interp *interp, const char *childCmd,
-				Tcl_Interp **targetInterpPtr,
-				const char **targetCmdPtr, int *argcPtr,
-				const char ***argvPtr);
+/* Slot 148 is reserved */
 /* 149 */
 EXTERN int		TclGetAliasObj(Tcl_Interp *interp,
 				const char *childCmd,
@@ -2032,11 +2023,11 @@ typedef struct TclStubs {
     int (*tcl_ExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 141 */
     int (*tcl_ExprString) (Tcl_Interp *interp, const char *expr); /* 142 */
     void (*tcl_Finalize) (void); /* 143 */
-    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, Tcl_Size *argcPtr, const char ***argvPtr); /* 144 */
+    void (*reserved144)(void);
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr); /* 147 */
-    int (*tclGetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
+    void (*reserved148)(void);
     int (*tclGetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
@@ -2863,16 +2854,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ExprString) /* 142 */
 #define Tcl_Finalize \
 	(tclStubsPtr->tcl_Finalize) /* 143 */
-#define Tcl_GetAlias \
-	(tclStubsPtr->tcl_GetAlias) /* 144 */
+/* Slot 144 is reserved */
 #define Tcl_FirstHashEntry \
 	(tclStubsPtr->tcl_FirstHashEntry) /* 145 */
 #define Tcl_Flush \
 	(tclStubsPtr->tcl_Flush) /* 146 */
 #define Tcl_GetAliasObj \
 	(tclStubsPtr->tcl_GetAliasObj) /* 147 */
-#define TclGetAlias \
-	(tclStubsPtr->tclGetAlias) /* 148 */
+/* Slot 148 is reserved */
 #define TclGetAliasObj \
 	(tclStubsPtr->tclGetAliasObj) /* 149 */
 #define Tcl_GetAssocData \
@@ -4229,9 +4218,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_ParseArgsObjv
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) \
 	    tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv))
-#   undef Tcl_GetAlias
-#   define Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) \
-	    tclStubsPtr->tclGetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (argcPtr), (argvPtr))
 #   undef Tcl_GetAliasObj
 #   define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) \
 	    tclStubsPtr->tclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv))
@@ -4247,7 +4233,6 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SplitPath
 #   undef Tcl_FSSplitPath
 #   undef Tcl_ParseArgsObjv
-#   undef Tcl_GetAlias
 #   undef Tcl_GetAliasObj
 #   if !defined(USE_TCL_STUBS)
 #	define Tcl_GetByteArrayFromObj(objPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
@@ -4283,9 +4268,6 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) <= sizeof(int) ? \
 		TclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) : \
 		(Tcl_ParseArgsObjv)((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
-#	define Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) (sizeof(*(argcPtr)) <= sizeof(int) ? \
-		TclGetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (argcPtr), (argvPtr)) : \
-		(Tcl_GetAlias)((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
 #	define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) (sizeof(*(objcPtr)) <= sizeof(int) ? \
 		TclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv)) : \
 		(Tcl_GetAliasObj)((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(objcPtr), (objv)))
@@ -4323,9 +4305,6 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) <= sizeof(int) ? \
 		tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) : \
 		tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
-#	define Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) (sizeof(*(argcPtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (argcPtr), (argvPtr)) : \
-		tclStubsPtr->tcl_GetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
 #	define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) (sizeof(*(objcPtr)) <= sizeof(int) ? \
 		tclStubsPtr->tclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv)) : \
 		tclStubsPtr->tcl_GetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(objcPtr), (objv)))
