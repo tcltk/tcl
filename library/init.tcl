@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.0b1
+package require -exact tcl 9.0b2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -97,17 +97,6 @@ namespace eval tcl::Pkg {}
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
-    # Default known auto_index (avoid loading auto index implicit after interp create):
-
-    array set ::auto_index {
-	::tcl::tm::UnknownHandler {source [info library]/tm.tcl}
-	::tclPkgUnknown {source [info library]/package.tcl}
-	::history {source [info library]/history.tcl}
-    }
-
-    # The newest possibility to load whole namespace:
-    array set ::auto_index_ns {}
-
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
     if {$tcl_platform(os) eq "Darwin"
@@ -131,10 +120,6 @@ if {[interp issafe]} {
 
 	uplevel 1 [info level 0]
     }
-    # Auto-loading stubs for 'clock.tcl'
-    set ::auto_index_ns(::tcl::clock) {::namespace inscope ::tcl::clock {
-	::source -encoding utf-8 [::file join [info library] clock.tcl]
-    }}
 }
 
 # Conditionalize for presence of exec.
@@ -368,7 +353,7 @@ proc unknown args {
 #                       for instance. If not given, namespace current is used.
 
 proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_index_ns auto_path
+    global auto_index auto_path
 
     # qualify names:
     if {$namespace eq ""} {
@@ -391,18 +376,6 @@ proc auto_load {cmd {namespace {}}} {
 	    # or [], it may not match.  For our purposes here, a better
 	    # route is to use
 	    #    namespace which -command $name
-	    if {[namespace which -command $name] ne ""} {
-		return 1
-	    }
-	}
-	# via auto_index_ns - resolver for the whole namespace loaders
-	if {[set ns [::namespace qualifiers $name]] ni {"" "::"} &&
-	    [info exists auto_index_ns($ns)]
-	} {
-	    # remove handler before loading (prevents several self-recursion cases):
-	    set ldr $auto_index_ns($ns); unset auto_index_ns($ns)
-	    namespace inscope :: $ldr
-	    # if got it:
 	    if {[namespace which -command $name] ne ""} {
 		return 1
 	    }
