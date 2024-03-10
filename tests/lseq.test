@@ -755,6 +755,13 @@ test lseq-4.19 {varnames} -body {
     unset {*}$varlist res varlist v plist
 } -result {auto_execok 1 auto_load 2 auto_qualify 2 arithseries}
 
+test lseq-4.20 {lindex on lseq without index args, bug a9625d1f53554f9d} -body {
+    set res [lindex [lseq 1000]]
+    list [llength $res] [lindex $res 0] [lindex $res end]
+} -cleanup {
+    unset -nocomplain res
+} -result {1000 0 999}
+
 test lseq-convertToList {does not result in a memory error} -body {
 	trace add variable var1 write [list ::apply [list args {
 		error {this is an error}
