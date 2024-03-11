@@ -315,7 +315,7 @@ test clock-1.0 "clock format - wrong # args" {
 
 test clock-1.0.1 "clock format - wrong # args (compiled ensemble with invalid syntax)" {
     list [catch {clock format 0 -too-few-options-4-test} msg] $msg $::errorCode
-} [subst {1 {wrong # args: should be "::tcl::clock::format $syntax"} {CLOCK wrongNumArgs}}]
+} [subst {1 {wrong # args: should be "clock format $syntax"} {CLOCK wrongNumArgs}}]
 
 test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg] $msg
