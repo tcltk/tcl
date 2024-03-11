@@ -270,7 +270,7 @@ ClockInitDateInfo(DateInfo *info) {
 #define CLF_LOCALE_USED (1 << 15)
 
 typedef struct ClockFmtScnCmdArgs {
-    ClientData clientData;  /* Opaque pointer to literal pool, etc. */
+    void *clientData;  /* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp;	    /* Tcl interpreter */
 
     Tcl_Obj *formatObj;	    /* Format */
@@ -513,7 +513,7 @@ MODULE_SCOPE void
 MODULE_SCOPE void
 		    GetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE int    ConvertUTCToLocal(ClientData clientData, Tcl_Interp *,
+MODULE_SCOPE int    ConvertUTCToLocal(void *clientData, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 MODULE_SCOPE Tcl_Obj *
 		    LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
@@ -524,7 +524,7 @@ MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 /* tclClock.c module declarations */
 
 MODULE_SCOPE Tcl_Obj *
-		    ClockSetupTimeZone(ClientData clientData,
+		    ClockSetupTimeZone(void *clientData,
 		Tcl_Interp *interp, Tcl_Obj *timezoneObj);
 
 MODULE_SCOPE Tcl_Obj *

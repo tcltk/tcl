@@ -230,7 +230,7 @@ extern "C" {
  * Miscellaneous declarations.
  */
 
-typedef void *ClientData;
+// typedef void *ClientData;
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
