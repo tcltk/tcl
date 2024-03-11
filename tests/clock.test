@@ -31,8 +31,6 @@ testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
 testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
-testConstraint no_tclclockmod \
-    [expr {[namespace which -command ::tcl::clock::configure] eq {}}]
 
 # Test with both validity modes - validate on / off:
 
@@ -276,7 +274,7 @@ proc ::testClock::registry { cmd path key } {
 
 # Base test cases:
 
-test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" no_tclclockmod {
+test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" {
     set i [interp create]; # because clock can be used somewhere, test it in new interp:
 
     set ret [$i eval {
@@ -15396,7 +15394,7 @@ test clock-4.97.8 { format JDN/JD (calendar and astronomical) } {
 	-1 0 1 21600 43199 43200 86399 
 	86400 86401 108000 129600 172800
     } {
-	lappend res $i [clock format [expr -210866803200 - $i] \
+	lappend res $i [clock format [expr {-210866803200 - $i}] \
 	    -format {%EE %Y-%m-%d %T -- %J %EJ %Ej} -gmt true]
     }
     set res
@@ -15425,7 +15423,7 @@ test clock-4.97.9 { format JDN/JD (calendar and astronomical) } {
 	-1 0 1 
 	43199 43200 43201 86400
     } {
-	lappend res $i [clock format [expr 653133196800 + $i] \
+	lappend res $i [clock format [expr {653133196800 + $i}] \
 	    -format {%Y-%m-%d %T -- %J %EJ %Ej} -gmt true]
     }
     set res
@@ -36013,7 +36011,7 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
     # This test can fail on a system that is so heavily loaded that
@@ -36029,7 +36027,7 @@ test clock-33.5a {clock tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
