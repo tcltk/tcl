@@ -2164,7 +2164,7 @@ ConvertUTCToLocal(
 	if (dataPtr->gmtTZName == NULL) {
 	    Tcl_Obj *tzName;
 	    tzdata = ClockGetTZData(clientData, interp, timezoneObj);
-	    if ( TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK
+	    if ( TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK
 	      || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
 		return TCL_ERROR;
 	    }

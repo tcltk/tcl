@@ -32,7 +32,7 @@ TCL_DECLARE_MUTEX(ClockFmtMutex); /* Serializes access to common format list. */
 
 static void ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
-static void ClockFrmScnFinalize(ClientData clientData);
+static void ClockFrmScnFinalize(void *clientData);
 
 /*
  * Clock scan and format facilities.
@@ -1103,7 +1103,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     int minLen, int maxLen)
 {
     Tcl_Obj **lstv;
-    int	      lstc;
+    Tcl_Size lstc;
     Tcl_Obj *valObj;
 
     /* get msgcat value */
@@ -1113,7 +1113,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     }
 
     /* is a list */
-    if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
+    if (TclListObjGetElementsM(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1159,7 +1159,7 @@ ClockMCGetListIdxTree(
 	/* build new index */
 
 	Tcl_Obj **lstv;
-	int	  lstc;
+	Tcl_Size lstc;
 	Tcl_Obj *valObj;
 
 	objPtr = TclStrIdxTreeNewObj();
@@ -1172,7 +1172,7 @@ ClockMCGetListIdxTree(
 	    goto done;
 	}
 
-	if (TclListObjGetElements(opts->interp, valObj,
+	if (TclListObjGetElementsM(opts->interp, valObj,
 		&lstc, &lstv) != TCL_OK) {
 	    goto done;
 	};
@@ -1232,7 +1232,7 @@ ClockMCGetMultiListIdxTree(
 	/* build new index */
 
 	Tcl_Obj **lstv;
-	int	  lstc;
+	Tcl_Size	  lstc;
 	Tcl_Obj *valObj;
 
 	objPtr = TclStrIdxTreeNewObj();
@@ -1247,7 +1247,7 @@ ClockMCGetMultiListIdxTree(
 		goto done;
 	    }
 
-	    if (TclListObjGetElements(opts->interp, valObj,
+	    if (TclListObjGetElementsM(opts->interp, valObj,
 		    &lstc, &lstv) != TCL_OK) {
 		goto done;
 	    };
@@ -2809,7 +2809,7 @@ ClockFmtToken_LocaleERAYear_Proc(
     ClockFormatToken *tok,
     int *val)
 {
-    int rowc;
+    Tcl_Size rowc;
     Tcl_Obj **rowv;
 
     if (dateFmt->localeEra == NULL) {
@@ -2817,7 +2817,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 	if (mcObj == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TclListObjGetElements(opts->interp, mcObj, &rowc, &rowv) != TCL_OK) {
+	if (TclListObjGetElementsM(opts->interp, mcObj, &rowc, &rowv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (rowc != 0) {
@@ -3349,9 +3349,8 @@ ClockFrmScnClearCaches(void)
 
 static void
 ClockFrmScnFinalize(
-    ClientData clientData)  /* Not used. */
+    TCL_UNUSED(void *))
 {
-	(void)clientData;
     Tcl_MutexLock(&ClockFmtMutex);
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     /* clear GC */

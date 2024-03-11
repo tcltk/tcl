@@ -226,13 +226,14 @@ TclStrIdxTreeAppend(
 int
 TclStrIdxTreeBuildFromList(
     TclStrIdxTree *idxTree,
-    int	       lstc,
+    Tcl_Size lstc,
     Tcl_Obj  **lstv,
-    ClientData *values)
+    void **values)
 {
     Tcl_Obj  **lwrv;
-    int i, ret = TCL_ERROR;
-    ClientData val;
+    Tcl_Size i;
+    int ret = TCL_ERROR;
+    void *val;
     const char *s, *e, *f;
     TclStrIdx	*item;
 
