@@ -120,6 +120,17 @@ if {[interp issafe]} {
 
 	uplevel 1 [info level 0]
     }
+
+    # Auto-loading stubs for 'clock.tcl'
+
+    namespace eval ::tcl::clock {
+	proc _load_stubs args {
+	    namespace unknown {}
+	    ::source -encoding utf-8 [::file join [info library] clock.tcl]
+	    tailcall {*}$args
+	}
+	namespace unknown ::tcl::clock::_load_stubs
+    }
 }
 
 # Conditionalize for presence of exec.
