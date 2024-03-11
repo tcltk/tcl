@@ -606,7 +606,7 @@ ClockFmtObj_UpdateString(
     Tcl_Obj  *objPtr)
 {
     const char *name = "UNKNOWN";
-    int	  len;
+    size_t len;
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
 
     if (fss != NULL) {
@@ -614,10 +614,11 @@ ClockFmtObj_UpdateString(
 	name = hPtr->key.string;
     }
     len = strlen(name);
-    objPtr->length = len,
-    objPtr->bytes = (char *)Tcl_Alloc((size_t)++len);
-    if (objPtr->bytes)
+    objPtr->length = len++,
+    objPtr->bytes = (char *)Tcl_Alloc(len);
+    if (objPtr->bytes) {
 	memcpy(objPtr->bytes, name, len);
+    }
 }
 
 /*
@@ -1053,15 +1054,14 @@ DetermineGreedySearchLen(
 static inline int
 ObjListSearch(
     DateInfo *info, int *val,
-    Tcl_Obj **lstv, int lstc,
+    Tcl_Obj **lstv, Tcl_Size lstc,
     int minLen, int maxLen)
 {
-    int	       i, l, lf = -1;
+    Tcl_Size i, l, lf = -1;
     const char *s, *f, *sf;
     /* search in list */
     for (i = 0; i < lstc; i++) {
-	s = TclGetString(lstv[i]);
-	l = lstv[i]->length;
+	s = Tcl_GetStringFromObj(lstv[i], &l);
 
 	if ( l >= minLen
 	  && (f = TclUtfFindEqualNC(yyInput, yyInput + maxLen, s, s + l, &sf)) > yyInput
@@ -1323,7 +1323,7 @@ static int
 StaticListSearch(ClockFmtScnCmdArgs *opts,
     DateInfo *info, const char **lst, int *val)
 {
-    int len;
+    size_t len;
     const char **s = lst;
     while (*s != NULL) {
 	len = strlen(*s);
@@ -2598,7 +2598,7 @@ ClockFmtToken_AMPM_Proc(
 {
     Tcl_Obj *mcObj;
     const char *s;
-    int len;
+    Tcl_Size len;
 
     if (*val < (SECONDS_PER_DAY / 2)) {
 	mcObj = ClockMCGet(opts, MCLIT_AM);
@@ -2608,7 +2608,7 @@ ClockFmtToken_AMPM_Proc(
     if (mcObj == NULL) {
 	return TCL_ERROR;
     }
-    s = TclGetString(mcObj); len = mcObj->length;
+    s = Tcl_GetStringFromObj(mcObj, &len);
     if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
     memcpy(dateFmt->output, s, len + 1);
     if (*tok->tokWord.start == 'p') {
@@ -2758,7 +2758,7 @@ ClockFmtToken_TimeZone_Proc(
 	}
     } else {
 	Tcl_Obj * objPtr;
-	const char *s; int len;
+	const char *s; Tcl_Size len;
 	/* convert seconds to local seconds to obtain tzName object */
 	if (ConvertUTCToLocal(opts->clientData, opts->interp,
 		&dateFmt->date, opts->timezoneObj,
@@ -2766,8 +2766,7 @@ ClockFmtToken_TimeZone_Proc(
 	    return TCL_ERROR;
 	};
 	objPtr = dateFmt->date.tzName;
-	s = TclGetString(objPtr);
-	len = objPtr->length;
+	s = Tcl_GetStringFromObj(objPtr, &len);
 	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
 	memcpy(dateFmt->output, s, len + 1);
 	dateFmt->output += len;
@@ -2784,7 +2783,7 @@ ClockFmtToken_LocaleERA_Proc(
 {
     Tcl_Obj *mcObj;
     const char *s;
-    int len;
+    Tcl_Size len;
 
     if (dateFmt->date.isBce) {
 	mcObj = ClockMCGet(opts, MCLIT_BCE);
@@ -2794,7 +2793,7 @@ ClockFmtToken_LocaleERA_Proc(
     if (mcObj == NULL) {
 	return TCL_ERROR;
     }
-    s = TclGetString(mcObj); len = mcObj->length;
+    s = Tcl_GetStringFromObj(mcObj, &len);
     if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
     memcpy(dateFmt->output, s, len + 1);
     dateFmt->output += len;
@@ -2844,7 +2843,7 @@ ClockFmtToken_LocaleERAYear_Proc(
     } else {
 	Tcl_Obj *objPtr;
 	const char *s;
-	int len;
+	Tcl_Size len;
 	if (*tok->tokWord.start == 'C') { /* %EC */
 	    if (Tcl_ListObjIndex(opts->interp, dateFmt->localeEra, 1,
 			&objPtr) != TCL_OK ) {
@@ -2877,8 +2876,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 		return TCL_OK;
 	    }
 	}
-	s = TclGetString(objPtr);
-	len = objPtr->length;
+	s = Tcl_GetStringFromObj(objPtr, &len);
 	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
 	memcpy(dateFmt->output, s, len + 1);
 	dateFmt->output += len;
@@ -3281,7 +3279,7 @@ ClockFormat(
 	break;
 	case CTOKT_WORD:
 	    if (1) {
-		int len = tok->tokWord.end - tok->tokWord.start;
+		Tcl_Size len = tok->tokWord.end - tok->tokWord.start;
 		if (FrmResultAllocate(dateFmt, len) != TCL_OK) { goto error; };
 		if (len == 1) {
 		    *dateFmt->output++ = *tok->tokWord.start;
@@ -3306,8 +3304,9 @@ error:
 done:
 
     if (dateFmt->resMem) {
-    	size_t size;
-	Tcl_Obj * result = Tcl_NewObj();
+	size_t size;
+	Tcl_Obj *result;
+	TclNewObj(result);
 	result->length = dateFmt->output - dateFmt->resMem;
 	size = result->length+1;
 	if (dateFmt->resMem == resMem) {
