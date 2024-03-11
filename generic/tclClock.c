@@ -2412,12 +2412,11 @@ Tcl_Obj *
 LookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
-    int rowc,			/* Number of rows of tzdata */
+    Tcl_Size rowc,			/* Number of rows of tzdata */
     Tcl_Obj *const *rowv,	/* Rows in tzdata */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
-    int l = 0;
-    int u;
+	Tcl_Size l, u;
     Tcl_Obj *compObj;
     Tcl_WideInt compVal, fromVal = LLONG_MIN, toVal = LLONG_MAX;
 
@@ -2447,9 +2446,10 @@ LookupLastTransition(
      * Binary-search to find the transition.
      */
 
+    l = 0;
     u = rowc-1;
     while (l < u) {
-	int m = (l + u + 1) / 2;
+	Tcl_Size m = (l + u + 1) / 2;
 
 	if (Tcl_ListObjIndex(interp, rowv[m], 0, &compObj) != TCL_OK ||
 		TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
@@ -3955,7 +3955,8 @@ ClockFreeScan(
     yyInput = Tcl_GetString(strObj);
 
     if (TclClockFreeScan(interp, info) != TCL_OK) {
-	Tcl_Obj *msg = Tcl_NewObj();
+	Tcl_Obj *msg;
+	TclNewObj(msg);
 	Tcl_AppendPrintfToObj(msg, "unable to convert date-time string \"%s\": %s",
 	    Tcl_GetString(strObj), TclGetString(Tcl_GetObjResult(interp)));
 	Tcl_SetObjResult(interp, msg);
@@ -4628,7 +4629,7 @@ TzsetIfNecessary(void)
 {
     static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
-    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static long long tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzWasEpoch = 0;        /* Epoch, signals that TZ changed */
     static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
 					    that TZ changed via TCL */
@@ -4637,7 +4638,7 @@ TzsetIfNecessary(void)
     /*
      * Prevent performance regression on some platforms by resolving of system time zone:
      * small latency for check whether environment was changed (once per second)
-     * no latency if environment was chaned with tcl-env (compare both epoch values)
+     * no latency if environment was changed with tcl-env (compare both epoch values)
      */
     Tcl_Time now;
     Tcl_GetTime(&now);
