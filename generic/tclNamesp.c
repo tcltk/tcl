@@ -650,7 +650,8 @@ Tcl_CreateNamespace(
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     Tcl_DString *namePtr, *buffPtr;
-    int newEntry, nameLen;
+    int newEntry;
+    int nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     const char *nameStr;
     Tcl_DString tmpBuffer;
@@ -1482,7 +1483,8 @@ Tcl_AppendExportList(
 				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
-    int i, result;
+    int i;
+    int result;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -2331,7 +2333,7 @@ TclGetNamespaceForQualName(
 		    Tcl_Panic("Could not create namespace '%s'", nsName);
 		}
 	    } else {
-		/* 
+		/*
 		 * Namespace not found and was not created.
 		 * Remember last found namespace for TCL_FIND_IF_NOT_SIMPLE.
 		 */
@@ -2369,7 +2371,7 @@ TclGetNamespaceForQualName(
 
 	if ((nsPtr == NULL) && (altNsPtr == NULL)) {
 	    if (flags & TCL_FIND_IF_NOT_SIMPLE) {
-		/* 
+		/*
 		 * return last found NS, regardless simple name or not,
 		 * e. g. ::A::B::C::D -> ::A::B and C::D, if namespace C
 		 * cannot be found in ::A::B
@@ -2625,7 +2627,7 @@ Tcl_FindCommand(
 	 * Next, check along the path.
 	 */
 
-	for (i=0 ; i<cxtNsPtr->commandPathLength && cmdPtr==NULL ; i++) {
+	for (i=0 ; (cmdPtr == NULL) && i<cxtNsPtr->commandPathLength ; i++) {
 	    pathNsPtr = cxtNsPtr->commandPathArray[i].nsPtr;
 	    if (pathNsPtr == NULL) {
 		continue;
@@ -3029,7 +3031,7 @@ NamespaceChildrenCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	unsigned int length = strlen(nsPtr->fullName);
+	size_t length = strlen(nsPtr->fullName);
 
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
@@ -4004,7 +4006,8 @@ NamespacePathCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    int i, nsObjc, result = TCL_ERROR;
+    int nsObjc, i;
+    int result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
 
