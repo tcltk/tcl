@@ -1375,20 +1375,24 @@ ClockSetupTimeZone(
 
 Tcl_Obj *
 ClockFormatNumericTimeZone(int z) {
-    char sign = '+';
+    char buf[12+1];
     int h, m;
+
+    *buf = '+';
     if ( z < 0 ) {
 	z = -z;
-	sign = '-';
+	*buf = '-';
     }
     h = z / 3600;
     z %= 3600;
     m = z / 60;
     z %= 60;
     if (z != 0) {
-	return Tcl_ObjPrintf("%c%02d%02d%02d", sign, h, m, z);
+	sprintf(&buf[1], "%02d%02d%02d", h, m, z);
+    } else {
+	sprintf(&buf[1], "%02d%02d", h, m);
     }
-    return Tcl_ObjPrintf("%c%02d%02d", sign, h, m);
+    return Tcl_NewStringObj(buf, -1);
 }
 
 /*
