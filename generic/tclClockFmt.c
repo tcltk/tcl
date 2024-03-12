@@ -1070,7 +1070,7 @@ ObjListSearch(
     const char *s, *f, *sf;
     /* search in list */
     for (i = 0; i < lstc; i++) {
-	s = Tcl_GetStringFromObj(lstv[i], &l);
+	s = TclGetStringFromObj(lstv[i], &l);
 
 	if ( l >= minLen
 	  && (f = TclUtfFindEqualNC(yyInput, yyInput + maxLen, s, s + l, &sf)) > yyInput
@@ -2617,7 +2617,7 @@ ClockFmtToken_AMPM_Proc(
     if (mcObj == NULL) {
 	return TCL_ERROR;
     }
-    s = Tcl_GetStringFromObj(mcObj, &len);
+    s = TclGetStringFromObj(mcObj, &len);
     if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
     memcpy(dateFmt->output, s, len + 1);
     if (*tok->tokWord.start == 'p') {
@@ -2775,7 +2775,7 @@ ClockFmtToken_TimeZone_Proc(
 	    return TCL_ERROR;
 	};
 	objPtr = dateFmt->date.tzName;
-	s = Tcl_GetStringFromObj(objPtr, &len);
+	s = TclGetStringFromObj(objPtr, &len);
 	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
 	memcpy(dateFmt->output, s, len + 1);
 	dateFmt->output += len;
@@ -2802,7 +2802,7 @@ ClockFmtToken_LocaleERA_Proc(
     if (mcObj == NULL) {
 	return TCL_ERROR;
     }
-    s = Tcl_GetStringFromObj(mcObj, &len);
+    s = TclGetStringFromObj(mcObj, &len);
     if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
     memcpy(dateFmt->output, s, len + 1);
     dateFmt->output += len;
@@ -2885,7 +2885,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 		return TCL_OK;
 	    }
 	}
-	s = Tcl_GetStringFromObj(objPtr, &len);
+	s = TclGetStringFromObj(objPtr, &len);
 	if (FrmResultAllocate(dateFmt, len) != TCL_OK) { return TCL_ERROR; };
 	memcpy(dateFmt->output, s, len + 1);
 	dateFmt->output += len;

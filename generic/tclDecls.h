@@ -4158,19 +4158,17 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
-#ifdef USE_TCL_STUBS
-    /* Protect those 10 functions, make them useless through the stub table */
-#   undef TclGetStringFromObj
-#   undef TclGetBytesFromObj
-#   undef TclGetUnicodeFromObj
-#   undef TclListObjGetElements
-#   undef TclListObjLength
-#   undef TclDictObjSize
-#   undef TclSplitList
-#   undef TclSplitPath
-#   undef TclFSSplitPath
-#   undef TclParseArgsObjv
-#endif
+/* Protect those 10 functions, make them useless through the stub table */
+#undef TclGetStringFromObj
+#undef TclGetBytesFromObj
+#undef TclGetUnicodeFromObj
+#undef TclListObjGetElements
+#undef TclListObjLength
+#undef TclDictObjSize
+#undef TclSplitList
+#undef TclSplitPath
+#undef TclFSSplitPath
+#undef TclParseArgsObjv
 
 #if TCL_MAJOR_VERSION < 9
     /* TIP #627 for 8.7 */
@@ -4236,7 +4234,7 @@ extern const TclStubs *tclStubsPtr;
 		TclGetBytesFromObj((interp), (objPtr), (sizePtr)) : \
 		(Tcl_GetBytesFromObj)((interp), (objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_GetStringFromObj(objPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetStringFromObj((objPtr), (sizePtr)) : \
+		(TclGetStringFromObj)((objPtr), (sizePtr)) : \
 		(Tcl_GetStringFromObj)((objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_GetUnicodeFromObj(objPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclGetUnicodeFromObj((objPtr), (sizePtr)) : \
