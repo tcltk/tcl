@@ -197,6 +197,15 @@ _itoaw(
 
     return buf + width;
 }
+char *
+TclItoAw(
+    char *buf,
+    int val,
+    char  padchar,
+    unsigned short int width)
+{
+    return _itoaw(buf, val, padchar, width);
+}
 
 static inline char *
 _witoaw(
