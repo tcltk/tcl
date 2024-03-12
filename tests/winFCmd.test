@@ -419,7 +419,7 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes notInCIenv} -body {
+} -constraints {win winNonZeroInodes notInCIenv extensive} -body {
     file mkdir td1
     lassign [MakeFiles td1] a b
     file rename -force $a $b
