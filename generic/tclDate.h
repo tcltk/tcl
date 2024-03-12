@@ -150,6 +150,8 @@ typedef enum ClockMsgCtLiteral {
 
 typedef enum {BCE=1, CE=0} ERA_ENUM;
 
+#define CLF_CTZ		(1 << 4)
+
 typedef struct TclDateFields {
 
     /* Cacheable fields:	 */
@@ -174,6 +176,8 @@ typedef struct TclDateFields {
     int minutes;		/* Minutes of hour (in-between time only calculation) */
     int secondOfMin;		/* Seconds of minute (in-between time only calculation) */
     int secondOfDay;		/* Seconds of day (in-between time only calculation) */
+
+    int flags;			/* 0 or CLF_CTZ */
 
     /* Non cacheable fields:	 */
 
