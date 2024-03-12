@@ -4023,16 +4023,23 @@ ClockFreeScan(
      */
 
     if (info->flags & CLF_ZONE) {
-	Tcl_Obj *tzObjStor = NULL;
-	int minEast = -yyTimezone;
-	int dstFlag = 1 - yyDSTmode;
-	tzObjStor = ClockFormatNumericTimeZone(
-			  60 * minEast + 3600 * dstFlag);
-	Tcl_IncrRefCount(tzObjStor);
+	if (yyTimezone || !yyDSTmode) {
+	    /* Real time zone from numeric zone */
+	    Tcl_Obj *tzObjStor = NULL;
+	    int minEast = -yyTimezone;
+	    int dstFlag = 1 - yyDSTmode;
+	    tzObjStor = ClockFormatNumericTimeZone(
+				60 * minEast + 3600 * dstFlag);
+	    Tcl_IncrRefCount(tzObjStor);
 
-	opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
+	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
 
-	Tcl_DecrRefCount(tzObjStor);
+	    Tcl_DecrRefCount(tzObjStor);
+	} else {
+	    /* simplest case - GMT / UTC */
+	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, 
+		dataPtr->literals[LIT_GMT]);
+	}
 	if (opts->timezoneObj == NULL) {
 	    goto done;
 	}
