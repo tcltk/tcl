@@ -544,6 +544,10 @@ MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 
 /* tclClockFmt.c module declarations */
 
+
+MODULE_SCOPE char *
+	TclItoAw(char *buf, int val, char padchar, unsigned short int width);
+
 MODULE_SCOPE Tcl_Obj*
 		    ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
 			Tcl_Obj *objPtr);
