@@ -71,26 +71,26 @@ typedef struct {
  * Declarations for functions local to this file:
  */
 
-static void		DeleteImportedCmd(ClientData clientData);
+static void		DeleteImportedCmd(void *clientData);
 static int		DoImport(Tcl_Interp *interp,
 			    Namespace *nsPtr, Tcl_HashEntry *hPtr,
 			    const char *cmdName, const char *pattern,
 			    Namespace *importNsPtr, int allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,Tcl_Obj *copyPtr);
-static char *		ErrorCodeRead(ClientData clientData,Tcl_Interp *interp,
+static char *		ErrorCodeRead(void *clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
-static char *		ErrorInfoRead(ClientData clientData,Tcl_Interp *interp,
+static char *		ErrorInfoRead(void *clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
-static char *		EstablishErrorCodeTraces(ClientData clientData,
+static char *		EstablishErrorCodeTraces(void *clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
-static char *		EstablishErrorInfoTraces(ClientData clientData,
+static char *		EstablishErrorInfoTraces(void *clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
-static int		InvokeImportedNRCmd(ClientData clientData,
+static int		InvokeImportedNRCmd(void *clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static Tcl_ObjCmdProc	NamespaceChildrenCmd;
 static Tcl_ObjCmdProc	NamespaceCodeCmd;
@@ -494,7 +494,7 @@ TclPopStackFrame(
 
 static char *
 EstablishErrorCodeTraces(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -526,7 +526,7 @@ EstablishErrorCodeTraces(
 
 static char *
 ErrorCodeRead(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -570,7 +570,7 @@ ErrorCodeRead(
 
 static char *
 EstablishErrorInfoTraces(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -602,7 +602,7 @@ EstablishErrorInfoTraces(
 
 static char *
 ErrorInfoRead(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -656,7 +656,7 @@ Tcl_CreateNamespace(
     const char *name,		/* Name for the new namespace. May be a
 				 * qualified name with names of ancestor
 				 * namespaces separated by "::"s. */
-    ClientData clientData,	/* One-word value to store with namespace. */
+    void *clientData,	/* One-word value to store with namespace. */
     Tcl_NamespaceDeleteProc *deleteProc)
 				/* Function called to delete client data when
 				 * the namespace is deleted. NULL if no
@@ -2039,7 +2039,7 @@ TclGetOriginalCommand(
 
 static int
 InvokeImportedNRCmd(
-    ClientData clientData,	/* Points to the imported command's
+    void *clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2054,7 +2054,7 @@ InvokeImportedNRCmd(
 
 int
 TclInvokeImportedCmd(
-    ClientData clientData,	/* Points to the imported command's
+    void *clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2087,7 +2087,7 @@ TclInvokeImportedCmd(
 
 static void
 DeleteImportedCmd(
-    ClientData clientData)	/* Points to the imported command's
+    void *clientData)	/* Points to the imported command's
 				 * ImportedCmdData structure. */
 {
     ImportedCmdData *dataPtr = (ImportedCmdData *)clientData;
@@ -3023,7 +3023,7 @@ TclInitNamespaceCmd(
 
 static int
 NamespaceChildrenCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3152,7 +3152,7 @@ NamespaceChildrenCmd(
 
 static int
 NamespaceCodeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3233,7 +3233,7 @@ NamespaceCodeCmd(
 
 static int
 NamespaceCurrentCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3296,7 +3296,7 @@ NamespaceCurrentCmd(
 
 static int
 NamespaceDeleteCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3373,7 +3373,7 @@ NamespaceDeleteCmd(
 
 static int
 NamespaceEvalCmd(
-    ClientData clientData,	/* Arbitrary value passed to cmd. */
+    void *clientData,	/* Arbitrary value passed to cmd. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3384,7 +3384,7 @@ NamespaceEvalCmd(
 
 static int
 NRNamespaceEvalCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3466,7 +3466,7 @@ NRNamespaceEvalCmd(
 
 static int
 NsEval_Callback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3516,7 +3516,7 @@ NsEval_Callback(
 
 static int
 NamespaceExistsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3571,7 +3571,7 @@ NamespaceExistsCmd(
 
 static int
 NamespaceExportCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3602,7 +3602,7 @@ NamespaceExportCmd(
      */
 
     firstArg = 1;
-    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
+    if (strcmp("-clear", TclGetString(objv[firstArg])) == 0) {
 	Tcl_Export(interp, NULL, "::", 1);
 	Tcl_ResetResult(interp);
 	firstArg++;
@@ -3613,7 +3613,7 @@ NamespaceExportCmd(
      */
 
     for (i = firstArg;  i < objc;  i++) {
-	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
+	int result = Tcl_Export(interp, NULL, TclGetString(objv[i]), 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -3653,7 +3653,7 @@ NamespaceExportCmd(
 
 static int
 NamespaceForgetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3718,7 +3718,7 @@ NamespaceForgetCmd(
 
 static int
 NamespaceImportCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3822,7 +3822,7 @@ NamespaceImportCmd(
 
 static int
 NamespaceInscopeCmd(
-    ClientData clientData,	/* Arbitrary value passed to cmd. */
+    void *clientData,	/* Arbitrary value passed to cmd. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3833,7 +3833,7 @@ NamespaceInscopeCmd(
 
 static int
 NRNamespaceInscopeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3930,7 +3930,7 @@ NRNamespaceInscopeCmd(
 
 static int
 NamespaceOriginCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3990,7 +3990,7 @@ NamespaceOriginCmd(
 
 static int
 NamespaceParentCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4048,7 +4048,7 @@ NamespaceParentCmd(
 
 static int
 NamespacePathCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4275,7 +4275,7 @@ TclInvalidateNsPath(
 
 static int
 NamespaceQualifiersCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4343,7 +4343,7 @@ NamespaceQualifiersCmd(
 
 static int
 NamespaceUnknownCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4530,7 +4530,7 @@ Tcl_SetNamespaceUnknownHandler(
 
 static int
 NamespaceTailCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4588,7 +4588,7 @@ NamespaceTailCmd(
 
 static int
 NamespaceUpvarCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4662,7 +4662,7 @@ NamespaceUpvarCmd(
 
 static int
 NamespaceWhichCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
