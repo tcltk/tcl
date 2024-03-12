@@ -138,7 +138,7 @@
 typedef struct _TABLE {
     const char *name;
     int type;
-    long value;
+    Tcl_WideInt value;
 } TABLE;
 
 /*
@@ -223,7 +223,7 @@ extern int TclDatedebug;
 union YYSTYPE
 {
 
-    long Number;
+    Tcl_WideInt Number;
     enum _MERIDIAN Meridian;
 
 
