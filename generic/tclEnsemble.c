@@ -1694,6 +1694,7 @@ NsEnsembleImplementationCmdNR(
     Tcl_Obj *errorObj;		/* Used for building error messages. */
     Tcl_Obj *subObj;
     int subIdx;
+    const char *orAmbiguousStr = "";
 
     /*
      * Must recheck objc, since numParameters might have changed. Cf. test
@@ -1818,6 +1819,7 @@ NsEnsembleImplementationCmdNR(
 		     * exported subcommands, which is an error case.
 		     */
 
+		    orAmbiguousStr = " or ambiguous";
 		    goto unknownOrAmbiguousSubcommand;
 		}
 		fullName = ensemblePtr->subcommandArrayPtr[i];
@@ -1959,7 +1961,7 @@ NsEnsembleImplementationCmdNR(
 	return TCL_ERROR;
     }
     errorObj = Tcl_ObjPrintf("unknown%s subcommand \"%s\": must be ",
-	    (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX ? " or ambiguous" : ""),
+	    orAmbiguousStr,
 	    TclGetString(subObj));
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);

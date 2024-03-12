@@ -111,7 +111,7 @@ test iortrans-1.0 {chan, wrong#args} -returnCodes error -body {
 } -result {wrong # args: should be "chan subcommand ?arg ...?"}
 test iortrans-1.1 {chan, unknown method} -returnCodes error -body {
     chan foo
-} -match glob -result {unknown or ambiguous subcommand "foo": must be*}
+} -match glob -result {unknown subcommand "foo": must be*}
 
 # --- --- --- --------- --------- ---------
 # chan push, and method "initialize"

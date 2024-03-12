@@ -657,7 +657,7 @@ test iocmd-20.0 {chan, wrong#args} {
 } {wrong # args: should be "chan subcommand ?arg ...?"}
 test iocmd-20.1 {chan, unknown method} -body {
     chan foo
-} -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
+} -returnCodes error -match glob -result {unknown subcommand "foo": must be *}
 
 # --- --- --- --------- --------- ---------
 # chan create, and method "initialize"

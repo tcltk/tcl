@@ -48,7 +48,7 @@ if {$noComp} {
 
 test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1579,7 +1579,7 @@ test string-20.1.$noComp {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}

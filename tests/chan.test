@@ -22,7 +22,7 @@ test chan-1.1 {chan command general syntax} -body {
 } -returnCodes error -result "wrong # args: should be \"chan subcommand ?arg ...?\""
 test chan-1.2 {chan command general syntax} -body {
     chan FOOBAR
-} -returnCodes error -match glob -result "unknown or ambiguous subcommand \"FOOBAR\": must be *"
+} -returnCodes error -match glob -result "unknown subcommand \"FOOBAR\": must be *"
 
 test chan-2.1 {chan command: blocked subcommand} -body {
     chan blocked foo bar

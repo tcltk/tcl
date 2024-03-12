@@ -33,7 +33,7 @@ test dict-1.1 {dict command basic syntax} -returnCodes error -body {
 } -result {wrong # args: should be "dict subcommand ?arg ...?"}
 test dict-1.2 {dict command basic syntax} -returnCodes error -body {
     dict ?
-} -match glob -result {unknown or ambiguous subcommand "?": must be *}
+} -match glob -result {unknown subcommand "?": must be *}
 
 test dict-2.1 {dict create command} {
     dict create

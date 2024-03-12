@@ -246,7 +246,7 @@ test history-9.1 {miscellaneous} history {catch {history gorp} msg} 1
 test history-9.2 {miscellaneous} history {
     catch {history gorp} msg
     set msg
-} {unknown or ambiguous subcommand "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+} {unknown subcommand "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
 
 # History retains references; Bug 1ae12987cb
 test history-10.1 {references kept by history} -constraints history -setup {
