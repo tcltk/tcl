@@ -35753,6 +35753,44 @@ test clock-30.30 {clock add weekdays and back} -body {
     }
     return "OK"
 } -result {OK}
+test clock-30.31 {regression test - add no int overflow} {
+    list \
+      [list \
+	[clock add 0 1600000000 seconds 24856 days -gmt 1] \
+	[clock add 0 1600000000 seconds 815 months -gmt 1] \
+	[clock add 0 1600000000 seconds 69 years -gmt 1] \
+	[clock add 0 1600000000 seconds 596524 hours -gmt 1] \
+	[clock add 0 1600000000 seconds 35791395 minutes -gmt 1] \
+	[clock add 0 1600000000 seconds 0x7fffffff seconds -gmt 1]
+      ] \
+      [list \
+	[clock add 1600000000 24856 days -gmt 1] \
+	[clock add 1600000000 815 months -gmt 1] \
+	[clock add 1600000000 69 years -gmt 1] \
+	[clock add 1600000000 596524 hours -gmt 1] \
+	[clock add 1600000000 35791395 minutes -gmt 1] \
+	[clock add 1600000000 0x7fffffff seconds -gmt 1]
+      ]
+} [lrepeat 2 {3747558400 3743238400 3777452800 3747486400 3747483700 3747483647}]
+test clock-30.32 {regression test - add no int overflow} {
+    list \
+      [list \
+	[clock add 3777452800 -1600000000 seconds -24856 days -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -815 months -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -69 years -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -596524 hours -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -35791395 minutes -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -0x7fffffff seconds -gmt 1]
+      ] \
+      [list \
+	[clock add 2177452800 -24856 days -gmt 1] \
+	[clock add 2177452800 -815 months -gmt 1] \
+	[clock add 2177452800 -69 years -gmt 1] \
+	[clock add 2177452800 -596524 hours -gmt 1] \
+	[clock add 2177452800 -35791395 minutes -gmt 1] \
+	[clock add 2177452800 -0x7fffffff seconds -gmt 1]
+      ]
+} [lrepeat 2 {29894400 34214400 0 29966400 29969100 29969153}]
 
 # END testcases30
 
@@ -36828,6 +36866,52 @@ test clock-38.2 {make sure TZ is not cached after unset} \
     } \
     -result 1
 
+test clock-38.3sc {ensure cache of base is correct for :localtime if TZ-env changing / scan} \
+    -setup {
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	}
+    } \
+    -body {
+	set res {}
+	foreach env(TZ) {GMT-11:30 GMT-07:30 GMT-03:30 GMT} \
+	        i {{07:30:00} {03:30:00} {23:30:00} {20:00:00}} \
+	{
+	    lappend res [clock scan $i -format "%H:%M:%S" -base [expr {20*60*60}] -timezone :localtime]
+	}
+	set res
+    } \
+    -cleanup {
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
+	    unset oldTZ
+	} else {
+	    unset env(TZ)
+	}
+    } \
+    -result [lrepeat 4 [expr {20*60*60}]]
+test clock-38.3fm {ensure cache of base is correct for :localtime if TZ-env changing / format} \
+    -setup {
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	}
+    } \
+    -body {
+	set res {}
+	foreach env(TZ) {GMT-11:30 GMT-07:30 GMT-03:30 GMT} {
+	    lappend res [clock format [expr {20*60*60}] -format "%Y-%m-%dT%H:%M:%S %Z" -timezone :localtime]
+	}
+	set res
+    } \
+    -cleanup {
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
+	    unset oldTZ
+	} else {
+	    unset env(TZ)
+	}
+    } \
+    -result {{1970-01-02T07:30:00 +1130} {1970-01-02T03:30:00 +0730} {1970-01-01T23:30:00 +0330} {1970-01-01T20:00:00 +0000}}
 
 test clock-39.1 {regression - synonym timezones} {
     clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
@@ -36946,6 +37030,28 @@ test clock-45.4 {compat: scan regression on spaces (mandatory leading/trailing s
 	    [catch {clock scan "11 1 120" -format " %y%m%d %H%M%S" -gmt 1} ret] $ret \
 	    [catch {clock scan "11 1 120" -format " %y%m%d %H%M%S " -gmt 1} ret] $ret
     } -result [lrepeat 3 1 "input string does not match supplied format"]
+test clock-45.5 {regression test - freescan no int overflow} {
+    # note that the relative date changes currently reset the time to 00:00,
+    # this can be changed later (simply achievable by adding 00:00 if expected):
+    list \
+	[clock scan "+24856 days" -base 1600000000 -gmt 1] \
+	[clock scan "+815 months" -base 1600000000 -gmt 1] \
+	[clock scan "+69 years" -base 1600000000 -gmt 1] \
+	[clock scan "+596524 hours" -base 1600000000 -gmt 1] \
+	[clock scan "+35791395 minutes" -base 1600000000 -gmt 1] \
+	[clock scan "+2147483647 seconds" -base 1600000000 -gmt 1]
+} {3747513600 3743193600 3777408000 3747486400 3747483700 3747483647}
+test clock-45.6 {regression test - freescan no int overflow} {
+    # note that the relative date changes currently reset the time to 00:00,
+    # this can be changed later (simply achievable by adding 00:00 if expected):
+    list \
+	[clock scan "-24856 days" -base 2177452800 -gmt 1] \
+	[clock scan "-815 months" -base 2177452800 -gmt 1] \
+	[clock scan "-69 years" -base 2177452800 -gmt 1] \
+	[clock scan "-596524 hours" -base 2177452800 -gmt 1] \
+	[clock scan "-35791395 minutes" -base 2177452800 -gmt 1] \
+	[clock scan "-2147483647 seconds" -base 2177452800 -gmt 1]
+} {29894400 34214400 0 29966400 29969100 29969153}
 
 test clock-46.1 {regression test - month zero} -constraints valid_off \
     -body {
