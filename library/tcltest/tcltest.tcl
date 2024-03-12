@@ -1282,19 +1282,23 @@ proc tcltest::DefineConstraintInitializers {} {
 
     # Skip empty tests
 
-    ConstraintInitializer emptyTest {format 0}
+    ConstraintInitializer emptyTest {expr 0}
 
     # By default, tests that expose known bugs are skipped.
 
-    ConstraintInitializer knownBug {format 0}
+    ConstraintInitializer knownBug {expr 0}
 
     # By default, non-portable tests are skipped.
 
-    ConstraintInitializer nonPortable {format 0}
+    ConstraintInitializer nonPortable {expr 0}
+
+    # By default, extremely slow, extensive or IO-aggressive tests are skipped.
+
+    ConstraintInitializer extensive {expr 0}
 
     # Some tests require user interaction.
 
-    ConstraintInitializer userInteraction {format 0}
+    ConstraintInitializer userInteraction {expr 0}
 
     # Some tests must be skipped if the interpreter is not in
     # interactive mode
