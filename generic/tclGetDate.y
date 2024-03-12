@@ -89,7 +89,7 @@
 typedef struct _TABLE {
     const char *name;
     int type;
-    long value;
+    Tcl_WideInt value;
 } TABLE;
 
 /*
@@ -103,7 +103,7 @@ typedef enum _DSTMODE {
 %}
 
 %union {
-    long Number;
+    Tcl_WideInt Number;
     enum _MERIDIAN Meridian;
 }
 

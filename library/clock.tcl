@@ -976,10 +976,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		"time zone \"$timezone\" not found"
 	}
 	variable MINWIDE
-	if { $timezone eq {:localtime} } {
-	    # Nothing to do, we'll convert using the localtime function
-
-	} elseif {
+	if {
 	    [regexp {^([-+])(\d\d)(?::?(\d\d)(?::?(\d\d))?)?} $timezone \
 		    -> s hh mm ss]
 	} then {

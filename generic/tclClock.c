@@ -1350,20 +1350,20 @@ ClockSetupTimeZone(
 
 Tcl_Obj *
 ClockFormatNumericTimeZone(int z) {
-    char sign = '+';
-    int h, m;
+    char buf[12+1], *p;
+
     if ( z < 0 ) {
 	z = -z;
-	sign = '-';
+	*buf = '-';
+    } else {
+	*buf = '+';
     }
-    h = z / 3600;
-    z %= 3600;
-    m = z / 60;
-    z %= 60;
+    TclItoAw(buf+1, z / 3600, '0', 2);   z %= 3600;
+    p = TclItoAw(buf+3, z / 60, '0', 2); z %= 60;
     if (z != 0) {
-	return Tcl_ObjPrintf("%c%02d%02d%02d", sign, h, m, z);
+	p = TclItoAw(buf+5, z, '0', 2);
     }
-    return Tcl_ObjPrintf("%c%02d%02d", sign, h, m);
+    return Tcl_NewStringObj(buf, p - buf);
 }
 
 /*
@@ -2219,6 +2219,9 @@ ConvertUTCToLocal(
 	    return TCL_ERROR;
 	}
 
+	/* signal we need to revalidate TZ epoch next time fields gets used. */
+	fields->flags |= CLF_CTZ;
+
 	/* we cannot cache (ranges unknown yet) */
     } else {
 	Tcl_WideInt rangesVal[2];
@@ -2227,6 +2230,9 @@ ConvertUTCToLocal(
 		rangesVal) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/* converted using table (TZ isn't :localtime) */
+	fields->flags &= ~CLF_CTZ;
 
 	/* Cache the last conversion */
 	if (ltzoc != NULL) { /* slot was found above */
@@ -2330,7 +2336,7 @@ ConvertUTCToLocalUsingC(
     time_t tock;
     struct tm *timeVal;		/* Time after conversion */
     int diff;			/* Time zone diff local-Greenwich */
-    char buffer[16];		/* Buffer for time zone name */
+    char buffer[16], *p;	/* Buffer for time zone name */
 
     /*
      * Use 'localtime' to determine local year, month, day, time of day.
@@ -2383,14 +2389,12 @@ ConvertUTCToLocalUsingC(
     } else {
 	*buffer = '+';
     }
-    snprintf(buffer+1, sizeof(buffer) - 1, "%02d", diff / 3600);
-    diff %= 3600;
-    snprintf(buffer+3, sizeof(buffer) - 3, "%02d", diff / 60);
-    diff %= 60;
-    if (diff > 0) {
-	snprintf(buffer+5, sizeof(buffer) - 5, "%02d", diff);
+    TclItoAw(buffer+1, diff / 3600, '0', 2);   diff %= 3600;
+    p = TclItoAw(buffer+3, diff / 60, '0', 2); diff %= 60;
+    if (diff != 0) {
+	p = TclItoAw(buffer+5, diff, '0', 2);
     }
-    Tcl_SetObjRef(fields->tzName, Tcl_NewStringObj(buffer, -1));
+    Tcl_SetObjRef(fields->tzName, Tcl_NewStringObj(buffer, p - buffer));
     return TCL_OK;
 }
 
@@ -3462,7 +3466,10 @@ baseNow:
 
     /* check base fields already cached (by TZ, last-second cache) */
     if ( dataPtr->lastBase.timezoneObj == opts->timezoneObj
-      && dataPtr->lastBase.date.seconds == baseVal) {
+      && dataPtr->lastBase.date.seconds == baseVal
+      && (!(dataPtr->lastBase.date.flags & CLF_CTZ)
+	     || dataPtr->lastTZEpoch == TzsetIfNecessary())
+    ) {
 	memcpy(date, &dataPtr->lastBase.date, ClockCacheableDateFieldsSize);
     } else {
 	/* extact fields from base */
@@ -3986,16 +3993,23 @@ ClockFreeScan(
      */
 
     if (info->flags & CLF_ZONE) {
-	Tcl_Obj *tzObjStor = NULL;
-	int minEast = -yyTimezone;
-	int dstFlag = 1 - yyDSTmode;
-	tzObjStor = ClockFormatNumericTimeZone(
-			  60 * minEast + 3600 * dstFlag);
-	Tcl_IncrRefCount(tzObjStor);
+	if (yyTimezone || !yyDSTmode) {
+	    /* Real time zone from numeric zone */
+	    Tcl_Obj *tzObjStor = NULL;
+	    int minEast = -yyTimezone;
+	    int dstFlag = 1 - yyDSTmode;
+	    tzObjStor = ClockFormatNumericTimeZone(
+				60 * minEast + 3600 * dstFlag);
+	    Tcl_IncrRefCount(tzObjStor);
 
-	opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
+	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, tzObjStor);
 
-	Tcl_DecrRefCount(tzObjStor);
+	    Tcl_DecrRefCount(tzObjStor);
+	} else {
+	    /* simplest case - GMT / UTC */
+	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, 
+		dataPtr->literals[LIT_GMT]);
+	}
 	if (opts->timezoneObj == NULL) {
 	    goto done;
 	}
@@ -4147,7 +4161,7 @@ repeat_rel:
 	/* relative time (seconds), if exceeds current date, do the day conversion and
 	 * leave rest of the increment in yyRelSeconds to add it hereafter in UTC seconds */
 	if (yyRelSeconds) {
-	    int newSecs = yySecondOfDay + yyRelSeconds;
+	    Tcl_WideInt newSecs = yySecondOfDay + yyRelSeconds;
 
 	    /* if seconds increment outside of current date, increment day */
 	    if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
@@ -4392,17 +4406,20 @@ ClockAddObjCmd(
      */
 
     for (i = 2; i < objc; i+=2) {
-	/* bypass not integers (options, allready processed above) */
+	/* bypass not integers (options, allready processed above in ClockParseFmtScnArgs) */
 	if (TclGetWideIntFromObj(NULL, objv[i], &offs) != TCL_OK) {
 	    continue;
-	}
-	if (objv[i]->typePtr == &tclBignumType) {
-	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	    goto done;
 	}
 	/* get unit */
 	if (Tcl_GetIndexFromObj(interp, objv[i+1], units, "unit", 0,
 		&unitIndex) != TCL_OK) {
+	    goto done;
+	}
+	if (objv[i]->typePtr == &tclBignumType
+	    || offs > (unitIndex < CLC_ADD_HOURS ? 0x7fffffff : TCL_MAX_SECONDS)
+	    || offs < (unitIndex < CLC_ADD_HOURS ? -0x7fffffff : TCL_MIN_SECONDS)
+	) {
+	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    goto done;
 	}
 
