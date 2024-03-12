@@ -4240,10 +4240,10 @@ extern const TclStubs *tclStubsPtr;
 		TclGetUnicodeFromObj((objPtr), (sizePtr)) : \
 		(Tcl_GetUnicodeFromObj)((objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) <= sizeof(int) ? \
-		TclListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)) : \
+		(TclListObjGetElements)((interp), (listPtr), (objcPtr), (objvPtr)) : \
 		(Tcl_ListObjGetElements)((interp), (listPtr), (Tcl_Size *)(void *)(objcPtr), (objvPtr)))
 #	define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*(lengthPtr)) <= sizeof(int) ? \
-		TclListObjLength((interp), (listPtr), (lengthPtr)) : \
+		(TclListObjLength)((interp), (listPtr), (lengthPtr)) : \
 		(Tcl_ListObjLength)((interp), (listPtr), (Tcl_Size *)(void *)(lengthPtr)))
 #	define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclDictObjSize((interp), (dictPtr), (sizePtr)) : \
