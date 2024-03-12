@@ -4007,7 +4007,7 @@ ClockFreeScan(
 	    Tcl_DecrRefCount(tzObjStor);
 	} else {
 	    /* simplest case - GMT / UTC */
-	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp, 
+	    opts->timezoneObj = ClockSetupTimeZone(dataPtr, interp,
 		dataPtr->literals[LIT_GMT]);
 	}
 	if (opts->timezoneObj == NULL) {
