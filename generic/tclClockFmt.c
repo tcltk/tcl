@@ -1122,7 +1122,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     }
 
     /* is a list */
-    if (TclListObjGetElementsM(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
+    if (TclListObjGetElements(opts->interp, valObj, &lstc, &lstv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1181,7 +1181,7 @@ ClockMCGetListIdxTree(
 	    goto done;
 	}
 
-	if (TclListObjGetElementsM(opts->interp, valObj,
+	if (TclListObjGetElements(opts->interp, valObj,
 		&lstc, &lstv) != TCL_OK) {
 	    goto done;
 	};
@@ -1256,7 +1256,7 @@ ClockMCGetMultiListIdxTree(
 		goto done;
 	    }
 
-	    if (TclListObjGetElementsM(opts->interp, valObj,
+	    if (TclListObjGetElements(opts->interp, valObj,
 		    &lstc, &lstv) != TCL_OK) {
 		goto done;
 	    };
@@ -2825,7 +2825,7 @@ ClockFmtToken_LocaleERAYear_Proc(
 	if (mcObj == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TclListObjGetElementsM(opts->interp, mcObj, &rowc, &rowv) != TCL_OK) {
+	if (TclListObjGetElements(opts->interp, mcObj, &rowc, &rowv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (rowc != 0) {
