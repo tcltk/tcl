@@ -4189,7 +4189,7 @@ repeat_rel:
 	/* relative time (seconds), if exceeds current date, do the day conversion and
 	 * leave rest of the increment in yyRelSeconds to add it hereafter in UTC seconds */
 	if (yyRelSeconds) {
-	    int newSecs = yySecondOfDay + yyRelSeconds;
+	    Tcl_WideInt newSecs = yySecondOfDay + yyRelSeconds;
 
 	    /* if seconds increment outside of current date, increment day */
 	    if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
@@ -4434,17 +4434,20 @@ ClockAddObjCmd(
      */
 
     for (i = 2; i < objc; i+=2) {
-	/* bypass not integers (options, allready processed above) */
+	/* bypass not integers (options, allready processed above in ClockParseFmtScnArgs) */
 	if (TclGetWideIntFromObj(NULL, objv[i], &offs) != TCL_OK) {
 	    continue;
-	}
-	if (objv[i]->typePtr == &tclBignumType) {
-	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	    goto done;
 	}
 	/* get unit */
 	if (Tcl_GetIndexFromObj(interp, objv[i+1], units, "unit", 0,
 		&unitIndex) != TCL_OK) {
+	    goto done;
+	}
+	if (objv[i]->typePtr == &tclBignumType
+	    || offs > (unitIndex < CLC_ADD_HOURS ? 0x7fffffff : TCL_MAX_SECONDS)
+	    || offs < (unitIndex < CLC_ADD_HOURS ? -0x7fffffff : TCL_MIN_SECONDS)
+	) {
+	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    goto done;
 	}
 
