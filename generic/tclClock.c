@@ -2249,6 +2249,9 @@ ConvertUTCToLocal(
 	    return TCL_ERROR;
 	}
 
+	/* signal we need to revalidate TZ epoch next time fields gets used. */
+	fields->flags |= CLF_CTZ;
+
 	/* we cannot cache (ranges unknown yet) */
     } else {
 	Tcl_WideInt rangesVal[2];
@@ -2257,6 +2260,9 @@ ConvertUTCToLocal(
 		rangesVal) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/* converted using table (TZ isn't :localtime) */
+	fields->flags &= ~CLF_CTZ;
 
 	/* Cache the last conversion */
 	if (ltzoc != NULL) { /* slot was found above */
@@ -3491,7 +3497,10 @@ baseNow:
 
     /* check base fields already cached (by TZ, last-second cache) */
     if ( dataPtr->lastBase.timezoneObj == opts->timezoneObj
-      && dataPtr->lastBase.date.seconds == baseVal) {
+      && dataPtr->lastBase.date.seconds == baseVal
+      && (!(dataPtr->lastBase.date.flags & CLF_CTZ)
+	     || dataPtr->lastTZEpoch == TzsetIfNecessary())
+    ) {
 	memcpy(date, &dataPtr->lastBase.date, ClockCacheableDateFieldsSize);
     } else {
 	/* extact fields from base */
