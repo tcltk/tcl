@@ -73,10 +73,8 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
+#undef TclGetStringFromObj
 #if defined(TCL_NO_DEPRECATED)
-# undef TclGetStringFromObj
-# undef TclGetBytesFromObj
-# undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
