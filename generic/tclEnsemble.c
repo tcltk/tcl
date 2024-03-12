@@ -196,7 +196,7 @@ TclNamespaceEnsembleCmd(
 	 */
 	Tcl_Obj *subcmdObj = NULL;
 	Tcl_Obj *mapObj = NULL;
-	int permitPrefix = 1;
+	int ensFlags = TCL_ENSEMBLE_PREFIX;
 	Tcl_Obj *unknownObj = NULL;
 	Tcl_Obj *paramObj = NULL;
 
@@ -330,7 +330,8 @@ TclNamespaceEnsembleCmd(
 		}
 		continue;
 	    }
-	    case CRT_PREFIX:
+	    case CRT_PREFIX: {
+	    	int permitPrefix;
 		if (Tcl_GetBooleanFromObj(interp, objv[1],
 			&permitPrefix) != TCL_OK) {
 		    if (allocatedMapFlag) {
@@ -338,7 +339,10 @@ TclNamespaceEnsembleCmd(
 		    }
 		    return TCL_ERROR;
 		}
+		ensFlags &= ~TCL_ENSEMBLE_PREFIX;
+		ensFlags |= permitPrefix ? TCL_ENSEMBLE_PREFIX : 0;
 		continue;
+	    }
 	    case CRT_UNKNOWN:
 		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
@@ -356,6 +360,15 @@ TclNamespaceEnsembleCmd(
 		&actualCxtPtr, &simpleName);
 
 	/*
+	 * Ensemble should be compiled if it has map (performance purposes)
+	 * Currently only for internal using namespace (like ::tcl::clock).
+	 * (An enhancement for completelly compile-feature is in work.)
+	 */
+	if (mapObj != NULL && strncmp("::tcl::", nsPtr->fullName, 7) == 0) {
+	    ensFlags |= ENSEMBLE_COMPILE;
+	}
+
+	/*
 	 * Create the ensemble. Note that this might delete another ensemble
 	 * linked to the same namespace, so we must be careful. However, we
 	 * should be OK because we only link the namespace into the list once
@@ -364,7 +377,7 @@ TclNamespaceEnsembleCmd(
 
 	token = TclCreateEnsembleInNs(interp, simpleName,
 		(Tcl_Namespace *) foundNsPtr, (Tcl_Namespace *) nsPtr,
-		(permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
+		ensFlags);
 	Tcl_SetEnsembleSubcommandList(interp, token, subcmdObj);
 	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
@@ -2934,14 +2947,14 @@ TclCompileEnsemble(
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords <= depth) {
-	goto failed;
+	goto tryCompileToInv;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	/*
 	 * Too hard.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -2966,7 +2979,7 @@ TclCompileEnsemble(
 	 * to proceed.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -2980,7 +2993,7 @@ TclCompileEnsemble(
 	 * Figuring out how to compile this has become too much. Bail out.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -3003,7 +3016,7 @@ TclCompileEnsemble(
 	Tcl_Obj *matchObj = NULL;
 
 	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
@@ -3014,7 +3027,7 @@ TclCompileEnsemble(
 
 		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
 		if (result != TCL_OK || targetCmdObj == NULL) {
-		    goto failed;
+		    goto tryCompileToInv;
 		}
 		replacement = elems[i];
 		goto doneMapLookup;
@@ -3032,17 +3045,17 @@ TclCompileEnsemble(
 	    if ((flags & TCL_ENSEMBLE_PREFIX)
 		    && strncmp(word, str, numBytes) == 0) {
 		if (matchObj != NULL) {
-		    goto failed;
+		    goto tryCompileToInv;
 		}
 		matchObj = elems[i];
 	    }
 	}
 	if (matchObj == NULL) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
 	if (result != TCL_OK || targetCmdObj == NULL) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	replacement = matchObj;
     } else {
@@ -3072,7 +3085,7 @@ TclCompileEnsemble(
 	 */
 
 	if (!(flags & TCL_ENSEMBLE_PREFIX)) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 
 	/*
@@ -3107,7 +3120,7 @@ TclCompileEnsemble(
 
 	if (matched != 1) {
 	    invokeAnyway = 1;
-	    goto failed;
+	    goto tryCompileToInv;
 	}
     }
 
@@ -3123,7 +3136,7 @@ TclCompileEnsemble(
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
     if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
-	goto failed;
+	goto tryCompileToInv;
     } else if (len != 1) {
 	/*
 	 * Note that at this point we know we can't issue any special
@@ -3153,6 +3166,9 @@ TclCompileEnsemble(
     cmdPtr = newCmdPtr;
     depth++;
 
+    if (cmdPtr->flags & CMD_COMPILE_TO_INVOKED) {
+	goto tryCompileToInv;
+    }
     /*
      * See whether we have a nested ensemble. If we do, we can go round the
      * mulberry bush again, consuming the next word.
@@ -3211,7 +3227,7 @@ TclCompileEnsemble(
      * instead of going through the ensemble lookup process again.
      */
 
-  failed:
+  tryCompileToInv:
     if (depth < 250) {
 	if (depth > 1) {
 	    if (!invokeAnyway) {

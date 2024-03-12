@@ -133,28 +133,43 @@ struct ClockCommand {
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
-    void *clientData;	/* Any clientData to give the command (if NULL
+    void *clientData;		/* Any clientData to give the command (if NULL
     				 * a reference to ClockClientData will be sent) */
+    int compFlags;		/* Command compile flags */
 };
 
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
-    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
-    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
-    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
-    {"configure",	ClockConfigureObjCmd,			NULL, NULL},
-    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
-    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL,
+	CMD_COMPILE_TO_INVOKED},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL,
+	0},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
+	CMD_COMPILE_TO_INVOKED},
+    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
+	0},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd,INT2PTR(1),
+	0},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2),
+	0},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
+	CMD_COMPILE_TO_INVOKED},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3),
+	0},
+    {"configure",	ClockConfigureObjCmd,			NULL, NULL,
+	CMD_COMPILE_TO_INVOKED},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL,
+	0},
+    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL,
+	0},
     {"GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
+		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL,
+	0},
     {"GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
-    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {NULL, NULL, NULL, NULL}
+		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL,
+	0},
+    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL,
+	0},
+    {NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -266,6 +281,7 @@ TclClockInit(
 		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
+	cmdPtr->flags |= clockCmdPtr->compFlags;
     }
 }
 
