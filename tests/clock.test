@@ -35753,6 +35753,26 @@ test clock-30.30 {clock add weekdays and back} -body {
     }
     return "OK"
 } -result {OK}
+test clock-30.31 {regression test - add with int overflow} {
+    list \
+      [list \
+	[clock add 0 1600000000 seconds 24856 days -gmt 1] \
+	[clock add 0 1600000000 seconds 815 months -gmt 1] \
+	[clock add 0 1600000000 seconds 69 years -gmt 1] \
+	[clock add 0 1600000000 seconds 596524 hours -gmt 1] \
+	[clock add 0 1600000000 seconds 35791395 minutes -gmt 1] \
+	[clock add 0 1600000000 seconds 0x7fffffff seconds -gmt 1]
+      ] \
+      [list \
+	[clock add 1600000000 24856 days -gmt 1] \
+	[clock add 1600000000 815 months -gmt 1] \
+	[clock add 1600000000 69 years -gmt 1] \
+	[clock add 1600000000 596524 hours -gmt 1] \
+	[clock add 1600000000 35791395 minutes -gmt 1] \
+	[clock add 1600000000 0x7fffffff seconds -gmt 1]
+      ]
+} [lrepeat 2 {3747558400 3743238400 3777452800 3747486400 3747483700 3747483647}]
+
 
 # END testcases30
 
