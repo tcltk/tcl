@@ -15391,7 +15391,7 @@ test clock-4.97.8 { format JDN/JD (calendar and astronomical) } {
     set res {}
     foreach i {
 	-172800 -129600 -86400 -43200
-	-1 0 1 21600 43199 43200 86399 
+	-1 0 1 21600 43199 43200 86399
 	86400 86401 108000 129600 172800
     } {
 	lappend res $i [clock format [expr {-210866803200 - $i}] \
@@ -15420,7 +15420,7 @@ test clock-4.97.9 { format JDN/JD (calendar and astronomical) } {
     set res {}
     foreach i {
 	-86400 -43200
-	-1 0 1 
+	-1 0 1
 	43199 43200 43201 86400
     } {
 	lappend res $i [clock format [expr {653133196800 + $i}] \
@@ -21452,7 +21452,7 @@ test clock-9.2.1 {Calendar julian day (with time fraction) takes precedence over
     list \
 	[clock scan {2440588.0 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true] \
 	[clock scan {2440588.5 20000101 010203} -format {%EJ %Y%m%d %H%M%S} -gmt true]
-    
+
 } {0 43200}
 test clock-9.3 {Astro julian day takes always precedence over date-time} {
     list \
@@ -37141,7 +37141,7 @@ unset -nocomplain idx relstr
 
 set dst_hole_check {
     {":Europe/Berlin"
-	"2017-03-26 01:59:59" "2017-03-26 02:00:00" "2017-03-26 02:59:59" "2017-03-26 03:00:00" 
+	"2017-03-26 01:59:59" "2017-03-26 02:00:00" "2017-03-26 02:59:59" "2017-03-26 03:00:00"
 	"2017-10-29 01:59:59" "2017-10-29 02:00:00"}
     {":Europe/Berlin"
 	"2018-03-25 01:59:59" "2018-03-25 02:00:00" "2018-03-25 02:59:59" "2018-03-25 03:00:00"
@@ -37150,14 +37150,14 @@ set dst_hole_check {
 	"2017-03-12 01:59:59" "2017-03-12 02:00:00" "2017-03-12 02:59:59" "2017-03-12 03:00:00"
 	"2017-11-05 01:59:59" "2017-11-05 02:00:00"}
     {":America/New_York"
-	"2018-03-11 01:59:59" "2018-03-11 02:00:00" "2018-03-11 02:59:59" "2018-03-11 03:00:00" 
+	"2018-03-11 01:59:59" "2018-03-11 02:00:00" "2018-03-11 02:59:59" "2018-03-11 03:00:00"
 	"2018-11-04 01:59:59" "2018-11-04 02:00:00"}
 }
 test clock-46.19-1 {free-scan: validation rules: invalid time (DST-hole, out of range in time-zone)} \
     -body {
 	set res {}
 	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
-	    lappend res [set v [catch {clock scan $dt -timezone $tz -valid 1} msg]] 
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -valid 1} msg]]
 	    if {$v} { lappend res $msg }
 	}}
 	set res
@@ -37170,7 +37170,7 @@ test clock-46.19-2 {free-scan: validation rules regression: all scans successful
 	set res {}
 	set res {}
 	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
-	    lappend res [set v [catch {clock scan $dt -timezone $tz} msg]] 
+	    lappend res [set v [catch {clock scan $dt -timezone $tz} msg]]
 	}}
 	set res
     } -cleanup {
@@ -37180,7 +37180,7 @@ test clock-46.19-3 {scan: validation rules: invalid time (DST-hole, out of range
     -body {
 	set res {}
 	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
-	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S" -valid 1} msg]] 
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S" -valid 1} msg]]
 	    if {$v} { lappend res $msg }
 	}}
 	set res
@@ -37193,7 +37193,7 @@ test clock-46.19-4 {scan: validation rules regression: all scans successful, if 
 	set res {}
 	set res {}
 	foreach tz $dst_hole_check { set dt [lassign $tz tz]; foreach dt $dt {
-	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S"} msg]] 
+	    lappend res [set v [catch {clock scan $dt -timezone $tz -format "%Y-%m-%d %H:%M:%S"} msg]]
 	}}
 	set res
     } -cleanup {
@@ -37286,7 +37286,7 @@ test clock-46.31 {scan: validation rules: invalid iso year} -setup {
 	clock configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
-    
+
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012
 } [clock scan 0012 -format %H%M]

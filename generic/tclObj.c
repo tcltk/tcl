@@ -1660,6 +1660,7 @@ Tcl_GetString(
  */
 
 #if !defined(TCL_NO_DEPRECATED)
+#undef TclGetStringFromObj
 char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
