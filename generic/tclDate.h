@@ -148,6 +148,8 @@ typedef enum ClockMsgCtLiteral {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
+#define CLF_CTZ		(1 << 4)
+
 typedef struct TclDateFields {
 
     /* Cacheable fields:	 */
@@ -170,8 +172,10 @@ typedef struct TclDateFields {
     int dayOfWeek;		/* Day of the week */
     int hour;			/* Hours of day (in-between time only calculation) */
     int minutes;		/* Minutes of hour (in-between time only calculation) */
-    int secondOfMin;		/* Seconds of minute (in-between time only calculation) */
-    int secondOfDay;		/* Seconds of day (in-between time only calculation) */
+    Tcl_WideInt secondOfMin;	/* Seconds of minute (in-between time only calculation) */
+    Tcl_WideInt secondOfDay;	/* Seconds of day (in-between time only calculation) */
+
+    int flags;			/* 0 or CLF_CTZ */
 
     /* Non cacheable fields:	 */
 
@@ -209,16 +213,16 @@ typedef struct DateInfo {
     int dateTimezone;
     int dateDSTmode;
 
-    int dateRelMonth;
-    int dateRelDay;
-    int dateRelSeconds;
+    Tcl_WideInt dateRelMonth;
+    Tcl_WideInt dateRelDay;
+    Tcl_WideInt dateRelSeconds;
 
     int dateMonthOrdinalIncr;
     int dateMonthOrdinal;
 
     int dateDayOrdinal;
 
-    int *dateRelPointer;
+    Tcl_WideInt *dateRelPointer;
 
     int dateSpaceCount;
     int dateDigitCount;
@@ -537,6 +541,10 @@ MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
 			Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
+
+
+MODULE_SCOPE char *
+	TclItoAw(char *buf, int val, char padchar, unsigned short int width);
 
 MODULE_SCOPE Tcl_Obj*
 		    ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
