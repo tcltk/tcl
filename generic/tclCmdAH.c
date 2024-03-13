@@ -190,7 +190,7 @@ Tcl_CaseObjCmd(
     if (caseObjc == 1) {
 	Tcl_Obj **newObjv;
 
-	TclListObjGetElementsM(interp, caseObjv[0], &caseObjc, &newObjv);
+	TclListObjGetElements(interp, caseObjv[0], &caseObjc, &newObjv);
 	caseObjv = newObjv;
     }
 
@@ -2949,7 +2949,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
+	result = TclListObjLength(interp, statePtr->vCopyList[i],
 	    &statePtr->varcList[i]);
 	if (result != TCL_OK) {
 	    result = TCL_ERROR;
@@ -2965,7 +2965,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
+	TclListObjGetElements(NULL, statePtr->vCopyList[i],
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
@@ -2985,7 +2985,7 @@ EachloopCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
+	    result = TclListObjGetElements(interp, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 	    if (result != TCL_OK) {
 		goto done;

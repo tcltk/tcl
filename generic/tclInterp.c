@@ -2321,7 +2321,7 @@ GetInterp(
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
-    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2377,7 +2377,7 @@ ChildBgerror(
     if (objc) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLengthM(NULL, objv[0], &length)
+	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));
@@ -2425,7 +2425,7 @@ ChildCreate(
     Tcl_Size objc;
     Tcl_Obj **objv;
 
-    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {
