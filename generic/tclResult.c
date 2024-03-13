@@ -747,12 +747,12 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (TclListObjGetElementsM(interp, valuePtr, &valueObjc,
+            if (TclListObjGetElements(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            TclListObjLengthM(interp, iPtr->errorStack, &len);
+            TclListObjLength(interp, iPtr->errorStack, &len);
 
             /*
              * Reset while keeping the list internalrep as much as possible.
@@ -909,7 +909,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -931,7 +931,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length)) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
@@ -1102,7 +1102,7 @@ Tcl_SetReturnOptions(
     Tcl_Obj **objv, *mergedOpts;
 
     Tcl_IncrRefCount(options);
-    if (TCL_ERROR == TclListObjGetElementsM(interp, options, &objc, &objv)
+    if (TCL_ERROR == TclListObjGetElements(interp, options, &objc, &objv)
 	    || (objc % 2)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "expected dict but got \"%s\"", TclGetString(options)));

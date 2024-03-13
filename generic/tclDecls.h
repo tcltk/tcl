@@ -4158,21 +4158,18 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
-#ifdef USE_TCL_STUBS
-    /* Protect those 12 functions, make them useless through the stub table */
-#   undef TclGetStringFromObj
-#   undef TclGetBytesFromObj
-#   undef TclGetUnicodeFromObj
-#   undef TclListObjGetElements
-#   undef TclListObjLength
-#   undef TclDictObjSize
-#   undef TclSplitList
-#   undef TclSplitPath
-#   undef TclFSSplitPath
-#   undef TclParseArgsObjv
-#   undef TclGetAlias
-#   undef TclGetAliasObj
-#endif
+/* Protect those 11 functions, make them useless through the stub table */
+#undef TclGetStringFromObj
+#undef TclGetBytesFromObj
+#undef TclGetUnicodeFromObj
+#undef TclListObjGetElements
+#undef TclListObjLength
+#undef TclDictObjSize
+#undef TclSplitList
+#undef TclSplitPath
+#undef TclFSSplitPath
+#undef TclParseArgsObjv
+#undef TclGetAliasObj
 
 #if TCL_MAJOR_VERSION < 9
     /* TIP #627 for 8.7 */
@@ -4242,16 +4239,16 @@ extern const TclStubs *tclStubsPtr;
 		TclGetBytesFromObj((interp), (objPtr), (sizePtr)) : \
 		(Tcl_GetBytesFromObj)((interp), (objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_GetStringFromObj(objPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetStringFromObj((objPtr), (sizePtr)) : \
+		(TclGetStringFromObj)((objPtr), (sizePtr)) : \
 		(Tcl_GetStringFromObj)((objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_GetUnicodeFromObj(objPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclGetUnicodeFromObj((objPtr), (sizePtr)) : \
 		(Tcl_GetUnicodeFromObj)((objPtr), (Tcl_Size *)(void *)(sizePtr)))
 #	define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) <= sizeof(int) ? \
-		TclListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)) : \
+		(TclListObjGetElements)((interp), (listPtr), (objcPtr), (objvPtr)) : \
 		(Tcl_ListObjGetElements)((interp), (listPtr), (Tcl_Size *)(void *)(objcPtr), (objvPtr)))
 #	define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*(lengthPtr)) <= sizeof(int) ? \
-		TclListObjLength((interp), (listPtr), (lengthPtr)) : \
+		(TclListObjLength)((interp), (listPtr), (lengthPtr)) : \
 		(Tcl_ListObjLength)((interp), (listPtr), (Tcl_Size *)(void *)(lengthPtr)))
 #	define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclDictObjSize((interp), (dictPtr), (sizePtr)) : \
