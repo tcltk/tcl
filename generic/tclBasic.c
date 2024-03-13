@@ -4805,11 +4805,54 @@ TEOV_NotFound(
 				 * namespace (TIP 181). */
     Namespace *savedNsPtr = NULL;
 
+    Tcl_Size qualLen;
+    const char *qualName = Tcl_GetStringFromObj(objv[0], &qualLen);
+
     currNsPtr = varFramePtr->nsPtr;
-    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
-	currNsPtr = iPtr->globalNsPtr;
-	if (currNsPtr == NULL) {
-	    Tcl_Panic("Tcl_EvalObjv: NULL global namespace pointer");
+    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL) ||
+	(qualLen > 2 && memchr(qualName, ':', qualLen)) /* fast check for NS:: */
+    ) {
+	/*
+	 * first try to find namespace unknown handler of the namespace
+	 * of executed command if available:
+	 */
+	Namespace *altNsPtr, *dummyNsPtr;
+	const char *simpleName;
+
+	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
+	    TCL_FIND_IF_NOT_SIMPLE, &currNsPtr, &altNsPtr,
+	    &dummyNsPtr, &simpleName);
+	if (!simpleName) {
+	    goto globNS;
+	}
+	if (!currNsPtr || (currNsPtr == iPtr->globalNsPtr)) {
+	    if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
+		goto globNS;
+	    }
+	    currNsPtr = altNsPtr;
+	}
+	while (currNsPtr->unknownHandlerPtr == NULL ||
+	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
+	) {
+	    /* traverse to alive parent namespace containing handler */
+	    if (!(currNsPtr = currNsPtr->parentPtr) ||
+		 (currNsPtr == iPtr->globalNsPtr)
+	    ) {
+		/* continue from alternate NS if available */
+		if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
+		    goto globNS;
+		}
+		currNsPtr = altNsPtr;
+		altNsPtr = NULL;
+		continue;
+	      globNS:
+		/* fallback to the global unknown */
+		currNsPtr = iPtr->globalNsPtr;
+		if (currNsPtr == NULL) {
+		    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
+		}
+		break;
+	    }
 	}
     }
 
@@ -4829,7 +4872,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    TclListObjGetElementsM(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5340,7 +5383,7 @@ TclEvalEx(
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    Tcl_Size numElements;
 
-		    code = TclListObjLengthM(interp, objv[objectsUsed],
+		    code = TclListObjLength(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*
@@ -5402,7 +5445,7 @@ TclEvalEx(
 			Tcl_Size numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			TclListObjGetElementsM(NULL, temp, &numElements,
+			TclListObjGetElements(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -6165,7 +6208,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
+	TclListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -8851,7 +8894,7 @@ TclNRTailcallEval(
     Tcl_Size objc;
     Tcl_Obj **objv;
 
-    TclListObjGetElementsM(interp, listPtr, &objc, &objv);
+    TclListObjGetElements(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -9281,7 +9324,7 @@ TclNREvalList(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9568,7 +9611,7 @@ InjectHandler(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
             INT2PTR(nargs), isProbe);
-    TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
