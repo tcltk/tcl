@@ -2627,7 +2627,7 @@ typedef struct ListRep {
  * Return TCL_OK on success or TCL_ERROR if the Tcl_Obj cannot be
  * converted to a list.
  */
-#define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
+#define TclListObjGetElements(interp_, listObj_, objcPtr_, objvPtr_)    \
     (((listObj_)->typePtr == &tclListType)                              \
 	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
 	    TCL_OK)                                                     \
@@ -2639,7 +2639,7 @@ typedef struct ListRep {
  * count in lenPtr_.  Returns TCL_OK on success or TCL_ERROR if the
  * Tcl_Obj cannot be converted to a list.
  */
-#define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
+#define TclListObjLength(interp_, listObj_, lenPtr_)         \
     (((listObj_)->typePtr == &tclListType)                   \
 	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
@@ -4374,13 +4374,13 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #define TCL_MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
     do {								\
-	int _needed = (used) + (append);					\
+	Tcl_Size _needed = (used) + (append);				\
 	if (_needed > TCL_MAX_TOKENS) {					\
 	    Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded",	\
 		    TCL_MAX_TOKENS);					\
 	}								\
 	if (_needed > (available)) {					\
-	    int allocated = 2 * _needed;					\
+	    Tcl_Size allocated = 2 * _needed;				\
 	    Tcl_Token *oldPtr = (tokenPtr);				\
 	    Tcl_Token *newPtr;						\
 	    if (oldPtr == (staticPtr)) {				\

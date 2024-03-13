@@ -1712,7 +1712,7 @@ Tcl_ListObjAppendList(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
-    if (TclListObjGetElementsM(interp, fromObj, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, fromObj, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1959,7 +1959,7 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    if (TclListObjGetElementsM(interp, listObj, &numElems, &elemObjs)
+    if (TclListObjGetElements(interp, listObj, &numElems, &elemObjs)
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2591,7 +2591,7 @@ TclLindexList(
 	 */
 	return TclLindexFlat(interp, listObj, 1, &argObj);
     }
-    TclListObjGetElementsM(interp, indexListCopy, &numIndexObjs, &indexObjs);
+    TclListObjGetElements(interp, indexListCopy, &numIndexObjs, &indexObjs);
     listObj = TclLindexFlat(interp, listObj, numIndexObjs, indexObjs);
     Tcl_DecrRefCount(indexListCopy);
     return listObj;
@@ -2782,7 +2782,7 @@ TclLsetList(
 	     */
 	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
 	} else {
-	    if (TCL_OK != TclListObjGetElementsM(
+	    if (TCL_OK != TclListObjGetElements(
 		    interp, indexListCopy, &indexCount, &indices)) {
 		Tcl_DecrRefCount(indexListCopy);
 		/*
@@ -2912,7 +2912,7 @@ TclLsetFlat(
 	 * Check for the possible error conditions...
 	 */
 
-	if (TclListObjGetElementsM(interp, subListObj, &elemCount, &elemPtrs)
+	if (TclListObjGetElements(interp, subListObj, &elemCount, &elemPtrs)
 	    != TCL_OK) {
 	    /* ...the sublist we're indexing into isn't a list at all. */
 	    result = TCL_ERROR;
@@ -3070,7 +3070,7 @@ TclLsetFlat(
      */
 
     len = -1;
-    TclListObjLengthM(NULL, subListObj, &len);
+    TclListObjLength(NULL, subListObj, &len);
     if (valueObj == NULL) {
 	/* T:listrep-1.{4.2,5.4,6.1,7.1,8.3},2.{4,5}.4 */
 	Tcl_ListObjReplace(NULL, subListObj, index, 1, 0, NULL);
