@@ -37,11 +37,10 @@ testConstraint y2038 \
 set valid_mode [clock configure -valid]
 
 # Wrapper to show validity mode in the test-case name (for possible errors):
-rename test __test
 proc test {args} {
   variable valid_mode
   lset args 0 [lindex $args 0].vm:$valid_mode
-  uplevel [linsert $args [set args 0] __test]
+  tailcall ::tcltest::test {*}$args
 }
 
 puts [outputChannel] "  Validity default mode: [expr {$valid_mode ? "on": "off"}]"
@@ -38260,9 +38259,16 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 
 ::tcl::clock::ClearCaches
 rename test {}
-rename __test test
+namespace import -force ::tcltest::*
+# adjust expected skipped (valid_off is an artificial constraint):
+if {$valid_mode && [info exists ::tcltest::skippedBecause(valid_off)]} {
+    incr ::tcltest::numTests(Total) -$::tcltest::skippedBecause(valid_off)
+    incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(valid_off)
+    unset ::tcltest::skippedBecause(valid_off)
+}
 ::tcltest::cleanupTests
 namespace delete ::testClock
+unset valid_mode
 
 return
 
