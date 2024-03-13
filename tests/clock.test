@@ -348,6 +348,10 @@ test clock-1.7 "clock format - option abbreviations" {
     clock format 0 -g true -f "%Y-%m-%d"
 } 1970-01-01
 
+test clock-1.7.1 "clock format - command abbreviations (compat regression test)" {
+    clock f 0 -g 1 -f "%Y-%m-%d"
+} 1970-01-01
+
 test clock-1.8 "clock format -now" {
     # give one second more for test (if on boundary of the current second):
     set n [clock format [clock seconds] -g 1 -f "%s"]
