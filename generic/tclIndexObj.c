@@ -117,7 +117,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit inefficient but simpler.
      */
 
-    result = TclListObjGetElementsM(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -552,7 +552,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = TclListObjLengthM(interp, objv[i], &errorLength);
+	    result = TclListObjLength(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -576,7 +576,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLengthM(interp, tablePtr, &i);
+    result = TclListObjLength(interp, tablePtr, &i);
     if (result != TCL_OK) {
 	return result;
     }
@@ -642,7 +642,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -700,7 +700,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }

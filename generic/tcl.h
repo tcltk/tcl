@@ -323,7 +323,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 typedef ptrdiff_t Tcl_Size;
-#define TCL_SIZE_MAX ((ptrdiff_t)(((size_t)-1)>>1))
+#define TCL_SIZE_MAX ((Tcl_Size)(((size_t)-1)>>1))
 #define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 
 #ifdef _WIN32

@@ -2669,7 +2669,7 @@ typedef struct ListRep {
  * Return TCL_OK on success or TCL_ERROR if the Tcl_Obj cannot be
  * converted to a list.
  */
-#define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
+#define TclListObjGetElements(interp_, listObj_, objcPtr_, objvPtr_)    \
     (((listObj_)->typePtr == &tclListType)                              \
 	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
 	    TCL_OK)                                                     \
@@ -2681,7 +2681,7 @@ typedef struct ListRep {
  * count in lenPtr_.  Returns TCL_OK on success or TCL_ERROR if the
  * Tcl_Obj cannot be converted to a list.
  */
-#define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
+#define TclListObjLength(interp_, listObj_, lenPtr_)         \
     (((listObj_)->typePtr == &tclListType)                   \
 	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
@@ -4347,6 +4347,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
+#define TclGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes \
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal
@@ -4538,7 +4543,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 #define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
-	Tcl_Size _count = 0, _i = (numBytes); \
+	Tcl_Size _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \

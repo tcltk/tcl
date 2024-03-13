@@ -487,7 +487,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElementsM(interp, argsPtr, &numArgs, &argArray);
+    result = TclListObjGetElements(interp, argsPtr, &numArgs, &argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -517,7 +517,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = TclListObjGetElementsM(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -923,7 +923,7 @@ TclNRUplevelObjCmd(
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status;
 	Tcl_Size llength;
-	status = TclListObjLengthM(interp, objv[1], &llength);
+	status = TclListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -2461,7 +2461,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjLengthM(NULL, objPtr, &objc);
+    result = TclListObjLength(NULL, objPtr, &objc);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
@@ -2469,7 +2469,7 @@ SetLambdaFromAny(
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
 	return TCL_ERROR;
     }
-    result = TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",

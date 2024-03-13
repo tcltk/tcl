@@ -431,7 +431,7 @@ TclOONewProcInstanceMethod(
     ProcedureMethod *pmPtr;
     Tcl_Method method;
 
-    if (TclListObjLengthM(interp, argsObj, &argsLen) != TCL_OK) {
+    if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     }
     pmPtr = (ProcedureMethod *)Tcl_Alloc(sizeof(ProcedureMethod));
@@ -489,7 +489,7 @@ TclOONewProcMethod(
 	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
-    } else if (TclListObjLengthM(interp, argsObj, &argsLen) != TCL_OK) {
+    } else if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     } else {
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
@@ -1482,7 +1482,7 @@ TclOONewForwardInstanceMethod(
     Tcl_Size prefixLen;
     ForwardMethod *fmPtr;
 
-    if (TclListObjLengthM(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1521,7 +1521,7 @@ TclOONewForwardMethod(
     Tcl_Size prefixLen;
     ForwardMethod *fmPtr;
 
-    if (TclListObjLengthM(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1570,7 +1570,7 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    TclListObjGetElementsM(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
+    TclListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);

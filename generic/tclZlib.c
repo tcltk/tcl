@@ -1410,7 +1410,7 @@ Tcl_ZlibStreamGet(
 		Tcl_DecrRefCount(zshPtr->currentInput);
 		zshPtr->currentInput = NULL;
 	    }
-	    TclListObjLengthM(NULL, zshPtr->inData, &listLen);
+	    TclListObjLength(NULL, zshPtr->inData, &listLen);
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
@@ -1459,7 +1459,7 @@ Tcl_ZlibStreamGet(
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
 	};
-	TclListObjLengthM(NULL, zshPtr->inData, &listLen);
+	TclListObjLength(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
 		&& (e == Z_OK || e == Z_BUF_ERROR) && (listLen > 0)) {
@@ -1539,7 +1539,7 @@ Tcl_ZlibStreamGet(
 	    inflateEnd(&zshPtr->stream);
 	}
     } else {
-	TclListObjLengthM(NULL, zshPtr->outData, &listLen);
+	TclListObjLength(NULL, zshPtr->outData, &listLen);
 	if (count < 0) {
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
@@ -1561,7 +1561,7 @@ Tcl_ZlibStreamGet(
 	dataPtr += existing;
 
 	while ((count > dataPos) &&
-		(TclListObjLengthM(NULL, zshPtr->outData, &listLen) == TCL_OK)
+		(TclListObjLength(NULL, zshPtr->outData, &listLen) == TCL_OK)
 		&& (listLen > 0)) {
 	    /*
 	     * Get the next chunk off our list of chunks and grab the data out

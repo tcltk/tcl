@@ -677,7 +677,7 @@ Tcl_RegsubObjCmd(
 	 * object. (If they aren't, that's cheap to do.)
 	 */
 
-	if (TclListObjLengthM(interp, objv[2], &numParts) != TCL_OK) {
+	if (TclListObjLength(interp, objv[2], &numParts) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (numParts < 1) {
@@ -779,7 +779,7 @@ Tcl_RegsubObjCmd(
 	    Tcl_Obj **args = NULL, **parts;
 	    Tcl_Size numArgs;
 
-	    TclListObjGetElementsM(interp, subPtr, &numParts, &parts);
+	    TclListObjGetElements(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
 	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
@@ -1809,7 +1809,7 @@ StringIsCmd(
 	 * well-formed lists.
 	 */
 
-	if (TCL_OK == TclListObjLengthM(NULL, objPtr, &length3)) {
+	if (TCL_OK == TclListObjLength(NULL, objPtr, &length3)) {
 	    break;
 	}
 
@@ -2023,7 +2023,7 @@ StringMapCmd(
 	Tcl_DictObjDone(&search);
     } else {
 	Tcl_Size i;
-	if (TclListObjGetElementsM(interp, objv[objc-2], &i,
+	if (TclListObjGetElements(interp, objv[objc-2], &i,
 		&mapElemv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3586,7 +3586,7 @@ TclNRSwitchObjCmd(
 	Tcl_Size listc;
 
 	blist = objv[0];
-	if (TclListObjLengthM(interp, objv[0], &listc) != TCL_OK) {
+	if (TclListObjLength(interp, objv[0], &listc) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3599,7 +3599,7 @@ TclNRSwitchObjCmd(
 		    "?-option ...? string {?pattern body ...? ?default body?}");
 	    return TCL_ERROR;
 	}
-	if (TclListObjGetElementsM(interp, objv[0], &listc, &listv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objv[0], &listc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	objc = listc;
@@ -3979,7 +3979,7 @@ Tcl_ThrowObjCmd(
      * The type must be a list of at least length 1.
      */
 
-    if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 	return TCL_ERROR;
     } else if (len < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4770,7 +4770,7 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 	    code = 1;
-	    if (TclListObjLengthM(NULL, objv[i+1], &dummy) != TCL_OK) {
+	    if (TclListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
 			TclGetString(objv[i+1])));
@@ -4782,7 +4782,7 @@ TclNRTryObjCmd(
 	    info[2] = objv[i+1];
 
 	commonHandler:
-	    if (TclListObjLengthM(interp, objv[i+2], &dummy) != TCL_OK) {
+	    if (TclListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
@@ -4932,12 +4932,12 @@ TryPostBody(
 	int found = 0;
 	Tcl_Obj **handlers, **info;
 
-	TclListObjGetElementsM(NULL, handlersObj, &numHandlers, &handlers);
+	TclListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *handlerBodyObj;
 	    Tcl_Size numElems = 0;
 
-	    TclListObjGetElementsM(NULL, handlers[i], &numElems, &info);
+	    TclListObjGetElements(NULL, handlers[i], &numElems, &info);
 	    if (!found) {
 		Tcl_GetIntFromObj(NULL, info[1], &code);
 		if (code != result) {
@@ -4958,8 +4958,8 @@ TryPostBody(
 		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
 		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
 		    Tcl_DecrRefCount(errorCodeName);
-		    TclListObjGetElementsM(NULL, info[2], &len1, &bits1);
-		    if (TclListObjGetElementsM(NULL, errcode, &len2,
+		    TclListObjGetElements(NULL, info[2], &len1, &bits1);
+		    if (TclListObjGetElements(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
 			continue;
 		    }
@@ -4999,7 +4999,7 @@ TryPostBody(
 
 	    Tcl_ResetResult(interp);
 	    result = TCL_ERROR;
-	    TclListObjLengthM(NULL, info[3], &numElems);
+	    TclListObjLength(NULL, info[3], &numElems);
 	    if (numElems> 0) {
 		Tcl_Obj *varName;
 

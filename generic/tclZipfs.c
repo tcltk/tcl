@@ -3383,7 +3383,7 @@ ZipFSMkZipOrImg(
 	}
     }
     Tcl_IncrRefCount(list);
-    if (TclListObjLengthM(interp, list, &lobjc) != TCL_OK) {
+    if (TclListObjLength(interp, list, &lobjc) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
@@ -3399,7 +3399,7 @@ ZipFSMkZipOrImg(
 	ZIPFS_ERROR_CODE(interp, "EMPTY");
 	return TCL_ERROR;
     }
-    if (TclListObjGetElementsM(interp, list, &lobjc, &lobjv) != TCL_OK) {
+    if (TclListObjGetElements(interp, list, &lobjc, &lobjv) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
