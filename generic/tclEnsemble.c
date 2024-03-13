@@ -234,7 +234,7 @@ TclNamespaceEnsembleCmd(
 		cxtPtr = nsPtr;
 		continue;
 	    case CRT_SUBCMDS:
-		if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -243,7 +243,7 @@ TclNamespaceEnsembleCmd(
 		subcmdObj = (len > 0 ? objv[1] : NULL);
 		continue;
 	    case CRT_PARAM:
-		if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -273,7 +273,7 @@ TclNamespaceEnsembleCmd(
 		    Tcl_Obj **listv;
 		    const char *cmd;
 
-		    if (TclListObjGetElementsM(interp, listObj, &len,
+		    if (TclListObjGetElements(interp, listObj, &len,
 			    &listv) != TCL_OK) {
 			Tcl_DictObjDone(&search);
 			if (patchedDict) {
@@ -339,7 +339,7 @@ TclNamespaceEnsembleCmd(
 		continue;
 	    }
 	    case CRT_UNKNOWN:
-		if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -535,13 +535,13 @@ TclNamespaceEnsembleCmd(
 		}
 		switch ((enum EnsConfigOpts) index) {
 		case CONF_SUBCMDS:
-		    if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    subcmdObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_PARAM:
-		    if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    paramObj = (len > 0 ? objv[1] : NULL);
@@ -563,7 +563,7 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjLengthM(interp, listObj, &len
+			if (TclListObjLength(interp, listObj, &len
 				) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
@@ -583,7 +583,7 @@ TclNamespaceEnsembleCmd(
 			    }
 			    goto freeMapAndError;
 			}
-			if (TclListObjGetElementsM(interp, listObj, &len,
+			if (TclListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
@@ -633,7 +633,7 @@ TclNamespaceEnsembleCmd(
 		    }
 		    continue;
 		case CONF_UNKNOWN:
-		    if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    unknownObj = (len > 0 ? objv[1] : NULL);
@@ -802,7 +802,7 @@ Tcl_SetEnsembleSubcommandList(
     if (subcmdList != NULL) {
 	Tcl_Size length;
 
-	if (TclListObjLengthM(interp, subcmdList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -878,7 +878,7 @@ Tcl_SetEnsembleParameterList(
     if (paramList == NULL) {
 	length = 0;
     } else {
-	if (TclListObjLengthM(interp, paramList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, paramList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1054,7 +1054,7 @@ Tcl_SetEnsembleUnknownHandler(
     if (unknownList != NULL) {
 	Tcl_Size length;
 
-	if (TclListObjLengthM(interp, unknownList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1898,7 +1898,7 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj **copyObjv;
 	Tcl_Size copyObjc, prefixObjc;
 
-	TclListObjLengthM(NULL, prefixObj, &prefixObjc);
+	TclListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
 	    copyPtr = TclListObjCopy(NULL, prefixObj);
@@ -1932,7 +1932,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	TclListObjGetElementsM(NULL, copyPtr, &copyObjc, &copyObjv);
+	TclListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
@@ -2308,7 +2308,7 @@ EnsembleUnknownCallback(
     for (i = 1 ; i < objc ; i++) {
 	Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
     }
-    TclListObjGetElementsM(NULL, unknownCmd, &paramc, &paramv);
+    TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
     Tcl_IncrRefCount(unknownCmd);
 
     /*
@@ -2345,7 +2345,7 @@ EnsembleUnknownCallback(
 
 	/* A non-empty list is the replacement command. */
 
-	if (TclListObjLengthM(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
+	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
 	    Tcl_AddErrorInfo(interp, "\n    while parsing result of "
 		    "ensemble unknown subcommand handler");
@@ -2602,7 +2602,7 @@ BuildEnsembleConfig(
          * Determine the target for each.
          */
 
-        TclListObjGetElementsM(NULL, subList, &subc, &subv);
+        TclListObjGetElements(NULL, subList, &subc, &subv);
         if (subList == mapDict) {
             /*
              * Unusual case where explicit list of subcommands is same value
@@ -3000,7 +3000,7 @@ TclCompileEnsemble(
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
-	if (TclListObjGetElementsM(NULL, listObj, &len, &elems) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto tryCompileToInv;
 	}
 	for (i=0 ; i<len ; i++) {
@@ -3120,7 +3120,7 @@ TclCompileEnsemble(
 
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
-    if (TclListObjGetElementsM(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+    if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto tryCompileToInv;
     } else if (len != 1) {
 	/*
@@ -3404,7 +3404,7 @@ CompileToInvokedCommand(
      * difference. Hence the call to TclContinuationsEnterDerived...
      */
 
-    TclListObjGetElementsM(NULL, replacements, &numWords, &words);
+    TclListObjGetElements(NULL, replacements, &numWords, &words);
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i <= numWords) {

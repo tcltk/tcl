@@ -443,7 +443,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -455,7 +455,7 @@ TraceExecutionObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -616,7 +616,7 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
+	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -690,7 +690,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -702,7 +702,7 @@ TraceCommandObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -816,7 +816,7 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
+	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -894,7 +894,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -906,7 +906,7 @@ TraceVariableObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
