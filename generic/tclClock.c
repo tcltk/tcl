@@ -133,43 +133,28 @@ struct ClockCommand {
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
-    void *clientData;		/* Any clientData to give the command (if NULL
+    void *clientData;	/* Any clientData to give the command (if NULL
     				 * a reference to ClockClientData will be sent) */
-    int compFlags;		/* Command compile flags */
 };
 
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL,
-	CMD_COMPILE_TO_INVOKED},
-    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL,
-	0},
-    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
-	CMD_COMPILE_TO_INVOKED},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
-	0},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd,INT2PTR(1),
-	0},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2),
-	0},
-    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL,
-	CMD_COMPILE_TO_INVOKED},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3),
-	0},
-    {"configure",	ClockConfigureObjCmd,			NULL, NULL,
-	CMD_COMPILE_TO_INVOKED},
-    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL,
-	0},
-    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL,
-	0},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
+    {"configure",	ClockConfigureObjCmd,			NULL, NULL},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
+    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
     {"GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL,
-	0},
+		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
     {"GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL,
-	0},
-    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL,
-	0},
-    {NULL, NULL, NULL, NULL, 0}
+		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
+    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {NULL, NULL, NULL, NULL}
 };
 
 /*
@@ -281,7 +266,6 @@ TclClockInit(
 		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
-	cmdPtr->flags |= clockCmdPtr->compFlags;
     }
 }
 
@@ -983,13 +967,15 @@ ClockConfigureObjCmd(
 	"-clear",
 	"-year-century",  "-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
+	"-init-complete",
 	NULL
     };
     enum optionInd {
 	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
 	CLOCK_CLEAR_CACHE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
-	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE
+	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
+	CLOCK_INIT_COMPLETE
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -1152,6 +1138,27 @@ ClockConfigureObjCmd(
 	break;
 	case CLOCK_CLEAR_CACHE:
 	    ClockConfigureClear(dataPtr);
+	break;
+	case CLOCK_INIT_COMPLETE: 
+	    {
+		/* 
+		 * Init completed.
+		 * Compile clock ensemble (performance purposes).
+		 */
+		Tcl_Command token = Tcl_FindCommand(interp, "::clock", 
+		    NULL, TCL_GLOBAL_ONLY);
+		if (!token) {
+		    return TCL_ERROR;
+		}
+		int ensFlags = 0;
+		if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		ensFlags |= ENSEMBLE_COMPILE;
+		if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
 	break;
 	}
     }
@@ -3157,7 +3164,7 @@ ClockClicksObjCmd(
 	}
 	break;
     default:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-switch?");
+	Tcl_WrongNumArgs(interp, 0, objv, "clock clicks ?-switch?");
 	return TCL_ERROR;
     }
 
@@ -3211,7 +3218,7 @@ ClockMillisecondsObjCmd(
     Tcl_Obj *timeObj;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, objv, "clock milliseconds");
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
@@ -3247,7 +3254,7 @@ ClockMicrosecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, objv, "clock microseconds");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
@@ -3545,7 +3552,7 @@ ClockFormatObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
 
-    static const char *syntax = "clockval|-now "
+    static const char *syntax = "clock format clockval|-now "
 	"?-format string? "
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
@@ -3555,7 +3562,7 @@ ClockFormatObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, syntax);
+	Tcl_WrongNumArgs(interp, 0, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3620,7 +3627,7 @@ ClockScanObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "string "
+    static const char *syntax = "clock scan string "
 	    "?-base seconds? "
 	    "?-format string? "
 	    "?-gmt boolean? "
@@ -3632,7 +3639,7 @@ ClockScanObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, syntax);
+	Tcl_WrongNumArgs(interp, 0, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -4365,7 +4372,7 @@ ClockAddObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clockval|-now ?number units?..."
+    static const char *syntax = "clock add clockval|-now ?number units?..."
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -4392,7 +4399,7 @@ ClockAddObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, syntax);
+	Tcl_WrongNumArgs(interp, 0, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -4405,7 +4412,7 @@ ClockAddObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
-	    CLC_ADD_ARGS, syntax);
+	    CLC_ADD_ARGS, "-gmt, -locale, or -timezone");
     if (ret != TCL_OK) {
 	goto done;
     }
@@ -4551,7 +4558,7 @@ ClockSecondsObjCmd(
     Tcl_Obj *timeObj;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	Tcl_WrongNumArgs(interp, 0, objv, "clock seconds");
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);

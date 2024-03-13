@@ -1850,8 +1850,6 @@ typedef struct Command {
  * CMD_COMPILES_EXPANDED -	If 1 this command has a compiler that
  *				can handle expansion (provided it is not the
  *				first word).
- * CMD_COMPILE_TO_INVOKED -	If 1 this command prefers a compilation with
- *				INST_INVOKE_REPLACE (in ensemble only).
  * TCL_TRACE_RENAME -		A rename trace is in progress. Further
  *				recursive renames will not be traced.
  * TCL_TRACE_DELETE -		A delete trace is in progress. Further
@@ -1866,7 +1864,6 @@ typedef struct Command {
 #define CMD_REDEF_IN_PROGRESS	    0x10
 #define CMD_VIA_RESOLVER	    0x20
 #define CMD_DEAD                    0x40
-#define CMD_COMPILE_TO_INVOKED      0x80
 
 
 /*
