@@ -37086,60 +37086,68 @@ test clock-46.6 {freescan: regression test - bad time} -constraints valid_off \
 	     [clock scan "13:00 pm" -base 0 -gmt 1]
     } -result {-1 -1}
 
+proc _invalid_test {args} {
+    global valid_mode
+    # ensure validation works TZ independently, since the conversion
+    # of local time to UTC may adjust date/time tokens, depending on TZ:
+    set res {}
+    foreach tz {:GMT :CET {} :Europe/Berlin :localtime} {
+	foreach {v} $args {
+	    if {$valid_mode} { # globally -valid 1
+		lappend res [catch {clock scan $v -timezone $tz} msg] $msg
+	    } else {
+		lappend res [catch {clock scan $v -valid 1 -timezone $tz} msg] $msg
+	    }
+	}
+    }
+    set res
+}
 # test without and with relative offsets:
 foreach {idx relstr} {"" "" "+rel" "+ 15 month + 40 days + 30 hours + 80 minutes +9999 seconds"} {
 test clock-46.10$idx {freescan: validation rules: invalid time} \
     -body {
 	# 13:00 am/pm are invalid input strings...
-	list [catch {clock scan "13:00 am$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "13:00 pm$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+	_invalid_test "13:00 am$relstr" "13:00 pm$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time (hour)}]
 test clock-46.11$idx {freescan: validation rules: invalid time} \
     -body {
 	# invalid minutes in input strings...
-	list [catch {clock scan "23:70$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "11:80 pm$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time (minutes)} 1 {unable to convert input string: invalid time (minutes)}}
+	_invalid_test "23:70$relstr" "11:80 pm$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time (minutes)}]
 test clock-46.12$idx {freescan: validation rules: invalid time} \
     -body {
 	# invalid seconds in input strings...
-	list [catch {clock scan "23:00:70$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "11:00:80 pm$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time}}
+	_invalid_test "23:00:70$relstr" "11:00:80 pm$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time}]
 test clock-46.13$idx {freescan: validation rules: invalid day} \
     -body {
-	list [catch {clock scan "29 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "30 Feb 2016$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+	_invalid_test "29 Feb 2017$relstr" "30 Feb 2016$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.14$idx {freescan: validation rules: invalid day} \
     -body {
-	list [catch {clock scan "0 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "00 Feb 2017$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+	_invalid_test "0 Feb 2017$relstr" "00 Feb 2017$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.15$idx {freescan: validation rules: invalid month} \
     -body {
-	list [catch {clock scan "13/13/2017$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "00/00/2017$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid month} 1 {unable to convert input string: invalid month}}
+	_invalid_test "13/13/2017$relstr" "00/00/2017$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid month}]
 test clock-46.16$idx {freescan: validation rules: invalid day of week} \
     -body {
-	list [catch {clock scan "Sat Jan 01 00:00:00 1970$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "Thu Jan 03 00:00:00 1970$relstr" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day of week} 1 {unable to convert input string: invalid day of week}}
+	_invalid_test "Sat Jan 02 00:00:00 1970$relstr" "Thu Jan 04 00:00:00 1970$relstr"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid day of week}]
 test clock-46.17$idx {scan: validation rules: invalid year} -setup {
 	set orgcfg [list -min-year [clock configure -min-year] -max-year [clock configure -max-year] \
 	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
 	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
-	list [catch {clock scan "70-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "1870-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "9570-01-01$relstr" -valid 1 -gmt 1} msg] $msg \
-    } -result [lrepeat 3 1 {unable to convert input string: invalid year}] -cleanup {
+	_invalid_test "70-01-01$relstr" "1870-01-01$relstr" "9570-01-01$relstr"
+    } -result [lrepeat 15 1 {unable to convert input string: invalid year}] -cleanup {
 	clock configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
 
 }; # foreach
+rename _invalid_test {}
 unset -nocomplain idx relstr
 
 set dst_hole_check {
@@ -37204,60 +37212,66 @@ test clock-46.19-4 {scan: validation rules regression: all scans successful, if 
     } -result [lrepeat 4 {*}[if {$valid_mode} {list 0 1 1 0 0 0} else {list 0 0 0 0 0 0}]]
 unset -nocomplain dst_hole_check
 
+proc _invalid_test {args} {
+    global valid_mode
+    # ensure validation works TZ independently, since the conversion
+    # of local time to UTC may adjust date/time tokens, depending on TZ:
+    set res {}
+    foreach tz {:GMT :CET {} :Europe/Berlin :localtime} {
+	foreach {v fmt} $args {
+	    if {$valid_mode} { # globally -valid 1
+		lappend res [catch {clock scan $v -format $fmt -timezone $tz} msg] $msg
+	    } else {
+		lappend res [catch {clock scan $v -format $fmt -valid 1 -timezone $tz} msg] $msg
+	    }
+	    
+	}
+    }
+    set res
+}
 test clock-46.20 {scan: validation rules: invalid time} \
     -body {
 	# 13:00 am/pm are invalid input strings...
-	list [catch {clock scan "13:00 am" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "13:00 pm" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+	_invalid_test "13:00 am" "%H:%M %p" "13:00 pm" "%H:%M %p"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time (hour)}]
 test clock-46.21 {scan: validation rules: invalid time} \
     -body {
 	# invalid minutes in input strings...
-	list [catch {clock scan "23:70" -format "%H:%M" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "11:80 pm" -format "%H:%M %p" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time (minutes)} 1 {unable to convert input string: invalid time (minutes)}}
+	_invalid_test "23:70" "%H:%M" "11:80 pm" "%H:%M %p"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time (minutes)}]
 test clock-46.22 {scan: validation rules: invalid time} \
     -body {
 	# invalid seconds in input strings...
-	list [catch {clock scan "23:00:70" -format "%H:%M:%S" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "11:00:80 pm" -format "%H:%M:%S %p" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time}}
+	_invalid_test "23:00:70" "%H:%M:%S" "11:00:80 pm" "%H:%M:%S %p"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid time}]
 test clock-46.23 {scan: validation rules: invalid day} \
     -body {
-	list [catch {clock scan "29 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "30 Feb 2016" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+	_invalid_test "29 Feb 2017" "%d %b %Y" "30 Feb 2016" "%d %b %Y"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.24 {scan: validation rules: invalid day} \
     -body {
-	list [catch {clock scan "0 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "00 Feb 2017" -format "%d %b %Y" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day} 1 {unable to convert input string: invalid day}}
+	_invalid_test "0 Feb 2017" "%d %b %Y" "00 Feb 2017" "%d %b %Y"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.25 {scan: validation rules: invalid month} \
     -body {
-	list [catch {clock scan "13/13/2017" -format "%m/%d/%Y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "00/00/2017" -format "%m/%d/%Y" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid month} 1 {unable to convert input string: invalid month}}
+	_invalid_test "13/13/2017" "%m/%d/%Y" "00/01/2017" "%m/%d/%Y"
+    } -result [lrepeat 10 1 {unable to convert input string: invalid month}]
 test clock-46.26 {scan: validation rules: ambiguous day} \
     -body {
-	list [catch {clock scan "1970-01-01--002" -format "%Y-%m-%d--%j" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "70-01-01--002" -format "%y-%m-%d--%j" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: ambiguous day} 1 {unable to convert input string: ambiguous day}}
+	_invalid_test "1970-01-02--004" "%Y-%m-%d--%j" "70-01-02--004" "%y-%m-%d--%j"
+    } -result [lrepeat 10 1 {unable to convert input string: ambiguous day}]
 test clock-46.27 {scan: validation rules: ambiguous year} \
     -body {
-	list [catch {clock scan "19700101 00W014" -format "%Y%m%d %gW%V%u" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "1970001 00W014" -format "%Y%j %gW%V%u" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: ambiguous year} 1 {unable to convert input string: ambiguous year}}
+	_invalid_test "19700106 00W014" "%Y%m%d %gW%V%u" "1970006 00W014" "%Y%j %gW%V%u"
+    } -result [lrepeat 10 1 {unable to convert input string: ambiguous year}]
 test clock-46.28 {scan: validation rules: invalid day of week} \
     -body {
-	list [catch {clock scan "Sat Jan 01 00:00:00 1970" -format "%a %b %d %H:%M:%S %Y" -valid 1 -gmt 1} msg] $msg
-    } -result {1 {unable to convert input string: invalid day of week}}
+	_invalid_test "Sat Jan 02 00:00:00 1970" "%a %b %d %H:%M:%S %Y"
+    } -result [lrepeat 5 1 {unable to convert input string: invalid day of week}]
 test clock-46.29-1 {scan: validation rules: invalid day of year} \
     -body {
-	list [catch {clock scan "000-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "366-2017" -format "%j-%Y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "000-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "366-2017" -format "%j-%G" -valid 1 -gmt 1} msg] $msg
-    } -result [lrepeat 4 1 {unable to convert input string: invalid day of year}]
+	_invalid_test "000-2017" "%j-%Y" "366-2017" "%j-%Y" "000-2017" "%j-%G" "366-2017" "%j-%G"
+    } -result [lrepeat 20 1 {unable to convert input string: invalid day of year}]
 test clock-46.29-2 {scan: validation rules: valid day of leap/not leap year} \
     -body {
 	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
@@ -37270,10 +37284,8 @@ test clock-46.30 {scan: validation rules: invalid year} -setup {
 	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
 	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
-	list [catch {clock scan "01-01-70" -format "%d-%m-%y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "01-01-1870" -format "%d-%m-%C%y" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "01-01-1970" -format "%d-%m-%Y" -valid 1 -gmt 1} msg] $msg \
-    } -result [lrepeat 3 1 {unable to convert input string: invalid year}] -cleanup {
+	_invalid_test "01-01-70" "%d-%m-%y" "01-01-1870" "%d-%m-%C%y" "01-01-1970" "%d-%m-%Y"
+    } -result [lrepeat 15 1 {unable to convert input string: invalid year}] -cleanup {
 	clock configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
@@ -37282,13 +37294,12 @@ test clock-46.31 {scan: validation rules: invalid iso year} -setup {
 	     -year-century [clock configure -year-century] -century-switch [clock configure -century-switch]]
 	clock configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
-	list [catch {clock scan "01-01-70" -format "%d-%m-%g" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "01-01-9870" -format "%d-%m-%C%g" -valid 1 -gmt 1} msg] $msg \
-	     [catch {clock scan "01-01-9870" -format "%d-%m-%G" -valid 1 -gmt 1} msg] $msg \
-    } -result [lrepeat 3 1 {unable to convert input string: invalid iso year}] -cleanup {
+	_invalid_test "01-01-70" "%d-%m-%g" "01-01-9870" "%d-%m-%C%g" "01-01-9870" "%d-%m-%G"
+    } -result [lrepeat 15 1 {unable to convert input string: invalid iso year}] -cleanup {
 	clock configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
+rename _invalid_test {}
 
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012
