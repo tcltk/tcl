@@ -18936,7 +18936,22 @@ test clock-7.8 {Julian Day, precedence below seconds} {
 test clock-7.9 {Julian Day, two values} {
     clock scan {2440588 2440589} -format {%J %J} -gmt true
 } 86400
-test clock-7.10 {Calendar vs Astronomical Julian Day (without and with time fraction)} {
+
+test clock-7.10 {Julian Day, negative amount} {
+    # Note: %J does not accept negative input;
+    # add negative amounts to Julian day 0 instead
+    set s0 [clock scan 0 -format %J -gmt true]
+    set J0 [scan [clock format $s0 -format %J -gmt true] %lld]
+    set s0m1d [clock add $s0 -1 days -timezone :UTC]
+    set s0m24h [clock add $s0 -24 hours -timezone :UTC]
+    set J0m24h [scan [clock format $s0m24h -format %J -gmt true] %lld]
+    set s0m1s [clock add $s0 -1 seconds -timezone :UTC]
+    set J0m1s [scan [clock format $s0m1s -format %J -gmt true] %lld]
+    list $s0m1d $s0m24h $J0m24h $s0m1s $J0m1s $s0 $J0 \
+	[::tcl::mathop::== $s0m1d $s0m24h] [::tcl::mathop::== $J0m24h $J0m1s]
+} [list -210866889600 -210866889600 -1 -210866803201 -1 -210866803200 0 1 1]
+
+test clock-7.11.1 {Calendar vs Astronomical Julian Day (without and with time fraction)} {
     list \
 	[clock scan {2440588}   -format {%J}  -gmt true] \
 	[clock scan {2440588}   -format {%EJ} -gmt true] \
@@ -18945,8 +18960,7 @@ test clock-7.10 {Calendar vs Astronomical Julian Day (without and with time frac
 	[clock scan {2440588.5} -format {%Ej} -gmt true] \
 } {0 0 43200 43200 86400}
 
-
-test clock-7.11 {Astronomical JDN/JD} {
+test clock-7.11.2 {Astronomical JDN/JD} {
     clock scan 0 -format %Ej -gmt true
 } -210866760000
 
@@ -19021,20 +19035,6 @@ test clock-7.20 {all JDN/JD are signed (and extended accept floats)} {
     }
     set res
 } {-210866889600 -210866889600 -210866846400 -210866846400 -210866803200}
-
-test clock-7.10 {Julian Day, negative amount} {
-    # Note: %J does not accept negative input;
-    # add negative amounts to Julian day 0 instead
-    set s0 [clock scan 0 -format %J -gmt true]
-    set J0 [scan [clock format $s0 -format %J -gmt true] %lld]
-    set s0m1d [clock add $s0 -1 days -timezone :UTC]
-    set s0m24h [clock add $s0 -24 hours -timezone :UTC]
-    set J0m24h [scan [clock format $s0m24h -format %J -gmt true] %lld]
-    set s0m1s [clock add $s0 -1 seconds -timezone :UTC]
-    set J0m1s [scan [clock format $s0m1s -format %J -gmt true] %lld]
-    list $s0m1d $s0m24h $J0m24h $s0m1s $J0m1s $s0 $J0 \
-	[::tcl::mathop::== $s0m1d $s0m24h] [::tcl::mathop::== $J0m24h $J0m1s]
-} [list -210866889600 -210866889600 -1 -210866803201 -1 -210866803200 0 1 1]
 
 # BEGIN testcases8
 
@@ -36611,13 +36611,6 @@ test clock-34.52 {more than one ordinal month} {*}{
     -returnCodes error
     -result {unable to convert date-time string "next January next March": more than one ordinal month in string}
 }
-
-test clock-34.53.1 {relative from base, date switch} {
-    set base [clock scan "12/31/2016 23:59:59" -gmt 1]
-    clock format [clock scan "+1 second" \
-       -base $base -gmt 1] -gmt 1 -format {%Y-%m-%d %H:%M:%S}
-} {2017-01-01 00:00:00}
-
 test clock-34.53 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023T00:00:00"]
     clock format $time -format {%b %d, %Y %H:%M:%S}
@@ -36682,7 +36675,13 @@ test clock-34.68 {clock scan tests (merid and TZ)} {
     set time [clock scan "10:59 pm +0100" -base 2000000 -gmt true]
     clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
 } {Jan 24,1970 21:59:00 GMT}
-test clock-34.53.2 {relative time, daylight switch} {
+
+test clock-34.69.1 {relative from base, date switch} {
+    set base [clock scan "12/31/2016 23:59:59" -gmt 1]
+    clock format [clock scan "+1 second" \
+       -base $base -gmt 1] -gmt 1 -format {%Y-%m-%d %H:%M:%S}
+} {2017-01-01 00:00:00}
+test clock-34.69.2 {relative time, daylight switch} {
     set base [clock scan "03/27/2016" -timezone CET]
     set res {}
     lappend res [clock format [clock scan "+1 hour" \
@@ -36691,7 +36690,7 @@ test clock-34.53.2 {relative time, daylight switch} {
        -base $base -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
-test clock-34.53.3 {relative time with day increment / daylight switch} {
+test clock-34.69.3 {relative time with day increment / daylight switch} {
     set base [clock scan "03/27/2016" -timezone CET]
     set res {}
     lappend res [clock format [clock scan "+5 day +25 hour" \
@@ -36700,7 +36699,7 @@ test clock-34.53.3 {relative time with day increment / daylight switch} {
        -base [expr {$base - 6*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
-test clock-34.53.4 {relative time with month & day increment / daylight switch} {
+test clock-34.69.4 {relative time with month & day increment / daylight switch} {
     set base [clock scan "03/27/2016" -timezone CET]
     set res {}
     lappend res [clock format [clock scan "next Mar +5 day +25 hour" \
@@ -36709,7 +36708,7 @@ test clock-34.53.4 {relative time with month & day increment / daylight switch} 
        -base [expr {$base - 35*24*60*60}] -timezone CET] -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]
 } {{2016-03-27 01:00:00 CET} {2016-03-27 03:00:00 CEST}}
 
-test clock-34.54.1 {check date in DST-hole: daylight switch CET -> CEST} {
+test clock-34.70.1 {check date in DST-hole: daylight switch CET -> CEST} {
     set res {}
     # forwards
     set base 1459033200
@@ -36737,7 +36736,7 @@ test clock-34.54.1 {check date in DST-hole: daylight switch CET -> CEST} {
 1459033200 = 2016-03-27 00:00:00 CET
 } {}] \n]
 
-test clock-34.54.2 {check date in DST-hole: daylight switch CEST -> CET} {
+test clock-34.70.2 {check date in DST-hole: daylight switch CEST -> CET} {
     set res {}
     # forwards
     set base 1477782000
