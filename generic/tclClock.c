@@ -3684,6 +3684,20 @@ ClockScanObjCmd(
 	goto done;
     }
 
+    /*
+     * If no GMT and not free-scan (where valid stage 1 is done in-between),
+     * validate with stage 1 before local time conversion, otherwise it may
+     * adjust date/time tokens to valid values
+     */
+    if ( (opts.flags & CLF_VALIDATE_S1) &&
+	 info->flags & (CLF_ASSEMBLE_SECONDS|CLF_LOCALSEC)
+    ) {
+	ret = ClockValidDate(&yy, &opts, CLF_VALIDATE_S1);
+	if (ret != TCL_OK) {
+	    goto done;
+	}
+    }
+
     /* Convert date info structure into UTC seconds */
 
     ret = ClockScanCommit(&yy, &opts);
@@ -3691,9 +3705,9 @@ ClockScanObjCmd(
 	goto done;
     }
 
-    /* Apply validation rules, if expected */
+    /* Apply remaining validation rules, if expected */
     if ( (opts.flags & CLF_VALIDATE) ) {
-	ret = ClockValidDate(&yy, &opts, opts.formatObj == NULL ? 2 : 3);
+	ret = ClockValidDate(&yy, &opts, opts.flags & CLF_VALIDATE);
 	if (ret != TCL_OK) {
 	    goto done;
 	}
@@ -3819,9 +3833,10 @@ ClockValidDate(
 	  yydate.tzOffset);
     #endif
 
-    if (!(stage & 1)) {
+    if (!(stage & CLF_VALIDATE_S1) || !(opts->flags & CLF_VALIDATE_S1)) {
 	goto stage_2;
     }
+    opts->flags &= ~CLF_VALIDATE_S1; /* stage 1 is done */
 
     /* first year (used later in hath / daysInPriorMonths) */
     if ((info->flags & (CLF_YEAR|CLF_ISO8601YEAR))) {
@@ -3900,9 +3915,10 @@ ClockValidDate(
 	}
     }
 
-    if (!(stage & 2)) {
+    if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
+    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
@@ -4047,7 +4063,7 @@ ClockFreeScan(
      * relative time (otherwise always valid recalculated date & time).
      */
     if ( (opts->flags & CLF_VALIDATE) ) {
-	if (ClockValidDate(info, opts, 1) != TCL_OK) {
+	if (ClockValidDate(info, opts, CLF_VALIDATE_S1) != TCL_OK) {
 	    goto done;
 	}
     }
