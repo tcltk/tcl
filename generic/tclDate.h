@@ -268,7 +268,9 @@ ClockInitDateInfo(DateInfo *info) {
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
  */
 
-#define CLF_VALIDATE	(1 << 2)
+#define CLF_VALIDATE_S1	(1 << 0)
+#define CLF_VALIDATE_S2	(1 << 1)
+#define CLF_VALIDATE	(CLF_VALIDATE_S1|CLF_VALIDATE_S2)
 #define CLF_EXTENDED	(1 << 4)
 #define CLF_STRICT	(1 << 8)
 #define CLF_LOCALE_USED (1 << 15)
