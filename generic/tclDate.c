@@ -78,8 +78,9 @@
  *	This file is generated from a yacc grammar defined in the file
  *	tclGetDate.y. It should not be edited directly.
  *
- * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1992-1995 Karl Lehenbauer & Mark Diekhans.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2015 Sergey G. Brester aka sebres.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -121,8 +122,7 @@
 
 #define TM_YEAR_BASE	1900
 
-#define HOUR(x)		((int) (60 * (x)))
-#define SECSPERDAY	(24L * 60L * 60L)
+#define HOUR(x)		((60 * (int)(x)))
 #define IsLeapYear(x)	(((x) % 4 == 0) && ((x) % 100 != 0 || (x) % 400 == 0))
 
 #define yyIncrFlags(f)				\
@@ -136,10 +136,10 @@
  * An entry in the lexical lookup table.
  */
 
-typedef struct _TABLE {
+typedef struct {
     const char *name;
     int type;
-    long long value;
+    int value;
 } TABLE;
 
 /*
@@ -322,9 +322,9 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
  */
 
 static int		LookupWord(YYSTYPE* yylvalPtr, char *buff);
- static void		TclDateerror(YYLTYPE* location,
+static void		TclDateerror(YYLTYPE* location,
 				     DateInfo* info, const char *s);
- static int		TclDatelex(YYSTYPE* yylvalPtr, YYLTYPE* location,
+static int		TclDatelex(YYSTYPE* yylvalPtr, YYLTYPE* location,
 				   DateInfo* info);
 MODULE_SCOPE int	yyparse(DateInfo*);
 
@@ -1775,7 +1775,7 @@ yyreduce:
 	    yyDay  = 1;
 	    yyMonth = 1;
 	    yyRelDay += (((yyvsp[-2].Number)%1000)*(365 + IsLeapYear(yyYear)))/1000;
-	    yyRelSeconds += (yyvsp[0].Number) * 144 * 60;
+	    yyRelSeconds += (yyvsp[0].Number) * (144LL * 60LL);
 	}
     break;
 
@@ -2164,20 +2164,6 @@ static const TABLE OtherTable[] = {
     { "last",		tUNUMBER,	-1 },
     { "this",		tSEC_UNIT,	0 },
     { "next",		tNEXT,		1 },
-#if 0
-    { "first",		tUNUMBER,	1 },
-    { "second",		tUNUMBER,	2 },
-    { "third",		tUNUMBER,	3 },
-    { "fourth",		tUNUMBER,	4 },
-    { "fifth",		tUNUMBER,	5 },
-    { "sixth",		tUNUMBER,	6 },
-    { "seventh",	tUNUMBER,	7 },
-    { "eighth",		tUNUMBER,	8 },
-    { "ninth",		tUNUMBER,	9 },
-    { "tenth",		tUNUMBER,	10 },
-    { "eleventh",	tUNUMBER,	11 },
-    { "twelfth",	tUNUMBER,	12 },
-#endif
     { "ago",		tAGO,		1 },
     { "epoch",		tEPOCH,		0 },
     { "stardate",	tSTARDATE,	0 },
@@ -2360,17 +2346,17 @@ ToSeconds(
 	if (Hours < 0 || Hours > 23) {
 	    return -1;
 	}
-	return (Hours * 60L + Minutes) * 60L + Seconds;
+	return (Hours * 60 + Minutes) * 60 + Seconds;
     case MERam:
 	if (Hours < 1 || Hours > 12) {
 	    return -1;
 	}
-	return ((Hours % 12) * 60L + Minutes) * 60L + Seconds;
+	return ((Hours % 12) * 60 + Minutes) * 60 + Seconds;
     case MERpm:
 	if (Hours < 1 || Hours > 12) {
 	    return -1;
 	}
-	return (((Hours % 12) + 12) * 60L + Minutes) * 60L + Seconds;
+	return (((Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
     }
     return -1;			/* Should never be reached */
 }
@@ -2579,7 +2565,7 @@ TclDatelex(
 	    int ret;
 	    for (p = buff; isalpha(UCHAR(c = *yyInput++)) /* INTL: ISO only. */
 		     || c == '.'; ) {
-		if (p < &buff[sizeof buff - 1]) {
+		if (p < &buff[sizeof(buff) - 1]) {
 		    *p++ = c;
 		}
 	    }
