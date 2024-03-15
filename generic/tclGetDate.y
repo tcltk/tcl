@@ -875,6 +875,11 @@ LookupWord(
     return tID;
 }
 
+/* int overflows may happens here (expected case) */
+#if defined(__GNUC__) || defined(__GNUG__)
+# pragma GCC optimize("no-trapv")
+#endif
+
 static int
 TclDatelex(
     YYSTYPE* yylvalPtr,
@@ -1012,6 +1017,10 @@ TclDatelex(
 	} while (Count > 0);
     }
 }
+
+#if defined(__GNUC__) || defined(__GNUG__)
+# pragma GCC reset_options
+#endif
 
 int
 TclClockFreeScan(
