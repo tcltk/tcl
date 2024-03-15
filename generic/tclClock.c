@@ -918,6 +918,17 @@ TimezoneLoaded(
     Tcl_Obj	*timezoneObj,	/* Name of zone was loaded */
     Tcl_Obj	*tzUnnormObj)	/* Name of zone was loaded */
 {
+    /* don't overwrite last-setup with GMT (special case) */
+    if (timezoneObj == dataPtr->literals[LIT_GMT]) {
+	/* mark GMT zone loaded */
+	if (dataPtr->gmtSetupTimeZone == NULL) {
+	    Tcl_SetObjRef(dataPtr->gmtSetupTimeZone,
+		dataPtr->literals[LIT_GMT]);
+	}
+	Tcl_SetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, tzUnnormObj);
+	return;
+    }
+
     /* last setup zone loaded */
     if (dataPtr->lastSetupTimeZone != timezoneObj) {
 	SavePrevTimezoneObj(dataPtr);
@@ -925,14 +936,6 @@ TimezoneLoaded(
 	Tcl_UnsetObjRef(dataPtr->lastSetupTZData);
     }
     Tcl_SetObjRef(dataPtr->lastSetupTimeZoneUnnorm, tzUnnormObj);
-
-    /* mark GMT zone loaded */
-    if ( dataPtr->gmtSetupTimeZone == NULL
-      && timezoneObj == dataPtr->literals[LIT_GMT]
-    ) {
-	Tcl_SetObjRef(dataPtr->gmtSetupTimeZone,
-		dataPtr->literals[LIT_GMT]);
-    }
 }
 /*
  *----------------------------------------------------------------------
