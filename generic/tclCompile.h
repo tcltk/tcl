@@ -1762,7 +1762,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TCL_DTRACE_DEBUG_LOG()
 
 MODULE_SCOPE void	TclDTraceInfo(Tcl_Obj *info, const char **args,
-			    int *argsi);
+			    Tcl_Size *argsi);
 
 #else /* USE_DTRACE */
 
@@ -1817,7 +1817,7 @@ MODULE_SCOPE void	TclDTraceInfo(Tcl_Obj *info, const char **args,
 MODULE_SCOPE int tclDTraceDebugEnabled, tclDTraceDebugIndent;
 MODULE_SCOPE FILE *tclDTraceDebugLog;
 MODULE_SCOPE void TclDTraceOpenDebugLog(void);
-MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
+MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *argsi);
 
 #define TCL_DTRACE_DEBUG_LOG() \
     int tclDTraceDebugEnabled = TCL_DTRACE_DEBUG_LOG_ENABLED;	\
