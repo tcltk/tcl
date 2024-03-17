@@ -16,17 +16,9 @@
 #
 #----------------------------------------------------------------------
 
-# msgcat 1.7 features are used. We need access to the Registry on Windows
-# systems.
+# msgcat 1.7 features are used.
 
-uplevel \#0 {
-    package require msgcat 1.7
-    if { $::tcl_platform(platform) eq {windows} } {
-	if { [catch { package require registry 1.1 }] } {
-	    namespace eval ::tcl::clock [list variable NoRegistry {}]
-	}
-    }
-}
+package require msgcat 1.7
 
 # Put the library directory into the namespace for the ensemble so that the
 # library code can find message catalogs and time zone definition files.
@@ -60,7 +52,6 @@ namespace eval ::tcl::clock {
     # Import the message catalog commands that we use.
 
     namespace import ::msgcat::mclocale
-    proc mc {args} { tailcall ::msgcat::mcn [namespace current] {*}$args }
     namespace import ::msgcat::mcpackagelocale
 
 }
@@ -923,7 +914,8 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone [configure -system-tz]
 	if { $timezone ne "" } {
 	    return $timezone
-	} elseif { $::tcl_platform(platform) eq {windows} } {
+	}
+	if { $::tcl_platform(platform) eq {windows} } {
 	    set timezone [GuessWindowsTimeZone]
 	} elseif { [file exists /etc/localtime]
 		   && ![catch {ReadZoneinfoFile \
