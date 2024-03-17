@@ -4931,7 +4931,7 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; int i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -5183,7 +5183,7 @@ TEOV_NotFound(
 				 * namespace (TIP 181). */
     Namespace *savedNsPtr = NULL;
 
-    int qualLen;
+    Tcl_Size qualLen;
     const char *qualName = TclGetStringFromObj(objv[0], &qualLen);
 
     currNsPtr = varFramePtr->nsPtr;
@@ -5817,7 +5817,7 @@ TclEvalEx(
 			 */
 
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %d)", objectsUsed));
+				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
@@ -7352,7 +7352,7 @@ Tcl_AppendObjToErrorInfo(
 				 * pertains. */
     Tcl_Obj *objPtr)		/* Message to record. */
 {
-    int length;
+    Tcl_Size length;
     const char *message = TclGetStringFromObj(objPtr, &length);
 
     Tcl_IncrRefCount(objPtr);
@@ -7503,10 +7503,10 @@ Tcl_VarEvalVA(
 	if (string == NULL) {
 	    break;
 	}
-	Tcl_DStringAppend(&buf, string, -1);
+	Tcl_DStringAppend(&buf, string, TCL_INDEX_NONE);
     }
 
-    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), TCL_INDEX_NONE, 0);
     Tcl_DStringFree(&buf);
     return result;
 }
@@ -7577,7 +7577,7 @@ Tcl_GlobalEval(
 
     savedVarFramePtr = iPtr->varFramePtr;
     iPtr->varFramePtr = iPtr->rootFramePtr;
-    result = Tcl_EvalEx(interp, command, -1, 0);
+    result = Tcl_EvalEx(interp, command, TCL_INDEX_NONE, 0);
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
@@ -8299,7 +8299,8 @@ ExprMaxMinFunc(
 {
     Tcl_Obj *res;
     double d;
-    int type, i;
+    int type;
+    int i;
     void *ptr;
 
     if (objc < 2) {
@@ -9052,7 +9053,7 @@ void
 TclDTraceInfo(
     Tcl_Obj *info,
     const char **args,
-    int *argsi)
+    Tcl_Size *argsi)
 {
     static Tcl_Obj *keys[10] = { NULL };
     Tcl_Obj **k = keys, *val;
