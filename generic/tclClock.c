@@ -942,7 +942,7 @@ TimezoneLoaded(
  *
  * ClockConfigureObjCmd --
  *
- *	This function is invoked to process the Tcl "clock configure" command.
+ *	This function is invoked to process the Tcl "::clock::configure" (internal) command.
  *
  * Usage:
  *	::tcl::clock::configure ?-option ?value??
