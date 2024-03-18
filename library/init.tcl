@@ -111,7 +111,7 @@ if {[interp issafe]} {
 
     proc clock args {
 	set cmdmap [dict create]
-	foreach cmd {add clicks format microseconds milliseconds scan seconds configure} {
+	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
