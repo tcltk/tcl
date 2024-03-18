@@ -2403,7 +2403,7 @@ ConvertUTCToLocalUsingC(
      * Convert that value to seconds.
      */
 
-    fields->localSeconds = (((fields->julianDay * (Tcl_WideInt) 24
+    fields->localSeconds = (((fields->julianDay * 24LL
 	    + timeVal->tm_hour) * 60 + timeVal->tm_min) * 60
 	    + timeVal->tm_sec) - JULIAN_SEC_POSIX_EPOCH;
 
@@ -3178,7 +3178,7 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
+	clicks = now.sec * 1000LL + now.usec / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
@@ -3787,8 +3787,8 @@ ClockScanCommit(
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS)) {
 	yydate.localSeconds =
-	    -210866803200L
-	    + ( SECONDS_PER_DAY * (Tcl_WideInt)yydate.julianDay )
+	    -210866803200LL
+	    + ( SECONDS_PER_DAY * yydate.julianDay )
 	    + ( yySecondOfDay % SECONDS_PER_DAY );
     }
 
