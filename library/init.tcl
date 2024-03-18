@@ -117,7 +117,7 @@ if {[interp issafe]} {
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
 	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
 	    -map $cmdmap]
-	::tcl::clock::configure -init-complete
+	::tcl::unsupported::clock::configure -init-complete
 
 	# Auto-loading stubs for 'clock.tcl'
 

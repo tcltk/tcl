@@ -280,9 +280,9 @@ proc ::tcl::clock::Initialize {} {
 
     # Default configuration
 
-    configure -current-locale  [mclocale]
-    #configure -default-locale  C
-    #configure -year-century    2000 \
+    ::tcl::unsupported::clock::configure -current-locale  [mclocale]
+    #::tcl::unsupported::clock::configure -default-locale  C
+    #::tcl::unsupported::clock::configure -year-century    2000 \
     #          -century-switch  38
 
     # Translation table to map Windows TZI onto cities, so that the Olson
@@ -911,7 +911,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     } else {
 	# ask engine for the cached timezone:
-	set timezone [configure -system-tz]
+	set timezone [::tcl::unsupported::clock::configure -system-tz]
 	if { $timezone ne "" } {
 	    return $timezone
 	}
@@ -934,7 +934,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
     }
 
     # tell backend - current system timezone:
-    configure -system-tz $timezone
+    ::tcl::unsupported::clock::configure -system-tz $timezone
 
     return $timezone
 }
@@ -1037,7 +1037,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		    set tzname [::tcl::clock::SetupTimeZone $tzname $timezone]
 		    set TZData($timezone) $TZData($tzname)
 		    # tell backend - timezone is initialized and return shared timezone object:
-		    return [configure -setup-tz $timezone]
+		    return [::tcl::unsupported::clock::configure -setup-tz $timezone]
 		}
 
 		dict unset opts -errorinfo
@@ -1049,7 +1049,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
     }
 
     # tell backend - timezone is initialized and return shared timezone object:
-    configure -setup-tz $timezone
+    ::tcl::unsupported::clock::configure -setup-tz $timezone
 }
 
 #----------------------------------------------------------------------
@@ -2045,7 +2045,7 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::ChangeCurrentLocale {args} {
-    configure -current-locale [lindex $args 0]
+    ::tcl::unsupported::clock::configure -current-locale [lindex $args 0]
 }
 
 #----------------------------------------------------------------------
@@ -2071,7 +2071,7 @@ proc ::tcl::clock::ClearCaches {} {
     variable TimeZoneBad
 
     # tell backend - should invalidate:
-    configure -clear
+    ::tcl::unsupported::clock::configure -clear
 
     # clear msgcat cache:
     set mcMergedCat [dict create]
