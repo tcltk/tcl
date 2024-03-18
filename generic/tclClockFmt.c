@@ -231,9 +231,9 @@ _witoaw(
     if (val >= 0)
     {
 	/* check resp. recalculate width */
-	if (val >= 10000000000L) {
+	if (val >= 10000000000LL) {
 	    Tcl_WideInt val2;
-	    val2 = val / 10000000000L;
+	    val2 = val / 10000000000LL;
 	    while (width <= 9 && val2 >= wrange[width]) {
 		width++;
 	    }
@@ -263,9 +263,9 @@ _witoaw(
     if (!width) width++;
     /* check resp. recalculate width (regarding sign) */
     width--;
-    if (val <= -10000000000L) {
+    if (val <= -10000000000LL) {
 	Tcl_WideInt val2;
-	val2 = val / 10000000000L;
+	val2 = val / 10000000000LL;
 	while (width <= 9 && val2 <= -wrange[width]) {
 	    width++;
 	}
@@ -1663,7 +1663,7 @@ done:
     yydate.julianDay = intJD;
 
     yydate.seconds =
-	-210866803200L
+	-210866803200LL
 	+ ( SECONDS_PER_DAY * intJD )
 	+ ( fractJD );
 
@@ -1823,7 +1823,7 @@ ClockScnToken_StarDate_Proc(TCL_UNUSED(ClockFmtScnCmdArgs *),
     GetJulianDayFromEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
 
     yydate.localSeconds =
-	-210866803200L
+	-210866803200LL
 	+ ( SECONDS_PER_DAY * yydate.julianDay )
 	+ ( SECONDS_PER_DAY * fractDay / fractDayDiv );
 
