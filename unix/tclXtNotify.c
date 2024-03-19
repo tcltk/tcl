@@ -91,7 +91,7 @@ static int		WaitForEvent(const Tcl_Time * timePtr);
  * Functions defined in this file for use by users of the Xt Notifier:
  */
 
-MODULE_SCOPE void InitNotifier(void);
+MODULE_SCOPE void	InitNotifier(void);
 MODULE_SCOPE XtAppContext TclSetAppContext(XtAppContext ctx);
 
 /*

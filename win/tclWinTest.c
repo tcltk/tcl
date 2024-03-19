@@ -476,8 +476,8 @@ TestplatformChmod(
     }
 
     /* Get process SID */
-    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
-	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw)
+	    && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
     pTokenUser = (TOKEN_USER *)ckalloc(dw);
@@ -486,9 +486,8 @@ TestplatformChmod(
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
     aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
-    if (!CopySid(aceEntry[nSids].sidLen,
-		 aceEntry[nSids].pSid,
-		 pTokenUser->User.Sid)) {
+    if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+	    pTokenUser->User.Sid)) {
 	ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }
