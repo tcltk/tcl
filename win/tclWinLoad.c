@@ -114,7 +114,7 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND) {
+		firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
         } else {
             lastError = firstError;

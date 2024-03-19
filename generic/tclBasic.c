@@ -300,11 +300,15 @@ typedef struct {
  * The built-in commands, and the functions that implement them:
  */
 
-int procObjCmd(void *clientData, Tcl_Interp *interp,
-    int objc, Tcl_Obj *const objv[]) {
+static int
+procObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
     return Tcl_ProcObjCmd(clientData, interp, objc, objv);
 }
-
 
 static const CmdInfo builtInCmds[] = {
     /*
@@ -2689,7 +2693,9 @@ typedef struct {
 } CmdWrapperInfo;
 
 
-static int cmdWrapperProc(void *clientData,
+static int
+cmdWrapperProc(
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj * const *objv)
@@ -2701,7 +2707,10 @@ static int cmdWrapperProc(void *clientData,
     return info->proc(info->clientData, interp, objc, objv);
 }
 
-static void cmdWrapperDeleteProc(void *clientData) {
+static void
+cmdWrapperDeleteProc(
+    void *clientData)
+{
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
 
     clientData = info->deleteData;
@@ -3277,7 +3286,9 @@ invokeObj2Command(
     return result;
 }
 
-static int cmdWrapper2Proc(void *clientData,
+static int
+cmdWrapper2Proc(
+    void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
     Tcl_Obj *const objv[])
@@ -5364,7 +5375,7 @@ TclEvalEx(
 
 		/* Currently max command words in INT_MAX */
 		if (additionalObjsCount > INT_MAX ||
-		    objectsNeeded > (INT_MAX - additionalObjsCount)) {
+			objectsNeeded > (INT_MAX - additionalObjsCount)) {
 		    code = TclCommandWordLimitError(interp, -1);
 		    Tcl_DecrRefCount(objv[objectsUsed]);
 		    break;
@@ -8469,7 +8480,8 @@ Tcl_NRCallObjProc(
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
-int wrapperNRObjProc(
+static int
+wrapperNRObjProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -8536,7 +8548,8 @@ Tcl_NRCallObjProc2(
  *----------------------------------------------------------------------
  */
 
-static int cmdWrapperNreProc(
+static int
+cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
