@@ -1316,7 +1316,7 @@ ApplicationType(
 
 	ext = strrchr(fullName, '.');
 	if ((ext != NULL) &&
-            (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -2770,7 +2770,7 @@ Tcl_PidObjCmd(
 	TclNewIntObj(elemPtr, getpid());
 	Tcl_SetObjResult(interp, elemPtr);
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
