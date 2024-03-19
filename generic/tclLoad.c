@@ -92,17 +92,17 @@ typedef struct InterpLibrary {
 
 static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
-static int	IsStatic (LoadedLibrary *libraryPtr);
+static int	IsStatic(LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
 		    LoadedLibrary *library, int keepLibrary,
 		    const char *fullFileName, int interpExiting);
 
 
 static int
-IsStatic (LoadedLibrary *libraryPtr) {
-    int res;
-    res = (libraryPtr->fileName[0] == '\0');
-    return res;
+IsStatic(
+    LoadedLibrary *libraryPtr)
+{
+    return (libraryPtr->fileName[0] == '\0');
 }
 
 /*

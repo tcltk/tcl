@@ -1340,14 +1340,20 @@ TclFSNormalizeToUniquePath(
      */
     path = Tcl_GetStringFromObj(pathPtr, &i);
 
-    if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
-		    || (path[0] == '\\' && path[1] == '\\') ) ) {
-	for ( i = 2; ; i++) {
-	    if (path[i] == '\0') break;
-	    if (path[i] == path[0]) break;
+    if ((i >= 3) && ((path[0] == '/' && path[1] == '/')
+	    || (path[0] == '\\' && path[1] == '\\'))) {
+	for (i = 2; ; i++) {
+	    if (path[i] == '\0') {
+		break;
+	    }
+	    if (path[i] == path[0]) {
+		break;
+	    }
 	}
 	--i;
-	if (path[i] == ':') isVfsPath = 1;
+	if (path[i] == ':') {
+	    isVfsPath = 1;
+	}
     }
 
     /*

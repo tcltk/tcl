@@ -120,7 +120,7 @@ const unsigned char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int	CommandComplete(const char *script, Tcl_Size numBytes);
+static int		CommandComplete(const char *script, Tcl_Size numBytes);
 static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
