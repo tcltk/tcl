@@ -922,7 +922,7 @@ TclpMatchInDirectory(
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    Tcl_Size len = 0;
-	    const char *str = Tcl_GetStringFromObj(norm, &len);
+	    const char *str = TclGetStringFromObj(norm, &len);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
@@ -982,7 +982,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -2801,7 +2801,7 @@ TclpObjNormalizePath(
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_INDEX_NONE);
-	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
+	    path = TclGetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
@@ -2886,7 +2886,7 @@ TclWinVolumeRelativeNormalize(
 	 */
 
 	Tcl_Size cwdLen;
-	const char *drive = Tcl_GetStringFromObj(useThisCwd, &cwdLen);
+	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -3059,7 +3059,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = TclGetStringFromObj(validPathPtr, &len);
 
     if (strlen(str) != (size_t)len) {
 	/*
