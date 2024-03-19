@@ -3092,7 +3092,7 @@ TclNativeCreateNativeRep(
 
     wp = nativePathPtr = (WCHAR *)Tcl_Alloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
-      goto done;
+	goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
 	    len + 2);

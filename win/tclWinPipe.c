@@ -2124,8 +2124,7 @@ PipeClose2Proc(
 		    TCL_READABLE);
 	    Tcl_Free(filePtr);
 	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
-	}
-	else {
+	} else {
 	    errChan = NULL;
 	}
 

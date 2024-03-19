@@ -4351,16 +4351,14 @@ Tcl_FSCopyDirectory(
 
 int
 Tcl_FSRemoveDirectory(
-    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed.
-                                 */
+    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed. */
     int recursive,		/* If zero, removes only an empty directory.
 				 * Otherwise, removes the directory and all its
 				 * contents.  */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
 				 * place to store a a pointer to a new
 				 * object having a refCount of 1 and containing
-				 * the name of the file that produced an error.
-				 * */
+				 * the name of the file that produced an error. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
