@@ -102,7 +102,7 @@ static int		FileTruncateProc(ClientData instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
-static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
 /*
@@ -1048,7 +1048,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	dictContents = TclGetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
