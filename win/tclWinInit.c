@@ -167,7 +167,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = Tcl_GetStringFromObj(pathPtr, &length);
+    bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
