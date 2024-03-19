@@ -10,9 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest
-namespace import ::tcltest::test
-
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 catch {package require twapi} ;# Only to bring window to foreground. Not critical
 ::tcltest::ConstraintInitializer haveThread { expr {![catch {package require Thread}]} }
