@@ -914,7 +914,7 @@ TclLookupSimpleVar(
 	const char *tail;
 	int lookGlobal = (flags & TCL_GLOBAL_ONLY)
 		|| (cxtNsPtr == iPtr->globalNsPtr)
-		|| ((*varName == ':') && (*(varName+1) == ':'));
+		|| ((varName[0] == ':') && (varName[1] == ':'));
 
 	if (lookGlobal) {
 	    *indexPtr = -1;
@@ -4971,7 +4971,7 @@ Tcl_GlobalObjCmd(
 	for (tail=varName ; *tail!='\0' ; tail++) {
 	    /* empty body */
 	}
-	while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
+	while ((tail > varName) && ((tail[0] != ':') || (tail[-1] != ':'))) {
 	    tail--;
 	}
 	if ((*tail == ':') && (tail > varName)) {

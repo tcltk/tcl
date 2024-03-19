@@ -559,9 +559,9 @@ TclCreateProc(
 			    "FORMALARGUMENTFORMAT", (void *)NULL);
 		    goto procError;
 		}
-	    } else if (*argnamei == ':' && *(argnamei+1) == ':') {
+	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
 		Tcl_Obj *errorObj = Tcl_NewStringObj(
-		    "formal parameter \"", -1);
+			"formal parameter \"", -1);
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
@@ -2592,7 +2592,7 @@ SetLambdaFromAny(
     } else {
 	const char *nsName = TclGetString(objv[2]);
 
-	if ((*nsName != ':') || (*(nsName+1) != ':')) {
+	if ((nsName[0] != ':') || (nsName[1] != ':')) {
 	    TclNewLiteralStringObj(nsObjPtr, "::");
 	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
 	} else {

@@ -235,7 +235,7 @@ TclCompileStringCatCmd(
     }
 
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
-       contiguous constants along the way */
+     * contiguous constants along the way */
 
     numArgs = 0;
     folded = NULL;
