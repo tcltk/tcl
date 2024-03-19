@@ -2474,7 +2474,7 @@ MakeTildeRelativePath(
     const char *user,    /* User name. NULL -> current user */
     const char *subPath, /* Rest of path. May be NULL */
     Tcl_DString *dsPtr)  /* Output. Is initialized by the function. Must be
-                           freed on success */
+                          * freed on success */
 {
     const char *dir;
     Tcl_DString dirString;
@@ -2489,10 +2489,10 @@ MakeTildeRelativePath(
 	if (dir == NULL) {
             if (interp) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                                     "couldn't find HOME environment variable to"
-                                     " expand path", -1));
+                        "couldn't find HOME environment variable to expand path",
+			-1));
                 Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-                                 "HOMELESS", (void *)NULL);
+                        "HOMELESS", (void *)NULL);
             }
             return TCL_ERROR;
         }
@@ -2502,9 +2502,9 @@ MakeTildeRelativePath(
 	if (dir == NULL) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                                     "user \"%s\" doesn't exist", user));
+                        "user \"%s\" doesn't exist", user));
                 Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-                                 (void *)NULL);
+                        (void *)NULL);
             }
             return TCL_ERROR;
 	}

@@ -1383,7 +1383,7 @@ AssembleOneLine(
 	}
 	if (opnd < 0 || opnd > 3) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj("operand must be [0..3]", -1));
+		     Tcl_NewStringObj("operand must be [0..3]", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", (void *)NULL);
 	    goto cleanup;
 	}

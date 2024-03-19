@@ -131,9 +131,9 @@ TclpFindExecutable(
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
-	if (*p == '\0') {
+	if (p[0] == '\0') {
 	    break;
-	} else if (*(p+1) == 0) {
+	} else if (p[1] == 0) {
 	    p = "./";
 	} else {
 	    p++;
