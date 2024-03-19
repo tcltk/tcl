@@ -2281,7 +2281,7 @@ TEBCresume(
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc+1)), OBJ_AT_TOS);
+	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc + 1)), OBJ_AT_TOS);
 	inst = *(pc += 2);
 	goto peepholeStart;
     } else if (inst == INST_START_CMD) {
@@ -2289,11 +2289,11 @@ TEBCresume(
 	 * Peephole: do not run INST_START_CMD, just skip it
 	 */
 
-	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
+	iPtr->cmdCount += TclGetUInt4AtPtr(pc + 5);
 	if (checkInterp) {
 	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
-		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
-		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+		    (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
+		    !(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
 	    checkInterp = 0;
@@ -4763,17 +4763,13 @@ TEBCresume(
 	{
 	    Tcl_Size value2Length;
 	    Tcl_Obj *indexListPtr = value2Ptr;
+
 	    if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (
-		    !TclHasInternalRep(value2Ptr, &tclListType)
-		    ||
-		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+		    && (!TclHasInternalRep(value2Ptr, &tclListType)
+		    || (Tcl_ListObjLength(interp, value2Ptr, &value2Length),
 			value2Length == 1
 			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
-			    : 0
-		    ))
-		)
-	    ) {
+			    : 0))) {
 		int code;
 
 		/* increment the refCount of value2Ptr because TclListObjGetElement may
@@ -5197,9 +5193,8 @@ TEBCresume(
 
 	DECACHE_STACK_INFO();
 
-	if (TclGetIntForIndexM(
-		interp, fromIdxObj, length - end_indicator, &fromIdx)
-	    != TCL_OK) {
+	if (TclGetIntForIndexM(interp, fromIdxObj, length - end_indicator,
+		&fromIdx) != TCL_OK) {
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5211,9 +5206,8 @@ TEBCresume(
 	}
 	numToDelete = 0;
 	if (toIdxObj) {
-	    if (TclGetIntForIndexM(
-		    interp, toIdxObj, length - end_indicator, &toIdx)
-		!= TCL_OK) {
+	    if (TclGetIntForIndexM(interp, toIdxObj, length - end_indicator,
+		    &toIdx) != TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -5232,13 +5226,8 @@ TEBCresume(
 
 	if (Tcl_IsShared(valuePtr)) {
 	    objResultPtr = Tcl_DuplicateObj(valuePtr);
-	    if (Tcl_ListObjReplace(interp,
-				   objResultPtr,
-				   fromIdx,
-				   numToDelete,
-				   numNewElems,
-				   &OBJ_AT_DEPTH(numNewElems - 1))
-		!= TCL_OK) {
+	    if (Tcl_ListObjReplace(interp, objResultPtr, fromIdx, numToDelete,
+		    numNewElems, &OBJ_AT_DEPTH(numNewElems - 1)) != TCL_OK) {
 		TRACE_ERROR(interp);
 		Tcl_DecrRefCount(objResultPtr);
 		goto gotError;
@@ -5246,13 +5235,8 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	    NEXT_INST_V(6, opnd, 1);
 	} else {
-	    if (Tcl_ListObjReplace(interp,
-				   valuePtr,
-				   fromIdx,
-				   numToDelete,
-				   numNewElems,
-				   &OBJ_AT_DEPTH(numNewElems - 1))
-		!= TCL_OK) {
+	    if (Tcl_ListObjReplace(interp, valuePtr, fromIdx, numToDelete,
+		    numNewElems, &OBJ_AT_DEPTH(numNewElems - 1)) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
@@ -5437,14 +5421,12 @@ TEBCresume(
 	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
 
 	DECACHE_STACK_INFO();
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
-		    &fromIdx) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength, &fromIdx) != TCL_OK) {
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
-		    &toIdx) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, OBJ_AT_TOS, slength, &toIdx) != TCL_OK) {
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5496,10 +5478,8 @@ TEBCresume(
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
 	DECACHE_STACK_INFO();
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
-		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
-		    &toIdx) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength, &fromIdx) != TCL_OK
+		|| TclGetIntForIndexM(interp, OBJ_AT_TOS, slength, &toIdx) != TCL_OK) {
 	    CACHE_STACK_INFO();
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
@@ -5511,9 +5491,7 @@ TEBCresume(
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 
-	if ((toIdx < 0) ||
-		(fromIdx > slength) ||
-		(toIdx < fromIdx)) {
+	if ((toIdx < 0) || (fromIdx > slength) || (toIdx < fromIdx)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
@@ -5583,10 +5561,10 @@ TEBCresume(
 	end = ustring1 + slength;
 	for (; ustring1 < end; ustring1++) {
 	    if ((*ustring1 == *ustring2) &&
-		/* Fix bug [69218ab7b]: restrict max compare length. */
-		((end-ustring1) >= length2) && (length2==1 ||
-		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
-			    == 0)) {
+		    /* Fix bug [69218ab7b]: restrict max compare length. */
+		    ((end - ustring1) >= length2) && (length2 == 1 ||
+		        memcmp(ustring1, ustring2,
+				sizeof(Tcl_UniChar) * length2) == 0)) {
 		if (p != ustring1) {
 		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
 		    p = ustring1 + length2;
@@ -7168,7 +7146,6 @@ TEBCresume(
 	searchPtr = (Tcl_DictSearch *)Tcl_Alloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
-
 	    /*
 	     * dictPtr is no longer on the stack, and we're not
 	     * moving it into the internalrep of an iterator.  We need
@@ -8206,9 +8183,8 @@ ExecuteExtendedBinaryMathOp(
 	    if ((type1 == TCL_NUMBER_INT)
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		w1 = *((const Tcl_WideInt *)ptr1);
-		if (!((w1>0 ? w1 : ~w1)
-			& -(((Tcl_WideUInt)1)
-			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
+		if (!((w1 > 0 ? w1 : ~w1) & -(
+			((Tcl_WideUInt)1) << (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
 		    WIDE_RESULT((Tcl_WideUInt)w1 << shift);
 		}
 	    }
@@ -8599,8 +8575,7 @@ ExecuteExtendedBinaryMathOp(
 	    switch (opcode) {
 	    case INST_ADD:
 		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
-		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT))
-		{
+		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT)) {
 		    /*
 		     * Check for overflow.
 		     */
@@ -8613,8 +8588,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    case INST_SUB:
 		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
-		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT))
-		{
+		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT)) {
 		    /*
 		     * Must check for overflow. The macro tests for overflows
 		     * in sums by looking at the sign bits. As we have a
@@ -9077,8 +9051,7 @@ ValidatePcAndStackTop(
 		opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack &&
-	    (stackTop > stackUpperBound)) {
+    if (checkStack && (stackTop > stackUpperBound)) {
 	Tcl_Size numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 

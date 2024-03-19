@@ -2182,7 +2182,7 @@ TclCompileScript(
      */
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "too many nested compilations (infinite loop?)", -1));
+		"too many nested compilations (infinite loop?)", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
@@ -2200,10 +2200,10 @@ TclCompileScript(
 	 * Note this gets -errorline as 1. Not worth figuring out which line
 	 * crosses the limit to get -errorline for this error case.
 	 */
-	Tcl_SetObjResult(interp,
-	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
-			   "d exceeds max permitted length %d.",
-			   numBytes, INT_MAX-1));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Script length %" TCL_SIZE_MODIFIER
+		"d exceeds max permitted length %d.",
+		numBytes, INT_MAX-1));
 	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (void *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
@@ -2507,7 +2507,7 @@ TclCompileTokens(
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
-		(tokenPtr->start[1] == '\n')) {
+		    (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
 		    int clPos = Tcl_DStringLength(&textBuffer);
 

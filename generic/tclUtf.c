@@ -234,8 +234,8 @@ Tcl_UniCharToUtf(
 		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
-		    if (   (0x80 == (0xC0 & buf[0]))
-			&& (0    == (0xCF & buf[1]))) {
+		    if (    (0x80 == (0xC0 & buf[0]))
+			    && (0 == (0xCF & buf[1]))) {
 			/* Previous Tcl_UniChar was a high surrogate, so combine */
 			buf[2]  = (char) (0x80 | (0x3F & ch));
 			buf[1] |= (char) (0x80 | (0x0F & (ch >> 6)));
@@ -246,12 +246,11 @@ Tcl_UniCharToUtf(
 		    /* High surrogate */
 
 		    /* Add 0x10000 to the raw number encoded in the surrogate
-		     * pair in order to get the code point.
-		    */
+		     * pair in order to get the code point. */
 		    ch += 0x40;
 
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
-		       so following low surrogate can recognize it and combine */
+		     * so following low surrogate can recognize it and combine */
 		    buf[2] = (char) ((ch << 4) & 0x30);
 		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
 		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
@@ -268,9 +267,9 @@ Tcl_UniCharToUtf(
 	    return 4;
 	}
     } else if (ch == -1) {
-	if (   (0x80 == (0xC0 & buf[0]))
-	    && (0    == (0xCF & buf[1]))
-	    && (0xF0 == (0xF8 & buf[-1]))) {
+	if (       (0x80 == (0xC0 & buf[0]))
+		&& (0    == (0xCF & buf[1]))
+		&& (0xF0 == (0xF8 & buf[-1]))) {
 	    ch = 0xD7C0
 		+ ((0x07 & buf[-1]) << 8)
 		+ ((0x3F & buf[0])  << 2)

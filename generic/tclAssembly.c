@@ -986,7 +986,6 @@ TclCompileAssembleCmd(
 
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
-
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s\" body, line %d)",
 		(int)parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
