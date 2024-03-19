@@ -2083,7 +2083,9 @@ TzsetIfNecessary(void)
 	wcscpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != (WCHAR *)INT2PTR(-1)) Tcl_Free(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) {
+	    Tcl_Free(tzWas);
+	}
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);

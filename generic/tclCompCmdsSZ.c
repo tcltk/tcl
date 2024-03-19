@@ -42,11 +42,11 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    Tcl_Size numWords, Tcl_Token **bodyToken,
-				Tcl_Size *bodyLines, Tcl_Size **bodyNext);
+			    Tcl_Size *bodyLines, Tcl_Size **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int numWords,
-				Tcl_Token **bodyToken, Tcl_Size *bodyLines,
-				Tcl_Size **bodyContLines);
+			    Tcl_Token **bodyToken, Tcl_Size *bodyLines,
+			    Tcl_Size **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,

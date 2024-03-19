@@ -411,8 +411,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFileW(nativeSrc,
-			    nativeDst) != FALSE) {
+		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -697,8 +696,7 @@ DoCopyFile(
 	    if (dstAttr & FILE_ATTRIBUTE_READONLY) {
 		SetFileAttributesW(nativeDst,
 			dstAttr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
-		if (CopyFileW(nativeSrc, nativeDst,
-			0) != FALSE) {
+		if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 		    return TCL_OK;
 		}
 
@@ -794,8 +792,7 @@ TclpDeleteFile(
 		int res = SetFileAttributesW(path,
 			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
 
-		if ((res != 0) &&
-			(DeleteFileW(path) != FALSE)) {
+		if ((res != 0) && (DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
 		Tcl_WinConvertError(GetLastError());
@@ -1082,8 +1079,7 @@ DoRemoveJustDirectory(
 
 	    if (attr & FILE_ATTRIBUTE_READONLY) {
 		attr &= ~FILE_ATTRIBUTE_READONLY;
-		if (SetFileAttributesW(nativePath,
-			attr) == FALSE) {
+		if (SetFileAttributesW(nativePath, attr) == FALSE) {
 		    goto end;
 		}
 		if (RemoveDirectoryW(nativePath) != FALSE) {
@@ -1120,7 +1116,9 @@ DoRemoveJustDirectory(
 	Tcl_DStringInit(errorPtr);
 	p = Tcl_WCharToUtfDString(nativePath, TCL_INDEX_NONE, errorPtr);
 	for (; *p; ++p) {
-	    if (*p == '\\') *p = '/';
+	    if (*p == '\\') {
+		*p = '/';
+	    }
 	}
     }
     return TCL_ERROR;
@@ -1381,8 +1379,7 @@ TraversalCopy(
 	if (DoCreateDirectory(nativeDst) == TCL_OK) {
 	    DWORD attr = GetFileAttributesW(nativeSrc);
 
-	    if (SetFileAttributesW(nativeDst,
-		    attr) != FALSE) {
+	    if (SetFileAttributesW(nativeDst, attr) != FALSE) {
 		return TCL_OK;
 	    }
 	    Tcl_WinConvertError(GetLastError());

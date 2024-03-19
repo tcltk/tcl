@@ -778,9 +778,9 @@ TclGetInnerContext(
         if (!objPtr) {
             Tcl_Panic("InnerContext: bad tos -- appending null object");
         }
-        if ((objPtr->refCount<=0)
+        if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-                || (objPtr->refCount==0x61616161)
+                || (objPtr->refCount == 0x61616161)
 #endif
         ) {
             Tcl_Panic("InnerContext: bad tos -- appending freed object %p",

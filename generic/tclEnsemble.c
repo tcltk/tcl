@@ -567,8 +567,7 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjLength(interp, listObj, &len
-				) != TCL_OK) {
+			if (TclListObjLength(interp, listObj, &len) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -2212,9 +2211,9 @@ TclSpellFix(
     TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
-Tcl_Obj *const *TclEnsembleGetRewriteValues(
-    Tcl_Interp *interp		/* Current interpreter. */
-)
+Tcl_Obj *const *
+TclEnsembleGetRewriteValues(
+    Tcl_Interp *interp)		/* Current interpreter. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;

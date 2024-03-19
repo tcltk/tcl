@@ -149,7 +149,7 @@ typedef struct {
  * Other typedefs required by this code.
  */
 
-static __time64_t		ToCTime(FILETIME fileTime);
+static __time64_t	ToCTime(FILETIME fileTime);
 static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 
 /*
@@ -972,7 +972,7 @@ TclpMatchInDirectory(
 	attr = GetFileAttributesW(native);
 
 	if ((attr == INVALID_FILE_ATTRIBUTES)
-	    || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+		|| ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    return TCL_OK;
 	}
 

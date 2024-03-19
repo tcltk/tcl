@@ -113,14 +113,14 @@ ExtractWinRoot(
 {
     int extended = 0;
 
-    if (   (path[0] == '/' || path[0] == '\\')
-	&& (path[1] == '/' || path[1] == '\\')
-	&& (path[2] == '?')
-	&& (path[3] == '/' || path[3] == '\\')) {
+    if (       (path[0] == '/' || path[0] == '\\')
+	    && (path[1] == '/' || path[1] == '\\')
+	    && (path[2] == '?')
+	    && (path[3] == '/' || path[3] == '\\')) {
 	extended = 1;
 	path = path + 4;
 	if (path[0] == 'U' && path[1] == 'N' && path[2] == 'C'
-	    && (path[3] == '/' || path[3] == '\\')) {
+		&& (path[3] == '/' || path[3] == '\\')) {
 	    extended = 2;
 	    path = path + 4;
 	}
@@ -583,7 +583,7 @@ Tcl_SplitPath(
 
     for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
-	for (; *(p++)!='\0'; );
+	while (*(p++) != '\0');
     }
     (*argvPtr)[i] = NULL;
 
@@ -823,8 +823,8 @@ TclpNativeJoinPath(
 
     if (length != 0) {
 	if ((p[0] == '.') && (p[1] == '/') &&
-	    (tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
-	    && (p[3] == ':')) {
+		(tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
+		&& (p[3] == ':')) {
 	    p += 2;
 	}
     }

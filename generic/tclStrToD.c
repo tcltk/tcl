@@ -308,7 +308,7 @@ static double		MakeNaN(int signum, Tcl_WideUInt tag);
 #endif
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
-static mp_err	MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
+static mp_err		MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
 static int 		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
 static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
@@ -592,18 +592,18 @@ TclParseNumber(
 	     *              V
 	     *   example: 5___6
 	     */
-	    for (before=(p-1);
-		 (before && *before=='_');
-		 before=(before>p ? (before-1):NULL));
-	    for (after=(p+1);
-		 (after && *after && *after=='_');
-		 after=(*after&&*after=='_')?(after+1):NULL);
+	    for (before = (p - 1);
+		 (before && *before == '_');
+		 before = (before > p ? (before - 1) : NULL));
+	    for (after = (p + 1);
+		 (after && *after && *after == '_');
+		 after = (*after && *after == '_') ? (after + 1) : NULL);
 
 	    switch (state) {
 	    case ZERO_B:
 	    case BINARY:
 		if ((before && (*before != '0' && *before != '1')) ||
-		    (after && (*after != '0' && *after != '1'))) {
+			(after && (*after != '0' && *after != '1'))) {
 		    /* Not a valid digit */
 		    goto endgame;
 		}
@@ -611,7 +611,7 @@ TclParseNumber(
 	    case ZERO_O:
 	    case OCTAL:
 		if (((before && (*before < '0' || '7' < *before))) ||
-		    ((after  && (*after  < '0' || '7' < *after)))) {
+			((after && (*after  < '0' || '7' < *after)))) {
 		    goto endgame;
 		}
 		break;
@@ -624,7 +624,7 @@ TclParseNumber(
 	    case EXPONENT_SIGNUM:
 	    case EXPONENT:
 		if ((!before || isdigit(UCHAR(*before))) &&
-		    (!after  || isdigit(UCHAR(*after)))) {
+			(!after || isdigit(UCHAR(*after)))) {
 		    break;
 		}
 		if (after && *after=='(') {
@@ -635,7 +635,7 @@ TclParseNumber(
 	    case ZERO_X:
 	    case HEXADECIMAL:
 		if ( (!before || isxdigit(UCHAR(*before))) &&
-		     (!after  || isxdigit(UCHAR(*after)))) {
+			(!after || isxdigit(UCHAR(*after)))) {
 		    break;
 		}
 		goto endgame;
