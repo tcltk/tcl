@@ -203,12 +203,12 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
-    void *clientData,	/* The one argument to Main(). */
-    size_t stackSize,	/* Size of stack for the new thread. */
+    void *clientData,		/* The one argument to Main(). */
+    size_t stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
-    WinThread *winThreadPtr;		/* Per-thread startup info */
+    WinThread *winThreadPtr;	/* Per-thread startup info */
     HANDLE tHandle;
 
     winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
@@ -219,8 +219,7 @@ TclpThreadCreate(
     EnterCriticalSection(&joinLock);
 
     *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned
-		 */
+                 * on WIN64 sizeof void* != sizeof unsigned */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,

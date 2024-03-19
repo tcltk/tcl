@@ -216,9 +216,8 @@ Tcl_AppInit(
      */
 
     (void)Tcl_EvalEx(interp,
-		     "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
-		     -1,
-		     TCL_EVAL_GLOBAL);
+	    "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
+	    TCL_AUTO_LENGTH, TCL_EVAL_GLOBAL);
 
     return TCL_OK;
 }

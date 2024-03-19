@@ -647,7 +647,7 @@ TclFinalizeIOSubsystem(void)
                  */
 
                 (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-                                            "-blocking", "on");
+                        "-blocking", "on");
             }
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
@@ -2448,13 +2448,13 @@ Tcl_GetChannelHandle(
 
 int
 Tcl_RemoveChannelMode(
-     Tcl_Interp* interp,        /* The interp for an error message. Allowed to be NULL. */
+     Tcl_Interp *interp,        /* The interp for an error message. Allowed to be NULL. */
      Tcl_Channel chan,		/* The channel which is modified. */
-     int         mode)          /* The access mode to drop from the channel */
+     int mode)			/* The access mode to drop from the channel */
 {
     const char* emsg;
     ChannelState *statePtr = ((Channel *) chan)->state;
-					/* State of actual channel. */
+				/* State of actual channel. */
 
     if ((mode != TCL_READABLE) && (mode != TCL_WRITABLE)) {
         emsg = "Illegal mode value.";
@@ -3564,7 +3564,7 @@ TclClose(
 	Tcl_SetErrno(stickyError);
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+		    Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 	}
 	return TCL_ERROR;
     }

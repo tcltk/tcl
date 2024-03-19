@@ -822,7 +822,7 @@ EncodingSystemObjCmd(
     }
     if (objc == 1) {
 	Tcl_SetObjResult(interp,
-			 Tcl_NewStringObj(Tcl_GetEncodingName(NULL), -1));
+		Tcl_NewStringObj(Tcl_GetEncodingName(NULL), -1));
     } else {
 	return Tcl_SetSystemEncoding(interp, TclGetString(objv[1]));
     }
@@ -1193,8 +1193,8 @@ FileAttrAccessTimeCmd(
     /* We use a value of 0 to indicate the access time not available */
     if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			     "could not get access time for file \"%s\"",
-			     TclGetString(objv[1])));
+		"could not get access time for file \"%s\"",
+		TclGetString(objv[1])));
 	return TCL_ERROR;
     }
 #endif
@@ -1275,8 +1275,8 @@ FileAttrModifyTimeCmd(
     /* We use a value of 0 to indicate the modification time not available */
     if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			     "could not get modification time for file \"%s\"",
-			     TclGetString(objv[1])));
+		"could not get modification time for file \"%s\"",
+		TclGetString(objv[1])));
 	return TCL_ERROR;
     }
 #endif
