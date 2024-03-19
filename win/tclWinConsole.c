@@ -2008,7 +2008,6 @@ AllocateConsoleHandleInfo(
 
     handleInfoPtr = (ConsoleHandleInfo *) Tcl_Alloc(sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
-    memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
     InitializeSRWLock(&handleInfoPtr->lock);
     InitializeConditionVariable(&handleInfoPtr->consoleThreadCV);
