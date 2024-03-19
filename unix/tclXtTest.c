@@ -21,7 +21,7 @@ static Tcl_ObjCmdProc TesteventloopCmd;
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
  */
 
-extern void	InitNotifier(void);
+extern void		InitNotifier(void);
 extern XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*

@@ -149,8 +149,8 @@ typedef struct {
  * Other typedefs required by this code.
  */
 
-static time_t		ToCTime(FILETIME fileTime);
-static void		FromCTime(time_t posixTime, FILETIME *fileTime);
+static __time64_t	ToCTime(FILETIME fileTime);
+static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 
 /*
  * Declarations for local functions defined in this file:
@@ -991,7 +991,7 @@ TclpMatchInDirectory(
 	attr = GetFileAttributesW(native);
 
 	if ((attr == INVALID_FILE_ATTRIBUTES)
-	    || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+		|| ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    return TCL_OK;
 	}
 
@@ -2288,7 +2288,7 @@ NativeStatMode(
  *
  * ToCTime --
  *
- *	Converts a Windows FILETIME to a time_t in UTC.
+ *	Converts a Windows FILETIME to a __time64_t in UTC.
  *
  * Results:
  *	Returns the count of seconds from the Posix epoch.
@@ -2296,7 +2296,7 @@ NativeStatMode(
  *------------------------------------------------------------------------
  */
 
-static time_t
+static __time64_t
 ToCTime(
     FILETIME fileTime)		/* UTC time */
 {
@@ -2305,7 +2305,7 @@ ToCTime(
     convertedTime.LowPart = fileTime.dwLowDateTime;
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
-    return (time_t) ((convertedTime.QuadPart -
+    return (__time64_t) ((convertedTime.QuadPart -
 	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
 }
 
@@ -2314,7 +2314,7 @@ ToCTime(
  *
  * FromCTime --
  *
- *	Converts a time_t to a Windows FILETIME
+ *	Converts a __time64_t to a Windows FILETIME
  *
  * Results:
  *	Returns the count of 100-ns ticks seconds from the Windows epoch.
@@ -2324,7 +2324,7 @@ ToCTime(
 
 static void
 FromCTime(
-    time_t posixTime,
+    __time64_t posixTime,
     FILETIME *fileTime)		/* UTC Time */
 {
     LARGE_INTEGER convertedTime;
@@ -2471,7 +2471,7 @@ TclpFilesystemPathType(
     if (normPath == NULL) {
 	return NULL;
     }
-    path = Tcl_GetString(normPath);
+    path = TclGetString(normPath);
     if (path == NULL) {
 	return NULL;
     }
@@ -2551,7 +2551,7 @@ TclpObjNormalizePath(
     Tcl_DString ds;		/* Some workspace. */
 
     Tcl_DStringInit(&dsNorm);
-    path = Tcl_GetString(pathPtr);
+    path = TclGetString(pathPtr);
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
@@ -2649,12 +2649,12 @@ TclpObjNormalizePath(
 		     * Convert link to forward slashes.
 		     */
 
-		    for (path = Tcl_GetString(to); *path != 0; path++) {
+		    for (path = TclGetString(to); *path != 0; path++) {
 			if (*path == '\\') {
 			    *path = '/';
 			}
 		    }
-		    path = Tcl_GetString(to);
+		    path = TclGetString(to);
 		    currentPathEndPosition = path + nextCheckpoint;
 		    if (temp != NULL) {
 			Tcl_DecrRefCount(temp);
@@ -2889,7 +2889,7 @@ TclWinVolumeRelativeNormalize(
 	 * current volume.
 	 */
 
-	const char *drive = Tcl_GetString(useThisCwd);
+	const char *drive = TclGetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
 	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);

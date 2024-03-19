@@ -433,7 +433,7 @@ Tcl_GetHostName(void)
  */
 
 void
-TclInitSockets()
+TclInitSockets(void)
 {
     /* Then Per thread initialization. */
     DWORD id;
@@ -1207,7 +1207,7 @@ TcpSetOptionProc(
 	return TCL_OK;
     }
     if ((len > 1) && (optionName[1] == 'n') &&
-	(strncmp(optionName, "-nodelay", len) == 0)) {
+	    (strncmp(optionName, "-nodelay", len) == 0)) {
 	BOOL boolVar;
 	int rtn;
 
@@ -2272,7 +2272,7 @@ Tcl_OpenTcpServerEx(
 	ioctlsocket(sock, (long) FIONBIO, &flag);
 	SendSelectMessage(tsdPtr, SELECT, statePtr);
 	if (Tcl_SetChannelOption(interp, statePtr->channel, "-eofchar", "")
-	    == TCL_ERROR) {
+		== TCL_ERROR) {
 	    Tcl_Close(NULL, statePtr->channel);
 	    return NULL;
 	}
