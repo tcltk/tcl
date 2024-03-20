@@ -25,7 +25,6 @@ namespace eval ::tclTestPerf-List {
 
 namespace path {::tclTestPerf}
 
-# regression tests for [bug-da16d15574] (fix for [db4f2843cd]):
 proc test-lsearch-regress {{reptime 1000}} {
   _test_run -no-result $reptime {
     # list with 5000 strings with ca. 50 chars elements:
