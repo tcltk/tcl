@@ -131,9 +131,9 @@ TclpFindExecutable(
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
-	if (*p == '\0') {
+	if (p[0] == '\0') {
 	    break;
-	} else if (*(p+1) == 0) {
+	} else if (p[1] == 0) {
 	    p = "./";
 	} else {
 	    p++;
@@ -712,9 +712,9 @@ TclpObjLstat(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpGetNativeCwd(
-    ClientData clientData)
+    void *clientData)
 {
     char buffer[MAXPATHLEN+1];
 
@@ -1058,7 +1058,7 @@ TclpFilesystemPathType(
 
 Tcl_Obj *
 TclpNativeToNormalized(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_DString ds;
 
@@ -1082,7 +1082,7 @@ TclpNativeToNormalized(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
@@ -1149,9 +1149,9 @@ TclNativeCreateNativeRep(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeDupInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     char *copy;
     size_t len;

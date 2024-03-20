@@ -136,7 +136,7 @@ static struct {
 #ifndef TCL_NO_DEPRECATED
 static struct tm *	ComputeGMT(const time_t *tp);
 #endif /* TCL_NO_DEPRECATED */
-static void		StopCalibration(ClientData clientData);
+static void		StopCalibration(void *clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
 static void		ResetCounterSamples(unsigned long long fileTime,
@@ -144,10 +144,10 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static void		NativeScaleTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static long long	NativeGetMicroseconds(void);
 static void		NativeGetTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -155,7 +155,7 @@ static void		NativeGetTime(Tcl_Time* timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  * Inlined version of Tcl_GetTime.
@@ -438,7 +438,7 @@ Tcl_GetTime(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -704,7 +704,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     long long usecSincePosixEpoch;
 
@@ -751,7 +751,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -1515,7 +1515,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -1542,7 +1542,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;

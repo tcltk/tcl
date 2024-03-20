@@ -44,13 +44,13 @@ static char *lastTZ = NULL;	/* Holds the last setting of the TZ
  */
 
 static void		SetTZIfNecessary(void);
-static void		CleanupMemory(ClientData clientData);
+static void		CleanupMemory(void *clientData);
 #endif /* TCL_NO_DEPRECATED */
 
 static void		NativeScaleTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -466,7 +466,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -493,7 +493,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;
@@ -526,7 +526,7 @@ Tcl_QueryTimeProc(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -551,7 +551,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     struct timeval tv;
 
@@ -620,7 +620,7 @@ SetTZIfNecessary(void)
 
 static void
 CleanupMemory(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ckfree(lastTZ);
 }
