@@ -1730,7 +1730,7 @@ TcpConnect(
 	     * Set kernel space buffering
 	     */
 
-	    TclSockMinimumBuffers((void *) statePtr->sockets->fd,
+	    TclSockMinimumBuffers((void *)statePtr->sockets->fd,
 		    TCP_BUFFER_SIZE);
 
 	    /*
