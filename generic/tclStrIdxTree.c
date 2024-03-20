@@ -87,7 +87,7 @@ TclStrIdxTreeSearch(
     TclStrIdxTree *parent = tree, *prevParent = tree;
     TclStrIdx  *item = tree->firstPtr, *prevItem = NULL;
     const char *s = start, *f, *cin, *cinf, *prevf = NULL;
-    int offs = 0;
+    Tcl_Size offs = 0;
 
     if (item == NULL) {
 	goto done;
@@ -280,7 +280,7 @@ TclStrIdxTreeBuildFromList(
 		  && foundItem->length <= (f - s) /* only if found item is covered in full */
 		  && foundItem->childTree.firstPtr == NULL
 		) {
-		    Tcl_SetObjRef(foundItem->key, lwrv[i]);
+		    TclSetObjRef(foundItem->key, lwrv[i]);
 		    foundItem->length = lwrv[i]->length;
 		    continue;
 		}
@@ -292,7 +292,7 @@ TclStrIdxTreeBuildFromList(
 		    if (item == NULL) {
 			goto done;
 		    }
-		    Tcl_InitObjRef(item->key, foundItem->key);
+		    TclInitObjRef(item->key, foundItem->key);
 		    item->length = f - s;
 		    /* set value or mark as ambigous if not the same value of both */
 		    item->value = (foundItem->value == val) ? val : NULL;
@@ -311,7 +311,7 @@ TclStrIdxTreeBuildFromList(
 	    goto done;
 	}
 	item->childTree.lastPtr = item->childTree.firstPtr = NULL;
-	Tcl_InitObjRef(item->key, lwrv[i]);
+	TclInitObjRef(item->key, lwrv[i]);
 	item->length = lwrv[i]->length;
 	item->value = val;
 	TclStrIdxTreeAppend(foundParent, item);
@@ -375,7 +375,7 @@ StrIdxTreeObj_DupIntRepProc(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 	srcPtr = (Tcl_Obj*)srcPtr->internalRep.twoPtrValue.ptr1;
     }
     /* create smart pointer to it (ptr1 != NULL, ptr2 = NULL) */
-    Tcl_InitObjRef(*((Tcl_Obj **)&copyPtr->internalRep.twoPtrValue.ptr1),
+    TclInitObjRef(*((Tcl_Obj **)&copyPtr->internalRep.twoPtrValue.ptr1),
 	srcPtr);
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &StrIdxTreeObjType;
@@ -389,7 +389,7 @@ StrIdxTreeObj_FreeIntRepProc(Tcl_Obj *objPtr)
       && objPtr->internalRep.twoPtrValue.ptr2 == NULL
     ) {
 	/* is a link */
-	Tcl_UnsetObjRef(*((Tcl_Obj **)&objPtr->internalRep.twoPtrValue.ptr1));
+	TclUnsetObjRef(*((Tcl_Obj **)&objPtr->internalRep.twoPtrValue.ptr1));
     } else {
 	/* is a tree */
 	TclStrIdxTree *tree = (TclStrIdxTree*)&objPtr->internalRep.twoPtrValue.ptr1;
@@ -431,7 +431,7 @@ TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr) {
 #if 0
 /* currently unused, debug resp. test purposes only */
 
-void
+static void
 TclStrIdxTreePrint(
     Tcl_Interp *interp,
     TclStrIdx  *tree,
@@ -439,19 +439,19 @@ TclStrIdxTreePrint(
 {
     Tcl_Obj *obj[2];
     const char *s;
-    Tcl_InitObjRef(obj[0], Tcl_NewStringObj("::puts", -1));
+    TclInitObjRef(obj[0], Tcl_NewStringObj("::puts", -1));
     while (tree != NULL) {
 	s = TclGetString(tree->key) + offs;
-	Tcl_InitObjRef(obj[1], Tcl_ObjPrintf("%*s%.*s\t:%d",
+	TclInitObjRef(obj[1], Tcl_ObjPrintf("%*s%.*s\t:%d",
 		offs, "", tree->length - offs, s, tree->value));
 	Tcl_PutsObjCmd(NULL, interp, 2, obj);
-	Tcl_UnsetObjRef(obj[1]);
+	TclUnsetObjRef(obj[1]);
 	if (tree->childTree.firstPtr != NULL) {
 	    TclStrIdxTreePrint(interp, tree->childTree.firstPtr, tree->length);
 	}
 	tree = tree->nextPtr;
     }
-    Tcl_UnsetObjRef(obj[0]);
+    TclUnsetObjRef(obj[0]);
 }
 
 
@@ -494,9 +494,7 @@ TclStrIdxTreeTestObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(ret - cs));
     break;
     case O_INDEX:
-    case O_PUTS_INDEX:
-
-    if (1) {
+    case O_PUTS_INDEX: {
 	Tcl_Obj **lstv;
 	int i, lstc;
 	TclStrIdxTree idxTree = {NULL, NULL};

@@ -28,7 +28,7 @@ typedef struct TclStrIdx {
     struct TclStrIdx *nextPtr;
     struct TclStrIdx *prevPtr;
     Tcl_Obj	*key;
-    int		 length;
+    Tcl_Size length;
     void	*value;
 } TclStrIdx;
 
@@ -115,19 +115,31 @@ TclUtfFindEqualNCInLwr(
  * Primitives to safe set, reset and free references.
  */
 
-#define Tcl_UnsetObjRef(obj) \
-  if (obj != NULL) { Tcl_DecrRefCount(obj); obj = NULL; }
-#define Tcl_InitObjRef(obj, val) \
-  obj = val; if (obj) { Tcl_IncrRefCount(obj); }
-#define Tcl_SetObjRef(obj, val) \
-if (1) { \
-  Tcl_Obj *nval = val; \
-  if (obj != nval) { \
-    Tcl_Obj *prev = obj; \
-    Tcl_InitObjRef(obj, nval); \
-    if (prev != NULL) { Tcl_DecrRefCount(prev); }; \
-  } \
-}
+#define TclUnsetObjRef(obj) \
+    do { \
+	if (obj != NULL) { \
+	    Tcl_DecrRefCount(obj); \
+	    obj = NULL; \
+	} \
+    } while (0)
+#define TclInitObjRef(obj, val) \
+    do { \
+	obj = val; \
+	if (obj) { \
+	    Tcl_IncrRefCount(obj); \
+	} \
+    } while (0)
+#define TclSetObjRef(obj, val) \
+    do { \
+	Tcl_Obj *nval = val; \
+	if (obj != nval) { \
+	    Tcl_Obj *prev = obj; \
+	    TclInitObjRef(obj, nval); \
+	    if (prev != NULL) { \
+		Tcl_DecrRefCount(prev); \
+	    }; \
+	} \
+    } while (0)
 
 /*
  * Prototypes of module functions.
@@ -147,8 +159,8 @@ MODULE_SCOPE Tcl_Obj*
 MODULE_SCOPE TclStrIdxTree*
 		    TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr);
 
-#if 1
-
+#if 0
+/* currently unused, debug resp. test purposes only */
 MODULE_SCOPE Tcl_ObjCmdProc TclStrIdxTreeTestObjCmd;
 #endif
 
