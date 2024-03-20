@@ -41,9 +41,9 @@ static Tcl_ExitProc		FinalizeIOCmdTSD;
 static Tcl_TcpAcceptProc 	AcceptCallbackProc;
 static Tcl_ObjCmdProc2		ChanPendingObjCmd;
 static Tcl_ObjCmdProc2		ChanTruncateObjCmd;
-static void			RegisterTcpServerInterpCleanup(
-				    Tcl_Interp *interp,
-				    AcceptCallback *acceptCallbackPtr);
+static void		RegisterTcpServerInterpCleanup(
+			    Tcl_Interp *interp,
+			    AcceptCallback *acceptCallbackPtr);
 static Tcl_InterpDeleteProc	TcpAcceptCallbacksDeleteProc;
 static void		TcpServerCloseProc(void *callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
@@ -422,11 +422,11 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected non-negative integer but got \"%s\"",
-			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
-		return TCL_ERROR;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected non-negative integer but got \"%s\"",
+		    TclGetString(objv[i])));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
+	    return TCL_ERROR;
 	}
     }
 

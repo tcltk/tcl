@@ -429,7 +429,7 @@ Tcl_GetHostName(void)
  */
 
 void
-TclInitSockets()
+TclInitSockets(void)
 {
     /* Then Per thread initialization. */
     DWORD id;
@@ -1203,7 +1203,7 @@ TcpSetOptionProc(
 	return TCL_OK;
     }
     if ((len > 1) && (optionName[1] == 'n') &&
-	(strncmp(optionName, "-nodelay", len) == 0)) {
+	    (strncmp(optionName, "-nodelay", len) == 0)) {
 	BOOL boolVar;
 	int rtn;
 
@@ -1730,7 +1730,7 @@ TcpConnect(
 	     * Set kernel space buffering
 	     */
 
-	    TclSockMinimumBuffers((void *) statePtr->sockets->fd,
+	    TclSockMinimumBuffers((void *)statePtr->sockets->fd,
 		    TCP_BUFFER_SIZE);
 
 	    /*
@@ -2268,7 +2268,7 @@ Tcl_OpenTcpServerEx(
 	ioctlsocket(sock, (long) FIONBIO, &flag);
 	SendSelectMessage(tsdPtr, SELECT, statePtr);
 	if (Tcl_SetChannelOption(interp, statePtr->channel, "-eofchar", "")
-	    == TCL_ERROR) {
+		== TCL_ERROR) {
 	    Tcl_CloseEx(NULL, statePtr->channel, 0);
 	    return NULL;
 	}
@@ -2356,9 +2356,9 @@ TcpAccept(
 
     if (statePtr->acceptProc != NULL) {
 	getnameinfo(&(addr.sa), len, host, sizeof(host), port, sizeof(port),
-                    NI_NUMERICHOST|NI_NUMERICSERV);
+		NI_NUMERICHOST|NI_NUMERICSERV);
 	statePtr->acceptProc(statePtr->acceptProcData, newInfoPtr->channel,
-			    host, atoi(port));
+		host, atoi(port));
     }
 }
 

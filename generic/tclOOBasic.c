@@ -210,7 +210,7 @@ TclOO_Class_Create(
 		"objectName ?arg ...?");
 	return TCL_ERROR;
     }
-    objName = Tcl_GetStringFromObj(
+    objName = TclGetStringFromObj(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -275,7 +275,7 @@ TclOO_Class_CreateNs(
 		"objectName namespaceName ?arg ...?");
 	return TCL_ERROR;
     }
-    objName = Tcl_GetStringFromObj(
+    objName = TclGetStringFromObj(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -283,7 +283,7 @@ TclOO_Class_CreateNs(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", (void *)NULL);
 	return TCL_ERROR;
     }
-    nsName = Tcl_GetStringFromObj(
+    nsName = TclGetStringFromObj(
 	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1281,7 +1281,7 @@ TclOOCopyObjectCmd(
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-			 "sourceName ?targetName? ?targetNamespace?");
+		"sourceName ?targetName? ?targetNamespace?");
 	return TCL_ERROR;
     }
 

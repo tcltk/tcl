@@ -84,16 +84,16 @@ static const Tcl_ChannelType tclRTransformType = {
 typedef struct {
     unsigned char *buf;		/* Reference to the buffer area. */
     size_t allocated;		/* Allocated size of the buffer area. */
-    size_t used;			/* Number of bytes in the buffer,
+    size_t used;		/* Number of bytes in the buffer,
 				 * <= allocated. */
 } ResultBuffer;
 
 #define ResultLength(r) ((r)->used)
 /* static int		ResultLength(ResultBuffer *r); */
 
-static inline void		ResultClear(ResultBuffer *r);
-static inline void		ResultInit(ResultBuffer *r);
-static inline void ResultAdd(ResultBuffer *r, unsigned char *buf,
+static inline void	ResultClear(ResultBuffer *r);
+static inline void	ResultInit(ResultBuffer *r);
+static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 			    size_t toWrite);
 static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 			    size_t toRead);

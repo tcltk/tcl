@@ -21,7 +21,7 @@ static Tcl_ObjCmdProc2 TesteventloopCmd;
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
  */
 
-extern void	InitNotifier(void);
+extern void		InitNotifier(void);
 extern XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
@@ -117,7 +117,7 @@ TesteventloopCmd(
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (void *)NULL);
+		"\": must be done or wait", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;

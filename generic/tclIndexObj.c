@@ -203,27 +203,27 @@ Tcl_GetIndexFromObjStruct(
 
     if (offset < (Tcl_Size)sizeof(char *)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-				"struct offset", offset));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid %s value %" TCL_SIZE_MODIFIER "d.",
+		    "struct offset", offset));
 	}
-    return TCL_ERROR;
+	return TCL_ERROR;
     }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
 
     if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-	if ((indexRep->tablePtr == tablePtr)
-		&& (indexRep->offset == offset)
-		&& (indexRep->index != TCL_INDEX_NONE)) {
-	    index = indexRep->index;
-	    goto uncachedDone;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	    if ((indexRep->tablePtr == tablePtr)
+		    && (indexRep->offset == offset)
+		    && (indexRep->index != TCL_INDEX_NONE)) {
+		index = indexRep->index;
+		goto uncachedDone;
+	    }
 	}
-    }
     }
 
     /*
@@ -647,10 +647,10 @@ PrefixAllObjCmd(
 	return result;
     }
     resultPtr = Tcl_NewListObj(0, NULL);
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * A prefix cannot match if it is longest.
@@ -704,13 +704,13 @@ PrefixLongestObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     resultString = NULL;
     resultLength = 0;
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * First check if the prefix string matches the element. A prefix
@@ -872,7 +872,7 @@ Tcl_WrongNumArgs(
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
 	    } else {
-		elementStr = Tcl_GetStringFromObj(origObjv[i], &elemLen);
+		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
@@ -922,7 +922,7 @@ Tcl_WrongNumArgs(
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
-	    elementStr = Tcl_GetStringFromObj(objv[i], &elemLen);
+	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
@@ -1048,7 +1048,7 @@ Tcl_ParseArgsObjv(
 	curArg = objv[srcIndex];
 	srcIndex++;
 	objc--;
-	str = Tcl_GetStringFromObj(curArg, &length);
+	str = TclGetStringFromObj(curArg, &length);
 	if (length > 0) {
 	    c = str[1];
 	} else {

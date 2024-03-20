@@ -355,7 +355,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -450,7 +450,7 @@ TclCreateProc(
 	    Tcl_Size length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
-	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
+	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 
 	    /*
@@ -540,7 +540,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -558,9 +558,9 @@ TclCreateProc(
 			    "FORMALARGUMENTFORMAT", (void *)NULL);
 		    goto procError;
 		}
-	    } else if (*argnamei == ':' && *(argnamei+1) == ':') {
+	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
 		Tcl_Obj *errorObj = Tcl_NewStringObj(
-		    "formal parameter \"", -1);
+			"formal parameter \"", -1);
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
@@ -603,12 +603,11 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_Size tmpLength, valueLength;
-		const char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr, &tmpLength);
-		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
-		     || memcmp(value, tmpPtr, tmpLength) != 0
-		) {
+			|| memcmp(value, tmpPtr, tmpLength) != 0) {
 		    Tcl_Obj *errorObj = Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"", procName);
 		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
@@ -1546,8 +1545,7 @@ TclPushProcCallFrame(
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
-		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)
-	) {
+		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)) {
 	    goto doCompilation;
 	}
     } else {
@@ -1937,8 +1935,7 @@ TclProcCompileProc(
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)
-		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)
-	) {
+		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)) {
 	    return TCL_OK;
 	}
 
@@ -2084,7 +2081,7 @@ MakeProcError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2599,7 +2596,7 @@ SetLambdaFromAny(
     } else {
 	const char *nsName = TclGetString(objv[2]);
 
-	if ((*nsName != ':') || (*(nsName+1) != ':')) {
+	if ((nsName[0] != ':') || (nsName[1] != ':')) {
 	    TclNewLiteralStringObj(nsObjPtr, "::");
 	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
 	} else {
@@ -2779,7 +2776,7 @@ MakeLambdaError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

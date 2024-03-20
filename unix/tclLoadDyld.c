@@ -257,8 +257,12 @@ TclpDlopen(
 			&dyldObjFileImage);
 		if (err == NSObjectFileImageSuccess && dyldObjFileImage) {
 		    int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
-		    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-		    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+		    if (!(flags & 1)) {
+			nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+		    }
+		    if (!(flags & 2)) {
+			nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+		    }
 		    module = NSLinkModule(dyldObjFileImage, nativePath, nsflags);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
@@ -418,7 +422,7 @@ FindSymbol(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\": %s", symbol, errMsg));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		(void *)NULL);
+		(char *)NULL);
     }
     return (void *)proc;
 }
@@ -654,8 +658,12 @@ TclpLoadMemory(
      * Extract the module we want from the image of the object file.
      */
 
-    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    if (!(flags & 1)) {
+	nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+    }
+    if (!(flags & 2)) {
+	nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    }
     module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]", nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {

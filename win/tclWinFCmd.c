@@ -411,8 +411,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFileW(nativeSrc,
-			    nativeDst) != FALSE) {
+		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -697,8 +696,7 @@ DoCopyFile(
 	    if (dstAttr & FILE_ATTRIBUTE_READONLY) {
 		SetFileAttributesW(nativeDst,
 			dstAttr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
-		if (CopyFileW(nativeSrc, nativeDst,
-			0) != FALSE) {
+		if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 		    return TCL_OK;
 		}
 
@@ -794,8 +792,7 @@ TclpDeleteFile(
 		int res = SetFileAttributesW(path,
 			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
 
-		if ((res != 0) &&
-			(DeleteFileW(path) != FALSE)) {
+		if ((res != 0) && (DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
 		Tcl_WinConvertError(GetLastError());
@@ -1082,8 +1079,7 @@ DoRemoveJustDirectory(
 
 	    if (attr & FILE_ATTRIBUTE_READONLY) {
 		attr &= ~FILE_ATTRIBUTE_READONLY;
-		if (SetFileAttributesW(nativePath,
-			attr) == FALSE) {
+		if (SetFileAttributesW(nativePath, attr) == FALSE) {
 		    goto end;
 		}
 		if (RemoveDirectoryW(nativePath) != FALSE) {
@@ -1120,7 +1116,9 @@ DoRemoveJustDirectory(
 	Tcl_DStringInit(errorPtr);
 	p = Tcl_WCharToUtfDString(nativePath, TCL_INDEX_NONE, errorPtr);
 	for (; *p; ++p) {
-	    if (*p == '\\') *p = '/';
+	    if (*p == '\\') {
+		*p = '/';
+	    }
 	}
     }
     return TCL_ERROR;
@@ -1381,8 +1379,7 @@ TraversalCopy(
 	if (DoCreateDirectory(nativeDst) == TCL_OK) {
 	    DWORD attr = GetFileAttributesW(nativeSrc);
 
-	    if (SetFileAttributesW(nativeDst,
-		    attr) != FALSE) {
+	    if (SetFileAttributesW(nativeDst, attr) != FALSE) {
 		return TCL_OK;
 	    }
 	    Tcl_WinConvertError(GetLastError());
@@ -1537,7 +1534,7 @@ GetWinFileAttributes(
 	 */
 
 	Tcl_Size len;
-	const char *str = Tcl_GetStringFromObj(fileName, &len);
+	const char *str = TclGetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1625,7 +1622,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = Tcl_GetStringFromObj(elt, &length);
+	pathv = TclGetStringFromObj(elt, &length);
 	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1661,7 +1658,7 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = Tcl_GetStringFromObj(tempPath, &length);
+	    tempString = TclGetStringFromObj(tempPath, &length);
 	    Tcl_DStringInit(&ds);
 	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
@@ -1992,12 +1989,12 @@ TclpCreateTemporaryDirectory(
      */
 
     if (dirObj) {
-	Tcl_GetString(dirObj);
+	TclGetString(dirObj);
 	if (dirObj->length < 1) {
 	    goto useSystemTemp;
 	}
 	Tcl_DStringInit(&base);
-	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), TCL_INDEX_NONE, &base);
+	Tcl_UtfToWCharDString(TclGetString(dirObj), TCL_INDEX_NONE, &base);
 	if (dirObj->bytes[dirObj->length - 1] != '\\') {
 	    Tcl_UtfToWCharDString("\\", TCL_INDEX_NONE, &base);
 	}
@@ -2015,7 +2012,7 @@ TclpCreateTemporaryDirectory(
 #define SUFFIX_LENGTH	8
 
     if (basenameObj) {
-	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), TCL_INDEX_NONE, &base);
+	Tcl_UtfToWCharDString(TclGetString(basenameObj), TCL_INDEX_NONE, &base);
     } else {
 	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, TCL_INDEX_NONE, &base);
     }

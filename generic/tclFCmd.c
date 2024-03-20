@@ -1251,12 +1251,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Create link from source to target.
@@ -1314,12 +1314,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Read link
@@ -1450,7 +1450,7 @@ TclFileTemporaryCmd(
     if (objc > 2) {
 	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[2];
-	const char *string = Tcl_GetStringFromObj(templateObj, &length);
+	const char *string = TclGetStringFromObj(templateObj, &length);
 
 	/*
 	 * Treat an empty string as if it wasn't there.
@@ -1602,7 +1602,7 @@ TclFileTempDirCmd(
     if (objc > 1) {
 	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[1];
-	const char *string = Tcl_GetStringFromObj(templateObj, &length);
+	const char *string = TclGetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
 
 	/*

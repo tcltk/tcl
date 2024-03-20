@@ -653,7 +653,7 @@ buildInfoObjCmd2(
     }
     if (objc == 2) {
 	Tcl_Size len;
-	const char *arg = Tcl_GetStringFromObj(objv[1], &len);
+	const char *arg = TclGetStringFromObj(objv[1], &len);
 	if (len == 7 && !strcmp(arg, "version")) {
 	    char buf[80];
 	    const char *p = strchr((char *)clientData, '.');
@@ -2690,7 +2690,9 @@ typedef struct {
 } CmdWrapperInfo;
 
 
-static int cmdWrapperProc(void *clientData,
+static int
+cmdWrapperProc(
+    void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
     Tcl_Obj * const *objv)
@@ -2703,7 +2705,10 @@ static int cmdWrapperProc(void *clientData,
     return info->proc(info->clientData, interp, (int)objc, objv);
 }
 
-static void cmdWrapperDeleteProc(void *clientData) {
+static void
+cmdWrapperDeleteProc(
+    void *clientData)
+{
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
 
     clientData = info->deleteData;
@@ -3287,7 +3292,9 @@ invokeObj2Command(
     return result;
 }
 
-static int cmdWrapper2Proc(void *clientData,
+static int
+cmdWrapper2Proc(
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4200,7 +4207,7 @@ Tcl_Canceled(
          */
 
         if (iPtr->asyncCancelMsg != NULL) {
-            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+            message = TclGetStringFromObj(iPtr->asyncCancelMsg, &length);
         } else {
             length = 0;
         }
@@ -4299,7 +4306,7 @@ Tcl_CancelEval(
      */
 
     if (resultObjPtr != NULL) {
-	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = (char *)Tcl_Realloc(cancelInfo->result,cancelInfo->length);
 	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
@@ -4802,7 +4809,7 @@ TEOV_Error(
 	 */
 
 	listPtr = Tcl_NewListObj(objc, objv);
-	cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
+	cmdString = TclGetStringFromObj(listPtr, &cmdLen);
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
 	Tcl_DecrRefCount(listPtr);
     }
@@ -4827,54 +4834,11 @@ TEOV_NotFound(
 				 * namespace (TIP 181). */
     Namespace *savedNsPtr = NULL;
 
-    Tcl_Size qualLen;
-    const char *qualName = Tcl_GetStringFromObj(objv[0], &qualLen);
-
     currNsPtr = varFramePtr->nsPtr;
-    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL) ||
-	(qualLen > 2 && memchr(qualName, ':', qualLen)) /* fast check for NS:: */
-    ) {
-	/*
-	 * first try to find namespace unknown handler of the namespace
-	 * of executed command if available:
-	 */
-	Namespace *altNsPtr, *dummyNsPtr;
-	const char *simpleName;
-
-	(void) TclGetNamespaceForQualName(interp, qualName, currNsPtr,
-	    TCL_FIND_IF_NOT_SIMPLE, &currNsPtr, &altNsPtr,
-	    &dummyNsPtr, &simpleName);
-	if (!simpleName) {
-	    goto globNS;
-	}
-	if (!currNsPtr || (currNsPtr == iPtr->globalNsPtr)) {
-	    if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
-		goto globNS;
-	    }
-	    currNsPtr = altNsPtr;
-	}
-	while (currNsPtr->unknownHandlerPtr == NULL ||
-	    (currNsPtr->flags & (NS_DYING | NS_DEAD))
-	) {
-	    /* traverse to alive parent namespace containing handler */
-	    if (!(currNsPtr = currNsPtr->parentPtr) ||
-		 (currNsPtr == iPtr->globalNsPtr)
-	    ) {
-		/* continue from alternate NS if available */
-		if (!altNsPtr || (altNsPtr == iPtr->globalNsPtr)) {
-		    goto globNS;
-		}
-		currNsPtr = altNsPtr;
-		altNsPtr = NULL;
-		continue;
-	      globNS:
-		/* fallback to the global unknown */
-		currNsPtr = iPtr->globalNsPtr;
-		if (currNsPtr == NULL) {
-		    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
-		}
-		break;
-	    }
+    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
+	currNsPtr = iPtr->globalNsPtr;
+	if (currNsPtr == NULL) {
+	    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
 	}
     }
 
@@ -4991,7 +4955,7 @@ TEOV_RunEnterTraces(
     Command *cmdPtr = *cmdPtrPtr;
     Tcl_Size length, newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int traceCode = TCL_OK;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     /*
      * Call trace functions.
@@ -5043,7 +5007,7 @@ TEOV_RunLeaveTraces(
     Command *cmdPtr = (Command *)data[2];
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Tcl_Size length;
-    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+    const char *command = TclGetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_DYING)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
@@ -5411,7 +5375,7 @@ TclEvalEx(
 			 */
 
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %" TCL_Z_MODIFIER "u)", objectsUsed));
+				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
@@ -6287,7 +6251,7 @@ TclNREvalObjEx(
 
 	Tcl_IncrRefCount(objPtr);
 
-	script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	script = TclGetStringFromObj(objPtr, &numSrcBytes);
 	result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 
 	TclDecrRefCount(objPtr);
@@ -6318,7 +6282,7 @@ TEOEx_ByteCodeCallback(
 
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
-	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    script = TclGetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
 
@@ -6615,7 +6579,7 @@ int
 Tcl_ExprBooleanObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,		/* Expression to evaluate. */
     int *ptr)			/* Where to store 0/1 result. */
 {
     Tcl_Obj *resultPtr;
@@ -6849,7 +6813,7 @@ Tcl_AppendObjToErrorInfo(
     Tcl_Obj *objPtr)		/* Message to record. */
 {
     Tcl_Size length;
-    const char *message = Tcl_GetStringFromObj(objPtr, &length);
+    const char *message = TclGetStringFromObj(objPtr, &length);
     Interp *iPtr = (Interp *) interp;
 
     Tcl_IncrRefCount(objPtr);
@@ -7433,7 +7397,7 @@ ExprAbsFunc(
 	} else if (l == 0) {
 	    if (TclHasStringRep(objv[1])) {
 		Tcl_Size numBytes;
-		const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+		const char *bytes = TclGetStringFromObj(objv[1], &numBytes);
 
 		while (numBytes) {
 		    if (*bytes == '-') {
@@ -8524,7 +8488,8 @@ Tcl_NRCallObjProc2(
 }
 
 #ifndef TCL_NO_DEPRECATED
-int wrapperNRObjProc(
+static int
+wrapperNRObjProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
@@ -8590,7 +8555,8 @@ Tcl_NRCallObjProc(
  */
 
 #ifndef TCL_NO_DEPRECATED
-static int cmdWrapperNreProc(
+static int
+cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,

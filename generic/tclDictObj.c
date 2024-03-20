@@ -543,11 +543,11 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -561,13 +561,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
@@ -648,7 +648,7 @@ SetDictFromAny(
 	}
     } else {
 	Tcl_Size length;
-	const char *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+	const char *nextElem = TclGetStringFromObj(objPtr, &length);
 	const char *limit = (nextElem + length);
 
 	while (nextElem < limit) {
@@ -3822,7 +3822,7 @@ DictAsListLength(
     Tcl_Obj *objPtr)
 {
     Tcl_Size estCount, length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+    const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
     Tcl_Obj *elemPtr;
 
     /*
@@ -3844,7 +3844,7 @@ DictAsListLength(
 	int literal;
 
 	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
+		&elemStart, &nextElem, &elemSize, &literal)) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
@@ -3854,14 +3854,14 @@ DictAsListLength(
 
 	TclInvalidateStringRep(elemPtr);
 	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
+		elemSize);
 	if (elemSize && check == NULL) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
 	if (!literal) {
 	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
+		    TclCopyAndCollapse(elemSize, elemStart, check));
 	}
 	llen++;
     }
@@ -3893,7 +3893,7 @@ DictAsListIndex(
     Tcl_Obj** elemObjPtr)
 {
     Tcl_Size /*estCount,*/ length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+    const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
     Tcl_Obj *elemPtr;
 
     /*
@@ -3916,7 +3916,7 @@ DictAsListIndex(
 	int literal;
 
 	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
+		&elemStart, &nextElem, &elemSize, &literal)) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
@@ -3926,7 +3926,7 @@ DictAsListIndex(
 
 	TclInvalidateStringRep(elemPtr);
 	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
+		elemSize);
 	if (elemSize && check == NULL) {
 	    Tcl_DecrRefCount(elemPtr);
 	    if (interp) {
@@ -3936,7 +3936,7 @@ DictAsListIndex(
 	}
 	if (!literal) {
 	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
+		    TclCopyAndCollapse(elemSize, elemStart, check));
 	}
 	if (llen == index) {
 	    *elemObjPtr = elemPtr;

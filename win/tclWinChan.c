@@ -98,7 +98,7 @@ static int		FileTruncateProc(void *instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
-static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
 /*
@@ -781,7 +781,7 @@ FileGetHandleProc(
 	return TCL_ERROR;
     }
 
-    *handlePtr = (void *) infoPtr->handle;
+    *handlePtr = (void *)infoPtr->handle;
     return TCL_OK;
 }
 
@@ -826,7 +826,7 @@ StoreElementInDict(
      * duplicate keys.
      */
 
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
@@ -910,9 +910,9 @@ StatOpenFile(
      * Anything else and we definitely couldn't have got here anyway.
      */
     if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	STORE_ELEM("type", Tcl_NewStringObj("directory", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("directory", TCL_INDEX_NONE));
     } else {
-	STORE_ELEM("type", Tcl_NewStringObj("file", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("file", TCL_INDEX_NONE));
     }
 #undef STORE_ELEM
 
@@ -961,7 +961,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	dictContents = TclGetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
@@ -1194,7 +1194,7 @@ TclpOpenFileChannel(
 		"couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		(void *)NULL);
+		(char *)NULL);
 	break;
     }
 

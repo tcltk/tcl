@@ -42,11 +42,11 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    Tcl_Size numWords, Tcl_Token **bodyToken,
-				Tcl_Size *bodyLines, Tcl_Size **bodyNext);
+			    Tcl_Size *bodyLines, Tcl_Size **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int numWords,
-				Tcl_Token **bodyToken, Tcl_Size *bodyLines,
-				Tcl_Size **bodyContLines);
+			    Tcl_Token **bodyToken, Tcl_Size *bodyLines,
+			    Tcl_Size **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -235,7 +235,7 @@ TclCompileStringCatCmd(
     }
 
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
-       contiguous constants along the way */
+     * contiguous constants along the way */
 
     numArgs = 0;
     folded = NULL;
@@ -253,7 +253,7 @@ TclCompileStringCatCmd(
 	    Tcl_DecrRefCount(obj);
 	    if (folded) {
 		Tcl_Size len;
-		const char *bytes = Tcl_GetStringFromObj(folded, &len);
+		const char *bytes = TclGetStringFromObj(folded, &len);
 
 		PushLiteral(envPtr, bytes, len);
 		Tcl_DecrRefCount(folded);
@@ -271,7 +271,7 @@ TclCompileStringCatCmd(
     }
     if (folded) {
 	Tcl_Size len;
-	const char *bytes = Tcl_GetStringFromObj(folded, &len);
+	const char *bytes = TclGetStringFromObj(folded, &len);
 
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(folded);
@@ -954,12 +954,12 @@ TclCompileStringMapCmd(
      * correct semantics for mapping.
      */
 
-    bytes = Tcl_GetStringFromObj(objv[0], &slen);
+    bytes = TclGetStringFromObj(objv[0], &slen);
     if (slen == 0) {
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
     } else {
 	PushLiteral(envPtr, bytes, slen);
-	bytes = Tcl_GetStringFromObj(objv[1], &slen);
+	bytes = TclGetStringFromObj(objv[1], &slen);
 	PushLiteral(envPtr, bytes, slen);
 	CompileWord(envPtr, stringTokenPtr, interp, 2);
 	OP(STR_MAP);
@@ -2919,7 +2919,7 @@ TclCompileTryCmd(
 	    }
 	    if (objc > 0) {
 		Tcl_Size len;
-		const char *varname = Tcl_GetStringFromObj(objv[0], &len);
+		const char *varname = TclGetStringFromObj(objv[0], &len);
 
 		resultVarIndices[i] = LocalScalar(varname, len, envPtr);
 		if (resultVarIndices[i] < 0) {
@@ -2931,7 +2931,7 @@ TclCompileTryCmd(
 	    }
 	    if (objc == 2) {
 		Tcl_Size len;
-		const char *varname = Tcl_GetStringFromObj(objv[1], &len);
+		const char *varname = TclGetStringFromObj(objv[1], &len);
 
 		optionVarIndices[i] = LocalScalar(varname, len, envPtr);
 		if (optionVarIndices[i] < 0) {
@@ -3138,7 +3138,7 @@ IssueTryClausesInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = Tcl_GetStringFromObj(matchClauses[i], &slen);
+	    p = TclGetStringFromObj(matchClauses[i], &slen);
 	    PushLiteral(envPtr, p, slen);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
@@ -3350,7 +3350,7 @@ IssueTryClausesFinallyInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    p = Tcl_GetStringFromObj(matchClauses[i], &slen);
+	    p = TclGetStringFromObj(matchClauses[i], &slen);
 	    PushLiteral(envPtr, p, slen);
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
@@ -3678,7 +3678,7 @@ TclCompileUnsetCmd(
 	    const char *bytes;
 	    Tcl_Size len;
 
-	    bytes = Tcl_GetStringFromObj(leadingWord, &len);
+	    bytes = TclGetStringFromObj(leadingWord, &len);
 	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 		flags = 0;
 		haveFlags++;

@@ -53,31 +53,31 @@ static const char *const processors[NUMPROCESSORS] = {
 };
 
 typedef struct {
-  union {
-    unsigned int  dwOemId;
-    struct {
-      int wProcessorArchitecture;
-      int wReserved;
+    union {
+        unsigned int  dwOemId;
+        struct {
+            int wProcessorArchitecture;
+            int wReserved;
+        };
     };
-  };
-  unsigned int     dwPageSize;
-  void *lpMinimumApplicationAddress;
-  void *lpMaximumApplicationAddress;
-  void *dwActiveProcessorMask;
-  unsigned int     dwNumberOfProcessors;
-  unsigned int     dwProcessorType;
-  unsigned int     dwAllocationGranularity;
-  int      wProcessorLevel;
-  int      wProcessorRevision;
+    unsigned int     dwPageSize;
+    void *lpMinimumApplicationAddress;
+    void *lpMaximumApplicationAddress;
+    void *dwActiveProcessorMask;
+    unsigned int     dwNumberOfProcessors;
+    unsigned int     dwProcessorType;
+    unsigned int     dwAllocationGranularity;
+    int      wProcessorLevel;
+    int      wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
-  unsigned int dwOSVersionInfoSize;
-  unsigned int dwMajorVersion;
-  unsigned int dwMinorVersion;
-  unsigned int dwBuildNumber;
-  unsigned int dwPlatformId;
-  wchar_t szCSDVersion[128];
+    unsigned int dwOSVersionInfoSize;
+    unsigned int dwMajorVersion;
+    unsigned int dwMinorVersion;
+    unsigned int dwBuildNumber;
+    unsigned int dwPlatformId;
+    wchar_t szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
 
@@ -551,7 +551,7 @@ TclpInitLibraryPath(
      * TODO - why is the type size_t anyways?
      */
     Tcl_Size length;
-    str = Tcl_GetStringFromObj(pathPtr, &length);
+    str = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length;
     *valuePtr = (char *)Tcl_Alloc(length + 1);
     memcpy(*valuePtr, str, length + 1);
@@ -864,6 +864,7 @@ TclpSetVariables(
         /* Some platforms build configure scripts expect ~ expansion so do that */
         Tcl_Obj *origPaths;
         Tcl_Obj *resolvedPaths;
+
         origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
         resolvedPaths = TclResolveTildePathList(origPaths);
         if (resolvedPaths != origPaths && resolvedPaths != NULL) {

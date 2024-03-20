@@ -502,7 +502,7 @@ MakeByteArray(
     ByteArray **byteArrayPtrPtr)
 {
     Tcl_Size length;
-    const char *src = Tcl_GetStringFromObj(objPtr, &length);
+    const char *src = TclGetStringFromObj(objPtr, &length);
     Tcl_Size numBytes = (limit >= 0 && limit < length) ? limit : length;
     ByteArray *byteArrayPtr = (ByteArray *)Tcl_Alloc(BYTEARRAY_SIZE(numBytes));
     unsigned char *dst = byteArrayPtr->bytes;
@@ -961,8 +961,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjLength(interp, objv[arg], &listc
-			) != TCL_OK) {
+		if (TclListObjLength(interp, objv[arg], &listc) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 
@@ -1087,7 +1086,7 @@ BinaryFormatCmd(
 	case 'B': {
 	    unsigned char *last;
 
-	    str = Tcl_GetStringFromObj(objv[arg], &length);
+	    str = TclGetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -1149,7 +1148,7 @@ BinaryFormatCmd(
 	    unsigned char *last;
 	    int c;
 
-	    str = Tcl_GetStringFromObj(objv[arg], &length);
+	    str = TclGetStringFromObj(objv[arg], &length);
 	    arg++;
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -2514,7 +2513,7 @@ BinaryDecodeHex(
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
-	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
     dataend = data + count;
@@ -2648,7 +2647,7 @@ BinaryEncode64(
 		    objv[i + 1], &wrapcharlen);
 	    if (wrapchar == NULL) {
 		purewrap = 0;
-		wrapchar = Tcl_GetStringFromObj(objv[i + 1], &wrapcharlen);
+		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
 	}
@@ -2772,7 +2771,7 @@ BinaryEncodeUu(
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const unsigned char *) Tcl_GetStringFromObj(
+	    wrapchar = (const unsigned char *) TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
 	    {
 		const unsigned char *p = wrapchar;
@@ -2917,7 +2916,7 @@ BinaryDecodeUu(
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
-	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
     dataend = data + count;
@@ -3092,7 +3091,7 @@ BinaryDecode64(
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
-	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
     dataend = data + count;

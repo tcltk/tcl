@@ -1321,7 +1321,7 @@ ApplicationType(
 
 	ext = strrchr(fullName, '.');
 	if ((ext != NULL) &&
-            (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -1334,7 +1334,7 @@ ApplicationType(
 	}
 
 	header.e_magic = 0;
-	ReadFile(hFile, (void *) &header, sizeof(header), &read, NULL);
+	ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
 	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
 	    /*
 	     * Doesn't have the magic number for relocatable executables. If
@@ -1369,7 +1369,7 @@ ApplicationType(
 
 	buf[0] = '\0';
 	SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-	ReadFile(hFile, (void *) buf, 2, &read, NULL);
+	ReadFile(hFile, (void *)buf, 2, &read, NULL);
 	CloseHandle(hFile);
 
 	if ((buf[0] == 'N') && (buf[1] == 'E')) {
@@ -1880,10 +1880,10 @@ Tcl_CreatePipe(
 	return TCL_ERROR;
     }
 
-    *rchan = Tcl_MakeFileChannel((void *) readHandle, TCL_READABLE);
+    *rchan = Tcl_MakeFileChannel((void *)readHandle, TCL_READABLE);
     Tcl_RegisterChannel(interp, *rchan);
 
-    *wchan = Tcl_MakeFileChannel((void *) writeHandle, TCL_WRITABLE);
+    *wchan = Tcl_MakeFileChannel((void *)writeHandle, TCL_WRITABLE);
     Tcl_RegisterChannel(interp, *wchan);
 
     return TCL_OK;
@@ -2120,12 +2120,11 @@ PipeClose2Proc(
 	if (pipePtr->errorFile) {
 	    WinFile *filePtr = (WinFile *) pipePtr->errorFile;
 
-	    errChan = Tcl_MakeFileChannel((void *) filePtr->handle,
+	    errChan = Tcl_MakeFileChannel((void *)filePtr->handle,
 		    TCL_READABLE);
 	    Tcl_Free(filePtr);
 	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
-	}
-	else {
+	} else {
 	    errChan = NULL;
 	}
 
@@ -2516,12 +2515,12 @@ PipeGetHandleProc(
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     if (direction == TCL_WRITABLE && infoPtr->writeFile) {
 	filePtr = (WinFile*) infoPtr->writeFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -3222,7 +3221,7 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(WCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(string, length, &buf);
@@ -3267,7 +3266,7 @@ TclpOpenTemporaryFile(
 	TclDecrRefCount(tmpObj);
     }
 
-    return Tcl_MakeFileChannel((void *) handle,
+    return Tcl_MakeFileChannel((void *)handle,
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:

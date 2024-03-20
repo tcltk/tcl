@@ -4088,7 +4088,9 @@ TclCompareObjKeys(
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
 
-       if (objPtr1 == objPtr2) return 1;
+       if (objPtr1 == objPtr2) {
+           return 1;
+       }
     */
 
     /*
@@ -4277,7 +4279,7 @@ Tcl_GetCommandFromObj(
                     TclGetCurrentNamespace(interp);
 
             if ((resPtr->refNsPtr == NULL)
-                || ((refNsPtr == resPtr->refNsPtr)
+		    || ((refNsPtr == resPtr->refNsPtr)
                     && (resPtr->refNsId == refNsPtr->nsId)
                     && (resPtr->refNsCmdEpoch == refNsPtr->cmdRefEpoch))) {
                 return (Tcl_Command) cmdPtr;

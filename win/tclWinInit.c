@@ -167,7 +167,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = Tcl_GetStringFromObj(pathPtr, &length);
+    bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
@@ -575,7 +575,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    Tcl_Size i, length, result = -1;
+    Tcl_Size i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;
@@ -591,9 +591,7 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = _wenviron[i];
-	env != NULL;
-	i++, env = _wenviron[i]) {
+    for (i = 0, env = _wenviron[i]; env != NULL; i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
@@ -601,7 +599,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

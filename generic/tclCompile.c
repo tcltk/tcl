@@ -800,7 +800,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
+    stringPtr = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked, and
@@ -1349,7 +1349,7 @@ CompileSubstObj(
     if (codePtr == NULL) {
 	CompileEnv compEnv;
 	Tcl_Size numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1839,7 +1839,7 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = Tcl_GetStringFromObj(cmdObj, &length);
+    bytes = TclGetStringFromObj(cmdObj, &length);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
 
     if (cmdPtr && TclRoutineHasName(cmdPtr)) {
@@ -2182,7 +2182,7 @@ TclCompileScript(
      */
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "too many nested compilations (infinite loop?)", -1));
+		"too many nested compilations (infinite loop?)", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
@@ -2195,114 +2195,114 @@ TclCompileScript(
     /* Each iteration compiles one command from the script. */
 
     if (numBytes > 0) {
-      if (numBytes >= INT_MAX) {
-	/*
-	 * Note this gets -errorline as 1. Not worth figuring out which line
-	 * crosses the limit to get -errorline for this error case.
-	 */
-	Tcl_SetObjResult(interp,
-	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
-			   "d exceeds max permitted length %d.",
-			   numBytes, INT_MAX-1));
+	if (numBytes >= INT_MAX) {
+	    /*
+	     * Note this gets -errorline as 1. Not worth figuring out which line
+	     * crosses the limit to get -errorline for this error case.
+	     */
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Script length %" TCL_SIZE_MODIFIER
+		    "d exceeds max permitted length %d.",
+		    numBytes, INT_MAX-1));
 	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (void *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
-      }
-      /*
-       * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
-       * many nested compilations (body enclosed in body) can cause abnormal
-       * program termination with a stack overflow exception, bug [fec0c17d39].
-       */
-      Tcl_Parse *parsePtr = (Tcl_Parse *)Tcl_Alloc(sizeof(Tcl_Parse));
-
-      do {
-	const char *next;
-
-	if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, parsePtr)) {
-	    /*
-	     * Compile bytecodes to report the parsePtr error at runtime.
-	     */
-
-	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
-		    parsePtr->term + 1 - parsePtr->commandStart);
-	    TclCompileSyntaxError(interp, envPtr);
-	    Tcl_Free(parsePtr);
-	    return;
 	}
+	/*
+	 * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
+	 * many nested compilations (body enclosed in body) can cause abnormal
+	 * program termination with a stack overflow exception, bug [fec0c17d39].
+	 */
+	Tcl_Parse *parsePtr = (Tcl_Parse *)Tcl_Alloc(sizeof(Tcl_Parse));
+
+	do {
+	    const char *next;
+
+	    if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, parsePtr)) {
+		/*
+		* Compile bytecodes to report the parsePtr error at runtime.
+		*/
+
+		Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
+			parsePtr->term + 1 - parsePtr->commandStart);
+		TclCompileSyntaxError(interp, envPtr);
+		Tcl_Free(parsePtr);
+		return;
+	    }
 
 #ifdef TCL_COMPILE_DEBUG
-	/*
-	 * If tracing, print a line for each top level command compiled.
-	 * TODO: Suppress when numWords == 0 ?
-	 */
+	    /*
+	     * If tracing, print a line for each top level command compiled.
+	     * TODO: Suppress when numWords == 0 ?
+	     */
 
-	if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
-	    int commandLength = parsePtr->term - parsePtr->commandStart;
-	    fprintf(stdout, "  Compiling: ");
-	    TclPrintSource(stdout, parsePtr->commandStart,
-		    TclMin(commandLength, 55));
-	    fprintf(stdout, "\n");
-	}
+	    if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
+		int commandLength = parsePtr->term - parsePtr->commandStart;
+		fprintf(stdout, "  Compiling: ");
+		TclPrintSource(stdout, parsePtr->commandStart,
+			TclMin(commandLength, 55));
+		fprintf(stdout, "\n");
+	    }
 #endif
 
-	/*
-	 * TIP #280: Count newlines before the command start.
-	 * (See test info-30.33).
-	 */
-
-	TclAdvanceLines(&envPtr->line, p, parsePtr->commandStart);
-	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
-		parsePtr->commandStart - envPtr->source);
-
-	/*
-	 * Advance parser to the next command in the script.
-	 */
-
-	next = parsePtr->commandStart + parsePtr->commandSize;
-	numBytes -= next - p;
-	p = next;
-
-	if (parsePtr->numWords == 0) {
 	    /*
-	     * The "command" parsed has no words.  In this case we can skip
-	     * the rest of the loop body.  With no words, clearly
-	     * CompileCommandTokens() has nothing to do.  Since the parser
-	     * aggressively sucks up leading comment and white space,
-	     * including newlines, parsePtr->commandStart must be pointing at
-	     * either the end of script, or a command-terminating semi-colon.
-	     * In either case, the TclAdvance*() calls have nothing to do.
-	     * Finally, when no words are parsed, no tokens have been
-	     * allocated at parsePtr->tokenPtr so there's also nothing for
-	     * Tcl_FreeParse() to do.
-	     *
-	     * The advantage of this shortcut is that CompileCommandTokens()
-	     * can be written with an assumption that (int)parsePtr->numWords > 0, with
-	     * the implication the CCT() always generates bytecode.
+	     * TIP #280: Count newlines before the command start.
+	     * (See test info-30.33).
 	     */
-	    continue;
-	}
 
-	/*
-	 * Avoid stack exhaustion by too many nested calls of TclCompileScript
-	 * (considering interp recursionlimit).
-	 */
-	iPtr->numLevels++;
+	    TclAdvanceLines(&envPtr->line, p, parsePtr->commandStart);
+	    TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
+		    parsePtr->commandStart - envPtr->source);
 
-	lastCmdIdx = CompileCommandTokens(interp, parsePtr, envPtr);
+	    /*
+	     * Advance parser to the next command in the script.
+	     */
 
-	iPtr->numLevels--;
+	    next = parsePtr->commandStart + parsePtr->commandSize;
+	    numBytes -= next - p;
+	    p = next;
 
-	/*
-	 * TIP #280: Track lines in the just compiled command.
-	 */
+	    if (parsePtr->numWords == 0) {
+		/*
+		 * The "command" parsed has no words.  In this case we can skip
+		 * the rest of the loop body.  With no words, clearly
+		 * CompileCommandTokens() has nothing to do.  Since the parser
+		 * aggressively sucks up leading comment and white space,
+		 * including newlines, parsePtr->commandStart must be pointing at
+		 * either the end of script, or a command-terminating semi-colon.
+		 * In either case, the TclAdvance*() calls have nothing to do.
+		 * Finally, when no words are parsed, no tokens have been
+		 * allocated at parsePtr->tokenPtr so there's also nothing for
+		 * Tcl_FreeParse() to do.
+		 *
+		 * The advantage of this shortcut is that CompileCommandTokens()
+		 * can be written with an assumption that (int)parsePtr->numWords > 0, with
+		 * the implication the CCT() always generates bytecode.
+		 */
+		continue;
+	    }
 
-	TclAdvanceLines(&envPtr->line, parsePtr->commandStart, p);
-	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
-		p - envPtr->source);
-	Tcl_FreeParse(parsePtr);
-      } while (numBytes > 0);
+	    /*
+	     * Avoid stack exhaustion by too many nested calls of TclCompileScript
+	     * (considering interp recursionlimit).
+	     */
+	    iPtr->numLevels++;
 
-      Tcl_Free(parsePtr);
+	    lastCmdIdx = CompileCommandTokens(interp, parsePtr, envPtr);
+
+	    iPtr->numLevels--;
+
+	    /*
+	     * TIP #280: Track lines in the just compiled command.
+	     */
+
+	    TclAdvanceLines(&envPtr->line, parsePtr->commandStart, p);
+	    TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
+		    p - envPtr->source);
+	    Tcl_FreeParse(parsePtr);
+	} while (numBytes > 0);
+
+	Tcl_Free(parsePtr);
     }
 
     if (lastCmdIdx == -1) {
@@ -2374,12 +2374,12 @@ TclCompileVarSubst(
      */
 
     for (i = 0, p = name;  i < nameBytes;  i++, p++) {
-	if ((*p == ':') && (i < nameBytes-1) && (*(p+1) == ':')) {
+	if ((p[0] == ':') && (i < nameBytes-1) && (p[1] == ':')) {
 	    localVarName = -1;
 	    break;
-	} else if ((*p == '(')
+	} else if ((p[0] == '(')
 		&& (tokenPtr->numComponents == 1)
-		&& (*(name + nameBytes - 1) == ')')) {
+		&& (name[nameBytes - 1] == ')')) {
 	    localVarName = 0;
 	    break;
 	}
@@ -2507,7 +2507,7 @@ TclCompileTokens(
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
-		(tokenPtr->start[1] == '\n')) {
+		    (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
 		    int clPos = Tcl_DStringLength(&textBuffer);
 
@@ -2831,7 +2831,7 @@ PreventCycle(
 	     * the internalrep.
 	     */
 	    Tcl_Size numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -3072,7 +3072,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

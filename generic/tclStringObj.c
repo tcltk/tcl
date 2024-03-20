@@ -181,14 +181,11 @@ GrowUnicodeBuffer(
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
-	stringPtr = (String *)TclReallocElemsEx(stringPtr,
-						needed + 1, /* +1 for nul */
-						sizeof(Tcl_UniChar),
-						offsetof(String, unicode),
-						&maxChars);
+	stringPtr = (String *) TclReallocElemsEx(stringPtr,
+		needed + 1, /* +1 for nul */
+		sizeof(Tcl_UniChar), offsetof(String, unicode), &maxChars);
 	maxChars -= 1; /* End nul not included */
-    }
-    else {
+    } else {
 	/*
 	 * First allocation - just big enough. Note needed does
 	 * not include terminating nul but STRING_SIZE does
@@ -490,7 +487,7 @@ TclCheckEmptyString(
     }
 
     if (TclIsPureByteArray(objPtr)
-	&& Tcl_GetCharLength(objPtr) == 0) {
+	    && Tcl_GetCharLength(objPtr) == 0) {
 	return TCL_EMPTYSTRING_YES;
     }
 
@@ -1394,10 +1391,8 @@ Tcl_AppendObjToObj(
 	return;
     }
 
-    if (
-	TclIsPureByteArray(appendObjPtr)
-	&& (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
-    ) {
+    if (TclIsPureByteArray(appendObjPtr)
+	    && (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)) {
 	/*
 	 * Both bytearray objects are pure, so the second internal bytearray value
 	 * can be appended to the first, with no need to modify the "bytes" field.
@@ -2192,7 +2187,9 @@ Tcl_AppendFormatToObj(
 		}
 		cmpResult = mp_cmp_d(&big, 0);
 		isNegative = (cmpResult == MP_LT);
-		if (cmpResult == MP_EQ) gotHash = 0;
+		if (cmpResult == MP_EQ) {
+		    gotHash = 0;
+		}
 		if (ch == 'u') {
 		    if (isNegative) {
 			mp_clear(&big);
@@ -2209,7 +2206,9 @@ Tcl_AppendFormatToObj(
 		    goto error;
 		}
 		isNegative = (w < (Tcl_WideInt) 0);
-		if (w == (Tcl_WideInt) 0) gotHash = 0;
+		if (w == (Tcl_WideInt) 0) {
+		    gotHash = 0;
+		}
 #endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (TclGetWideBitsFromObj(interp, segment, &w) != TCL_OK) {
@@ -2220,18 +2219,26 @@ Tcl_AppendFormatToObj(
 		if (useShort) {
 		    s = (short) l;
 		    isNegative = (s < (short) 0);
-		    if (s == (short) 0) gotHash = 0;
+		    if (s == (short) 0) {
+			gotHash = 0;
+		    }
 		} else {
 		    isNegative = (l < (long) 0);
-		    if (l == (long) 0) gotHash = 0;
+		    if (l == (long) 0) {
+			gotHash = 0;
+		    }
 		}
 	    } else if (useShort) {
 		s = (short) l;
 		isNegative = (s < (short) 0);
-		if (s == (short) 0) gotHash = 0;
+		if (s == (short) 0) {
+		    gotHash = 0;
+		}
 	    } else {
 		isNegative = (l < (long) 0);
-		if (l == (long) 0) gotHash = 0;
+		if (l == (long) 0) {
+		    gotHash = 0;
+		}
 	    }
 
 	    TclNewObj(segment);
@@ -2544,7 +2551,9 @@ Tcl_AppendFormatToObj(
 		char *q = TclGetString(segment) + 1;
 		*q = 'x';
 		q = strchr(q, 'P');
-		if (q) *q = 'p';
+		if (q) {
+		    *q = 'p';
+		}
 	    }
 	    break;
 	}
@@ -3275,11 +3284,11 @@ TclStringCat(
 		Tcl_Obj *objPtr = *ov++;
 
 		if (objPtr->bytes == NULL
-		    && TclCheckEmptyString(objPtr) != TCL_EMPTYSTRING_YES) {
+			&& TclCheckEmptyString(objPtr) != TCL_EMPTYSTRING_YES) {
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    (void)Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
+		    (void) Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 

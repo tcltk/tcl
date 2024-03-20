@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 	 */
 
 	Tcl_Size len;
-	const char *part1 = Tcl_GetStringFromObj(part1Ptr, &len);
+	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
 	    const char *part2 = strchr(part1, '(');
@@ -848,7 +848,7 @@ TclLookupSimpleVar(
     ResolverScheme *resPtr;
     int isNew, result;
     Tcl_Size i, varLen;
-    const char *varName = Tcl_GetStringFromObj(varNamePtr, &varLen);
+    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -914,7 +914,7 @@ TclLookupSimpleVar(
 	const char *tail;
 	int lookGlobal = (flags & TCL_GLOBAL_ONLY)
 		|| (cxtNsPtr == iPtr->globalNsPtr)
-		|| ((*varName == ':') && (*(varName+1) == ':'));
+		|| ((varName[0] == ':') && (varName[1] == ':'));
 
 	if (lookGlobal) {
 	    *indexPtr = -1;
@@ -983,10 +983,10 @@ TclLookupSimpleVar(
 		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
-		    localNameStr = Tcl_GetStringFromObj(objPtr, &localLen);
+		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
-			&& !memcmp(varName, localNameStr, varLen)) {
+			    && !memcmp(varName, localNameStr, varLen)) {
 			*indexPtr = i;
 			return (Var *) &varFramePtr->compiledLocals[i];
 		    }
@@ -4973,7 +4973,7 @@ Tcl_GlobalObjCmd(
 	for (tail=varName ; *tail!='\0' ; tail++) {
 	    /* empty body */
 	}
-	while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
+	while ((tail > varName) && ((tail[0] != ':') || (tail[-1] != ':'))) {
 	    tail--;
 	}
 	if ((*tail == ':') && (tail > varName)) {
@@ -5499,7 +5499,7 @@ TclDeleteVars(
     }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
-	 varPtr = VarHashFirstVar(tablePtr, &search)) {
+	    varPtr = VarHashFirstVar(tablePtr, &search)) {
 	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
 		-1);
 	VarHashDeleteEntry(varPtr);

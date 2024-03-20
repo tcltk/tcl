@@ -1594,8 +1594,8 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			    VwaitVarProc, &vwaitItems[numItems]);
+		    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		    VwaitVarProc, &vwaitItems[numItems]);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -1610,7 +1610,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1634,7 +1634,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1658,7 +1658,7 @@ Tcl_VwaitObjCmd(
 
   endOfOptionLoop:
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
-		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
+	    TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"can't wait: would block forever", -1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (void *)NULL);
@@ -1676,8 +1676,8 @@ Tcl_VwaitObjCmd(
 
     for (result = TCL_OK; i < objc; i++) {
 	result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			VwaitVarProc, &vwaitItems[numItems]);
+		TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		VwaitVarProc, &vwaitItems[numItems]);
 	if (result != TCL_OK) {
 	    break;
 	}
@@ -1710,7 +1710,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
-			&vwaitItems[numItems]);
+		&vwaitItems[numItems]);
 	Tcl_GetTime(&before);
     } else {
 	timeout = 0;

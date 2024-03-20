@@ -772,15 +772,15 @@ TclCompileClockClicksCmd(
 	 */
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
-	    || tokenPtr[1].size < 4
-	    || tokenPtr[1].size > 13) {
+		|| tokenPtr[1].size < 4
+		|| tokenPtr[1].size > 13) {
 	    return TCL_ERROR;
 	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
-			    tokenPtr[1].size)) {
+		tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
 	    break;
 	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
-			    tokenPtr[1].size)) {
+		tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
 	    break;
 	} else {
@@ -3452,8 +3452,10 @@ TclLocalScalar(
     size_t numBytes,
     CompileEnv *envPtr)
 {
-    Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-                                 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+    Tcl_Token token[2] = {
+	{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+        {TCL_TOKEN_TEXT, NULL, 0, 0}
+    };
 
     token[1].start = bytes;
     token[1].size = numBytes;
@@ -3570,8 +3572,8 @@ TclPushVarName(
 	 */
 
 	simpleVarName = 0;
-	for (p = varTokenPtr[1].start,
-	     last = p + varTokenPtr[1].size;  p < last;  p++) {
+	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
+		p < last;  p++) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
@@ -3640,7 +3642,7 @@ TclPushVarName(
 	int hasNsQualifiers = 0;
 
 	for (p = name, last = p + nameLen-1;  p < last;  p++) {
-	    if ((*p == ':') && (*(p+1) == ':')) {
+	    if ((p[0] == ':') && (p[1] == ':')) {
 		hasNsQualifiers = 1;
 		break;
 	    }

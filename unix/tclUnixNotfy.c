@@ -131,12 +131,12 @@ TclpAlertNotifier(
     if (write(tsdPtr->triggerEventFd, &eventFdVal,
 	    sizeof(eventFdVal)) != sizeof(eventFdVal)) {
 	Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
-		(void *) tsdPtr);
+		tsdPtr);
     }
 #else
     if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
 	Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerPipe",
-		(void *) tsdPtr);
+		tsdPtr);
     }
 #endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
 #endif /* NOTIFIER_SELECT */
@@ -484,7 +484,7 @@ AtForkChild(void)
  *
  * TclpNotifierData --
  *
- *	This function returns a pointer to be associated
+ *	This function returns a void pointer to be associated
  *	with a Tcl_AsyncHandler.
  *
  * Results:
@@ -503,7 +503,7 @@ TclpNotifierData(void)
 #if defined(NOTIFIER_EPOLL) || defined(NOTIFIER_KQUEUE)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    return (void *) tsdPtr;
+    return tsdPtr;
 #else
     return NULL;
 #endif

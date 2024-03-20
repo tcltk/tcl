@@ -2260,13 +2260,13 @@ TclGetNamespaceForQualName(
 
     start = qualName;			/* Points to start of qualifying
 					 * namespace. */
-    if ((*qualName == ':') && (*(qualName+1) == ':')) {
-	start = qualName+2;		/* Skip over the initial :: */
-	while (*start == ':') {
+    if ((qualName[0] == ':') && (qualName[1] == ':')) {
+	start = qualName + 2;		/* Skip over the initial :: */
+	while (start[0] == ':') {
 	    start++;			/* Skip over a subsequent : */
 	}
 	nsPtr = globalNsPtr;
-	if (*start == '\0') {		/* qualName is just two or more
+	if (start[0] == '\0') {		/* qualName is just two or more
 					 * ":"s. */
 	    *nsPtrPtr = globalNsPtr;
 	    *altNsPtrPtr = NULL;
@@ -2306,7 +2306,7 @@ TclGetNamespaceForQualName(
 
 	len = 0;
 	for (end = start;  *end != '\0';  end++) {
-	    if ((*end == ':') && (*(end+1) == ':')) {
+	    if ((end[0] == ':') && (end[1] == ':')) {
 		end += 2;		/* Skip over the initial :: */
 		while (*end == ':') {
 		    end++;		/* Skip over the subsequent : */
@@ -2316,7 +2316,7 @@ TclGetNamespaceForQualName(
 	    len++;
 	}
 
-	if (*end=='\0' && !(end-start>=2 && *(end-1)==':' && *(end-2)==':')) {
+	if (end[0]=='\0' && !(end-start>=2 && end[-1]==':' && end[-2]==':')) {
 	    /*
 	     * qualName ended with a simple name at start. If TCL_FIND_ONLY_NS
 	     * was specified, look this up as a namespace. Otherwise, start is
@@ -2436,7 +2436,7 @@ TclGetNamespaceForQualName(
      * variable name, trailing "::"s refer to the cmd or var named {}.
      */
 
-    if ((flags & TCL_FIND_ONLY_NS) || (end>start && *(end-1)!=':')) {
+    if ((flags & TCL_FIND_ONLY_NS) || (end>start && end[-1]!=':')) {
 	*simpleNamePtr = NULL;		/* Found namespace name. */
     } else {
 	*simpleNamePtr = end;		/* Found cmd/var: points to empty
@@ -3058,7 +3058,7 @@ NamespaceChildrenCmd(
     if (objc == 3) {
 	const char *name = TclGetString(objv[2]);
 
-	if ((*name == ':') && (*(name+1) == ':')) {
+	if ((name[0] == ':') && (name[1] == ':')) {
 	    pattern = name;
 	} else {
 	    Tcl_DStringAppend(&buffer, nsPtr->fullName, -1);
@@ -3172,7 +3172,7 @@ NamespaceCodeCmd(
      " "namespace" command.  [Bug 3202171].
      */
 
-    arg = Tcl_GetStringFromObj(objv[1], &length);
+    arg = TclGetStringFromObj(objv[1], &length);
     if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
@@ -4292,13 +4292,13 @@ NamespaceQualifiersCmd(
      */
 
     name = TclGetString(objv[1]);
-    for (p = name;  *p != '\0';  p++) {
+    for (p = name;  p[0] != '\0';  p++) {
 	/* empty body */
     }
     while (--p >= name) {
-	if ((*p == ':') && (p > name) && (*(p-1) == ':')) {
+	if ((p[0] == ':') && (p > name) && (p[-1] == ':')) {
 	    p -= 2;			/* Back up over the :: */
-	    while ((p >= name) && (*p == ':')) {
+	    while ((p >= name) && (p[0] == ':')) {
 		p--;			/* Back up over the preceding : */
 	    }
 	    break;
@@ -4550,7 +4550,7 @@ NamespaceTailCmd(
 	/* empty body */
     }
     while (--p > name) {
-	if ((*p == ':') && (*(p-1) == ':')) {
+	if ((p[0] == ':') && (p[-1] == ':')) {
 	    p++;			/* Just after the last "::" */
 	    break;
 	}

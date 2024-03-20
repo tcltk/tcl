@@ -888,7 +888,7 @@ CompileAssembleObj(
      * Set up the compilation environment, and assemble the code.
      */
 
-    source = Tcl_GetStringFromObj(objPtr, &sourceLen);
+    source = TclGetStringFromObj(objPtr, &sourceLen);
     TclInitCompileEnv(interp, &compEnv, source, sourceLen, NULL, 0);
     status = TclAssembleCode(&compEnv, source, sourceLen, TCL_EVAL_DIRECT);
     if (status != TCL_OK) {
@@ -986,7 +986,6 @@ TclCompileAssembleCmd(
 
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
-
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s\" body, line %d)",
 		(int)parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
@@ -1312,7 +1311,7 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
 	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
@@ -1384,7 +1383,7 @@ AssembleOneLine(
 	}
 	if (opnd < 0 || opnd > 3) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj("operand must be [0..3]", -1));
+		     Tcl_NewStringObj("operand must be [0..3]", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", (void *)NULL);
 	    goto cleanup;
 	}
@@ -1479,7 +1478,7 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
+	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
 	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 
 	    /*
@@ -2319,7 +2318,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return TCL_INDEX_NONE;
     }
-    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return TCL_INDEX_NONE;

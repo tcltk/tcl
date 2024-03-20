@@ -114,7 +114,7 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND) {
+		firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
         } else {
             lastError = firstError;
@@ -133,32 +133,32 @@ TclpDlopen(
 	if (interp) {
 	    switch (lastError) {
 	    case ERROR_MOD_NOT_FOUND:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", (char *)NULL);
 		goto notFoundMsg;
 	    case ERROR_DLL_NOT_FOUND:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", (char *)NULL);
 	    notFoundMsg:
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
 			" could not be found in library path", TCL_INDEX_NONE);
 		break;
 	    case ERROR_PROC_NOT_FOUND:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", (char *)NULL);
 		Tcl_AppendToObj(errMsg, "A function specified in the import"
 			" table could not be resolved by the system. Windows"
 			" is not telling which one, I'm sorry.", TCL_INDEX_NONE);
 		break;
 	    case ERROR_INVALID_DLL:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", (char *)NULL);
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
 			" is damaged", TCL_INDEX_NONE);
 		break;
 	    case ERROR_DLL_INIT_FAILED:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", (char *)NULL);
 		Tcl_AppendToObj(errMsg, "the library initialization"
 			" routine failed", TCL_INDEX_NONE);
 		break;
             case ERROR_BAD_EXE_FORMAT:
-		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", (void *)NULL);
+		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", (char *)NULL);
 		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
                 break;
             default:
@@ -227,7 +227,7 @@ FindSymbol(
     if (proc == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\"", symbol));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;
 }

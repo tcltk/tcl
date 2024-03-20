@@ -49,17 +49,24 @@ static Tcl_ObjCmdProc2	TestbigdataCmd;
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
 
-static void VarPtrDeleteProc(void *clientData, TCL_UNUSED(Tcl_Interp *))
+static void
+VarPtrDeleteProc(
+    void *clientData,
+    TCL_UNUSED(Tcl_Interp *))
 {
     int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
-	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
+	if (varPtr[i]) {
+	    Tcl_DecrRefCount(varPtr[i]);
+	}
     }
     Tcl_Free(varPtr);
 }
 
-static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
+static Tcl_Obj **
+GetVarPtr(
+    Tcl_Interp *interp)
 {
     Tcl_InterpDeleteProc *proc;
 
@@ -407,7 +414,7 @@ TestbooleanobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetBooleanFromObj(interp, varPtr[varIndex],
-				  &boolValue) != TCL_OK) {
+		&boolValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -507,7 +514,7 @@ TestdoubleobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, varPtr[varIndex],
-				 &doubleValue) != TCL_OK) {
+		&doubleValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -947,7 +954,7 @@ TestlistobjCmd(
     case LISTOBJ_REPLACE:
 	if (objc < 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex start count ?element...?");
+		    "varIndex start count ?element...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK
@@ -959,7 +966,7 @@ TestlistobjCmd(
 	}
 	Tcl_ResetResult(interp);
 	return Tcl_ListObjReplace(interp, varPtr[varIndex], first, count,
-				  objc-5, objv+5);
+		objc-5, objv+5);
 
     case LISTOBJ_INDEXMEMCHECK:
 	if (objc != 3) {
@@ -1017,8 +1024,7 @@ TestlistobjCmd(
 	 * Hence this explicit test.
 	 */
 	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex listIndex");
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex listIndex");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK) {
@@ -1654,12 +1660,9 @@ TestbigdataCmd (
     /* Need one byte for nul terminator */
     Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
-		Tcl_GetString(objv[2]),
-		limit));
+		Tcl_GetString(objv[2]), limit));
 	return TCL_ERROR;
     }
 
