@@ -2462,18 +2462,18 @@ TclUniCharMatch(
  */
 
 int
-TclUtfToUCS4(
+TclpUtfToUCS4(
     const char *src,	/* The UTF-8 string. */
     int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
 			 * by the UTF-8 string. */
 {
     Tcl_UniChar ch = 0;
-    int len = Tcl_UtfToUniChar(src, &ch);
+    int len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX <= 4
     if ((ch & ~0x3FF) == 0xD800) {
 	Tcl_UniChar low = ch;
-	int len2 = Tcl_UtfToUniChar(src+len, &low);
+	int len2 = TclUtfToUniChar(src+len, &low);
 	if ((low & ~0x3FF) == 0xDC00) {
 	    *ucs4Ptr = (((ch & 0x3FF) << 10) | (low & 0x3FF)) + 0x10000;
 	    return len + len2;
