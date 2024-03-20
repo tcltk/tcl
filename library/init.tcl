@@ -118,6 +118,18 @@ if {[interp issafe]} {
 	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
 	    -map $cmdmap]
 	::tcl::unsupported::clock::configure -init-complete
+
+	# Auto-loading stubs for 'clock.tcl'
+
+	namespace inscope ::tcl::clock {
+	    proc _load_stubs args {
+		namespace unknown {}
+		::source -encoding utf-8 [::file join [info library] clock.tcl]
+		tailcall {*}$args
+	    }
+	    namespace unknown ::tcl::clock::_load_stubs
+	}
+
 	uplevel 1 [info level 0]
     }
 }
