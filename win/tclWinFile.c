@@ -2769,27 +2769,25 @@ TclpObjNormalizePath(
 	 * Convert the entire known path to long form.
 	 */
 
-	if (1) {
-	    WCHAR wpath[MAX_PATH];
-	    const WCHAR *nativePath;
-	    DWORD wpathlen;
+	WCHAR wpath[MAX_PATH];
+	const WCHAR *nativePath;
+	DWORD wpathlen;
 
-	    Tcl_DStringInit(&ds);
-	    nativePath =
-		    Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
-	    wpathlen = GetLongPathNameProc(nativePath,
-		    (WCHAR *) wpath, MAX_PATH);
-	    /*
-	     * We have to make the drive letter uppercase.
-	     */
+	Tcl_DStringInit(&ds);
+	nativePath =
+		Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
+	wpathlen = GetLongPathNameProc(nativePath,
+		(WCHAR *) wpath, MAX_PATH);
+	/*
+	 * We have to make the drive letter uppercase.
+	 */
 
-	    if (wpath[0] >= 'a') {
-		wpath[0] -= ('a' - 'A');
-	    }
-	    Tcl_DStringAppend(&dsNorm, (const char *) wpath,
-		    wpathlen * sizeof(WCHAR));
-	    Tcl_DStringFree(&ds);
+	if (wpath[0] >= 'a') {
+	    wpath[0] -= ('a' - 'A');
 	}
+	Tcl_DStringAppend(&dsNorm, (const char *) wpath,
+		wpathlen * sizeof(WCHAR));
+	Tcl_DStringFree(&ds);
 #endif /* TclNORM_LONG_PATH */
     }
 
@@ -3111,7 +3109,7 @@ TclNativeCreateNativeRep(
 
     wp = nativePathPtr = (WCHAR *)ckalloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
-      goto done;
+	goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
 	    len + 2);

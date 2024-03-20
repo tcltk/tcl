@@ -101,7 +101,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -152,7 +152,7 @@ TesteventloopCmd(
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (void *)NULL);
+		"\": must be done or wait", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -177,7 +177,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -206,11 +206,11 @@ TestvolumetypeCmd(
 
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (void *)NULL);
+		(path?path:""), "\"", (char *)NULL);
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_AppendResult(interp, volType, (void *)NULL);
+    Tcl_AppendResult(interp, volType, (char *)NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }
@@ -243,7 +243,7 @@ TestvolumetypeCmd(
 
 static int
 TestwinclockCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -292,7 +292,7 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -312,7 +312,7 @@ TestwinsleepCmd(
 
 static int
 TestSizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -357,7 +357,7 @@ syntax:
 
 static int
 TestExceptionCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,			/* Tcl interpreter */
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
@@ -604,14 +604,9 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath,
-			      SE_FILE_OBJECT,
-			      DACL_SECURITY_INFORMATION |
-				  PROTECTED_DACL_SECURITY_INFORMATION,
-			      NULL,
-			      NULL,
-			      newAcl,
-			      NULL) == ERROR_SUCCESS) {
+    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
     }
 
@@ -635,7 +630,6 @@ TestplatformChmod(
 
     /* Run normal chmod command */
     return chmod(nativePath, pmode);
-
 }
 
 /*
@@ -659,7 +653,7 @@ TestplatformChmod(
 
 static int
 TestchmodCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -685,7 +679,7 @@ TestchmodCmd(
 	}
 	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    (void *)NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);

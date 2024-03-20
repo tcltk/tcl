@@ -53,31 +53,31 @@ static const char *const processors[NUMPROCESSORS] = {
 };
 
 typedef struct {
-  union {
-    unsigned int  dwOemId;
-    struct {
-      int wProcessorArchitecture;
-      int wReserved;
+    union {
+        unsigned int  dwOemId;
+        struct {
+            int wProcessorArchitecture;
+            int wReserved;
+        };
     };
-  };
-  unsigned int     dwPageSize;
-  void *lpMinimumApplicationAddress;
-  void *lpMaximumApplicationAddress;
-  void *dwActiveProcessorMask;
-  unsigned int     dwNumberOfProcessors;
-  unsigned int     dwProcessorType;
-  unsigned int     dwAllocationGranularity;
-  int      wProcessorLevel;
-  int      wProcessorRevision;
+    unsigned int     dwPageSize;
+    void *lpMinimumApplicationAddress;
+    void *lpMaximumApplicationAddress;
+    void *dwActiveProcessorMask;
+    unsigned int     dwNumberOfProcessors;
+    unsigned int     dwProcessorType;
+    unsigned int     dwAllocationGranularity;
+    int      wProcessorLevel;
+    int      wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
-  unsigned int dwOSVersionInfoSize;
-  unsigned int dwMajorVersion;
-  unsigned int dwMinorVersion;
-  unsigned int dwBuildNumber;
-  unsigned int dwPlatformId;
-  wchar_t szCSDVersion[128];
+    unsigned int dwOSVersionInfoSize;
+    unsigned int dwMajorVersion;
+    unsigned int dwMinorVersion;
+    unsigned int dwBuildNumber;
+    unsigned int dwPlatformId;
+    wchar_t szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
 

@@ -507,12 +507,11 @@ TclpCreateProcess(
 	sigdelset(&sigs, SIGKILL);
 	sigdelset(&sigs, SIGSTOP);
 
-	posix_spawnattr_setflags(&attr,
-				 POSIX_SPAWN_SETSIGDEF
+	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF
 #ifdef POSIX_SPAWN_USEVFORK
-				 | POSIX_SPAWN_USEVFORK
+		| POSIX_SPAWN_USEVFORK
 #endif
-				 );
+		);
 	posix_spawnattr_setsigdefault(&attr, &sigs);
 
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
@@ -520,7 +519,7 @@ TclpCreateProcess(
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
-			      newArgv, environ);
+		newArgv, environ);
 	childErrno = errno;
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
@@ -1349,7 +1348,7 @@ Tcl_WaitPid(
 
 int
 Tcl_PidObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
