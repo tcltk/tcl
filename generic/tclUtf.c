@@ -443,7 +443,6 @@ static const unsigned short cp1252[32] = {
    0x2DC, 0x2122, 0x0161, 0x203A, 0x0153,   0x9D, 0x017E, 0x0178
 };
 
-#undef Tcl_UtfToUniChar
 Tcl_Size
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
@@ -685,11 +684,11 @@ Tcl_UtfToUniCharDString(
     endPtr = src + length;
     optPtr = endPtr - 4;
     while (p <= optPtr) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while (p < endPtr) {
@@ -937,7 +936,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -976,7 +975,7 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1203,7 +1202,7 @@ Tcl_UniCharAtIndex(
 	/* Index points at character following high Surrogate */
 	return -1;
     }
-    Tcl_UtfToUniChar(src, &i);
+    TclUtfToUniChar(src, &i);
     return i;
 }
 
@@ -1344,7 +1343,7 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -1397,7 +1396,7 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -1453,7 +1452,7 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
@@ -1465,7 +1464,7 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
