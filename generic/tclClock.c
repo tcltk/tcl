@@ -203,7 +203,7 @@ TclClockInit(
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
-	Tcl_InitObjRef(data->literals[i], Tcl_NewStringObj(Literals[i], -1));
+	TclInitObjRef(data->literals[i], Tcl_NewStringObj(Literals[i], -1));
     }
     data->mcLiterals = NULL;
     data->mcLitIdxs = NULL;
@@ -295,38 +295,38 @@ ClockConfigureClear(
     ClockFrmScnClearCaches();
 
     data->lastTZEpoch = 0;
-    Tcl_UnsetObjRef(data->systemTimeZone);
-    Tcl_UnsetObjRef(data->systemSetupTZData);
-    Tcl_UnsetObjRef(data->gmtSetupTimeZoneUnnorm);
-    Tcl_UnsetObjRef(data->gmtSetupTimeZone);
-    Tcl_UnsetObjRef(data->gmtSetupTZData);
-    Tcl_UnsetObjRef(data->gmtTZName);
-    Tcl_UnsetObjRef(data->lastSetupTimeZoneUnnorm);
-    Tcl_UnsetObjRef(data->lastSetupTimeZone);
-    Tcl_UnsetObjRef(data->lastSetupTZData);
-    Tcl_UnsetObjRef(data->prevSetupTimeZoneUnnorm);
-    Tcl_UnsetObjRef(data->prevSetupTimeZone);
-    Tcl_UnsetObjRef(data->prevSetupTZData);
+    TclUnsetObjRef(data->systemTimeZone);
+    TclUnsetObjRef(data->systemSetupTZData);
+    TclUnsetObjRef(data->gmtSetupTimeZoneUnnorm);
+    TclUnsetObjRef(data->gmtSetupTimeZone);
+    TclUnsetObjRef(data->gmtSetupTZData);
+    TclUnsetObjRef(data->gmtTZName);
+    TclUnsetObjRef(data->lastSetupTimeZoneUnnorm);
+    TclUnsetObjRef(data->lastSetupTimeZone);
+    TclUnsetObjRef(data->lastSetupTZData);
+    TclUnsetObjRef(data->prevSetupTimeZoneUnnorm);
+    TclUnsetObjRef(data->prevSetupTimeZone);
+    TclUnsetObjRef(data->prevSetupTZData);
 
-    Tcl_UnsetObjRef(data->defaultLocale);
+    TclUnsetObjRef(data->defaultLocale);
     data->defaultLocaleDict = NULL;
-    Tcl_UnsetObjRef(data->currentLocale);
+    TclUnsetObjRef(data->currentLocale);
     data->currentLocaleDict = NULL;
-    Tcl_UnsetObjRef(data->lastUsedLocaleUnnorm);
-    Tcl_UnsetObjRef(data->lastUsedLocale);
+    TclUnsetObjRef(data->lastUsedLocaleUnnorm);
+    TclUnsetObjRef(data->lastUsedLocale);
     data->lastUsedLocaleDict = NULL;
-    Tcl_UnsetObjRef(data->prevUsedLocaleUnnorm);
-    Tcl_UnsetObjRef(data->prevUsedLocale);
+    TclUnsetObjRef(data->prevUsedLocaleUnnorm);
+    TclUnsetObjRef(data->prevUsedLocale);
     data->prevUsedLocaleDict = NULL;
 
-    Tcl_UnsetObjRef(data->lastBase.timezoneObj);
+    TclUnsetObjRef(data->lastBase.timezoneObj);
 
-    Tcl_UnsetObjRef(data->lastTZOffsCache[0].timezoneObj);
-    Tcl_UnsetObjRef(data->lastTZOffsCache[0].tzName);
-    Tcl_UnsetObjRef(data->lastTZOffsCache[1].timezoneObj);
-    Tcl_UnsetObjRef(data->lastTZOffsCache[1].tzName);
+    TclUnsetObjRef(data->lastTZOffsCache[0].timezoneObj);
+    TclUnsetObjRef(data->lastTZOffsCache[0].tzName);
+    TclUnsetObjRef(data->lastTZOffsCache[1].timezoneObj);
+    TclUnsetObjRef(data->lastTZOffsCache[1].tzName);
 
-    Tcl_UnsetObjRef(data->mcDicts);
+    TclUnsetObjRef(data->mcDicts);
 }
 
 /*
@@ -394,9 +394,9 @@ SavePrevTimezoneObj(
 {
     Tcl_Obj *timezoneObj = dataPtr->lastSetupTimeZone;
     if (timezoneObj && timezoneObj != dataPtr->prevSetupTimeZone) {
-	Tcl_SetObjRef(dataPtr->prevSetupTimeZoneUnnorm, dataPtr->lastSetupTimeZoneUnnorm);
-	Tcl_SetObjRef(dataPtr->prevSetupTimeZone, timezoneObj);
-	Tcl_SetObjRef(dataPtr->prevSetupTZData, dataPtr->lastSetupTZData);
+	TclSetObjRef(dataPtr->prevSetupTimeZoneUnnorm, dataPtr->lastSetupTimeZoneUnnorm);
+	TclSetObjRef(dataPtr->prevSetupTimeZone, timezoneObj);
+	TclSetObjRef(dataPtr->prevSetupTZData, dataPtr->lastSetupTZData);
     }
 }
 
@@ -452,13 +452,13 @@ NormTimezoneObj(
     if (dataPtr->lastSetupTimeZone != NULL &&
 	strcmp(tz, TclGetString(dataPtr->lastSetupTimeZone)) == 0
     ) {
-	Tcl_SetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);
+	TclSetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);
 	return dataPtr->lastSetupTimeZone;
     }
     if (dataPtr->prevSetupTimeZone != NULL &&
 	strcmp(tz, TclGetString(dataPtr->prevSetupTimeZone)) == 0
     ) {
-	Tcl_SetObjRef(dataPtr->prevSetupTimeZoneUnnorm, timezoneObj);
+	TclSetObjRef(dataPtr->prevSetupTimeZoneUnnorm, timezoneObj);
 	return dataPtr->prevSetupTimeZone;
     }
     if (dataPtr->systemTimeZone != NULL &&
@@ -467,7 +467,7 @@ NormTimezoneObj(
 	return dataPtr->systemTimeZone;
     }
     if (strcmp(tz, Literals[LIT_GMT]) == 0) {
-	Tcl_SetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, timezoneObj);
+	TclSetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, timezoneObj);
 	if (dataPtr->gmtSetupTimeZone == NULL) {
 	    *loaded = 0;
 	}
@@ -528,7 +528,7 @@ ClockGetCurrentLocale(
 	return NULL;
     }
 
-    Tcl_SetObjRef(dataPtr->currentLocale, Tcl_GetObjResult(interp));
+    TclSetObjRef(dataPtr->currentLocale, Tcl_GetObjResult(interp));
     dataPtr->currentLocaleDict = NULL;
     Tcl_ResetResult(interp);
 
@@ -556,8 +556,8 @@ SavePrevLocaleObj(
 {
     Tcl_Obj *localeObj = dataPtr->lastUsedLocale;
     if (localeObj && localeObj != dataPtr->prevUsedLocale) {
-	Tcl_SetObjRef(dataPtr->prevUsedLocaleUnnorm, dataPtr->lastUsedLocaleUnnorm);
-	Tcl_SetObjRef(dataPtr->prevUsedLocale, localeObj);
+	TclSetObjRef(dataPtr->prevUsedLocaleUnnorm, dataPtr->lastUsedLocaleUnnorm);
+	TclSetObjRef(dataPtr->prevUsedLocale, localeObj);
 	/* mcDicts owns reference to dict */
 	dataPtr->prevUsedLocaleDict = dataPtr->lastUsedLocaleDict;
     }
@@ -636,7 +636,7 @@ NormLocaleObj(
       )
     ) {
 	*mcDictObj = dataPtr->lastUsedLocaleDict;
-	Tcl_SetObjRef(dataPtr->lastUsedLocaleUnnorm, localeObj);
+	TclSetObjRef(dataPtr->lastUsedLocaleUnnorm, localeObj);
 	return dataPtr->lastUsedLocale;
     }
     if ( dataPtr->prevUsedLocale != NULL
@@ -647,7 +647,7 @@ NormLocaleObj(
       )
     ) {
 	*mcDictObj = dataPtr->prevUsedLocaleDict;
-	Tcl_SetObjRef(dataPtr->prevUsedLocaleUnnorm, localeObj);
+	TclSetObjRef(dataPtr->prevUsedLocaleUnnorm, localeObj);
 	return dataPtr->prevUsedLocale;
     }
     if (
@@ -675,9 +675,9 @@ NormLocaleObj(
 	   && strcasecmp(loc, Literals[LIT_SYSTEM]) == 0)
     ) {
 	SavePrevLocaleObj(dataPtr);
-	Tcl_SetObjRef(dataPtr->lastUsedLocaleUnnorm, localeObj);
+	TclSetObjRef(dataPtr->lastUsedLocaleUnnorm, localeObj);
 	localeObj = ClockGetSystemLocale(dataPtr, interp);
-	Tcl_SetObjRef(dataPtr->lastUsedLocale, localeObj);
+	TclSetObjRef(dataPtr->lastUsedLocale, localeObj);
 	*mcDictObj = NULL;
 	return localeObj;
     }
@@ -729,7 +729,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 		int i;
 		dataPtr->mcLiterals = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
 		for (i = 0; i < MCLIT__END; ++i) {
-		    Tcl_InitObjRef(dataPtr->mcLiterals[i],
+		    TclInitObjRef(dataPtr->mcLiterals[i],
 			Tcl_NewStringObj(MsgCtLiterals[i], -1));
 		}
 	    }
@@ -741,7 +741,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 
 	    /* first try to find locale catalog dict */
 	    if (dataPtr->mcDicts == NULL) {
-		Tcl_SetObjRef(dataPtr->mcDicts, Tcl_NewDictObj());
+		TclSetObjRef(dataPtr->mcDicts, Tcl_NewDictObj());
 	    }
 	    Tcl_DictObjGet(NULL, dataPtr->mcDicts,
 		opts->localeObj, &opts->mcDictObj);
@@ -784,8 +784,8 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 		dataPtr->lastUsedLocaleDict = opts->mcDictObj;
 	    } else {
 		SavePrevLocaleObj(dataPtr);
-		Tcl_SetObjRef(dataPtr->lastUsedLocale, opts->localeObj);
-		Tcl_UnsetObjRef(dataPtr->lastUsedLocaleUnnorm);
+		TclSetObjRef(dataPtr->lastUsedLocale, opts->localeObj);
+		TclUnsetObjRef(dataPtr->lastUsedLocaleUnnorm);
 		dataPtr->lastUsedLocaleDict = opts->mcDictObj;
 	    }
 	}
@@ -907,7 +907,7 @@ ClockMCSetIdx(
 	int i;
 	dataPtr->mcLitIdxs = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
 	for (i = 0; i < MCLIT__END; ++i) {
-	    Tcl_InitObjRef(dataPtr->mcLitIdxs[i],
+	    TclInitObjRef(dataPtr->mcLitIdxs[i],
 		Tcl_NewStringObj(MsgCtLitIdxs[i], -1));
 	}
     }
@@ -926,20 +926,20 @@ TimezoneLoaded(
     if (timezoneObj == dataPtr->literals[LIT_GMT]) {
 	/* mark GMT zone loaded */
 	if (dataPtr->gmtSetupTimeZone == NULL) {
-	    Tcl_SetObjRef(dataPtr->gmtSetupTimeZone,
+	    TclSetObjRef(dataPtr->gmtSetupTimeZone,
 		dataPtr->literals[LIT_GMT]);
 	}
-	Tcl_SetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, tzUnnormObj);
+	TclSetObjRef(dataPtr->gmtSetupTimeZoneUnnorm, tzUnnormObj);
 	return;
     }
 
     /* last setup zone loaded */
     if (dataPtr->lastSetupTimeZone != timezoneObj) {
 	SavePrevTimezoneObj(dataPtr);
-	Tcl_SetObjRef(dataPtr->lastSetupTimeZone, timezoneObj);
-	Tcl_UnsetObjRef(dataPtr->lastSetupTZData);
+	TclSetObjRef(dataPtr->lastSetupTimeZone, timezoneObj);
+	TclUnsetObjRef(dataPtr->lastSetupTZData);
     }
-    Tcl_SetObjRef(dataPtr->lastSetupTimeZoneUnnorm, tzUnnormObj);
+    TclSetObjRef(dataPtr->lastSetupTimeZoneUnnorm, tzUnnormObj);
 }
 /*
  *----------------------------------------------------------------------
@@ -995,14 +995,13 @@ ClockConfigureObjCmd(
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
-	case CLOCK_SYSTEM_TZ:
-	if (1) {
+	case CLOCK_SYSTEM_TZ: {
 	    /* validate current tz-epoch */
 	    size_t lastTZEpoch = TzsetIfNecessary();
 	    if (i < objc) {
 		if (dataPtr->systemTimeZone != objv[i]) {
-		    Tcl_SetObjRef(dataPtr->systemTimeZone, objv[i]);
-		    Tcl_UnsetObjRef(dataPtr->systemSetupTZData);
+		    TclSetObjRef(dataPtr->systemTimeZone, objv[i]);
+		    TclUnsetObjRef(dataPtr->systemSetupTZData);
 		}
 		dataPtr->lastTZEpoch = lastTZEpoch;
 	    }
@@ -1029,7 +1028,7 @@ ClockConfigureObjCmd(
 	case CLOCK_DEFAULT_LOCALE:
 	    if (i < objc) {
 		if (dataPtr->defaultLocale != objv[i]) {
-		    Tcl_SetObjRef(dataPtr->defaultLocale, objv[i]);
+		    TclSetObjRef(dataPtr->defaultLocale, objv[i]);
 		    dataPtr->defaultLocaleDict = NULL;
 		}
 	    }
@@ -1041,7 +1040,7 @@ ClockConfigureObjCmd(
 	case CLOCK_CURRENT_LOCALE:
 	    if (i < objc) {
 		if (dataPtr->currentLocale != objv[i]) {
-		    Tcl_SetObjRef(dataPtr->currentLocale, objv[i]);
+		    TclSetObjRef(dataPtr->currentLocale, objv[i]);
 		    dataPtr->currentLocaleDict = NULL;
 		}
 	    }
@@ -1240,14 +1239,14 @@ ClockGetTZData(
 
     /* cache using corresponding slot and as last used */
     if (out != NULL) {
-	Tcl_SetObjRef(*out, ret);
+	TclSetObjRef(*out, ret);
     }
     else
     if (dataPtr->lastSetupTimeZone != timezoneObj) {
 	SavePrevTimezoneObj(dataPtr);
-	Tcl_SetObjRef(dataPtr->lastSetupTimeZone, timezoneObj);
-	Tcl_UnsetObjRef(dataPtr->lastSetupTimeZoneUnnorm);
-	Tcl_SetObjRef(dataPtr->lastSetupTZData, ret);
+	TclSetObjRef(dataPtr->lastSetupTimeZone, timezoneObj);
+	TclUnsetObjRef(dataPtr->lastSetupTimeZoneUnnorm);
+	TclSetObjRef(dataPtr->lastSetupTZData, ret);
     }
     return ret;
 }
@@ -1281,14 +1280,14 @@ ClockGetSystemTimeZone(
 	return dataPtr->systemTimeZone;
     }
 
-    Tcl_UnsetObjRef(dataPtr->systemTimeZone);
-    Tcl_UnsetObjRef(dataPtr->systemSetupTZData);
+    TclUnsetObjRef(dataPtr->systemTimeZone);
+    TclUnsetObjRef(dataPtr->systemSetupTZData);
 
     if (Tcl_EvalObjv(interp, 1, &dataPtr->literals[LIT_GETSYSTEMTIMEZONE], 0) != TCL_OK) {
 	return NULL;
     }
     if (dataPtr->systemTimeZone == NULL) {
-	Tcl_SetObjRef(dataPtr->systemTimeZone, Tcl_GetObjResult(interp));
+	TclSetObjRef(dataPtr->systemTimeZone, Tcl_GetObjResult(interp));
     }
     Tcl_ResetResult(interp);
     return dataPtr->systemTimeZone;
@@ -1353,7 +1352,7 @@ ClockSetupTimeZone(
     callargs[0] = dataPtr->literals[LIT_SETUPTIMEZONE];
     if (Tcl_EvalObjv(interp, 2, callargs, 0) == TCL_OK) {
 	/* save unnormalized last used */
-	Tcl_SetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);
+	TclSetObjRef(dataPtr->lastSetupTimeZoneUnnorm, timezoneObj);
 	return callargs[1];
     }
     return NULL;
@@ -1967,16 +1966,16 @@ ConvertLocalToUTC(
 	/* Cache the last conversion */
 	if (ltzoc != NULL) { /* slot was found above */
 	    /* timezoneObj and changeover are the same */
-	    Tcl_SetObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	    TclSetObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
 	} else {
 	    /* no TZ in cache - just move second slot down and use the first one */
 	    ltzoc = &dataPtr->lastTZOffsCache[0];
-	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
-	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
+	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
+	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
 	    memcpy(&dataPtr->lastTZOffsCache[1], ltzoc, sizeof(*ltzoc));
-	    Tcl_InitObjRef(ltzoc->timezoneObj, timezoneObj);
+	    TclInitObjRef(ltzoc->timezoneObj, timezoneObj);
 	    ltzoc->changeover = changeover;
-	    Tcl_InitObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	    TclInitObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
 	}
 	ltzoc->localSeconds = fields->localSeconds;
 	ltzoc->rangesVal[0] = rangesVal[0];
@@ -2075,7 +2074,7 @@ ConvertLocalToUTCUsingTable(
   found:
     fields->tzOffset = have[i].tzOffset;
     fields->seconds = fields->localSeconds - fields->tzOffset;
-    Tcl_SetObjRef(fields->tzName, have[i].tzName);
+    TclSetObjRef(fields->tzName, have[i].tzName);
 
     return TCL_OK;
 }
@@ -2198,9 +2197,9 @@ ConvertUTCToLocal(
 	      || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetObjRef(dataPtr->gmtTZName, tzName);
+	    TclSetObjRef(dataPtr->gmtTZName, tzName);
 	}
-	Tcl_SetObjRef(fields->tzName, dataPtr->gmtTZName);
+	TclSetObjRef(fields->tzName, dataPtr->gmtTZName);
 	return TCL_OK;
     }
 
@@ -2220,7 +2219,7 @@ ConvertUTCToLocal(
 	    /* the same time zone and offset (UTC time inside the last minute) */
 	    fields->tzOffset = ltzoc->tzOffset;
 	    fields->localSeconds = fields->seconds + fields->tzOffset;
-	    Tcl_SetObjRef(fields->tzName, ltzoc->tzName);
+	    TclSetObjRef(fields->tzName, ltzoc->tzName);
 	    return TCL_OK;
 	}
     }
@@ -2267,16 +2266,16 @@ ConvertUTCToLocal(
 	/* Cache the last conversion */
 	if (ltzoc != NULL) { /* slot was found above */
 	    /* timezoneObj and changeover are the same */
-	    Tcl_SetObjRef(ltzoc->tzName, fields->tzName);
+	    TclSetObjRef(ltzoc->tzName, fields->tzName);
 	} else {
 	    /* no TZ in cache - just move second slot down and use the first one */
 	    ltzoc = &dataPtr->lastTZOffsCache[0];
-	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
-	    Tcl_UnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
+	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
+	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
 	    memcpy(&dataPtr->lastTZOffsCache[1], ltzoc, sizeof(*ltzoc));
-	    Tcl_InitObjRef(ltzoc->timezoneObj, timezoneObj);
+	    TclInitObjRef(ltzoc->timezoneObj, timezoneObj);
 	    ltzoc->changeover = changeover;
-	    Tcl_InitObjRef(ltzoc->tzName, fields->tzName);
+	    TclInitObjRef(ltzoc->tzName, fields->tzName);
 	}
 	ltzoc->localSeconds = fields->localSeconds;
 	ltzoc->rangesVal[0] = rangesVal[0];
@@ -2333,7 +2332,7 @@ ConvertUTCToLocalUsingTable(
      * Convert the time.
      */
 
-    Tcl_SetObjRef(fields->tzName, cellv[3]);
+    TclSetObjRef(fields->tzName, cellv[3]);
     fields->localSeconds = fields->seconds + fields->tzOffset;
     return TCL_OK;
 }
@@ -2424,7 +2423,7 @@ ConvertUTCToLocalUsingC(
     if (diff != 0) {
 	p = TclItoAw(buffer+5, diff, '0', 2);
     }
-    Tcl_SetObjRef(fields->tzName, Tcl_NewStringObj(buffer, p - buffer));
+    TclSetObjRef(fields->tzName, Tcl_NewStringObj(buffer, p - buffer));
     return TCL_OK;
 }
 
@@ -3510,7 +3509,7 @@ baseNow:
 	}
 	/* cache last base */
 	memcpy(&dataPtr->lastBase.date, date, ClockCacheableDateFieldsSize);
-	Tcl_SetObjRef(dataPtr->lastBase.timezoneObj, opts->timezoneObj);
+	TclSetObjRef(dataPtr->lastBase.timezoneObj, opts->timezoneObj);
     }
 
     return TCL_OK;
@@ -3598,7 +3597,7 @@ ClockFormatObjCmd(
 
 done:
 
-    Tcl_UnsetObjRef(dateFmt.date.tzName);
+    TclUnsetObjRef(dateFmt.date.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
@@ -3722,7 +3721,7 @@ ClockScanObjCmd(
 
 done:
 
-    Tcl_UnsetObjRef(yy.date.tzName);
+    TclUnsetObjRef(yy.date.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
@@ -4060,7 +4059,7 @@ ClockFreeScan(
 	    goto done;
 	}
 
-	// Tcl_SetObjRef(yydate.tzName, opts->timezoneObj);
+	// TclSetObjRef(yydate.tzName, opts->timezoneObj);
 
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     }
@@ -4542,7 +4541,7 @@ ClockAddObjCmd(
 
 done:
 
-    Tcl_UnsetObjRef(yy.date.tzName);
+    TclUnsetObjRef(yy.date.tzName);
 
     if (ret != TCL_OK) {
 	return ret;
@@ -4634,13 +4633,13 @@ ClockSafeCatchCmd(
     statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
     if (!statePtr->errorInfo) {
 	/* todo: avoid traced get of errorInfo here */
-	Tcl_InitObjRef(statePtr->errorInfo,
+	TclInitObjRef(statePtr->errorInfo,
 		Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, 0));
 	flags |= ERR_LEGACY_COPY;
     }
     if (!statePtr->errorCode) {
 	/* todo: avoid traced get of errorCode here */
-	Tcl_InitObjRef(statePtr->errorCode,
+	TclInitObjRef(statePtr->errorCode,
 		Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, 0));
 	flags |= ERR_LEGACY_COPY;
     }
@@ -4653,7 +4652,7 @@ ClockSafeCatchCmd(
 	return TCL_ERROR;
     }
     /* overwrite result in state with catch result */
-    Tcl_SetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
+    TclSetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
     /* set result (together with restore state) to interpreter */
     (void) Tcl_RestoreInterpState(interp, (Tcl_InterpState)statePtr);
     /* todo: unless ERR_LEGACY_COPY not set in restore (branch [bug-554117edde] not merged yet) */

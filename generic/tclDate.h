@@ -486,7 +486,7 @@ struct ClockFmtScnStorage {
  * Extracts Julian day and seconds of the day from posix seconds (tm).
  */
 #define ClockExtractJDAndSODFromSeconds(jd, sod, tm) \
-    if (1) { \
+    do { \
 	jd = (tm + JULIAN_SEC_POSIX_EPOCH); \
 	if (jd >= SECONDS_PER_DAY || jd <= -SECONDS_PER_DAY) { \
 	    jd /= SECONDS_PER_DAY; \
@@ -501,7 +501,7 @@ struct ClockFmtScnStorage {
 		jd--; \
 	    } \
 	} \
-    }
+    } while(0)
 
 /*
  * Prototypes of module functions.

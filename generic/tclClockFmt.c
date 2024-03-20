@@ -556,7 +556,7 @@ ClockFmtObj_DupInternalRep(
     ObjClockFmtScn(copyPtr) = fss;
     /* regards special case - format not localizable */
     if (ObjLocFmtKey(srcPtr) != srcPtr) {
-	Tcl_InitObjRef(ObjLocFmtKey(copyPtr), ObjLocFmtKey(srcPtr));
+	TclInitObjRef(ObjLocFmtKey(copyPtr), ObjLocFmtKey(srcPtr));
     } else {
 	ObjLocFmtKey(copyPtr) = copyPtr;
     }
@@ -592,7 +592,7 @@ ClockFmtObj_FreeInternalRep(
     }
     ObjClockFmtScn(objPtr) = NULL;
     if (ObjLocFmtKey(objPtr) != objPtr) {
-	Tcl_UnsetObjRef(ObjLocFmtKey(objPtr));
+	TclUnsetObjRef(ObjLocFmtKey(objPtr));
     } else {
 	ObjLocFmtKey(objPtr) = NULL;
     }
@@ -679,7 +679,7 @@ ClockFrmObjGetLocFmtKey(
     }
 
     keyObj = Tcl_ObjPrintf("FMT_%s", TclGetString(objPtr));
-    Tcl_InitObjRef(ObjLocFmtKey(objPtr), keyObj);
+    TclInitObjRef(ObjLocFmtKey(objPtr), keyObj);
 
     return keyObj;
 }
@@ -890,7 +890,7 @@ ClockLocalizeFormat(
 	if (valObj == opts->formatObj) {
 	    /* mark it as unlocalizable, by setting self as key (without refcount incr) */
 	    if (valObj->typePtr == &ClockFmtObjType) {
-		Tcl_UnsetObjRef(ObjLocFmtKey(valObj));
+		TclUnsetObjRef(ObjLocFmtKey(valObj));
 		ObjLocFmtKey(valObj) = valObj;
 	    }
 	}
@@ -898,7 +898,7 @@ ClockLocalizeFormat(
 
 done:
 
-    Tcl_UnsetObjRef(keyObj);
+    TclUnsetObjRef(keyObj);
     return (opts->formatObj = valObj);
 }
 
