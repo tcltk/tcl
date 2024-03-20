@@ -4383,7 +4383,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = Tcl_UtfToUniChar(from, &chw);
+		int bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);

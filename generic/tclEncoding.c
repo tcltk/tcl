@@ -1639,7 +1639,7 @@ Tcl_UtfToExternalDStringEx(
 		    Tcl_Size pos = TclNumUtfChars(srcStart, nBytesProcessed);
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
-		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
+		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
@@ -2604,12 +2604,12 @@ UtfToUtfProc(
 		/* TCL_ENCODING_PROFILE_TCL8 */
 		char chbuf[2];
 		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
-	    size_t len = Tcl_UtfToUniChar(src, &ch);
+	    size_t len = TclUtfToUniChar(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
 		    if (PROFILE_STRICT(profile)) {
@@ -2646,7 +2646,7 @@ UtfToUtfProc(
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
 		    low = ch;
-		    len = (src <= srcEnd - 3) ? Tcl_UtfToUniChar(src, &low) : 0;
+		    len = (src <= srcEnd - 3) ? TclUtfToUniChar(src, &low) : 0;
 
 		    if ((!LOW_SURROGATE(low)) || (ch & 0x400)) {
 
@@ -2906,7 +2906,7 @@ UtfToUtf32Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3184,7 +3184,7 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3431,7 +3431,7 @@ TableToUtfProc(
 	    } else {
 		char chbuf[2];
 		chbuf[0] = byte; chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}
 
