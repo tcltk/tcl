@@ -1222,7 +1222,7 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    len = Tcl_UtfToUniChar(stringPtr, &ch);
+	    len = TclUtfToUniChar(stringPtr, &ch);
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
@@ -1268,9 +1268,9 @@ Tcl_SplitObjCmd(
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
-	    len = Tcl_UtfToUniChar(stringPtr, &ch);
+	    len = TclUtfToUniChar(stringPtr, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = Tcl_UtfToUniChar(p, &splitChar);
+		splitLen = TclUtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -1898,7 +1898,7 @@ StringIsCmd(
 	for (; string1 < end; string1 += length2, failat++) {
 	    int ucs4;
 
-	    length2 = Tcl_UtfToUniChar(string1, &ucs4);
+	    length2 = TclUtfToUniChar(string1, &ucs4);
 	    if (!chcomp(ucs4)) {
 		result = 0;
 		break;
