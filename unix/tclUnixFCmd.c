@@ -484,8 +484,7 @@ DoCopyFile(
 	char linkBuf[MAXPATHLEN+1];
 	int length;
 
-	length = readlink(src, linkBuf, MAXPATHLEN);
-							/* INTL: Native. */
+	length = readlink(src, linkBuf, MAXPATHLEN);	/* INTL: Native. */
 	if (length == -1) {
 	    return TCL_ERROR;
 	}
@@ -1515,7 +1514,7 @@ SetGroupAttribute(
 			" group \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
-			"NO_GROUP", (void *)NULL);
+			"NO_GROUP", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1581,7 +1580,7 @@ SetOwnerAttribute(
 			" user \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
-			"NO_USER", (void *)NULL);
+			"NO_USER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1676,7 +1675,7 @@ SetPermissionsAttribute(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unknown permission string format \"%s\"",
 			modeStringPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1763,7 +1762,7 @@ GetModeFromPermString(
 
     newMode = 0;
     for (i = 0; i < 9; i++) {
-	switch (*(modeStringPtr+i)) {
+	switch (modeStringPtr[i]) {
 	case 'r':
 	    if ((i%3) != 0) {
 		goto chmodStyleCheck;
@@ -1825,13 +1824,13 @@ GetModeFromPermString(
      * We now check for an "ugoa+-=rwxst" style permissions string
      */
 
-    for (n = 0 ; *(modeStringPtr+n) != '\0' ; n = n + i) {
+    for (n = 0 ; modeStringPtr[n] != '\0' ; n += i) {
 	oldMode = *modePtr;
 	who = op = what = op_found = who_found = 0;
-	for (i = 0 ; *(modeStringPtr+n+i) != '\0' ; i++ ) {
+	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++ ) {
 	    if (!who_found) {
 		/* who */
-		switch (*(modeStringPtr+n+i)) {
+		switch (modeStringPtr[n + i]) {
 		case 'u':
 		    who |= 0x9C0;
 		    continue;
@@ -1852,7 +1851,7 @@ GetModeFromPermString(
 	    }
 	    if (!op_found) {
 		/* op */
-		switch (*(modeStringPtr+n+i)) {
+		switch (modeStringPtr[n + i]) {
 		case '+':
 		    op = 1;
 		    op_found = 1;
@@ -1870,7 +1869,7 @@ GetModeFromPermString(
 		}
 	    }
 	    /* what */
-	    switch (*(modeStringPtr+n+i)) {
+	    switch (modeStringPtr[n + i]) {
 	    case 'r':
 		what |= 0x124;
 		continue;
@@ -1891,7 +1890,7 @@ GetModeFromPermString(
 	    default:
 		return TCL_ERROR;
 	    }
-	    if (*(modeStringPtr+n+i) == ',') {
+	    if (modeStringPtr[n + i] == ',') {
 		i++;
 		break;
 	    }
