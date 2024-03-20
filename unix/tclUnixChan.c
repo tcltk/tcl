@@ -876,12 +876,12 @@ TtySetOptionProc(
 	    Tcl_UniChar character = 0;
 	    int charLen;
 
-	    charLen = Tcl_UtfToUniChar(argv[0], &character);
+	    charLen = TclUtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    iostate.c_cc[VSTART] = character;
-	    charLen = Tcl_UtfToUniChar(argv[1], &character);
+	    charLen = TclUtfToUniChar(argv[1], &character);
 	    if ((character > 0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
