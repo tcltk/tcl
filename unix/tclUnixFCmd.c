@@ -1532,7 +1532,7 @@ SetGroupAttribute(
 			" group \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
-			"NO_GROUP", (void *)NULL);
+			"NO_GROUP", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1603,7 +1603,7 @@ SetOwnerAttribute(
 			" user \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
-			"NO_USER", (void *)NULL);
+			"NO_USER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1698,7 +1698,7 @@ SetPermissionsAttribute(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unknown permission string format \"%s\"",
 			modeStringPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
