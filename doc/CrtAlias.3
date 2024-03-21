@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_IsSafe, Tcl_CreateChild, Tcl_GetChild, Tcl_GetParent, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
+Tcl_IsSafe, Tcl_CreateChild, Tcl_GetChild, Tcl_GetParent, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -35,10 +35,6 @@ int
 int
 \fBTcl_CreateAliasObj\fR(\fIchildInterp, childCmd, targetInterp, targetCmd,
                    objc, objv\fR)
-.sp
-int
-\fBTcl_GetAlias\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr,
-             argcPtr, argvPtr\fR)
 .sp
 int
 \fBTcl_GetAliasObj\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr,
@@ -87,16 +83,13 @@ command is defined for an alias.
 .AP "const char" **targetCmdPtr out
 Pointer to location to store the address of the name of the target command
 for an alias.
-.AP int *argcPtr out
-Pointer to location to store count of additional arguments to be passed to
-the alias. The location is in storage owned by the caller.
-.AP "const char" ***argvPtr out
-Pointer to location to store a vector of strings, the additional arguments
-to pass to an alias. The location is in storage owned by the caller, the
-vector of strings is owned by the called function.
-.AP int *objcPtr out
+.AP "Tcl_Size \&| int" *objcPtr out
 Pointer to location to store count of additional value arguments to be
 passed to the alias. The location is in storage owned by the caller.
+If it points to a variable which type is not \fBTcl_Size\fR, a compiler
+warning will be generated. If your extensions is compiled with -DTCL_8_API,
+this function will return TCL_ERROR for aliases with more than INT_MAX
+value arguments, otherwise expect it to crash
 .AP Tcl_Obj ***objvPtr out
 Pointer to location to store a vector of Tcl_Obj structures, the additional
 arguments to pass to an alias command. The location is in storage
@@ -168,16 +161,13 @@ restrictions on how they are related.
 that it takes a vector of values to pass as additional arguments instead
 of a vector of strings.
 .PP
-\fBTcl_GetAlias\fR returns information about an alias \fIaliasName\fR
+\fBTcl_GetAliasObj\fR returns information in the form of a pointer to a vector
+of Tcl_Obj structures about an alias \fIaliasName\fR
 in \fIinterp\fR. Any of the result fields can be \fBNULL\fR, in
 which case the corresponding datum is not returned. If a result field is
 non\-\fBNULL\fR, the address indicated is set to the corresponding datum.
-For example, if \fItargetNamePtr\fR is non\-\fBNULL\fR it is set to a
+For example, if \fItargetCmdPtr\fR is non\-\fBNULL\fR it is set to a
 pointer to the string containing the name of the target command.
-.PP
-\fBTcl_GetAliasObj\fR is similar to \fBTcl_GetAlias\fR except that it
-returns a pointer to a vector of Tcl_Obj structures instead of a vector of
-strings.
 .PP
 \fBTcl_ExposeCommand\fR moves the command named \fIhiddenCmdName\fR from
 the set of hidden commands to the set of exposed commands, putting
