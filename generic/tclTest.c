@@ -3927,7 +3927,7 @@ TestlistrepCmd(
 		listRepObjs[3] = Tcl_NewListObj(8, NULL);
 		Tcl_ListObjAppendElement(interp, listRepObjs[3],
 			Tcl_NewStringObj("memoryAddress", -1));
-		Tcl_ListObjAppendElement(interp, listRepObjs[3], 
+		Tcl_ListObjAppendElement(interp, listRepObjs[3],
 			Tcl_ObjPrintf("%p", listRep.spanPtr));
 		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanStart);
 		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanLength);
