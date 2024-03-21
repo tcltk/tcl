@@ -98,7 +98,6 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
-# define TclGetAlias 0
 # define TclGetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
