@@ -602,7 +602,7 @@ Tcl_GetRegExpFromObj(
     RegexpGetInternalRep(objPtr, regexpPtr);
 
     if ((regexpPtr == NULL) || (regexpPtr->flags != flags)) {
-	pattern = Tcl_GetStringFromObj(objPtr, &length);
+	pattern = TclGetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
 	if (regexpPtr == NULL) {

@@ -800,7 +800,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
+    stringPtr = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked, and
@@ -1349,7 +1349,7 @@ CompileSubstObj(
     if (codePtr == NULL) {
 	CompileEnv compEnv;
 	Tcl_Size numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1839,7 +1839,7 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = Tcl_GetStringFromObj(cmdObj, &length);
+    bytes = TclGetStringFromObj(cmdObj, &length);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
 
     if (cmdPtr && TclRoutineHasName(cmdPtr)) {
@@ -2831,7 +2831,7 @@ PreventCycle(
 	     * the internalrep.
 	     */
 	    Tcl_Size numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -3072,7 +3072,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		localName = TclGetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

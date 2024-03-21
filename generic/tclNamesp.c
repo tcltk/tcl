@@ -3172,7 +3172,7 @@ NamespaceCodeCmd(
      " "namespace" command.  [Bug 3202171].
      */
 
-    arg = Tcl_GetStringFromObj(objv[1], &length);
+    arg = TclGetStringFromObj(objv[1], &length);
     if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
