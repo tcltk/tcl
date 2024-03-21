@@ -2172,7 +2172,7 @@ TclCompileRegsubCmd(
      * replacement "simple"?
      */
 
-    bytes = Tcl_GetStringFromObj(patternObj, &len);
+    bytes = TclGetStringFromObj(patternObj, &len);
     if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
 	    != TCL_OK || exact || quantified) {
 	goto done;
@@ -2220,7 +2220,7 @@ TclCompileRegsubCmd(
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
     PushLiteral(envPtr,	bytes, len);
-    bytes = Tcl_GetStringFromObj(replacementObj, &len);
+    bytes = TclGetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
     CompileWord(envPtr,	stringTokenPtr, interp, (int)parsePtr->numWords - 2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
@@ -2479,7 +2479,7 @@ TclCompileSyntaxError(
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
     Tcl_Size numBytes;
-    const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
@@ -2737,7 +2737,7 @@ IndexTailVarIfKnown(
 	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
-    tailName = Tcl_GetStringFromObj(tailPtr, &len);
+    tailName = TclGetStringFromObj(tailPtr, &len);
 
     if (len) {
 	if (*(tailName + len - 1) == ')') {

@@ -356,7 +356,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -451,7 +451,7 @@ TclCreateProc(
 	    Tcl_Size length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
-	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
+	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 
 	    /*
@@ -541,7 +541,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -604,8 +604,8 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_Size tmpLength, valueLength;
-		const char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr, &tmpLength);
-		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
 			|| memcmp(value, tmpPtr, tmpLength) != 0) {
@@ -2078,7 +2078,7 @@ MakeProcError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2772,7 +2772,7 @@ MakeLambdaError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
