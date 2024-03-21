@@ -111,24 +111,33 @@ if {[interp issafe]} {
 
     proc clock args {
 	set cmdmap [dict create]
-	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
+	foreach cmd {add clicks microseconds milliseconds scan seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
+	set ensemble [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]]
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
 	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
-	    -map $cmdmap]
+	    -map $cmdmap \
+	    -unknown [
+		list ::apply [list {name action args} {
+		    # Auto-load clock.tcl
+		    set hidden {format scan}
+		    if {$action ni $hidden} {
+			return
+		    }
+		    set ensemble [uplevel 1 [::list ::namespace which $name]]
+		    ::source -encoding utf-8 [::file join [info library] clock.tcl]
+		    set map [namespace ensemble configure $ensemble -map]
+		    foreach name $hidden {
+			rename ::tcl::clock::uninitialized::$name ::tcl::clock::$name
+			dict set map $name ::tcl::clock::$name
+		    }
+		    namespace ensemble configure $ensemble -map $map
+		    return
+		} [namespace current]]
+		]
+	    ]
 	::tcl::unsupported::clock::configure -init-complete
-
-	# Auto-loading stubs for 'clock.tcl'
-
-	namespace inscope ::tcl::clock {
-	    proc _load_stubs args {
-		namespace unknown {}
-		::source -encoding utf-8 [::file join [info library] clock.tcl]
-		tailcall {*}$args
-	    }
-	    namespace unknown ::tcl::clock::_load_stubs
-	}
 
 	uplevel 1 [info level 0]
     }
