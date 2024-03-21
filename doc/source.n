@@ -46,7 +46,9 @@ unicode encodings (utf-8, utf-16, ucs-2).
 .PP
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
-is omitted, the utf-8 encoding is assumed.
+is omitted, the utf-8 encoding is assumed. If \fB\-encoding\fR
+is set to "tcl8", "replace" or "strict", the profile is set
+to the given value and the utf-8 encoding is assumed.
 .SH EXAMPLE
 .PP
 Run the script in the file \fBfoo.tcl\fR and then the script in the
