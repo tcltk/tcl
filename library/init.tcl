@@ -111,7 +111,7 @@ if {[interp issafe]} {
 
     proc clock args {
 	set cmdmap [dict create]
-	foreach cmd {add clicks microseconds milliseconds scan seconds} {
+	foreach cmd {clicks microseconds milliseconds seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
 	set ensemble [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]]
@@ -121,7 +121,7 @@ if {[interp issafe]} {
 	    -unknown [
 		list ::apply [list {name action args} {
 		    # Auto-load clock.tcl
-		    set hidden {format scan}
+		    set hidden {add format scan}
 		    if {$action ni $hidden} {
 			return
 		    }

@@ -139,7 +139,7 @@ struct ClockCommand {
 };
 
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, 0, NULL},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, 1, NULL},
     {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  0, NULL},
     {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, 1, NULL},
     {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, 0, NULL},
