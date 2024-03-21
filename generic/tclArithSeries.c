@@ -106,9 +106,9 @@ ArithSeriesIndexDbl(
 {
     ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl*)arithSeriesRepPtr;
     if (arithSeriesRepPtr->isDouble) {
-        double d = dblRepPtr->start + (index * dblRepPtr->step);
+	double d = dblRepPtr->start + (index * dblRepPtr->step);
 	unsigned n = (dblRepPtr->precision > 0 ? dblRepPtr->precision : 0);
-        return ArithRound(d, n);
+	return ArithRound(d, n);
     } else {
 	return (double)(arithSeriesRepPtr->start + (index * arithSeriesRepPtr->step));
     }
@@ -277,8 +277,7 @@ DupArithSeriesInternalRep(
 static void
 FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr)  /* Free any allocated memory */
 {
-    ArithSeries *arithSeriesRepPtr =
-	    (ArithSeries *)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    ArithSeries *arithSeriesRepPtr = (ArithSeries *)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
 
     if (arithSeriesRepPtr->elements) {
 	Tcl_Size i;
@@ -319,7 +318,9 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     ArithSeries *arithSeriesRepPtr;
 
     length = len>=0 ? len : -1;
-    if (length < 0) length = -1;
+    if (length < 0) {
+	length = -1;
+    }
 
     TclNewObj(arithSeriesObj);
 
@@ -337,8 +338,9 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &tclArithSeriesType;
-    if (length > 0)
+    if (length > 0) {
     	Tcl_InvalidateStringRep(arithSeriesObj);
+    }
 
     return arithSeriesObj;
 }
@@ -621,7 +623,9 @@ TclArithSeriesObjIndex(
  *
  *----------------------------------------------------------------------
  */
-Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
+Tcl_Size
+TclArithSeriesObjLength(
+    Tcl_Obj *arithSeriesObj)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesObj->internalRep.twoPtrValue.ptr1;
@@ -655,7 +659,7 @@ ArithSeriesObjStep(
     Tcl_Obj *stepObj;
 
     if (arithSeriesObj->typePtr != &tclArithSeriesType) {
-        Tcl_Panic("ArithSeriesObjStep called with a not ArithSeries Obj.");
+	Tcl_Panic("ArithSeriesObjStep called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
     if (arithSeriesRepPtr->isDouble) {
@@ -767,7 +771,7 @@ TclArithSeriesObjRange(
 	    ((arithSeriesObj->refCount > 1))) {
 	Tcl_Obj *newSlicePtr;
 	if (TclNewArithSeriesObj(interp, &newSlicePtr,
-	        arithSeriesRepPtr->isDouble, startObj, endObj,
+		arithSeriesRepPtr->isDouble, startObj, endObj,
 		stepObj, NULL) != TCL_OK) {
 	    newSlicePtr = NULL;
 	}
@@ -901,9 +905,7 @@ TclArithSeriesGetElements(
 	*objcPtr = objc;
     } else {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("value is not an arithseries"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("value is not an arithseries", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (void *)NULL);
 	}
 	return TCL_ERROR;
@@ -1046,12 +1048,10 @@ TclArithSeriesObjReverse(
 static void
 UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
 {
-    ArithSeries *arithSeriesRepPtr =
-	    (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
     char *p;
-    Tcl_Obj *elemObj;
-    Tcl_Size i;
-    Tcl_Size length = 0;
+    Tcl_Obj *eleObj;
+    Tcl_Size i, bytlen = 0;
     Tcl_Size slen;
 
     /*
@@ -1061,7 +1061,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 	    slen = d>0 ? log10(d)+1 : d<0 ? log10((0-d))+2 : 1;
-	    length += slen;
+	    bytlen += slen;
 	}
     } else {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
@@ -1069,35 +1069,35 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
 	    char tmp[TCL_DOUBLE_SPACE+2];
 	    tmp[0] = 0;
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    if ((length + strlen(tmp)) > TCL_SIZE_MAX) {
+	    if ((bytlen + strlen(tmp)) > TCL_SIZE_MAX) {
 		break; // overflow
 	    }
-	    length += strlen(tmp);
+	    bytlen += strlen(tmp);
 	}
     }
-    length += arithSeriesRepPtr->len; // Space for each separator
+    bytlen += arithSeriesRepPtr->len; // Space for each separator
 
     /*
      * Pass 2: generate the string repr.
      */
 
-    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, length);
+    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
     if (p == NULL) {
-	Tcl_Panic("Unable to allocate string size %d", length);
+	Tcl_Panic("Unable to allocate string size %d", bytlen);
     }
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	elemObj = TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i);
-	char *str = Tcl_GetStringFromObj(elemObj, &slen);
-	if (((p - arithSeriesObjPtr->bytes)+slen) > length) {
+	eleObj = TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i);
+	char *str = TclGetStringFromObj(eleObj, &slen);
+	if (((p - arithSeriesObjPtr->bytes)+slen) > bytlen) {
 	    break;
 	}
 	strncpy(p, str, slen);
 	p[slen] = ' ';
 	p += slen+1;
-	Tcl_DecrRefCount(elemObj);
+	Tcl_DecrRefCount(eleObj);
     }
-    if (length > 0) arithSeriesObjPtr->bytes[length-1] = '\0';
-    arithSeriesObjPtr->length = length-1;
+    if (bytlen > 0) arithSeriesObjPtr->bytes[bytlen-1] = '\0';
+    arithSeriesObjPtr->length = bytlen-1;
 }
 
 /*
