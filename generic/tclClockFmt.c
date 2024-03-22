@@ -56,11 +56,6 @@ static void ClockFrmScnFinalize(void *clientData);
  *----------------------------------------------------------------------
  */
 
-/* int overflows may happens here (expected case) */
-#if defined(__GNUC__) || defined(__GNUG__)
-# pragma GCC optimize("no-trapv")
-#endif
-
 static inline int
 _str2int(
     int	       *out,
@@ -90,6 +85,11 @@ _str2int(
     return TCL_OK;
 }
 
+/* Tcl_WideInt overflows may happens here (expected case) */
+#if defined(__GNUC__) || defined(__GNUG__)
+# pragma GCC optimize("no-trapv")
+#endif
+
 static inline int
 _str2wideInt(
     Tcl_WideInt *out,
