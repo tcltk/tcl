@@ -79,22 +79,22 @@ _str2int(
 	    val = val * 10 + (*p++ - '0');
 	}
 	while (p < e) {				/* check for overflow */
+	    prev = val;
 	    val = val * 10 + (*p++ - '0');
 	    if (val / 10 < prev) {
 		return TCL_ERROR;
 	    }
-	    prev = val;
 	}
     } else {
 	while (p < eNO) {			/* never overflows */
 	    val = val * 10 - (*p++ - '0');
 	}
 	while (p < e) {				/* check for overflow */
+	    prev = val;
 	    val = val * 10 - (*p++ - '0');
 	    if (val / 10 > prev) {
 		return TCL_ERROR;
 	    }
-	    prev = val;
 	}
     }
     *out = val;
@@ -119,22 +119,22 @@ _str2wideInt(
 	    val = val * 10 + (*p++ - '0');
 	}
 	while (p < e) {				/* check for overflow */
+	    prev = val;
 	    val = val * 10 + (*p++ - '0');
 	    if (val / 10 < prev) {
 		return TCL_ERROR;
 	    }
-	    prev = val;
 	}
     } else {
 	while (p < eNO) {			/* never overflows */
 	    val = val * 10 - (*p++ - '0');
 	}
 	while (p < e) {				/* check for overflow */
+	    prev = val;
 	    val = val * 10 - (*p++ - '0');
 	    if (val / 10 > prev) {
 		return TCL_ERROR;
 	    }
-	    prev = val;
 	}
     }
     *out = val;
