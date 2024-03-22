@@ -1103,7 +1103,7 @@ TclNRSourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *encodingName = NULL;
+    const char *encodingNameOrProfile = NULL;
     Tcl_Obj *fileName;
     int result;
     void **pkgFiles = NULL;
@@ -1118,7 +1118,7 @@ TclNRSourceObjCmd(
 
     if (objc == 4) {
 	static const char *const options[] = {
-	    "-encoding", NULL
+	    "-encoding", "-profile", NULL
 	};
 	int index;
 
@@ -1126,7 +1126,17 @@ TclNRSourceObjCmd(
 		"option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
-	encodingName = TclGetString(objv[2]);
+	if (index) {
+	if (!strcmp(TclGetString(objv[2]), "strict")) {
+		encodingNameOrProfile = TCL_SHELL_PROFILE_STRICT;
+	} else if (!strcmp(TclGetString(objv[2]), "replace")) {
+		encodingNameOrProfile = TCL_SHELL_PROFILE_REPLACE;
+	} else if (!strcmp(TclGetString(objv[2]), "tcl8")) {
+		encodingNameOrProfile = TCL_SHELL_PROFILE_TCL8;
+	}
+	} else {
+	encodingNameOrProfile = TclGetString(objv[2]);
+	}
     } else if (objc == 3) {
 	/* Handle undocumented -nopkg option. This should only be
 	 * used by the internal ::tcl::Pkg::source utility function. */
@@ -1145,7 +1155,7 @@ TclNRSourceObjCmd(
 	names = *pkgFiles;
 	*pkgFiles = NULL;
     }
-    result = TclNREvalFile(interp, fileName, encodingName);
+    result = TclNREvalFile(interp, fileName, encodingNameOrProfile);
     if (pkgFiles) {
 	/* restore "tclPkgFiles" assocdata to how it was. */
 	*pkgFiles = names;
