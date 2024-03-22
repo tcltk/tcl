@@ -121,18 +121,18 @@ if {[interp issafe]} {
 	    -unknown [
 		list ::apply [list {name action args} {
 		    # Auto-load clock.tcl
-		    set hidden {add format scan}
-		    if {$action ni $hidden} {
-			return
-		    }
-		    set ensemble [uplevel 1 [::list ::namespace which $name]]
 		    ::source -encoding utf-8 [::file join [info library] clock.tcl]
-		    set map [namespace ensemble configure $ensemble -map]
-		    foreach name $hidden {
-			rename ::tcl::clock::uninitialized::$name ::tcl::clock::$name
-			dict set map $name ::tcl::clock::$name
+		    set ensemble [uplevel 1 [::list ::namespace which $name]]
+		    set ns [namespace ensemble configure $ensemble -namespace]
+		    set unns ${ns}::uninitialized
+		    set cmdmap [namespace ensemble configure $ensemble -map]
+		    foreach name [info commands ${unns}::*] {
+			set tail [namespace tail $name]
+			set target ${ns}::$tail
+			rename $name $target
+			dict set cmdmap [namespace tail $name] $target
 		    }
-		    namespace ensemble configure $ensemble -map $map
+		    namespace ensemble configure $ensemble -map $cmdmap -unknown {}
 		    return
 		} [namespace current]]
 		]
