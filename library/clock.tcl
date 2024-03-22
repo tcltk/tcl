@@ -2683,7 +2683,7 @@ proc ::tcl::clock::ScanWide { str } {
 	    "\"$str\" is not an integer"
     }
     if { [incr result 0] != $str } {
-	return -code error -errorcode [list CLOCK integervalueTooLarge] \
+	return -code error -errorcode [list CLOCK dateTooLarge] \
 	    "integer value too large to represent"
     }
     return $result
