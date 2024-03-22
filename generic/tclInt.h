@@ -4566,17 +4566,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	(((UCHAR(*(str))) < 0x80) ?		\
 	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
-#else
-#define TclUtfToUniChar(str, chPtr) \
-	(((UCHAR(*(str))) < 0x80) ?		\
-	    ((*(chPtr) = UCHAR(*(str))), 1)	\
-	    : Tcl_UtfToChar16(str, chPtr))
-#endif
 
 /*
  *----------------------------------------------------------------

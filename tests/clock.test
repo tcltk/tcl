@@ -6,8 +6,8 @@
 # built-in commands. Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright © 2004 by Kevin B. Kenny.  All rights reserved.
-# Copyright © 2015 by Sergey G. Brester aka sebres.
+# Copyright © 2004 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2015 Sergey G. Brester aka sebres.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18693,6 +18693,18 @@ test clock-6.10 {input of seconds - overflow} {
 test clock-6.10a {input of seconds - overflow, bug [1f40aa83c5]} knownBug {
     list [catch {clock scan 27670116110564327423 -format %s -gmt true} result] $result $::errorCode
 } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+
+test clock-6.10b {input of seconds - overflow ??, bug [1f40aa83c5]} knownBug {
+    clock scan 27670116110564327423 -gmt true
+} 89170590268800
+
+test clock-6.10c {input of seconds - overflow, bug [1f40aa83c5]} {
+    list [catch {clock scan 27670116110564327424 -format %s -gmt true} result] $result $::errorCode
+} {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+
+test clock-6.10d {input of seconds - overflow ??, bug [1f40aa83c5]} knownBug {
+    clock scan 27670116110564327424 -gmt true
+} -90247104115200
 
 test clock-6.11 {input of seconds - two values} {
     clock scan {1 2} -format {%s %s} -gmt true
