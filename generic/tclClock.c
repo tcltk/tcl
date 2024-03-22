@@ -133,28 +133,27 @@ struct ClockCommand {
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
-    int initialize;		/* 0 if no initialization is needed */
     void *clientData;	/* Any clientData to give the command (if NULL
     				 * a reference to ClockClientData will be sent) */
 };
 
 static const struct ClockCommand clockCommands[] = {
-    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, 1, NULL},
-    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  0, NULL},
-    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, 1, NULL},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, 0, NULL},
-    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, 0, INT2PTR(1)},
-    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, 0, INT2PTR(2)},
-    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, 1, NULL},
-    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, 0, INT2PTR(3)},
-    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL,  0, NULL},
-    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL,  0, NULL},
+    {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
+    {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd, NULL},
+    {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
+    {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
+    {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
+    {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
+    {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
     {"GetJulianDayFromEraYearMonthDay",
-		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL,  0, NULL},
+		ClockGetjuliandayfromerayearmonthdayObjCmd,	NULL, NULL},
     {"GetJulianDayFromEraYearWeekDay",
-		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL,  0, NULL},
-    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, 0, NULL},
-    {NULL, NULL, NULL, 0, NULL}
+		ClockGetjuliandayfromerayearweekdayObjCmd,	NULL, NULL},
+    {"catch",		ClockSafeCatchCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {NULL, NULL, NULL, NULL}
 };
 
 /*
@@ -182,10 +181,6 @@ TclClockInit(
     const struct ClockCommand *clockCmdPtr;
     char cmdNamePublic[50];	/* Buffer large enough to hold the string
 				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NUL. */
-    char cmdNameUninitialized[65];
-				/* Buffer large enough to hold the string
-				 *::tcl::clock::uninitialized::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NUL. */
     char *cmdName;
     Command         *cmdPtr;
@@ -259,18 +254,11 @@ TclClockInit(
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
 #define TCL_CLOCK_UNINITIALIZED_PREFIX_LEN 29 /* == strlen("::tcl::clock::uninitialized::") */
     memcpy(cmdNamePublic, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
-    memcpy(cmdNameUninitialized, "::tcl::clock::uninitialized::"
-	    , TCL_CLOCK_UNINITIALIZED_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
     	void *clientData;
 
-	if (clockCmdPtr->initialize == 1) {
-	    cmdName = cmdNameUninitialized;
-	    strcpy(cmdName + TCL_CLOCK_UNINITIALIZED_PREFIX_LEN, clockCmdPtr->name);
-	} else {
-	    cmdName = cmdNamePublic;
-	    strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
-	}
+	cmdName = cmdNamePublic;
+	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 
 	if (!(clientData = clockCmdPtr->clientData)) {
 	    clientData = data;
