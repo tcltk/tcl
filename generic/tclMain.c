@@ -141,27 +141,24 @@ Tcl_SetStartupScript(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_Obj *newEncodingOrProfile;
 
-    if (PTR2UINT(tsdPtr->encodingOrProfile) - 1 < PTR2UINT(TCL_SHELL_PROFILE_TCL8) - 1) {
-	newEncodingOrProfile = Tcl_NewStringObj(encodingOrProfile, -1);
-    } else {
-	newEncodingOrProfile = (Tcl_Obj *)encodingOrProfile;
+    if (path != NULL) {
+	Tcl_IncrRefCount(path);
     }
-
     if (tsdPtr->path != NULL) {
 	Tcl_DecrRefCount(tsdPtr->path);
     }
     tsdPtr->path = path;
-    if (tsdPtr->path != NULL) {
-	Tcl_IncrRefCount(tsdPtr->path);
-    }
 
+    if (PTR2UINT(encodingOrProfile) - 1 < PTR2UINT(TCL_SHELL_PROFILE_TCL8) - 1) {
+	newEncodingOrProfile = Tcl_NewStringObj(encodingOrProfile, -1);
+	Tcl_IncrRefCount(newEncodingOrProfile);
+    } else {
+	newEncodingOrProfile = (Tcl_Obj *)encodingOrProfile;
+    }
     if (PTR2UINT(tsdPtr->encodingOrProfile) - 1 < PTR2UINT(TCL_SHELL_PROFILE_TCL8) - 1) {
 	Tcl_DecrRefCount(tsdPtr->encodingOrProfile);
     }
     tsdPtr->encodingOrProfile = newEncodingOrProfile;
-    if (tsdPtr->encodingOrProfile != NULL) {
-	Tcl_IncrRefCount(tsdPtr->encodingOrProfile);
-    }
 }
 
 /*
@@ -333,19 +330,18 @@ Tcl_MainEx(
 	if ((argc >= 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
-	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
-		    TclGetString(value));
+	    Tcl_SetStartupScript(NewNativeObj(argv[3]), TclGetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
 	} else if ((argc >= 3) && (0 == _tcscmp(TEXT("-profile"), argv[1]))
 			&& ('-' != argv[3][0])) {
-	    if (0 == _tcscmp(TEXT("strict"), argv[2])) {
-		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_STRICT);
+	    if (0 == _tcscmp(TEXT("tcl8"), argv[2])) {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_TCL8);
 	    } else if (0 == _tcscmp(TEXT("replace"), argv[2])) {
 		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_REPLACE);
-	    } else if (0 == _tcscmp(TEXT("tcl8"), argv[2])) {
-		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_TCL8);
+	    } else {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), NULL);
 	    }
 	    argc -= 3;
 	    i += 3;

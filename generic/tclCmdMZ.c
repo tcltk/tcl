@@ -1110,7 +1110,7 @@ TclNRSourceObjCmd(
     void *names = NULL;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name|-profile profile? fileName");
 	return TCL_ERROR;
     }
 
@@ -1127,13 +1127,18 @@ TclNRSourceObjCmd(
 	    return TCL_ERROR;
 	}
 	if (index) {
-	if (!strcmp(TclGetString(objv[2]), "strict")) {
-		encodingNameOrProfile = TCL_SHELL_PROFILE_STRICT;
-	} else if (!strcmp(TclGetString(objv[2]), "replace")) {
-		encodingNameOrProfile = TCL_SHELL_PROFILE_REPLACE;
-	} else if (!strcmp(TclGetString(objv[2]), "tcl8")) {
+	    int id;
+	    result = TclEncodingProfileNameToId(interp, TclGetString(objv[2]), &id);
+	    if (result != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (id == TCL_ENCODING_PROFILE_TCL8) {
 		encodingNameOrProfile = TCL_SHELL_PROFILE_TCL8;
-	}
+	    } else if (id == TCL_ENCODING_PROFILE_REPLACE) {
+		encodingNameOrProfile = TCL_SHELL_PROFILE_REPLACE;
+	    } else {
+		encodingNameOrProfile = NULL;
+	    }
 	} else {
 	encodingNameOrProfile = TclGetString(objv[2]);
 	}
