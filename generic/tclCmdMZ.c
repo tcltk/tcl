@@ -1204,13 +1204,13 @@ Tcl_SplitObjCmd(
 	splitChars = " \n\t\r";
 	splitCharLen = 4;
     } else if (objc == 3) {
-	splitChars = Tcl_GetStringFromObj(objv[2], &splitCharLen);
+	splitChars = TclGetStringFromObj(objv[2], &splitCharLen);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?splitChars?");
 	return TCL_ERROR;
     }
 
-    stringPtr = Tcl_GetStringFromObj(objv[1], &stringLen);
+    stringPtr = TclGetStringFromObj(objv[1], &stringLen);
     end = stringPtr + stringLen;
     TclNewObj(listPtr);
 
@@ -1630,7 +1630,7 @@ StringIsCmd(
 	    if (strict) {
 		result = 0;
 	    } else {
-		string1 = Tcl_GetStringFromObj(objPtr, &length1);
+		string1 = TclGetStringFromObj(objPtr, &length1);
 		result = length1 == 0;
 	    }
 	} else if ((objPtr->internalRep.wideValue != 0)
@@ -1659,7 +1659,7 @@ StringIsCmd(
 	    Tcl_Size lenRemain, elemSize;
 	    const char *p;
 
-	    string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	    string1 = TclGetStringFromObj(objPtr, &length1);
 	    end = string1 + length1;
 	    failat = -1;
 	    for (p=string1, lenRemain=length1; lenRemain > 0;
@@ -1699,7 +1699,7 @@ StringIsCmd(
 		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
-	string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0) {
 	    if (strict) {
 		result = 0;
@@ -1729,7 +1729,7 @@ StringIsCmd(
 		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
-	string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0) {
 	    if (strict) {
 		result = 0;
@@ -1771,7 +1771,7 @@ StringIsCmd(
 	    break;
 	}
 
-	string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0) {
 	    if (strict) {
 		result = 0;
@@ -1840,7 +1840,7 @@ StringIsCmd(
 	    Tcl_Size elemSize;
 	    const char *p;
 
-	    string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	    string1 = TclGetStringFromObj(objPtr, &length1);
 	    end = string1 + length1;
 	    failat = -1;
 	    for (p=string1, lenRemain=length1; lenRemain > 0;
@@ -1895,7 +1895,7 @@ StringIsCmd(
     }
 
     if (chcomp != NULL) {
-	string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0) {
 	    if (strict) {
 		result = 0;
@@ -1981,7 +1981,7 @@ StringMapCmd(
     }
 
     if (objc == 4) {
-	const char *string = Tcl_GetStringFromObj(objv[1], &length2);
+	const char *string = TclGetStringFromObj(objv[1], &length2);
 
 	if ((length2 > 1) &&
 		strncmp(string, "-nocase", length2) == 0) {
@@ -2254,7 +2254,7 @@ StringMatchCmd(
 
     if (objc == 4) {
 	Tcl_Size length;
-	const char *string = Tcl_GetStringFromObj(objv[1], &length);
+	const char *string = TclGetStringFromObj(objv[1], &length);
 
 	if ((length > 1) && strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
@@ -2664,7 +2664,7 @@ StringEqualCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string2 = Tcl_GetStringFromObj(objv[i], &length);
+	string2 = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string2, "-nocase", length)) {
 	    nocase = 1;
 	} else if ((length > 1)
@@ -2767,7 +2767,7 @@ StringCmpOpts(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string = Tcl_GetStringFromObj(objv[i], &length);
+	string = TclGetStringFromObj(objv[i], &length);
 	if ((length > 1) && !strncmp(string, "-nocase", length)) {
 	    *nocase = 1;
 	} else if ((length > 1)
@@ -2908,7 +2908,7 @@ StringLowerCmd(
 	return TCL_ERROR;
     }
 
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
@@ -2943,7 +2943,7 @@ StringLowerCmd(
 	    return TCL_OK;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[1], &length1);
+	string1 = TclGetStringFromObj(objv[1], &length1);
 	start = Tcl_UtfAtIndex(string1, first);
 	end = Tcl_UtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
@@ -2993,7 +2993,7 @@ StringUpperCmd(
 	return TCL_ERROR;
     }
 
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
@@ -3028,7 +3028,7 @@ StringUpperCmd(
 	    return TCL_OK;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[1], &length1);
+	string1 = TclGetStringFromObj(objv[1], &length1);
 	start = Tcl_UtfAtIndex(string1, first);
 	end = Tcl_UtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
@@ -3078,7 +3078,7 @@ StringTitleCmd(
 	return TCL_ERROR;
     }
 
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     if (objc == 2) {
 	Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
@@ -3113,7 +3113,7 @@ StringTitleCmd(
 	    return TCL_OK;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[1], &length1);
+	string1 = TclGetStringFromObj(objv[1], &length1);
 	start = Tcl_UtfAtIndex(string1, first);
 	end = Tcl_UtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
@@ -3158,7 +3158,7 @@ StringTrimCmd(
     Tcl_Size triml, trimr, length1, length2;
 
     if (objc == 3) {
-	string2 = Tcl_GetStringFromObj(objv[2], &length2);
+	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
 	string2 = tclDefaultTrimSet;
 	length2 = strlen(tclDefaultTrimSet);
@@ -3166,7 +3166,7 @@ StringTrimCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
     }
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     triml = TclTrim(string1, length1, string2, length2, &trimr);
 
@@ -3206,7 +3206,7 @@ StringTrimLCmd(
     Tcl_Size length1, length2;
 
     if (objc == 3) {
-	string2 = Tcl_GetStringFromObj(objv[2], &length2);
+	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
 	string2 = tclDefaultTrimSet;
 	length2 = strlen(tclDefaultTrimSet);
@@ -3214,7 +3214,7 @@ StringTrimLCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
     }
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     trim = TclTrimLeft(string1, length1, string2, length2);
 
@@ -3253,7 +3253,7 @@ StringTrimRCmd(
     Tcl_Size length1, length2;
 
     if (objc == 3) {
-	string2 = Tcl_GetStringFromObj(objv[2], &length2);
+	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
 	string2 = tclDefaultTrimSet;
 	length2 = strlen(tclDefaultTrimSet);
@@ -3261,7 +3261,7 @@ StringTrimRCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
     }
-    string1 = Tcl_GetStringFromObj(objv[1], &length1);
+    string1 = TclGetStringFromObj(objv[1], &length1);
 
     trim = TclTrimRight(string1, length1, string2, length2);
 
@@ -3678,7 +3678,7 @@ TclNRSwitchObjCmd(
 	 * See if the pattern matches the string.
 	 */
 
-	pattern = Tcl_GetStringFromObj(objv[i], &patternLength);
+	pattern = TclGetStringFromObj(objv[i], &patternLength);
 
 	if ((i == objc - 2) && (*pattern == 'd')
 		&& (strcmp(pattern, "default") == 0)) {
