@@ -18532,27 +18532,25 @@ test clock-6.8 {input of seconds} {
 } 9223372036854775807
 
 test clock-6.9 {input of seconds - overflow} {
-    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result] $result $::errorCode
+    list [catch {clock scan -9223372036854775809 -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
 } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
-
 test clock-6.10 {input of seconds - overflow} {
-    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result] $result $::errorCode
+    list [catch {clock scan 9223372036854775808 -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
 } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
 
-test clock-6.10a {input of seconds - overflow, bug [1f40aa83c5]} {
-    list [catch {clock scan 27670116110564327423 -format %s -gmt true} result] $result $::errorCode
-} {1 {integer value too large to represent} {CLOCK dateTooLarge}}
-
-test clock-6.10b {input of seconds - overflow ??, bug [1f40aa83c5]} knownBug {
+foreach sign {{} -} {
+  test clock-6.10a$sign {input of seconds - overflow, bug [1f40aa83c5]} {
+    list [catch {clock scan ${sign}27670116110564327423 -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
+  } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+  test clock-6.10b$sign {input of seconds - overflow, bug [1f40aa83c5]} {
+    list [catch {clock scan ${sign}27670116110564327424 -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
+  } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+}; unset sign
+test clock-6.10c {input of seconds - overflow ??, bug [1f40aa83c5]} knownBug {
     clock scan 27670116110564327423 -gmt true
 } 89170590268800
-
-test clock-6.10c {input of seconds - overflow, bug [1f40aa83c5]} {
-    list [catch {clock scan 27670116110564327424 -format %s -gmt true} result] $result $::errorCode
-} {1 {integer value too large to represent} {CLOCK dateTooLarge}}
-
 test clock-6.10d {input of seconds - overflow ??, bug [1f40aa83c5]} knownBug {
-    clock scan 27670116110564327424 -gmt true
+  clock scan 27670116110564327424 -gmt true
 } -90247104115200
 
 test clock-6.11 {input of seconds - two values} {
