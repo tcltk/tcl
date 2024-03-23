@@ -174,7 +174,7 @@ static const struct ClockCommand clockCommands[] = {
  *----------------------------------------------------------------------
  */
 
-void
+int
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
@@ -184,6 +184,7 @@ TclClockInit(
 				 * plus a terminating NUL. */
     Command         *cmdPtr;
     ClockClientData *data;
+    Tcl_Obj *ensembleNamePtr;
     int i;
 
     /*
@@ -192,7 +193,7 @@ TclClockInit(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return;
+	return TCL_ERROR;
     }
 
     /*
@@ -271,6 +272,26 @@ TclClockInit(
 	    ClockConfigureObjCmd, data, NULL);
     data->refCount++;
     cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
+
+    /*
+     * Compile clock ensemble (performance purposes).
+     */
+    ensembleNamePtr=Tcl_NewStringObj("::clock", -1);
+    Tcl_Command token = Tcl_FindEnsemble(interp, ensembleNamePtr,
+	TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(ensembleNamePtr);
+    if (!token) {
+	return TCL_ERROR;
+    }
+    int ensFlags = 0;
+    if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    ensFlags |= ENSEMBLE_COMPILE;
+    if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /*
@@ -974,7 +995,6 @@ ClockConfigureObjCmd(
 	"-clear",
 	"-year-century",  "-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
-	"-init-complete",
 	NULL
     };
     enum optionInd {
@@ -982,7 +1002,6 @@ ClockConfigureObjCmd(
 	CLOCK_CLEAR_CACHE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
-	CLOCK_INIT_COMPLETE
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -1145,27 +1164,6 @@ ClockConfigureObjCmd(
 	break;
 	case CLOCK_CLEAR_CACHE:
 	    ClockConfigureClear(dataPtr);
-	break;
-	case CLOCK_INIT_COMPLETE:
-	    {
-		/*
-		 * Init completed.
-		 * Compile clock ensemble (performance purposes).
-		 */
-		Tcl_Command token = Tcl_FindCommand(interp, "::clock",
-		    NULL, TCL_GLOBAL_ONLY);
-		if (!token) {
-		    return TCL_ERROR;
-		}
-		int ensFlags = 0;
-		if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		ensFlags |= ENSEMBLE_COMPILE;
-		if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-	    }
 	break;
 	}
     }

@@ -26,6 +26,7 @@ package require msgcat 1.7
 namespace eval ::tcl::clock \
     [list variable LibDir [info library]]
 
+load {} TclLibraryClock
 #----------------------------------------------------------------------
 #
 # clock --
@@ -2080,3 +2081,4 @@ proc ::tcl::clock::ClearCaches {} {
     set TimeZoneBad {}
     InitTZData
 }
+

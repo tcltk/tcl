@@ -1128,14 +1128,6 @@ Tcl_CreateInterp(void)
     TclInitProcessCmd(interp);
 
     /*
-     * Register "clock" subcommands. These *do* go through
-     * Tcl_CreateObjCommand, since they aren't in the global namespace and
-     * involve ensembles.
-     */
-
-    TclClockInit(interp);
-
-    /*
      * Register the built-in functions. This is empty now that they are
      * implemented as commands in the ::tcl::mathfunc namespace.
      */

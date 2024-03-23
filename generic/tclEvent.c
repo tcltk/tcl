@@ -1162,6 +1162,12 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+
+
+	    Tcl_StaticLibrary(
+		NULL, (const char *)"TclLibraryClock", TclClockInit ,NULL);
+
+
 	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();

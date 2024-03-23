@@ -3662,7 +3662,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclChanCreateObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPushObjCmd;
-MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclClockOldscanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CloseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
