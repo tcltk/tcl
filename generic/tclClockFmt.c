@@ -140,7 +140,7 @@ _str2wideInt(
     const char	*e,
     int sign)
 {
-    register Tcl_WideInt val = 0;
+    Tcl_WideInt val = 0;
     /* overflow impossible for 18 digits ("9..9"), so no needs to check before */
     const char *eNO = p+18;
     if (eNO > e) {

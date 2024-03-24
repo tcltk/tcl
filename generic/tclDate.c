@@ -2512,7 +2512,7 @@ TclDatelex(
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
 
-	    /* 
+	    /*
 	     * Count the number of digits.
 	     */
 	    p = (char *)yyInput;
@@ -2528,13 +2528,13 @@ TclDatelex(
 		p = (char *)yyInput+8;
 		if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
 		    return tID; /* overflow*/
-		}                
+		}
 		yyDigitCount = 8;
 		yyInput = p;
 		location->last_column = yyInput - info->dateStart - 1;
 		return tISOBASL;
 	    }
-	    /* 
+	    /*
 	     * Convert the string into a number
 	     */
 	    if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {

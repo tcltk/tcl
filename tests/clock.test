@@ -18702,7 +18702,7 @@ foreach sign {{} -} {
   test clock-6.10d {input of seconds - overflow, bug [1f40aa83c5]} {
     list [catch {clock scan ${sign}[string repeat 9 19] -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
   } {1 {integer value too large to represent} {CLOCK dateTooLarge}}
-  # both fololowing freescan test don't generate overflow error, 
+  # both fololowing freescan test don't generate overflow error,
   # since it is a free scan, thus the token is simply not recognized further in yacc lexer,
   # therefore we get parse error (can be surely changed latter):
   test clock-6.10e {input of seconds - overflow (but since freescan parse error, but not boom), bug [1f40aa83c5]} -body {
