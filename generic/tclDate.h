@@ -366,7 +366,11 @@ typedef struct ClockClientData {
  * Clock scan and format facilities.
  */
 
-#define CLOCK_FMT_SCN_STORAGE_GC_SIZE 32
+#ifndef TCL_MEM_DEBUG
+# define CLOCK_FMT_SCN_STORAGE_GC_SIZE 32
+#else
+# define CLOCK_FMT_SCN_STORAGE_GC_SIZE 0
+#endif
 
 #define CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE 2
 
