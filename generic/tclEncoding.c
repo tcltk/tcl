@@ -1177,18 +1177,6 @@ Tcl_ExternalToUtfDStringEx(
     /* DO FIRST - Must always be initialized before returning */
     Tcl_DStringInit(dstPtr);
 
-    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
-	/* TODO - what other flags are illegal? - See TIP 656 */
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_NewStringObj(
-		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
-	errno = EINVAL;
-	return TCL_ERROR;
-    }
-
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
@@ -1203,6 +1191,7 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
+    flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
@@ -1505,18 +1494,6 @@ Tcl_UtfToExternalDStringEx(
     /* DO FIRST - must always be initialized on return */
     Tcl_DStringInit(dstPtr);
 
-    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
-	/* TODO - what other flags are illegal? - See TIP 656 */
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_NewStringObj(
-		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
-	errno = EINVAL;
-	return TCL_ERROR;
-    }
-
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
@@ -1531,6 +1508,7 @@ Tcl_UtfToExternalDStringEx(
 	srcLen = strlen(src);
     }
 
+    flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
     while (1) {
 	int srcChunkLen, srcChunkRead;
