@@ -221,7 +221,7 @@ extern int TclDatedebug;
 union YYSTYPE
 {
 
-    long long Number;
+    Tcl_WideInt Number;
     enum _MERIDIAN Meridian;
 
 
@@ -2512,44 +2512,40 @@ TclDatelex(
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
 
-	    /*
-	     * Convert the string into a number; count the number of digits.
+	    /* 
+	     * Count the number of digits.
 	     */
-	    long long num = c - '0';
 	    p = (char *)yyInput;
-	    while (isdigit(UCHAR(c = *(++p)))) {
-		if (num >= 0) {
-		    num *= 10; num += c - '0';
-		}
-	    }
-	    yylvalPtr->Number = num;
+	    while (isdigit(UCHAR(*++p))) {};
 	    yyDigitCount = p - yyInput;
+	    /*
+	     * A number with 12 or 14 digits is considered an ISO 8601 date.
+	     */
+	    if (yyDigitCount == 14 || yyDigitCount == 12) {
+		/* long form of ISO 8601 (without separator), either
+		 * YYYYMMDDhhmmss or YYYYMMDDhhmm, so reduce to date
+		 * (8 chars is isodate) */
+		p = (char *)yyInput+8;
+		if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
+		    return tID; /* overflow*/
+		}                
+		yyDigitCount = 8;
+		yyInput = p;
+		location->last_column = yyInput - info->dateStart - 1;
+		return tISOBASL;
+	    }
+	    /* 
+	     * Convert the string into a number
+	     */
+	    if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
+		return tID; /* overflow*/
+	    }
 	    yyInput = p;
-
 	    /*
 	     * A number with 6 or more digits is considered an ISO 8601 base.
 	     */
-
 	    location->last_column = yyInput - info->dateStart - 1;
 	    if (yyDigitCount >= 6) {
-		if (yyDigitCount == 14 || yyDigitCount == 12) {
-		    /* long form of ISO 8601 (without separator), either
-		     * YYYYMMDDhhmmss or YYYYMMDDhhmm, so reduce to date
-		     * (8 chars is isodate) */
-		    p = (char *)tokStart;
-		    num = *p++ - '0';
-		    do {
-			num *= 10; num += *p++ - '0';
-		    } while (p - tokStart < 8);
-		    yylvalPtr->Number = num;
-		    yyDigitCount = 8;
-		    yyInput = p;
-		    location->last_column = yyInput - info->dateStart - 1;
-		    return tISOBASL;
-		}
-		if (yyDigitCount > 14) { /* overflow */
-		    return tID;
-		}
 		if (yyDigitCount == 8) {
 		    return tISOBAS8;
 		}
