@@ -268,7 +268,7 @@ TclClockInit(
     }
     cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
 	    "::tcl::unsupported::clock::configure",
-	    ClockConfigureObjCmd, data, NULL);
+	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
     data->refCount++;
     cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
 }
