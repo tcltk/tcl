@@ -156,10 +156,20 @@ static const struct ClockCommand clockCommands[] = {
     {NULL, NULL, NULL, NULL}
 };
 
+int
+TclClockNOPCmdProc(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
+{
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * TclClockInit --
+ * TclClockAutoLoad --
  *
  *	Registers the 'clock' subcommands with the Tcl interpreter and
  *	initializes its client data (which consists mostly of constant
@@ -173,10 +183,9 @@ static const struct ClockCommand clockCommands[] = {
  *
  *----------------------------------------------------------------------
  */
-
-void
-TclClockInit(
-    Tcl_Interp *interp)		/* Tcl interpreter */
+int
+TclClockAutoLoad(
+    Tcl_Interp *interp)	    /* Tcl interpreter */
 {
     const struct ClockCommand *clockCmdPtr;
     char cmdName[50];		/* Buffer large enough to hold the string
@@ -192,7 +201,13 @@ TclClockInit(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return;
+	return TCL_ERROR;
+    }
+
+    /* Auto-loader command points to NOP now */
+    cmdPtr = (Command *)Tcl_FindCommand(interp, "::tcl::clock::load", NULL, 0);
+    if (cmdPtr) {
+	cmdPtr->objProc = TclClockNOPCmdProc;
     }
 
     /*
@@ -263,14 +278,87 @@ TclClockInit(
 	cmdPtr = (Command *)Tcl_CreateObjCommand(interp, cmdName,
 		clockCmdPtr->objCmdProc, clientData,
 		clockCmdPtr->clientData ? NULL : ClockDeleteCmdProc);
+	if (!cmdPtr) { return TCL_ERROR; }
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
     }
     cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
 	    "::tcl::unsupported::clock::configure",
 	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
+    if (!cmdPtr) { return TCL_ERROR; }
     data->refCount++;
     cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
+
+    return TCL_OK;
+}
+
+int
+TclClockAutoLoadCmdProc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	    /* Tcl interpreter */
+    int objc,		    /* Parameter count */
+    Tcl_Obj *const objv[])  /* Parameter vector */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    
+    return TclClockAutoLoad(interp);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclClockInit --
+ *
+ *	Registers the 'clock' auto loader.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Installs the commands and creates the client data
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclClockInit(
+    Tcl_Interp *interp)		/* Tcl interpreter */
+{
+    Tcl_Obj *aiVar = NULL, *varName, *cmdObj;
+    const struct ClockCommand *clockCmdPtr;
+    char cmdName[50];		/* Buffer large enough to hold the string
+				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
+				 * plus a terminating NUL. */
+    if (Tcl_IsSafe(interp)) {
+	return;
+    }
+    (void)Tcl_CreateObjCommand(interp,
+	    "::tcl::clock::load", TclClockAutoLoadCmdProc,
+		NULL, NULL);
+
+    /* TODO: replace following ::auto_index(::tcl::clock::*) definitions with
+     * [namespace unknown], if TIP#689 gets accepted. */
+
+    /* set ::auto_index(::tcl::clock::*) ... */
+    TclInitObjRef(aiVar, Tcl_NewStringObj("auto_index", 10));
+    TclInitObjRef(cmdObj, Tcl_NewStringObj("::tcl::clock::load", 18));
+    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
+    varName = NULL;
+    for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
+	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
+	TclSetObjRef(varName, Tcl_NewStringObj(cmdName, -1));
+	Tcl_ObjSetVar2(interp, aiVar, varName, cmdObj, TCL_GLOBAL_ONLY);
+    }
+    /* set ::auto_index(::tcl::unsupported::clock::configure) ... */
+    TclSetObjRef(varName, Tcl_NewStringObj(
+    	"::tcl::unsupported::clock::configure", 36));
+    Tcl_ObjSetVar2(interp, aiVar, varName, cmdObj, TCL_GLOBAL_ONLY);
+    /* clean */
+    TclUnsetObjRef(varName);
+    TclUnsetObjRef(cmdObj);
+    TclUnsetObjRef(aiVar);
 }
 
 /*
