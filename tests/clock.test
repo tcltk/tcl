@@ -273,21 +273,35 @@ proc ::testClock::registry { cmd path key } {
 
 # Base test cases:
 
-test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" {
+test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" -setup {
     set i [interp create]; # because clock can be used somewhere, test it in new interp:
-
-    set ret [$i eval {
-
+} -body {
+    $i eval {
 	lappend ret ens:[namespace ensemble exists ::clock]
 	clock seconds; # init ensemble (but not yet stubs, loading of clock.tcl retarded)
 	lappend ret ens:[namespace ensemble exists ::clock]
 	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
 	clock format -now; # clock.tcl stubs expected
 	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
-    }]
+    }
+} -cleanup {
     interp delete $i
-    set ret
-} {ens:0 ens:1 stubs:0 stubs:1}
+} -result {ens:0 ens:1 stubs:0 stubs:1}
+test clock-0.1a "initial: safe interpreter shares clock command with parent" -setup {
+    set i [interp create]
+    $i eval {set sci [interp create -safe]}
+} -body {
+    $i eval {
+	lappend ret ens:[namespace ensemble exists ::clock]
+	$sci eval { clock seconds }; # init ensemble (but not yet stubs, loading of clock.tcl retarded)
+	lappend ret ens:[namespace ensemble exists ::clock]
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+	$sci eval { clock format -now }; # clock.tcl stubs expected
+	lappend ret stubs:[expr {[namespace which -command ::tcl::clock::GetSystemTimeZone] ne ""}]
+    }
+} -cleanup {
+    interp delete $i
+} -result {ens:0 ens:1 stubs:0 stubs:1}
 
 test clock-0.2 "initial: loading of format/locale does not overwrite interp state (errorInfo)" -setup {
     # be sure - we have no cached locale/msgcat, etc:
