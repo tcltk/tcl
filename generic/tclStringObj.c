@@ -3968,7 +3968,7 @@ TclStringCmp(
 	    if (empty > 0) {
 		switch (TclCheckEmptyString(value2Ptr)) {
 		case -1:
-		    s1 = 0;
+		    s1 = "";
 		    s1len = 0;
 		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 		    break;
@@ -3983,7 +3983,7 @@ TclStringCmp(
 	    } else if (TclCheckEmptyString(value2Ptr) > 0) {
 		switch (empty) {
 		case -1:
-		    s2 = 0;
+		    s2 = "";
 		    s2len = 0;
 		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
 		    break;
