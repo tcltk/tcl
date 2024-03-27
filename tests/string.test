@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Commands covered:  string
 #
 # This file contains a collection of tests for one or more of the Tcl
@@ -171,6 +173,37 @@ test string-2.35.$noComp {string compare, binary neq} {
 test string-2.36.$noComp {string compare, binary neq unequal length} {
     run {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
 } 1
+test string-2.37.$noComp {string compare, big -length} {
+    if {[package vsatisfies [info patchlevel] 8.7-]} {
+      run {string compare -length 0x100000000 ab abde}
+    } else {
+      run {string compare -length 0x7fffffff ab abde}
+    }
+} -1
+test string-2.38a.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare "" [binary decode hex 00]}
+} -1
+test string-2.38b.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 "" [binary decode hex 00]}
+} -1
+test string-2.38c.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase "" [binary decode hex 00]}
+} -1
+test string-2.38d.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare [binary decode hex 00] ""}
+} 1
+test string-2.38e.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 [binary decode hex 00] ""}
+} 1
+test string-2.38f.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase  [binary decode hex 00] ""}
+} 1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -198,6 +231,153 @@ test string-3.7.$noComp {string equal -nocase} {
 test string-3.8.$noComp {string equal with length, unequal strings} {
     run {string equal -length 2 abc abde}
 } 1
+test string-3.9.$noComp {string equal, not enough args} {
+    list [catch {run {string equal a}} msg] $msg
+} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
+test string-3.10.$noComp {string equal, bad args} {
+    list [catch {run {string equal a b c}} msg] $msg
+} {1 {bad option "a": must be -nocase or -length}}
+test string-3.11.$noComp {string equal, bad args} {
+    list [catch {run {string equal -length -nocase str1 str2}} msg] $msg
+} {1 {expected integer but got "-nocase"}}
+test string-3.12.$noComp {string equal, too many args} {
+    list [catch {run {string equal -length 10 -nocase str1 str2 str3}} msg] $msg
+} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
+test string-3.13.$noComp {string equal with length unspecified} {
+    list [catch {run {string equal -length 10 10}} msg] $msg
+} {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
+test string-3.14.$noComp {string equal with length} {
+    run {string equal -length 2 abcde abxyz}
+} 1
+test string-3.15.$noComp {string equal with special index} {
+    list [catch {run {string equal -length end-3 abcde abxyz}} msg] $msg
+} {1 {expected integer but got "end-3"}}
+
+test string-3.16.$noComp {string equal, unicode} {
+    run {string equal ab牦 ab牧}
+} 0
+test string-3.17.$noComp {string equal, unicode} {
+    run {string equal Ü Ü}
+} 1
+test string-3.18.$noComp {string equal, unicode} {
+    run {string equal Ü ü}
+} 0
+test string-3.19.$noComp {string equal, unicode} {
+    run {string equal ÜÜÜüü ÜÜÜÜÜ}
+} 0
+test string-3.20.$noComp {string equal, high bit} {
+    # This test fails if the underlying comparison
+    # is using signed chars instead of unsigned chars.
+    # (like SunOS's default memcmp thus the compat/memcmp.c)
+    run {string equal "\x80" "@"}
+    # Nb this tests works also in utf8 space because \x80 is
+    # translated into a 2 or more bytelength but whose first byte has
+    # the high bit set.
+} 0
+test string-3.21.$noComp {string equal -nocase} {
+    run {string equal -nocase abcde Abdef}
+} 0
+test string-3.22.$noComp {string equal, -nocase unicode} {
+    run {string equal -nocase Ü Ü}
+} 1
+test string-3.23.$noComp {string equal, -nocase unicode} {
+    run {string equal -nocase ÜÜÜüü ÜÜÜÜÜ}
+} 1
+test string-3.24.$noComp {string equal -nocase with length} {
+    run {string equal -length 2 -nocase abcde Abxyz}
+} 1
+test string-3.25.$noComp {string equal -nocase with length} {
+    run {string equal -nocase -length 3 abcde Abxyz}
+} 0
+test string-3.26.$noComp {string equal -nocase with length <= 0} {
+    run {string equal -nocase -length -1 abcde AbCdEf}
+} 0
+test string-3.27.$noComp {string equal -nocase with excessive length} {
+    run {string equal -nocase -length 50 AbCdEf abcde}
+} 0
+test string-3.28.$noComp {string equal -len unicode} {
+    # These are strings that are 6 BYTELENGTH long, but the length
+    # shouldn't make a different because there are actually 3 CHARS long
+    run {string equal -len 5 ÜÜÜ ÜÜü}
+} 0
+test string-3.29.$noComp {string equal -nocase with special index} {
+    list [catch {run {string equal -nocase -length end-3 Abcde abxyz}} msg] $msg
+} {1 {expected integer but got "end-3"}}
+test string-3.30.$noComp {string equal, null strings} {
+    run {string equal "" ""}
+} 1
+test string-3.31.$noComp {string equal, null strings} {
+    run {string equal "" foo}
+} 0
+test string-3.32.$noComp {string equal, null strings} {
+    run {string equal foo ""}
+} 0
+test string-3.33.$noComp {string equal -nocase, null strings} {
+    run {string equal -nocase "" ""}
+} 1
+test string-3.34.$noComp {string equal -nocase, null strings} {
+    run {string equal -nocase "" foo}
+} 0
+test string-3.35.$noComp {string equal -nocase, null strings} {
+    run {string equal -nocase foo ""}
+} 0
+test string-3.36.$noComp {string equal with NUL character vs. other ASCII} {
+    # Be careful here, since UTF-8 rep comparison with memcmp() of
+    # these puts chars in the wrong order
+    run {string equal \x00 \x01}
+} 0
+test string-3.37.$noComp {string equal, high bit} {
+    run {string equal "a\x80" "a@"}
+} 0
+test string-3.38.$noComp {string equal, high bit} {
+    run {string equal "a\x00" "a\x01"}
+} 0
+test string-3.39.$noComp {string equal, high bit} {
+    run {string equal "a\x00\x00" "a\x00\x01"}
+} 0
+test string-3.40.$noComp {string equal, binary equal} {
+    run {string equal [binary format a100 0] [binary format a100 0]}
+} 1
+test string-3.41.$noComp {string equal, binary neq} {
+    run {string equal [binary format a100a 0 1] [binary format a100a 0 0]}
+} 0
+test string-3.42.$noComp {string equal, binary neq inequal length} {
+    run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
+} 0
+test string-3.43.$noComp {string equal, big -length} {
+    if {[package vsatisfies [info patchlevel] 8.7-]} {
+      run {string equal -length 0x100000000 abc def}
+    } else {
+      run {string equal -length 0x7fffffff abc def}
+    }
+} 0
+test string-3.44.$noComp {string equal, bigger -length} -body {
+    run {string equal -length 18446744073709551616 abc def}
+} -returnCodes 1 -result {integer value too large to represent}
+test string-3.45.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal [binary decode hex 00] ""}
+} 0
+test string-3.45.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 [binary decode hex 00] ""}
+} 0
+test string-3.45.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase  [binary decode hex 00] ""}
+} 0
 
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
