@@ -228,15 +228,30 @@ test string-2.36.$noComp {string compare, binary neq unequal length} {
 test string-2.37.$noComp {string compare with -length >= 2^32} {
     run {string compare -length 4294967296 ab abde}
 } -1
-test string-bug-edb4b065f4-1 {string compare empty string against byte array} {
-    string compare "" [binary decode hex 00]
+test string-2.38.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare "" [binary decode hex 00]}
 } -1
-test string-bug-edb4b065f4-2 {string compare -length empty string against byte array} {
-    string compare -length 1 "" [binary decode hex 00]
+test string-2.38.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 "" [binary decode hex 00]}
 } -1
-test string-bug-edb4b065f4-3 {string compare -nocase empty string against byte array} {
-    string compare -nocase "" [binary decode hex 00]
+test string-2.38.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase "" [binary decode hex 00]}
 } -1
+test string-2.38.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare [binary decode hex 00] ""}
+} 1
+test string-2.38.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 [binary decode hex 00] ""}
+} 1
+test string-2.38.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase  [binary decode hex 00] ""}
+} 1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -383,6 +398,31 @@ test string-3.43.$noComp {string equal, big -length} {
 test string-3.44.$noComp {string equal, bigger -length} -body {
     run {string equal -length 18446744073709551616 abc def}
 } -returnCodes 1 -result {integer value too large to represent}
+test string-3.45.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase "" [binary decode hex 00]}
+} 0
+test string-3.45.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal [binary decode hex 00] ""}
+} 0
+test string-3.45.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 [binary decode hex 00] ""}
+} 0
+test string-3.45.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase  [binary decode hex 00] ""}
+} 0
+
 
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
