@@ -36,7 +36,7 @@ mp_err s_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
    mp_err err;
 
    /* init temps */
-   if ((err = mp_init_multi(&S1, &S2, &T1, (void *)NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&S1, &S2, &T1, NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -146,7 +146,7 @@ mp_err s_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
    if ((err = mp_sub(&S2, &a1, &S2)) != MP_OKAY)                  goto LBL_ERR;
 
    /** S2 = S2 / 3; \\ this is an exact division  */
-   if ((err = mp_div_3(&S2, &S2, NULL)) != MP_OKAY)               goto LBL_ERR;
+   if ((err = s_mp_div_3(&S2, &S2, NULL)) != MP_OKAY)             goto LBL_ERR;
 
    /** a1 = S1 - a1; */
    if ((err = mp_sub(&S1, &a1, &a1)) != MP_OKAY)                  goto LBL_ERR;
@@ -208,7 +208,7 @@ LBL_ERRa2:
 LBL_ERRa1:
    mp_clear(&a0);
 LBL_ERRa0:
-   mp_clear_multi(&S1, &S2, &T1, (void *)NULL);
+   mp_clear_multi(&S1, &S2, &T1, NULL);
    return err;
 }
 
