@@ -63,9 +63,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-MODULE_SCOPE mp_err TclBN_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r);
-MODULE_SCOPE mp_err TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r);
+MODULE_SCOPE mp_err	TclBN_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c);
 MODULE_SCOPE mp_err	TclBN_s_mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c);
 MODULE_SCOPE mp_err	TclBN_s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
 MODULE_SCOPE mp_err	TclBN_s_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
@@ -75,10 +75,10 @@ MODULE_SCOPE mp_err	TclBN_s_mp_toom_sqr(const mp_int *a, mp_int *b);
 MODULE_SCOPE mp_err TclBN_s_mp_add(const mp_int *a, const mp_int *b, mp_int *c);
 MODULE_SCOPE mp_err TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
 MODULE_SCOPE mp_err TclBN_s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs);
-MODULE_SCOPE void TclBN_s_mp_reverse(unsigned char *s, size_t len);
-MODULE_SCOPE mp_err TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
+MODULE_SCOPE mp_err	TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 MODULE_SCOPE const char *const TclBN_mp_s_rmap;
 MODULE_SCOPE const uint8_t TclBN_mp_s_rmap_reverse[];
 MODULE_SCOPE const size_t TclBN_mp_s_rmap_reverse_sz;
