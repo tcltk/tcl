@@ -27,7 +27,7 @@ mp_err mp_root_n(const mp_int *a, int b, mp_int *c)
       return MP_VAL;
    }
 
-   if ((err = mp_init_multi(&t1, &t2, &t3, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&t1, &t2, &t3, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -134,7 +134,7 @@ mp_err mp_root_n(const mp_int *a, int b, mp_int *c)
    c->sign = a->sign;
 
 LBL_ERR:
-   mp_clear_multi(&t1, &t2, &t3, NULL);
+   mp_clear_multi(&t1, &t2, &t3, (void *)NULL);
    return err;
 }
 
