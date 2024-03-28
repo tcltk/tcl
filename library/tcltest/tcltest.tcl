@@ -2844,49 +2844,6 @@ proc tcltest::GetMatchingDirectories {rootdir} {
     return [lsort $matchDirs]
 }
 
-# tcltest::fileEncoding --
-#
-#	checks the file contains BOM (or coding header)
-#	and returns -encoding utf-8 (or enconding),
-#	otherwise an empty list
-#
-#	Typical header for coding:
-#		# -*- coding: utf-8 -*-
-#
-#	For similarity with Tcl this will be also supported:
-#		# -encoding utf-8 ...
-#		#!/usr/bin/env tclsh -encoding utf-8 ...
-#
-# Arguments:
-#	name of the file to check encoding
-#
-# Results:
-#	-encoding utf-8, -encoding $enc or empty
-#
-# Side effects:
-#	None.
-
-proc tcltest::fileEncoding {name} {
-    variable fullutf
-
-    set f [open $name rb]
-    try {
-	set buf [read $f 3]
-	# contains BOM?
-	if {$buf eq "\xEF\xBB\xBF"} {
-	    return {-encoding utf-8}
-	}
-	# read 2 lines in header (may contain shebang and coding hereafter):
-	append buf [gets $f] \n [gets $f]
-	if {[regexp -line {^#+(?:!\S+(?: \S+){0,2})? [-\*\s]*(?:en)?coding:? ([\w\-]+)} $buf {} enc]} {
-	    return [list -encoding $enc]
-	}
-    } finally {
-	close $f
-    }
-    return {}
-}
-
 # tcltest::runAllTests --
 #
 #	prints output and sources test files according to the match and
@@ -2963,13 +2920,10 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] $tail
 	flush [outputChannel]
 
-	# get encoding of file (BOM or coding in header):
-	set fenc [fileEncoding $file]
-
 	if {[singleProcess]} {
 	    if {[catch {
 		incr numTestFiles
-		uplevel 1 [list ::source {*}$fenc $file]
+		uplevel 1 [list ::source $file]
 	    } msg]} {
 		puts [outputChannel] "Test file error: $msg"
 		# append the name of the test to a list to be reported
@@ -2993,7 +2947,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		}
 		lappend childargv $opt $value
 	    }
-	    set cmd [linsert $childargv 0 | $shell {*}$fenc $file]
+	    set cmd [linsert $childargv 0 | $shell $file]
 	    if {[catch {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
