@@ -10,7 +10,7 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c)
    mp_int  t1, t2;
 
 
-   if ((err = mp_init_multi(&t1, &t2, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&t1, &t2, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -38,7 +38,7 @@ mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c)
    c->sign = MP_ZPOS;
 
 LBL_T:
-   mp_clear_multi(&t1, &t2, NULL);
+   mp_clear_multi(&t1, &t2, (void *)NULL);
    return err;
 }
 #endif
