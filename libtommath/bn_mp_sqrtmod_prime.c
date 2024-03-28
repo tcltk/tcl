@@ -25,7 +25,7 @@ mp_err mp_sqrtmod_prime(const mp_int *n, const mp_int *prime, mp_int *ret)
    if ((err = mp_kronecker(n, prime, &legendre)) != MP_OKAY)        return err;
    if (legendre == -1)                                           return MP_VAL; /* quadratic non-residue mod prime */
 
-   if ((err = mp_init_multi(&t1, &C, &Q, &S, &Z, &M, &T, &R, &two, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&t1, &C, &Q, &S, &Z, &M, &T, &R, &two, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -111,7 +111,7 @@ mp_err mp_sqrtmod_prime(const mp_int *n, const mp_int *prime, mp_int *ret)
    }
 
 cleanup:
-   mp_clear_multi(&t1, &C, &Q, &S, &Z, &M, &T, &R, &two, NULL);
+   mp_clear_multi(&t1, &C, &Q, &S, &Z, &M, &T, &R, &two, (void *)NULL);
    return err;
 }
 

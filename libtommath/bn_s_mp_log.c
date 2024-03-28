@@ -17,7 +17,7 @@ mp_err s_mp_log(const mp_int *a, mp_digit base, int *c)
 
    if ((err =
            mp_init_multi(&bracket_low, &bracket_high,
-                         &bracket_mid, &t, &bi_base, NULL)) != MP_OKAY) {
+                         &bracket_mid, &t, &bi_base, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -73,7 +73,7 @@ mp_err s_mp_log(const mp_int *a, mp_digit base, int *c)
 
 LBL_END:
    mp_clear_multi(&bracket_low, &bracket_high, &bracket_mid,
-                  &t, &bi_base, NULL);
+                  &t, &bi_base, (void *)NULL);
    return err;
 }
 
