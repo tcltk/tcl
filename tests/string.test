@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Commands covered:  string
 #
 # This file contains a collection of tests for one or more of the Tcl
@@ -254,16 +252,16 @@ test string-3.15.$noComp {string equal with special index} {
 } {1 {expected integer but got "end-3"}}
 
 test string-3.16.$noComp {string equal, unicode} {
-    run {string equal ab牦 ab牧}
+    run {string equal ab\u7266 ab\u7267}
 } 0
 test string-3.17.$noComp {string equal, unicode} {
-    run {string equal Ü Ü}
+    run {string equal \xDC \xDC}
 } 1
 test string-3.18.$noComp {string equal, unicode} {
-    run {string equal Ü ü}
+    run {string equal \xDC \xFC}
 } 0
 test string-3.19.$noComp {string equal, unicode} {
-    run {string equal ÜÜÜüü ÜÜÜÜÜ}
+    run {string equal \xDC\xDC\xDC\xFC\xFC \xDC\xDC\xDC\xDC\xDC}
 } 0
 test string-3.20.$noComp {string equal, high bit} {
     # This test fails if the underlying comparison
@@ -278,10 +276,10 @@ test string-3.21.$noComp {string equal -nocase} {
     run {string equal -nocase abcde Abdef}
 } 0
 test string-3.22.$noComp {string equal, -nocase unicode} {
-    run {string equal -nocase Ü Ü}
+    run {string equal -nocase \xDC \xDC}
 } 1
 test string-3.23.$noComp {string equal, -nocase unicode} {
-    run {string equal -nocase ÜÜÜüü ÜÜÜÜÜ}
+    run {string equal -nocase \xDC\xDC\xDC\xFC\xFC \xDC\xDC\xDC\xDC\xDC}
 } 1
 test string-3.24.$noComp {string equal -nocase with length} {
     run {string equal -length 2 -nocase abcde Abxyz}
@@ -298,7 +296,7 @@ test string-3.27.$noComp {string equal -nocase with excessive length} {
 test string-3.28.$noComp {string equal -len unicode} {
     # These are strings that are 6 BYTELENGTH long, but the length
     # shouldn't make a different because there are actually 3 CHARS long
-    run {string equal -len 5 ÜÜÜ ÜÜü}
+    run {string equal -len 5 \xDC\xDC\xDC \xDC\xDC\xFC}
 } 0
 test string-3.29.$noComp {string equal -nocase with special index} {
     list [catch {run {string equal -nocase -length end-3 Abcde abxyz}} msg] $msg
