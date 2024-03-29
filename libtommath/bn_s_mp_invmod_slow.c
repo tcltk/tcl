@@ -16,7 +16,7 @@ mp_err s_mp_invmod_slow(const mp_int *a, const mp_int *b, mp_int *c)
 
    /* init temps */
    if ((err = mp_init_multi(&x, &y, &u, &v,
-                            &A, &B, &C, &D, NULL)) != MP_OKAY) {
+                            &A, &B, &C, &D, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -113,7 +113,7 @@ top:
    mp_exch(&C, c);
    err = MP_OKAY;
 LBL_ERR:
-   mp_clear_multi(&x, &y, &u, &v, &A, &B, &C, &D, NULL);
+   mp_clear_multi(&x, &y, &u, &v, &A, &B, &C, &D, (void *)NULL);
    return err;
 }
 #endif

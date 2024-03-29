@@ -188,6 +188,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
 #define TclBN_s_mp_balance_mul s_mp_balance_mul
+#define TclBN_s_mp_div_3 s_mp_div_3
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
@@ -226,7 +227,7 @@ static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 #define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))(void *)TclBN_mp_set_long
 
 mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
-	return mp_expt_u32(a, b, c);
+	return TclBN_mp_expt_n(a, b, c);
 }
 mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
    return mp_add_d(a, b, c);
@@ -272,7 +273,6 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclBN_mp_toradix_n 0
 #   undef TclBN_mp_sqr
 #   define TclBN_mp_sqr 0
-#   undef TclBN_mp_div_3
 #   define TclBN_mp_div_3 0
 #   define TclBN_mp_init_l 0
 #   define TclBN_mp_init_ul 0
@@ -587,6 +587,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
+#if !defined(TCL_NO_DEPRECATED)
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
@@ -595,6 +596,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
 }
 #define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -776,6 +778,14 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
  */
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+/* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
+ * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
+mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+    return mp_expt_u32(a, (uint32_t)b, c);;
+}
+#endif /* TCL_WITH_EXTERNAL_TOMMATH */
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -1188,7 +1198,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     TclBN_mp_div_3, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_u32, /* 19 */
+    TclBN_mp_expt_n, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
