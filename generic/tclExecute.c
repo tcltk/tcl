@@ -9082,7 +9082,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	mp_init(&bigResult);
-	mp_expt_u32(&big1, (unsigned int)w2, &bigResult);
+	TclBN_mp_expt_d(&big1, (unsigned int)w2, &bigResult);
 	mp_clear(&big1);
 	BIG_RESULT(&bigResult);
     }
