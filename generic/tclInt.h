@@ -4007,7 +4007,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclUtfToUCS4(src, ucs4Ptr) \
 	(((UCHAR(*(src))) < 0x80) ?		\
 	    ((*(ucs4Ptr) = UCHAR(*(src))), 1)	\
-	    : TclpUtfToUCS4(src, ucs4Ptr))	
+	    : TclpUtfToUCS4(src, ucs4Ptr))
 
 /*
  *----------------------------------------------------------------
