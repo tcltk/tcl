@@ -236,22 +236,13 @@ TOOM_SQR_CUTOFF;
 
 #if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
-#elif defined(_MSC_VER) && _MSC_VER >= 1500
-#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
-#else
-#  define MP_DEPRECATED(x)
-#endif
-
-#ifndef MP_NO_DEPRECATED_PRAGMA
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
 #  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
 #  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
 #elif defined(_MSC_VER) && _MSC_VER >= 1500
+#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
 #  define MP_DEPRECATED_PRAGMA(s) __pragma(message(s))
-#endif
-#endif
-
-#ifndef MP_DEPRECATED_PRAGMA
+#else
+#  define MP_DEPRECATED(s)
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
 

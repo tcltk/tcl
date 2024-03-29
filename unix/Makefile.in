@@ -530,11 +530,9 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_get_i32.c \
 	$(TOMMATH_DIR)/bn_mp_get_i64.c \
 	$(TOMMATH_DIR)/bn_mp_get_l.c \
-	$(TOMMATH_DIR)/bn_mp_get_ll.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_u32.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_u64.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_ul.c \
-	$(TOMMATH_DIR)/bn_mp_get_mag_ull.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_incr.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
@@ -542,14 +540,12 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_init_i32.c \
 	$(TOMMATH_DIR)/bn_mp_init_i64.c \
 	$(TOMMATH_DIR)/bn_mp_init_l.c \
-	$(TOMMATH_DIR)/bn_mp_init_ll.c \
 	$(TOMMATH_DIR)/bn_mp_init_multi.c \
 	$(TOMMATH_DIR)/bn_mp_init_set.c \
 	$(TOMMATH_DIR)/bn_mp_init_size.c \
 	$(TOMMATH_DIR)/bn_mp_init_u32.c \
 	$(TOMMATH_DIR)/bn_mp_init_u64.c \
 	$(TOMMATH_DIR)/bn_mp_init_ul.c \
-	$(TOMMATH_DIR)/bn_mp_init_ull.c \
 	$(TOMMATH_DIR)/bn_mp_invmod.c \
 	$(TOMMATH_DIR)/bn_mp_is_square.c \
 	$(TOMMATH_DIR)/bn_mp_iseven.c \
@@ -601,11 +597,9 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_set_i32.c \
 	$(TOMMATH_DIR)/bn_mp_set_i64.c \
 	$(TOMMATH_DIR)/bn_mp_set_l.c \
-	$(TOMMATH_DIR)/bn_mp_set_ll.c \
 	$(TOMMATH_DIR)/bn_mp_set_u32.c \
 	$(TOMMATH_DIR)/bn_mp_set_u64.c \
 	$(TOMMATH_DIR)/bn_mp_set_ul.c \
-	$(TOMMATH_DIR)/bn_mp_set_ull.c \
 	$(TOMMATH_DIR)/bn_mp_shrink.c \
 	$(TOMMATH_DIR)/bn_mp_signed_rsh.c \
 	$(TOMMATH_DIR)/bn_mp_sqr.c \
