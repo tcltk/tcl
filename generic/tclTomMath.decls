@@ -165,7 +165,7 @@ declare 46 {deprecated {Use mp_to_radix}} {
     mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
 }
 declare 47 {
-    size_t TclBN_mp_ubin_size(const mp_int *a)
+    size_t TclBN_mp_unsigned_bin_size(const mp_int *a)
 }
 declare 48 {
     mp_err MP_WUR TclBN_mp_xor(const mp_int *a, const mp_int *b, mp_int *c)
@@ -181,10 +181,10 @@ declare 50 {deprecated {is private function in libtommath}} {
     void TclBN_reverse(unsigned char *s, int len)
 }
 declare 51 {deprecated {is private function in libtommath}} {
-    mp_err TclBN_s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs)
+    mp_err TclBN_fast_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 }
 declare 52 {deprecated {is private function in libtommath}} {
-    mp_err TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b)
+    mp_err TclBN_fast_s_mp_sqr(const mp_int *a, mp_int *b)
 }
 declare 53 {deprecated {is private function in libtommath}} {
     mp_err TclBN_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c)
@@ -230,7 +230,7 @@ declare 66 {
 }
 
 # Added in libtommath 1.0
-declare 67 {deprecated {Use mp_expt_u32}} {
+declare 67 {deprecated {Use mp_expt_n}} {
     mp_err TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
 }
 # Added in libtommath 1.0.1
