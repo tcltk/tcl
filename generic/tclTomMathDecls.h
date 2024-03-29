@@ -71,6 +71,7 @@
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_expt_n TclBN_mp_expt_d
 #define mp_expt_u32 TclBN_mp_expt_d
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
 #define mp_grow TclBN_mp_grow
