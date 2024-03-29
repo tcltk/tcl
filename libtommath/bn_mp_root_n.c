@@ -18,7 +18,7 @@ mp_err mp_root_n(const mp_int *a, int b, mp_int *c)
    int    ilog2;
    mp_err err;
 
-   if (b < 0 || (unsigned)b > (unsigned)MP_DIGIT_MAX) {
+   if ((unsigned)b > (unsigned)MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
 
