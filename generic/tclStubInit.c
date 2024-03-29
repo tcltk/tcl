@@ -182,7 +182,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_mp_tc_xor TclBN_mp_xor
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
-#define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_unsigned_bin_size mp_ubin_size
 #define TclBN_mp_unpack mp_unpack
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
@@ -192,10 +192,10 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
-#define TclBN_s_mp_mul_digs_fast s_mp_mul_digs_fast
+#define TclBN_fast_s_mp_mul_digs s_mp_mul_digs_fast
 #define TclBN_s_mp_reverse s_mp_reverse
 #define TclBN_s_mp_sqr s_mp_sqr
-#define TclBN_s_mp_sqr_fast s_mp_sqr_fast
+#define TclBN_fast_s_mp_sqr s_mp_sqr_fast
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
@@ -355,7 +355,7 @@ mp_err TclBN_mp_to_unsigned_bin(const mp_int *a, unsigned char *b)
 
 mp_err TclBN_mp_to_unsigned_bin_n(const mp_int *a, unsigned char *b, unsigned long *outlen)
 {
-    size_t n = TclBN_mp_ubin_size(a);
+    size_t n = TclBN_mp_unsigned_bin_size(a);
     if (*outlen < (unsigned long)n) {
 	return MP_VAL;
     }
@@ -692,10 +692,10 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
-#   undef TclBN_s_mp_mul_digs_fast
-#   define TclBN_s_mp_mul_digs_fast 0
-#   undef TclBN_s_mp_sqr_fast
-#   define TclBN_s_mp_sqr_fast 0
+#   undef TclBN_fast_s_mp_mul_digs
+#   define TclBN_fast_s_mp_mul_digs 0
+#   undef TclBN_fast_s_mp_sqr
+#   define TclBN_fast_s_mp_sqr 0
 #   undef TclBN_mp_karatsuba_mul
 #   define TclBN_mp_karatsuba_mul 0
 #   undef TclBN_mp_karatsuba_sqr
@@ -1226,12 +1226,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_to_unsigned_bin, /* 44 */
     TclBN_mp_to_unsigned_bin_n, /* 45 */
     TclBN_mp_toradix_n, /* 46 */
-    TclBN_mp_ubin_size, /* 47 */
+    TclBN_mp_unsigned_bin_size, /* 47 */
     TclBN_mp_xor, /* 48 */
     TclBN_mp_zero, /* 49 */
     TclBN_reverse, /* 50 */
-    TclBN_s_mp_mul_digs_fast, /* 51 */
-    TclBN_s_mp_sqr_fast, /* 52 */
+    TclBN_fast_s_mp_mul_digs, /* 51 */
+    TclBN_fast_s_mp_sqr, /* 52 */
     TclBN_mp_karatsuba_mul, /* 53 */
     TclBN_mp_karatsuba_sqr, /* 54 */
     TclBN_mp_toom_mul, /* 55 */
