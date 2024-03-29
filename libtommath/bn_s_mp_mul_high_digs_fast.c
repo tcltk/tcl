@@ -3,7 +3,7 @@
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
-/* this is a modified version of s_mp_mul_digs_fast that only produces
+/* this is a modified version of s_mp_mul_digs_fast  that only produces
  * output digits *above* digs.  See the comments for s_mp_mul_digs_fast
  * to see how it works.
  *
