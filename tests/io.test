@@ -6237,7 +6237,7 @@ test io-44.5 {FileEventProc procedure: end of file} -constraints {
 close $f
 
 test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
-} -constraints {stdio fileevent openpipe} -body {
+} -constraints {stdio fileevent} -body {
 
     namespace eval refchan {
 	namespace ensemble create

@@ -8758,7 +8758,7 @@ ChannelTimerProc(
     } else {
 	Tcl_Preserve(statePtr);
 	statePtr->timer = NULL;
-	if (statePtr->interestMask & TCL_WRITABLE
+	if (0 && statePtr->interestMask & TCL_WRITABLE
 		&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
 		&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    /*

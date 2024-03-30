@@ -682,6 +682,11 @@ TclChanCreateObjCmd(
     chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
+    if (Tcl_SetChannelOption(interp, chan, "-buffering", "none") != TCL_OK) {
+	Tcl_Close(interp, chan); /* Will also free rcPtr etc. */
+	return TCL_ERROR;
+    }
+
     TclChannelPreserve(chan);
     chanPtr = (Channel *) chan;
 

@@ -1395,7 +1395,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo args {oninit cget cgetall; onfinal; track; return ""}
@@ -1404,7 +1404,7 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{cgetall rc*} {-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo args {
@@ -1416,7 +1416,7 @@ test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *} -bar foo -snarf x}}
+} -result {{cgetall rc*} {-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *} -bar foo -snarf x}}
 test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
@@ -2937,7 +2937,7 @@ test iocmd.tf-25.1 {chan configure, cgetall, standard options} -match glob -body
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
 test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
@@ -2950,7 +2950,7 @@ test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{cgetall rc*} {-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
 test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo {args} {
@@ -2966,7 +2966,7 @@ test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *} -bar foo -snarf x}}
+    -result {{cgetall rc*} {-blocking 1 -buffering * -buffersize 4096 -encoding * -eofchar {} * -translation {auto *} -bar foo -snarf x}}
 test iocmd.tf-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
