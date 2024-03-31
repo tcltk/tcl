@@ -408,6 +408,7 @@ mp_err mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
 
 /* a/3 => 3c + d == a */
 mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
+mp_err s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
 
 /* c = a * 2**b, implemented as c = a << b */
 mp_err mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
