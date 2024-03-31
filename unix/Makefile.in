@@ -328,7 +328,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
-	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_u32.o \
+	bn_mp_div_2d.o bn_s_mp_div_3.o bn_mp_exch.o bn_mp_expt_n.o \
 	bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_s_mp_karatsuba_mul.o \
@@ -504,10 +504,10 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div.c \
 	$(TOMMATH_DIR)/bn_mp_div_2.c \
 	$(TOMMATH_DIR)/bn_mp_div_2d.c \
-	$(TOMMATH_DIR)/bn_mp_div_3.c \
+	$(TOMMATH_DIR)/bn_s_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_div_d.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
-	$(TOMMATH_DIR)/bn_mp_expt_u32.c \
+	$(TOMMATH_DIR)/bn_mp_expt_n.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
@@ -1422,14 +1422,14 @@ bn_mp_div_2.o: $(TOMMATH_DIR)/bn_mp_div_2.c $(MATHHDRS)
 bn_mp_div_2d.o: $(TOMMATH_DIR)/bn_mp_div_2d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
 
-bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
+bn_s_mp_div_3.o: $(TOMMATH_DIR)/bn_s_mp_div_3.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_div_3.c
 
 bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
 
-bn_mp_expt_u32.o: $(TOMMATH_DIR)/bn_mp_expt_u32.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_u32.c
+bn_mp_expt_n.o: $(TOMMATH_DIR)/bn_mp_expt_n.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_n.c
 
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c

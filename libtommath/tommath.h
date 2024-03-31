@@ -724,9 +724,9 @@ mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
 mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c) MP_WUR;
 
 /* c = a**b */
-mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_u32) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
+mp_err mp_expt_n(const mp_int *a, int b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a) MP_WUR;
