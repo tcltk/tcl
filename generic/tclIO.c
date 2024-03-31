@@ -8709,7 +8709,7 @@ UpdateInterest(
 	}
     }
 
-    if (!statePtr->timer
+    if (0 && !statePtr->timer
 	    && mask & TCL_WRITABLE
 	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
