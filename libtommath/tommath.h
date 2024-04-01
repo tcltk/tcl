@@ -329,7 +329,7 @@ uint32_t mp_get_mag_u32(const mp_int *a) MP_WUR;
 uint64_t mp_get_mag_u64(const mp_int *a) MP_WUR;
 #endif
 unsigned long mp_get_mag_ul(const mp_int *a) MP_WUR;
-Tcl_WideUInt mp_get_mag_ull(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_get_mag_u64) Tcl_WideUInt mp_get_mag_ull(const mp_int *a) MP_WUR;
 
 /* get integer, set integer (long) */
 long mp_get_l(const mp_int *a) MP_WUR;
@@ -342,14 +342,14 @@ void mp_set_ul(mp_int *a, unsigned long b);
 mp_err mp_init_ul(mp_int *a, unsigned long b) MP_WUR;
 
 /* get integer, set integer (Tcl_WideInt) */
-Tcl_WideInt mp_get_ll(const mp_int *a) MP_WUR;
-void mp_set_ll(mp_int *a, Tcl_WideInt b);
-mp_err mp_init_ll(mp_int *a, Tcl_WideInt b) MP_WUR;
+MP_DEPRECATED(mp_get_i64) Tcl_WideInt mp_get_ll(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_set_i64) void mp_set_ll(mp_int *a, Tcl_WideInt b);
+MP_DEPRECATED(mp_init_i64) mp_err mp_init_ll(mp_int *a, Tcl_WideInt b) MP_WUR;
 
 /* get integer, set integer (Tcl_WideUInt) */
-#define mp_get_ull(a) ((Tcl_WideUInt)mp_get_ll(a))
-void mp_set_ull(mp_int *a, Tcl_WideUInt b);
-mp_err mp_init_ull(mp_int *a, Tcl_WideUInt b) MP_WUR;
+#define mp_get_ull(a) (MP_DEPRECATED_PRAGMA("mp_get_ull() has been deprecated, use mp_get_u64()") ((Tcl_WideUInt)mp_get_ll(a)))
+MP_DEPRECATED(mp_set_u64) void mp_set_ull(mp_int *a, Tcl_WideUInt b);
+MP_DEPRECATED(mp_init_u64) mp_err mp_init_ull(mp_int *a, Tcl_WideUInt b) MP_WUR;
 
 /* set to single unsigned digit, up to MP_DIGIT_MAX */
 void mp_set(mp_int *a, mp_digit b);
@@ -358,7 +358,7 @@ mp_err mp_init_set(mp_int *a, mp_digit b) MP_WUR;
 /* get integer, set integer and init with integer (deprecated) */
 MP_DEPRECATED(mp_get_mag_u32/mp_get_u32) unsigned long mp_get_int(const mp_int *a) MP_WUR;
 MP_DEPRECATED(mp_get_mag_ul/mp_get_ul) unsigned long mp_get_long(const mp_int *a) MP_WUR;
-MP_DEPRECATED(mp_get_mag_ull/mp_get_ull) Tcl_WideUInt mp_get_long_long(const mp_int *a) MP_WUR;
+MP_DEPRECATED(mp_get_mag_u64/mp_get_u64) Tcl_WideUInt mp_get_long_long(const mp_int *a) MP_WUR;
 MP_DEPRECATED(mp_set_ul) mp_err mp_set_int(mp_int *a, unsigned long b);
 MP_DEPRECATED(mp_set_ul) mp_err mp_set_long(mp_int *a, unsigned long b);
 MP_DEPRECATED(mp_set_ull) mp_err mp_set_long_long(mp_int *a, Tcl_WideUInt b);
@@ -407,8 +407,7 @@ mp_err mp_div_2d(const mp_int *a, int b, mp_int *c, mp_int *d) MP_WUR;
 mp_err mp_div_2(const mp_int *a, mp_int *b) MP_WUR;
 
 /* a/3 => 3c + d == a */
-mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
-mp_err s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
+MP_DEPRECATED(mp_div_d) mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
 
 /* c = a * 2**b, implemented as c = a << b */
 mp_err mp_mul_2d(const mp_int *a, int b, mp_int *c) MP_WUR;
@@ -555,13 +554,24 @@ mp_err mp_exteuclid(const mp_int *a, const mp_int *b, mp_int *U1, mp_int *U2, mp
 /* c = [a, b] or (a*b)/(a, b) */
 mp_err mp_lcm(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
 
+/* Integer logarithm to integer base */
+mp_err mp_log_n(const mp_int *a, int base, int *c) MP_WUR;
+MP_DEPRECATED(mp_log_n) mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c) MP_WUR;
+
+/* c = a**b */
+mp_err mp_expt_n(const mp_int *a, int b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_n) mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
+
 /* finds one of the b'th root of a, such that |c|**b <= |a|
  *
  * returns error if a < 0 and b is even
  */
-mp_err mp_root_u32(const mp_int *a, unsigned int b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_root_u32) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_root_u32) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
+mp_err mp_root_n(const mp_int *a, int b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_root_n) mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_root_n) mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
+MP_DEPRECATED(mp_root_n) mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* special sqrt algo */
 mp_err mp_sqrt(const mp_int *arg, mp_int *ret) MP_WUR;
@@ -720,14 +730,6 @@ mp_err mp_prime_next_prime(mp_int *a, int t, int bbs_style) MP_WUR;
 MP_DEPRECATED(mp_prime_rand) mp_err mp_prime_random_ex(mp_int *a, int t, int size, int flags,
       private_mp_prime_callback cb, void *dat) MP_WUR;
 mp_err mp_prime_rand(mp_int *a, int t, int size, int flags) MP_WUR;
-
-/* Integer logarithm to integer base */
-mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c) MP_WUR;
-
-/* c = a**b */
-mp_err mp_expt_n(const mp_int *a, int b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c) MP_WUR;
-MP_DEPRECATED(mp_expt_n) mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast) MP_WUR;
 
 /* ---> radix conversion <--- */
 int mp_count_bits(const mp_int *a) MP_WUR;
