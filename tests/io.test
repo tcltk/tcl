@@ -6304,7 +6304,7 @@ test io-44.7 {
 } -setup {
 } -constraints {stdio fileevent} -body {
 
-    namespace eval refchan {
+    namespace eval refchan2 {
 	namespace ensemble create
 	namespace export *
 
