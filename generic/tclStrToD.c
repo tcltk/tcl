@@ -3566,7 +3566,7 @@ ShorteningBignumConversionPowD(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, NULL);
+    mp_clear_multi(&b, &mminus, &temp, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -3690,7 +3690,7 @@ StrictBignumConversionPowD(
      * string.
      */
 
-    mp_clear_multi(&b, &temp, NULL);
+    mp_clear_multi(&b, &temp, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -3991,7 +3991,7 @@ ShorteningBignumConversion(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, &dig, &S, NULL);
+    mp_clear_multi(&b, &mminus, &temp, &dig, &S, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4048,7 +4048,7 @@ StrictBignumConversion(
      * S = 2**s2 * 5*s5
      */
 
-    mp_init_multi(&temp, &dig, NULL);
+    mp_init_multi(&temp, &dig, (void *)NULL);
     TclBNInitBignumFromWideUInt(&b, bw);
     mp_mul_2d(&b, b2, &b);
     mp_init_set(&S, 1);
@@ -4155,7 +4155,7 @@ StrictBignumConversion(
      * string.
      */
 
-    mp_clear_multi(&b, &S, &temp, &dig, NULL);
+    mp_clear_multi(&b, &S, &temp, &dig, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
