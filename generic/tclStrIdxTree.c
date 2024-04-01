@@ -156,7 +156,7 @@ TclStrIdxTreeFree(
 	    TclStrIdxTreeFree(tree->childTree.firstPtr);
 	}
 	t = tree, tree = tree->nextPtr;
-	ckfree(t);
+	Tcl_Free(t);
     }
 }
 
@@ -239,7 +239,7 @@ TclStrIdxTreeBuildFromList(
 
     /* create lowercase reflection of the list keys */
 
-    lwrv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * lstc);
+    lwrv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * lstc);
     if (lwrv == NULL) {
 	return TCL_ERROR;
     }
@@ -288,7 +288,7 @@ TclStrIdxTreeBuildFromList(
 		 * but don't split by fulfilled child of found item ( ii->iii->iiii ) */
 		if (foundItem->length != (f - s)) {
 		    /* first split found item (insert one between parent and found + new one) */
-		    item = (TclStrIdx *)ckalloc(sizeof(TclStrIdx));
+		    item = (TclStrIdx *)Tcl_Alloc(sizeof(TclStrIdx));
 		    if (item == NULL) {
 			goto done;
 		    }
@@ -306,7 +306,7 @@ TclStrIdxTreeBuildFromList(
 	    }
 	}
 	/* append item at end of found parent */
-	item = (TclStrIdx *)ckalloc(sizeof(TclStrIdx));
+	item = (TclStrIdx *)Tcl_Alloc(sizeof(TclStrIdx));
 	if (item == NULL) {
 	    goto done;
 	}
@@ -325,7 +325,7 @@ done:
 	for (i = 0; i < lstc; i++) {
 	    Tcl_DecrRefCount(lwrv[i]);
 	}
-	ckfree(lwrv);
+	Tcl_Free(lwrv);
     }
 
     if (ret != TCL_OK) {
