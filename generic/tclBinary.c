@@ -512,7 +512,7 @@ MakeByteArray(
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
-	int count = Tcl_UtfToUniChar(src, &ch);
+	int count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;
@@ -2513,7 +2513,7 @@ BinaryDecodeHex(
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
-	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+	data = (unsigned char *)TclGetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
     dataend = data + count;
@@ -2563,7 +2563,7 @@ BinaryDecodeHex(
     if (pure) {
 	ucs4 = c;
     } else {
-	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
+	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2771,7 +2771,7 @@ BinaryEncodeUu(
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const unsigned char *) TclGetStringFromObj(
+	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
 	    {
 		const unsigned char *p = wrapchar;
@@ -3027,7 +3027,7 @@ BinaryDecodeUu(
     if (pure) {
 	ucs4 = c;
     } else {
-	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
+	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" (U+%06X) at position %"
@@ -3202,7 +3202,7 @@ BinaryDecode64(
 	 * of a multi-byte character. */
 
 	/* Safe because we know data is NUL-terminated */
-	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
+	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

@@ -618,8 +618,7 @@ TclGetUniChar(
 	return -1;
     }
     const char *begin = TclUtfAtIndex(objPtr->bytes, index);
-#undef Tcl_UtfToUniChar
-    Tcl_UtfToUniChar(begin, &ch);
+    TclUtfToUniChar(begin, &ch);
     return ch;
 }
 
@@ -1474,7 +1473,7 @@ Tcl_AppendObjToObj(
 
 	    AppendUnicodeToUnicodeRep(objPtr, unicode, numChars);
 	} else {
-	    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+	    bytes = TclGetStringFromObj(appendObjPtr, &length);
 	    AppendUtfToUnicodeRep(objPtr, bytes, length);
 	}
 	return;
@@ -1486,7 +1485,7 @@ Tcl_AppendObjToObj(
      * characters in the final (appended-to) object.
      */
 
-    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+    bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
     if ((numChars >= 0) && TclHasInternalRep(appendObjPtr, &tclStringType)) {
@@ -1865,7 +1864,7 @@ Tcl_AppendFormatToObj(
     if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
     }
-    (void)Tcl_GetStringFromObj(appendObj, &originalLength);
+    (void)TclGetStringFromObj(appendObj, &originalLength);
     limit = TCL_SIZE_MAX - originalLength;
 
     /*
@@ -2293,7 +2292,7 @@ Tcl_AppendFormatToObj(
 		    TclNewIntObj(pure, l);
 		}
 		Tcl_IncrRefCount(pure);
-		bytes = Tcl_GetStringFromObj(pure, &length);
+		bytes = TclGetStringFromObj(pure, &length);
 
 		/*
 		 * Already did the sign above.
@@ -2579,7 +2578,7 @@ Tcl_AppendFormatToObj(
 	    }
 	}
 
-	(void)Tcl_GetStringFromObj(segment, &segmentNumBytes);
+	(void)TclGetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);
@@ -2962,7 +2961,7 @@ TclGetStringStorage(
     String *stringPtr;
 
     if (!TclHasInternalRep(objPtr, &tclStringType) || objPtr->bytes == NULL) {
-	return Tcl_GetStringFromObj(objPtr, sizePtr);
+	return TclGetStringFromObj(objPtr, sizePtr);
     }
 
     stringPtr = GET_STRING(objPtr);
@@ -3028,7 +3027,7 @@ TclStringRepeat(
 	maxCount = TCL_SIZE_MAX/sizeof(Tcl_UniChar);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-	(void)Tcl_GetStringFromObj(objPtr, &length);
+	(void)TclGetStringFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_MAX;
     }
 
@@ -3288,7 +3287,7 @@ TclStringCat(
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    (void) Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
+		    (void) TclGetStringFromObj(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
@@ -3312,14 +3311,14 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    (void)Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		    (void)TclGetStringFromObj(objPtr, &numBytes); /* PANIC? */
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
 		    last = objc -oc -1;
 		}
 		if (oc || numBytes) {
-		    (void)Tcl_GetStringFromObj(pendingPtr, &length);
+		    (void)TclGetStringFromObj(pendingPtr, &length);
 		}
 		if (length == 0) {
 		    if (numBytes) {
@@ -3453,7 +3452,7 @@ TclStringCat(
 
 	    objResultPtr = *objv++; objc--;
 
-	    (void)Tcl_GetStringFromObj(objResultPtr, &start);
+	    (void)TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3485,7 +3484,7 @@ TclStringCat(
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		Tcl_Size more;
-		char *src = Tcl_GetStringFromObj(objPtr, &more);
+		char *src = TclGetStringFromObj(objPtr, &more);
 
 		memcpy(dst, src, more);
 		dst += more;
@@ -3718,9 +3717,9 @@ TclStringCmp(
 	    if (empty > 0) {
 		switch (TclCheckEmptyString(value2Ptr)) {
 		case -1:
-		    s1 = 0;
+		    s1 = "";
 		    s1len = 0;
-		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 		    break;
 		case 0:
 		    match = -1;
@@ -3733,9 +3732,9 @@ TclStringCmp(
 	    } else if (TclCheckEmptyString(value2Ptr) > 0) {
 		switch (empty) {
 		case -1:
-		    s2 = 0;
+		    s2 = "";
 		    s2len = 0;
-		    s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
+		    s1 = TclGetStringFromObj(value1Ptr, &s1len);
 		    break;
 		case 0:
 		    match = 1;
@@ -3746,8 +3745,8 @@ TclStringCmp(
 		    goto matchdone;
 		}
 	    } else {
-		s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
-		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		s1 = TclGetStringFromObj(value1Ptr, &s1len);
+		s2 = TclGetStringFromObj(value2Ptr, &s2len);
 	    }
 	    if (!nocase && checkEq && reqlength < 0) {
 		/*
@@ -4133,7 +4132,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = Tcl_UtfToUniChar(from, &chw);
+		int bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);

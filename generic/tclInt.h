@@ -3238,6 +3238,7 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    Tcl_Size *sizePtr, int *literalPtr);
+MODULE_SCOPE Tcl_Obj *	TclDictObjSmartRef(Tcl_Interp *interp, Tcl_Obj *);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
@@ -4516,17 +4517,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	(((UCHAR(*(str))) < 0x80) ?		\
 	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
-#else
-#define TclUtfToUniChar(str, chPtr) \
-	(((UCHAR(*(str))) < 0x80) ?		\
-	    ((*(chPtr) = UCHAR(*(str))), 1)	\
-	    : Tcl_UtfToChar16(str, chPtr))
-#endif
 
 /*
  *----------------------------------------------------------------

@@ -4537,7 +4537,7 @@ ChildCommandLimitCmd(
 	    switch (index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(scriptObj, &scriptLen);
+		(void) TclGetStringFromObj(scriptObj, &scriptLen);
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
@@ -4554,7 +4554,7 @@ ChildCommandLimitCmd(
 		break;
 	    case OPT_VAL:
 		limitObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &limitLen);
+		(void) TclGetStringFromObj(objv[i+1], &limitLen);
 		if (limitLen == 0) {
 		    break;
 		}
@@ -4745,7 +4745,7 @@ ChildTimeLimitCmd(
 	    switch (index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);
+		(void) TclGetStringFromObj(objv[i+1], &scriptLen);
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
@@ -4762,7 +4762,7 @@ ChildTimeLimitCmd(
 		break;
 	    case OPT_MILLI:
 		milliObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &milliLen);
+		(void) TclGetStringFromObj(objv[i+1], &milliLen);
 		if (milliLen == 0) {
 		    break;
 		}
@@ -4780,7 +4780,7 @@ ChildTimeLimitCmd(
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &secLen);
+		(void) TclGetStringFromObj(objv[i+1], &secLen);
 		if (secLen == 0) {
 		    break;
 		}

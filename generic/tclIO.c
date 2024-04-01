@@ -6307,8 +6307,8 @@ ReadChars(
 		flags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
-	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX ||
-		(code == TCL_CONVERT_MULTIBYTE && GotFlag(statePtr, CHANNEL_EOF))) {
+	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX
+		|| (code == TCL_CONVERT_MULTIBYTE && GotFlag(statePtr, CHANNEL_EOF))) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	    code = TCL_OK;
 	}

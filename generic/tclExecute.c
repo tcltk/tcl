@@ -8506,7 +8506,8 @@ ExecuteExtendedBinaryMathOp(
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	err = mp_init(&bigResult);
 	if (err == MP_OKAY) {
-	    err = mp_expt_u32(&big1, (unsigned int)w2, &bigResult);
+	    /* Don't use "mp_expt_n" directly here, it doesn't exist in libtommath 1.2 */
+	    err = TclBN_mp_expt_n(&big1, (int)w2, &bigResult);
 	}
 	if (err != MP_OKAY) {
 	    return OUT_OF_MEMORY;

@@ -570,7 +570,7 @@ SetInvalidRealFromAny(
     const char *endPtr;
     Tcl_Size length;
 
-    str = Tcl_GetStringFromObj(objPtr, &length);
+    str = TclGetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
@@ -615,7 +615,7 @@ GetInvalidIntFromObj(
     int *intPtr)
 {
     Tcl_Size length;
-    const char *str = Tcl_GetStringFromObj(objPtr, &length);
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || ((length == 2) && (str[0] == '0')
 	    && strchr("xXbBoOdD", str[1]))) {
@@ -824,7 +824,7 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = TclGetStringFromObj(valueObj, &valueLength);
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)Tcl_Realloc(*pp, ++valueLength);
@@ -832,7 +832,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";

@@ -2019,7 +2019,7 @@ ReflectGetOption(
         goto error;
     } else {
 	Tcl_Size len;
-	const char *str = Tcl_GetStringFromObj(resObj, &len);
+	const char *str = TclGetStringFromObj(resObj, &len);
 
 	if (len) {
 	    TclDStringAppendLiteral(dsPtr, " ");
@@ -2454,7 +2454,7 @@ InvokeTclMethod(
 
 	    if (result != TCL_ERROR) {
 		Tcl_Size cmdLen;
-		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
@@ -3329,7 +3329,7 @@ ForwardProc(
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
 		Tcl_Size len;
-		const char *str = Tcl_GetStringFromObj(resObj, &len);
+		const char *str = TclGetStringFromObj(resObj, &len);
 
 		if (len) {
 		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
@@ -3441,7 +3441,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     Tcl_Size len;
-    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
+    const char *msgStr = TclGetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));

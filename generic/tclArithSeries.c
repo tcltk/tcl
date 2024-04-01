@@ -919,7 +919,7 @@ TclArithSeriesGetElements(
 	*objcPtr = objc;
     } else {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value is not an arithseries"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("value is not an arithseries", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (void *)NULL);
 	}
 	return TCL_ERROR;

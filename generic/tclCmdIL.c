@@ -2205,7 +2205,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) TclGetStringFromObj(joinObjPtr, &length);
+    (void)TclGetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -5433,8 +5433,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += Tcl_UtfToUniChar(left, &uniLeft);
-	    right += Tcl_UtfToUniChar(right, &uniRight);
+	    left += TclUtfToUniChar(left, &uniLeft);
+	    right += TclUtfToUniChar(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because

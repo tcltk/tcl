@@ -469,7 +469,7 @@ Tcl_ReadObjCmd(
 	const char *result;
 	Tcl_Size length;
 
-	result = Tcl_GetStringFromObj(resultPtr, &length);
+	result = TclGetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -715,7 +715,7 @@ Tcl_CloseObjCmd(
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
 	    Tcl_SetObjResult(interp, resultPtr);
 	}
-	string = Tcl_GetStringFromObj(resultPtr, &len);
+	string = TclGetStringFromObj(resultPtr, &len);
 	if ((len > 0) && (string[len - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, len - 1);
 	}
@@ -1000,7 +1000,7 @@ Tcl_ExecObjCmd(
      */
 
     if (keepNewline == 0) {
-	string = Tcl_GetStringFromObj(resultPtr, &length);
+	string = TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (string[length - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}

@@ -1177,18 +1177,6 @@ Tcl_ExternalToUtfDStringEx(
     /* DO FIRST - Must always be initialized before returning */
     Tcl_DStringInit(dstPtr);
 
-    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
-	/* TODO - what other flags are illegal? - See TIP 656 */
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_NewStringObj(
-		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
-	errno = EINVAL;
-	return TCL_ERROR;
-    }
-
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
@@ -1203,6 +1191,7 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
+    flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
@@ -1505,18 +1494,6 @@ Tcl_UtfToExternalDStringEx(
     /* DO FIRST - must always be initialized on return */
     Tcl_DStringInit(dstPtr);
 
-    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
-	/* TODO - what other flags are illegal? - See TIP 656 */
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_NewStringObj(
-		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
-	errno = EINVAL;
-	return TCL_ERROR;
-    }
-
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
@@ -1531,6 +1508,7 @@ Tcl_UtfToExternalDStringEx(
 	srcLen = strlen(src);
     }
 
+    flags &= ~TCL_ENCODING_END;
     flags |= TCL_ENCODING_START;
     while (1) {
 	int srcChunkLen, srcChunkRead;
@@ -1581,7 +1559,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 
-		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
+		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
@@ -2551,11 +2529,11 @@ UtfToUtfProc(
 		/* TCL_ENCODING_PROFILE_TCL8 */
 		char chbuf[2];
 		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    size_t len = Tcl_UtfToUniChar(src, &ch);
+	    size_t len = TclUtfToUniChar(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
 		    if (PROFILE_STRICT(profile)) {
@@ -2799,7 +2777,7 @@ UtfToUtf32Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3076,7 +3054,7 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3323,7 +3301,7 @@ TableToUtfProc(
 	    } else {
 		char chbuf[2];
 		chbuf[0] = byte; chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}
 

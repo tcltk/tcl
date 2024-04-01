@@ -290,6 +290,7 @@ GENERIC_OBJS = \
 	tclBinary.$(OBJEXT) \
 	tclCkalloc.$(OBJEXT) \
 	tclClock.$(OBJEXT) \
+	tclClockFmt.$(OBJEXT) \
 	tclCmdAH.$(OBJEXT) \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
@@ -353,6 +354,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrIdxTree.$(OBJEXT) \
 	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
@@ -385,9 +387,9 @@ TOMMATH_OBJS = \
 	bn_mp_div_d.${OBJEXT} \
 	bn_mp_div_2.${OBJEXT} \
 	bn_mp_div_2d.${OBJEXT} \
-	bn_mp_div_3.${OBJEXT} \
+	bn_s_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
-	bn_mp_expt_u32.${OBJEXT} \
+	bn_mp_expt_n.${OBJEXT} \
 	bn_mp_get_mag_u64.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \

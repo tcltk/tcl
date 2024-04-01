@@ -64,10 +64,6 @@
 #undef Tcl_ParseArgsObjv
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
-#undef Tcl_UniCharToUtfDString
-#undef Tcl_UtfToUniCharDString
-#undef Tcl_UtfToUniChar
-#undef Tcl_UniCharLen
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
@@ -271,17 +267,18 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_mp_balance_mul s_mp_balance_mul
-#define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
-#define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
+#define TclBN_s_mp_balance_mul s_mp_balance_mul
+#define TclBN_s_mp_div_3 s_mp_div_3
+#define TclBN_s_mp_karatsuba_mul s_mp_karatsuba_mul
+#define TclBN_s_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
 #define TclBN_s_mp_mul_digs_fast s_mp_mul_digs_fast
 #define TclBN_s_mp_reverse s_mp_reverse
 #define TclBN_s_mp_sqr s_mp_sqr
 #define TclBN_s_mp_sqr_fast s_mp_sqr_fast
 #define TclBN_s_mp_sub s_mp_sub
-#define TclBN_mp_toom_mul s_mp_toom_mul
-#define TclBN_mp_toom_sqr s_mp_toom_sqr
+#define TclBN_s_mp_toom_mul s_mp_toom_mul
+#define TclBN_s_mp_toom_sqr s_mp_toom_sqr
 
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
 #   define Tcl_MacOSXOpenVersionedBundleResources 0
@@ -406,6 +403,14 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
  */
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+/* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
+ * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
+mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+    return mp_expt_u32(a, (uint32_t)b, c);;
+}
+#endif /* TCL_WITH_EXTERNAL_TOMMATH */
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -743,7 +748,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     0, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_u32, /* 19 */
+    TclBN_mp_expt_n, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */

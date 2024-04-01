@@ -301,7 +301,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclArithSeries.o tclAssembly.o tclAsync.o tclBasic.o tclBinary.o \
-	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
+	tclCkalloc.o tclClock.o tclClockFmt.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
@@ -313,7 +313,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
 	tclPreserve.o tclProc.o tclProcess.o tclRegexp.o \
-	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
+	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclStrIdxTree.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
@@ -328,7 +328,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o \
 	bn_mp_cnt_lsb.o bn_mp_copy.o \
 	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
-	bn_mp_div_2d.o bn_mp_div_3.o bn_mp_exch.o bn_mp_expt_u32.o \
+	bn_mp_div_2d.o bn_s_mp_div_3.o bn_mp_exch.o bn_mp_expt_n.o \
 	bn_mp_get_mag_u64.o \
 	bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
@@ -411,6 +411,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclBinary.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
 	$(GENERIC_DIR)/tclClock.c \
+	$(GENERIC_DIR)/tclClockFmt.c \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
@@ -466,6 +467,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclScan.c \
 	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStringObj.c \
+	$(GENERIC_DIR)/tclStrIdxTree.c \
 	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestABSList.c \
@@ -522,14 +524,14 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div.c \
 	$(TOMMATH_DIR)/bn_mp_div_2.c \
 	$(TOMMATH_DIR)/bn_mp_div_2d.c \
-	$(TOMMATH_DIR)/bn_mp_div_3.c \
+	$(TOMMATH_DIR)/bn_s_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_div_d.c \
 	$(TOMMATH_DIR)/bn_mp_dr_is_modulus.c \
 	$(TOMMATH_DIR)/bn_mp_dr_reduce.c \
 	$(TOMMATH_DIR)/bn_mp_dr_setup.c \
 	$(TOMMATH_DIR)/bn_mp_error_to_string.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
-	$(TOMMATH_DIR)/bn_mp_expt_u32.c \
+	$(TOMMATH_DIR)/bn_mp_expt_n.c \
 	$(TOMMATH_DIR)/bn_mp_exptmod.c \
 	$(TOMMATH_DIR)/bn_mp_exteuclid.c \
 	$(TOMMATH_DIR)/bn_mp_fread.c \
@@ -541,11 +543,9 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_get_i32.c \
 	$(TOMMATH_DIR)/bn_mp_get_i64.c \
 	$(TOMMATH_DIR)/bn_mp_get_l.c \
-	$(TOMMATH_DIR)/bn_mp_get_ll.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_u32.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_u64.c \
 	$(TOMMATH_DIR)/bn_mp_get_mag_ul.c \
-	$(TOMMATH_DIR)/bn_mp_get_mag_ull.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_incr.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
@@ -553,21 +553,22 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_init_i32.c \
 	$(TOMMATH_DIR)/bn_mp_init_i64.c \
 	$(TOMMATH_DIR)/bn_mp_init_l.c \
-	$(TOMMATH_DIR)/bn_mp_init_ll.c \
 	$(TOMMATH_DIR)/bn_mp_init_multi.c \
 	$(TOMMATH_DIR)/bn_mp_init_set.c \
 	$(TOMMATH_DIR)/bn_mp_init_size.c \
 	$(TOMMATH_DIR)/bn_mp_init_u32.c \
 	$(TOMMATH_DIR)/bn_mp_init_u64.c \
 	$(TOMMATH_DIR)/bn_mp_init_ul.c \
-	$(TOMMATH_DIR)/bn_mp_init_ull.c \
 	$(TOMMATH_DIR)/bn_mp_invmod.c \
 	$(TOMMATH_DIR)/bn_mp_is_square.c \
 	$(TOMMATH_DIR)/bn_mp_iseven.c \
 	$(TOMMATH_DIR)/bn_mp_isodd.c \
 	$(TOMMATH_DIR)/bn_mp_kronecker.c \
 	$(TOMMATH_DIR)/bn_mp_lcm.c \
-	$(TOMMATH_DIR)/bn_mp_log_u32.c \
+	$(TOMMATH_DIR)/bn_mp_log_n.c \
+	$(TOMMATH_DIR)/bn_s_mp_log.c \
+	$(TOMMATH_DIR)/bn_s_mp_log_2expt.c \
+	$(TOMMATH_DIR)/bn_s_mp_log_d.c \
 	$(TOMMATH_DIR)/bn_mp_lshd.c \
 	$(TOMMATH_DIR)/bn_mp_mod.c \
 	$(TOMMATH_DIR)/bn_mp_mod_2d.c \
@@ -604,7 +605,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_reduce_is_2k.c \
 	$(TOMMATH_DIR)/bn_mp_reduce_is_2k_l.c \
 	$(TOMMATH_DIR)/bn_mp_reduce_setup.c \
-	$(TOMMATH_DIR)/bn_mp_root_u32.c \
+	$(TOMMATH_DIR)/bn_mp_root_n.c \
 	$(TOMMATH_DIR)/bn_mp_rshd.c \
 	$(TOMMATH_DIR)/bn_mp_sbin_size.c \
 	$(TOMMATH_DIR)/bn_mp_set.c \
@@ -612,11 +613,9 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_set_i32.c \
 	$(TOMMATH_DIR)/bn_mp_set_i64.c \
 	$(TOMMATH_DIR)/bn_mp_set_l.c \
-	$(TOMMATH_DIR)/bn_mp_set_ll.c \
 	$(TOMMATH_DIR)/bn_mp_set_u32.c \
 	$(TOMMATH_DIR)/bn_mp_set_u64.c \
 	$(TOMMATH_DIR)/bn_mp_set_ul.c \
-	$(TOMMATH_DIR)/bn_mp_set_ull.c \
 	$(TOMMATH_DIR)/bn_mp_shrink.c \
 	$(TOMMATH_DIR)/bn_mp_signed_rsh.c \
 	$(TOMMATH_DIR)/bn_mp_sqr.c \
@@ -1266,6 +1265,7 @@ TRIMHDR		= $(GENERIC_DIR)/tclStringTrim.h
 
 TCL_LOCATIONS	= -DTCL_LIBRARY="\"${TCL_LIBRARY}\"" \
 	-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\""
+TCLDATEHDR=$(GENERIC_DIR)/tclDate.h $(GENERIC_DIR)/tclStrIdxTree.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1305,8 +1305,11 @@ tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
 
-tclClock.o: $(GENERIC_DIR)/tclClock.c
+tclClock.o: $(GENERIC_DIR)/tclClock.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
+
+tclClockFmt.o: $(GENERIC_DIR)/tclClockFmt.c $(TCLDATEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClockFmt.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c
@@ -1317,7 +1320,7 @@ tclCmdIL.o: $(GENERIC_DIR)/tclCmdIL.c $(TCLREHDRS)
 tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdMZ.c
 
-tclDate.o: $(GENERIC_DIR)/tclDate.c
+tclDate.o: $(GENERIC_DIR)/tclDate.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
 tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
@@ -1538,6 +1541,9 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
+tclStrIdxTree.o: $(GENERIC_DIR)/tclStrIdxTree.c $(GENERIC_DIR)/tclStrIdxTree.h $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrIdxTree.c
+
 tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
 
@@ -1656,14 +1662,14 @@ bn_mp_div_2.o: $(TOMMATH_DIR)/bn_mp_div_2.c $(MATHHDRS)
 bn_mp_div_2d.o: $(TOMMATH_DIR)/bn_mp_div_2d.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
 
-bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
+bn_s_mp_div_3.o: $(TOMMATH_DIR)/bn_s_mp_div_3.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_div_3.c
 
 bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
 
-bn_mp_expt_u32.o: $(TOMMATH_DIR)/bn_mp_expt_u32.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_u32.c
+bn_mp_expt_n.o: $(TOMMATH_DIR)/bn_mp_expt_n.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_n.c
 
 bn_mp_get_mag_u64.o: $(TOMMATH_DIR)/bn_mp_get_mag_u64.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_get_mag_u64.c

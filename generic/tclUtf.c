@@ -678,11 +678,11 @@ Tcl_UtfToUniCharDString(
     endPtr = src + length;
     optPtr = endPtr - 4;
     while (p <= optPtr) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while (p < endPtr) {
@@ -928,7 +928,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -967,7 +967,7 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1190,7 +1190,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-    Tcl_UtfToUniChar(src, &i);
+    TclUtfToUniChar(src, &i);
     return i;
 }
 
@@ -1219,7 +1219,7 @@ Tcl_UtfAtIndex(
     Tcl_UniChar ch = 0;
 
     while (index-- > 0) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }
@@ -1329,7 +1329,7 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -1382,7 +1382,7 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -1438,7 +1438,7 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if (len < TclUtfCount(titleChar)) {
@@ -1450,7 +1450,7 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {

@@ -926,13 +926,13 @@ TclParseBackslash(
 	 */
 
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = Tcl_UtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[8];
 
 	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
-	    count = Tcl_UtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}
 	result = unichar;
 	break;
