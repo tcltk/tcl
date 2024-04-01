@@ -1707,7 +1707,6 @@ Tcl_CreateChannel(
     statePtr->interestMask	= 0;
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
-    statePtr->timer		= NULL;
     statePtr->timerChanPtr	= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
@@ -8700,24 +8699,21 @@ UpdateInterest(
 
 	    mask &= ~TCL_EXCEPTION;
 
-	    if (!statePtr->timer) {
+	    if (!statePtr->timerChanPtr) {
 		TclChannelPreserve((Tcl_Channel)chanPtr);
 		statePtr->timerChanPtr = chanPtr;
-		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			ChannelTimerProc, chanPtr);
+		Tcl_DoWhenIdle(ChannelTimerProc, chanPtr);
 	    }
 	}
     }
 
-    if (!statePtr->timer
+    if (!statePtr->timerChanPtr
 	    && mask & TCL_WRITABLE
 	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timerChanPtr = chanPtr;
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
+	Tcl_DoWhenIdle(ChannelTimerProc,chanPtr);
     }
-
 
     ChanWatch(chanPtr, mask);
 }
@@ -8757,7 +8753,6 @@ ChannelTimerProc(
 	CleanupTimerHandler(statePtr);
     } else {
 	Tcl_Preserve(statePtr);
-	statePtr->timer = NULL;
 	if (statePtr->interestMask & TCL_WRITABLE
 		&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
 		&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
@@ -8765,8 +8760,7 @@ ChannelTimerProc(
 	     * Restart the timer in case a channel handler reenters the event loop
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
-	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
+	    Tcl_DoWhenIdle(ChannelTimerProc,chanPtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
 	} else {
 	    /* The channel may have just been closed from within Tcl_NotifyChannel */
@@ -8780,8 +8774,7 @@ ChannelTimerProc(
 		     * before UpdateInterest gets called by Tcl_NotifyChannel.
 		     */
 
-		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			ChannelTimerProc,chanPtr);
+		    Tcl_DoWhenIdle(ChannelTimerProc,chanPtr);
 		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 		} else {
 		    CleanupTimerHandler(statePtr);
@@ -8800,8 +8793,8 @@ DeleteTimerHandler(
     ChannelState *statePtr
 )
 {
-    if (statePtr->timer != NULL) {
-	Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->timerChanPtr != NULL) {
+	Tcl_CancelIdleCall(ChannelTimerProc,statePtr->timerChanPtr);
 	CleanupTimerHandler(statePtr);
     }
 }
@@ -8810,7 +8803,6 @@ CleanupTimerHandler(
     ChannelState *statePtr
 ){
     TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
-    statePtr->timer = NULL;
     statePtr->timerChanPtr = NULL;
 }
 

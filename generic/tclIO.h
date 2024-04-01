@@ -189,7 +189,6 @@ typedef struct ChannelState {
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
     Tcl_Size bufSize;		/* What size buffers to allocate? */
-    Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
 				   the right channel when the timer is
 				   deleted. */
