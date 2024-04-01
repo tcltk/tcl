@@ -6237,7 +6237,7 @@ test io-44.5 {FileEventProc procedure: end of file} -constraints {
 close $f
 
 test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
-} -constraints {stdio fileevent openpipe} -body {
+} -constraints {stdio fileevent} -body {
 
     namespace eval refchan {
 	namespace ensemble create
@@ -6288,6 +6288,83 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
 	    set x done
 	}
     }]
+    set token [after 10000 [namespace code {
+	set x timeout
+    }]]
+    vwait [namespace which -variable x]
+    return $x
+} -cleanup {
+    after cancel $token
+    catch {chan close $f}
+} -result done
+
+
+test io-44.7 {
+    FileEventProc procedure: write-only non-blocking channel postevent idle
+} -setup {
+} -constraints {stdio fileevent} -body {
+
+    namespace eval refchan2 {
+	namespace ensemble create
+	namespace export *
+
+	proc finalize {chan args} {
+	    namespace delete c_$chan
+	}
+
+	proc initialize {chan args} {
+	    namespace eval c_$chan {}
+	    namespace upvar c_$chan watching watching
+	    set watching {}
+	    list finalize initialize seek watch write
+	}
+
+	proc watch {chan args} {
+	    namespace upvar c_$chan watching watching
+	    foreach arg $args {
+		switch $arg {
+		    write {
+			if {$arg ni $watching} {
+			    lappend watching $arg
+			}
+			after idle after 0 chan postevent $chan $arg
+		    }
+		}
+	    }
+	}
+
+	proc write {chan args} {
+	    incr ::counter
+	    after idle after 0 chan postevent $chan write
+	    return 1
+	}
+    }
+
+    set f [chan create w [namespace which refchan]]
+    chan configure $f -blocking 0
+    chan event $f writable [namespace code {
+	puts $f X
+    }]
+
+    variable x {}
+
+    apply [list {} {
+	set script {
+	    set lambda [list ::apply [list script {
+		variable count
+		variable x
+		if {[incr count] < 1000} {
+		    try $script
+		} else {
+		    set x done
+		}
+	    } [namespace current]] $script]
+	    after idle [list after 0 $lambda]
+	}
+	try $script
+    } [namespace current]]
+
+
     set token [after 10000 [namespace code {
 	set x timeout
     }]]
