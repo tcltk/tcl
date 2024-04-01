@@ -6340,7 +6340,7 @@ test io-44.7 {
 	}
     }
 
-    set f [chan create w [namespace which refchan]]
+    set f [chan create w [namespace which refchan2]]
     chan configure $f -blocking 0
     chan event $f writable [namespace code {
 	puts $f X
