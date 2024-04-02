@@ -326,11 +326,9 @@ void
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    Tcl_Obj *aiVar = NULL, *varName, *cmdObj;
+    Tcl_Obj *alcDict;		/* Dict with commands to load */
+    Tcl_Obj *trueObj;
     const struct ClockCommand *clockCmdPtr;
-    char cmdName[50];		/* Buffer large enough to hold the string
-				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
-				 * plus a terminating NUL. */
     if (Tcl_IsSafe(interp)) {
 	return;
     }
@@ -338,27 +336,19 @@ TclClockInit(
 	    "::tcl::clock::load", TclClockAutoLoadCmdProc,
 		NULL, NULL);
 
-    /* TODO: replace following ::auto_index(::tcl::clock::*) definitions with
-     * [namespace unknown], if TIP#689 gets accepted. */
-
-    /* set ::auto_index(::tcl::clock::*) ... */
-    TclInitObjRef(aiVar, Tcl_NewStringObj("auto_index", 10));
-    TclInitObjRef(cmdObj, Tcl_NewStringObj("::tcl::clock::load", 18));
-    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
-    varName = NULL;
-    for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
-	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
-	TclSetObjRef(varName, Tcl_NewStringObj(cmdName, -1));
-	Tcl_ObjSetVar2(interp, aiVar, varName, cmdObj, TCL_GLOBAL_ONLY);
+    TclNewObj(alcDict);
+    if (((Interp *)interp)->execEnvPtr) {
+	trueObj = ((Interp *)interp)->execEnvPtr->constants[1]; /* const "1" obj */
+    } else {
+	TclNewIntObj(trueObj, 1);
     }
-    /* set ::auto_index(::tcl::unsupported::clock::configure) ... */
-    TclSetObjRef(varName, Tcl_NewStringObj(
-    	"::tcl::unsupported::clock::configure", 36));
-    Tcl_ObjSetVar2(interp, aiVar, varName, cmdObj, TCL_GLOBAL_ONLY);
-    /* clean */
-    TclUnsetObjRef(varName);
-    TclUnsetObjRef(cmdObj);
-    TclUnsetObjRef(aiVar);
+    for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
+	(void)Tcl_DictObjPut(interp, alcDict,
+		Tcl_NewStringObj(clockCmdPtr->name, TCL_INDEX_NONE), trueObj
+	);
+    }
+    Tcl_SetVar2Ex(interp, "::tcl::clock::auto_load_cmds", NULL,
+	alcDict, TCL_GLOBAL_ONLY);
 }
 
 /*
