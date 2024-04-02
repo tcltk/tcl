@@ -118,12 +118,16 @@ if {[interp issafe]} {
 	    -command ::clock -map $cmdmap]
 	::tcl::unsupported::clock::configure -init-complete
     } ::}}
-    # Auto-loading stubs for 'clock.tcl'
+    # Auto-init C-stubs and auto-load stubs for 'clock.tcl'
     namespace inscope ::tcl::clock {
 	proc _load_stubs args {
+	    variable auto_load_cmds
 	    set cmd [uplevel {namespace current}]::[lindex $args 0]
 	    regsub {^(::){1,2}tcl::clock(::){1,2}} $cmd {} cmd
-	    if {[dict getd $::tcl::clock::auto_load_cmds $cmd 0]} {
+	    if {[info exists auto_load_cmds] &&
+		[dict getd $auto_load_cmds $cmd 0]
+	    } {
+		unset auto_load_cmds
 		::tcl::clock::load
 		tailcall {*}$args
 	    }
