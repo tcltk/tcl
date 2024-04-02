@@ -147,7 +147,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_mp_div_2 mp_div_2
 #define TclBN_mp_div_2d mp_div_2d
 #define TclBN_mp_exch mp_exch
-#define TclBN_mp_get_mag_u64 mp_get_mag_u64
+#define TclBN_mp_get_mag_ull mp_get_mag_u64
 #define TclBN_mp_grow mp_grow
 #define TclBN_mp_init mp_init
 #define TclBN_mp_init_copy mp_init_copy
@@ -169,8 +169,8 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
-#define TclBN_mp_set_i64 mp_set_i64
-#define TclBN_mp_set_u64 mp_set_u64
+#define TclBN_mp_set_ll mp_set_i64
+#define TclBN_mp_set_ull mp_set_u64
 #define TclBN_mp_shrink mp_shrink
 #define TclBN_mp_sqr mp_sqr
 #define TclBN_mp_sqrt mp_sqrt
@@ -214,20 +214,20 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
 {
-    TclBN_mp_set_u64(a, i);
+    TclBN_mp_set_ull(a, i);
     return MP_OKAY;
 }
 
 static mp_err TclBN_mp_set_long(mp_int *a, unsigned long i)
 {
-    TclBN_mp_set_u64(a, i);
+    TclBN_mp_set_ull(a, i);
     return MP_OKAY;
 }
 
 #define TclBN_mp_set_ul (void (*)(mp_int *a, unsigned long i))(void *)TclBN_mp_set_long
 
 mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c) {
-	return TclBN_mp_expt_n(a, b, c);
+	return TclBN_mp_expt_d(a, b, c);
 }
 mp_err	TclBN_mp_add_d(const mp_int *a, unsigned int b, mp_int *c) {
    return mp_add_d(a, b, c);
@@ -275,7 +275,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclBN_mp_sqr 0
 #   define TclBN_mp_div_3 0
 #   define TclBN_mp_init_l 0
-#   define TclBN_mp_init_ul 0
+#   define TclBN_mp_init_set_int 0
 #   define TclBN_mp_set 0
 #   define TclSetStartupScriptPath 0
 #   define TclGetStartupScriptPath 0
@@ -370,7 +370,7 @@ void TclBN_reverse(unsigned char *s, int len)
     }
 }
 
-mp_err TclBN_mp_init_ul(mp_int *a, unsigned long b)
+mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long b)
 {
     return TclBN_mp_init_u64(a,b);
 }
@@ -381,7 +381,7 @@ mp_err TclBN_mp_init_l(mp_int *a, long b)
 }
 
 void TclBN_mp_set(mp_int *a, unsigned int b) {
-    TclBN_mp_set_u64(a, b);
+    TclBN_mp_set_ull(a, b);
 }
 
 mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
@@ -782,7 +782,7 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 /* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
  * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
-mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+mp_err MP_WUR TclBN_mp_expt_d(const mp_int *a, int b, mp_int *c) {
     return mp_expt_u32(a, (uint32_t)b, c);;
 }
 #endif /* TCL_WITH_EXTERNAL_TOMMATH */
@@ -1198,7 +1198,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     TclBN_mp_div_3, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_n, /* 19 */
+    TclBN_mp_expt_d, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -1240,16 +1240,16 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_mul_digs, /* 58 */
     TclBN_s_mp_sqr, /* 59 */
     TclBN_s_mp_sub, /* 60 */
-    TclBN_mp_init_ul, /* 61 */
+    TclBN_mp_init_set_int, /* 61 */
     TclBN_mp_set_ul, /* 62 */
     TclBN_mp_cnt_lsb, /* 63 */
     TclBN_mp_init_l, /* 64 */
     TclBN_mp_init_i64, /* 65 */
     TclBN_mp_init_u64, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
-    TclBN_mp_set_u64, /* 68 */
-    TclBN_mp_get_mag_u64, /* 69 */
-    TclBN_mp_set_i64, /* 70 */
+    TclBN_mp_set_ull, /* 68 */
+    TclBN_mp_get_mag_ull, /* 69 */
+    TclBN_mp_set_ll, /* 70 */
     TclBN_mp_unpack, /* 71 */
     TclBN_mp_pack, /* 72 */
     TclBN_mp_tc_and, /* 73 */

@@ -80,7 +80,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_expt_d(const mp_int *a, int b, mp_int *c)
 }
 declare 20 {
     mp_err MP_WUR TclBN_mp_grow(mp_int *a, int size)
@@ -211,7 +211,7 @@ declare 60 {deprecated {is private function in libtommath}} {
     mp_err TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c)
 }
 declare 61 {deprecated {macro calling mp_init_u64}} {
-    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
+    mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 }
 declare 62 {deprecated {macro calling mp_set_u64}} {
     void TclBN_mp_set_ul(mp_int *a, unsigned long i)
@@ -235,13 +235,13 @@ declare 67 {deprecated {Use mp_expt_n}} {
 }
 # Added in libtommath 1.0.1
 declare 68 {
-    void TclBN_mp_set_u64(mp_int *a, uint64_t i)
+    void TclBN_mp_set_ull(mp_int *a, uint64_t i)
 }
 declare 69 {
-    uint64_t MP_WUR TclBN_mp_get_mag_u64(const mp_int *a)
+    uint64_t MP_WUR TclBN_mp_get_mag_ull(const mp_int *a)
 }
 declare 70 {
-    void TclBN_mp_set_i64(mp_int *a, int64_t i)
+    void TclBN_mp_set_ll(mp_int *a, int64_t i)
 }
 declare 71 {
     mp_err MP_WUR TclBN_mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
