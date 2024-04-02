@@ -146,23 +146,21 @@ Tcl_SetStartupScript(
 
     if (encoding != NULL) {
 	newEncoding = Tcl_NewStringObj(encoding, -1);
+	Tcl_IncrRefCount(newEncoding);
     }
 
+    if (path != NULL) {
+	Tcl_IncrRefCount(path);
+    }
     if (tsdPtr->path != NULL) {
 	Tcl_DecrRefCount(tsdPtr->path);
     }
     tsdPtr->path = path;
-    if (tsdPtr->path != NULL) {
-	Tcl_IncrRefCount(tsdPtr->path);
-    }
 
     if (tsdPtr->encoding != NULL) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
     tsdPtr->encoding = newEncoding;
-    if (tsdPtr->encoding != NULL) {
-	Tcl_IncrRefCount(tsdPtr->encoding);
-    }
 }
 
 /*
@@ -195,10 +193,10 @@ Tcl_GetStartupScript(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (tsdPtr->encoding == NULL) {
-	    *encodingPtr = NULL;
-	} else {
+	if (tsdPtr->encoding != NULL) {
 	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
+	} else {
+	    *encodingPtr = NULL;
 	}
     }
     return tsdPtr->path;
@@ -210,7 +208,8 @@ Tcl_GetStartupScript(
  *
  *	This function is typically invoked by Tcl_Main of Tk_Main function to
  *	source an application specific rc file into the interpreter at startup
- *	time.
+ *	time. If the filename cannot be translated (e.g. it referred to a bogus
+ *	user or there was no HOME environment variable). Just do nothing.
  *
  * Results:
  *	None.
@@ -236,13 +235,7 @@ Tcl_SourceRCFile(
 
 	Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
-	if (fullName == NULL) {
-	    /*
-	     * Couldn't translate the file name (e.g. it referred to a bogus
-	     * user or there was no HOME environment variable). Just do
-	     * nothing.
-	     */
-	} else {
+	if (fullName != NULL) {
 	    /*
 	     * Test for the existence of the rc file before trying to read it.
 	     */
@@ -338,10 +331,10 @@ Tcl_MainEx(
     }
 
     path = Tcl_GetStartupScript(&encodingName);
-    if (path == NULL) {
-	appName = NewNativeObj(argv[0]);
-    } else {
+    if (path != NULL) {
 	appName = path;
+    } else {
+	appName = NewNativeObj(argv[0]);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
     argc--;
