@@ -249,6 +249,15 @@ mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c)
    return mp_expt_n(a, (int)b, c);
 }
 #endif
+#ifdef BN_MP_EXPT_U32_C
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
+{
+   if (b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+      return MP_VAL;
+   }
+   return mp_expt_n(a, (int)b, c);
+}
+#endif
 #ifdef BN_MP_N_ROOT_EX_C
 mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
