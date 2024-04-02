@@ -52,7 +52,7 @@ NewNativeObj(
 #ifdef UNICODE
     Tcl_WinTCharToUtf(string, -1, &ds);
 #else
-    Tcl_ExternalToUtfDString(NULL, (char *) string, -1, &ds);
+    (void)Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
     return TclDStringToObj(&ds);
 }
@@ -285,6 +285,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
+    int i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -293,7 +294,12 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    TclpFindExecutable((const char *)argv[0]);
+    if (argc > 0) {
+	--argc;			/* consume argv[0] */
+	++i;
+    }
+    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
+						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -315,36 +321,37 @@ Tcl_MainEx(
 	 *  FILENAME
 	 */
 
-	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
+	/* mind argc is being adjusted as we proceed */
+	if ((argc >= 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
 		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
-	    argv += 3;
-	} else if ((argc > 1) && ('-' != argv[1][0])) {
+	    i += 3;
+	} else if ((argc >= 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
-	    argv++;
+	    i++;
 	}
     }
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path != NULL) {
 	appName = path;
-    } else {
+    } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
+    } else {
+	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
-    argc--;
-    argv++;
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
-	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++));
+	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(argv[i++]));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
@@ -438,7 +445,7 @@ Tcl_MainEx(
      * Get a new value for tty if anyone writes to ::tcl_interactive
      */
 
-    Tcl_LinkVar(interp, "tcl_interactive", (char *) &is.tty, TCL_LINK_BOOLEAN);
+    Tcl_LinkVar(interp, "tcl_interactive", (char *)&is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
