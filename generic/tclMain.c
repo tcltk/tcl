@@ -54,7 +54,7 @@ NewNativeObj(
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString(string, -1, &ds);
 #else
-    Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
+    (void)Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
     return Tcl_DStringToObj(&ds);
 }
@@ -143,23 +143,21 @@ Tcl_SetStartupScript(
 
     if (encoding != NULL) {
 	newEncoding = Tcl_NewStringObj(encoding, -1);
+	Tcl_IncrRefCount(newEncoding);
     }
 
+    if (path != NULL) {
+	Tcl_IncrRefCount(path);
+    }
     if (tsdPtr->path != NULL) {
 	Tcl_DecrRefCount(tsdPtr->path);
     }
     tsdPtr->path = path;
-    if (tsdPtr->path != NULL) {
-	Tcl_IncrRefCount(tsdPtr->path);
-    }
 
     if (tsdPtr->encoding != NULL) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
     tsdPtr->encoding = newEncoding;
-    if (tsdPtr->encoding != NULL) {
-	Tcl_IncrRefCount(tsdPtr->encoding);
-    }
 }
 
 /*
@@ -192,10 +190,10 @@ Tcl_GetStartupScript(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (tsdPtr->encoding == NULL) {
-	    *encodingPtr = NULL;
-	} else {
+	if (tsdPtr->encoding != NULL) {
 	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
+	} else {
+	    *encodingPtr = NULL;
 	}
     }
     return tsdPtr->path;
@@ -207,7 +205,8 @@ Tcl_GetStartupScript(
  *
  *	This function is typically invoked by Tcl_Main of Tk_Main function to
  *	source an application specific rc file into the interpreter at startup
- *	time.
+ *	time. If the filename cannot be translated (e.g. it referred to a bogus
+ *	user or there was no HOME environment variable). Just do nothing.
  *
  * Results:
  *	None.
@@ -233,13 +232,7 @@ Tcl_SourceRCFile(
 
 	Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
-	if (fullName == NULL) {
-	    /*
-	     * Couldn't translate the file name (e.g. it referred to a bogus
-	     * user or there was no HOME environment variable). Just do
-	     * nothing.
-	     */
-	} else {
+	if (fullName != NULL) {
 	    /*
 	     * Test for the existence of the rc file before trying to read it.
 	     */
@@ -291,7 +284,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    int i=0;			/* argv[i] index */
+    int i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -300,13 +293,12 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    if (0 < argc) {
-	--argc;			/* "consume" argv[0] */
+    if (argc > 0) {
+	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable ((const char *)argv [0]);	/* nb: this could be NULL
-							 * w/ (eg) an empty argv
-							 * supplied to execve() */
+    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
+						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -345,10 +337,12 @@ Tcl_MainEx(
     }
 
     path = Tcl_GetStartupScript(&encodingName);
-    if (path == NULL) {
+    if (path != NULL) {
+	appName = path;
+    } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-	appName = path;
+	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
