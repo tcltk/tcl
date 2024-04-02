@@ -148,6 +148,7 @@ EXPORTS
     mp_zero
     s_mp_add
     s_mp_balance_mul
+    s_mp_div_3
     s_mp_karatsuba_mul
     s_mp_karatsuba_sqr
     s_mp_mul_digs
