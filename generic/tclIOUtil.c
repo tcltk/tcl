@@ -1691,7 +1691,9 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the utf-8 encoding. */
+				   use the utf-8 encoding. May also be TCL_SHELL_PROFILE_STRICT,
+				   TCL_SHELL_PROFILE_REPLACE, or TCL_SHELL_PROFILE_TCL8,
+				   for specifying the profile. */
 {
     Tcl_Size length;
     int result = TCL_ERROR;
@@ -1731,9 +1733,17 @@ Tcl_FSEvalFileEx(
     /*
      * If the encoding is specified, set the channel to that encoding.
      * Otherwise use utf-8.  If the encoding is unknown report an error.
+     * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL) {
+    if (encodingName == NULL || encodingName == TCL_SHELL_PROFILE_STRICT) {
+	goto utf8;
+    } else if (encodingName == TCL_SHELL_PROFILE_REPLACE) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
+	goto utf8;
+    } else if (encodingName == TCL_SHELL_PROFILE_TCL8) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
+    utf8:
 	encodingName = "utf-8";
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
@@ -1867,9 +1877,17 @@ TclNREvalFile(
     /*
      * If the encoding is specified, set the channel to that encoding.
      * Otherwise use utf-8.  If the encoding is unknown report an error.
+     * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL) {
+    if (encodingName == NULL || encodingName == TCL_SHELL_PROFILE_STRICT) {
+	goto utf8;
+    } else if (encodingName == TCL_SHELL_PROFILE_REPLACE) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
+	goto utf8;
+    } else if (encodingName == TCL_SHELL_PROFILE_TCL8) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
+    utf8:
 	encodingName = "utf-8";
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)

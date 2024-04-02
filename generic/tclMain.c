@@ -74,7 +74,7 @@ typedef struct {
 				 * routines to [source] as a startup script,
 				 * or NULL for none set, meaning enter
 				 * interactive mode. */
-    Tcl_Obj *encoding;		/* The encoding of the startup script file. */
+    Tcl_Obj *encoding;	/* The encoding or profile of the startup script file. */
     Tcl_MainLoopProc *mainLoopProc;
 				/* Any installed main loop handler. The main
 				 * extension that installs these is Tk. */
@@ -133,33 +133,35 @@ static Tcl_ThreadDataKey dataKey;
  *----------------------------------------------------------------------
  */
 
+#define IS_ENCODING(encoding) ((encoding) && (((encoding) < TCL_SHELL_PROFILE_TCL8) \
+	|| ((encoding) > TCL_SHELL_PROFILE_STRICT)))
+
 void
 Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
     const char *encoding)	/* Encoding of the data in that file */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_Obj *newEncoding = NULL;
+    Tcl_Obj *newEncoding;
 
-    if (encoding != NULL) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
+    if (path != NULL) {
+	Tcl_IncrRefCount(path);
     }
-
     if (tsdPtr->path != NULL) {
 	Tcl_DecrRefCount(tsdPtr->path);
     }
     tsdPtr->path = path;
-    if (tsdPtr->path != NULL) {
-	Tcl_IncrRefCount(tsdPtr->path);
-    }
 
-    if (tsdPtr->encoding != NULL) {
+    if (IS_ENCODING(encoding)) {
+	newEncoding = Tcl_NewStringObj(encoding, -1);
+	Tcl_IncrRefCount(newEncoding);
+    } else {
+	newEncoding = (Tcl_Obj *)encoding;
+    }
+    if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
     tsdPtr->encoding = newEncoding;
-    if (tsdPtr->encoding != NULL) {
-	Tcl_IncrRefCount(tsdPtr->encoding);
-    }
 }
 
 /*
@@ -175,7 +177,7 @@ Tcl_SetStartupScript(
  *
  * Side effects:
  *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
- *	the encoding name registered for the startup script. Tcl retains
+ *	the encoding name or profile registered for the startup script. Tcl retains
  *	ownership of the string, and may free it. Caller should make a copy
  *	for long-term use.
  *
@@ -184,18 +186,17 @@ Tcl_SetStartupScript(
 
 Tcl_Obj *
 Tcl_GetStartupScript(
-    const char **encodingPtr)	/* When not NULL, points to storage for the
-				 * (const char *) that points to the
-				 * registered encoding name for the startup
-				 * script. */
+    const char **encodingPtr)	/* When not NULL or TCL_SHELL_PROFILE_????,
+				 * points to storage for the (const char *) that points to the
+				 * registered encoding name for the startup script. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (tsdPtr->encoding == NULL) {
-	    *encodingPtr = NULL;
-	} else {
+	if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	    *encodingPtr = TclGetString(tsdPtr->encoding);
+	} else {
+	    *encodingPtr = (const char *)tsdPtr->encoding;
 	}
     }
     return tsdPtr->path;
@@ -335,6 +336,17 @@ Tcl_MainEx(
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
 		    TclGetString(value));
 	    Tcl_DecrRefCount(value);
+	    argc -= 3;
+	    i += 3;
+	} else if ((argc >= 3) && (0 == _tcscmp(TEXT("-profile"), argv[1]))
+		&& ('-' != argv[3][0])) {
+	    if (0 == _tcscmp(TEXT("tcl8"), argv[2])) {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_TCL8);
+	    } else if (0 == _tcscmp(TEXT("replace"), argv[2])) {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_REPLACE);
+	    } else {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), NULL);
+	    }
 	    argc -= 3;
 	    i += 3;
 	} else if ((argc >= 1) && ('-' != argv[1][0])) {

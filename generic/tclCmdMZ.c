@@ -1110,7 +1110,7 @@ TclNRSourceObjCmd(
     void *names = NULL;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name|-profile profile? fileName");
 	return TCL_ERROR;
     }
 
@@ -1118,7 +1118,7 @@ TclNRSourceObjCmd(
 
     if (objc == 4) {
 	static const char *const options[] = {
-	    "-encoding", NULL
+	    "-encoding", "-profile", NULL
 	};
 	int index;
 
@@ -1126,7 +1126,22 @@ TclNRSourceObjCmd(
 		"option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
+	if (index) {
+	    int id;
+	    result = TclEncodingProfileNameToId(interp, TclGetString(objv[2]), &id);
+	    if (result != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (id == TCL_ENCODING_PROFILE_TCL8) {
+		encodingName = TCL_SHELL_PROFILE_TCL8;
+	    } else if (id == TCL_ENCODING_PROFILE_REPLACE) {
+		encodingName = TCL_SHELL_PROFILE_REPLACE;
+	    } else {
+		encodingName = NULL;
+	    }
+	} else {
 	encodingName = TclGetString(objv[2]);
+	}
     } else if (objc == 3) {
 	/* Handle undocumented -nopkg option. This should only be
 	 * used by the internal ::tcl::Pkg::source utility function. */
