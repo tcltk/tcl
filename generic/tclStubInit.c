@@ -95,7 +95,7 @@ mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 
 int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
-	return mp_expt_u32(a, b, c);
+	return mp_expt_n(a, b, c);
 }
 
 #define TclBN_mp_div_ld TclBNMpDivLd

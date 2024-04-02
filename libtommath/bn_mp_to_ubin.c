@@ -10,8 +10,7 @@ mp_err mp_to_ubin(const mp_int *a, unsigned char *buf, size_t maxlen, size_t *wr
    mp_err  err;
    mp_int  t;
 
-   size_t size = (size_t)mp_count_bits(a);
-   count = (size / 8u) + (((size & 7u) != 0u) ? 1u : 0u);
+   count = mp_ubin_size(a);
    if (count > maxlen) {
       return MP_BUF;
    }
