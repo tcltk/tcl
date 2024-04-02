@@ -8774,7 +8774,7 @@ ExecuteExtendedBinaryMathOp(
 	err = mp_init(&bigResult);
 	if (err == MP_OKAY) {
 	    /* Don't use "mp_expt_n" directly here, it doesn't exist in libtommath 1.2 */
-	    err = TclBN_mp_expt_n(&big1, (int)w2, &bigResult);
+	    err = TclBN_mp_expt_d(&big1, (int)w2, &bigResult);
 	}
 	if (err != MP_OKAY) {
 	    return OUT_OF_MEMORY;
