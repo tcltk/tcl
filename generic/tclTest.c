@@ -246,6 +246,7 @@ static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
 static Tcl_ObjCmdProc	TestbytestringObjCmd;
 static Tcl_ObjCmdProc	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc	TestpurebytesobjObjCmd;
+static Tcl_ObjCmdProc	TestparseargsObjCmd;
 static Tcl_ObjCmdProc	TeststringbytesObjCmd;
 static Tcl_ObjCmdProc	Testutf16stringObjCmd;
 static Tcl_ObjCmdProc	TestcmdinfoObjCmd;
@@ -592,6 +593,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testparseargsobj", TestparseargsObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
@@ -5640,6 +5642,83 @@ TestpurebytesobjObjCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestparseargsObjCmd --
+ *
+ *	This object-based procedure tests the TCL_ARGV_GENFUNC functionality.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseMedia(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    TCL_UNUSED(int),
+    Tcl_Obj *const *objv,
+    void *dstPtr)
+{
+    static const char *const mediaOpts[] = {"A4", "Legal", "Letter", NULL};
+    static const char *const ExtendedMediaOpts[] = {
+	"Paper size is ISO A4", "Paper size is US Legal",
+	"Paper size is US Letter", NULL};
+    int index;
+    const char **media = (const char **) dstPtr;
+
+    if (Tcl_GetIndexFromObjStruct(interp, objv[0], mediaOpts,
+	    sizeof(char *), "media", 0, &index) != TCL_OK) {
+	return -1;
+    }
+
+    *media = ExtendedMediaOpts[index];
+    return 1;
+}
+
+static int
+TestparseargsObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Size count;
+
+    const char *media = NULL, *color = NULL;
+
+    const Tcl_ArgvInfo argTable[] = {
+	{TCL_ARGV_STRING,  "-colormode" ,  NULL, &color,  "color mode", NULL},
+	{TCL_ARGV_GENFUNC, "-media", ParseMedia, &media,  "media page size", NULL},
+	TCL_ARGV_TABLE_END
+    };
+
+    if (objc%2 != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-opt arg ...?");
+	return TCL_ERROR;
+    }
+
+    count = objc;
+
+    if (Tcl_ParseArgsObjv(interp, argTable, &count, objv, NULL)!=TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* show color and media parsed values */
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Color: |%d|%s|, Media: |%d|%s|",
+	color?1:0, color?color:"NO COLOR",
+	media?1:0, media?media:"NO MEDIA"
+    ));
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
