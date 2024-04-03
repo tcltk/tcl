@@ -74,7 +74,7 @@ typedef struct {
 				 * routines to [source] as a startup script,
 				 * or NULL for none set, meaning enter
 				 * interactive mode. */
-    Tcl_Obj *encoding;	/* The encoding or profile of the startup script file. */
+    Tcl_Obj *encoding;		/* The encoding or profile of the startup script file. */
     Tcl_MainLoopProc *mainLoopProc;
 				/* Any installed main loop handler. The main
 				 * extension that installs these is Tk. */
@@ -144,6 +144,13 @@ Tcl_SetStartupScript(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_Obj *newEncoding;
 
+    if (IS_ENCODING(encoding)) {
+	newEncoding = Tcl_NewStringObj(encoding, -1);
+	Tcl_IncrRefCount(newEncoding);
+    } else {
+	newEncoding = (Tcl_Obj *)encoding;
+    }
+
     if (path != NULL) {
 	Tcl_IncrRefCount(path);
     }
@@ -152,12 +159,6 @@ Tcl_SetStartupScript(
     }
     tsdPtr->path = path;
 
-    if (IS_ENCODING(encoding)) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
-	Tcl_IncrRefCount(newEncoding);
-    } else {
-	newEncoding = (Tcl_Obj *)encoding;
-    }
     if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
@@ -176,10 +177,10 @@ Tcl_SetStartupScript(
  *	The path of the startup script; NULL if none has been set.
  *
  * Side effects:
- *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
- *	the encoding name or profile registered for the startup script. Tcl retains
- *	ownership of the string, and may free it. Caller should make a copy
- *	for long-term use.
+ *	If encodingPtr is not NULL, stores a (const char *) in it pointing
+ *	to the encoding name or profile registered for the startup script.
+ *	Tcl retains ownership of the string, and may free it. Caller
+ *	should make a copy for long-term use.
  *
  *----------------------------------------------------------------------
  */
@@ -187,14 +188,14 @@ Tcl_SetStartupScript(
 Tcl_Obj *
 Tcl_GetStartupScript(
     const char **encodingPtr)	/* When not NULL or TCL_SHELL_PROFILE_????,
-				 * points to storage for the (const char *) that points to the
-				 * registered encoding name for the startup script. */
+				 * points to storage for the (const char *) that points to
+				 * the registered encoding name for the startup script. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
 	if (IS_ENCODING((const char *)tsdPtr->encoding)) {
-	    *encodingPtr = TclGetString(tsdPtr->encoding);
+	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
 	} else {
 	    *encodingPtr = (const char *)tsdPtr->encoding;
 	}
@@ -208,7 +209,8 @@ Tcl_GetStartupScript(
  *
  *	This function is typically invoked by Tcl_Main of Tk_Main function to
  *	source an application specific rc file into the interpreter at startup
- *	time.
+ *	time. If the filename cannot be translated (e.g. it referred to a bogus
+ *	user or there was no HOME environment variable). Just do nothing.
  *
  * Results:
  *	None.
@@ -234,13 +236,7 @@ Tcl_SourceRCFile(
 
 	Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
-	if (fullName == NULL) {
-	    /*
-	     * Couldn't translate the file name (e.g. it referred to a bogus
-	     * user or there was no HOME environment variable). Just do
-	     * nothing.
-	     */
-	} else {
+	if (fullName != NULL) {
 	    /*
 	     * Test for the existence of the rc file before trying to read it.
 	     */
@@ -305,9 +301,8 @@ Tcl_MainEx(
 	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable ((const char *)argv [0]);	/* nb: this could be NULL
-							 * w/ (eg) an empty argv
-							 * supplied to execve() */
+    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
+						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -334,7 +329,7 @@ Tcl_MainEx(
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
-		    TclGetString(value));
+		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
@@ -362,7 +357,7 @@ Tcl_MainEx(
     } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-    	appName = Tcl_NewStringObj("tclsh", -1);
+	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
