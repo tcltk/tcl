@@ -60,7 +60,8 @@ reading or writing of binary data.
 .PP
 In the second form, \fIaccess\fR consists of a list of any of the
 following flags, most of which have the standard POSIX meanings.
-One of the flags must be either \fBRDONLY\fR, \fBWRONLY\fR or \fBRDWR\fR.
+If none of \fBRDONLY\fR, \fBWRONLY\fR or \fBRDWR\fR are specified,
+\fBRDONLY\fR is the default.
 .IP \fBRDONLY\fR
 Open the file for reading only.
 .IP \fBWRONLY\fR

@@ -476,14 +476,14 @@ unmatched open brace in list
 \"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {
   list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
-} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
+} {1 {invalid access mode "FOO": must be APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, RDWR, RDONLY, REPLACE, STRICT, TCL8, TRUNC, or WRONLY}}
 test iocmd-12.8 {POSIX open access modes: errors} {
-    list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+    list [catch {open $path(test3) {BINARY STRICT}} msg] $msg
+} {1 {invalid access mode "BINARY STRICT": modes BINARY, REPLACE, STRICT, and TCL8 cannot be combined}}
 close [open $path(test3) w]
 test iocmd-12.9 {POSIX open access modes: BINARY} {
-    list [catch {open $path(test1) BINARY} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+    list [catch {open $path(test1) {RDWR WRONLY}} msg] $msg
+} {1 {invalid access mode "RDWR WRONLY": modes RDONLY, RDWR, and WRONLY cannot be combined}}
 test iocmd-12.10 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f a
