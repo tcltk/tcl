@@ -290,7 +290,7 @@ Tcl_MainEx(
 {
     Tcl_Size i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
-    const char *encodingName = NULL;
+    const char *encoding = NULL;
     int code, exitCode = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
@@ -351,7 +351,7 @@ Tcl_MainEx(
 	}
     }
 
-    path = Tcl_GetStartupScript(&encodingName);
+    path = Tcl_GetStartupScript(&encoding);
     if (path != NULL) {
 	appName = path;
     } else if (argv[0]) {
@@ -413,10 +413,10 @@ Tcl_MainEx(
      * again, as the appInitProc might have reset it.
      */
 
-    path = Tcl_GetStartupScript(&encodingName);
+    path = Tcl_GetStartupScript(&encoding);
     if (path != NULL) {
 	Tcl_ResetResult(interp);
-	code = Tcl_FSEvalFileEx(interp, path, encodingName);
+	code = Tcl_FSEvalFileEx(interp, path, encoding);
 	if (code != TCL_OK) {
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan) {

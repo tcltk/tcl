@@ -1686,7 +1686,7 @@ Tcl_FSEvalFileEx(
     Tcl_Obj *pathPtr,		/* Pathname of the file to process.
 				 * Tilde-substitution is performed on this
 				 * pathname. */
-    const char *encodingName)	/* Either the name of an encoding or NULL to
+    const char *encoding)	/* Either the name of an encoding or NULL to
 				   use the utf-8 encoding. May also be TCL_SHELL_PROFILE_STRICT,
 				   TCL_SHELL_PROFILE_REPLACE, or TCL_SHELL_PROFILE_TCL8,
 				   for specifying the profile. */
@@ -1732,17 +1732,17 @@ Tcl_FSEvalFileEx(
      * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL || encodingName == TCL_SHELL_PROFILE_STRICT) {
+    if (encoding == NULL || encoding == TCL_SHELL_PROFILE_STRICT) {
 	goto utf8;
-    } else if (encodingName == TCL_SHELL_PROFILE_REPLACE) {
+    } else if (encoding == TCL_SHELL_PROFILE_REPLACE) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 	goto utf8;
-    } else if (encodingName == TCL_SHELL_PROFILE_TCL8) {
+    } else if (encoding == TCL_SHELL_PROFILE_TCL8) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
     utf8:
-	encodingName = "utf-8";
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_CloseEx(interp,chan,0);
 	return result;
@@ -1834,7 +1834,7 @@ TclNREvalFile(
     Tcl_Obj *pathPtr,		/* Pathname of a file containing the script to
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
-    const char *encodingName)	/* The name of an encoding to use, or NULL to
+    const char *encoding)	/* The name of an encoding to use, or NULL to
 				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
@@ -1876,17 +1876,17 @@ TclNREvalFile(
      * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL || encodingName == TCL_SHELL_PROFILE_STRICT) {
+    if (encoding == NULL || encoding == TCL_SHELL_PROFILE_STRICT) {
 	goto utf8;
-    } else if (encodingName == TCL_SHELL_PROFILE_REPLACE) {
+    } else if (encoding == TCL_SHELL_PROFILE_REPLACE) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 	goto utf8;
-    } else if (encodingName == TCL_SHELL_PROFILE_TCL8) {
+    } else if (encoding == TCL_SHELL_PROFILE_TCL8) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
     utf8:
-	encodingName = "utf-8";
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_CloseEx(interp, chan, 0);
 	return TCL_ERROR;
