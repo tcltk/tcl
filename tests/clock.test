@@ -37315,10 +37315,10 @@ test clock-46.29-1 {scan: validation rules: invalid day of year} \
     } -result [lrepeat 20 1 {unable to convert input string: invalid day of year}]
 test clock-46.29-2 {scan: validation rules: valid day of leap/not leap year} \
     -body {
-	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"]
+	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1]
     } -result {31-12-2016 31-12-2017 31-12-2016 31-12-2017}
 test clock-46.30 {scan: validation rules: invalid year} -setup {
 	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
