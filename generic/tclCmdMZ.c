@@ -988,7 +988,7 @@ TclNRSourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *encodingName = NULL;
+    const char *encoding = NULL;
     Tcl_Obj *fileName;
 
     if (objc != 2 && objc !=4) {
@@ -1008,10 +1008,10 @@ TclNRSourceObjCmd(
 		"option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
-	encodingName = TclGetString(objv[2]);
+	encoding = TclGetString(objv[2]);
     }
 
-    return TclNREvalFile(interp, fileName, encodingName);
+    return TclNREvalFile(interp, fileName, encoding);
 }
 
 /*

@@ -467,10 +467,10 @@ declare 177 {
 }
 # TIP 338 made these public - now declared in tcl.h too
 declare 178 {
-    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encoding)
 }
 declare 179 {
-    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingPtr)
 }
 declare 182 {
      struct tm *TclpLocaltime(const time_t *clock)

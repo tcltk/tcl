@@ -457,9 +457,9 @@ EXTERN void		TclVarErrMsg(Tcl_Interp *interp, const char *part1,
 				const char *reason);
 /* 178 */
 EXTERN void		Tcl_SetStartupScript(Tcl_Obj *pathPtr,
-				const char *encodingName);
+				const char *encoding);
 /* 179 */
-EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingNamePtr);
+EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingPtr);
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 /* 182 */
@@ -831,8 +831,8 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */
     void (*tclVarErrMsg) (Tcl_Interp *interp, const char *part1, const char *part2, const char *operation, const char *reason); /* 177 */
-    void (*tcl_SetStartupScript) (Tcl_Obj *pathPtr, const char *encodingName); /* 178 */
-    Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingNamePtr); /* 179 */
+    void (*tcl_SetStartupScript) (Tcl_Obj *pathPtr, const char *encoding); /* 178 */
+    Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingPtr); /* 179 */
     void (*reserved180)(void);
     void (*reserved181)(void);
     struct tm * (*tclpLocaltime) (const time_t *clock); /* 182 */
