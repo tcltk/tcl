@@ -597,7 +597,7 @@ Tcl_ScanObjCmd(
 	return TCL_ERROR;
     }
 
-    format = Tcl_GetString(objv[2]);
+    format = TclGetString(objv[2]);
     numVars = objc-3;
 
     /*
@@ -619,7 +619,7 @@ Tcl_ScanObjCmd(
 	}
     }
 
-    string = Tcl_GetString(objv[1]);
+    string = TclGetString(objv[1]);
     baseString = string;
 
     /*
