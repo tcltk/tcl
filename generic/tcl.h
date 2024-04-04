@@ -2341,8 +2341,8 @@ typedef struct {
 
 typedef int (Tcl_ArgvFuncProc)(void *clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
-	int objc, Tcl_Obj *const *objv, void *dstPtr);
+typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
+	Tcl_Size objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
  * Shorthand for commonly used argTable entries.
