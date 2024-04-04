@@ -169,13 +169,13 @@ test indexObj-7.7 {Tcl_ParseArgsObjv memory management} testparseargs {
 test indexObj-7.8 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -color Nothing
 } {0 1 testparseargs Nothing NULL}
-test indexObj-7.9 {Tcl_ParseArgsObjv} {testparseargs knownBug} {
+test indexObj-7.9 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -media A4
 } {0 1 testparseargs NULL {Paper size is ISO A4}}
-test indexObj-7.10 {Tcl_ParseArgsObjv} {testparseargs knownBug} {
+test indexObj-7.10 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -media A4 -color Somecolor
 } {0 1 testparseargs Somecolor {Paper size is ISO A4}}
-test indexObj-7.11 {Tcl_ParseArgsObjv} {testparseargs knownBug} {
+test indexObj-7.11 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -color othercolor -media Letter
 } {0 1 testparseargs othercolor {Paper size is US Letter}}
 test indexObj-7.12 {Tcl_ParseArgsObjv} -constraints testparseargs -body {
