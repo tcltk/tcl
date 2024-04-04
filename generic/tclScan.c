@@ -344,7 +344,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (char *)NULL);
 	    goto error;
 	}
 
@@ -408,7 +408,7 @@ ValidateFormat(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
 		goto error;
 	    }
 	    /* FALLTHRU */
@@ -422,7 +422,7 @@ ValidateFormat(
 		Tcl_AppendToObj(errorMsg, buf, -1);
 		Tcl_AppendToObj(errorMsg, " conversion", -1);
 		Tcl_SetObjResult(interp, errorMsg);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
 		goto error;
 	    }
 	    /*
@@ -474,7 +474,7 @@ ValidateFormat(
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched [ in format string", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (char *)NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -483,7 +483,7 @@ ValidateFormat(
 	    Tcl_AppendToObj(errorMsg, buf, -1);
 	    Tcl_AppendToObj(errorMsg, "\"", -1);
 	    Tcl_SetObjResult(interp, errorMsg);
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -530,7 +530,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (char *)NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
 	    /*
@@ -541,7 +541,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (char *)NULL);
 	    goto error;
 	}
     }
@@ -553,12 +553,12 @@ ValidateFormat(
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"%n$\" argument index out of range", -1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (char *)NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
 		-1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (char *)NULL);
     }
 
   error:
@@ -953,7 +953,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);
@@ -981,7 +981,7 @@ Tcl_ScanObjCmd(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
-				"BADUNSIGNED", (void *)NULL);
+				"BADUNSIGNED", (char *)NULL);
 			return TCL_ERROR;
 		    }
 		}
@@ -999,7 +999,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);
