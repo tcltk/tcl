@@ -225,9 +225,37 @@ test string-2.35.$noComp {string compare, binary neq} {
 test string-2.36.$noComp {string compare, binary neq unequal length} {
     run {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
 } 1
-test string-2.37.$noComp {string compare with -length >= 2^32} {
-    run {string compare -length 4294967296 ab abde}
+test string-2.37.$noComp {string compare, big -length} {
+    if {[package vsatisfies [info patchlevel] 8.7-]} {
+      run {string compare -length 0x100000000 ab abde}
+    } else {
+      run {string compare -length 0x7fffffff ab abde}
+    }
 } -1
+test string-2.38a.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare "" [binary decode hex 00]}
+} -1
+test string-2.38b.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 "" [binary decode hex 00]}
+} -1
+test string-2.38c.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase "" [binary decode hex 00]}
+} -1
+test string-2.38d.$noComp {string compare empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare [binary decode hex 00] ""}
+} 1
+test string-2.38e.$noComp {string compare -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -length 1 [binary decode hex 00] ""}
+} 1
+test string-2.38f.$noComp {string compare -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string compare -nocase  [binary decode hex 00] ""}
+} 1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -369,11 +397,40 @@ test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
 test string-3.43.$noComp {string equal, big -length} {
-    run {string equal -length 4294967296 abc def}
+    if {[package vsatisfies [info patchlevel] 8.7-]} {
+      run {string equal -length 0x100000000 abc def}
+    } else {
+      run {string equal -length 0x7fffffff abc def}
+    }
 } 0
 test string-3.44.$noComp {string equal, bigger -length} -body {
     run {string equal -length 18446744073709551616 abc def}
 } -returnCodes 1 -result {integer value too large to represent}
+test string-3.45a.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal "" [binary decode hex 00]}
+} 0
+test string-3.45b.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 "" [binary decode hex 00]}
+} 0
+test string-3.45c.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase "" [binary decode hex 00]}
+} 0
+test string-3.45d.$noComp {string equal empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal [binary decode hex 00] ""}
+} 0
+test string-3.45e.$noComp {string equal -length empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -length 1 [binary decode hex 00] ""}
+} 0
+test string-3.45f.$noComp {string equal -nocase empty string against byte array} {
+    # Bug edb4b065f4
+    run {string equal -nocase  [binary decode hex 00] ""}
+} 0
+
 
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg

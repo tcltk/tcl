@@ -32,7 +32,7 @@ mp_err mp_prime_frobenius_underwood(const mp_int *N, mp_bool *result)
 
    *result = MP_NO;
 
-   if ((err = mp_init_multi(&T1z, &T2z, &Np1z, &sz, &tz, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&T1z, &T2z, &Np1z, &sz, &tz, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -124,7 +124,7 @@ mp_err mp_prime_frobenius_underwood(const mp_int *N, mp_bool *result)
    }
 
 LBL_FU_ERR:
-   mp_clear_multi(&tz, &sz, &Np1z, &T2z, &T1z, NULL);
+   mp_clear_multi(&tz, &sz, &Np1z, &T2z, &T1z, (void *)NULL);
    return err;
 }
 
