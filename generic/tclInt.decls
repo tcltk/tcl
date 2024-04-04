@@ -459,10 +459,10 @@ declare 177 {
 	    const char *operation, const char *reason)
 }
 declare 178 {deprecated {}} {
-    void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+    void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encoding)
 }
 declare 179 {deprecated {}} {
-    Tcl_Obj *TclGetStartupScript(const char **encodingNamePtr)
+    Tcl_Obj *TclGetStartupScript(const char **encodingPtr)
 }
 declare 182 {deprecated {}} {
      struct tm *TclpLocaltime(const time_t *clock)

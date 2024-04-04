@@ -925,7 +925,7 @@ TclJoinPath(
 		     */
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
-			    || (strchr(Tcl_GetString(elt), '\\') == NULL)) {
+			    || (strchr(TclGetString(elt), '\\') == NULL)) {
 
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len);
@@ -1840,7 +1840,7 @@ Tcl_FSGetNormalizedPath(
 	    copy = AppendPath(fsPathPtr->cwdPtr, pathPtr);
 
 	    (void) TclGetStringFromObj(fsPathPtr->cwdPtr, &cwdLen);
-	    cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
+	    cwdLen += (TclGetString(copy)[cwdLen] == '/');
 
 	    /*
 	     * Normalize the combined string, but only starting after the end
@@ -2286,7 +2286,7 @@ SetFsPathFromAny(
 			    "couldn't find HOME environment variable to"
 			    " expand path", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-			    "HOMELESS", (void *)NULL);
+			    "HOMELESS", (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2311,7 +2311,7 @@ SetFsPathFromAny(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "user \"%s\" doesn't exist", expandedUser));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		Tcl_DStringFree(&userName);
 		Tcl_DStringFree(&temp);
@@ -2630,7 +2630,7 @@ MakeTildeRelativePath(
                                      "couldn't find HOME environment variable to"
                                      " expand path", -1));
                 Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-                                 "HOMELESS", (void *)NULL);
+                                 "HOMELESS", (char *)NULL);
             }
             return TCL_ERROR;
         }
@@ -2642,7 +2642,7 @@ MakeTildeRelativePath(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                                      "user \"%s\" doesn't exist", user));
                 Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-                                 (void *)NULL);
+                                 (char *)NULL);
             }
             return TCL_ERROR;
 	}
@@ -2805,7 +2805,7 @@ TclResolveTildePathList(
      * Figure out if any paths need resolving to avoid unnecessary allocations.
      */
     for (i = 0; i < objc; ++i) {
-        path = Tcl_GetString(objv[i]);
+        path = TclGetString(objv[i]);
         if (path[0] == '~') {
             break; /* At least one path needs resolution */
         }
@@ -2817,7 +2817,7 @@ TclResolveTildePathList(
     resolvedPaths = Tcl_NewListObj(objc, NULL);
     for (i = 0; i < objc; ++i) {
 	Tcl_Obj *resolvedPath;
-        path = Tcl_GetString(objv[i]);
+        path = TclGetString(objv[i]);
 	if (path[0] == 0) {
 	    continue; /* Skip empty strings */
 	}

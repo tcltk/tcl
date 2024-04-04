@@ -415,7 +415,7 @@ static const char *TclGetStartupScriptFileName(void)
     if (path == NULL) {
 	return NULL;
     }
-    return Tcl_GetString(path);
+    return TclGetString(path);
 }
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS

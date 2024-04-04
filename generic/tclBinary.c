@@ -435,13 +435,13 @@ Tcl_GetBytesFromObj(
 
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		nonbyte = TclUtfAtIndex(TclGetString(objPtr), baPtr->bad);
 		TclUtfToUniChar(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected byte sequence but character %d "
 			"was '%1s' (U+%06X)", baPtr->bad, nonbyte, ucs4));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (char *)NULL);
 	    }
 	    return NULL;
 	}
@@ -2660,7 +2660,7 @@ BinaryDecodeHex(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -2729,7 +2729,7 @@ BinaryEncode64(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
-			"LINE_LENGTH", (void *)NULL);
+			"LINE_LENGTH", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    break;
@@ -2854,7 +2854,7 @@ BinaryEncodeUu(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
-			"LINE_LENGTH", (void *)NULL);
+			"LINE_LENGTH", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
@@ -2883,7 +2883,7 @@ BinaryEncodeUu(
 				    "invalid wrapchar; will defeat decoding",
 				    -1));
 			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", (void *)NULL);
+				    "ENCODE", "WRAPCHAR", (char *)NULL);
 			    return TCL_ERROR;
 		    }
 		}
@@ -3105,7 +3105,7 @@ BinaryDecodeUu(
 
   shortUu:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("short uuencode data"));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 
@@ -3118,7 +3118,7 @@ BinaryDecodeUu(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
@@ -3294,7 +3294,7 @@ BinaryDecode64(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid base64 character \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
