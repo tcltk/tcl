@@ -136,14 +136,14 @@ static Tcl_ThreadDataKey dataKey;
 void
 Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
-    const char *encoding)	/* Encoding of the data in that file */
+    const char *encodingName)	/* Encoding of the data in that file */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_Obj *newEncoding = NULL;
+    Tcl_Obj *encodingObj = NULL;
 
-    if (encoding != NULL) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
-	Tcl_IncrRefCount(newEncoding);
+    if (encodingName != NULL) {
+	encodingObj = Tcl_NewStringObj(encodingName, -1);
+	Tcl_IncrRefCount(encodingObj);
     }
 
     if (path != NULL) {
@@ -157,7 +157,7 @@ Tcl_SetStartupScript(
     if (tsdPtr->encoding != NULL) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
-    tsdPtr->encoding = newEncoding;
+    tsdPtr->encoding = encodingObj;
 }
 
 /*
@@ -172,7 +172,7 @@ Tcl_SetStartupScript(
  *	The path of the startup script; NULL if none has been set.
  *
  * Side effects:
- *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
+ *	If encodingNamePtr is not NULL, stores a (const char *) in it pointing to
  *	the encoding name registered for the startup script. Tcl retains
  *	ownership of the string, and may free it. Caller should make a copy
  *	for long-term use.
@@ -182,18 +182,18 @@ Tcl_SetStartupScript(
 
 Tcl_Obj *
 Tcl_GetStartupScript(
-    const char **encodingPtr)	/* When not NULL, points to storage for the
+    const char **encodingNamePtr)	/* When not NULL, points to storage for the
 				 * (const char *) that points to the
 				 * registered encoding name for the startup
 				 * script. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (encodingPtr != NULL) {
+    if (encodingNamePtr != NULL) {
 	if (tsdPtr->encoding != NULL) {
-	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
+	    *encodingNamePtr = Tcl_GetString(tsdPtr->encoding);
 	} else {
-	    *encodingPtr = NULL;
+	    *encodingNamePtr = NULL;
 	}
     }
     return tsdPtr->path;
