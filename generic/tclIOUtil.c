@@ -1658,7 +1658,7 @@ TclGetOpenModeEx(
  *
  *	Reads a file and evaluates it as a script.
  *
- *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encoding argument.
+ *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encodingName argument.
  *
  *	TclNREvalFile is an NRE-enabled version of Tcl_FSEvalFileEx.
  *
