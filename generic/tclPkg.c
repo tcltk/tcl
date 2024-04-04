@@ -153,7 +153,7 @@ Tcl_PkgProvideEx(
 	return TCL_OK;
     }
 
-    if (CheckVersionAndConvert(interp, Tcl_GetString(pkgPtr->version), &pvi,
+    if (CheckVersionAndConvert(interp, TclGetString(pkgPtr->version), &pvi,
 	    NULL) != TCL_OK) {
 	return TCL_ERROR;
     } else if (CheckVersionAndConvert(interp, version, &vi, NULL) != TCL_OK) {
@@ -173,7 +173,7 @@ Tcl_PkgProvideEx(
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "conflicting versions provided for package \"%s\": %s, then %s",
-	    name, Tcl_GetString(pkgPtr->version), version));
+	    name, TclGetString(pkgPtr->version), version));
     Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT", NULL);
     return TCL_ERROR;
 }
@@ -472,7 +472,7 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
      */
 
     if (reqc != 0) {
-	CheckVersionAndConvert(interp, Tcl_GetString(reqPtr->pkgPtr->version),
+	CheckVersionAndConvert(interp, TclGetString(reqPtr->pkgPtr->version),
 		&pkgVersionI, NULL);
 	satisfies = SomeRequirementSatisfied(pkgVersionI, reqc, reqv);
 
@@ -481,7 +481,7 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
 	if (!satisfies) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "version conflict for package \"%s\": have %s, need",
-		    name, Tcl_GetString(reqPtr->pkgPtr->version)));
+		    name, TclGetString(reqPtr->pkgPtr->version)));
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
 		    NULL);
 	    AddRequirementsToResult(interp, reqc, reqv);
@@ -694,7 +694,7 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
 	    char *pvi, *vi;
 
 	    if (TCL_OK != CheckVersionAndConvert(interp,
-		    Tcl_GetString(reqPtr->pkgPtr->version), &pvi, NULL)) {
+		    TclGetString(reqPtr->pkgPtr->version), &pvi, NULL)) {
 		result = TCL_ERROR;
 	    } else if (CheckVersionAndConvert(interp,
 		    versionToProvide, &vi, NULL) != TCL_OK) {
@@ -711,7 +711,7 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
 			    "attempt to provide package %s %s failed:"
 			    " package %s %s provided instead",
 			    name, versionToProvide,
-			    name, Tcl_GetString(reqPtr->pkgPtr->version)));
+			    name, TclGetString(reqPtr->pkgPtr->version)));
 		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
 			    "WRONGPROVIDE", NULL);
 		}
@@ -962,7 +962,7 @@ TclNRPackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = Tcl_GetStringFromObj(objv[3], &length);
+	argv3 = TclGetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -1003,7 +1003,7 @@ TclNRPackageObjCmd(
 		prevPtr->nextPtr = availPtr;
 	    }
 	}
-	argv4 = Tcl_GetStringFromObj(objv[4], &length);
+	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, (unsigned) length + 1);
 	break;
     }
@@ -1174,7 +1174,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		ckfree(iPtr->packageUnknown);
 	    }
-	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
+	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -1830,7 +1830,7 @@ AddRequirementsToResult(
     int i, length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
+	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {

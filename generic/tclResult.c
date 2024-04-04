@@ -491,7 +491,7 @@ Tcl_GetStringResult(
     Interp *iPtr = (Interp *) interp;
 
     if (*(iPtr->result) == 0) {
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
+	Tcl_SetResult(interp, Tcl_GetString(Tcl_GetObjResult(interp)),
 		TCL_VOLATILE);
     }
     return iPtr->result;

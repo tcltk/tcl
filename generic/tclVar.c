@@ -298,7 +298,7 @@ NotArrayError(
     Tcl_Interp *interp,
     Tcl_Obj *name)
 {
-    const char *nameStr = Tcl_GetString(name);
+    const char *nameStr = TclGetString(name);
 
     Tcl_SetObjResult(interp,
 	    Tcl_ObjPrintf("\"%s\" isn't an array", nameStr));

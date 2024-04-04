@@ -1487,7 +1487,7 @@ Tcl_SocketObjCmd(
     }
 
     for (a = 1; a < objc; a++) {
-	const char *arg = Tcl_GetString(objv[a]);
+	const char *arg = TclGetString(objv[a]);
 
 	if (arg[0] != '-') {
 	    break;
