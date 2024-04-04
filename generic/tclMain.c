@@ -172,7 +172,7 @@ Tcl_SetStartupScript(
  *	The path of the startup script; NULL if none has been set.
  *
  * Side effects:
- *	If encodingNamePtr is not NULL, stores a (const char *) in it pointing to
+ *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
  *	the encoding name registered for the startup script. Tcl retains
  *	ownership of the string, and may free it. Caller should make a copy
  *	for long-term use.
@@ -182,18 +182,18 @@ Tcl_SetStartupScript(
 
 Tcl_Obj *
 Tcl_GetStartupScript(
-    const char **encodingNamePtr)	/* When not NULL, points to storage for the
+    const char **encodingPtr)	/* When not NULL, points to storage for the
 				 * (const char *) that points to the
 				 * registered encoding name for the startup
 				 * script. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (encodingNamePtr != NULL) {
+    if (encodingPtr != NULL) {
 	if (tsdPtr->encoding != NULL) {
-	    *encodingNamePtr = Tcl_GetString(tsdPtr->encoding);
+	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
 	} else {
-	    *encodingNamePtr = NULL;
+	    *encodingPtr = NULL;
 	}
     }
     return tsdPtr->path;

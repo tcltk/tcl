@@ -1664,7 +1664,7 @@ EXTERN int		Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle);
 EXTERN void		Tcl_SetStartupScript(Tcl_Obj *path,
 				const char *encoding);
 /* 623 */
-EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingNamePtr);
+EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingPtr);
 /* 624 */
 EXTERN int		Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan,
 				int flags);
@@ -2502,7 +2502,7 @@ typedef struct TclStubs {
     int (*tcl_ZlibStreamClose) (Tcl_ZlibStream zshandle); /* 620 */
     int (*tcl_ZlibStreamReset) (Tcl_ZlibStream zshandle); /* 621 */
     void (*tcl_SetStartupScript) (Tcl_Obj *path, const char *encoding); /* 622 */
-    Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingNamePtr); /* 623 */
+    Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingPtr); /* 623 */
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
     int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
