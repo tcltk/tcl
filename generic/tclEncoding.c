@@ -517,13 +517,13 @@ FillEncodingFileMap(void)
 
 	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
-	    Tcl_Obj *encoding, *fileObj;
+	    Tcl_Obj *encodingName, *fileObj;
 
 	    fileObj = TclPathPart(NULL, filev[j], TCL_PATH_TAIL);
-	    encoding = TclPathPart(NULL, fileObj, TCL_PATH_ROOT);
-	    Tcl_DictObjPut(NULL, map, encoding, directory);
+	    encodingName = TclPathPart(NULL, fileObj, TCL_PATH_ROOT);
+	    Tcl_DictObjPut(NULL, map, encodingName, directory);
 	    Tcl_DecrRefCount(fileObj);
-	    Tcl_DecrRefCount(encoding);
+	    Tcl_DecrRefCount(encodingName);
 	}
 	Tcl_DecrRefCount(matchFileList);
 	Tcl_DecrRefCount(directory);

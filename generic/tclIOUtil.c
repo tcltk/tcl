@@ -1654,7 +1654,7 @@ TclGetOpenModeEx(
  *
  *	Reads a file and evaluates it as a script.
  *
- *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encoding argument.
+ *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encodingName argument.
  *
  *	TclNREvalFile is an NRE-enabled version of Tcl_FSEvalFileEx.
  *
@@ -1686,7 +1686,7 @@ Tcl_FSEvalFileEx(
     Tcl_Obj *pathPtr,		/* Pathname of the file to process.
 				 * Tilde-substitution is performed on this
 				 * pathname. */
-    const char *encoding)	/* Either the name of an encoding or NULL to
+    const char *encodingName)	/* Either the name of an encoding or NULL to
 				   use the utf-8 encoding. */
 {
     Tcl_Size length;
@@ -1729,10 +1729,10 @@ Tcl_FSEvalFileEx(
      * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encoding == NULL) {
-	encoding = "utf-8";
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 	    != TCL_OK) {
 	Tcl_Close(interp,chan);
 	return result;
@@ -1824,7 +1824,7 @@ TclNREvalFile(
     Tcl_Obj *pathPtr,		/* Pathname of a file containing the script to
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
-    const char *encoding)	/* The name of an encoding to use, or NULL to
+    const char *encodingName)	/* The name of an encoding to use, or NULL to
 				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
@@ -1865,10 +1865,10 @@ TclNREvalFile(
      * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encoding == NULL) {
-	encoding = "utf-8";
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 	    != TCL_OK) {
 	Tcl_Close(interp, chan);
 	return TCL_ERROR;
