@@ -24,7 +24,7 @@ Tcl_Main, Tcl_MainEx, Tcl_MainExW, Tcl_SetStartupScript, Tcl_GetStartupScript, T
 \fBTcl_SetStartupScript\fR(\fIpath, encoding\fR)
 .sp
 Tcl_Obj *
-\fBTcl_GetStartupScript\fR(\fIencodingNamePtr\fR)
+\fBTcl_GetStartupScript\fR(\fIencodingPtr\fR)
 .sp
 \fBTcl_SetMainLoop\fR(\fImainLoopProc\fR)
 .fi
@@ -46,7 +46,7 @@ The value for this argument is usually \fBTcl_AppInit\fR.
 Name of file to use as startup script, or NULL.
 .AP "const char" *encoding in
 Encoding of file to use as startup script, or NULL.
-.AP "const char" **encodingNamePtr out
+.AP "const char" **encodingPtr out
 If non-NULL, location to write a copy of the (const char *)
 pointing to the encoding name.
 .AP Tcl_MainLoopProc *mainLoopProc in
@@ -119,7 +119,7 @@ will not evaluate any startup script.
 and encoding set by the most recent \fBTcl_SetStartupScript\fR
 call in the same thread.  The stored file name is returned,
 and the stored encoding name is written to space pointed to
-by \fIencodingNamePtr\fR, when that is not NULL.
+by \fIencodingPtr\fR, when that is not NULL.
 .PP
 The file name and encoding values managed by the routines
 \fBTcl_SetStartupScript\fR and \fBTcl_GetStartupScript\fR
@@ -215,7 +215,7 @@ embedders, the stubs table must be first initialized using one of
 argument, and will increment the reference count of it.
 .PP
 \fBTcl_GetStartupScript\fR returns a value with reference count at least 1, or
-NULL. It's \fIencodingNamePtr\fR is also used (if non-NULL) to return a value with
+NULL. It's \fIencodingPtr\fR is also used (if non-NULL) to return a value with
 a reference count at least 1, or NULL. In both cases, the owner of the values
 is the current thread.
 .SH "SEE ALSO"
