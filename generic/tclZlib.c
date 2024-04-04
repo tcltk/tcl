@@ -442,7 +442,7 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
 		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
@@ -474,7 +474,7 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
-	valueStr = Tcl_GetStringFromObj(value, &len);
+	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
 		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
@@ -3439,14 +3439,14 @@ ZlibTransformGetOption(
 	    Tcl_DStringAppendElement(dsPtr, "-dictionary");
 	    if (cd->compDictObj) {
 		Tcl_DStringAppendElement(dsPtr,
-			Tcl_GetString(cd->compDictObj));
+			TclGetString(cd->compDictObj));
 	    } else {
 		Tcl_DStringAppendElement(dsPtr, "");
 	    }
 	} else {
 	    if (cd->compDictObj) {
 		int len;
-		const char *str = Tcl_GetStringFromObj(cd->compDictObj, &len);
+		const char *str = TclGetStringFromObj(cd->compDictObj, &len);
 
 		Tcl_DStringAppend(dsPtr, str, len);
 	    }
@@ -3467,7 +3467,7 @@ ZlibTransformGetOption(
 	ExtractHeader(&cd->inHeader.header, tmpObj);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-header");
-	    Tcl_DStringAppendElement(dsPtr, Tcl_GetString(tmpObj));
+	    Tcl_DStringAppendElement(dsPtr, TclGetString(tmpObj));
 	    Tcl_DecrRefCount(tmpObj);
 	} else {
 	    TclDStringAppendObj(dsPtr, tmpObj);
