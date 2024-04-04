@@ -1686,7 +1686,7 @@ Tcl_FSEvalFileEx(
     Tcl_Obj *pathPtr,		/* Pathname of the file to process.
 				 * Tilde-substitution is performed on this
 				 * pathname. */
-    const char *encodingName)	/* Either the name of an encoding or NULL to
+    const char *encoding)	/* Either the name of an encoding or NULL to
 				   use the utf-8 encoding. */
 {
     Tcl_Size length;
@@ -1706,14 +1706,14 @@ Tcl_FSEvalFileEx(
 	Tcl_SetErrno(errno);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
 
@@ -1729,10 +1729,10 @@ Tcl_FSEvalFileEx(
      * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName == NULL) {
-	encodingName = "utf-8";
+    if (encoding == NULL) {
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_Close(interp,chan);
 	return result;
@@ -1749,10 +1749,10 @@ Tcl_FSEvalFileEx(
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
 
     /*
      * If first character is not a BOM, append the remaining characters.
@@ -1764,7 +1764,7 @@ Tcl_FSEvalFileEx(
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
 
@@ -1824,7 +1824,7 @@ TclNREvalFile(
     Tcl_Obj *pathPtr,		/* Pathname of a file containing the script to
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
-    const char *encodingName)	/* The name of an encoding to use, or NULL to
+    const char *encoding)	/* The name of an encoding to use, or NULL to
 				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
@@ -1841,17 +1841,17 @@ TclNREvalFile(
 	Tcl_SetErrno(errno);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
+    TclPkgFileSeen(interp, TclGetString(pathPtr));
 
     /*
      * The eof character is \x1A (^Z). Tcl uses it on every platform to allow
@@ -1865,10 +1865,10 @@ TclNREvalFile(
      * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName == NULL) {
-	encodingName = "utf-8";
+    if (encoding == NULL) {
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_Close(interp, chan);
 	return TCL_ERROR;
@@ -1885,11 +1885,11 @@ TclNREvalFile(
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
 
     /*
      * If first character is not a BOM, append the remaining characters.
@@ -1901,7 +1901,7 @@ TclNREvalFile(
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -2235,7 +2235,7 @@ Tcl_FSOpenFileChannel(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"could not seek to end of file while opening \"%s\": %s",
-			Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
 	    Tcl_Close(NULL, retVal);
 	    return NULL;
@@ -2254,7 +2254,7 @@ Tcl_FSOpenFileChannel(
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't open \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
     }
     return NULL;
 }
@@ -3143,7 +3143,7 @@ skipUnlink(
 */
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(Tcl_GetString(shlibFile), &fs) == 0)
+	if ((statfs(TclGetString(shlibFile), &fs) == 0)
 		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
 	    return 1;
 	}
@@ -3219,7 +3219,7 @@ Tcl_LoadFile(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load library \"%s\": %s",
-		    Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -3832,7 +3832,7 @@ Tcl_FSSplitPath(
 
 	if (sep != NULL) {
 	    Tcl_IncrRefCount(sep);
-	    separator = Tcl_GetString(sep)[0];
+	    separator = TclGetString(sep)[0];
 	    Tcl_DecrRefCount(sep);
 	}
     }
@@ -3844,7 +3844,7 @@ Tcl_FSSplitPath(
      */
 
     TclNewObj(result);
-    p = Tcl_GetString(pathPtr);
+    p = TclGetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
     p += driveNameLength;
