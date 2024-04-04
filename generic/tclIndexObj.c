@@ -1020,6 +1020,7 @@ Tcl_ParseArgsObjv(
 				 * reporting. */
     Tcl_Size objc;		/* # arguments in objv still to process. */
     Tcl_Size length;		/* Number of characters in current argument */
+    Tcl_Size gf_ret;		/* Return value from Tcl_ArgvGenFuncProc*/
 
     if (remObjv != NULL) {
 	/*
@@ -1181,10 +1182,13 @@ Tcl_ParseArgsObjv(
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 
-	    objc = handlerProc(infoPtr->clientData, interp, (int)objc,
+	    gf_ret = handlerProc(infoPtr->clientData, interp, objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
-	    if (objc < 0) {
+	    if (gf_ret < 0) {
 		goto error;
+	    } else {
+		srcIndex += gf_ret;
+		objc -= gf_ret;
 	    }
 	    break;
 	}
