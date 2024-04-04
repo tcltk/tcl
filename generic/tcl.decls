@@ -2078,7 +2078,7 @@ declare 622 {
     void Tcl_SetStartupScript(Tcl_Obj *path, const char *encoding)
 }
 declare 623 {
-    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingPtr)
 }
 
 # TIP#332 (half-close made public) aferrieux
