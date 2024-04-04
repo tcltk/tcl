@@ -1,10 +1,10 @@
 #include "tommath_private.h"
-#ifdef BN_MP_DIV_3_C
+#ifdef BN_S_MP_DIV_3_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
 /* divide by three (based on routine from MPI and the GMP manual) */
-mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d)
+mp_err s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d)
 {
    mp_int   q;
    mp_word  w, t;
