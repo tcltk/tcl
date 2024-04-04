@@ -8419,7 +8419,7 @@ static int
 ParseMedia(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Size),
     Tcl_Obj *const *objv,
     void *dstPtr)
 {
