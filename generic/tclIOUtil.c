@@ -1725,7 +1725,7 @@ Tcl_FSEvalFileEx(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
     Tcl_Obj *pathPtr,		/* Path of file to process. Tilde-substitution
 				 * will be performed on this name. */
-    const char *encoding)	/* If non-NULL, then use this encoding for the
+    const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
     int length, result = TCL_ERROR;
@@ -1767,8 +1767,8 @@ Tcl_FSEvalFileEx(
      * it (and use the system encoding) Report error on unknown encoding.
      */
 
-    if (encoding != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
+    if (encodingName != NULL) {
+	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
 	    Tcl_Close(interp,chan);
 	    return result;
@@ -1861,7 +1861,7 @@ TclNREvalFile(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
     Tcl_Obj *pathPtr,		/* Path of file to process. Tilde-substitution
 				 * will be performed on this name. */
-    const char *encoding)	/* If non-NULL, then use this encoding for the
+    const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
     Tcl_StatBuf statBuf;
@@ -1901,8 +1901,8 @@ TclNREvalFile(
      * it (and use the system encoding) Report error on unknown encoding.
      */
 
-    if (encoding != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
+    if (encodingName != NULL) {
+	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
 	    Tcl_Close(interp,chan);
 	    return TCL_ERROR;
