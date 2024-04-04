@@ -2625,7 +2625,7 @@ not_match:
 	"input string \"%s\" does not match supplied format \"%s\","
 	" locale \"%s\" - token \"%s\"",
 	info->dateStart, HashEntry4FmtScn(fss)->key.string,
-        Tcl_GetString(opts->localeObj),
+        TclGetString(opts->localeObj),
         tok && tok->tokWord.start ? tok->tokWord.start : "NULL"));
   #endif
     Tcl_SetErrorCode(opts->interp, "CLOCK", "badInputString", (char *)NULL);
