@@ -1563,7 +1563,7 @@ EXTERN void		Tcl_GetCommandFullName(Tcl_Interp *interp,
 				Tcl_Command command, Tcl_Obj *objPtr);
 /* 518 */
 EXTERN int		Tcl_FSEvalFileEx(Tcl_Interp *interp,
-				Tcl_Obj *fileName, const char *encoding);
+				Tcl_Obj *fileName, const char *encodingName);
 /* 519 */
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 /* 520 */
@@ -2572,7 +2572,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_FindCommand) (Tcl_Interp *interp, const char *name, Tcl_Namespace *contextNsPtr, int flags); /* 515 */
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
-    int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encoding); /* 518 */
+    int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
     TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, void *clientData); /* 521 */

@@ -1105,14 +1105,14 @@ TclNRSourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *encoding = NULL;
+    const char *encodingName = NULL;
     Tcl_Obj *fileName;
     int result;
     void **pkgFiles = NULL;
     void *names = NULL;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding encoding? fileName");
 	return TCL_ERROR;
     }
 
@@ -1128,7 +1128,7 @@ TclNRSourceObjCmd(
 		"option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
-	encoding = TclGetString(objv[2]);
+	encodingName = TclGetString(objv[2]);
     } else if (objc == 3) {
 	/* Handle undocumented -nopkg option. This should only be
 	 * used by the internal ::tcl::Pkg::source utility function. */
@@ -1147,7 +1147,7 @@ TclNRSourceObjCmd(
 	names = *pkgFiles;
 	*pkgFiles = NULL;
     }
-    result = TclNREvalFile(interp, fileName, encoding);
+    result = TclNREvalFile(interp, fileName, encodingName);
     if (pkgFiles) {
 	/* restore "tclPkgFiles" assocdata to how it was. */
 	*pkgFiles = names;
