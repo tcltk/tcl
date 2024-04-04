@@ -820,13 +820,13 @@ Tcl_AfterObjCmd(
     if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
-            const char *arg = Tcl_GetString(objv[1]);
+            const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"
                     " cancel, idle, info, or an integer", arg));
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
-                    arg, (void *)NULL);
+                    arg, (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -965,7 +965,7 @@ Tcl_AfterObjCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "event \"%s\" doesn't exist", eventStr));
-            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (void *)NULL);
+            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultListPtr;

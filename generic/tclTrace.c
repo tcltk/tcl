@@ -335,7 +335,7 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 	TclNewObj(resultListPtr);
-	name = Tcl_GetString(objv[2]);
+	name = TclGetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 	    char *q = ops;
@@ -384,7 +384,7 @@ Tcl_TraceObjCmd(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad operations \"%s\": should be one or more of rwua",
 	    flagOps));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", (char *)NULL);
     return TCL_ERROR;
 #endif
 }
@@ -452,7 +452,7 @@ TraceExecutionObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " enter, leave, enterstep, or leavestep", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    (void *)NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
@@ -496,7 +496,7 @@ TraceExecutionObjCmd(
 		flags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 	    }
 	    memcpy(tcmdPtr->command, command, length+1);
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
 		ckfree(tcmdPtr);
@@ -515,7 +515,7 @@ TraceExecutionObjCmd(
 	     * First ensure the name given is valid.
 	     */
 
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    if (Tcl_FindCommand(interp,name,NULL,TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
@@ -576,7 +576,7 @@ TraceExecutionObjCmd(
 	    return TCL_ERROR;
 	}
 
-	name = Tcl_GetString(objv[3]);
+	name = TclGetString(objv[3]);
 
 	/*
 	 * First ensure the name given is valid.
@@ -699,7 +699,7 @@ TraceCommandObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " delete or rename", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    (void *)NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
@@ -734,7 +734,7 @@ TraceCommandObjCmd(
 	    tcmdPtr->refCount = 1;
 	    flags |= TCL_TRACE_DELETE;
 	    memcpy(tcmdPtr->command, command, length+1);
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    if (Tcl_TraceCommand(interp, name, flags, TraceCommandProc,
 		    tcmdPtr) != TCL_OK) {
 		ckfree(tcmdPtr);
@@ -753,7 +753,7 @@ TraceCommandObjCmd(
 	     * First ensure the name given is valid.
 	     */
 
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    if (Tcl_FindCommand(interp,name,NULL,TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
@@ -789,7 +789,7 @@ TraceCommandObjCmd(
 	 * First ensure the name given is valid.
 	 */
 
-	name = Tcl_GetString(objv[3]);
+	name = TclGetString(objv[3]);
 	if (Tcl_FindCommand(interp, name, NULL, TCL_LEAVE_ERR_MSG) == NULL) {
 	    return TCL_ERROR;
 	}
@@ -903,7 +903,7 @@ TraceVariableObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " array, read, unset, or write", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    (void *)NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
@@ -948,7 +948,7 @@ TraceVariableObjCmd(
 	    ctvarPtr->traceInfo.traceProc = TraceVarProc;
 	    ctvarPtr->traceInfo.clientData = &ctvarPtr->traceCmdInfo;
 	    ctvarPtr->traceInfo.flags = flags;
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    if (TraceVarEx(interp, name, NULL, (VarTrace *) ctvarPtr)
 		    != TCL_OK) {
 		ckfree(ctvarPtr);
@@ -961,7 +961,7 @@ TraceVariableObjCmd(
 	     * first one that matches.
 	     */
 
-	    name = Tcl_GetString(objv[3]);
+	    name = TclGetString(objv[3]);
 	    FOREACH_VAR_TRACE(interp, name, clientData) {
 		TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
@@ -991,7 +991,7 @@ TraceVariableObjCmd(
 	}
 
 	TclNewObj(resultListPtr);
-	name = Tcl_GetString(objv[3]);
+	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
@@ -1854,7 +1854,7 @@ TraceExecutionProc(
 
 	    Tcl_DStringInit(&sub);
 	    for (i = 0; i < objc; i++) {
-		Tcl_DStringAppendElement(&sub, Tcl_GetString(objv[i]));
+		Tcl_DStringAppendElement(&sub, TclGetString(objv[i]));
 	    }
 	    Tcl_DStringAppendElement(&cmd, Tcl_DStringValue(&sub));
 	    Tcl_DStringFree(&sub);
@@ -1878,7 +1878,7 @@ TraceExecutionProc(
 		 */
 
 		TclNewIntObj(resultCode, code);
-		resultCodeStr = Tcl_GetString(resultCode);
+		resultCodeStr = TclGetString(resultCode);
 		Tcl_DStringAppendElement(&cmd, resultCodeStr);
 		Tcl_DecrRefCount(resultCode);
 
@@ -2296,7 +2296,7 @@ StringTraceProc(
     argv = (const char **) TclStackAlloc(interp,
 	    (objc + 1) * sizeof(const char *));
     for (i = 0; i < objc; i++) {
-	argv[i] = Tcl_GetString(objv[i]);
+	argv[i] = TclGetString(objv[i]);
     }
     argv[objc] = 0;
 
@@ -2802,7 +2802,7 @@ TclCallVarTraces(
 		    (part2 ? ")" : "") ));
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, verb,
-			Tcl_GetString((Tcl_Obj *) result));
+			TclGetString((Tcl_Obj *) result));
 	    } else {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, verb, result);
 	    }

@@ -178,7 +178,7 @@ Tcl_LoadObjCmd(
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fullFileName = Tcl_GetString(objv[1]);
+    fullFileName = TclGetString(objv[1]);
 
     Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&initName);
@@ -189,7 +189,7 @@ Tcl_LoadObjCmd(
 
     prefix = NULL;
     if (objc >= 3) {
-	prefix = Tcl_GetString(objv[2]);
+	prefix = TclGetString(objv[2]);
 	if (prefix[0] == '\0') {
 	    prefix = NULL;
 	}
@@ -198,7 +198,7 @@ Tcl_LoadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -209,7 +209,7 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	const char *childIntName = Tcl_GetString(objv[3]);
+	const char *childIntName = TclGetString(objv[3]);
 
 	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
@@ -266,7 +266,7 @@ Tcl_LoadObjCmd(
 		    "file \"%s\" is already loaded for prefix \"%s\"",
 		    fullFileName, libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-		    "SPLITPERSONALITY", (void *)NULL);
+		    "SPLITPERSONALITY", (char *)NULL);
 	    code = TCL_ERROR;
 	    Tcl_MutexUnlock(&libraryMutex);
 	    goto done;
@@ -303,7 +303,7 @@ Tcl_LoadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no library with prefix \"%s\" is loaded statically", prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -333,7 +333,7 @@ Tcl_LoadObjCmd(
 
 	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 	    Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
-	    pkgGuess = Tcl_GetString(pkgGuessPtr);
+	    pkgGuess = TclGetString(pkgGuessPtr);
 	    if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 		    && (pkgGuess[2] == 'b')) {
 		pkgGuess += 3;
@@ -366,7 +366,7 @@ Tcl_LoadObjCmd(
 			"couldn't figure out prefix for %s",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-			"WHATLIBRARY", (void *)NULL);
+			"WHATLIBRARY", (char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -462,7 +462,7 @@ Tcl_LoadObjCmd(
 		    "can't use library in a safe interpreter: no"
 		    " %s_SafeInit procedure", libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -473,7 +473,7 @@ Tcl_LoadObjCmd(
 		    "can't attach library to interpreter: no %s_Init procedure",
 		    libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -580,7 +580,7 @@ Tcl_UnloadObjCmd(
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    fullFileName = Tcl_GetString(objv[i]);
+	    fullFileName = TclGetString(objv[i]);
 	    if (fullFileName[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -620,13 +620,13 @@ Tcl_UnloadObjCmd(
 	return TCL_ERROR;
     }
 
-    fullFileName = Tcl_GetString(objv[i]);
+    fullFileName = TclGetString(objv[i]);
     Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&tmp);
 
     prefix = NULL;
     if (objc - i >= 2) {
-	prefix = Tcl_GetString(objv[i+1]);
+	prefix = TclGetString(objv[i+1]);
 	if (prefix[0] == '\0') {
 	    prefix = NULL;
 	}
@@ -635,7 +635,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -646,7 +646,7 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	const char *childIntName = Tcl_GetString(objv[i + 2]);
+	const char *childIntName = TclGetString(objv[i + 2]);
 
 	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
@@ -705,7 +705,7 @@ Tcl_UnloadObjCmd(
 		"library with prefix \"%s\" is loaded statically and cannot be unloaded",
 		prefix));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -717,7 +717,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"file \"%s\" has never been loaded", fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -747,7 +747,7 @@ Tcl_UnloadObjCmd(
 		"file \"%s\" has never been loaded in this interpreter",
 		fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -810,7 +810,7 @@ UnloadLibrary(
 			"file \"%s\" cannot be unloaded under a safe interpreter",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(void *)NULL);
+			(char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -823,7 +823,7 @@ UnloadLibrary(
 			"file \"%s\" cannot be unloaded under a trusted interpreter",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(void *)NULL);
+			(char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }

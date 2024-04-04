@@ -488,10 +488,10 @@ EXTERN void		TclVarErrMsg(Tcl_Interp *interp, const char *part1,
 /* 178 */
 TCL_DEPRECATED("")
 void			TclSetStartupScript(Tcl_Obj *pathPtr,
-				const char *encodingName);
+				const char *encoding);
 /* 179 */
 TCL_DEPRECATED("")
-Tcl_Obj *		TclGetStartupScript(const char **encodingNamePtr);
+Tcl_Obj *		TclGetStartupScript(const char **encodingPtr);
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 /* 182 */
@@ -872,8 +872,8 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) (Interp *iPtr, Var *arrayPtr, Var *varPtr, const char *part1, const char *part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var *varPtr, Var *arrayPtr); /* 176 */
     void (*tclVarErrMsg) (Tcl_Interp *interp, const char *part1, const char *part2, const char *operation, const char *reason); /* 177 */
-    TCL_DEPRECATED_API("") void (*tclSetStartupScript) (Tcl_Obj *pathPtr, const char *encodingName); /* 178 */
-    TCL_DEPRECATED_API("") Tcl_Obj * (*tclGetStartupScript) (const char **encodingNamePtr); /* 179 */
+    TCL_DEPRECATED_API("") void (*tclSetStartupScript) (Tcl_Obj *pathPtr, const char *encoding); /* 178 */
+    TCL_DEPRECATED_API("") Tcl_Obj * (*tclGetStartupScript) (const char **encodingPtr); /* 179 */
     void (*reserved180)(void);
     void (*reserved181)(void);
     TCL_DEPRECATED_API("") struct tm * (*tclpLocaltime) (const time_t *clock); /* 182 */
