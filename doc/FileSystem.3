@@ -428,8 +428,8 @@ its contents as a Tcl script. It returns the same information as
 \fBTcl_EvalObjEx\fR.
 If \fIencoding\fR is NULL, the utf-8 encoding and the
 strict profile is used for reading the file contents.
-If \fIencoding\fR is set to \fBTCL_SHELL_PROFILE_STRICT\fR,
-\fBTCL_SHELL_PROFILE_REPLACE\fR or \fBTCL_SHELL_PROFILE_TCL8\fR, the
+If \fIencoding\fR is set to \fBTCL_ENCODING_UTF8_STRICT\fR,
+\fBTCL_ENCODING_UTF8_REPLACE\fR or \fBTCL_ENCODING_UTF8_TCL8\fR, the
 profile is set to the given value, the encoding is utf-8.
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.

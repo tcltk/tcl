@@ -133,22 +133,22 @@ static Tcl_ThreadDataKey dataKey;
  *----------------------------------------------------------------------
  */
 
-#define IS_ENCODING(encoding) ((encoding) && (((encoding) < TCL_SHELL_PROFILE_TCL8) \
-	|| ((encoding) > TCL_SHELL_PROFILE_STRICT)))
+#define IS_ENCODING(encoding) ((encoding) && (((encoding) < TCL_ENCODING_UTF8_TCL8) \
+	|| ((encoding) > TCL_ENCODING_UTF8_STRICT)))
 
 void
 Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
-    const char *encoding)	/* Encoding of the data in that file */
+    const char *encodingName)	/* Encoding of the data in that file */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_Obj *newEncoding;
+    Tcl_Obj *encodingObj;
 
-    if (IS_ENCODING(encoding)) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
-	Tcl_IncrRefCount(newEncoding);
+    if (IS_ENCODING(encodingName)) {
+	encodingObj = Tcl_NewStringObj(encodingName, -1);
+	Tcl_IncrRefCount(encodingObj);
     } else {
-	newEncoding = (Tcl_Obj *)encoding;
+	encodingObj = (Tcl_Obj *)encodingName;
     }
 
     if (path != NULL) {
@@ -162,7 +162,7 @@ Tcl_SetStartupScript(
     if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
-    tsdPtr->encoding = newEncoding;
+    tsdPtr->encoding = encodingObj;
 }
 
 /*
@@ -187,7 +187,7 @@ Tcl_SetStartupScript(
 
 Tcl_Obj *
 Tcl_GetStartupScript(
-    const char **encodingPtr)	/* When not NULL or TCL_SHELL_PROFILE_????,
+    const char **encodingPtr)	/* When not NULL or TCL_ENCODING_UTF8_????,
 				 * points to storage for the (const char *) that points to
 				 * the registered encoding name for the startup script. */
 {
@@ -336,9 +336,9 @@ Tcl_MainEx(
 	} else if ((argc >= 3) && (0 == _tcscmp(TEXT("-profile"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    if (0 == _tcscmp(TEXT("tcl8"), argv[2])) {
-		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_TCL8);
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_ENCODING_UTF8_TCL8);
 	    } else if (0 == _tcscmp(TEXT("replace"), argv[2])) {
-		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_SHELL_PROFILE_REPLACE);
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_ENCODING_UTF8_REPLACE);
 	    } else {
 		Tcl_SetStartupScript(NewNativeObj(argv[3]), NULL);
 	    }

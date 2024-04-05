@@ -1133,9 +1133,9 @@ TclNRSourceObjCmd(
 		return TCL_ERROR;
 	    }
 	    if (id == TCL_ENCODING_PROFILE_TCL8) {
-		encoding = TCL_SHELL_PROFILE_TCL8;
+		encoding = TCL_ENCODING_UTF8_TCL8;
 	    } else if (id == TCL_ENCODING_PROFILE_REPLACE) {
-		encoding = TCL_SHELL_PROFILE_REPLACE;
+		encoding = TCL_ENCODING_UTF8_REPLACE;
 	    } else {
 		encoding = NULL;
 	    }

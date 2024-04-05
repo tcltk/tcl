@@ -2031,9 +2031,9 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
-#define TCL_SHELL_PROFILE_STRICT      ((const char *)-1)
-#define TCL_SHELL_PROFILE_REPLACE     ((const char *)-2)
-#define TCL_SHELL_PROFILE_TCL8        ((const char *)-3)
+#define TCL_ENCODING_UTF8_STRICT      ((const char *)-1)
+#define TCL_ENCODING_UTF8_REPLACE     ((const char *)-2)
+#define TCL_ENCODING_UTF8_TCL8        ((const char *)-3)
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2194,8 +2194,8 @@ typedef struct {
 
 typedef int (Tcl_ArgvFuncProc)(void *clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
-	int objc, Tcl_Obj *const *objv, void *dstPtr);
+typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
+	Tcl_Size objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
  * Shorthand for commonly used argTable entries.

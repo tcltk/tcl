@@ -1654,7 +1654,7 @@ TclGetOpenMode(
  *
  *	Reads a file and evaluates it as a script.
  *
- *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encoding argument.
+ *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encodingName argument.
  *
  *	TclNREvalFile is an NRE-enabled version of Tcl_FSEvalFileEx.
  *
@@ -1687,8 +1687,8 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encoding)	/* Either the name of an encoding or NULL to
-				   use the utf-8 encoding. May also be TCL_SHELL_PROFILE_STRICT,
-				   TCL_SHELL_PROFILE_REPLACE, or TCL_SHELL_PROFILE_TCL8,
+				   use the utf-8 encoding. May also be TCL_ENCODING_UTF8_STRICT,
+				   TCL_ENCODING_UTF8_REPLACE, or TCL_ENCODING_UTF8_TCL8,
 				   for specifying the profile. */
 {
     Tcl_Size length;
@@ -1732,12 +1732,12 @@ Tcl_FSEvalFileEx(
      * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encoding == NULL || encoding == TCL_SHELL_PROFILE_STRICT) {
+    if (encoding == NULL || encoding == TCL_ENCODING_UTF8_STRICT) {
 	goto utf8;
-    } else if (encoding == TCL_SHELL_PROFILE_REPLACE) {
+    } else if (encoding == TCL_ENCODING_UTF8_REPLACE) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 	goto utf8;
-    } else if (encoding == TCL_SHELL_PROFILE_TCL8) {
+    } else if (encoding == TCL_ENCODING_UTF8_TCL8) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
     utf8:
 	encoding = "utf-8";
@@ -1876,12 +1876,12 @@ TclNREvalFile(
      * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encoding == NULL || encoding == TCL_SHELL_PROFILE_STRICT) {
+    if (encoding == NULL || encoding == TCL_ENCODING_UTF8_STRICT) {
 	goto utf8;
-    } else if (encoding == TCL_SHELL_PROFILE_REPLACE) {
+    } else if (encoding == TCL_ENCODING_UTF8_REPLACE) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 	goto utf8;
-    } else if (encoding == TCL_SHELL_PROFILE_TCL8) {
+    } else if (encoding == TCL_ENCODING_UTF8_TCL8) {
 	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
     utf8:
 	encoding = "utf-8";

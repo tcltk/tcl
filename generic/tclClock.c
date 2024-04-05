@@ -991,7 +991,7 @@ ClockConfigureObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i++], options,
 	    "option", 0, &optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i-1]), (char *)NULL);
+		    TclGetString(objv[i-1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -3458,7 +3458,7 @@ ClockParseFmtScnArgs(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer but got \"%s\"",
-		    Tcl_GetString(baseObj)));
+		    TclGetString(baseObj)));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    i = 1;
 	    goto badOption;
@@ -3524,7 +3524,7 @@ badOptionMsg:
 badOption:
 
     Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-	    (i < objc) ? Tcl_GetString(objv[i]) : (char *)NULL, (char *)NULL);
+	    (i < objc) ? TclGetString(objv[i]) : (char *)NULL, (char *)NULL);
 
     return TCL_ERROR;
 }
@@ -4004,13 +4004,13 @@ ClockFreeScan(
      * structure, e. g. yySecondOfDay -> info->date.secondOfDay or
      *			yyMonth -> info->date.month (same as yydate.month)
      */
-    yyInput = Tcl_GetString(strObj);
+    yyInput = TclGetString(strObj);
 
     if (TclClockFreeScan(interp, info) != TCL_OK) {
 	Tcl_Obj *msg;
 	TclNewObj(msg);
 	Tcl_AppendPrintfToObj(msg, "unable to convert date-time string \"%s\": %s",
-	    Tcl_GetString(strObj), TclGetString(Tcl_GetObjResult(interp)));
+	    TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp)));
 	Tcl_SetObjResult(interp, msg);
 	goto done;
     }
