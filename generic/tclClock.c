@@ -3437,25 +3437,19 @@ ClockParseFmtScnArgs(
 
     /* Base (by scan or add) or clock value (by format) */
 
+    /* we accept "-now" as current date-time */
+    static const char *const nowOpts[] = {
+	"-now", NULL
+    };
+    int idx;
+
     if (opts->baseObj != NULL) {
 	Tcl_Obj *baseObj = opts->baseObj;
 	/* bypass integer recognition if looks like option "-now" */
-	if (
-	    (baseObj->length == 4 && baseObj->bytes && *(baseObj->bytes+1) == 'n') ||
-	    TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK
-	) {
-
-	    /* we accept "-now" as current date-time */
-	    static const char *const nowOpts[] = {
-		"-now", NULL
-	    };
-	    int idx;
-	    if (Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds or -now",
-		    TCL_EXACT, &idx) == TCL_OK
-	    ) {
-		goto baseNow;
-	    }
-
+	if (Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds or -now", TCL_EXACT, &idx) == TCL_OK) {
+	    goto baseNow;
+	}
+	if (TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer but got \"%s\"",
 		    TclGetString(baseObj)));
