@@ -15,7 +15,7 @@ source \- Evaluate a file or resource as a Tcl script
 .SH SYNOPSIS
 \fBsource \fIfileName\fR
 .sp
-\fBsource\fR \fB\-encoding \fIencoding fileName\fR
+\fBsource\fR \fB\-encoding \fIencodingName fileName\fR
 .BE
 .SH DESCRIPTION
 .PP

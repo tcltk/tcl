@@ -1663,7 +1663,7 @@ declare 517 {
 # TIP#137 (encoding-aware source command) dgp for Anton Kovalenko
 declare 518 {
     int Tcl_FSEvalFileEx(Tcl_Interp *interp, Tcl_Obj *fileName,
-	    const char *encoding)
+	    const char *encodingName)
 }
 
 # TIP#143 (resource limits) dkf
