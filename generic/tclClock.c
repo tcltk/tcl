@@ -3447,7 +3447,7 @@ ClockParseFmtScnArgs(
 	Tcl_Obj *baseObj = opts->baseObj;
 	/* bypass integer recognition if looks like option "-now" */
 	if ((baseObj->typePtr != &tclIntType)
-		&& Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds or -now", TCL_EXACT, &idx) == TCL_OK) {
+		&& Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "", TCL_EXACT, &idx) == TCL_OK) {
 	    goto baseNow;
 	}
 	if (TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK) {
