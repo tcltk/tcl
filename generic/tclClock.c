@@ -3322,7 +3322,7 @@ ClockParseFmtScnArgs(
     };
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
-    int i;
+    int i, baseIdx;
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
     if ( flags & (CLC_SCN_ARGS) ) {
@@ -3330,7 +3330,7 @@ ClockParseFmtScnArgs(
     	opts->flags |= dataPtr->defFlags & (CLF_VALIDATE);
     } else {
     	/* clock value (as current base) */
-	opts->baseObj = objv[1];
+	opts->baseObj = objv[(baseIdx = 1)];
 	saw |= (1 << CLC_ARGS_BASE);
     }
 
@@ -3382,7 +3382,7 @@ ClockParseFmtScnArgs(
 	    opts->timezoneObj = objv[i+1];
 	    break;
 	case CLC_ARGS_BASE:
-	    opts->baseObj = objv[i+1];
+	    opts->baseObj = objv[(baseIdx = i+1)];
 	    break;
 	case CLC_ARGS_VALIDATE:
 	    if ( !(flags & CLC_SCN_ARGS) ) {
@@ -3441,7 +3441,7 @@ ClockParseFmtScnArgs(
 	Tcl_Obj *baseObj = opts->baseObj;
 	/* bypass integer recognition if looks like option "-now" */
 	if (
-	    (baseObj->length == 4 && baseObj->bytes && *(baseObj->bytes+1) == 'n') ||
+	    (baseObj->bytes && baseObj->length == 4 && *(baseObj->bytes+1) == 'n') ||
 	    TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK
 	) {
 
@@ -3450,17 +3450,18 @@ ClockParseFmtScnArgs(
 		"-now", NULL
 	    };
 	    int idx;
-	    if (Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds or -now",
+	    if (Tcl_GetIndexFromObj(interp, baseObj, nowOpts, "seconds",
 		    TCL_EXACT, &idx) == TCL_OK
 	    ) {
 		goto baseNow;
 	    }
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "expected integer but got \"%s\"",
-		    TclGetString(baseObj)));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
-	    i = 1;
+	    if (baseObj->typePtr == &tclBignumType) {
+		goto baseOverflow;
+	    }
+
+	    Tcl_AppendResult(interp, " or integer", NULL);
+	    i = baseIdx;
 	    goto badOption;
 	}
 	/*
@@ -3474,8 +3475,10 @@ ClockParseFmtScnArgs(
 	if ( baseObj->typePtr == &tclBignumType
 	  || baseVal < TCL_MIN_SECONDS || baseVal > TCL_MAX_SECONDS
 	) {
+baseOverflow:
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	    return TCL_ERROR;
+	    i = baseIdx;
+	    goto badOption;
 	}
 
     } else {
