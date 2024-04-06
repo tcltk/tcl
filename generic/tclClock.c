@@ -3456,12 +3456,11 @@ ClockParseFmtScnArgs(
 		goto baseNow;
 	    }
 
-	    if (baseObj->typePtr != &tclBignumType) {
-		Tcl_AppendResult(interp, " or integer", NULL);
-	    } else {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "expected integer but got \"%s\"", TclGetString(baseObj)));
+	    if (baseObj->typePtr == &tclBignumType) {
+		goto baseOverflow;
 	    }
+
+	    Tcl_AppendResult(interp, " or integer", NULL);
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -3476,8 +3475,10 @@ ClockParseFmtScnArgs(
 	if ( baseObj->typePtr == &tclBignumType
 	  || baseVal < TCL_MIN_SECONDS || baseVal > TCL_MAX_SECONDS
 	) {
+baseOverflow:
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
-	    return TCL_ERROR;
+	    i = baseIdx;
+	    goto badOption;
 	}
 
     } else {
