@@ -74,7 +74,7 @@ typedef struct {
 				 * routines to [source] as a startup script,
 				 * or NULL for none set, meaning enter
 				 * interactive mode. */
-    Tcl_Obj *encoding;		/* The encoding of the startup script file. */
+    Tcl_Obj *encoding;		/* The encoding or profile of the startup script file. */
     Tcl_MainLoopProc *mainLoopProc;
 				/* Any installed main loop handler. The main
 				 * extension that installs these is Tk. */
@@ -133,17 +133,22 @@ static Tcl_ThreadDataKey dataKey;
  *----------------------------------------------------------------------
  */
 
+#define IS_ENCODING(encoding) ((encoding) && (((encoding) < TCL_ENCODING_UTF8_TCL8) \
+	|| ((encoding) > TCL_ENCODING_UTF8_STRICT)))
+
 void
 Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
     const char *encodingName)	/* Encoding of the data in that file */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_Obj *encodingObj = NULL;
+    Tcl_Obj *encodingObj;
 
-    if (encodingName != NULL) {
+    if (IS_ENCODING(encodingName)) {
 	encodingObj = Tcl_NewStringObj(encodingName, -1);
 	Tcl_IncrRefCount(encodingObj);
+    } else {
+	encodingObj = (Tcl_Obj *)encodingName;
     }
 
     if (path != NULL) {
@@ -154,7 +159,7 @@ Tcl_SetStartupScript(
     }
     tsdPtr->path = path;
 
-    if (tsdPtr->encoding != NULL) {
+    if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
     tsdPtr->encoding = encodingObj;
@@ -172,28 +177,27 @@ Tcl_SetStartupScript(
  *	The path of the startup script; NULL if none has been set.
  *
  * Side effects:
- *	If encodingPtr is not NULL, stores a (const char *) in it pointing to
- *	the encoding name registered for the startup script. Tcl retains
- *	ownership of the string, and may free it. Caller should make a copy
- *	for long-term use.
+ *	If encodingPtr is not NULL, stores a (const char *) in it pointing
+ *	to the encoding name or profile registered for the startup script.
+ *	Tcl retains ownership of the string, and may free it. Caller
+ *	should make a copy for long-term use.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Obj *
 Tcl_GetStartupScript(
-    const char **encodingPtr)	/* When not NULL, points to storage for the
-				 * (const char *) that points to the
-				 * registered encoding name for the startup
-				 * script. */
+    const char **encodingPtr)	/* When not NULL or TCL_ENCODING_UTF8_????,
+				 * points to storage for the (const char *) that points to
+				 * the registered encoding name for the startup script. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (tsdPtr->encoding != NULL) {
+	if (IS_ENCODING((const char *)tsdPtr->encoding)) {
 	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
 	} else {
-	    *encodingPtr = NULL;
+	    *encodingPtr = (const char *)tsdPtr->encoding;
 	}
     }
     return tsdPtr->path;
@@ -286,7 +290,7 @@ Tcl_MainEx(
 {
     Tcl_Size i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
-    const char *encodingName = NULL;
+    const char *encoding = NULL;
     int code, exitCode = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
@@ -329,6 +333,17 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
+	} else if ((argc >= 3) && (0 == _tcscmp(TEXT("-profile"), argv[1]))
+		&& ('-' != argv[3][0])) {
+	    if (0 == _tcscmp(TEXT("tcl8"), argv[2])) {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_ENCODING_UTF8_TCL8);
+	    } else if (0 == _tcscmp(TEXT("replace"), argv[2])) {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), TCL_ENCODING_UTF8_REPLACE);
+	    } else {
+		Tcl_SetStartupScript(NewNativeObj(argv[3]), NULL);
+	    }
+	    argc -= 3;
+	    i += 3;
 	} else if ((argc >= 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
@@ -336,7 +351,7 @@ Tcl_MainEx(
 	}
     }
 
-    path = Tcl_GetStartupScript(&encodingName);
+    path = Tcl_GetStartupScript(&encoding);
     if (path != NULL) {
 	appName = path;
     } else if (argv[0]) {
@@ -398,10 +413,10 @@ Tcl_MainEx(
      * again, as the appInitProc might have reset it.
      */
 
-    path = Tcl_GetStartupScript(&encodingName);
+    path = Tcl_GetStartupScript(&encoding);
     if (path != NULL) {
 	Tcl_ResetResult(interp);
-	code = Tcl_FSEvalFileEx(interp, path, encodingName);
+	code = Tcl_FSEvalFileEx(interp, path, encoding);
 	if (code != TCL_OK) {
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan) {

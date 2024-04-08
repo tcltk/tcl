@@ -124,7 +124,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 EXTERN Tcl_ObjCmdProc *	 TclGetObjInterpProc(void);
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
-				int *seekFlagPtr);
+				int *flagPtr);
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
@@ -620,7 +620,7 @@ typedef struct TclIntStubs {
     void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
     Tcl_ObjCmdProc * (*tclGetObjInterpProc) (void); /* 39 */
-    int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
+    int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *flagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
     Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */

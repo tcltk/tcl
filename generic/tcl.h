@@ -2031,6 +2031,10 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
+#define TCL_ENCODING_UTF8_STRICT      ((const char *)-1)
+#define TCL_ENCODING_UTF8_REPLACE     ((const char *)-2)
+#define TCL_ENCODING_UTF8_TCL8        ((const char *)-3)
+
 /*
  * The following definitions are the error codes returned by the conversion
  * routines:

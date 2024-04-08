@@ -45,7 +45,9 @@ The value for this argument is usually \fBTcl_AppInit\fR.
 .AP Tcl_Obj *path in
 Name of file to use as startup script, or NULL.
 .AP "const char" *encoding in
-Encoding of file to use as startup script, or NULL.
+Encoding of file to use as startup script, or NULL, or
+\fBTCL_ENCODING_UTF8_STRICT\fR, \fBTCL_ENCODING_UTF8_REPLACE\fR
+or \fBTCL_ENCODING_UTF8_TCL8\fR.
 .AP "const char" **encodingPtr out
 If non-NULL, location to write a copy of the (const char *)
 pointing to the encoding name.

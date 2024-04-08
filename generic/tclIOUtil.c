@@ -1418,51 +1418,22 @@ TclFSNormalizeToUniquePath(
  *
  * TclGetOpenMode --
  *
- *	Obsolete.  A limited version of TclGetOpenModeEx() which exists only to
- *	satisfy any extensions imprudently using it via Tcl's internal stubs
- *	table.
- *
- * Results:
- *	See TclGetOpenModeEx().
- *
- * Side effects:
- *	See TclGetOpenModeEx().
- *
- *---------------------------------------------------------------------------
- */
-
-int
-TclGetOpenMode(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting.  May
-				 *  be NULL. */
-    const char *modeString,	/* e.g. "r+" or "RDONLY CREAT". */
-    int *seekFlagPtr)		/* Sets this to 1 to tell the caller to seek to
-				   EOF after opening the file, and
-				 * 0 otherwise. */
-{
-    int binary = 0;
-    return TclGetOpenModeEx(interp, modeString, seekFlagPtr, &binary);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclGetOpenModeEx --
- *
  *	Computes a POSIX mode mask for opening a file.
  *
  * Results:
  *	The mode to pass to "open", or -1 if an error occurs.
  *
  * Side effects:
- *	Sets *seekFlagPtr to 1 to tell the caller to
- *	seek to EOF after opening the file, or to 0 otherwise.
+ *	Sets *flagPtr to the expected profile. 0 is the default.
  *
- *	Sets *binaryPtr to 1 to tell the caller to configure the channel as a
- *	binary channel, or to 0 otherwise.
+ *	Adds 1 to *flagPtr to tell the caller to seek to EOF
+ *	after opening the file.
  *
- *	If there is an error and interp is not NULL, sets interpreter result to
- *	an error message.
+ *	Adds 2 to *flagPtr to tell the caller to configure the
+ *	channel as a binary channel.
+ *
+ *	If there is an error and interp is not NULL, sets
+ *	interpreter result to an error message.
  *
  * Special note:
  *	Based on a prototype implementation contributed by Mark Diekhans.
@@ -1471,15 +1442,11 @@ TclGetOpenMode(
  */
 
 int
-TclGetOpenModeEx(
+TclGetOpenMode(
     Tcl_Interp *interp,		/* Interpreter, possibly NULL, to use for
 				 * error reporting. */
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
-    int *seekFlagPtr,		/* Sets this to 1 to tell the the caller to seek to
-				 * EOF after opening the file, and 0 otherwise. */
-    int *binaryPtr)		/* Sets this to 1 to tell the caller to
-				 * configure the channel for binary
-				 * operations after opening the file. */
+    int *flagPtr)
 {
     int mode, c, gotRW;
     Tcl_Size modeArgc, i;
@@ -1492,9 +1459,8 @@ TclGetOpenModeEx(
      * lower-case first letter.
      */
 
-    *seekFlagPtr = 0;
-    *binaryPtr = 0;
-    mode = 0;
+    *flagPtr = 0;
+    mode = O_RDONLY;
 
     /*
      * Guard against wide characters before using byte-oriented routines.
@@ -1516,7 +1482,7 @@ TclGetOpenModeEx(
 	     */
 
 	    mode = O_WRONLY|O_CREAT|O_APPEND;
-	    *seekFlagPtr = 1;
+	    *flagPtr |= 1;
 	    break;
 	default:
 	    goto error;
@@ -1537,7 +1503,7 @@ TclGetOpenModeEx(
 		mode |= O_RDWR;
 		break;
 	    case 'b':
-		*binaryPtr = 1;
+		*flagPtr |= 2;
 		break;
 	    default:
 		goto error;
@@ -1549,8 +1515,7 @@ TclGetOpenModeEx(
 	return mode;
 
     error:
-	*seekFlagPtr = 0;
-	*binaryPtr = 0;
+	*flagPtr = 0;
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "illegal access mode \"%s\"", modeString));
@@ -1579,17 +1544,33 @@ TclGetOpenModeEx(
 	flag = modeArgv[i];
 	c = flag[0];
 	if ((c == 'R') && (strcmp(flag, "RDONLY") == 0)) {
+	    if (gotRW) {
+	    invRW:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				"invalid access mode \"%s\": modes RDONLY, "
+				"RDWR, and WRONLY cannot be combined", modeString));
+		}
+		Tcl_Free((void *)modeArgv);
+		return -1;
+	    }
 	    mode = (mode & ~RW_MODES) | O_RDONLY;
 	    gotRW = 1;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
+	    if (gotRW) {
+		goto invRW;
+	    }
 	    mode = (mode & ~RW_MODES) | O_WRONLY;
 	    gotRW = 1;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
+	    if (gotRW) {
+		goto invRW;
+	    }
 	    mode = (mode & ~RW_MODES) | O_RDWR;
 	    gotRW = 1;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
 	    mode |= O_APPEND;
-	    *seekFlagPtr = 1;
+	    *flagPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {
@@ -1623,15 +1604,39 @@ TclGetOpenModeEx(
 
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
 	    mode |= O_TRUNC;
+	} else if ((c == 'T') && (strcmp(flag, "TCL8") == 0)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+	    invAccess:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				"invalid access mode \"%s\": modes BINARY, "
+				"REPLACE, STRICT, and TCL8 cannot be combined", modeString));
+		}
+		Tcl_Free((void *)modeArgv);
+		return -1;
+	    }
+	    *flagPtr |= TCL_ENCODING_PROFILE_TCL8;
+	} else if ((c == 'S') && (strcmp(flag, "STRICT") == 0)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+		goto invAccess;
+	    }
+	    *flagPtr |= TCL_ENCODING_PROFILE_STRICT;
+	} else if ((c == 'R') && (strcmp(flag, "REPLACE") == 0)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+		goto invAccess;
+	    }
+	    *flagPtr |= TCL_ENCODING_PROFILE_REPLACE;
 	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
-	    *binaryPtr = 1;
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+		goto invAccess;
+	    }
+	    *flagPtr |= 2;
 	} else {
-
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"invalid access mode \"%s\": must be RDONLY, WRONLY, "
-			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
-			" or TRUNC", flag));
+			"invalid access mode \"%s\": must be APPEND, BINARY, "
+			"CREAT, EXCL, NOCTTY, NONBLOCK, RDWR, RDONLY, REPLACE, "
+			"STRICT, TCL8, TRUNC, or WRONLY", flag));
 	    }
 	    Tcl_Free((void *)modeArgv);
 	    return -1;
@@ -1639,15 +1644,6 @@ TclGetOpenModeEx(
     }
 
     Tcl_Free((void *)modeArgv);
-
-    if (!gotRW) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "access mode must include either RDONLY, WRONLY, or RDWR",
-		    -1));
-	}
-	return -1;
-    }
     return mode;
 }
 
@@ -1690,8 +1686,10 @@ Tcl_FSEvalFileEx(
     Tcl_Obj *pathPtr,		/* Pathname of the file to process.
 				 * Tilde-substitution is performed on this
 				 * pathname. */
-    const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the utf-8 encoding. */
+    const char *encoding)	/* Either the name of an encoding or NULL to
+				   use the utf-8 encoding. May also be TCL_ENCODING_UTF8_STRICT,
+				   TCL_ENCODING_UTF8_REPLACE, or TCL_ENCODING_UTF8_TCL8,
+				   for specifying the profile. */
 {
     Tcl_Size length;
     int result = TCL_ERROR;
@@ -1731,12 +1729,20 @@ Tcl_FSEvalFileEx(
     /*
      * If the encoding is specified, set the channel to that encoding.
      * Otherwise use utf-8.  If the encoding is unknown report an error.
+     * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL) {
-	encodingName = "utf-8";
+    if (encoding == NULL || encoding == TCL_ENCODING_UTF8_STRICT) {
+	goto utf8;
+    } else if (encoding == TCL_ENCODING_UTF8_REPLACE) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
+	goto utf8;
+    } else if (encoding == TCL_ENCODING_UTF8_TCL8) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
+    utf8:
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_CloseEx(interp,chan,0);
 	return result;
@@ -1828,7 +1834,7 @@ TclNREvalFile(
     Tcl_Obj *pathPtr,		/* Pathname of a file containing the script to
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
-    const char *encodingName)	/* The name of an encoding to use, or NULL to
+    const char *encoding)	/* The name of an encoding to use, or NULL to
 				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
@@ -1867,12 +1873,20 @@ TclNREvalFile(
     /*
      * If the encoding is specified, set the channel to that encoding.
      * Otherwise use utf-8.  If the encoding is unknown report an error.
+     * "tcl8", "replace" or "strict" are permitted values too.
      */
 
-    if (encodingName == NULL) {
-	encodingName = "utf-8";
+    if (encoding == NULL || encoding == TCL_ENCODING_UTF8_STRICT) {
+	goto utf8;
+    } else if (encoding == TCL_ENCODING_UTF8_REPLACE) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "replace");
+	goto utf8;
+    } else if (encoding == TCL_ENCODING_UTF8_TCL8) {
+	Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
+    utf8:
+	encoding = "utf-8";
     }
-    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encoding)
 	    != TCL_OK) {
 	Tcl_CloseEx(interp, chan, 0);
 	return TCL_ERROR;
@@ -2208,14 +2222,14 @@ Tcl_FSOpenFileChannel(
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {
-	int mode, seekFlag, binary;
+	int mode, flags;
 
 	/*
 	 * Parse the mode to determine whether to seek at the outset
 	 * and/or set the channel into binary mode.
 	 */
 
-	mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
+	mode = TclGetOpenMode(interp, modeString, &flags);
 	if (mode == -1) {
 	    return NULL;
 	}
@@ -2234,7 +2248,7 @@ Tcl_FSOpenFileChannel(
 	 * Seek and/or set binary mode as determined above.
 	 */
 
-	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
+	if ((flags & 1) && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2244,8 +2258,12 @@ Tcl_FSOpenFileChannel(
 	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
-	if (binary) {
+	if (flags & 2) {
 	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
+	} else if ((flags & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_TCL8) {
+	    Tcl_SetChannelOption(interp, retVal, "-profile", "tcl8");
+	} else if ((flags & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_REPLACE) {
+	    Tcl_SetChannelOption(interp, retVal, "-profile", "replace");
 	}
 	return retVal;
     }
