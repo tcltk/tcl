@@ -1867,6 +1867,11 @@ EXTERN int		Tcl_UtfNcmp(const char *s1, const char *s2, size_t n);
 EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
 				size_t n);
 /* 688 */
+EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
+/* 689 */
+EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
+				Tcl_WideUInt uwideValue);
+/* 690 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2567,7 +2572,9 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
-    void (*tclUnusedStubEntry) (void); /* 688 */
+    Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
+    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
+    void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3895,8 +3902,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNcmp) /* 686 */
 #define Tcl_UtfNcasecmp \
 	(tclStubsPtr->tcl_UtfNcasecmp) /* 687 */
+#define Tcl_NewWideUIntObj \
+	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
+#define Tcl_SetWideUIntObj \
+	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4074,6 +4085,14 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
+
+#if TCL_MAJOR_VERSION > 8
+#   define Tcl_NewIndexObj(value) (((Tcl_WideUInt)(value) > (((size_t)-1)>>1)) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(value))
+#   define Tcl_SetIndexObj(objPtr, value) (((Tcl_WideUInt)(value) > (((size_t)-1)>>1)) ? Tcl_SetWideIntObj(objPtr, -1) : Tcl_SetWideUIntObj(objPtr, value))
+#else
+#   define Tcl_NewIndexObj Tcl_NewIntObj
+#   define Tcl_SetIndexObj Tcl_SetIntObj
+#endif
 
 #if TCL_UTF_MAX < 4
 #   undef Tcl_UniCharToUtfDString
