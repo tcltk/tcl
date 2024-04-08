@@ -1000,15 +1000,23 @@ TclNRSourceObjCmd(
 
     if (objc == 4) {
 	static const char *const options[] = {
-	    "-encoding", NULL
+	    "-encoding", "-profile", NULL
 	};
 	int index;
 
-	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], options,
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, objv[1], options,
 		"option", TCL_EXACT, &index)) {
+	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[1]),
+		    "\": must be -encoding", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
+		    TclGetString(objv[1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
-	encodingName = TclGetString(objv[2]);
+	if (index) {
+	    encodingName = "utf-8";
+	} else {
+	    encodingName = TclGetString(objv[2]);
+	}
     }
 
     return TclNREvalFile(interp, fileName, encodingName);
