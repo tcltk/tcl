@@ -4086,14 +4086,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
-#if TCL_MAJOR_VERSION > 8
-#   define Tcl_NewIndexObj(value) (((Tcl_WideUInt)(value) > (((size_t)-1)>>1)) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(value))
-#   define Tcl_SetIndexObj(objPtr, value) (((Tcl_WideUInt)(value) > (((size_t)-1)>>1)) ? Tcl_SetWideIntObj(objPtr, -1) : Tcl_SetWideUIntObj(objPtr, value))
-#else
-#   define Tcl_NewIndexObj Tcl_NewIntObj
-#   define Tcl_SetIndexObj Tcl_SetIntObj
-#endif
-
 #if TCL_UTF_MAX < 4
 #   undef Tcl_UniCharToUtfDString
 #   define Tcl_UniCharToUtfDString Tcl_Char16ToUtfDString
