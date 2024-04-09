@@ -146,6 +146,7 @@ static const struct ClockCommand clockCommands[] = {
     {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
     {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {"seconds",		ClockSecondsObjCmd,	TclCompileClockReadingCmd, INT2PTR(3)},
+    {"configure",	ClockConfigureObjCmd,			NULL, NULL},
     {"ConvertLocalToUTC", ClockConvertlocaltoutcObjCmd,		NULL, NULL},
     {"GetDateFields",	  ClockGetdatefieldsObjCmd,		NULL, NULL},
     {"GetJulianDayFromEraYearMonthDay",
@@ -266,11 +267,6 @@ TclClockInit(
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
     }
-    cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
-	    "::tcl::unsupported::clock::configure",
-	    ClockConfigureObjCmd, data, ClockDeleteCmdProc);
-    data->refCount++;
-    cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
 }
 
 /*
@@ -946,10 +942,11 @@ TimezoneLoaded(
  *
  * ClockConfigureObjCmd --
  *
- *	This function is invoked to process the Tcl "::clock::configure" (internal) command.
+ *	This function is invoked to process the Tcl "::tcl::clock::configure"
+ *	(internal, unsupported) command.
  *
  * Usage:
- *	::tcl::unsupported::clock::configure ?-option ?value??
+ *	::tcl::clock::configure ?-option ?value??
  *
  * Results:
  *	Returns a standard Tcl result.
