@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -1605,7 +1606,7 @@ TclGetOpenMode(
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
 	    mode |= O_TRUNC;
 	} else if ((c == 'T') && (strcmp(flag, "TCL8") == 0)) {
-	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|CHANNEL_RAW_MODE)) {
 	    invAccess:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1617,20 +1618,20 @@ TclGetOpenMode(
 	    }
 	    *flagPtr |= TCL_ENCODING_PROFILE_TCL8;
 	} else if ((c == 'S') && (strcmp(flag, "STRICT") == 0)) {
-	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|CHANNEL_RAW_MODE)) {
 		goto invAccess;
 	    }
 	    *flagPtr |= TCL_ENCODING_PROFILE_STRICT;
 	} else if ((c == 'R') && (strcmp(flag, "REPLACE") == 0)) {
-	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|CHANNEL_RAW_MODE)) {
 		goto invAccess;
 	    }
 	    *flagPtr |= TCL_ENCODING_PROFILE_REPLACE;
 	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
-	    if (*flagPtr & (ENCODING_PROFILE_MASK|2)) {
+	    if (*flagPtr & (ENCODING_PROFILE_MASK|CHANNEL_RAW_MODE)) {
 		goto invAccess;
 	    }
-	    *flagPtr |= 2;
+	    *flagPtr |= CHANNEL_RAW_MODE;
 	} else {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2258,11 +2259,11 @@ Tcl_FSOpenFileChannel(
 	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
-	if (flags & 2) {
+	if (flags & CHANNEL_RAW_MODE) {
 	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
-	} else if ((flags & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_TCL8) {
+	} else if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_TCL8) {
 	    Tcl_SetChannelOption(interp, retVal, "-profile", "tcl8");
-	} else if ((flags & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_REPLACE) {
+	} else if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_REPLACE) {
 	    Tcl_SetChannelOption(interp, retVal, "-profile", "replace");
 	}
 	return retVal;

@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #include "tclTomMath.h"
 
 /*
@@ -1163,11 +1164,11 @@ Tcl_OpenObjCmd(
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
 	    if (chan) {
-		if (profile & 2) {
+		if (profile & CHANNEL_RAW_MODE) {
 		    Tcl_SetChannelOption(interp, chan, "-translation", "binary");
-		} else if ((profile & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_TCL8) {
+		} else if (ENCODING_PROFILE_GET(profile) == TCL_ENCODING_PROFILE_TCL8) {
 		    Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
-		} else if ((profile & ENCODING_PROFILE_MASK) == TCL_ENCODING_PROFILE_REPLACE) {
+		} else if (ENCODING_PROFILE_GET(profile) == TCL_ENCODING_PROFILE_REPLACE) {
 		    Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 		}
 	    }
