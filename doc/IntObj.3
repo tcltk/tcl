@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_NewIndexObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_SetWideUIntObj, Tcl_SetIndexObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_SetWideUIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,9 +25,6 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewWideUIntObj\fR(\fIuwideValue\fR)
 .sp
-Tcl_Obj *
-\fBTcl_NewIndexObj\fR(\fIindexValue\fR)
-.sp
 \fBTcl_SetIntObj\fR(\fIobjPtr, intValue\fR)
 .sp
 \fBTcl_SetLongObj\fR(\fIobjPtr, longValue\fR)
@@ -35,8 +32,6 @@ Tcl_Obj *
 \fBTcl_SetWideIntObj\fR(\fIobjPtr, wideValue\fR)
 .sp
 \fBTcl_SetWideUIntObj\fR(\fIobjPtr, uwideValue\fR)
-.sp
-\fBTcl_SetIndexObj\fR(\fIobjPtr, indexValue\fR)
 .sp
 int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
@@ -90,7 +85,7 @@ Unsigned wide integer value used to initialize or set a Tcl value.
 In Tcl 8.x, \fTcl_Size\f is actually the same as int.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
-\fBTcl_SetWideUIntObj\fR, \fBTcl_SetIndexObj\fR,
+\fBTcl_SetWideUIntObj\fR,
 and \fBTcl_SetBignumObj\fR, this points to the value in which to store an
 integral value.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
 \fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
@@ -136,12 +131,12 @@ The \fBmp_int\fR type is a multiple-precision integer type defined
 by the LibTomMath multiple-precision integer library.
 .PP
 The \fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR, \fBTcl_NewWideIntObj\fR,
-\fBTcl_NewWideUIntObj\fR, \fBTcl_NewIndexObj\fR, and \fBTcl_NewBignumObj\fR
+\fBTcl_NewWideUIntObj\fR, and \fBTcl_NewBignumObj\fR
 routines each create and return a new Tcl value initialized to the
 integral value of the argument.  The returned Tcl value is unshared.
 .PP
 The \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
-\fBTcl_SetWideUIntObj\fR, \fBTcl_SetIndexObj\fR, and \fBTcl_SetBignumObj\fR
+\fBTcl_SetWideUIntObj\fR, and \fBTcl_SetBignumObj\fR
 routines each set the value of an existing Tcl value pointed to by \fIobjPtr\fR
 to the integral value provided by the other argument.  The \fIobjPtr\fR
 argument must point to an unshared Tcl value.  Any attempt to set the
