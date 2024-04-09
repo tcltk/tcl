@@ -470,15 +470,15 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 148 {
-    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
-	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    int *argcPtr, const char ***argvPtr)
-}
-declare 149 {
+declare 147 {
     int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    int *objcPtr, Tcl_Obj ***objv)
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+}
+declare 149 {
+    int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 150 {
     void *Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
