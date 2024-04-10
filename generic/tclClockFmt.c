@@ -670,8 +670,7 @@ ClockFmtObj_SetFromAny(
     (void)TclGetString(objPtr);
 
     /* free old internal representation */
-    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc)
-	objPtr->typePtr->freeIntRepProc(objPtr);
+    TclFreeInternalRep(objPtr);
 
     /* initial state of format object */
     ObjClockFmtScn(objPtr) = NULL;
