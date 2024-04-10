@@ -7566,7 +7566,7 @@ SimpleOpenFileChannel(
     Tcl_Obj *tempPtr;
     Tcl_Channel chan;
 
-    if ((mode != 0) && !(mode & O_RDONLY)) {
+    if ((mode & O_ACCMODE) != O_RDONLY) {
 	Tcl_AppendResult(interp, "read-only", (char *)NULL);
 	return NULL;
     }
@@ -8453,7 +8453,7 @@ TestparseargsCmd(
     const Tcl_ArgvInfo argTable[] = {
 	{TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
 	{TCL_ARGV_STRING,  "-colormode" ,  NULL, &color,  "color mode", NULL},
-	{TCL_ARGV_GENFUNC, "-media", ParseMedia, &media,  "media page size", NULL},
+	{TCL_ARGV_GENFUNC, "-media", (void *)ParseMedia, &media,  "media page size", NULL},
 	TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };
 
