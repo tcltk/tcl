@@ -68,7 +68,7 @@
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
-    LIST_ASSERT((listObj_)->typePtr == &tclListType);
+    LIST_ASSERT(TclHasInternalRep(listObj_, &tclListType));
 
 
 /*

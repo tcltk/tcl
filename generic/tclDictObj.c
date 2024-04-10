@@ -2085,7 +2085,7 @@ TclDictObjSmartRef(
     Tcl_Obj *result;
     Dict    *dict;
 
-    if (dictPtr->typePtr != &tclDictType
+    if (!TclHasInternalRep(dictPtr, &tclDictType)
 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	return NULL;
     }

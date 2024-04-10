@@ -591,7 +591,7 @@ TclArithSeriesObjIndex(
 {
     ArithSeries *arithSeriesRepPtr;
 
-    if (arithSeriesObj->typePtr != &tclArithSeriesType) {
+    if (!TclHasInternalRep(arithSeriesObj, &tclArithSeriesType)) {
 	Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
@@ -658,7 +658,7 @@ ArithSeriesObjStep(
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *stepObj;
 
-    if (arithSeriesObj->typePtr != &tclArithSeriesType) {
+    if (!TclHasInternalRep(arithSeriesObj, &tclArithSeriesType)) {
 	Tcl_Panic("ArithSeriesObjStep called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
@@ -865,7 +865,7 @@ TclArithSeriesGetElements(
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
 {
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+    if (TclHasInternalRep(objPtr, &tclArithSeriesType)) {
 	ArithSeries *arithSeriesRepPtr;
 	Tcl_Obj **objv;
 	int i, objc;

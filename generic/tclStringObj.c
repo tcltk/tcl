@@ -272,7 +272,7 @@ GrowStringBuffer(
 {
     /*
      * Preconditions:
-     *	objPtr->typePtr == &tclStringType
+     *	TclHasInternalRep(objPtr, &tclStringType)
      *	needed > stringPtr->allocated
      *	flag || objPtr->bytes != NULL
      */
@@ -323,7 +323,7 @@ GrowUnicodeBuffer(
 {
     /*
      * Preconditions:
-     *	objPtr->typePtr == &tclStringType
+     *	TclHasInternalRep(objPtr, &tclStringType)
      *	needed > stringPtr->maxChars
      *	needed < UNICHAR_STRING_MAXCHARS
      */
@@ -3528,7 +3528,7 @@ TclStringCat(
 	 	binary = 0;
 	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
 	 	    forceUniChar = 1;
-	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclUniCharStringType)) {
+	 	} else if ((objPtr->typePtr) && !TclHasInternalRep(objPtr, &tclUniCharStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
