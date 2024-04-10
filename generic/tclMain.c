@@ -332,7 +332,7 @@ Tcl_MainEx(
 	    i += 3;
 	} else if ((argc >= 3) && (0 == _tcscmp(TEXT("-profile"), argv[1]))
 		&& ('-' != argv[3][0])) {
-	    Tcl_SetStartupScript(NewNativeObj(argv[3]), "utf-8");
+	    Tcl_SetStartupScript(NewNativeObj(argv[3]), NULL);
 	    argc -= 3;
 	    i += 3;
 	} else if ((argc >= 1) && ('-' != argv[1][0])) {
