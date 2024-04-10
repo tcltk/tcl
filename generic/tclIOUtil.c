@@ -1451,7 +1451,7 @@ TclGetOpenMode(
 {
     int mode, c, gotRW;
     Tcl_Size modeArgc, i;
-    const char **modeArgv, *flag;
+    const char **modeArgv = NULL, *flag;
 #define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
     /*
@@ -1520,6 +1520,7 @@ TclGetOpenMode(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "illegal access mode \"%s\"", modeString));
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	return -1;
     }
@@ -1531,11 +1532,16 @@ TclGetOpenMode(
      */
 
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
+    invAccessMode:
 	if (interp != NULL) {
 	    Tcl_AddErrorInfo(interp,
 		    "\n    while processing open access modes \"");
 	    Tcl_AddErrorInfo(interp, modeString);
 	    Tcl_AddErrorInfo(interp, "\"");
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	}
+	if (modeArgv) {
+	    Tcl_Free((void *)modeArgv);
 	}
 	return -1;
     }
@@ -1550,10 +1556,9 @@ TclGetOpenMode(
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", modeString));
+				"RDWR, and WRONLY cannot be combined", flag));
 		}
-		Tcl_Free((void *)modeArgv);
-		return -1;
+		goto invAccessMode;
 	    }
 	    mode = (mode & ~RW_MODES) | O_RDONLY;
 	    gotRW = 1;
@@ -1570,15 +1575,32 @@ TclGetOpenMode(
 	    mode = (mode & ~RW_MODES) | O_RDWR;
 	    gotRW = 1;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
+	    if (mode & O_APPEND) {
+	    accessFlagRepeated:
+		if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"access mode \"%s\" repeated",
+			flag));
+		}
+	    goto invAccessMode;
+	    }
 	    mode |= O_APPEND;
 	    *flagPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
+	    if (mode & O_CREAT) {
+	    goto accessFlagRepeated;
+	    }
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {
+	    if (mode & O_EXCL) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_EXCL;
-
 	} else if ((c == 'N') && (strcmp(flag, "NOCTTY") == 0)) {
 #ifdef O_NOCTTY
+	    if (mode & O_NOCTTY) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NOCTTY;
 #else
 	    if (interp != NULL) {
@@ -1586,12 +1608,14 @@ TclGetOpenMode(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
 
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
 #ifdef O_NONBLOCK
+	    if (mode & O_NONBLOCK) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NONBLOCK;
 #else
 	    if (interp != NULL) {
@@ -1599,11 +1623,12 @@ TclGetOpenMode(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
-
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
+	    if (mode & O_TRUNC) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_TRUNC;
 	} else if ((c == 'T') && (strcmp(flag, "TCL8") == 0)) {
 	    if (*flagPtr & (ENCODING_PROFILE_MASK|CHANNEL_RAW_MODE)) {
@@ -1611,10 +1636,9 @@ TclGetOpenMode(
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 				"invalid access mode \"%s\": modes BINARY, "
-				"REPLACE, STRICT, and TCL8 cannot be combined", modeString));
+				"REPLACE, STRICT, and TCL8 cannot be combined", flag));
 		}
-		Tcl_Free((void *)modeArgv);
-		return -1;
+		goto invAccessMode;
 	    }
 	    *flagPtr |= TCL_ENCODING_PROFILE_TCL8;
 	} else if ((c == 'S') && (strcmp(flag, "STRICT") == 0)) {
@@ -1639,8 +1663,7 @@ TclGetOpenMode(
 			"CREAT, EXCL, NOCTTY, NONBLOCK, RDWR, RDONLY, REPLACE, "
 			"STRICT, TCL8, TRUNC, or WRONLY", flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 	}
     }
 
@@ -2223,14 +2246,14 @@ Tcl_FSOpenFileChannel(
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {
-	int mode, flags;
+	int mode, modeFlags;
 
 	/*
 	 * Parse the mode to determine whether to seek at the outset
 	 * and/or set the channel into binary mode.
 	 */
 
-	mode = TclGetOpenMode(interp, modeString, &flags);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    return NULL;
 	}
@@ -2249,7 +2272,7 @@ Tcl_FSOpenFileChannel(
 	 * Seek and/or set binary mode as determined above.
 	 */
 
-	if ((flags & 1) && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
+	if ((modeFlags & 1) && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2259,11 +2282,11 @@ Tcl_FSOpenFileChannel(
 	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
-	if (flags & CHANNEL_RAW_MODE) {
+	if (modeFlags & CHANNEL_RAW_MODE) {
 	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
-	} else if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_TCL8) {
+	} else if (ENCODING_PROFILE_GET(modeFlags) == TCL_ENCODING_PROFILE_TCL8) {
 	    Tcl_SetChannelOption(interp, retVal, "-profile", "tcl8");
-	} else if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_REPLACE) {
+	} else if (ENCODING_PROFILE_GET(modeFlags) == TCL_ENCODING_PROFILE_REPLACE) {
 	    Tcl_SetChannelOption(interp, retVal, "-profile", "replace");
 	}
 	return retVal;

@@ -103,7 +103,7 @@ declare 39 {
     Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
-    int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *flagPtr)
+    int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *modeFlagsPtr)
 }
 declare 41 {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)

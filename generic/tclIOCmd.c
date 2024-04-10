@@ -1134,7 +1134,7 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, profile;
+	int mode, modeFlags;
 	Tcl_Size cmdObjc;
 	const char **cmdArgv;
 
@@ -1142,7 +1142,7 @@ Tcl_OpenObjCmd(
 	    return TCL_ERROR;
 	}
 
-	mode = TclGetOpenMode(interp, modeString, &profile);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    chan = NULL;
 	} else {
@@ -1164,11 +1164,11 @@ Tcl_OpenObjCmd(
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
 	    if (chan) {
-		if (profile & CHANNEL_RAW_MODE) {
+		if (modeFlags & CHANNEL_RAW_MODE) {
 		    Tcl_SetChannelOption(interp, chan, "-translation", "binary");
-		} else if (ENCODING_PROFILE_GET(profile) == TCL_ENCODING_PROFILE_TCL8) {
+		} else if (ENCODING_PROFILE_GET(modeFlags) == TCL_ENCODING_PROFILE_TCL8) {
 		    Tcl_SetChannelOption(interp, chan, "-profile", "tcl8");
-		} else if (ENCODING_PROFILE_GET(profile) == TCL_ENCODING_PROFILE_REPLACE) {
+		} else if (ENCODING_PROFILE_GET(modeFlags) == TCL_ENCODING_PROFILE_REPLACE) {
 		    Tcl_SetChannelOption(interp, chan, "-profile", "replace");
 		}
 	    }
