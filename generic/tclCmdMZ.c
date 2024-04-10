@@ -1103,7 +1103,7 @@ TclNRSourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *encoding = NULL;
+    const char *encodingName = NULL;
     Tcl_Obj *fileName;
     int result;
     void **pkgFiles = NULL;
@@ -1133,14 +1133,14 @@ TclNRSourceObjCmd(
 		return TCL_ERROR;
 	    }
 	    if (id == TCL_ENCODING_PROFILE_TCL8) {
-		encoding = TCL_ENCODING_UTF8_TCL8;
+		encodingName = TCL_ENCODING_UTF8_TCL8;
 	    } else if (id == TCL_ENCODING_PROFILE_REPLACE) {
-		encoding = TCL_ENCODING_UTF8_REPLACE;
+		encodingName = TCL_ENCODING_UTF8_REPLACE;
 	    } else {
-		encoding = NULL;
+		encodingName = NULL;
 	    }
 	} else {
-	encoding = TclGetString(objv[2]);
+	encodingName = TclGetString(objv[2]);
 	}
     } else if (objc == 3) {
 	/* Handle undocumented -nopkg option. This should only be
@@ -1160,7 +1160,7 @@ TclNRSourceObjCmd(
 	names = *pkgFiles;
 	*pkgFiles = NULL;
     }
-    result = TclNREvalFile(interp, fileName, encoding);
+    result = TclNREvalFile(interp, fileName, encodingName);
     if (pkgFiles) {
 	/* restore "tclPkgFiles" assocdata to how it was. */
 	*pkgFiles = names;
