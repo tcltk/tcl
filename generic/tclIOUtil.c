@@ -1516,7 +1516,7 @@ TclGetOpenModeEx(
 				 * EOF during the opening of the file. */
     int *binaryPtr)		/* Set this to 1 if the caller should
 				 * configure the opened channel for binary
-				 * operations, or -1 if utf-8 is expected. */
+				 * operations. */
 {
     int mode, modeArgc, c, i, gotRW;
     const char **modeArgv, *flag;
@@ -1665,13 +1665,10 @@ TclGetOpenModeEx(
 	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
 	    *binaryPtr = 1;
 	} else if ((c == 'R') && (strcmp(flag, "REPLACE") == 0)) {
-	    *binaryPtr = -1;
 	    gotRW = 1;
 	} else if ((c == 'S') && (strcmp(flag, "STRICT") == 0)) {
-	    *binaryPtr = -1;
 	    gotRW = 1;
 	} else if ((c == 'T') && (strcmp(flag, "TCL8") == 0)) {
-	    *binaryPtr = -1;
 	    gotRW = 1;
 	} else {
 
@@ -2290,11 +2287,7 @@ Tcl_FSOpenFileChannel(
 	    return NULL;
 	}
 	if (binary) {
-	    if (binary < 0) {
-		Tcl_SetChannelOption(interp, retVal, "-encoding", "utf-8");
-	    } else {
-		Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
-	    }
+	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
 	}
 	return retVal;
     }

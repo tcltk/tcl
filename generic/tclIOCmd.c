@@ -1185,11 +1185,7 @@ Tcl_OpenObjCmd(
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
 	    if (binary && chan) {
-		if (binary < 0) {
-		    Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
-		} else {
-		    Tcl_SetChannelOption(interp, chan, "-translation", "binary");
-	    }
+		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
 	ckfree(cmdArgv);

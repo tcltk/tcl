@@ -1012,9 +1012,7 @@ TclNRSourceObjCmd(
 		    TclGetString(objv[1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
-	if (index) {
-	    encodingName = "utf-8";
-	} else {
+	if (!index) {
 	    encodingName = TclGetString(objv[2]);
 	}
     }
