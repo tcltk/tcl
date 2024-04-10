@@ -3456,7 +3456,7 @@ ClockParseFmtScnArgs(
 		goto baseNow;
 	    }
 
-	    if (baseObj->typePtr == &tclBignumType) {
+	    if (TclHasInternalRep(baseObj, &tclBignumType)) {
 		goto baseOverflow;
 	    }
 
@@ -3472,7 +3472,7 @@ ClockParseFmtScnArgs(
 	 * Note the year is currently an integer, thus avoid to overflow it also.
 	 */
 
-	if ( baseObj->typePtr == &tclBignumType
+	if (TclHasInternalRep(baseObj, &tclBignumType)
 	  || baseVal < TCL_MIN_SECONDS || baseVal > TCL_MAX_SECONDS
 	) {
 baseOverflow:
@@ -4463,7 +4463,7 @@ ClockAddObjCmd(
 		&unitIndex) != TCL_OK) {
 	    goto done;
 	}
-	if (objv[i]->typePtr == &tclBignumType
+	if (TclHasInternalRep(objv[i], &tclBignumType)
 	    || offs > (unitIndex < CLC_ADD_HOURS ? 0x7fffffff : TCL_MAX_SECONDS)
 	    || offs < (unitIndex < CLC_ADD_HOURS ? -0x7fffffff : TCL_MIN_SECONDS)
 	) {
