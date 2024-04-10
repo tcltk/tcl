@@ -1148,7 +1148,7 @@ Tcl_OpenObjCmd(
 	} else {
 	    int flags = TCL_STDERR | TCL_ENFORCE_MODE;
 
-	    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+	    switch (mode & O_ACCMODE) {
 	    case O_RDONLY:
 		flags |= TCL_STDOUT;
 		break;

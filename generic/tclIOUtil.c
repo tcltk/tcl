@@ -1452,7 +1452,6 @@ TclGetOpenMode(
     int mode, c, gotRW;
     Tcl_Size modeArgc, i;
     const char **modeArgv = NULL, *flag;
-#define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
     /*
      * Check for the simpler fopen-like access modes like "r" which are
@@ -1471,7 +1470,6 @@ TclGetOpenMode(
 	    && islower(UCHAR(modeString[0]))) { /* INTL: ISO only. */
 	switch (modeString[0]) {
 	case 'r':
-	    mode = O_RDONLY;
 	    break;
 	case 'w':
 	    mode = O_WRONLY|O_CREAT|O_TRUNC;
@@ -1500,8 +1498,7 @@ TclGetOpenMode(
 		 * 1773127]
 		 */
 
-		mode &= ~(O_RDONLY|O_WRONLY|O_APPEND);
-		mode |= O_RDWR;
+		mode = (mode & ~(O_ACCMODE|O_APPEND)) | O_RDWR;
 		break;
 	    case 'b':
 		*flagPtr |= 2;
@@ -1560,19 +1557,19 @@ TclGetOpenMode(
 		}
 		goto invAccessMode;
 	    }
-	    mode = (mode & ~RW_MODES) | O_RDONLY;
+	    mode = (mode & ~O_ACCMODE) | O_RDONLY;
 	    gotRW = 1;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
-	    mode = (mode & ~RW_MODES) | O_WRONLY;
+	    mode = (mode & ~O_ACCMODE) | O_WRONLY;
 	    gotRW = 1;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
 	    if (gotRW) {
 		goto invRW;
 	    }
-	    mode = (mode & ~RW_MODES) | O_RDWR;
+	    mode = (mode & ~O_ACCMODE) | O_RDWR;
 	    gotRW = 1;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
 	    if (mode & O_APPEND) {

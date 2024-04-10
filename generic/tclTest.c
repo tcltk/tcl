@@ -7430,7 +7430,7 @@ SimpleOpenFileChannel(
     Tcl_Obj *tempPtr;
     Tcl_Channel chan;
 
-    if ((mode != 0) && !(mode & O_RDONLY)) {
+    if ((mode & O_ACCMODE) != O_RDONLY) {
 	Tcl_AppendResult(interp, "read-only", (char *)NULL);
 	return NULL;
     }
