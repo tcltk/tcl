@@ -360,7 +360,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewWideIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewBooleanObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.
