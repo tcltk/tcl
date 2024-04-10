@@ -129,7 +129,7 @@ GrowStringBuffer(
 {
     /*
      * Preconditions:
-     *	objPtr->typePtr == &tclStringType
+     *	TclHasInternalRep(objPtr, &tclStringType)
      *	needed > stringPtr->allocated
      *	flag || objPtr->bytes != NULL
      */
@@ -167,7 +167,7 @@ GrowUnicodeBuffer(
 {
     /*
      * Preconditions:
-     *	objPtr->typePtr == &tclStringType
+     *	TclHasInternalRep(objPtr, &tclStringType)
      *	needed > stringPtr->maxChars
      */
 
