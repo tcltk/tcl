@@ -205,8 +205,8 @@ typedef struct DateInfo {
 
     TclDateFields date;
 
-    int		flags;		/* Signals parts of date/time get found */
-    int		errFlags;	/* Signals error (part of date/time found twice) */
+    int flags;			/* Signals parts of date/time get found */
+    int errFlags;		/* Signals error (part of date/time found twice) */
 
     MERIDIAN dateMeridian;
 
@@ -229,8 +229,8 @@ typedef struct DateInfo {
 
     int dateCentury;
 
-    Tcl_Obj* messages;	    /* Error messages */
-    const char* separatrix; /* String separating messages */
+    Tcl_Obj *messages;		/* Error messages */
+    const char* separatrix;	/* String separating messages */
 } DateInfo;
 
 #define yydate	    (info->date)  /* Date fields used for converting */
@@ -260,7 +260,9 @@ typedef struct DateInfo {
 #define yySpaceCount	(info->dateSpaceCount)
 
 static inline void
-ClockInitDateInfo(DateInfo *info) {
+ClockInitDateInfo(
+    DateInfo *info)
+{
     memset(info, 0, sizeof(DateInfo));
 }
 
@@ -276,28 +278,26 @@ ClockInitDateInfo(DateInfo *info) {
 #define CLF_LOCALE_USED (1 << 15)
 
 typedef struct ClockFmtScnCmdArgs {
-    void *clientData;  /* Opaque pointer to literal pool, etc. */
-    Tcl_Interp *interp;	    /* Tcl interpreter */
-
-    Tcl_Obj *formatObj;	    /* Format */
-    Tcl_Obj *localeObj;	    /* Name of the locale where the time will be expressed. */
-    Tcl_Obj *timezoneObj;   /* Default time zone in which the time will be expressed */
-    Tcl_Obj *baseObj;	    /* Base (scan and add) or clockValue (format) */
-    int	     flags;	    /* Flags control scanning */
-
-    Tcl_Obj *mcDictObj;	    /* Current dictionary of tcl::clock package for given localeObj*/
+    void *clientData;		/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp *interp;		/* Tcl interpreter */
+    Tcl_Obj *formatObj;		/* Format */
+    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
+    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
+    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
+    int flags;			/* Flags control scanning */
+    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
 } ClockFmtScnCmdArgs;
 
 /* Last-period cache for fast UTC to local and backwards conversion */
 typedef struct ClockLastTZOffs {
     /* keys */
-    Tcl_Obj    *timezoneObj;
-    int		changeover;
+    Tcl_Obj *timezoneObj;
+    int changeover;
     Tcl_WideInt localSeconds;
     Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
     /* values */
-    int		tzOffset;
-    Tcl_Obj    *tzName;		/* Name (abbreviation) of this area in TZ */
+    int tzOffset;
+    Tcl_Obj *tzName;		/* Name (abbreviation) of this area in TZ */
 } ClockLastTZOffs;
 
 /*
@@ -305,12 +305,11 @@ typedef struct ClockLastTZOffs {
  */
 
 typedef struct ClockClientData {
-    size_t    refCount;		/* Number of live references. */
+    size_t refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals (common, locale independent). */
     Tcl_Obj **mcLiterals;	/* Msgcat object literals with mc-keys for search with locale. */
     Tcl_Obj **mcLitIdxs;	/* Msgcat object indices prefixed with _IDX_,
 				 * used for quick dictionary search */
-
     Tcl_Obj *mcDicts;		/* Msgcat collection, contains weak pointers to locale
 				 * catalogs, and owns it references (onetime referenced) */
 
@@ -376,12 +375,10 @@ typedef struct ClockClientData {
 
 typedef struct ClockScanToken ClockScanToken;
 
-
 typedef int ClockScanTokenProc(
 	ClockFmtScnCmdArgs *opts,
 	DateInfo *info,
 	ClockScanToken *tok);
-
 
 typedef enum _CLCKTOK_TYPE {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
@@ -389,28 +386,27 @@ typedef enum _CLCKTOK_TYPE {
 } CLCKTOK_TYPE;
 
 typedef struct ClockScanTokenMap {
-    unsigned short int	type;
-    unsigned short int	flags;
-    unsigned short int	clearFlags;
-    unsigned short int	minSize;
-    unsigned short int	maxSize;
-    unsigned short int	offs;
+    unsigned short type;
+    unsigned short flags;
+    unsigned short clearFlags;
+    unsigned short minSize;
+    unsigned short maxSize;
+    unsigned short offs;
     ClockScanTokenProc *parser;
-    const void	       *data;
+    const void *data;
 } ClockScanTokenMap;
 
 struct ClockScanToken {
-    ClockScanTokenMap  *map;
+    const ClockScanTokenMap *map;
     struct {
 	const char *start;
 	const char *end;
     } tokWord;
-    unsigned short int	endDistance;
-    unsigned short int	lookAhMin;
-    unsigned short int	lookAhMax;
-    unsigned short int	lookAhTok;
+    unsigned short endDistance;
+    unsigned short lookAhMin;
+    unsigned short lookAhMax;
+    unsigned short lookAhTok;
 };
-
 
 #define MIN_FMT_RESULT_BLOCK_ALLOC 80
 #define MIN_FMT_RESULT_BLOCK_DELTA 0
@@ -422,9 +418,7 @@ typedef struct DateFormat {
     char *resMem;
     char *resEnd;
     char *output;
-
     TclDateFields date;
-
     Tcl_Obj *localeEra;
 } DateFormat;
 
@@ -442,42 +436,41 @@ typedef int ClockFormatTokenProc(
 	int *val);
 
 typedef struct ClockFormatTokenMap {
-    unsigned short int	type;
-    const char	       *tostr;
-    unsigned short int	width;
-    unsigned short int	flags;
-    unsigned short int	divider;
-    unsigned short int	divmod;
-    unsigned short int	offs;
+    unsigned short type;
+    const char *tostr;
+    unsigned short width;
+    unsigned short flags;
+    unsigned short divider;
+    unsigned short divmod;
+    unsigned short offs;
     ClockFormatTokenProc *fmtproc;
-    void	       *data;
+    void *data;
 } ClockFormatTokenMap;
 
 struct ClockFormatToken {
-    ClockFormatTokenMap *map;
+    const ClockFormatTokenMap *map;
     struct {
 	const char *start;
 	const char *end;
     } tokWord;
 };
 
-
 typedef struct ClockFmtScnStorage ClockFmtScnStorage;
 
 struct ClockFmtScnStorage {
-    int			 objRefCount;	/* Reference count shared across threads */
-    ClockScanToken	*scnTok;
-    unsigned int	 scnTokC;
-    unsigned int	 scnSpaceCount; /* Count of mandatory spaces used in format */
-    ClockFormatToken	*fmtTok;
-    unsigned int	 fmtTokC;
+    int objRefCount;		/* Reference count shared across threads */
+    ClockScanToken *scnTok;
+    unsigned scnTokC;
+    unsigned scnSpaceCount;	/* Count of mandatory spaces used in format */
+    ClockFormatToken *fmtTok;
+    unsigned fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
-    ClockFmtScnStorage	*nextPtr;
-    ClockFmtScnStorage	*prevPtr;
+    ClockFmtScnStorage *nextPtr;
+    ClockFmtScnStorage *prevPtr;
 #endif
-    size_t		 fmtMinAlloc;
+    size_t fmtMinAlloc;
 #if 0
-   +Tcl_HashEntry    hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+    Tcl_HashEntry hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
 					 * stored by offset +sizeof(self) */
 #endif
 };
@@ -490,86 +483,66 @@ struct ClockFmtScnStorage {
  * Extracts Julian day and seconds of the day from posix seconds (tm).
  */
 #define ClockExtractJDAndSODFromSeconds(jd, sod, tm) \
-    do { \
-	jd = (tm + JULIAN_SEC_POSIX_EPOCH); \
-	if (jd >= SECONDS_PER_DAY || jd <= -SECONDS_PER_DAY) { \
-	    jd /= SECONDS_PER_DAY; \
-	    sod = (int)(tm % SECONDS_PER_DAY); \
-	} else { \
-	    sod = (int)jd, jd = 0; \
-	} \
-	if (sod < 0) { \
-	    sod += SECONDS_PER_DAY; \
+    do {								\
+	jd = (tm + JULIAN_SEC_POSIX_EPOCH);				\
+	if (jd >= SECONDS_PER_DAY || jd <= -SECONDS_PER_DAY) {		\
+	    jd /= SECONDS_PER_DAY;					\
+	    sod = (int)(tm % SECONDS_PER_DAY);				\
+	} else {							\
+	    sod = (int)jd, jd = 0;					\
+	}								\
+	if (sod < 0) {							\
+	    sod += SECONDS_PER_DAY;					\
 	    /* JD is affected, if switched into negative (avoid 24 hours difference) */ \
-	    if (jd <= 0) { \
-		jd--; \
-	    } \
-	} \
+	    if (jd <= 0) {						\
+		jd--;							\
+	    }								\
+	}								\
     } while(0)
 
 /*
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE int    ToSeconds(int Hours, int Minutes,
+MODULE_SCOPE int	ToSeconds(int Hours, int Minutes,
 			    int Seconds, MERIDIAN Meridian);
-MODULE_SCOPE int    IsGregorianLeapYear(TclDateFields *);
-MODULE_SCOPE void
-		    GetJulianDayFromEraYearWeekDay(
+MODULE_SCOPE int	IsGregorianLeapYear(TclDateFields *);
+MODULE_SCOPE void	GetJulianDayFromEraYearWeekDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void
-		    GetJulianDayFromEraYearMonthDay(
+MODULE_SCOPE void	GetJulianDayFromEraYearMonthDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE void
-		    GetJulianDayFromEraYearDay(
+MODULE_SCOPE void	GetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE int    ConvertUTCToLocal(void *clientData, Tcl_Interp *,
+MODULE_SCOPE int	ConvertUTCToLocal(void *clientData, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
-MODULE_SCOPE Tcl_Obj *
-		    LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
+MODULE_SCOPE Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
 			    Tcl_Size, Tcl_Obj *const *, Tcl_WideInt *rangesVal);
-
-MODULE_SCOPE int    TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
+MODULE_SCOPE int	TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
 /* tclClock.c module declarations */
 
-MODULE_SCOPE Tcl_Obj *
-		    ClockSetupTimeZone(void *clientData,
-		Tcl_Interp *interp, Tcl_Obj *timezoneObj);
-
-MODULE_SCOPE Tcl_Obj *
-		    ClockMCDict(ClockFmtScnCmdArgs *opts);
-MODULE_SCOPE Tcl_Obj *
-		    ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE Tcl_Obj *
-		    ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
-MODULE_SCOPE int    ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
-			Tcl_Obj *valObj);
+MODULE_SCOPE Tcl_Obj *	ClockSetupTimeZone(void *clientData,
+			    Tcl_Interp *interp, Tcl_Obj *timezoneObj);
+MODULE_SCOPE Tcl_Obj *	ClockMCDict(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE Tcl_Obj *	ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE Tcl_Obj *	ClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
+MODULE_SCOPE int	ClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,
+			    Tcl_Obj *valObj);
 
 /* tclClockFmt.c module declarations */
 
+MODULE_SCOPE char *	TclItoAw(char *buf, int val, char padchar, unsigned short width);
+MODULE_SCOPE int	TclAtoWIe(Tcl_WideInt *out, const char *p, const char *e, int sign);
 
-MODULE_SCOPE char *
-	TclItoAw(char *buf, int val, char padchar, unsigned short int width);
-MODULE_SCOPE int
-	TclAtoWIe(Tcl_WideInt *out, const char *p, const char *e, int sign);
-
-MODULE_SCOPE Tcl_Obj*
-		    ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
-			Tcl_Obj *objPtr);
-
-MODULE_SCOPE ClockFmtScnStorage *
-		    Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
-			Tcl_Obj *objPtr);
-MODULE_SCOPE Tcl_Obj *
-		    ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
-
-MODULE_SCOPE int    ClockScan(DateInfo *info,
-			Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
-
-MODULE_SCOPE int    ClockFormat(DateFormat *dateFmt,
-			ClockFmtScnCmdArgs *opts);
-
-MODULE_SCOPE void   ClockFrmScnClearCaches(void);
+MODULE_SCOPE Tcl_Obj*	ClockFrmObjGetLocFmtKey(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+MODULE_SCOPE ClockFmtScnStorage *Tcl_GetClockFrmScnFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+MODULE_SCOPE Tcl_Obj *	ClockLocalizeFormat(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE int	ClockScan(DateInfo *info, Tcl_Obj *strObj,
+			    ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE int	ClockFormat(DateFormat *dateFmt,
+			    ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE void	ClockFrmScnClearCaches(void);
 
 #endif /* _TCLCLOCK_H */
