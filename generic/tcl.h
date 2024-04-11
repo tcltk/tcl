@@ -783,6 +783,8 @@ typedef struct Tcl_ObjType {
 				 * old type. Returns TCL_ERROR on failure. */
 } Tcl_ObjType;
 #define TCL_OBJTYPE_V0 /* just empty */
+#define TCL_OBJTYPE_V1(a) /* just empty */
+#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) /* just empty */
 
 /*
  * The following structure stores an internal representation (internalrep) for
