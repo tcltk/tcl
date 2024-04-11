@@ -178,7 +178,7 @@ MODULE_SCOPE const char*TclStrIdxTreeSearch(TclStrIdxTree **foundParent,
 			    const char *start, const char *end);
 MODULE_SCOPE int	TclStrIdxTreeBuildFromList(TclStrIdxTree *idxTree,
 			    Tcl_Size lstc, Tcl_Obj **lstv, void **values);
-MODULE_SCOPE Tcl_Obj *	TclStrIdxTreeNewObj();
+MODULE_SCOPE Tcl_Obj *	TclStrIdxTreeNewObj(void);
 MODULE_SCOPE TclStrIdxTree*TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr);
 
 #ifdef TEST_STR_IDX_TREE

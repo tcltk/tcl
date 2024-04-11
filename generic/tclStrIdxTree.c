@@ -350,15 +350,24 @@ TclStrIdxTreeBuildFromList(
     return ret;
 }
 
-/* Follow links (smart pointers). */
+/* Is a Tcl_Obj (of right type) holding a smart pointer link? */
+static inline int
+IsLink(
+    Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *irPtr = &objPtr->internalRep;
+    return irPtr->twoPtrValue.ptr1 && !irPtr->twoPtrValue.ptr2;
+}
+
+/* Follow links (smart pointers) if present. */
 static inline Tcl_Obj *
 FollowPossibleLink(
     Tcl_Obj *objPtr)
 {
-    if (objPtr->internalRep.twoPtrValue.ptr1 != NULL
-	    && objPtr->internalRep.twoPtrValue.ptr2 == NULL) {
+    if (IsLink(objPtr)) {
 	objPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
     }
+    /* assert(!IsLink(objPtr)); */
     return objPtr;
 }
 
@@ -401,8 +410,7 @@ StrIdxTreeObj_FreeIntRepProc(
     Tcl_Obj *objPtr)
 {
     /* follow links (smart pointers) */
-    if (objPtr->internalRep.twoPtrValue.ptr1 != NULL
-	    && objPtr->internalRep.twoPtrValue.ptr2 == NULL) {
+    if (IsLink(objPtr)) {
 	/* is a link */
 	TclUnsetObjRef(*((Tcl_Obj **) &objPtr->internalRep.twoPtrValue.ptr1));
     } else {
