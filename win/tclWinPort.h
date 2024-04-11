@@ -345,6 +345,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef R_OK
 #    define R_OK 04
 #endif
+#ifndef O_ACCMODE
+#    define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
+#endif
 
 /*
  * Define macros to query file type bits, if they're not already
