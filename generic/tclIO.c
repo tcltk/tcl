@@ -8711,22 +8711,17 @@ UpdateInterest(
     }
 
     if (!statePtr->timer
-	    && mask & TCL_WRITABLE
+	    && (mask & TCL_WRITABLE)
 	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	    && (
-		bufPtr
-		&&
-		!IsBufferEmpty(bufPtr)
-		&&
-		!IsBufferFull(bufPtr)
-	   )
+	    && bufPtr
+		&& !IsBufferEmpty(bufPtr)
+		&& !IsBufferFull(bufPtr)
     ) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
     }
-
 
     ChanWatch(chanPtr, mask);
 }
