@@ -24,7 +24,7 @@ typedef struct TclStrIdx TclStrIdx;
 /*
  * Top level structure of the tree, or first two fields of the interior
  * structure.
- * 
+ *
  * Note that this is EXACTLY two pointers so it is the same size as the
  * twoPtrValue of a Tcl_ObjInternalRep. This is how the top level structure
  * of the tree is always allocated. (This type constraint is asserted in
