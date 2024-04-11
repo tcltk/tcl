@@ -15,6 +15,7 @@ close \- Close an open channel
 \fBclose \fIchannelId\fR ?\fBr\fR(\fBead\fR)|\fBw\fR(\fBrite\fR)?
 .BE
 .SH DESCRIPTION
+.PP
 The \fBclose\fR command has been superceded by the \fBchan close\fR
 command and supports the same syntax and options.
 .SH "SEE ALSO"
