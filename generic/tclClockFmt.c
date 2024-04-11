@@ -592,8 +592,7 @@ static const Tcl_ObjType ClockFmtObjType = {
     ClockFmtObj_FreeInternalRep, /* freeIntRepProc */
     ClockFmtObj_DupInternalRep,	 /* dupIntRepProc */
     ClockFmtObj_UpdateString,	 /* updateStringProc */
-    ClockFmtObj_SetFromAny,	 /* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    ClockFmtObj_SetFromAny	 /* setFromAnyProc */
 };
 
 #define ObjClockFmtScn(objPtr) \
