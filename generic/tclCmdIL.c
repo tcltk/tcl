@@ -989,7 +989,7 @@ InfoDefaultCmd(
 		if (valueObjPtr == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
 	    } else {
 		Tcl_Obj *nullObjPtr;
 		TclNewObj(nullObjPtr);
@@ -999,7 +999,7 @@ InfoDefaultCmd(
 		if (valueObjPtr == NULL) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 	    }
 	    return TCL_OK;
 	}
