@@ -1106,7 +1106,7 @@ TclpOpenFileChannel(
 	return NULL;
     }
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	accessMode = GENERIC_READ;
 	channelPermissions = TCL_READABLE;

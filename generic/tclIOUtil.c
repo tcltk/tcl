@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -1342,14 +1343,20 @@ TclFSNormalizeToUniquePath(
      */
     path = TclGetStringFromObj(pathPtr, &i);
 
-    if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
-		    || (path[0] == '\\' && path[1] == '\\') ) ) {
-	for ( i = 2; ; i++) {
-	    if (path[i] == '\0') break;
-	    if (path[i] == path[0]) break;
+    if ((i >= 3) && ((path[0] == '/' && path[1] == '/')
+	    || (path[0] == '\\' && path[1] == '\\'))) {
+	for (i = 2; ; i++) {
+	    if (path[i] == '\0') {
+		break;
+	    }
+	    if (path[i] == path[0]) {
+		break;
+	    }
 	}
 	--i;
-	if (path[i] == ':') isVfsPath = 1;
+	if (path[i] == ':') {
+	    isVfsPath = 1;
+	}
     }
 
     /*
@@ -1414,51 +1421,20 @@ TclFSNormalizeToUniquePath(
  *
  * TclGetOpenMode --
  *
- *	Obsolete.  A limited version of TclGetOpenModeEx() which exists only to
- *	satisfy any extensions imprudently using it via Tcl's internal stubs
- *	table.
- *
- * Results:
- *	See TclGetOpenModeEx().
- *
- * Side effects:
- *	See TclGetOpenModeEx().
- *
- *---------------------------------------------------------------------------
- */
-
-int
-TclGetOpenMode(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting.  May
-				 *  be NULL. */
-    const char *modeString,	/* e.g. "r+" or "RDONLY CREAT". */
-    int *seekFlagPtr)		/* Sets this to 1 to tell the caller to seek to
-				   EOF after opening the file, and
-				 * 0 otherwise. */
-{
-    int binary = 0;
-    return TclGetOpenModeEx(interp, modeString, seekFlagPtr, &binary);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclGetOpenModeEx --
- *
  *	Computes a POSIX mode mask for opening a file.
  *
  * Results:
  *	The mode to pass to "open", or -1 if an error occurs.
  *
  * Side effects:
- *	Sets *seekFlagPtr to 1 to tell the caller to
+ *	Sets *modeFlagsPtr to 1 to tell the caller to
  *	seek to EOF after opening the file, or to 0 otherwise.
  *
- *	Sets *binaryPtr to 1 to tell the caller to configure the channel as a
- *	binary channel, or to 0 otherwise.
+ *	Adds CHANNEL_RAW_MODE to *modeFlagsPtr to tell the caller
+ *	to configure the channel as a binary channel.
  *
- *	If there is an error and interp is not NULL, sets interpreter result to
- *	an error message.
+ *	If there is an error and interp is not NULL, sets
+ *	interpreter result to an error message.
  *
  * Special note:
  *	Based on a prototype implementation contributed by Mark Diekhans.
@@ -1467,20 +1443,15 @@ TclGetOpenMode(
  */
 
 int
-TclGetOpenModeEx(
+TclGetOpenMode(
     Tcl_Interp *interp,		/* Interpreter, possibly NULL, to use for
 				 * error reporting. */
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
-    int *seekFlagPtr,		/* Sets this to 1 to tell the the caller to seek to
-				 * EOF after opening the file, and 0 otherwise. */
-    int *binaryPtr)		/* Sets this to 1 to tell the caller to
-				 * configure the channel for binary
-				 * operations after opening the file. */
+    int *modeFlagsPtr)
 {
     int mode, c, gotRW;
     Tcl_Size modeArgc, i;
-    const char **modeArgv, *flag;
-#define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
+    const char **modeArgv = NULL, *flag;
 
     /*
      * Check for the simpler fopen-like access modes like "r" which are
@@ -1488,9 +1459,8 @@ TclGetOpenModeEx(
      * lower-case first letter.
      */
 
-    *seekFlagPtr = 0;
-    *binaryPtr = 0;
-    mode = 0;
+    *modeFlagsPtr = 0;
+    mode = O_RDONLY;
 
     /*
      * Guard against wide characters before using byte-oriented routines.
@@ -1500,7 +1470,6 @@ TclGetOpenModeEx(
 	    && islower(UCHAR(modeString[0]))) { /* INTL: ISO only. */
 	switch (modeString[0]) {
 	case 'r':
-	    mode = O_RDONLY;
 	    break;
 	case 'w':
 	    mode = O_WRONLY|O_CREAT|O_TRUNC;
@@ -1512,7 +1481,7 @@ TclGetOpenModeEx(
 	     */
 
 	    mode = O_WRONLY|O_CREAT|O_APPEND;
-	    *seekFlagPtr = 1;
+	    *modeFlagsPtr |= 1;
 	    break;
 	default:
 	    goto error;
@@ -1529,11 +1498,10 @@ TclGetOpenModeEx(
 		 * 1773127]
 		 */
 
-		mode &= ~(O_RDONLY|O_WRONLY|O_APPEND);
-		mode |= O_RDWR;
+		mode = (mode & ~(O_ACCMODE|O_APPEND)) | O_RDWR;
 		break;
 	    case 'b':
-		*binaryPtr = 1;
+		*modeFlagsPtr |= CHANNEL_RAW_MODE;
 		break;
 	    default:
 		goto error;
@@ -1545,11 +1513,11 @@ TclGetOpenModeEx(
 	return mode;
 
     error:
-	*seekFlagPtr = 0;
-	*binaryPtr = 0;
+	*modeFlagsPtr = 0;
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "illegal access mode \"%s\"", modeString));
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	return -1;
     }
@@ -1561,11 +1529,16 @@ TclGetOpenModeEx(
      */
 
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
+    invAccessMode:
 	if (interp != NULL) {
 	    Tcl_AddErrorInfo(interp,
 		    "\n    while processing open access modes \"");
 	    Tcl_AddErrorInfo(interp, modeString);
 	    Tcl_AddErrorInfo(interp, "\"");
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	}
+	if (modeArgv) {
+	    ckfree((void *)modeArgv);
 	}
 	return -1;
     }
@@ -1575,24 +1548,55 @@ TclGetOpenModeEx(
 	flag = modeArgv[i];
 	c = flag[0];
 	if ((c == 'R') && (strcmp(flag, "RDONLY") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_RDONLY;
+	    if (gotRW) {
+	    invRW:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				"invalid access mode \"%s\": modes RDONLY, "
+				"RDWR, and WRONLY cannot be combined", flag));
+		}
+		goto invAccessMode;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_RDONLY;
 	    gotRW = 1;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_WRONLY;
+	    if (gotRW) {
+		goto invRW;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_WRONLY;
 	    gotRW = 1;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_RDWR;
+	    if (gotRW) {
+		goto invRW;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_RDWR;
 	    gotRW = 1;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
+	    if (mode & O_APPEND) {
+	    accessFlagRepeated:
+		if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"access mode \"%s\" repeated", flag));
+		}
+	    goto invAccessMode;
+	    }
 	    mode |= O_APPEND;
-	    *seekFlagPtr = 1;
+	    *modeFlagsPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
+	    if (mode & O_CREAT) {
+	    goto accessFlagRepeated;
+	    }
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {
+	    if (mode & O_EXCL) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_EXCL;
-
 	} else if ((c == 'N') && (strcmp(flag, "NOCTTY") == 0)) {
 #ifdef O_NOCTTY
+	    if (mode & O_NOCTTY) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NOCTTY;
 #else
 	    if (interp != NULL) {
@@ -1600,12 +1604,14 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    ckfree(modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
 
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
 #ifdef O_NONBLOCK
+	    if (mode & O_NONBLOCK) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NONBLOCK;
 #else
 	    if (interp != NULL) {
@@ -1613,33 +1619,35 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    ckfree(modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
-
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
+	    if (mode & O_TRUNC) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_TRUNC;
 	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
-	    *binaryPtr = 1;
+	    if (*modeFlagsPtr & CHANNEL_RAW_MODE) {
+		goto accessFlagRepeated;
+	    }
+	    *modeFlagsPtr |= CHANNEL_RAW_MODE;
 	} else {
-
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"invalid access mode \"%s\": must be RDONLY, WRONLY, "
-			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
-			" or TRUNC", flag));
+			"invalid access mode \"%s\": must be APPEND, BINARY, "
+			"CREAT, EXCL, NOCTTY, NONBLOCK, RDONLY, RDWR, "
+			"TRUNC, or WRONLY", flag));
 	    }
-	    ckfree(modeArgv);
-	    return -1;
+	    goto invAccessMode;
 	}
     }
 
-    ckfree(modeArgv);
+    ckfree((void *)modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "access mode must include either RDONLY, WRONLY, or RDWR",
+		    "access mode must include either RDONLY, RDWR, or WRONLY",
 		    -1));
 	}
 	return -1;
@@ -2055,7 +2063,7 @@ Tcl_PosixError(
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
     if (interp) {
-	Tcl_SetErrorCode(interp, "POSIX", id, msg, (void *)NULL);
+	Tcl_SetErrorCode(interp, "POSIX", id, msg, (char *)NULL);
     }
     return msg;
 }
@@ -2204,14 +2212,14 @@ Tcl_FSOpenFileChannel(
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {
-	int mode, seekFlag, binary;
+	int mode, modeFlags;
 
 	/*
 	 * Parse the mode to determine whether to seek at the outset
 	 * and/or set the channel into binary mode.
 	 */
 
-	mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    return NULL;
 	}
@@ -2230,7 +2238,7 @@ Tcl_FSOpenFileChannel(
 	 * Seek and/or set binary mode as determined above.
 	 */
 
-	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
+	if ((modeFlags & 1) && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2240,7 +2248,7 @@ Tcl_FSOpenFileChannel(
 	    Tcl_Close(NULL, retVal);
 	    return NULL;
 	}
-	if (binary) {
+	if (modeFlags & CHANNEL_RAW_MODE) {
 	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
 	}
 	return retVal;
@@ -4353,16 +4361,14 @@ Tcl_FSCopyDirectory(
 
 int
 Tcl_FSRemoveDirectory(
-    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed.
-                                 */
+    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed. */
     int recursive,		/* If zero, removes only an empty directory.
 				 * Otherwise, removes the directory and all its
 				 * contents.  */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
 				 * place to store a a pointer to a new
 				 * object having a refCount of 1 and containing
-				 * the name of the file that produced an error.
-				 * */
+				 * the name of the file that produced an error. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 

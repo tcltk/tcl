@@ -2178,7 +2178,7 @@ TclCompileScript(
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "too many nested compilations (infinite loop?)", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
     }

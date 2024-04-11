@@ -1469,7 +1469,7 @@ Tcl_GetChannel(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can not find channel named \"%s\"", chanName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (char *)NULL);
 	return NULL;
     }
 
@@ -8760,6 +8760,7 @@ UpdateInterest(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
+    ChannelBuffer *bufPtr = statePtr->outQueueHead;
     int mask = statePtr->interestMask;
 
     if (chanPtr->typePtr == NULL) {
@@ -8839,14 +8840,17 @@ UpdateInterest(
     }
 
     if (!statePtr->timer
-	    && mask & TCL_WRITABLE
-	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+	    && (mask & TCL_WRITABLE)
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && bufPtr
+		&& !IsBufferEmpty(bufPtr)
+		&& !IsBufferFull(bufPtr)
+    ) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
     }
-
 
     ChanWatch(chanPtr, mask);
 }
@@ -9950,12 +9954,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error reading \"",
-			Tcl_GetChannelName(inChan), "\": ", (void *)NULL);
+			Tcl_GetChannelName(inChan), "\": ", (char *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 	    }
 	    if (msg != NULL) {
@@ -10031,12 +10035,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error writing \"",
-			Tcl_GetChannelName(outChan), "\": ", (void *)NULL);
+			Tcl_GetChannelName(outChan), "\": ", (char *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 	    }
 	    if (msg != NULL) {
