@@ -8760,6 +8760,7 @@ UpdateInterest(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
+    ChannelBuffer *bufPtr = statePtr->outQueueHead;
     int mask = statePtr->interestMask;
 
     if (chanPtr->typePtr == NULL) {
@@ -8839,14 +8840,17 @@ UpdateInterest(
     }
 
     if (!statePtr->timer
-	    && mask & TCL_WRITABLE
-	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+	    && (mask & TCL_WRITABLE)
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && bufPtr
+		&& !IsBufferEmpty(bufPtr)
+		&& !IsBufferFull(bufPtr)
+    ) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
     }
-
 
     ChanWatch(chanPtr, mask);
 }
