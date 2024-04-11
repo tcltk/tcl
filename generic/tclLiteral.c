@@ -393,13 +393,13 @@ TclRegisterLiteral(
 				 * the literal should not be shared across
 				 * namespaces. */
 {
-    CompileEnv *envPtr = ePtr;
+    CompileEnv *envPtr = (CompileEnv *)ePtr;
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
     unsigned hash;
-    int localHash, objIndex, new;
+    int localHash, objIndex, isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -453,7 +453,7 @@ TclRegisterLiteral(
      */
 
     globalPtr = NULL;
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
+    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 

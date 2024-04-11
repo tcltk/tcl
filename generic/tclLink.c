@@ -126,7 +126,7 @@ Tcl_LinkVar(
 	return TCL_ERROR;
     }
 
-    linkPtr = ckalloc(sizeof(Link));
+    linkPtr = (Link *)ckalloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->nsPtr = NULL;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
@@ -274,7 +274,7 @@ LinkTraceProc(
     const char *name2,		/* Second part of variable name. */
     int flags)			/* Miscellaneous additional information. */
 {
-    Link *linkPtr = clientData;
+    Link *linkPtr = (Link *)clientData;
     int changed;
     size_t valueLength;
     const char *value;
@@ -550,7 +550,7 @@ LinkTraceProc(
 	valueLength = valueObj->length + 1;
 	pp = (char **) linkPtr->addr;
 
-	*pp = ckrealloc(*pp, valueLength);
+	*pp = (char *)ckrealloc(*pp, valueLength);
 	memcpy(*pp, value, valueLength);
 	break;
 
