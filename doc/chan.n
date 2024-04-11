@@ -814,7 +814,44 @@ set data [chan read $f $numDataBytes]
 
 close $f
 .CE
-
+.SS "FILE SEEK EXAMPLES"
+.PP
+Read a file twice:
+.PP
+.CS
+set f [open file.txt]
+set data1 [chan read $f]
+\fBchan seek\fR $f 0
+set data2 [chan read $f]
+chan close $f
+# $data1 eq $data2 if the file wasn't updated
+.CE
+.PP
+Read the last 10 bytes from a file:
+.PP
+.CS
+set f [open file.data]
+# This is guaranteed to work with binary data but
+# may fail with other encodings...
+chan configure $f -translation binary
+\fBchan seek\fR $f -10 end
+set data [chan read $f 10]
+chan close $f
+.CE
+.PP
+Read a line from a file channel only if it starts with \fBfoobar\fR:
+.PP
+.CS
+# Save the offset in case we need to undo the read...
+set offset [\fBtell\fR $chan]
+if {[read $chan 6] eq "foobar"} {
+    gets $chan line
+} else {
+    set line {}
+    # Undo the read...
+    seek $chan $offset
+}
+.CE
 .SS "ENCODING ERROR EXAMPLES"
 .PP
 The example below illustrates handling of an encoding error encountered
@@ -980,10 +1017,11 @@ vwait done
 .SH "SEE ALSO"
 close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
 fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
-socket(n), tell(n), refchan(n), transchan(n)
+socket(n), tell(n), refchan(n), transchan(n),
+Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, end of file, events, input, non-blocking,
-offset, output, readable, writable
+offset, output, readable, seek, stdio, tell, writable
 '\" Local Variables:
 '\" mode: nroff
 '\" End:
