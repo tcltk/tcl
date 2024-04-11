@@ -8317,7 +8317,7 @@ TestparseargsCmd(
     const Tcl_ArgvInfo argTable[] = {
 	{TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
 	{TCL_ARGV_STRING,  "-colormode" ,  NULL, &color,  "color mode", NULL},
-	{TCL_ARGV_GENFUNC, "-media", ParseMedia, &media,  "media page size", NULL},
+	{TCL_ARGV_GENFUNC, "-media", (void *)ParseMedia, &media,  "media page size", NULL},
 	TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };
 
