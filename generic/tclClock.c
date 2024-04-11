@@ -1139,7 +1139,7 @@ ClockConfigureObjCmd(
 	    }
 	    if (i+1 >= objc) {
 		Tcl_SetObjResult(interp,
-		    Tcl_NewWideIntObj(dataPtr->defFlags & CLF_VALIDATE ? 1 : 0));
+			Tcl_NewBooleanObj(dataPtr->defFlags & CLF_VALIDATE));
 	    }
 	break;
 	case CLOCK_CLEAR_CACHE:
