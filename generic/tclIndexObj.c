@@ -115,7 +115,7 @@ Tcl_GetIndexFromObj(
      */
 
     if (objPtr->typePtr == &indexType) {
-	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	IndexRep *indexRep = (IndexRep *)objPtr->internalRep.twoPtrValue.ptr1;
 
 	/*
 	 * Here's hoping we don't get hit by unfortunate packing constraints
@@ -274,7 +274,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr && (objPtr->typePtr == &indexType)) {
-	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	indexRep = (IndexRep *)objPtr->internalRep.twoPtrValue.ptr1;
 	if ((indexRep->tablePtr == tablePtr)
 		&& (indexRep->offset == offset)
 		&& (indexRep->index >= 0)) {
@@ -338,10 +338,10 @@ Tcl_GetIndexFromObjStruct(
 
     if (objPtr && (index >= 0)) {
 	if (objPtr->typePtr == &indexType) {
-	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	    indexRep = (IndexRep *)objPtr->internalRep.twoPtrValue.ptr1;
 	} else {
 	    TclFreeIntRep(objPtr);
-	    indexRep = ckalloc(sizeof(IndexRep));
+	    indexRep = (IndexRep *)ckalloc(sizeof(IndexRep));
 	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
 	    objPtr->typePtr = &indexType;
 	}
@@ -415,11 +415,11 @@ UpdateStringOfIndex(
 {
     IndexRep *indexRep = (IndexRep *)objPtr->internalRep.twoPtrValue.ptr1;
     char *buf;
-    unsigned len;
+    size_t len;
     const char *indexStr = EXPAND_OF(indexRep);
 
     len = strlen(indexStr);
-    buf = ckalloc(len + 1);
+    buf = (char *)ckalloc(len + 1);
     memcpy(buf, indexStr, len+1);
     objPtr->bytes = buf;
     objPtr->length = len;

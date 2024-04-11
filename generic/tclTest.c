@@ -599,8 +599,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
-    Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
-    Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
+    Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData)123);
+    Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData)345);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -985,7 +985,7 @@ TestcmdinfoCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	Tcl_CreateCommand(interp, argv[2], CmdProc1, (ClientData) "original",
+	Tcl_CreateCommand(interp, argv[2], CmdProc1, (ClientData)"original",
 		CmdDelProc1);
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_DStringInit(&delString);
@@ -1022,16 +1022,12 @@ TestcmdinfoCmd(
 	}
     } else if (strcmp(argv[1], "modify") == 0) {
 	info.proc = CmdProc2;
-	info.clientData = (ClientData) "new_command_data";
+	info.clientData = (ClientData)"new_command_data";
 	info.objProc = NULL;
 	info.objClientData = NULL;
 	info.deleteProc = CmdDelProc2;
-	info.deleteData = (ClientData) "new_delete_data";
-	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-	}
+	info.deleteData = (ClientData)"new_delete_data";
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_SetCommandInfo(interp, argv[2], &info)));
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, get, or modify", NULL);
@@ -1115,7 +1111,7 @@ TestcmdtokenCmd(
     }
     if (strcmp(argv[1], "create") == 0) {
 	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
-		(ClientData) "original", NULL);
+		(ClientData)"original", NULL);
 	snprintf(buf, sizeof(buf), "%p", (void *)token);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "name") == 0) {
