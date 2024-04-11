@@ -447,7 +447,7 @@ Tcl_ReadObjCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 		return TCL_ERROR;
 #if !defined(TCL_NO_DEPRECATED)
 	    }
