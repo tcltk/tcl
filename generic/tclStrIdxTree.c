@@ -60,13 +60,12 @@ static void		StrIdxTreeObj_DupIntRepProc(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		StrIdxTreeObj_FreeIntRepProc(Tcl_Obj *objPtr);
 static void		StrIdxTreeObj_UpdateStringProc(Tcl_Obj *objPtr);
 
-Tcl_ObjType StrIdxTreeObjType = {
+static const Tcl_ObjType StrIdxTreeObjType = {
     "str-idx-tree",		    /* name */
     StrIdxTreeObj_FreeIntRepProc,   /* freeIntRepProc */
     StrIdxTreeObj_DupIntRepProc,    /* dupIntRepProc */
     StrIdxTreeObj_UpdateStringProc, /* updateStringProc */
-    NULL,			    /* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    NULL			    /* setFromAnyProc */
 };
 
 /*
