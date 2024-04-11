@@ -537,7 +537,7 @@ TransformCloseProc(
     ClientData instanceData,
     Tcl_Interp *interp)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Important: In this procedure 'dataPtr->self' already points to the

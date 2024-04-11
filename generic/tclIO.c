@@ -11261,7 +11261,7 @@ DupChannelInternalRep(
     Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ResolvedChanName *resPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr = (ResolvedChanName *)srcPtr->internalRep.twoPtrValue.ptr1;
 
     resPtr->refCount++;
     copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
@@ -11288,7 +11288,7 @@ static void
 FreeChannelInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr = (ResolvedChanName *)objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
     if (--resPtr->refCount) {
