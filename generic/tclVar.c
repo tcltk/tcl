@@ -30,7 +30,7 @@ static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
-    0,				/* flags */
+    TCL_HASH_KEY_DIRECT_COMPARE,/* allows compare keys by pointers */
     TclHashObjKey,		/* hashKeyProc */
     CompareVarKeys,		/* compareKeysProc */
     AllocVarEntry,		/* allocEntryProc */
