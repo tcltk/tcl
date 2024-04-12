@@ -742,7 +742,7 @@ runtest: ${TCLTEST_EXE}
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: ${TCLTEST_EXE}
-	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | $(SHELL_ENV) ./${TCLTEST_EXE}
+	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source -encoding utf-8 ../tests/all.tcl;exec chmod +w .' | $(SHELL_ENV) ./${TCLTEST_EXE}
 
 # The following target generates the shared libraries in dltest/ that are used
 # for testing; they are included as part of the "tcltest" target (via the
@@ -1850,7 +1850,7 @@ gendate:
 # run (and the results checked) after updating to a new release of libtommath.
 
 gentommath_h:
-	$(NATIVE_TCLSH) "$(TOOL_DIR)/fix_tommath_h.tcl" \
+	$(NATIVE_TCLSH) -encoding utf-8 "$(TOOL_DIR)/fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR)/tommath.h" \
 		> "$(GENERIC_DIR)/tclTomMath.h"
 
@@ -1870,10 +1870,10 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) -encoding utf-8 $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) -encoding utf-8 $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
 
 #
@@ -2146,7 +2146,7 @@ html-tk: ${NATIVE_TCLSH}
 # from Makefile.in in the first place...
 HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
-	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
+	@${NATIVE_TCLSH} -encoding utf-8 $(TOOL_DIR)/tcltk-man2html.tcl \
 		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
