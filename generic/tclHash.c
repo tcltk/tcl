@@ -304,20 +304,34 @@ CreateHashEntry(
 
     if (typePtr->compareKeysProc) {
 	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
-
-	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
-		hPtr = hPtr->nextPtr) {
-	    if (hash != PTR2UINT(hPtr->hash)) {
-		continue;
-	    }
-	    /* if keys pointers or values are equal */
-	    if ((key == hPtr->key.oneWordValue)
-		|| compareKeysProc((void *) key, hPtr)
-	    ) {
-		if (newPtr) {
-		    *newPtr = 0;
+	if (typePtr->flags & TCL_HASH_KEY_DIRECT_COMPARE) {
+	    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+		    hPtr = hPtr->nextPtr) {
+		if (hash != PTR2UINT(hPtr->hash)) {
+		    continue;
 		}
-		return hPtr;
+		/* if keys pointers or values are equal */
+		if ((key == hPtr->key.oneWordValue)
+		    || compareKeysProc((void *) key, hPtr)
+		) {
+		    if (newPtr) {
+			*newPtr = 0;
+		    }
+		    return hPtr;
+		}
+	    }
+	} else { /* no direct compare */
+	    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+		    hPtr = hPtr->nextPtr) {
+		if (hash != PTR2UINT(hPtr->hash)) {
+		    continue;
+		}
+		if (compareKeysProc((void *) key, hPtr)) {
+		    if (newPtr) {
+			*newPtr = 0;
+		    }
+		    return hPtr;
+		}
 	    }
 	}
     } else {
