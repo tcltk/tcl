@@ -625,14 +625,14 @@ proc ::safe::InterpInit {
     # other procedures defined:
 
     if {[catch {::interp eval $child {
-	source [file join $tcl_library init.tcl]
+	source -encoding utf-8 [file join $tcl_library init.tcl]
     }} msg opt]} {
 	Log $child "can't source init.tcl ($msg)"
 	return -options $opt "can't source init.tcl into child $child ($msg)"
     }
 
     if {[catch {::interp eval $child {
-	source [file join $tcl_library tm.tcl]
+	source -encoding utf-8 [file join $tcl_library tm.tcl]
     }} msg opt]} {
 	Log $child "can't source tm.tcl ($msg)"
 	return -options $opt "can't source tm.tcl into child $child ($msg)"
