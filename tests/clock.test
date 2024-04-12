@@ -34,7 +34,7 @@ testConstraint y2038 \
 
 # Test with both validity modes - validate on / off:
 
-set valid_mode [::tcl::clock::configure -valid]
+set valid_mode [::tcl::unsupported::clock::configure -valid]
 
 # Wrapper to show validity mode in the test-case name (for possible errors):
 proc test {args} {
@@ -44,7 +44,7 @@ proc test {args} {
 }
 
 puts [outputChannel] "  Validity default mode: [expr {$valid_mode ? "on": "off"}]"
-testConstraint valid_off [expr {![::tcl::clock::configure -valid]}]
+testConstraint valid_off [expr {![::tcl::unsupported::clock::configure -valid]}]
 
 if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
     namespace import ::tcl::unsupported::timerate
@@ -37182,13 +37182,13 @@ test clock-46.16$idx {freescan: validation rules: invalid day of week} \
 	_invalid_test "Sat Jan 02 00:00:00 1970$relstr" "Thu Jan 04 00:00:00 1970$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid day of week}]
 test clock-46.17$idx {scan: validation rules: invalid year} -setup {
-	set orgcfg [list -min-year [::tcl::clock::configure -min-year] -max-year [::tcl::clock::configure -max-year] \
-	     -year-century [::tcl::clock::configure -year-century] -century-switch [::tcl::clock::configure -century-switch]]
-	::tcl::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
+	     -year-century [::tcl::unsupported::clock::configure -year-century] -century-switch [::tcl::unsupported::clock::configure -century-switch]]
+	::tcl::unsupported::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
 	_invalid_test "70-01-01$relstr" "1870-01-01$relstr" "9570-01-01$relstr"
     } -result [lrepeat 15 1 {unable to convert input string: invalid year}] -cleanup {
-	::tcl::clock::configure {*}$orgcfg
+	::tcl::unsupported::clock::configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
 
@@ -37325,23 +37325,23 @@ test clock-46.29-2 {scan: validation rules: valid day of leap/not leap year} \
 	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1]
     } -result {31-12-2016 31-12-2017 31-12-2016 31-12-2017}
 test clock-46.30 {scan: validation rules: invalid year} -setup {
-	set orgcfg [list -min-year [::tcl::clock::configure -min-year] -max-year [::tcl::clock::configure -max-year] \
-	     -year-century [::tcl::clock::configure -year-century] -century-switch [::tcl::clock::configure -century-switch]]
-	::tcl::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
+	     -year-century [::tcl::unsupported::clock::configure -year-century] -century-switch [::tcl::unsupported::clock::configure -century-switch]]
+	::tcl::unsupported::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
 	_invalid_test "01-01-70" "%d-%m-%y" "01-01-1870" "%d-%m-%C%y" "01-01-1970" "%d-%m-%Y"
     } -result [lrepeat 15 1 {unable to convert input string: invalid year}] -cleanup {
-	::tcl::clock::configure {*}$orgcfg
+	::tcl::unsupported::clock::configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
 test clock-46.31 {scan: validation rules: invalid iso year} -setup {
-	set orgcfg [list -min-year [::tcl::clock::configure -min-year] -max-year [::tcl::clock::configure -max-year] \
-	     -year-century [::tcl::clock::configure -year-century] -century-switch [::tcl::clock::configure -century-switch]]
-	::tcl::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
+	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
+	     -year-century [::tcl::unsupported::clock::configure -year-century] -century-switch [::tcl::unsupported::clock::configure -century-switch]]
+	::tcl::unsupported::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
 	_invalid_test "01-01-70" "%d-%m-%g" "01-01-9870" "%d-%m-%C%g" "01-01-9870" "%d-%m-%G"
     } -result [lrepeat 15 1 {unable to convert input string: invalid iso year}] -cleanup {
-	::tcl::clock::configure {*}$orgcfg
+	::tcl::unsupported::clock::configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
 rename _invalid_test {}

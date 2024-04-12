@@ -83,8 +83,8 @@ static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
-static int		ClockConfigureObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ClockConfigureObjCmd;
+static Tcl_ObjCmdProc ClockConfigureUnsupportedObjCmd;
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
@@ -267,6 +267,11 @@ TclClockInit(
 	cmdPtr->compileProc = clockCmdPtr->compileProc ?
 		clockCmdPtr->compileProc : TclCompileBasicMin0ArgCmd;
     }
+    cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
+	    "::tcl::unsupported::clock::configure",
+	    ClockConfigureUnsupportedObjCmd, data, ClockDeleteCmdProc);
+    data->refCount++;
+    cmdPtr->compileProc = TclCompileBasicMin0ArgCmd;
 }
 
 /*
@@ -940,7 +945,7 @@ TimezoneLoaded(
 /*
  *----------------------------------------------------------------------
  *
- * ClockConfigureObjCmd --
+ * ClockConfigureObjCmd/ClockConfigureUnsupportedObjCmd --
  *
  *	This function is invoked to process the Tcl "::tcl::clock::configure"
  *	(internal, unsupported) command.
@@ -969,16 +974,12 @@ ClockConfigureObjCmd(
     static const char *const options[] = {
 	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
 	"-clear",
-	"-year-century",  "-century-switch",
-	"-min-year", "-max-year", "-max-jdn", "-validate",
 	"-init-complete",
 	NULL
     };
     enum optionInd {
 	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
 	CLOCK_CLEAR_CACHE,
-	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
-	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
 	CLOCK_INIT_COMPLETE
     };
     int optionIndex;		/* Index of an option. */
@@ -1045,6 +1046,65 @@ ClockConfigureObjCmd(
 		Tcl_SetObjResult(interp, dataPtr->currentLocale);
 	    }
 	break;
+	case CLOCK_CLEAR_CACHE:
+	    ClockConfigureClear(dataPtr);
+	break;
+	case CLOCK_INIT_COMPLETE:
+	    {
+		/*
+		 * Init completed.
+		 * Compile clock ensemble (performance purposes).
+		 */
+		Tcl_Command token = Tcl_FindCommand(interp, "::clock",
+		    NULL, TCL_GLOBAL_ONLY);
+		if (!token) {
+		    return TCL_ERROR;
+		}
+		int ensFlags = 0;
+		if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		ensFlags |= ENSEMBLE_COMPILE;
+		if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	break;
+	}
+    }
+
+    return TCL_OK;
+}
+
+static int
+ClockConfigureUnsupportedObjCmd(
+    void *clientData,  /* Client data containing literal pool */
+    Tcl_Interp *interp,	    /* Tcl interpreter */
+    int objc,		    /* Parameter count */
+    Tcl_Obj *const objv[])  /* Parameter vector */
+{
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
+
+    static const char *const options[] = {
+	"-year-century",  "-century-switch",
+	"-min-year", "-max-year", "-max-jdn", "-validate",
+	NULL
+    };
+    enum optionInd {
+	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
+	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
+    };
+    int optionIndex;		/* Index of an option. */
+    int i;
+
+    for (i = 1; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i++], options,
+	    "option", 0, &optionIndex) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
+		    TclGetString(objv[i-1]), (char *)NULL);
+	    return TCL_ERROR;
+	}
+	switch (optionIndex) {
 	case CLOCK_YEAR_CENTURY:
 	    if (i < objc) {
 		int year;
@@ -1137,30 +1197,6 @@ ClockConfigureObjCmd(
 	    if (i+1 >= objc) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewBooleanObj(dataPtr->defFlags & CLF_VALIDATE));
-	    }
-	break;
-	case CLOCK_CLEAR_CACHE:
-	    ClockConfigureClear(dataPtr);
-	break;
-	case CLOCK_INIT_COMPLETE:
-	    {
-		/*
-		 * Init completed.
-		 * Compile clock ensemble (performance purposes).
-		 */
-		Tcl_Command token = Tcl_FindCommand(interp, "::clock",
-		    NULL, TCL_GLOBAL_ONLY);
-		if (!token) {
-		    return TCL_ERROR;
-		}
-		int ensFlags = 0;
-		if (Tcl_GetEnsembleFlags(interp, token, &ensFlags) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		ensFlags |= ENSEMBLE_COMPILE;
-		if (Tcl_SetEnsembleFlags(interp, token, ensFlags) != TCL_OK) {
-		    return TCL_ERROR;
-		}
 	    }
 	break;
 	}
