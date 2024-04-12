@@ -359,6 +359,7 @@ ClockDeleteCmdProc(
 	    for (i = 0; i < MCLIT__END; ++i) {
 		Tcl_DecrRefCount(data->mcLitIdxs[i]);
 	    }
+	    Tcl_Free(data->mcLitIdxs);
 	    data->mcLitIdxs = NULL;
 	}
 
