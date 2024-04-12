@@ -31,42 +31,51 @@
 
 #define RODDENBERRY			1946	/* Another epoch (Hi, Jeff!) */
 
+enum DateInfoFlags {
+    CLF_OPTIONAL = 1 << 0,	/* token is non mandatory */
+    CLF_POSIXSEC = 1 << 1,
+    CLF_LOCALSEC = 1 << 2,
+    CLF_JULIANDAY = 1 << 3,
+    CLF_TIME = 1 << 4,
+    CLF_ZONE = 1 << 5,
+    CLF_CENTURY = 1 << 6,
+    CLF_DAYOFMONTH = 1 << 7,
+    CLF_DAYOFYEAR = 1 << 8,
+    CLF_MONTH = 1 << 9,
+    CLF_YEAR = 1 << 10,
+    CLF_DAYOFWEEK = 1 << 11,
+    CLF_ISO8601YEAR = 1 << 12,
+    CLF_ISO8601WEAK = 1 << 13,
+    CLF_ISO8601CENTURY = 1 << 14,
 
-#define CLF_OPTIONAL	       (1 << 0) /* token is non mandatory */
-#define CLF_POSIXSEC	       (1 << 1)
-#define CLF_LOCALSEC	       (1 << 2)
-#define CLF_JULIANDAY	       (1 << 3)
-#define CLF_TIME	       (1 << 4)
-#define CLF_ZONE	       (1 << 5)
-#define CLF_CENTURY	       (1 << 6)
-#define CLF_DAYOFMONTH	       (1 << 7)
-#define CLF_DAYOFYEAR	       (1 << 8)
-#define CLF_MONTH	       (1 << 9)
-#define CLF_YEAR	       (1 << 10)
-#define CLF_DAYOFWEEK	       (1 << 11)
-#define CLF_ISO8601YEAR	       (1 << 12)
-#define CLF_ISO8601WEAK	       (1 << 13)
-#define CLF_ISO8601CENTURY     (1 << 14)
+    CLF_SIGNED = 1 << 15,
 
-#define CLF_SIGNED	       (1 << 15)
+    /* Compounds */
 
-/* extra flags used outside of scan/format-tokens too (int, not a short int) */
-#define CLF_RELCONV	       (1 << 17)
-#define CLF_ORDINALMONTH       (1 << 18)
+    CLF_HAVEDATE = (CLF_DAYOFMONTH | CLF_MONTH | CLF_YEAR),
+    CLF_DATE = (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR
+	    | CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR
+	    | CLF_DAYOFWEEK | CLF_ISO8601WEAK),
 
-/* On demand (lazy) assemble flags */
-#define CLF_ASSEMBLE_DATE      (1 << 28) /* assemble year, month, etc. using julianDay */
-#define CLF_ASSEMBLE_JULIANDAY (1 << 29) /* assemble julianDay using year, month, etc. */
-#define CLF_ASSEMBLE_SECONDS   (1 << 30) /* assemble localSeconds (and seconds at end) */
+    /*
+     * Extra flags used outside of scan/format-tokens too (int, not a short).
+     */
 
-#define CLF_HAVEDATE	       (CLF_DAYOFMONTH|CLF_MONTH|CLF_YEAR)
-#define CLF_DATE	       (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR | \
-				CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR | \
-				CLF_DAYOFWEEK | CLF_ISO8601WEAK)
+    CLF_RELCONV = 1 << 17,
+    CLF_ORDINALMONTH = 1 << 18,
 
-#define TCL_MIN_SECONDS			-0x00F0000000000000LL
-#define TCL_MAX_SECONDS			 0x00F0000000000000LL
-#define TCL_INV_SECONDS			(TCL_MIN_SECONDS-1)
+    /* On demand (lazy) assemble flags */
+
+    CLF_ASSEMBLE_DATE = 1 << 28,/* assemble year, month, etc. using julianDay */
+    CLF_ASSEMBLE_JULIANDAY = 1 << 29,
+				/* assemble julianDay using year, month, etc. */
+    CLF_ASSEMBLE_SECONDS = 1 << 30
+				/* assemble localSeconds (and seconds at end) */
+};
+
+#define TCL_MIN_SECONDS		-0x00F0000000000000LL
+#define TCL_MAX_SECONDS		 0x00F0000000000000LL
+#define TCL_INV_SECONDS		(TCL_MIN_SECONDS - 1)
 
 /*
  * Enumeration of the string literals used in [clock]
@@ -148,10 +157,11 @@ typedef enum ClockMsgCtLiteral {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
-#define CLF_CTZ		(1 << 4)
+enum TclDateFieldsFlags {
+    CLF_CTZ = (1 << 4)
+};
 
 typedef struct TclDateFields {
-
     /* Cacheable fields:	 */
 
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
@@ -270,15 +280,19 @@ ClockInitDateInfo(
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
  */
 
-#define CLF_VALIDATE_S1	(1 << 0)
-#define CLF_VALIDATE_S2	(1 << 1)
-#define CLF_VALIDATE	(CLF_VALIDATE_S1|CLF_VALIDATE_S2)
-#define CLF_EXTENDED	(1 << 4)
-#define CLF_STRICT	(1 << 8)
-#define CLF_LOCALE_USED (1 << 15)
+enum ClockFmtScnCmdArgsFlags {
+    CLF_VALIDATE_S1 = (1 << 0),
+    CLF_VALIDATE_S2 = (1 << 1),
+    CLF_VALIDATE = (CLF_VALIDATE_S1|CLF_VALIDATE_S2),
+    CLF_EXTENDED = (1 << 4),
+    CLF_STRICT = (1 << 8),
+    CLF_LOCALE_USED = (1 << 15)
+};
+
+typedef struct ClockClientData ClockClientData;
 
 typedef struct ClockFmtScnCmdArgs {
-    void *clientData;		/* Opaque pointer to literal pool, etc. */
+    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
     Tcl_Interp *interp;		/* Tcl interpreter */
     Tcl_Obj *formatObj;		/* Format */
     Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
@@ -422,10 +436,12 @@ typedef struct DateFormat {
     Tcl_Obj *localeEra;
 } DateFormat;
 
-#define CLFMT_INCR	    (1 << 3)
-#define CLFMT_DECR	    (1 << 4)
-#define CLFMT_CALC	    (1 << 5)
-#define CLFMT_LOCALE_INDX   (1 << 8)
+enum ClockFormatTokenMapFlags {
+    CLFMT_INCR = (1 << 3),
+    CLFMT_DECR = (1 << 4),
+    CLFMT_CALC = (1 << 5),
+    CLFMT_LOCALE_INDX = (1 << 8)
+};
 
 typedef struct ClockFormatToken ClockFormatToken;
 
@@ -513,7 +529,7 @@ MODULE_SCOPE void	GetJulianDayFromEraYearMonthDay(
 			    TclDateFields *fields, int changeover);
 MODULE_SCOPE void	GetJulianDayFromEraYearDay(
 			    TclDateFields *fields, int changeover);
-MODULE_SCOPE int	ConvertUTCToLocal(void *clientData, Tcl_Interp *,
+MODULE_SCOPE int	ConvertUTCToLocal(ClockClientData *dataPtr, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 MODULE_SCOPE Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
 			    Tcl_Size, Tcl_Obj *const *, Tcl_WideInt *rangesVal);
@@ -521,7 +537,7 @@ MODULE_SCOPE int	TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 
 /* tclClock.c module declarations */
 
-MODULE_SCOPE Tcl_Obj *	ClockSetupTimeZone(void *clientData,
+MODULE_SCOPE Tcl_Obj *	ClockSetupTimeZone(ClockClientData *dataPtr,
 			    Tcl_Interp *interp, Tcl_Obj *timezoneObj);
 MODULE_SCOPE Tcl_Obj *	ClockMCDict(ClockFmtScnCmdArgs *opts);
 MODULE_SCOPE Tcl_Obj *	ClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
