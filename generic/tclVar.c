@@ -30,7 +30,7 @@ static unsigned int	HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 static Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
-    0,				/* flags */
+    TCL_HASH_KEY_DIRECT_COMPARE,/* allows compare keys by pointers */
     HashVarKey,			/* hashKeyProc */
     CompareVarKeys,		/* compareKeysProc */
     AllocVarEntry,		/* allocEntryProc */

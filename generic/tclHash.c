@@ -317,23 +317,42 @@ CreateHashEntry(
 
     if (typePtr->compareKeysProc) {
 	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
-	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
-		hPtr = hPtr->nextPtr) {
+
+	if (typePtr->flags & TCL_HASH_KEY_DIRECT_COMPARE) {
+            for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+                    hPtr = hPtr->nextPtr) {
 #if TCL_HASH_KEY_STORE_HASH
-	    if (hash != PTR2UINT(hPtr->hash)) {
-		continue;
-	    }
+                if (hash != PTR2UINT(hPtr->hash)) {
+                    continue;
+                }
 #endif
-	    /* if keys pointers or values are equal */
-	    if ((key == hPtr->key.oneWordValue)
-		|| compareKeysProc((VOID *) key, hPtr)
-	    ) {
-		if (newPtr) {
-		    *newPtr = 0;
-		}
-		return hPtr;
-	    }
-	}
+                /* if keys pointers or values are equal */
+                if ((key == hPtr->key.oneWordValue)
+                    || compareKeysProc((VOID *) key, hPtr)
+                ) {
+                    if (newPtr) {
+                        *newPtr = 0;
+                    }
+                    return hPtr;
+                }
+            }
+        } else {
+            for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+                    hPtr = hPtr->nextPtr) {
+#if TCL_HASH_KEY_STORE_HASH
+                if (hash != PTR2UINT(hPtr->hash)) {
+                    continue;
+                }
+#endif
+                /* if keys pointers or values are equal */
+                if (compareKeysProc((VOID *) key, hPtr)) {
+                    if (newPtr) {
+                        *newPtr = 0;
+                    }
+                    return hPtr;
+                }
+            }
+        }
     } else {
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
