@@ -2,7 +2,7 @@
 #
 # Source this file in the related tests to include from tcl-tests:
 #
-#   source [file join [file dirname [info script]] internals.tcl]
+#   source -encoding utf-8 [file join [file dirname [info script]] internals.tcl]
 #
 # Copyright © 2020 Sergey G. Brester (sebres).
 #

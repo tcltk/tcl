@@ -22,7 +22,7 @@ if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} 
 
 ## common test performance framework:
 if {![namespace exists ::tclTestPerf]} {
-  source [file join [file dirname [info script]] test-performance.tcl]
+  source -encoding utf-8 [file join [file dirname [info script]] test-performance.tcl]
 }
 
 namespace eval ::tclTestPerf-TclClock {

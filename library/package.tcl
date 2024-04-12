@@ -291,7 +291,7 @@ proc pkg_mkIndex {args} {
 		    set ::tcl::type load
 		} else {
 		    set ::tcl::debug sourcing
-		    source [file join $::tcl::dir $::tcl::file]
+		    source -encoding utf-8 [file join $::tcl::dir $::tcl::file]
 		    set ::tcl::type source
 		}
 
@@ -442,7 +442,7 @@ proc tclPkgSetup {dir pkg version files} {
 	    if {$type eq "load"} {
 		set auto_index($cmd) [list load [file join $dir $f] $pkg]
 	    } else {
-		set auto_index($cmd) [list source [file join $dir $f]]
+		set auto_index($cmd) [list source -encoding utf-8 [file join $dir $f]]
 	    }
 	}
     }
