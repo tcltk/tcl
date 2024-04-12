@@ -927,7 +927,7 @@ runtest: ${TCLTEST_EXE}
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: ${TCLTEST_EXE}
-	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | $(SHELL_ENV) ./${TCLTEST_EXE}
+	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source -encoding utf-8 ../tests/all.tcl;exec chmod +w .' | $(SHELL_ENV) ./${TCLTEST_EXE}
 
 # The following target generates the shared libraries in dltest/ that are used
 # for testing; they are included as part of the "tcltest" target (via the
@@ -2152,10 +2152,10 @@ $(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) -encoding utf-8 $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(NATIVE_TCLSH) -encoding utf-8 $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
 
 genscript:
