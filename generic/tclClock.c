@@ -2033,7 +2033,7 @@ ConvertLocalToUTCUsingTable(
 	}
 	for (i = 0; i < nHave; ++i) {
 	    if (have[i].tzOffset == fields->tzOffset) {
-		break;
+		goto found;
 	    }
 	}
 	if (nHave == 8) {
@@ -2044,6 +2044,7 @@ ConvertLocalToUTCUsingTable(
 	fields->seconds = fields->localSeconds - fields->tzOffset;
     }
 
+  found:
     fields->tzOffset = have[i].tzOffset;
     fields->seconds = fields->localSeconds - fields->tzOffset;
     TclSetObjRef(fields->tzName, have[i].tzName);
@@ -3080,7 +3081,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = (struct tm *) Tcl_GetThreadData(&tmKey, sizeof(struct tm));
+    struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     tmPtr = localtime_r(timePtr, tmPtr);
 #else
@@ -3668,7 +3669,7 @@ ClockScanObjCmd(
     }
 
     /* Apply remaining validation rules, if expected */
-    if ((opts.flags & CLF_VALIDATE)) {
+    if (opts.flags & CLF_VALIDATE) {
 	ret = ClockValidDate(&yy, &opts, opts.flags & CLF_VALIDATE);
 	if (ret != TCL_OK) {
 	    goto done;
@@ -4043,7 +4044,7 @@ ClockFreeScan(
      * For freescan apply validation rules (stage 1) before mixed with
      * relative time (otherwise always valid recalculated date & time).
      */
-    if ((opts->flags & CLF_VALIDATE)) {
+    if (opts->flags & CLF_VALIDATE) {
 	if (ClockValidDate(info, opts, CLF_VALIDATE_S1) != TCL_OK) {
 	    goto done;
 	}
@@ -4586,7 +4587,7 @@ ClockSafeCatchCmd(
 	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
     }
 
-    statePtr = (InterpState *) Tcl_SaveInterpState(interp, 0);
+    statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
     if (!statePtr->errorInfo) {
 	/* todo: avoid traced get of errorInfo here */
 	TclInitObjRef(statePtr->errorInfo,
