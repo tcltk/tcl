@@ -4619,7 +4619,8 @@ ClockSafeCatchCmd(
  *	environment variable has changed.
  *
  * Results:
- *	None.
+ *	An epoch counter to allow efficient checking if the timezone has
+ *	changed.
  *
  * Side effects:
  *	Calls tzset.
