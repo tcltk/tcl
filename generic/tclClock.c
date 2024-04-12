@@ -3705,7 +3705,7 @@ ClockScanCommit(
 {
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-	if ((info->flags & CLF_ISO8601WEAK)) {
+	if (info->flags & CLF_ISO8601WEEK) {
 	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
 	} else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
 		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
