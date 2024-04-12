@@ -176,7 +176,7 @@ const Tcl_ObjType tclDictType = {
 
 static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
-    0,
+    TCL_HASH_KEY_DIRECT_COMPARE,        /* allows compare keys by pointers */
     TclHashObjKey,
     TclCompareObjKeys,
     AllocChainEntry,
