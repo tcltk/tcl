@@ -293,13 +293,16 @@ CreateHashEntry(
 		    return hPtr;
 		}
 	    }
-	} else { /* no direct compare */
+	} else { /* no direct compare - compare key addresses only */
 	    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		    hPtr = hPtr->nextPtr) {
 		if (hash != hPtr->hash) {
 		    continue;
 		}
-		if (compareKeysProc((void *) key, hPtr)) {
+		/* if needle pointer equals content pointer or values equal */
+		if ((key == hPtr->key.string)
+		    || compareKeysProc((void *) key, hPtr)
+		) {
 		    if (newPtr) {
 			*newPtr = 0;
 		    }
