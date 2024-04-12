@@ -45,7 +45,7 @@ enum DateInfoFlags {
     CLF_YEAR = 1 << 10,
     CLF_DAYOFWEEK = 1 << 11,
     CLF_ISO8601YEAR = 1 << 12,
-    CLF_ISO8601WEAK = 1 << 13,
+    CLF_ISO8601WEEK = 1 << 13,
     CLF_ISO8601CENTURY = 1 << 14,
 
     CLF_SIGNED = 1 << 15,
@@ -55,7 +55,7 @@ enum DateInfoFlags {
     CLF_HAVEDATE = (CLF_DAYOFMONTH | CLF_MONTH | CLF_YEAR),
     CLF_DATE = (CLF_JULIANDAY | CLF_DAYOFMONTH | CLF_DAYOFYEAR
 	    | CLF_MONTH | CLF_YEAR | CLF_ISO8601YEAR
-	    | CLF_DAYOFWEEK | CLF_ISO8601WEAK),
+	    | CLF_DAYOFWEEK | CLF_ISO8601WEEK),
 
     /*
      * Extra flags used outside of scan/format-tokens too (int, not a short).
