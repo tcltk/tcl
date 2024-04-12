@@ -344,7 +344,10 @@ CreateHashEntry(
 		    continue;
 		}
 #endif
-		if (compareKeysProc((void *) key, hPtr)) {
+		/* if needle pointer equals content pointer or values equal */
+		if ((key == hPtr->key.string)
+		    || compareKeysProc((void *) key, hPtr)
+		) {
 		    if (newPtr) {
 			*newPtr = 0;
 		    }
