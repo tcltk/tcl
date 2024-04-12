@@ -462,7 +462,7 @@ TclStrIdxTreePrint(
     Tcl_Obj *obj[2];
     const char *s;
 
-    TclInitObjRef(obj[0], Tcl_NewStringObj("::puts", -1));
+    TclInitObjRef(obj[0], Tcl_NewStringObj("::puts", TCL_AUTO_LENGTH));
     while (tree != NULL) {
 	s = TclGetString(tree->key) + offs;
 	TclInitObjRef(obj[1], Tcl_ObjPrintf("%*s%.*s\t:%d",
