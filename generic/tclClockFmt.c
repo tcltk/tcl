@@ -679,7 +679,7 @@ ClockFmtObj_FreeInternalRep(
     Tcl_Obj *objPtr)
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
-    if (fss != NULL) {
+    if (fss != NULL && initialized) {
 	Tcl_MutexLock(&ClockFmtMutex);
 	/* decrement object reference count of format/scan storage */
 	if (--fss->objRefCount <= 0) {
