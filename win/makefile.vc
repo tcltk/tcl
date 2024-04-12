@@ -707,10 +707,10 @@ genstubs:
 !if !exist($(TCLSH))
 	@echo Build tclsh first!
 !else
-	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) -encoding utf-8 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
 		$(GENERICDIR:\=/)/tclTomMath.decls
-	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+	$(TCLSH) -encoding utf-8 $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
