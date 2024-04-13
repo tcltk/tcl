@@ -1236,10 +1236,18 @@ struct Tcl_HashEntry {
  * TCL_HASH_KEY_SYSTEM_HASH -	If this flag is set then all memory internally
  *                              allocated for the hash table that is not for an
  *                              entry will use the system heap.
+ * TCL_HASH_KEY_DIRECT_COMPARE -
+ * 	                        Allows fast comparison for hash keys directly
+ *                              by compare of their key.oneWordValue values,
+ *                              before call of compareKeysProc (much slower
+ *                              than a direct compare, so it is speed-up only
+ *                              flag). Don't use it if keys contain values rather
+ *                              than pointers.
  */
 
 #define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
 #define TCL_HASH_KEY_SYSTEM_HASH    0x2
+#define TCL_HASH_KEY_DIRECT_COMPARE 0x4
 
 /*
  * Structure definition for the methods associated with a hash table key type.
