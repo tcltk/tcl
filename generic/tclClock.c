@@ -954,15 +954,12 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
-	"-clear",
-	"-init-complete",
-	NULL
+	"-default-locale",	"-clear",	  "-current-locale",
+	"-init-complete", "-system-tz",	  "-setup-tz", NULL
     };
     enum optionInd {
-	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
-	CLOCK_CLEAR_CACHE,
-	CLOCK_INIT_COMPLETE
+	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
+	CLOCK_INIT_COMPLETE, CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -1068,13 +1065,12 @@ ClockConfigureUnsupportedObjCmd(
     ClockClientData *dataPtr = (ClockClientData *)clientData;
 
     static const char *const options[] = {
-	"-year-century",  "-century-switch",
-	"-min-year", "-max-year", "-max-jdn", "-validate",
-	NULL
+	"-century-switch", "-max-jdn", "-max-year", "-min-year",
+	"-validate" "-year-century", NULL
     };
     enum optionInd {
-	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
-	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
+	CLOCK_CENTURY_SWITCH, CLOCK_MAX_JDN, CLOCK_MAX_YEAR, CLOCK_MIN_YEAR,
+	CLOCK_VALIDATE, CLOCK_YEAR_CENTURY
     };
     int optionIndex;		/* Index of an option. */
     int i;
@@ -4593,16 +4589,16 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-        int status;			/* return code status */
-        int flags;			/* Each remaining field saves the */
-        int returnLevel;		/* corresponding field of the Interp */
-        int returnCode;			/* struct. These fields taken together are */
-        Tcl_Obj *errorInfo;		/* the "state" of the interp. */
-        Tcl_Obj *errorCode;
-        Tcl_Obj *returnOpts;
-        Tcl_Obj *objResult;
-        Tcl_Obj *errorStack;
-        int resetErrorStack;
+	int status;			/* return code status */
+	int flags;			/* Each remaining field saves the */
+	int returnLevel;		/* corresponding field of the Interp */
+	int returnCode;			/* struct. These fields taken together are */
+	Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+	Tcl_Obj *errorCode;
+	Tcl_Obj *returnOpts;
+	Tcl_Obj *objResult;
+	Tcl_Obj *errorStack;
+	int resetErrorStack;
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;

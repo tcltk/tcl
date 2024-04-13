@@ -479,16 +479,15 @@ TclStrIdxTreePrint(
 
 int
 TclStrIdxTreeTestObjCmd(
-    ClientData clientData, Tcl_Interp *interp,
+    void *clientData, Tcl_Interp *interp,
     int objc, Tcl_Obj *const objv[])
 {
     const char *cs, *cin, *ret;
     static const char *const options[] = {
-	"index", "puts-index", "findequal",
-	NULL
+	"findequal", "index", "puts-index", NULL
     };
     enum optionInd {
-	O_INDEX,  O_PUTS_INDEX, O_FINDEQUAL
+	O_FINDEQUAL, O_INDEX,  O_PUTS_INDEX,
     };
     int optionIndex;
 
