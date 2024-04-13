@@ -1066,7 +1066,7 @@ ClockConfigureUnsupportedObjCmd(
 
     static const char *const options[] = {
 	"-century-switch", "-max-jdn", "-max-year", "-min-year",
-	"-validate" "-year-century", NULL
+	"-validate", "-year-century", NULL
     };
     enum optionInd {
 	CLOCK_CENTURY_SWITCH, CLOCK_MAX_JDN, CLOCK_MAX_YEAR, CLOCK_MIN_YEAR,
