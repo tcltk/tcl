@@ -518,7 +518,7 @@ TclStrIdxTreeTestObjCmd(
     case O_INDEX:
     case O_PUTS_INDEX: {
 	Tcl_Obj **lstv;
-	int i, lstc;
+	Tcl_Size i, lstc;
 	TclStrIdxTree idxTree = {NULL, NULL};
 
 	i = 1;
