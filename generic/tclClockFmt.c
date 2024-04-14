@@ -3553,8 +3553,8 @@ ClockFrmScnFinalize(
     ClockFmtScnStorage_GC.count = 0;
 #endif
     if (initialized) {
-	Tcl_DeleteHashTable(&FmtScnHashTable);
 	initialized = 0;
+	Tcl_DeleteHashTable(&FmtScnHashTable);
     }
     Tcl_MutexUnlock(&ClockFmtMutex);
     Tcl_MutexFinalize(&ClockFmtMutex);
