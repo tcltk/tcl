@@ -26,7 +26,6 @@ static void		ClockFmtObj_UpdateString(Tcl_Obj *objPtr);
 TCL_DECLARE_MUTEX(ClockFmtMutex);	/* Serializes access to common format list. */
 
 static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
-static void		ClockFrmScnFinalize(void *);
 
 /*
  * Derivation of tclStringHashKeyType with another allocEntryProc
@@ -832,7 +831,6 @@ FindOrCreateFmtScnStorage(
 		&ClockFmtScnStorageHashKeyType);
 
 	initialized = 1;
-	Tcl_CreateExitHandler(ClockFrmScnFinalize, NULL);
     }
 
     /* get or create entry (and alocate storage) */
@@ -3541,10 +3539,12 @@ ClockFrmScnClearCaches(void)
     Tcl_MutexUnlock(&ClockFmtMutex);
 }
 
-static void
-ClockFrmScnFinalize(
-    TCL_UNUSED(void *))
+void
+ClockFrmScnFinalize()
 {
+    if (!initialized) {
+	return;
+    }
     Tcl_MutexLock(&ClockFmtMutex);
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     /* clear GC */
