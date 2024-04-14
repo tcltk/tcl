@@ -554,7 +554,7 @@ ClockFmtScnStorageAllocProc(
 	allocsize -= sizeof(hPtr->key);
     }
 
-    fss = (ClockFmtScnStorage *) ckalloc(allocsize);
+    fss = (ClockFmtScnStorage *)ckalloc(allocsize);
 
     /* initialize */
     memset(fss, 0, sizeof(*fss));
@@ -666,7 +666,7 @@ ClockFmtObj_DupInternalRep(
 
     /* if no format representation, dup string representation */
     if (fss == NULL) {
-	copyPtr->bytes = (char *) ckalloc(srcPtr->length + 1);
+	copyPtr->bytes = (char *)ckalloc(srcPtr->length + 1);
 	memcpy(copyPtr->bytes, srcPtr->bytes, srcPtr->length + 1);
 	copyPtr->length = srcPtr->length;
     }
@@ -733,7 +733,7 @@ ClockFmtObj_UpdateString(
     }
     len = strlen(name);
     objPtr->length = len++,
-    objPtr->bytes = (char *) attemptckalloc(len);
+    objPtr->bytes = (char *)attemptckalloc(len);
     if (objPtr->bytes) {
 	memcpy(objPtr->bytes, name, len);
     }
@@ -2123,7 +2123,7 @@ EstimateTokenCount(
 
 #define AllocTokenInChain(tok, chain, tokCnt, type) \
     if (++(tok) >= (chain) + (tokCnt)) {				\
-	chain = (type) attemptckrealloc((char *)(chain),		\
+	chain = (type)attemptckrealloc((char *)(chain),		\
 	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
 	if ((chain) == NULL) { 						\
 	    goto done;							\
@@ -2169,7 +2169,7 @@ ClockGetOrParseScanFormat(
 
 	fss->scnSpaceCount = 0;
 
-	scnTok = tok = (ClockScanToken *) ckalloc(sizeof(*tok) * fss->scnTokC);
+	scnTok = tok = (ClockScanToken *)ckalloc(sizeof(*tok) * fss->scnTokC);
 	memset(tok, 0, sizeof(*tok));
 	tokCnt = 1;
 	while (p < e) {
@@ -2712,13 +2712,13 @@ FrmResultAllocate(
 	char *newRes;
 	/* differentiate between stack and memory */
 	if (!FrmResultIsAllocated(dateFmt)) {
-	    newRes = (char *) attemptckalloc(newsize);
+	    newRes = (char *)attemptckalloc(newsize);
 	    if (newRes == NULL) {
 		return TCL_ERROR;
 	    }
 	    memcpy(newRes, dateFmt->resMem, dateFmt->output - dateFmt->resMem);
 	} else {
-	    newRes = (char *) attemptckrealloc(dateFmt->resMem, newsize);
+	    newRes = (char *)attemptckrealloc(dateFmt->resMem, newsize);
 	    if (newRes == NULL) {
 		return TCL_ERROR;
 	    }
@@ -3244,7 +3244,7 @@ ClockGetOrParseFmtFormat(
 	/* estimate token count by % char and format length */
 	fss->fmtTokC = EstimateTokenCount(p, e);
 
-	fmtTok = tok = (ClockFormatToken *) ckalloc(sizeof(*tok) * fss->fmtTokC);
+	fmtTok = tok = (ClockFormatToken *)ckalloc(sizeof(*tok) * fss->fmtTokC);
 	memset(tok, 0, sizeof(*tok));
 	tokCnt = 1;
 	while (p < e) {
@@ -3380,7 +3380,7 @@ ClockFormat(
     dateFmt->resMem = resMem;
     dateFmt->resEnd = dateFmt->resMem + sizeof(resMem);
     if (fss->fmtMinAlloc > sizeof(resMem)) {
-	dateFmt->resMem = (char *) attemptckalloc(fss->fmtMinAlloc);
+	dateFmt->resMem = (char *)attemptckalloc(fss->fmtMinAlloc);
 	if (dateFmt->resMem == NULL) {
 	    return TCL_ERROR;
 	}
@@ -3505,13 +3505,13 @@ ClockFormat(
 	result->length = dateFmt->output - dateFmt->resMem;
 	size = result->length + 1;
 	if (dateFmt->resMem == resMem) {
-	    result->bytes = (char *) attemptckalloc(size);
+	    result->bytes = (char *)attemptckalloc(size);
 	    if (result->bytes == NULL) {
 		return TCL_ERROR;
 	    }
 	    memcpy(result->bytes, dateFmt->resMem, size);
 	} else if ((dateFmt->resEnd - dateFmt->resMem) / size > MAX_FMT_RESULT_THRESHOLD) {
-	    result->bytes = (char *) attemptckrealloc(dateFmt->resMem, size);
+	    result->bytes = (char *)attemptckrealloc(dateFmt->resMem, size);
 	    if (result->bytes == NULL) {
 		result->bytes = dateFmt->resMem;
 	    }
