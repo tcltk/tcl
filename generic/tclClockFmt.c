@@ -560,7 +560,6 @@ ClockFmtScnStorageAllocProc(
     memset(fss, 0, sizeof(*fss));
 
     hPtr = HashEntry4FmtScn(fss);
-    hPtr->key.oneWordValue = 0; /* See Ticket [167e0635db] */
     memcpy(&hPtr->key.string, string, size);
     hPtr->clientData = 0;	/* currently unused */
 
