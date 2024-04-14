@@ -1090,7 +1090,7 @@ static void DupLgenSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
  *  Abstract List ObjType definition
  */
 
-static Tcl_ObjType lgenType = {
+static const Tcl_ObjType lgenType = {
     "lgenseries",
     FreeLgenInternalRep,
     DupLgenSeriesRep,

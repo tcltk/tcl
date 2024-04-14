@@ -136,30 +136,28 @@ static Tcl_ThreadDataKey dataKey;
 void
 Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
-    const char *encoding)	/* Encoding of the data in that file */
+    const char *encodingName)	/* Encoding of the data in that file */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_Obj *newEncoding = NULL;
+    Tcl_Obj *encodingObj = NULL;
 
-    if (encoding != NULL) {
-	newEncoding = Tcl_NewStringObj(encoding, -1);
+    if (encodingName != NULL) {
+	encodingObj = Tcl_NewStringObj(encodingName, -1);
+	Tcl_IncrRefCount(encodingObj);
     }
 
+    if (path != NULL) {
+	Tcl_IncrRefCount(path);
+    }
     if (tsdPtr->path != NULL) {
 	Tcl_DecrRefCount(tsdPtr->path);
     }
     tsdPtr->path = path;
-    if (tsdPtr->path != NULL) {
-	Tcl_IncrRefCount(tsdPtr->path);
-    }
 
     if (tsdPtr->encoding != NULL) {
 	Tcl_DecrRefCount(tsdPtr->encoding);
     }
-    tsdPtr->encoding = newEncoding;
-    if (tsdPtr->encoding != NULL) {
-	Tcl_IncrRefCount(tsdPtr->encoding);
-    }
+    tsdPtr->encoding = encodingObj;
 }
 
 /*
@@ -192,10 +190,10 @@ Tcl_GetStartupScript(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (encodingPtr != NULL) {
-	if (tsdPtr->encoding == NULL) {
-	    *encodingPtr = NULL;
+	if (tsdPtr->encoding != NULL) {
+	    *encodingPtr = Tcl_GetString(tsdPtr->encoding);
 	} else {
-	    *encodingPtr = TclGetString(tsdPtr->encoding);
+	    *encodingPtr = NULL;
 	}
     }
     return tsdPtr->path;
@@ -207,7 +205,8 @@ Tcl_GetStartupScript(
  *
  *	This function is typically invoked by Tcl_Main of Tk_Main function to
  *	source an application specific rc file into the interpreter at startup
- *	time.
+ *	time. If the filename cannot be translated (e.g. it referred to a bogus
+ *	user or there was no HOME environment variable). Just do nothing.
  *
  * Results:
  *	None.
@@ -233,13 +232,7 @@ Tcl_SourceRCFile(
 
 	Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
-	if (fullName == NULL) {
-	    /*
-	     * Couldn't translate the file name (e.g. it referred to a bogus
-	     * user or there was no HOME environment variable). Just do
-	     * nothing.
-	     */
-	} else {
+	if (fullName != NULL) {
 	    /*
 	     * Test for the existence of the rc file before trying to read it.
 	     */
@@ -304,9 +297,8 @@ Tcl_MainEx(
 	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable ((const char *)argv [0]);	/* nb: this could be NULL
-							 * w/ (eg) an empty argv
-							 * supplied to execve() */
+    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
+						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -333,7 +325,7 @@ Tcl_MainEx(
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
-		    TclGetString(value));
+		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
@@ -350,7 +342,7 @@ Tcl_MainEx(
     } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-    	appName = Tcl_NewStringObj("tclsh", -1);
+	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
@@ -368,7 +360,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewWideIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewBooleanObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.

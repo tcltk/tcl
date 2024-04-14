@@ -456,11 +456,6 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 147 {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
-	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
-}
 declare 149 {
     int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
@@ -866,9 +861,11 @@ declare 284 {
     void Tcl_SetMainLoop(Tcl_MainLoopProc *proc)
 }
 
-# Reserved for future use (8.0.x vs. 8.1)
-#  declare 285 {
-#  }
+declare 285 {
+    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+}
 
 # Added in 8.1:
 

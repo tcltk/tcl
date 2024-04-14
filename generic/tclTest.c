@@ -7382,7 +7382,7 @@ SimpleOpenFileChannel(
     Tcl_Obj *tempPtr;
     Tcl_Channel chan;
 
-    if ((mode != 0) && !(mode & O_RDONLY)) {
+    if ((mode & O_ACCMODE) != O_RDONLY) {
 	Tcl_AppendResult(interp, "read-only", (char *)NULL);
 	return NULL;
     }
@@ -8220,6 +8220,7 @@ TestconcatobjCmd(
  *	This procedure implements the "testparseargs" command. It is used to
  *	test that Tcl_ParseArgsObjv does indeed return the right number of
  *	arguments. In other words, that [Bug 3413857] was fixed properly.
+ *	Also test for bug [7cb7409e05]
  *
  * Results:
  *	A standard Tcl result.
@@ -8230,6 +8231,30 @@ TestconcatobjCmd(
  *----------------------------------------------------------------------
  */
 
+static Tcl_Size
+ParseMedia(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Size),
+    Tcl_Obj *const *objv,
+    void *dstPtr)
+{
+    static const char *const mediaOpts[] = {"A4", "Legal", "Letter", NULL};
+    static const char *const ExtendedMediaOpts[] = {
+	"Paper size is ISO A4", "Paper size is US Legal",
+	"Paper size is US Letter", NULL};
+    int index;
+    const char **media = (const char **) dstPtr;
+
+    if (Tcl_GetIndexFromObjStruct(interp, objv[0], mediaOpts,
+	    sizeof(char *), "media", 0, &index) != TCL_OK) {
+	return -1;
+    }
+
+    *media = ExtendedMediaOpts[index];
+    return 1;
+}
+
 static int
 TestparseargsCmd(
     TCL_UNUSED(void *),
@@ -8238,10 +8263,13 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
+    const char *media = NULL, *color = NULL;
     Tcl_Size count = objc;
-    Tcl_Obj **remObjv, *result[3];
+    Tcl_Obj **remObjv, *result[5];
     const Tcl_ArgvInfo argTable[] = {
 	{TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
+	{TCL_ARGV_STRING,  "-colormode" ,  NULL, &color,  "color mode", NULL},
+	{TCL_ARGV_GENFUNC, "-media", (void *)ParseMedia, &media,  "media page size", NULL},
 	TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };
 
@@ -8252,7 +8280,9 @@ TestparseargsCmd(
     result[0] = Tcl_NewWideIntObj(foo);
     result[1] = Tcl_NewWideIntObj(count);
     result[2] = Tcl_NewListObj(count, remObjv);
-    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
+    result[3] = Tcl_NewStringObj(color ? color : "NULL", -1);
+    result[4] = Tcl_NewStringObj(media ? media : "NULL", -1);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(5, result));
     Tcl_Free(remObjv);
     return TCL_OK;
 }

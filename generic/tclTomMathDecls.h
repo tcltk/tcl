@@ -64,20 +64,18 @@
 extern "C" {
 #endif
 MODULE_SCOPE mp_err	TclBN_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err	TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r);
-MODULE_SCOPE mp_err	TclBN_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c);
-MODULE_SCOPE mp_err	TclBN_s_mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c);
-MODULE_SCOPE mp_err	TclBN_s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
-MODULE_SCOPE mp_err	TclBN_s_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
-MODULE_SCOPE mp_err	TclBN_s_mp_karatsuba_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err	TclBN_s_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
-MODULE_SCOPE mp_err	TclBN_s_mp_toom_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d);
+MODULE_SCOPE mp_err	TclBN_mp_karatsuba_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_mp_karatsuba_sqr(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
+MODULE_SCOPE mp_err	TclBN_mp_toom_sqr(const mp_int *a, mp_int *b);
 MODULE_SCOPE mp_err TclBN_s_mp_add(const mp_int *a, const mp_int *b, mp_int *c);
-MODULE_SCOPE mp_err TclBN_s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
-MODULE_SCOPE mp_err TclBN_s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs);
-MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
+MODULE_SCOPE mp_err TclBN_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+MODULE_SCOPE mp_err TclBN_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs);
+MODULE_SCOPE void	TclBN_mp_reverse(unsigned char *s, size_t len);
 MODULE_SCOPE mp_err	TclBN_s_mp_sqr(const mp_int *a, mp_int *b);
-MODULE_SCOPE mp_err	TclBN_s_mp_sqr_fast(const mp_int *a, mp_int *b);
+MODULE_SCOPE mp_err	TclBN_mp_sqr_fast(const mp_int *a, mp_int *b);
 MODULE_SCOPE mp_err	TclBN_s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c);
 MODULE_SCOPE const char *const TclBN_mp_s_rmap;
 MODULE_SCOPE const uint8_t TclBN_mp_s_rmap_reverse[];
@@ -106,12 +104,9 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define mp_div TclBN_mp_div
 #define mp_div_d TclBN_mp_div_d
 #define mp_div_2 TclBN_mp_div_2
-#define mp_div_3 TclBN_mp_div_3
 #define mp_div_2d TclBN_mp_div_2d
 #define mp_exch TclBN_mp_exch
-#define mp_expt_d TclBN_mp_expt_d
-#define mp_expt_d_ex TclBN_mp_expt_d_ex
-#define mp_expt_u32 TclBN_mp_expt_u32
+#define mp_expt_d TclBN_mp_expt_n
 #define mp_expt_n TclBN_mp_expt_n
 #define mp_get_mag_u64 TclBN_mp_get_mag_u64
 #define mp_grow TclBN_mp_grow
@@ -139,7 +134,7 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define mp_s_rmap TclBN_mp_s_rmap
 #define mp_s_rmap_reverse TclBN_mp_s_rmap_reverse
 #define mp_s_rmap_reverse_sz TclBN_mp_s_rmap_reverse_sz
-#define mp_set TclBN_s_mp_set
+#define mp_set TclBN_mp_set
 #define mp_set_i64 TclBN_mp_set_i64
 #define mp_set_u64 TclBN_mp_set_u64
 #define mp_shrink TclBN_mp_shrink
@@ -162,18 +157,18 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
-#define s_mp_balance_mul TclBN_s_mp_balance_mul
-#define s_mp_div_3 TclBN_s_mp_div_3
-#define s_mp_karatsuba_mul TclBN_s_mp_karatsuba_mul
-#define s_mp_karatsuba_sqr TclBN_s_mp_karatsuba_sqr
-#define s_mp_mul_digs TclBN_s_mp_mul_digs
-#define s_mp_mul_digs_fast TclBN_s_mp_mul_digs_fast
-#define s_mp_reverse TclBN_s_mp_reverse
+#define s_mp_balance_mul TclBN_mp_balance_mul
+#define s_mp_div_3 TclBN_mp_div_3
+#define s_mp_karatsuba_mul TclBN_mp_karatsuba_mul
+#define s_mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
+#define s_mp_mul_digs TclBN_mp_mul_digs
+#define s_mp_mul_digs_fast TclBN_mp_mul_digs_fast
+#define s_mp_reverse TclBN_mp_reverse
 #define s_mp_sqr TclBN_s_mp_sqr
-#define s_mp_sqr_fast TclBN_s_mp_sqr_fast
+#define s_mp_sqr_fast TclBN_mp_sqr_fast
 #define s_mp_sub TclBN_s_mp_sub
-#define s_mp_toom_mul TclBN_s_mp_toom_mul
-#define s_mp_toom_sqr TclBN_s_mp_toom_sqr
+#define s_mp_toom_mul TclBN_mp_toom_mul
+#define s_mp_toom_sqr TclBN_mp_toom_sqr
 #endif /* !TCL_WITH_EXTERNAL_TOMMATH */
 
 #undef TCL_STORAGE_CLASS

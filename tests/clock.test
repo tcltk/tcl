@@ -329,8 +329,8 @@ test clock-1.0.1 "clock format - wrong # args (compiled ensemble with invalid sy
 } [subst {1 {wrong # args: should be "clock format $syntax"} {CLOCK wrongNumArgs}}]
 
 test clock-1.1 "clock format - bad time" {
-    list [catch {clock format foo} msg] $msg
-} {1 {expected integer but got "foo"}}
+    list [catch {clock format foo} msg opt] $msg [dict getd $opt -errorcode {}]
+} {1 {bad seconds "foo": must be -now or integer} {CLOCK badOption foo}}
 
 test clock-1.2 "clock format - bad gmt val" {
     list [catch {clock format 0 -gmt foo} msg] $msg
@@ -18695,6 +18695,10 @@ test clock-6.7 {input of seconds} {
 test clock-6.8 {input of seconds} {
     clock scan {9223372036854775807} -format %s -gmt true
 } 9223372036854775807
+
+test clock-6.8b "clock scan - bad base" {
+    list [catch {clock scan "" -base foo -gmt 1} msg opt] $msg [dict getd $opt -errorcode {}]
+} {1 {bad seconds "foo": must be -now or integer} {CLOCK badOption foo}}
 
 test clock-6.9 {input of seconds - overflow} {
     list [catch {clock scan -9223372036854775809 -format %s -gmt true} result opt] $result [dict getd $opt -errorcode ""]
@@ -37315,10 +37319,10 @@ test clock-46.29-1 {scan: validation rules: invalid day of year} \
     } -result [lrepeat 20 1 {unable to convert input string: invalid day of year}]
 test clock-46.29-2 {scan: validation rules: valid day of leap/not leap year} \
     -body {
-	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"] \
-	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y"]
+	list [clock format [clock scan "366-2016" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "365-2017" -format "%j-%Y" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "366-2016" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1] \
+	     [clock format [clock scan "365-2017" -format "%j-%G" -valid 1 -gmt 1] -format "%d-%m-%Y" -gmt 1]
     } -result {31-12-2016 31-12-2017 31-12-2016 31-12-2017}
 test clock-46.30 {scan: validation rules: invalid year} -setup {
 	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
@@ -38180,14 +38184,32 @@ test clock-61.1 {overflow of a wide integer on output} {*}{
     -body {
 	clock format 0x8000000000000000 -format %s -gmt true
     }
-    -result {expected integer but got "0x8000000000000000"}
+    -result {integer value too large to represent}
+    -errorCode {CLOCK badOption 0x8000000000000000}
+    -returnCodes error
+}
+test clock-61.1b {overflow of a wide integer on base} {*}{
+    -body {
+	clock scan "" -base 0x8000000000000000 -gmt true
+    }
+    -result {integer value too large to represent}
+    -errorCode {CLOCK badOption 0x8000000000000000}
     -returnCodes error
 }
 test clock-61.2 {overflow of a wide integer on output} {*}{
     -body {
 	clock format -0x8000000000000001 -format %s -gmt true
     }
-    -result {expected integer but got "-0x8000000000000001"}
+    -result {integer value too large to represent}
+    -errorCode {CLOCK badOption -0x8000000000000001}
+    -returnCodes error
+}
+test clock-61.2b {overflow of a wide integer on base} {*}{
+    -body {
+	clock scan "" -base -0x8000000000000001 -gmt true
+    }
+    -result {integer value too large to represent}
+    -errorCode {CLOCK badOption -0x8000000000000001}
     -returnCodes error
 }
 test clock-61.3 {near-miss overflow of a wide integer on output, very large datetime (upper range)} {
@@ -38199,10 +38221,10 @@ test clock-61.4 {near-miss overflow of a wide integer on output, very small date
 
 test clock-61.5 {overflow of possible date-time (upper range)} -body {
     clock format 0x00F0000000000001 -gmt true
-} -returnCodes error -result {integer value too large to represent}
+} -returnCodes error -result {integer value too large to represent} -errorCode {CLOCK badOption 0x00F0000000000001}
 test clock-61.6 {overflow of possible date-time (lower range)} -body {
     clock format -0x00F0000000000001 -gmt true
-} -returnCodes error -result {integer value too large to represent}
+} -returnCodes error -result {integer value too large to represent} -errorCode {CLOCK badOption -0x00F0000000000001}
 
 test clock-62.1 {Bug 1902423} {*}{
     -setup {::tcl::clock::ClearCaches}
