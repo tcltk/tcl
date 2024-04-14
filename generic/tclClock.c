@@ -722,7 +722,7 @@ ClockMCDict(
 
 	/* check or obtain mcDictObj (be sure it's modifiable) */
 	if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
-	    int ref = 1;
+	    Tcl_Size ref = 1;
 
 	    /* first try to find locale catalog dict */
 	    if (dataPtr->mcDicts == NULL) {
@@ -967,7 +967,7 @@ ClockConfigureObjCmd(
 	CLOCK_INIT_COMPLETE
     };
     int optionIndex;		/* Index of an option. */
-    int i;
+    Tcl_Size i;
 
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i++], options,
@@ -3277,7 +3277,7 @@ ClockParseFmtScnArgs(
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[],	/* Parameter vector */
     ClockOperation operation,	/* What operation are we doing: format, scan, add */
     const char *syntax)		/* Syntax of the current command */
@@ -3294,7 +3294,7 @@ ClockParseFmtScnArgs(
     };
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
-    int i, baseIdx;
+    Tcl_Size i, baseIdx;
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
     if (operation == CLC_OP_SCN) {
@@ -4370,7 +4370,7 @@ ClockAddObjCmd(
 	CLC_ADD_HOURS,	CLC_ADD_MINUTES,    CLC_ADD_SECONDS
     };
     int unitIndex;		/* Index of an option. */
-    int i;
+    Tcl_Size i;
     Tcl_WideInt offs;
 
     /* even number of arguments */
