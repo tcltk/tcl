@@ -4722,6 +4722,8 @@ ClockFinalize(
     if (tz.was && tz.was != TZ_INIT_MARKER) {
 	Tcl_Free(tz.was);
     }
+
+    Tcl_MutexFinalize(&clockMutex);
 }
 
 /*
