@@ -594,7 +594,7 @@ proc auto_mkindex_parser::indexEntry {name} {
     set filenameParts [file split $scriptFile]
 
     append index [format \
-	    {set auto_index(%s) [list source [file join $dir %s]]%s} \
+	    {set auto_index(%s) [list source -encoding utf-8 [file join $dir %s]]%s} \
 	    $name $filenameParts \n]
     return
 }
