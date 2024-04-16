@@ -61,9 +61,10 @@ static Tcl_ObjCmdProc		DictForNRCmd;
 static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
+#if 0 /* Needs rewrite */
 static Tcl_ObjTypeLengthProc    DictAsListLength;
 /* static Tcl_ObjTypeIndexProc     DictAsListIndex; Needs rewrite */
-
+#endif
 /*
  * Table of dict subcommand names and implementations.
  */
@@ -149,6 +150,8 @@ const Tcl_ObjType tclDictType = {
     DupDictInternalRep,		/* dupIntRepProc */
     UpdateStringOfDict,		/* updateStringProc */
     SetDictFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0
+#if 0
     TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
@@ -161,6 +164,7 @@ const Tcl_ObjType tclDictType = {
     NULL,
     NULL,
     NULL)
+#endif
 };
 
 #define DictSetInternalRep(objPtr, dictRepPtr)				\
@@ -3855,6 +3859,7 @@ TclInitDictCmd(
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
 
+#if 0 /* Needs rewrite */
 /*
  *----------------------------------------------------------------------
  *
@@ -3938,7 +3943,6 @@ DictAsListLength(
  *   The intent is to have no side effects.
  *
  */
-#if 0 /* Needs rewrite */
 static int
 DictAsListIndex(
     Tcl_Interp *interp,
