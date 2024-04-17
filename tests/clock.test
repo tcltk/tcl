@@ -37039,10 +37039,16 @@ test clock-44.2 {regression test - time zone containing only two digits} \
     } \
     -result 482134530
 
-test clock-44.3 {regression test - spaces between some scan tokens are optional} \
+test clock-44.3 {regression test - spaces between some scan tokens are optional (TCL_CLOCK_FULL_COMPAT, no-strict only)} \
     -body {
 	list [clock scan {9 Apr 2024} -format {%d %b%Y} -gmt 1] \
 	     [clock scan {Tue, 9 Apr 2024 00:00:00 +0000} -format {%a, %d %b%Y %H:%M:%S %Z} -gmt 1]
+    } \
+    -result {1712620800 1712620800}
+test clock-44.4 {regression test - spaces between all scan tokens are optional (TCL_CLOCK_FULL_COMPAT, no-strict only)} \
+    -body {
+	list [clock scan {9 Apr 2024} -format {%d%b%Y} -gmt 1] \
+	     [clock scan {Tue, 9 Apr 2024 00:00:00 +0000} -format {%a,%d%b%Y%H:%M:%S%Z} -gmt 1]
     } \
     -result {1712620800 1712620800}
 
