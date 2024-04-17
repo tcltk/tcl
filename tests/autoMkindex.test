@@ -125,7 +125,7 @@ test autoMkindex-1.2 {build tclIndex based on a test file} {
     auto_mkindex . autoMkindex.tcl
     file exists tclIndex
 } {1}
-set element "{source [file join . autoMkindex.tcl]}"
+set element "{source -encoding utf-8 [file join . autoMkindex.tcl]}"
 test autoMkindex-1.3 {examine tclIndex} -setup {
     file delete tclIndex
 } -body {
@@ -133,7 +133,7 @@ test autoMkindex-1.3 {examine tclIndex} -setup {
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
         variable auto_index
-        source tclIndex
+        source -encoding utf-8 tclIndex
         set ::result ""
         foreach elem [lsort [array names auto_index]] {
             lappend ::result [list $elem $auto_index($elem)]
@@ -190,13 +190,13 @@ test autoMkindex-3.2 {auto_mkindex_parser::command} -setup {
 	variable index
 	variable scriptFile
 	append index [list set auto_index([fullname $name])] \
-		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+		" \[list source -encoding utf-8 \[file join \$dir [list $scriptFile]\]\]\n"
     }
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
         variable auto_index
-        source tclIndex
+        source -encoding utf-8 tclIndex
         set ::result ""
         foreach elem [lsort [array names auto_index]] {
             lappend ::result [list $elem $auto_index($elem)]
@@ -216,13 +216,13 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} -setup {
 	variable scriptFile
 	puts "my proc $name"
 	append index [list set auto_index([fullname $name])] \
-		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+		" \[list source -encoding utf-8 \[file join \$dir [list $scriptFile]\]\]\n"
     }
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
         variable auto_index
-        source tclIndex
+        source -encoding utf-8 tclIndex
         set ::result ""
         foreach elem [lsort [array names auto_index]] {
             lappend ::result [list $elem $auto_index($elem)]
@@ -266,7 +266,7 @@ test autoMkindex-3.4 {ensemble commands in tclIndex} {
     set result [lsort $dat]
     close $f
     set result
-} {{set auto_index(::wok::commands) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(::wok::vars) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(wok) [list source [file join $dir ensemblecommands.tcl]]}}
+} {{set auto_index(::wok::commands) [list source -encoding utf-8 [file join $dir ensemblecommands.tcl]]} {set auto_index(::wok::vars) [list source -encoding utf-8 [file join $dir ensemblecommands.tcl]]} {set auto_index(wok) [list source -encoding utf-8 [file join $dir ensemblecommands.tcl]]}}
 removeFile ensemblecommands.tcl
 
 test autoMkindex-4.1 {platform independent source commands} -setup {
@@ -303,7 +303,7 @@ test autoMkindex-4.1 {platform independent source commands} -setup {
     catch {close $f}
     removeFile [file join pkg samename.tcl]
     removeDirectory pkg
-} -result {{set auto_index(::college::team) [list source [file join $dir pkg samename.tcl]]} {set auto_index(::pro::team) [list source [file join $dir pkg samename.tcl]]}}
+} -result {{set auto_index(::college::team) [list source -encoding utf-8 [file join $dir pkg samename.tcl]]} {set auto_index(::pro::team) [list source -encoding utf-8 [file join $dir pkg samename.tcl]]}}
 
 test autoMkindex-5.1 {escape magic tcl chars in general code} -setup {
     file delete tclIndex
@@ -327,7 +327,7 @@ test autoMkindex-5.1 {escape magic tcl chars in general code} -setup {
     catch {close $f}
     removeFile [file join pkg magicchar.tcl]
     removeDirectory pkg
-} -result {set auto_index(testProc) [list source [file join $dir pkg magicchar.tcl]]}
+} -result {set auto_index(testProc) [list source -encoding utf-8 [file join $dir pkg magicchar.tcl]]}
 test autoMkindex-5.2 {correctly locate auto loaded procs with []} -setup {
     file delete tclIndex
     makeDirectory pkg
