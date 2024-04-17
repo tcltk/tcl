@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(libtommath
-    VERSION 1.3.0
+    VERSION 1.3.1
     DESCRIPTION "A free open source portable number theoretic multiple-precision integer (MPI) library written entirely in C."
     HOMEPAGE_URL "https://www.libtom.net/LibTomMath"
     LANGUAGES C)
@@ -33,18 +33,8 @@ include(sources.cmake)
 #-----------------------------------------------------------------------------
 option(BUILD_SHARED_LIBS "Build shared library and only the shared library if \"ON\", default is static" OFF)
 
-#-----------------------------------------------------------------------------
-# Add support for ccache if desired
-#-----------------------------------------------------------------------------
-find_program(CCACHE ccache)
-
-if(CCACHE)
-    option(ENABLE_CCACHE "Enable ccache." ON)
-endif()
-
-# use ccache if installed
-if(CCACHE AND ENABLE_CCACHE)
-    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+if(ENABLE_CCACHE)
+    message(DEPRECATION "The 'ENABLE_CCACHE' option is deprecated and is a NOOP now. It will be removed in the next major version")
 endif()
 
 #-----------------------------------------------------------------------------

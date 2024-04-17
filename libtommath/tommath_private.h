@@ -191,6 +191,13 @@ typedef private_mp_word mp_word;
 
 MP_STATIC_ASSERT(prec_geq_min_prec, MP_PREC >= MP_MIN_PREC)
 
+#if defined(__STDC_IEC_559__) || defined(__GCC_IEC_559) \
+   || defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) \
+   || defined(__i386__) || defined(_M_X86) \
+   || defined(__aarch64__) || defined(__arm__)
+#define MP_HAS_SET_DOUBLE
+#endif
+
 /* random number source */
 extern MP_PRIVATE mp_err(*s_mp_rand_source)(void *out, size_t size);
 
@@ -203,6 +210,7 @@ MP_PRIVATE int s_mp_log_2expt(const mp_int *a, mp_digit base) MP_WUR;
 MP_PRIVATE int s_mp_log_d(mp_digit base, mp_digit n) MP_WUR;
 MP_PRIVATE mp_err s_mp_add(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
 MP_PRIVATE mp_err s_mp_sub(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
+MP_PRIVATE mp_err s_mp_div_3(const mp_int *a, mp_int *c, mp_digit *d) MP_WUR;
 MP_PRIVATE mp_err s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs) MP_WUR;
 MP_PRIVATE mp_err s_mp_mul_digs(const mp_int *a, const mp_int *b, mp_int *c, int digs) MP_WUR;
 MP_PRIVATE mp_err s_mp_mul_high_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs) MP_WUR;

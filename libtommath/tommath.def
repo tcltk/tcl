@@ -4,6 +4,8 @@
 ;   lib -machine:X86 -name:libtommath.dll -def:tommath.def -out:tommath.lib
 ; Use this command to produce a 64-bit .lib file, for use in any MSVC version
 ;   lib -machine:X64 -name:libtommath.dll -def:tommath.def -out:tommath.lib
+; Use this command to produce a 64-bit arm .lib file, for use in any MSVC version
+;   lib -machine:ARM64 -name:libtommath.dll -def:tommath.def -out:tommath.lib
 ;
 EXPORTS
     mp_2expt
