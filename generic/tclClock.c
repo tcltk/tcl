@@ -4699,8 +4699,7 @@ TzsetIfNecessary(void)
 	if (tz.was != NULL && tz.was != TZ_INIT_MARKER) {
 	    ckfree(tz.was);
 	}
-	tz.was = (WCHAR *)
-		ckalloc(sizeof(WCHAR) * (wcslen(tzNow) + 1));
+	tz.was = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzNow) + 1));
 	wcscpy(tz.was, tzNow);
 	epoch = ++tz.epoch;
     } else if (tzNow == NULL && tz.was != NULL) {
