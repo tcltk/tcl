@@ -313,6 +313,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   undef TclSetPreInitScript
 #   define TclSetPreInitScript 0
 #   define TclInitCompiledLocals 0
+#   define Tcl_GetAlias 0
 #else
 
 #define TclGuessPackageName guessPackageName
