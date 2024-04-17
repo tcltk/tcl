@@ -74,6 +74,7 @@
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
+# define Tcl_GetAlias 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
