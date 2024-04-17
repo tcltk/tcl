@@ -36085,15 +36085,16 @@ test clock-44.1 {regression test - time zone name containing hyphen } \
 
 test clock-44.2 {regression test - time zone containing only two digits} \
     -body {
-        clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
+	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
     } \
     -result 482134530
 
 test clock-44.3 {regression test - spaces between some scan tokens are optional} \
     -body {
-        clock scan {9 Apr 2024} -format {%d %b%Y} -gmt 1
+	list [clock scan {9 Apr 2024} -format {%d %b%Y} -gmt 1] \
+	     [clock scan {Tue, 9 Apr 2024 00:00:00 +0000} -format {%a, %d %b%Y %H:%M:%S %Z} -gmt 1]
     } \
-    -result 1712620800
+    -result {1712620800 1712620800}
 
 test clock-46.1 {regression test - month zero} \
     -body {
