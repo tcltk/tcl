@@ -489,7 +489,8 @@ EXTERN int		Tcl_Flush(Tcl_Channel chan);
 TCL_DEPRECATED("see TIP #559. Use Tcl_ResetResult")
 void			Tcl_FreeResult(Tcl_Interp *interp);
 /* 148 */
-EXTERN int		Tcl_GetAlias(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_GetAliasObj")
+int			Tcl_GetAlias(Tcl_Interp *interp,
 				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, int *argcPtr,
@@ -2194,7 +2195,7 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     TCL_DEPRECATED_API("see TIP #559. Use Tcl_ResetResult") void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
-    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
+    TCL_DEPRECATED_API("Use Tcl_GetAliasObj") int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
     int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
