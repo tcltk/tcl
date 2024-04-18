@@ -8,7 +8,7 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -153,10 +153,10 @@ test iocmd-4.11 {read command} {
 test iocmd-4.12 {read command} -setup {
     set f [open $path(test1)]
 } -body {
-    list [catch {read $f 12z} msg] $msg $::errorCode
+    read $f 12z
 } -cleanup {
     close $f
-} -result {1 {expected non-negative integer but got "12z"} {TCL VALUE NUMBER}}
+} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
@@ -482,7 +482,7 @@ test iocmd-12.11 {POSIX open access modes: BINARY} {
     set result [read -nonewline $f]
     close $f
     set result
-} \u0048
+} H
 
 test iocmd-13.1 {errors in open command} {
     list [catch {open} msg] $msg
@@ -563,7 +563,6 @@ test ioCmd-13.11 {open ... a+ must not use O_APPEND: Bug 1773127} -setup {
 } -cleanup {
     removeFile $f
 } -result 341234x6
-
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $::errorCode
@@ -1018,7 +1017,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
@@ -1983,10 +1982,11 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c readable {note TOCK}]
-    set stop [after 15000 {note TIMEOUT}]
+    set tock {}
+    note [fileevent $c readable {lappend res TOCK; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c r]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
@@ -1996,10 +1996,10 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c writable {note TOCK}]
-    set stop [after 15000 {note TIMEOUT}]
+    note [fileevent $c writable {lappend res TOCK; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c w]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
@@ -2303,7 +2303,7 @@ test iocmd.tf-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd.tf-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd.tf-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
