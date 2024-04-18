@@ -1010,7 +1010,6 @@ Tcl_InitMemory(
     Tcl_CreateObjCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
-
 #else	/* TCL_MEM_DEBUG */
 
 /* This is the !TCL_MEM_DEBUG case */

@@ -81,11 +81,16 @@ TCL_DECLARE_MUTEX(socketMutex)
  * The following defines declare the messages used on socket windows.
  */
 
-#define SOCKET_MESSAGE		WM_USER+1
-#define SOCKET_SELECT		WM_USER+2
-#define SOCKET_TERMINATE	WM_USER+3
-#define SELECT			TRUE
-#define UNSELECT		FALSE
+enum TclSocketMessageID {
+    SOCKET_MESSAGE = WM_USER+1,	/* There is something waiting. */
+    SOCKET_SELECT = WM_USER+2,	/* Change what we are waiting for. */
+    SOCKET_TERMINATE = WM_USER+3/* Terminate the worker thread. */
+};
+
+enum SocketSelectOp {
+    SELECT = TRUE,
+    UNSELECT = FALSE,
+};
 
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
@@ -164,21 +169,19 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
-#define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
-#define SOCKET_EOF		(1<<2)	/* A zero read happened on the
-					 * socket. */
-#define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
-					 * socket */
-#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
-					 * process an async connect. This
-					 * flag indicates that reentry is
-					 * still pending */
-#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
-
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process */
+enum TcpStateFlags {
+    TCP_NONBLOCKING = (1<<0),	/* Socket with non-blocking I/O. */
+    TCP_ASYNC_CONNECT = (1<<1),	/* Async connect in progress. */
+    SOCKET_EOF = (1<<2),	/* A zero read happened on the socket. */
+    SOCKET_PENDING = (1<<3),	/* A message has been sent for this socket */
+    TCP_ASYNC_PENDING = (1<<4),	/* TcpConnect was called to process an async
+				 * connect. This flag indicates that reentry
+				 * is still pending. */
+    TCP_ASYNC_FAILED = (1<<5),	/* An async connect finally failed. */
+    TCP_ASYNC_TEST_MODE = (1<<8)/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process */
+};
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -201,7 +204,6 @@ typedef struct {
 
 #define TCP_BUFFER_SIZE 4096
 
-
 typedef struct {
     HWND hwnd;			/* Handle to window for socket messages. */
     HANDLE socketThread;	/* Thread handling the window */
@@ -211,8 +213,7 @@ typedef struct {
 				 * socketThread has been initialized and has
 				 * started. */
     HANDLE socketListLock;	/* Win32 Event to lock the socketList */
-    TcpState *pendingTcpState;
-				/* This socket is opened but not jet in the
+    TcpState *pendingTcpState;	/* This socket is opened but not jet in the
 				 * list. This value is also checked by
 				 * the event structure. */
     TcpState *socketList;	/* Every open socket in this thread has an
@@ -293,10 +294,15 @@ static ProcessGlobalValue hostName =
  * Simple wrapper round the SendMessage syscall.
  */
 
-#define SendSelectMessage(tsdPtr, message, payload)     \
-    SendMessageW((tsdPtr)->hwnd, SOCKET_SELECT,          \
-                (WPARAM) (message), (LPARAM) (payload))
-
+static inline void
+SendSelectMessage(
+    ThreadSpecificData *tsdPtr,
+    enum SocketSelectOp message,
+    TcpState *payload)
+{
+    SendMessageW(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) message, (LPARAM) payload);
+}
 
 /*
  * Address print debug functions
@@ -2841,8 +2847,7 @@ AddSocketInfoFd(
     fds->statePtr = statePtr;
     fds->next = NULL;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2897,10 +2902,9 @@ NewSocketInfo(SOCKET socket)
 
 static int
 WaitForSocketEvent(
-    TcpState *statePtr,	/* Information about this socket. */
+    TcpState *statePtr,		/* Information about this socket. */
     int events,			/* Events to look for. May be one of
-				 * FD_READ or FD_WRITE.
-				 */
+				 * FD_READ or FD_WRITE. */
     int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;
@@ -3245,7 +3249,7 @@ TcpThreadActionProc(
 {
     ThreadSpecificData *tsdPtr;
     TcpState *statePtr = (TcpState *)instanceData;
-    int notifyCmd;
+    enum SocketSelectOp notifyCmd;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
 	/*

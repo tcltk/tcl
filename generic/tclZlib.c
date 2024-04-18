@@ -130,21 +130,17 @@ typedef struct {
 } ZlibChannelData;
 
 /*
- * Value bits for the flags field. Definitions are:
- *	ASYNC -		Whether this is an asynchronous channel.
- *	IN_HEADER -	Whether the inHeader field has been registered with
- *			the input compressor.
- *	OUT_HEADER -	Whether the outputHeader field has been registered
- *			with the output decompressor.
- *	STREAM_DECOMPRESS - Signal decompress pending data.
- *	STREAM_DONE -	Flag to signal stream end up to transform input.
+ * Value bits for the flags field.
  */
-
-#define ASYNC			0x01
-#define IN_HEADER		0x02
-#define OUT_HEADER		0x04
-#define STREAM_DECOMPRESS	0x08
-#define STREAM_DONE		0x10
+enum ZlibChannelDataFlags {
+    ASYNC = 0x01,		/* This is an asynchronous channel. */
+    IN_HEADER = 0x02,		/* Whether the inHeader field has been
+				 * registered with the input compressor. */
+    OUT_HEADER = 0x04,		/* Whether the outputHeader field has been
+				 * registered with the output decompressor. */
+    STREAM_DECOMPRESS = 0x08,	/* Signal decompress pending data. */
+    STREAM_DONE = 0x10		/* Signal stream end up to transform input. */
+};
 
 /*
  * Size of buffers allocated by default, and the range it can be set to.  The
@@ -3872,7 +3868,6 @@ ResultDecompress(
 {
     int e, written, resBytes = 0;
     Tcl_Obj *errObj;
-
 
     cd->flags &= ~STREAM_DECOMPRESS;
     cd->inStream.next_out = (Bytef *) buf;

@@ -67,7 +67,6 @@ union overhead {
 #define realBlockSize	ovu.size
 };
 
-
 #define MAGIC		0xEF	/* magic # on accounting info */
 #define RMAGIC		0x5555	/* magic # on range info */
 

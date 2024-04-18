@@ -36,7 +36,6 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 #  define techar char
 #endif
 
-
 /* MODULE_SCOPE */
 size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 				 * (if changed with tcl-env). */

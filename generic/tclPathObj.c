@@ -1519,7 +1519,6 @@ Tcl_FSNewNativePath(
     Tcl_Obj *pathPtr = NULL;
     FsPath *fsPathPtr;
 
-
     if (fromFilesystem->internalToNormalizedProc != NULL) {
 	pathPtr = (*fromFilesystem->internalToNormalizedProc)(clientData);
     }

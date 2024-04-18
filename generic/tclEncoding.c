@@ -129,11 +129,12 @@ typedef struct {
  * Constants used when loading an encoding file to identify the type of the
  * file.
  */
-
-#define ENCODING_SINGLEBYTE	0
-#define ENCODING_DOUBLEBYTE	1
-#define ENCODING_MULTIBYTE	2
-#define ENCODING_ESCAPE		3
+enum EncodingTypes {
+    ENCODING_SINGLEBYTE = 0,
+    ENCODING_DOUBLEBYTE = 1,
+    ENCODING_MULTIBYTE = 2,
+    ENCODING_ESCAPE = 3
+};
 
 /*
  * A list of directories in which Tcl should look for *.enc files. This list
@@ -257,7 +258,6 @@ static Tcl_EncodingConvertProc	UtfToUcs2Proc;
 static Tcl_EncodingConvertProc	UtfToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
-
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
@@ -512,9 +512,11 @@ FillEncodingFileMap(void)
  *
  * To prevent conflicting bits, only define bits within 0xff00 mask here.
  */
-#define TCL_ENCODING_LE	0x100   /* Used to distinguish LE/BE variants */
-#define ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
-#define ENCODING_INPUT	0x400   /* For UTF-8/CESU-8 encoding, means external -> internal */
+enum EncodingFlags {
+    TCL_ENCODING_LE = 0x100,	/* Used to distinguish LE/BE variants */
+    ENCODING_UTF = 0x200,	/* For UTF-8 encoding, allow 4-byte output sequences */
+    ENCODING_INPUT = 0x400	/* For UTF-8/CESU-8 encoding, means external -> internal */
+};
 
 void
 TclInitEncodingSubsystem(void)

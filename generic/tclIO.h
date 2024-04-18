@@ -39,12 +39,12 @@ typedef struct ChannelBuffer {
     Tcl_Size refCount;		/* Current uses count */
     Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;	/* Position of next byte to be removed from
 				 * the buffer. */
     Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
-    char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
+    char buf[TCLFLEXARRAY];	/* Placeholder for real buffer. The real
 				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
@@ -96,7 +96,7 @@ typedef struct EventScriptRecord {
 
 typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
-    void *instanceData;	/* Instance-specific data provided by creator
+    void *instanceData;		/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
@@ -160,7 +160,8 @@ typedef struct ChannelState {
 				 * input. */
 #if TCL_MAJOR_VERSION < 9
     int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. For Tcl 8.x only */
+				 * it is closed if it is open for writing.
+				 * For Tcl 8.x only */
 #endif
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
@@ -191,8 +192,8 @@ typedef struct ChannelState {
     Tcl_Size bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
-				   the right channel when the timer is
-				   deleted. */
+				 * the right channel when the timer is
+				 * deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
@@ -232,62 +233,56 @@ typedef struct ChannelState {
  * the channel can also have TCL_READABLE (1<<1) and TCL_WRITABLE (1<<2) set.
  */
 
-#define CHANNEL_NONBLOCKING	(1<<6)	/* Channel is currently in nonblocking
-					 * mode. */
-#define BG_FLUSH_SCHEDULED	(1<<7)	/* A background flush of the queued
-					 * output buffers has been
-					 * scheduled. */
-#define CHANNEL_CLOSED		(1<<8)	/* Channel has been closed. No further
-					 * Tcl-level IO on the channel is
-					 * allowed. */
-#define CHANNEL_EOF		(1<<9)	/* EOF occurred on this channel. This
-					 * bit is cleared before every input
-					 * operation. */
-#define CHANNEL_STICKY_EOF	(1<<10)	/* EOF occurred on this channel
-					 * because we saw the input
-					 * eofChar. This bit prevents clearing
-					 * of the EOF bit before every input
-					 * operation. */
-#define CHANNEL_BLOCKED		(1<<11)	/* EWOULDBLOCK or EAGAIN occurred on
-					 * this channel. This bit is cleared
-					 * before every input or output
-					 * operation. */
-#define INPUT_SAW_CR		(1<<12)	/* Channel is in CRLF eol input
-					 * translation mode and the last byte
-					 * seen was a "\r". */
-#define CHANNEL_DEAD		(1<<13)	/* The channel has been closed by the
-					 * exit handler (on exit) but not
-					 * deallocated. When any IO operation
-					 * sees this flag on a channel, it
-					 * does not call driver level
-					 * functions to avoid referring to
-					 * deallocated data. */
-#define CHANNEL_NEED_MORE_DATA	(1<<14)	/* The last input operation failed
-					 * because there was not enough data
-					 * to complete the operation. This
-					 * flag is set when gets fails to get
-					 * a complete line or when read fails
-					 * to get a complete character. When
-					 * set, file events will not be
-					 * delivered for buffered data until
-					 * the state of the channel
-					 * changes. */
-#define CHANNEL_ENCODING_ERROR	(1<<15)	/* set if channel
-					 * encountered an encoding error */
-#define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
-					 * being used. */
-#define CHANNEL_LINEBUFFERED	(1<<17)	/* Output to the channel must be
-					 * flushed after every newline. */
-#define CHANNEL_UNBUFFERED	(1<<18)	/* Output to the channel must always
-					 * be flushed immediately. */
-#define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
-					 * Its structures are still live and
-					 * usable, but it may not be closed
-					 * again from within the close
-					 * handler. */
-#define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
-					 * No further Tcl-level write IO on
-					 * the channel is allowed. */
+enum ChannelStateFlags {
+    CHANNEL_NONBLOCKING = 1<<6,	/* Channel is currently in nonblocking mode. */
+    BG_FLUSH_SCHEDULED = 1<<7,	/* A background flush of the queued output
+				 * output buffers has been scheduled. */
+    CHANNEL_CLOSED = 1<<8,	/* Channel has been closed. No further
+				 * Tcl-level IO on the channel is allowed. */
+    CHANNEL_EOF = 1<<9,		/* EOF occurred on this channel. This bit is
+				 * cleared before every input operation. */
+    CHANNEL_STICKY_EOF = 1<<10,	/* EOF occurred on this channel because we
+				 * saw the input eofChar. This bit prevents
+				 * clearing of the EOF bit before every input
+				 * operation. */
+    CHANNEL_BLOCKED = 1<<11,	/* EWOULDBLOCK or EAGAIN occurred on this
+				 * channel. This bit is cleared before every
+				 * input or output operation. */
+    INPUT_SAW_CR = 1<<12,	/* Channel is in CRLF eol input translation
+				 * mode and the last byte seen was a "\r". */
+    CHANNEL_DEAD = 1<<13,	/* The channel has been closed by the exit
+				 * handler (on exit) but not deallocated.
+				 * When any IO operation sees this flag on a
+				 * channel, it does not call driver level
+				 * functions to avoid referring to deallocated
+				 * data. */
+    CHANNEL_NEED_MORE_DATA = 1<<14,
+				/* The last input operation failed because
+				 * there was not enough data to complete the
+				 * operation. This flag is set when gets fails
+				 * to get a complete line or when read fails
+				 * to get a complete character. When set, file
+				 * events will not be delivered for buffered
+				 * data until the state of the channel
+				 * changes. */
+    CHANNEL_ENCODING_ERROR = 1<<15,
+				/* Set if the channel encountered an encoding
+				 * error. */
+    CHANNEL_RAW_MODE = 1<<16,	/* When set, notes that the Raw API is being
+				 * used. */
+    CHANNEL_LINEBUFFERED = 1<<17,
+				/* Output to the channel must be flushed
+				 * after every newline. */
+    CHANNEL_UNBUFFERED = 1<<18,	/* Output to the channel must always be
+				 * flushed immediately. */
+    CHANNEL_INCLOSE = 1<<19,	/* Channel is currently being closed. Its
+				 * structures are still live and usable, but
+				 * it may not be closed again from within the
+				 * close handler. */
+    CHANNEL_CLOSEDWRITE = 1<<21	/* Channel write side has been closed. No
+				 * further Tcl-level write IO on the channel
+				 * is allowed. */
+};
 
 /*
  * The length of time to wait between synthetic timer events. Must be zero or

@@ -2220,8 +2220,8 @@ TclCompileScript(
 
 	    if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, parsePtr)) {
 		/*
-		* Compile bytecodes to report the parsePtr error at runtime.
-		*/
+		 * Compile bytecodes to report the parsePtr error at runtime.
+		 */
 
 		Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 			parsePtr->term + 1 - parsePtr->commandStart);

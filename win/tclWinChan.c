@@ -17,12 +17,16 @@
  * State flags used in the info structures below.
  */
 
-#define FILE_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define FILE_ASYNC	(1<<1)	/* Channel is non-blocking. */
-#define FILE_APPEND	(1<<2)	/* File is in append mode. */
+enum FileInfoFlags {
+    FILE_PENDING = (1<<0),	/* Message is pending in the queue. */
+    FILE_ASYNC = (1<<1),	/* Channel is non-blocking. */
+    FILE_APPEND = (1<<2)	/* File is in append mode. */
+};
 
-#define FILE_TYPE_SERIAL  (FILE_TYPE_PIPE+1)
-#define FILE_TYPE_CONSOLE (FILE_TYPE_PIPE+2)
+enum TclWinFileType {
+    FILE_TYPE_SERIAL = (FILE_TYPE_PIPE + 1),
+    FILE_TYPE_CONSOLE = (FILE_TYPE_PIPE + 2)
+};
 
 /*
  * The following structure contains per-instance data for a file based
@@ -108,10 +112,10 @@ static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-	NULL,
+    NULL,
     NULL,			/* Set option proc. */
     FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */

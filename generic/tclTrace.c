@@ -82,11 +82,13 @@ typedef struct {
  * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
  */
 
-#define TCL_TRACE_ENTER_DURING_EXEC	4
-#define TCL_TRACE_LEAVE_DURING_EXEC	8
-#define TCL_TRACE_ANY_EXEC		15
-#define TCL_TRACE_EXEC_IN_PROGRESS	0x10
-#define TCL_TRACE_EXEC_DIRECT		0x20
+enum TraceCommandFlags {
+    TCL_TRACE_ENTER_DURING_EXEC = 4,
+    TCL_TRACE_LEAVE_DURING_EXEC = 8,
+    TCL_TRACE_ANY_EXEC = 15,
+    TCL_TRACE_EXEC_IN_PROGRESS = 0x10,
+    TCL_TRACE_EXEC_DIRECT = 0x20
+};
 
 /*
  * Forward declarations for functions defined in this file:
@@ -1015,7 +1017,6 @@ Tcl_TraceCommand(
 	}
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
-
 
     return TCL_OK;
 }

@@ -3156,7 +3156,6 @@ CloseChannel(
      */
     DeleteTimerHandler(statePtr);
 
-
     /*
      * Mark the channel as deleted by clearing the type structure.
      */
@@ -6111,7 +6110,7 @@ finish:
 	/* Channel either is blocking or is nonblocking with no data
 	 * succesfully red before the error.  Return an error so that callers
 	 * like [read] can also return an error.
-	*/
+	 */
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;

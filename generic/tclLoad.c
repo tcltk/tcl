@@ -12,7 +12,6 @@
 
 #include "tclInt.h"
 
-
 /*
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
@@ -821,8 +820,6 @@ UnloadLibrary(
 	unloadProc = libraryPtr->unloadProc;
     }
 
-
-
     /*
      * We are ready to unload the library. First, evaluate the unload
      * function. If this fails, we cannot proceed with unload. Also, we must
@@ -856,12 +853,10 @@ UnloadLibrary(
 	code = unloadProc(target, code);
     }
 
-
     if (code != TCL_OK) {
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
-
 
     /*
      * Remove this library from the interpreter's library cache.
@@ -884,7 +879,6 @@ UnloadLibrary(
     }
     Tcl_Free(ipPtr);
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
-
 
     if (IsStatic(libraryPtr)) {
 	goto done;

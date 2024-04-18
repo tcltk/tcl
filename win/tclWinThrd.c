@@ -90,15 +90,13 @@ static Tcl_ThreadDataKey dataKey;
 
 /*
  * State bits for the thread.
- * WIN_THREAD_UNINIT		Uninitialized. Must be zero because of the way
- *				ThreadSpecificData is created.
- * WIN_THREAD_RUNNING		Running, not waiting.
- * WIN_THREAD_BLOCKED		Waiting, or trying to wait.
  */
-
-#define WIN_THREAD_UNINIT	0x0
-#define WIN_THREAD_RUNNING	0x1
-#define WIN_THREAD_BLOCKED	0x2
+enum ThreadStateFlags {
+    WIN_THREAD_UNINIT = 0x0,	/* Uninitialized. Must be zero because of the
+				 * way ThreadSpecificData is created. */
+    WIN_THREAD_RUNNING = 0x1,	/* Running, not waiting. */
+    WIN_THREAD_BLOCKED = 0x2	/* Waiting, or trying to wait. */
+};
 
 /*
  * The per condition queue pointers and the Mutex used to serialize access to
@@ -108,8 +106,8 @@ static Tcl_ThreadDataKey dataKey;
 typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
-    struct ThreadSpecificData *firstPtr;	/* Queue pointers */
-    struct ThreadSpecificData *lastPtr;
+    ThreadSpecificData *firstPtr;	/* Queue pointers */
+    ThreadSpecificData *lastPtr;
 } WinCondition;
 
 /*
@@ -120,7 +118,7 @@ typedef struct {
 static DWORD tlsKey;
 
 typedef struct {
-    Tcl_Mutex	     tlock;
+    Tcl_Mutex tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
 #endif /* USE_THREAD_ALLOC */
@@ -131,9 +129,10 @@ typedef struct {
  */
 
 typedef struct {
-  LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
-  LPVOID lpParameter;		/* Original startup data */
-  unsigned int fpControl;	/* Floating point control word from the
+    LPTHREAD_START_ROUTINE lpStartAddress;
+				/* Original startup routine */
+    LPVOID lpParameter;		/* Original startup data */
+    unsigned int fpControl;	/* Floating point control word from the
 				 * main thread */
 } WinThread;
 
@@ -926,9 +925,6 @@ TclpFinalizeCondition(
     }
 }
 
-
-
-
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
@@ -1029,7 +1025,6 @@ TclpFreeAllocCache(
     }
 }
 #endif /* USE_THREAD_ALLOC */
-
 
 void *
 TclpThreadCreateKey(void)

@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -227,13 +227,16 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     int flags;
-#define ZE_F_CRC_COMPARED      0x0001  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT       0x0002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
-#define ZE_F_VOLUME            0x0004  /* Entry corresponds to //zipfs:/ */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
 } ZipEntry;
+
+enum ZipEntryFlags {
+    ZE_F_CRC_COMPARED = 1,	/* The CRC has been compared. */
+    ZE_F_CRC_CORRECT = 2,	/* Only meaningful if ZE_F_CRC_COMPARED is set */
+    ZE_F_VOLUME = 4		/* Entry corresponds to //zipfs:/ */
+};
 
 /*
  * File channel for file contained in mounted ZIP archive.

@@ -40,9 +40,10 @@ static int		TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_GlobTypeData *types);
 
 /* Flag values used by TclGlob() */
-
-#define TCL_GLOBMODE_DIR	4
-#define TCL_GLOBMODE_TAILS	8
+enum TclGlobFlags {
+    TCL_GLOBMODE_DIR = 4,
+    TCL_GLOBMODE_TAILS = 8
+};
 
 /*
  * When there is no support for getting the block size of a file in a stat()

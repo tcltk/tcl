@@ -1024,7 +1024,6 @@ GrowEvaluationStack(
     }
     needed = growth + moveWords + WALLOCALIGN;
 
-
     /*
      * Check if there is enough room in the next stack (if there is one, it
      * should be both empty and the last one!)
@@ -5792,9 +5791,9 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 
 	/*
-	    Try to determine, without triggering generation of a string
-	    representation, whether one value is not a number.
-	*/
+	 * Try to determine, without triggering generation of a string
+	 * representation, whether one value is not a number.
+	 */
 	if (TclCheckEmptyString(valuePtr) > 0 || TclCheckEmptyString(value2Ptr) > 0) {
 	    goto stringCompare;
 	}
@@ -6603,7 +6602,6 @@ TEBCresume(
 		    goto gotError;
 		}
 		CACHE_STACK_INFO();
-
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {

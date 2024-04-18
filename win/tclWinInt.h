@@ -75,10 +75,9 @@ typedef struct TclPipeThreadInfo {
 				 * to do read/write operation. Additionally
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
-    void *clientData;	/* Referenced data of the main thread */
+    void *clientData;		/* Referenced data of the main thread */
     HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
-
 
 /* If pipe-workers will use some tcl subsystem, we can use Tcl_Alloc without
  * more overhead for finalize thread (should be executed anyway)
@@ -92,13 +91,13 @@ typedef struct TclPipeThreadInfo {
  * State PTI_STATE_STOP possible from idle state only, worker owns TI structure.
  * Otherwise PTI_STATE_END used (main thread hold ownership of the TI).
  */
-
-#define PTI_STATE_IDLE	0	/* idle or not yet initialzed */
-#define PTI_STATE_WORK	1	/* in work */
-#define PTI_STATE_STOP	2	/* thread should stop work (owns TI structure) */
-#define PTI_STATE_END	4	/* thread should stop work (worker is busy) */
-#define PTI_STATE_DOWN  8	/* worker is down */
-
+enum PipeThreadInfoStates {
+    PTI_STATE_IDLE = 0,		/* idle or not yet initialzed */
+    PTI_STATE_WORK = 1,		/* in work */
+    PTI_STATE_STOP = 2,		/* thread should stop work (owns TI structure) */
+    PTI_STATE_END = 4,		/* thread should stop work (worker is busy) */
+    PTI_STATE_DOWN = 8		/* worker is down */
+};
 
 MODULE_SCOPE
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,

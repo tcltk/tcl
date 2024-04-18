@@ -222,9 +222,9 @@ typedef struct AssemblyEnv {
     Tcl_HashTable labelHash;	/* Hash table whose keys are labels and whose
 				 * values are 'label' objects storing the code
 				 * offsets of the labels. */
-    Tcl_Size cmdLine;	/* Current line number within the assembly
+    Tcl_Size cmdLine;		/* Current line number within the assembly
 				 * code */
-    Tcl_Size* clNext;	/* Invisible continuation line for
+    Tcl_Size* clNext;		/* Invisible continuation line for
 				 * [info frame] */
     BasicBlock* head_bb;	/* First basic block in the code */
     BasicBlock* curr_bb;	/* Current basic block */
@@ -277,7 +277,7 @@ static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr);
 static void		FillInJumpOffsets(AssemblyEnv*);
 static int		CreateMirrorJumpTable(AssemblyEnv* assemEnvPtr,
 			    Tcl_Obj* jumpTable);
-static size_t	FindLocalVar(AssemblyEnv* envPtr,
+static size_t		FindLocalVar(AssemblyEnv* envPtr,
 			    Tcl_Token** tokenPtrPtr);
 static int		FinishAssembly(AssemblyEnv*);
 static void		FreeAssemblyEnv(AssemblyEnv*);
@@ -1271,7 +1271,7 @@ AssembleOneLine(
     Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
-    Tcl_Size localVar;	/* LVT index of a local variable */
+    Tcl_Size localVar;		/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
     JumptableInfo* jtPtr;	/* Pointer to a jumptable */
     int infoIndex;		/* Index of the jumptable in auxdata */
@@ -1968,7 +1968,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    Tcl_Size objc;			/* Number of elements in the 'jumps' list */
+    Tcl_Size objc;		/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */

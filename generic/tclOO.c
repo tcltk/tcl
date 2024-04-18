@@ -302,8 +302,8 @@ InitFoundation(
     Tcl_Interp *interp)
 {
     static Tcl_ThreadDataKey tsdKey;
-    ThreadLocalData *tsdPtr =
-	    (ThreadLocalData *)Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
+    ThreadLocalData *tsdPtr = (ThreadLocalData *)
+	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = (Foundation *)Tcl_Alloc(sizeof(Foundation));
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
@@ -353,14 +353,14 @@ InitFoundation(
     Tcl_DStringInit(&buffer);
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
-	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
@@ -432,7 +432,7 @@ InitFoundation(
 
     return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -576,8 +576,8 @@ DeletedHelpersNamespace(
 static void
 KillFoundation(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp)	/* The interpreter containing the OO system
-			 * foundation. */
+    Tcl_Interp *interp)		/* The interpreter containing the OO system
+				 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
 
@@ -656,7 +656,8 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u", ++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u",
+		++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;
@@ -791,11 +792,10 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    void *clientData)	/* Reference to the object whose [my] has been
+    void *clientData)		/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
-
     oPtr->myCommand = NULL;
 }
 
@@ -822,7 +822,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    void *clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -1135,7 +1135,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    void *clientData)	/* Pointer to the class whose namespace is
+    void *clientData)		/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1369,7 +1369,6 @@ TclOODecrRefCount(
     Object *oPtr)
 {
     if (oPtr->refCount-- <= 1) {
-
 	if (oPtr->classPtr != NULL) {
 	    Tcl_Free(oPtr->classPtr);
 	}
@@ -1718,10 +1717,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)		/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1786,10 +1785,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,		/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1921,7 +1920,7 @@ FinalizeAlloc(
 
     if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object deleted in constructor", -1));
+		"object deleted in constructor", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", (char *)NULL);
 	result = TCL_ERROR;
     }
@@ -1992,7 +1991,7 @@ Tcl_CopyObjectInstance(
 
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not clone the class of classes", -1));
+		"may not clone the class of classes", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", (char *)NULL);
 	return NULL;
     }
@@ -2607,7 +2606,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2678,7 +2677,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    Tcl_Size objc,			/* How many arguments are being passed in. */
+    Tcl_Size objc,		/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2800,7 +2799,7 @@ TclOOObjectCmdCore(
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "no valid method implementation", -1));
+		    "no valid method implementation", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    TclOODeleteContext(contextPtr);

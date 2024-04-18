@@ -31,11 +31,12 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * The following defines identify the various types of applications that run
  * under windows. There is special case code for the various types.
  */
-
-#define APPL_NONE	0
-#define APPL_DOS	1
-#define APPL_WIN3X	2
-#define APPL_WIN32	3
+enum TclApplicationTypeIds {
+    APPL_NONE = 0,
+    APPL_DOS = 1,
+    APPL_WIN3X = 2,
+    APPL_WIN32 = 3
+};
 
 /*
  * The following constants and structures are used to encapsulate the state of
@@ -43,7 +44,9 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * supported Win32s.
  */
 
-#define WIN_FILE	3	/* Basic Win32 file. */
+enum WinFileTypes {
+    WIN_FILE = 3		/* Basic Win32 file. */
+};
 
 /*
  * This structure encapsulates the common state associated with all file types
@@ -68,18 +71,15 @@ typedef struct ProcInfo {
 static ProcInfo *procList;
 
 /*
- * Bit masks used in the flags field of the PipeInfo structure below.
+ * Bit masks used in the flags and readFlags fields of the PipeInfo structure
+ * below.
  */
-
-#define PIPE_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define PIPE_ASYNC	(1<<1)	/* Channel is non-blocking. */
-
-/*
- * Bit masks used in the sharedFlags field of the PipeInfo structure below.
- */
-
-#define PIPE_EOF	(1<<2)	/* Pipe has reached EOF. */
-#define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
+enum PipeInfoFlags {
+    PIPE_PENDING = (1<<0),	/* Message is pending in the queue. */
+    PIPE_ASYNC = (1<<1),	/* Channel is non-blocking. */
+    PIPE_EOF = (1<<2),		/* Pipe has reached EOF. */
+    PIPE_EXTRABYTE = (1<<3)	/* The reader thread has consumed one byte. */
+};
 
 /*
  * TODO: It appears the whole EXTRABYTE machinery is in place to support
@@ -113,7 +113,6 @@ typedef struct PipeInfo {
     TclPipeThreadInfo *readTI;	/* structure owned by corresponding thread. */
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
-
     HANDLE writable;		/* Manual-reset event to signal when the
 				 * writer thread has finished waiting for the
 				 * current buffer to be written. */
@@ -203,7 +202,7 @@ static void		PipeThreadActionProc(void *instanceData,
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */

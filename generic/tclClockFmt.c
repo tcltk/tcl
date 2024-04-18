@@ -1863,7 +1863,7 @@ ClockScnToken_TimeZone_Proc(
 	}
 	while (len < maxLen) {
 	    if ((*p & 0x80)
-		    || (!isalpha(UCHAR(*p)) && !isdigit(UCHAR(*p)))) {	/* INTL: ISO only. */
+		    || (!isalpha(UCHAR(*p)) && !isdigit(UCHAR(*p)))) {	// INTL: ISO only
 		break;
 	    }
 	    p++;

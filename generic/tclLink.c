@@ -75,21 +75,18 @@ typedef struct {
 
 /*
  * Definitions for flag bits:
- * LINK_READ_ONLY -		1 means errors should be generated if Tcl
- *				script attempts to write variable.
- * LINK_BEING_UPDATED -		1 means that a call to Tcl_UpdateLinkedVar is
- *				in progress for this variable, so trace
- *				callbacks on the variable should be ignored.
- * LINK_ALLOC_ADDR -		1 means linkPtr->addr was allocated on the
- *				heap.
- * LINK_ALLOC_LAST -		1 means linkPtr->valueLast.p was allocated on
- *				the heap.
  */
-
-#define LINK_READ_ONLY		1
-#define LINK_BEING_UPDATED	2
-#define LINK_ALLOC_ADDR		4
-#define LINK_ALLOC_LAST		8
+enum LinkFlags {
+    LINK_READ_ONLY = 1,		/* Errors should be generated if Tcl script
+				 * attempts to write variable.*/
+    LINK_BEING_UPDATED = 2,	/* A call to Tcl_UpdateLinkedVar is in
+				 * progress for this variable, so trace
+				 * callbacks on the variable should be
+				 * ignored. */
+    LINK_ALLOC_ADDR = 4,	/* linkPtr->addr was allocated on the heap. */
+    LINK_ALLOC_LAST = 8		/* linkPtr->valueLast.p was allocated on the
+				 * heap. */
+};
 
 /*
  * Forward references to functions defined later in this file:

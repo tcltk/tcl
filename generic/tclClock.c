@@ -124,7 +124,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc; /* Function that implements the command. This
+    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
@@ -255,7 +255,7 @@ TclClockInit(
      * Install the commands.
      */
 
-#define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
+#define TCL_CLOCK_PREFIX_LEN 14 // == strlen("::tcl::clock::")
     memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
     	void *clientData;
@@ -646,7 +646,7 @@ NormLocaleObj(
 	return dataPtr->prevUsedLocale;
     }
 
-    if ((localeObj->length == 1 /* C */
+    if ((localeObj->length == 1 // C
 	    && strcasecmp(loc, Literals[LIT_C]) == 0)
 	    || (dataPtr->defaultLocale && (loc2 = TclGetString(dataPtr->defaultLocale))
       	    && localeObj->length == dataPtr->defaultLocale->length
@@ -656,7 +656,7 @@ NormLocaleObj(
 		dataPtr->defaultLocale : dataPtr->literals[LIT_C];
     }
 
-    if (localeObj->length == 7 /* current */
+    if (localeObj->length == 7 // current
 	    && strcasecmp(loc, Literals[LIT_CURRENT]) == 0) {
 	if (dataPtr->currentLocale == NULL) {
 	    ClockGetCurrentLocale(dataPtr, interp);
@@ -665,7 +665,7 @@ NormLocaleObj(
 	return dataPtr->currentLocale;
     }
 
-    if ((localeObj->length == 6 /* system */
+    if ((localeObj->length == 6 // system
 	    && strcasecmp(loc, Literals[LIT_SYSTEM]) == 0)) {
 	SavePrevLocaleObj(dataPtr);
 	TclSetObjRef(dataPtr->lastUsedLocaleUnnorm, localeObj);
@@ -756,17 +756,21 @@ ClockMCDict(
 
 		opts->mcDictObj = Tcl_GetObjResult(opts->interp);
 		Tcl_ResetResult(opts->interp);
-		ref = 0; /* new object is not yet referenced */
+		ref = 0;	// new object is not yet referenced
 	    }
 
-	    /* be sure that object reference doesn't increase (dict changeable) */
+	    /*
+	     * Be sure that object reference doesn't increase (dict changeable).
+	     */
 	    if (opts->mcDictObj->refCount > ref) {
 		/* smart reference (shared dict as object with no ref-counter) */
 		opts->mcDictObj = TclDictObjSmartRef(opts->interp,
 			opts->mcDictObj);
 	    }
 
-	    /* create exactly one reference to catalog / make it searchable for future */
+	    /*
+	     * Create exactly one reference to catalog / make it searchable for future.
+	     */
 	    Tcl_DictObjPut(NULL, dataPtr->mcDicts, opts->localeObj,
 		    opts->mcDictObj);
 
@@ -821,7 +825,7 @@ ClockMCGet(
 
     Tcl_DictObjGet(opts->interp, opts->mcDictObj,
 	    opts->dataPtr->mcLiterals[mcKey], &valObj);
-    return valObj; /* or NULL in obscure case if Tcl_DictObjGet failed */
+    return valObj; // or NULL in obscure case if Tcl_DictObjGet failed
 }
 
 /*
@@ -1945,9 +1949,9 @@ ConvertLocalToUTC(
 	seconds = fields->seconds;
 
 	/* Cache the last conversion */
-	if (ltzoc != NULL) { /* slot was found above */
+	if (ltzoc != NULL) { // slot was found above
 	    /* timezoneObj and changeover are the same */
-	    TclSetObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	    TclSetObjRef(ltzoc->tzName, fields->tzName); // may be NULL
 	} else {
 	    /* no TZ in cache - just move second slot down and use the first one */
 	    ltzoc = &dataPtr->lastTZOffsCache[0];
@@ -1956,14 +1960,13 @@ ConvertLocalToUTC(
 	    memcpy(&dataPtr->lastTZOffsCache[1], ltzoc, sizeof(*ltzoc));
 	    TclInitObjRef(ltzoc->timezoneObj, timezoneObj);
 	    ltzoc->changeover = changeover;
-	    TclInitObjRef(ltzoc->tzName, fields->tzName); /* may be NULL */
+	    TclInitObjRef(ltzoc->tzName, fields->tzName); // may be NULL
 	}
 	ltzoc->localSeconds = fields->localSeconds;
 	ltzoc->rangesVal[0] = rangesVal[0];
 	ltzoc->rangesVal[1] = rangesVal[1];
 	ltzoc->tzOffset = fields->tzOffset;
     }
-
 
     /* check DST-hole: if retrieved seconds is out of range */
     if (ltzoc->rangesVal[0] > seconds || seconds >= ltzoc->rangesVal[1]) {
@@ -1976,7 +1979,7 @@ ConvertLocalToUTC(
 #endif
 	/* because we don't know real TZ (we're outsize), just invalidate local
 	 * time (which could be verified in ClockValidDate later) */
-	fields->localSeconds = TCL_INV_SECONDS; /* not valid seconds */
+	fields->localSeconds = TCL_INV_SECONDS; // not valid seconds
     }
     return TCL_OK;
 }
@@ -2243,11 +2246,15 @@ ConvertUTCToLocal(
 	fields->flags &= ~CLF_CTZ;
 
 	/* Cache the last conversion */
-	if (ltzoc != NULL) { /* slot was found above */
+	if (ltzoc != NULL) { // slot was found above
 	    /* timezoneObj and changeover are the same */
 	    TclSetObjRef(ltzoc->tzName, fields->tzName);
 	} else {
-	    /* no TZ in cache - just move second slot down and use the first one */
+	    /*
+	     * No TZ in cache - just move second slot down and use the first
+	     * one.
+	     */
+
 	    ltzoc = &dataPtr->lastTZOffsCache[0];
 	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].timezoneObj);
 	    TclUnsetObjRef(dataPtr->lastTZOffsCache[1].tzName);
@@ -2700,7 +2707,10 @@ GetMonthDay(
      * Estimate month by calculating `dayOfYear / (365/12)`
      */
     month = (day*12) / dipm[12];
-    /* then do forwards backwards correction */
+
+    /*
+     * then do forwards backwards correction
+     */
     while (1) {
 	if (day > dipm[month]) {
 	    if (month >= 11 || day <= dipm[month + 1]) {
@@ -2836,7 +2846,7 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
-#if 0 /* BUG https://core.tcl-lang.org/tcl/tktview?name=da340d4f32 */
+#if 0 // BUG https://core.tcl-lang.org/tcl/tktview?name=da340d4f32
     ym1o4 = ym1 / 4;
 #else
     /*
@@ -2900,7 +2910,6 @@ GetJulianDayFromEraYearMonthDay(
  *----------------------------------------------------------------------
  */
 
-
 void
 GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
@@ -3289,7 +3298,7 @@ ClockParseFmtScnArgs(
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
-    Tcl_Size objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const objv[],	/* Parameter vector */
     ClockOperation operation,	/* What operation are we doing: format, scan, add */
     const char *syntax)		/* Syntax of the current command */
@@ -3314,7 +3323,8 @@ ClockParseFmtScnArgs(
     	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
     } else {
     	/* clock value (as current base) */
-	opts->baseObj = objv[(baseIdx = 1)];
+	baseIdx = 1;
+	opts->baseObj = objv[1];
 	saw |= 1 << CLC_ARGS_BASE;
     }
 
@@ -3365,7 +3375,8 @@ ClockParseFmtScnArgs(
 	    opts->timezoneObj = objv[i + 1];
 	    break;
 	case CLC_ARGS_BASE:
-	    opts->baseObj = objv[(baseIdx = i + 1)];
+	    baseIdx = i + 1;
+	    opts->baseObj = objv[i + 1];
 	    break;
 	case CLC_ARGS_VALIDATE:
 	    if (operation != CLC_OP_SCN) {
@@ -3719,8 +3730,8 @@ ClockScanCommit(
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
 	if (info->flags & CLF_ISO8601WEEK) {
 	    GetJulianDayFromEraYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-	} else if (!(info->flags & CLF_DAYOFYEAR) /* no day of year */
-		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) /* yymmdd over yyddd */
+	} else if (!(info->flags & CLF_DAYOFYEAR) // no day of year
+		|| (info->flags & (CLF_DAYOFMONTH|CLF_MONTH)) // yymmdd over yyddd
 		== (CLF_DAYOFMONTH|CLF_MONTH)) {
 	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
 	} else {
@@ -3801,7 +3812,7 @@ ClockValidDate(
     if (!(stage & CLF_VALIDATE_S1) || !(opts->flags & CLF_VALIDATE_S1)) {
 	goto stage_2;
     }
-    opts->flags &= ~CLF_VALIDATE_S1; /* stage 1 is done */
+    opts->flags &= ~CLF_VALIDATE_S1; // stage 1 is done
 
     /* first year (used later in hath / daysInPriorMonths) */
     if ((info->flags & (CLF_YEAR | CLF_ISO8601YEAR))) {
@@ -3821,7 +3832,7 @@ ClockValidDate(
 		goto error;
 	    }
 	} else if ((info->flags & CLF_ISO8601YEAR)) {
-	    yyYear = yydate.iso8601Year; /* used to recognize leap */
+	    yyYear = yydate.iso8601Year; // used to recognize leap
 	}
 	if ((info->flags & (CLF_ISO8601YEAR | CLF_YEAR))
 		== (CLF_ISO8601YEAR | CLF_YEAR)) {
@@ -3903,7 +3914,7 @@ ClockValidDate(
     if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
-    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
+    opts->flags &= ~CLF_VALIDATE_S2; // stage 2 is done
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
@@ -4309,8 +4320,6 @@ ClockWeekdaysOffs(
 
     return offs;
 }
-
-
 
 /*----------------------------------------------------------------------
  *

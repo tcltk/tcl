@@ -106,7 +106,6 @@ static Tcl_FSFileAttrsSetProc	NativeFileAttrsSet;
 MODULE_SCOPE const char *const		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
-
 /*
  * These these functions are not static either because routines in the native
  * (win/unix) directories call them or they are actually implemented in those
@@ -329,8 +328,8 @@ Tcl_Stat(
 /* Obsolete */
 int
 Tcl_Access(
-    const char *path,		/* Pathname of file to access (in current CP).
-				*/
+    const char *path,		/* Pathname of file to access (in current
+				 * CP). */
     int mode)			/* Permission setting. */
 {
     int ret;
@@ -1170,7 +1169,6 @@ FsAddMountsToGlobResult(
 		    len--;
 		}
 		len++;		/* account for '/' in the mElt [Bug 1602539] */
-
 
 		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
@@ -2200,7 +2198,6 @@ Tcl_FSOpenFileChannel(
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
 
-
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	/*
 	 * Return the correct error message.
@@ -3020,8 +3017,8 @@ Tcl_FSChdir(
 int
 Tcl_FSLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic shared object.
-				 */
+    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic
+				 * shared object. */
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
@@ -3115,7 +3112,6 @@ skipUnlink(
      * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS filesystem can be detected (using statfs, if available).
      *
      */
-
 
 #ifdef hpux
     (void)shlibFile;
@@ -4455,7 +4451,7 @@ Tcl_FSGetFileSystemForPath(
     } else if (retVal != NULL) {
 	/*
 	 * Found the filesystem in the internal representation of pathPtr.
-	*/
+	 */
 	Disclaim();
 	return retVal;
     }

@@ -125,10 +125,12 @@ TclOOInitInfo(
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
-		Tcl_NewStringObj("::oo::InfoObject", -1));
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
-		Tcl_NewStringObj("::oo::InfoClass", -1));
+	Tcl_DictObjPut(NULL, mapDict,
+		Tcl_NewStringObj("object", TCL_AUTO_LENGTH),
+		Tcl_NewStringObj("::oo::InfoObject", TCL_AUTO_LENGTH));
+	Tcl_DictObjPut(NULL, mapDict,
+		Tcl_NewStringObj("class", TCL_AUTO_LENGTH),
+		Tcl_NewStringObj("::oo::InfoClass", TCL_AUTO_LENGTH));
 	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
     }
 }
@@ -269,7 +271,8 @@ InfoObjectDefnCmd(
     procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", -1));
+		"definition not available for this kind of method",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
@@ -283,7 +286,7 @@ InfoObjectDefnCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -381,7 +384,7 @@ InfoObjectForwardCmd(
     if (prefixObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
-		-1));
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
@@ -615,7 +618,7 @@ InfoObjectMethodsCmd(
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], -1));
+		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
@@ -684,7 +687,8 @@ InfoObjectMethodTypeCmd(
 	goto unknownMethod;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    mPtr->typePtr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
 }
 
@@ -791,8 +795,8 @@ InfoObjectNsCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    oPtr->namespacePtr->fullName, TCL_AUTO_LENGTH));
     return TCL_OK;
 }
 
@@ -948,7 +952,8 @@ InfoClassConstrCmd(
     procPtr = TclOOGetProcFromMethod(clsPtr->constructorPtr);
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", -1));
+		"definition not available for this kind of method",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -961,7 +966,7 @@ InfoClassConstrCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1015,7 +1020,8 @@ InfoClassDefnCmd(
     procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", -1));
+		"definition not available for this kind of method",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
@@ -1029,7 +1035,7 @@ InfoClassDefnCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1126,7 +1132,8 @@ InfoClassDestrCmd(
     procPtr = TclOOGetProcFromMethod(clsPtr->destructorPtr);
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", -1));
+		"definition not available for this kind of method",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1214,7 +1221,7 @@ InfoClassForwardCmd(
     if (prefixObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
-		-1));
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
@@ -1370,7 +1377,7 @@ InfoClassMethodsCmd(
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], -1));
+		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
@@ -1436,7 +1443,8 @@ InfoClassMethodTypeCmd(
 
 	goto unknownMethod;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    mPtr->typePtr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
 }
 
@@ -1668,7 +1676,7 @@ InfoObjectCallCmd(
 	    NULL);
     if (contextPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", -1));
+		"cannot construct any call chain", TCL_AUTO_LENGTH));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
@@ -1713,7 +1721,7 @@ InfoClassCallCmd(
     callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
     if (callPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", -1));
+		"cannot construct any call chain", TCL_AUTO_LENGTH));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
@@ -1871,8 +1879,8 @@ InfoObjectPropCmd(
  *
  * SortPropList --
  *	Sort a list of names of properties. Simple support function. Assumes
- *	that the list Tcl_Obj is unshared and doesn't have a string
- *	representation.
+ *	that the list Tcl_Obj is unshared, sensible to modify at all (i.e., a
+ *	simple list) and doesn't have a string representation.
  *
  * ----------------------------------------------------------------------
  */
@@ -1895,7 +1903,7 @@ SortPropList(
     Tcl_Size ec;
     Tcl_Obj **ev;
 
-    Tcl_ListObjGetElements(NULL, list, &ec, &ev);
+    TclListObjGetElements(NULL, list, &ec, &ev);
     qsort(ev, ec, sizeof(Tcl_Obj *), PropNameCompare);
 }
 

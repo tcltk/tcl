@@ -468,8 +468,10 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
  * Operation codes for TransformFlush().
  */
 
-#define FLUSH_WRITE	1
-#define FLUSH_DISCARD	0
+enum TransformFlushOpCodes {
+    FLUSH_WRITE = 1,
+    FLUSH_DISCARD = 0
+};
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -1105,7 +1107,6 @@ ReflectInput(
 	    goto stop;
 	}
 
-
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -1140,7 +1141,6 @@ ReflectInput(
 	if (toRead <= 0) {
 	    goto stop;
 	}
-
 
 	readBytes = Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);

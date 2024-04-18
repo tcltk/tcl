@@ -105,43 +105,45 @@
  * - Finally if LISTREP_SPACE_ONLY_BACK is present, ALL extra space is at
  *   the back.
  */
-#define LISTREP_PANIC_ON_FAIL         0x00000001
-#define LISTREP_SPACE_FAVOR_FRONT     0x00000002
-#define LISTREP_SPACE_FAVOR_BACK      0x00000004
-#define LISTREP_SPACE_ONLY_BACK       0x00000008
-#define LISTREP_SPACE_FAVOR_NONE \
-    (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK)
-#define LISTREP_SPACE_FLAGS                               \
-    (LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK \
-     | LISTREP_SPACE_ONLY_BACK)
+enum ListRepFlags {
+    LISTREP_PANIC_ON_FAIL = 1,
+    LISTREP_SPACE_FAVOR_FRONT = 2,
+    LISTREP_SPACE_FAVOR_BACK = 4,
+    LISTREP_SPACE_ONLY_BACK = 8,
+    LISTREP_SPACE_FAVOR_NONE = (
+	LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK),
+    LISTREP_SPACE_FLAGS = (
+	LISTREP_SPACE_FAVOR_FRONT | LISTREP_SPACE_FAVOR_BACK
+	| LISTREP_SPACE_ONLY_BACK)
+};
 
 /*
  * Prototypes for non-inline static functions defined later in this file:
  */
-static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static int	ListLimitExceededError(Tcl_Interp *);
-static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
-static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
-static int	ListRepInitAttempt(Tcl_Interp *,
-		    Tcl_Size objc,
-		    Tcl_Obj *const objv[],
-		    ListRep *);
-static void	ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
-static void	ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
-static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
-static void	ListRepRange(ListRep *srcRepPtr,
-		    Tcl_Size rangeStart,
-		    Tcl_Size rangeEnd,
-		    int preserveSrcRep,
-		    ListRep *rangeRepPtr);
-static ListStore *ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
-static void	ListRepValidate(const ListRep *repPtr, const char *file,
-		    int lineNum);
-static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void	FreeListInternalRep(Tcl_Obj *listPtr);
-static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static Tcl_Size ListLength(Tcl_Obj *listPtr);
+static int		MemoryAllocationError(Tcl_Interp *, size_t size);
+static int		ListLimitExceededError(Tcl_Interp *);
+static ListStore *	ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[],
+			    int flags);
+static int		ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[],
+			    int flags, ListRep *);
+static int		ListRepInitAttempt(Tcl_Interp *, Tcl_Size objc,
+			    Tcl_Obj *const objv[], ListRep *);
+static void		ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr,
+			    int flags);
+static void		ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
+static int		TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr,
+			    ListRep *repPtr);
+static void		ListRepRange(ListRep *srcRepPtr,
+			    Tcl_Size rangeStart, Tcl_Size rangeEnd,
+			    int preserveSrcRep, ListRep *rangeRepPtr);
+static ListStore *	ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
+static void		ListRepValidate(const ListRep *repPtr, const char *file,
+			    int lineNum);
+static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+static void		FreeListInternalRep(Tcl_Obj *listPtr);
+static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		UpdateStringOfList(Tcl_Obj *listPtr);
+static Tcl_Size 	ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -239,8 +241,8 @@ const Tcl_ObjType tclListType = {
  */
 static inline ListSpan *
 ListSpanNew(
-    Tcl_Size firstSlot, /* Starting slot index of the span */
-    Tcl_Size numSlots)  /* Number of slots covered by the span */
+    Tcl_Size firstSlot,		/* Starting slot index of the span */
+    Tcl_Size numSlots)		/* Number of slots covered by the span */
 {
     ListSpan *spanPtr = (ListSpan *) Tcl_Alloc(sizeof(*spanPtr));
     spanPtr->refCount = 0;
@@ -266,7 +268,8 @@ ListSpanNew(
  *------------------------------------------------------------------------
  */
 static inline void
-ListSpanDecrRefs(ListSpan *spanPtr)
+ListSpanDecrRefs(
+    ListSpan *spanPtr)
 {
     if (spanPtr->refCount <= 1) {
 	Tcl_Free(spanPtr);
@@ -343,7 +346,8 @@ ListSpanMerited(
  *------------------------------------------------------------------------
  */
 static inline void
-ListRepFreeUnreferenced(const ListRep *repPtr)
+ListRepFreeUnreferenced(
+    const ListRep *repPtr)
 {
     if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
 	/* T:listrep-1.5.1 */
@@ -368,9 +372,9 @@ ListRepFreeUnreferenced(const ListRep *repPtr)
  */
 static inline void
 ObjArrayIncrRefs(
-    Tcl_Obj * const *objv,  /* Pointer to the array */
-    Tcl_Size startIdx,     /* Starting index of subarray within objv */
-    Tcl_Size count)        /* Number of elements in the subarray */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -400,9 +404,9 @@ ObjArrayIncrRefs(
  */
 static inline void
 ObjArrayDecrRefs(
-    Tcl_Obj * const *objv, /* Pointer to the array */
-    Tcl_Size startIdx,    /* Starting index of subarray within objv */
-    Tcl_Size count)       /* Number of elements in the subarray */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj * const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -2017,7 +2021,6 @@ Tcl_ListObjLength(
 	*lenPtr = TclObjTypeLength(listObj);
 	return TCL_OK;
     }
-
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return TCL_ERROR;

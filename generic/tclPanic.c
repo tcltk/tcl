@@ -81,7 +81,6 @@ Tcl_Panic(
 				 * to pass to fprintf. */
     char *arg4, *arg5, *arg6, *arg7, *arg8;
 
-
     va_start(argList, format);
     arg1 = va_arg(argList, char *);
     arg2 = va_arg(argList, char *);

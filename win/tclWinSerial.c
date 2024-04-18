@@ -33,24 +33,22 @@ TCL_DECLARE_MUTEX(serialMutex)
  * Bit masks used in the flags field of the SerialInfo structure below.
  */
 
-#define SERIAL_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define SERIAL_ASYNC	(1<<1)	/* Channel is non-blocking. */
+enum SerialInfoFlags {
+    SERIAL_PENDING = (1<<0),	/* Message is pending in the queue. */
+    SERIAL_ASYNC = (1<<1),	/* Channel is non-blocking. */
+    SERIAL_EOF = (1<<2),	/* Serial has reached EOF. */
+    SERIAL_ERROR = (1<<4),
 
-/*
- * Bit masks used in the sharedFlags field of the SerialInfo structure below.
- */
+    /*
+     * Bit masks used for noting whether to drain or discard output on close.
+     * They are disjoint from each other; at most one may be set at a time.
+     */
 
-#define SERIAL_EOF	(1<<2)	/* Serial has reached EOF. */
-#define SERIAL_ERROR	(1<<4)
-
-/*
- * Bit masks used for noting whether to drain or discard output on close. They
- * are disjoint from each other; at most one may be set at a time.
- */
-
-#define SERIAL_CLOSE_DRAIN   (1<<6)	/* Drain all output on close. */
-#define SERIAL_CLOSE_DISCARD (1<<7)	/* Discard all output on close. */
-#define SERIAL_CLOSE_MASK    (3<<6)	/* Both two bits above. */
+    SERIAL_CLOSE_DRAIN = (1<<6),/* Drain all output on close. */
+    SERIAL_CLOSE_DISCARD = (1<<7), /* Discard all output on close. */
+    SERIAL_CLOSE_MASK = (SERIAL_CLOSE_DRAIN | SERIAL_CLOSE_DISCARD)
+				/* Both two bits above. */
+};
 
 /*
  * Default time to block between checking status on the serial port.
@@ -204,7 +202,7 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
 static const Tcl_ChannelType serialChannelType = {
     "serial",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     SerialInputProc,		/* Input proc. */
     SerialOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -218,7 +216,7 @@ static const Tcl_ChannelType serialChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     SerialThreadActionProc,	/* thread action proc */
-    NULL                       /* truncate */
+    NULL			/* truncate */
 };
 
 /*
@@ -612,7 +610,6 @@ SerialCloseProc(
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
 	return EINVAL;
     }
-
 
     if (serialPtr->validMask & TCL_READABLE) {
 	PurgeComm(serialPtr->handle, PURGE_RXABORT | PURGE_RXCLEAR);
@@ -1479,7 +1476,6 @@ TclWinOpenSerialChannel(
     TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
-
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
     PurgeComm(handle,

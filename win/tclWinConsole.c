@@ -145,8 +145,11 @@ typedef struct ConsoleHandleInfo {
     int permissions;	  /* TCL_READABLE for input consoles, TCL_WRITABLE
 			   * for output. Only one or the other can be set. */
     int flags;
-#define CONSOLE_DATA_AWAITED 0x0001 /* An interpreter is awaiting data */
 } ConsoleHandleInfo;
+
+enum ConsoleHandleInfoFlags {
+    CONSOLE_DATA_AWAITED = 1	/* An interpreter is awaiting data */
+};
 
 /*
  * This structure describes per-instance data for a console based channel.
@@ -190,10 +193,13 @@ typedef struct ConsoleChannelInfo {
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which events should be reported. */
     int flags;			/* State flags */
-#define CONSOLE_EVENT_QUEUED 0x0001 /* Notification event already queued */
-#define CONSOLE_ASYNC        0x0002 /* Channel is non-blocking. */
-#define CONSOLE_READ_OPS     0x0004 /* Channel supports read-related ops. */
 } ConsoleChannelInfo;
+
+enum ConsoleChannelInfoFlags {
+    CONSOLE_EVENT_QUEUED = 1,	/* Notification event already queued */
+    CONSOLE_ASYNC = 2,		/* Channel is non-blocking. */
+    CONSOLE_READ_OPS = 4	/* Channel supports read-related ops. */
+};
 
 /*
  * The following structure is what is added to the Tcl event queue when
@@ -279,7 +285,6 @@ static Tcl_ThreadDataKey dataKey;
  * channel types in that the channel<->OS descriptor mapping is not one-to-one.
  */
 SRWLOCK gConsoleLock;
-
 
 /* Process-wide list of console handles. Access control through gConsoleLock */
 static ConsoleHandleInfo *gConsoleHandleInfoList;

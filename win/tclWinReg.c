@@ -53,7 +53,9 @@
  * should be created if it doesn't currently exist.
  */
 
-#define REG_CREATE 1
+enum TclRegFlags {
+    REG_CREATE = 1
+};
 
 /*
  * The following tables contain the mapping from registry root names to the
@@ -386,7 +388,7 @@ RegistryObjCmd(
 	     */
 
 	    mode |= KEY_ALL_ACCESS;
-	    if (OpenKey(interp, objv[n], mode, 1, &key) != TCL_OK) {
+	    if (OpenKey(interp, objv[n], mode, REG_CREATE, &key) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    RegCloseKey(key);

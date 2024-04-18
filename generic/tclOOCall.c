@@ -52,14 +52,17 @@ typedef struct {
  * Extra flags used for call chain management.
  */
 
-#define DEFINITE_PROTECTED 0x100000
-#define DEFINITE_PUBLIC    0x200000
-#define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
-#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
-#define BUILDING_MIXINS	   0x400000
-#define TRAVERSED_MIXIN	   0x800000
-#define OBJECT_MIXIN	   0x1000000
-#define DEFINE_FOR_CLASS   0x2000000
+enum CallChainExtraFlags {
+    DEFINITE_PROTECTED = 0x100000,
+    DEFINITE_PUBLIC = 0x200000,
+    DEFINITE_NOT_PUBLIC = (PRIVATE_METHOD | TRUE_PRIVATE_METHOD),
+    KNOWN_STATE = (DEFINITE_PROTECTED | DEFINITE_PUBLIC),
+    SPECIAL = (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN),
+    BUILDING_MIXINS = 0x400000,
+    TRAVERSED_MIXIN = 0x800000,
+    OBJECT_MIXIN = 0x1000000,
+    DEFINE_FOR_CLASS = 0x2000000
+};
 #define MIXIN_CONSISTENT(flags) \
     (((flags) & OBJECT_MIXIN) ||					\
 	!((flags) & BUILDING_MIXINS) == !((flags) & TRAVERSED_MIXIN))
@@ -80,7 +83,7 @@ typedef struct {
 #define WANT_PUBLIC(flags)			\
     (((flags) & PUBLIC_METHOD) != 0)
 #define WANT_UNEXPORTED(flags)			\
-    (((flags) & (PRIVATE_METHOD | TRUE_PRIVATE_METHOD)) == 0)
+    (((flags) & DEFINITE_NOT_PUBLIC) == 0)
 #define WANT_ITCLPRIVATE(flags)			\
     (((flags) & PRIVATE_METHOD) != 0)
 #define WANT_PRIVATE(flags)			\
@@ -154,6 +157,14 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     NULL,
     TCL_OBJTYPE_V0
+};
+
+/*
+ * Name the bits used in the names table values.
+ */
+enum NamesTableFlags {
+    IN_LIST = 1,
+    NO_IMPLEMENTATION = 2
 };
 
 
@@ -309,7 +320,7 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    void *clientData,	/* The method call context. */
+    void *clientData,		/* The method call context. */
     Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
@@ -375,9 +386,12 @@ TclOOInvokeContext(
     if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		(Tcl_ObjectContext) contextPtr, objc, objv);
-    }
-    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+    } else {
+	Tcl_MethodCallProc2 *callProc = (Tcl_MethodCallProc2 *) (void *)
+		mPtr->typePtr->callProc;
+	return callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
+    }
 }
 
 static int
@@ -459,12 +473,6 @@ TclOOGetSortedMethodList(
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
-
-    /*
-     * Name the bits used in the names table values.
-     */
-#define IN_LIST 1
-#define NO_IMPLEMENTATION 2
 
     /*
      * Process method names due to the object.
@@ -678,7 +686,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    int flags,		/* Whether we are interested in just the
+    int flags,			/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
@@ -809,9 +817,6 @@ AddStandardMethodName(
 	}
     }
 }
-
-#undef IN_LIST
-#undef NO_IMPLEMENTATION
 
 /*
  * ----------------------------------------------------------------------
@@ -1044,8 +1049,8 @@ AddMethodToCallChain(
      */
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain =
-		(struct MInvoke *)Tcl_Alloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
+	callPtr->chain = (struct MInvoke *)
+		Tcl_Alloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
@@ -1344,8 +1349,8 @@ TclOOGetCallContext(
 	    int isNew;
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
-		    oPtr->selfCls->classChainCache =
-			    (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		    oPtr->selfCls->classChainCache = (Tcl_HashTable *)
+			    Tcl_Alloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
 		}
@@ -1353,7 +1358,8 @@ TclOOGetCallContext(
 			methodNameObj, &isNew);
 	    } else {
 		if (oPtr->chainCache == NULL) {
-		    oPtr->chainCache = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		    oPtr->chainCache = (Tcl_HashTable *)
+			    Tcl_Alloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
@@ -1379,7 +1385,8 @@ TclOOGetCallContext(
     }
 
   returnContext:
-    contextPtr = (CallContext *)TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
+    contextPtr = (CallContext *)
+	    TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
 
     /*

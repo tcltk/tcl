@@ -113,16 +113,12 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-			        */
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-			        */
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is readable. */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is writable. */
 
     /*
      * Note regarding the usage of timers.

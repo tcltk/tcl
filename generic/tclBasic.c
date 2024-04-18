@@ -30,7 +30,15 @@
  *	1  - _fpclass
  *	2  - simulate
  *	3  - __builtin_fpclassify
+ *
+ * Not directly used; handled by preprocessor.
  */
+enum ClassifyModes {
+    MODE_FPCLASSIFY = 0,
+    MODE_FPCLASS = 1,
+    MODE_SIMULATE = 2,
+    MODE_BUILTIN = 3
+};
 
 #ifndef TCL_FPCLASSIFY_MODE
 #if defined(__MINGW32__) && defined(_X86_) /* mingw 32-bit */
@@ -62,7 +70,6 @@
 #endif /* !fpclassify */
 /* actually there is no fallback to builtin fpclassify */
 #endif /* !TCL_FPCLASSIFY_MODE */
-
 
 /*
  * Bug 7371b6270b: to check C call stack depth, prefer an approach which is
@@ -1176,7 +1183,6 @@ Tcl_CreateInterp(void)
 	Tcl_Export(interp, nsPtr, "*", 1);
     }
 
-
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.
@@ -1937,7 +1943,6 @@ DeleteInterpProc(
 	Tcl_Free(hTablePtr);
     }
 
-
     if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
@@ -2691,7 +2696,6 @@ typedef struct {
     void *deleteData; /* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc2 *nreProc;
 } CmdWrapperInfo;
-
 
 static int
 cmdWrapperProc(
@@ -9239,7 +9243,6 @@ TclNRCoroutineActivateCallback(
 		}
 	    }
 	    iPtr->execEnvPtr = corPtr->eePtr;
-
 
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));

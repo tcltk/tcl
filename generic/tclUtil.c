@@ -88,12 +88,14 @@ static ProcessGlobalValue executableName = {
  * Tcl*Convert*Element routines.
  */
 
-#define COMPAT 1
-#define CONVERT_NONE	0
-#define CONVERT_BRACE	2
-#define CONVERT_ESCAPE	4
-#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
-#define CONVERT_ANY	16
+enum ScanConvertFlags {
+    COMPAT = 1,
+    CONVERT_NONE = 0,
+    CONVERT_BRACE = 2,
+    CONVERT_ESCAPE = 4,
+    CONVERT_MASK = (CONVERT_BRACE | CONVERT_ESCAPE),
+    CONVERT_ANY = 16
+};
 
 /*
  * Prototypes for functions defined later in this file.
@@ -2616,7 +2618,6 @@ Tcl_DStringAppend(
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
-
 
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {

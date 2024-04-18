@@ -350,7 +350,6 @@ WaitProcessStatus(
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -515,8 +514,8 @@ ProcessStatusObjCmd(
 
     if (objc == 1) {
 	/*
-	* Return a dict with all child process statuses.
-	*/
+	 * Return a dict with all child process statuses.
+	 */
 
 	dict = Tcl_NewDictObj();
 	Tcl_MutexLock(&infoTablesMutex);

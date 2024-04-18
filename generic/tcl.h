@@ -767,7 +767,7 @@ typedef struct Tcl_Namespace {
 				 * is an synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    void *clientData;	/* Arbitrary value associated with this
+    void *clientData;		/* Arbitrary value associated with this
 				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Function invoked when deleting the
@@ -841,11 +841,11 @@ typedef struct {
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
-    void *clientData;	/* ClientData for string proc. */
+    void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Function to call when command is
 				 * deleted. */
-    void *deleteData;	/* Value to pass to deleteProc (usually the
+    void *deleteData;		/* Value to pass to deleteProc (usually the
 				 * same as clientData). */
     Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
 				 * command. Note that Tcl_SetCmdInfo will not
@@ -964,7 +964,7 @@ typedef struct Tcl_DString {
  *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
  *				stack for the script in progress to be
  *				completely unwound.
- *	TCL_EVAL_NOERR:	Do no exception reporting at all, just return
+ *	TCL_EVAL_NOERR:		Do no exception reporting at all, just return
  *				as the caller will report.
  */
 
@@ -1077,7 +1077,7 @@ struct Tcl_HashEntry {
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
     size_t hash;		/* Hash value. */
-    void *clientData;	/* Application stores something here with
+    void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1173,11 +1173,11 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    Tcl_Size numBuckets;		/* Total number of buckets allocated at
+    Tcl_Size numBuckets;	/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    Tcl_Size numEntries;		/* Total number of entries present in
+    Tcl_Size numEntries;	/* Total number of entries present in
 				 * table. */
-    Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
+    Tcl_Size rebuildSize;	/* Enlarge table when numEntries gets to be
 				 * this large. */
 #if TCL_MAJOR_VERSION > 8
     size_t mask;		/* Mask value used in hashing function. */
@@ -1186,7 +1186,7 @@ struct Tcl_HashTable {
 				 * Designed to use high-order bits of
 				 * randomized keys. */
 #if TCL_MAJOR_VERSION < 9
-    int mask;		/* Mask value used in hashing function. */
+    int mask;			/* Mask value used in hashing function. */
 #endif
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
@@ -1776,8 +1776,8 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD; see
 				 * below for valid types. */
     const char *start;		/* First character in token. */
-    Tcl_Size size;			/* Number of bytes in token. */
-    Tcl_Size numComponents;		/* If this token is composed of other tokens,
+    Tcl_Size size;		/* Number of bytes in token. */
+    Tcl_Size numComponents;	/* If this token is composed of other tokens,
 				 * this field tells how many of them there are
 				 * (including components of components, etc.).
 				 * The component tokens immediately follow
@@ -1891,13 +1891,13 @@ typedef struct Tcl_Token {
 typedef struct Tcl_Parse {
     const char *commentStart;	/* Pointer to # that begins the first of one
 				 * or more comments preceding the command. */
-    Tcl_Size commentSize;		/* Number of bytes in comments (up through
+    Tcl_Size commentSize;	/* Number of bytes in comments (up through
 				 * newline character that terminates the last
 				 * comment). If there were no comments, this
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    Tcl_Size commandSize;		/* Number of bytes in command, including first
+    Tcl_Size commandSize;	/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
@@ -1967,7 +1967,7 @@ typedef struct Tcl_EncodingType {
     Tcl_FreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    void *clientData;	/* Arbitrary value associated with encoding
+    void *clientData;		/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     Tcl_Size nullSize;		/* Number of zero bytes that signify
 				 * end-of-string in this encoding. This number
@@ -2173,7 +2173,7 @@ typedef struct {
 				 * depends on type.*/
     const char *helpStr;	/* Documentation message describing this
 				 * option. */
-    void *clientData;	/* Word to pass to function callbacks. */
+    void *clientData;		/* Word to pass to function callbacks. */
 } Tcl_ArgvInfo;
 
 /*
@@ -2501,7 +2501,11 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr, __FILE__, __LINE__)
 
-static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
+static inline void
+TclBounceRefCount(
+    Tcl_Obj *objPtr,
+    const char *fn,
+    int line)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2519,11 +2523,11 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
      */
 #   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
-	do { \
-	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- <= 1) { \
-		TclFreeObj(_objPtr); \
-	    } \
+	do {								\
+	    Tcl_Obj *_objPtr = (objPtr);				\
+	    if (_objPtr->refCount-- <= 1) {				\
+		TclFreeObj(_objPtr);					\
+	    }								\
 	} while(0)
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
@@ -2537,7 +2541,9 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 #   define Tcl_BounceRefCount(objPtr)     \
     TclBounceRefCount(objPtr);
 
-static inline void TclBounceRefCount(Tcl_Obj* objPtr)
+static inline void
+TclBounceRefCount(
+    Tcl_Obj* objPtr)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {

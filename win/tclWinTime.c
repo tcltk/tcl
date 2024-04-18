@@ -103,7 +103,6 @@ static struct {
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
 
-
 /*
  * Declarations for functions defined later in this file.
  */
@@ -214,9 +213,9 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	* nearly as we can, and return it.
-	*/
+	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
+	 * nearly as we can, and return it.
+	 */
 
 	Tcl_Time now;		/* Current Tcl time */
 

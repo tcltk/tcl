@@ -405,21 +405,21 @@ typedef struct CompileEnv {
  * CmdLocation map, and the compilation AuxData array.
  */
 
-/*
- * A PRECOMPILED bytecode struct is one that was generated from a compiled
- * image rather than implicitly compiled from source
- */
+enum ByteCodeFlags {
+    /*
+     * A PRECOMPILED bytecode struct is one that was generated from a compiled
+     * image rather than implicitly compiled from source
+     */
+    TCL_BYTECODE_PRECOMPILED = 0x0001,
 
-#define TCL_BYTECODE_PRECOMPILED		0x0001
+    /*
+     * When a bytecode is compiled, interp or namespace resolvers have not been
+     * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
+     */
+    TCL_BYTECODE_RESOLVE_VARS = 0x0002,
 
-/*
- * When a bytecode is compiled, interp or namespace resolvers have not been
- * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
- */
-
-#define TCL_BYTECODE_RESOLVE_VARS		0x0002
-
-#define TCL_BYTECODE_RECOMPILE			0x0004
+    TCL_BYTECODE_RECOMPILE = 0x0004
+};
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -427,7 +427,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    Tcl_Size compileEpoch;		/* Value of iPtr->compileEpoch when this
+    Tcl_Size compileEpoch;	/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -459,17 +459,17 @@ typedef struct ByteCode {
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    Tcl_Size numCommands;		/* Number of commands compiled. */
-    Tcl_Size numSrcBytes;		/* Number of source bytes compiled. */
-    Tcl_Size numCodeBytes;		/* Number of code bytes. */
-    Tcl_Size numLitObjects;		/* Number of objects in literal array. */
+    Tcl_Size numCommands;	/* Number of commands compiled. */
+    Tcl_Size numSrcBytes;	/* Number of source bytes compiled. */
+    Tcl_Size numCodeBytes;	/* Number of code bytes. */
+    Tcl_Size numLitObjects;	/* Number of objects in literal array. */
     Tcl_Size numExceptRanges;	/* Number of ExceptionRange array elems. */
     Tcl_Size numAuxDataItems;	/* Number of AuxData items. */
-    Tcl_Size numCmdLocBytes;		/* Number of bytes needed for encoded command
+    Tcl_Size numCmdLocBytes;	/* Number of bytes needed for encoded command
 				 * location information. */
-    Tcl_Size maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
+    Tcl_Size maxExceptDepth;	/* Maximum nesting level of ExceptionRanges;
 				 * TCL_INDEX_NONE if no ranges were compiled. */
-    Tcl_Size maxStackDepth;		/* Maximum number of stack elements needed to
+    Tcl_Size maxStackDepth;	/* Maximum number of stack elements needed to
 				 * execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code. This
 				 * is just after the final ByteCode member
@@ -525,7 +525,7 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (codePtr);				\
@@ -533,13 +533,11 @@ typedef struct ByteCode {
 	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
     } while (0)
 
-
-
-#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), (typePtr));		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -1225,9 +1223,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TclFetchAuxData(envPtr, index) \
     (envPtr)->auxDataArrayPtr[(index)].clientData
 
-#define LITERAL_ON_HEAP		0x01
-#define LITERAL_CMD_NAME	0x02
-#define LITERAL_UNSHARED	0x04
+enum LiteralFlags {
+    LITERAL_ON_HEAP = 0x01,
+    LITERAL_CMD_NAME = 0x02,
+    LITERAL_UNSHARED = 0x04
+};
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
@@ -1279,7 +1279,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 	    if (_delta == INT_MIN) {				\
 		_delta = 1 - (i);				\
 	    }							\
-	    TclAdjustStackDepth(_delta, envPtr);			\
+	    TclAdjustStackDepth(_delta, envPtr);		\
 	}							\
     } while (0)
 

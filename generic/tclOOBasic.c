@@ -100,8 +100,8 @@ TclOO_Class_Constructor(
      * here (and the class definition delegate doesn't run any constructors).
      */
 
-    nameObj = Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1);
-    Tcl_AppendToObj(nameObj, ":: oo ::delegate", -1);
+    nameObj = Tcl_NewStringObj(oPtr->namespacePtr->fullName, TCL_AUTO_LENGTH);
+    Tcl_AppendToObj(nameObj, ":: oo ::delegate", TCL_AUTO_LENGTH);
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
 	    TclGetString(nameObj), NULL, -1, NULL, -1);
     Tcl_DecrRefCount(nameObj);
@@ -113,7 +113,7 @@ TclOO_Class_Constructor(
     invoke = (Tcl_Obj **)Tcl_Alloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
-    invoke[2] = objv[objc-1];
+    invoke[2] = objv[objc - 1];
 
     /*
      * Must add references or errors in configuration script will cause
@@ -148,7 +148,7 @@ DecrRefsPostClassConstructor(
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    invoke[0] = Tcl_NewStringObj("::oo::MixinClassDelegates", -1);
+    invoke[0] = Tcl_NewStringObj("::oo::MixinClassDelegates", TCL_AUTO_LENGTH);
     invoke[1] = TclOOObjectName(interp, oPtr);
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
@@ -214,7 +214,7 @@ TclOO_Class_Create(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object name must not be empty", -1));
+		"object name must not be empty", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -279,7 +279,7 @@ TclOO_Class_CreateNs(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object name must not be empty", -1));
+		"object name must not be empty", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -287,7 +287,7 @@ TclOO_Class_CreateNs(
 	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"namespace name must not be empty", -1));
+		"namespace name must not be empty", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -600,14 +600,14 @@ TclOO_Object_Unknown(
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(errorMsg, ", ", -1);
+	    Tcl_AppendToObj(errorMsg, ", ", TCL_AUTO_LENGTH);
 	}
-	Tcl_AppendToObj(errorMsg, methodNames[i], -1);
+	Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     }
     if (i) {
-	Tcl_AppendToObj(errorMsg, " or ", -1);
+	Tcl_AppendToObj(errorMsg, " or ", TCL_AUTO_LENGTH);
     }
-    Tcl_AppendToObj(errorMsg, methodNames[i], -1);
+    Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     Tcl_Free((void *)methodNames);
     Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
@@ -710,7 +710,7 @@ TclOO_Object_LinkVar(
 	    TclSetVarNamespaceVar(varPtr);
 	}
 
-	if (TclPtrMakeUpvar(interp, varPtr, varName, 0, -1) != TCL_OK) {
+	if (TclPtrMakeUpvar(interp, varPtr, varName, 0, TCL_INDEX_NONE) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -726,6 +726,62 @@ TclOO_Object_LinkVar(
  *
  * ----------------------------------------------------------------------
  */
+
+/*
+ * Private method handling. [TIP 500]
+ *
+ * If we're in a context that can see some private methods of an
+ * object, we may need to precede a variable name with its prefix.
+ * This is a little tricky as we need to check through the inheritance
+ * hierarchy when the method was declared by a class to see if the
+ * current object is an instance of that class.
+ */
+static inline Tcl_Obj *
+MapPrivateVarName(
+    Tcl_Object object,
+    CallFrame *framePtr,
+    Tcl_Obj *argPtr)
+{
+    Object *oPtr = (Object *) object;
+    // NB: NOT the context we got the object from!
+    CallContext *callerCtxt = (CallContext *) framePtr->clientData;
+    Method *mPtr = callerCtxt->callPtr->chain[callerCtxt->index].mPtr;
+    PrivateVariableMapping *pvPtr;
+    Tcl_Size i;
+
+    if (mPtr->declaringObjectPtr == oPtr) {
+	FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
+	    if (!strcmp(TclGetString(pvPtr->variableObj),
+		    TclGetString(argPtr))) {
+		return pvPtr->fullNameObj;
+	    }
+	}
+    } else if (mPtr->declaringClassPtr &&
+	    mPtr->declaringClassPtr->privateVariables.num) {
+	Class *clsPtr = mPtr->declaringClassPtr;
+	int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
+	Class *mixinCls;
+
+	if (!isInstance) {
+	    FOREACH(mixinCls, oPtr->mixins) {
+		if (TclOOIsReachable(clsPtr, mixinCls)) {
+		    isInstance = 1;
+		    break;
+		}
+	    }
+	}
+
+	if (isInstance) {
+	    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
+		if (!strcmp(TclGetString(pvPtr->variableObj),
+			TclGetString(argPtr))) {
+		    return pvPtr->fullNameObj;
+		}
+	    }
+	}
+    }
+    return argPtr;
+}
 
 int
 TclOO_Object_VarName(
@@ -746,7 +802,7 @@ TclOO_Object_VarName(
 		"varName");
 	return TCL_ERROR;
     }
-    argPtr = objv[objc-1];
+    argPtr = objv[objc - 1];
     arg = TclGetString(argPtr);
 
     /*
@@ -764,59 +820,12 @@ TclOO_Object_VarName(
 	Tcl_Namespace *namespacePtr =
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
 
-	/*
-	 * Private method handling. [TIP 500]
-	 *
-	 * If we're in a context that can see some private methods of an
-	 * object, we may need to precede a variable name with its prefix.
-	 * This is a little tricky as we need to check through the inheritance
-	 * hierarchy when the method was declared by a class to see if the
-	 * current object is an instance of that class.
-	 */
-
 	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-	    CallContext *callerContext = (CallContext *)framePtr->clientData;
-	    Method *mPtr = callerContext->callPtr->chain[
-		    callerContext->index].mPtr;
-	    PrivateVariableMapping *pvPtr;
-	    Tcl_Size i;
-
-	    if (mPtr->declaringObjectPtr == oPtr) {
-		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
-		    if (!strcmp(TclGetString(pvPtr->variableObj),
-			    TclGetString(argPtr))) {
-			argPtr = pvPtr->fullNameObj;
-			break;
-		    }
-		}
-	    } else if (mPtr->declaringClassPtr &&
-		    mPtr->declaringClassPtr->privateVariables.num) {
-		Class *clsPtr = mPtr->declaringClassPtr;
-		int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
-		Class *mixinCls;
-
-		if (!isInstance) {
-		    FOREACH(mixinCls, oPtr->mixins) {
-			if (TclOOIsReachable(clsPtr, mixinCls)) {
-			    isInstance = 1;
-			    break;
-			}
-		    }
-		}
-		if (isInstance) {
-		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
-			if (!strcmp(TclGetString(pvPtr->variableObj),
-				TclGetString(argPtr))) {
-			    argPtr = pvPtr->fullNameObj;
-			    break;
-			}
-		    }
-		}
-	    }
+	    argPtr = MapPrivateVarName(Tcl_ObjectContextObject(context),
+		    framePtr, argPtr);
 	}
 
-	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
+	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, TCL_AUTO_LENGTH);
 	Tcl_AppendToObj(varNamePtr, "::", 2);
 	Tcl_AppendObjToObj(varNamePtr, argPtr);
     }
@@ -842,10 +851,10 @@ TclOO_Object_VarName(
 	 * WARNING! This code pokes inside the implementation of hash tables!
 	 */
 
-	Tcl_AppendToObj(varNamePtr, "(", -1);
+	Tcl_AppendToObj(varNamePtr, "(", TCL_AUTO_LENGTH);
 	Tcl_AppendObjToObj(varNamePtr, ((VarInHash *)
 		varPtr)->entry.key.objPtr);
-	Tcl_AppendToObj(varNamePtr, ")", -1);
+	Tcl_AppendToObj(varNamePtr, ")", TCL_AUTO_LENGTH);
     } else {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
     }
@@ -968,7 +977,7 @@ TclOONextToObjCmd(
 
 	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
 		    contextPtr, INT2PTR(contextPtr->index), NULL);
-	    contextPtr->index = i-1;
+	    contextPtr->index = i - 1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    return TclNRObjectContextInvokeNext(interp,
 		    (Tcl_ObjectContext) contextPtr, objc, objv, 2);
@@ -1021,6 +1030,46 @@ NextRestoreFrame(
 	contextPtr->index = PTR2UINT(data[2]);
     }
     return result;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetDeclarer, GetMethodName --
+ *
+ *	Helpers for the [self] command implementation.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+/* Get (class?) object that declared a method. */
+static inline Object *
+GetDeclarer(
+    Method *mPtr)		/* Method impl to get declarer of. */
+{
+    if (mPtr->declaringClassPtr != NULL) {
+	return mPtr->declaringClassPtr->thisPtr;
+    } else if (mPtr->declaringObjectPtr != NULL) {
+	return mPtr->declaringObjectPtr;
+    }
+
+    Tcl_Panic("method without declarer!");
+    return NULL;
+}
+
+/* Get the official name of a method. */
+static inline Tcl_Obj *
+GetMethodName(
+    CallContext *contextPtr,	/* Context in which we're asking. */
+    Method *mPtr)		/* What method implementation to name. */
+{
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	return contextPtr->oPtr->fPtr->constructorName;
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	return contextPtr->oPtr->fPtr->destructorName;
+    } else {
+	return mPtr->namePtr;
+    }
 }
 
 /*
@@ -1092,14 +1141,14 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     case SELF_NS:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->oPtr->namespacePtr->fullName, -1));
+		contextPtr->oPtr->namespacePtr->fullName, TCL_AUTO_LENGTH));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
 
 	if (clsPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "method not defined by a class", -1));
+		    "method not defined by a class", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -1108,19 +1157,13 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     }
     case SELF_METHOD:
-	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->constructorName);
-	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->destructorName);
-	} else {
-	    Tcl_SetObjResult(interp,
-		    CurrentlyInvoked(contextPtr).mPtr->namePtr);
-	}
+        Tcl_SetObjResult(interp, GetMethodName(contextPtr, 
+		CurrentlyInvoked(contextPtr).mPtr));
 	return TCL_OK;
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "not inside a filtering context", -1));
+		    "not inside a filtering context", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", (char *)NULL);
 	    return TCL_ERROR;
 	} else {
@@ -1137,7 +1180,7 @@ TclOOSelfObjCmd(
 	    }
 
 	    result[0] = TclOOObjectName(interp, oPtr);
-	    result[1] = Tcl_NewStringObj(type, -1);
+	    result[1] = Tcl_NewStringObj(type, TCL_AUTO_LENGTH);
 	    result[2] = miPtr->mPtr->namePtr;
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
@@ -1146,75 +1189,35 @@ TclOOSelfObjCmd(
 	if ((framePtr->callerVarPtr == NULL) ||
 		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)){
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "caller is not an object", -1));
+		    "caller is not an object", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    return TCL_ERROR;
 	} else {
 	    CallContext *callerPtr = (CallContext *)framePtr->callerVarPtr->clientData;
 	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
-	    Object *declarerPtr;
-
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
-		return TCL_ERROR;
-	    }
+	    Object *declarerPtr = GetDeclarer(mPtr);
 
 	    result[0] = TclOOObjectName(interp, declarerPtr);
 	    result[1] = TclOOObjectName(interp, callerPtr->oPtr);
-	    if (callerPtr->callPtr->flags & CONSTRUCTOR) {
-		result[2] = declarerPtr->fPtr->constructorName;
-	    } else if (callerPtr->callPtr->flags & DESTRUCTOR) {
-		result[2] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[2] = mPtr->namePtr;
-	    }
+	    result[2] = GetMethodName(callerPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
 	}
     case SELF_NEXT:
-	if (contextPtr->index < contextPtr->callPtr->numChain-1) {
+	if (contextPtr->index < contextPtr->callPtr->numChain - 1) {
 	    Method *mPtr =
 		    contextPtr->callPtr->chain[contextPtr->index+1].mPtr;
-	    Object *declarerPtr;
-
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
-		return TCL_ERROR;
-	    }
+	    Object *declarerPtr = GetDeclarer(mPtr);
 
 	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		result[1] = declarerPtr->fPtr->constructorName;
-	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		result[1] = declarerPtr->fPtr->destructorName;
-	    } else {
-		result[1] = mPtr->namePtr;
-	    }
+	    result[1] = GetMethodName(contextPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	}
 	return TCL_OK;
     case SELF_TARGET:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "not inside a filtering context", -1));
+		    "not inside a filtering context", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", (char *)NULL);
 	    return TCL_ERROR;
 	} else {
@@ -1222,7 +1225,7 @@ TclOOSelfObjCmd(
 	    Object *declarerPtr;
 	    Tcl_Size i;
 
-	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++){
+	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++) {
 		if (!contextPtr->callPtr->chain[i].isFilter) {
 		    break;
 		}
@@ -1231,21 +1234,9 @@ TclOOSelfObjCmd(
 		Tcl_Panic("filtering call chain without terminal non-filter");
 	    }
 	    mPtr = contextPtr->callPtr->chain[i].mPtr;
-	    if (mPtr->declaringClassPtr != NULL) {
-		declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	    } else if (mPtr->declaringObjectPtr != NULL) {
-		declarerPtr = mPtr->declaringObjectPtr;
-	    } else {
-		/*
-		 * This should be unreachable code.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
-		return TCL_ERROR;
-	    }
+	    declarerPtr = GetDeclarer(mPtr);
 	    result[0] = TclOOObjectName(interp, declarerPtr);
-	    result[1] = mPtr->namePtr;
+	    result[1] = GetMethodName(contextPtr, mPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}
