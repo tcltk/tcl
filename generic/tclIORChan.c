@@ -31,29 +31,29 @@
  * Signatures of all functions used in the C layer of the reflection.
  */
 
-static int		ReflectClose(ClientData clientData,
+static int		ReflectClose(void *clientData,
 			    Tcl_Interp *interp);
-static int		ReflectClose2(ClientData clientData,
+static int		ReflectClose2(void *clientData,
 			    Tcl_Interp *interp, int flags);
-static int		ReflectInput(ClientData clientData, char *buf,
+static int		ReflectInput(void *clientData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		ReflectOutput(ClientData clientData, const char *buf,
+static int		ReflectOutput(void *clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
-static void		ReflectWatch(ClientData clientData, int mask);
-static int		ReflectBlock(ClientData clientData, int mode);
+static void		ReflectWatch(void *clientData, int mask);
+static int		ReflectBlock(void *clientData, int mode);
 #ifdef TCL_THREADS
-static void		ReflectThread(ClientData clientData, int action);
+static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
-static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
+static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
+static Tcl_WideInt	ReflectSeekWide(void *clientData,
 			    Tcl_WideInt offset, int mode, int *errorCodePtr);
-static int		ReflectSeek(ClientData clientData, long offset,
+static int		ReflectSeek(void *clientData, long offset,
 			    int mode, int *errorCodePtr);
-static int		ReflectGetOption(ClientData clientData,
+static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		ReflectSetOption(ClientData clientData,
+static int		ReflectSetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *newValue);
 
@@ -382,7 +382,7 @@ TCL_DECLARE_MUTEX(rcForwardMutex)
 static void		ForwardOpToHandlerThread(ReflectedChannel *rcPtr,
 			    ForwardedOperation op, const void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
-static void		SrcExitProc(ClientData clientData);
+static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
 	if ((p)->base.mustFree) {                               \
@@ -409,7 +409,7 @@ static void		SrcExitProc(ClientData clientData);
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
 static ReflectedChannelMap *	GetThreadReflectedChannelMap(void);
-static void		DeleteThreadReflectedChannelMap(ClientData clientData);
+static void		DeleteThreadReflectedChannelMap(void *clientData);
 
 #endif /* TCL_THREADS */
 
@@ -436,7 +436,7 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
-static void		DeleteReflectedChannelMap(ClientData clientData,
+static void		DeleteReflectedChannelMap(void *clientData,
 			    Tcl_Interp *interp);
 static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
 static void		MarkDead(ReflectedChannel *rcPtr);
@@ -482,7 +482,7 @@ static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo
 
 int
 TclChanCreateObjCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -781,7 +781,7 @@ ReflectEventRun(
 static int
 ReflectEventDelete(
     Tcl_Event *ev,
-    ClientData cd)
+    void *cd)
 {
     /* OWNER thread
      *
@@ -801,7 +801,7 @@ ReflectEventDelete(
 
 int
 TclChanPostEventObjCmd(
-    ClientData dummy,
+    void *dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -854,7 +854,7 @@ TclChanPostEventObjCmd(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can not find reflected channel named \"%s\"", chanId));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1118,7 +1118,7 @@ TclChanCaughtErrorBypass(
 
 static int
 ReflectClose(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1170,7 +1170,7 @@ ReflectClose(
 	    ckfree((char *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
 	}
-        Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
+	Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
 	return EOK;
     }
 
@@ -1245,7 +1245,7 @@ ReflectClose(
 
 static int
 ReflectClose2(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
 	int flags)
 {
@@ -1273,7 +1273,7 @@ ReflectClose2(
 
 static int
 ReflectInput(
-    ClientData clientData,
+    void *clientData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -1380,7 +1380,7 @@ ReflectInput(
 
 static int
 ReflectOutput(
-    ClientData clientData,
+    void *clientData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -1509,7 +1509,7 @@ ReflectOutput(
 
 static Tcl_WideInt
 ReflectSeekWide(
-    ClientData clientData,
+    void *clientData,
     Tcl_WideInt offset,
     int seekMode,
     int *errorCodePtr)
@@ -1585,7 +1585,7 @@ ReflectSeekWide(
 
 static int
 ReflectSeek(
-    ClientData clientData,
+    void *clientData,
     long offset,
     int seekMode,
     int *errorCodePtr)
@@ -1620,7 +1620,7 @@ ReflectSeek(
 
 static void
 ReflectWatch(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1692,7 +1692,7 @@ ReflectWatch(
 
 static int
 ReflectBlock(
-    ClientData clientData,
+    void *clientData,
     int nonblocking)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1759,7 +1759,7 @@ ReflectBlock(
 
 static void
 ReflectThread(
-    ClientData clientData,
+    void *clientData,
     int action)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1796,7 +1796,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1868,7 +1868,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -1881,7 +1881,8 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc, result = TCL_OK;
+    int listc;
+    int result = TCL_OK;
     Tcl_Obj **listv;
     MethodName method;
 
@@ -2464,7 +2465,7 @@ GetReflectedChannelMap(
 	rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RCMKEY,
-		(Tcl_InterpDeleteProc *) DeleteReflectedChannelMap, rcmPtr);
+		(Tcl_InterpDeleteProc *)DeleteReflectedChannelMap, rcmPtr);
     }
     return rcmPtr;
 }
@@ -2513,7 +2514,7 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    ClientData clientData,	/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
@@ -2690,7 +2691,7 @@ GetThreadReflectedChannelMap(void)
 
 static void
 DeleteThreadReflectedChannelMap(
-    ClientData dummy)	/* The per-thread data structure. */
+    void *dummy)	/* The per-thread data structure. */
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
@@ -3020,7 +3021,7 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    int bytec;			/* Number of returned bytes */
+	    int bytec;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -3264,7 +3265,7 @@ ForwardProc(
 
 static void
 SrcExitProc(
-    ClientData clientData)
+    void *clientData)
 {
     ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
     ForwardingResult *resultPtr;
