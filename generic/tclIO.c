@@ -167,7 +167,6 @@ static int		CheckForDeadChannel(Tcl_Interp *interp,
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
 static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
-static void		CleanupTimerHandler(ChannelState *statePtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
@@ -3152,8 +3151,8 @@ CloseChannel(
     /*
      * Cancel any outstanding timer.
      */
-    DeleteTimerHandler(statePtr);
 
+    DeleteTimerHandler(statePtr);
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3502,11 +3501,6 @@ TclClose(
     }
 
     Tcl_ClearChannelHandlers(chan);
-
-    /*
-     * Cancel any outstanding timer.
-     */
-    DeleteTimerHandler(statePtr);
 
     /*
      * Invoke the registered close callbacks and delete their records.
@@ -7544,7 +7538,6 @@ Tcl_Eof(
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -7570,7 +7563,7 @@ TclChannelGetBlockingMode(
 
     return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8631,7 +8624,6 @@ UpdateInterest(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    ChannelBuffer *bufPtr = statePtr->outQueueHead;
     int mask = statePtr->interestMask;
 
     if (chanPtr->typePtr == NULL) {
@@ -8709,20 +8701,6 @@ UpdateInterest(
 	    }
 	}
     }
-
-    if (!statePtr->timer
-	    && (mask & TCL_WRITABLE)
-	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	    && bufPtr
-		&& !IsBufferEmpty(bufPtr)
-		&& !IsBufferFull(bufPtr)
-    ) {
-	TclChannelPreserve((Tcl_Channel)chanPtr);
-	statePtr->timerChanPtr = chanPtr;
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
-    }
-
     ChanWatch(chanPtr, mask);
 }
 
@@ -8751,51 +8729,30 @@ ChannelTimerProc(
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
 
-    /* TclChannelPreserve() must be called before the current function was
-     * scheduled, is already in effect.  In this function it guards against
-     * deallocation in Tcl_NotifyChannel and also keps the channel preserved
-     * until ChannelTimerProc is later called again.
-     */
-
     if (chanPtr->typePtr == NULL) {
-	CleanupTimerHandler(statePtr);
-    } else {
-	Tcl_Preserve(statePtr);
 	statePtr->timer = NULL;
-	if (statePtr->interestMask & TCL_WRITABLE
-		&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
-		&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
+    } else {
+	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+		&& (statePtr->interestMask & TCL_READABLE)
+		&& (statePtr->inQueueHead != NULL)
+		&& IsBufferReady(statePtr->inQueueHead)) {
 	    /*
 	     * Restart the timer in case a channel handler reenters the event loop
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
-	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
+	    Tcl_Preserve(statePtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+	    Tcl_Release(statePtr);
 	} else {
-	    /* The channel may have just been closed from within Tcl_NotifyChannel */
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
-		if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-			&& (statePtr->interestMask & TCL_READABLE)
-			&& (statePtr->inQueueHead != NULL)
-			&& IsBufferReady(statePtr->inQueueHead)) {
-		    /*
-		     * Restart the timer in case a channel handler reenters the event loop
-		     * before UpdateInterest gets called by Tcl_NotifyChannel.
-		     */
-
-		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			ChannelTimerProc,chanPtr);
-		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-		} else {
-		    CleanupTimerHandler(statePtr);
-		    UpdateInterest(chanPtr);
-		}
-	    } else {
-		CleanupTimerHandler(statePtr);
-	    }
+	    statePtr->timer = NULL;
+	    UpdateInterest(chanPtr);
+	    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	    statePtr->timerChanPtr = NULL;
 	}
-	Tcl_Release(statePtr);
     }
 }
 
@@ -8806,16 +8763,10 @@ DeleteTimerHandler(
 {
     if (statePtr->timer != NULL) {
 	Tcl_DeleteTimerHandler(statePtr->timer);
-	CleanupTimerHandler(statePtr);
+	statePtr->timer = NULL;
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
     }
-}
-static void
-CleanupTimerHandler(
-    ChannelState *statePtr
-){
-    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
-    statePtr->timer = NULL;
-    statePtr->timerChanPtr = NULL;
 }
 
 /*
