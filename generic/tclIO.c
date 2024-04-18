@@ -1554,11 +1554,9 @@ TclGetChannelFromObj(
     }
 
     if (resPtr && resPtr->refCount == 1) {
-	/*
-         * Re-use the ResolvedCmdName struct.
-         */
-
+	/* Re-use the ResolvedCmdName struct */
 	Tcl_Release(resPtr->statePtr);
+
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -3961,6 +3959,7 @@ Tcl_ClearChannelHandlers(
     /*
      * Cancel any outstanding timer.
      */
+
     DeleteTimerHandler(statePtr);
 
     /*
@@ -5941,6 +5940,7 @@ DoReadChars(
 	Tcl_SetErrno(EILSEQ);
 	return -1;
     }
+
     /*
      * Early out when next read will see eofchar.
      *
