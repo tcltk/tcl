@@ -2018,7 +2018,9 @@ EXTERN int		TclUtfNcmp(const char *s1, const char *s2, size_t n);
 /* 687 */
 EXTERN int		TclUtfNcasecmp(const char *s1, const char *s2,
 				size_t n);
-/* 688 */
+/* Slot 688 is reserved */
+/* Slot 689 is reserved */
+/* 690 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2743,7 +2745,9 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tclUtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tclUtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
-    void (*tclUnusedStubEntry) (void); /* 688 */
+    void (*reserved688)(void);
+    void (*reserved689)(void);
+    void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4134,8 +4138,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclUtfNcmp) /* 686 */
 #define TclUtfNcasecmp \
 	(tclStubsPtr->tclUtfNcasecmp) /* 687 */
+/* Slot 688 is reserved */
+/* Slot 689 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
