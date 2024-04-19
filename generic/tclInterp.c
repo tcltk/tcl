@@ -1276,69 +1276,6 @@ Tcl_CreateAliasObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetAlias --
- *
- *	Gets information about an alias.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-#ifndef TCL_NO_DEPRECATED
-int
-Tcl_GetAlias(
-    Tcl_Interp *interp,		/* Interp to start search from. */
-    const char *aliasName,	/* Name of alias to find. */
-    Tcl_Interp **targetInterpPtr,
-				/* (Return) target interpreter. */
-    const char **targetNamePtr,	/* (Return) name of target command. */
-    int *argcPtr,		/* (Return) count of addnl args. */
-    const char ***argvPtr)	/* (Return) additional arguments. */
-{
-    InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
-    Tcl_HashEntry *hPtr;
-    Alias *aliasPtr;
-    int i, objc;
-    Tcl_Obj **objv;
-
-    hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
-    if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (char *)NULL);
-	return TCL_ERROR;
-    }
-    aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
-    objc = aliasPtr->objc;
-    objv = &aliasPtr->objPtr;
-
-    if (targetInterpPtr != NULL) {
-	*targetInterpPtr = aliasPtr->targetInterp;
-    }
-    if (targetNamePtr != NULL) {
-	*targetNamePtr = TclGetString(objv[0]);
-    }
-    if (argcPtr != NULL) {
-	*argcPtr = objc - 1;
-    }
-    if (argvPtr != NULL) {
-	*argvPtr = (const char **)
-		Tcl_Alloc(sizeof(const char *) * (objc - 1));
-	for (i = 1; i < objc; i++) {
-	    (*argvPtr)[i - 1] = TclGetString(objv[i]);
-	}
-    }
-    return TCL_OK;
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetAliasObj --
  *
  *	Object version: Gets information about an alias.
@@ -1358,14 +1295,14 @@ Tcl_GetAliasObj(
     const char *aliasName,	/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
-    const char **targetNamePtr,	/* (Return) name of target command. */
-    int *objcPtr,		/* (Return) count of addnl args. */
+    const char **targetCmdPtr,	/* (Return) name of target command. */
+    Tcl_Size *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
@@ -1382,8 +1319,8 @@ Tcl_GetAliasObj(
     if (targetInterpPtr != NULL) {
 	*targetInterpPtr = aliasPtr->targetInterp;
     }
-    if (targetNamePtr != NULL) {
-	*targetNamePtr = TclGetString(objv[0]);
+    if (targetCmdPtr != NULL) {
+	*targetCmdPtr = TclGetString(objv[0]);
     }
     if (objcPtr != NULL) {
 	*objcPtr = objc - 1;
@@ -1522,7 +1459,7 @@ AliasCreate(
     Tcl_Interp *parentInterp,	/* Interp in which target command will be
 				 * invoked. */
     Tcl_Obj *namePtr,		/* Name of alias cmd. */
-    Tcl_Obj *targetNamePtr,	/* Name of target cmd. */
+    Tcl_Obj *targetCmdPtr,	/* Name of target cmd. */
     int objc,			/* Additional arguments to store */
     Tcl_Obj *const objv[])	/* with alias. */
 {
@@ -1542,8 +1479,8 @@ AliasCreate(
     aliasPtr->objc = objc + 1;
     prefv = &aliasPtr->objPtr;
 
-    *prefv = targetNamePtr;
-    Tcl_IncrRefCount(targetNamePtr);
+    *prefv = targetCmdPtr;
+    Tcl_IncrRefCount(targetCmdPtr);
     for (i = 0; i < objc; i++) {
 	*(++prefv) = objv[i];
 	Tcl_IncrRefCount(objv[i]);
@@ -1574,7 +1511,7 @@ AliasCreate(
 	Command *cmdPtr;
 
 	Tcl_DecrRefCount(aliasPtr->token);
-	Tcl_DecrRefCount(targetNamePtr);
+	Tcl_DecrRefCount(targetCmdPtr);
 	for (i = 0; i < objc; i++) {
 	    Tcl_DecrRefCount(objv[i]);
 	}
