@@ -973,36 +973,36 @@ TclChanPostEventObjCmd(
 	}
 #if TCL_THREADS
     } else {
-        ReflectEvent *ev = (ReflectEvent *)ckalloc(sizeof(ReflectEvent));
+	ReflectEvent *ev = (ReflectEvent *)ckalloc(sizeof(ReflectEvent));
 
-        ev->header.proc = ReflectEventRun;
-        ev->events = events;
-        ev->rcPtr = rcPtr;
+	ev->header.proc = ReflectEventRun;
+	ev->events = events;
+	ev->rcPtr = rcPtr;
 
-        /*
-         * We are not preserving the structure here. When the channel is
-         * closed any pending events are deleted, see ReflectClose(), and
-         * ReflectEventDelete(). Trying to preserve and later release when the
-         * event is run may generate a situation where the channel structure
-         * is deleted but not our structure, crashing in
-         * FreeReflectedChannel().
-         *
-         * Force creation of the RCM, for proper cleanup on thread teardown.
-         * The teardown of unprocessed events is currently coupled to the
-         * thread reflected channel map
-         */
+	/*
+	 * We are not preserving the structure here. When the channel is
+	 * closed any pending events are deleted, see ReflectClose(), and
+	 * ReflectEventDelete(). Trying to preserve and later release when the
+	 * event is run may generate a situation where the channel structure
+	 * is deleted but not our structure, crashing in
+	 * FreeReflectedChannel().
+	 *
+	 * Force creation of the RCM, for proper cleanup on thread teardown.
+	 * The teardown of unprocessed events is currently coupled to the
+	 * thread reflected channel map
+	 */
 
-        (void) GetThreadReflectedChannelMap();
+	(void) GetThreadReflectedChannelMap();
 
-        /*
-         * XXX Race condition !!
-         * XXX The destination thread may not exist anymore already.
-         * XXX (Delayed postevent executed after channel got removed).
-         * XXX Can we detect this ? (check the validity of the owner threadid ?)
-         * XXX Actually, in that case the channel should be dead also !
-         */
+	/*
+	 * XXX Race condition !!
+	 * XXX The destination thread may not exist anymore already.
+	 * XXX (Delayed postevent executed after channel got removed).
+	 * XXX Can we detect this ? (check the validity of the owner threadid ?)
+	 * XXX Actually, in that case the channel should be dead also !
+	 */
 
-        Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev,
+	Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev,
 		TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
     }
 #endif
