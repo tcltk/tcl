@@ -73,6 +73,7 @@
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
+# define Tcl_GetAlias 0
 #endif
 #define TclUnusedStubEntry 0
 
@@ -970,7 +971,7 @@ const TclStubs tclStubs = {
     0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
-    Tcl_GetAliasObj, /* 147 */
+    0, /* 147 */
     0, /* 148 */
     TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
@@ -1108,7 +1109,7 @@ const TclStubs tclStubs = {
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
     Tcl_SetMainLoop, /* 284 */
-    0, /* 285 */
+    Tcl_GetAliasObj, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */

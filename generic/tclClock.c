@@ -115,6 +115,7 @@ static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
 static Tcl_ObjCmdProc2	ClockSafeCatchCmd;
+static void		ClockFinalize(void *);
 /*
  * Structure containing description of "native" clock commands to create.
  */
@@ -179,6 +180,15 @@ TclClockInit(
     Command *cmdPtr;
     ClockClientData *data;
     int i;
+
+    static int initialized = 0;	/* global clock engine initialized (in process) */
+    /*
+     * Register handler to finalize clock on exit.
+     */
+    if (!initialized) {
+	Tcl_CreateExitHandler(ClockFinalize, NULL);
+	initialized = 1;
+    }
 
     /*
      * Safe interps get [::clock] as alias to a parent, so do not need their
@@ -352,12 +362,14 @@ ClockDeleteCmdProc(
 	    for (i = 0; i < MCLIT__END; ++i) {
 		Tcl_DecrRefCount(data->mcLiterals[i]);
 	    }
+	    Tcl_Free(data->mcLiterals);
 	    data->mcLiterals = NULL;
 	}
 	if (data->mcLitIdxs != NULL) {
 	    for (i = 0; i < MCLIT__END; ++i) {
 		Tcl_DecrRefCount(data->mcLitIdxs[i]);
 	    }
+	    Tcl_Free(data->mcLitIdxs);
 	    data->mcLitIdxs = NULL;
 	}
 
@@ -4638,20 +4650,25 @@ ClockSafeCatchCmd(
 #endif
 #define TZ_INIT_MARKER	((WCHAR *) INT2PTR(-1))
 
+typedef struct ClockTzStatic {
+    WCHAR *was;			/* Previous value of TZ. */
+#if TCL_MAJOR_VERSION > 8
+    long long lastRefresh;	/* Used for latency before next refresh. */
+#else
+    long lastRefresh;		/* Used for latency before next refresh. */
+#endif
+    size_t epoch;		/* Epoch, signals that TZ changed. */
+    size_t envEpoch;		/* Last env epoch, for faster signaling,
+				 * that TZ changed via TCL */
+} ClockTzStatic;
+static ClockTzStatic tz = {	/* Global timezone info; protected by
+				 * clockMutex.*/
+    TZ_INIT_MARKER, 0, 0, 0
+};
+
 static size_t
 TzsetIfNecessary(void)
 {
-    typedef struct ClockTzStatic {
-	WCHAR *was;		/* Previous value of TZ. */
-	long long lastRefresh;	/* Used for latency before next refresh. */
-	size_t epoch;		/* Epoch, signals that TZ changed. */
-	size_t envEpoch;	/* Last env epoch, for faster signaling,
-				 * that TZ changed via TCL */
-    } ClockTzStatic;
-    static ClockTzStatic tz = {	/* Global timezone info; protected by
-				 * clockMutex.*/
-	TZ_INIT_MARKER, 0, 0, 0
-    };
     const WCHAR *tzNow;		/* Current value of TZ. */
     Tcl_Time now;		/* Current time. */
     size_t epoch;		/* The tz.epoch that the TZ was read at. */
@@ -4682,7 +4699,7 @@ TzsetIfNecessary(void)
 	if (tz.was != NULL && tz.was != TZ_INIT_MARKER) {
 	    Tcl_Free(tz.was);
 	}
-	tz.was = (WCHAR *) Tcl_Alloc(sizeof(WCHAR) * (wcslen(tzNow) + 1));
+	tz.was = (WCHAR *)Tcl_Alloc(sizeof(WCHAR) * (wcslen(tzNow) + 1));
 	wcscpy(tz.was, tzNow);
 	epoch = ++tz.epoch;
     } else if (tzNow == NULL && tz.was != NULL) {
@@ -4698,6 +4715,19 @@ TzsetIfNecessary(void)
     Tcl_MutexUnlock(&clockMutex);
 
     return epoch;
+}
+
+static void
+ClockFinalize(
+    TCL_UNUSED(void *))
+{
+    ClockFrmScnFinalize();
+
+    if (tz.was && tz.was != TZ_INIT_MARKER) {
+	Tcl_Free(tz.was);
+    }
+
+    Tcl_MutexFinalize(&clockMutex);
 }
 
 /*
