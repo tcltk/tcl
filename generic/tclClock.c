@@ -249,7 +249,7 @@ TclClockInit(
 
     memset(&data->lastTZOffsCache, 0, sizeof(data->lastTZOffsCache));
 
-    data->defFlags = 0;
+    data->defFlags = CLF_VALIDATE;
 
     /*
      * Install the commands.
