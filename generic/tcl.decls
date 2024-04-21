@@ -2506,9 +2506,17 @@ declare 687 {
     int TclUtfNcasecmp(const char *s1, const char *s2, size_t n)
 }
 
+# TIP #648
+declare 688 {
+    Tcl_Obj *Tcl_NewWideUIntObj(Tcl_WideUInt wideValue)
+}
+declare 689 {
+    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
-declare 688 {
+declare 690 {
     void TclUnusedStubEntry(void)
 }
 

@@ -28,11 +28,6 @@
 #   define TCL_UTF_MAX 3
 #endif
 #include "tclInt.h"
-#ifdef TCL_WITH_EXTERNAL_TOMMATH
-#   include "tommath.h"
-#else
-#   include "tclTomMath.h"
-#endif
 #include "tclOO.h"
 #include <math.h>
 
@@ -561,11 +556,6 @@ Tcltest_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-#ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
-	return TCL_ERROR;
-    }
-#endif
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
@@ -3401,29 +3391,12 @@ TestlinkCmd(
 	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-#ifdef TCL_WIDE_INT_IS_LONG
-	if (ulongVar > WIDE_MAX) {
-		mp_int bignumValue;
-		if (mp_init_u64(&bignumValue, ulongVar) != MP_OKAY) {
-		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
-		}
-		tmp = Tcl_NewBignumObj(&bignumValue);
-	} else
-#endif /* TCL_WIDE_INT_IS_LONG */
-	tmp = Tcl_NewWideIntObj((Tcl_WideInt)ulongVar);
+	tmp = Tcl_NewWideUIntObj(ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
 	Tcl_AppendElement(interp, buffer);
-	if (uwideVar > WIDE_MAX) {
-		mp_int bignumValue;
-		if (mp_init_u64(&bignumValue, uwideVar) != MP_OKAY) {
-		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
-		}
-		tmp = Tcl_NewBignumObj(&bignumValue);
-	} else {
-	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
-	}
+	tmp = Tcl_NewWideUIntObj(uwideVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {

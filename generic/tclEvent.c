@@ -1129,6 +1129,20 @@ static const struct {
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+	    ".tommath-0103"
+#endif
+#ifdef TCL_WITH_INTERNAL_ZLIB
+	    ".zlib-"
+#if ZLIB_VER_MAJOR < 10
+	    "0"
+#endif
+	    STRINGIFY(ZLIB_VER_MAJOR)
+#if ZLIB_VER_MINOR < 10
+	    "0"
+#endif
+	    STRINGIFY(ZLIB_VER_MINOR)
+#endif
 }};
 
 const char *

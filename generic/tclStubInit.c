@@ -1984,7 +1984,9 @@ const TclStubs tclStubs = {
     Tcl_DStringToObj, /* 685 */
     TclUtfNcmp, /* 686 */
     TclUtfNcasecmp, /* 687 */
-    TclUnusedStubEntry, /* 688 */
+    Tcl_NewWideUIntObj, /* 688 */
+    Tcl_SetWideUIntObj, /* 689 */
+    TclUnusedStubEntry, /* 690 */
 };
 
 /* !END!: Do not edit above this line. */

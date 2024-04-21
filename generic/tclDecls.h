@@ -2019,6 +2019,11 @@ EXTERN int		TclUtfNcmp(const char *s1, const char *s2, size_t n);
 EXTERN int		TclUtfNcasecmp(const char *s1, const char *s2,
 				size_t n);
 /* 688 */
+EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
+/* 689 */
+EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
+				Tcl_WideUInt uwideValue);
+/* 690 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2743,7 +2748,9 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tclUtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tclUtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
-    void (*tclUnusedStubEntry) (void); /* 688 */
+    Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
+    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
+    void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4134,8 +4141,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclUtfNcmp) /* 686 */
 #define TclUtfNcasecmp \
 	(tclStubsPtr->tclUtfNcasecmp) /* 687 */
+#define Tcl_NewWideUIntObj \
+	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
+#define Tcl_SetWideUIntObj \
+	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
