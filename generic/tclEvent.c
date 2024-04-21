@@ -1129,7 +1129,7 @@ static const struct {
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
-#ifdef TCL_WITH_EXTERNAL_TOMMATH
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
 #endif
 #ifdef TCL_WITH_INTERNAL_ZLIB
