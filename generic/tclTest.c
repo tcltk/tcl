@@ -529,11 +529,6 @@ Tcltest_Init(
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
-#ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
-	return TCL_ERROR;
-    }
-#endif
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
