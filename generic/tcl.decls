@@ -534,7 +534,7 @@ declare 148 {
 declare 149 {
     int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr,
-	    int *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 150 {
     ClientData Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
