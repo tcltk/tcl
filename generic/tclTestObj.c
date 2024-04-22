@@ -103,10 +103,12 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
     if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
 	return TCL_ERROR;
     }
-    varPtr = (Tcl_Obj **)Tcl_Alloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+#endif
+    varPtr = (Tcl_Obj **)Tcl_Alloc(NUMBER_OF_OBJECT_VARS * sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
