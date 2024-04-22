@@ -500,7 +500,7 @@ EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
 				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, int *objcPtr,
-				Tcl_Obj ***objv);
+				Tcl_Obj ***objvPtr);
 /* 150 */
 EXTERN void *		Tcl_GetAssocData(Tcl_Interp *interp,
 				const char *name,
@@ -2201,7 +2201,7 @@ typedef struct TclStubs {
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     TCL_DEPRECATED_API("see TIP #559. Use Tcl_ResetResult") void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
     TCL_DEPRECATED_API("Use Tcl_GetAliasObj") int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
-    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
+    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
     Tcl_Size (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
