@@ -597,7 +597,7 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 #endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
-typedef void (Tcl_PanicProc) (const char *format, ...);
+typedef TCL_NORETURN1 void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (void *clientData);
@@ -2371,7 +2371,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_FindExecutable(const char *argv0);
 EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 EXTERN const char *	Tcl_SetPanicProc(
-			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+			    Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
@@ -2379,7 +2379,7 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif
-EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
