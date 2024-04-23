@@ -188,12 +188,12 @@ FindSymbol(
 	return NULL;
     }
     native = Tcl_DStringValue(&ds);
-    proc = dlsym(handle, native);	/* INTL: Native. */
+    proc = dlsym(handle, native);		/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
 	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
-	proc = dlsym(handle, native);	/* INTL: Native. */
+	proc = dlsym(handle, native);		/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
 #ifdef __cplusplus

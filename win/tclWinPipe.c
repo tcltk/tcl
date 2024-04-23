@@ -202,7 +202,7 @@ static void		PipeThreadActionProc(void *instanceData,
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Close proc. */
+    NULL,			/* Old close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -210,7 +210,7 @@ static const Tcl_ChannelType pipeChannelType = {
     NULL,			/* Get option proc. */
     PipeWatchProc,		/* Set up notifier to watch the channel. */
     PipeGetHandleProc,		/* Get an OS handle from channel. */
-    PipeClose2Proc,		/* close2proc */
+    PipeClose2Proc,		/* New close proc */
     PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -915,7 +915,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc,			/* Number of arguments in following array. */
+    size_t argc,		/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1540,7 +1540,7 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    size_t argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
@@ -1603,8 +1603,8 @@ BuildCommandLine(
 		    continue;
 		}
 		if (TclIsSpaceProc(*start)) {
-		    quote |= CL_QUOTE;	/* quote only */
-		    if (bspos) {	/* if backslash found, escape & quote */
+		    quote |= CL_QUOTE;		/* quote only */
+		    if (bspos) {		/* if backslash found, escape & quote */
 			quote |= CL_ESCAPE;
 			break;
 		    }
@@ -1805,8 +1805,8 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
+		0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1820,8 +1820,8 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
+		0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -1957,7 +1957,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -1996,7 +1996,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,	/* Pointer to PipeInfo structure. */
+    void *instanceData,		/* Pointer to PipeInfo structure. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -2018,7 +2018,6 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-
 	    TclPipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
@@ -2032,26 +2031,22 @@ PipeClose2Proc(
     }
     if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
-
 	    /*
 	     * Wait for the  writer thread to finish the  current buffer, then
 	     * terminate the thread  and close the handles. If  the channel is
 	     * nonblocking or may block during exit, bail out since the worker
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
-	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 
+	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 		/* give it a chance to leave honorably */
 		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
 		}
-
 	    } else {
-
 		WaitForSingleObject(pipePtr->writable, inExit ? 5000 : INFINITE);
-
 	    }
 
 	    TclPipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
@@ -2167,7 +2162,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -2261,7 +2256,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -2335,7 +2330,6 @@ PipeOutputProc(
   error:
     *errorCode = errno;
     return -1;
-
 }
 
 /*
@@ -2443,7 +2437,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2505,9 +2499,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle.  */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;
@@ -3235,8 +3229,8 @@ TclpOpenTemporaryFile(
 	namePtr += length;
     }
     counter = TclpGetClicks() % 65533;
-    counter2 = 1024;			/* Only try this many times! Prevents
-					 * an infinite loop. */
+    counter2 = 1024;		/* Only try this many times! Prevents
+				 * an infinite loop. */
 
     do {
 	char number[TCL_INTEGER_SPACE + 4];

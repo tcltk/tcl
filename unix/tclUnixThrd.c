@@ -213,8 +213,8 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    void *clientData,	/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    void *clientData,		/* The one argument to Main() */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -672,7 +672,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
@@ -708,7 +708,7 @@ Tcl_ConditionWait(
 
 	Tcl_GetTime(&now);
 	ptime.tv_sec = timePtr->sec + now.sec +
-	    (timePtr->usec + now.usec) / 1000000;
+		(timePtr->usec + now.usec) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
@@ -839,7 +839,6 @@ TclpFreeAllocCache(
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
-
     } else {
 	/*
 	 * Called by TclFinalizeThreadAlloc() during the process

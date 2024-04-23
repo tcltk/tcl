@@ -40,7 +40,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
     LIST_ENTRY(FileHandler) readyNode;
 				/* Next/previous in list of FileHandlers asso-
@@ -185,8 +185,7 @@ PlatformEventsControl(
 	Tcl_Panic("fstat: %s", strerror(errno));
     } else if ((fdStat.st_mode & S_IFMT) == S_IFREG
 	    || (fdStat.st_mode & S_IFMT) == S_IFDIR
-	    || (fdStat.st_mode & S_IFMT) == S_IFLNK
-	    ) {
+	    || (fdStat.st_mode & S_IFMT) == S_IFLNK) {
 	switch (op) {
 	case EV_ADD:
 	    if (isNew) {
@@ -518,7 +517,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -787,7 +786,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
-    void *clientData,	/* Notifier data. */
+    void *clientData,		/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {

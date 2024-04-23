@@ -681,7 +681,7 @@ InstructionDesc const tclInstructionTable[] = {
 
 static void		CleanupByteCode(ByteCode *codePtr);
 static ByteCode *	CompileSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int flags);
+			    unsigned long flags);
 static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
@@ -740,14 +740,20 @@ static const Tcl_ObjType substCodeType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
-#define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
+#define SubstFlags(objPtr) \
+    ((objPtr)->internalRep.ptrAndLongRep.value)
 
 /*
- * Helper macros.
+ * Add a delta to an unsigned value stored at a particular address.
+ * No alignment is assumed.
  */
-
-#define TclIncrUInt4AtPtr(ptr, delta) \
-    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr))
+static inline void
+TclIncrUInt4AtPtr(
+    unsigned char *ptr,
+    int delta)
+{
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr) + delta, ptr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -779,7 +785,7 @@ TclSetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
-    void *clientData)	/* Hook procedure private data. */
+    void *clientData)		/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
@@ -996,7 +1002,7 @@ DupByteCodeInternalRep(
 
 static void
 FreeByteCodeInternalRep(
-    Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
+    Tcl_Obj *objPtr)		/* Object whose internal rep to free. */
 {
     ByteCode *codePtr;
 
@@ -1046,7 +1052,7 @@ TclReleaseByteCode(
 
 static void
 CleanupByteCode(
-    ByteCode *codePtr)	/* Points to the ByteCode to free. */
+    ByteCode *codePtr)		/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
@@ -1115,7 +1121,6 @@ CleanupByteCode(
      */
 
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
 	    objPtr = *objArrayPtr;
@@ -1325,7 +1330,7 @@ static ByteCode *
 CompileSubstObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    int flags)
+    unsigned long flags)
 {
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr = NULL;
@@ -1335,7 +1340,7 @@ CompileSubstObj(
     if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	if (flags != PTR2INT(SubstFlags(objPtr))
+	if (flags != SubstFlags(objPtr)
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1360,7 +1365,7 @@ CompileSubstObj(
 	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	SubstFlags(objPtr) = INT2PTR(flags);
+	SubstFlags(objPtr) = flags;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1397,7 +1402,7 @@ CompileSubstObj(
 
 static void
 FreeSubstCodeInternalRep(
-    Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
+    Tcl_Obj *objPtr)		/* Object whose internal rep to free. */
 {
     ByteCode *codePtr;
 
@@ -1448,7 +1453,7 @@ void
 TclInitCompileEnv(
     Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
 				 * structure is initialized. */
-    CompileEnv *envPtr,/* Points to the CompileEnv structure to
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
@@ -2649,7 +2654,7 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
@@ -2989,7 +2994,7 @@ TclInitByteCodeObj(
 				 * and whose string rep contains the source
 				 * code. */
     const Tcl_ObjType *typePtr,
-    CompileEnv *envPtr)/* Points to the CompileEnv structure from
+    CompileEnv *envPtr)		/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
     ByteCode *codePtr;
@@ -3034,7 +3039,7 @@ TclInitByteCodeObj(
 
 Tcl_Size
 TclFindCompiledLocal(
-    const char *name,	/* Points to first character of the name of a
+    const char *name,		/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
@@ -3213,7 +3218,7 @@ EnterCmdStartData(
     Tcl_Size cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
     Tcl_Size srcOffset,		/* Offset of first char of the command. */
-    Tcl_Size codeOffset)		/* Offset of first byte of command code. */
+    Tcl_Size codeOffset)	/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3291,8 +3296,8 @@ EnterCmdExtentData(
 				 * location information. */
     Tcl_Size cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    Tcl_Size numSrcBytes,		/* Number of command source chars. */
-    Tcl_Size numCodeBytes)		/* Offset of last byte of command code. */
+    Tcl_Size numSrcBytes,	/* Number of command source chars. */
+    Tcl_Size numCodeBytes)	/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3415,7 +3420,7 @@ EnterCmdWordData(
 Tcl_Size
 TclCreateExceptRange(
     ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
-    CompileEnv *envPtr)/* Points to CompileEnv for which to create a
+    CompileEnv *envPtr)		/* Points to CompileEnv for which to create a
 				 * new ExceptionRange structure. */
 {
     ExceptionRange *rangePtr;
@@ -3513,7 +3518,6 @@ TclGetInnermostExceptionRange(
 			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
-
 	    if (auxPtrPtr) {
 		*auxPtrPtr = envPtr->exceptAuxArrayPtr + i;
 	    }
@@ -3775,11 +3779,11 @@ TclFinalizeLoopExceptionRange(
 
 Tcl_Size
 TclCreateAuxData(
-    void *clientData,	/* The compilation auxiliary data to store in
+    void *clientData,		/* The compilation auxiliary data to store in
 				 * the new aux data record. */
     const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
-    CompileEnv *envPtr)/* Points to the CompileEnv for which a new
+    CompileEnv *envPtr)		/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
     Tcl_Size index;		/* Index for the new AuxData structure. */

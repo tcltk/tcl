@@ -204,7 +204,8 @@ Tcl_NewInstanceMethod(
 				 * method to be created. */
 {
     if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
-	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_1", "Tcl_NewInstanceMethod");
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_1",
+		"Tcl_NewInstanceMethod");
     }
     return TclNewInstanceMethod(NULL, object, nameObj, flags,
 	    (const Tcl_MethodType *)typePtr, clientData);
@@ -226,7 +227,8 @@ Tcl_NewInstanceMethod2(
 				 * method to be created. */
 {
     if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
-	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewInstanceMethod2");
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2",
+		"Tcl_NewInstanceMethod2");
     }
     return TclNewInstanceMethod(NULL, object, nameObj, flags,
 	    (const Tcl_MethodType *)typePtr, clientData);
@@ -316,7 +318,8 @@ Tcl_NewMethod(
 				 * method to be created. */
 {
     if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
-	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_1", "Tcl_NewMethod");
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_1",
+		"Tcl_NewMethod");
     }
     return TclNewMethod(NULL, cls, nameObj, flags, typePtr, clientData);
 }
@@ -337,7 +340,8 @@ Tcl_NewMethod2(
 				 * method to be created. */
 {
     if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
-	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewMethod2");
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2",
+		"Tcl_NewMethod2");
     }
     return TclNewMethod(NULL, cls, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
 }
@@ -536,7 +540,7 @@ TclOOMakeProcInstanceMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    void *clientData,	/* The per-method type-specific data. */
+    void *clientData,		/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -649,7 +653,7 @@ TclOOMakeProcMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    void *clientData,	/* The per-method type-specific data. */
+    void *clientData,		/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -744,7 +748,7 @@ TclOOMakeProcMethod(
 
 static int
 InvokeProcedureMethod(
-    void *clientData,	/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -1544,7 +1548,7 @@ TclOONewForwardMethod(
 
 static int
 InvokeForwardMethod(
-    void *clientData,	/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */

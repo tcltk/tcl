@@ -726,7 +726,6 @@ Tcl_RegsubObjCmd(
 
     numMatches = 0;
     for ( ; offset <= wlen; ) {
-
 	/*
 	 * The flags argument is set if string is part of a larger string, so
 	 * that "^" won't match.
@@ -1236,7 +1235,6 @@ Tcl_SplitObjCmd(
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
 	Tcl_DeleteHashTable(&charReuseTable);
-
     } else if (splitCharLen == 1) {
 	const char *p;
 
@@ -2407,7 +2405,7 @@ StringRplcCmd(
      * result is the original string.
      */
 
-    if ((last < 0) ||	/* Range ends before start of string */
+    if ((last < 0) ||		/* Range ends before start of string */
 	    (first > end) ||	/* Range begins after end of string */
 	    (last < first)) {	/* Range begins after it starts */
 	/*

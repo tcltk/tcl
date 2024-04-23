@@ -369,8 +369,8 @@ Tcl_ReadObjCmd(
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
-    Tcl_WideInt toRead;			/* How many bytes to read? */
-    Tcl_Size charactersRead;		/* How many characters were read? */
+    Tcl_WideInt toRead;		/* How many bytes to read? */
+    Tcl_Size charactersRead;	/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -1199,7 +1199,7 @@ Tcl_OpenObjCmd(
 
 static void
 TcpAcceptCallbacksDeleteProc(
-    void *clientData,	/* Data which was passed when the assocdata
+    void *clientData,		/* Data which was passed when the assocdata
 				 * was registered. */
     TCL_UNUSED(Tcl_Interp *))
 {
@@ -1327,7 +1327,7 @@ UnregisterTcpServerInterpCleanupProc(
 
 static void
 AcceptCallbackProc(
-    void *callbackData,	/* The data stored when the callback was
+    void *callbackData,		/* The data stored when the callback was
 				 * created in the call to
 				 * Tcl_OpenTcpServer. */
     Tcl_Channel chan,		/* Channel for the newly accepted
@@ -1418,7 +1418,7 @@ AcceptCallbackProc(
 
 static void
 TcpServerCloseProc(
-    void *callbackData)	/* The data passed in the call to
+    void *callbackData)		/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
     AcceptCallback *acceptCallbackPtr = (AcceptCallback *)callbackData;
@@ -2037,13 +2037,13 @@ TclInitChanCmd(
 	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
 	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
 	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	/* TIP #219 */
+	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #219 */
 	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #230 */
 	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, NULL, 0},
 	{"read",	Tcl_ReadObjCmd,		NULL, NULL, NULL, 0},
 	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
 	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},		/* TIP #208 */
+	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},	/* TIP #208 */
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char *const extras[] = {

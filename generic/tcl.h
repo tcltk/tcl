@@ -248,7 +248,8 @@ typedef void *ClientData;
 #    undef HAVE_STRUCT_STAT64
 #endif /* __APPLE__ */
 
-/* Cross-compiling 32-bit on a 64-bit platform? Then our
+/*
+ * Cross-compiling 32-bit on a 64-bit platform? Then our
  * configure script does the wrong thing. Correct that here.
  */
 #if defined(__GNUC__) && !defined(_WIN32) && !defined(__LP64__)
@@ -464,9 +465,9 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
 
 typedef struct Tcl_RegExpIndices {
 #if TCL_MAJOR_VERSION > 8
-    Tcl_Size start;			/* Character offset of first character in
+    Tcl_Size start;		/* Character offset of first character in
 				 * match. */
-    Tcl_Size end;			/* Character offset of first character after
+    Tcl_Size end;		/* Character offset of first character after
 				 * the match. */
 #else
     long start;
@@ -475,11 +476,11 @@ typedef struct Tcl_RegExpIndices {
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    Tcl_Size nsubs;			/* Number of subexpressions in the compiled
+    Tcl_Size nsubs;		/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
 #if TCL_MAJOR_VERSION > 8
-    Tcl_Size extendStart;		/* The offset at which a subsequent match
+    Tcl_Size extendStart;	/* The offset at which a subsequent match
 				 * might begin. */
 #else
     long extendStart;
@@ -617,26 +618,23 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
-typedef	      Tcl_Size	(Tcl_ObjTypeLengthProc)  (struct Tcl_Obj *listPtr);
-typedef		   int	(Tcl_ObjTypeIndexProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size index, struct Tcl_Obj** elemObj);
-typedef		   int	(Tcl_ObjTypeSliceProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size fromIdx, Tcl_Size toIdx,
-                                             struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ObjTypeReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ObjTypeGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef	struct Tcl_Obj*	(Tcl_ObjTypeSetElement)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size indexCount,
-                                             struct Tcl_Obj *const indexArray[],
-                                             struct Tcl_Obj *valueObj);
-typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
-                                             Tcl_Size first, Tcl_Size numToDelete,
-                                             Tcl_Size numToInsert,
-                                             struct Tcl_Obj *const insertObjs[]);
-typedef            int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp, struct Tcl_Obj *valueObj,
-                                             struct Tcl_Obj *listObj, int *boolResult);
+typedef Tcl_Size (Tcl_ObjTypeLengthProc) (struct Tcl_Obj *listPtr);
+typedef	int (Tcl_ObjTypeIndexProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size index, struct Tcl_Obj** elemObj);
+typedef	int (Tcl_ObjTypeSliceProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size fromIdx, Tcl_Size toIdx, struct Tcl_Obj **newObjPtr);
+typedef int (Tcl_ObjTypeReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	struct Tcl_Obj **newObjPtr);
+typedef	int (Tcl_ObjTypeGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
+typedef	struct Tcl_Obj*	(Tcl_ObjTypeSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size indexCount, struct Tcl_Obj *const indexArray[],
+	struct Tcl_Obj *valueObj);
+typedef int (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+	Tcl_Size first, Tcl_Size numToDelete, Tcl_Size numToInsert,
+	struct Tcl_Obj *const insertObjs[]);
+typedef int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp, struct Tcl_Obj *valueObj,
+	struct Tcl_Obj *listObj, int *boolResult);
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -670,23 +668,27 @@ typedef struct Tcl_ObjType {
     size_t version;
 
     /* List emulation functions - ObjType Version 1 */
-    Tcl_ObjTypeLengthProc *lengthProc;	     /* Return the [llength] of the
-					     ** AbstractList */
-    Tcl_ObjTypeIndexProc *indexProc;	     /* Return a value (Tcl_Obj) for
-					     ** [lindex $al $index] */
-    Tcl_ObjTypeSliceProc *sliceProc;	     /* Return an AbstractList for
-					     ** [lrange $al $start $end] */
-    Tcl_ObjTypeReverseProc *reverseProc;     /* Return an AbstractList for
-					     ** [lreverse $al] */
-    Tcl_ObjTypeGetElements *getElementsProc; /* Return an objv[] of all elements in
-					     ** the list */
-    Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
-					     ** with the given valueObj. */
-    Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
-    Tcl_ObjTypeInOperatorProc *inOperProc;   /* "in" and "ni" expr list
-                                             ** operation Determine if the given
-                                             ** string value matches an element in
-                                             ** the list */
+    Tcl_ObjTypeLengthProc *lengthProc;
+				/* Return the [llength] of the AbstractList */
+    Tcl_ObjTypeIndexProc *indexProc;
+				/* Return a value (Tcl_Obj) for
+				 * [lindex $al $index] */
+    Tcl_ObjTypeSliceProc *sliceProc;
+				/* Return an AbstractList for
+				 * [lrange $al $start $end] */
+    Tcl_ObjTypeReverseProc *reverseProc;
+				/* Return an AbstractList for [lreverse $al] */
+    Tcl_ObjTypeGetElements *getElementsProc;
+				/* Return an objv[] of all elements in the list. */
+    Tcl_ObjTypeSetElement *setElementProc;
+				/* Replace the element at the index with the
+				 * given valueObj. */
+    Tcl_ObjTypeReplaceProc *replaceProc;
+				/* Replace subsequence with elements. */
+    Tcl_ObjTypeInOperatorProc *inOperProc;
+				/* "in" and "ni" expr list operation. Determines
+				 * if the given string value matches an element
+				 * in the list. */
 #endif
 } Tcl_ObjType;
 
@@ -749,7 +751,8 @@ typedef struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    Tcl_ObjInternalRep internalRep;	/* The internal representation: */
+    Tcl_ObjInternalRep internalRep;
+				/* The internal representation: */
 } Tcl_Obj;
 
 
@@ -905,10 +908,10 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_NAN		Value is NaN.
  */
 
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_INT		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -927,9 +930,9 @@ typedef struct Tcl_DString {
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
  * TCL_NULL_OK allows the empty string or NULL to return TCL_OK.
- *      The returned value will be -1;
+ *	The returned value will be -1;
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
- *      a table that will not live long enough to make it worthwhile.
+ *	a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
@@ -973,7 +976,7 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_NOERR		0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -1101,15 +1104,15 @@ struct Tcl_HashEntry {
  *				randomising the bits and then using the upper
  *				N bits as the index into the table.
  * TCL_HASH_KEY_SYSTEM_HASH -	If this flag is set then all memory internally
- *                              allocated for the hash table that is not for an
- *                              entry will use the system heap.
+ *				allocated for the hash table that is not for an
+ *				entry will use the system heap.
  * TCL_HASH_KEY_DIRECT_COMPARE -
- * 	                        Allows fast comparison for hash keys directly
- *                              by compare of their key.oneWordValue values,
- *                              before call of compareKeysProc (much slower
- *                              than a direct compare, so it is speed-up only
- *                              flag). Don't use it if keys contain values rather
- *                              than pointers.
+ *				Allows fast comparison for hash keys directly
+ *				by compare of their key.oneWordValue values,
+ *				before call of compareKeysProc (much slower
+ *				than a direct compare, so it is speed-up only
+ *				flag). Don't use it if keys contain values rather
+ *				than pointers.
  */
 
 #define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
@@ -2508,8 +2511,8 @@ TclBounceRefCount(
     int line)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DbDecrRefCount(objPtr, fn, line);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DbDecrRefCount(objPtr, fn, line);
 	}
     }
 }
@@ -2546,8 +2549,8 @@ TclBounceRefCount(
     Tcl_Obj* objPtr)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DecrRefCount(objPtr);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
 }

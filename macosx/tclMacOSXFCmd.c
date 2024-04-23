@@ -84,11 +84,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",				/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny,			/* setFromAnyProc */
+    "osType",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfOSType,	/* updateStringProc */
+    SetOSTypeFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 
@@ -132,10 +132,10 @@ typedef struct {
 
 int
 TclMacOSXGetFileAttribute(
-    Tcl_Interp *interp,		 /* The interp we are using for errors. */
-    int objIndex,		 /* The index of the attribute. */
-    Tcl_Obj *fileName,		 /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	 /* A pointer to return the object with. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
 #ifdef HAVE_GETATTRLIST
     int result;
@@ -691,7 +691,7 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)		/* OSType object whose string rep to
 				 * update. */
 {
     const size_t size = TCL_UTF_MAX * 4;

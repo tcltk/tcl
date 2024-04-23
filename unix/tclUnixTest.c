@@ -312,7 +312,7 @@ TestfilehandlerCmd(
 
 static void
 TestFileHandlerProc(
-    void *clientData,	/* Points to a Pipe structure. */
+    void *clientData,		/* Points to a Pipe structure. */
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
@@ -611,9 +611,9 @@ TestgotsigCmd(
 static int
 TestchmodCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,			/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int i, mode;
 

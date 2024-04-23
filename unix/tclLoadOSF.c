@@ -129,7 +129,7 @@ TclpDlopen(
      */
 
     if ((pkg = strrchr(fileName, '/')) == NULL) {
-        pkg = fileName;
+	pkg = fileName;
     } else {
 	pkg++;
     }
@@ -161,9 +161,9 @@ TclpDlopen(
 
 static void *
 FindSymbol(
-    Tcl_Interp *interp,
-    Tcl_LoadHandle loadHandle,
-    const char *symbol)
+    Tcl_Interp *interp,		/* Where to report errors. */
+    Tcl_LoadHandle loadHandle,	/* Handle for the opened library. */
+    const char *symbol)		/* The symbol to look up. */
 {
     void *proc = ldr_lookup_package((char *) loadHandle, symbol);
 

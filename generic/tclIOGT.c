@@ -119,7 +119,7 @@ static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 static const Tcl_ChannelType transformChannelType = {
     "transform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Old close proc. */
     TransformInputProc,		/* Input proc. */
     TransformOutputProc,	/* Output proc. */
     NULL,			/* Seek proc. */
@@ -127,7 +127,7 @@ static const Tcl_ChannelType transformChannelType = {
     TransformGetOptionProc,	/* Get option proc. */
     TransformWatchProc,		/* Initialize notifier. */
     TransformGetFileHandleProc,	/* Get OS handles out of channel. */
-    TransformCloseProc,		/* close2proc */
+    TransformCloseProc,		/* New close2proc */
     TransformBlockModeProc,	/* Set blocking/nonblocking mode.*/
     NULL,			/* Flush proc. */
     TransformNotifyProc,	/* Handling of events bubbling up. */
@@ -139,8 +139,9 @@ static const Tcl_ChannelType transformChannelType = {
 /*
  * Possible values for 'flags' field in control structure, see below.
  */
-
-#define CHANNEL_ASYNC (1<<0)	/* Non-blocking mode. */
+enum TransformChannelFlags {
+    CHANNEL_ASYNC = (1<<0)	/* Non-blocking mode. */
+};
 
 /*
  * Definition of the structure containing the information about the internal
@@ -517,7 +518,7 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    void *instanceData,	/* State of transformation. */
+    void *instanceData,		/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -740,7 +741,6 @@ TransformInputProc(
 	    gotBytes = -1;
 	    break;
 	} else if (read == 0) {
-
 	    /*
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
@@ -852,7 +852,7 @@ TransformOutputProc(
 
 static long long
 TransformWideSeekProc(
-    void *instanceData,	/* The channel to manipulate. */
+    void *instanceData,		/* The channel to manipulate. */
     long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
@@ -1015,7 +1015,7 @@ TransformGetOptionProc(
 
 static void
 TransformWatchProc(
-    void *instanceData,	/* Channel to watch. */
+    void *instanceData,		/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -1093,9 +1093,9 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    void *instanceData,	/* Channel to query. */
+    void *instanceData,		/* Channel to query. */
     int direction,		/* Direction of interest. */
-    void **handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)		/* Place to store the handle into. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
@@ -1127,7 +1127,7 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    void *clientData,	/* The state of the notified
+    void *clientData,		/* The state of the notified
 				 * transformation. */
     int mask)			/* The mask of occurring events. */
 {
@@ -1172,7 +1172,7 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    void *clientData)	/* Transformation to query. */
+    void *clientData)		/* Transformation to query. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 

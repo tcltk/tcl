@@ -25,7 +25,7 @@
 
 struct ChainBuilder {
     CallChain *callChainPtr;	/* The call chain being built. */
-    size_t filterLength;		/* Number of entries in the call chain that
+    size_t filterLength;	/* Number of entries in the call chain that
 				 * are due to processing filters and not the
 				 * main call chain. */
     Object *oPtr;		/* The object that we are building the chain
@@ -390,7 +390,7 @@ TclOOInvokeContext(
 	Tcl_MethodCallProc2 *callProc = (Tcl_MethodCallProc2 *) (void *)
 		mPtr->typePtr->callProc;
 	return callProc(mPtr->clientData, interp,
-	    (Tcl_ObjectContext) contextPtr, objc, objv);
+		(Tcl_ObjectContext) contextPtr, objc, objv);
     }
 }
 
@@ -2046,8 +2046,9 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *const definerCls,		/* What class defines this entry. */
-    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
+    Class *const definerCls,	/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,
+				/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method

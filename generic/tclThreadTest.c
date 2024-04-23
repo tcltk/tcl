@@ -54,8 +54,9 @@ static ThreadSpecificData *threadList = NULL;
  * The following bit-values are legal for the "flags" field of the
  * ThreadSpecificData structure.
  */
-
-#define TP_Dying		0x001 /* This thread is being canceled */
+enum ThreadCtrlFlags {
+    TP_Dying = 0x001		/* This thread is being canceled */
+};
 
 /*
  * An instance of the following structure contains all information that is

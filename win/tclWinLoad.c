@@ -90,11 +90,11 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-        /*
-         * Remember the first error on load attempt to be used if the
-         * second load attempt below also fails.
-        */
-        firstError = (nativeName == NULL) ?
+	/*
+	 * Remember the first error on load attempt to be used if the
+	 * second load attempt below also fails.
+	*/
+	firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
 	Tcl_DStringInit(&ds);
@@ -106,19 +106,19 @@ TclpDlopen(
 
     if (hInstance == NULL) {
 	DWORD lastError;
-        Tcl_Obj *errMsg;
+	Tcl_Obj *errMsg;
 
-        /*
-         * We choose to only use the error from the second call if the first
-         * call failed due to the file not being found. Else stick to the
-         * first error for reporting purposes.
-         */
-        if (firstError == ERROR_MOD_NOT_FOUND ||
+	/*
+	 * We choose to only use the error from the second call if the first
+	 * call failed due to the file not being found. Else stick to the
+	 * first error for reporting purposes.
+	 */
+	if (firstError == ERROR_MOD_NOT_FOUND ||
 		firstError == ERROR_DLL_NOT_FOUND) {
-            lastError = GetLastError();
-        } else {
-            lastError = firstError;
-        }
+	    lastError = GetLastError();
+	} else {
+	    lastError = firstError;
+	}
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		TclGetString(pathPtr));
@@ -157,11 +157,12 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "the library initialization"
 			" routine failed", TCL_INDEX_NONE);
 		break;
-            case ERROR_BAD_EXE_FORMAT:
+	    case ERROR_BAD_EXE_FORMAT:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", (char *)NULL);
-		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
-                break;
-            default:
+		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.",
+			TCL_INDEX_NONE);
+		break;
+	    default:
 		Tcl_WinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_INDEX_NONE);
 	    }
@@ -201,9 +202,9 @@ TclpDlopen(
 
 static void *
 FindSymbol(
-    Tcl_Interp *interp,
-    Tcl_LoadHandle loadHandle,
-    const char *symbol)
+    Tcl_Interp *interp,		/* Where to report errors. */
+    Tcl_LoadHandle loadHandle,	/* Handle for the opened library. */
+    const char *symbol)		/* The symbol to look up. */
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
     void *proc = NULL;

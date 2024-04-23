@@ -2476,7 +2476,6 @@ ClassMixinGet(
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
-
 }
 
 static int

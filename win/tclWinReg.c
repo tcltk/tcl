@@ -295,9 +295,9 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
@@ -1209,7 +1209,8 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    static LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
+    static LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) =
+	    (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
 
     /*
      * Do not allow NULL or empty key name.
@@ -1431,7 +1432,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

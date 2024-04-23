@@ -124,19 +124,21 @@ typedef struct {
  * This allows new versions of the structure to be introduced without breaking
  * binary compatibility.
  */
-
-#define TCL_OO_METHOD_VERSION_1 1
-#define TCL_OO_METHOD_VERSION_2 2
-#define TCL_OO_METHOD_VERSION_CURRENT 1
+enum Tcl_OOMethodVersions {
+    TCL_OO_METHOD_VERSION_1 = 1,
+    TCL_OO_METHOD_VERSION_2 = 2,
+    TCL_OO_METHOD_VERSION_CURRENT = TCL_OO_METHOD_VERSION_1
+};
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
  * Tcl_NewInstanceMethod.
  */
-
-#define TCL_OO_METHOD_PUBLIC		1
-#define TCL_OO_METHOD_UNEXPORTED	0
-#define TCL_OO_METHOD_PRIVATE		0x20
+enum Tcl_OOMethodVisibilityFlags {
+    TCL_OO_METHOD_PUBLIC = 1,
+    TCL_OO_METHOD_UNEXPORTED = 0,
+    TCL_OO_METHOD_PRIVATE = 0x20
+};
 
 /*
  * The type of some object (or class) metadata. This describes how to delete
@@ -162,8 +164,9 @@ typedef struct {
  * structure. This allows new versions of the structure to be introduced
  * without breaking binary compatibility.
  */
-
-#define TCL_OO_METADATA_VERSION_CURRENT 1
+enum Tcl_OOMetadataVersions {
+    TCL_OO_METADATA_VERSION_CURRENT = 1
+};
 
 /*
  * Include all the public API, generated from tclOO.decls.

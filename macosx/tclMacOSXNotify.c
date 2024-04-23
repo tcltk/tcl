@@ -311,7 +311,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -1114,7 +1114,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -1908,7 +1908,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
+    TCL_UNUSED(void *),		/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {

@@ -78,12 +78,13 @@ static CRITICAL_SECTION joinLock;
 
 #if TCL_THREADS
 
-typedef struct ThreadSpecificData {
-    HANDLE condEvent;			/* Per-thread condition event */
-    struct ThreadSpecificData *nextPtr;	/* Queue pointers */
-    struct ThreadSpecificData *prevPtr;
-    int flags;				/* See flags below */
-} ThreadSpecificData;
+typedef struct ThreadSpecificData ThreadSpecificData;
+struct ThreadSpecificData {
+    HANDLE condEvent;		/* Per-thread condition event */
+    ThreadSpecificData *nextPtr;/* Queue pointers */
+    ThreadSpecificData *prevPtr;
+    int flags;			/* See flags below */
+};
 static Tcl_ThreadDataKey dataKey;
 
 #endif /* TCL_THREADS */
@@ -106,7 +107,7 @@ enum ThreadStateFlags {
 typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
-    ThreadSpecificData *firstPtr;	/* Queue pointers */
+    ThreadSpecificData *firstPtr; /* Queue pointers */
     ThreadSpecificData *lastPtr;
 } WinCondition;
 
@@ -217,8 +218,8 @@ TclpThreadCreate(
 
     EnterCriticalSection(&joinLock);
 
-    *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned */
+    *idPtr = 0;	/* must initialize as Tcl_Thread is a pointer and
+		 * on WIN64 sizeof void* != sizeof unsigned */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,
@@ -658,7 +659,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */

@@ -33,14 +33,14 @@ MODULE_SCOPE void *tclStubsHandle;
  */
 MODULE_SCOPE const char *
 TclInitStubTable(
-	const char *version) /* points to the version field of a
-	                        structure variable. */
+    const char *version)	/* points to the version field of a
+				 * structure variable. */
 {
     if (version) {
 	if (tclStubsHandle == NULL) {
-		/* This can only happen with -DBUILD_STATIC, so simulate
-		 * that the loading of Tcl succeeded, although we didn't
-		 * actually load it dynamically */
+	    /* This can only happen with -DBUILD_STATIC, so simulate
+	     * that the loading of Tcl succeeded, although we didn't
+	     * actually load it dynamically */
 	    tclStubsHandle = (void *)1;
 	}
 	tclStubsPtr = ((const TclStubs **) version)[-1];

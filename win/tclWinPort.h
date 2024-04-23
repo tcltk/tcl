@@ -204,7 +204,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   define ENOTCONN	126	/* Socket is not connected */
 #endif
 #ifndef ENOTRECOVERABLE
-#   define ENOTRECOVERABLE	127	/* Not recoverable */
+#   define ENOTRECOVERABLE 127	/* Not recoverable */
 #endif
 #ifndef ENOTSOCK
 #   define ENOTSOCK	128	/* Socket operation on non-socket */

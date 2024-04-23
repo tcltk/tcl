@@ -349,7 +349,7 @@ ClockConfigureClear(
  */
 static void
 ClockDeleteCmdProc(
-    void *clientData)	/* Opaque pointer to the client data */
+    void *clientData)		/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
     int i;
@@ -704,7 +704,6 @@ ClockMCDict(
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
-
 	/* if locale was not yet used */
 	if (!(opts->flags & CLF_LOCALE_USED)) {
 	    opts->localeObj = NormLocaleObj(dataPtr, opts->interp,
@@ -3493,7 +3492,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -4580,11 +4579,11 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-        int status;			/* return code status */
-        int flags;			/* Each remaining field saves the */
-        int returnLevel;		/* corresponding field of the Interp */
-        int returnCode;			/* struct. These fields taken together are */
-        Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+        int status;		/* return code status */
+        int flags;		/* Each remaining field saves the */
+        int returnLevel;	/* corresponding field of the Interp */
+        int returnCode;		/* struct. These fields taken together are */
+        Tcl_Obj *errorInfo;	/* the "state" of the interp. */
         Tcl_Obj *errorCode;
         Tcl_Obj *returnOpts;
         Tcl_Obj *objResult;

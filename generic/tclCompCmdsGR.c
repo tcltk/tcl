@@ -523,7 +523,7 @@ TclCompileIncrCmd(
      * Emit the instruction to increment the variable.
      */
 
-    if (isScalar) {	/* Simple scalar variable. */
+    if (isScalar) {		/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
 		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
@@ -1835,7 +1835,7 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -2578,7 +2578,7 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}

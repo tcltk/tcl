@@ -58,15 +58,15 @@ static int		ReflectNotify(void *clientData, int mask);
 static const Tcl_ChannelType tclRTransformType = {
     "tclrtransform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel. */
-    NULL,		/* Close channel, clean instance data. */
+    NULL,			/* Close channel, clean instance data. */
     ReflectInput,		/* Handle read request. */
     ReflectOutput,		/* Handle write request. */
-	NULL,			/* Move location of access point. */
+    NULL,			/* Move location of access point. */
     ReflectSetOption,		/* Set options. */
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
     ReflectHandle,		/* Get OS handle from the channel. */
-	ReflectClose,		/* No close2 support. NULL'able. */
+    ReflectClose,		/* No close2 support. NULL'able. */
     ReflectBlock,		/* Set blocking/nonblocking. */
     NULL,			/* Flush channel. Not used by core.
 				 * NULL'able. */
@@ -502,6 +502,17 @@ TclChanPushObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    /*
+     * Syntax:   chan push CHANNEL CMDPREFIX
+     *           [0]  [1]  [2]     [3]
+     *
+     * Actually: rPush CHANNEL CMDPREFIX
+     *           [0]   [1]     [2]
+     */
+    enum ArgumentIndices {
+	CHAN = (1),		/* CHANNEL index */
+	CMD = (2)		/* CMDPREFIX index */
+    };
     ReflectedTransform *rtPtr;	/* Instance data of the new (transform)
 				 * channel. */
     Tcl_Obj *chanObj;		/* Handle of parent channel */
@@ -513,7 +524,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -525,16 +536,6 @@ TclChanPushObjCmd(
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
     int isNew;			/* Placeholder. */
 
-    /*
-     * Syntax:   chan push CHANNEL CMDPREFIX
-     *           [0]  [1]  [2]     [3]
-     *
-     * Actually: rPush CHANNEL CMDPREFIX
-     *           [0]   [1]     [2]
-     */
-
-#define CHAN	(1)
-#define CMD	(2)
 
     /*
      * Number of arguments...
@@ -602,9 +603,9 @@ TclChanPushObjCmd(
      */
 
     if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s initialize\" returned non-list: %s",
-                TclGetString(cmdObj), TclGetString(resObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s initialize\" returned non-list: %s",
+		TclGetString(cmdObj), TclGetString(resObj)));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -627,9 +628,9 @@ TclChanPushObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" does not support all required methods",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" does not support all required methods",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -649,9 +650,9 @@ TclChanPushObjCmd(
     }
 
     if (!mode) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" makes the channel inaccessible",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" makes the channel inaccessible",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -660,16 +661,16 @@ TclChanPushObjCmd(
      */
 
     if (!IMPLIES(HAS(methods, METH_DRAIN), HAS(methods, METH_READ))) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" supports \"drain\" but not \"read\"",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" supports \"drain\" but not \"read\"",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_FLUSH), HAS(methods, METH_WRITE))) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" supports \"flush\" but not \"write\"",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" supports \"flush\" but not \"write\"",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -717,9 +718,6 @@ TclChanPushObjCmd(
 
     Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
-
-#undef CHAN
-#undef CMD
 }
 
 /*
@@ -754,9 +752,9 @@ TclChanPopObjCmd(
      * Actually: rPop CHANNEL
      *           [0]  [1]
      */
-
-#define CHAN	(1)
-
+    enum ArgumentIndices {
+	CHAN = (1)		/* CHANNEL index */
+    };
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
     int mode;			/* Channel r/w mode */
@@ -789,8 +787,6 @@ TclChanPopObjCmd(
 
     Tcl_UnstackChannel(interp, chan);
     return TCL_OK;
-
-#undef CHAN
 }
 
 /*
@@ -1146,7 +1142,6 @@ ReflectInput(
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
 	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
-
 		/*
 		 * Down channel is blocked and offers zero additional bytes.
 		 * The nonzero gotBytes already returned makes the total
@@ -1169,7 +1164,6 @@ ReflectInput(
 	}
 
 	if (readBytes == 0) {
-
 	    /*
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
@@ -1492,7 +1486,7 @@ ReflectBlock(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1534,7 +1528,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -1781,7 +1775,7 @@ NewReflectedTransform(
 	Tcl_IncrRefCount(word);
     }
 
-    i++;				/* Skip placeholder for method */
+    i++;			/* Skip placeholder for method */
 
     /*
      * See [x] in FreeReflectedTransform for release
@@ -2108,12 +2102,12 @@ GetReflectedTransformMap(
 
 static void
 DeleteReflectedTransformMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedTransform *rtPtr;
 #if TCL_THREADS
     ForwardingResult *resultPtr;
@@ -2993,7 +2987,7 @@ static inline size_t
 ResultCopy(
     ResultBuffer *rPtr,		/* The buffer to read from */
     unsigned char *buf,		/* The buffer to copy into */
-    size_t toRead)			/* Number of requested bytes */
+    size_t toRead)		/* Number of requested bytes */
 {
     int copied;
 

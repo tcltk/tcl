@@ -276,7 +276,7 @@ static const Tcl_WideUInt wuipow5[] = {
     (Tcl_WideUInt) 3125U*3125U*25U,
     (Tcl_WideUInt) 3125U*3125U*125U,
     (Tcl_WideUInt) 3125U*3125U*625U,
-    (Tcl_WideUInt) 3125U*3125U*3125U, /* 5**15 */
+    (Tcl_WideUInt) 3125U*3125U*3125U,	/* 5**15 */
     (Tcl_WideUInt) 3125U*3125U*3125U*5U,
     (Tcl_WideUInt) 3125U*3125U*3125U*25U,
     (Tcl_WideUInt) 3125U*3125U*3125U*125U,
@@ -286,9 +286,9 @@ static const Tcl_WideUInt wuipow5[] = {
     (Tcl_WideUInt) 3125U*3125U*3125U*3125U*25U,
     (Tcl_WideUInt) 3125U*3125U*3125U*3125U*125U,
     (Tcl_WideUInt) 3125U*3125U*3125U*3125U*625U,
-    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U,  /* 5**25 */
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U,	/* 5**25 */
     (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U*5U,
-    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U*25U /* 5**27 */
+    (Tcl_WideUInt) 3125U*3125U*3125U*3125U*3125U*25U	/* 5**27 */
 };
 
 /*
@@ -652,7 +652,6 @@ TclParseNumber(
 
     continue_num:
 	switch (state) {
-
 	case INITIAL:
 	    /*
 	     * Initial state. Acceptable characters are +, -, digits, period,
@@ -1443,7 +1442,6 @@ TclParseNumber(
 
 	case FRACTION:
 	case EXPONENT:
-
 	    /*
 	     * Here, we're parsing a floating-point number. 'significandWide'
 	     * or 'significandBig' contains the exact significand, according
@@ -1696,7 +1694,7 @@ MakeLowPrecisionDouble(
      * ulp, so we need to change rounding mode to 53-bits. We also make
      * 'retval' volatile, so that it doesn't get promoted to a register.
      */
-    volatile double retval;		/* Value of the number. */
+    volatile double retval;	/* Value of the number. */
 
     /*
      * Test for zero significand, which requires explicit construction
@@ -2652,7 +2650,7 @@ ComputeScale(
 
 static inline void
 SetPrecisionLimits(
-    int flags,		/* Type of conversion: TCL_DD_SHORTEST,
+    int flags,			/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_E_FMT, TCL_DD_F_FMT. */
     int k,			/* Floor(log10(number to convert)) */
     int *ndigitsPtr,		/* IN/OUT: Number of digits requested (will be
@@ -4881,8 +4879,7 @@ TclBignumToDouble(
 	err = mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
-	if (lsb == -1-shift) {
-
+	if (lsb == -1 - shift) {
 	    /*
 	     * Round to even
 	     */
@@ -4896,7 +4893,6 @@ TclBignumToDouble(
 		}
 	    }
 	} else {
-
 	    /*
 	     * Ordinary rounding
 	     */
@@ -4959,7 +4955,7 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const void *big)			/* Integer to convert. */
+    const void *big)		/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -5025,7 +5021,7 @@ TclCeil(
 
 double
 TclFloor(
-    const void *big)			/* Integer to convert. */
+    const void *big)		/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;

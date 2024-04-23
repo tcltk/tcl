@@ -391,7 +391,6 @@ DoRenameFile(
 	 * or dest specified the current working directory on the current
 	 * filesystem. EACCES is returned for those cases.
 	 */
-
     } else if (Tcl_GetErrno() == EEXIST) {
 	/*
 	 * Reports EEXIST any time the target already exists. If it makes
@@ -436,7 +435,7 @@ DoRenameFile(
 	    } else {	/* (dstAttr & FILE_ATTRIBUTE_DIRECTORY) == 0 */
 		Tcl_SetErrno(ENOTDIR);
 	    }
-	} else {    /* (srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0 */
+	} else {	/* (srcAttr & FILE_ATTRIBUTE_DIRECTORY) == 0 */
 	    if (dstAttr & FILE_ATTRIBUTE_DIRECTORY) {
 		Tcl_SetErrno(EISDIR);
 	    } else {
@@ -1124,7 +1123,6 @@ DoRemoveJustDirectory(
 	}
     }
     return TCL_ERROR;
-
 }
 
 static int
@@ -2032,7 +2030,7 @@ TclpCreateTemporaryDirectory(
 	char tempbuf[SUFFIX_LENGTH + 1];
 	int i;
 	static const char randChars[] =
-	    "QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
+		"QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
 	static const int numRandChars = sizeof(randChars) - 1;
 
 	/*

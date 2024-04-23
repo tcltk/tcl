@@ -136,9 +136,9 @@ TclpDlopen(
 
 static void *
 FindSymbol(
-    Tcl_Interp *interp,
-    Tcl_LoadHandle loadHandle,
-    const char *symbol)
+    Tcl_Interp *interp,		/* Where to report errors. */
+    Tcl_LoadHandle loadHandle,	/* Handle for the opened library. */
+    const char *symbol)		/* The symbol to look up. */
 {
     Tcl_LibraryInitProc *proc = NULL;
 

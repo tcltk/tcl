@@ -54,21 +54,21 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-        unsigned int  dwOemId;
-        struct {
-            int wProcessorArchitecture;
-            int wReserved;
-        };
+	unsigned int dwOemId;
+	struct {
+	    int wProcessorArchitecture;
+	    int wReserved;
+	};
     };
-    unsigned int     dwPageSize;
+    unsigned int dwPageSize;
     void *lpMinimumApplicationAddress;
     void *lpMaximumApplicationAddress;
     void *dwActiveProcessorMask;
-    unsigned int     dwNumberOfProcessors;
-    unsigned int     dwProcessorType;
-    unsigned int     dwAllocationGranularity;
-    int      wProcessorLevel;
-    int      wProcessorRevision;
+    unsigned int dwNumberOfProcessors;
+    unsigned int dwProcessorType;
+    unsigned int dwAllocationGranularity;
+    int wProcessorLevel;
+    int wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
@@ -325,8 +325,7 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
 	(TCL_THREADS && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
 	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
-	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
-	)))
+	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050))))
 /*
  * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
  * initialize release global at startup from uname().
@@ -861,15 +860,15 @@ TclpSetVariables(
     }
     Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
-        /* Some platforms build configure scripts expect ~ expansion so do that */
-        Tcl_Obj *origPaths;
-        Tcl_Obj *resolvedPaths;
+	/* Some platforms build configure scripts expect ~ expansion so do that */
+	Tcl_Obj *origPaths;
+	Tcl_Obj *resolvedPaths;
 
-        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
-        resolvedPaths = TclResolveTildePathList(origPaths);
-        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
-            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
-        }
+	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+	resolvedPaths = TclResolveTildePathList(origPaths);
+	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+	}
     }
 
 #ifdef DJGPP

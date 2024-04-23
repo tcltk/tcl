@@ -248,7 +248,7 @@ caterr(
     while (*p >= '0' && *p <= '9') {
 	p++;
     }
-    switch (atoi(s)) {		/* INTL: "C", UTF safe. */
+    switch (atoi(s)) {				/* INTL: "C", UTF safe. */
     case L_ERROR_TOOMANY:
 	strcat(errbuf, "to many errors");
 	break;

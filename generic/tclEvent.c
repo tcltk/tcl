@@ -69,7 +69,7 @@ typedef struct {
 
 typedef struct ExitHandler {
     Tcl_ExitProc *proc;		/* Function to call when process exits. */
-    void *clientData;	/* One word of information to pass to proc. */
+    void *clientData;		/* One word of information to pass to proc. */
     struct ExitHandler *nextPtr;/* Next in list of all exit handlers for this
 				 * application, or NULL for end of list. */
 } ExitHandler;
@@ -119,7 +119,7 @@ static Tcl_ThreadDataKey dataKey;
 #if TCL_THREADS
 typedef struct {
     Tcl_ThreadCreateProc *proc;	/* Main() function of the thread */
-    void *clientData;	/* The one argument to Main() */
+    void *clientData;		/* The one argument to Main() */
 } ThreadClientData;
 static Tcl_ThreadCreateType NewThreadProc(void *clientData);
 #endif /* TCL_THREADS */
@@ -209,7 +209,7 @@ Tcl_BackgroundException(
 
 static void
 HandleBgErrors(
-    void *clientData)	/* Pointer to ErrAssocData structure. */
+    void *clientData)		/* Pointer to ErrAssocData structure. */
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
     Tcl_Interp *interp = assocPtr->interp;
@@ -613,7 +613,7 @@ TclGetBgErrorHandler(
 
 static void
 BgErrorDeleteProc(
-    void *clientData,	/* Pointer to ErrAssocData structure. */
+    void *clientData,		/* Pointer to ErrAssocData structure. */
     TCL_UNUSED(Tcl_Interp *))
 {
     ErrAssocData *assocPtr = (ErrAssocData *)clientData;
@@ -652,7 +652,7 @@ BgErrorDeleteProc(
 void
 Tcl_CreateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr = (ExitHandler*)Tcl_Alloc(sizeof(ExitHandler));
 
@@ -685,7 +685,7 @@ Tcl_CreateExitHandler(
 void
 TclCreateLateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr = (ExitHandler*)Tcl_Alloc(sizeof(ExitHandler));
 
@@ -718,7 +718,7 @@ TclCreateLateExitHandler(
 void
 Tcl_DeleteExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
 
@@ -761,7 +761,7 @@ Tcl_DeleteExitHandler(
 void
 TclDeleteLateExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
 
@@ -804,7 +804,7 @@ TclDeleteLateExitHandler(
 void
 Tcl_CreateThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -837,7 +837,7 @@ Tcl_CreateThreadExitHandler(
 void
 Tcl_DeleteThreadExitHandler(
     Tcl_ExitProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     ExitHandler *exitPtr, *prevPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -877,7 +877,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    TCL_NORETURN1 Tcl_ExitProc *proc)	/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -974,21 +974,15 @@ Tcl_Exit(
      */
 
     if (currentAppExitPtr) {
-
 	currentAppExitPtr(INT2PTR(status));
-
     } else if (subsystemsInitialized) {
-
 	if (TclFullFinalizationRequested()) {
-
 	    /*
 	     * Thorough finalization for Valgrind et al.
 	     */
 
 	    Tcl_Finalize();
-
 	} else {
-
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
@@ -1135,8 +1129,7 @@ Tcl_InitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-
-		/*
+	    /*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -2055,7 +2048,7 @@ Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,		/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

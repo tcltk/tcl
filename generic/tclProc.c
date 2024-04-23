@@ -69,7 +69,7 @@ const Tcl_ObjType tclProcBodyType = {
     TCL_OBJTYPE_V0
 };
 
-#define ProcSetInternalRep(objPtr, procPtr)					\
+#define ProcSetInternalRep(objPtr, procPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(procPtr)->refCount++;						\
@@ -78,11 +78,11 @@ const Tcl_ObjType tclProcBodyType = {
 	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
     } while (0)
 
-#define ProcGetInternalRep(objPtr, procPtr)					\
+#define ProcGetInternalRep(objPtr, procPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);		\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);	\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -116,21 +116,21 @@ static const Tcl_ObjType lambdaType = {
     TCL_OBJTYPE_V0
 };
 
-#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
 	Tcl_IncrRefCount((nsObjPtr));					\
-	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);		\
     } while (0)
 
-#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &lambdaType);			\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
-	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &lambdaType);		\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
     } while (0)
 
 
@@ -156,7 +156,7 @@ int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -903,7 +903,6 @@ TclNRUplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -971,7 +970,6 @@ TclNRUplevelObjCmd(
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
-
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -1077,12 +1075,12 @@ ProcWrongNumArgs(
 
     numArgs = framePtr->procPtr->numArgs;
     desiredObjs = (Tcl_Obj **)TclStackAlloc(interp,
-	    sizeof(Tcl_Obj *) * (numArgs+1));
+	    sizeof(Tcl_Obj *) * (numArgs + 1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-	desiredObjs[0] = framePtr->objv[skip-1];
+	desiredObjs[0] = framePtr->objv[skip - 1];
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
@@ -1091,7 +1089,7 @@ ProcWrongNumArgs(
 
 	for (i=1 ; i<=numArgs ; i++, defPtr++) {
 	    Tcl_Obj *argObj;
-	    Tcl_Obj *namePtr = localName(framePtr, i-1);
+	    Tcl_Obj *namePtr = localName(framePtr, i - 1);
 
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
@@ -1339,7 +1337,7 @@ InitLocalCache(
 
 static int
 InitArgsAndLocals(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
@@ -1503,9 +1501,9 @@ InitArgsAndLocals(
 
 int
 TclPushProcCallFrame(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
@@ -1597,9 +1595,9 @@ TclPushProcCallFrame(
 
 int
 TclObjInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1614,11 +1612,11 @@ TclObjInterpProc(
 
 int
 TclNRInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1637,7 +1635,7 @@ NRInterpProc(
 				 * interpreted. */
     Tcl_Interp *interp, 	/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,		/* Count of number of arguments to this
+    int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1688,10 +1686,10 @@ ObjInterpProc2(
 
 int
 TclNRInterpProcCore(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    Tcl_Size skip,			/* Number of initial arguments to be skipped,
+    Tcl_Size skip,		/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -2109,7 +2107,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)	/* Procedure to be deleted. */
+    void *clientData)		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 
@@ -2137,7 +2135,7 @@ TclProcDeleteProc(
 
 void
 TclProcCleanupProc(
-    Proc *procPtr)	/* Procedure to be deleted. */
+    Proc *procPtr)		/* Procedure to be deleted. */
 {
     CompiledLocal *localPtr;
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
@@ -2402,7 +2400,7 @@ ProcBodyFree(
 static void
 DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
@@ -2417,7 +2415,7 @@ DupLambdaInternalRep(
 
 static void
 FreeLambdaInternalRep(
-    Tcl_Obj *objPtr)	/* CmdName object with internal representation
+    Tcl_Obj *objPtr)		/* CmdName object with internal representation
 				 * to free. */
 {
     Proc *procPtr;
@@ -2435,7 +2433,7 @@ FreeLambdaInternalRep(
 static int
 SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
     const char *name;
@@ -2534,7 +2532,6 @@ SetLambdaFromAny(
 	     */
 
 	    Tcl_IncrRefCount(contextPtr->data.eval.path);
-
 	}
 
 	if (contextPtr->type == TCL_LOCATION_SOURCE) {

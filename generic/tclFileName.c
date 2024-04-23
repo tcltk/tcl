@@ -252,7 +252,6 @@ ExtractWinRoot(
 		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
-
 	    } else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
 		/*
 		 * Have match for 'con'.
@@ -260,7 +259,6 @@ ExtractWinRoot(
 
 		abs = 3;
 	    }
-
 	} else if ((path[0] == 'l' || path[0] == 'L')
 		&& (path[1] == 'p' || path[1] == 'P')
 		&& (path[2] == 't' || path[2] == 'T')) {
@@ -275,7 +273,6 @@ ExtractWinRoot(
 		    abs = 5;
 		}
 	    }
-
 	} else if ((path[0] == 'p' || path[0] == 'P')
 		&& (path[1] == 'r' || path[1] == 'R')
 		&& (path[2] == 'n' || path[2] == 'N')
@@ -284,7 +281,6 @@ ExtractWinRoot(
 	     * Have match for 'prn'.
 	     */
 	    abs = 3;
-
 	} else if ((path[0] == 'n' || path[0] == 'N')
 		&& (path[1] == 'u' || path[1] == 'U')
 		&& (path[2] == 'l' || path[2] == 'L')
@@ -294,7 +290,6 @@ ExtractWinRoot(
 	     */
 
 	    abs = 3;
-
 	} else if ((path[0] == 'a' || path[0] == 'A')
 		&& (path[1] == 'u' || path[1] == 'U')
 		&& (path[2] == 'x' || path[2] == 'X')
@@ -391,50 +386,50 @@ TclpGetNativePathType(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX: {
-        const char *origPath = path;
+	const char *origPath = path;
 
-        /*
-         * Paths that begin with / are absolute.
-         */
+	/*
+	 * Paths that begin with / are absolute.
+	 */
 
-        if (path[0] == '/') {
-            ++path;
-            /*
-             * Check for "//" network path prefix
-             */
-            if ((*path == '/') && path[1] && (path[1] != '/')) {
-                path += 2;
-                while (*path && *path != '/') {
-                    ++path;
-                }
-            }
-            if (driveNameLengthPtr != NULL) {
-                /*
-                 * We need this addition in case the "//" code was used.
-                 */
+	if (path[0] == '/') {
+	    ++path;
+	    /*
+	     * Check for "//" network path prefix
+	     */
+	    if ((*path == '/') && path[1] && (path[1] != '/')) {
+		path += 2;
+		while (*path && *path != '/') {
+		    ++path;
+		}
+	    }
+	    if (driveNameLengthPtr != NULL) {
+		/*
+		 * We need this addition in case the "//" code was used.
+		 */
 
-                *driveNameLengthPtr = (path - origPath);
-            }
-        } else {
-            type = TCL_PATH_RELATIVE;
-        }
-        break;
+		*driveNameLengthPtr = (path - origPath);
+	    }
+	} else {
+	    type = TCL_PATH_RELATIVE;
+	}
+	break;
     }
     case TCL_PLATFORM_WINDOWS: {
-        Tcl_DString ds;
-        const char *rootEnd;
+	Tcl_DString ds;
+	const char *rootEnd;
 
-        Tcl_DStringInit(&ds);
-        rootEnd = ExtractWinRoot(path, &ds, 0, &type);
-        if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
-            *driveNameLengthPtr = rootEnd - path;
-            if (driveNameRef != NULL) {
-                *driveNameRef = Tcl_DStringToObj(&ds);
-                Tcl_IncrRefCount(*driveNameRef);
-            }
-        }
-        Tcl_DStringFree(&ds);
-        break;
+	Tcl_DStringInit(&ds);
+	rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+	if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
+	    *driveNameLengthPtr = rootEnd - path;
+	    if (driveNameRef != NULL) {
+		*driveNameRef = Tcl_DStringToObj(&ds);
+		Tcl_IncrRefCount(*driveNameRef);
+	    }
+	}
+	Tcl_DStringFree(&ds);
+	break;
     }
     }
     return type;
@@ -655,9 +650,9 @@ SplitUnixPath(
 	}
 	length = path - elementStart;
 	if (length > 0) {
-	    Tcl_Obj *nextElt;
-            nextElt = Tcl_NewStringObj(elementStart, length);
-            Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    Tcl_Obj *nextElt = Tcl_NewStringObj(elementStart, length);
+
+	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {
 	    break;
@@ -718,6 +713,7 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
+
 	    if ((elementStart != path) &&
 		    isalpha(UCHAR(elementStart[0])) &&
 		    (elementStart[1] == ':')) {
@@ -1163,13 +1159,13 @@ Tcl_GlobObjCmd(
 	}
 
 	switch (index) {
-	case GLOB_NOCOMPLAIN:			/* -nocomplain */
+	case GLOB_NOCOMPLAIN:		/* -nocomplain */
 	    /*
 	     * Do nothing; This is normal operations in Tcl 9.
 	     * Keep accepting as a no-op option to accommodate old scripts.
 	     */
 	    break;
-	case GLOB_DIR:				/* -dir */
+	case GLOB_DIR:			/* -dir */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-directory\"", -1));
@@ -1191,13 +1187,13 @@ Tcl_GlobObjCmd(
 	    pathOrDir = objv[i+1];
 	    i++;
 	    break;
-	case GLOB_JOIN:				/* -join */
+	case GLOB_JOIN:			/* -join */
 	    join = 1;
 	    break;
-	case GLOB_TAILS:				/* -tails */
+	case GLOB_TAILS:		/* -tails */
 	    globFlags |= TCL_GLOBMODE_TAILS;
 	    break;
-	case GLOB_PATH:				/* -path */
+	case GLOB_PATH:			/* -path */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-path\"", -1));
@@ -1218,7 +1214,7 @@ Tcl_GlobObjCmd(
 	    pathOrDir = objv[i+1];
 	    i++;
 	    break;
-	case GLOB_TYPE:				/* -types */
+	case GLOB_TYPE:			/* -types */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-types\"", -1));
@@ -1231,7 +1227,7 @@ Tcl_GlobObjCmd(
 	    }
 	    i++;
 	    break;
-	case GLOB_LAST:				/* -- */
+	case GLOB_LAST:			/* -- */
 	    i++;
 	    goto endOfForLoop;
 	}
@@ -1279,7 +1275,6 @@ Tcl_GlobObjCmd(
 	     */
 
 	    dir = PATH_DIR;
-
 	} else {
 	    Tcl_DString pref;
 	    char *search, *find;
@@ -1407,7 +1402,6 @@ Tcl_GlobObjCmd(
 		default:
 		    goto badTypesArg;
 		}
-
 	    } else if (len == 4) {
 		/*
 		 * This is assumed to be a MacOS file type.
@@ -1418,7 +1412,6 @@ Tcl_GlobObjCmd(
 		}
 		globTypes->macType = look;
 		Tcl_IncrRefCount(look);
-
 	    } else {
 		Tcl_Obj *item;
 		Tcl_Size llen;
@@ -1698,7 +1691,6 @@ TclGlob(
 	 */
 
 	separators = "/\\";
-
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
 	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
@@ -2008,7 +2000,6 @@ DoGlob(
     for (p = pattern; *p != '\0'; p++) {
 	if (quoted) {
 	    quoted = 0;
-
 	} else if (*p == '\\') {
 	    quoted = 1;
 	    if (strchr(separators, p[1]) != NULL) {
@@ -2017,13 +2008,11 @@ DoGlob(
 		 */
 		break;
 	    }
-
 	} else if (strchr(separators, *p) != NULL) {
 	    /*
 	     * Unquoted directory separator.
 	     */
 	    break;
-
 	} else if (*p == '{') {
 	    openBrace = p;
 	    p++;
@@ -2040,7 +2029,6 @@ DoGlob(
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    (void *)NULL);
 	    return TCL_ERROR;
-
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched close-brace in file name", -1));

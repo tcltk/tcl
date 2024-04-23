@@ -82,9 +82,11 @@ typedef struct {
 				 * structure. */
 } ZlibStreamHandle;
 
-#define DICT_TO_SET	0x1	/* If we need to set a compression dictionary
+enum ZlibStreamHandleFlags {
+    DICT_TO_SET = 0x1		/* If we need to set a compression dictionary
 				 * in the low-level engine at the next
 				 * opportunity. */
+};
 
 /*
  * Macros to make it clearer in some of the twiddlier accesses what is
@@ -210,7 +212,7 @@ static const Tcl_ChannelType zlibChannelType = {
     ZlibTransformGetOption,
     ZlibTransformWatch,
     ZlibTransformGetHandle,
-	ZlibTransformClose,			/* close2Proc */
+    ZlibTransformClose,		/* close2Proc */
     ZlibTransformBlockMode,
     NULL,			/* flushProc */
     ZlibTransformEventHandler,
@@ -440,6 +442,7 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
+
 	valueStr = TclGetStringFromObj(value, &length);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, length,
 		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
@@ -1356,7 +1359,7 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,	/* As obtained from Tcl_ZlibStreamInit */
     Tcl_Obj *data,		/* A place to append the data. */
-    Tcl_Size count)			/* Number of bytes to grab as a maximum, you
+    Tcl_Size count)		/* Number of bytes to grab as a maximum, you
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
@@ -1838,7 +1841,7 @@ Tcl_ZlibInflate(
     TclNewObj(obj);
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
     memset(&stream, 0, sizeof(z_stream));
-    stream.avail_in = inLen+1;	/* +1 because zlib can "over-request"
+    stream.avail_in = inLen + 1;	/* +1 because zlib can "over-request"
 					 * input (but ignore it!) */
     stream.next_in = inData;
     stream.avail_out = bufferSize;
@@ -2230,7 +2233,7 @@ ZlibCmd(
     case CMD_PUSH:			/* push mode channel options...
 					 *	-> channel */
 	return ZlibPushSubcmd(interp, objc, objv);
-    };
+    }
 
     return TCL_ERROR;
 
@@ -2747,29 +2750,29 @@ ZlibStreamAddCmd(
 	}
 
 	switch (index) {
-	case ao_flush: /* -flush */
+	case ao_flush:		/* -flush */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
-	case ao_fullflush: /* -fullflush */
+	case ao_fullflush:	/* -fullflush */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
-	case ao_finalize: /* -finalize */
+	case ao_finalize:	/* -finalize */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
 	    }
 	    break;
-	case ao_buffer: /* -buffer */
-	    if (i == objc-2) {
+	case ao_buffer:		/* -buffer */
+	    if (i == objc - 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-buffer\" option must be followed by integer "
 			"decompression buffersize", -1));
@@ -2787,8 +2790,8 @@ ZlibStreamAddCmd(
 		return TCL_ERROR;
 	    }
 	    break;
-	case ao_dictionary:
-	    if (i == objc-2) {
+	case ao_dictionary:	/* -dictionary */
+	    if (i == objc - 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-dictionary\" option must be followed by"
 			" compression dictionary bytes", -1));
@@ -2874,29 +2877,29 @@ ZlibStreamPutCmd(
 	}
 
 	switch (index) {
-	case po_flush: /* -flush */
+	case po_flush:		/* -flush */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
-	case po_fullflush: /* -fullflush */
+	case po_fullflush:	/* -fullflush */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
-	case po_finalize: /* -finalize */
+	case po_finalize:	/* -finalize */
 	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
 	    }
 	    break;
-	case po_dictionary:
-	    if (i == objc-2) {
+	case po_dictionary:	/* -dictionary */
+	    if (i == objc - 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"\"-dictionary\" option must be followed by"
 			" compression dictionary bytes", -1));
@@ -3151,7 +3154,6 @@ ZlibTransformInput(
 	 */
 
 	if (readBytes == -1) {
-
 	    /* See ReflectInput() in tclIORTrans.c */
 	    if (Tcl_InputBlocked(cd->parent) && (gotBytes > 0)) {
 		break;
@@ -3164,7 +3166,7 @@ ZlibTransformInput(
 	/* more bytes (or Eof if readBytes == 0) */
 	cd->inStream.avail_in += readBytes;
 
-copyDecompressed:
+    copyDecompressed:
 
 	/*
 	 * Transform the read chunk, if not empty. Anything we get
@@ -3344,7 +3346,7 @@ ZlibTransformFlush(
  */
 
 static int
-ZlibTransformSetOption(			/* not used */
+ZlibTransformSetOption(		/* not used */
     void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
@@ -3873,7 +3875,6 @@ ResultDecompress(
     cd->inStream.next_out = (Bytef *) buf;
     cd->inStream.avail_out = toRead;
     while (cd->inStream.avail_out > 0) {
-
 	e = inflate(&cd->inStream, flush);
 	if (e == Z_NEED_DICT && cd->compDictObj) {
 	    e = SetInflateDictionary(&cd->inStream, cd->compDictObj);

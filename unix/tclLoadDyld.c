@@ -104,7 +104,7 @@ static void		UnloadFile(Tcl_LoadHandle handle);
 #if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
 static const char *
 DyldOFIErrorMsg(
-    int err)
+    int err)			/* Error code to be converted */
 {
     switch (err) {
     case NSObjectFileImageSuccess:
@@ -148,7 +148,7 @@ TclpDlopen(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr,
@@ -548,7 +548,7 @@ TclpLoadMemory(
     int codeSize,		/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
-    Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr,
@@ -583,7 +583,7 @@ TclpLoadMemory(
 #	define mh_size  sizeof(struct mach_header_64)
 #	define mh_magic MH_MAGIC_64
 #	define arch_abi CPU_ARCH_ABI64
-#endif /*  __LP64__ */
+#endif /* __LP64__ */
 
 	if ((size_t) codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {

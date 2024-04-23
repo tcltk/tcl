@@ -186,7 +186,7 @@ typedef struct {
 
 #define BYTEARRAY_MAX_LEN (TCL_SIZE_MAX - (Tcl_Size)offsetof(ByteArray, bytes))
 #define BYTEARRAY_SIZE(len) \
-        ( (len < 0 || BYTEARRAY_MAX_LEN < (len)) \
+	( (len < 0 || BYTEARRAY_MAX_LEN < (len)) \
 	? (Tcl_Panic("negative length specified or max size of a Tcl value exceeded"), 0) \
 	: (offsetof(ByteArray, bytes) + (len)) )
 #define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
@@ -441,7 +441,7 @@ unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
     Tcl_Size numBytes)		/* Number of bytes in resized array
-                                 * Must be >= 0 */
+				 * Must be >= 0 */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep *irPtr;
@@ -772,12 +772,10 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
-	byteArrayPtr =
-	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
-					   needed,
-					   1,
-					   offsetof(ByteArray, bytes),
-					   &newCapacity);
+
+	byteArrayPtr = (ByteArray *)
+		TclReallocElemsEx(byteArrayPtr, needed, 1,
+			offsetof(ByteArray, bytes), &newCapacity);
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }

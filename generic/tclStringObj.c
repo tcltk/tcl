@@ -718,8 +718,8 @@ Tcl_GetUnicodeFromObj(
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    Tcl_Size first,			/* First index of the range. */
-    Tcl_Size last)			/* Last index of the range. */
+    Tcl_Size first,		/* First index of the range. */
+    Tcl_Size last)		/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -2470,7 +2470,6 @@ Tcl_AppendFormatToObj(
 		Tcl_DecrRefCount(pure);
 		break;
 	    }
-
 	    }
 	    break;
 	}
@@ -3521,9 +3520,9 @@ TclStringCat(
 
 static int
 UniCharNcasememcmp(
-    const void *ucsPtr,	/* Unicode string to compare to uct. */
-    const void *uctPtr,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of Unichars to compare. */
+    const void *ucsPtr,		/* Unicode string to compare to uct. */
+    const void *uctPtr,		/* Unicode string ucs is compared to. */
+    size_t numChars)		/* Number of Unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3544,7 +3543,7 @@ static int
 UtfNmemcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3576,7 +3575,7 @@ static int
 UtfNcasememcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3603,9 +3602,9 @@ UtfNcasememcmp(
 
 static int
 UniCharNmemcmp(
-    const void *ucsPtr,	/* Unicode string to compare to uct. */
-    const void *uctPtr,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of unichars to compare. */
+    const void *ucsPtr,		/* Unicode string to compare to uct. */
+    const void *uctPtr,		/* Unicode string ucs is compared to. */
+    size_t numChars)		/* Number of unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3637,7 +3636,7 @@ TclStringCmp(
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
-						 * TCL_INDEX_NONE to compare whole strings */
+				 * TCL_INDEX_NONE to compare whole strings */
 {
     const char *s1, *s2;
     int empty, match;

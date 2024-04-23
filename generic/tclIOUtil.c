@@ -35,7 +35,7 @@
  */
 
 typedef struct FilesystemRecord {
-    void *clientData;	/* Client-specific data for the filesystem
+    void *clientData;		/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -47,8 +47,8 @@ typedef struct FilesystemRecord {
 } FilesystemRecord;
 
 /*
+ * Information held per thread.
  */
-
 typedef struct {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
@@ -57,8 +57,7 @@ typedef struct {
     size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
-				 * changed.
-				 */
+				 * changed. */
     void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
@@ -844,7 +843,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    void *clientData,	/* Client-specific data for this filesystem. */
+    void *clientData,		/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -1104,8 +1103,7 @@ FsAddMountsToGlobResult(
     Tcl_Obj *pathPtr,		/* The directory that was searched. */
     const char *pattern,	/* Pattern to match mounts against. */
     Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
-				 * directory flag is particularly significant.
-				 */
+				 * directory flag is particularly significant. */
 {
     Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
@@ -1264,8 +1262,8 @@ Tcl_FSMountsChanged(
 
 void *
 Tcl_FSData(
-    const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
-				  *  registered filesystems. */
+    const Tcl_Filesystem *fsPtr)/* The filesystem to find in the list of
+				 *  registered filesystems. */
 {
     void *retVal = NULL;
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
@@ -1363,7 +1361,6 @@ TclFSNormalizeToUniquePath(
     Claim();
 
     if (!isVfsPath) {
-
 	/*
 	 * Find and call the native filesystem handler first if there is one
 	 * because the root of Tcl's filesystem is always a native filesystem
@@ -1602,7 +1599,6 @@ TclGetOpenMode(
 	    }
 	    goto invAccessMode;
 #endif
-
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
 #ifdef O_NONBLOCK
 	    if (mode & O_NONBLOCK) {
@@ -1691,7 +1687,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the utf-8 encoding. */
+				 * use the utf-8 encoding. */
 {
     Tcl_Size length;
     int result = TCL_ERROR;
@@ -1829,7 +1825,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the utf-8 encoding. */
+				 * use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -2084,9 +2080,9 @@ Tcl_PosixError(
 int
 Tcl_FSStat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 *  current CP). */
+				 * current CP). */
     Tcl_StatBuf *buf)		/* A buffer to hold the results of the call to
-				 *  stat. */
+				 * stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
@@ -2119,7 +2115,7 @@ Tcl_FSStat(
 int
 Tcl_FSLstat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				   current CP). */
+				 * current CP). */
     Tcl_StatBuf *buf)		/* Filled with results of that call to stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2193,7 +2189,7 @@ Tcl_FSOpenFileChannel(
     const char *modeString,	/* A list of POSIX open modes or a string such
 				 * as "rw". */
     int permissions)		/* What modes to use if opening the file
-				   involves creating it. */
+				 * involves creating it. */
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
@@ -2914,11 +2910,10 @@ Tcl_FSChdir(
     }
 
     if (retVal == 0) {
-
-	 /* Assume that the cwd was actually changed to the normalized value
-	  * just calculated, and cache that information.  */
-
 	/*
+	 * Assume that the cwd was actually changed to the normalized value
+	 * just calculated, and cache that information.
+	 *
 	 * If the filesystem epoch changed recently, the normalized pathname or
 	 * its internal handle may be different from what was found above.
 	 * This can easily be the case with scripted documents . Therefore get
@@ -3651,9 +3646,7 @@ Tcl_FSUnloadFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/*
-				 * NULL or the pathname of a file to link to.
-				 */
+    Tcl_Obj *toPtr,		/* NULL or the pathname of a file to link to. */
     int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -3902,7 +3895,8 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,
+				/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
@@ -3957,8 +3951,7 @@ TclFSNonnativePathType(
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
     Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
-				 * the volume name if the pathname is absolute.
-				 */
+				 * the volume name if the pathname is absolute. */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
 				 * an object having its its refCount already
 				 * incremented, and contining the name of the
@@ -4074,7 +4067,7 @@ TclFSNonnativePathType(
 int
 Tcl_FSRenameFile(
     Tcl_Obj *srcPathPtr,	/* The pathname of a file or directory to be
-				   renamed. */
+				 * renamed. */
     Tcl_Obj *destPathPtr)	/* The new pathname for the file. */
 {
     int retVal = -1;

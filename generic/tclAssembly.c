@@ -1302,7 +1302,6 @@ AssembleOneLine(
 
     instType = TalInstructionTable[tblIdx].instType;
     switch (instType) {
-
     case ASSEM_PUSH:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "value");

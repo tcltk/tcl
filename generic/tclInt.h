@@ -257,7 +257,7 @@ typedef struct Namespace {
 				 * synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    void *clientData;	/* An arbitrary value associated with this
+    void *clientData;		/* An arbitrary value associated with this
 				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Procedure invoked when deleting the
@@ -279,7 +279,7 @@ typedef struct Namespace {
 #else
     unsigned long nsId;
 #endif
-    Tcl_Interp *interp;	/* The interpreter containing this
+    Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
 				 * flags NS_DYING and NS_DEAD listed below. */
@@ -312,12 +312,12 @@ typedef struct Namespace {
 				 * registered using "namespace export". */
     Tcl_Size maxExportPatterns;	/* Number of export patterns for which space
 				 * is currently allocated. */
-    Tcl_Size cmdRefEpoch;		/* Incremented if a newly added command
+    Tcl_Size cmdRefEpoch;	/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    Tcl_Size resolverEpoch;		/* Incremented whenever (a) the name
+    Tcl_Size resolverEpoch;	/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -838,10 +838,10 @@ enum TclVarFlags {
 
 #define TclVarFindHiddenArray(varPtr,arrayPtr)				\
     do {								\
-        if ((arrayPtr == NULL) && TclIsVarInHash(varPtr) &&		\
-              (TclVarParentArray(varPtr) != NULL)) {			\
-            arrayPtr = TclVarParentArray(varPtr);			\
-        }								\
+	if ((arrayPtr == NULL) && TclIsVarInHash(varPtr)		\
+		&& (TclVarParentArray(varPtr) != NULL)) {		\
+	    arrayPtr = TclVarParentArray(varPtr);			\
+	}								\
     } while(0)
 
 #define TclIsVarScalar(varPtr) \
@@ -907,13 +907,13 @@ enum TclVarFlags {
 
 #define TclIsVarTricky(varPtr,trickyFlags)				\
     (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
-          || (TclIsVarInHash(varPtr)					\
-                && (TclVarParentArray(varPtr) != NULL)			\
-                && (TclVarParentArray(varPtr)->flags & (trickyFlags))))
+	  || (TclIsVarInHash(varPtr)					\
+		&& (TclVarParentArray(varPtr) != NULL)			\
+		&& (TclVarParentArray(varPtr)->flags & (trickyFlags))))
 
 #define TclIsVarDirectReadable(varPtr)					\
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
-          && (varPtr)->value.objPtr)
+	  && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
     (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
@@ -923,7 +923,7 @@ enum TclVarFlags {
 
 #define TclIsVarDirectModifyable(varPtr) \
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
-          &&  (varPtr)->value.objPtr)
+	  &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
     (TclIsVarDirectReadable(varPtr) &&\
@@ -1062,7 +1062,7 @@ typedef struct Trace {
 #else
     Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
 #endif
-    void *clientData;	/* Arbitrary value to pass to proc. */
+    void *clientData;		/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
 				 * Tcl_CreateObjTrace for details. */
@@ -1267,8 +1267,7 @@ typedef struct CallFrame {
     Tcl_Size objc;		/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
-    struct CallFrame *callerPtr;
-				/* Value of interp->framePtr when this
+    struct CallFrame *callerPtr;/* Value of interp->framePtr when this
 				 * procedure was invoked (i.e. next higher in
 				 * stack of all active procedures). */
     struct CallFrame *callerVarPtr;
@@ -1298,7 +1297,7 @@ typedef struct CallFrame {
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
-    void *clientData;	/* Pointer to some context that is used by
+    void *clientData;		/* Pointer to some context that is used by
 				 * object systems. The meaning of the contents
 				 * of this field is defined by the code that
 				 * sets it, and it should only ever be set by
@@ -1449,7 +1448,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     Tcl_Size num;		/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    Tcl_Size loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
+    Tcl_Size loc[TCLFLEXARRAY];	/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -1524,8 +1523,10 @@ typedef void **TclHandle;
  *----------------------------------------------------------------
  */
 
-#define TCL_REG_BOSONLY 002000	/* Prepend \A to pattern so it only matches at
+enum TclGetRegExpFromObjFlags {
+    TCL_REG_BOSONLY = 002000	/* Prepend \A to pattern so it only matches at
 				 * the beginning of the string. */
+};
 
 /*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet
@@ -1632,7 +1633,7 @@ typedef struct CoroutineData {
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    Tcl_Size nargs;             /* Number of args required for resuming this
+    Tcl_Size nargs;		/* Number of args required for resuming this
 				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL means "0 or 1"
 				 * (default), COROUTINE_ARGUMENTS_ARBITRARY means "any" */
     Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
@@ -1712,10 +1713,11 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    size_t numExecutions;		/* Number of ByteCodes executed. */
+    size_t numExecutions;	/* Number of ByteCodes executed. */
     size_t numCompilations;	/* Number of ByteCodes created. */
     size_t numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    size_t instructionCount[256];	/* Number of times each instruction was
+    size_t instructionCount[256];
+				/* Number of times each instruction was
 				 * executed. */
 
     double totalSrcBytes;	/* Total source bytes ever compiled. */
@@ -1723,7 +1725,7 @@ typedef struct ByteCodeStats {
     double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
 
-    size_t srcCount[32];		/* Source size distribution: # of srcs of
+    size_t srcCount[32];	/* Source size distribution: # of srcs of
 				 * size [2**(n-1)..2**n), n in [0..32). */
     size_t byteCodeCount[32];	/* ByteCode size distribution. */
     size_t lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
@@ -1973,12 +1975,9 @@ typedef struct Interp {
 				 * enabled extensions check for a NULL pointer value
 				 * and for a TCL_STUBS_MAGIC value to verify they
 				 * are not [load]ing into one of those pre-stubs
-				 * interps.
-				 */
-
+				 * interps. */
     TclHandle handle;		/* Handle used to keep track of when this
 				 * interp is deleted. */
-
     Namespace *globalNsPtr;	/* The interpreter's global namespace. */
     Tcl_HashTable *hiddenCmdTablePtr;
 				/* Hash table used by tclBasic.c to keep track
@@ -2311,7 +2310,7 @@ typedef struct Interp {
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
     Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
     Tcl_Obj *innerContext;	/* cached list for fast reallocation */
-    int resetErrorStack;        /* controls cleaning up of ::errorStack */
+    int resetErrorStack;	/* controls cleaning up of ::errorStack */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2338,10 +2337,10 @@ typedef struct Interp {
 #define TclCanceled(iPtr) \
     (((iPtr)->flags & CANCELED) || ((iPtr)->flags & TCL_CANCEL_UNWIND))
 
-#define TclSetCancelFlags(iPtr, cancelFlags)   \
-    (iPtr)->flags |= CANCELED;                 \
-    if ((cancelFlags) & TCL_CANCEL_UNWIND) {   \
-        (iPtr)->flags |= TCL_CANCEL_UNWIND;    \
+#define TclSetCancelFlags(iPtr, cancelFlags) \
+    (iPtr)->flags |= CANCELED;						\
+    if ((cancelFlags) & TCL_CANCEL_UNWIND) {				\
+	(iPtr)->flags |= TCL_CANCEL_UNWIND;				\
     }
 
 #define TclUnsetCancelFlags(iPtr) \
@@ -2357,21 +2356,21 @@ typedef struct Interp {
  * TclSpliceIn adds to the head of the list.
  */
 
-#define TclSpliceIn(a,b)			\
-    (a)->nextPtr = (b);				\
-    if ((b) != NULL) {				\
-	(b)->prevPtr = (a);			\
-    }						\
+#define TclSpliceIn(a, b) \
+    (a)->nextPtr = (b);							\
+    if ((b) != NULL) {							\
+	(b)->prevPtr = (a);						\
+    }									\
     (a)->prevPtr = NULL, (b) = (a);
 
-#define TclSpliceOut(a,b)			\
-    if ((a)->prevPtr != NULL) {			\
-	(a)->prevPtr->nextPtr = (a)->nextPtr;	\
-    } else {					\
-	(b) = (a)->nextPtr;			\
-    }						\
-    if ((a)->nextPtr != NULL) {			\
-	(a)->nextPtr->prevPtr = (a)->prevPtr;	\
+#define TclSpliceOut(a, b) \
+    if ((a)->prevPtr != NULL) {						\
+	(a)->prevPtr->nextPtr = (a)->nextPtr;				\
+    } else {								\
+	(b) = (a)->nextPtr;						\
+    }									\
+    if ((a)->nextPtr != NULL) {						\
+	(a)->nextPtr->prevPtr = (a)->prevPtr;				\
     }
 
 /*
@@ -2612,7 +2611,7 @@ typedef struct ListSpan {
     size_t refCount;		/* Count of references to this span record */
 } ListSpan;
 
-#ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
+#ifndef LIST_SPAN_THRESHOLD	/* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
 #endif
 
@@ -2641,18 +2640,32 @@ typedef struct ListRep {
  */
 
 /* Returns the starting slot for this listRep in the contained ListStore */
-#define ListRepStart(listRepPtr_) \
-    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanStart \
-			    : (listRepPtr_)->storePtr->firstUsed)
+static inline Tcl_Size
+ListRepStart(
+    const ListRep *listRepPtr)
+{
+    return (listRepPtr->spanPtr
+	    ? listRepPtr->spanPtr->spanStart
+	    : listRepPtr->storePtr->firstUsed);
+}
 
 /* Returns the number of elements in this listRep */
-#define ListRepLength(listRepPtr_) \
-    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanLength \
-			    : (listRepPtr_)->storePtr->numUsed)
+static inline Tcl_Size
+ListRepLength(
+    const ListRep *listRepPtr)
+{
+    return (listRepPtr->spanPtr
+	    ? listRepPtr->spanPtr->spanLength
+	    : listRepPtr->storePtr->numUsed);
+}
 
 /* Returns a pointer to the first slot containing this ListRep elements */
-#define ListRepElementsBase(listRepPtr_) \
-    (&(listRepPtr_)->storePtr->slots[ListRepStart(listRepPtr_)])
+static inline Tcl_Obj **
+ListRepElementsBase(
+    ListRep *listRepPtr)
+{
+    return &listRepPtr->storePtr->slots[ListRepStart(listRepPtr)];
+}
 
 /* Stores the number of elements and base address of the element array */
 #define ListRepElements(listRepPtr_, objc_, objv_) \
@@ -2660,7 +2673,12 @@ typedef struct ListRep {
      ((objc_) = ListRepLength(listRepPtr_)))
 
 /* Returns 1/0 whether the ListRep's ListStore is shared. */
-#define ListRepIsShared(listRepPtr_) ((listRepPtr_)->storePtr->refCount > 1)
+static inline int
+ListRepIsShared(
+    const ListRep *listRepPtr)
+{
+    return listRepPtr->storePtr->refCount > 1;
+}
 
 /* Returns a pointer to the ListStore component */
 #define ListObjStorePtr(listObj_) \
@@ -2671,21 +2689,30 @@ typedef struct ListRep {
     ((ListSpan *)((listObj_)->internalRep.twoPtrValue.ptr2))
 
 /* Returns the ListRep internal representaton in a Tcl_Obj */
-#define ListObjGetRep(listObj_, listRepPtr_) \
-    do {                                                     \
-	(listRepPtr_)->storePtr = ListObjStorePtr(listObj_); \
-	(listRepPtr_)->spanPtr = ListObjSpanPtr(listObj_);   \
-    } while (0)
+static inline void
+ListObjGetRep(
+    Tcl_Obj *listObj,
+    ListRep *listRepPtr)
+{
+    listRepPtr->storePtr = ListObjStorePtr(listObj);
+    listRepPtr->spanPtr = ListObjSpanPtr(listObj);
+}
 
 /* Returns the length of the list */
 #define ListObjLength(listObj_, len_) \
-    ((len_) = ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanLength \
-				       : ListObjStorePtr(listObj_)->numUsed)
+    ((len_) = ListObjSpanPtr(listObj_)					\
+	    ? ListObjSpanPtr(listObj_)->spanLength			\
+	    : ListObjStorePtr(listObj_)->numUsed)
 
 /* Returns the starting slot index of this list's elements in the ListStore */
-#define ListObjStart(listObj_) \
-    (ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanStart \
-			      : ListObjStorePtr(listObj_)->firstUsed)
+static inline Tcl_Size
+ListObjStart(
+    Tcl_Obj *listObj)
+{
+    return (ListObjSpanPtr(listObj)
+	    ? ListObjSpanPtr(listObj)->spanStart
+	    : ListObjStorePtr(listObj)->firstUsed);
+}
 
 /* Stores the element count and base address of this list's elements */
 #define ListObjGetElements(listObj_, objc_, objv_) \
@@ -2697,8 +2724,12 @@ typedef struct ListRep {
  * is shared.  Note by intent this only checks for sharing of ListStore,
  * not spans.
  */
-#define ListObjRepIsShared(listObj_) \
-    (ListObjStorePtr(listObj_)->refCount > 1)
+static inline int
+ListObjRepIsShared(
+    Tcl_Obj *listObj)
+{
+    return ListObjStorePtr(listObj)->refCount > 1;
+}
 
 /*
  * Certain commands like concat are optimized if an existing string
@@ -2715,10 +2746,14 @@ typedef struct ListRep {
  * and never from strings (see SetListFromAny) and thus their string
  * representation will always be canonical.
  */
-#define ListObjIsCanonical(listObj_) \
-    (((listObj_)->bytes == NULL)                                 \
-     || (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL) \
-     || ListObjSpanPtr(listObj_) != NULL)
+static inline int
+ListObjIsCanonical(
+    Tcl_Obj *listObj)
+{
+    return ((listObj->bytes == NULL)
+	    || (ListObjStorePtr(listObj)->flags & LISTSTORE_CANONICAL)
+	    || ListObjSpanPtr(listObj) != NULL);
+}
 
 /*
  * Converts the Tcl_Obj to a list if it isn't one and stores the element
@@ -2743,8 +2778,13 @@ typedef struct ListRep {
 	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK)		\
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
 
-#define TclListObjIsCanonical(listObj_) \
-    ((TclHasInternalRep((listObj_), &tclListType)) ? ListObjIsCanonical((listObj_)) : 0)
+static inline int
+TclListObjIsCanonical(
+    Tcl_Obj *listObj)
+{
+    return TclHasInternalRep(listObj, &tclListType)
+	    && ListObjIsCanonical(listObj);
+}
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -2919,7 +2959,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *len
 #ifdef _WIN32
 #   define TCLFSENCODING tclUtf8Encoding /* On Windows, all Unicode (except surrogates) are valid */
 #else
-#   define TCLFSENCODING NULL /* On Non-Windows, use the system encoding for validation checks */
+#   define TCLFSENCODING NULL	/* On Non-Windows, use the system encoding for validation checks */
 #endif
 
 /*
@@ -3503,8 +3543,8 @@ MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 			    Tcl_Obj* pathPtr);
 MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesPtr,
-                            int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
-                            Tcl_Obj *stepObj, Tcl_Obj *lenObj);
+			    int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
+			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
@@ -3991,9 +4031,10 @@ MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 /* Flag values for the [string] ensemble functions. */
-
-#define TCL_STRING_MATCH_NOCASE TCL_MATCH_NOCASE /* (1<<0) in tcl.h */
-#define TCL_STRING_IN_PLACE (1<<1)
+enum StringEnsembleFlags {
+    TCL_STRING_MATCH_NOCASE = TCL_MATCH_NOCASE, /* (1<<0) in tcl.h */
+    TCL_STRING_IN_PLACE = (1<<1)
+};
 
 /*
  * Functions defined in generic/tclVar.c and currently exported only for use
@@ -4124,8 +4165,8 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */
-#define TCL_INDEX_END           ((Tcl_Size)-2)
-#define TCL_INDEX_START         ((Tcl_Size)0)
+#define TCL_INDEX_END	((Tcl_Size)-2)
+#define TCL_INDEX_START	((Tcl_Size)0)
 
 /*
  *----------------------------------------------------------------------
@@ -4204,20 +4245,20 @@ TclScaleTime(
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
-#  define TclAllocObjStorage(objPtr)		\
+#  define TclAllocObjStorage(objPtr) \
 	TclAllocObjStorageEx(NULL, (objPtr))
 
-#  define TclFreeObjStorage(objPtr)		\
+#  define TclFreeObjStorage(objPtr) \
 	TclFreeObjStorageEx(NULL, (objPtr))
 
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes    = &tclEmptyString; \
-    (objPtr)->length   = 0; \
-    (objPtr)->typePtr  = NULL; \
+    TclIncrObjsAllocated();						\
+    TclAllocObjStorage(objPtr);						\
+    (objPtr)->refCount = 0;						\
+    (objPtr)->bytes    = &tclEmptyString;				\
+    (objPtr)->length   = 0;						\
+    (objPtr)->typePtr  = NULL;						\
     TCL_DTRACE_OBJ_CREATE(objPtr)
 
 /*
@@ -4228,19 +4269,19 @@ TclScaleTime(
  */
 
 # define TclDecrRefCount(objPtr) \
-    if ((objPtr)->refCount-- > 1) ; else { \
-	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
-	    TCL_DTRACE_OBJ_FREE(objPtr); \
-	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != &tclEmptyString)) { \
-		Tcl_Free((objPtr)->bytes); \
-	    } \
-	    (objPtr)->length = TCL_INDEX_NONE; \
-	    TclFreeObjStorage(objPtr); \
-	    TclIncrObjsFreed(); \
-	} else { \
-	    TclFreeObj(objPtr); \
-	} \
+    if ((objPtr)->refCount-- > 1) ; else {				\
+	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) {	\
+	    TCL_DTRACE_OBJ_FREE(objPtr);				\
+	    if ((objPtr)->bytes						\
+		    && ((objPtr)->bytes != &tclEmptyString)) {		\
+		Tcl_Free((objPtr)->bytes);				\
+	    }								\
+	    (objPtr)->length = TCL_INDEX_NONE;				\
+	    TclFreeObjStorage(objPtr);					\
+	    TclIncrObjsFreed();						\
+	} else {							\
+	    TclFreeObj(objPtr);						\
+	}								\
     }
 
 #if TCL_THREADS && !defined(USE_THREAD_ALLOC)
@@ -4347,11 +4388,11 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
     } while (0)
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
-    do {							       \
-	Tcl_MutexLock(&tclObjMutex);				       \
+    do {								\
+	Tcl_MutexLock(&tclObjMutex);					\
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) tclFreeObjList; \
-	tclFreeObjList = (objPtr);				       \
-	Tcl_MutexUnlock(&tclObjMutex);				       \
+	tclFreeObjList = (objPtr);					\
+	Tcl_MutexUnlock(&tclObjMutex);					\
     } while (0)
 #endif
 
@@ -4360,7 +4401,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
 
 # define TclDbNewObj(objPtr, file, line) \
-    do { \
+    do {								\
 	TclIncrObjsAllocated();						\
 	(objPtr) = (Tcl_Obj *)						\
 		Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line));		\
@@ -4405,23 +4446,23 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	((objPtr)->length = (((objPtr)->bytes = &tclEmptyString), 0))
 
 #define TclInitStringRep(objPtr, bytePtr, len) \
-    if ((len) == 0) { \
-	TclInitEmptyStringRep(objPtr); \
-    } else { \
-	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U); \
+    if ((len) == 0) {							\
+	TclInitEmptyStringRep(objPtr);					\
+    } else {								\
+	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U);		\
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
-	(objPtr)->bytes[len] = '\0'; \
-	(objPtr)->length = (len); \
+	(objPtr)->bytes[len] = '\0';					\
+	(objPtr)->length = (len);					\
     }
 
 #define TclAttemptInitStringRep(objPtr, bytePtr, len) \
-    ((((len) == 0) ? ( \
-	TclInitEmptyStringRep(objPtr) \
-    ) : ( \
-	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U), \
-	(objPtr)->length = ((objPtr)->bytes) ? \
+    ((((len) == 0) ? (							\
+	TclInitEmptyStringRep(objPtr)					\
+    ) : (								\
+	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U),		\
+	(objPtr)->length = ((objPtr)->bytes) ?				\
 		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
-		(objPtr)->bytes[len] = '\0', (len)) : (-1) \
+		(objPtr)->bytes[len] = '\0', (len)) : (-1)		\
     )), (objPtr)->bytes)
 
 /*
@@ -4437,11 +4478,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclGetString(objPtr) \
-    ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
+    ((objPtr)->bytes ? (objPtr)->bytes : Tcl_GetString(objPtr))
 
 #define TclGetStringFromObj(objPtr, lenPtr) \
-    ((objPtr)->bytes \
-	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+    ((objPtr)->bytes							\
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)		\
 	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
 
 /*
@@ -4455,11 +4496,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclFreeInternalRep(objPtr) \
-    if ((objPtr)->typePtr != NULL) { \
-	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
-	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
-	} \
-	(objPtr)->typePtr = NULL; \
+    if ((objPtr)->typePtr != NULL) {					\
+	if ((objPtr)->typePtr->freeIntRepProc != NULL) {		\
+	    (objPtr)->typePtr->freeIntRepProc(objPtr);			\
+	}								\
+	(objPtr)->typePtr = NULL;					\
     }
 
 /*
@@ -4522,8 +4563,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 #define TclUnpackBignum(objPtr, bignum) \
     do {								\
-	Tcl_Obj *bignumObj = (objPtr);				\
-	int bignumPayload =					\
+	Tcl_Obj *bignumObj = (objPtr);					\
+	int bignumPayload =						\
 		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
@@ -4576,22 +4617,22 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 		oldPtr = NULL;						\
 	    }								\
 	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
-		    allocated * sizeof(Tcl_Token));	\
+		    allocated * sizeof(Tcl_Token));			\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
-			allocated * sizeof(Tcl_Token)); \
+			allocated * sizeof(Tcl_Token)); 		\
 	    }								\
 	    (available) = allocated;					\
 	    if (oldPtr == NULL) {					\
 		memcpy(newPtr, staticPtr,				\
-			(used) * sizeof(Tcl_Token));		\
+			(used) * sizeof(Tcl_Token));			\
 	    }								\
 	    (tokenPtr) = newPtr;					\
 	}								\
     } while (0)
 
-#define TclGrowParseTokenArray(parsePtr, append)			\
+#define TclGrowParseTokenArray(parsePtr, append) \
     TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
 	    (parsePtr)->tokensAvailable, (append),			\
 	    (parsePtr)->staticTokens)
@@ -4609,8 +4650,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	(((UCHAR(*(str))) < 0x80) ?		\
-	    ((*(chPtr) = UCHAR(*(str))), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?					\
+	    ((*(chPtr) = UCHAR(*(str))), 1)				\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
 /*
@@ -4627,15 +4668,15 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  */
 
 #define TclNumUtfCharsM(numChars, bytes, numBytes) \
-    do { \
-	Tcl_Size _count, _i = (numBytes); \
-	unsigned char *_str = (unsigned char *) (bytes); \
-	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; } \
-	_count = (numBytes) - _i; \
-	if (_i) { \
-	    _count += Tcl_NumUtfChars((bytes) + _count, _i); \
-	} \
-	(numChars) = _count; \
+    do {								\
+	Tcl_Size _count, _i = (numBytes);				\
+	unsigned char *_str = (unsigned char *) (bytes);		\
+	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; }		\
+	_count = (numBytes) - _i;					\
+	if (_i) {							\
+	    _count += Tcl_NumUtfChars((bytes) + _count, _i);		\
+	}								\
+	(numChars) = _count;						\
     } while (0);
 
 /*
@@ -4730,19 +4771,19 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
  */
 
 #define TclSetIntObj(objPtr, i) \
-    do {						\
-	Tcl_ObjInternalRep ir;				\
-	ir.wideValue = (Tcl_WideInt) i;			\
-	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);	\
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.wideValue = (Tcl_WideInt) i;					\
+	TclInvalidateStringRep(objPtr);					\
+	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);			\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
-    do {						\
-	Tcl_ObjInternalRep ir;				\
-	ir.doubleValue = (double) d;			\
-	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);	\
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.doubleValue = (double) d;					\
+	TclInvalidateStringRep(objPtr);					\
+	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);		\
     } while (0)
 
 /*
@@ -4761,58 +4802,58 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 #ifndef TCL_MEM_DEBUG
 #define TclNewIntObj(objPtr, w) \
-    do {						\
-	TclIncrObjsAllocated();				\
-	TclAllocObjStorage(objPtr);			\
-	(objPtr)->refCount = 0;				\
-	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
-	(objPtr)->typePtr = &tclIntType;		\
-	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->bytes = NULL;						\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);		\
+	(objPtr)->typePtr = &tclIntType;				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #define TclNewUIntObj(objPtr, uw) \
-    do {						\
-	TclIncrObjsAllocated();				\
-	TclAllocObjStorage(objPtr);			\
-	(objPtr)->refCount = 0;				\
-	(objPtr)->bytes = NULL;				\
-	Tcl_WideUInt uw_ = (uw);		\
-	if (uw_ > WIDE_MAX) {			\
-	    mp_int bignumValue_;		\
-	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->bytes = NULL;						\
+	Tcl_WideUInt uw_ = (uw);					\
+	if (uw_ > WIDE_MAX) {						\
+	    mp_int bignumValue_;					\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {		\
 		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
-	    }	\
-	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
-	} else {	\
+	    }								\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);		\
+	} else {							\
 	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
-	    (objPtr)->typePtr = &tclIntType;		\
-	}	\
-	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+	    (objPtr)->typePtr = &tclIntType;				\
+	}								\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #define TclNewIndexObj(objPtr, w) \
     TclNewIntObj(objPtr, w)
 
 #define TclNewDoubleObj(objPtr, d) \
-    do {							\
-	TclIncrObjsAllocated();					\
-	TclAllocObjStorage(objPtr);				\
-	(objPtr)->refCount = 0;					\
-	(objPtr)->bytes = NULL;					\
-	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType;			\
-	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	(objPtr)->bytes = NULL;						\
+	(objPtr)->internalRep.doubleValue = (double)(d);		\
+	(objPtr)->typePtr = &tclDoubleType;				\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #define TclNewStringObj(objPtr, s, len) \
-    do {							\
-	TclIncrObjsAllocated();					\
-	TclAllocObjStorage(objPtr);				\
-	(objPtr)->refCount = 0;					\
-	TclInitStringRep((objPtr), (s), (len));			\
-	(objPtr)->typePtr = NULL;				\
-	TCL_DTRACE_OBJ_CREATE(objPtr);				\
+    do {								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	(objPtr)->refCount = 0;						\
+	TclInitStringRep((objPtr), (s), (len));				\
+	(objPtr)->typePtr = NULL;					\
+	TCL_DTRACE_OBJ_CREATE(objPtr);					\
     } while (0)
 
 #else /* TCL_MEM_DEBUG */
@@ -4820,18 +4861,18 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewUIntObj(objPtr, uw) \
-    do {						\
-	Tcl_WideUInt uw_ = (uw);		\
-	if (uw_ > WIDE_MAX) {			\
-	    mp_int bignumValue_;		\
-	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {	\
-		(objPtr) = Tcl_NewBignumObj(&bignumValue_);	\
-	    } else {	\
-		(objPtr) = NULL; \
-	    } \
-	} else {	\
-	    (objPtr) = Tcl_NewWideIntObj(uw_);	\
-	}	\
+    do {								\
+	Tcl_WideUInt uw_ = (uw);					\
+	if (uw_ > WIDE_MAX) {						\
+	    mp_int bignumValue_;					\
+	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {		\
+		(objPtr) = Tcl_NewBignumObj(&bignumValue_);		\
+	    } else {							\
+		(objPtr) = NULL;					\
+	    }								\
+	} else {							\
+	    (objPtr) = Tcl_NewWideIntObj(uw_);				\
+	}								\
     } while (0)
 
 #define TclNewIndexObj(objPtr, w) \
@@ -4883,24 +4924,24 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
  * the internal stubs, but the core can use the macro instead.
  */
 
-#define TclCleanupCommandMacro(cmdPtr)		\
-    do {					\
-	if ((cmdPtr)->refCount-- <= 1) {	\
-	    Tcl_Free(cmdPtr);			\
-	}					\
+#define TclCleanupCommandMacro(cmdPtr) \
+    do {								\
+	if ((cmdPtr)->refCount-- <= 1) {				\
+	    Tcl_Free(cmdPtr);						\
+	}								\
     } while (0)
 
 /*
  * inside this routine crement refCount first incase cmdPtr is replacing itself
  */
-#define TclRoutineAssign(location, cmdPtr)	    \
-    do {					    \
-	(cmdPtr)->refCount++;			    \
-	if ((location) != NULL			    \
-	    && (location--) <= 1) {		    \
-	    Tcl_Free(((location)));		    \
-	}					    \
-	(location) = (cmdPtr);			    \
+#define TclRoutineAssign(location, cmdPtr) \
+    do {								\
+	(cmdPtr)->refCount++;						\
+	if ((location) != NULL						\
+		&& (location--) <= 1) {					\
+	    Tcl_Free(((location)));					\
+	}								\
+	(location) = (cmdPtr);						\
     } while (0)
 
 #define TclRoutineHasName(cmdPtr) \
@@ -4917,7 +4958,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 #define TclLimitExceeded(limit) ((limit).exceeded != 0)
 
-#define TclLimitReady(limit)						\
+#define TclLimitReady(limit) \
     (((limit).active == 0) ? 0 :					\
     (++(limit).granularityTicker,					\
     ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
@@ -5074,9 +5115,9 @@ typedef struct NRE_callback {
 #include "tclIntPlatDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
-#define Tcl_AttemptAlloc        TclpAlloc
-#define Tcl_AttemptRealloc      TclpRealloc
-#define Tcl_Free                TclpFree
+#define Tcl_AttemptAlloc	TclpAlloc
+#define Tcl_AttemptRealloc	TclpRealloc
+#define Tcl_Free		TclpFree
 #endif
 
 /*

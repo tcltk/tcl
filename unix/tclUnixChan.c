@@ -162,15 +162,15 @@ static int		TtySetOptionProc(void *instanceData,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Old close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-	NULL,
+    NULL,
     NULL,			/* Set option proc. */
     FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    FileCloseProc,		/* close2proc. */
+    FileCloseProc,		/* New close proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -188,7 +188,7 @@ static const Tcl_ChannelType fileChannelType = {
 static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Old close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -196,7 +196,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    TtyCloseProc,			/* close2proc. */
+    TtyCloseProc,		/* New close proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -225,7 +225,7 @@ static const Tcl_ChannelType ttyChannelType = {
 
 static int
 FileBlockModeProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     int mode)			/* The mode to set. Can be TCL_MODE_BLOCKING
 				 * or TCL_MODE_NONBLOCKING. */
 {
@@ -258,7 +258,7 @@ FileBlockModeProc(
 
 static int
 FileInputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     char *buf,			/* Where to store data read. */
     int toRead,			/* How much space is available in the
 				 * buffer? */
@@ -308,7 +308,7 @@ FileInputProc(
 
 static int
 FileOutputProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
@@ -355,7 +355,7 @@ FileOutputProc(
 
 static int
 FileCloseProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -448,7 +448,7 @@ TtyCloseProc(
 
 static long long
 FileWideSeekProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? Can be
 				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
@@ -496,7 +496,7 @@ FileWatchNotifyChannelWrapper(
 
 static void
 FileWatchProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -536,9 +536,9 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     FileState *fsPtr = (FileState *)instanceData;
 
@@ -773,7 +773,7 @@ TtyModemStatusStr(
 
 static int
 TtySetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -1113,7 +1113,7 @@ TtySetOptionProc(
 
 static int
 TtyGetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */
@@ -1630,10 +1630,7 @@ TtyParseMode(
     const char *bad = "bad value for -mode";
 
     i = sscanf(mode, "%d,%c,%d,%d%n",
-	    &ttyPtr->baud,
-	    &parity,
-	    &ttyPtr->data,
-	    &ttyPtr->stop, &end);
+	    &ttyPtr->baud, &parity, &ttyPtr->data, &ttyPtr->stop, &end);
     if ((i != 4) || (mode[end] != '\0')) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1654,11 +1651,11 @@ TtyParseMode(
 
     if (
 #if defined(PAREXT)
-        strchr("noems", parity)
+	strchr("noems", parity)
 #else
-        strchr("noe", parity)
+	strchr("noe", parity)
 #endif /* PAREXT */
-                               == NULL) {
+				== NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s parity: should be %s", bad,
@@ -2069,7 +2066,7 @@ Tcl_GetOpenFile(
 				 * Ignored, we always check that
 				 * the channel is open for the requested
 				 * mode. */
-    void **filePtr)	/* Store pointer to FILE structure here. */
+    void **filePtr)		/* Store pointer to FILE structure here. */
 {
     Tcl_Channel chan;
     int chanMode, fd;

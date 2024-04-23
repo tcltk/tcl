@@ -194,7 +194,6 @@ Tcl_DetachPids(
 	detList = detPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
-
 }
 
 /*
@@ -1021,7 +1020,7 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    Tcl_Size argc,			/* How many arguments. */
+    Tcl_Size argc,		/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */

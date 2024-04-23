@@ -171,7 +171,7 @@ TclDumpMemoryInfo(
     char buf[1024];
 
     if (clientData == NULL) {
-        return 0;
+	return 0;
     }
     snprintf(buf, sizeof(buf),
 	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
@@ -276,7 +276,6 @@ ValidateMemory(
 	memset(memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
 	memset(hiPtr, 0, HIGH_GUARD_SIZE);
     }
-
 }
 
 /*
@@ -827,7 +826,7 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("error accessing %s: %s",
-                    TclGetString(objv[2]), Tcl_PosixError(interp)));
+		    TclGetString(objv[2]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -872,8 +871,8 @@ MemoryCmd(
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "cannot open output file: %s",
-                    Tcl_PosixError(interp)));
+		    "cannot open output file: %s",
+		    Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -937,9 +936,9 @@ MemoryCmd(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-            "bad option \"%s\": should be active, break_on_malloc, info, "
-            "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-            TclGetString(objv[1])));
+	    "bad option \"%s\": should be active, break_on_malloc, info, "
+	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
+	    TclGetString(objv[1])));
     return TCL_ERROR;
 
   argError:
@@ -1252,11 +1251,11 @@ TclDumpMemoryInfo(
  */
 void *
 TclAllocElemsEx(
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
+    Tcl_Size elemCount,		/* Allocation will store at least these many... */
+    Tcl_Size elemSize,		/* ...elements of this size */
+    Tcl_Size leadSize,		/* Additional leading space in bytes */
+    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
+				 * non-NULL. Only modified on success */
 {
     void *ptr = TclAttemptReallocElemsEx(
 	NULL, elemCount, elemSize, leadSize, capacityPtr);
@@ -1287,13 +1286,13 @@ TclAllocElemsEx(
  */
 void *
 TclAttemptReallocElemsEx(
-    void *oldPtr,	    /* Pointer to memory block to reallocate or
-			     * NULL to indicate this is a new allocation */
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
+    void *oldPtr,		/* Pointer to memory block to reallocate or
+				 * NULL to indicate this is a new allocation */
+    Tcl_Size elemCount,		/* Allocation will store at least these many... */
+    Tcl_Size elemSize,		/* ...elements of this size */
+    Tcl_Size leadSize,		/* Additional leading space in bytes */
+    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored
+				 * here if non-NULL. Only modified on success */
 {
     void *ptr;
     Tcl_Size limit;

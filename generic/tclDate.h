@@ -20,8 +20,8 @@
 #define JULIAN_DAY_POSIX_EPOCH		2440588
 #define GREGORIAN_CHANGE_DATE		2361222
 #define SECONDS_PER_DAY			86400
-#define JULIAN_SEC_POSIX_EPOCH	      (((Tcl_WideInt) JULIAN_DAY_POSIX_EPOCH) \
-					* SECONDS_PER_DAY)
+#define JULIAN_SEC_POSIX_EPOCH \
+	(((Tcl_WideInt) JULIAN_DAY_POSIX_EPOCH)  * SECONDS_PER_DAY)
 #define FOUR_CENTURIES			146097	/* days */
 #define JDAY_1_JAN_1_CE_JULIAN		1721424
 #define JDAY_1_JAN_1_CE_GREGORIAN	1721426
@@ -486,8 +486,8 @@ struct ClockFmtScnStorage {
 #endif
     size_t fmtMinAlloc;
 #if 0
-    Tcl_HashEntry hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
-					 * stored by offset +sizeof(self) */
+    Tcl_HashEntry hashEntry	/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+				 * stored by offset +sizeof(self) */
 #endif
 };
 

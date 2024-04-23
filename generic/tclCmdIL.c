@@ -1264,7 +1264,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};	/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
@@ -2215,7 +2215,6 @@ Tcl_JoinObjCmd(
 	TclNewObj(resObjPtr);
 	for (i = 0;  i < listLen;  i++) {
 	    if (i > 0) {
-
 		/*
 		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
 		 * to shimmer joinObjPtr.  If it did, then the case where
@@ -2427,7 +2426,7 @@ int
 Tcl_LinsertObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
@@ -2520,9 +2519,8 @@ int
 Tcl_ListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     /*
      * If there are no list elements, the result is an empty object.
@@ -2557,8 +2555,7 @@ Tcl_LlengthObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int result;
@@ -2606,8 +2603,7 @@ Tcl_LpopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int copied = 0, result;
@@ -2726,8 +2722,7 @@ Tcl_LrangeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     Tcl_Size listLen, first, last;
@@ -2938,9 +2933,8 @@ int
 Tcl_LrepeatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_WideInt elementCount, i;
     Tcl_Size totalElems;
@@ -3219,7 +3213,6 @@ Tcl_LreverseObjCmd(
 
 	Tcl_SetObjResult(interp, resultObj);
     } else {
-
 	/*
 	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
 	 * returning a pointer to the live array of Tcl_Obj values.
@@ -4170,49 +4163,48 @@ Tcl_LseqObjCmd(
      * digit.
      */
     if (objc > 6) {
-	 /* Too many arguments */
-	 arg_key=0;
+	/* Too many arguments */
+	arg_key=0;
     } else for (i=1; i<objc; i++) {
-	 arg_key = (arg_key * 10);
-	 numValues[value_i] = NULL;
-	 decoded = SequenceIdentifyArgument(interp, objv[i], &numberObj, &keyword);
-	 switch (decoded) {
+	arg_key = (arg_key * 10);
+	numValues[value_i] = NULL;
+	decoded = SequenceIdentifyArgument(interp, objv[i], &numberObj, &keyword);
+	switch (decoded) {
+	case NoneArg:
+	    /*
+	     * Unrecognizable argument
+	     * Reproduce operation error message
+	     */
+	    status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
+		    "operation", 0, &opmode);
+	    goto done;
 
-	 case NoneArg:
-	      /*
-	       * Unrecognizable argument
-	       * Reproduce operation error message
-	       */
-	      status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
-		           "operation", 0, &opmode);
-	      goto done;
+	case NumericArg:
+	    arg_key += NumericArg;
+	    numValues[value_i] = numberObj;
+	    Tcl_IncrRefCount(numValues[value_i]);
+	    values[value_i] = keyword;  // This is the TCL_NUMBER_* value
+	    useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
+	    value_i++;
+	    break;
 
-	 case NumericArg:
-	      arg_key += NumericArg;
-	      numValues[value_i] = numberObj;
-	      Tcl_IncrRefCount(numValues[value_i]);
-	      values[value_i] = keyword;  // This is the TCL_NUMBER_* value
-	      useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
-	      value_i++;
-	      break;
+	case RangeKeywordArg:
+	    arg_key += RangeKeywordArg;
+	    values[value_i] = keyword;
+	    value_i++;
+	    break;
 
-	 case RangeKeywordArg:
-	      arg_key += RangeKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
+	case ByKeywordArg:
+	    arg_key += ByKeywordArg;
+	    values[value_i] = keyword;
+	    value_i++;
+	    break;
 
-	 case ByKeywordArg:
-	      arg_key += ByKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
-
-	 default:
-	      arg_key += 9; // Error state
-	      value_i++;
-	      break;
-	 }
+	default:
+	    arg_key += 9; // Error state
+	    value_i++;
+	    break;
+	}
     }
 
     /*
@@ -4220,7 +4212,6 @@ Tcl_LseqObjCmd(
      * error condition; process the values accordningly.
      */
     switch (arg_key) {
-
 /*    No argument */
     case 0:
 	 Tcl_WrongNumArgs(interp, 1, objv,
@@ -4771,10 +4762,10 @@ Tcl_LsortObjCmd(
 
     if (TclObjTypeHasProc(objv[1], getElementsProc)) {
 	sortInfo.resultCode =
-	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
+		TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
-	    &length, &listObjPtrs);
+		&length, &listObjPtrs);
     }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
@@ -5368,7 +5359,7 @@ DictionaryCompare(
     int secondaryDiff = 0;
 
     while (1) {
-		if (isdigit(UCHAR(*right))		/* INTL: digit */
+	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
 	     * There are decimal numbers embedded in the two strings. Compare

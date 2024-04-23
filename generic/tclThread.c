@@ -23,9 +23,9 @@
  */
 
 typedef struct {
-    int num;		/* Number of objects remembered */
-    int max;		/* Max size of the array */
-    void **list;	/* List of pointers */
+    int num;			/* Number of objects remembered */
+    int max;			/* Max size of the array */
+    void **list;		/* List of pointers */
 } SyncObjRecord;
 
 static SyncObjRecord keyRecord = {0, 0, NULL};
@@ -487,7 +487,7 @@ Tcl_ExitThread(
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
-    TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
+    TCL_UNUSED(Tcl_Condition *),/* Really (pthread_cond_t **) */
     TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
     TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
 {

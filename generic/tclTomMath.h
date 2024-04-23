@@ -5,19 +5,19 @@
 #if defined(TCL_NO_TOMMATH_H)
     typedef size_t mp_digit;
     typedef int mp_sign;
-#   define MP_ZPOS       0   /* positive integer */
-#   define MP_NEG        1   /* negative */
+#   define MP_ZPOS       0	/* positive integer */
+#   define MP_NEG        1	/* negative */
     typedef int mp_ord;
-#   define MP_LT        -1   /* less than */
-#   define MP_EQ         0   /* equal to */
-#   define MP_GT         1   /* greater than */
+#   define MP_LT        -1	/* less than */
+#   define MP_EQ         0	/* equal to */
+#   define MP_GT         1	/* greater than */
     typedef int mp_err;
-#   define MP_OKAY       0   /* no error */
-#   define MP_ERR        -1  /* unknown error */
-#   define MP_MEM        -2  /* out of mem */
-#   define MP_VAL        -3  /* invalid input */
-#   define MP_ITER       -4  /* maximum iterations reached */
-#   define MP_BUF        -5  /* buffer overflow, supplied buffer too small */
+#   define MP_OKAY       0	/* no error */
+#   define MP_ERR        -1	/* unknown error */
+#   define MP_MEM        -2	/* out of mem */
+#   define MP_VAL        -3	/* invalid input */
+#   define MP_ITER       -4	/* maximum iterations reached */
+#   define MP_BUF        -5	/* buffer overflow, supplied buffer too small */
     typedef int mp_order;
 #   define MP_LSB_FIRST -1
 #   define MP_MSB_FIRST  1

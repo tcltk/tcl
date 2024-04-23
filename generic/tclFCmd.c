@@ -262,7 +262,6 @@ TclFileMakeDirsCmd(
 	    Tcl_IncrRefCount(target);
 
 	createDir:
-
 	    /*
 	     * Call Tcl_FSStat() so that if target is a symlink that points to
 	     * a directory we will create subdirectories in that directory.
@@ -429,19 +428,21 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-
 	    /*
 	     * Avoid possible race condition (file/directory deleted after call
 	     * of lstat), so bypass ENOENT because not an error, just a no-op
 	     */
+
 	    if (errno == ENOENT) {
 		result = TCL_OK;
 		continue;
 	    }
+
 	    /*
 	     * It is important that we break on error, otherwise we might end
 	     * up owning reference counts on numerous errorBuffers.
 	     */
+
 	    result = TCL_ERROR;
 	    break;
 	}

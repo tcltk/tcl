@@ -97,20 +97,20 @@ static int		TclArithSeriesObjStep(Tcl_Obj *arithSeriesObj,
 /* ------------------------ ArithSeries object type -------------------------- */
 
 static const Tcl_ObjType arithSeriesType = {
-    "arithseries",			/* name */
-    FreeArithSeriesInternalRep,		/* freeIntRepProc */
-    DupArithSeriesInternalRep,		/* dupIntRepProc */
-    UpdateStringOfArithSeries,		/* updateStringProc */
-    SetArithSeriesFromAny,		/* setFromAnyProc */
+    "arithseries",		/* name */
+    FreeArithSeriesInternalRep,	/* freeIntRepProc */
+    DupArithSeriesInternalRep,	/* dupIntRepProc */
+    UpdateStringOfArithSeries,	/* updateStringProc */
+    SetArithSeriesFromAny,	/* setFromAnyProc */
     TCL_OBJTYPE_V2(
     ArithSeriesObjLength,
     TclArithSeriesObjIndex,
     TclArithSeriesObjRange,
     TclArithSeriesObjReverse,
     TclArithSeriesGetElements,
-    NULL, // SetElement
-    NULL, // Replace
-    ArithSeriesInOperation) // "in" operator
+    NULL,			// SetElement
+    NULL,			// Replace
+    ArithSeriesInOperation)	// "in" operator
 };
 
 /*
@@ -549,26 +549,24 @@ assignNumber(
  *      refcount = 0.
  *
  * Results:
- *
  * 	A Tcl_Obj pointer to the created ArithSeries object.
  * 	An empty Tcl_Obj if the range is invalid.
  *
  * Side Effects:
- *
  * 	None.
+ *
  *----------------------------------------------------------------------
  */
-
 int
 TclNewArithSeriesObj(
-    Tcl_Interp *interp,       /* For error reporting */
-    Tcl_Obj **arithSeriesObj, /* return value */
-    int useDoubles,           /* Flag indicates values start,
-			      ** end, step, are treated as doubles */
-    Tcl_Obj *startObj,        /* Starting value */
-    Tcl_Obj *endObj,          /* Ending limit */
-    Tcl_Obj *stepObj,         /* increment value */
-    Tcl_Obj *lenObj)          /* Number of elements */
+    Tcl_Interp *interp,		/* For error reporting */
+    Tcl_Obj **arithSeriesObj,	/* return value */
+    int useDoubles,		/* Flag indicates values start,
+				 * end, step, are treated as doubles */
+    Tcl_Obj *startObj,		/* Starting value */
+    Tcl_Obj *endObj,		/* Ending limit */
+    Tcl_Obj *stepObj,		/* increment value */
+    Tcl_Obj *lenObj)		/* Number of elements */
 {
     double dstart, dend, dstep;
     Tcl_WideInt start, end, step;
@@ -664,11 +662,9 @@ TclNewArithSeriesObj(
  *	element is stored in *element.
  *
  * Results:
- *
  * 	TCL_OK on success.
  *
  * Side Effects:
- *
  * 	On success, the integer pointed by *element is modified.
  * 	An empty string ("") is assigned if index is out-of-bounds.
  *
@@ -705,11 +701,9 @@ TclArithSeriesObjIndex(
  *	Returns the length of the arithmetic series.
  *
  * Results:
- *
  * 	The length of the series as Tcl_WideInt.
  *
  * Side Effects:
- *
  * 	None.
  *
  *----------------------------------------------------------------------
@@ -732,16 +726,14 @@ ArithSeriesObjLength(
  *	refcount = 0.
  *
  * Results:
- *
  * 	A Tcl_Obj pointer to the created ArithSeries object.
  * 	A NULL pointer of the range is invalid.
  *
  * Side Effects:
- *
  * 	None.
+ *
  *----------------------------------------------------------------------
  */
-
 int
 TclArithSeriesObjStep(
     Tcl_Obj *arithSeriesObj,
@@ -769,20 +761,17 @@ TclArithSeriesObjStep(
  * 	This function is here just to populate the Type structure.
  *
  * Results:
- *
  * 	The result is always TCL_ERROR. But see Side Effects.
  *
  * Side effects:
- *
  * 	Tcl Panic if called.
  *
  *----------------------------------------------------------------------
  */
-
 static int
 SetArithSeriesFromAny(
-    TCL_UNUSED(Tcl_Interp *),		/* Used for error reporting if not NULL. */
-    TCL_UNUSED(Tcl_Obj *))		/* The object to convert. */
+    TCL_UNUSED(Tcl_Interp *),	/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Obj *))	/* The object to convert. */
 {
     Tcl_Panic("SetArithSeriesFromAny: should never be called");
     return TCL_ERROR;
@@ -794,7 +783,7 @@ SetArithSeriesFromAny(
  * TclArithSeriesObjRange --
  *
  *	Makes a slice of an ArithSeries value.
- *      *arithSeriesObj must be known to be a valid list.
+ *	*arithSeriesObj must be known to be a valid list.
  *
  * Results:
  *	Returns a pointer to the sliced series.
@@ -809,11 +798,11 @@ SetArithSeriesFromAny(
 
 int
 TclArithSeriesObjRange(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to take a range from. */
     Tcl_Size fromIdx,		/* Index of first element to include. */
     Tcl_Size toIdx,		/* Index of last element to include. */
-    Tcl_Obj **newObjPtr)        /* return value */
+    Tcl_Obj **newObjPtr)	/* return value */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *startObj, *endObj, *stepObj;
@@ -1016,7 +1005,7 @@ TclArithSeriesGetElements(
  */
 int
 TclArithSeriesObjReverse(
-    Tcl_Interp *interp,         /* For error message(s) */
+    Tcl_Interp *interp,		/* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to reverse. */
     Tcl_Obj **newObjPtr)
 {
@@ -1202,7 +1191,6 @@ UpdateStringOfArithSeries(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ArithSeriesInOperation(
     Tcl_Interp *interp,

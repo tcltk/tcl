@@ -45,21 +45,20 @@ static const Tcl_ObjType instNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define InstNameSetInternalRep(objPtr, inst)				\
-    do {							\
-	Tcl_ObjInternalRep ir;					\
-	ir.wideValue = (inst);					\
+#define InstNameSetInternalRep(objPtr, inst) \
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.wideValue = (inst);						\
 	Tcl_StoreInternalRep((objPtr), &instNameType, &ir);		\
     } while (0)
 
-#define InstNameGetInternalRep(objPtr, inst)				\
-    do {							\
+#define InstNameGetInternalRep(objPtr, inst) \
+    do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &instNameType);	\
-	assert(irPtr != NULL);					\
-	(inst) = irPtr->wideValue;			\
+	irPtr = TclFetchInternalRep((objPtr), &instNameType);		\
+	assert(irPtr != NULL);						\
+	(inst) = irPtr->wideValue;					\
     } while (0)
-
 
 /*
  *----------------------------------------------------------------------
@@ -279,7 +278,8 @@ DisassembleByteCodeObj(
      */
 
     Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode %p, refCt %" TCL_SIZE_MODIFIER "d, epoch %" TCL_SIZE_MODIFIER "d, interp %p (epoch %" TCL_SIZE_MODIFIER "d)\n",
+	    "ByteCode %p, refCt %" TCL_SIZE_MODIFIER "d, "
+	    "epoch %" TCL_SIZE_MODIFIER "d, interp %p (epoch %" TCL_SIZE_MODIFIER "d)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
@@ -290,7 +290,9 @@ DisassembleByteCodeObj(
 		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
-	    "\n  Cmds %d, src %" TCL_SIZE_MODIFIER "d, inst %" TCL_SIZE_MODIFIER "d, litObjs %" TCL_SIZE_MODIFIER "d, aux %" TCL_SIZE_MODIFIER "d, stkDepth %" TCL_SIZE_MODIFIER "d, code/src %.2f\n",
+	    "\n  Cmds %d, src %" TCL_SIZE_MODIFIER "d, inst %" TCL_SIZE_MODIFIER "d, "
+	    "litObjs %" TCL_SIZE_MODIFIER "d, aux %" TCL_SIZE_MODIFIER "d, "
+	    "stkDepth %" TCL_SIZE_MODIFIER "d, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
@@ -302,8 +304,10 @@ DisassembleByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     Tcl_AppendPrintfToObj(bufferObj,
-	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_SIZE_MODIFIER "d+litObj %"
-	    TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_SIZE_MODIFIER "d\n",
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+"
+	    "inst %" TCL_SIZE_MODIFIER "d+litObj %" TCL_Z_MODIFIER "u+"
+	    "exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+"
+	    "cmdMap %" TCL_SIZE_MODIFIER "d\n",
 	    codePtr->structureSize,
 	    offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
@@ -324,7 +328,9 @@ DisassembleByteCodeObj(
 	Tcl_Size numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "d, args %" TCL_SIZE_MODIFIER "d, compiled locals %" TCL_SIZE_MODIFIER "d\n",
+		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "d, "
+		"args %" TCL_SIZE_MODIFIER "d, "
+		"compiled locals %" TCL_SIZE_MODIFIER "d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -355,20 +361,23 @@ DisassembleByteCodeObj(
      */
 
     if ((int)codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_SIZE_MODIFIER "d, depth %" TCL_SIZE_MODIFIER "d:\n",
+	Tcl_AppendPrintfToObj(bufferObj,
+		"  Exception ranges %" TCL_SIZE_MODIFIER "d, depth %" TCL_SIZE_MODIFIER "d:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
 	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
-		    "      %" TCL_SIZE_MODIFIER "d: level %" TCL_SIZE_MODIFIER "d, %s, pc %" TCL_SIZE_MODIFIER "d-%" TCL_SIZE_MODIFIER "d, ",
+		    "      %" TCL_SIZE_MODIFIER "d: level %" TCL_SIZE_MODIFIER "d, "
+		    "%s, pc %" TCL_SIZE_MODIFIER "d-%" TCL_SIZE_MODIFIER "d, ",
 		    i, rangePtr->nestingLevel,
 		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
 		    rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
 	    switch (rangePtr->type) {
 	    case LOOP_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "continue %" TCL_SIZE_MODIFIER "d, break %" TCL_SIZE_MODIFIER "d\n",
+		Tcl_AppendPrintfToObj(bufferObj,
+			"continue %" TCL_SIZE_MODIFIER "d, break %" TCL_SIZE_MODIFIER "d\n",
 			rangePtr->continueOffset, rangePtr->breakOffset);
 		break;
 	    case CATCH_EXCEPTION_RANGE:
@@ -446,7 +455,8 @@ DisassembleByteCodeObj(
 	    srcLengthNext++;
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "%s%4" TCL_SIZE_MODIFIER "d: pc %d-%d, src %d-%d",
+	Tcl_AppendPrintfToObj(bufferObj,
+		"%s%4" TCL_SIZE_MODIFIER "d: pc %d-%d, src %d-%d",
 		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
@@ -704,8 +714,8 @@ TclGetInnerContext(
     case INST_TRY_CVT_TO_NUMERIC:
     case INST_EXPAND_STKTOP:
     case INST_EXPR_STK:
-        objc = 1;
-        break;
+	objc = 1;
+	break;
 
     case INST_LIST_IN:
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
@@ -732,22 +742,22 @@ TclGetInnerContext(
     case INST_SUB:
     case INST_DIV:
     case INST_MULT:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_RETURN_STK:
-        /* early pop. TODO: dig out opt dict too :/ */
-        objc = 1;
-        break;
+	/* early pop. TODO: dig out opt dict too :/ */
+	objc = 1;
+	break;
 
     case INST_SYNTAX:
     case INST_RETURN_IMM:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
-        break;
+	break;
 
     case INST_INVOKE_STK1:
 	objc = TclGetUInt1AtPtr(pc+1);
@@ -756,37 +766,36 @@ TclGetInnerContext(
 
     result = iPtr->innerContext;
     if (Tcl_IsShared(result)) {
-        Tcl_DecrRefCount(result);
-        iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
-        Tcl_IncrRefCount(result);
+	Tcl_DecrRefCount(result);
+	iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
+	Tcl_IncrRefCount(result);
     } else {
-        Tcl_Size len;
+	Tcl_Size len;
 
-        /*
-         * Reset while keeping the list internalrep as much as possible.
-         */
+	/*
+	 * Reset while keeping the list internalrep as much as possible.
+	 */
 
 	TclListObjLength(interp, result, &len);
-        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+	Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
 
     for (; objc>0 ; objc--) {
-        Tcl_Obj *objPtr;
+	Tcl_Obj *objPtr = tosPtr[1 - objc];
 
-        objPtr = tosPtr[1 - objc];
-        if (!objPtr) {
-            Tcl_Panic("InnerContext: bad tos -- appending null object");
-        }
-        if ((objPtr->refCount <= 0)
+	if (!objPtr) {
+	    Tcl_Panic("InnerContext: bad tos -- appending null object");
+	}
+	if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-                || (objPtr->refCount == 0x61616161)
+		|| (objPtr->refCount == 0x61616161)
 #endif
-        ) {
-            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
-                    objPtr);
-        }
-        Tcl_ListObjAppendElement(NULL, result, objPtr);
+		) {
+	    Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
+		    objPtr);
+	}
+	Tcl_ListObjAppendElement(NULL, result, objPtr);
     }
 
     return result;
@@ -829,7 +838,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    size_t inst;	/* NOTE: We know this is really an unsigned char */
+    size_t inst;		/* NOTE: We know this is really an unsigned char */
     char *dst;
 
     InstNameGetInternalRep(objPtr, inst);
@@ -837,7 +846,7 @@ UpdateStringOfInstName(
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
+	snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
@@ -1147,14 +1156,17 @@ DisassembleByteCodeAsDicts(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d to %" TCL_SIZE_MODIFIER "d break %" TCL_SIZE_MODIFIER "d continue %" TCL_SIZE_MODIFIER "d",
+		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d "
+		    "to %" TCL_SIZE_MODIFIER "d break %" TCL_SIZE_MODIFIER "d "
+		    "continue %" TCL_SIZE_MODIFIER "d",
 		    "loop", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->breakOffset, rangePtr->continueOffset));
 	    break;
 	case CATCH_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d to %" TCL_SIZE_MODIFIER "d catch %" TCL_SIZE_MODIFIER "d",
+		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d "
+		    "to %" TCL_SIZE_MODIFIER "d catch %" TCL_SIZE_MODIFIER "d",
 		    "catch", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->catchOffset));
@@ -1269,7 +1281,7 @@ DisassembleByteCodeAsDicts(
 
 int
 Tcl_DisassembleObjCmd(
-    void *clientData,	/* What type of operation. */
+    void *clientData,		/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

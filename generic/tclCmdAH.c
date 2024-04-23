@@ -425,14 +425,13 @@ TclInitEncodingCmd(
  */
 static int
 EncodingConvertParseOptions(
-    Tcl_Interp *interp,    /* For error messages. May be NULL */
-    int objc,		   /* Number of arguments */
-    Tcl_Obj *const objv[], /* Argument objects as passed to command. */
-    Tcl_Encoding *encPtr,  /* Where to store the encoding */
-    Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
-    int *profilePtr,         /* Bit mask of encoding option profile */
-    Tcl_Obj **failVarPtr   /* Where to store -failindex option value */
-)
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[],	/* Argument objects as passed to command. */
+    Tcl_Encoding *encPtr,	/* Where to store the encoding */
+    Tcl_Obj **dataObjPtr,	/* Where to store ptr to Tcl_Obj containing data */
+    int *profilePtr,		/* Bit mask of encoding option profile */
+    Tcl_Obj **failVarPtr)	/* Where to store -failindex option value */
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
@@ -500,7 +499,7 @@ EncodingConvertParseOptions(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -525,7 +524,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -594,7 +593,6 @@ EncodingConvertfromObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -687,7 +685,6 @@ EncodingConverttoObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -753,9 +750,9 @@ EncodingDirsObjCmd(
 int
 EncodingNamesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -781,9 +778,9 @@ EncodingNamesObjCmd(
 int
 EncodingProfilesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -812,9 +809,9 @@ EncodingProfilesObjCmd(
 int
 EncodingSystemObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,     /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj *const objv[])	/* Vector of command line args */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?encoding?");
@@ -2347,28 +2344,28 @@ StoreStatData(
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue)                  \
-        Tcl_DictObjPut(NULL, result,            \
-            Tcl_NewStringObj((key), -1),        \
-            (objValue));
-	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
-	DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
-	DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-	DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+#define DOBJPUT(key, objValue) \
+	Tcl_DictObjPut(NULL, result,					\
+		Tcl_NewStringObj((key), TCL_AUTO_LENGTH),		\
+		(objValue));
+	DOBJPUT("dev",	 Tcl_NewWideIntObj((long)statPtr->st_dev));
+	DOBJPUT("ino",	 Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+	DOBJPUT("nlink", Tcl_NewWideIntObj((long)statPtr->st_nlink));
+	DOBJPUT("uid",	 Tcl_NewWideIntObj((long)statPtr->st_uid));
+	DOBJPUT("gid",	 Tcl_NewWideIntObj((long)statPtr->st_gid));
+	DOBJPUT("size",	 Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	DOBJPUT("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+	DOBJPUT("blocks", Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-	DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-	DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
-	DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+	DOBJPUT("atime", Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+	DOBJPUT("mtime", Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+	DOBJPUT("ctime", Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
 	mode = (unsigned short) statPtr->st_mode;
-	DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
-	DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+	DOBJPUT("mode",	 Tcl_NewWideIntObj(mode));
+	DOBJPUT("type",	 Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef DOBJPUT
 	Tcl_SetObjResult(interp, result);
 	Tcl_DecrRefCount(result);
@@ -2814,7 +2811,7 @@ EachloopCmd(
 	    goto done;
 	}
 	result = TclListObjLength(interp, statePtr->vCopyList[i],
-	    &statePtr->varcList[i]);
+		&statePtr->varcList[i]);
 	if (result != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2830,7 +2827,7 @@ EachloopCmd(
 	    goto done;
 	}
 	TclListObjGetElements(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i], &statePtr->varvList[i]);
+		&statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
 	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {

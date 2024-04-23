@@ -1148,7 +1148,6 @@ DetermineGreedySearchLen(
 	}
 	p += tok->lookAhMin;
 	if (laTok->map && p < end) {
-
 	    /* try to find laTok between [lookAhMin, lookAhMax] */
 	    while (minLen < maxLen) {
 		const char *f = FindTokenBegin(p, end, laTok,
@@ -2585,7 +2584,6 @@ ClockScan(
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
 	if (flags & CLF_DATE) {
-
 	    if (!(flags & CLF_JULIANDAY)) {
 		info->flags |= CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY;
 

@@ -42,7 +42,8 @@ typedef struct {
 				 * space allocated for the Unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Tcl_UniChar representation. */
-    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Tcl_UniChar units.
+    Tcl_UniChar unicode[TCLFLEXARRAY];
+				/* The array of Tcl_UniChar units.
 				 * The actual size of this field depends on
 				 * the maxChars field above. */
 } String;
@@ -67,7 +68,7 @@ typedef struct {
     ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
-#endif /*  _TCLSTRINGREP */
+#endif /* _TCLSTRINGREP */
 /*
  * Local Variables:
  * mode: c

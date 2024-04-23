@@ -42,7 +42,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
     LIST_ENTRY(FileHandler) readyNode;
 				/* Next/previous in list of FileHandlers asso-
@@ -226,24 +226,22 @@ PlatformEventsControl(
 	Tcl_Panic("fstat: %s", strerror(errno));
     }
 
-   if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
-       switch (errno) {
-	    case EPERM:
-		switch (op) {
-		case EPOLL_CTL_ADD:
-		    if (isNew) {
-			LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
-				readyNode);
-		    }
-		    break;
-		case EPOLL_CTL_DEL:
-		    LIST_REMOVE(filePtr, readyNode);
-		    break;
+    if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
+	if (errno != EPERM) {
+	    /* Unexpected! */
+	    Tcl_Panic("epoll_ctl: %s", strerror(errno));
+	}
 
-		}
-		break;
-	    default:
-		Tcl_Panic("epoll_ctl: %s", strerror(errno));
+	switch (op) {
+	case EPOLL_CTL_ADD:
+	    if (isNew) {
+		LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+			readyNode);
+	    }
+	    break;
+	case EPOLL_CTL_DEL:
+	    LIST_REMOVE(filePtr, readyNode);
+	    break;
 	}
     }
     return;
@@ -513,7 +511,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -791,7 +789,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
-    void *clientData,	/* Notifier data. */
+    void *clientData,		/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {

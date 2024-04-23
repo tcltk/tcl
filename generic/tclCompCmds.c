@@ -199,7 +199,7 @@ TclCompileAppendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    localIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    localIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
     if (localIndex < 0) {
 	return TCL_ERROR;
     }
@@ -379,9 +379,9 @@ TclCompileArraySetCmd(
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
 	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
-	TclEmitOpcode(INST_POP,          			envPtr);
+	TclEmitOpcode(INST_POP,					envPtr);
     }
 
     /*
@@ -607,7 +607,7 @@ TclCompileCatchCmd(
     if ((int)parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
 	/* DGP */
-	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
+	resultIndex = TclLocalScalarFromToken(resultNameTokenPtr, envPtr);
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -615,7 +615,7 @@ TclCompileCatchCmd(
 	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
-	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
+	    optsIndex = TclLocalScalarFromToken(optsNameTokenPtr, envPtr);
 	    if (optsIndex < 0) {
 		return TCL_ERROR;
 	    }
@@ -968,7 +968,7 @@ TclCompileConstCmd(
      * that.
      */
     if (!isScalar) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     /*
@@ -1100,7 +1100,7 @@ TclCompileDictSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    dictVarIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
@@ -1183,7 +1183,7 @@ TclCompileDictIncrCmd(
      * discover what the index is.
      */
 
-    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    dictVarIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1331,7 +1331,7 @@ TclCompileDictUnsetCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
+    dictVarIndex = TclLocalScalarFromToken(tokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1658,9 +1658,9 @@ CompileDictEachCmd(
     }
 
     nameChars = strlen(argv[0]);
-    keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
+    keyVarIndex = TclLocalScalar(argv[0], nameChars, envPtr);
     nameChars = strlen(argv[1]);
-    valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
+    valueVarIndex = TclLocalScalar(argv[1], nameChars, envPtr);
     Tcl_Free((void *)argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
@@ -1858,7 +1858,7 @@ TclCompileDictUpdateCmd(
      */
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictIndex = LocalScalarFromToken(dictVarTokenPtr, envPtr);
+    dictIndex = TclLocalScalarFromToken(dictVarTokenPtr, envPtr);
     if (dictIndex < 0) {
 	goto issueFallback;
     }
@@ -1887,7 +1887,7 @@ TclCompileDictUpdateCmd(
 	 * scalar that is resolvable at compile-time).
 	 */
 
-	duiPtr->varIndices[i] = LocalScalarFromToken(tokenPtr, envPtr);
+	duiPtr->varIndices[i] = TclLocalScalarFromToken(tokenPtr, envPtr);
 	if (duiPtr->varIndices[i] == TCL_INDEX_NONE) {
 	    goto failedUpdateInfoAssembly;
 	}
@@ -1998,7 +1998,7 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
+    dictVarIndex = TclLocalScalarFromToken(tokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
     }
@@ -2054,7 +2054,7 @@ TclCompileDictLappendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
-    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    dictVarIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -2130,7 +2130,7 @@ TclCompileDictWithCmd(
      */
 
     gotPath = ((int)parsePtr->numWords > 3);
-    dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
+    dictVar = TclLocalScalarFromToken(varTokenPtr, envPtr);
 
     /*
      * Special case: an empty body means we definitely have no need to issue
@@ -2851,7 +2851,7 @@ CompileEachloopCmd(
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
 	    bytes = TclGetStringFromObj(varNameObj, &length);
-	    varIndex = LocalScalar(bytes, length, envPtr);
+	    varIndex = TclLocalScalar(bytes, length, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
 		goto done;
@@ -2966,7 +2966,7 @@ CompileEachloopCmd(
 
 static void *
 DupForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -3015,7 +3015,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
@@ -3349,7 +3349,7 @@ TclCompileFormatCmd(
     start = TclGetString(formatObj);
 				/* The start of the currently-scanned literal
 				 * in the format string. */
-    TclNewObj(tmpObj);	/* The buffer used to accumulate the literal
+    TclNewObj(tmpObj);		/* The buffer used to accumulate the literal
 				 * being built. */
     for (bytes = start ; *bytes ; bytes++) {
 	if (*bytes == '%') {
@@ -3451,7 +3451,7 @@ TclLocalScalar(
 {
     Tcl_Token token[2] = {
 	{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-        {TCL_TOKEN_TEXT, NULL, 0, 0}
+	{TCL_TOKEN_TEXT, NULL, 0, 0}
     };
 
     token[1].start = bytes;
@@ -3599,34 +3599,34 @@ TclPushVarName(
 	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingLen) {
-		/*
-		 * Make a first token with the extra characters in the first
-		 * token.
-		 */
+		if (remainingLen) {
+		    /*
+		     * Make a first token with the extra characters in the first
+		     * token.
+		     */
 
-		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingLen;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = n;
+		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		    allocedTokens = 1;
+		    elemTokenPtr->type = TCL_TOKEN_TEXT;
+		    elemTokenPtr->start = elName;
+		    elemTokenPtr->size = remainingLen;
+		    elemTokenPtr->numComponents = 0;
+		    elemTokenCount = n;
 
-		/*
-		 * Copy the remaining tokens.
-		 */
+		    /*
+		     * Copy the remaining tokens.
+		     */
 
-		memcpy(elemTokenPtr+1, varTokenPtr+2,
-			(n-1) * sizeof(Tcl_Token));
-	      } else {
-		/*
-		 * Use the already available tokens.
-		 */
+		    memcpy(elemTokenPtr+1, varTokenPtr+2,
+			    (n-1) * sizeof(Tcl_Token));
+		} else {
+		    /*
+		     * Use the already available tokens.
+		     */
 
-		elemTokenPtr = &varTokenPtr[2];
-		elemTokenCount = n - 1;
-	      }
+		    elemTokenPtr = &varTokenPtr[2];
+		    elemTokenCount = n - 1;
+		}
 	    }
 	}
     }

@@ -131,7 +131,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    size_t epoch; 	/* Epoch counter */
+    size_t epoch;		/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -163,19 +163,19 @@ const Tcl_ObjType tclDictType = {
     NULL)
 };
 
-#define DictSetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
-        Tcl_ObjInternalRep ir;                                               \
-        ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-        ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);                   \
+#define DictSetInternalRep(objPtr, dictRepPtr) \
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.twoPtrValue.ptr1 = (dictRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
     } while (0)
 
-#define DictGetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
-        const Tcl_ObjInternalRep *irPtr;                                     \
-        irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
-        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
+#define DictGetInternalRep(objPtr, dictRepPtr) \
+    do {								\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
+	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -190,7 +190,7 @@ const Tcl_ObjType tclDictType = {
 
 static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
-    TCL_HASH_KEY_DIRECT_COMPARE,        /* allows compare keys by pointers */
+    TCL_HASH_KEY_DIRECT_COMPARE,	/* allows compare keys by pointers */
     TclHashObjKey,
     TclCompareObjKeys,
     AllocChainEntry,
@@ -627,7 +627,6 @@ SetDictFromAny(
 	}
 
 	for (i=0 ; i<objc ; i+=2) {
-
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
@@ -1277,7 +1276,7 @@ Tcl_DictObjNext(
 
 void
 Tcl_DictObjDone(
-    Tcl_DictSearch *searchPtr)		/* Pointer to a hash search context. */
+    Tcl_DictSearch *searchPtr)	/* Pointer to a hash search context. */
 {
     Dict *dict;
 
@@ -2104,10 +2103,10 @@ DictSizeCmd(
 Tcl_Obj *
 TclDictObjSmartRef(
     Tcl_Interp *interp,
-    Tcl_Obj    *dictPtr)
+    Tcl_Obj *dictPtr)
 {
     Tcl_Obj *result;
-    Dict    *dict;
+    Dict *dict;
 
     if (!TclHasInternalRep(dictPtr, &tclDictType)
 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
@@ -3922,7 +3921,6 @@ DictAsListLength(
     Tcl_DecrRefCount(elemPtr);
     return llen;
 }
-
 
 /*
  *----------------------------------------------------------------------

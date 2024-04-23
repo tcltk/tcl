@@ -101,64 +101,128 @@ static const z_crc_t* crc32tab;
 
 /*
  * Local header of ZIP archive member (at very beginning of each member).
- */
+ *
+ * The structure is one of these, but packed and guaranteed to be little endian:
 
+struct ZipLocalMemberHeader {
+    uint32_t signature;		// = ZIP_LOCAL_HEADER_SIG
+    uint16_t version;		// version needed to extract
+    uint16_t flags;		// general purpose bit flag
+    uint16_t compressionMethod;	// compression method
+    uint16_t modifiedTime;	// last mod file time
+    uint16_t modifiedDate;	// last mod file date
+    uint32_t crc32;		// crc-32
+    uint32_t compressedLength;	// compressed size
+    uint32_t uncompressedLength;// uncompressed size
+    uint16_t pathLength;	// file name length
+    uint16_t extraLength;	// extra field length
+};
+ */
+enum ZipLocalMemberHeaderOffsets {
 #define ZIP_LOCAL_HEADER_SIG		0x04034b50
-#define ZIP_LOCAL_HEADER_LEN		30
-#define ZIP_LOCAL_SIG_OFFS		0
-#define ZIP_LOCAL_VERSION_OFFS		4
-#define ZIP_LOCAL_FLAGS_OFFS		6
-#define ZIP_LOCAL_COMPMETH_OFFS		8
-#define ZIP_LOCAL_MTIME_OFFS		10
-#define ZIP_LOCAL_MDATE_OFFS		12
-#define ZIP_LOCAL_CRC32_OFFS		14
-#define ZIP_LOCAL_COMPLEN_OFFS		18
-#define ZIP_LOCAL_UNCOMPLEN_OFFS	22
-#define ZIP_LOCAL_PATHLEN_OFFS		26
-#define ZIP_LOCAL_EXTRALEN_OFFS		28
+    ZIP_LOCAL_SIG_OFFS = 0,
+    ZIP_LOCAL_VERSION_OFFS = 4,
+    ZIP_LOCAL_FLAGS_OFFS = 6,
+    ZIP_LOCAL_COMPMETH_OFFS = 8,
+    ZIP_LOCAL_MTIME_OFFS = 10,
+    ZIP_LOCAL_MDATE_OFFS = 12,
+    ZIP_LOCAL_CRC32_OFFS = 14,
+    ZIP_LOCAL_COMPLEN_OFFS = 18,
+    ZIP_LOCAL_UNCOMPLEN_OFFS = 22,
+    ZIP_LOCAL_PATHLEN_OFFS = 26,
+    ZIP_LOCAL_EXTRALEN_OFFS = 28,
+    ZIP_LOCAL_HEADER_LEN = 30	/* Length of header */
+};
 
 /*
  * Central header of ZIP archive member at end of ZIP file.
- */
+ *
+ * The structure is one of these, but packed and guaranteed to be little endian:
 
+struct ZipCentralMemberHeader {
+    uint32_t signature;		// = ZIP_CENTRAL_HEADER_SIG
+    uint16_t versionMade;	// version made by
+    uint16_t version;		// version needed to extract
+    uint16_t flags;		// general purpose bit flag
+    uint16_t compressionMethod;	// compression method
+    uint16_t modifiedTime;	// last mod file time
+    uint16_t modifiedDate;	// last mod file date
+    uint32_t crc32;		// crc-32
+    uint32_t compressedLength;	// compressed size
+    uint32_t uncompressedLength;// uncompressed size
+    uint16_t pathLength;	// file name length
+    uint16_t extraLength;	// extra field length
+    uint16_t commentLength;	// file comment length
+    uint16_t diskFile;		// disk number start
+    uint16_t iattr;		// internal file attributes
+    uint32_t eattr;		// external file attributes
+    uint32_t localHeader;	// relative offset of local header
+};
+ */
+enum ZipCentralMemberHeaderOffsets {
 #define ZIP_CENTRAL_HEADER_SIG		0x02014b50
-#define ZIP_CENTRAL_HEADER_LEN		46
-#define ZIP_CENTRAL_SIG_OFFS		0
-#define ZIP_CENTRAL_VERSIONMADE_OFFS	4
-#define ZIP_CENTRAL_VERSION_OFFS	6
-#define ZIP_CENTRAL_FLAGS_OFFS		8
-#define ZIP_CENTRAL_COMPMETH_OFFS	10
-#define ZIP_CENTRAL_MTIME_OFFS		12
-#define ZIP_CENTRAL_MDATE_OFFS		14
-#define ZIP_CENTRAL_CRC32_OFFS		16
-#define ZIP_CENTRAL_COMPLEN_OFFS	20
-#define ZIP_CENTRAL_UNCOMPLEN_OFFS	24
-#define ZIP_CENTRAL_PATHLEN_OFFS	28
-#define ZIP_CENTRAL_EXTRALEN_OFFS	30
-#define ZIP_CENTRAL_FCOMMENTLEN_OFFS	32
-#define ZIP_CENTRAL_DISKFILE_OFFS	34
-#define ZIP_CENTRAL_IATTR_OFFS		36
-#define ZIP_CENTRAL_EATTR_OFFS		38
-#define ZIP_CENTRAL_LOCALHDR_OFFS	42
+    ZIP_CENTRAL_SIG_OFFS = 0,
+    ZIP_CENTRAL_VERSIONMADE_OFFS = 4,
+    ZIP_CENTRAL_VERSION_OFFS = 6,
+    ZIP_CENTRAL_FLAGS_OFFS = 8,
+    ZIP_CENTRAL_COMPMETH_OFFS = 10,
+    ZIP_CENTRAL_MTIME_OFFS = 12,
+    ZIP_CENTRAL_MDATE_OFFS = 14,
+    ZIP_CENTRAL_CRC32_OFFS = 16,
+    ZIP_CENTRAL_COMPLEN_OFFS = 20,
+    ZIP_CENTRAL_UNCOMPLEN_OFFS = 24,
+    ZIP_CENTRAL_PATHLEN_OFFS = 28,
+    ZIP_CENTRAL_EXTRALEN_OFFS = 30,
+    ZIP_CENTRAL_FCOMMENTLEN_OFFS = 32,
+    ZIP_CENTRAL_DISKFILE_OFFS = 34,
+    ZIP_CENTRAL_IATTR_OFFS = 36,
+    ZIP_CENTRAL_EATTR_OFFS = 38,
+    ZIP_CENTRAL_LOCALHDR_OFFS = 42,
+    ZIP_CENTRAL_HEADER_LEN = 46	/* Length of directory entry header */
+};
 
 /*
  * Central end signature at very end of ZIP file.
- */
+ *
+ * The structure is one of these, but packed and guaranteed to be little endian:
 
+struct ZipMainHeader {
+    uint32_t signature;		// = ZIP_CENTRAL_END_SIG
+    uint16_t diskNumber;	// number of this disk
+    uint16_t diskDir;		// number of the disk with the
+				// start of the central directory
+    uint16_t entities;		// total number of entries in the
+				// central directory on this disk
+    uint16_t totalEntities;	// total number of entries in
+				// the central directory
+    uint32_t dirSize;		// size of the central directory
+    uint32_t dirStart;		// offset of start of central
+				// directory with respect to
+				// the starting disk number
+    uint16_t commentLen;	// .ZIP file comment length
+    char comment[];		// .ZIP file comment
+};
+ */
+enum ZipMainHeaderOffsets {
 #define ZIP_CENTRAL_END_SIG		0x06054b50
-#define ZIP_CENTRAL_END_LEN		22
-#define ZIP_CENTRAL_END_SIG_OFFS	0
-#define ZIP_CENTRAL_DISKNO_OFFS		4
-#define ZIP_CENTRAL_DISKDIR_OFFS	6
-#define ZIP_CENTRAL_ENTS_OFFS		8
-#define ZIP_CENTRAL_TOTALENTS_OFFS	10
-#define ZIP_CENTRAL_DIRSIZE_OFFS	12
-#define ZIP_CENTRAL_DIRSTART_OFFS	16
-#define ZIP_CENTRAL_COMMENTLEN_OFFS	20
+    ZIP_CENTRAL_END_SIG_OFFS = 0,
+    ZIP_CENTRAL_DISKNO_OFFS = 4,
+    ZIP_CENTRAL_DISKDIR_OFFS= 6,
+    ZIP_CENTRAL_ENTS_OFFS = 8,
+    ZIP_CENTRAL_TOTALENTS_OFFS = 10,
+    ZIP_CENTRAL_DIRSIZE_OFFS = 12,
+    ZIP_CENTRAL_DIRSTART_OFFS = 16,
+    ZIP_CENTRAL_COMMENTLEN_OFFS = 20,
+    ZIP_CENTRAL_END_LEN = 22	/* Length of archive "header" */
+};
 
 #define ZIP_MIN_VERSION			20
-#define ZIP_COMPMETH_STORED		0
-#define ZIP_COMPMETH_DEFLATED		8
+
+/* Supported compression methods. */
+enum ZipCompressionMethods {
+    ZIP_COMPMETH_STORED = 0,	/* The file is stored (no compression) */
+    ZIP_COMPMETH_DEFLATED = 8	/* The file is Deflated */
+};
 
 #define ZIP_PASSWORD_END_SIG		0x5a5a4b50
 #define ZIP_CRYPT_HDR_LEN		12
@@ -196,7 +260,7 @@ typedef struct ZipFile {
     size_t baseOffset;		/* Archive start */
     size_t passOffset;		/* Password start */
     size_t directoryOffset;	/* Archive directory start */
-    size_t directorySize;       /* Size of archive directory */
+    size_t directorySize;	/* Size of archive directory */
     unsigned char passBuf[264]; /* Password buffer */
     size_t numOpen;		/* Number of open files on archive */
     struct ZipEntry *entries;	/* List of files in archive */
@@ -260,11 +324,11 @@ typedef struct ZipChannel {
     Tcl_Size numBytes;		/* Number of bytes of uncompressed data */
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
-    unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
-				   may point *inside* the block) */
+    unsigned char *ubufToFree;	/* NULL if ubuf points to memory that does not
+    				 * need freeing. Else memory to free (ubuf
+				 * may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
-    int iscompr;                /* True if data is compressed */
+    int iscompr;		/* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
     int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
@@ -813,11 +877,13 @@ IsCryptHeaderValid(
  *------------------------------------------------------------------------
  */
 static int
-DecodeCryptHeader(Tcl_Interp *interp,
-		  ZipEntry *z,
-		  unsigned long keys[3],/* Updated on success. Must have been
-					   initialized by caller. */
-		  unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN]) /* From zip file content */
+DecodeCryptHeader(
+    Tcl_Interp *interp,
+    ZipEntry *z,
+    unsigned long keys[3],	/* Updated on success. Must have been
+				 * initialized by caller. */
+    unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN])
+				/* From zip file content */
 {
     int i;
     int ch;
@@ -876,7 +942,7 @@ static char *
 DecodeZipEntryText(
     const unsigned char *inputBytes,
     unsigned int inputLength,
-    Tcl_DString *dstPtr) /* Must have been initialized by caller! */
+    Tcl_DString *dstPtr)	/* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
     const char *src;
@@ -981,9 +1047,10 @@ DecodeZipEntryText(
  *------------------------------------------------------------------------
  */
 static int
-NormalizeMountPoint(Tcl_Interp *interp,
-		    const char *mountPath,
-		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
+NormalizeMountPoint(
+    Tcl_Interp *interp,
+    const char *mountPath,
+    Tcl_DString *dsPtr)		/* Must be initialized by caller! */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1068,11 +1135,11 @@ errorReturn:
  *------------------------------------------------------------------------
  */
 static char *
-MapPathToZipfs(Tcl_Interp *interp,
-	       const char *mountPath,	/* Must be fully normalized */
-	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
-	                                   by caller */
+MapPathToZipfs(
+    Tcl_Interp *interp,
+    const char *mountPath,	/* Must be fully normalized */
+    const char *path,		/* Archive content path to map */
+    Tcl_DString *dsPtr)		/* Must be initialized and cleared by caller */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1441,10 +1508,9 @@ ZipFSFindTOC(
 	ZIPFS_ERROR(interp, "archive directory end signature not found");
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
 
-  error:
+    error:
 	ZipFSCloseArchive(interp, zf);
 	return TCL_ERROR;
-
     }
 
     /*
@@ -1660,7 +1726,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-        /* What's the magic about 64 * 1024 * 1024 ? */
+	/* What's the magic about 64 * 1024 * 1024 ? */
 	if ((zf->length <= ZIP_CENTRAL_END_LEN) ||
 		(zf->length - ZIP_CENTRAL_END_LEN) >
 			(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
@@ -2230,10 +2296,12 @@ ListMountPoints(
  *------------------------------------------------------------------------
  */
 static void
-CleanupMount(ZipFile *zf)        /* Mount point */
+CleanupMount(
+    ZipFile *zf)		/* Mount point */
 {
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
+
     for (z = zf->entries; z; z = znext) {
 	znext = z->next;
 	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
@@ -2375,7 +2443,7 @@ TclZipfs_Mount(
 			Tcl_Free(zf);
 		    } else {
 			ret = ZipFSCatalogFilesystem(
-			    interp, zf, mountPoint, passwd, normPath);
+				interp, zf, mountPoint, passwd, normPath);
 			/* Note zf is already freed on error! */
 		    }
 		}
@@ -2482,7 +2550,7 @@ TclZipfs_MountBuffer(
     } else {
 	/* Note ZipFSCatalogFilesystem will free zf on error */
 	ret = ZipFSCatalogFilesystem(
-	    interp, zf, mountPoint, NULL, "Memory Buffer");
+		interp, zf, mountPoint, NULL, "Memory Buffer");
     }
     if (ret == TCL_OK && interp) {
 	Tcl_DStringResult(interp, &ds);
@@ -3279,7 +3347,7 @@ ComputeNameInArchive(
 				 * archive */
     const char *strip,		/* A prefix to strip; may be NULL if no
 				 * stripping need be done. */
-    Tcl_Size slen)			/* The length of the prefix; must be 0 if no
+    Tcl_Size slen)		/* The length of the prefix; must be 0 if no
 				 * stripping need be done. */
 {
     const char *name;
@@ -3355,8 +3423,8 @@ ZipFSMkZipOrImg(
     Tcl_Size pwlen = 0, slen = 0, len, i = 0;
     Tcl_Size lobjc;
     long long directoryStartOffset;
-    /* The overall file offset of the start of the
-     * central directory. */
+				/* The overall file offset of the start of the
+				 * central directory. */
     long long suffixStartOffset;/* The overall file offset of the start of the
 				 * suffix of the central directory (i.e.,
 				 * where this data will be written). */
@@ -4398,9 +4466,9 @@ ZipChannelClose(
 	ZipEntry *z = info->zipEntryPtr;
 	assert(info->ubufToFree && info->ubuf);
 	unsigned char *newdata;
-	newdata = (unsigned char *)Tcl_AttemptRealloc(
-	    info->ubufToFree,
-	    info->numBytes ? info->numBytes : 1); /* Bug [23dd83ce7c] */
+	newdata = (unsigned char *) Tcl_AttemptRealloc(
+		info->ubufToFree,
+		info->numBytes ? info->numBytes : 1); /* Bug [23dd83ce7c] */
 	if (newdata == NULL) {
 	    /* Could not reallocate, keep existing buffer */
 	    newdata = info->ubufToFree;
@@ -4575,8 +4643,8 @@ ZipChannelWrite(
 	} else {
 	    needed = info->maxWrite;
 	}
-	unsigned char *newBuf =
-	    (unsigned char *)Tcl_AttemptRealloc(info->ubufToFree, needed);
+	unsigned char *newBuf = (unsigned char *)
+		Tcl_AttemptRealloc(info->ubufToFree, needed);
 	if (newBuf == NULL) {
 	    *errloc = ENOMEM;
 	    return -1;
@@ -5546,8 +5614,8 @@ ZipFSMatchInDirectoryProc(
 	if ((wanted & TCL_GLOB_TYPE_MOUNT) && (wanted != TCL_GLOB_TYPE_MOUNT)) {
 	    if (interp) {
 		ZIPFS_ERROR(interp,
-			      "Internal error: TCL_GLOB_TYPE_MOUNT should not "
-			      "be set in conjunction with other glob types.");
+			"Internal error: TCL_GLOB_TYPE_MOUNT should not "
+			"be set in conjunction with other glob types.");
 	    }
 	    return TCL_ERROR;
 	}
@@ -5556,8 +5624,7 @@ ZipFSMatchInDirectoryProc(
 	    /* Not looking for files,dirs,mounts. zipfs cannot have others */
 	    return TCL_OK;
 	}
-	wanted &=
-	    (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT);
+	wanted &= TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT;
     } else {
 	wanted = TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE;
     }
@@ -6518,7 +6585,7 @@ TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
     TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
+    TCL_UNUSED(const char *))	/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
     ZIPFS_ERROR(interp, "no zlib available");
@@ -6555,7 +6622,7 @@ TclZipfs_AppHook(
 #ifdef _WIN32
     TCL_UNUSED(WCHAR ***)) /* argvPtr */
 #else /* !_WIN32 */
-    TCL_UNUSED(char ***))		/* Pointer to argv */
+    TCL_UNUSED(char ***))	/* Pointer to argv */
 #endif /* _WIN32 */
 {
     return NULL;

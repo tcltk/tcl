@@ -92,7 +92,7 @@ typedef struct {
     size_t numRemoves;		/* Number of removes from bucket */
     size_t numInserts;		/* Number of inserts into bucket */
     size_t numLocks;		/* Number of locks acquired */
-    size_t totalAssigned;		/* Total space assigned to bucket */
+    size_t totalAssigned;	/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -120,7 +120,7 @@ typedef struct Cache {
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
     size_t maxBlocks;		/* Max blocks before move to share. */
-    size_t numMove;			/* Num blocks to move to share. */
+    size_t numMove;		/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -946,7 +946,6 @@ GetBlocks(
     if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].numFree > 0) {
 	LockBucket(cachePtr, bucket);
 	if (sharedPtr->buckets[bucket].numFree > 0) {
-
 	    /*
 	     * Either move the entire list or walk the list to find the last
 	     * block to move.

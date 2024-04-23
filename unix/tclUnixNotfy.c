@@ -213,7 +213,7 @@ LookUpFileHandler(
 
 void
 TclpSetTimer(
-    TCL_UNUSED(const Tcl_Time *))		/* Timeout value, may be NULL. */
+    TCL_UNUSED(const Tcl_Time *))	/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -418,7 +418,6 @@ AtForkChild(void)
      */
 
     if (atForkInit == 1) {
-
 	notifierCount = 0;
 	if (notifierThreadRunning == 1) {
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

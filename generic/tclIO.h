@@ -34,7 +34,6 @@
  *
  * Buffers data being sent to or from a channel.
  */
-
 typedef struct ChannelBuffer {
     Tcl_Size refCount;		/* Current uses count */
     Tcl_Size nextAdded;		/* The next position into which a character
@@ -71,7 +70,6 @@ typedef struct ChannelBuffer {
  * "fileevent". This is used later when the event being waited for to invoke
  * the saved script in the interpreter designed in this record.
  */
-
 typedef struct EventScriptRecord {
     struct Channel *chanPtr;	/* The channel for which this script is
 				 * registered. This is used only when an error
@@ -93,9 +91,8 @@ typedef struct EventScriptRecord {
  * Tcl channel mechanism, and it points at an instance specific (and type
  * specific) instance data, and at a channel type structure.
  */
-
 typedef struct Channel {
-    struct ChannelState *state; /* Split out state information */
+    struct ChannelState *state;	/* Split out state information */
     void *instanceData;		/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
@@ -124,7 +121,6 @@ typedef struct Channel {
  * Tcl channel mechanism, and it points at an instance specific (and type
  * specific) instance data, and at a channel type structure.
  */
-
 typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
@@ -215,8 +211,8 @@ typedef struct ChannelState {
      * precedence over a Posix error code returned by a channel operation.
      */
 
-    Tcl_Obj* chanMsg;
-    Tcl_Obj* unreportedMsg;     /* Non-NULL if an error report was deferred
+    Tcl_Obj *chanMsg;
+    Tcl_Obj *unreportedMsg;	/* Non-NULL if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */
@@ -232,7 +228,6 @@ typedef struct ChannelState {
  * options and state bits about the channel. In addition to the flags below,
  * the channel can also have TCL_READABLE (1<<1) and TCL_WRITABLE (1<<2) set.
  */
-
 enum ChannelStateFlags {
     CHANNEL_NONBLOCKING = 1<<6,	/* Channel is currently in nonblocking mode. */
     BG_FLUSH_SCHEDULED = 1<<7,	/* A background flush of the queued output

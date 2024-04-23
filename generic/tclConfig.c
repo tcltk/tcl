@@ -69,7 +69,8 @@ Tcl_RegisterConfig(
     const char *pkgName,	/* Name of the package registering the
 				 * embedded configuration. ASCII, thus in
 				 * UTF-8 too. */
-    const Tcl_Config *configuration,	/* Embedded configuration. */
+    const Tcl_Config *configuration,
+				/* Embedded configuration. */
     const char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {

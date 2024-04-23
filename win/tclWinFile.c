@@ -16,9 +16,9 @@
 #include "tclFileSystem.h"
 #include <winioctl.h>
 #include <shlobj.h>
-#include <lm.h>		        /* For TclpGetUserHome(). */
+#include <lm.h>			/* For TclpGetUserHome(). */
 #include <userenv.h>		/* For TclpGetUserHome(). */
-#include <aclapi.h>             /* For GetNamedSecurityInfo */
+#include <aclapi.h>		/* For GetNamedSecurityInfo */
 
 #ifdef _MSC_VER
 #   pragma comment(lib, "userenv.lib")
@@ -285,7 +285,6 @@ WinLink(
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    return WinSymLinkDirectory(linkSourcePath, linkTargetPath);
-
 	} else if (linkAction & TCL_CREATE_HARD_LINK) {
 	    /*
 	     * Can't hard link directories.
@@ -343,7 +342,6 @@ WinReadLink(
 
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
-
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	/*
 	 * It is a file - this is not yet supported.
@@ -1250,7 +1248,6 @@ WinIsReserved(
 
 	    return 3;
 	}
-
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
@@ -1265,7 +1262,6 @@ WinIsReserved(
 		return 4;
 	    }
 	}
-
     } else if (!strcasecmp(path, "prn") || !strcasecmp(path, "nul")
 	    || !strcasecmp(path, "aux")) {
 	/*
@@ -1359,7 +1355,6 @@ NativeMatchType(
 	 */
 
 	return 1;
-
     } else if (types->type != 0) {
 	unsigned short st_mode;
 	int isExec = NativeIsExec(nativeName);
@@ -1438,32 +1433,35 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-        /*
-         * Treat the current user as a special case because the general case
-         * below does not properly retrieve the path. The NetUserGetInfo
-         * call returns an empty path and the code defaults to the user's
-         * name in the profiles directory. On modern Windows systems, this
-         * is generally wrong as when the account is a Microsoft account,
-         * for example abcdefghi@outlook.com, the directory name is
-         * abcde and not abcdefghi.
-         *
-         * Note we could have just used env(USERPROFILE) here but
-         * the intent is to retrieve (as on Unix) the system's view
-         * of the home irrespective of environment settings of HOME
-         * and USERPROFILE.
-         *
-         * Fixing this for the general user needs more investigating but
-         * at least for the current user we can use a direct call.
-         */
+	/*
+	 * Treat the current user as a special case because the general case
+	 * below does not properly retrieve the path. The NetUserGetInfo
+	 * call returns an empty path and the code defaults to the user's
+	 * name in the profiles directory. On modern Windows systems, this
+	 * is generally wrong as when the account is a Microsoft account,
+	 * for example abcdefghi@outlook.com, the directory name is
+	 * abcde and not abcdefghi.
+	 *
+	 * Note we could have just used env(USERPROFILE) here but
+	 * the intent is to retrieve (as on Unix) the system's view
+	 * of the home irrespective of environment settings of HOME
+	 * and USERPROFILE.
+	 *
+	 * Fixing this for the general user needs more investigating but
+	 * at least for the current user we can use a direct call.
+	 */
+
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
 	    HANDLE hProcess;
 	    WCHAR buf[MAX_PATH];
 	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
+
 	    /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
 	    hProcess = GetCurrentProcess(); /* Need not be closed */
 	    if (hProcess) {
 		HANDLE hToken;
+
 		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
 		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
 			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
@@ -1832,7 +1830,6 @@ NativeAccess(
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
-
     }
     return 0;
 }
@@ -1893,7 +1890,7 @@ NativeIsExec(
 
 int
 TclpObjChdir(
-    Tcl_Obj *pathPtr)	/* Path to new working directory. */
+    Tcl_Obj *pathPtr)		/* Path to new working directory. */
 {
     int result;
     const WCHAR *nativePath;
@@ -2059,9 +2056,9 @@ NativeStat(
             if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
                 Tcl_SetErrno(ENOENT);
                 return -1;
-            }
+	    }
 
-            /*
+	    /*
 	     * Mock up the expected structure
 	     */
 
@@ -2069,12 +2066,12 @@ NativeStat(
             statPtr->st_atime = 0;
             statPtr->st_mtime = 0;
             statPtr->st_ctime = 0;
-        } else {
+	} else {
             CloseHandle(fileHandle);
             statPtr->st_atime = ToCTime(data.ftLastAccessTime);
             statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
             statPtr->st_ctime = ToCTime(data.ftCreationTime);
-        }
+	}
 	attr = data.dwFileAttributes;
 	statPtr->st_size = ((long long) data.nFileSizeLow) |
 		(((long long) data.nFileSizeHigh) << 32);
@@ -2520,9 +2517,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)	        /* offset to start at in pathPtr */
+    int nextCheckpoint)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -3280,7 +3277,7 @@ TclWinFileOwned(
     if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
 	    &secd) != ERROR_SUCCESS) {
-        /*
+	/*
 	 * Either not a file, or we do not have access to it in which case we
 	 * are in all likelihood not the owner.
 	 */
@@ -3296,7 +3293,7 @@ TclWinFileOwned(
      */
 
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-        /*
+	/*
 	 * Find out how big the buffer needs to be.
 	 */
 
@@ -3306,8 +3303,8 @@ TclWinFileOwned(
             buf = (LPBYTE)Tcl_Alloc(bufsz);
             if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
                 owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
-            }
-        }
+	    }
+	}
         CloseHandle(token);
     }
 
@@ -3316,13 +3313,13 @@ TclWinFileOwned(
      */
 
     if (secd) {
-        LocalFree(secd);            /* Also frees ownerSid */
+        LocalFree(secd);	/* Also frees ownerSid */
     }
     if (buf) {
         Tcl_Free(buf);
     }
 
-    return (owned != 0);        /* Convert non-0 to 1 */
+    return (owned != 0);	/* Convert non-0 to 1 */
 }
 
 /*

@@ -373,7 +373,6 @@ Tcl_LoadObjCmd(
 
 	    Tcl_DStringSetLength(&pfx,
 		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
-
 	}
 
 	/*
@@ -772,13 +771,12 @@ Tcl_UnloadObjCmd(
  */
 static int
 UnloadLibrary(
-	Tcl_Interp *interp,
-	Tcl_Interp *target,
-	LoadedLibrary *libraryPtr,
-	int keepLibrary,
-	const char *fullFileName,
-	int interpExiting
-)
+    Tcl_Interp *interp,
+    Tcl_Interp *target,
+    LoadedLibrary *libraryPtr,
+    int keepLibrary,
+    const char *fullFileName,
+    int interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -1037,17 +1035,16 @@ Tcl_StaticLibrary(
 	strcpy(libraryPtr->prefix, prefix);
 	libraryPtr->loadHandle	= NULL;
 	libraryPtr->initProc	= initProc;
-	libraryPtr->safeInitProc	= safeInitProc;
-	libraryPtr->unloadProc = NULL;
+	libraryPtr->safeInitProc= safeInitProc;
+	libraryPtr->unloadProc	= NULL;
 	libraryPtr->safeUnloadProc = NULL;
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		= firstLibraryPtr;
+	libraryPtr->nextPtr	= firstLibraryPtr;
 	firstLibraryPtr		= libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
     }
 
     if (interp != NULL) {
-
 	/*
 	 * If we're loading the library into an interpreter, determine whether
 	 * it's already loaded.
@@ -1101,9 +1098,8 @@ TclGetLoadedLibraries(
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
-    const char *prefix)	/* Prefix or NULL. If NULL, return info
-				 * for all prefixes.
-				 */
+    const char *prefix)		/* Prefix or NULL. If NULL, return info
+				 * for all prefixes. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;
@@ -1188,7 +1184,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),		/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
