@@ -877,7 +877,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
