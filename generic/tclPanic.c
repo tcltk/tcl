@@ -23,7 +23,7 @@
  * procedure.
  */
 
-static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
+static Tcl_PanicProc *panicProc = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -43,7 +43,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 
 const char *
 Tcl_SetPanicProc(
-    TCL_NORETURN1 Tcl_PanicProc *proc)
+    Tcl_PanicProc *proc)
 {
     panicProc = proc;
     return Tcl_InitSubsystems();
