@@ -28,7 +28,7 @@
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_ConsolePanic(
     const char *format, ...)
 {
@@ -63,6 +63,20 @@ Tcl_ConsolePanic(
 	WriteFile(handle, "\n", 1, &dummy, 0);
 	FlushFileBuffers(handle);
     }
+#   if defined(__GNUC__)
+	__builtin_trap();
+#   elif defined(_WIN64)
+	__debugbreak();
+#   elif defined(_MSC_VER)
+	_asm {int 3}
+#   else
+	DebugBreak();
+#   endif
+#if defined(_WIN32)
+	ExitProcess(1);
+#else
+	abort();
+#endif
 }
 /*
  * Local Variables:
