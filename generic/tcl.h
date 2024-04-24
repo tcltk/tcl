@@ -156,7 +156,7 @@ extern "C" {
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
-#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NORETURN __declspec(noreturn)
 #   else
 #	define TCL_NORETURN /* nothing */
 #   endif
