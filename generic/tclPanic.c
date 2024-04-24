@@ -71,7 +71,7 @@ Tcl_SetPanicProc(
  */
 
 /* coverity[+kill] */
-void
+TCL_NORETURN void
 Tcl_Panic(
     const char *format,
     ...)
@@ -104,21 +104,21 @@ Tcl_Panic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
-#   if defined(__GNUC__)
-	__builtin_trap();
-#   elif defined(_WIN64)
-	__debugbreak();
-#   elif defined(_MSC_VER) && defined (_M_IX86)
-	_asm {int 3}
-#   elif defined(_WIN32)
-	DebugBreak();
-#   endif
-#if defined(_WIN32)
-	ExitProcess(1);
-#else
-	abort();
-#endif
     }
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER) && defined (_M_IX86)
+    _asm {int 3}
+#elif defined(_WIN32)
+    DebugBreak();
+#endif
+#if defined(_WIN32)
+    ExitProcess(1);
+#else
+    abort();
+#endif
 }
 
 /*
