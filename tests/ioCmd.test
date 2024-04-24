@@ -476,14 +476,14 @@ unmatched open brace in list
 \"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {
   list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
-} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
+} {1 {invalid access mode "FOO": must be APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, RDONLY, RDWR, TRUNC, or WRONLY}}
 test iocmd-12.8 {POSIX open access modes: errors} {
     list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+} {1 {access mode must include either RDONLY, RDWR, or WRONLY}}
 close [open $path(test3) w]
 test iocmd-12.9 {POSIX open access modes: BINARY} {
     list [catch {open $path(test1) BINARY} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+} {1 {access mode must include either RDONLY, RDWR, or WRONLY}}
 test iocmd-12.10 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f a
@@ -513,6 +513,15 @@ test iocmd-12.12 {POSIX open access modes: BINARY} {
     close $f
     set result
 } H
+test iocmd-12.12 {POSIX open access modes: errors} {
+  list [catch {open $path(test3) {RDWR WRONLY}} msg] $msg
+} {1 {invalid access mode "WRONLY": modes RDONLY, RDWR, and WRONLY cannot be combined}}
+test iocmd-12.13 {POSIX open access modes: errors} {
+  list [catch {open $path(test3) {BINARY BINARY}} msg] $msg
+} {1 {access mode "BINARY" repeated}}
+test iocmd-12.14 {POSIX open access modes: errors} {
+  list [catch {open $path(test3) {TRUNC}} msg] $msg
+} {1 {access mode must include either RDONLY, RDWR, or WRONLY}}
 
 test iocmd-13.1 {errors in open command} {
     list [catch {open} msg] $msg
