@@ -597,7 +597,7 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 #endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
-typedef TCL_NORETURN1 void (Tcl_PanicProc) (const char *format, ...);
+typedef void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (void *clientData);
@@ -2312,7 +2312,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
+    void Tcl_ConsolePanic(const char *format, ...);
 #else
 #   define Tcl_ConsolePanic NULL
 #endif
