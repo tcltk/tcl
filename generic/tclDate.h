@@ -560,5 +560,6 @@ MODULE_SCOPE int	ClockScan(DateInfo *info, Tcl_Obj *strObj,
 MODULE_SCOPE int	ClockFormat(DateFormat *dateFmt,
 			    ClockFmtScnCmdArgs *opts);
 MODULE_SCOPE void	ClockFrmScnClearCaches(void);
+MODULE_SCOPE void	ClockFrmScnFinalize();
 
 #endif /* _TCLCLOCK_H */
