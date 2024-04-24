@@ -2337,8 +2337,8 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
-	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b2"), \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
 #else
