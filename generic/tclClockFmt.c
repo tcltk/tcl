@@ -26,7 +26,10 @@ static void		ClockFmtObj_UpdateString(Tcl_Obj *objPtr);
 TCL_DECLARE_MUTEX(ClockFmtMutex);	/* Serializes access to common format list. */
 
 static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
-static void		ClockFrmScnFinalize(void *);
+
+#ifndef TCL_CLOCK_FULL_COMPAT
+#define TCL_CLOCK_FULL_COMPAT 1
+#endif
 
 /*
  * Derivation of tclStringHashKeyType with another allocEntryProc
@@ -678,7 +681,7 @@ ClockFmtObj_FreeInternalRep(
     Tcl_Obj *objPtr)
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
-    if (fss != NULL) {
+    if (fss != NULL && initialized) {
 	Tcl_MutexLock(&ClockFmtMutex);
 	/* decrement object reference count of format/scan storage */
 	if (--fss->objRefCount <= 0) {
@@ -832,7 +835,6 @@ FindOrCreateFmtScnStorage(
 		&ClockFmtScnStorageHashKeyType);
 
 	initialized = 1;
-	Tcl_CreateExitHandler(ClockFrmScnFinalize, NULL);
     }
 
     /* get or create entry (and alocate storage) */
@@ -1019,7 +1021,8 @@ static const char *
 FindTokenBegin(
     const char *p,
     const char *end,
-    ClockScanToken *tok)
+    ClockScanToken *tok,
+    int flags)
 {
     if (p < end) {
 	char c;
@@ -1028,15 +1031,19 @@ FindTokenBegin(
 	switch (tok->map->type) {
 	case CTOKT_INT:
 	case CTOKT_WIDE:
-	    /* should match at least one digit */
-	    while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+	    if (!(flags & CLF_STRICT)) {
+		/* should match at least one digit or space */
+		while (!isdigit(UCHAR(*p)) && !isspace(UCHAR(*p)) &&
+			(p = Tcl_UtfNext(p)) < end) {}
+	    } else {
+		/* should match at least one digit */
+		while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+	    }
 	    return p;
 
 	case CTOKT_WORD:
 	    c = *(tok->tokWord.start);
-	    /* should match at least to the first char of this word */
-	    while (*p != c && (p = Tcl_UtfNext(p)) < end) {}
-	    return p;
+	    goto findChar;
 
 	case CTOKT_SPACE:
 	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
@@ -1044,7 +1051,15 @@ FindTokenBegin(
 
 	case CTOKT_CHAR:
 	    c = *((char *)tok->map->data);
-	    while (*p != c && (p = Tcl_UtfNext(p)) < end) {}
+findChar:
+	    if (!(flags & CLF_STRICT)) {
+		/* should match the char or space */
+		while (*p != c && !isspace(UCHAR(*p)) &&
+			(p = Tcl_UtfNext(p)) < end) {}
+	    } else {
+		/* should match the char */
+		while (*p != c && (p = Tcl_UtfNext(p)) < end) {}
+	    }
 	    return p;
 	}
     }
@@ -1069,6 +1084,7 @@ FindTokenBegin(
 
 static void
 DetermineGreedySearchLen(
+    ClockFmtScnCmdArgs *opts,
     DateInfo *info,
     ClockScanToken *tok,
     int *minLenPtr,
@@ -1083,7 +1099,8 @@ DetermineGreedySearchLen(
     if ((tok + 1)->map) {
 	end -= tok->endDistance + yySpaceCount;
 	/* find position of next known token */
-	p = FindTokenBegin(p, end, tok + 1);
+	p = FindTokenBegin(p, end, tok + 1,
+		TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
 	if (p < end) {
 	    minLen = p - yyInput;
 	}
@@ -1134,7 +1151,8 @@ DetermineGreedySearchLen(
 
 	    /* try to find laTok between [lookAhMin, lookAhMax] */
 	    while (minLen < maxLen) {
-		const char *f = FindTokenBegin(p, end, laTok);
+		const char *f = FindTokenBegin(p, end, laTok,
+				    TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
 		/* if found (not below lookAhMax) */
 		if (f < end) {
 		    break;
@@ -1518,7 +1536,7 @@ ClockScnToken_Month_Proc(
     int minLen, maxLen;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     /* get or create tree in msgcat dict */
 
@@ -1550,7 +1568,7 @@ ClockScnToken_DayOfWeek_Proc(
     char curTok = *tok->tokWord.start;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     /* %u %w %Ou %Ow */
     if (curTok != 'a' && curTok != 'A'
@@ -1621,7 +1639,7 @@ ClockScnToken_amPmInd_Proc(
     int minLen, maxLen;
     Tcl_Obj *amPmObj[2];
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     amPmObj[0] = ClockMCGet(opts, MCLIT_AM);
     amPmObj[1] = ClockMCGet(opts, MCLIT_PM);
@@ -1656,7 +1674,7 @@ ClockScnToken_LocaleERA_Proc(
     int minLen, maxLen;
     Tcl_Obj *eraObj[6];
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     eraObj[0] = ClockMCGet(opts, MCLIT_BCE);
     eraObj[1] = ClockMCGet(opts, MCLIT_CE);
@@ -1693,7 +1711,7 @@ ClockScnToken_LocaleListMatcher_Proc(
     int minLen, maxLen;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     /* get or create tree in msgcat dict */
 
@@ -1716,7 +1734,7 @@ ClockScnToken_LocaleListMatcher_Proc(
 
 static int
 ClockScnToken_JDN_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
+    ClockFmtScnCmdArgs *opts,
     DateInfo *info,
     ClockScanToken *tok)
 {
@@ -1725,7 +1743,7 @@ ClockScnToken_JDN_Proc(
     Tcl_WideInt intJD;
     int fractJD = 0, fractJDDiv = 1;
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     end = yyInput + maxLen;
 
@@ -1796,7 +1814,7 @@ ClockScnToken_TimeZone_Proc(
     const char *p = yyInput;
     Tcl_Obj *tzObjStor = NULL;
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     /* numeric timezone */
     if (*p == '+' || *p == '-') {
@@ -1879,7 +1897,7 @@ ClockScnToken_TimeZone_Proc(
 
 static int
 ClockScnToken_StarDate_Proc(
-    TCL_UNUSED(ClockFmtScnCmdArgs *),
+    ClockFmtScnCmdArgs *opts,
     DateInfo *info,
     ClockScanToken *tok)
 {
@@ -1888,7 +1906,7 @@ ClockScnToken_StarDate_Proc(
     int year, fractYear, fractDayDiv, fractDay;
     static const char *stardatePref = "stardate ";
 
-    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
     end = yyInput + maxLen;
 
@@ -2436,7 +2454,7 @@ ClockScan(
 		}
 	    }
 
-	    DetermineGreedySearchLen(info, tok, &minLen, &size);
+	    DetermineGreedySearchLen(opts, info, tok, &minLen, &size);
 
 	    if (size < map->minSize) {
 		/* missing input -> error */
@@ -3541,10 +3559,12 @@ ClockFrmScnClearCaches(void)
     Tcl_MutexUnlock(&ClockFmtMutex);
 }
 
-static void
-ClockFrmScnFinalize(
-    TCL_UNUSED(void *))
+void
+ClockFrmScnFinalize()
 {
+    if (!initialized) {
+	return;
+    }
     Tcl_MutexLock(&ClockFmtMutex);
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
     /* clear GC */
@@ -3553,8 +3573,8 @@ ClockFrmScnFinalize(
     ClockFmtScnStorage_GC.count = 0;
 #endif
     if (initialized) {
-	Tcl_DeleteHashTable(&FmtScnHashTable);
 	initialized = 0;
+	Tcl_DeleteHashTable(&FmtScnHashTable);
     }
     Tcl_MutexUnlock(&ClockFmtMutex);
     Tcl_MutexFinalize(&ClockFmtMutex);
