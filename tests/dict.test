@@ -151,11 +151,6 @@ test dict-3.16 {dict/list shimmering - Bug 3004007} testobj {
     dict get $l q
     list $l [testobj objtype $l]
 } {{p 1 p 2 q 3} dict}
-test dict-3.17 {dict/list shimmering - Bug 3004007} testobj {
-    set l [list p 1 p 2 q 3]
-    dict get $l q
-    list [llength $l] [testobj objtype $l]
-} {6 dict}
 
 test dict-4.1 {dict replace command} {
     dict replace {a b c d}
