@@ -117,7 +117,7 @@ extern "C" {
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER)
-#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NORETURN __declspec(noreturn)
 #	define TCL_NOINLINE __declspec(noinline)
 #   else
 #	define TCL_NORETURN /* nothing */
@@ -2312,9 +2312,9 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
 #else
-#   define Tcl_ConsolePanic NULL
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
 
 #ifdef USE_TCL_STUBS
