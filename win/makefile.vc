@@ -464,7 +464,8 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+LIBTCLVFSSUBDIR = libtcl.vfs
+LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
@@ -664,9 +665,10 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
     @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
     @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
 !endif
-	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
+	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
+	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
