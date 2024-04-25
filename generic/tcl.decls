@@ -2417,10 +2417,10 @@ export {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
 }
 export {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 export {
     const char *Tcl_FindExecutable(const char *argv0)
