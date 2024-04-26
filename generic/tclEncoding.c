@@ -47,6 +47,7 @@ typedef struct Encoding {
 				 * returns the number of bytes in a 0x0000
 				 * terminated string. */
     TclAtomicInt refCount;	/* Number of uses of this structure. */
+    unsigned long epoch;	/* Epoch this encoding was created. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
 } Encoding;
 
@@ -174,7 +175,7 @@ static TclAtomicInt encodingsInitialized = 0;
 static Tcl_HashTable encodingTable;
 TCL_DECLARE_MUTEX(encodingMutex);
 
-static volatile unsigned long encodingsEpoch = 0;
+static unsigned long encodingsEpoch = 0;
 
 /*
  * The following are used to hold the default and current system encodings.
@@ -183,8 +184,14 @@ static volatile unsigned long encodingsEpoch = 0;
  */
 
 #define defaultEncoding tclIdentityEncoding
-static volatile Tcl_Encoding systemEncoding = NULL;
+static Tcl_Encoding systemEncoding = NULL;
 Tcl_Encoding tclIdentityEncoding = NULL;
+
+/*
+ * Small encoding cache (GC) hold 2 last freed encodings, to avoid too often
+ * load of encodings by reuse.
+ */
+static Encoding *encodingCache[2] = {NULL, NULL};
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -295,6 +302,18 @@ GetSystemEncodingRef()
     } while (1);
 }
 
+static inline
+FreeEncodingCache()
+{
+    if (encodingCache[1]) {
+	FreeEncoding(encodingCache[1], 0);
+	encodingCache[1] = NULL;
+    }
+    if (encodingCache[0]) {
+	FreeEncoding(encodingCache[0], 0);
+	encodingCache[0] = NULL;
+    }
+}
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the ptrAndLongRep.ptr field
@@ -337,12 +356,14 @@ Tcl_GetEncodingFromObj(
     if (objPtr->typePtr != &encodingType
 	|| objPtr->internalRep.ptrAndLongRep.value != encodingsEpoch
     ) {
-	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
+	Tcl_Encoding encoding;
 
+	/* firstly free this (old encoding, if epochs are different) */
+	TclFreeIntRep(objPtr);
+	encoding = Tcl_GetEncoding(interp, name);
 	if (encoding == NULL) {
 	    return TCL_ERROR;
 	}
-	TclFreeIntRep(objPtr);
 	objPtr->internalRep.ptrAndLongRep.ptr = (VOID *) encoding;
 	objPtr->internalRep.ptrAndLongRep.value = encodingsEpoch;
 	objPtr->typePtr = &encodingType;
@@ -437,6 +458,11 @@ Tcl_SetEncodingSearchPath(
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
+
+    /* ensure new encoding version can be loaded (and will be preferred) */
+    encodingsEpoch++;
+    FreeEncodingCache();
+
     return TCL_OK;
 }
 
@@ -696,12 +722,16 @@ TclFinalizeEncodingSubsystem(void)
 	return;
     }
 
+    /* increase epoch to signal all encodings are obsolete */
+    encodingsEpoch++;
+
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
     FreeEncoding((Encoding *)systemEncoding, 0);
     systemEncoding = NULL;
     FreeEncoding((Encoding *)defaultEncoding, 0);
     defaultEncoding = NULL;
+    FreeEncodingCache();
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
@@ -854,6 +884,9 @@ void
 Tcl_FreeEncoding(
     Tcl_Encoding encoding)
 {
+    if (encoding == NULL) {
+	return;
+    }
     FreeEncoding((Encoding *)encoding, 1);
 }
 
@@ -880,12 +913,26 @@ FreeEncoding(
     Encoding *encodingPtr,
     int lock)
 {
-    if (encodingPtr == NULL) {
-	return;
-    }
     if (TclpAtomicDecrFetch(&encodingPtr->refCount) <= 0) {
 	if (encodingPtr->refCount < 0) {
 	    Tcl_Panic("FreeEncoding: refcount problem !!!");
+	}
+	/* Cache encoding which get free, thereby avoid infinite reqursion
+	 * and cache within TclFinalizeEncodingSubsystem process,
+	 * also consider epoch (don't store obsolete encodings in cache) */
+	if ( lock == 1 && encodingsInitialized
+	  && encodingPtr->epoch >= encodingsEpoch
+	) {
+	    /* hold 2 last freed encodings (make it reusable) */
+	    Tcl_MutexLock(&encodingMutex);
+	    if (encodingCache[1]) {
+		FreeEncoding(encodingCache[1], 0);
+	    }
+	    TclpAtomicIncrFetch(&encodingPtr->refCount);
+	    encodingCache[1] = encodingCache[0];
+	    encodingCache[0] = encodingPtr;
+	    Tcl_MutexUnlock(&encodingMutex);
+	    return;
 	}
 	if (encodingPtr->freeProc != NULL) {
 	    (*encodingPtr->freeProc)(encodingPtr->clientData);
@@ -1120,6 +1167,7 @@ Tcl_CreateEncoding(
 	encodingPtr->lengthProc = (LengthProc *) unilen;
     }
     encodingPtr->refCount	= 1;
+    encodingPtr->epoch		= encodingsEpoch;
     encodingPtr->hPtr		= hPtr;
     Tcl_SetHashValue(hPtr, encodingPtr);
 
@@ -2057,7 +2105,7 @@ LoadEscapeEncoding(
 		e = (Encoding *) Tcl_GetEncoding(NULL, est.name);
 		if (e && e->toUtfProc != TableToUtfProc &&
 			e->toUtfProc != Iso88591ToUtfProc) {
-		   Tcl_FreeEncoding((Tcl_Encoding) e);
+		   FreeEncoding(e, 2 /* don't cache */);
 		   e = NULL;
 		}
 		est.encodingPtr = e;
@@ -3471,7 +3519,9 @@ EscapeFreeProc(
 	{
 	    subTablePtr = dataPtr->subTables;
 	    for (i = 0; i < dataPtr->numSubTables; i++) {
-		FreeEncoding(subTablePtr->encodingPtr, 1);
+		if (subTablePtr->encodingPtr) {
+		    FreeEncoding(subTablePtr->encodingPtr, 2 /* don't cache */);
+		}
 		subTablePtr++;
 	    }
 	}
