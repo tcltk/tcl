@@ -188,10 +188,11 @@ static Tcl_Encoding systemEncoding = NULL;
 Tcl_Encoding tclIdentityEncoding = NULL;
 
 /*
- * Small encoding cache (GC) hold 2 last freed encodings, to avoid too often
+ * Small encoding cache (GC) hold N last freed encodings, to avoid too often
  * load of encodings by reuse.
  */
-static Encoding *encodingCache[2] = {NULL, NULL};
+#define ENC_CACHE_SIZE 4
+static Encoding *encodingCache[ENC_CACHE_SIZE] = {NULL, NULL, NULL, NULL};
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -303,16 +304,19 @@ GetSystemEncodingRef()
 }
 
 static inline
+void
 FreeEncodingCache()
 {
-    if (encodingCache[1]) {
-	FreeEncoding(encodingCache[1], 0);
-	encodingCache[1] = NULL;
+    int i;
+
+    Tcl_MutexLock(&encodingMutex);
+    for (i = ENC_CACHE_SIZE-1; i >= 0; i--) {
+	if (encodingCache[i]) {
+	    FreeEncoding(encodingCache[i], 0);
+	    encodingCache[i] = NULL;
+	}
     }
-    if (encodingCache[0]) {
-	FreeEncoding(encodingCache[0], 0);
-	encodingCache[0] = NULL;
-    }
+    Tcl_MutexUnlock(&encodingMutex);
 }
 
 /*
@@ -725,13 +729,14 @@ TclFinalizeEncodingSubsystem(void)
     /* increase epoch to signal all encodings are obsolete */
     encodingsEpoch++;
 
+    FreeEncodingCache();
+
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
     FreeEncoding((Encoding *)systemEncoding, 0);
     systemEncoding = NULL;
     FreeEncoding((Encoding *)defaultEncoding, 0);
     defaultEncoding = NULL;
-    FreeEncodingCache();
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
@@ -923,13 +928,17 @@ FreeEncoding(
 	if ( lock == 1 && encodingsInitialized
 	  && encodingPtr->epoch >= encodingsEpoch
 	) {
-	    /* hold 2 last freed encodings (make it reusable) */
+	    int i;
+
+	    /* hold N last freed encodings (make it reusable) */
 	    Tcl_MutexLock(&encodingMutex);
-	    if (encodingCache[1]) {
-		FreeEncoding(encodingCache[1], 0);
+	    if (encodingCache[ENC_CACHE_SIZE-1]) {
+		FreeEncoding(encodingCache[ENC_CACHE_SIZE-1], 0);
 	    }
 	    TclpAtomicIncrFetch(&encodingPtr->refCount);
-	    encodingCache[1] = encodingCache[0];
+	    for (i = ENC_CACHE_SIZE-1; i > 0; i--) {
+		encodingCache[i] = encodingCache[i-1];
+	    }
 	    encodingCache[0] = encodingPtr;
 	    Tcl_MutexUnlock(&encodingMutex);
 	    return;

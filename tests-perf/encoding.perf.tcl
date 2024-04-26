@@ -27,7 +27,7 @@ namespace path {::tclTestPerf}
 
 proc test-encoding-object {{reptime 1000}} {
   _test_run $reptime {
-    # cached encoding (utf-8 must be already there):
+    # static object and cached encoding (utf-8 must be already there):
     {encoding convertfrom utf-8 xxx}
     {encoding convertto utf-8 xxx}
     # system encoding:
@@ -39,6 +39,16 @@ proc test-encoding-object {{reptime 1000}} {
     # object shimmering :
     {encoding convertfrom jis0208 xxx; llength jis0208}
     {encoding convertto jis0208 xxx; llength jis0208}
+  }
+}
+proc test-multi-encoding {{reptime 1000}} {
+  _test_run $reptime {
+    # dynamic object 2x convert:
+    {encoding convertfrom [string trimright "jis0208 "] [encoding convertto [string trimright "shiftjis "] xxx]}
+    # dynamic object 3x convert:
+    {encoding convertto [string trimright "jis0212 "] [encoding convertfrom [string trimright "jis0208 "] [encoding convertto [string trimright "shiftjis "] xxx]]}
+    # dynamic object 4x convert (with nested encodings load):
+    {encoding convertfrom [string trimright "iso2022-kr "] [encoding convertto [string trimright "ebcdic "] [encoding convertfrom [string trimright "dingbats "] [encoding convertto [string trimright "iso2022-jp "] xxx]]]}
   }
 }
 
@@ -54,6 +64,7 @@ proc test-channel-encoding {{reptime 1000}} {
 
 proc test {{reptime 1000}} {
   test-encoding-object $reptime
+  test-multi-encoding $reptime
   test-channel-encoding $reptime
   puts \n**OK**
 }
