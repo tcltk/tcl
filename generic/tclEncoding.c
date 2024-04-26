@@ -46,7 +46,7 @@ typedef struct Encoding {
 				 * nullSize is 2, this is a function that
 				 * returns the number of bytes in a 0x0000
 				 * terminated string. */
-    int refCount;		/* Number of uses of this structure. */
+    TclAtomicInt refCount;	/* Number of uses of this structure. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
 } Encoding;
 
@@ -164,7 +164,7 @@ static ProcessGlobalValue libraryPath = {
     0, 0, NULL, NULL, TclpInitLibraryPath, NULL, NULL
 };
 
-static int encodingsInitialized = 0;
+static TclAtomicInt encodingsInitialized = 0;
 
 /*
  * Hash table that keeps track of all loaded Encodings. Keys are the string
@@ -172,7 +172,9 @@ static int encodingsInitialized = 0;
  */
 
 static Tcl_HashTable encodingTable;
-TCL_DECLARE_MUTEX(encodingMutex)
+TCL_DECLARE_MUTEX(encodingMutex);
+
+static volatile unsigned long encodingsEpoch = 0;
 
 /*
  * The following are used to hold the default and current system encodings.
@@ -180,9 +182,9 @@ TCL_DECLARE_MUTEX(encodingMutex)
  * the system encoding will be used to perform the conversion.
  */
 
-static Tcl_Encoding defaultEncoding;
-static Tcl_Encoding systemEncoding;
-Tcl_Encoding tclIdentityEncoding;
+#define defaultEncoding tclIdentityEncoding
+static volatile Tcl_Encoding systemEncoding = NULL;
+Tcl_Encoding tclIdentityEncoding = NULL;
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -213,7 +215,7 @@ static int		EscapeToUtfProc(ClientData clientData,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
 static void		FillEncodingFileMap(void);
-static void		FreeEncoding(Tcl_Encoding encoding);
+static void		FreeEncoding(Encoding *encodingPtr, int lock);
 static void		FreeEncodingIntRep(Tcl_Obj *objPtr);
 static Encoding *	GetTableEncoding(EscapeEncodingData *dataPtr,
 			    int state);
@@ -270,8 +272,32 @@ static int		Iso88591ToUtfProc(ClientData clientData,
 			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
 
+static inline
+Encoding *
+GetSystemEncodingRef()
+{
+    Encoding *encodingPtr;
+    /* 
+     * refCount of systemEncoding gets decremented after it gets switched,
+     * see Tcl_SetSystemEncoding,  so it is hardly possible to obtain an encoding
+     * with refCount of 0 (which will be freed), so simply increase it here and 
+     * check (the improbable case) is was 1.
+     */
+    do {
+	encodingPtr = (Encoding *)systemEncoding;
+	if (TclpAtomicIncrFetch(&encodingPtr->refCount) > 1) {
+	    return encodingPtr;
+	}
+	/* refCount was 0 (now 1) - it going to free, so we incremented later
+	 * than systemEncoding got switched, retry (systemEncoding already points
+	 * to other value).
+	 */
+    } while (1);
+}
+
+
 /*
- * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
+ * A Tcl_ObjType for holding a cached Tcl_Encoding in the ptrAndLongRep.ptr field
  * of the intrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
@@ -306,17 +332,26 @@ Tcl_GetEncodingFromObj(
     Tcl_Encoding *encodingPtr)
 {
     const char *name = Tcl_GetString(objPtr);
-    if (objPtr->typePtr != &encodingType) {
+
+    /* ensure encodings epoch is unchanged (see tests encoding-6.1, encoding-6.2) */
+    if (objPtr->typePtr != &encodingType
+	|| objPtr->internalRep.ptrAndLongRep.value != encodingsEpoch
+    ) {
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
 
 	if (encoding == NULL) {
 	    return TCL_ERROR;
 	}
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) encoding;
+	objPtr->internalRep.ptrAndLongRep.ptr = (VOID *) encoding;
+	objPtr->internalRep.ptrAndLongRep.value = encodingsEpoch;
 	objPtr->typePtr = &encodingType;
     }
-    *encodingPtr = Tcl_GetEncoding(NULL, name);
+    *encodingPtr = objPtr->internalRep.ptrAndLongRep.ptr;
+    /* despite the object hold the reference, related to docu, after every call 
+     * "the caller should call Tcl_FreeEncoding on the resulting encoding token",
+     * so we'd increase its reference count here also: */
+    TclpAtomicIncrFetch(&((Encoding *)(*encodingPtr))->refCount);
     return TCL_OK;
 }
 
@@ -334,7 +369,7 @@ static void
 FreeEncodingIntRep(
     Tcl_Obj *objPtr)
 {
-    Tcl_FreeEncoding((Tcl_Encoding) objPtr->internalRep.twoPtrValue.ptr1);
+    FreeEncoding((Encoding *)objPtr->internalRep.ptrAndLongRep.ptr, 1);
     objPtr->typePtr = NULL;
 }
 
@@ -353,8 +388,12 @@ DupEncodingIntRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    dupPtr->internalRep.twoPtrValue.ptr1 = (VOID *)
-	    Tcl_GetEncoding(NULL, srcPtr->bytes);
+    Encoding *encodingPtr = srcPtr->internalRep.ptrAndLongRep.ptr;
+
+    TclpAtomicIncrFetch(&encodingPtr->refCount);
+    dupPtr->internalRep.ptrAndLongRep.ptr = encodingPtr;
+    dupPtr->internalRep.ptrAndLongRep.value = srcPtr->internalRep.ptrAndLongRep.value;
+    
 }
 
 /*
@@ -545,7 +584,7 @@ TclInitEncodingSubsystem(void)
 {
     Tcl_EncodingType type;
 
-    if (encodingsInitialized) {
+    if (TclpAtomicIncrFetch(&encodingsInitialized) != 1) {
 	return;
     }
 
@@ -567,8 +606,8 @@ TclInitEncodingSubsystem(void)
     type.clientData	= NULL;
 
     defaultEncoding	= Tcl_CreateEncoding(&type);
-    tclIdentityEncoding = Tcl_GetEncoding(NULL, type.encodingName);
-    systemEncoding	= Tcl_GetEncoding(NULL, type.encodingName);
+    TclpAtomicIncrFetch(&((Encoding *)defaultEncoding)->refCount);
+    systemEncoding	= defaultEncoding;
 
     type.encodingName	= "utf-8";
     type.toUtfProc	= UtfExtToUtfIntProc;
@@ -629,8 +668,6 @@ TclInitEncodingSubsystem(void)
 	type.clientData		= dataPtr;
 	Tcl_CreateEncoding(&type);
     }
-
-    encodingsInitialized = 1;
 }
 
 /*
@@ -655,10 +692,16 @@ TclFinalizeEncodingSubsystem(void)
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
+    if (!encodingsInitialized) {
+	return;
+    }
+
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
-    FreeEncoding(systemEncoding);
-    FreeEncoding(tclIdentityEncoding);
+    FreeEncoding((Encoding *)systemEncoding, 0);
+    systemEncoding = NULL;
+    FreeEncoding((Encoding *)defaultEncoding, 0);
+    defaultEncoding = NULL;
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
@@ -669,7 +712,7 @@ TclFinalizeEncodingSubsystem(void)
 	 * cleaned up.
 	 */
 
-	FreeEncoding((Tcl_Encoding) Tcl_GetHashValue(hPtr));
+	FreeEncoding((Encoding *)Tcl_GetHashValue(hPtr), 0);
 	hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     }
 
@@ -772,18 +815,15 @@ Tcl_GetEncoding(
     Tcl_HashEntry *hPtr;
     Encoding *encodingPtr;
 
-    Tcl_MutexLock(&encodingMutex);
     if (name == NULL) {
-	encodingPtr = (Encoding *) systemEncoding;
-	encodingPtr->refCount++;
-	Tcl_MutexUnlock(&encodingMutex);
-	return systemEncoding;
+	return (Tcl_Encoding)GetSystemEncodingRef();
     }
 
+    Tcl_MutexLock(&encodingMutex);
     hPtr = Tcl_FindHashEntry(&encodingTable, name);
     if (hPtr != NULL) {
 	encodingPtr = (Encoding *) Tcl_GetHashValue(hPtr);
-	encodingPtr->refCount++;
+	TclpAtomicIncrFetch(&encodingPtr->refCount);
 	Tcl_MutexUnlock(&encodingMutex);
 	return (Tcl_Encoding) encodingPtr;
     }
@@ -814,9 +854,7 @@ void
 Tcl_FreeEncoding(
     Tcl_Encoding encoding)
 {
-    Tcl_MutexLock(&encodingMutex);
-    FreeEncoding(encoding);
-    Tcl_MutexUnlock(&encodingMutex);
+    FreeEncoding((Encoding *)encoding, 1);
 }
 
 /*
@@ -839,24 +877,27 @@ Tcl_FreeEncoding(
 
 static void
 FreeEncoding(
-    Tcl_Encoding encoding)
+    Encoding *encodingPtr,
+    int lock)
 {
-    Encoding *encodingPtr;
-
-    encodingPtr = (Encoding *) encoding;
     if (encodingPtr == NULL) {
 	return;
     }
-    if (encodingPtr->refCount<=0) {
-	Tcl_Panic("FreeEncoding: refcount problem !!!");
-    }
-    encodingPtr->refCount--;
-    if (encodingPtr->refCount == 0) {
+    if (TclpAtomicDecrFetch(&encodingPtr->refCount) <= 0) {
+	if (encodingPtr->refCount < 0) {
+	    Tcl_Panic("FreeEncoding: refcount problem !!!");
+	}
 	if (encodingPtr->freeProc != NULL) {
 	    (*encodingPtr->freeProc)(encodingPtr->clientData);
 	}
+	if (lock) {
+	    Tcl_MutexLock(&encodingMutex);
+	}
 	if (encodingPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(encodingPtr->hPtr);
+	}
+	if (lock) {
+	    Tcl_MutexUnlock(&encodingMutex);
 	}
 	ckfree((char *) encodingPtr->name);
 	ckfree((char *) encodingPtr);
@@ -885,6 +926,7 @@ Tcl_GetEncodingName(
     Tcl_Encoding encoding)	/* The encoding whose name to fetch. */
 {
     if (encoding == NULL) {
+	/* TODO: this may be dangerous - see tcl ticket [f2ff05fc8411be80] */
 	encoding = systemEncoding;
     }
 
@@ -994,11 +1036,9 @@ Tcl_SetSystemEncoding(
     Encoding *encodingPtr;
 
     if (!name || !*name) {
-	Tcl_MutexLock(&encodingMutex);
 	encoding = defaultEncoding;
 	encodingPtr = (Encoding *) encoding;
-	encodingPtr->refCount++;
-	Tcl_MutexUnlock(&encodingMutex);
+	TclpAtomicIncrFetch(&encodingPtr->refCount);
     } else {
 	encoding = Tcl_GetEncoding(interp, name);
 	if (encoding == NULL) {
@@ -1006,10 +1046,9 @@ Tcl_SetSystemEncoding(
 	}
     }
 
-    Tcl_MutexLock(&encodingMutex);
-    FreeEncoding(systemEncoding);
+    encodingPtr = (Encoding *)systemEncoding;
     systemEncoding = encoding;
-    Tcl_MutexUnlock(&encodingMutex);
+    FreeEncoding(encodingPtr, 1);
     Tcl_FSMountsChanged(NULL);
 
     return TCL_OK;
@@ -1061,6 +1100,9 @@ Tcl_CreateEncoding(
 
 	encodingPtr = (Encoding *) Tcl_GetHashValue(hPtr);
 	encodingPtr->hPtr = NULL;
+
+	/* increase epoch (to validate encoding stored in object repr.) */
+	encodingsEpoch++;
     }
 
     name = ckalloc((unsigned) strlen(typePtr->encodingName) + 1);
@@ -1119,7 +1161,7 @@ Tcl_ExternalToUtfDString(
 {
     char *dst;
     Tcl_EncodingState state;
-    Encoding *encodingPtr;
+    Encoding *encodingPtr = (Encoding *) encoding;
     int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
 
     Tcl_DStringInit(dstPtr);
@@ -1127,9 +1169,9 @@ Tcl_ExternalToUtfDString(
     dstLen = dstPtr->spaceAvl - 1;
 
     if (encoding == NULL) {
-	encoding = systemEncoding;
+	/* avoid [f2ff05fc8411be80], to be thread safe increase count here */
+	encodingPtr = GetSystemEncodingRef();
     }
-    encodingPtr = (Encoding *) encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1147,7 +1189,7 @@ Tcl_ExternalToUtfDString(
 
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return Tcl_DStringValue(dstPtr);
+	    break;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -1160,6 +1202,13 @@ Tcl_ExternalToUtfDString(
 	dst = Tcl_DStringValue(dstPtr) + soFar;
 	dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
     }
+
+    if (encoding == NULL) {
+	/* decrease count of used system encoding */
+	FreeEncoding(encodingPtr, 1);
+    }
+
+    return Tcl_DStringValue(dstPtr);
 }
 
 /*
@@ -1210,14 +1259,14 @@ Tcl_ExternalToUtf(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    Encoding *encodingPtr;
+    Encoding *encodingPtr = (Encoding *) encoding;
     int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
 
     if (encoding == NULL) {
-	encoding = systemEncoding;
+	/* avoid [f2ff05fc8411be80], to be thread safe increase count here */
+	encodingPtr = GetSystemEncodingRef();
     }
-    encodingPtr = (Encoding *) encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1250,6 +1299,10 @@ Tcl_ExternalToUtf(
 	    dstCharsPtr);
     dst[*dstWrotePtr] = '\0';
 
+    if (encoding == NULL) {
+	/* decrease count of used system encoding */
+	FreeEncoding(encodingPtr, 1);
+    }
     return result;
 }
 
@@ -1286,7 +1339,7 @@ Tcl_UtfToExternalDString(
 {
     char *dst;
     Tcl_EncodingState state;
-    Encoding *encodingPtr;
+    Encoding *encodingPtr = (Encoding *) encoding;
     int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
 
     Tcl_DStringInit(dstPtr);
@@ -1294,9 +1347,9 @@ Tcl_UtfToExternalDString(
     dstLen = dstPtr->spaceAvl - 1;
 
     if (encoding == NULL) {
-	encoding = systemEncoding;
+	/* avoid [f2ff05fc8411be80], to be thread safe increase count here */
+	encodingPtr = GetSystemEncodingRef();
     }
-    encodingPtr = (Encoding *) encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1315,7 +1368,7 @@ Tcl_UtfToExternalDString(
 		Tcl_DStringSetLength(dstPtr, soFar + 1);
 	    }
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return Tcl_DStringValue(dstPtr);
+	    break;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -1328,6 +1381,12 @@ Tcl_UtfToExternalDString(
 	dst = Tcl_DStringValue(dstPtr) + soFar;
 	dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
     }
+
+    if (encoding == NULL) {
+	/* decrease count of used system encoding */
+	FreeEncoding(encodingPtr, 1);
+    }
+    return Tcl_DStringValue(dstPtr);
 }
 
 /*
@@ -1378,14 +1437,14 @@ Tcl_UtfToExternal(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    Encoding *encodingPtr;
+    Encoding *encodingPtr = (Encoding *) encoding;
     int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
 
     if (encoding == NULL) {
-	encoding = systemEncoding;
+	/* avoid [f2ff05fc8411be80], to be thread safe increase count here */
+	encodingPtr = GetSystemEncodingRef();
     }
-    encodingPtr = (Encoding *) encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1415,6 +1474,10 @@ Tcl_UtfToExternal(
     }
     dst[*dstWrotePtr] = '\0';
 
+    if (encoding == NULL) {
+	/* decrease count of used system encoding */
+	FreeEncoding(encodingPtr, 1);
+    }
     return result;
 }
 
@@ -3408,7 +3471,7 @@ EscapeFreeProc(
 	{
 	    subTablePtr = dataPtr->subTables;
 	    for (i = 0; i < dataPtr->numSubTables; i++) {
-		FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
+		FreeEncoding(subTablePtr->encodingPtr, 1);
 		subTablePtr++;
 	    }
 	}
@@ -3548,7 +3611,7 @@ InitializeEncodingSearchPath(
     Tcl_DecrRefCount(encodingObj);
     *encodingPtr = libraryPath.encoding;
     if (*encodingPtr) {
-	((Encoding *)(*encodingPtr))->refCount++;
+	TclpAtomicIncrFetch(&((Encoding *)(*encodingPtr))->refCount);
     }
     bytes = Tcl_GetStringFromObj(searchPath, &numBytes);
 
