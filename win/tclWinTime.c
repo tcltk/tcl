@@ -103,11 +103,11 @@ static TimeInfo timeInfo = {
     (LARGE_INTEGER) (Tcl_WideInt) 0,
     (LARGE_INTEGER) (Tcl_WideInt) 0,
 #else
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
 #endif
     { 0 },
     { 0 },
