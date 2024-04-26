@@ -730,8 +730,21 @@ buildInfoObjCmd(
 	}
 	const char *p = strchr((char *)clientData, '.');
 	while (p) {
-	    if (!strncmp(p+1, arg, len) && ((p[len+1] == '.') || (p[len+1] == '\0'))) {
-		Tcl_AppendResult(interp, "1", (char *)NULL);
+	    if (!strncmp(p+1, arg, len) && ((p[len+1] == '.')
+		    || (p[len+1] == '-') || (p[len+1] == '\0'))) {
+		if (p[len+1] == '-') {
+		    char buf[16];
+		    p += len + 2;
+		    const char *q = strchr(p, '.');
+		    if (!q) {
+		 	q = p + strlen(p);
+		    }
+		    memcpy(buf, p, q - p);
+		    buf[q - p] = '\0';
+		    Tcl_AppendResult(interp, buf, (char *)NULL);
+		} else {
+		    Tcl_AppendResult(interp, "1", (char *)NULL);
+		}
 		return TCL_OK;
 	    }
 	    p = strchr(p+1, '.');
