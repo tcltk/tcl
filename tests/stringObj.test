@@ -164,7 +164,7 @@ test stringObj-6.8 {Tcl_AppendStringsToObj procedure, object totally empty} {tes
     teststringobj appendstrings 1 {}
     list [teststringobj length2 1] [teststringobj get 1]
 } {0 {}}
-test stringObj-6.9 {Tcl_AppendStringToObj, pure unicode} testobj {
+test stringObj-6.9 {Tcl_AppendStringsToObj, pure unicode} testobj {
     testobj freeallvars
     teststringobj set2 1 [string replace abc 1 1 d]
     teststringobj appendstrings 1 foo bar soom
