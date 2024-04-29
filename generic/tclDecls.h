@@ -4177,7 +4177,7 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_SetPanicProc(arg) ((void)((Tcl_SetPanicProc)(arg)))
 #   endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #elif !defined(TCL_NO_DEPRECATED)
 #   define Tcl_FindExecutable(arg) ((void)((Tcl_FindExecutable)(arg)))
