@@ -1012,8 +1012,7 @@ Tcl_Exit(
 	}
     }
 
-    TclpExit(status);
-    Tcl_Panic("OS exit failed!");
+    exit(status);
 }
 
 /*
