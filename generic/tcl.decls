@@ -2568,11 +2568,11 @@ declare 3 win {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
+    TCL_NORETURN void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
-    void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
-    Tcl_Interp *interp)
+    TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
+	Tcl_Interp *interp)
 }
 export {
     void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
