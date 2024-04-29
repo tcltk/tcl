@@ -382,9 +382,6 @@ TclWinConvertError(
  */
 
 MODULE_SCOPE TCL_NORETURN void
-tclWinDebugPanic(const char *format, ...);
-
-TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
