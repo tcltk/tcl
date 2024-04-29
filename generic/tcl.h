@@ -117,7 +117,7 @@ extern "C" {
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER)
-#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NORETURN __declspec(noreturn)
 #	define TCL_NOINLINE __declspec(noinline)
 #   else
 #	define TCL_NORETURN /* nothing */
@@ -2312,9 +2312,9 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
 #else
-#   define Tcl_ConsolePanic NULL
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
 
 #ifdef USE_TCL_STUBS
@@ -2371,7 +2371,7 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_FindExecutable(const char *argv0);
 EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 EXTERN const char *	Tcl_SetPanicProc(
-			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+			    Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
@@ -2379,7 +2379,7 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif
-EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
