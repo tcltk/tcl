@@ -2409,18 +2409,18 @@ declare 3 {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
-    Tcl_Interp *interp)
+    TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
+	Tcl_Interp *interp)
 }
 export {
     void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
 }
 export {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 export {
     const char *Tcl_FindExecutable(const char *argv0)
