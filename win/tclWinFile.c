@@ -177,7 +177,6 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
-MODULE_SCOPE TCL_NORETURN void	tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -812,7 +811,7 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+MODULE_SCOPE TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
