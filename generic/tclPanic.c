@@ -76,7 +76,7 @@ Tcl_SetPanicProc(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_PanicVA(
     const char *format,		/* Format string, suitable for passing to
 				 * fprintf. */
@@ -106,23 +106,23 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
+    }
 #if defined(_WIN32) || defined(__CYGWIN__)
-#   if defined(__GNUC__)
-	__builtin_trap();
-#   elif defined(_WIN64)
-	__debugbreak();
-#   elif defined(_MSC_VER) && defined (_M_IX86)
-	_asm {int 3}
-#   else
-	DebugBreak();
-#   endif
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER) && defined (_M_IX86)
+    _asm {int 3}
+#else
+    DebugBreak();
+#endif
 #endif
 #if defined(_WIN32)
-	ExitProcess(1);
+    ExitProcess(1);
 #else
-	abort();
+    abort();
 #endif
-    }
 }
 
 /*
@@ -149,7 +149,7 @@ Tcl_PanicVA(
  */
 
 /* coverity[+kill] */
-void
+TCL_NORETURN void
 Tcl_Panic(
     const char *format,
     ...)
@@ -158,7 +158,6 @@ Tcl_Panic(
 
     va_start(argList, format);
     Tcl_PanicVA(format, argList);
-    va_end (argList);
 }
 
 /*
