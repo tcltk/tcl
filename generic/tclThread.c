@@ -462,7 +462,11 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
+#if TCL_THREADS
     TclpThreadExit(status);
+#else
+    exit(status);
+#endif
 }
 
 #if !TCL_THREADS

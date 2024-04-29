@@ -537,7 +537,9 @@ typedef DWORD_PTR * PDWORD_PTR;
  * functions.
  */
 
-#define TclpExit		exit
+#ifndef TCL_NO_DEPRECATED
+#   define TclpExit		exit
+#endif
 
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF

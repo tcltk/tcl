@@ -381,7 +381,7 @@ Tcl_WinConvertError(
  *----------------------------------------------------------------------
  */
 
-void
+MODULE_SCOPE TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -413,6 +413,12 @@ tclWinDebugPanic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
+#   if defined(__GNUC__)
+    __builtin_trap();
+#   else
+    DebugBreak();
+#   endif
+    abort();
 }
 #endif
 /*
