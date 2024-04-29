@@ -24,9 +24,9 @@
  */
 
 #if defined(__CYGWIN__)
-static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
+static Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
-static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
+static Tcl_PanicProc *panicProc = NULL;
 #endif
 
 /*
