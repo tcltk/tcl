@@ -2795,6 +2795,7 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
+	    /* TODO: support for bignum arguments */
 	    case 'l':
 		++size;
 		p++;
