@@ -2170,13 +2170,10 @@ Tcl_AppendFormatToObj(
 	    int toAppend;
 
 	    if (useBig) {
-		int cmpResult;
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		cmpResult = mp_cmp_d(&big, 0);
-		isNegative = (cmpResult == MP_LT);
-		if (cmpResult == MP_EQ) gotHash = 0;
+		isNegative = mp_isneg(&big);
 		if (ch == 'u') {
 		    if (isNegative) {
 			mp_clear(&big);
