@@ -3336,6 +3336,7 @@ MODULE_SCOPE void	TclInitSockets(void);
 #else
 #define TclInitSockets() /* do nothing */
 #endif
+struct addrinfo; /* forward declaration, needed for TclCreateSocketAddress */
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, int port, int willBind,
