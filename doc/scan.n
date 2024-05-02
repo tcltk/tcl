@@ -117,9 +117,6 @@ The input substring must be a decimal integer.
 The integer value is truncated as required by the size modifier
 value, and the corresponding unsigned value for that truncated
 range is computed and stored in the variable as a decimal string.
-The conversion makes no sense without reference to a truncation range,
-so the size modifier \fBll\fR is not permitted in combination
-with conversion character \fBu\fR.
 .TP
 \fBi\fR
 .
