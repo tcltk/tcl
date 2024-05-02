@@ -2087,6 +2087,20 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+	} else if (ch == 'I') {
+	    if ((format[1] == '6') && (format[2] == '4')) {
+		format += (step + 2);
+		step = TclUtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+		useWide = 1;
+#endif
+	    } else if ((format[1] == '3') && (format[2] == '2')) {
+		format += (step + 2);
+		step = TclUtfToUniChar(format, &ch);
+	    } else {
+		format += step;
+		step = TclUtfToUniChar(format, &ch);
+	    }
 	}
 
 	format += step;
@@ -2142,12 +2156,6 @@ Tcl_AppendFormatToObj(
 	}
 
 	case 'u':
-	    if (useBig) {
-		msg = "unsigned bignum format is invalid";
-		errCode = "BADUNSIGNED";
-		goto errorMsg;
-	    }
-	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'x':
@@ -2158,13 +2166,27 @@ Tcl_AppendFormatToObj(
 	    long l;
 	    Tcl_WideInt w;
 	    mp_int big;
-	    int toAppend, isNegative = 0;
+	    int isNegative = 0;
+	    int toAppend;
 
 	    if (useBig) {
+		int cmpResult;
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		cmpResult = mp_cmp_d(&big, 0);
+		isNegative = (cmpResult == MP_LT);
+		if (cmpResult == MP_EQ) gotHash = 0;
+		if (ch == 'u') {
+		    if (isNegative) {
+			mp_clear(&big);
+			msg = "unsigned bignum format is invalid";
+			errCode = "BADUNSIGNED";
+			goto errorMsg;
+		    } else {
+			ch = 'd';
+		    }
+		}
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
@@ -2640,10 +2662,23 @@ NewLongObj(
 	mp_init_u64(&bignumValue, (unsigned long)value);
 	return Tcl_NewBignumObj(&bignumValue);
 #else
-	return Tcl_NewWideIntObj((unsigned long)value | ~(unsigned long)LONG_MAX);
+	return Tcl_NewWideIntObj((unsigned long)value);
 #endif
     }
     return Tcl_NewLongObj(value);
+}
+
+static Tcl_Obj *
+NewWideIntObj(
+    char c,
+    Tcl_WideInt value)
+{
+    if ((value < 0) && strchr("puoxX", c)) {
+	mp_int bignumValue;
+	mp_init_u64(&bignumValue, (Tcl_WideUInt)value);
+	return Tcl_NewBignumObj(&bignumValue);
+    }
+    return Tcl_NewWideIntObj(value);
 }
 
 static void
@@ -2731,6 +2766,10 @@ AppendPrintfToObjVA(
 		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
 			    va_arg(argList, long)));
 		    break;
+		case 2:
+		    Tcl_ListObjAppendElement(NULL, list, NewWideIntObj(*p,
+			    va_arg(argList, Tcl_WideInt)));
+		    break;
 		}
 		break;
 	    case 'e':
@@ -2759,9 +2798,19 @@ AppendPrintfToObjVA(
 		gotPrecision = 1;
 		p++;
 		break;
-	    /* TODO: support for wide (and bignum?) arguments */
 	    case 'l':
-		size = 1;
+		++size;
+		p++;
+		break;
+	    case 'I':
+		if (p[1]=='6' && p[2]=='4') {
+		    p += 2;
+		    size = 2;
+		} else if (p[1]=='3' && p[2]=='2') {
+		    p += 2;
+		} else if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
 		p++;
 		break;
 	    case 'h':
