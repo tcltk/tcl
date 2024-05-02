@@ -3,7 +3,7 @@
  *
  *	This file contains the implementation of the "scan" command.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -340,7 +340,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (char *)NULL);
 	    goto error;
 	}
 
@@ -389,7 +389,7 @@ ValidateFormat(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
 		goto error;
 	    }
 	    /* FALLTHRU */
@@ -403,7 +403,7 @@ ValidateFormat(
 		Tcl_AppendToObj(errorMsg, buf, -1);
 		Tcl_AppendToObj(errorMsg, " conversion", -1);
 		Tcl_SetObjResult(interp, errorMsg);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
 		goto error;
 	    }
 	    /*
@@ -462,7 +462,7 @@ ValidateFormat(
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched [ in format string", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (char *)NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -471,7 +471,7 @@ ValidateFormat(
 	    Tcl_AppendToObj(errorMsg, buf, -1);
 	    Tcl_AppendToObj(errorMsg, "\"", -1);
 	    Tcl_SetObjResult(interp, errorMsg);
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -518,7 +518,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (char *)NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
 	    /*
@@ -529,7 +529,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (char *)NULL);
 	    goto error;
 	}
     }
@@ -541,12 +541,12 @@ ValidateFormat(
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"%n$\" argument index out of range", -1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (char *)NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
 		-1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (char *)NULL);
     }
 
   error:
@@ -967,7 +967,7 @@ Tcl_ScanObjCmd(
 	     * Scan a floating point number
 	     */
 
-	    objPtr = Tcl_NewDoubleObj(0.0);
+	    TclNewDoubleObj(objPtr, 0.0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1047,12 +1047,14 @@ Tcl_ScanObjCmd(
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
 		Tcl_DecrRefCount(objs[i]);
 	    } else {
+		Tcl_Obj *obj;
 		/*
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewObj());
+		TclNewObj(obj);
+		Tcl_ListObjAppendElement(NULL, objPtr, obj);
 	    }
 	}
     }
