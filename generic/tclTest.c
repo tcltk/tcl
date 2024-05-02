@@ -21,9 +21,8 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
-#include "tclInt.h"
-#undef TCLBOOLWARNING
 #define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
+#include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>
 
