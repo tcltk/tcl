@@ -4035,7 +4035,7 @@ extern const TclStubs *tclStubsPtr;
 #if !defined(TCLBOOLWARNING)
 #if !defined(__cplusplus) && !defined(BUILD_tcl) && !defined(BUILD_tk) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #	define TCLBOOLWARNING(boolPtr) (void)(sizeof(struct {_Static_assert(sizeof(*(boolPtr)) <= sizeof(int), "sizeof(boolPtr) too large");int dummy;})),
-#elif defined(__GNUC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
 	/* If this gives: "error: size of array ‘_bool_Var’ is negative", it means that sizeof(*boolPtr)>sizeof(int), which is not allowed */
 #   define TCLBOOLWARNING(boolPtr) ({__attribute__((unused)) char _bool_Var[sizeof(*(boolPtr)) > sizeof(int) ? -1 : 1];}),
 #else
