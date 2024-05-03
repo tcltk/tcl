@@ -81,11 +81,11 @@ static TimeInfo timeInfo = {
     (LARGE_INTEGER) (long long) 0,
     (LARGE_INTEGER) (long long) 0,
 #else
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
 #endif
     { 0 },
     { 0 },

@@ -1863,8 +1863,11 @@ EXTERN int		Tcl_UtfNcmp(const char *s1, const char *s2, size_t n);
 /* 687 */
 EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
 				size_t n);
-/* Slot 688 is reserved */
-/* Slot 689 is reserved */
+/* 688 */
+EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
+/* 689 */
+EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
+				Tcl_WideUInt uwideValue);
 /* 690 */
 EXTERN void		TclUnusedStubEntry(void);
 
@@ -2566,8 +2569,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
-    void (*reserved688)(void);
-    void (*reserved689)(void);
+    Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
+    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
     void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
@@ -3892,8 +3895,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNcmp) /* 686 */
 #define Tcl_UtfNcasecmp \
 	(tclStubsPtr->tcl_UtfNcasecmp) /* 687 */
-/* Slot 688 is reserved */
-/* Slot 689 is reserved */
+#define Tcl_NewWideUIntObj \
+	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
+#define Tcl_SetWideUIntObj \
+	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
 #define TclUnusedStubEntry \
 	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
@@ -4006,28 +4011,38 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetIndexFromObjStruct
-#ifdef __GNUC__
+#undef Tcl_GetBooleanFromObj
+#undef Tcl_GetBoolean
+#if !defined(TCLBOOLWARNING)
+#if !defined(__cplusplus) && !defined(BUILD_tcl) && !defined(BUILD_tk) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#	define TCLBOOLWARNING(boolPtr) (void)(sizeof(struct {_Static_assert(sizeof(*(boolPtr)) <= sizeof(int), "sizeof(boolPtr) too large");int dummy;})),
+#elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
 	/* If this gives: "error: size of array ‘_bool_Var’ is negative", it means that sizeof(*boolPtr)>sizeof(int), which is not allowed */
-#   define TCLBOOLWARNING(boolPtr) ({__attribute__((unused)) char _bool_Var[sizeof(*(boolPtr)) > sizeof(int) ? -1 : 1];}),
+#   define TCLBOOLWARNING(boolPtr) ({__attribute__((unused)) char _bool_Var[sizeof(*(boolPtr)) <= sizeof(int) ? 1 : -1];}),
 #else
 #   define TCLBOOLWARNING(boolPtr)
 #endif
+#endif /* !TCLBOOLWARNING */
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(TCLBOOLWARNING(boolPtr)Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#define Tcl_GetBoolean(interp, src, boolPtr) \
-	(TCLBOOLWARNING(boolPtr)Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) ((sizeof(*(boolPtr)) <= sizeof(int)) \
+	? Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) \
+	: (TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
+#define Tcl_GetBoolean(interp, src, boolPtr) ((sizeof(*(boolPtr)) <= sizeof(int)) \
+	? Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) \
+	: (TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
 #else
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(TCLBOOLWARNING(boolPtr)Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#define Tcl_GetBoolean(interp, src, boolPtr) \
-	(TCLBOOLWARNING(boolPtr)Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) ((sizeof(*(boolPtr)) <= sizeof(int)) \
+	? Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) \
+	: (TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
+#define Tcl_GetBoolean(interp, src, boolPtr) ((sizeof(*(boolPtr)) <= sizeof(int)) \
+	? Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)) \
+	: (TCLBOOLWARNING(boolPtr)Tcl_Panic("sizeof(%s) must be <= sizeof(int)", & #boolPtr [1]),TCL_ERROR))
 #endif
 
 #ifdef TCL_MEM_DEBUG
@@ -4140,7 +4155,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
-/* Protect those 10 functions, make them useless through the stub table */
+/* Protect those 11 functions, make them useless through the stub table */
 #undef TclGetStringFromObj
 #undef TclGetBytesFromObj
 #undef TclGetUnicodeFromObj
@@ -4151,6 +4166,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclSplitPath
 #undef TclFSSplitPath
 #undef TclParseArgsObjv
+#undef TclGetAliasObj
 
 #if defined(TCL_8_API)
 #   undef Tcl_GetBytesFromObj

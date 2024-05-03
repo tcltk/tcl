@@ -73,7 +73,6 @@
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
-# define Tcl_GetAlias 0
 #endif
 #define TclUnusedStubEntry 0
 
@@ -1512,8 +1511,8 @@ const TclStubs tclStubs = {
     Tcl_DStringToObj, /* 685 */
     Tcl_UtfNcmp, /* 686 */
     Tcl_UtfNcasecmp, /* 687 */
-    0, /* 688 */
-    0, /* 689 */
+    Tcl_NewWideUIntObj, /* 688 */
+    Tcl_SetWideUIntObj, /* 689 */
     TclUnusedStubEntry, /* 690 */
 };
 

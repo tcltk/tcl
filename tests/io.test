@@ -2479,13 +2479,25 @@ test io-28.6 {
 
 	Should not produce a segmentation fault in a Tcl built with
 	--enable-symbols and -DPURIFY
-} debugpurify {
+} -body {
     variable done
     variable res
     after 0 [list coroutine c1 apply [list {} {
 	variable done
-	set chan [chan create w {apply {args {
-	    list initialize finalize watch write configure blocking
+	set chan [chan create w {apply {{cmd chan args} {
+	    switch $cmd {
+		blocking - finalize {
+		}
+		watch {
+		    chan postevent $chan write
+		}
+		initialize {
+		    list initialize finalize watch read write configure blocking
+		}
+		default {
+		    error [list {unexpected command} $cmd]
+		}
+	    }
 	}}}]
 	chan configure $chan -blocking 0
 	while 1 {
@@ -2497,16 +2509,15 @@ test io-28.6 {
 	}
     } [namespace current]]]
     vwait [namespace current]::done
-return success
-} success
-
+    return success
+} -result success
 
 test io-28.7 {
     close channel in read event handler
 
 	Should not produce a segmentation fault in a Tcl built with
 	--enable-symbols and -DPURIFY
-} debugpurify {
+} -body  {
     variable done
     variable res
     after 0 [list coroutine c1 apply [list {} {
@@ -2536,10 +2547,8 @@ test io-28.7 {
 	}
     } [namespace current]]]
     vwait [namespace current]::done
-return success
-} success
-
-
+    return success
+} -result success
 
 test io-29.1 {Tcl_WriteChars, channel not writable} {
     list [catch {puts stdin hello} msg] $msg
