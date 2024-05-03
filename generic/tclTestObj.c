@@ -18,6 +18,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -25,8 +26,6 @@
 #   include "tclTomMath.h"
 #endif
 #include "tclStringRep.h"
-#undef TCLBOOLWARNING
-#define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
 
 #include <assert.h>
 
