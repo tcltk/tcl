@@ -67,7 +67,7 @@ set auto_index(::safe::AliasExeName) [list source -encoding utf-8 [file join $di
 set auto_index(::safe::RejectExcessColons) [list source -encoding utf-8 [file join $dir safe.tcl]]
 set auto_index(::safe::VarName) [list source -encoding utf-8 [file join $dir safe.tcl]]
 set auto_index(::safe::Setup) [list source -encoding utf-8 [file join $dir safe.tcl]]
-set auto_index(::tcl::tmpath) [list source -encoding utf-8 [file join $dir tm.tcl]]
+set auto_index(::tcl::tm::path) [list source -encoding utf-8 [file join $dir tm.tcl]]
 set auto_index(::tcl::tm::add) [list source -encoding utf-8 [file join $dir tm.tcl]]
 set auto_index(::tcl::tm::remove) [list source -encoding utf-8 [file join $dir tm.tcl]]
 set auto_index(::tcl::tm::list) [list source -encoding utf-8 [file join $dir tm.tcl]]
