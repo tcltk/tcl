@@ -97,7 +97,7 @@ proc ::tcl::tm::add {args} {
 
     set newpaths $paths
     foreach p $args {
-	if {$p in $newpaths} {
+	if {($p eq "") || ($p in $newpaths)} {
 	    # Ignore a path already on the list.
 	    continue
 	}
