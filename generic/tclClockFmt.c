@@ -2307,6 +2307,7 @@ ClockGetOrParseScanFormat(
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
 		    AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *);
+		    wordTok = tok - 1;
 		    tokCnt++;
 		}
 		if (isspace(UCHAR(*p))) {
@@ -3344,6 +3345,7 @@ ClockGetOrParseFmtFormat(
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &FmtWordTokenMap;
 		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC, ClockFormatToken *);
+		    wordTok = tok - 1;
 		    tokCnt++;
 		}
 		p = Tcl_UtfNext(p);
