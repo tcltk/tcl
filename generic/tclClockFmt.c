@@ -2295,13 +2295,12 @@ ClockGetOrParseScanFormat(
 		}
 	      word_tok:
 		{
-		ClockScanToken *wordTok = tok;
+		/* try continue with previous word token */
+		ClockScanToken *wordTok = tok - 1;
 
-		if (tok > scnTok && (tok - 1)->map == &ScnWordTokenMap) {
-		    /* further with previous word token */
-		    wordTok = tok - 1;
-		} else {
-		    /* new word token */
+		if (wordTok < scnTok || wordTok->map != &ScnWordTokenMap) {
+		    /* start with new word token */
+		    wordTok = tok;
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
 		}
@@ -3339,11 +3338,12 @@ ClockGetOrParseFmtFormat(
 	    default:
 	      word_tok:
 		{
-		ClockFormatToken *wordTok = tok;
+		/* try continue with previous word token */
+		ClockFormatToken *wordTok = tok - 1;
 
-		if (tok > fmtTok && (tok - 1)->map == &FmtWordTokenMap) {
-		    wordTok = tok - 1;
-		} else {
+		if (wordTok < fmtTok || wordTok->map != &FmtWordTokenMap) {
+		    /* start with new word token */
+		    wordTok = tok;
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &FmtWordTokenMap;
 		}
