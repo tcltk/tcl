@@ -485,7 +485,7 @@ TestplatformChmod(
 	goto done;
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
-    aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+    aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
     if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
 	    pTokenUser->User.Sid)) {
 	ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -527,7 +527,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
 	    ckfree(pTokenGroup);
 	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -557,7 +557,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
 	    LocalFree(pWorldSid);
 	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
