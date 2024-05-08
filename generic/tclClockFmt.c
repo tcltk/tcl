@@ -2304,7 +2304,7 @@ ClockGetOrParseScanFormat(
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
 		}
-		
+
 		do {
 		    if (isspace(UCHAR(*p))) {
 			fss->scnSpaceCount++;
