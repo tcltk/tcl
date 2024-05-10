@@ -621,7 +621,7 @@ ClockFmtScnStorageDelete(
 {
     Tcl_HashEntry *hPtr = HashEntry4FmtScn(fss);
     /*
-     * This will delete a hash entry and call "Tcl_Free" for storage self, if
+     * This will delete a hash entry and call "ckfree" for storage self, if
      * some additionally handling required, freeEntryProc can be used instead
      */
     Tcl_DeleteHashEntry(hPtr);
@@ -3566,7 +3566,7 @@ ClockFrmScnClearCaches(void)
 }
 
 void
-ClockFrmScnFinalize()
+ClockFrmScnFinalize(void)
 {
     if (!initialized) {
 	return;
