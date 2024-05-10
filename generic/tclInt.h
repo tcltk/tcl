@@ -1108,7 +1108,6 @@ typedef struct ActiveInterpTrace {
 	((objPtr)->typePtr)->proc : NULL)
 
 MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
-
 
 /*
  * Abstract List

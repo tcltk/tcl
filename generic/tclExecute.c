@@ -1024,7 +1024,6 @@ GrowEvaluationStack(
     }
     needed = growth + moveWords + WALLOCALIGN;
 
-
     /*
      * Check if there is enough room in the next stack (if there is one, it
      * should be both empty and the last one!)
@@ -6603,7 +6602,6 @@ TEBCresume(
 		    goto gotError;
 		}
 		CACHE_STACK_INFO();
-
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
