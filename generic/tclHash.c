@@ -214,7 +214,6 @@ FindHashEntry(
 {
     return CreateHashEntry(tablePtr, key, NULL);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -301,8 +300,7 @@ CreateHashEntry(
 		}
 		/* if needle pointer equals content pointer or values equal */
 		if ((key == hPtr->key.string)
-		    || compareKeysProc((void *) key, hPtr)
-		) {
+			|| compareKeysProc((void *) key, hPtr)) {
 		    if (newPtr) {
 			*newPtr = 0;
 		    }

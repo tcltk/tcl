@@ -103,7 +103,6 @@ static struct {
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
 
-
 /*
  * Declarations for functions defined later in this file.
  */
