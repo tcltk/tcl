@@ -48,15 +48,15 @@ extern "C" {
  */
 
 #if !defined(TCL_MAJOR_VERSION)
-#   define TCL_MAJOR_VERSION   9
+#   define TCL_MAJOR_VERSION	9
 #endif
 #if TCL_MAJOR_VERSION == 9
-#   define TCL_MINOR_VERSION   0
-#   define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#   define TCL_RELEASE_SERIAL  2
+#   define TCL_MINOR_VERSION	0
+#   define TCL_RELEASE_LEVEL	TCL_BETA_RELEASE
+#   define TCL_RELEASE_SERIAL	2
 
-#   define TCL_VERSION	    "9.0"
-#   define TCL_PATCH_LEVEL	    "9.0b2"
+#   define TCL_VERSION		"9.0"
+#   define TCL_PATCH_LEVEL	"9.0b2"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
@@ -90,7 +90,8 @@ extern "C" {
  * Special macro to define mutexes.
  */
 
-#define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
+#define TCL_DECLARE_MUTEX(name) \
+    static Tcl_Mutex name;
 
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
@@ -464,9 +465,9 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
 
 typedef struct Tcl_RegExpIndices {
 #if TCL_MAJOR_VERSION > 8
-    Tcl_Size start;			/* Character offset of first character in
+    Tcl_Size start;		/* Character offset of first character in
 				 * match. */
-    Tcl_Size end;			/* Character offset of first character after
+    Tcl_Size end;		/* Character offset of first character after
 				 * the match. */
 #else
     long start;
@@ -475,11 +476,11 @@ typedef struct Tcl_RegExpIndices {
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    Tcl_Size nsubs;			/* Number of subexpressions in the compiled
+    Tcl_Size nsubs;		/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
 #if TCL_MAJOR_VERSION > 8
-    Tcl_Size extendStart;		/* The offset at which a subsequent match
+    Tcl_Size extendStart;	/* The offset at which a subsequent match
 				 * might begin. */
 #else
     long extendStart;
@@ -615,28 +616,25 @@ typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
-
+
 /* Abstract List functions */
-typedef	      Tcl_Size	(Tcl_ObjTypeLengthProc)  (struct Tcl_Obj *listPtr);
-typedef		   int	(Tcl_ObjTypeIndexProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size index, struct Tcl_Obj** elemObj);
-typedef		   int	(Tcl_ObjTypeSliceProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size fromIdx, Tcl_Size toIdx,
-                                             struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ObjTypeReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ObjTypeGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef	struct Tcl_Obj*	(Tcl_ObjTypeSetElement)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             Tcl_Size indexCount,
-                                             struct Tcl_Obj *const indexArray[],
-                                             struct Tcl_Obj *valueObj);
-typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
-                                             Tcl_Size first, Tcl_Size numToDelete,
-                                             Tcl_Size numToInsert,
-                                             struct Tcl_Obj *const insertObjs[]);
-typedef            int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp, struct Tcl_Obj *valueObj,
-                                             struct Tcl_Obj *listObj, int *boolResult);
+typedef Tcl_Size (Tcl_ObjTypeLengthProc) (struct Tcl_Obj *listPtr);
+typedef int (Tcl_ObjTypeIndexProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size index, struct Tcl_Obj** elemObj);
+typedef int (Tcl_ObjTypeSliceProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+	Tcl_Size fromIdx, Tcl_Size toIdx, struct Tcl_Obj **newObjPtr);
+typedef int (Tcl_ObjTypeReverseProc) (Tcl_Interp *interp,
+	struct Tcl_Obj *listPtr, struct Tcl_Obj **newObjPtr);
+typedef int (Tcl_ObjTypeGetElements) (Tcl_Interp *interp,
+	struct Tcl_Obj *listPtr, Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
+typedef	struct Tcl_Obj *(Tcl_ObjTypeSetElement) (Tcl_Interp *interp,
+	struct Tcl_Obj *listPtr, Tcl_Size indexCount,
+	struct Tcl_Obj *const indexArray[], struct Tcl_Obj *valueObj);
+typedef int (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp,
+	struct Tcl_Obj *listObj, Tcl_Size first, Tcl_Size numToDelete,
+	Tcl_Size numToInsert, struct Tcl_Obj *const insertObjs[]);
+typedef int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp,
+	struct Tcl_Obj *valueObj, struct Tcl_Obj *listObj, int *boolResult);
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -670,33 +668,36 @@ typedef struct Tcl_ObjType {
     size_t version;
 
     /* List emulation functions - ObjType Version 1 */
-    Tcl_ObjTypeLengthProc *lengthProc;	     /* Return the [llength] of the
-					     ** AbstractList */
-    Tcl_ObjTypeIndexProc *indexProc;	     /* Return a value (Tcl_Obj) for
-					     ** [lindex $al $index] */
-    Tcl_ObjTypeSliceProc *sliceProc;	     /* Return an AbstractList for
-					     ** [lrange $al $start $end] */
-    Tcl_ObjTypeReverseProc *reverseProc;     /* Return an AbstractList for
-					     ** [lreverse $al] */
-    Tcl_ObjTypeGetElements *getElementsProc; /* Return an objv[] of all elements in
-					     ** the list */
-    Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
-					     ** with the given valueObj. */
-    Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
-    Tcl_ObjTypeInOperatorProc *inOperProc;   /* "in" and "ni" expr list
-                                             ** operation Determine if the given
-                                             ** string value matches an element in
-                                             ** the list */
+    Tcl_ObjTypeLengthProc *lengthProc;
+				/* Return the [llength] of the AbstractList */
+    Tcl_ObjTypeIndexProc *indexProc;
+				/* Return a value (Tcl_Obj) at a given index */
+    Tcl_ObjTypeSliceProc *sliceProc;
+				/* Return an AbstractList for
+				 * [lrange $al $start $end] */
+    Tcl_ObjTypeReverseProc *reverseProc;
+				/* Return an AbstractList for [lreverse $al] */
+    Tcl_ObjTypeGetElements *getElementsProc;
+				/* Return an objv[] of all elements in the list */
+    Tcl_ObjTypeSetElement *setElementProc;
+				/* Replace the element at the indicies with the
+				 * given valueObj. */
+    Tcl_ObjTypeReplaceProc *replaceProc;
+				/* Replace sublist with another sublist */
+    Tcl_ObjTypeInOperatorProc *inOperProc;
+				/* "in" and "ni" expr list operation.
+				 * Determine if the given string value matches
+				 * an element in the list. */
 #endif
 } Tcl_ObjType;
 
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_OBJTYPE_V0 0, \
-	   0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+	   0,0,0,0,0,0,0,0	/* Pre-Tcl 9 */
 #   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
-	   a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+	   a,0,0,0,0,0,0,0	/* Tcl 9 Version 1 */
 #   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType),  \
-	   a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
+	   a,b,c,d,e,f,g,h	/* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
 #endif
@@ -749,9 +750,9 @@ typedef struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    Tcl_ObjInternalRep internalRep;	/* The internal representation: */
+    Tcl_ObjInternalRep internalRep;
+				/* The internal representation: */
 } Tcl_Obj;
-
 
 /*
  *----------------------------------------------------------------------------
@@ -767,7 +768,7 @@ typedef struct Tcl_Namespace {
 				 * is an synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    void *clientData;	/* Arbitrary value associated with this
+    void *clientData;		/* Arbitrary value associated with this
 				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Function invoked when deleting the
@@ -841,11 +842,11 @@ typedef struct {
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
-    void *clientData;	/* ClientData for string proc. */
+    void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Function to call when command is
 				 * deleted. */
-    void *deleteData;	/* Value to pass to deleteProc (usually the
+    void *deleteData;		/* Value to pass to deleteProc (usually the
 				 * same as clientData). */
     Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
 				 * command. Note that Tcl_SetCmdInfo will not
@@ -964,7 +965,7 @@ typedef struct Tcl_DString {
  *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
  *				stack for the script in progress to be
  *				completely unwound.
- *	TCL_EVAL_NOERR:	Do no exception reporting at all, just return
+ *	TCL_EVAL_NOERR:		Do no exception reporting at all, just return
  *				as the caller will report.
  */
 
@@ -1077,7 +1078,7 @@ struct Tcl_HashEntry {
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
     size_t hash;		/* Hash value. */
-    void *clientData;	/* Application stores something here with
+    void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1173,11 +1174,11 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    Tcl_Size numBuckets;		/* Total number of buckets allocated at
+    Tcl_Size numBuckets;	/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    Tcl_Size numEntries;		/* Total number of entries present in
+    Tcl_Size numEntries;	/* Total number of entries present in
 				 * table. */
-    Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
+    Tcl_Size rebuildSize;	/* Enlarge table when numEntries gets to be
 				 * this large. */
 #if TCL_MAJOR_VERSION > 8
     size_t mask;		/* Mask value used in hashing function. */
@@ -1186,7 +1187,7 @@ struct Tcl_HashTable {
 				 * Designed to use high-order bits of
 				 * randomized keys. */
 #if TCL_MAJOR_VERSION < 9
-    int mask;		/* Mask value used in hashing function. */
+    int mask;			/* Mask value used in hashing function. */
 #endif
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
@@ -1776,8 +1777,8 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD; see
 				 * below for valid types. */
     const char *start;		/* First character in token. */
-    Tcl_Size size;			/* Number of bytes in token. */
-    Tcl_Size numComponents;		/* If this token is composed of other tokens,
+    Tcl_Size size;		/* Number of bytes in token. */
+    Tcl_Size numComponents;	/* If this token is composed of other tokens,
 				 * this field tells how many of them there are
 				 * (including components of components, etc.).
 				 * The component tokens immediately follow
@@ -1891,13 +1892,13 @@ typedef struct Tcl_Token {
 typedef struct Tcl_Parse {
     const char *commentStart;	/* Pointer to # that begins the first of one
 				 * or more comments preceding the command. */
-    Tcl_Size commentSize;		/* Number of bytes in comments (up through
+    Tcl_Size commentSize;	/* Number of bytes in comments (up through
 				 * newline character that terminates the last
 				 * comment). If there were no comments, this
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    Tcl_Size commandSize;		/* Number of bytes in command, including first
+    Tcl_Size commandSize;	/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
@@ -1967,7 +1968,7 @@ typedef struct Tcl_EncodingType {
     Tcl_FreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    void *clientData;	/* Arbitrary value associated with encoding
+    void *clientData;		/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     Tcl_Size nullSize;		/* Number of zero bytes that signify
 				 * end-of-string in this encoding. This number
@@ -2173,7 +2174,7 @@ typedef struct {
 				 * depends on type.*/
     const char *helpStr;	/* Documentation message describing this
 				 * option. */
-    void *clientData;	/* Word to pass to function callbacks. */
+    void *clientData;		/* Word to pass to function callbacks. */
 } Tcl_ArgvInfo;
 
 /*
@@ -2293,9 +2294,9 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
  */
 
 #if TCL_MAJOR_VERSION > 8
-#   define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
+#   define TCL_STUB_MAGIC	((int) 0xFCA3BACB + (int) sizeof(void *))
 #else
-#   define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#   define TCL_STUB_MAGIC	((int) 0xFCA3BACF)
 #endif
 
 /*
@@ -2312,7 +2313,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN void	Tcl_ConsolePanic(const char *format, ...);
 #else
 #   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
@@ -2360,7 +2361,8 @@ void *			TclStubCall(void *arg);
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
+#define Tcl_Main(argc, argv, proc) \
+	Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
 EXTERN TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
@@ -2379,9 +2381,9 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif
-EXTERN Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *	TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
 EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
@@ -2501,7 +2503,11 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr, __FILE__, __LINE__)
 
-static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
+static inline void
+TclBounceRefCount(
+    Tcl_Obj* objPtr,
+    const char* fn,
+    int line)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2519,11 +2525,11 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
      */
 #   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
-	do { \
-	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- <= 1) { \
-		TclFreeObj(_objPtr); \
-	    } \
+	do {								\
+	    Tcl_Obj *_objPtr = (objPtr);				\
+	    if (_objPtr->refCount-- <= 1) {				\
+		TclFreeObj(_objPtr);					\
+	    }								\
 	} while(0)
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
@@ -2534,10 +2540,12 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
  * This will release the obj if there is no referece count,
  * otherwise let it be.
  */
-#   define Tcl_BounceRefCount(objPtr)     \
+#   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr);
 
-static inline void TclBounceRefCount(Tcl_Obj* objPtr)
+static inline void
+TclBounceRefCount(
+    Tcl_Obj* objPtr)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2589,10 +2597,10 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr)
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (void *)(value))
 #define Tcl_GetHashKey(tablePtr, h) \
-	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
-		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
+	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS ||		\
+		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS)		\
+		? (h)->key.oneWordValue					\
+		: (h)->key.string))
 
 /*
  * Macros to use for clients to use to invoke find and create functions for
