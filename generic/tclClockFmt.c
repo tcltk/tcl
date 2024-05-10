@@ -3567,7 +3567,7 @@ ClockFrmScnClearCaches(void)
 }
 
 void
-ClockFrmScnFinalize()
+ClockFrmScnFinalize(void)
 {
     if (!initialized) {
 	return;
