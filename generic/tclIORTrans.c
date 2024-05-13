@@ -209,9 +209,9 @@ typedef enum {
 #define RANDW \
 	(TCL_READABLE | TCL_WRITABLE)
 
-#define IMPLIES(a,b)	((!(a)) || (b))
-#define NEGIMPL(a,b)
-#define HAS(x,f)	((x) & FLAG(f))
+#define IMPLIES(a, b)	((!(a)) || (b))
+#define NEGIMPL(a, b)
+#define HAS(x, f)	((x) & FLAG(f))
 
 #if TCL_THREADS
 /*
@@ -356,37 +356,37 @@ static void		ForwardOpToOwnerThread(ReflectedTransform *rtPtr,
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
-#define FreeReceivedError(p) \
+#define FreeReceivedError(fwdParam) \
 	do {								\
-	    if ((p)->base.mustFree) {					\
-		Tcl_Free((p)->base.msgStr);				\
+	    if ((fwdParam)->base.mustFree) {				\
+		Tcl_Free((fwdParam)->base.msgStr);			\
 	    }								\
 	} while (0)
-#define PassReceivedErrorInterp(i,p) \
+#define PassReceivedErrorInterp(interp, fwdParam) \
 	do {								\
-	    if ((i) != NULL) {						\
-		Tcl_SetChannelErrorInterp((i),				\
-			Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	    if ((interp) != NULL) {					\
+		Tcl_SetChannelErrorInterp((interp),			\
+			Tcl_NewStringObj((fwdParam)->base.msgStr, -1));	\
 	    }								\
-	    FreeReceivedError(p);					\
+	    FreeReceivedError(fwdParam);				\
 	} while (0)
-#define PassReceivedError(c,p) \
+#define PassReceivedError(chan, fwdParam) \
 	do {								\
-	    Tcl_SetChannelError((c),					\
-		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
-	    FreeReceivedError(p);					\
+	    Tcl_SetChannelError((chan),					\
+		    Tcl_NewStringObj((fwdParam)->base.msgStr, -1));	\
+	    FreeReceivedError(fwdParam);				\
 	} while (0)
-#define ForwardSetStaticError(p,emsg) \
+#define ForwardSetStaticError(fwdParam, emsg) \
 	do {								\
-	    (p)->base.code = TCL_ERROR;					\
-	    (p)->base.mustFree = 0;					\
-	    (p)->base.msgStr = (char *) (emsg);				\
+	    (fwdParam)->base.code = TCL_ERROR;				\
+	    (fwdParam)->base.mustFree = 0;				\
+	    (fwdParam)->base.msgStr = (char *) (emsg);			\
 	} while (0)
-#define ForwardSetDynamicError(p,emsg) \
+#define ForwardSetDynamicError(fwdParam, emsg) \
 	do {								\
-	    (p)->base.code = TCL_ERROR;					\
-	    (p)->base.mustFree = 1;					\
-	    (p)->base.msgStr = (char *) (emsg);				\
+	    (fwdParam)->base.code = TCL_ERROR;				\
+	    (fwdParam)->base.mustFree = 1;				\
+	    (fwdParam)->base.msgStr = (char *) (emsg);			\
 	} while (0)
 
 static void		ForwardSetObjError(ForwardParam *p,
@@ -396,8 +396,8 @@ static void		DeleteThreadReflectedTransformMap(
 			    void *clientData);
 #endif /* TCL_THREADS */
 
-#define SetChannelErrorStr(c,msgStr) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
+#define SetChannelErrorStr(chan, msgStr) \
+	Tcl_SetChannelError((chan), Tcl_NewStringObj((msgStr), -1))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
 static void		UnmarshallErrorResult(Tcl_Interp *interp,
@@ -599,9 +599,9 @@ TclChanPushObjCmd(
      */
 
     if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s initialize\" returned non-list: %s",
-                TclGetString(cmdObj), TclGetString(resObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s initialize\" returned non-list: %s",
+		TclGetString(cmdObj), TclGetString(resObj)));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -624,9 +624,9 @@ TclChanPushObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" does not support all required methods",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" does not support all required methods",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -646,9 +646,9 @@ TclChanPushObjCmd(
     }
 
     if (!mode) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" makes the channel inaccessible",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" makes the channel inaccessible",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -657,16 +657,16 @@ TclChanPushObjCmd(
      */
 
     if (!IMPLIES(HAS(methods, METH_DRAIN), HAS(methods, METH_READ))) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" supports \"drain\" but not \"read\"",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" supports \"drain\" but not \"read\"",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_FLUSH), HAS(methods, METH_WRITE))) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "chan handler \"%s\" supports \"flush\" but not \"write\"",
-                TclGetString(cmdObj)));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"chan handler \"%s\" supports \"flush\" but not \"write\"",
+		TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -1926,7 +1926,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = Tcl_NewStringObj(msg_dstlost, -1);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}

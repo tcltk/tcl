@@ -632,11 +632,11 @@ ClockFmtScnStorageDelete(
  */
 
 static const Tcl_ObjType ClockFmtObjType = {
-    "clock-format",			/* name */
-    ClockFmtObj_FreeInternalRep,	/* freeIntRepProc */
-    ClockFmtObj_DupInternalRep,		/* dupIntRepProc */
-    ClockFmtObj_UpdateString,		/* updateStringProc */
-    ClockFmtObj_SetFromAny,		/* setFromAnyProc */
+    "clock-format",		/* name */
+    ClockFmtObj_FreeInternalRep,/* freeIntRepProc */
+    ClockFmtObj_DupInternalRep,	/* dupIntRepProc */
+    ClockFmtObj_UpdateString,	/* updateStringProc */
+    ClockFmtObj_SetFromAny,	/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 
@@ -1046,7 +1046,9 @@ FindTokenBegin(
 	    goto findChar;
 
 	case CTOKT_SPACE:
-	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {
+		// empty body
+	    }
 	    return p;
 
 	case CTOKT_CHAR:
@@ -2140,13 +2142,13 @@ EstimateTokenCount(
     return ++tokcnt;
 }
 
-#define AllocTokenInChain(tok, chain, tokCnt, type)			 \
-    if (++(tok) >= (chain) + (tokCnt)) {				 \
-	chain = (type)Tcl_Realloc((char *)(chain),			 \
-	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
-	(tok) = (chain) + (tokCnt);					 \
-	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;			 \
-    }									 \
+#define AllocTokenInChain(tok, chain, tokCnt, type) \
+    if (++(tok) >= (chain) + (tokCnt)) {				\
+	chain = (type)Tcl_Realloc((char *)(chain),			\
+	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok)));\
+	(tok) = (chain) + (tokCnt);					\
+	(tokCnt) += CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE;			\
+    }									\
     memset(tok, 0, sizeof(*(tok)));
 
 /*
@@ -2293,7 +2295,7 @@ ClockGetOrParseScanFormat(
 		    tokCnt++;
 		    continue;
 		}
-	      word_tok:
+	    word_tok:
 		{
 		/* try continue with previous word token */
 		ClockScanToken *wordTok = tok - 1;
@@ -3336,8 +3338,7 @@ ClockGetOrParseFmtFormat(
 		continue;
 	    }
 	    default:
-	      word_tok:
-		{
+	    word_tok: {
 		/* try continue with previous word token */
 		ClockFormatToken *wordTok = tok - 1;
 
