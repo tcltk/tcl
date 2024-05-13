@@ -1051,6 +1051,16 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
     interp delete child
 } -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
 
+test execute-8.8 {Compile epoch bump causes line-number reset (bug [31fd84270644f67d])} -setup {
+    set c [subst -nocommands -novariables {if {[incr cntr] == 1} {testbumpinterpepoch};\n\nif 1 {\ndict get [info frame 0] line\n}}]
+    set res {}
+} -body {
+    lappend res [eval $c]; # with epoch bump
+    lappend res [eval $c]; # without epoch bump
+} -cleanup {
+    unset -nocomplain c res
+} -result {4 4}
+
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {
