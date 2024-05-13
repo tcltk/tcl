@@ -40,7 +40,7 @@ struct DeclaredSlot {
     const Tcl_MethodType resolverType;
 };
 
-#define SLOT(name,getter,setter,resolver)				\
+#define SLOT(name, getter, setter, resolver)				\
     {"::oo::" name,							\
 	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
 		    getter, NULL, NULL},				\
@@ -2677,7 +2677,7 @@ ClassSuperSet(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "class should only be a direct superclass once",
 			    -1));
-		    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",(char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", (char *)NULL);
 		    goto failedAfterAlloc;
 		}
 	    }

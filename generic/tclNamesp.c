@@ -77,9 +77,9 @@ static int		DoImport(Tcl_Interp *interp,
 			    const char *cmdName, const char *pattern,
 			    Namespace *importNsPtr, int allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,Tcl_Obj *copyPtr);
-static char *		ErrorCodeRead(void *clientData,Tcl_Interp *interp,
+static char *		ErrorCodeRead(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
-static char *		ErrorInfoRead(void *clientData,Tcl_Interp *interp,
+static char *		ErrorInfoRead(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static char *		EstablishErrorCodeTraces(void *clientData,
 			    Tcl_Interp *interp, const char *name1,
@@ -90,8 +90,7 @@ static char *		EstablishErrorInfoTraces(void *clientData,
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
-static int		InvokeImportedNRCmd(void *clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	InvokeImportedNRCmd;
 static Tcl_ObjCmdProc	NamespaceChildrenCmd;
 static Tcl_ObjCmdProc	NamespaceCodeCmd;
 static Tcl_ObjCmdProc	NamespaceCurrentCmd;
@@ -653,7 +652,7 @@ Tcl_CreateNamespace(
     const char *name,		/* Name for the new namespace. May be a
 				 * qualified name with names of ancestor
 				 * namespaces separated by "::"s. */
-    void *clientData,	/* One-word value to store with namespace. */
+    void *clientData,		/* One-word value to store with namespace. */
     Tcl_NamespaceDeleteProc *deleteProc)
 				/* Function called to delete client data when
 				 * the namespace is deleted. NULL if no
@@ -1178,7 +1177,7 @@ TclDeleteNamespaceChildren(
 
 void
 TclTeardownNamespace(
-    Namespace *nsPtr)	/* Points to the namespace to be dismantled
+    Namespace *nsPtr)		/* Points to the namespace to be dismantled
 				 * and unlinked from its parent. */
 {
     Interp *iPtr = (Interp *) nsPtr->interp;
@@ -1316,7 +1315,7 @@ TclTeardownNamespace(
 
 static void
 NamespaceFree(
-    Namespace *nsPtr)	/* Points to the namespace to free. */
+    Namespace *nsPtr)		/* Points to the namespace to free. */
 {
     /*
      * Most of the namespace's contents are freed when the namespace is
@@ -1615,7 +1614,7 @@ Tcl_Import(
      * want absence of the command to be a failure case.
      */
 
-    if (Tcl_FindCommand(interp,"auto_import",NULL,TCL_GLOBAL_ONLY) != NULL) {
+    if (Tcl_FindCommand(interp, "auto_import", NULL, TCL_GLOBAL_ONLY) != NULL) {
 	Tcl_Obj *objv[2];
 	int result;
 
@@ -1640,7 +1639,7 @@ Tcl_Import(
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern",-1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern", -1));
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2035,7 +2034,7 @@ TclGetOriginalCommand(
 
 static int
 InvokeImportedNRCmd(
-    void *clientData,	/* Points to the imported command's
+    void *clientData,		/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2050,7 +2049,7 @@ InvokeImportedNRCmd(
 
 int
 TclInvokeImportedCmd(
-    void *clientData,	/* Points to the imported command's
+    void *clientData,		/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2083,7 +2082,7 @@ TclInvokeImportedCmd(
 
 static void
 DeleteImportedCmd(
-    void *clientData)	/* Points to the imported command's
+    void *clientData)		/* Points to the imported command's
 				 * ImportedCmdData structure. */
 {
     ImportedCmdData *dataPtr = (ImportedCmdData *)clientData;
@@ -2522,7 +2521,7 @@ Tcl_FindNamespace(
 				 * points to namespace in which to resolve
 				 * name; if NULL, look up name in the current
 				 * namespace. */
-    int flags)		/* Flags controlling namespace lookup: an OR'd
+    int flags)			/* Flags controlling namespace lookup: an OR'd
 				 * combination of TCL_GLOBAL_ONLY and
 				 * TCL_LEAVE_ERR_MSG flags. */
 {
@@ -3369,7 +3368,7 @@ NamespaceDeleteCmd(
 
 static int
 NamespaceEvalCmd(
-    void *clientData,	/* Arbitrary value passed to cmd. */
+    void *clientData,		/* Arbitrary value passed to cmd. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3758,7 +3757,7 @@ NamespaceImportCmd(
 
 	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
 		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
-			(char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr) ,-1));
+			(char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr), -1));
 	    }
 	}
 	Tcl_SetObjResult(interp, listPtr);
@@ -3818,7 +3817,7 @@ NamespaceImportCmd(
 
 static int
 NamespaceInscopeCmd(
-    void *clientData,	/* Arbitrary value passed to cmd. */
+    void *clientData,		/* Arbitrary value passed to cmd. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4691,7 +4690,7 @@ NamespaceWhichCmd(
     TclNewObj(resultPtr);
     switch (lookupType) {
     case 0: {				/* -command */
-	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc - 1]);
 
 	if (cmd != NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
@@ -4700,7 +4699,7 @@ NamespaceWhichCmd(
     }
     case 1: {				/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
-		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
+		TclGetString(objv[objc - 1]), NULL, /*flags*/ 0);
 
 	if (var != NULL) {
 	    Tcl_GetVariableFullName(interp, var, resultPtr);
@@ -4733,7 +4732,7 @@ NamespaceWhichCmd(
 
 static void
 FreeNsNameInternalRep(
-    Tcl_Obj *objPtr)	/* nsName object with internal representation
+    Tcl_Obj *objPtr)		/* nsName object with internal representation
 				 * to free. */
 {
     ResolvedNsName *resNamePtr;
@@ -4780,7 +4779,7 @@ FreeNsNameInternalRep(
 static void
 DupNsNameInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     ResolvedNsName *resNamePtr;
 
@@ -4816,7 +4815,7 @@ SetNsNameFromAny(
     Tcl_Interp *interp,		/* Points to the namespace in which to resolve
 				 * name. Also used for error reporting if not
 				 * NULL. */
-    Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     const char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
@@ -4829,7 +4828,7 @@ SetNsNameFromAny(
 
     name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
-	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+	    &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
 	return TCL_ERROR;

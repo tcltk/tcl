@@ -46,8 +46,8 @@ typedef struct Method {
 				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
-    Tcl_Size refCount;
-    void *clientData;	/* Type-specific data. */
+    Tcl_Size refCount;		/* Reference counter for this structure. */
+    void *clientData;		/* Type-specific data. */
     Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
 				/* The object that declares this method, or
@@ -209,9 +209,9 @@ typedef struct Object {
 				 * references; this mechanism exists to
 				 * avoid Tcl_Preserve. */
     int flags;
-    Tcl_Size creationEpoch;		/* Unique value to make comparisons of objects
+    Tcl_Size creationEpoch;	/* Unique value to make comparisons of objects
 				 * easier. */
-    Tcl_Size epoch;			/* Per-object epoch, incremented when the way
+    Tcl_Size epoch;		/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
     Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
@@ -519,16 +519,16 @@ MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
 MODULE_SCOPE int    TclMethodIsType(Tcl_Method method,
-                        const Tcl_MethodType *typePtr,
-                        void **clientDataPtr);
+			    const Tcl_MethodType *typePtr,
+			    void **clientDataPtr);
 MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
-                        Tcl_Object object, Tcl_Obj *nameObj,
-                        int flags, const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Object object, Tcl_Obj *nameObj,
+			    int flags, const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
-                        Tcl_Obj *nameObj, int flags,
-                        const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Obj *nameObj, int flags,
+			    const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, Tcl_Size objc,
@@ -611,9 +611,9 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  * REQUIRES DECLARATION: Tcl_Size i;
  */
 
-#define FOREACH(var,ary) \
-    for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
-	continue; \
+#define FOREACH(var, ary) \
+    for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) {		\
+	continue;							\
     } else if ((var) = (ary).list[i], 1)
 
 /*
@@ -623,7 +623,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  * REQUIRES DECLARATION: Tcl_Size i; See [96551aca55] for more FOREACH_STRUCT details.
  */
 
-#define FOREACH_STRUCT(var,ary) \
+#define FOREACH_STRUCT(var, ary) \
     if (i=0, (ary).num>0) for(; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
@@ -636,13 +636,15 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 
 #define FOREACH_HASH_DECLS \
     Tcl_HashEntry *hPtr;Tcl_HashSearch search
-#define FOREACH_HASH(key,val,tablePtr) \
-    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
-	    (*(void **)&(key)=Tcl_GetHashKey((tablePtr),hPtr),\
-	    *(void **)&(val)=Tcl_GetHashValue(hPtr),1):0; hPtr=Tcl_NextHashEntry(&search))
-#define FOREACH_HASH_VALUE(val,tablePtr) \
-    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
-	    (*(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;hPtr=Tcl_NextHashEntry(&search))
+#define FOREACH_HASH(key, val, tablePtr) \
+    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ?	\
+	    (*(void **)&(key)=Tcl_GetHashKey((tablePtr),hPtr),		\
+	    *(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;		\
+	    hPtr=Tcl_NextHashEntry(&search))
+#define FOREACH_HASH_VALUE(val, tablePtr) \
+    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ?	\
+	    (*(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;		\
+	    hPtr=Tcl_NextHashEntry(&search))
 
 /*
  * Convenience macro for duplicating a list. Needs no external declaration,
@@ -650,14 +652,15 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  */
 
 #undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
-#define DUPLICATE(target,source,type) \
-    do { \
-	size_t len = sizeof(type) * ((target).num=(source).num);\
-	if (len != 0) { \
-	    memcpy(((target).list=(type*)Tcl_Alloc(len)), (source).list, len); \
-	} else { \
-	    (target).list = NULL; \
-	} \
+#define DUPLICATE(target, source, type) \
+    do {								\
+	size_t len = sizeof(type) * ((target).num=(source).num);	\
+	if (len != 0) {							\
+	    memcpy(((target).list=(type*)				\
+		    Tcl_Alloc(len)), (source).list, len);		\
+	} else {							\
+	    (target).list = NULL;					\
+	}								\
     } while(0)
 
 #endif /* TCL_OO_INTERNAL_H */

@@ -45,7 +45,7 @@
  * Macros to report errors only if an interp is present.
  */
 
-#define ZIPFS_ERROR(interp,errstr) \
+#define ZIPFS_ERROR(interp, errstr) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(errstr, -1));	\
@@ -59,14 +59,14 @@
 	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);		\
 	}								\
     } while (0)
-#define ZIPFS_POSIX_ERROR(interp,errstr) \
+#define ZIPFS_POSIX_ERROR(interp, errstr) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(			\
 		    "%s: %s", errstr, Tcl_PosixError(interp)));		\
 	}								\
     } while (0)
-#define ZIPFS_ERROR_CODE(interp,errcode) \
+#define ZIPFS_ERROR_CODE(interp, errcode) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (char *)NULL);	\
@@ -196,7 +196,7 @@ typedef struct ZipFile {
     size_t baseOffset;		/* Archive start */
     size_t passOffset;		/* Password start */
     size_t directoryOffset;	/* Archive directory start */
-    size_t directorySize;       /* Size of archive directory */
+    size_t directorySize;	/* Size of archive directory */
     unsigned char passBuf[264]; /* Password buffer */
     size_t numOpen;		/* Number of open files on archive */
     struct ZipEntry *entries;	/* List of files in archive */
@@ -258,10 +258,10 @@ typedef struct ZipChannel {
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
-				   may point *inside* the block) */
+    				 * need freeing. Else memory to free (ubuf
+				 * may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
-    int iscompr;                /* True if data is compressed */
+    int isCompressed;		/* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
     int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
@@ -1393,9 +1393,9 @@ ZipFSCloseArchive(
  *	into the given "interp" if it is not NULL.
  *
  * Side effects:
- *      The given ZipFile struct is filled with information about the ZIP
- *      archive file.  On error, ZipFSCloseArchive is called on zf but
- *      it is not freed.
+ *	The given ZipFile struct is filled with information about the ZIP
+ *	archive file.  On error, ZipFSCloseArchive is called on zf but
+ *	it is not freed.
  *
  *-------------------------------------------------------------------------
  */
@@ -1594,7 +1594,7 @@ ZipFSFindTOC(
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
  *	into the given "interp" if it is not NULL. On error, ZipFSCloseArchive
- *      is called on zf but it is not freed.
+ *	is called on zf but it is not freed.
  *
  * Side effects:
  *	ZIP archive is memory mapped or read into allocated memory, the given
@@ -1660,7 +1660,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-        /* What's the magic about 64 * 1024 * 1024 ? */
+	/* What's the magic about 64 * 1024 * 1024 ? */
 	if ((zf->length <= ZIP_CENTRAL_END_LEN) ||
 		(zf->length - ZIP_CENTRAL_END_LEN) >
 			(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
@@ -2230,7 +2230,8 @@ ListMountPoints(
  *------------------------------------------------------------------------
  */
 static void
-CleanupMount(ZipFile *zf)        /* Mount point */
+CleanupMount(
+    ZipFile *zf)		/* Mount point */
 {
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
@@ -3279,7 +3280,7 @@ ComputeNameInArchive(
 				 * archive */
     const char *strip,		/* A prefix to strip; may be NULL if no
 				 * stripping need be done. */
-    Tcl_Size slen)			/* The length of the prefix; must be 0 if no
+    Tcl_Size slen)		/* The length of the prefix; must be 0 if no
 				 * stripping need be done. */
 {
     const char *name;
@@ -5115,7 +5116,7 @@ InitReadableChannel(
     unsigned char *ubuf = NULL;
     int ch;
 
-    info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
+    info->isCompressed = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
     info->ubufToFree = NULL; /* ubuf memory not allocated */
     info->ubufSize = 0;
@@ -5135,7 +5136,7 @@ InitReadableChannel(
 	info->ubuf += ZIP_CRYPT_HDR_LEN;
     }
 
-    if (info->iscompr) {
+    if (info->isCompressed) {
 	z_stream stream;
 	int err;
 	unsigned int j;
@@ -5546,8 +5547,8 @@ ZipFSMatchInDirectoryProc(
 	if ((wanted & TCL_GLOB_TYPE_MOUNT) && (wanted != TCL_GLOB_TYPE_MOUNT)) {
 	    if (interp) {
 		ZIPFS_ERROR(interp,
-			      "Internal error: TCL_GLOB_TYPE_MOUNT should not "
-			      "be set in conjunction with other glob types.");
+			"Internal error: TCL_GLOB_TYPE_MOUNT should not "
+			"be set in conjunction with other glob types.");
 	    }
 	    return TCL_ERROR;
 	}
@@ -6518,7 +6519,7 @@ TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
     TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
+    TCL_UNUSED(const char *))	/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
     ZIPFS_ERROR(interp, "no zlib available");
@@ -6555,7 +6556,7 @@ TclZipfs_AppHook(
 #ifdef _WIN32
     TCL_UNUSED(WCHAR ***)) /* argvPtr */
 #else /* !_WIN32 */
-    TCL_UNUSED(char ***))		/* Pointer to argv */
+    TCL_UNUSED(char ***))	/* Pointer to argv */
 #endif /* _WIN32 */
 {
     return NULL;
