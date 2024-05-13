@@ -115,6 +115,12 @@ extern "C" {
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   if __GNUC__ > 3
+/* Technically, came in with GCC 3.5 but who has anything that old deployed? */ 
+#	define TCL_SENTINEL __attribute__ ((sentinel))
+#   else
+#	define TCL_SENTINEL /* nothing */
+#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER)
@@ -125,6 +131,7 @@ extern "C" {
 #	define TCL_NOINLINE /* nothing */
 #   endif
 #   define TCL_NORETURN1 /* nothing */
+#   define TCL_SENTINEL /* nothing */
 #endif
 
 /*

@@ -83,7 +83,7 @@ declare 14 {
     int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 15 {
-    void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
+    TCL_SENTINEL void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
 declare 16 {
     void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
@@ -230,7 +230,7 @@ declare 69 {
     void Tcl_AppendElement(Tcl_Interp *interp, const char *element)
 }
 declare 70 {
-    void Tcl_AppendResult(Tcl_Interp *interp, ...)
+    TCL_SENTINEL void Tcl_AppendResult(Tcl_Interp *interp, ...)
 }
 declare 71 {
     Tcl_AsyncHandler Tcl_AsyncCreate(Tcl_AsyncProc *proc,
@@ -727,7 +727,7 @@ declare 227 {
     void Tcl_SetErrno(int err)
 }
 declare 228 {
-    void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
+    TCL_SENTINEL void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 }
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
@@ -802,7 +802,7 @@ declare 259 {
 	    const char *part2, const char *localName, int flags)
 }
 declare 260 {
-    int Tcl_VarEval(Tcl_Interp *interp, ...)
+    TCL_SENTINEL int Tcl_VarEval(Tcl_Interp *interp, ...)
 }
 declare 262 {
     void *Tcl_VarTraceInfo2(Tcl_Interp *interp, const char *part1,
