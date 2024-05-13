@@ -7451,11 +7451,13 @@ TEBCresume(
 	    break;
 	default:
 	    Tcl_Panic("clockRead instruction with unknown clock#");
+	    break;
 	}
 	TclNewIntObj(objResultPtr, wval);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(2, 0, 1);
     }
+    break;
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
