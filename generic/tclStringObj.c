@@ -1797,7 +1797,7 @@ TclAppendUtfToUtf(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_SENTINEL void
 Tcl_AppendStringsToObj(
     Tcl_Obj *objPtr,
     ...)

@@ -295,7 +295,7 @@ Tcl_GetObjResult(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_SENTINEL void
 Tcl_AppendResult(
     Tcl_Interp *interp, ...)
 {
@@ -482,7 +482,7 @@ ResetObjResult(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_SENTINEL void
 Tcl_SetErrorCode(
     Tcl_Interp *interp, ...)
 {

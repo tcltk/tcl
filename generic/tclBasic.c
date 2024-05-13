@@ -6876,7 +6876,7 @@ Tcl_AppendObjToErrorInfo(
  *----------------------------------------------------------------------
  */
 
-int
+TCL_SENTINEL int
 Tcl_VarEval(
     Tcl_Interp *interp,
     ...)

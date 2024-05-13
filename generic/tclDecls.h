@@ -89,7 +89,7 @@ EXTERN int		Tcl_WaitForEvent(const Tcl_Time *timePtr);
 EXTERN int		Tcl_AppendAllObjTypes(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
 /* 15 */
-EXTERN void		Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...);
+EXTERN TCL_SENTINEL void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...);
 /* 16 */
 EXTERN void		Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes,
 				Tcl_Size length);
@@ -223,7 +223,7 @@ EXTERN void		Tcl_AllowExceptions(Tcl_Interp *interp);
 EXTERN void		Tcl_AppendElement(Tcl_Interp *interp,
 				const char *element);
 /* 70 */
-EXTERN void		Tcl_AppendResult(Tcl_Interp *interp, ...);
+EXTERN TCL_SENTINEL void Tcl_AppendResult(Tcl_Interp *interp, ...);
 /* 71 */
 EXTERN Tcl_AsyncHandler	 Tcl_AsyncCreate(Tcl_AsyncProc *proc,
 				void *clientData);
@@ -629,7 +629,7 @@ EXTERN int		Tcl_SetCommandInfo(Tcl_Interp *interp,
 /* 227 */
 EXTERN void		Tcl_SetErrno(int err);
 /* 228 */
-EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
+EXTERN TCL_SENTINEL void Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* Slot 230 is reserved */
@@ -703,7 +703,7 @@ EXTERN int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
 /* 260 */
-EXTERN int		Tcl_VarEval(Tcl_Interp *interp, ...);
+EXTERN TCL_SENTINEL int	 Tcl_VarEval(Tcl_Interp *interp, ...);
 /* Slot 261 is reserved */
 /* 262 */
 EXTERN void *		Tcl_VarTraceInfo2(Tcl_Interp *interp,
@@ -1899,7 +1899,7 @@ typedef struct TclStubs {
     void (*tcl_Sleep) (int ms); /* 12 */
     int (*tcl_WaitForEvent) (const Tcl_Time *timePtr); /* 13 */
     int (*tcl_AppendAllObjTypes) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 14 */
-    void (*tcl_AppendStringsToObj) (Tcl_Obj *objPtr, ...); /* 15 */
+    TCL_SENTINEL void (*tcl_AppendStringsToObj) (Tcl_Obj *objPtr, ...); /* 15 */
     void (*tcl_AppendToObj) (Tcl_Obj *objPtr, const char *bytes, Tcl_Size length); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) (Tcl_Size objc, Tcl_Obj *const objv[]); /* 17 */
     int (*tcl_ConvertToType) (Tcl_Interp *interp, Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 18 */
@@ -1954,7 +1954,7 @@ typedef struct TclStubs {
     void (*reserved67)(void);
     void (*tcl_AllowExceptions) (Tcl_Interp *interp); /* 68 */
     void (*tcl_AppendElement) (Tcl_Interp *interp, const char *element); /* 69 */
-    void (*tcl_AppendResult) (Tcl_Interp *interp, ...); /* 70 */
+    TCL_SENTINEL void (*tcl_AppendResult) (Tcl_Interp *interp, ...); /* 70 */
     Tcl_AsyncHandler (*tcl_AsyncCreate) (Tcl_AsyncProc *proc, void *clientData); /* 71 */
     void (*tcl_AsyncDelete) (Tcl_AsyncHandler async); /* 72 */
     int (*tcl_AsyncInvoke) (Tcl_Interp *interp, int code); /* 73 */
@@ -2112,7 +2112,7 @@ typedef struct TclStubs {
     int (*tcl_SetChannelOption) (Tcl_Interp *interp, Tcl_Channel chan, const char *optionName, const char *newValue); /* 225 */
     int (*tcl_SetCommandInfo) (Tcl_Interp *interp, const char *cmdName, const Tcl_CmdInfo *infoPtr); /* 226 */
     void (*tcl_SetErrno) (int err); /* 227 */
-    void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
+    TCL_SENTINEL void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
     void (*reserved230)(void);
     Tcl_Size (*tcl_SetRecursionLimit) (Tcl_Interp *interp, Tcl_Size depth); /* 231 */
@@ -2144,7 +2144,7 @@ typedef struct TclStubs {
     void (*tcl_UpdateLinkedVar) (Tcl_Interp *interp, const char *varName); /* 257 */
     void (*reserved258)(void);
     int (*tcl_UpVar2) (Tcl_Interp *interp, const char *frameName, const char *part1, const char *part2, const char *localName, int flags); /* 259 */
-    int (*tcl_VarEval) (Tcl_Interp *interp, ...); /* 260 */
+    TCL_SENTINEL int (*tcl_VarEval) (Tcl_Interp *interp, ...); /* 260 */
     void (*reserved261)(void);
     void * (*tcl_VarTraceInfo2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *procPtr, void *prevClientData); /* 262 */
     Tcl_Size (*tcl_Write) (Tcl_Channel chan, const char *s, Tcl_Size slen); /* 263 */
