@@ -1052,7 +1052,13 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
 } -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
 
 test execute-8.8 {Compile epoch bump causes line-number reset (bug [31fd84270644f67d])} -setup {
-    set c [subst -nocommands -novariables {if {[incr cntr] == 1} {testbumpinterpepoch};\n\nif 1 {\ndict get [info frame 0] line\n}}]
+    set cntr 0
+    set c {
+      if {[incr cntr] == 1} {testbumpinterpepoch};
+      if 1 {
+        dict get [info frame 0] line; # must be line 4
+      }
+    }
     set res {}
 } -body {
     lappend res [eval $c]; # with epoch bump
