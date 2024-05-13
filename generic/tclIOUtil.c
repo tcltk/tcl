@@ -245,7 +245,7 @@ Tcl_Stat(
 {
     int ret;
     Tcl_StatBuf buf;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSStat(pathPtr, &buf);
@@ -332,10 +332,10 @@ Tcl_Access(
     int mode)			/* Permission setting. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
 
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSAccess(pathPtr,mode);
+    ret = Tcl_FSAccess(pathPtr, mode);
     Tcl_DecrRefCount(pathPtr);
 
     return ret;
@@ -352,7 +352,7 @@ Tcl_OpenFileChannel(
     int permissions)		/* The modes to use if creating a new file. */
 {
     Tcl_Channel ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
@@ -367,7 +367,7 @@ Tcl_Chdir(
     const char *dirName)
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName, -1);
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSChdir(pathPtr);
     Tcl_DecrRefCount(pathPtr);
@@ -399,7 +399,7 @@ Tcl_EvalFile(
 				 * pathaname. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName, -1);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSEvalFile(interp, pathPtr);
@@ -1568,8 +1568,8 @@ TclGetOpenMode(
 	    if (mode & O_APPEND) {
 	    accessFlagRepeated:
 		if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"access mode \"%s\" repeated", flag));
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "access mode \"%s\" repeated", flag));
 		}
 	    goto invAccessMode;
 	    }
@@ -1577,7 +1577,7 @@ TclGetOpenMode(
 	    *modeFlagsPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
 	    if (mode & O_CREAT) {
-	    goto accessFlagRepeated;
+		goto accessFlagRepeated;
 	    }
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {
@@ -1735,7 +1735,7 @@ Tcl_FSEvalFileEx(
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 	    != TCL_OK) {
-	Tcl_CloseEx(interp,chan,0);
+	Tcl_CloseEx(interp, chan, 0);
 	return result;
     }
 
@@ -2006,7 +2006,7 @@ Tcl_GetErrno(void)
  * Tcl_SetErrno --
  *
  *	Sets the Tcl error code to the given value. On some saner platforms
- *	this is implemented in the C library as a thread-local value , but this
+ *	this is implemented in the C library as a thread-local value, but this
  *	is *really* unsafe to assume!
  *
  * Results:
@@ -2358,7 +2358,7 @@ NativeFileAttrsGet(
     Tcl_Obj *pathPtr,		/* Pathname of the file */
     Tcl_Obj **objPtrRef)	/* Where to store the a pointer to the result. */
 {
-    return tclpFileAttrProcs[index].getProc(interp, index, pathPtr,objPtrRef);
+    return tclpFileAttrProcs[index].getProc(interp, index, pathPtr, objPtrRef);
 }
 
 /*
@@ -2653,7 +2653,7 @@ Tcl_FSGetCwd(
 
 		retVal = fsRecPtr->fsPtr->internalToNormalizedProc(retCd);
 		Tcl_IncrRefCount(retVal);
-		norm = TclFSNormalizeAbsolutePath(interp,retVal);
+		norm = TclFSNormalizeAbsolutePath(interp, retVal);
 		if (norm != NULL) {
 		    /*
 		     * Assign to global storage the pathname of the current
@@ -2785,7 +2785,7 @@ Tcl_FSGetCwd(
 	norm = TclFSNormalizeAbsolutePath(interp, retVal);
 
 	if (norm == NULL) {
-	     /*
+	    /*
 	     * 'norm' shouldn't ever be NULL, but we are careful.
 	     */
 
@@ -2796,7 +2796,7 @@ Tcl_FSGetCwd(
 	} else if (norm == tsdPtr->cwdPathPtr) {
 	    goto cdEqual;
 	} else {
-	     /*
+	    /*
 	     * Determine whether the filesystem's answer is the same as the
 	     * cached local value.  Since both 'norm' and 'tsdPtr->cwdPathPtr'
 	     * are normalized pathnames, do something more efficient than
@@ -4014,7 +4014,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = TclGetStringFromObj(vol,&len);
+		    strVol = TclGetStringFromObj(vol, &len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -4636,7 +4636,7 @@ NativeFilesystemSeparator(
 	separator = "\\";
 	break;
     }
-    return Tcl_NewStringObj(separator,1);
+    return Tcl_NewStringObj(separator, 1);
 }
 
 /*
