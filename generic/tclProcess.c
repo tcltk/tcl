@@ -40,7 +40,7 @@ static Tcl_HashTable infoTablePerResolvedPid;
 static int infoTablesInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(infoTablesMutex)
 
-/*
+ /*
  * Prototypes for functions defined later in this file:
  */
 

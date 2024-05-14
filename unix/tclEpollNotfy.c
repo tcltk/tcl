@@ -42,7 +42,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;		/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
     LIST_ENTRY(FileHandler) readyNode;
 				/* Next/previous in list of FileHandlers asso-
@@ -207,10 +207,10 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-	newPedPtr = (struct PlatformEventData *)
+        newPedPtr = (struct PlatformEventData *)
 		Tcl_Alloc(sizeof(struct PlatformEventData));
-	newPedPtr->filePtr = filePtr;
-	newPedPtr->tsdPtr = tsdPtr;
+        newPedPtr->filePtr = filePtr;
+        newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
     }
     newEvent.data.ptr = filePtr->pedPtr;
@@ -227,22 +227,23 @@ PlatformEventsControl(
     }
 
    if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
-	switch (errno) {
-	case EPERM:
-	    switch (op) {
-	    case EPOLL_CTL_ADD:
-		if (isNew) {
-		    LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr,
-			    filePtr, readyNode);
+       switch (errno) {
+	    case EPERM:
+		switch (op) {
+		case EPOLL_CTL_ADD:
+		    if (isNew) {
+			LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+				readyNode);
+		    }
+		    break;
+		case EPOLL_CTL_DEL:
+		    LIST_REMOVE(filePtr, readyNode);
+		    break;
+
 		}
 		break;
-	    case EPOLL_CTL_DEL:
-		LIST_REMOVE(filePtr, readyNode);
-		break;
-	    }
-	    break;
-	default:
-	    Tcl_Panic("epoll_ctl: %s", strerror(errno));
+	    default:
+		Tcl_Panic("epoll_ctl: %s", strerror(errno));
 	}
     }
     return;
@@ -366,7 +367,7 @@ PlatformEventsInit(void)
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
-	tsdPtr->maxReadyEvents = 512;
+        tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
@@ -512,7 +513,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)		/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -790,7 +791,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
-    void *clientData,		/* Notifier data. */
+    void *clientData,	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {

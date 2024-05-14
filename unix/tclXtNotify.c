@@ -33,7 +33,7 @@ typedef struct FileHandler {
     XtInputId except;		/* Xt exception callback handle. */
     Tcl_FileProc *proc;		/* Procedure to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;		/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -263,7 +263,7 @@ NotifierExitHandler(
 
 static void
 SetTimer(
-    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
     unsigned long timeout;
 
@@ -339,7 +339,7 @@ CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Procedure to call for each selected
 				 * event. */
-    void *clientData)		/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     FileHandler *filePtr;
 
@@ -627,7 +627,7 @@ FileHandlerEventProc(
 
 static int
 WaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     int timeout;
 

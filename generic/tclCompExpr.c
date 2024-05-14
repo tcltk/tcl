@@ -746,7 +746,7 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
-		} else if (Tcl_GetBooleanFromObj(NULL, literal, &b) == TCL_OK) {
+		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOLEAN;
 		} else {
 		    /*
@@ -1869,8 +1869,8 @@ Tcl_ParseExpr(
 {
     int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
-    Tcl_Obj *litList;		/* List to hold the literals. */
-    Tcl_Obj *funcList;		/* List to hold the functon names. */
+    Tcl_Obj *litList;	/* List to hold the literals. */
+    Tcl_Obj *funcList;	/* List to hold the functon names. */
     Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
