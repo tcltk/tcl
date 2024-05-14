@@ -379,9 +379,9 @@ TclCompileArraySetCmd(
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
 	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
-	TclEmitOpcode(  INST_POP,				envPtr);
+	TclEmitOpcode(INST_POP,          			envPtr);
     }
 
     /*
@@ -391,11 +391,9 @@ TclCompileArraySetCmd(
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = (ForeachInfo *)
-	    Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
+    infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)
-	    Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
+    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -969,7 +967,7 @@ TclCompileConstCmd(
      * that.
      */
     if (!isScalar) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
 
     /*
@@ -1162,7 +1160,7 @@ TclCompileDictIncrCmd(
 
 	incrTokenPtr = TokenAfter(keyTokenPtr);
 	if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
 	word = incrTokenPtr[1].start;
 	numBytes = incrTokenPtr[1].size;
@@ -1172,7 +1170,7 @@ TclCompileDictIncrCmd(
 	code = TclGetIntFromObj(NULL, intObj, &incrAmount);
 	TclDecrRefCount(intObj);
 	if (code != TCL_OK) {
-	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
     } else {
 	incrAmount = 1;
@@ -2001,7 +1999,7 @@ TclCompileDictAppendCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
     if (dictVarIndex < 0) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
     }
 
     /*
@@ -2967,7 +2965,7 @@ CompileEachloopCmd(
 
 static void *
 DupForeachInfo(
-    void *clientData)		/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -3016,7 +3014,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    void *clientData)		/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
@@ -3350,7 +3348,7 @@ TclCompileFormatCmd(
     start = TclGetString(formatObj);
 				/* The start of the currently-scanned literal
 				 * in the format string. */
-    TclNewObj(tmpObj);		/* The buffer used to accumulate the literal
+    TclNewObj(tmpObj);	/* The buffer used to accumulate the literal
 				 * being built. */
     for (bytes = start ; *bytes ; bytes++) {
 	if (*bytes == '%') {
@@ -3452,7 +3450,7 @@ TclLocalScalar(
 {
     Tcl_Token token[2] = {
 	{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-	{TCL_TOKEN_TEXT, NULL, 0, 0}
+        {TCL_TOKEN_TEXT, NULL, 0, 0}
     };
 
     token[1].start = bytes;
@@ -3600,35 +3598,34 @@ TclPushVarName(
 	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-		if (remainingLen) {
-		    /*
-		     * Make a first token with the extra characters in the first
-		     * token.
-		     */
+	      if (remainingLen) {
+		/*
+		 * Make a first token with the extra characters in the first
+		 * token.
+		 */
 
-		    elemTokenPtr = (Tcl_Token *)
-			    TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		    allocedTokens = 1;
-		    elemTokenPtr->type = TCL_TOKEN_TEXT;
-		    elemTokenPtr->start = elName;
-		    elemTokenPtr->size = remainingLen;
-		    elemTokenPtr->numComponents = 0;
-		    elemTokenCount = n;
+		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = remainingLen;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = n;
 
-		    /*
-		     * Copy the remaining tokens.
-		     */
+		/*
+		 * Copy the remaining tokens.
+		 */
 
-		    memcpy(elemTokenPtr + 1, varTokenPtr + 2,
-			    (n-1) * sizeof(Tcl_Token));
-		} else {
-		    /*
-		     * Use the already available tokens.
-		     */
+		memcpy(elemTokenPtr+1, varTokenPtr+2,
+			(n-1) * sizeof(Tcl_Token));
+	      } else {
+		/*
+		 * Use the already available tokens.
+		 */
 
-		    elemTokenPtr = &varTokenPtr[2];
-		    elemTokenCount = n - 1;
-		}
+		elemTokenPtr = &varTokenPtr[2];
+		elemTokenCount = n - 1;
+	      }
 	    }
 	}
     }

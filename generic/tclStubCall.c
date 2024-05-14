@@ -9,8 +9,8 @@
 #ifndef _WIN32
 #   include <dlfcn.h>
 #else
-#   define dlopen(a, b)	(void *)LoadLibraryW(JOIN(L, a))
-#   define dlsym(a, b)	(void *)GetProcAddress((HMODULE)(a), b)
+#   define dlopen(a,b) (void *)LoadLibraryW(JOIN(L,a))
+#   define dlsym(a,b) (void *)GetProcAddress((HMODULE)(a),b)
 #   define dlerror() ""
 #endif
 
@@ -52,15 +52,14 @@ static const char PROCNAME[][24] = {
 };
 
 MODULE_SCOPE const void *nullVersionProc(void) {
-    return NULL;
+	return NULL;
 }
 
 static const char CANNOTCALL[] = "Cannot call %s from stubbed extension\n";
 static const char CANNOTFIND[] = "Cannot find %s: %s\n";
 
 MODULE_SCOPE void *
-TclStubCall(
-    void *arg)
+TclStubCall(void *arg)
 {
     static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
     size_t index = PTR2UINT(arg);

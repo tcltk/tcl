@@ -1129,66 +1129,66 @@ TclCompileStringReplaceCmd(
     }
 
     if (parsePtr->numWords == 5) {
-	/*
-	 * When we have a string replacement, we have to take care about
-	 * not replacing empty substrings that [string replace] promises
-	 * not to replace
-	 *
-	 * The remaining index values might be suitable for conventional
-	 * string replacement, but only if they cannot possibly meet the
-	 * conditions described above at runtime. If there's a chance they
-	 * might, we would have to emit bytecode to check and at that point
-	 * we're paying more in bytecode execution time than would make
-	 * things worthwhile. Trouble is we are very limited in
-	 * how much we can detect that at compile time. After decoding,
-	 * we need, first:
-	 *
-	 *	(first <= end)
-	 *
-	 * The encoded indices (first <= TCL_INDEX END) and
-	 * (first == TCL_INDEX_NONE) always meets this condition, but
-	 * any other encoded first index has some list for which it fails.
-	 *
-	 * We also need, second:
-	 *
-	 *	(last >= 0)
-	 *
-	 * The encoded index (last >= TCL_INDEX_START) always meet this
-	 * condition but any other encoded last index has some list for
-	 * which it fails.
-	 *
-	 * Finally we need, third:
-	 *
-	 *	(first <= last)
-	 *
-	 * Considered in combination with the constraints we already have,
-	 * we see that we can proceed when (first == TCL_INDEX_NONE).
-	 * These also permit simplification of the prefix|replace|suffix
-	 * construction. The other constraints, though, interfere with
-	 * getting a guarantee that first <= last.
-	 */
+    /*
+     * When we have a string replacement, we have to take care about
+     * not replacing empty substrings that [string replace] promises
+     * not to replace
+     *
+     * The remaining index values might be suitable for conventional
+     * string replacement, but only if they cannot possibly meet the
+     * conditions described above at runtime. If there's a chance they
+     * might, we would have to emit bytecode to check and at that point
+     * we're paying more in bytecode execution time than would make
+     * things worthwhile. Trouble is we are very limited in
+     * how much we can detect that at compile time. After decoding,
+     * we need, first:
+     *
+     *		(first <= end)
+     *
+     * The encoded indices (first <= TCL_INDEX END) and
+     * (first == TCL_INDEX_NONE) always meets this condition, but
+     * any other encoded first index has some list for which it fails.
+     *
+     * We also need, second:
+     *
+     *		(last >= 0)
+     *
+     * The encoded index (last >= TCL_INDEX_START) always meet this
+     * condition but any other encoded last index has some list for
+     * which it fails.
+     *
+     * Finally we need, third:
+     *
+     *		(first <= last)
+     *
+     * Considered in combination with the constraints we already have,
+     * we see that we can proceed when (first == TCL_INDEX_NONE).
+     * These also permit simplification of the prefix|replace|suffix
+     * construction. The other constraints, though, interfere with
+     * getting a guarantee that first <= last.
+     */
 
-	if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
-	    /* empty prefix */
-	    tokenPtr = TokenAfter(tokenPtr);
-	    CompileWord(envPtr, tokenPtr, interp, 4);
-	    OP4(	REVERSE, 2);
-	    if (last == INT_MAX) {
-		OP(	POP);		/* Pop  original */
-	    } else {
-		OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
-		OP1(	STR_CONCAT1, 2);
-	    }
-	    return TCL_OK;
-	}
-
-	if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
-	    OP44(	STR_RANGE_IMM, 0, first-1);
-	    tokenPtr = TokenAfter(tokenPtr);
-	    CompileWord(envPtr, tokenPtr, interp, 4);
+    if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
+	/* empty prefix */
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 4);
+	OP4(		REVERSE, 2);
+	if (last == INT_MAX) {
+	    OP(		POP);		/* Pop  original */
+	} else {
+	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
-	    return TCL_OK;
 	}
+	return TCL_OK;
+    }
+
+    if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
+	OP44(		STR_RANGE_IMM, 0, first-1);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 4);
+	OP1(		STR_CONCAT1, 2);
+	return TCL_OK;
+    }
 
 	/* FLOW THROUGH TO genericReplace */
 
@@ -1474,12 +1474,12 @@ TclCompileSubstCmd(
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
 
-#if 0
+/*
     if (TclSubstOptions(NULL, numOpts, objv, &flags) == TCL_OK) {
 	toSubst = objv[numOpts];
 	Tcl_IncrRefCount(toSubst);
     }
-#endif
+*/
 
     /* TODO: Figure out expansion to cover WordKnownAtCompileTime
      *	The difficulty is that WKACT makes a copy, and if TclSubstParse
@@ -2115,7 +2115,7 @@ IssueSwitchChainedTests(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
+    Tcl_Size *bodyLines,		/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
@@ -2123,8 +2123,7 @@ IssueSwitchChainedTests(
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    unsigned int *fixupTargetArray;
-				/* Array of places for fixups to point at. */
+    unsigned int *fixupTargetArray; /* Array of places for fixups to point at. */
     int fixupCount;		/* Number of places to fix up. */
     int contFixIndex;		/* Where the first of the jumps due to a group
 				 * of continuation bodies starts, or -1 if
@@ -2364,7 +2363,7 @@ IssueSwitchJumpTable(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
+    Tcl_Size *bodyLines,		/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {

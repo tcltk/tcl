@@ -397,17 +397,17 @@ InstructionDesc const tclInstructionTable[] = {
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
     {"dictExpand",       1,    -1,        0,    {OPERAND_NONE}},
-	/* Probe into a dict and extract it (or a subdict of it) into
-	 * variables with matched names. Produces list of keys bound as
-	 * result. Part of [dict with].
+        /* Probe into a dict and extract it (or a subdict of it) into
+         * variables with matched names. Produces list of keys bound as
+         * result. Part of [dict with].
 	 * Stack:  ... dict path => ... keyList */
     {"dictRecombineStk", 1,    -3,        0,    {OPERAND_NONE}},
-	/* Map variable contents back into a dictionary in a variable. Part of
-	 * [dict with].
+        /* Map variable contents back into a dictionary in a variable. Part of
+         * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
     {"dictRecombineImm", 5,    -2,        1,    {OPERAND_LVT4}},
-	/* Map variable contents back into a dictionary in the local variable
-	 * indicated by the LVT index. Part of [dict with].
+        /* Map variable contents back into a dictionary in the local variable
+         * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
     {"dictExists",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
 	/* The top op4 words (min 1) are a key path into the dictionary just
@@ -637,7 +637,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... varName list => ... listVarContents */
 
     {"clockRead",	 2,	+1,	1,	{OPERAND_UINT1}},
-	/* Read clock out to the stack. Operand is which clock to read
+        /* Read clock out to the stack. Operand is which clock to read
 	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
 	 * Stack: ... => ... time */
 
@@ -779,7 +779,7 @@ TclSetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
-    void *clientData)		/* Hook procedure private data. */
+    void *clientData)	/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
@@ -996,7 +996,7 @@ DupByteCodeInternalRep(
 
 static void
 FreeByteCodeInternalRep(
-    Tcl_Obj *objPtr)		/* Object whose internal rep to free. */
+    Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
     ByteCode *codePtr;
 
@@ -1046,7 +1046,7 @@ TclReleaseByteCode(
 
 static void
 CleanupByteCode(
-    ByteCode *codePtr)		/* Points to the ByteCode to free. */
+    ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
@@ -1397,7 +1397,7 @@ CompileSubstObj(
 
 static void
 FreeSubstCodeInternalRep(
-    Tcl_Obj *objPtr)		/* Object whose internal rep to free. */
+    Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
     ByteCode *codePtr;
 
@@ -1448,7 +1448,7 @@ void
 TclInitCompileEnv(
     Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
 				 * structure is initialized. */
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure to
+    CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
@@ -2513,8 +2513,8 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (Tcl_Size *) Tcl_Realloc(clPosition,
-				maxNumCL * sizeof(Tcl_Size));
+			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
+                                maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL ++;
@@ -2649,7 +2649,7 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    size_t count1,		/* Number of tokens to consider at tokenPtr.
+    size_t count1,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
@@ -2827,7 +2827,7 @@ PreventCycle(
 	     *
 	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
 	     * on the string value, and do not call Tcl_DuplicateObj() so we
-	     * can be sure we do not have any lingering cycles hiding in
+             * can be sure we do not have any lingering cycles hiding in
 	     * the internalrep.
 	     */
 	    Tcl_Size numBytes;
@@ -3034,7 +3034,7 @@ TclInitByteCodeObj(
 
 Tcl_Size
 TclFindCompiledLocal(
-    const char *name,		/* Points to first character of the name of a
+    const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
@@ -3090,7 +3090,7 @@ TclFindCompiledLocal(
 		char *localName = localPtr->name;
 
 		if ((nameBytes == localPtr->nameLength) &&
-			(strncmp(name, localName, nameBytes) == 0)) {
+			(strncmp(name,localName,nameBytes) == 0)) {
 		    return i;
 		}
 	    }
@@ -3213,7 +3213,7 @@ EnterCmdStartData(
     Tcl_Size cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
     Tcl_Size srcOffset,		/* Offset of first char of the command. */
-    Tcl_Size codeOffset)	/* Offset of first byte of command code. */
+    Tcl_Size codeOffset)		/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3291,8 +3291,8 @@ EnterCmdExtentData(
 				 * location information. */
     Tcl_Size cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    Tcl_Size numSrcBytes,	/* Number of command source chars. */
-    Tcl_Size numCodeBytes)	/* Offset of last byte of command code. */
+    Tcl_Size numSrcBytes,		/* Number of command source chars. */
+    Tcl_Size numCodeBytes)		/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3775,15 +3775,16 @@ TclFinalizeLoopExceptionRange(
 
 Tcl_Size
 TclCreateAuxData(
-    void *clientData,		/* The compilation auxiliary data to store in
+    void *clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
     const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
-    CompileEnv *envPtr)		/* Points to the CompileEnv for which a new
+    CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
     Tcl_Size index;		/* Index for the new AuxData structure. */
-    AuxData *auxDataPtr;	/* Points to the new AuxData structure */
+    AuxData *auxDataPtr;
+				/* Points to the new AuxData structure */
 
     index = envPtr->auxDataArrayNext;
     if (index >= envPtr->auxDataArrayEnd) {

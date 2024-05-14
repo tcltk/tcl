@@ -88,10 +88,8 @@ static DWORD lastType = REG_RESOURCE_LIST;
 
 #if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
 # if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a, b, c) \
-	Tcl_WinTCharToUtf((TCHAR *)(a), (b) * sizeof(WCHAR), c)
-#   define Tcl_UtfToWCharDString(a, b, c) \
-	(WCHAR *)Tcl_WinUtfToTChar(a, b, c)
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
 # else
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
@@ -295,9 +293,9 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    void *dummy,		/* Not used. */
+    void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
@@ -937,7 +935,7 @@ GetValueNames(
      */
 
     size = MAX_KEY_LENGTH;
-    while (RegEnumValueW(key, index, (WCHAR *)Tcl_DStringValue(&buffer),
+    while (RegEnumValueW(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);
@@ -1431,7 +1429,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

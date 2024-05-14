@@ -3786,7 +3786,7 @@ ZlibStackChannelTransform(
     }
 
     switch (format) {
-    case TCL_ZLIB_FORMAT_RAW:
+    case  TCL_ZLIB_FORMAT_RAW:
 	wbits = WBITS_RAW;
 	break;
     case TCL_ZLIB_FORMAT_ZLIB:

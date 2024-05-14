@@ -276,7 +276,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    Tcl_Size argc,		/* Number of arguments. */
+    Tcl_Size argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -739,7 +739,7 @@ TclFullFinalizationRequested(void)
 
 static void
 StdinProc(
-    void *clientData,		/* The state of interactive cmd line */
+    void *clientData,	/* The state of interactive cmd line */
     TCL_UNUSED(int) /*mask*/)
 {
     int code;

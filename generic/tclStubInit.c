@@ -96,13 +96,8 @@
 # define TclParseArgsObjv 0
 # define TclGetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
-int
-TclListObjGetElements(
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    void *objcPtr,
-    Tcl_Obj ***objvPtr)
-{
+int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    void *objcPtr, Tcl_Obj ***objvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
@@ -116,12 +111,8 @@ TclListObjGetElements(
     }
     return result;
 }
-int
-TclListObjLength(
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    void *lengthPtr)
-{
+int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    void *lengthPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
@@ -135,12 +126,8 @@ TclListObjLength(
     }
     return result;
 }
-int
-TclDictObjSize(
-    Tcl_Interp *interp,
-    Tcl_Obj *dictPtr,
-    void *sizePtr)
-{
+int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+    void *sizePtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
@@ -154,13 +141,8 @@ TclDictObjSize(
     }
     return result;
 }
-int
-TclSplitList(
-    Tcl_Interp *interp,
-    const char *listStr,
-    void *argcPtr,
-    const char ***argvPtr)
-{
+int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
+	const char ***argvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if (argcPtr) {
@@ -175,12 +157,7 @@ TclSplitList(
     }
     return result;
 }
-void
-TclSplitPath(
-    const char *path,
-    void *argcPtr,
-    const char ***argvPtr)
-{
+void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
@@ -192,11 +169,7 @@ TclSplitPath(
 	*(int *)argcPtr = (int)n;
     }
 }
-Tcl_Obj *
-TclFSSplitPath(
-    Tcl_Obj *pathPtr,
-    void *lenPtr)
-{
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
@@ -208,28 +181,17 @@ TclFSSplitPath(
     }
     return result;
 }
-int
-TclParseArgsObjv(
-    Tcl_Interp *interp,
-    const Tcl_ArgvInfo *argTable,
-    void *objcPtr,
-    Tcl_Obj *const *objv,
-    Tcl_Obj ***remObjv)
-{
+int TclParseArgsObjv(Tcl_Interp *interp,
+	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
+	Tcl_Obj ***remObjv) {
     Tcl_Size n = (*(int *)objcPtr < 0) ? TCL_INDEX_NONE: (Tcl_Size)*(int *)objcPtr ;
     int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
     *(int *)objcPtr = (int)n;
     return result;
 }
-int
-TclGetAliasObj(
-    Tcl_Interp *interp,
-    const char *childCmd,
-    Tcl_Interp **targetInterpPtr,
-    const char **targetCmdPtr,
-    int *objcPtr,
-    Tcl_Obj ***objv)
-{
+int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	int *objcPtr, Tcl_Obj ***objv) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
     if (objcPtr) {
@@ -344,8 +306,7 @@ doNothing(void)
 
 #define TclWinNoBackslash winNoBackslash
 static char *
-TclWinNoBackslash(
-    char *path)
+TclWinNoBackslash(char *path)
 {
     char *p;
 
@@ -357,8 +318,7 @@ TclWinNoBackslash(
     return path;
 }
 
-void *
-TclWinGetTclInstance(void)
+void *TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -367,8 +327,7 @@ TclWinGetTclInstance(void)
 }
 
 Tcl_Size
-TclpGetPid(
-    Tcl_Pid pid)
+TclpGetPid(Tcl_Pid pid)
 {
     return (Tcl_Size)PTR2INT(pid);
 }
@@ -379,14 +338,8 @@ TclpGetPid(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_GetLongFromObj \
-	(int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
-static int
-exprInt(
-    Tcl_Interp *interp,
-    const char *expr,
-    int *ptr)
-{
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
+static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
@@ -401,14 +354,8 @@ exprInt(
     }
     return result;
 }
-#define Tcl_ExprLong \
-	(int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
-static int
-exprIntObj(
-    Tcl_Interp *interp,
-    Tcl_Obj*expr,
-    int *ptr)
-{
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
+static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
@@ -455,15 +402,10 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 /* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
  * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
-mp_err MP_WUR
-TclBN_mp_expt_n(
-    const mp_int *a,
-    int b,
-    mp_int *c)
-{
-    if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
-	return MP_VAL;
-    }
+mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+      return MP_VAL;
+   }
     return mp_expt_u32(a, (uint32_t)b, c);;
 }
 #endif /* TCL_WITH_EXTERNAL_TOMMATH */

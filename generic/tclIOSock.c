@@ -191,7 +191,7 @@ TclCreateSocketAddress(
     if (host != NULL) {
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+		Tcl_DStringFree(&ds);
 	    return 0;
 	}
 	native = Tcl_DStringValue(&ds);
@@ -263,7 +263,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-	return 0;
+        return 0;
     }
 
     /*
