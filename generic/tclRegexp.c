@@ -103,11 +103,11 @@ static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  */
 
 const Tcl_ObjType tclRegexpType = {
-    "regexp",			/* name */
-    FreeRegexpInternalRep,	/* freeIntRepProc */
-    DupRegexpInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetRegexpFromAny,		/* setFromAnyProc */
+    "regexp",				/* name */
+    FreeRegexpInternalRep,		/* freeIntRepProc */
+    DupRegexpInternalRep,		/* dupIntRepProc */
+    NULL,				/* updateStringProc */
+    SetRegexpFromAny,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 

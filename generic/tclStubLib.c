@@ -92,8 +92,7 @@ Tcl_InitStubs(
 
 	    p = version;
 	    while (*p && (*p == *q)) {
-		p++;
-		q++;
+		p++; q++;
 	    }
 	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */

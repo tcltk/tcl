@@ -51,7 +51,7 @@ MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const WCHAR *LinkOriginal,
 			    const WCHAR *LinkCopy);
 MODULE_SCOPE int	TclWinSymLinkDelete(const WCHAR *LinkOriginal,
 			    int linkOnly);
-MODULE_SCOPE int	TclWinFileOwned(Tcl_Obj *);
+MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
 MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);

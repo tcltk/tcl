@@ -557,69 +557,56 @@ FormatInstruction(
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes);
-	    numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_UINT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes);
-	    numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		snprintf(suffixBuffer+strlen(suffixBuffer),
-			sizeof(suffixBuffer) - strlen(suffixBuffer),
+		snprintf(suffixBuffer+strlen(suffixBuffer), sizeof(suffixBuffer) - strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_OFFSET1:
-	    opnd = TclGetInt1AtPtr(pc+numBytes);
-	    numBytes++;
+	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
 	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		snprintf(suffixBuffer, sizeof(suffixBuffer),
-			"next cmd at pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "next cmd at pc %u", pcOffset+opnd);
 	    } else {
-		snprintf(suffixBuffer, sizeof(suffixBuffer),
-			"pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_LIT1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes);
-	    numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_LIT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    suffixObj = codePtr->objArrayPtr[opnd];
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    break;
 	case OPERAND_AUX4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", opnd);
 	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
 	    break;
 	case OPERAND_IDX4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes);
-	    numBytes += 4;
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opnd >= -1) {
 		Tcl_AppendPrintfToObj(bufferObj, "%d ", opnd);
 	    } else if (opnd == -2) {
@@ -638,16 +625,14 @@ FormatInstruction(
 	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
-		    Tcl_Panic("FormatInstruction: bad local var index %u (%"
-			    TCL_SIZE_MODIFIER "d locals)",
+		    Tcl_Panic("FormatInstruction: bad local var index %u (%" TCL_SIZE_MODIFIER "d locals)",
 			    opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
 		}
 		if (TclIsVarTemporary(localPtr)) {
-		    snprintf(suffixBuffer, sizeof(suffixBuffer),
-			    "temp var %u", opnd);
+		    snprintf(suffixBuffer, sizeof(suffixBuffer), "temp var %u", opnd);
 		} else {
 		    snprintf(suffixBuffer, sizeof(suffixBuffer), "var ");
 		    suffixSrc = localPtr->name;
@@ -656,8 +641,7 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", opnd);
 	    break;
 	case OPERAND_SCLS1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes);
-	    numBytes++;
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
 		    tclStringClassTable[opnd].name);
 	    break;
@@ -719,8 +703,8 @@ TclGetInnerContext(
     case INST_TRY_CVT_TO_NUMERIC:
     case INST_EXPAND_STKTOP:
     case INST_EXPR_STK:
-	objc = 1;
-	break;
+        objc = 1;
+        break;
 
     case INST_LIST_IN:
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
@@ -747,22 +731,22 @@ TclGetInnerContext(
     case INST_SUB:
     case INST_DIV:
     case INST_MULT:
-	objc = 2;
-	break;
+        objc = 2;
+        break;
 
     case INST_RETURN_STK:
-	/* early pop. TODO: dig out opt dict too :/ */
-	objc = 1;
-	break;
+        /* early pop. TODO: dig out opt dict too :/ */
+        objc = 1;
+        break;
 
     case INST_SYNTAX:
     case INST_RETURN_IMM:
-	objc = 2;
-	break;
+        objc = 2;
+        break;
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
-	break;
+        break;
 
     case INST_INVOKE_STK1:
 	objc = TclGetUInt1AtPtr(pc+1);
@@ -771,37 +755,37 @@ TclGetInnerContext(
 
     result = iPtr->innerContext;
     if (Tcl_IsShared(result)) {
-	Tcl_DecrRefCount(result);
-	iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
-	Tcl_IncrRefCount(result);
+        Tcl_DecrRefCount(result);
+        iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
+        Tcl_IncrRefCount(result);
     } else {
-	Tcl_Size len;
+        Tcl_Size len;
 
-	/*
-	 * Reset while keeping the list internalrep as much as possible.
-	 */
+        /*
+         * Reset while keeping the list internalrep as much as possible.
+         */
 
 	TclListObjLength(interp, result, &len);
-	Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
 
     for (; objc>0 ; objc--) {
-	Tcl_Obj *objPtr;
+        Tcl_Obj *objPtr;
 
-	objPtr = tosPtr[1 - objc];
-	if (!objPtr) {
-	    Tcl_Panic("InnerContext: bad tos -- appending null object");
-	}
-	if ((objPtr->refCount <= 0)
+        objPtr = tosPtr[1 - objc];
+        if (!objPtr) {
+            Tcl_Panic("InnerContext: bad tos -- appending null object");
+        }
+        if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-		|| (objPtr->refCount == 0x61616161)
+                || (objPtr->refCount == 0x61616161)
 #endif
-	) {
-	    Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
-		    objPtr);
-	}
-	Tcl_ListObjAppendElement(NULL, result, objPtr);
+        ) {
+            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
+                    objPtr);
+        }
+        Tcl_ListObjAppendElement(NULL, result, objPtr);
     }
 
     return result;
@@ -844,7 +828,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    size_t inst;		/* NOTE: We know this is really an unsigned char */
+    size_t inst;	/* NOTE: We know this is really an unsigned char */
     char *dst;
 
     InstNameGetInternalRep(objPtr, inst);
@@ -852,7 +836,7 @@ UpdateStringOfInstName(
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-	snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
+        snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
@@ -1187,8 +1171,8 @@ DisassembleByteCodeAsDicts(
 
 #define Decode(ptr) \
     ((TclGetUInt1AtPtr(ptr) == 0xFF)			\
-	? ((ptr)+=5, TclGetInt4AtPtr((ptr)-4))		\
-	: ((ptr)+=1, TclGetInt1AtPtr((ptr)-1)))
+	? ((ptr)+=5 , TclGetInt4AtPtr((ptr)-4))		\
+	: ((ptr)+=1 , TclGetInt1AtPtr((ptr)-1)))
 
     TclNewObj(commands);
     codeOffPtr = codePtr->codeDeltaStart;
@@ -1284,7 +1268,7 @@ DisassembleByteCodeAsDicts(
 
 int
 Tcl_DisassembleObjCmd(
-    void *clientData,		/* What type of operation. */
+    void *clientData,	/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

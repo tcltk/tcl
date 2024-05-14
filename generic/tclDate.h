@@ -103,27 +103,26 @@ typedef enum ClockLiteral {
     LIT__END
 } ClockLiteral;
 
-#define CLOCK_LITERAL_ARRAY(litarr) \
-    static const char *const litarr[] = {				\
-	"",								\
-	"%a %b %d %H:%M:%S %Z %Y",					\
-	"system",	"current",		"C",			\
-	"BCE",		"CE",						\
-	"dayOfMonth",	"dayOfWeek",		"dayOfYear",		\
-	"era",		":GMT",			"gregorian",		\
-	"integer value too large to represent",				\
-	"iso8601Week",	"iso8601Year",					\
-	"julianDay",	"localSeconds",					\
-	"month",							\
-	"seconds",	"tzName",		"tzOffset",		\
-	"year",								\
-	"::tcl::clock::TZData",						\
-	"::tcl::clock::GetSystemTimeZone",				\
-	"::tcl::clock::SetupTimeZone",					\
-	"::tcl::clock::mcget",						\
-	"::tcl::clock::GetSystemLocale", "::tcl::clock::mclocale",	\
-	"::tcl::clock::LocalizeFormat"					\
-    }
+#define CLOCK_LITERAL_ARRAY(litarr) static const char *const litarr[] = { \
+    "", \
+    "%a %b %d %H:%M:%S %Z %Y", \
+    "system",		"current",		"C", \
+    "BCE",		"CE", \
+    "dayOfMonth",	"dayOfWeek",		"dayOfYear", \
+    "era",		":GMT",			"gregorian", \
+    "integer value too large to represent", \
+    "iso8601Week",	"iso8601Year", \
+    "julianDay",	"localSeconds", \
+    "month", \
+    "seconds",		"tzName",		"tzOffset", \
+    "year", \
+    "::tcl::clock::TZData", \
+    "::tcl::clock::GetSystemTimeZone", \
+    "::tcl::clock::SetupTimeZone", \
+    "::tcl::clock::mcget", \
+    "::tcl::clock::GetSystemLocale", "::tcl::clock::mclocale", \
+    "::tcl::clock::LocalizeFormat" \
+}
 
 /*
  * Enumeration of the msgcat literals used in [clock]
@@ -142,18 +141,17 @@ typedef enum ClockMsgCtLiteral {
     MCLIT__END
 } ClockMsgCtLiteral;
 
-#define CLOCK_LOCALE_LITERAL_ARRAY(litarr, pref) \
-    static const char *const litarr[] = {				\
-	pref "",							\
-	pref "MONTHS_FULL", pref "MONTHS_ABBREV", pref "MONTHS_COMB",	\
-	pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", pref "DAYS_OF_WEEK_COMB", \
-	pref "AM", pref "PM",						\
-	pref "LOCALE_ERAS",						\
-	pref "BCE",	   pref "CE",					\
-	pref "b.c.e.", pref "c.e.",					\
-	pref "b.c.",   pref "a.d.",					\
-	pref "LOCALE_NUMERALS",						\
-    }
+#define CLOCK_LOCALE_LITERAL_ARRAY(litarr, pref) static const char *const litarr[] = { \
+    pref "", \
+    pref "MONTHS_FULL", pref "MONTHS_ABBREV", pref "MONTHS_COMB", \
+    pref "DAYS_OF_WEEK_FULL", pref "DAYS_OF_WEEK_ABBREV", pref "DAYS_OF_WEEK_COMB", \
+    pref "AM", pref "PM", \
+    pref "LOCALE_ERAS", \
+    pref "BCE",	   pref "CE", \
+    pref "b.c.e.", pref "c.e.", \
+    pref "b.c.",   pref "a.d.", \
+    pref "LOCALE_NUMERALS", \
+}
 
 /*
  * Structure containing the fields used in [clock format] and [clock scan]
@@ -488,9 +486,8 @@ struct ClockFmtScnStorage {
 #endif
     size_t fmtMinAlloc;
 #if 0
-    Tcl_HashEntry hashEntry	/* ClockFmtScnStorage is a derivate of
-				 * Tcl_HashEntry, stored by
-				 * offset +sizeof(self) */
+    Tcl_HashEntry hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+					 * stored by offset +sizeof(self) */
 #endif
 };
 

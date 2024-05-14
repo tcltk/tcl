@@ -171,7 +171,7 @@ TclDumpMemoryInfo(
     char buf[1024];
 
     if (clientData == NULL) {
-	return 0;
+        return 0;
     }
     snprintf(buf, sizeof(buf),
 	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
@@ -447,7 +447,7 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr, "Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -536,7 +536,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr, "Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -826,12 +826,12 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("error accessing %s: %s",
-		    TclGetString(objv[2]), Tcl_PosixError(interp)));
+                    TclGetString(objv[2]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "break_on_malloc") == 0) {
+    if (strcmp(TclGetString(objv[1]),"break_on_malloc") == 0) {
 	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
@@ -842,7 +842,7 @@ MemoryCmd(
 	break_on_malloc = value;
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "info") == 0) {
+    if (strcmp(TclGetString(objv[1]),"info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
@@ -856,7 +856,7 @@ MemoryCmd(
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	init_malloced_bodies = (strcmp(TclGetString(objv[2]), "on") == 0);
+	init_malloced_bodies = (strcmp(TclGetString(objv[2]),"on") == 0);
 	return TCL_OK;
     }
     if (strcmp(TclGetString(objv[1]), "objs") == 0) {
@@ -871,8 +871,8 @@ MemoryCmd(
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "cannot open output file: %s",
-		    Tcl_PosixError(interp)));
+                    "cannot open output file: %s",
+                    Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -880,7 +880,7 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "onexit") == 0) {
+    if (strcmp(TclGetString(objv[1]),"onexit") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -890,11 +890,11 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	onExitMemDumpFileName = dumpFile;
-	strcpy(onExitMemDumpFileName, fileName);
+	strcpy(onExitMemDumpFileName,fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "tag") == 0) {
+    if (strcmp(TclGetString(objv[1]),"tag") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -908,15 +908,15 @@ MemoryCmd(
 	memcpy(curTagPtr->string, TclGetString(objv[2]), len + 1);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "trace") == 0) {
+    if (strcmp(TclGetString(objv[1]),"trace") == 0) {
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	alloc_tracing = (strcmp(TclGetString(objv[2]), "on") == 0);
+	alloc_tracing = (strcmp(TclGetString(objv[2]),"on") == 0);
 	return TCL_OK;
     }
 
-    if (strcmp(TclGetString(objv[1]), "trace_on_at_malloc") == 0) {
+    if (strcmp(TclGetString(objv[1]),"trace_on_at_malloc") == 0) {
 	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
@@ -927,18 +927,18 @@ MemoryCmd(
 	trace_on_at_malloc = value;
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]), "validate") == 0) {
+    if (strcmp(TclGetString(objv[1]),"validate") == 0) {
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	validate_memory = (strcmp(TclGetString(objv[2]), "on") == 0);
+	validate_memory = (strcmp(TclGetString(objv[2]),"on") == 0);
 	return TCL_OK;
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad option \"%s\": should be active, break_on_malloc, info, "
-	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-	    TclGetString(objv[1])));
+            "bad option \"%s\": should be active, break_on_malloc, info, "
+            "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
+            TclGetString(objv[1])));
     return TCL_ERROR;
 
   argError:

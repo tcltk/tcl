@@ -305,7 +305,7 @@ TclpAlloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (void *)(overPtr + 1);
+	return (void *)(overPtr+1);
     }
 
     /*
@@ -581,7 +581,7 @@ TclpRealloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (void *)(overPtr + 1);
+	return (void *)(overPtr+1);
     }
     maxSize = (size_t)1 << (i+3);
     expensive = 0;
@@ -695,7 +695,7 @@ mstats(
 #undef TclpAlloc
 void *
 TclpAlloc(
-    size_t numBytes)		/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
     return malloc(numBytes);
 }
