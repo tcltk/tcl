@@ -463,7 +463,7 @@ TestplatformChmod(
 	goto done;
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
-    aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
+    aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
     if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
 	    pTokenUser->User.Sid)) {
 	Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -505,7 +505,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
-	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
 	    Tcl_Free(pTokenGroup);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -535,7 +535,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
-	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
 	    LocalFree(pWorldSid);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
