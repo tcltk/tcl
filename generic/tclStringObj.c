@@ -2557,8 +2557,7 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad field specifier \"%c\"", ch));
+		TclPrintfResult(interp, "bad field specifier \"%c\"", ch);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    }
 	    goto error;
@@ -2618,7 +2617,7 @@ Tcl_AppendFormatToObj(
 
   errorMsg:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	TclSetResult(interp, msg);
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, (char *)NULL);
     }
   error:
@@ -3038,10 +3037,10 @@ TclStringRepeat(
     /* maxCount includes space for null */
     if (count > (maxCount-1)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER
 		    "d bytes) exceeded",
-		    TCL_SIZE_MAX));
+		    TCL_SIZE_MAX);
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return NULL;
@@ -3077,10 +3076,10 @@ TclStringRepeat(
 	/* TODO - overflow check */
 	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"string size overflow: unable to alloc %"
 			TCL_SIZE_MODIFIER "d bytes",
-			STRING_SIZE(count*length)));
+			STRING_SIZE(count*length));
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	    }
 	    return NULL;
@@ -3106,9 +3105,10 @@ TclStringRepeat(
 	/* TODO - overflow check */
 	if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"string size overflow: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
-			count*length));
+		TclPrintfResult(interp,
+			"string size overflow: unable to alloc %"
+			TCL_SIZE_MODIFIER "d bytes",
+			count * length);
 		Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	    }
 	    return NULL;
@@ -3408,10 +3408,10 @@ TclStringCat(
 	    Tcl_InvalidateStringRep(objResultPtr);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 		    	"concatenation failed: unable to alloc %"
 			TCL_Z_MODIFIER "u bytes",
-			STRING_SIZE(length)));
+			STRING_SIZE(length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3425,10 +3425,10 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 		    	"concatenation failed: unable to alloc %"
 			TCL_Z_MODIFIER "u bytes",
-			STRING_SIZE(length)));
+			STRING_SIZE(length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3458,9 +3458,10 @@ TclStringCat(
 	    (void)TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
-			length));
+		    TclPrintfResult(interp,
+		    	"concatenation failed: unable to alloc %"
+			TCL_SIZE_MODIFIER "d bytes",
+			length);
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3473,9 +3474,9 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
-			length));
+			length);
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3500,8 +3501,9 @@ TclStringCat(
 
   overflow:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX));
+	TclPrintfResult(interp,
+		"max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		"d bytes) exceeded", TCL_SIZE_MAX);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return NULL;
@@ -4249,9 +4251,10 @@ TclStringReplace(
 
 	    if (newBytes > (TCL_SIZE_MAX - (numBytes - count))) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded",
-			    TCL_SIZE_MAX));
+		    TclPrintfResult(interp,
+			    "max size for a Tcl value (%" TCL_SIZE_MODIFIER
+			    "d bytes) exceeded",
+			    TCL_SIZE_MAX);
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;

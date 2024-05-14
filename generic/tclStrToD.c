@@ -4812,7 +4812,7 @@ Tcl_InitBignumFromDouble(
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    TclSetResult(interp, s);
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	}
 	return TCL_ERROR;

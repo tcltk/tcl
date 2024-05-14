@@ -46,9 +46,8 @@ TclpDlopen(
     int flags)
 {
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"dynamic loading is not currently available on this system",
-		-1));
+	TclSetResult(interp,
+		"dynamic loading is not currently available on this system");
     }
     return TCL_ERROR;
 }
@@ -80,8 +79,8 @@ TclpLoadMemory(
     TCL_UNUSED(int))
 {
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
-		"is not available on this system", -1));
+	TclSetResult(interp,
+		"dynamic loading from memory is not available on this system");
     }
     return TCL_ERROR;
 }

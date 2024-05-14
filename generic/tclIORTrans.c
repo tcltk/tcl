@@ -599,9 +599,9 @@ TclChanPushObjCmd(
      */
 
     if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s initialize\" returned non-list: %s",
-		TclGetString(cmdObj), TclGetString(resObj)));
+		TclGetString(cmdObj), TclGetString(resObj));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -610,10 +610,9 @@ TclChanPushObjCmd(
     while (listc > 0) {
 	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "chan handler \"%s initialize\" returned %s",
-		    TclGetString(cmdObj),
-		    Tcl_GetStringResult(interp)));
+		    TclGetString(cmdObj), Tcl_GetStringResult(interp));
 	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
@@ -624,9 +623,9 @@ TclChanPushObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" does not support all required methods",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
@@ -646,9 +645,9 @@ TclChanPushObjCmd(
     }
 
     if (!mode) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" makes the channel inaccessible",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
@@ -657,16 +656,16 @@ TclChanPushObjCmd(
      */
 
     if (!IMPLIES(HAS(methods, METH_DRAIN), HAS(methods, METH_READ))) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" supports \"drain\" but not \"read\"",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_FLUSH), HAS(methods, METH_WRITE))) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" supports \"flush\" but not \"write\"",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
@@ -702,8 +701,7 @@ TclChanPushObjCmd(
      * Return the channel as the result of the command.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    Tcl_GetChannelName(rtPtr->chan), -1));
+    TclSetResult(interp, Tcl_GetChannelName(rtPtr->chan));
     return TCL_OK;
 
   error:
@@ -2006,8 +2004,8 @@ InvokeTclMethod(
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rtPtr->interp);
-		Tcl_SetObjResult(rtPtr->interp, Tcl_ObjPrintf(
-			"chan handler returned bad code: %d", result));
+		TclPrintfResult(rtPtr->interp,
+			"chan handler returned bad code: %d", result);
 		Tcl_LogCommandInfo(rtPtr->interp, cmdString, cmdString, cmdLen);
 		Tcl_DecrRefCount(cmd);
 		result = TCL_ERROR;

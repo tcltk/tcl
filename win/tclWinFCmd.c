@@ -1480,8 +1480,8 @@ StatError(
 				 * error. */
 {
     Tcl_WinConvertError(GetLastError());
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
-	    TclGetString(fileName), Tcl_PosixError(interp)));
+    TclPrintfResult(interp,"could not read \"%s\": %s",
+	    TclGetString(fileName), Tcl_PosixError(interp));
 }
 
 /*
@@ -1599,9 +1599,9 @@ ConvertFileNameFormat(
 
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "could not read \"%s\": no such file or directory",
-		    TclGetString(fileName)));
+		    TclGetString(fileName));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);
 	}
@@ -1879,9 +1879,9 @@ CannotSetAttribute(
     Tcl_Obj *fileName,		/* The name of the file. */
     TCL_UNUSED(Tcl_Obj *) /*attributePtr*/)
 {
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
-	    tclpFileAttrStrings[objIndex], TclGetString(fileName)));
+	    tclpFileAttrStrings[objIndex], TclGetString(fileName));
     errno = EINVAL;
     Tcl_PosixError(interp);
     return TCL_ERROR;

@@ -267,8 +267,7 @@ TclChannelTransform(
     }
 
     if (TCL_OK != TclListObjLength(interp, cmdObjPtr, &objc)) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("-command value is not a list", -1));
+	TclSetResult(interp, "-command value is not a list");
 	return TCL_ERROR;
     }
 

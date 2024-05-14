@@ -1357,8 +1357,8 @@ Tcl_DisassembleObjCmd(
 
 	procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
 	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" isn't a procedure", TclGetString(objv[2])));
+	    TclPrintfResult(interp,
+		    "\"%s\" isn't a procedure", TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
 		    TclGetString(objv[2]), (void *)NULL);
 	    return TCL_ERROR;
@@ -1407,8 +1407,8 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    TclPrintfResult(interp,
+		    "\"%s\" is not a class", TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		    TclGetString(objv[2]), (void *)NULL);
 	    return TCL_ERROR;
@@ -1416,17 +1416,17 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = oPtr->classPtr->constructorPtr;
 	if (methodPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "\"%s\" has no defined constructor",
-		    TclGetString(objv[2])));
+		    TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "CONSRUCTOR", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of constructor", -1));
+	    TclSetResult(interp,
+		    "body not available for this kind of constructor");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (void *)NULL);
 	    return TCL_ERROR;
@@ -1472,8 +1472,8 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    TclPrintfResult(interp,
+		    "\"%s\" is not a class", TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		    TclGetString(objv[2]), (void *)NULL);
 	    return TCL_ERROR;
@@ -1481,17 +1481,17 @@ Tcl_DisassembleObjCmd(
 
 	methodPtr = oPtr->classPtr->destructorPtr;
 	if (methodPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "\"%s\" has no defined destructor",
-		    TclGetString(objv[2])));
+		    TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "DESRUCTOR", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of destructor", -1));
+	    TclSetResult(interp,
+		    "body not available for this kind of destructor");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (void *)NULL);
 	    return TCL_ERROR;
@@ -1537,8 +1537,8 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
+	    TclPrintfResult(interp,
+		    "\"%s\" is not a class", TclGetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		    TclGetString(objv[2]), (void *)NULL);
 	    return TCL_ERROR;
@@ -1572,16 +1572,16 @@ Tcl_DisassembleObjCmd(
     methodBody:
 	if (hPtr == NULL) {
 	unknownMethod:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown method \"%s\"", TclGetString(objv[3])));
+	    TclPrintfResult(interp,
+		    "unknown method \"%s\"", TclGetString(objv[3]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(objv[3]), (void *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of method", -1));
+	    TclSetResult(interp,
+		    "body not available for this kind of method");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (void *)NULL);
 	    return TCL_ERROR;
@@ -1617,8 +1617,7 @@ Tcl_DisassembleObjCmd(
     ByteCodeGetInternalRep(codeObjPtr, &tclByteCodeType, codePtr);
 
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not disassemble prebuilt bytecode", -1));
+	TclSetResult(interp, "may not disassemble prebuilt bytecode");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		"BYTECODE", (void *)NULL);
 	return TCL_ERROR;

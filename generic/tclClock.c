@@ -711,9 +711,8 @@ ClockMCDict(
 		    opts->localeObj, &opts->mcDictObj);
 
 	    if (opts->localeObj == NULL) {
-		Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-			"locale not specified and no default locale set",
-			TCL_AUTO_LENGTH));
+		TclSetResult(opts->interp,
+			"locale not specified and no default locale set");
 		Tcl_SetErrorCode(opts->interp, "CLOCK", "badOption", (char *)NULL);
 		return NULL;
 	    }
@@ -1438,8 +1437,7 @@ ClockConvertlocaltoutcObjCmd(
 	return TCL_ERROR;
     }
     if (secondsObj == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("key \"localseconds\" not "
-		"found in dictionary", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "key \"localseconds\" not found in dictionary");
 	return TCL_ERROR;
     }
     if ((TclGetWideIntFromObj(interp, secondsObj, &fields.localSeconds) != TCL_OK)
@@ -1665,8 +1663,7 @@ FetchEraField(
 	return TCL_ERROR;
     }
     if (value == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"expected key(s) not found in dictionary", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "expected key(s) not found in dictionary");
 	return TCL_ERROR;
     }
     return Tcl_GetIndexFromObj(interp, value, eras, "era", TCL_EXACT, storePtr);
@@ -1685,8 +1682,7 @@ FetchIntField(
 	return TCL_ERROR;
     }
     if (value == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"expected key(s) not found in dictionary", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "expected key(s) not found in dictionary");
 	return TCL_ERROR;
     }
     return TclGetIntFromObj(interp, value, storePtr);
@@ -2129,8 +2125,7 @@ ConvertLocalToUTCUsingC(
 
     if (localErrno != 0
 	    || (fields->seconds == -1 && timeVal.tm_yday == -1)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"time value too large/small to represent", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "time value too large/small to represent");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -2351,17 +2346,16 @@ ConvertUTCToLocalUsingC(
 
     tock = (time_t) fields->seconds;
     if ((Tcl_WideInt) tock != fields->seconds) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"number too large to represent as a Posix time", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "number too large to represent as a Posix time");
 	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", (char *)NULL);
 	return TCL_ERROR;
     }
     TzsetIfNecessary();
     timeVal = ThreadSafeLocalTime(&tock);
     if (timeVal == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	TclSetResult(interp,
 		"localtime failed (clock value may be too "
-		"large/small to represent)", TCL_AUTO_LENGTH));
+		"large/small to represent)");
 	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3054,8 +3048,7 @@ ClockGetenvObjCmd(
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
     if (varValue != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		varValue, TCL_AUTO_LENGTH));
+	TclSetResult(interp, varValue);
     }
 #endif
     return TCL_OK;
@@ -3339,9 +3332,9 @@ ClockParseFmtScnArgs(
 	    if (operation != CLC_OP_SCN && optionIndex == CLC_ARGS_BASE) {
 		goto badOptionMsg;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "bad option \"%s\": doubly present",
-		    TclGetString(objv[i])));
+		    TclGetString(objv[i]));
 	    goto badOption;
 	}
 	switch (optionIndex) {
@@ -3391,8 +3384,7 @@ ClockParseFmtScnArgs(
 
     if ((saw & (1 << CLC_ARGS_GMT))
 	    && (saw & (1 << CLC_ARGS_TIMEZONE))) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot use -gmt and -timezone in same call", TCL_AUTO_LENGTH));
+	TclSetResult(interp, "cannot use -gmt and -timezone in same call");
 	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3492,9 +3484,9 @@ ClockParseFmtScnArgs(
     return TCL_OK;
 
   badOptionMsg:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "bad option \"%s\": must be %s",
-	    TclGetString(objv[i]), syntax));
+	    TclGetString(objv[i]), syntax);
 
   badOption:
     Tcl_SetErrorCode(interp, "CLOCK", "badOption",
@@ -3640,8 +3632,8 @@ ClockScanObjCmd(
 	/* [SB] TODO: Perhaps someday we'll localize the legacy code. Right now,
 	 * it's not localized. */
 	if (opts.localeObj != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "legacy [clock scan] does not support -locale", TCL_AUTO_LENGTH));
+	    TclSetResult(interp,
+		    "legacy [clock scan] does not support -locale");
 	    Tcl_SetErrorCode(interp, "CLOCK", "flagWithLegacyFormat", (char *)NULL);
 	    ret = TCL_ERROR;
 	    goto done;
@@ -3734,8 +3726,8 @@ ClockScanCommit(
 	double curJDN = (double)yydate.julianDay
 		+ ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
 	if (curJDN > opts->dataPtr->maxJDN) {
-	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-		    "requested date too large to represent", TCL_AUTO_LENGTH));
+	    TclSetResult(opts->interp,
+		    "requested date too large to represent");
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -3943,8 +3935,8 @@ ClockValidDate(
     return TCL_OK;
 
   error:
-    Tcl_SetObjResult(opts->interp, Tcl_ObjPrintf(
-	    "unable to convert input string: %s", errMsg));
+    TclPrintfResult(opts->interp,
+	    "unable to convert input string: %s", errMsg);
     Tcl_SetErrorCode(opts->interp, "CLOCK", "invInpStr", errCode, (char *)NULL);
     return TCL_ERROR;
 }
@@ -3987,9 +3979,9 @@ ClockFreeScan(
     yyInput = TclGetString(strObj);
 
     if (TclClockFreeScan(interp, info) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to convert date-time string \"%s\": %s",
-		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp))));
+		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp)));
 	goto done;
     }
 

@@ -225,8 +225,7 @@ FindSymbol(
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\"", symbol));
+	TclPrintfResult(interp, "cannot find symbol \"%s\"", symbol);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;
@@ -292,9 +291,8 @@ TclpTempFileNameForLibrary(
     Tcl_MutexLock(&dllDirectoryNameMutex);
     if (dllDirectoryName == NULL) {
 	if (InitDLLDirectoryName() == TCL_ERROR) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't create temporary directory: %s",
-		    Tcl_PosixError(interp)));
+	    TclPrintfResult(interp, "couldn't create temporary directory: %s",
+		    Tcl_PosixError(interp));
 	    Tcl_MutexUnlock(&dllDirectoryNameMutex);
 	    return NULL;
 	}

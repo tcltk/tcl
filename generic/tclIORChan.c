@@ -608,9 +608,9 @@ TclChanCreateObjCmd(
      */
 
     if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s initialize\" returned non-list: %s",
-		TclGetString(cmdObj), TclGetString(resObj)));
+		TclGetString(cmdObj), TclGetString(resObj));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -634,37 +634,37 @@ TclChanCreateObjCmd(
     Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" does not support all required methods",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
     if ((mode & TCL_READABLE) && !HAS(methods, METH_READ)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" lacks a \"read\" method",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
     if ((mode & TCL_WRITABLE) && !HAS(methods, METH_WRITE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" lacks a \"write\" method",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGET), HAS(methods, METH_CGETALL))) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" supports \"cget\" but not \"cgetall\"",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGETALL), HAS(methods, METH_CGET))) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"chan handler \"%s\" supports \"cgetall\" but not \"cget\"",
-		TclGetString(cmdObj)));
+		TclGetString(cmdObj));
 	goto error;
     }
 
@@ -736,8 +736,7 @@ TclChanCreateObjCmd(
      * Return handle as result of command.
      */
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(chanPtr->state->channelName, -1));
+    TclSetResult(interp, chanPtr->state->channelName);
     return TCL_OK;
 
   error:
@@ -867,8 +866,8 @@ TclChanPostEventObjCmd(
     hPtr = Tcl_FindHashEntry(&rcmPtr->map, chanId);
 
     if (hPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can not find reflected channel named \"%s\"", chanId));
+	TclPrintfResult(interp,
+		"can not find reflected channel named \"%s\"", chanId);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -921,8 +920,7 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad event list: is empty", -1));
+	TclSetResult(interp, "bad event list: is empty");
 	return TCL_ERROR;
     }
 
@@ -931,9 +929,9 @@ TclChanPostEventObjCmd(
      */
 
     if (events & ~rcPtr->interest) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"tried to post events channel \"%s\" is not interested in",
-		chanId));
+		chanId);
 	return TCL_ERROR;
     }
 
@@ -2007,10 +2005,10 @@ ReflectGetOption(
 	 */
 
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Expected list with even number of "
-		"elements, got %" TCL_SIZE_MODIFIER "d element%s instead", listc,
-		(listc == 1 ? "" : "s")));
+	TclPrintfResult(interp,
+		"Expected list with even number of elements, "
+		"got %" TCL_SIZE_MODIFIER "d element%s instead",
+		listc, (listc == 1 ? "" : "s"));
 	goto error;
     } else {
 	Tcl_Size len;
@@ -2453,8 +2451,8 @@ InvokeTclMethod(
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
-		Tcl_SetObjResult(rcPtr->interp, Tcl_ObjPrintf(
-			"chan handler returned bad code: %d", result));
+		TclPrintfResult(rcPtr->interp,
+			"chan handler returned bad code: %d", result);
 		Tcl_LogCommandInfo(rcPtr->interp, cmdString, cmdString,
 			cmdLen);
 		Tcl_DecrRefCount(cmd);

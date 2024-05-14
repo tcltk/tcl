@@ -110,9 +110,9 @@ TclpDlopen(
     }
 
     if (lm == LDR_NULL_MODULE) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"couldn't load file \"%s\": %s",
-		fileName, Tcl_PosixError(interp)));
+		fileName, Tcl_PosixError(interp));
 	return TCL_ERROR;
     }
 
@@ -167,8 +167,8 @@ FindSymbol(
     void *proc = ldr_lookup_package((char *) loadHandle, symbol);
 
     if (proc == NULL && interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\"", symbol));
+	TclPrintfResult(interp,
+		"cannot find symbol \"%s\"", symbol);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;

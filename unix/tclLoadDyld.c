@@ -419,8 +419,8 @@ FindSymbol(
     }
     Tcl_DStringFree(&ds);
     if (errMsg && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\": %s", symbol, errMsg));
+	TclPrintfResult(interp,
+		"cannot find symbol \"%s\": %s", symbol, errMsg);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		(char *)NULL);
     }
@@ -647,9 +647,9 @@ TclpLoadMemory(
     if (dyldObjFileImage == NULL) {
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
 	if (objFileImageErrMsg != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "NSCreateObjectFileImageFromMemory() error: %s",
-		    objFileImageErrMsg));
+		    objFileImageErrMsg);
 	}
 	return TCL_ERROR;
     }
@@ -672,7 +672,7 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_INDEX_NONE));
+	TclSetResult(interp, errMsg);
 	return TCL_ERROR;
     }
 

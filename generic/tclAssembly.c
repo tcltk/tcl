@@ -1381,8 +1381,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	if (opnd < 0 || opnd > 3) {
-	    Tcl_SetObjResult(interp,
-		     Tcl_NewStringObj("operand must be [0..3]", -1));
+	    TclSetResult(interp, "operand must be [0..3]");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", (void *)NULL);
 	    goto cleanup;
 	}
@@ -1622,8 +1621,7 @@ AssembleOneLine(
 	}
 	if (opnd < 2) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("operand must be >=2", -1));
+		TclSetResult(interp, "operand must be >=2");
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND>=2", (void *)NULL);
 	    }
 	    goto cleanup;
@@ -1987,9 +1985,8 @@ CreateMirrorJumpTable(
     }
     if (objc % 2 != 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "jump table must have an even number of list elements",
-		    -1));
+	    TclSetResult(interp,
+		    "jump table must have an even number of list elements");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", (void *)NULL);
 	}
 	return TCL_ERROR;
@@ -2018,9 +2015,9 @@ CreateMirrorJumpTable(
 		&isNew);
 	if (!isNew) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"duplicate entry in jump table for \"%s\"",
-			TclGetString(objv[i])));
+			TclGetString(objv[i]));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPJUMPTABLEENTRY", (void *)NULL);
 		DeleteMirrorJumpTable(jtPtr);
 		return TCL_ERROR;
@@ -2104,8 +2101,7 @@ GetNextOperand(
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "assembly code may not contain substitutions", -1));
+	    TclSetResult(interp, "assembly code may not contain substitutions");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOSUBST", (void *)NULL);
 	}
 	return TCL_ERROR;
@@ -2326,9 +2322,9 @@ FindLocalVar(
     Tcl_DecrRefCount(varNameObj);
     if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "cannot use this instruction to create a variable"
-		    " in a non-proc context", -1));
+		    " in a non-proc context");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", (void *)NULL);
 	}
 	return TCL_INDEX_NONE;
@@ -2362,8 +2358,7 @@ CheckNamespaceQualifiers(
 
     for (p = name; p+2 < name+nameLen;  p++) {
 	if ((*p == ':') && (p[1] == ':')) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "variable \"%s\" is not local", name));
+	    TclPrintfResult(interp, "variable \"%s\" is not local", name);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONLOCAL", name, (void *)NULL);
 	    return TCL_ERROR;
 	}
@@ -2395,11 +2390,8 @@ CheckOneByte(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
     int value)			/* Value to check */
 {
-    Tcl_Obj* result;		/* Error message */
-
     if (value < 0 || value > 0xFF) {
-	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
-	Tcl_SetObjResult(interp, result);
+	TclSetResult(interp, "operand does not fit in one byte");
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", (void *)NULL);
 	return TCL_ERROR;
     }
@@ -2430,11 +2422,8 @@ CheckSignedOneByte(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
     int value)			/* Value to check */
 {
-    Tcl_Obj* result;		/* Error message */
-
     if (value > 0x7F || value < -0x80) {
-	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
-	Tcl_SetObjResult(interp, result);
+	TclSetResult(interp, "operand does not fit in one byte");
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", (void *)NULL);
 	return TCL_ERROR;
     }
@@ -2463,11 +2452,8 @@ CheckNonNegative(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
     int value)			/* Value to check */
 {
-    Tcl_Obj* result;		/* Error message */
-
     if (value < 0) {
-	result = Tcl_NewStringObj("operand must be nonnegative", -1);
-	Tcl_SetObjResult(interp, result);
+	TclSetResult(interp, "operand must be nonnegative");
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONNEGATIVE", (void *)NULL);
 	return TCL_ERROR;
     }
@@ -2496,11 +2482,8 @@ CheckStrictlyPositive(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
     int value)			/* Value to check */
 {
-    Tcl_Obj* result;		/* Error message */
-
     if (value <= 0) {
-	result = Tcl_NewStringObj("operand must be positive", -1);
-	Tcl_SetObjResult(interp, result);
+	TclSetResult(interp, "operand must be positive");
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "POSITIVE", (void *)NULL);
 	return TCL_ERROR;
     }
@@ -2550,8 +2533,8 @@ DefineLabel(
 	 */
 
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "duplicate definition of label \"%s\"", labelName));
+	    TclPrintfResult(interp,
+		    "duplicate definition of label \"%s\"", labelName);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "DUPLABEL", labelName,
 		    (void *)NULL);
 	}
@@ -2951,8 +2934,8 @@ ReportUndefinedLabel(
 				/* Tcl interpreter */
 
     if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"undefined label \"%s\"", TclGetString(jumpTarget)));
+	TclPrintfResult(interp,
+		"undefined label \"%s\"", TclGetString(jumpTarget));
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOLABEL",
 		TclGetString(jumpTarget), (void *)NULL);
 	Tcl_SetErrorLine(interp, bbPtr->jumpLine);
@@ -3234,11 +3217,11 @@ CheckNonThrowingBlock(
 	     */
 
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"\"%s\" instruction may not appear in "
 			"a context where an exception has been "
 			"caught and not disposed of.",
-			tclInstructionTable[opcode].name));
+			tclInstructionTable[opcode].name);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADTHROW", (void *)NULL);
 		AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    }
@@ -3411,8 +3394,8 @@ StackCheckBasicBlock(
 	    return TCL_OK;
 	}
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "inconsistent stack depths on two execution paths", -1));
+	    TclSetResult(interp,
+		    "inconsistent stack depths on two execution paths");
 
 	    /*
 	     * TODO - add execution trace of both paths
@@ -3441,7 +3424,7 @@ StackCheckBasicBlock(
 
     if (initialStackDepth + blockPtr->minStackDepth < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("stack underflow", -1));
+	    TclSetResult(interp, "stack underflow");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", (void *)NULL);
 	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    Tcl_SetErrorLine(interp, blockPtr->startLine);
@@ -3459,8 +3442,8 @@ StackCheckBasicBlock(
 	    < (blockPtr->enclosingCatch->initialStackDepth
 		+ blockPtr->enclosingCatch->finalStackDepth)) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "code pops stack below level of enclosing catch", -1));
+	    TclSetResult(interp,
+		    "code pops stack below level of enclosing catch");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH", (void *)NULL);
 	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    Tcl_SetErrorLine(interp, blockPtr->startLine);
@@ -3586,9 +3569,9 @@ StackCheckExit(
 
 	if (depth != 1) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"stack is unbalanced on exit from the code (depth=%d)",
-			depth));
+			depth);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", (void *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3730,9 +3713,9 @@ ProcessCatchesInBasicBlock(
 	bbPtr->enclosingCatch = enclosing;
     } else if (bbPtr->enclosingCatch != enclosing) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "execution reaches an instruction in inconsistent "
-		    "exception contexts", -1));
+		    "exception contexts");
 	    Tcl_SetErrorLine(interp, bbPtr->startLine);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADCATCH", (void *)NULL);
 	}
@@ -3790,8 +3773,8 @@ ProcessCatchesInBasicBlock(
 
 	if (enclosing == NULL) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"endCatch without a corresponding beginCatch", -1));
+		TclSetResult(interp,
+			"endCatch without a corresponding beginCatch");
 		Tcl_SetErrorLine(interp, bbPtr->startLine);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADENDCATCH", (void *)NULL);
 	    }
@@ -3860,13 +3843,13 @@ CheckForUnclosedCatches(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
-				/* Tcl interpreter */
 
     if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "catch still active on exit from assembly code", -1));
+	    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+				/* Tcl interpreter */
+	    TclSetResult(interp,
+		    "catch still active on exit from assembly code");
 	    Tcl_SetErrorLine(interp,
 		    assemEnvPtr->curr_bb->enclosingCatch->startLine);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", (void *)NULL);

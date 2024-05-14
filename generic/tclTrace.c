@@ -316,9 +316,9 @@ TraceExecutionObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "bad operation list \"\": must be one or more of"
-		    " enter, leave, enterstep, or leavestep", -1));
+		    " enter, leave, enterstep, or leavestep");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (void *)NULL);
 	    return TCL_ERROR;
@@ -559,9 +559,9 @@ TraceCommandObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "bad operation list \"\": must be one or more of"
-		    " delete or rename", -1));
+		    " delete or rename");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (void *)NULL);
 	    return TCL_ERROR;
@@ -759,9 +759,9 @@ TraceVariableObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "bad operation list \"\": must be one or more of"
-		    " array, read, unset, or write", -1));
+		    " array, read, unset, or write");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (void *)NULL);
 	    return TCL_ERROR;
@@ -2674,8 +2674,7 @@ TclCallVarTraces(
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
 		Tcl_SetObjResult((Tcl_Interp *)iPtr, (Tcl_Obj *) result);
 	    } else {
-		Tcl_SetObjResult((Tcl_Interp *)iPtr,
-			Tcl_NewStringObj(result, -1));
+		TclSetResult((Tcl_Interp *)iPtr, result);
 	    }
 	    Tcl_AddErrorInfo((Tcl_Interp *)iPtr, "");
 

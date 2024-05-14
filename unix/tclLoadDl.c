@@ -129,9 +129,9 @@ TclpDlopen(
 	const char *errorStr = dlerror();
 
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "couldn't load file \"%s\": %s",
-		    TclGetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr);
 	}
 	return TCL_ERROR;
     }
@@ -229,8 +229,8 @@ FindSymbol(
 	    if (!errorStr) {
 		errorStr = "unknown";
 	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "cannot find symbol \"%s\": %s", symbol, errorStr));
+	    TclPrintfResult(interp,
+		    "cannot find symbol \"%s\": %s", symbol, errorStr);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		    (char *)NULL);
 	}

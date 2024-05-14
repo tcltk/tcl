@@ -167,8 +167,7 @@ Tcl_LinkVar(
     linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
     if (linkPtr != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"variable '%s' is already linked", varName));
+	TclPrintfResult(interp, "variable '%s' is already linked", varName);
 	return TCL_ERROR;
     }
 
@@ -247,8 +246,7 @@ Tcl_LinkArray(
     int code;
 
     if (size < 1) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"wrong array size given", -1));
+	TclSetResult(interp, "wrong array size given");
 	return TCL_ERROR;
     }
 
@@ -315,8 +313,7 @@ Tcl_LinkArray(
 	break;
     default:
 	LinkFree(linkPtr);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad linked array variable type", -1));
+	TclSetResult(interp, "bad linked array variable type");
 	return TCL_ERROR;
     }
 

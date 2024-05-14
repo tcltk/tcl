@@ -1237,13 +1237,14 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
+			    nBytesProcessed);
+		    TclPrintfResult(interp,
 			    "unexpected byte sequence starting at index %"
 			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
-			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
-		    Tcl_SetErrorCode(
-			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
+			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed]));
+		    Tcl_SetErrorCode(interp,
+			    "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1559,10 +1560,10 @@ Tcl_UtfToExternalDStringEx(
 
 		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
-			    pos, ucs4));
+			    pos, ucs4);
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 			    buf, (void *)NULL);
 		}
@@ -1819,8 +1820,7 @@ OpenEncodingFileChannel(
     }
 
     if ((NULL == chan) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown encoding \"%s\"", name));
+	TclPrintfResult(interp, "unknown encoding \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
@@ -1894,8 +1894,7 @@ LoadEncodingFile(
 	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid encoding file \"%s\"", name));
+	TclPrintfResult(interp, "invalid encoding file \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_CloseEx(NULL, chan, 0);
@@ -4321,14 +4320,14 @@ TclEncodingProfileNameToId(
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendStringsToObj(
-		errorObj, " ", encodingProfiles[i].name, ",", (void *)NULL);
+		    errorObj, " ", encodingProfiles[i].name, ",", (void *)NULL);
 	}
 	Tcl_AppendStringsToObj(
-	    errorObj, " or ", encodingProfiles[numProfiles-1].name, (void *)NULL);
+		errorObj, " or ", encodingProfiles[numProfiles-1].name, (void *)NULL);
 
 	Tcl_SetObjResult(interp, errorObj);
-	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILE", profileName, (void *)NULL);
+	Tcl_SetErrorCode(interp,
+		"TCL", "ENCODING", "PROFILE", profileName, (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -4361,9 +4360,8 @@ TclEncodingProfileIdToName(
 	}
     }
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Internal error. Bad profile id \"%d\".",
-		profileValue));
+	TclPrintfResult(interp,
+		"Internal error. Bad profile id \"%d\".", profileValue);
 	Tcl_SetErrorCode(
 	    interp, "TCL", "ENCODING", "PROFILEID", (void *)NULL);
     }

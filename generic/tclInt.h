@@ -4857,6 +4857,17 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 /*
  *----------------------------------------------------------------
+ * Convenience for writing to the interpreter result.
+ */
+
+#define TclSetResult(interp, str) \
+    Tcl_SetObjResult((interp), Tcl_NewStringObj((str), TCL_AUTO_LENGTH))
+
+#define TclPrintfResult(interp, format, ...) \
+    Tcl_SetObjResult((interp), Tcl_ObjPrintf((format), __VA_ARGS__))
+
+/*
+ *----------------------------------------------------------------
  * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace.
  */
 

@@ -100,8 +100,8 @@ TclpDlopen(
 	int len, maxlen;
 
 	NXGetMemoryBuffer(errorStream, &data, &len, &maxlen);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't load file \"%s\": %s", fileName, data));
+	TclPrintfResult(interp,
+		"couldn't load file \"%s\": %s", fileName, data);
 	NXCloseMemory(errorStream, NX_FREEBUFFER);
 	return TCL_ERROR;
     }
@@ -150,8 +150,8 @@ FindSymbol(
 	rld_lookup(NULL, sym, (unsigned long *) &proc);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\"", symbol));
+	TclPrintfResult(interp,
+		"cannot find symbol \"%s\"", symbol);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;

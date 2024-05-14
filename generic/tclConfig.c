@@ -227,7 +227,7 @@ QueryConfigObjCmd(
 	 * present.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
+	TclSetResult(interp, "package not known");
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
 		TclGetString(pkgName), (void *)NULL);
 	return TCL_ERROR;
@@ -242,7 +242,7 @@ QueryConfigObjCmd(
 
 	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
+	    TclSetResult(interp, "key not known");
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
 		    TclGetString(objv[2]), (void *)NULL);
 	    return TCL_ERROR;
@@ -278,8 +278,7 @@ QueryConfigObjCmd(
 	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "insufficient memory to create list", -1));
+	    TclSetResult(interp, "insufficient memory to create list");
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
 	    return TCL_ERROR;
 	}

@@ -2181,8 +2181,8 @@ TclCompileScript(
      * eval+compile) and is good enough for default recursionlimit (1000).
      */
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"too many nested compilations (infinite loop?)", -1));
+	TclSetResult(interp,
+		"too many nested compilations (infinite loop?)");
 	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
@@ -2200,10 +2200,10 @@ TclCompileScript(
 	     * Note this gets -errorline as 1. Not worth figuring out which line
 	     * crosses the limit to get -errorline for this error case.
 	     */
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Script length %" TCL_SIZE_MODIFIER
 		    "d exceeds max permitted length %d.",
-		    numBytes, INT_MAX-1));
+		    numBytes, INT_MAX - 1);
 	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (void *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;

@@ -106,10 +106,9 @@ FileForRedirect(
 	    if (msg) {
 		Tcl_SetObjResult(interp, msg);
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"channel \"%s\" wasn't opened for %s",
+		TclPrintfResult(interp, "channel \"%s\" wasn't opened for %s",
 			Tcl_GetChannelName(chan),
-			((writing) ? "writing" : "reading")));
+			((writing) ? "writing" : "reading"));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			"BADCHAN", (void *)NULL);
 	    }
@@ -142,10 +141,9 @@ FileForRedirect(
 	file = TclpOpenFile(name, flags);
 	Tcl_DStringFree(&nameString);
 	if (file == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't %s file \"%s\": %s",
+	    TclPrintfResult(interp, "couldn't %s file \"%s\": %s",
 		    (writing ? "write" : "read"), spec,
-		    Tcl_PosixError(interp)));
+		    Tcl_PosixError(interp));
 	    return NULL;
 	}
 	*closePtr = 1;
@@ -153,8 +151,7 @@ FileForRedirect(
     return file;
 
   badLastArg:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't specify \"%s\" as last word in command", arg));
+    TclPrintfResult(interp, "can't specify \"%s\" as last word in command", arg);
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "SYNTAX", (void *)NULL);
     return NULL;
 }
@@ -340,9 +337,9 @@ TclCleanupChildren(
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
 		Tcl_ResetResult(interp);
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"error reading stderr output file: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 	    } else if (count > 0) {
 		anyErrorInfo = 1;
 		Tcl_SetObjResult(interp, objPtr);
@@ -360,8 +357,7 @@ TclCleanupChildren(
      */
 
     if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"child process exited abnormally", -1));
+	TclSetResult(interp, "child process exited abnormally");
     }
     return result;
 }
@@ -511,8 +507,7 @@ TclCreatePipeline(
 	    }
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "illegal use of | or |& in command", -1));
+		    TclSetResult(interp, "illegal use of | or |& in command");
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", (void *)NULL);
 		    goto error;
@@ -539,9 +534,9 @@ TclCreatePipeline(
 		if (*inputLiteral == '\0') {
 		    inputLiteral = ((i + 1) == argc) ? NULL : argv[i + 1];
 		    if (inputLiteral == NULL) {
-			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			TclPrintfResult(interp,
 				"can't specify \"%s\" as last word in command",
-				argv[i]));
+				argv[i]);
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 				"PIPESYNTAX", (void *)NULL);
 			goto error;
@@ -656,9 +651,9 @@ TclCreatePipeline(
 		 */
 
 		if (i != argc-1) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "must specify \"%s\" as last word in command",
-			    argv[i]));
+			    argv[i]);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", (void *)NULL);
 		    goto error;
@@ -699,8 +694,7 @@ TclCreatePipeline(
 	 * We had a bar followed only by redirections.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"illegal use of | or |& in command", -1));
+	TclSetResult(interp, "illegal use of | or |& in command");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
 		(void *)NULL);
 	goto error;
@@ -716,9 +710,9 @@ TclCreatePipeline(
 
 	    inputFile = TclpCreateTempFile(inputLiteral);
 	    if (inputFile == NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"couldn't create input file for command: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 		goto error;
 	    }
 	    inputClose = 1;
@@ -729,9 +723,9 @@ TclCreatePipeline(
 	     */
 
 	    if (TclpCreatePipe(&inputFile, inPipePtr) == 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"couldn't create input pipe for command: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 		goto error;
 	    }
 	    inputClose = 1;
@@ -758,9 +752,9 @@ TclCreatePipeline(
 	     */
 
 	    if (TclpCreatePipe(outPipePtr, &outputFile) == 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"couldn't create output pipe for command: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 		goto error;
 	    }
 	    outputClose = 1;
@@ -798,9 +792,9 @@ TclCreatePipeline(
 
 	    errorFile = TclpCreateTempFile(NULL);
 	    if (errorFile == NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"couldn't create error file for command: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 		goto error;
 	    }
 	    *errFilePtr = errorFile;
@@ -871,8 +865,8 @@ TclCreatePipeline(
 	} else {
 	    argv[lastArg] = NULL;
 	    if (TclpCreatePipe(&pipeIn, &curOutFile) == 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't create pipe: %s", Tcl_PosixError(interp)));
+		TclPrintfResult(interp, "couldn't create pipe: %s",
+			Tcl_PosixError(interp));
 		goto error;
 	    }
 	}
@@ -1052,17 +1046,17 @@ Tcl_OpenCommandChannel(
 
     if (flags & TCL_ENFORCE_MODE) {
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "can't read output from command:"
-		    " standard output was redirected", -1));
+		    " standard output was redirected");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (void *)NULL);
 	    goto error;
 	}
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    TclSetResult(interp,
 		    "can't write input to command:"
-		    " standard input was redirected", -1));
+		    " standard input was redirected");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (void *)NULL);
 	    goto error;
@@ -1073,8 +1067,7 @@ Tcl_OpenCommandChannel(
 	    numPids, pidPtr);
 
     if (channel == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"pipe for command could not be created", -1));
+	TclSetResult(interp, "pipe for command could not be created");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", (void *)NULL);
 	goto error;
     }
