@@ -375,6 +375,10 @@ test clock-1.9 "clock arguments: option doubly present" {
     list [catch {clock format 0 -gmt 1 -gmt 0} result] $result
 } {1 {bad option "-gmt": doubly present}}
 
+test clock-1.10 {clock format: text with token (bug [a858d95f4bfddafb])} {
+    clock format 0 -format text(%d) -gmt 1
+} {text(01)}
+
 # BEGIN testcases2
 
 # Test formatting of Gregorian year, month, day, all formats
@@ -18923,6 +18927,10 @@ test clock-6.22.19 {Greedy match (space wins as date-time separator)} {
 test clock-6.22.20 {Greedy match (second space wins as date-time separator)} {
     clock format [clock scan "111 2 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
 } {Sun Jan 02 13:12:00 GMT 2011}
+
+test clock-6.23 {clock scan: text with token (bug [a858d95f4bfddafb])} {
+    clock scan {text(01)} -format text(%d) -gmt 1 -base 0
+} 0
 
 
 test clock-7.1 {Julian Day} {
