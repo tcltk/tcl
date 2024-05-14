@@ -97,8 +97,8 @@ proc ::tcl::tm::add {args} {
 
     set newpaths $paths
     foreach p $args {
-	if {$p in $newpaths} {
-	    # Ignore a path already on the list.
+	if {($p eq "") || ($p in $newpaths)} {
+	    # Ignore any path which is empty or already on the list.
 	    continue
 	}
 
@@ -335,13 +335,13 @@ proc ::tcl::tm::Defaults {} {
 	foreach ev [::list \
 			TCL${major}.${n}_TM_PATH \
 			TCL${major}_${n}_TM_PATH \
-        ] {
+	] {
 	    if {![info exists env($ev)]} continue
 	    foreach p [split $env($ev) $sep] {
-                # Paths relative to unresolvable home dirs are ignored
-                if {![catch {file tildeexpand $p} expanded_path]} {
-                    path add $expanded_path
-                }
+		# Paths relative to unresolvable home dirs are ignored
+		if {![catch {file tildeexpand $p} expanded_path]} {
+		    path add $expanded_path
+		}
 	    }
 	}
     }
