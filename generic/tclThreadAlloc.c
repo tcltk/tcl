@@ -92,7 +92,7 @@ typedef struct {
     size_t numRemoves;		/* Number of removes from bucket */
     size_t numInserts;		/* Number of inserts into bucket */
     size_t numLocks;		/* Number of locks acquired */
-    size_t totalAssigned;	/* Total space assigned to bucket */
+    size_t totalAssigned;		/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -120,7 +120,7 @@ typedef struct Cache {
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
     size_t maxBlocks;		/* Max blocks before move to share. */
-    size_t numMove;		/* Num blocks to move to share. */
+    size_t numMove;			/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -214,7 +214,7 @@ GetCache(void)
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
-	memset(cachePtr, 0, sizeof(Cache));
+        memset(cachePtr, 0, sizeof(Cache));
 	Tcl_MutexLock(listLockPtr);
 	cachePtr->nextPtr = firstCachePtr;
 	firstCachePtr = cachePtr;
@@ -1035,7 +1035,7 @@ GetBlocks(
  * TclInitThreadAlloc --
  *
  *	Initializes the allocator cache-maintenance structures.
- *	It is done early and protected during the Tcl_InitSubsystems().
+ *      It is done early and protected during the Tcl_InitSubsystems().
  *
  * Results:
  *	None.

@@ -19,13 +19,10 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(str, dsPtr) \
-    (Tcl_DStringInit(dsPtr),						\
-    (char *)Tcl_Char16ToUtfDString(					\
-	    (const unsigned short *)(str), -1, (dsPtr)))
-#  define utf2tenvirondstr(str, dsPtr) \
-    (Tcl_DStringInit(dsPtr),						\
-    (const WCHAR *) Tcl_UtfToChar16DString((str), -1, (dsPtr)))
+#  define tenviron2utfdstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+	(char *)Tcl_Char16ToUtfDString((const unsigned short *)(str), -1, (dsPtr)))
+#  define utf2tenvirondstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+	(const WCHAR *)Tcl_UtfToChar16DString((str), -1, (dsPtr)))
 #  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
@@ -40,7 +37,7 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 #endif
 
 /* MODULE_SCOPE */
-size_t TclEnvEpoch = 0;		/* Epoch of the tcl environment
+size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 				 * (if changed with tcl-env). */
 
 static struct {
@@ -48,7 +45,7 @@ static struct {
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
-    techar **ourEnviron;	/* Cache of the array that we allocate. We
+    techar **ourEnviron;		/* Cache of the array that we allocate. We
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */

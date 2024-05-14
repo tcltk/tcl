@@ -58,7 +58,8 @@ static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 void
 TclInitLiteralTable(
-    LiteralTable *tablePtr)	/* Pointer to table structure, which is
+    LiteralTable *tablePtr)
+				/* Pointer to table structure, which is
 				 * supplied by the caller. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4)
@@ -175,11 +176,11 @@ TclDeleteLiteralTable(
 Tcl_Obj *
 TclCreateLiteral(
     Interp *iPtr,
-    const char *bytes,		/* The start of the string. Note that this is
+    const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    Tcl_Size length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If the value is
-				 * TCL_INDEX_NONE, it will be computed here. */
+    Tcl_Size length,	/* Number of bytes in the string. */
+    size_t hash, /* The string's hash. If the value is
+				         * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -388,12 +389,12 @@ TclFetchLiteral(
 
 int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
-    void *ePtr,			/* Points to the CompileEnv in whose object
+    void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
-    const char *bytes,		/* Points to string for which to find or
+    const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    Tcl_Size length,		/* Number of bytes in the string. If -1, the
+    Tcl_Size length,			/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
@@ -506,7 +507,7 @@ static LiteralEntry *
 LookupLiteralEntry(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)		/* Points to a Tcl object holding a literal
+    Tcl_Obj *objPtr)	/* Points to a Tcl object holding a literal
 				 * that was previously created by a call to
 				 * TclRegisterLiteral. */
 {
@@ -552,7 +553,7 @@ void
 TclHideLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    CompileEnv *envPtr,		/* Points to CompileEnv whose literal array
+    CompileEnv *envPtr,/* Points to CompileEnv whose literal array
 				 * contains the entry being hidden. */
     int index)			/* The index of the entry in the literal
 				 * array. */
@@ -616,7 +617,7 @@ TclHideLiteral(
 
 int
 TclAddLiteralObj(
-    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The object to insert into the array. */
     LiteralEntry **litPtrPtr)	/* The location where the pointer to the new
@@ -669,7 +670,7 @@ TclAddLiteralObj(
 
 static size_t
 AddLocalLiteralEntry(
-    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The literal to add to the CompileEnv. */
     int localHash)		/* Hash value for the literal's string. */
@@ -747,7 +748,7 @@ AddLocalLiteralEntry(
 
 static void
 ExpandLocalLiteralArray(
-    CompileEnv *envPtr)		/* Points to the CompileEnv whose object array
+    CompileEnv *envPtr)/* Points to the CompileEnv whose object array
 				 * must be enlarged. */
 {
     /*
@@ -829,7 +830,7 @@ void
 TclReleaseLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)		/* Points to a literal object that was
+    Tcl_Obj *objPtr)	/* Points to a literal object that was
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
@@ -909,8 +910,8 @@ TclReleaseLiteral(
 
 static size_t
 HashString(
-    const char *string,		/* String for which to compute hash value. */
-    size_t length)		/* Number of bytes in the string. */
+    const char *string,	/* String for which to compute hash value. */
+    size_t length)			/* Number of bytes in the string. */
 {
     size_t result = 0;
 
@@ -973,7 +974,8 @@ HashString(
 
 static void
 RebuildLiteralTable(
-    LiteralTable *tablePtr)	/* Local or global table to enlarge. */
+    LiteralTable *tablePtr)
+				/* Local or global table to enlarge. */
 {
     LiteralEntry **oldBuckets;
     LiteralEntry **oldChainPtr, **newChainPtr;
