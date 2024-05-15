@@ -1790,9 +1790,9 @@ TclpOpenFileChannel(
     native = (const char *)Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"",
-	    TclGetString(pathPtr), "\": filename is invalid on this platform",
-	    (char *)NULL);
+	    TclPrintfResult(interp, 
+		    "couldn't open \"%s\": filename is invalid on this platform",
+		    TclGetString(pathPtr));
 	}
 	return NULL;
     }

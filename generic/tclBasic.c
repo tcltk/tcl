@@ -664,85 +664,97 @@ buildInfoObjCmd2(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    const char *buildData = (const char *) clientData;
+    char buf[80];
+    const char *arg, *p, *q;
+    Tcl_Size len;
+    int idx;
+    static const char *identifiers[] = {
+	"commit", "compiler", "patchlevel", "version", NULL
+    };
+    enum Identifiers {
+	ID_COMMIT, ID_COMPILER, ID_PATCHLEVEL, ID_VERSION, ID_OTHER
+    };
+
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
 	return TCL_ERROR;
-    }
-    if (objc == 2) {
-	Tcl_Size len;
-	const char *arg = TclGetStringFromObj(objv[1], &len);
-	if (len == 7 && !strcmp(arg, "version")) {
-	    char buf[80];
-	    const char *p = strchr((char *)clientData, '.');
-	    if (p) {
-		const char *q = strchr(p + 1, '.');
-		const char *r = strchr(p + 1, '+');
-		p = (q < r) ? q : r;
-	    }
-	    if (p) {
-		memcpy(buf, (char *)clientData, p - (char *)clientData);
-		buf[p - (char *)clientData] = '\0';
-		Tcl_AppendResult(interp, buf, (char *)NULL);
-	    }
-	    return TCL_OK;
-	} else if (len == 10 && !strcmp(arg, "patchlevel")) {
-	    char buf[80];
-	    const char *p = strchr((char *)clientData, '+');
-	    if (p) {
-		memcpy(buf, (char *)clientData, p - (char *)clientData);
-		buf[p - (char *)clientData] = '\0';
-		Tcl_AppendResult(interp, buf, (char *)NULL);
-	    }
-	    return TCL_OK;
-	} else if (len == 6 && !strcmp(arg, "commit")) {
-	    const char *q, *p = strchr((char *)clientData, '+');
-	    if (p) {
-		if ((q = strchr(p, '.'))) {
-		    char buf[80];
-		    memcpy(buf, p + 1, q - p - 1);
-		    buf[q - p - 1] = '\0';
-		    Tcl_AppendResult(interp, buf, (char *)NULL);
-		} else {
-		    Tcl_AppendResult(interp, p + 1, (char *)NULL);
-		}
-	    }
-	    return TCL_OK;
-	} else if (len == 8 && !strcmp(arg, "compiler")) {
-	    const char *p = strchr((char *)clientData, '.');
-	    while (p) {
-		if (!strncmp(p + 1, "clang-", 6)
-			|| !strncmp(p + 1, "gcc-", 4)
-			|| !strncmp(p + 1, "icc-", 4)
-			|| !strncmp(p + 1, "msvc-", 5)) {
-		    const char *q = strchr(p + 1, '.');
-		    if (q) {
-			char buf[16];
-			memcpy(buf, p + 1, q - p - 1);
-			buf[q - p - 1] = '\0';
-			Tcl_AppendResult(interp, buf, (char *)NULL);
-		    } else {
-			Tcl_AppendResult(interp, p + 1, (char *)NULL);
-		    }
-		    return TCL_OK;
-		}
-		p = strchr(p + 1, '.');
-	    }
-	    Tcl_AppendResult(interp, "0", (char *)NULL);
-	    return TCL_OK;
-	}
-	const char *p = strchr((char *)clientData, '.');
-	while (p) {
-	    if (!strncmp(p + 1, arg, len)
-		    && ((p[len + 1] == '.') || (p[len + 1] == '\0'))) {
-		Tcl_AppendResult(interp, "1", (char *)NULL);
-		return TCL_OK;
-	    }
-	    p = strchr(p + 1, '.');
-	}
-	Tcl_AppendResult(interp, "0", (char *)NULL);
+    } else if (objc < 2) {
+	TclSetResult(interp, buildData);
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, (char *)clientData, (char *)NULL);
+
+    /*
+     * Query for a specific piece of build info
+     */
+
+    if (Tcl_GetIndexFromObj(NULL, objv[1], identifiers, NULL, TCL_EXACT,
+	    &idx) != TCL_OK) {
+	idx = ID_OTHER;
+    }
+
+    switch (idx) {
+    case ID_PATCHLEVEL:
+	if ((p = strchr(buildData, '+')) != NULL) {
+	    memcpy(buf, buildData, p - buildData);
+	    buf[p - buildData] = '\0';
+	    TclSetResult(interp, buf);
+	}
+	return TCL_OK;
+    case ID_VERSION:
+	if ((p = strchr(buildData, '.')) != NULL) {
+	    const char *r = strchr(p++, '+');
+	    q = strchr(p, '.');
+	    p = (q < r) ? q : r;
+	}
+	if (p != NULL) {
+	    memcpy(buf, buildData, p - buildData);
+	    buf[p - buildData] = '\0';
+	    TclSetResult(interp, buf);
+	}
+	return TCL_OK;
+    case ID_COMMIT:
+	if ((p = strchr(buildData, '+')) != NULL) {
+	    if ((q = strchr(p++, '.')) != NULL) {
+		memcpy(buf, p, q - p);
+		buf[q - p] = '\0';
+		TclSetResult(interp, buf);
+	    } else {
+		TclSetResult(interp, p);
+	    }
+	}
+	return TCL_OK;
+    case ID_COMPILER:
+	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	    /*
+	     * Does the word begin with one of the standard prefixes?
+	     */
+	    if (!strncmp(p, "clang-", 6)
+		    || !strncmp(p, "gcc-", 4)
+		    || !strncmp(p, "icc-", 4)
+		    || !strncmp(p, "msvc-", 5)) {
+		if ((q = strchr(p, '.')) != NULL) {
+		    memcpy(buf, p, q - p);
+		    buf[q - p] = '\0';
+		    TclSetResult(interp, buf);
+		} else {
+		    TclSetResult(interp, p);
+		}
+		return TCL_OK;
+	    }
+	}
+	break;
+    default:		/* Boolean test for other identifiers' presence */
+	arg = TclGetStringFromObj(objv[1], &len);
+	for (p = strchr(buildData, '.'); p++; p = strchr(p, '.')) {
+	    if (!strncmp(p, arg, len)
+		    && ((p[len] == '.') || (p[len] == '\0'))) {
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+		return TCL_OK;
+	    }
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
     return TCL_OK;
 }
 
@@ -755,7 +767,7 @@ buildInfoObjCmd(
 {
     return buildInfoObjCmd2(clientData, interp, objc, objv);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
