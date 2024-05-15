@@ -9681,7 +9681,6 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		result = TCL_OK;
 		goto done;
 	    }
 	}
@@ -9773,7 +9772,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    result = TCL_OK;
 	    goto done;
 	}
 
@@ -9796,7 +9794,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    result = TCL_OK;
 	    goto done;
 	}
     } /* while */
