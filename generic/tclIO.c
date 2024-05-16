@@ -9559,7 +9559,7 @@ CopyData(
 				/* Encoding control */
     int underflow;		/* Input underflow */
 
-    csPtr->refCount++; /* avoid freeing during handling */
+    csPtr->refCount++;		/* avoid freeing during handling */
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
@@ -9847,7 +9847,7 @@ CopyData(
 	}
     }
 
-done:
+  done:
     CopyDecrRefCount(csPtr);
     return result;
 }
@@ -10202,8 +10202,8 @@ StopCopy(
 
 static void
 CopyDecrRefCount(
-    CopyState *csPtr
-) {
+    CopyState *csPtr)
+{
     if (csPtr->refCount-- > 1) {
 	return;
     }
