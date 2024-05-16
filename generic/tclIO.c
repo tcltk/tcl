@@ -9186,9 +9186,6 @@ TclCopyChannel(
     int nonBlocking = (cmdPtr) ? CHANNEL_NONBLOCKING : 0;
     int moveBytes;
 
-    TclChannelPreserve(inChan);
-    TclChannelPreserve(outChan);
-
     inStatePtr = inPtr->state;
     outStatePtr = outPtr->state;
 
@@ -9269,6 +9266,9 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
+
+    TclChannelPreserve(inChan);
+    TclChannelPreserve(outChan);
 
     inStatePtr->csPtrR = csPtr;
     outStatePtr->csPtrW = csPtr;
