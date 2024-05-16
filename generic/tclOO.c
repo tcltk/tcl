@@ -302,8 +302,8 @@ InitFoundation(
     Tcl_Interp *interp)
 {
     static Tcl_ThreadDataKey tsdKey;
-    ThreadLocalData *tsdPtr =
-	    (ThreadLocalData *)Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
+    ThreadLocalData *tsdPtr = (ThreadLocalData *)
+	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = (Foundation *)Tcl_Alloc(sizeof(Foundation));
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
@@ -353,14 +353,14 @@ InitFoundation(
     Tcl_DStringInit(&buffer);
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
-	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
@@ -576,8 +576,8 @@ DeletedHelpersNamespace(
 static void
 KillFoundation(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp)	/* The interpreter containing the OO system
-			 * foundation. */
+    Tcl_Interp *interp)		/* The interpreter containing the OO system
+				 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
 
@@ -656,7 +656,8 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u", ++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u",
+		++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;
@@ -740,7 +741,8 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = (CommandTrace *)Tcl_Alloc(sizeof(CommandTrace));
+    cmdPtr->tracePtr = tracePtr = (CommandTrace *)
+	    Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
@@ -791,7 +793,7 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    void *clientData)	/* Reference to the object whose [my] has been
+    void *clientData)		/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
@@ -822,7 +824,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    void *clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -1135,7 +1137,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    void *clientData)	/* Pointer to the class whose namespace is
+    void *clientData)		/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1449,10 +1451,12 @@ TclOOAddToInstances(
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
-	    clsPtr->instances.list = (Object **)Tcl_Alloc(sizeof(Object *) * ALLOC_CHUNK);
+	    clsPtr->instances.list = (Object **)
+		    Tcl_Alloc(sizeof(Object *) * ALLOC_CHUNK);
 	} else {
-	    clsPtr->instances.list = (Object **)Tcl_Realloc(clsPtr->instances.list,
-		    sizeof(Object *) * clsPtr->instances.size);
+	    clsPtr->instances.list = (Object **)
+		    Tcl_Realloc(clsPtr->instances.list,
+			    sizeof(Object *) * clsPtr->instances.size);
 	}
     }
     clsPtr->instances.list[clsPtr->instances.num++] = oPtr;
@@ -1550,10 +1554,12 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = (Class **)Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = (Class **)Tcl_Realloc(superPtr->subclasses.list,
-		    sizeof(Class *) * superPtr->subclasses.size);
+	    superPtr->subclasses.list = (Class **)
+		    Tcl_Realloc(superPtr->subclasses.list,
+			    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
     superPtr->subclasses.list[superPtr->subclasses.num++] = subPtr;
@@ -1616,10 +1622,12 @@ TclOOAddToMixinSubs(
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
-	    superPtr->mixinSubs.list = (Class **)Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->mixinSubs.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->mixinSubs.list = (Class **)Tcl_Realloc(superPtr->mixinSubs.list,
-		    sizeof(Class *) * superPtr->mixinSubs.size);
+	    superPtr->mixinSubs.list = (Class **)
+		    Tcl_Realloc(superPtr->mixinSubs.list,
+			    sizeof(Class *) * superPtr->mixinSubs.size);
 	}
     }
     superPtr->mixinSubs.list[superPtr->mixinSubs.num++] = subPtr;
@@ -1718,10 +1726,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)		/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1786,10 +1794,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,		/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1805,8 +1813,9 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
-     * object cloning only). If there aren't any constructors, we do nothing.
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case
+     * used for object cloning only). If there aren't any constructors, we do
+     * nothing.
      */
 
     if (objc < 0) {
@@ -1921,7 +1930,7 @@ FinalizeAlloc(
 
     if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object deleted in constructor", -1));
+		"object deleted in constructor", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", (char *)NULL);
 	result = TCL_ERROR;
     }
@@ -1992,7 +2001,7 @@ Tcl_CopyObjectInstance(
 
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not clone the class of classes", -1));
+		"may not clone the class of classes", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", (char *)NULL);
 	return NULL;
     }
@@ -2002,8 +2011,8 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName, TCL_INDEX_NONE,
-	    NULL, -1);
+	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName,
+	    TCL_INDEX_NONE, NULL, TCL_INDEX_NONE);
     if (o2Ptr == NULL) {
 	return NULL;
     }
@@ -2133,8 +2142,9 @@ Tcl_CopyObjectInstance(
 	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = (Class **)Tcl_Realloc(cls2Ptr->superclasses.list,
-		    sizeof(Class *) * clsPtr->superclasses.num);
+	    cls2Ptr->superclasses.list = (Class **)
+		    Tcl_Realloc(cls2Ptr->superclasses.list,
+			    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
 	    cls2Ptr->superclasses.list =
 		    (Class **)Tcl_Alloc(sizeof(Class *) * clsPtr->superclasses.num);
@@ -2560,7 +2570,7 @@ TclOOPublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
+    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData, objc, objv);
 }
 
 static int
@@ -2570,8 +2580,8 @@ PublicNRObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, PUBLIC_METHOD,
-	    NULL);
+    return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv,
+	    PUBLIC_METHOD, NULL);
 }
 
 int
@@ -2581,7 +2591,7 @@ TclOOPrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
+    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData, objc, objv);
 }
 
 static int
@@ -2607,7 +2617,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2678,7 +2688,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    Tcl_Size objc,			/* How many arguments are being passed in. */
+    Tcl_Size objc,		/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2800,7 +2810,7 @@ TclOOObjectCmdCore(
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "no valid method implementation", -1));
+		    "no valid method implementation", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    TclOODeleteContext(contextPtr);

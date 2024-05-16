@@ -40,14 +40,14 @@ struct DeclaredSlot {
     const Tcl_MethodType resolverType;
 };
 
-#define SLOT(name,getter,setter,resolver)				\
+#define SLOT(name, getter, setter, resolver) \
     {"::oo::" name,							\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
-		    getter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
-		    setter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
-		    resolver, NULL, NULL}}
+	{TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
+	    getter, NULL, NULL},					\
+	{TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+	    setter, NULL, NULL},					\
+	{TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
+	    resolver, NULL, NULL}}
 
 /*
  * A [string match] pattern used to determine if a method should be exported.
@@ -333,9 +333,9 @@ TclOOObjectSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (oPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
+	    filtersList = (Tcl_Obj **) Tcl_Alloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)Tcl_Realloc(oPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **) Tcl_Realloc(oPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -392,9 +392,10 @@ TclOOClassSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (classPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
+	    filtersList = (Tcl_Obj **) Tcl_Alloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)Tcl_Realloc(classPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **)
+		    Tcl_Realloc(classPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -448,10 +449,11 @@ TclOOObjectSetMixins(
 		}
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    oPtr->mixins.list = (Class **)Tcl_Realloc(oPtr->mixins.list,
-		    sizeof(Class *) * numMixins);
+	    oPtr->mixins.list = (Class **)
+		    Tcl_Realloc(oPtr->mixins.list, sizeof(Class *) * numMixins);
 	} else {
-	    oPtr->mixins.list = (Class **)Tcl_Alloc(sizeof(Class *) * numMixins);
+	    oPtr->mixins.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * numMixins);
 	    oPtr->flags &= ~USE_CLASS_CACHE;
 	}
 	oPtr->mixins.num = numMixins;
@@ -506,10 +508,12 @@ TclOOClassSetMixins(
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    classPtr->mixins.list = (Class **)Tcl_Realloc(classPtr->mixins.list,
-		    sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = (Class **)
+		    Tcl_Realloc(classPtr->mixins.list,
+			    sizeof(Class *) * numMixins);
 	} else {
-	    classPtr->mixins.list = (Class **)Tcl_Alloc(sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * numMixins);
 	}
 	classPtr->mixins.num = numMixins;
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
@@ -557,9 +561,11 @@ InstallStandardVariableMapping(
 	if (varc == 0) {
 	    Tcl_Free(vnlPtr->list);
 	} else if (i) {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **)
+		    Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
 	} else {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **)
+		    Tcl_Alloc(sizeof(Tcl_Obj *) * varc);
 	}
     }
     vnlPtr->num = 0;
@@ -580,7 +586,8 @@ InstallStandardVariableMapping(
 	 */
 
 	if (n != varc) {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
+	    vnlPtr->list = (Tcl_Obj **)
+		    Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -609,10 +616,12 @@ InstallPrivateVariableMapping(
 	if (varc == 0) {
 	    Tcl_Free(pvlPtr->list);
 	} else if (i) {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Realloc(pvlPtr->list,
-		    sizeof(PrivateVariableMapping) * varc);
+	    pvlPtr->list = (PrivateVariableMapping *)
+		    Tcl_Realloc(pvlPtr->list,
+			    sizeof(PrivateVariableMapping) * varc);
 	} else {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Alloc(sizeof(PrivateVariableMapping) * varc);
+	    pvlPtr->list = (PrivateVariableMapping *)
+		    Tcl_Alloc(sizeof(PrivateVariableMapping) * varc);
 	}
     }
 
@@ -639,8 +648,9 @@ InstallPrivateVariableMapping(
 	 */
 
 	if (n != varc) {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Realloc(pvlPtr->list,
-		    sizeof(PrivateVariableMapping) * n);
+	    pvlPtr->list = (PrivateVariableMapping *)
+		    Tcl_Realloc(pvlPtr->list,
+			    sizeof(PrivateVariableMapping) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -687,7 +697,7 @@ RenameDeleteMethod(
 	    if (hPtr == newHPtr) {
 	    renameToSelf:
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot rename method to itself", -1));
+			"cannot rename method to itself", TCL_AUTO_LENGTH));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "RENAME_TO_SELF", (char *)NULL);
 		return TCL_ERROR;
 	    } else if (!isNew) {
@@ -763,7 +773,7 @@ TclOOUnknownDefinition(
 
     if (objc < 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad call of unknown handler", -1));
+		"bad call of unknown handler", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_UNKNOWN", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -797,7 +807,7 @@ TclOOUnknownDefinition(
 		TclStackAlloc(interp, sizeof(Tcl_Obj*) * (objc - 1));
 	int result;
 
-	newObjv[0] = Tcl_NewStringObj(matchedStr, -1);
+	newObjv[0] = Tcl_NewStringObj(matchedStr, TCL_AUTO_LENGTH);
 	Tcl_IncrRefCount(newObjv[0]);
 	if (objc > 2) {
 	    memcpy(newObjv + 1, objv + 2, sizeof(Tcl_Obj *) * (objc - 2));
@@ -900,7 +910,7 @@ InitDefineContext(
 
     if (namespacePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"no definition namespace available", -1));
+		"no definition namespace available", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -941,7 +951,8 @@ TclOOGetDefineCmdContext(
 	    && iPtr->varFramePtr->isProcCallFrame != PRIVATE_FRAME)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"this command may only be called from within the context of"
-		" an ::oo::define or ::oo::objdefine command", -1));
+		" an ::oo::define or ::oo::objdefine command",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return NULL;
     }
@@ -949,7 +960,7 @@ TclOOGetDefineCmdContext(
     if (Tcl_ObjectDeleted(object)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"this command cannot be called when the object has been"
-		" deleted", -1));
+		" deleted", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return NULL;
     }
@@ -992,7 +1003,7 @@ GetClassInOuterContext(
 	return NULL;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(className), (char *)NULL);
 	return NULL;
@@ -1491,13 +1502,15 @@ TclOODefineClassObjCmd(
     }
     if (oPtr->flags & ROOT_OBJECT) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not modify the class of the root object class", -1));
+		"may not modify the class of the root object class",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
     if (oPtr->flags & ROOT_CLASS) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not modify the class of the class of classes", -1));
+		"may not modify the class of the class of classes",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1517,7 +1530,8 @@ TclOODefineClassObjCmd(
     }
     if (oPtr == clsPtr->thisPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not change classes into an instance of themselves", -1));
+		"may not change classes into an instance of themselves",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1670,14 +1684,14 @@ TclOODefineDefnNsObjCmd(
     }
     if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
     if (oPtr->flags & (ROOT_OBJECT | ROOT_CLASS)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not modify the definition namespace of the root classes",
-		-1));
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1701,7 +1715,7 @@ TclOODefineDefnNsObjCmd(
 	if (nsPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	nsNamePtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+	nsNamePtr = Tcl_NewStringObj(nsPtr->fullName, TCL_AUTO_LENGTH);
 	Tcl_IncrRefCount(nsNamePtr);
     }
 
@@ -1754,7 +1768,7 @@ TclOODefineDeleteMethodObjCmd(
     }
     if (!isInstanceDeleteMethod && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1880,7 +1894,7 @@ TclOODefineExportObjCmd(
     clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1897,7 +1911,8 @@ TclOODefineExportObjCmd(
 
 	if (isInstanceExport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)
+			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -1909,7 +1924,7 @@ TclOODefineExportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *)Tcl_Alloc(sizeof(Method));
+	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
@@ -1974,7 +1989,7 @@ TclOODefineForwardObjCmd(
     }
     if (!isInstanceForward && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2052,7 +2067,7 @@ TclOODefineMethodObjCmd(
     }
     if (!isInstanceMethod && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2131,7 +2146,7 @@ TclOODefineRenameMethodObjCmd(
     }
     if (!isInstanceRenameMethod && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2193,7 +2208,7 @@ TclOODefineUnexportObjCmd(
     clsPtr = oPtr->classPtr;
     if (!isInstanceUnexport && !clsPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2210,7 +2225,8 @@ TclOODefineUnexportObjCmd(
 
 	if (isInstanceUnexport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)
+			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -2222,7 +2238,7 @@ TclOODefineUnexportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *)Tcl_Alloc(sizeof(Method));
+	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
@@ -2322,9 +2338,9 @@ TclOODefineSlots(
     Foundation *fPtr)
 {
     const struct DeclaredSlot *slotInfoPtr;
-    Tcl_Obj *getName = Tcl_NewStringObj("Get", -1);
-    Tcl_Obj *setName = Tcl_NewStringObj("Set", -1);
-    Tcl_Obj *resolveName = Tcl_NewStringObj("Resolve", -1);
+    Tcl_Obj *getName = Tcl_NewStringObj("Get", TCL_AUTO_LENGTH);
+    Tcl_Obj *setName = Tcl_NewStringObj("Set", TCL_AUTO_LENGTH);
+    Tcl_Obj *resolveName = Tcl_NewStringObj("Resolve", TCL_AUTO_LENGTH);
     Class *slotCls;
 
     slotCls = ((Object *) Tcl_NewObjectInstance(fPtr->interp, (Tcl_Class)
@@ -2337,7 +2353,8 @@ TclOODefineSlots(
     Tcl_IncrRefCount(resolveName);
     for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(fPtr->interp,
-		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
+		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE,
+		NULL, 0);
 
 	if (slotObject == NULL) {
 	    continue;
@@ -2389,7 +2406,7 @@ ClassFilterGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2425,7 +2442,7 @@ ClassFilterSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (TclListObjGetElements(interp, objv[0], &filterc,
@@ -2470,7 +2487,7 @@ ClassMixinGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2514,7 +2531,7 @@ ClassMixinSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (TclListObjGetElements(interp, objv[0], &mixinc,
@@ -2522,7 +2539,7 @@ ClassMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -2535,13 +2552,14 @@ ClassMixinSet(
 	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
 	if (!isNew) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "class should only be a direct mixin once", -1));
+		    "class should only be a direct mixin once",
+		    TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", (char *)NULL);
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "may not mix a class into itself", -1));
+		    "may not mix a class into itself", TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", (char *)NULL);
 	    goto freeAndError;
 	}
@@ -2591,7 +2609,7 @@ ClassSuperGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2630,12 +2648,13 @@ ClassSuperSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (oPtr == oPtr->fPtr->objectCls->thisPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not modify the superclass of the root object", -1));
+		"may not modify the superclass of the root object",
+		TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (TclListObjGetElements(interp, objv[0], &superc,
@@ -2676,14 +2695,15 @@ ClassSuperSet(
 		if (superclasses[j] == superclasses[i]) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "class should only be a direct superclass once",
-			    -1));
+			    TCL_AUTO_LENGTH));
 		    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",(char *)NULL);
 		    goto failedAfterAlloc;
 		}
 	    }
 	    if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"attempt to form circular dependency graph", -1));
+			"attempt to form circular dependency graph",
+			TCL_AUTO_LENGTH));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", (char *)NULL);
 	    failedAfterAlloc:
 		for (; i-- > 0 ;) {
@@ -2758,7 +2778,7 @@ ClassVarsGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2805,7 +2825,7 @@ ClassVarsSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (TclListObjGetElements(interp, objv[0], &varc,
@@ -2983,7 +3003,7 @@ ObjMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -2995,7 +3015,8 @@ ObjMixinSet(
 	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
 	if (!isNew) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "class should only be a direct mixin once", -1));
+		    "class should only be a direct mixin once",
+		    TCL_AUTO_LENGTH));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", (char *)NULL);
 	    goto freeAndError;
 	}
@@ -3204,10 +3225,11 @@ InstallReadableProps(
 	if (objc == 0) {
 	    Tcl_Free(props->readable.list);
 	} else if (i) {
-	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
-		    sizeof(Tcl_Obj *) * objc);
+	    props->readable.list = (Tcl_Obj **)
+		    Tcl_Realloc(props->readable.list, sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->readable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
+	    props->readable.list = (Tcl_Obj **)
+		    Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->readable.num = 0;
@@ -3228,8 +3250,8 @@ InstallReadableProps(
 	 */
 
 	if (n != objc) {
-	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
-		    sizeof(Tcl_Obj *) * n);
+	    props->readable.list = (Tcl_Obj **)
+		    Tcl_Realloc(props->readable.list, sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -3256,7 +3278,7 @@ ClassRPropsGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3292,7 +3314,7 @@ ClassRPropsSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (Tcl_ListObjGetElements(interp, objv[0], &varc,
@@ -3401,10 +3423,11 @@ InstallWritableProps(
 	if (objc == 0) {
 	    Tcl_Free(props->writable.list);
 	} else if (i) {
-	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
-		    sizeof(Tcl_Obj *) * objc);
+	    props->writable.list = (Tcl_Obj **)
+		    Tcl_Realloc(props->writable.list, sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->writable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
+	    props->writable.list = (Tcl_Obj **)
+		    Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->writable.num = 0;
@@ -3425,8 +3448,8 @@ InstallWritableProps(
 	 */
 
 	if (n != objc) {
-	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
-		    sizeof(Tcl_Obj *) * n);
+	    props->writable.list = (Tcl_Obj **)
+		    Tcl_Realloc(props->writable.list, sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -3453,7 +3476,7 @@ ClassWPropsGet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -3489,7 +3512,7 @@ ClassWPropsSet(
 	return TCL_ERROR;
     } else if (!oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     } else if (Tcl_ListObjGetElements(interp, objv[0], &varc,
