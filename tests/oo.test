@@ -3335,7 +3335,7 @@ test oo-22.3 {OO and coroutines and info frame} -setup {
 } -cleanup {
     catch {rename dump {}}
     catch {A destroy}
-} -match glob -result {{* method Work object *} {* method Work object *}}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {
