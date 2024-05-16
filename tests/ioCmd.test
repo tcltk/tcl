@@ -2128,6 +2128,7 @@ test iocmd-32.3 {prevent copy-state against segfault by finalize, bug [79474c588
       }
     }
     set clchlst {}
+    set toev {}
 } -body {
     set ::ret {}
     set ch [chan create "read write" test_chan]
@@ -2168,14 +2169,15 @@ test iocmd-32.3 {prevent copy-state against segfault by finalize, bug [79474c588
 	}
     }} $ch $out1]
 
-    after 5000 {set ::done tout}
+    set toev [after 5000 {set ::done tout}]
     vwait ::done
     list {*}$::ret $::done
 } -cleanup {
     foreach ch $clchlst {
 	catch {close $ch}
     }
-    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3
+    if {$toev ne ""} { after cancel $toev }
+    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev
 } -result {initialize read write finalize done}
 
 # ### ### ### ######### ######### #########
