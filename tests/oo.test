@@ -2783,6 +2783,30 @@ test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
     o destroy
     c destroy
 } -result $stdmethods
+test oo-17.15 {OO: class method list without -all (bug 36e5517a6850)} -setup {
+    oo::class create c
+} -body {
+    oo::define c {
+	method foo {} {}
+	method Bar {} {}
+	private method gorp {} {}
+    }
+    list [lsort [info class methods c]] [lsort [info class methods c -private]]
+} -cleanup {
+    c destroy
+} -result {foo {Bar foo}}
+test oo-17.16 {OO: instance method list without -all (bug 36e5517a6850)} -setup {
+    oo::object create o
+} -body {
+    oo::objdefine o {
+	method foo {} {}
+	method Bar {} {}
+	private method gorp {} {}
+    }
+    list [lsort [info object methods o]] [lsort [info object methods o -private]]
+} -cleanup {
+    o destroy
+} -result {foo {Bar foo}}
 
 
 test oo-18.1 {OO: define command support} {
