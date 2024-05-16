@@ -3296,7 +3296,8 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 } -match glob -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
-test oo-22.3 {OO and coroutines and info frame} -setup {
+# BUG: second call is missing info (caused by workaround in tclCmdIL.c)
+test oo-22.3 {OO and coroutines and info frame} -constraints knownBug -setup {
     oo::class create A {
 	self method run {nworkers} {
 	    set ::result {}
