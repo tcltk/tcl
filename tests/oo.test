@@ -3296,6 +3296,47 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 } -match glob -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
+# BUG: second call is missing info (caused by workaround in tclCmdIL.c)
+test oo-22.3 {OO and coroutines and info frame} -constraints knownBug -setup {
+    oo::class create A {
+	self method run {nworkers} {
+	    set ::result {}
+	    set workers {}
+	    for {set n 1} {$n <= $nworkers} {incr n} {
+		set worker [A create a$n]
+		lappend workers $worker
+		$worker schedule
+	    }
+	    after 250 [namespace code {variable forever false}]
+	    variable forever true
+	    vwait [my varname forever]
+	    foreach worker $workers {
+		$worker destroy
+	    }
+	    return $::result
+	}
+    	method schedule {} {
+	    set coro coro-[namespace tail [self]]
+	    if {[llength [info commands $coro]] == 0} {
+		coroutine $coro my Work
+	    }
+	}
+	method Work {} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend ::result [dump]
+	}
+    }
+} -body {
+    # Triggers a crash with incorrectly restored procPtr->cmdPtr
+    proc dump {} {
+	info frame [expr {[info frame] - 1}]
+    }
+    A run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {
