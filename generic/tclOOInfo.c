@@ -622,7 +622,11 @@ InfoObjectMethodsCmd(
 	}
     } else if (oPtr->methodsPtr) {
 	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
 	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
 	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
 		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
 		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
@@ -1388,6 +1392,9 @@ InfoClassMethodsCmd(
 	FOREACH_HASH_DECLS;
 
 	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
 	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
 
 	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
