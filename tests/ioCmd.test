@@ -2177,7 +2177,7 @@ test iocmd-32.3 {prevent copy-state against segfault by finalize, bug [79474c588
 	catch {close $ch}
     }
     if {$toev ne ""} { after cancel $toev }
-    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev
+    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev clchlst
 } -result {initialize read write finalize done}
 
 # ### ### ### ######### ######### #########
