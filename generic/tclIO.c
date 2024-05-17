@@ -2949,6 +2949,34 @@ FlushChannel(
     return errorCode;
 }
 
+static void
+FreeChannelState(
+    char *blockPtr)		/* Channel state to free. */
+{
+    ChannelState *statePtr = (ChannelState *)blockPtr;
+    /*
+     * Even after close some members can be filled again (in events etc).
+     * Test in bug [79474c588] illustrates one leak (on remaining chanMsg).
+     * Possible other fields need freeing on some constellations.
+     */
+
+    DiscardInputQueued(statePtr, 1);
+    if (statePtr->curOutPtr != NULL) {
+	ReleaseChannelBuffer(statePtr->curOutPtr);
+    }
+    DiscardOutputQueued(statePtr);
+    
+    DeleteTimerHandler(statePtr);
+
+    if (statePtr->chanMsg) {
+	Tcl_DecrRefCount(statePtr->chanMsg);
+    }
+    if (statePtr->unreportedMsg) {
+	Tcl_DecrRefCount(statePtr->unreportedMsg);
+    }
+    ckfree(statePtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3125,7 +3153,7 @@ CloseChannel(
 
     ChannelFree(chanPtr);
 
-    Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree(statePtr, FreeChannelState);
 
     return errorCode;
 }
