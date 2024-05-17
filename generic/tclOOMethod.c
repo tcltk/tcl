@@ -17,17 +17,6 @@
 #include "tclCompile.h"
 
 /*
- * Structure used to help delay computing names of objects or classes for
- * [info frame] until needed, making invocation faster in the normal case.
- */
-
-struct PNI {
-    Tcl_Interp *interp;		/* Interpreter in which to compute the name of
-				 * a method. */
-    Tcl_Method method;		/* Method to compute the name of. */
-};
-
-/*
  * Structure used to contain all the information needed about a call frame
  * used in a procedure-like method.
  */
@@ -38,11 +27,8 @@ typedef struct {
     ProcErrorProc *errProc;	/* The error handler for the body. */
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
-    ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
     Command *oldCmdPtr;		/* Saved cmdPtr so that we can be safe after a
 				 * recursive call returns. */
-    struct PNI pni;		/* Specialist information used in the efi
-				 * field for this type of call. */
 } PMFrameData;
 
 /*
@@ -86,6 +72,9 @@ static void		ConstructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		DestructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
+static inline void	InitFrameInfo(Tcl_Interp *interp,
+			    ProcedureMethod *pmPtr, Tcl_ObjectContext context);
+static Tcl_Obj *	RenderMethodName(void *clientData);
 static Tcl_Obj *	RenderDeclarerName(void *clientData);
 static int		InvokeForwardMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
@@ -658,7 +647,7 @@ TclOOMakeProcMethod(
 
 static int
 InvokeProcedureMethod(
-    void *clientData,	/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -681,6 +670,8 @@ InvokeProcedureMethod(
 	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
 		Tcl_ObjectContextSkippedArgs(context));
     }
+
+    InitFrameInfo(interp, pmPtr, context);
 
     /*
      * Allocate the special frame data.
@@ -737,6 +728,48 @@ InvokeProcedureMethod(
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }
 
+/*
+ * Finishes filling out the extra frame info so that [info frame] works.
+ */
+static inline void
+InitFrameInfo(
+    Tcl_Interp *interp,		/* For object name resolution later. */
+    ProcedureMethod *pmPtr,	/* What we're writing to. */
+    Tcl_ObjectContext context)	/* The calling context, used to figure out how
+				 * we're using the method. */
+{
+    Tcl_Method method = Tcl_ObjectContextMethod(context);
+
+    if (pmPtr->efi.length) {
+	/*
+	 * Do nothing if already set up.
+	 */
+	return;
+    }
+
+    pmPtr->efi.length = 2;
+    pmPtr->efi.fields[0].name = "method";
+    pmPtr->efi.fields[0].proc = RenderMethodName;
+    pmPtr->efi.fields[0].clientData = pmPtr;
+    pmPtr->callSiteFlags = ((CallContext *)
+	    context)->callPtr->flags & (CONSTRUCTOR | DESTRUCTOR);
+    pmPtr->interp = interp;
+    pmPtr->method = method;
+    if (pmPtr->gfivProc != NULL) {
+	pmPtr->efi.fields[1].name = "";
+	pmPtr->efi.fields[1].proc = pmPtr->gfivProc;
+	pmPtr->efi.fields[1].clientData = pmPtr;
+    } else {
+	if (Tcl_MethodDeclarerObject(method) != NULL) {
+	    pmPtr->efi.fields[1].name = "object";
+	} else {
+	    pmPtr->efi.fields[1].name = "class";
+	}
+	pmPtr->efi.fields[1].proc = RenderDeclarerName;
+	pmPtr->efi.fields[1].clientData = pmPtr;
+    }
+}
+
 static int
 FinalizePMCall(
     void *data[],
@@ -791,7 +824,6 @@ PushMethodCallFrame(
 {
     Namespace *nsPtr = (Namespace *) contextPtr->oPtr->namespacePtr;
     int result;
-    const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
 
     /*
@@ -799,17 +831,14 @@ PushMethodCallFrame(
      */
 
     if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	namePtr = "<constructor>";
 	fdPtr->nameObj = contextPtr->oPtr->fPtr->constructorName;
 	fdPtr->errProc = ConstructorErrorHandler;
     } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	namePtr = "<destructor>";
 	fdPtr->nameObj = contextPtr->oPtr->fPtr->destructorName;
 	fdPtr->errProc = DestructorErrorHandler;
     } else {
 	fdPtr->nameObj = Tcl_MethodName(
 		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr));
-	namePtr = TclGetString(fdPtr->nameObj);
 	fdPtr->errProc = MethodErrorHandler;
     }
     if (pmPtr->errProc != NULL) {
@@ -822,8 +851,7 @@ PushMethodCallFrame(
      */
 
     if (pmPtr->flags & USE_DECLARER_NS) {
-	Method *mPtr =
-		contextPtr->callPtr->chain[contextPtr->index].mPtr;
+	Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
 	    nsPtr = (Namespace *)
@@ -845,10 +873,9 @@ PushMethodCallFrame(
      * Compile the body. This operation may fail.
      */
 
-    fdPtr->efi.length = 2;
     memset(&fdPtr->cmd, 0, sizeof(Command));
     fdPtr->cmd.nsPtr = nsPtr;
-    fdPtr->cmd.clientData = &fdPtr->efi;
+    fdPtr->cmd.clientData = &pmPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
     /*
@@ -865,7 +892,8 @@ PushMethodCallFrame(
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
-	    pmPtr->procPtr->bodyPtr, nsPtr, "body of method", namePtr);
+	    pmPtr->procPtr->bodyPtr, nsPtr, "body of method",
+	    TclGetString(fdPtr->nameObj));
     if (result != TCL_OK) {
 	goto failureReturn;
     }
@@ -882,32 +910,6 @@ PushMethodCallFrame(
     fdPtr->framePtr->objc = objc;
     fdPtr->framePtr->objv = objv;
     fdPtr->framePtr->procPtr = pmPtr->procPtr;
-
-    /*
-     * Finish filling out the extra frame info so that [info frame] works.
-     */
-
-    fdPtr->efi.fields[0].name = "method";
-    fdPtr->efi.fields[0].proc = NULL;
-    fdPtr->efi.fields[0].clientData = fdPtr->nameObj;
-    if (pmPtr->gfivProc != NULL) {
-	fdPtr->efi.fields[1].name = "";
-	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
-	fdPtr->efi.fields[1].clientData = pmPtr;
-    } else {
-	Tcl_Method method =
-		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr);
-
-	if (Tcl_MethodDeclarerObject(method) != NULL) {
-	    fdPtr->efi.fields[1].name = "object";
-	} else {
-	    fdPtr->efi.fields[1].name = "class";
-	}
-	fdPtr->efi.fields[1].proc = RenderDeclarerName;
-	fdPtr->efi.fields[1].clientData = &fdPtr->pni;
-	fdPtr->pni.interp = interp;
-	fdPtr->pni.method = method;
-    }
 
     return TCL_OK;
 
@@ -1115,6 +1117,32 @@ ProcedureMethodCompiledVarResolver(
 /*
  * ----------------------------------------------------------------------
  *
+ * RenderMethodName --
+ *
+ *	Returns the name of the declared method. Used for producing information
+ *	for [info frame].
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+RenderMethodName(
+    void *clientData)
+{
+    ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
+
+    if (pmPtr->callSiteFlags & CONSTRUCTOR) {
+	return TclOOGetFoundation(pmPtr->interp)->constructorName;
+    } else if (pmPtr->callSiteFlags & DESTRUCTOR) {
+	return TclOOGetFoundation(pmPtr->interp)->destructorName;
+    } else {
+	return Tcl_MethodName(pmPtr->method);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * RenderDeclarerName --
  *
  *	Returns the name of the entity (object or class) which declared a
@@ -1129,13 +1157,13 @@ static Tcl_Obj *
 RenderDeclarerName(
     void *clientData)
 {
-    struct PNI *pni = (struct PNI *)clientData;
-    Tcl_Object object = Tcl_MethodDeclarerObject(pni->method);
+    ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
+    Tcl_Object object = Tcl_MethodDeclarerObject(pmPtr->method);
 
     if (object == NULL) {
-	object = Tcl_GetClassAsObject(Tcl_MethodDeclarerClass(pni->method));
+	object = Tcl_GetClassAsObject(Tcl_MethodDeclarerClass(pmPtr->method));
     }
-    return TclOOObjectName(pni->interp, (Object *) object);
+    return TclOOObjectName(pmPtr->interp, (Object *) object);
 }
 
 /*
