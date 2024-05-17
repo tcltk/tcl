@@ -97,6 +97,16 @@ typedef struct ProcedureMethod {
     GetFrameInfoValueProc *gfivProc;
 				/* Callback to allow for fine tuning of how
 				 * the method reports itself. */
+    Command cmd;		/* Space used to connect to [info frame] */
+    ExtraFrameInfo efi;		/* Space used to store data for [info frame] */
+    Tcl_Interp *interp;		/* Interpreter in which to compute the name of
+				 * the method. */
+    Tcl_Method method;		/* Method to compute the name of. */
+    int callSiteFlags;		/* Flags from the call chain. Only interested
+				 * in whether this is a constructor or
+				 * destructor, which we can't know until then
+				 * for messy reasons. Other flags are variable
+				 * but not used. */
 } ProcedureMethod;
 
 enum ProcedureMethodVersions {
