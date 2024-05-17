@@ -97,6 +97,7 @@ typedef struct ProcedureMethod {
     GetFrameInfoValueProc *gfivProc;
 				/* Callback to allow for fine tuning of how
 				 * the method reports itself. */
+    Command cmd;		/* Space used to connect to [info frame] */
     ExtraFrameInfo efi;		/* Space used to store data for [info frame] */
     Tcl_Interp *interp;		/* Interpreter in which to compute the name of
 				 * the method. */
