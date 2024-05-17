@@ -274,7 +274,7 @@ Tcl_SourceRCFile(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_MainEx(
     int argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */

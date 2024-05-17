@@ -28,7 +28,7 @@
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_ConsolePanic(
     const char *format, ...)
 {

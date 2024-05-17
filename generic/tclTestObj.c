@@ -18,6 +18,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -109,6 +110,11 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+    if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
+	return TCL_ERROR;
+    }
+#endif
     varPtr = (Tcl_Obj **)ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;

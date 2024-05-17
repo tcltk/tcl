@@ -177,7 +177,6 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
-MODULE_SCOPE TCL_NORETURN void	tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -808,7 +807,7 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+MODULE_SCOPE TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -838,15 +837,11 @@ tclWinDebugPanic(
 	MessageBoxW(NULL, msgString, L"Fatal Error",
 		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
-#if defined(__GNUC__)
+#   if defined(__GNUC__)
     __builtin_trap();
-#elif defined(_WIN64)
-    __debugbreak();
-#elif defined(_MSC_VER) && defined (_M_IX86)
-    _asm {int 3}
-#else
+#   else
     DebugBreak();
-#endif
+#   endif
     abort();
 }
 

@@ -536,7 +536,7 @@ declare 148 {deprecated {Use Tcl_GetAliasObj}} {
 declare 149 {
     int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    int *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 150 {
     void *Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
@@ -815,7 +815,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
 }
 declare 231 {
     Tcl_Size Tcl_SetRecursionLimit(Tcl_Interp *interp, Tcl_Size depth)
@@ -1872,7 +1872,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {nostub {Don't use this function in a stub-enabled extension}} {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
@@ -2568,21 +2568,21 @@ declare 3 win {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
+    TCL_NORETURN void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
-    void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
-    Tcl_Interp *interp)
+    TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
+	Tcl_Interp *interp)
 }
 export {
     void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
 }
 export {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 export {
     const char *Tcl_FindExecutable(const char *argv0)

@@ -105,7 +105,7 @@ static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
  * non-NULL value.
  */
 
-static TCL_NORETURN1 Tcl_ExitProc *appExitPtr = NULL;
+static Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
@@ -888,7 +888,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -969,7 +969,7 @@ Tcl_Exit(
     int status)			/* Exit status for application; typically 0
 				 * for normal return, 1 for error return. */
 {
-    TCL_NORETURN1 Tcl_ExitProc *currentAppExitPtr;
+    Tcl_ExitProc *currentAppExitPtr;
 
     Tcl_MutexLock(&exitMutex);
     currentAppExitPtr = appExitPtr;
@@ -1023,8 +1023,7 @@ Tcl_Exit(
 	}
     }
 
-    TclpExit(status);
-    Tcl_Panic("OS exit failed!");
+    exit(status);
 }
 
 /*
