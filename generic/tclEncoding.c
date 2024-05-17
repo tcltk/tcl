@@ -258,6 +258,7 @@ static Tcl_EncodingConvertProc	UtfToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
+
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
  * of the internalrep. This should help the lifetime of encodings be more useful.
@@ -273,20 +274,21 @@ static const Tcl_ObjType encodingType = {
     TCL_OBJTYPE_V0
 };
 
-#define EncodingSetInternalRep(objPtr, encoding) \
+#define EncodingSetInternalRep(objPtr, encoding)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (encoding);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);			\
     } while (0)
 
-#define EncodingGetInternalRep(objPtr, encoding) \
+#define EncodingGetInternalRep(objPtr, encoding)				\
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
+	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep ((objPtr), &encodingType);		\
-	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL; \
+	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
+
 
 /*
  *----------------------------------------------------------------------
@@ -1110,6 +1112,7 @@ Tcl_ExternalToUtfDString(
 	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
+
 
 /*
  *-------------------------------------------------------------------------
@@ -1155,14 +1158,14 @@ Tcl_ExternalToUtfDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    Tcl_Size srcLen,		/* Source string length in bytes, or < 0 for
+    Tcl_Size srcLen,			/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
     Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                 * (or TCL_INDEX_NONE if no error). May
-				 * be NULL. */
+                                   (or TCL_INDEX_NONE if no error). May
+				   be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
@@ -1427,6 +1430,7 @@ Tcl_UtfToExternalDString(
 	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
+
 
 /*
  *-------------------------------------------------------------------------
@@ -1477,8 +1481,8 @@ Tcl_UtfToExternalDStringEx(
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
     Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                 * (or TCL_INDEX_NONE if no error). May
-				 * be NULL. */
+                                   (or TCL_INDEX_NONE if no error). May
+				   be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
