@@ -18,6 +18,7 @@ MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
 
 const TclTomMathStubs *tclTomMathStubsPtr = NULL;
 
+
 /*
  *----------------------------------------------------------------------
  *

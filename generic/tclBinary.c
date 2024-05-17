@@ -557,6 +557,7 @@ TclNarrowToBytes(
     Tcl_IncrRefCount(objPtr);
     return objPtr;
 }
+
 
 /*
  *----------------------------------------------------------------------
