@@ -2123,6 +2123,7 @@ test iocmd-32.3 {prevent copy-state against segfault by finalize, bug [79474c588
       lappend ::ret $mode
       switch -exact $mode {
         read {puts $chan "Test" ; close $chan}
+        write {set data [lindex $rest 0]; string length $data}
         finalize {after 20 {set ::done done}}
         initialize {return "initialize watch finalize read write"}
       }
