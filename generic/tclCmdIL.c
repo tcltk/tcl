@@ -5290,6 +5290,7 @@ SortCompare(
 	    return 0;
 	}
 
+
 	objPtr1 = elemPtr1->collationKey.objValuePtr;
 	objPtr2 = elemPtr2->collationKey.objValuePtr;
 

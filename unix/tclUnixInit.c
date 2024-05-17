@@ -335,6 +335,7 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 MODULE_SCOPE long tclMacOSXDarwinRelease;
 long tclMacOSXDarwinRelease = 0;
 #endif
+
 
 /*
  *---------------------------------------------------------------------------

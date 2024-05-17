@@ -18,7 +18,7 @@
 
 typedef struct {
     int initialized;
-    Tcl_DString errorMsg;	/* UTF-8 encoded error-message */
+    Tcl_DString errorMsg; /* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -75,8 +75,7 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds,
-		NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -189,8 +188,7 @@ TclCreateSocketAddress(
     int result;
 
     if (host != NULL) {
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
-		NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 	    return 0;
 	}
