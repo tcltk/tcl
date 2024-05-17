@@ -58,17 +58,18 @@ static int		ReflectNotify(void *clientData, int mask);
 static const Tcl_ChannelType tclRTransformType = {
     "tclrtransform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel. */
-    NULL,
+    NULL,		/* Close channel, clean instance data. */
     ReflectInput,		/* Handle read request. */
     ReflectOutput,		/* Handle write request. */
-    NULL,			/* Move location of access point. */
+	NULL,			/* Move location of access point. */
     ReflectSetOption,		/* Set options. */
     ReflectGetOption,		/* Get options. */
     ReflectWatch,		/* Initialize notifier. */
     ReflectHandle,		/* Get OS handle from the channel. */
-    ReflectClose,		/* Close channel, clean instance data. */
+	ReflectClose,		/* No close2 support. NULL'able. */
     ReflectBlock,		/* Set blocking/nonblocking. */
-    NULL,			/* Flush channel. Not used by core. */
+    NULL,			/* Flush channel. Not used by core.
+				 * NULL'able. */
     ReflectNotify,		/* Handle events. */
     ReflectSeekWide,		/* Move access point (64 bit). */
     NULL,			/* thread action */
@@ -510,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;		/* Result of 'initialize', and of */
+    Tcl_Size listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -1104,6 +1105,7 @@ ReflectInput(
 	    goto stop;
 	}
 
+
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -1138,6 +1140,7 @@ ReflectInput(
 	if (toRead <= 0) {
 	    goto stop;
 	}
+
 
 	readBytes = Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
@@ -1489,7 +1492,7 @@ ReflectBlock(
 
 static int
 ReflectSetOption(
-    void *clientData,		/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1531,7 +1534,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,		/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -1642,6 +1645,7 @@ ReflectNotify(
 /*
  * Helpers. =========================================================
  */
+
 
 /*
  *----------------------------------------------------------------------
@@ -2071,8 +2075,7 @@ static ReflectedTransformMap *
 GetReflectedTransformMap(
     Tcl_Interp *interp)
 {
-    ReflectedTransformMap *rtmPtr = (ReflectedTransformMap *)
-	    Tcl_GetAssocData(interp, RTMKEY, NULL);
+    ReflectedTransformMap *rtmPtr = (ReflectedTransformMap *)Tcl_GetAssocData(interp, RTMKEY, NULL);
 
     if (rtmPtr == NULL) {
 	rtmPtr = (ReflectedTransformMap *)Tcl_Alloc(sizeof(ReflectedTransformMap));
@@ -2105,7 +2108,7 @@ GetReflectedTransformMap(
 
 static void
 DeleteReflectedTransformMap(
-    void *clientData,		/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
@@ -2240,8 +2243,7 @@ GetThreadReflectedTransformMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rtmPtr) {
-	tsdPtr->rtmPtr = (ReflectedTransformMap *)
-		Tcl_Alloc(sizeof(ReflectedTransformMap));
+	tsdPtr->rtmPtr = (ReflectedTransformMap *)Tcl_Alloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&tsdPtr->rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedTransformMap, NULL);
     }
@@ -2991,7 +2993,7 @@ static inline size_t
 ResultCopy(
     ResultBuffer *rPtr,		/* The buffer to read from */
     unsigned char *buf,		/* The buffer to copy into */
-    size_t toRead)		/* Number of requested bytes */
+    size_t toRead)			/* Number of requested bytes */
 {
     int copied;
 

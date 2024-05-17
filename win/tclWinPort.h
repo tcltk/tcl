@@ -246,6 +246,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   define EWOULDBLOCK	140	/* Operation would block */
 #endif
 
+
 /* Visual Studio doesn't have these, so just choose some high numbers */
 #ifndef ESOCKTNOSUPPORT
 #   define ESOCKTNOSUPPORT 240	/* Socket type not supported */
@@ -414,6 +415,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   endif
 #endif /* !S_ISLNK */
 
+
 /*
  * Define MAXPATHLEN in terms of MAXPATH if available
  */
@@ -521,6 +523,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
+
 
 /*
  * The following macros have trivial definitions, allowing generic code to

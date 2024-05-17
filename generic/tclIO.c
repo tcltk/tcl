@@ -8711,8 +8711,9 @@ UpdateInterest(
 	    && (mask & TCL_WRITABLE)
 	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
 	    && bufPtr
-	    && !IsBufferEmpty(bufPtr)
-	    && !IsBufferFull(bufPtr)) {
+		&& !IsBufferEmpty(bufPtr)
+		&& !IsBufferFull(bufPtr)
+    ) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
@@ -8797,7 +8798,8 @@ ChannelTimerProc(
 
 static void
 DeleteTimerHandler(
-    ChannelState *statePtr)
+    ChannelState *statePtr
+)
 {
     if (statePtr->timer != NULL) {
 	Tcl_DeleteTimerHandler(statePtr->timer);
@@ -8806,8 +8808,8 @@ DeleteTimerHandler(
 }
 static void
 CleanupTimerHandler(
-    ChannelState *statePtr)
-{
+    ChannelState *statePtr
+){
     TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
     statePtr->timer = NULL;
     statePtr->timerChanPtr = NULL;
@@ -10295,13 +10297,20 @@ Lossless(
     return inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	&& inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	&& outStatePtr->outputTranslation == TCL_TRANSLATE_LF
-	&& ((inStatePtr->encoding == GetBinaryEncoding()
-		&& outStatePtr->encoding == GetBinaryEncoding())
-	    || (toRead == -1
+	&& (
+	    (
+		inStatePtr->encoding == GetBinaryEncoding()
+		&&
+		outStatePtr->encoding == GetBinaryEncoding()
+	    )
+	    ||
+	    (
+		toRead == -1
 		&& inStatePtr->encoding == outStatePtr->encoding
 		&& ENCODING_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
 		&& ENCODING_PROFILE_GET(outStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
-	    ));
+	    )
+	);
 }
 
 /*

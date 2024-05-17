@@ -186,7 +186,7 @@ struct LimitHandler {
     int flags;			/* The state of this particular handler. */
     Tcl_LimitHandlerProc *handlerProc;
 				/* The handler callback. */
-    void *clientData;		/* Opaque argument to the handler callback. */
+    void *clientData;	/* Opaque argument to the handler callback. */
     Tcl_LimitHandlerDeleteProc *deleteProc;
 				/* How to delete the clientData. */
     LimitHandler *prevPtr;	/* Previous item in linked list of
@@ -206,6 +206,8 @@ struct LimitHandler {
 
 #define LIMIT_HANDLER_ACTIVE    0x01
 #define LIMIT_HANDLER_DELETED   0x02
+
+
 
 /*
  * Prototypes for local static functions:
@@ -275,6 +277,7 @@ static void		TimeLimitCallback(void *clientData);
 static Tcl_NRPostProc	NRPostInvokeHidden;
 static Tcl_ObjCmdProc	NRInterpCmd;
 static Tcl_ObjCmdProc	NRChildCmd;
+
 
 /*
  *----------------------------------------------------------------------

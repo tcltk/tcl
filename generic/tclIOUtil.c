@@ -35,7 +35,7 @@
  */
 
 typedef struct FilesystemRecord {
-    void *clientData;		/* Client-specific data for the filesystem
+    void *clientData;	/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -52,11 +52,13 @@ typedef struct FilesystemRecord {
 typedef struct {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
-				 * determine whether cwdPathPtr is stale. */
+				 * determine whether cwdPathPtr is stale.
+				 */
     size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
-				 * changed. */
+				 * changed.
+				 */
     void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
@@ -103,6 +105,7 @@ static Tcl_FSFileAttrsSetProc	NativeFileAttrsSet;
 
 MODULE_SCOPE const char *const		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
+
 
 /*
  * These these functions are not static either because routines in the native
@@ -239,8 +242,7 @@ typedef struct {
 /* Obsolete */
 int
 Tcl_Stat(
-    const char *path,		/* Pathname of file to stat (in current system
-				 * encoding). */
+    const char *path,		/* Pathname of file to stat (in current CP). */
     struct stat *oldStyleBuf)	/* Filled with results of stat call. */
 {
     int ret;
@@ -327,8 +329,8 @@ Tcl_Stat(
 /* Obsolete */
 int
 Tcl_Access(
-    const char *path,		/* Pathname of file to access (in current
-				 * system encoding). */
+    const char *path,		/* Pathname of file to access (in current CP).
+				*/
     int mode)			/* Permission setting. */
 {
     int ret;
@@ -843,7 +845,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    void *clientData,		/* Client-specific data for this filesystem. */
+    void *clientData,	/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -1103,7 +1105,8 @@ FsAddMountsToGlobResult(
     Tcl_Obj *pathPtr,		/* The directory that was searched. */
     const char *pattern,	/* Pattern to match mounts against. */
     Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
-				 * directory flag is particularly significant. */
+				 * directory flag is particularly significant.
+				 */
 {
     Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
@@ -1167,6 +1170,7 @@ FsAddMountsToGlobResult(
 		    len--;
 		}
 		len++;		/* account for '/' in the mElt [Bug 1602539] */
+
 
 		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
@@ -1361,6 +1365,7 @@ TclFSNormalizeToUniquePath(
     Claim();
 
     if (!isVfsPath) {
+
 	/*
 	 * Find and call the native filesystem handler first if there is one
 	 * because the root of Tcl's filesystem is always a native filesystem
@@ -1688,7 +1693,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				 * use the utf-8 encoding. */
+				   use the utf-8 encoding. */
 {
     Tcl_Size length;
     int result = TCL_ERROR;
@@ -2081,7 +2086,7 @@ Tcl_PosixError(
 int
 Tcl_FSStat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 *  current system encoding). */
+				 *  current CP). */
     Tcl_StatBuf *buf)		/* A buffer to hold the results of the call to
 				 *  stat. */
 {
@@ -2116,7 +2121,7 @@ Tcl_FSStat(
 int
 Tcl_FSLstat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 * current system encoding). */
+				   current CP). */
     Tcl_StatBuf *buf)		/* Filled with results of that call to stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2153,8 +2158,7 @@ Tcl_FSLstat(
 
 int
 Tcl_FSAccess(
-    Tcl_Obj *pathPtr,		/* Pathname of file to access (in current
-				 * system encoding). */
+    Tcl_Obj *pathPtr,		/* Pathname of file to access (in current CP). */
     int mode)			/* Permission setting. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2191,10 +2195,11 @@ Tcl_FSOpenFileChannel(
     const char *modeString,	/* A list of POSIX open modes or a string such
 				 * as "rw". */
     int permissions)		/* What modes to use if opening the file
-				 * involves creating it. */
+				   involves creating it. */
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
+
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	/*
@@ -3015,8 +3020,8 @@ Tcl_FSChdir(
 int
 Tcl_FSLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic
-				 * shared object. */
+    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic shared object.
+				 */
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
@@ -3104,12 +3109,13 @@ skipUnlink(
      *
      * 1. The operating system is HPUX.
      *
-     * 2. If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
-     *    set to true (an integer > 0)
+     * 2.   If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
+     * set to true (an integer > 0)
      *
-     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS
-     *    filesystem can be detected (using statfs, if available).
+     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS filesystem can be detected (using statfs, if available).
+     *
      */
+
 
 #ifdef hpux
     (void)shlibFile;
@@ -3649,7 +3655,9 @@ Tcl_FSUnloadFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/* NULL or the pathname of a file to link to. */
+    Tcl_Obj *toPtr,		/*
+				 * NULL or the pathname of a file to link to.
+				 */
     int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -3898,8 +3906,7 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    Tcl_Size *driveNameLengthPtr,
-				/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
@@ -3953,9 +3960,9 @@ TclFSNonnativePathType(
 				/* If not NULL, a  place to store a pointer to
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
-    Tcl_Size *driveNameLengthPtr,
-				/* If not NULL, a place to store the length of
-				 * the volume name if the pathname is absolute. */
+    Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
+				 * the volume name if the pathname is absolute.
+				 */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
 				 * an object having its its refCount already
 				 * incremented, and contining the name of the
@@ -4071,7 +4078,7 @@ TclFSNonnativePathType(
 int
 Tcl_FSRenameFile(
     Tcl_Obj *srcPathPtr,	/* The pathname of a file or directory to be
-				 * renamed. */
+				   renamed. */
     Tcl_Obj *destPathPtr)	/* The new pathname for the file. */
 {
     int retVal = -1;
