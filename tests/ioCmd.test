@@ -2118,68 +2118,73 @@ test iocmd-32.2 {delete interp of reflected chan} {
 } {}
 
 test iocmd-32.3 {prevent copy-state against segfault by finalize, bug [79474c58800cdf94]} -setup {
-    proc test_chan {args} {
+    proc test_chan {writeErr args} {
       set rest [lassign $args mode chan]
       lappend ::ret $mode
       switch -exact $mode {
         read {puts $chan "Test" ; close $chan}
-        write {set data [lindex $rest 0]; string length $data}
+        write {if {$writeErr} {return}; set data [lindex $rest 0]; string length $data}
         finalize {after 20 {set ::done done}}
         initialize {return "initialize watch finalize read write"}
       }
     }
     set clchlst {}
-    set toev {}
+    set toev [after 5000 {set ::done tout}]
 } -body {
     set ::ret {}
-    set ch [chan create "read write" test_chan]
-    lappend clchlst $ch
+    # 1st attempt without error in write, another with error in write:
+    foreach i {0 1} {
+	set ch [chan create "read write" [list test_chan $i]]
+	lappend clchlst $ch
 
-    lassign [chan pipe] in1 out1
-    lappend clchlst $in1 $out1
-    lassign [chan pipe] in2 out2
-    lappend clchlst $in2 $out2
-    lassign [chan pipe] in3 out3
-    lappend clchlst $in3 $out3
+	lassign [chan pipe] in1 out1
+	lappend clchlst $in1 $out1
+	lassign [chan pipe] in2 out2
+	lappend clchlst $in2 $out2
+	lassign [chan pipe] in3 out3
+	lappend clchlst $in3 $out3
 
-    # simulate exec: echo test >@ $out2 2>@ $out3 <@ $in1 &:
-    fileevent $out2 writable [list apply {{cho che} {puts $cho test; close $cho; close $che}} $out2 $out3]
-    # recopy to given chans in handler
-    fileevent $in2 readable [list apply {{in out} {
-	if {[catch {
-	    chan copy $in $out
-	} msg]} {
-	    #puts err:$msg
-	    fileevent $in readable {}
-	}
-    }} $in2 $ch]
-    fileevent $in3 readable [list apply {{in out} {
-	if {[catch {
-	    chan copy $in $out
-	} msg]} {
-	    #puts err:$msg
-	    fileevent $in readable {}
-	}
-    }} $in3 $ch]
-    fileevent $out1 writable [list apply {{in out} {
-	if {[catch {
-	    chan copy $in $out
-	} msg]} {
-	    #puts err:$msg
-	    fileevent $out writable {}
-	}
-    }} $ch $out1]
+	# simulate exec: echo test >@ $out2 2>@ $out3 <@ $in1 &:
+	fileevent $out2 writable [list apply {{cho che} {
+	    puts $cho test; close $cho; close $che
+	}} $out2 $out3]
+	# recopy to given chans in handler
+	fileevent $in2 readable [list apply {{in out} {
+	    if {[catch {
+		chan copy $in $out
+	    } msg]} {
+		#puts err:$msg
+		fileevent $in readable {}
+	    }
+	}} $in2 $ch]
+	fileevent $in3 readable [list apply {{in out} {
+	    if {[catch {
+		chan copy $in $out
+	    } msg]} {
+		#puts err:$msg
+		fileevent $in readable {}
+	    }
+	}} $in3 $ch]
+	fileevent $out1 writable [list apply {{in out} {
+	    if {[catch {
+		chan copy $in $out
+	    } msg]} {
+		#puts err:$msg
+		fileevent $out writable {}
+	    }
+	}} $ch $out1]
 
-    set toev [after 5000 {set ::done tout}]
-    vwait ::done
-    list {*}$::ret $::done
+	vwait ::done
+	lappend ::ret $::done
+    }
+    set ::ret
 } -cleanup {
     foreach ch $clchlst {
 	catch {close $ch}
     }
-    if {$toev ne ""} { after cancel $toev }
+    after cancel $toev
     unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev clchlst
-} -result {initialize read write finalize done}
+} -result [lrepeat 2 initialize read write finalize done]
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and
