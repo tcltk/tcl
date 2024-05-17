@@ -157,7 +157,8 @@ typedef struct CloseCallback {
 static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
-static int		IsShared(ChannelBuffer *bufPtr);
+static void		FreeChannelState(char *blockPtr);
+static int 		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelFree(Channel *chanPtr);
 static void		ChannelTimerProc(void *clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
@@ -2949,6 +2950,23 @@ FlushChannel(
     return errorCode;
 }
 
+static void FreeChannelState(char *blockPtr)
+{
+    ChannelState *statePtr = (ChannelState *)blockPtr;
+    /*
+     * Bug [79474c588] leak. Possible other fields need freeing but
+     * not clear if they are already freed and if the fields are set to NULL
+     * when they are. Test suite shows no other leaks at the moment.
+     */
+    if (statePtr->chanMsg) {
+	Tcl_DecrRefCount(statePtr->chanMsg);
+    }
+    if (statePtr->unreportedMsg) {
+	Tcl_DecrRefCount(statePtr->unreportedMsg);
+    }
+    ckfree(statePtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3125,7 +3143,7 @@ CloseChannel(
 
     ChannelFree(chanPtr);
 
-    Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree(statePtr, FreeChannelState);
 
     return errorCode;
 }
