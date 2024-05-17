@@ -1379,12 +1379,7 @@ TclInfoFrame(
      * Procedure CallFrame.
      */
 
-    if (procPtr != NULL
-#ifndef AVOID_EMERGENCY_HACKS
-	    /* Emergency band-aid fix for [87271f7cd6] */
-	    && procPtr->cmdPtr != NULL
-#endif
-	    ) {
+    if (procPtr != NULL) {
 	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
 
 	if (namePtr) {
