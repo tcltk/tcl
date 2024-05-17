@@ -3296,40 +3296,49 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 } -match glob -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
-# BUG: second call is missing info (caused by workaround in tclCmdIL.c)
 test oo-22.3 {OO and coroutines and info frame} -constraints knownBug -setup {
     oo::class create A {
-	self method run {nworkers} {
-	    set ::result {}
-	    set workers {}
-	    for {set n 1} {$n <= $nworkers} {incr n} {
-		set worker [A create a$n]
-		lappend workers $worker
-		$worker schedule
+	self {
+	    variable result stop
+	    method WithWorkers {nworkers args script} {
+		set workers {}
+		try {
+		    for {set n 1} {$n <= $nworkers} {incr n} {
+			lappend workers [set worker [[self] new]]
+			$worker schedule {*}$args
+		    }
+		    return [uplevel 1 $script]
+		} finally {
+		    foreach worker $workers {$worker destroy}
+		} 
 	    }
-	    after 250 [namespace code {variable forever false}]
-	    variable forever true
-	    vwait [my varname forever]
-	    foreach worker $workers {
-		$worker destroy
+	    method run {nworkers} {
+		set result {}
+		set stopvar [my varname stop]
+		set stop false
+		my WithWorkers $nworkers [list my Work [my varname result]] {
+		    after idle [namespace code {set stop true}]
+		    vwait $stopvar
+		}
+		return $result
 	    }
-	    return $::result
 	}
-    	method schedule {} {
-	    set coro coro-[namespace tail [self]]
-	    if {[llength [info commands $coro]] == 0} {
-		coroutine $coro my Work
+    	method schedule {args} {
+	    set coro [namespace current]::coro
+	    if {![llength [info commands $coro]]} {
+		coroutine $coro {*}$args
 	    }
 	}
-	method Work {} {
+	method Work {var} {
 	    after 0 [info coroutine]
 	    yield
-	    lappend ::result [dump]
+	    lappend $var [dump]
 	}
     }
 } -body {
     # Triggers a crash with incorrectly restored procPtr->cmdPtr
     proc dump {} {
+	# Called from [A Work] after a coroutine suspend/resume
 	info frame [expr {[info frame] - 1}]
     }
     A run 2
