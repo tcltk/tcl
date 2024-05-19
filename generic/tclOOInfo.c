@@ -636,6 +636,15 @@ enum Scopes {
     SCOPE_NONE = -1		/* No scope set. Use old semantics. */
 };
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ParseMethodsArgs --
+ *
+ *	Parse the options to [info class methods] and [info object methods]. 
+ *
+ * ----------------------------------------------------------------------
+ */
 static inline int
 ParseMethodsArgs(
     Tcl_Interp *interp,
@@ -732,6 +741,55 @@ ParseMethodsArgs(
     }
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ListLocalMatchingMethods --
+ *
+ *	Get the method names out of a hash table of methods where the methods
+ *	match the given filter options. Used by [info class methods] and
+ *	[info object methods] when not recursing through the inheritance
+ *	hierarchy.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+ListLocalMatchingMethods(
+    Tcl_HashTable *methodsPtr,	/* Hash table of methods. */
+    int scope,			/* Sought scope. */
+    int flag)			/* Sought flag. */
+{
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *namePtr, *resultObj;
+    Method *mPtr;
+
+    /*
+     * Can't pre-allocate the list buffer; not sure how many elements there
+     * are going to be yet.
+     */
+    TclNewObj(resultObj);
+    if (scope == SCOPE_NONE) {
+	/*
+	 * Handle legacy-mode matching. [Bug 36e5517a6850]
+	 */
+	int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
+	FOREACH_HASH(namePtr, mPtr, methodsPtr) {
+	    if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	    }
+	}
+    } else {
+	FOREACH_HASH(namePtr, mPtr, methodsPtr) {
+	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	    }
+	}
+    }
+    return resultObj;
+}
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -775,34 +833,8 @@ InfoObjectMethodsCmd(
 	    Tcl_Free((void *) names);
 	}
     } else if (oPtr->methodsPtr) {
-	FOREACH_HASH_DECLS;
-	Tcl_Obj *namePtr, *resultObj;
-	Method *mPtr;
-
-	/*
-	 * Can't pre-allocate the list buffer; not sure how many elements there
-	 * are going to be yet.
-	 */
-	TclNewObj(resultObj);
-	if (scope == SCOPE_NONE) {
-	    /*
-	     * Handle legacy-mode matching. [Bug 36e5517a6850]
-	     */
-	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
-
-	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-		}
-	    }
-	} else {
-	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-		}
-	    }
-	}
-	Tcl_SetObjResult(interp, resultObj);
+	Tcl_SetObjResult(interp,
+		ListLocalMatchingMethods(oPtr->methodsPtr, scope, flag));
     }
     return TCL_OK;
 }
@@ -1448,30 +1480,8 @@ InfoClassMethodsCmd(
 	    Tcl_Free((void *)names);
 	}
     } else {
-	Tcl_Obj *namePtr, *resultObj;
-	Method *mPtr;
-	FOREACH_HASH_DECLS;
-
-	TclNewObj(resultObj);
-	if (scope == SCOPE_NONE) {
-	    /*
-	     * Handle legacy-mode matching. [Bug 36e5517a6850]
-	     */
-	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
-
-	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-		}
-	    }
-	} else {
-	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-		}
-	    }
-	}
-	Tcl_SetObjResult(interp, resultObj);
+	Tcl_SetObjResult(interp,
+		ListLocalMatchingMethods(&clsPtr->classMethods, scope, flag));
     }
     return TCL_OK;
 }
