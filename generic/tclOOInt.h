@@ -583,10 +583,10 @@ MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
-			    int flags, const char ***stringsPtr);
+			    int flags, Tcl_Obj ***namesPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
-			    const char ***stringsPtr);
+			    Tcl_Obj ***namesPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,

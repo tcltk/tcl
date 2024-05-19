@@ -623,6 +623,116 @@ InfoObjectIsACmd(
 }
 
 /*
+ * Scopes as passed via the -scope option to [info class methods] and [info
+ * object methods].
+ */
+enum Scopes {
+    SCOPE_PRIVATE,		/* User said -scope private */
+    SCOPE_PUBLIC,		/* User said -scope public */
+    SCOPE_UNEXPORTED,		/* User said -scope unexported */
+#ifdef TCLOO_SUPPORT_LOCALPRIVATE_SCOPE_IN_INFO_METHODS
+    SCOPE_LOCALPRIVATE,		/* User said -scope localprivate (not enabled) */
+#endif
+    SCOPE_NONE = -1		/* No scope set. Use old semantics. */
+};
+
+static inline int
+ParseMethodsArgs(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[],
+    int *recursePtr,
+    int *flagPtr,
+    int *scopePtr)
+{
+    static const char *const scopes[] = {
+	"private", "public", "unexported"
+#ifdef TCLOO_SUPPORT_LOCALPRIVATE_SCOPE_IN_INFO_METHODS
+	, "localprivate"
+#endif
+    };
+    static const char *const options[] = {
+	"-all", "-localprivate", "-private", "-scope", NULL
+    };
+    enum Options {
+	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
+    } idx;
+    int i;
+
+    /*
+     * Set the defaults.
+     */
+    *flagPtr = PUBLIC_METHOD, *recursePtr = 0, *scopePtr = SCOPE_NONE;
+    if (objc == 2) {
+	return TCL_OK;
+    }
+
+    /*
+     * Parse the options.
+     */
+    for (i=2 ; i<objc ; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		&idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (idx) {
+	case OPT_ALL:
+	    *recursePtr = 1;
+	    break;
+	case OPT_LOCALPRIVATE:
+	    *flagPtr = PRIVATE_METHOD;
+	    break;
+	case OPT_PRIVATE:
+	    *flagPtr = 0;
+	    break;
+	case OPT_SCOPE:
+	    if (++i >= objc) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"missing option for -scope"));
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
+			(char *)NULL);
+		return TCL_ERROR;
+	    }
+	    if (*scopePtr != SCOPE_NONE) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"-scope option provided twice"));
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "DOUBLED",
+			(char *)NULL);
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
+		    scopePtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+
+    /*
+     * Handle interlocking between features: -scope disables much.
+     */
+    if (*scopePtr != SCOPE_NONE) {
+	*recursePtr = 0;
+	switch (*scopePtr) {
+	case SCOPE_PRIVATE:
+	    *flagPtr = TRUE_PRIVATE_METHOD;
+	    break;
+	case SCOPE_PUBLIC:
+	    *flagPtr = PUBLIC_METHOD;
+	    break;
+#ifdef TCLOO_SUPPORT_LOCALPRIVATE_SCOPE_IN_INFO_METHODS
+	case SCOPE_LOCALPRIVATE:
+	    *flagPtr = PRIVATE_METHOD;
+	    break;
+#endif
+	case SCOPE_UNEXPORTED:
+	    *flagPtr = 0;
+	    break;
+	}
+    }
+    return TCL_OK;
+}
+/*
  * ----------------------------------------------------------------------
  *
  * InfoObjectMethodsCmd --
@@ -639,25 +749,8 @@ InfoObjectMethodsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static const char *const options[] = {
-	"-all", "-localprivate", "-private", "-scope", NULL
-    };
-    enum Options {
-	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
-    } idx;
-    static const char *const scopes[] = {
-	"private", "public", "unexported"
-    };
-    enum Scopes {
-	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
-	SCOPE_LOCALPRIVATE,
-	SCOPE_NONE = -1
-    };
     Object *oPtr;
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_NONE;
-    FOREACH_HASH_DECLS;
-    Tcl_Obj *namePtr, *resultObj;
-    Method *mPtr;
+    int flag, recurse, scope;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
@@ -667,72 +760,30 @@ InfoObjectMethodsCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		    &idx) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    switch (idx) {
-	    case OPT_ALL:
-		recurse = 1;
-		break;
-	    case OPT_LOCALPRIVATE:
-		flag = PRIVATE_METHOD;
-		break;
-	    case OPT_PRIVATE:
-		flag = 0;
-		break;
-	    case OPT_SCOPE:
-		if (++i >= objc) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "missing option for -scope"));
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
-		    return TCL_ERROR;
-		}
-		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
-			&scope) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	}
-    }
-    if (scope != SCOPE_NONE) {
-	recurse = 0;
-	switch (scope) {
-	case SCOPE_PRIVATE:
-	    flag = TRUE_PRIVATE_METHOD;
-	    break;
-	case SCOPE_PUBLIC:
-	    flag = PUBLIC_METHOD;
-	    break;
-	case SCOPE_LOCALPRIVATE:
-	    flag = PRIVATE_METHOD;
-	    break;
-	case SCOPE_UNEXPORTED:
-	    flag = 0;
-	    break;
-	}
+    if (ParseMethodsArgs(interp, objc, objv,
+	    &recurse, &flag, &scope) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
+	Tcl_Obj **names;
+	int numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
 		&names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
 	if (numNames > 0) {
-	    Tcl_Free((void *)names);
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(numNames, names));
+	    Tcl_Free((void *) names);
 	}
     } else if (oPtr->methodsPtr) {
+	FOREACH_HASH_DECLS;
+	Tcl_Obj *namePtr, *resultObj;
+	Method *mPtr;
+
+	/*
+	 * Can't pre-allocate the list buffer; not sure how many elements there
+	 * are going to be yet.
+	 */
+	TclNewObj(resultObj);
 	if (scope == SCOPE_NONE) {
 	    /*
 	     * Handle legacy-mode matching. [Bug 36e5517a6850]
@@ -751,8 +802,8 @@ InfoObjectMethodsCmd(
 		}
 	    }
 	}
+	Tcl_SetObjResult(interp, resultObj);
     }
-    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 
@@ -1372,23 +1423,8 @@ InfoClassMethodsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static const char *const options[] = {
-	"-all", "-localprivate", "-private", "-scope", NULL
-    };
-    enum Options {
-	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
-    } idx;
-    static const char *const scopes[] = {
-	"private", "public", "unexported"
-    };
-    enum Scopes {
-	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
-	SCOPE_NONE = -1
-    };
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_NONE;
-    Tcl_Obj *namePtr, *resultObj;
-    Method *mPtr;
     Class *clsPtr;
+    int flag, recurse, scope;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-option value ...?");
@@ -1398,70 +1434,25 @@ InfoClassMethodsCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		    &idx) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    switch (idx) {
-	    case OPT_ALL:
-		recurse = 1;
-		break;
-	    case OPT_LOCALPRIVATE:
-		flag = PRIVATE_METHOD;
-		break;
-	    case OPT_PRIVATE:
-		flag = 0;
-		break;
-	    case OPT_SCOPE:
-		if (++i >= objc) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "missing option for -scope"));
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
-		    return TCL_ERROR;
-		}
-		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
-			&scope) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	}
-    }
-    if (scope != SCOPE_NONE) {
-	recurse = 0;
-	switch (scope) {
-	case SCOPE_PRIVATE:
-	    flag = TRUE_PRIVATE_METHOD;
-	    break;
-	case SCOPE_PUBLIC:
-	    flag = PUBLIC_METHOD;
-	    break;
-	case SCOPE_UNEXPORTED:
-	    flag = 0;
-	    break;
-	}
+    if (ParseMethodsArgs(interp, objc, objv,
+	    &recurse, &flag, &scope) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    TclNewObj(resultObj);
     if (recurse) {
-	const char **names;
-	Tcl_Size i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
+	Tcl_Obj **names;
+	Tcl_Size numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
-	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
-	}
 	if (numNames > 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(numNames, names));
 	    Tcl_Free((void *)names);
 	}
     } else {
+	Tcl_Obj *namePtr, *resultObj;
+	Method *mPtr;
 	FOREACH_HASH_DECLS;
 
+	TclNewObj(resultObj);
 	if (scope == SCOPE_NONE) {
 	    /*
 	     * Handle legacy-mode matching. [Bug 36e5517a6850]
@@ -1480,8 +1471,8 @@ InfoClassMethodsCmd(
 		}
 	    }
 	}
+	Tcl_SetObjResult(interp, resultObj);
     }
-    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 

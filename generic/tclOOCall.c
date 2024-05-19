@@ -141,7 +141,7 @@ static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
 static size_t		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
-			    const char ***stringsPtr);
+			    Tcl_Obj ***sortedNamesPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -450,8 +450,8 @@ TclOOGetSortedMethodList(
 				 * flags can override this. */
     int flags,			/* Whether we just want the public method
 				 * names. */
-    const char ***stringsPtr)	/* Where to write a pointer to the array of
-				 * strings to. */
+    Tcl_Obj ***namesPtr)	/* Where to write a pointer to the array of
+				 * names to. */
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
 				 * mapping. */
@@ -525,7 +525,7 @@ TclOOGetSortedMethodList(
      */
 
     Tcl_DeleteHashTable(&examinedClasses);
-    numStrings = SortMethodNames(&names, flags, stringsPtr);
+    numStrings = SortMethodNames(&names, flags, namesPtr);
     Tcl_DeleteHashTable(&names);
     return numStrings;
 }
@@ -535,8 +535,8 @@ TclOOGetSortedClassMethodList(
     Class *clsPtr,		/* The class to get the method names for. */
     int flags,			/* Whether we just want the public method
 				 * names. */
-    const char ***stringsPtr)	/* Where to write a pointer to the array of
-				 * strings to. */
+    Tcl_Obj ***namesPtr)	/* Where to write a pointer to the array of
+				 * names to. */
 {
     Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
 				 * mapping. */
@@ -570,7 +570,7 @@ TclOOGetSortedClassMethodList(
      * them (processing export layering).
      */
 
-    numStrings = SortMethodNames(&names, flags, stringsPtr);
+    numStrings = SortMethodNames(&names, flags, namesPtr);
     Tcl_DeleteHashTable(&names);
     return numStrings;
 }
@@ -597,10 +597,10 @@ SortMethodNames(
     int flags,			/* Whether we are looking for unexported
 				 * methods. Full private methods are handled
 				 * on insertion to the table. */
-    const char ***stringsPtr)	/* Where to store the sorted list of strings
+    Tcl_Obj ***sortedNamesPtr)	/* Where to store the sorted list of names
 				 * that we produce. Tcl_Alloced() */
 {
-    const char **strings;
+    Tcl_Obj **names;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
@@ -612,7 +612,7 @@ SortMethodNames(
      */
 
     if (namesPtr->numEntries == 0) {
-	*stringsPtr = NULL;
+	*sortedNamesPtr = NULL;
 	return 0;
     }
 
@@ -622,13 +622,13 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    strings = (const char **) Tcl_Alloc(sizeof(char *) * namesPtr->numEntries);
+    names = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * namesPtr->numEntries);
     FOREACH_HASH(namePtr, isWanted, namesPtr) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
 		continue;
 	    }
-	    strings[i++] = TclGetString(namePtr);
+	    names[i++] = namePtr;
 	}
     }
 
@@ -640,12 +640,12 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, i, sizeof(char *), CmpStr);
+	    qsort((void *) names, i, sizeof(Tcl_Obj *), CmpStr);
 	}
-	*stringsPtr = strings;
+	*sortedNamesPtr = names;
     } else {
-	Tcl_Free((void *)strings);
-	*stringsPtr = NULL;
+	Tcl_Free((void *)names);
+	*sortedNamesPtr = NULL;
     }
     return i;
 }
@@ -655,13 +655,15 @@ SortMethodNames(
  */
 static int
 CmpStr(
-    const void *ptr1,
-    const void *ptr2)
+    const void *ptr1,		/* Ref to first Tcl_Obj* to compare */
+    const void *ptr2)		/* Ref to second Tcl_Obj* to compare */
 {
-    const char **strPtr1 = (const char **) ptr1;
-    const char **strPtr2 = (const char **) ptr2;
+    Tcl_Obj *objPtr1 = *((Tcl_Obj **) ptr1);
+    Tcl_Obj *objPtr2 = *((Tcl_Obj **) ptr2);
+    Tcl_Size len1;
+    const char *str1 = TclGetStringFromObj(objPtr1, &len1);
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1) + 1);
+    return TclpUtfNcmp2(str1, TclGetString(objPtr2), len1 + 1);
 }
 
 /*
