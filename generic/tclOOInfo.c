@@ -623,17 +623,13 @@ InfoObjectIsACmd(
 }
 
 /*
- * Scopes as passed via the -scope option to [info class methods] and [info
- * object methods].
+ * How [info class methods] and [info object methods] want the methods to be
+ * matched.
  */
-enum Scopes {
-    SCOPE_PRIVATE,		/* User said -scope private */
-    SCOPE_PUBLIC,		/* User said -scope public */
-    SCOPE_UNEXPORTED,		/* User said -scope unexported */
-#ifdef TCLOO_SUPPORT_LOCALPRIVATE_SCOPE_IN_INFO_METHODS
-    SCOPE_LOCALPRIVATE,		/* User said -scope localprivate (not enabled) */
-#endif
-    SCOPE_NONE = -1		/* No scope set. Use old semantics. */
+enum MethodsMatchingModes {
+    MODE_CLASSIC,		/* Classic matching mode */
+    MODE_SCOPED,		/* Mode when -scope is passed */
+    MODE_RECURSIVE		/* Recursive matching mode */
 };
 
 /*
@@ -650,9 +646,8 @@ ParseMethodsArgs(
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[],
-    int *recursePtr,
-    int *flagPtr,
-    int *scopePtr)
+    int *modePtr,
+    int *flagPtr)
 {
     static const char *const scopes[] = {
 	"private", "public", "unexported"
@@ -660,18 +655,27 @@ ParseMethodsArgs(
 	, "localprivate"
 #endif
     };
+    enum Scopes {
+	SCOPE_PRIVATE,		/* User said -scope private */
+	SCOPE_PUBLIC,		/* User said -scope public */
+	SCOPE_UNEXPORTED,	/* User said -scope unexported */
+#ifdef TCLOO_SUPPORT_LOCALPRIVATE_SCOPE_IN_INFO_METHODS
+	SCOPE_LOCALPRIVATE,	/* User said -scope localprivate (not enabled) */
+#endif
+	SCOPE_NONE		/* No scope set. Use old semantics. */
+    };
     static const char *const options[] = {
 	"-all", "-localprivate", "-private", "-scope", NULL
     };
     enum Options {
 	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
     } idx;
-    int i;
+    int i, recurse, scope;
 
     /*
      * Set the defaults.
      */
-    *flagPtr = PUBLIC_METHOD, *recursePtr = 0, *scopePtr = SCOPE_NONE;
+    *flagPtr = PUBLIC_METHOD, recurse = 0, scope = SCOPE_NONE;
     if (objc == 2) {
 	return TCL_OK;
     }
@@ -686,7 +690,7 @@ ParseMethodsArgs(
 	}
 	switch (idx) {
 	case OPT_ALL:
-	    *recursePtr = 1;
+	    recurse = 1;
 	    break;
 	case OPT_LOCALPRIVATE:
 	    *flagPtr = PRIVATE_METHOD;
@@ -702,7 +706,7 @@ ParseMethodsArgs(
 			(char *)NULL);
 		return TCL_ERROR;
 	    }
-	    if (*scopePtr != SCOPE_NONE) {
+	    if (scope != SCOPE_NONE) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"-scope option provided twice"));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "DOUBLED",
@@ -710,7 +714,7 @@ ParseMethodsArgs(
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
-		    scopePtr) != TCL_OK) {
+		    &scope) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;
@@ -718,11 +722,11 @@ ParseMethodsArgs(
     }
 
     /*
-     * Handle interlocking between features: -scope disables much.
+     * Handle interlocking between features.
      */
-    if (*scopePtr != SCOPE_NONE) {
-	*recursePtr = 0;
-	switch (*scopePtr) {
+    if (scope != SCOPE_NONE) {
+	*modePtr = MODE_SCOPED;
+	switch (scope) {
 	case SCOPE_PRIVATE:
 	    *flagPtr = TRUE_PRIVATE_METHOD;
 	    break;
@@ -738,6 +742,8 @@ ParseMethodsArgs(
 	    *flagPtr = 0;
 	    break;
 	}
+    } else {
+	*modePtr = (recurse ? MODE_RECURSIVE : MODE_CLASSIC);
     }
     return TCL_OK;
 }
@@ -757,34 +763,29 @@ ParseMethodsArgs(
 static inline Tcl_Obj *
 ListLocalMatchingMethods(
     Tcl_HashTable *methodsPtr,	/* Hash table of methods. */
-    int scope,			/* Sought scope. */
+    int mode,			/* Matching mode. */
     int flag)			/* Sought flag. */
 {
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
+    int scopeFilter = SCOPE_FLAGS;
 
     /*
      * Can't pre-allocate the list buffer; not sure how many elements there
      * are going to be yet.
      */
     TclNewObj(resultObj);
-    if (scope == SCOPE_NONE) {
+    if (mode == MODE_CLASSIC) {
 	/*
 	 * Handle legacy-mode matching. [Bug 36e5517a6850]
 	 */
-	int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+	scopeFilter = flag | TRUE_PRIVATE_METHOD;
+    }
 
-	FOREACH_HASH(namePtr, mPtr, methodsPtr) {
-	    if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-	    }
-	}
-    } else {
-	FOREACH_HASH(namePtr, mPtr, methodsPtr) {
-	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
-	    }
+    FOREACH_HASH(namePtr, mPtr, methodsPtr) {
+	if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 	}
     }
     return resultObj;
@@ -808,7 +809,7 @@ InfoObjectMethodsCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int flag, recurse, scope;
+    int flag, mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
@@ -818,12 +819,11 @@ InfoObjectMethodsCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (ParseMethodsArgs(interp, objc, objv,
-	    &recurse, &flag, &scope) != TCL_OK) {
+    if (ParseMethodsArgs(interp, objc, objv, &mode, &flag) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if (recurse) {
+    if (mode == MODE_RECURSIVE) {
 	Tcl_Obj **names;
 	int numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
 		&names);
@@ -834,7 +834,7 @@ InfoObjectMethodsCmd(
 	}
     } else if (oPtr->methodsPtr) {
 	Tcl_SetObjResult(interp,
-		ListLocalMatchingMethods(oPtr->methodsPtr, scope, flag));
+		ListLocalMatchingMethods(oPtr->methodsPtr, mode, flag));
     }
     return TCL_OK;
 }
@@ -1456,7 +1456,7 @@ InfoClassMethodsCmd(
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
-    int flag, recurse, scope;
+    int flag, mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-option value ...?");
@@ -1466,12 +1466,11 @@ InfoClassMethodsCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    if (ParseMethodsArgs(interp, objc, objv,
-	    &recurse, &flag, &scope) != TCL_OK) {
+    if (ParseMethodsArgs(interp, objc, objv, &mode, &flag) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if (recurse) {
+    if (mode == MODE_RECURSIVE) {
 	Tcl_Obj **names;
 	Tcl_Size numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
@@ -1481,7 +1480,7 @@ InfoClassMethodsCmd(
 	}
     } else {
 	Tcl_SetObjResult(interp,
-		ListLocalMatchingMethods(&clsPtr->classMethods, scope, flag));
+		ListLocalMatchingMethods(&clsPtr->classMethods, mode, flag));
     }
     return TCL_OK;
 }
