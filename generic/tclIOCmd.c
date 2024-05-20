@@ -606,7 +606,6 @@ Tcl_TellObjCmd(
      * them into the regular interpreter result.
      */
 
-
     code  = TclChanCaughtErrorBypass(interp, chan);
     TclChannelRelease(chan);
     if (code) {
