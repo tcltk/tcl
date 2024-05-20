@@ -1691,7 +1691,7 @@ AddPrivatesFromClassChainToCallContext(
 
   tailRecurse:
     if (classPtr == NULL) {
-	return;
+	return 0;
     }
     FOREACH(superPtr, classPtr->mixins) {
 	if (AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
