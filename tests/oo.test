@@ -4274,8 +4274,6 @@ test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly}
 } -cleanup {
     base destroy
 } -result {{c d e} {c d e}}
-
-
 test oo-35.6 {
     Bug : teardown of an object that is a class that is an instance of itself
 } -setup {
@@ -4297,7 +4295,37 @@ test oo-35.6 {
 } -cleanup {
     rename obj {}
 } -result done
-
+test oo-35.7 {Bug 7842f33a5c: destructor cascading} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {}
 
 
 cleanupTests
