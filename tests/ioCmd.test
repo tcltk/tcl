@@ -496,14 +496,14 @@ test iocmd-12.10 {POSIX open access modes: BINARY} {
     close $f
     set result
 } 5
-test iocmd-12.11 {POSIX open access modes: BINARY} -body {
+test iocmd-12.10.1 {POSIX open access modes: BINARY} -body {
     after 100
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f Ɉ		;# throws an exception
 } -cleanup {
     close $f
 } -returnCodes 1 -match glob -result {error writing "*": invalid or incomplete multibyte or wide character}
-test iocmd-12.12 {POSIX open access modes: BINARY} {
+test iocmd-12.11 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f H
     close $f
