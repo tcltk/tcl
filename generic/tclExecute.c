@@ -7437,28 +7437,28 @@ TEBCresume(
 #else
 		wval = (Tcl_WideInt)TclpGetClicks();
 #endif
-	    break;
-	case 1:			/* microseconds */
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
-	    break;
-	case 2:			/* milliseconds */
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
-	    break;
-	case 3:			/* seconds */
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec;
-	    break;
-	default:
-	    Tcl_Panic("clockRead instruction with unknown clock#");
-	    break;
+		break;
+	    case 1:		/* microseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
+		break;
+	    case 2:		/* milliseconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
+		break;
+	    case 3:		/* seconds */
+		Tcl_GetTime(&now);
+		wval = (Tcl_WideInt)now.sec;
+		break;
+	    default:
+		Tcl_Panic("clockRead instruction with unknown clock#");
+		break;
+	    }
+	    TclNewIntObj(objResultPtr, wval);
+	    TRACE_WITH_OBJ(("=> "), objResultPtr);
+	    NEXT_INST_F(2, 0, 1);
 	}
-	TclNewIntObj(objResultPtr, wval);
-	TRACE_WITH_OBJ(("=> "), objResultPtr);
-	NEXT_INST_F(2, 0, 1);
-    }
-    break;
+	break;
 
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
