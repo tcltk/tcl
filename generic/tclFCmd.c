@@ -918,8 +918,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-	/*
-	 * Return the last component, unless it is the only component, and it
+        /*
+         * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 
@@ -1115,7 +1115,7 @@ TclFileAttrsCmd(
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0]));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
 	    goto end;
 	}
 
@@ -1139,7 +1139,7 @@ TclFileAttrsCmd(
 	    TclPrintfResult(interp,
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0]));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
 	    goto end;
 	}
 
@@ -1519,7 +1519,7 @@ TclFileTemporaryCmd(
      */
 
   makeTemporary:
-    chan = TclpOpenTemporaryFile(tempDirObj, tempBaseObj, tempExtObj, nameObj);
+    chan = TclpOpenTemporaryFile(tempDirObj,tempBaseObj,tempExtObj, nameObj);
 
     /*
      * If we created pieces of template, get rid of them now.

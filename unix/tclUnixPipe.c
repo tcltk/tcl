@@ -80,7 +80,7 @@ static int		SetupStdFile(TclFile file, int type);
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Close proc. */
+    NULL,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -355,7 +355,7 @@ TclpCreatePipe(
 
 int
 TclpCloseFile(
-    TclFile file)		/* The file to close. */
+    TclFile file)	/* The file to close. */
 {
     int fd = GetFd(file);
 
@@ -400,7 +400,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc,		/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -571,7 +571,7 @@ TclpCreateProcess(
 		|| !SetupStdFile(outputFile, TCL_STDOUT)
 		|| (!joinThisError && !SetupStdFile(errorFile, TCL_STDERR))
 		|| (joinThisError &&
-			((dup2(1, 2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
+			((dup2(1,2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
 	    snprintf(errSpace, sizeof(errSpace),
 		    "%dforked process couldn't set up input/output", errno);
 	    len = strlen(errSpace);
@@ -1001,7 +1001,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,		/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
@@ -1041,7 +1041,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,		/* The pipe to close. */
+    void *instanceData,	/* The pipe to close. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -1138,7 +1138,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,		/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int toRead,			/* How much space is available in the
 				 * buffer? */
@@ -1189,7 +1189,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,		/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
@@ -1248,7 +1248,7 @@ PipeWatchNotifyChannelWrapper(
 
 static void
 PipeWatchProc(
-    void *instanceData,		/* The pipe state. */
+    void *instanceData,	/* The pipe state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1296,9 +1296,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,		/* The pipe state. */
+    void *instanceData,	/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)		/* Where to store the handle. */
+    void **handlePtr)	/* Where to store the handle. */
 {
     PipeState *psPtr = (PipeState *)instanceData;
 

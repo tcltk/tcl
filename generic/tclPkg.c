@@ -96,36 +96,26 @@ static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
 static void		AddRequirementsToDString(Tcl_DString *dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
-static int		PkgRequireCore(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		TclNRPkgRequireProc(void *clientData,
-			    Tcl_Interp *interp, int reqc,
-			    Tcl_Obj *const reqv[]);
-static int		SelectPackage(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		SelectPackageFinal(void *data[], Tcl_Interp *interp,
-			    int result);
-static int		TclNRPackageObjCmdCleanup(void *data[],
-			    Tcl_Interp *interp, int result);
+static int		PkgRequireCore(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
+static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
+static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
+static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
 
 /*
  * Helper macros.
  */
 
-#define DupBlock(var, str, len) \
-    ((var) = (char *) Tcl_Alloc(len), memcpy((var), (str), (len)))
-#define DupString(var, str) \
-    do {								\
-	size_t local__len = strlen(str) + 1;				\
-	DupBlock((var), (str), local__len);				\
+#define DupBlock(v,s,len) \
+    ((v) = (char *)Tcl_Alloc(len), memcpy((v),(s),(len)))
+#define DupString(v,s) \
+    do { \
+	size_t local__len = strlen(s) + 1; \
+	DupBlock((v),(s),local__len); \
     } while (0)
 
 /*
@@ -1254,7 +1244,7 @@ TclNRPackageObjCmd(
 		    hPtr = Tcl_NextHashEntry(&search)) {
 		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
+		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
 			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
 		}
 	    }
@@ -1369,7 +1359,7 @@ TclNRPackageObjCmd(
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL, NULL);
+		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,
 		    PkgRequireCore, (void *) argv3, INT2PTR(newobjc),
 		    newObjvPtr, NULL);
@@ -1395,7 +1385,7 @@ TclNRPackageObjCmd(
 	    }
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL, NULL);
+		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,
 		    PkgRequireCore, (void *) argv2, INT2PTR(newobjc),
 		    newObjvPtr, NULL);

@@ -14,7 +14,7 @@
  * following copyright notice:
  *
  * Copyright © 1988, 1993, 1994
- *	The Regents of the University of California. All rights reserved.
+ *      The Regents of the University of California. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -757,7 +757,7 @@ TclpObjCopyDirectory(
     int ret;
     Tcl_Obj *transPtr;
 
-    transPtr = Tcl_FSGetTranslatedPath(NULL, srcPathPtr);
+    transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
     ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, 0, &srcString, NULL);
@@ -767,7 +767,7 @@ TclpObjCopyDirectory(
     if (ret != TCL_OK) {
 	*errorPtr = srcPathPtr;
     } else {
-	transPtr = Tcl_FSGetTranslatedPath(NULL, destPathPtr);
+	transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
 	ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
@@ -1292,7 +1292,7 @@ TraversalDelete(
 static int
 CopyFileAtts(
 #ifdef MAC_OSX_TCL
-    const char *src,		/* Path name of source file (native). */
+    const char *src,	/* Path name of source file (native). */
 #else
     TCL_UNUSED(const char *) /*src*/,
 #endif
@@ -1763,14 +1763,14 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     TCL_UNUSED(Tcl_Interp *),
-    const char *modeStringPtr,	/* Permissions string */
+    const char *modeStringPtr, /* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
     mode_t oldMode;		/* Storage for the value of the old mode (that
 				 * is passed in), to allow for the chmod style
 				 * manipulation. */
-    int i, n, who, op, what, op_found, who_found;
+    int i,n, who, op, what, op_found, who_found;
 
     /*
      * We start off checking for an "rwxrwxrwx" style permissions string
@@ -2072,7 +2072,7 @@ TclpObjNormalizePath(
 	    return 0;
 	}
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, path, nextCheckpoint, 0, &ds, NULL)) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, path,nextCheckpoint, 0, &ds, NULL)) {
 	    Tcl_DStringFree(&ds);
 	    return -1;
 	}
@@ -2485,10 +2485,10 @@ GetUnixFileAttributes(
 
 static int
 SetUnixFileAttributes(
-    Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
-    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr)	/* The attribute to set. */
+    Tcl_Interp *interp,	    /* The interp we are using for errors. */
+    int objIndex,           /* The index of the attribute. */
+    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)  /* The attribute to set. */
 {
     int yesNo, fileAttributes, old;
     WCHAR *winPath;

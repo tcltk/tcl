@@ -497,8 +497,7 @@ TclWinSymLinkDelete(
 
     if (hFile != INVALID_HANDLE_VALUE) {
 	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer,
-		REPARSE_MOUNTPOINT_HEADER_SIZE, NULL, 0, &returnedLength,
-		NULL)) {
+		REPARSE_MOUNTPOINT_HEADER_SIZE,NULL,0,&returnedLength,NULL)) {
 	    /*
 	     * Error setting junction.
 	     */
@@ -584,7 +583,7 @@ WinReadLinkDirectory(
 	     */
 
 	    if (wcsncmp(reparseBuffer->MountPointReparseBuffer.PathBuffer,
-		    L"\\??\\Volume{", 11) == 0) {
+		    L"\\??\\Volume{",11) == 0) {
 		char drive;
 
 		/*
@@ -607,7 +606,7 @@ WinReadLinkDirectory(
 		    };
 
 		    driveSpec[0] = drive;
-		    retVal = Tcl_NewStringObj(driveSpec, 2);
+		    retVal = Tcl_NewStringObj(driveSpec,2);
 		    Tcl_IncrRefCount(retVal);
 		    return retVal;
 		}
@@ -624,14 +623,14 @@ WinReadLinkDirectory(
 
 		goto invalidError;
 	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\\\?\\", 4) == 0) {
+		    .PathBuffer, L"\\\\?\\",4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
 
 		offset = 4;
 	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\??\\", 4) == 0) {
+		    .PathBuffer, L"\\??\\",4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
@@ -646,9 +645,9 @@ WinReadLinkDirectory(
 		reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength>>1, &ds);
 
-	copy = Tcl_DStringValue(&ds) + offset;
-	len = Tcl_DStringLength(&ds) - offset;
-	retVal = Tcl_NewStringObj(copy, len);
+	copy = Tcl_DStringValue(&ds)+offset;
+	len = Tcl_DStringLength(&ds)-offset;
+	retVal = Tcl_NewStringObj(copy,len);
 	Tcl_IncrRefCount(retVal);
 	Tcl_DStringFree(&ds);
 	return retVal;
@@ -1438,23 +1437,23 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-	/*
-	 * Treat the current user as a special case because the general case
-	 * below does not properly retrieve the path. The NetUserGetInfo
-	 * call returns an empty path and the code defaults to the user's
-	 * name in the profiles directory. On modern Windows systems, this
-	 * is generally wrong as when the account is a Microsoft account,
-	 * for example abcdefghi@outlook.com, the directory name is
-	 * abcde and not abcdefghi.
-	 *
-	 * Note we could have just used env(USERPROFILE) here but
-	 * the intent is to retrieve (as on Unix) the system's view
-	 * of the home irrespective of environment settings of HOME
-	 * and USERPROFILE.
-	 *
-	 * Fixing this for the general user needs more investigating but
-	 * at least for the current user we can use a direct call.
-	 */
+        /*
+         * Treat the current user as a special case because the general case
+         * below does not properly retrieve the path. The NetUserGetInfo
+         * call returns an empty path and the code defaults to the user's
+         * name in the profiles directory. On modern Windows systems, this
+         * is generally wrong as when the account is a Microsoft account,
+         * for example abcdefghi@outlook.com, the directory name is
+         * abcde and not abcdefghi.
+         *
+         * Note we could have just used env(USERPROFILE) here but
+         * the intent is to retrieve (as on Unix) the system's view
+         * of the home irrespective of environment settings of HOME
+         * and USERPROFILE.
+         *
+         * Fixing this for the general user needs more investigating but
+         * at least for the current user we can use a direct call.
+         */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
 	    HANDLE hProcess;
@@ -1749,8 +1748,8 @@ NativeAccess(
 	 * go).
 	 */
 
-	if(!GetSecurityDescriptorOwner(sdPtr, &pSid, &SidDefaulted) ||
-	   memcmp(GetSidIdentifierAuthority(pSid), &samba_unmapped,
+	if(!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
+	   memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
 		  sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
 	    HeapFree(GetProcessHeap(), 0, sdPtr);
 	    return 0; /* Attrib tests say access allowed. */
@@ -1893,7 +1892,7 @@ NativeIsExec(
 
 int
 TclpObjChdir(
-    Tcl_Obj *pathPtr)		/* Path to new working directory. */
+    Tcl_Obj *pathPtr)	/* Path to new working directory. */
 {
     int result;
     const WCHAR *nativePath;
@@ -2053,28 +2052,28 @@ NativeStat(
     if (fileHandle != INVALID_HANDLE_VALUE) {
 	BY_HANDLE_FILE_INFORMATION data;
 
-	if (GetFileInformationByHandle(fileHandle, &data) != TRUE) {
-	    fileType = GetFileType(fileHandle);
-	    CloseHandle(fileHandle);
-	    if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
-		Tcl_SetErrno(ENOENT);
-		return -1;
-	    }
+	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
+            fileType = GetFileType(fileHandle);
+            CloseHandle(fileHandle);
+            if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
+                Tcl_SetErrno(ENOENT);
+                return -1;
+            }
 
-	    /*
+            /*
 	     * Mock up the expected structure
 	     */
 
-	    memset(&data, 0, sizeof(data));
-	    statPtr->st_atime = 0;
-	    statPtr->st_mtime = 0;
-	    statPtr->st_ctime = 0;
-	} else {
-	    CloseHandle(fileHandle);
-	    statPtr->st_atime = ToCTime(data.ftLastAccessTime);
-	    statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
-	    statPtr->st_ctime = ToCTime(data.ftCreationTime);
-	}
+            memset(&data, 0, sizeof(data));
+            statPtr->st_atime = 0;
+            statPtr->st_mtime = 0;
+            statPtr->st_ctime = 0;
+        } else {
+            CloseHandle(fileHandle);
+            statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+            statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+            statPtr->st_ctime = ToCTime(data.ftCreationTime);
+        }
 	attr = data.dwFileAttributes;
 	statPtr->st_size = ((long long) data.nFileSizeLow) |
 		(((long long) data.nFileSizeHigh) << 32);
@@ -2134,11 +2133,11 @@ NativeStat(
     dev = NativeDev(nativePath);
     mode = NativeStatMode(attr, checkLinks, NativeIsExec(nativePath));
     if (fileType == FILE_TYPE_CHAR) {
-	mode &= ~S_IFMT;
-	mode |= S_IFCHR;
+        mode &= ~S_IFMT;
+        mode |= S_IFCHR;
     } else if (fileType == FILE_TYPE_DISK) {
-	mode &= ~S_IFMT;
-	mode |= S_IFBLK;
+        mode &= ~S_IFMT;
+        mode |= S_IFBLK;
     }
 
     statPtr->st_dev	= (dev_t) dev;
@@ -2520,9 +2519,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
+    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)		/* offset to start at in pathPtr */
+    int nextCheckpoint)	        /* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -2870,7 +2869,7 @@ TclWinVolumeRelativeNormalize(
 
 	const char *drive = TclGetString(useThisCwd);
 
-	absolutePath = Tcl_NewStringObj(drive, 2);
+	absolutePath = Tcl_NewStringObj(drive,2);
 	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(absolutePath);
 
@@ -2972,10 +2971,10 @@ TclpNativeToNormalized(
      */
 
     if (*copy == '\\') {
-	if (0 == strncmp(copy, "\\??\\", 4)) {
+	if (0 == strncmp(copy,"\\??\\",4)) {
 	    copy += 4;
 	    len -= 4;
-	} else if (0 == strncmp(copy, "\\\\?\\", 4)) {
+	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
 	    copy += 4;
 	    len -= 4;
 	}
@@ -2991,7 +2990,7 @@ TclpNativeToNormalized(
 	}
     }
 
-    objPtr = Tcl_NewStringObj(copy, len);
+    objPtr = Tcl_NewStringObj(copy,len);
     Tcl_DStringFree(&ds);
 
     return objPtr;
@@ -3257,8 +3256,8 @@ TclpUtime(
  * TclWinFileOwned --
  *
  *	Returns 1 if the specified file exists and is owned by the current
- *	user and 0 otherwise. Like the Unix case, the check is made using
- *	the real process SID, not the effective (impersonation) one.
+ *      user and 0 otherwise. Like the Unix case, the check is made using
+ *      the real process SID, not the effective (impersonation) one.
  *
  *---------------------------------------------------------------------------
  */
@@ -3280,12 +3279,12 @@ TclWinFileOwned(
     if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
 	    &secd) != ERROR_SUCCESS) {
-	/*
+        /*
 	 * Either not a file, or we do not have access to it in which case we
 	 * are in all likelihood not the owner.
 	 */
 
-	return 0;
+        return 0;
     }
 
     /*
@@ -3296,19 +3295,19 @@ TclWinFileOwned(
      */
 
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-	/*
+        /*
 	 * Find out how big the buffer needs to be.
 	 */
 
-	bufsz = 0;
-	GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
-	if (bufsz) {
-	    buf = (LPBYTE)Tcl_Alloc(bufsz);
-	    if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
-		owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
-	    }
-	}
-	CloseHandle(token);
+        bufsz = 0;
+        GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
+        if (bufsz) {
+            buf = (LPBYTE)Tcl_Alloc(bufsz);
+            if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
+                owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
+            }
+        }
+        CloseHandle(token);
     }
 
     /*
@@ -3316,13 +3315,13 @@ TclWinFileOwned(
      */
 
     if (secd) {
-	LocalFree(secd);	/* Also frees ownerSid */
+        LocalFree(secd);            /* Also frees ownerSid */
     }
     if (buf) {
-	Tcl_Free(buf);
+        Tcl_Free(buf);
     }
 
-    return (owned != 0);	/* Convert non-0 to 1 */
+    return (owned != 0);        /* Convert non-0 to 1 */
 }
 
 /*

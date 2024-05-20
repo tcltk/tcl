@@ -71,9 +71,9 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #  include <sunmath.h>
 #  define TCL_IEEE_DOUBLE_ROUNDING_DECL
 #  define TCL_IEEE_DOUBLE_ROUNDING \
-    ieee_flags("set", "precision", "double", NULL)
+    ieee_flags("set","precision","double",NULL)
 #  define TCL_DEFAULT_DOUBLE_ROUNDING \
-    ieee_flags("clear", "precision", NULL, NULL)
+    ieee_flags("clear","precision",NULL,NULL)
 
 # endif
 #endif
@@ -1696,7 +1696,7 @@ MakeLowPrecisionDouble(
      * ulp, so we need to change rounding mode to 53-bits. We also make
      * 'retval' volatile, so that it doesn't get promoted to a register.
      */
-    volatile double retval;	/* Value of the number. */
+    volatile double retval;		/* Value of the number. */
 
     /*
      * Test for zero significand, which requires explicit construction
@@ -2262,28 +2262,22 @@ NormalizeRightward(
     Tcl_WideUInt w = *wPtr;
 
     if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
-	w >>= 32;
-	rv += 32;
+	w >>= 32; rv += 32;
     }
     if (!(w & (Tcl_WideUInt) 0xFFFF)) {
-	w >>= 16;
-	rv += 16;
+	w >>= 16; rv += 16;
     }
     if (!(w & (Tcl_WideUInt) 0xFF)) {
-	w >>= 8;
-	rv += 8;
+	w >>= 8; rv += 8;
     }
     if (!(w & (Tcl_WideUInt) 0xF)) {
-	w >>= 4;
-	rv += 4;
+	w >>= 4; rv += 4;
     }
     if (!(w & 0x3)) {
-	w >>= 2;
-	rv += 2;
+	w >>= 2; rv += 2;
     }
     if (!(w & 0x1)) {
-	w >>= 1;
-	++rv;
+	w >>= 1; ++rv;
     }
     *wPtr = w;
     return rv;
@@ -2311,31 +2305,24 @@ RequiredPrecision(
     unsigned long wi;
 
     if (w & ((Tcl_WideUInt) 0xFFFFFFFF << 32)) {
-	wi = (unsigned long) (w >> 32);
-	rv = 32;
+	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
-	wi = (unsigned long) w;
-	rv = 0;
+	wi = (unsigned long) w; rv = 0;
     }
     if (wi & 0xFFFF0000) {
-	wi >>= 16;
-	rv += 16;
+	wi >>= 16; rv += 16;
     }
     if (wi & 0xFF00) {
-	wi >>= 8;
-	rv += 8;
+	wi >>= 8; rv += 8;
     }
     if (wi & 0xF0) {
-	wi >>= 4;
-	rv += 4;
+	wi >>= 4; rv += 4;
     }
     if (wi & 0xC) {
-	wi >>= 2;
-	rv += 2;
+	wi >>= 2; rv += 2;
     }
     if (wi & 0x2) {
-	wi >>= 1;
-	++rv;
+	wi >>= 1; ++rv;
     }
     if (wi & 0x1) {
 	++rv;
@@ -2665,7 +2652,7 @@ ComputeScale(
 
 static inline void
 SetPrecisionLimits(
-    int flags,			/* Type of conversion: TCL_DD_SHORTEST,
+    int flags,		/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_E_FMT, TCL_DD_F_FMT. */
     int k,			/* Floor(log10(number to convert)) */
     int *ndigitsPtr,		/* IN/OUT: Number of digits requested (will be
@@ -3161,9 +3148,7 @@ ShorteningInt64Conversion(
 
     if (b < S) {
 	b = 10 * b;
-	++m2plus;
-	++m2minus;
-	++m5;
+	++m2plus; ++m2minus; ++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3541,9 +3526,7 @@ ShorteningBignumConversionPowD(
 
     if ((err == MP_OKAY) && (b.used <= sd)) {
 	err = mp_mul_d(&b, 10, &b);
-	++m2plus;
-	++m2minus;
-	++m5;
+	++m2plus; ++m2minus; ++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3583,8 +3566,7 @@ ShorteningBignumConversionPowD(
 	    if (b.used > sd+1 || digit >= 10) {
 		Tcl_Panic("wrong digit!");
 	    }
-	    --b.used;
-	    mp_clamp(&b);
+	    --b.used; mp_clamp(&b);
 	}
 
 	/*
@@ -4560,11 +4542,9 @@ TclDoubleDigits(
 	 */
 
 	if (b2 >= s2 && s2 > 0) {
-	    b2 -= s2;
-	    s2 = 0;
+	    b2 -= s2; s2 = 0;
 	} else if (s2 >= b2 && b2 > 0) {
-	    s2 -= b2;
-	    b2 = 0;
+	    s2 -= b2; b2 = 0;
 	}
 
 	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {
@@ -4858,7 +4838,7 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    const void *big)		/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i, lsb;
@@ -4979,7 +4959,7 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const void *big)		/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -5045,7 +5025,7 @@ TclCeil(
 
 double
 TclFloor(
-    const void *big)		/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;

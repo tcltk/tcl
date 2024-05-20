@@ -209,9 +209,9 @@ typedef enum {
 #define RANDW \
 	(TCL_READABLE | TCL_WRITABLE)
 
-#define IMPLIES(a, b)	((!(a)) || (b))
-#define NEGIMPL(a, b)
-#define HAS(x, f)	((x) & FLAG(f))
+#define IMPLIES(a,b)	((!(a)) || (b))
+#define NEGIMPL(a,b)
+#define HAS(x,f)	((x) & FLAG(f))
 
 #if TCL_THREADS
 /*
@@ -356,37 +356,37 @@ static void		ForwardOpToOwnerThread(ReflectedTransform *rtPtr,
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
-#define FreeReceivedError(fwdParam) \
+#define FreeReceivedError(p) \
 	do {								\
-	    if ((fwdParam)->base.mustFree) {				\
-		Tcl_Free((fwdParam)->base.msgStr);			\
+	    if ((p)->base.mustFree) {					\
+		Tcl_Free((p)->base.msgStr);				\
 	    }								\
 	} while (0)
-#define PassReceivedErrorInterp(interp, fwdParam) \
+#define PassReceivedErrorInterp(i,p) \
 	do {								\
-	    if ((interp) != NULL) {					\
-		Tcl_SetChannelErrorInterp((interp),			\
-			Tcl_NewStringObj((fwdParam)->base.msgStr, -1));	\
+	    if ((i) != NULL) {						\
+		Tcl_SetChannelErrorInterp((i),				\
+			Tcl_NewStringObj((p)->base.msgStr, -1));	\
 	    }								\
-	    FreeReceivedError(fwdParam);				\
+	    FreeReceivedError(p);					\
 	} while (0)
-#define PassReceivedError(chan, fwdParam) \
+#define PassReceivedError(c,p) \
 	do {								\
-	    Tcl_SetChannelError((chan),					\
-		    Tcl_NewStringObj((fwdParam)->base.msgStr, -1));	\
-	    FreeReceivedError(fwdParam);				\
+	    Tcl_SetChannelError((c),					\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+	    FreeReceivedError(p);					\
 	} while (0)
-#define ForwardSetStaticError(fwdParam, emsg) \
+#define ForwardSetStaticError(p,emsg) \
 	do {								\
-	    (fwdParam)->base.code = TCL_ERROR;				\
-	    (fwdParam)->base.mustFree = 0;				\
-	    (fwdParam)->base.msgStr = (char *) (emsg);			\
+	    (p)->base.code = TCL_ERROR;					\
+	    (p)->base.mustFree = 0;					\
+	    (p)->base.msgStr = (char *) (emsg);				\
 	} while (0)
-#define ForwardSetDynamicError(fwdParam, emsg) \
+#define ForwardSetDynamicError(p,emsg) \
 	do {								\
-	    (fwdParam)->base.code = TCL_ERROR;				\
-	    (fwdParam)->base.mustFree = 1;				\
-	    (fwdParam)->base.msgStr = (char *) (emsg);			\
+	    (p)->base.code = TCL_ERROR;					\
+	    (p)->base.mustFree = 1;					\
+	    (p)->base.msgStr = (char *) (emsg);				\
 	} while (0)
 
 static void		ForwardSetObjError(ForwardParam *p,
@@ -396,8 +396,8 @@ static void		DeleteThreadReflectedTransformMap(
 			    void *clientData);
 #endif /* TCL_THREADS */
 
-#define SetChannelErrorStr(chan, msgStr) \
-	Tcl_SetChannelError((chan), Tcl_NewStringObj((msgStr), -1))
+#define SetChannelErrorStr(c,msgStr) \
+	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
 static void		UnmarshallErrorResult(Tcl_Interp *interp,
@@ -1924,7 +1924,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost, -1);
+	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}

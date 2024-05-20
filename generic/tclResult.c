@@ -441,7 +441,7 @@ Tcl_ResetResult(
 
 static void
 ResetObjResult(
-    Interp *iPtr)		/* Points to the interpreter whose result
+    Interp *iPtr)	/* Points to the interpreter whose result
 				 * object should be reset. */
 {
     Tcl_Obj *objResultPtr = iPtr->objResultPtr;
@@ -551,7 +551,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- *	Returns the line number associated with the current error.
+ *      Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -568,7 +568,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- *	Sets the line number associated with the current error.
+ *      Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -716,7 +716,7 @@ TclProcessReturn(
 	    iPtr->errorInfo = NULL;
 	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
-		&valuePtr);
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    Tcl_Size length;
 
@@ -728,41 +728,41 @@ TclProcessReturn(
 	    }
 	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
-		&valuePtr);
+                &valuePtr);
 	if (valuePtr != NULL) {
-	    Tcl_Size len, valueObjc;
-	    Tcl_Obj **valueObjv;
+            Tcl_Size len, valueObjc;
+            Tcl_Obj **valueObjv;
 
-	    if (Tcl_IsShared(iPtr->errorStack)) {
-		Tcl_Obj *newObj;
+            if (Tcl_IsShared(iPtr->errorStack)) {
+                Tcl_Obj *newObj;
 
-		newObj = Tcl_DuplicateObj(iPtr->errorStack);
-		Tcl_DecrRefCount(iPtr->errorStack);
-		Tcl_IncrRefCount(newObj);
-		iPtr->errorStack = newObj;
-	    }
+                newObj = Tcl_DuplicateObj(iPtr->errorStack);
+                Tcl_DecrRefCount(iPtr->errorStack);
+                Tcl_IncrRefCount(newObj);
+                iPtr->errorStack = newObj;
+            }
 
-	    /*
-	     * List extraction done after duplication to avoid moving the rug
-	     * if someone does [return -errorstack [info errorstack]]
-	     */
+            /*
+             * List extraction done after duplication to avoid moving the rug
+             * if someone does [return -errorstack [info errorstack]]
+             */
 
-	    if (TclListObjGetElements(interp, valuePtr, &valueObjc,
-		    &valueObjv) == TCL_ERROR) {
-		return TCL_ERROR;
-	    }
-	    iPtr->resetErrorStack = 0;
-	    TclListObjLength(interp, iPtr->errorStack, &len);
+            if (TclListObjGetElements(interp, valuePtr, &valueObjc,
+                    &valueObjv) == TCL_ERROR) {
+                return TCL_ERROR;
+            }
+            iPtr->resetErrorStack = 0;
+            TclListObjLength(interp, iPtr->errorStack, &len);
 
-	    /*
-	     * Reset while keeping the list internalrep as much as possible.
-	     */
+            /*
+             * Reset while keeping the list internalrep as much as possible.
+             */
 
-	    Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
-		    valueObjv);
+            Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
+                    valueObjv);
  	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE],
-		&valuePtr);
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    Tcl_SetObjErrorCode(interp, valuePtr);
 	} else {
@@ -770,7 +770,7 @@ TclProcessReturn(
 	}
 
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORLINE],
-		&valuePtr);
+                &valuePtr);
 	if (valuePtr != NULL) {
 	    TclGetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
 	}
@@ -874,7 +874,7 @@ TclMergeReturnOptions(
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
     if (valuePtr != NULL) {
 	if (TclGetCompletionCodeFromObj(interp, valuePtr,
-		&code) == TCL_ERROR) {
+                &code) == TCL_ERROR) {
 	    goto error;
 	}
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
@@ -940,21 +940,21 @@ TclMergeReturnOptions(
 		    "bad -errorstack value: expected a list but got \"%s\"",
 		    TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "NONLIST_ERRORSTACK",
-		    (void *)NULL);
+                    (void *)NULL);
 	    goto error;
 	}
-	if (length % 2) {
-	    /*
-	     * Errorstack must always be an even-sized list
-	     */
+        if (length % 2) {
+            /*
+             * Errorstack must always be an even-sized list
+             */
 
 	    TclPrintfResult(interp,
-		    "forbidden odd-sized list for -errorstack: \"%s\"",
+                    "forbidden odd-sized list for -errorstack: \"%s\"",
 		    TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT",
-		    "ODDSIZEDLIST_ERRORSTACK", (void *)NULL);
+                    "ODDSIZEDLIST_ERRORSTACK", (void *)NULL);
 	    goto error;
-	}
+        }
     }
 
     /*
@@ -1034,7 +1034,7 @@ Tcl_GetReturnOptions(
 
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "");
-	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
+        Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     }
     if (iPtr->errorCode) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORCODE], iPtr->errorCode);

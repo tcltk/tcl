@@ -524,7 +524,7 @@ Tcl_ErrnoId(void)
 
 const char *
 Tcl_ErrnoMsg(
-    int err)			/* Error number (such as in errno variable). */
+     int err)			/* Error number (such as in errno variable). */
 {
     switch (err) {
 #if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
@@ -1022,7 +1022,7 @@ Tcl_ErrnoMsg(
 
 const char *
 Tcl_SignalId(
-    int sig)			/* Number of signal. */
+     int sig)			/* Number of signal. */
 {
     switch (sig) {
 #ifdef SIGABRT
@@ -1156,7 +1156,7 @@ Tcl_SignalId(
 
 const char *
 Tcl_SignalMsg(
-    int sig)			/* Number of signal. */
+     int sig)			/* Number of signal. */
 {
     switch (sig) {
 #ifdef SIGABRT

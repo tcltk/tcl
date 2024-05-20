@@ -349,7 +349,7 @@ ClockConfigureClear(
  */
 static void
 ClockDeleteCmdProc(
-    void *clientData)		/* Opaque pointer to the client data */
+    void *clientData)	/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
     int i;
@@ -649,7 +649,7 @@ NormLocaleObj(
     if ((localeObj->length == 1 /* C */
 	    && strcasecmp(loc, Literals[LIT_C]) == 0)
 	    || (dataPtr->defaultLocale && (loc2 = TclGetString(dataPtr->defaultLocale))
-	    && localeObj->length == dataPtr->defaultLocale->length
+      	    && localeObj->length == dataPtr->defaultLocale->length
 	    && strcasecmp(loc, loc2) == 0)) {
 	*mcDictObj = dataPtr->defaultLocaleDict;
 	return dataPtr->defaultLocale ?
@@ -3280,7 +3280,7 @@ ClockParseFmtScnArgs(
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
-    Tcl_Size objc,		/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[],	/* Parameter vector */
     ClockOperation operation,	/* What operation are we doing: format, scan, add */
     const char *syntax)		/* Syntax of the current command */
@@ -3472,7 +3472,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-		GREGORIAN_CHANGE_DATE) != TCL_OK) {
+	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}
@@ -3496,7 +3496,7 @@ ClockParseFmtScnArgs(
 
 /*----------------------------------------------------------------------
  *
- * ClockFormatObjCmd, [clock format] --
+ * ClockFormatObjCmd -- , clock format --
  *
  *	This function is invoked to process the Tcl "clock format" command.
  *
@@ -3565,7 +3565,7 @@ ClockFormatObjCmd(
 
 /*----------------------------------------------------------------------
  *
- * ClockScanObjCmd, [clock scan] --
+ * ClockScanObjCmd -- , clock scan --
  *
  *	This function is invoked to process the Tcl "clock scan" command.
  *
@@ -3622,8 +3622,7 @@ ClockScanObjCmd(
     }
 
     /* seconds are in localSeconds (relative base date), so reset time here */
-    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0;
-    yyMeridian = MER24;
+    yyHour = yyMinutes = yySeconds = yySecondOfDay = 0; yyMeridian = MER24;
 
     /* If free scan */
     if (opts.formatObj == NULL) {
@@ -4302,7 +4301,7 @@ ClockWeekdaysOffs(
 
 /*----------------------------------------------------------------------
  *
- * ClockAddObjCmd, [clock add] --
+ * ClockAddObjCmd -- , clock add --
  *
  *	Adds an offset to a given time.
  *
@@ -4559,16 +4558,16 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-	int status;		/* return code status */
-	int flags;		/* Each remaining field saves the */
-	int returnLevel;	/* corresponding field of the Interp */
-	int returnCode;		/* struct. These fields taken together are */
-	Tcl_Obj *errorInfo;	/* the "state" of the interp. */
-	Tcl_Obj *errorCode;
-	Tcl_Obj *returnOpts;
-	Tcl_Obj *objResult;
-	Tcl_Obj *errorStack;
-	int resetErrorStack;
+        int status;			/* return code status */
+        int flags;			/* Each remaining field saves the */
+        int returnLevel;		/* corresponding field of the Interp */
+        int returnCode;			/* struct. These fields taken together are */
+        Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+        Tcl_Obj *errorCode;
+        Tcl_Obj *returnOpts;
+        Tcl_Obj *objResult;
+        Tcl_Obj *errorStack;
+        int resetErrorStack;
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;

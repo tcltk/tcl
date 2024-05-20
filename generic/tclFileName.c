@@ -348,7 +348,7 @@ Tcl_GetPathType(
     const char *path)
 {
     Tcl_PathType type;
-    Tcl_Obj *tempObj = Tcl_NewStringObj(path, -1);
+    Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);
 
     Tcl_IncrRefCount(tempObj);
     type = Tcl_FSGetPathType(tempObj);
@@ -381,9 +381,8 @@ Tcl_GetPathType(
 Tcl_PathType
 TclpGetNativePathType(
     Tcl_Obj *pathPtr,		/* Native path of interest */
-    Tcl_Size *driveNameLengthPtr,
-				/* Returns length of drive, if non-NULL and
-				 * path was absolute */
+    Tcl_Size *driveNameLengthPtr, /* Returns length of drive, if non-NULL and
+				   * path was absolute */
     Tcl_Obj **driveNameRef)
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
@@ -391,50 +390,50 @@ TclpGetNativePathType(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX: {
-	const char *origPath = path;
+        const char *origPath = path;
 
-	/*
-	 * Paths that begin with / are absolute.
-	 */
+        /*
+         * Paths that begin with / are absolute.
+         */
 
-	if (path[0] == '/') {
-	    ++path;
-	    /*
-	     * Check for "//" network path prefix
-	     */
-	    if ((*path == '/') && path[1] && (path[1] != '/')) {
-		path += 2;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    }
-	    if (driveNameLengthPtr != NULL) {
-		/*
-		 * We need this addition in case the "//" code was used.
-		 */
+        if (path[0] == '/') {
+            ++path;
+            /*
+             * Check for "//" network path prefix
+             */
+            if ((*path == '/') && path[1] && (path[1] != '/')) {
+                path += 2;
+                while (*path && *path != '/') {
+                    ++path;
+                }
+            }
+            if (driveNameLengthPtr != NULL) {
+                /*
+                 * We need this addition in case the "//" code was used.
+                 */
 
-		*driveNameLengthPtr = (path - origPath);
-	    }
-	} else {
-	    type = TCL_PATH_RELATIVE;
-	}
-	break;
+                *driveNameLengthPtr = (path - origPath);
+            }
+        } else {
+            type = TCL_PATH_RELATIVE;
+        }
+        break;
     }
     case TCL_PLATFORM_WINDOWS: {
-	Tcl_DString ds;
-	const char *rootEnd;
+        Tcl_DString ds;
+        const char *rootEnd;
 
-	Tcl_DStringInit(&ds);
-	rootEnd = ExtractWinRoot(path, &ds, 0, &type);
-	if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
-	    *driveNameLengthPtr = rootEnd - path;
-	    if (driveNameRef != NULL) {
-		*driveNameRef = Tcl_DStringToObj(&ds);
-		Tcl_IncrRefCount(*driveNameRef);
-	    }
-	}
-	Tcl_DStringFree(&ds);
-	break;
+        Tcl_DStringInit(&ds);
+        rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+        if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
+            *driveNameLengthPtr = rootEnd - path;
+            if (driveNameRef != NULL) {
+                *driveNameRef = Tcl_DStringToObj(&ds);
+                Tcl_IncrRefCount(*driveNameRef);
+            }
+        }
+        Tcl_DStringFree(&ds);
+        break;
     }
     }
     return type;
@@ -655,8 +654,9 @@ SplitUnixPath(
 	}
 	length = path - elementStart;
 	if (length > 0) {
-	    Tcl_Obj *nextElt = Tcl_NewStringObj(elementStart, length);
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    Tcl_Obj *nextElt;
+            nextElt = Tcl_NewStringObj(elementStart, length);
+            Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {
 	    break;
@@ -980,8 +980,8 @@ Tcl_JoinPath(
  *
  * Results:
  *	The return value is a pointer to a string containing the name.
- *	This may either be the name pointer passed in or space allocated in
- *	bufferPtr. In all cases, if the return value is not NULL, the caller
+ *      This may either be the name pointer passed in or space allocated in
+ *      bufferPtr. In all cases, if the return value is not NULL, the caller
  *	must call Tcl_DStringFree() to free the space. If there was an
  *	error in processing the name, then an error message is left in the
  *	interp's result (if interp was not NULL) and the return value is NULL.
@@ -1132,7 +1132,7 @@ Tcl_GlobObjCmd(
 	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TAILS,
 	GLOB_TYPE, GLOB_LAST
     } index;
-    enum pathDirOptions {PATH_NONE = -1, PATH_GENERAL = 0, PATH_DIR = 1};
+    enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
     Tcl_GlobTypeData *globTypes = NULL;
 
     globFlags = 0;
@@ -1190,7 +1190,7 @@ Tcl_GlobObjCmd(
 	case GLOB_JOIN:				/* -join */
 	    join = 1;
 	    break;
-	case GLOB_TAILS:			/* -tails */
+	case GLOB_TAILS:				/* -tails */
 	    globFlags |= TCL_GLOBMODE_TAILS;
 	    break;
 	case GLOB_PATH:				/* -path */
@@ -1252,7 +1252,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	Tcl_Size pathlength;
 	const char *last;
-	const char *first = TclGetStringFromObj(pathOrDir, &pathlength);
+	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -2246,7 +2246,7 @@ DoGlob(
 		 */
 
 		Tcl_Size len;
-		const char *joined = TclGetStringFromObj(joinedPtr, &len);
+		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2283,7 +2283,7 @@ DoGlob(
 	     */
 
 	    Tcl_Size len;
-	    const char *joined = TclGetStringFromObj(joinedPtr, &len);
+	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {

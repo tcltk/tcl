@@ -1,9 +1,9 @@
 /*
  * tclStringObj.c --
  *
- *	This file contains functions that implement string operations on Tcl
- *	objects. Some string operations work with UTF-8 encoding forms.
- *	Functions that require knowledge of the width of each character,
+ *      This file contains functions that implement string operations on Tcl
+ *      objects. Some string operations work with UTF-8 encoding forms.
+ *      Functions that require knowledge of the width of each character,
  * 	such as indexing, operate on fixed width encoding forms such as UTF-32.
  *
  * 	Conceptually, a string is a sequence of Unicode code points. Internally
@@ -15,10 +15,10 @@
  *	numChars, but we don't store the fixed form encoding (unless
  * 	Tcl_GetUnicode is explicitly called).
  *
- *	The String object type stores one or both formats. The default
- *	behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
- *	stored in the internal rep for future access (without an additional
- *	O(n) cost).
+ *      The String object type stores one or both formats. The default
+ *      behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
+ *      stored in the internal rep for future access (without an additional
+ *      O(n) cost).
  *
  *	To allow many appends to be done to an object without constantly
  *	reallocating space, we allocate double the space and use the
@@ -124,8 +124,8 @@ const Tcl_ObjType tclStringType = {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    Tcl_Size needed,		/* Not including terminating nul */
-    int flag)			/* If 0, try to overallocate */
+    Tcl_Size needed, /* Not including terminating nul */
+    int flag)      /* If 0, try to overallocate */
 {
     /*
      * Preconditions:
@@ -718,8 +718,8 @@ Tcl_GetUnicodeFromObj(
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    Tcl_Size first,		/* First index of the range. */
-    Tcl_Size last)		/* Last index of the range. */
+    Tcl_Size first,			/* First index of the range. */
+    Tcl_Size last)			/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -2759,7 +2759,7 @@ AppendPrintfToObjVA(
 		}
 
 		Tcl_ListObjAppendElement(NULL, list,
-			Tcl_NewStringObj(bytes, (end - bytes)));
+			Tcl_NewStringObj(bytes , (end - bytes)));
 
 		break;
 	    }
@@ -2804,11 +2804,11 @@ AppendPrintfToObjVA(
 	    case 'g':
 	    case 'G':
 		if (size > 0) {
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			    (double) va_arg(argList, long double)));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			(double)va_arg(argList, long double)));
 		} else {
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			    va_arg(argList, double)));
+			Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+				va_arg(argList, double)));
 		}
 		seekingConversion = 0;
 		break;
@@ -3039,8 +3039,7 @@ TclStringRepeat(
 	if (interp) {
 	    TclPrintfResult(interp,
 		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER
-		    "d bytes) exceeded",
-		    TCL_SIZE_MAX);
+		    "d bytes) exceeded", TCL_SIZE_MAX);
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return NULL;
@@ -3268,8 +3267,7 @@ TclStringCat(
 	} while (--oc);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-	ov = objv;
-	oc = objc;
+	ov = objv; oc = objc;
 	do {
 	    Tcl_Obj *pendingPtr = NULL;
 
@@ -3353,8 +3351,7 @@ TclStringCat(
 	return objv[first];
     }
 
-    objv += first;
-    objc = (last - first + 1);
+    objv += first; objc = (last - first + 1);
     inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     if (binary) {
@@ -3369,8 +3366,7 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start = 0;
 
-	    objResultPtr = *objv++;
-	    objc--;
+	    objResultPtr = *objv++; objc--;
 	    (void)Tcl_GetBytesFromObj(NULL, objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
 	} else {
@@ -3400,8 +3396,7 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++;
-	    objc--;
+	    objResultPtr = *objv++; objc--;
 
 	    /* Ugly interface! Force resize of the unicode array. */
 	    (void)Tcl_GetUnicodeFromObj(objResultPtr, &start);
@@ -3452,8 +3447,7 @@ TclStringCat(
 	if (inPlace) {
 	    Tcl_Size start;
 
-	    objResultPtr = *objv++;
-	    objc--;
+	    objResultPtr = *objv++; objc--;
 
 	    (void)TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
@@ -3527,9 +3521,9 @@ TclStringCat(
 
 static int
 UniCharNcasememcmp(
-    const void *ucsPtr,		/* Unicode string to compare to uct. */
-    const void *uctPtr,		/* Unicode string ucs is compared to. */
-    size_t numChars)		/* Number of Unichars to compare. */
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of Unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3550,7 +3544,7 @@ static int
 UtfNmemcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)		/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3582,7 +3576,7 @@ static int
 UtfNcasememcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)		/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3609,9 +3603,9 @@ UtfNcasememcmp(
 
 static int
 UniCharNmemcmp(
-    const void *ucsPtr,		/* Unicode string to compare to uct. */
-    const void *uctPtr,		/* Unicode string ucs is compared to. */
-    size_t numChars)		/* Number of unichars to compare. */
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3643,7 +3637,7 @@ TclStringCmp(
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
-				 * TCL_INDEX_NONE to compare whole strings */
+						 * TCL_INDEX_NONE to compare whole strings */
 {
     const char *s1, *s2;
     int empty, match;
@@ -3689,8 +3683,9 @@ TclStringCmp(
 			&& (value1Ptr->bytes != NULL)
 			&& (s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
-		    /* each byte represents one character so s1l3n, s2l3n, and
-		     * reqlength are in both bytes and characters */
+			/* each byte represents one character so s1l3n, s2l3n, and
+			 * reqlength are in both bytes and characters
+			 */
 		    s1 = value1Ptr->bytes;
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;

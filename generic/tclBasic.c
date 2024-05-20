@@ -151,21 +151,17 @@ TCL_DECLARE_MUTEX(commandTypeLock);
  * are used to save the evaluation state between NR calls to each coro.
  */
 
-#define SAVE_CONTEXT(context) \
-    do {								\
-	(context).framePtr = iPtr->framePtr;				\
-	(context).varFramePtr = iPtr->varFramePtr;			\
-	(context).cmdFramePtr = iPtr->cmdFramePtr;			\
-	(context).lineLABCPtr = iPtr->lineLABCPtr;			\
-    } while (0)
+#define SAVE_CONTEXT(context)				\
+    (context).framePtr = iPtr->framePtr;		\
+    (context).varFramePtr = iPtr->varFramePtr;		\
+    (context).cmdFramePtr = iPtr->cmdFramePtr;		\
+    (context).lineLABCPtr = iPtr->lineLABCPtr
 
-#define RESTORE_CONTEXT(context) \
-    do {								\
-	iPtr->framePtr = (context).framePtr;				\
-	iPtr->varFramePtr = (context).varFramePtr;			\
-	iPtr->cmdFramePtr = (context).cmdFramePtr;			\
-	iPtr->lineLABCPtr = (context).lineLABCPtr;			\
-    } while (0)
+#define RESTORE_CONTEXT(context)			\
+    iPtr->framePtr = (context).framePtr;		\
+    iPtr->varFramePtr = (context).varFramePtr;		\
+    iPtr->cmdFramePtr = (context).cmdFramePtr;		\
+    iPtr->lineLABCPtr = (context).lineLABCPtr
 
 /*
  * Static functions in this file:
@@ -823,8 +819,8 @@ Tcl_CreateInterp(void)
     if (sizeof(time_t) != 8) {
 	Tcl_Panic("<time.h> is not compatible with VS2005+");
     }
-    if ((offsetof(Tcl_StatBuf, st_atime) != 32)
-	    || (offsetof(Tcl_StatBuf, st_ctime) != 48)) {
+    if ((offsetof(Tcl_StatBuf,st_atime) != 32)
+	    || (offsetof(Tcl_StatBuf,st_ctime) != 48)) {
 	Tcl_Panic("<sys/stat.h> is not compatible with VS2005+");
     }
 #endif
@@ -907,11 +903,11 @@ Tcl_CreateInterp(void)
     iPtr->errorStack = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(iPtr->errorStack);
     iPtr->resetErrorStack = 1;
-    TclNewLiteralStringObj(iPtr->upLiteral, "UP");
+    TclNewLiteralStringObj(iPtr->upLiteral,"UP");
     Tcl_IncrRefCount(iPtr->upLiteral);
-    TclNewLiteralStringObj(iPtr->callLiteral, "CALL");
+    TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
     Tcl_IncrRefCount(iPtr->callLiteral);
-    TclNewLiteralStringObj(iPtr->innerLiteral, "INNER");
+    TclNewLiteralStringObj(iPtr->innerLiteral,"INNER");
     Tcl_IncrRefCount(iPtr->innerLiteral);
     iPtr->innerContext = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(iPtr->innerContext);
@@ -1210,7 +1206,7 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL, NULL);
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
     if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
@@ -3688,7 +3684,7 @@ Tcl_DeleteCommandFromToken(
 	CommandTrace *tracePtr;
 	/* CallCommandTraces() does not cmdPtr, that's
 	 * done just before Tcl_DeleteCommandFromToken() returns */
-	CallCommandTraces(iPtr, cmdPtr, NULL, NULL, TCL_TRACE_DELETE);
+	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
 	 * Now delete these traces.
@@ -4606,8 +4602,7 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6];
-	Tcl_Size i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -8911,7 +8906,7 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc - 1, objv + 1, 0, NULL);
 }
@@ -9092,7 +9087,7 @@ DeleteCoroutine(
     NRE_callback *rootPtr = TOP_CB(interp);
 
     if (COR_IS_SUSPENDED(corPtr)) {
-	TclNRRunCallbacks(interp, RewindCoroutine(corPtr, TCL_OK), rootPtr);
+	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr);
     }
 }
 
@@ -9313,7 +9308,7 @@ TclNREvalList(
     Tcl_IncrRefCount(listPtr);
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
@@ -9828,7 +9823,7 @@ TclNRCoroutineObjCmd(
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(corPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
-	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr, &hSearch);
+	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
 		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
 	    int isNew;
 	    Tcl_HashEntry *newPtr =

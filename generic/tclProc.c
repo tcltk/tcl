@@ -895,6 +895,7 @@ TclNRUplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -903,11 +904,11 @@ TclNRUplevelObjCmd(
     Tcl_Obj *objPtr;
 
     if (objc < 2) {
-	/* to do:
-	 * simplify things by interpreting the argument as a command when there
-	 * is only one argument.  This requires a TIP since currently a single
-	 * argument is interpreted as a level indicator if possible.
-	 */
+    /* to do
+    *    simplify things by interpreting the argument as a command when there
+    *    is only one argument.  This requires a TIP since currently a single
+    *    argument is interpreted as a level indicator if possible.
+    */
     uplevelSyntax:
 	Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
 	return TCL_ERROR;
@@ -1738,8 +1739,7 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6];
-	Tcl_Size i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -2100,7 +2100,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)		/* Procedure to be deleted. */
+    void *clientData)	/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 

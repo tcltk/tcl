@@ -390,7 +390,7 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    void *clientData,		/* Pointer to Tcl_Obj. */
+    void *clientData,	/* Pointer to Tcl_Obj. */
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_DecrRefCount((Tcl_Obj *)clientData);

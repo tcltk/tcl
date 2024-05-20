@@ -104,9 +104,9 @@ static void		MyClassDeleted(void *clientData);
  * Note that the core methods don't need clone or free proc callbacks.
  */
 
-#define DCM(name, visibility, proc) \
-    {name, visibility, \
-	{TCL_OO_METHOD_VERSION_CURRENT, "core method: "#name, proc, NULL, NULL}}
+#define DCM(name,visibility,proc) \
+    {name,visibility,\
+	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
     DCM("destroy", 1,	TclOO_Object_Destroy),
@@ -180,9 +180,9 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #define IsRootClass(ocPtr)	((ocPtr)->flags & ROOT_CLASS)
 #define IsRoot(ocPtr)		((ocPtr)->flags & (ROOT_OBJECT|ROOT_CLASS))
 
-#define RemoveItem(type, lst, idx) \
+#define RemoveItem(type, lst, i) \
     do {						\
-	Remove ## type ((lst).list, (lst).num, idx);	\
+	Remove ## type ((lst).list, (lst).num, i);	\
 	(lst).num--;					\
     } while (0)
 
@@ -415,7 +415,7 @@ InitFoundation(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::copy", TclOOCopyObjectCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::oo::copy", TclOOCopyObjectCmd, NULL,NULL);
     TclOOInitInfo(interp);
 
     /*
@@ -576,8 +576,8 @@ DeletedHelpersNamespace(
 static void
 KillFoundation(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp)		/* The interpreter containing the OO system
-				 * foundation. */
+    Tcl_Interp *interp)	/* The interpreter containing the OO system
+			 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
 
@@ -751,7 +751,7 @@ AllocObject(
 	    TclOOPrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
-	    MyClassDeleted);
+            MyClassDeleted);
     return oPtr;
 }
 
@@ -791,7 +791,7 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    void *clientData)		/* Reference to the object whose [my] has been
+    void *clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
@@ -822,7 +822,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    void *clientData,		/* The object being deleted. */
+    void *clientData,	/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -1135,7 +1135,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    void *clientData)		/* Pointer to the class whose namespace is
+    void *clientData)	/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1718,10 +1718,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,		/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip)		/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1786,10 +1786,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,		/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip,		/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -2558,7 +2558,7 @@ TclOOPublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
 }
 
 static int
@@ -2579,7 +2579,7 @@ TclOOPrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
 }
 
 static int
@@ -2605,7 +2605,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2676,7 +2676,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    Tcl_Size objc,		/* How many arguments are being passed in. */
+    Tcl_Size objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2810,7 +2810,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 

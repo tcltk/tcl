@@ -516,14 +516,14 @@ TclpSetVariables(
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY);
 	} else {
-	    /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
-	    ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
-	    if (ptr != NULL && ptr[0]) {
-		Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
-	    } else {
-		/* Last resort */
-		Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
-	    }
+            /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
+            ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
+            if (ptr != NULL && ptr[0]) {
+                Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
+            } else {
+                /* Last resort */
+                Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            }
 	}
     }
 
@@ -542,7 +542,7 @@ TclpSetVariables(
      * Define what the platform PATH separator is. [TIP #315]
      */
 
-    Tcl_SetVar2(interp, "tcl_platform", "pathSeparator", ";", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
 }
 
 /*
@@ -570,7 +570,7 @@ Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    Tcl_Size *lengthPtr)	/* Used to return length of name (for
+    Tcl_Size *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */

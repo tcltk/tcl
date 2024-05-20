@@ -25,7 +25,7 @@
 
 struct ChainBuilder {
     CallChain *callChainPtr;	/* The call chain being built. */
-    size_t filterLength;	/* Number of entries in the call chain that
+    size_t filterLength;		/* Number of entries in the call chain that
 				 * are due to processing filters and not the
 				 * main call chain. */
     Object *oPtr;		/* The object that we are building the chain
@@ -308,7 +308,7 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    void *clientData,		/* The method call context. */
+    void *clientData,	/* The method call context. */
     Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
@@ -357,9 +357,9 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->oPtr->flags & FILTER_HANDLING) {
-	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
     } else {
-	TclNRAddCallback(interp, ResetFilterFlags, contextPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
     }
     if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
 	contextPtr->oPtr->flags |= FILTER_HANDLING;
@@ -677,7 +677,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    int flags,			/* Whether we are interested in just the
+    int flags,		/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
@@ -2038,9 +2038,8 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *const definerCls,	/* What class defines this entry. */
-    Tcl_Obj *const namespaceName,
-				/* The name for this entry (or NULL, a
+    Class *const definerCls,		/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method

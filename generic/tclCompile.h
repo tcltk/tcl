@@ -859,7 +859,7 @@ enum TclInstruction {
 #define MAX_INSTRUCTION_OPERANDS 2
 
 typedef enum InstOperandType {
-    OPERAND_NONE,		/* No operand. */
+    OPERAND_NONE,
     OPERAND_INT1,		/* One byte signed integer. */
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
@@ -1841,15 +1841,13 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
     do {								\
 	if (tclDTraceDebugEnabled) {					\
 	    int _l, _t = 0;						\
-	    if (!tclDTraceDebugLog) {					\
-		TclDTraceOpenDebugLog();				\
-	    }								\
+	    if (!tclDTraceDebugLog) { TclDTraceOpenDebugLog(); }	\
 	    fprintf(tclDTraceDebugLog, "%.12s:%.4d:%n",			\
-		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l;	\
+		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, " %.*s():%n",			\
 		    (_t < 18 ? 18 - _t : 0) + 18, __func__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, "%*s" p "%n",			\
-		    (_t < 40 ? 40 - _t : 0) + 2 * tclDTraceDebugIndent,	\
+		    (_t < 40 ? 40 - _t : 0) + 2 * tclDTraceDebugIndent, \
 		    "", &_l); _t += _l;					\
 	    fprintf(tclDTraceDebugLog, "%*s" m "\n",			\
 		    (_t < 64 ? 64 - _t : 1), "", ##__VA_ARGS__);	\

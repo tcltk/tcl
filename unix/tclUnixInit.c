@@ -54,21 +54,21 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-	unsigned int dwOemId;
-	struct {
-	    int wProcessorArchitecture;
-	    int wReserved;
-	};
+        unsigned int  dwOemId;
+        struct {
+            int wProcessorArchitecture;
+            int wReserved;
+        };
     };
-    unsigned int dwPageSize;
+    unsigned int     dwPageSize;
     void *lpMinimumApplicationAddress;
     void *lpMaximumApplicationAddress;
     void *dwActiveProcessorMask;
-    unsigned int dwNumberOfProcessors;
-    unsigned int dwProcessorType;
-    unsigned int dwAllocationGranularity;
-    int wProcessorLevel;
-    int wProcessorRevision;
+    unsigned int     dwNumberOfProcessors;
+    unsigned int     dwProcessorType;
+    unsigned int     dwAllocationGranularity;
+    int      wProcessorLevel;
+    int      wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
@@ -852,25 +852,23 @@ TclpSetVariables(
 #endif /* HAVE_COREFOUNDATION */
     p = pkgPath;
     while ((q = strchr(p, ':')) != NULL) {
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q - p));
-	p = q + 1;
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+	p = q+1;
     }
     if (*p) {
 	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
     }
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL,
-	    pkgListObj, TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
-	/* Some platforms build configure scripts expect ~ expansion so do that */
-	Tcl_Obj *origPaths;
-	Tcl_Obj *resolvedPaths;
+        /* Some platforms build configure scripts expect ~ expansion so do that */
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
 
-	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
-	resolvedPaths = TclResolveTildePathList(origPaths);
-	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
-	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths,
-		    TCL_GLOBAL_ONLY);
-	}
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+        }
     }
 
 #ifdef DJGPP
@@ -899,8 +897,7 @@ TclpSetVariables(
 	osInfo.dwMajorVersion = 11;
     }
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    snprintf(buffer, sizeof(buffer), "%d.%d",
-	    osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -990,7 +987,7 @@ TclpSetVariables(
      * Define what the platform PATH separator is. [TIP #315]
      */
 
-    Tcl_SetVar2(interp, "tcl_platform", "pathSeparator", ":", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ":", TCL_GLOBAL_ONLY);
 }
 
 /*

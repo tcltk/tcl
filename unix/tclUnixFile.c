@@ -155,11 +155,9 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE,
-		TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE),
-		encoding);
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
 	Tcl_DStringFree(&utfName);
 	goto done;
     }
@@ -194,11 +192,10 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer),
-	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
+	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE),
-	    encoding);
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
     Tcl_DStringFree(&utfName);
 
   done:
@@ -311,8 +308,7 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE,
-		0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
 	    Tcl_DecrRefCount(fileNamePtr);
@@ -328,7 +324,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = TclOSopendir(native);			/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
@@ -381,8 +377,8 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    if (Tcl_ExternalToUtfDStringEx(interp, NULL, entryPtr->d_name,
-		    TCL_INDEX_NONE, 0, &utfDs, NULL) != TCL_OK) {
+	    if (Tcl_ExternalToUtfDStringEx(interp, NULL, entryPtr->d_name, TCL_INDEX_NONE,
+		    0, &utfDs, NULL) != TCL_OK) {
 		matchResult = -1;
 		break;
 	    }
@@ -392,8 +388,7 @@ TclpMatchInDirectory(
 
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
-		    native = Tcl_DStringAppend(&ds, entryPtr->d_name,
-			    TCL_INDEX_NONE);
+		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, TCL_INDEX_NONE);
 		    matchResult = NativeMatchType(interp, native,
 			    entryPtr->d_name, types);
 		    typeOk = (matchResult == 1);
@@ -442,10 +437,10 @@ TclpMatchInDirectory(
 
 static int
 NativeMatchType(
-    Tcl_Interp *interp,		/* Interpreter to receive errors. */
-    const char *nativeEntry,	/* Native path to check. */
-    const char *nativeName,	/* Native filename to check. */
-    Tcl_GlobTypeData *types)	/* Type description to match against. */
+    Tcl_Interp *interp,       /* Interpreter to receive errors. */
+    const char *nativeEntry,  /* Native path to check. */
+    const char *nativeName,   /* Native filename to check. */
+    Tcl_GlobTypeData *types)  /* Type description to match against. */
 {
     Tcl_StatBuf buf;
 
@@ -615,8 +610,7 @@ TclpGetUserHome(
     Tcl_DString ds;
     const char *native;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds,
-	    NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -628,8 +622,7 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE,
-	    0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     } else {
 	return Tcl_DStringValue(bufferPtr);
@@ -811,8 +804,7 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0,
-	    bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     }
     return Tcl_DStringValue(bufferPtr);
@@ -850,8 +842,7 @@ TclpReadlink(
     const char *native;
     Tcl_DString ds;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, path, TCL_INDEX_NONE, 0, &ds,
-	    NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, path, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -863,8 +854,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, 0, linkPtr,
-	    NULL) == TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, 0, linkPtr, NULL) == TCL_OK) {
 	return Tcl_DStringValue(linkPtr);
     }
 #endif /* !DJGPP */
@@ -999,8 +989,7 @@ TclpObjLink(
 		return NULL;
 	    }
 	    target = TclGetStringFromObj(transPtr, &length);
-	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, 0, &ds,
-		    NULL) != TCL_OK) {
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, 0, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 		return NULL;
 	    }
@@ -1034,14 +1023,12 @@ TclpObjLink(
 	}
 	Tcl_DecrRefCount(transPtr);
 
-	length = readlink((const char *)Tcl_FSGetNativePath(pathPtr), link,
-		sizeof(link));
+	length = readlink((const char *)Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
 	if (length < 0) {
 	    return NULL;
 	}
 
-	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, 0,
-		&ds, NULL) != TCL_OK) {
+	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, 0, &ds, NULL) != TCL_OK) {
 	    return NULL;
 	}
 	linkPtr = Tcl_DStringToObj(&ds);
@@ -1108,8 +1095,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData,
-	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 

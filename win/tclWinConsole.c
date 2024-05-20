@@ -94,10 +94,10 @@ static int gInitialized = 0;
  * and bufPtr[0]:bufPtr[length - (size-start)].
  */
 typedef struct RingBuffer {
-    char *bufPtr;		/* Pointer to buffer storage */
-    Tcl_Size capacity;		/* Size of the buffer in RingBufferChar */
-    Tcl_Size start;		/* Start of the data within the buffer. */
-    Tcl_Size length;		/* Number of RingBufferChar*/
+    char *bufPtr;	/* Pointer to buffer storage */
+    Tcl_Size capacity;	/* Size of the buffer in RingBufferChar */
+    Tcl_Size start;	/* Start of the data within the buffer. */
+    Tcl_Size length;	/* Number of RingBufferChar*/
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
 #define RingBufferHasFreeSpace(ringPtr_) ((ringPtr_)->length < (ringPtr_)->capacity)
@@ -125,28 +125,25 @@ typedef struct RingBuffer {
  * from gConsoleHandleInfoList.
  */
 typedef struct ConsoleHandleInfo {
-    struct ConsoleHandleInfo *nextPtr;
-				/* Process-global list of consoles */
-    HANDLE console;		/* Console handle */
-    HANDLE consoleThread;	/* Handle to thread doing actual i/o on the
-				 * console */
-    SRWLOCK lock;		/* Controls access to this structure.
-				 * Cheaper than CRITICAL_SECTION but note does
-				 * not support recursive locks or Try* style
-				 * attempts.*/
+    struct ConsoleHandleInfo *nextPtr; /* Process-global list of consoles */
+    HANDLE console;       /* Console handle */
+    HANDLE consoleThread; /* Handle to thread doing actual i/o on the console */
+    SRWLOCK lock;	  /* Controls access to this structure.
+			   * Cheaper than CRITICAL_SECTION but note does not
+			   * support recursive locks or Try* style attempts.*/
     CONDITION_VARIABLE consoleThreadCV;/* For awakening console thread */
     CONDITION_VARIABLE interpThreadCV; /* For awakening interpthread(s) */
-    RingBuffer buffer;		/* Buffer for data transferred between console
-				 * threads and Tcl threads. For input consoles,
-				 * written by the console thread and read by Tcl
-				 * threads. The converse for output threads */
-    DWORD initMode;		/* Initial console mode. */
-    DWORD lastError;		/* An error caused by the last background
-				 * operation. Set to 0 if no error has been
-				 * detected. */
-    int numRefs;		/* See comments above */
-    int permissions;		/* TCL_READABLE for input consoles, TCL_WRITABLE
-				 * for output. Only one or the other can be set. */
+    RingBuffer buffer;	  /* Buffer for data transferred between console
+			   * threads and Tcl threads. For input consoles,
+			   * written by the console thread and read by Tcl
+			   * threads. The converse for output threads */
+    DWORD initMode;	  /* Initial console mode. */
+    DWORD lastError;	  /* An error caused by the last background
+			   * operation. Set to 0 if no error has been
+			   * detected. */
+    int numRefs;	  /* See comments above */
+    int permissions;	  /* TCL_READABLE for input consoles, TCL_WRITABLE
+			   * for output. Only one or the other can be set. */
     int flags;
 #define CONSOLE_DATA_AWAITED 0x0001 /* An interpreter is awaiting data */
 } ConsoleHandleInfo;
@@ -186,7 +183,7 @@ typedef struct ConsoleChannelInfo {
     Tcl_Channel channel;	/* Pointer to channel structure. */
     DWORD initMode;		/* Initial console mode. */
     int numRefs;		/* See comments above */
-    int permissions;		/* OR'ed combination of TCL_READABLE,
+    int permissions;            /* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
     int watchMask;		/* OR'ed combination of TCL_READABLE,
@@ -301,23 +298,23 @@ static ConsoleChannelInfo *gWatchingChannelList;
  */
 
 static const Tcl_ChannelType consoleChannelType = {
-    "console",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Old close proc. Deprecated */
-    ConsoleInputProc,		/* Input proc. */
-    ConsoleOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. Not seekable. Deprecated */
-    ConsoleSetOptionProc,	/* Set option proc. */
-    ConsoleGetOptionProc,	/* Get option proc. */
-    ConsoleWatchProc,		/* Set up notifier to watch the channel. */
-    ConsoleGetHandleProc,	/* Get an OS handle from channel. */
-    ConsoleCloseProc,		/* New close2 proc. */
-    ConsoleBlockModeProc,	/* Set blocking or non-blocking mode. */
-    NULL,			/* Flush proc. */
-    NULL,			/* Handler proc. */
-    NULL,			/* Wide seek proc. Not seekable */
-    ConsoleThreadActionProc,	/* Thread action proc. */
-    NULL			/* Truncation proc. */
+    "console",               /* Type name. */
+    TCL_CHANNEL_VERSION_5,   /* v5 channel */
+    NULL,                    /* Close proc. */
+    ConsoleInputProc,        /* Input proc. */
+    ConsoleOutputProc,       /* Output proc. */
+    NULL,                    /* Seek proc. */
+    ConsoleSetOptionProc,    /* Set option proc. */
+    ConsoleGetOptionProc,    /* Get option proc. */
+    ConsoleWatchProc,        /* Set up notifier to watch the channel. */
+    ConsoleGetHandleProc,    /* Get an OS handle from channel. */
+    ConsoleCloseProc,        /* close2proc. */
+    ConsoleBlockModeProc,    /* Set blocking or non-blocking mode. */
+    NULL,                    /* Flush proc. */
+    NULL,                    /* Handler proc. */
+    NULL,                    /* Wide seek proc. */
+    ConsoleThreadActionProc, /* Thread action proc. */
+    NULL                     /* Truncation proc. */
 };
 
 /*
@@ -757,8 +754,8 @@ NudgeWatchers(
  *
  *	This procedure is invoked before Tcl_DoOneEvent blocks waiting for an
  *	event. It walks the channel list and if any input channel has data
- *	available or output channel has space for data, sets the event loop
- *	blocking time to 0 so that it will poll immediately.
+ *      available or output channel has space for data, sets the event loop
+ *      blocking time to 0 so that it will poll immediately.
  *
  * Results:
  *	None.
@@ -2002,13 +1999,13 @@ ConsoleWriterThread(
  */
 static ConsoleHandleInfo *
 AllocateConsoleHandleInfo(
-    HANDLE consoleHandle,	/* Actual handle to console. */
-    int permissions)		/* TCL_READABLE or TCL_WRITABLE */
+    HANDLE consoleHandle,
+    int permissions)   /* TCL_READABLE or TCL_WRITABLE */
 {
     ConsoleHandleInfo *handleInfoPtr;
     DWORD consoleMode;
 
-    handleInfoPtr = (ConsoleHandleInfo *) Tcl_Alloc(sizeof(*handleInfoPtr));
+    handleInfoPtr = (ConsoleHandleInfo *)Tcl_Alloc(sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
     InitializeSRWLock(&handleInfoPtr->lock);
@@ -2026,14 +2023,12 @@ AllocateConsoleHandleInfo(
 	SetConsoleMode(consoleHandle, consoleMode);
     }
     handleInfoPtr->consoleThread = CreateThread(
-	    NULL,		/* default security descriptor */
-	    2 * CONSOLE_BUFFER_SIZE, /* Stack size, rounded up to granularity */
-	    permissions == TCL_READABLE
-		    ? ConsoleReaderThread
-		    : ConsoleWriterThread,
-	    handleInfoPtr,	/* Pass to thread */
-	    0,			/* Flags - no special cases */
-	    NULL);		/* Don't care about thread id */
+	NULL, /* default security descriptor */
+	2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
+	permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
+	handleInfoPtr, /* Pass to thread */
+	0,             /* Flags - no special cases */
+	NULL);         /* Don't care about thread id */
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
 	RingBufferClear(&handleInfoPtr->buffer);
@@ -2262,7 +2257,7 @@ ConsoleThreadActionProc(
  */
 static int
 ConsoleSetOptionProc(
-    void *instanceData,		/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -2349,7 +2344,7 @@ ConsoleSetOptionProc(
 
 static int
 ConsoleGetOptionProc(
-    void *instanceData,		/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */

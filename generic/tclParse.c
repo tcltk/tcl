@@ -205,7 +205,8 @@ Tcl_ParseCommand(
 				 * close bracket should be considered a
 				 * command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    Tcl_Parse *parsePtr)	/* Structure to fill in with information about
+    Tcl_Parse *parsePtr)
+				/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
@@ -527,7 +528,7 @@ Tcl_ParseCommand(
 
 	/* Parse the whitespace between words. */
 
-	scanned = ParseWhiteSpace(src, numBytes, &parsePtr->incomplete, &type);
+	scanned = ParseWhiteSpace(src,numBytes, &parsePtr->incomplete, &type);
 	src += scanned;
 	numBytes -= scanned;
     }
@@ -1035,7 +1036,7 @@ ParseComment(
 
 static int
 ParseTokens(
-    const char *src,		/* First character to parse. */
+    const char *src,	/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
@@ -1385,20 +1386,15 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	ch = *src;
-	while (numBytes && (braceCount > 0 || ch != '}')) {
+	while (numBytes && (braceCount>0 || ch != '}')) {
 	    switch (ch) {
-	    case '{':
-		braceCount++;
-		break;
-	    case '}':
-		braceCount--;
-		break;
+	    case '{': braceCount++; break;
+	    case '}': braceCount--; break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
 		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
-		   src++;
-		   numBytes--;
+		   src++; numBytes--;
 		}
 	    }
 	    numBytes--;
@@ -1411,7 +1407,7 @@ Tcl_ParseVarName(
 			"missing close-brace for variable name");
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
-	    parsePtr->term = tokenPtr->start - 1;
+	    parsePtr->term = tokenPtr->start-1;
 	    parsePtr->incomplete = 1;
 	    goto error;
 	}
@@ -1530,7 +1526,7 @@ Tcl_ParseVarName(
 const char *
 Tcl_ParseVar(
     Tcl_Interp *interp,		/* Context for looking up variable. */
-    const char *start,		/* Start of variable substitution. First
+    const char *start,	/* Start of variable substitution. First
 				 * character must be "$". */
     const char **termPtr)	/* If non-NULL, points to word to fill in with
 				 * character just after last one in the
@@ -1618,7 +1614,8 @@ Tcl_ParseBraces(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,
+				/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
@@ -1817,7 +1814,8 @@ Tcl_ParseQuotedString(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,
+				/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
