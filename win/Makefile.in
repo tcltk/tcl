@@ -206,6 +206,7 @@ MKDIR		= mkdir -p
 SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
+GDB		= gdb
 
 CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
 -I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" -DTCL_TOMMATH \
@@ -814,7 +815,16 @@ shell: binaries
 # This target can be used to run tclsh inside either gdb or insight
 gdb: binaries
 	@echo "set env TCL_LIBRARY=$(LIBRARY_DIR)" > gdb.run
-	gdb ./$(TCLSH) --command=gdb.run
+	$(GDB) ./$(TCLSH) --command=gdb.run
+	rm gdb.run
+
+shquotequote = $(subst ',\",$(subst ",\",$(1)))
+gdb-test: tcltest
+	@printf '%s ' 'set env TCL_LIBRARY=$(LIBRARY_DIR)' > gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set args $(ROOT_DIR_NATIVE)/tests/all.tcl \
+		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
+	$(GDB) ${TEST_EXE_FILE} --command=gdb.run
 	rm gdb.run
 
 depend:
