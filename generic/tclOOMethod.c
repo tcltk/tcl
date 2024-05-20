@@ -733,7 +733,7 @@ TclOOMakeProcMethod(
 
 static int
 InvokeProcedureMethod(
-    void *clientData,		/* Pointer to some per-method context. */
+    void *clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
