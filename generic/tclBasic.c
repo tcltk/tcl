@@ -485,48 +485,52 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
  * Math functions. All are safe.
  */
 
+typedef double (BuiltinUnaryFunc)(double x);
+typedef double (BuiltinBinaryFunc)(double x, double y);
+#define BINARY_TYPECAST(fn) \
+	(BuiltinUnaryFunc *)(void *)(BuiltinBinaryFunc *) fn
 typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
-    double (*fn)(double x);	/* Real function pointer */
+    BuiltinUnaryFunc *fn;	/* Real function pointer */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "abs",	ExprAbsFunc,	NULL			},
     { "acos",	ExprUnaryFunc,	acos			},
     { "asin",	ExprUnaryFunc,	asin			},
     { "atan",	ExprUnaryFunc,	atan			},
-    { "atan2",	ExprBinaryFunc,	(double (*)(double))(void *)(double (*)(double, double)) atan2},
+    { "atan2",	ExprBinaryFunc,	BINARY_TYPECAST(atan2)	},
     { "bool",	ExprBoolFunc,	NULL			},
     { "ceil",	ExprCeilFunc,	NULL			},
-    { "cos",	ExprUnaryFunc,	cos				},
+    { "cos",	ExprUnaryFunc,	cos			},
     { "cosh",	ExprUnaryFunc,	cosh			},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
-    { "exp",	ExprUnaryFunc,	exp				},
+    { "exp",	ExprUnaryFunc,	exp			},
     { "floor",	ExprFloorFunc,	NULL			},
-    { "fmod",	ExprBinaryFunc,	(double (*)(double))(void *)(double (*)(double, double)) fmod},
-    { "hypot",	ExprBinaryFunc,	(double (*)(double))(void *)(double (*)(double, double)) hypot},
+    { "fmod",	ExprBinaryFunc,	BINARY_TYPECAST(fmod)	},
+    { "hypot",	ExprBinaryFunc,	BINARY_TYPECAST(hypot)	},
     { "int",	ExprIntFunc,	NULL			},
     { "isfinite", ExprIsFiniteFunc, NULL		},
     { "isinf",	ExprIsInfinityFunc, NULL		},
-    { "isnan",	ExprIsNaNFunc,	NULL	    	},
+    { "isnan",	ExprIsNaNFunc,	NULL			},
     { "isnormal", ExprIsNormalFunc, NULL		},
     { "isqrt",	ExprIsqrtFunc,	NULL			},
-    { "issubnormal", ExprIsSubnormalFunc, NULL,	 },
-    { "isunordered", ExprIsUnorderedFunc, NULL,	 },
-    { "log",	ExprUnaryFunc,	log				},
+    { "issubnormal", ExprIsSubnormalFunc, NULL,		},
+    { "isunordered", ExprIsUnorderedFunc, NULL,		},
+    { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
-    { "pow",	ExprBinaryFunc,	(double (*)(double))(void *)(double (*)(double, double)) pow},
+    { "pow",	ExprBinaryFunc,	BINARY_TYPECAST(pow)	},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
-    { "sin",	ExprUnaryFunc,	sin				},
+    { "sin",	ExprUnaryFunc,	sin			},
     { "sinh",	ExprUnaryFunc,	sinh			},
     { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
-    { "tan",	ExprUnaryFunc,	tan				},
+    { "tan",	ExprUnaryFunc,	tan			},
     { "tanh",	ExprUnaryFunc,	tanh			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
@@ -824,7 +828,7 @@ Tcl_CreateInterp(void)
      * the result is a binary incompatible with the 'standard' build of
      * Tcl: All extensions using Tcl_StatBuf need to be recompiled in
      * the same way. Therefore, this is not officially supported.
-     * In stead, it is recommended to use Win64 or Tcl 9.0 (not released yet)
+     * In stead, it is recommended to use Win64 or Tcl 9.0
      */
     if ((offsetof(Tcl_StatBuf,st_atime) != 32)
 	    || (offsetof(Tcl_StatBuf,st_ctime) != 40)) {
@@ -7921,7 +7925,7 @@ ExprSqrtFunc(
 
 static int
 ExprUnaryFunc(
-    void *clientData,	/* Contains the address of a function that
+    void *clientData,		/* Contains the address of a function that
 				 * takes one double argument and returns a
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
@@ -7931,7 +7935,7 @@ ExprUnaryFunc(
 {
     int code;
     double d;
-    double (*func)(double) = (double (*)(double)) clientData;
+    BuiltinUnaryFunc *func = (BuiltinUnaryFunc *) clientData;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -7985,7 +7989,7 @@ CheckDoubleResult(
 
 static int
 ExprBinaryFunc(
-    void *clientData,	/* Contains the address of a function that
+    void *clientData,		/* Contains the address of a function that
 				 * takes two double arguments and returns a
 				 * double result. */
     Tcl_Interp *interp,		/* The interpreter in which to execute the
@@ -7995,7 +7999,7 @@ ExprBinaryFunc(
 {
     int code;
     double d1, d2;
-    double (*func)(double, double) = (double (*)(double, double)) clientData;
+    BuiltinBinaryFunc *func = (BuiltinBinaryFunc *)clientData;
 
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
@@ -8071,7 +8075,8 @@ ExprAbsFunc(
 			Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 			return TCL_OK;
 		    }
-		    bytes++; numBytes--;
+		    bytes++;
+		    numBytes--;
 		}
 	    }
 	    goto unChanged;
