@@ -53,7 +53,6 @@ enum {
 static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
 	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
 
-
 const char *const tclpFileAttrStrings[] = {
 	"-archive", "-hidden", "-longname", "-readonly",
 	"-shortname", "-system", NULL
