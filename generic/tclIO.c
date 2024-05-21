@@ -97,6 +97,7 @@ typedef struct GetsState {
 typedef struct CopyState {
     struct Channel *readPtr;	/* Pointer to input channel. */
     struct Channel *writePtr;	/* Pointer to output channel. */
+    int refCount;		/* Reference counter. */
     int readFlags;		/* Original read channel flags. */
     int writeFlags;		/* Original write channel flags. */
     Tcl_WideInt toRead;		/* Number of bytes to copy, or -1. */
@@ -220,6 +221,7 @@ static int		StackSetBlockMode(Channel *chanPtr, int mode);
 static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 			    int mode);
 static void		StopCopy(CopyState *csPtr);
+static void		CopyDecrRefCount(CopyState *csPtr);
 static void		TranslateInputEOL(ChannelState *statePtr, char *dst,
 			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
@@ -2117,7 +2119,7 @@ Tcl_UnstackChannel(
 		return TCL_ERROR;
 	    }
 
-	    statePtr->csPtrR  = csPtrR;
+	    statePtr->csPtrR = csPtrR;
 	    statePtr->csPtrW = csPtrW;
 	}
 
@@ -3047,6 +3049,34 @@ FlushChannel(
     return errorCode;
 }
 
+static void
+FreeChannelState(
+    char *blockPtr)		/* Channel state to free. */
+{
+    ChannelState *statePtr = (ChannelState *)blockPtr;
+    /*
+     * Even after close some members can be filled again (in events etc).
+     * Test in bug [79474c588] illustrates one leak (on remaining chanMsg).
+     * Possible other fields need freeing on some constellations.
+     */
+
+    DiscardInputQueued(statePtr, 1);
+    if (statePtr->curOutPtr != NULL) {
+	ReleaseChannelBuffer(statePtr->curOutPtr);
+    }
+    DiscardOutputQueued(statePtr);
+    
+    DeleteTimerHandler(statePtr);
+
+    if (statePtr->chanMsg) {
+	Tcl_DecrRefCount(statePtr->chanMsg);
+    }
+    if (statePtr->unreportedMsg) {
+	Tcl_DecrRefCount(statePtr->unreportedMsg);
+    }
+    ckfree(statePtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3223,7 +3253,7 @@ CloseChannel(
 
     ChannelFree(chanPtr);
 
-    Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree(statePtr, FreeChannelState);
 
     return errorCode;
 }
@@ -4052,8 +4082,14 @@ Tcl_ClearChannelHandlers(
      * Cancel any pending copy operation.
      */
 
-    StopCopy(statePtr->csPtrR);
-    StopCopy(statePtr->csPtrW);
+    if (statePtr->csPtrR) {
+	StopCopy(statePtr->csPtrR);
+	statePtr->csPtrR = NULL;
+    }
+    if (statePtr->csPtrW) {
+	StopCopy(statePtr->csPtrW);
+	statePtr->csPtrW = NULL;
+    }
 
     /*
      * Must set the interest mask now to 0, otherwise infinite loops will
@@ -9546,6 +9582,7 @@ TclCopyChannel(
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
+    csPtr->refCount = 2; /* two references below (inStatePtr, outStatePtr) */
     csPtr->readFlags = readFlags;
     csPtr->writeFlags = writeFlags;
     csPtr->toRead = toRead;
@@ -9556,7 +9593,10 @@ TclCopyChannel(
     }
     csPtr->cmdPtr = cmdPtr;
 
-    inStatePtr->csPtrR  = csPtr;
+    TclChannelPreserve(inChan);
+    TclChannelPreserve(outChan);
+
+    inStatePtr->csPtrR = csPtr;
     outStatePtr->csPtrW = csPtr;
 
     if (moveBytes) {
@@ -9570,7 +9610,7 @@ TclCopyChannel(
 
     if ((nonBlocking == CHANNEL_NONBLOCKING) && (toRead == 0)) {
 	Tcl_CreateTimerHandler(0, ZeroTransferTimerProc, csPtr);
-	return 0;
+	return TCL_OK;
     }
 
     /*
@@ -9846,6 +9886,8 @@ CopyData(
 				/* Encoding control */
     int underflow;		/* Input underflow */
 
+    csPtr->refCount++;		/* avoid freeing during handling */
+
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
     inStatePtr	= csPtr->readPtr->state;
@@ -9994,7 +10036,7 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		return TCL_OK;
+		goto done;
 	    }
 	}
 
@@ -10085,7 +10127,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    return TCL_OK;
+	    goto done;
 	}
 
 	/*
@@ -10107,7 +10149,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    return TCL_OK;
+	    goto done;
 	}
     } /* while */
 
@@ -10159,6 +10201,9 @@ CopyData(
 	    }
 	}
     }
+
+  done:
+    CopyDecrRefCount(csPtr);
     return result;
 }
 
@@ -10270,8 +10315,6 @@ DoRead(
 	    code = GetInput(chanPtr);
 	    bufPtr = statePtr->inQueueHead;
 
-	    assert(bufPtr != NULL);
-
 	    if (GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)) {
 		/*
 		 * Further reads cannot do any more.
@@ -10280,20 +10323,21 @@ DoRead(
 		break;
 	    }
 
-	    if (code) {
-		/*
-	     * Read error
-	     */
-
-		UpdateInterest(chanPtr);
-		TclChannelRelease((Tcl_Channel)chanPtr);
-		return -1;
+	    if (code || !bufPtr) {
+		/* Read error (or channel dead/closed) */
+		goto readErr;
 	    }
 
 	    assert(IsBufferFull(bufPtr));
 	}
 
-	assert(bufPtr != NULL);
+	if (!bufPtr) {
+	  readErr:
+
+	    UpdateInterest(chanPtr);
+	    TclChannelRelease((Tcl_Channel)chanPtr);
+	    return -1;
+	}
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
@@ -10502,9 +10546,32 @@ StopCopy(
 	Tcl_DeleteChannelHandler(inChan, MBEvent, csPtr);
 	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 	TclDecrRefCount(csPtr->cmdPtr);
+	csPtr->cmdPtr = NULL;
     }
-    inStatePtr->csPtrR = NULL;
-    outStatePtr->csPtrW = NULL;
+
+    if (inStatePtr->csPtrR) {
+	assert(inStatePtr->csPtrR == csPtr);
+	inStatePtr->csPtrR = NULL;
+	CopyDecrRefCount(csPtr);
+    }
+    if (outStatePtr->csPtrW) {
+	assert(outStatePtr->csPtrW == csPtr);
+	outStatePtr->csPtrW = NULL;
+	CopyDecrRefCount(csPtr);
+    }
+}
+
+static void
+CopyDecrRefCount(
+    CopyState *csPtr)
+{
+    if (csPtr->refCount-- > 1) {
+	return;
+    }
+
+    TclChannelRelease((Tcl_Channel)csPtr->readPtr);
+    TclChannelRelease((Tcl_Channel)csPtr->writePtr);
+
     ckfree(csPtr);
 }
 
