@@ -753,8 +753,8 @@ buildInfoObjCmd(
 	    if (!strncmp(p, arg, len)
 		    && ((p[len] == '.') || (p[len] == '-') || (p[len] == '\0'))) {
 		if (p[len] == '-') {
-		    p += len + 2;
-		    q = strchr(p, '.');
+		    p += len;
+		    q = strchr(++p, '.');
 		    if (!q) {
 		 	q = p + strlen(p);
 		    }
@@ -1579,8 +1579,8 @@ Tcl_CallWhenDeleted(
 {
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
-    int *assocDataCounterPtr =
-	    (int *)Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
+    int *assocDataCounterPtr = (int *)
+	    Tcl_GetThreadData(&assocDataCounterKey, sizeof(int));
     int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = (AssocData *)ckalloc(sizeof(AssocData));
@@ -1987,7 +1987,6 @@ DeleteInterpProc(
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree(hTablePtr);
     }
-
 
     if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
@@ -2856,7 +2855,7 @@ TclCreateObjCommandInNs(
 		&& cmdPtr->deleteProc == deleteProc) {
 	    cmdPtr->objProc = proc;
 	    cmdPtr->objClientData = clientData;
-	    return (Tcl_Command) cmdPtr;
+	    return (Tcl_Command)cmdPtr;
 	}
 
 	/*
@@ -3364,7 +3363,7 @@ Tcl_SetCommandInfoFromToken(
      * The isNativeObjectProc and nsPtr members of *infoPtr are ignored.
      */
 
-    cmdPtr = (Command *) cmd;
+    cmdPtr = (Command *)cmd;
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
     if (infoPtr->objProc == NULL) {
@@ -3673,7 +3672,7 @@ Tcl_DeleteCommandFromToken(
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
 	/* CallCommandTraces() does not cmdPtr, that's
-	 * done just before Tcl_DeleteCommandFromToken() returns  */
+	 * done just before Tcl_DeleteCommandFromToken() returns */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
@@ -4941,14 +4940,14 @@ Dispatch(
 {
     Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
     void *clientData = data[1];
-    int objc = PTR2INT(data[2]);
+    Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
-	int i = 0;
+	Tcl_Size i = 0;
 
 	while (i < 10) {
 	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
@@ -5746,7 +5745,7 @@ TclEvalEx(
 	     */
 
 	    if (numWords > minObjs) {
-		expand = (int *) ckalloc(numWords * sizeof(int));
+		expand = (int *)ckalloc(numWords * sizeof(int));
 		objvSpace = (Tcl_Obj **)
 			ckalloc(numWords * sizeof(Tcl_Obj *));
 		lineSpace = (Tcl_Size *)
@@ -5835,10 +5834,8 @@ TclEvalEx(
 		Tcl_Size objIdx = objectsNeeded - 1;
 
 		if ((numWords > minObjs) || (objectsNeeded > minObjs)) {
-		    objv = objvSpace = (Tcl_Obj **)
-			    ckalloc(objectsNeeded * sizeof(Tcl_Obj *));
-		    lines = lineSpace = (Tcl_Size *)
-			    ckalloc(objectsNeeded * sizeof(Tcl_Size));
+		    objv = objvSpace = (Tcl_Obj **)ckalloc(objectsNeeded * sizeof(Tcl_Obj *));
+		    lines = lineSpace = (Tcl_Size *)ckalloc(objectsNeeded * sizeof(Tcl_Size));
 		}
 
 		objectsUsed = 0;
@@ -6449,7 +6446,7 @@ TclArgumentGet(
 	CFWordBC *cfwPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
 	framePtr = cfwPtr->framePtr;
-	framePtr->data.tebc.pc = (char *) (((ByteCode *)
+	framePtr->data.tebc.pc = (char *)(((ByteCode *)
 		framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
 	*wordPtr = cfwPtr->word;
@@ -6495,7 +6492,7 @@ Tcl_Eval(
      * string result (some callers may expect it there).
      */
 
-    (void) Tcl_GetStringResult(interp);
+    (void)Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -9483,7 +9480,7 @@ TclNRTailcallEval(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
-    return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
+    return TclNREvalObjv(interp, objc - 1, objv + 1, 0, NULL);
 }
 
 int
@@ -9834,7 +9831,6 @@ TclNRCoroutineActivateCallback(
 	    }
 	    iPtr->execEnvPtr = corPtr->eePtr;
 
-
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot yield: C stack busy", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -9869,7 +9865,7 @@ TclNRCoroutineActivateCallback(
  *
  * TclNREvalList --
  *
- *      Callback to invoke command as list, used in order to delayed
+ *	Callback to invoke command as list, used in order to delayed
  *	processing of canonical list command in sane environment.
  *
  *----------------------------------------------------------------------
@@ -9898,7 +9894,7 @@ TclNREvalList(
  *
  * CoroTypeObjCmd --
  *
- *      Implementation of [::tcl::unsupported::corotype] command.
+ *	Implementation of [::tcl::unsupported::corotype] command.
  *
  *----------------------------------------------------------------------
  */
@@ -9967,7 +9963,7 @@ CoroTypeObjCmd(
  *
  * TclNRCoroInjectObjCmd, TclNRCoroProbeObjCmd --
  *
- *      Implementation of [coroinject] and [coroprobe] commands.
+ *	Implementation of [coroinject] and [coroprobe] commands.
  *
  *----------------------------------------------------------------------
  */
