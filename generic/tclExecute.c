@@ -1848,7 +1848,7 @@ ArgumentBCEnter(
     ByteCode *codePtr,
     TEBCdata *tdPtr,
     const unsigned char *pc,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj **objv)
 {
     Tcl_Size cmd;
@@ -9167,7 +9167,7 @@ IllegalExprOperandType(
 Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {
@@ -9175,7 +9175,7 @@ TclGetSourceFromFrame(
     }
     if (cfPtr->cmdObj == NULL) {
 	if (cfPtr->cmd == NULL) {
-	    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+	    ByteCode *codePtr = (ByteCode *)cfPtr->data.tebc.codePtr;
 
 	    cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
 		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
@@ -9557,7 +9557,7 @@ TclExprFloatError(
 
 int
 TclLog2(
-    int value)			/* The integer for which to compute the log
+    int value)		/* The integer for which to compute the log
 				 * base 2. */
 {
     int n = value;
