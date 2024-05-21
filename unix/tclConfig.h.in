@@ -453,6 +453,9 @@
 /* Tcl with external libtommath */
 #undef TCL_WITH_EXTERNAL_TOMMATH
 
+/* Tcl with internal zlib */
+#undef TCL_WITH_INTERNAL_ZLIB
+
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD
 

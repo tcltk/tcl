@@ -169,6 +169,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
+  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
