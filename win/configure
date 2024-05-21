@@ -5017,6 +5017,9 @@ fi
 
 else case e in #(
   e)
+
+printf "%s\n" "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
+
   ZLIB_OBJS=\${ZLIB_OBJS}
 
   TOMMATH_OBJS=\${TOMMATH_OBJS}
