@@ -9195,11 +9195,6 @@ echo "${ECHO_T}enabled $tcl_ok debugging" >&6
 
 
 cat >>confdefs.h <<\_ACEOF
-#define TCL_TOMMATH 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
 #define MP_PREC 4
 _ACEOF
 
