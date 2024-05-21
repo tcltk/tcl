@@ -930,7 +930,7 @@ AddSimpleChainToCallContext(
 		contextCls, methodNameObj, cbPtr, doneFilters, flags,
 		filterDecl);
     }
-    if (!blockedUnexported) {
+    if (!blockedUnexported && oPtr->selfCls) {
 	foundPrivate |= AddSimpleClassChainToCallContext(oPtr->selfCls,
 		methodNameObj, cbPtr, doneFilters, flags, filterDecl);
     }
