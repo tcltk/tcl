@@ -2598,10 +2598,11 @@ char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
-				 * TCL_INDEX_NONE then this must be null-terminated. */
+				 * TCL_INDEX_NONE then this must be
+				 * null-terminated. */
     Tcl_Size length)		/* Number of bytes from "bytes" to append. If
-				 * TCL_INDEX_NONE, then append all of bytes, up to null
-				 * at end. */
+				 * TCL_INDEX_NONE, then append all of bytes, up
+				 * to null at end. */
 {
     Tcl_Size newSize;
 
@@ -2616,7 +2617,6 @@ Tcl_DStringAppend(
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
-
 
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {

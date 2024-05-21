@@ -89,20 +89,20 @@ typedef enum {
 
 typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
-    Tcl_Size nestingLevel;		/* Static depth of the exception range. Used
+    Tcl_Size nestingLevel;	/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
-    Tcl_Size codeOffset;		/* Offset of the first instruction byte of the
+    Tcl_Size codeOffset;	/* Offset of the first instruction byte of the
 				 * code range. */
-    Tcl_Size numCodeBytes;		/* Number of bytes in the code range. */
-    Tcl_Size breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
+    Tcl_Size numCodeBytes;	/* Number of bytes in the code range. */
+    Tcl_Size breakOffset;	/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    Tcl_Size continueOffset;		/* If LOOP_EXCEPTION_RANGE and not TCL_INDEX_NONE, the
-				 * target PC offset for a continue command in
-				 * the code range. Otherwise, ignore this
+    Tcl_Size continueOffset;	/* If LOOP_EXCEPTION_RANGE and not TCL_INDEX_NONE,
+				 * the target PC offset for a continue command
+				 * in the code range. Otherwise, ignore this
 				 * range when processing a continue
 				 * command. */
-    Tcl_Size catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
+    Tcl_Size catchOffset;	/* If a CATCH_EXCEPTION_RANGE, the target PC
 				 * offset for any "exception" in range. */
 } ExceptionRange;
 
@@ -118,11 +118,11 @@ typedef struct ExceptionAux {
 				 * one (see [for] next-clause) then we must
 				 * not pick up the range when scanning for a
 				 * target to continue to. */
-    Tcl_Size stackDepth;		/* The stack depth at the point where the
+    Tcl_Size stackDepth;	/* The stack depth at the point where the
 				 * exception range was created. This is used
 				 * to calculate the number of POPs required to
 				 * restore the stack to its prior state. */
-    Tcl_Size expandTarget;		/* The number of expansions expected on the
+    Tcl_Size expandTarget;	/* The number of expansions expected on the
 				 * auxData stack at the time the loop starts;
 				 * we can't currently discard them except by
 				 * doing INST_INVOKE_EXPANDED; this is a known
@@ -135,23 +135,25 @@ typedef struct ExceptionAux {
     Tcl_Size numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    TCL_HASH_TYPE *breakTargets;	/* The offsets of the INST_JUMP4 instructions
+    TCL_HASH_TYPE *breakTargets;/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numBreakTargets==0, this is NULL. */
     Tcl_Size allocBreakTargets;	/* The size of the breakTargets array. */
-    Tcl_Size numContinueTargets;	/* The number of [continue]s that want to be
+    Tcl_Size numContinueTargets;/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    TCL_HASH_TYPE *continueTargets; /* The offsets of the INST_JUMP4 instructions
+    TCL_HASH_TYPE *continueTargets;
+				/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numContinueTargets==0, this is NULL. */
-    Tcl_Size allocContinueTargets;	/* The size of the continueTargets array. */
+    Tcl_Size allocContinueTargets;
+				/* The size of the continueTargets array. */
 } ExceptionAux;
 
 /*
@@ -163,10 +165,10 @@ typedef struct ExceptionAux {
  */
 
 typedef struct {
-    Tcl_Size codeOffset;		/* Offset of first byte of command code. */
-    Tcl_Size numCodeBytes;		/* Number of bytes for command's code. */
+    Tcl_Size codeOffset;	/* Offset of first byte of command code. */
+    Tcl_Size numCodeBytes;	/* Number of bytes for command's code. */
     Tcl_Size srcOffset;		/* Offset of first char of the command. */
-    Tcl_Size numSrcBytes;		/* Number of command source chars. */
+    Tcl_Size numSrcBytes;	/* Number of command source chars. */
 } CmdLocation;
 
 /*
@@ -182,10 +184,10 @@ typedef struct {
 
 typedef struct {
     Tcl_Size srcOffset;		/* Command location to find the entry. */
-    Tcl_Size nline;			/* Number of words in the command */
-    Tcl_Size *line;			/* Line information for all words in the
+    Tcl_Size nline;		/* Number of words in the command */
+    Tcl_Size *line;		/* Line information for all words in the
 				 * command. */
-    Tcl_Size **next;			/* Transient information used by the compiler
+    Tcl_Size **next;		/* Transient information used by the compiler
 				 * for tracking of hidden continuation
 				 * lines. */
 } ECL;
@@ -198,8 +200,8 @@ typedef struct {
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */
-    Tcl_Size nloc;			/* Number of allocated entries in 'loc'. */
-    Tcl_Size nuloc;			/* Number of used entries in 'loc'. */
+    Tcl_Size nloc;		/* Number of allocated entries in 'loc'. */
+    Tcl_Size nuloc;		/* Number of used entries in 'loc'. */
 } ExtCmdLoc;
 
 /*
@@ -217,11 +219,11 @@ typedef struct {
  * the AuxData structure.
  */
 
-typedef void *(AuxDataDupProc)  (void *clientData);
-typedef void	   (AuxDataFreeProc) (void *clientData);
-typedef void	   (AuxDataPrintProc)(void *clientData,
-			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
-			    TCL_HASH_TYPE pcOffset);
+typedef void *	(AuxDataDupProc) (void *clientData);
+typedef void	(AuxDataFreeProc) (void *clientData);
+typedef void	(AuxDataPrintProc) (void *clientData,
+	Tcl_Obj *appendObj, struct ByteCode *codePtr,
+	TCL_HASH_TYPE pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information
@@ -266,7 +268,7 @@ typedef struct AuxDataType {
 typedef struct AuxData {
     const AuxDataType *type;	/* Pointer to the AuxData type associated with
 				 * this ClientData. */
-    void *clientData;	/* The compilation data itself. */
+    void *clientData;		/* The compilation data itself. */
 } AuxData;
 
 /*
@@ -290,21 +292,23 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    Tcl_Size numSrcBytes;		/* Number of bytes in source. */
+    Tcl_Size numSrcBytes;	/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
 				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
-    Tcl_Size numCommands;		/* Number of commands compiled. */
-    Tcl_Size exceptDepth;		/* Current exception range nesting level; TCL_INDEX_NONE
-				 * if not in any range currently. */
-    Tcl_Size maxExceptDepth;		/* Max nesting level of exception ranges; TCL_INDEX_NONE
-				 * if no ranges have been compiled. */
-    Tcl_Size maxStackDepth;		/* Maximum number of stack elements needed to
+    Tcl_Size numCommands;	/* Number of commands compiled. */
+    Tcl_Size exceptDepth;	/* Current exception range nesting level;
+				 * TCL_INDEX_NONE if not in any range
+				 * currently. */
+    Tcl_Size maxExceptDepth;	/* Max nesting level of exception ranges;
+				 * TCL_INDEX_NONE if no ranges have been
+				 * compiled. */
+    Tcl_Size maxStackDepth;	/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
-    Tcl_Size currStackDepth;		/* Current stack depth. */
+    Tcl_Size currStackDepth;	/* Current stack depth. */
     LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects referenced by this compiled code.
 				 * Indexed by the string representations of
@@ -331,7 +335,7 @@ typedef struct CompileEnv {
 				 * exceptArrayNext is the number of ranges and
 				 * (exceptArrayNext-1) is the index of the
 				 * current range's array entry. */
-    Tcl_Size exceptArrayEnd;		/* Index after the last ExceptionRange array
+    Tcl_Size exceptArrayEnd;	/* Index after the last ExceptionRange array
 				 * entry. */
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
@@ -369,7 +373,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    Tcl_Size line;			/* First line of the script, based on the
+    Tcl_Size line;		/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -378,11 +382,11 @@ typedef struct CompileEnv {
 				 * inefficient. If set to 2, that instruction
 				 * should not be issued at all (by the generic
 				 * part of the command compiler). */
-    Tcl_Size expandCount;		/* Number of INST_EXPAND_START instructions
+    Tcl_Size expandCount;	/* Number of INST_EXPAND_START instructions
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    Tcl_Size *clNext;	/* If not NULL, it refers to the next slot in
+    Tcl_Size *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
 } CompileEnv;
@@ -417,7 +421,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    Tcl_Size compileEpoch;		/* Value of iPtr->compileEpoch when this
+    Tcl_Size compileEpoch;	/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -449,17 +453,17 @@ typedef struct ByteCode {
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    Tcl_Size numCommands;		/* Number of commands compiled. */
-    Tcl_Size numSrcBytes;		/* Number of source bytes compiled. */
-    Tcl_Size numCodeBytes;		/* Number of code bytes. */
-    Tcl_Size numLitObjects;		/* Number of objects in literal array. */
+    Tcl_Size numCommands;	/* Number of commands compiled. */
+    Tcl_Size numSrcBytes;	/* Number of source bytes compiled. */
+    Tcl_Size numCodeBytes;	/* Number of code bytes. */
+    Tcl_Size numLitObjects;	/* Number of objects in literal array. */
     Tcl_Size numExceptRanges;	/* Number of ExceptionRange array elems. */
     Tcl_Size numAuxDataItems;	/* Number of AuxData items. */
-    Tcl_Size numCmdLocBytes;		/* Number of bytes needed for encoded command
+    Tcl_Size numCmdLocBytes;	/* Number of bytes needed for encoded command
 				 * location information. */
-    Tcl_Size maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
+    Tcl_Size maxExceptDepth;	/* Maximum nesting level of ExceptionRanges;
 				 * TCL_INDEX_NONE if no ranges were compiled. */
-    Tcl_Size maxStackDepth;		/* Maximum number of stack elements needed to
+    Tcl_Size maxStackDepth;	/* Maximum number of stack elements needed to
 				 * execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code. This
 				 * is just after the final ByteCode member
@@ -515,7 +519,7 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (codePtr);				\
@@ -523,13 +527,11 @@ typedef struct ByteCode {
 	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
     } while (0)
 
-
-
-#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), (typePtr));		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -819,11 +821,11 @@ enum TclInstruction {
 
     INST_DICT_GET_DEF,
 
-	/* TIP 461 */
-	INST_STR_LT,
-	INST_STR_GT,
-	INST_STR_LE,
-	INST_STR_GE,
+    /* TIP 461 */
+    INST_STR_LT,
+    INST_STR_GT,
+    INST_STR_LE,
+    INST_STR_GE,
 
     INST_LREPLACE4,
 
@@ -958,8 +960,8 @@ typedef struct JumpFixup {
 
 typedef struct JumpFixupArray {
     JumpFixup *fixup;		/* Points to start of jump fixup array. */
-    Tcl_Size next;			/* Index of next free array entry. */
-    Tcl_Size end;			/* Index of last usable entry in array. */
+    Tcl_Size next;		/* Index of next free array entry. */
+    Tcl_Size end;		/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
     JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
@@ -975,7 +977,8 @@ typedef struct JumpFixupArray {
 
 typedef struct ForeachVarList {
     Tcl_Size numVars;		/* The number of variables in the list. */
-    Tcl_Size varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
+    Tcl_Size varIndexes[TCLFLEXARRAY];
+				/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
 				 * are supported. The actual size of this
@@ -993,13 +996,14 @@ typedef struct ForeachVarList {
 typedef struct ForeachInfo {
     Tcl_Size numLists;		/* The number of both the variable and value
 				 * lists of the foreach command. */
-    Tcl_Size firstValueTemp;		/* Index of the first temp var in a proc frame
+    Tcl_Size firstValueTemp;	/* Index of the first temp var in a proc frame
 				 * used to point to a value list. */
-    Tcl_Size loopCtTemp;		/* Index of temp var in a proc frame holding
+    Tcl_Size loopCtTemp;	/* Index of temp var in a proc frame holding
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
-    ForeachVarList *varLists[TCLFLEXARRAY];/* An array of pointers to ForeachVarList
+    ForeachVarList *varLists[TCLFLEXARRAY];
+				/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
 				 * enough to numVars indexes. THIS MUST BE THE
@@ -1030,7 +1034,8 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 typedef struct {
     Tcl_Size length;		/* Size of array */
-    Tcl_Size varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
+    Tcl_Size varIndices[TCLFLEXARRAY];
+				/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
 				 * entry, and the structure is allocated to
@@ -1189,9 +1194,9 @@ MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
 			    Tcl_Size length, const unsigned char *pc,
 			    Tcl_Obj **tosPtr);
-MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *	TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
-MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+MODULE_SCOPE Tcl_Obj *	TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int isLambda);
@@ -1217,58 +1222,66 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define LITERAL_UNSHARED	0x04
 
 /*
- * Macro used to manually adjust the stack requirements; used in cases where
- * the stack effect cannot be computed from the opcode and its operands, but
- * is still known at compile time.
- *
- * void TclAdjustStackDepth(int delta, CompileEnv *envPtr);
+ * Adjust the stack requirements. Manually used in cases where the stack
+ * effect cannot be computed from the opcode and its operands, but is still
+ * known at compile time.
  */
+static inline void
+TclAdjustStackDepth(
+    int delta,
+    CompileEnv *envPtr)
+{
+    if (delta < 0) {
+	if ((int) envPtr->maxStackDepth < (int) envPtr->currStackDepth) {
+	    envPtr->maxStackDepth = envPtr->currStackDepth;
+	}
+    }
+    envPtr->currStackDepth += delta;
+}
 
-#define TclAdjustStackDepth(delta, envPtr) \
-    do {								\
-	if ((delta) < 0) {						\
-	    if ((int)(envPtr)->maxStackDepth < (int)(envPtr)->currStackDepth) {	\
-		(envPtr)->maxStackDepth = (envPtr)->currStackDepth;	\
-	    }								\
-	}								\
-	(envPtr)->currStackDepth += (delta);				\
-    } while (0)
-
-#define TclGetStackDepth(envPtr)		\
+#define TclGetStackDepth(envPtr) \
     ((envPtr)->currStackDepth)
 
-#define TclSetStackDepth(depth, envPtr)		\
+#define TclSetStackDepth(depth, envPtr) \
     (envPtr)->currStackDepth = (depth)
 
-#define TclCheckStackDepth(depth, envPtr)				\
-    do {								\
-	size_t _dd = (depth);						\
-	if (_dd != (size_t)(envPtr)->currStackDepth) {				\
-	    Tcl_Panic("bad stack depth computations: is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u", \
-		    (size_t)(envPtr)->currStackDepth, _dd);		\
-	}								\
-    } while (0)
+/*
+ * Verify that the current stack depth is what we think it should be. When
+ * this is wrong, code generation is broken!
+ */
+static inline void
+TclCheckStackDepth(
+    size_t depth,
+    CompileEnv *envPtr)
+{
+    if (depth != (size_t) envPtr->currStackDepth) {
+	Tcl_Panic("bad stack depth computations: "
+		"is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u",
+		(size_t) envPtr->currStackDepth, depth);
+    }
+}
 
 /*
- * Macro used to update the stack requirements. It is called by the macros
- * TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
+ * Update the stack requirements based on the instruction definition. It is
+ * called by the macros TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
  * Remark that the very last instruction of a bytecode always reduces the
  * stack level: INST_DONE or INST_POP, so that the maxStackdepth is always
  * updated.
- *
- * void TclUpdateStackReqs(unsigned char op, int i, CompileEnv *envPtr);
  */
-
-#define TclUpdateStackReqs(op, i, envPtr) \
-    do {							\
-	int _delta = tclInstructionTable[(op)].stackEffect;	\
-	if (_delta) {						\
-	    if (_delta == INT_MIN) {				\
-		_delta = 1 - (i);				\
-	    }							\
-	    TclAdjustStackDepth(_delta, envPtr);			\
-	}							\
-    } while (0)
+static inline void
+TclUpdateStackReqs(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    int delta = tclInstructionTable[op].stackEffect;
+    if (delta) {
+	if (delta == INT_MIN) {
+	    delta = 1 - i;
+	}
+	TclAdjustStackDepth(delta, envPtr);
+    }
+}
 
 /*
  * Macros used to update the flag that indicates if we are at the start of a
@@ -1278,8 +1291,8 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 
 #define TclUpdateAtCmdStart(op, envPtr) \
-    if ((envPtr)->atCmdStart < 2) {				     \
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);     \
+    if ((envPtr)->atCmdStart < 2) {					\
+	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);	\
     }
 
 /*
@@ -1290,13 +1303,13 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 
 #define TclEmitOpcode(op, envPtr) \
-    do {							\
-	if ((envPtr)->codeNext == (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);				\
-	}							\
-	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	TclUpdateAtCmdStart(op, envPtr);			\
-	TclUpdateStackReqs(op, 0, envPtr);			\
+    do {								\
+	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) (op);			\
+	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateStackReqs(op, 0, envPtr);				\
     } while (0)
 
 /*
@@ -1352,21 +1365,21 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
     } while (0)
 
 #define TclEmitInstInt4(op, i, envPtr) \
-    do {							\
-	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {	\
-	    TclExpandCodeArray(envPtr);				\
-	}							\
-	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >> 24);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >> 16);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >>  8);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i)      );	\
-	TclUpdateAtCmdStart(op, envPtr);			\
-	TclUpdateStackReqs(op, i, envPtr);			\
+    do {								\
+	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {		\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) (op);			\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >> 24);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >> 16);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >>  8);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i)      );		\
+	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateStackReqs(op, i, envPtr);				\
     } while (0)
 
 /*
@@ -1379,13 +1392,13 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    do {							 \
-	int _objIndexCopy = (objIndex);			 \
-	if (_objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
-	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr)); \
-	}							 \
+    do {								\
+	int _objIndexCopy = (objIndex);					\
+	if (_objIndexCopy <= 255) {					\
+	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr));	\
+	} else {							\
+	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr));	\
+	}								\
     } while (0)
 
 /*
@@ -1401,11 +1414,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
     *(p)   = (unsigned char) ((unsigned int) (i))
 
 #define TclStoreInt4AtPtr(i, p) \
-    do {							\
-	*(p)   = (unsigned char) ((unsigned int) (i) >> 24);	\
-	*(p+1) = (unsigned char) ((unsigned int) (i) >> 16);	\
-	*(p+2) = (unsigned char) ((unsigned int) (i) >>  8);	\
-	*(p+3) = (unsigned char) ((unsigned int) (i)      );	\
+    do {								\
+	*(p)   = (unsigned char) ((unsigned int) (i) >> 24);		\
+	*(p+1) = (unsigned char) ((unsigned int) (i) >> 16);		\
+	*(p+2) = (unsigned char) ((unsigned int) (i) >>  8);		\
+	*(p+3) = (unsigned char) ((unsigned int) (i)      );		\
     } while (0)
 
 /*
@@ -1418,15 +1431,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 
 #define TclUpdateInstInt1AtPc(op, i, pc) \
-    do {					\
-	*(pc) = (unsigned char) (op);		\
-	TclStoreInt1AtPtr((i), ((pc)+1));	\
+    do {								\
+	*(pc) = (unsigned char) (op);					\
+	TclStoreInt1AtPtr((i), ((pc)+1));				\
     } while (0)
 
 #define TclUpdateInstInt4AtPc(op, i, pc) \
-    do {					\
-	*(pc) = (unsigned char) (op);		\
-	TclStoreInt4AtPtr((i), ((pc)+1));	\
+    do {								\
+	*(pc) = (unsigned char) (op);					\
+	TclStoreInt4AtPtr((i), ((pc)+1));				\
     } while (0)
 
 /*
@@ -1473,17 +1486,17 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #endif
 
 #define TclGetInt4AtPtr(p) \
-    ((int) ((TclGetUInt1AtPtr(p) << 24) |			\
-		       (*((p)+1) << 16) |			\
-		       (*((p)+2) <<  8) |			\
+    ((int) ((TclGetUInt1AtPtr(p) << 24) |				\
+		       (*((p)+1) << 16) |				\
+		       (*((p)+2) <<  8) |				\
 		       (*((p)+3))))
 
 #define TclGetUInt1AtPtr(p) \
     ((unsigned int) *(p))
 #define TclGetUInt4AtPtr(p) \
-    ((unsigned int) ((*(p)     << 24) |				\
-		     (*((p)+1) << 16) |				\
-		     (*((p)+2) <<  8) |				\
+    ((unsigned int) ((*(p)     << 24) |					\
+		     (*((p)+1) << 16) |					\
+		     (*((p)+2) <<  8) |					\
 		     (*((p)+3))))
 
 /*
@@ -1504,7 +1517,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * static void		BODY(Tcl_Token *tokenPtr, int word);
  */
 
-#define BODY(tokenPtr, word)						\
+#define BODY(tokenPtr, word) \
     SetLineInformation((word));						\
     TclCompileCmdWord(interp, (tokenPtr)+1, (tokenPtr)->numComponents,	\
 	    envPtr)
@@ -1802,14 +1815,14 @@ MODULE_SCOPE void TclDTraceOpenDebugLog(void);
 MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *argsi);
 
 #define TCL_DTRACE_DEBUG_LOG() \
-    int tclDTraceDebugEnabled = TCL_DTRACE_DEBUG_LOG_ENABLED;	\
-    int tclDTraceDebugIndent = 0;				\
-    FILE *tclDTraceDebugLog = NULL;				\
-    void TclDTraceOpenDebugLog(void) {				\
-	char n[35];						\
+    int tclDTraceDebugEnabled = TCL_DTRACE_DEBUG_LOG_ENABLED;		\
+    int tclDTraceDebugIndent = 0;					\
+    FILE *tclDTraceDebugLog = NULL;					\
+    void TclDTraceOpenDebugLog(void) {					\
+	char n[35];							\
 	snprintf(n, sizeof(n), "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
-		(size_t) getpid());			\
-	tclDTraceDebugLog = fopen(n, "a");			\
+		(size_t) getpid());					\
+	tclDTraceDebugLog = fopen(n, "a");				\
     }
 
 #define TclDTraceDbgMsg(p, m, ...) \
@@ -1836,10 +1849,10 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
 #define TCL_DTRACE_PROC_ARGS_ENABLED()	    1
 #define TCL_DTRACE_PROC_INFO_ENABLED()	    1
 #define TCL_DTRACE_PROC_ENTRY(a0, a1, a2) \
-	tclDTraceDebugIndent++; \
+	tclDTraceDebugIndent++;						\
 	TclDTraceDbgMsg("-> proc-entry", "%s %" TCL_SIZE_MODIFIER "d %p", a0, a1, a2)
 #define TCL_DTRACE_PROC_RETURN(a0, a1) \
-	TclDTraceDbgMsg("<- proc-return", "%s %d", a0, a1); \
+	TclDTraceDbgMsg("<- proc-return", "%s %d", a0, a1);		\
 	tclDTraceDebugIndent--
 #define TCL_DTRACE_PROC_RESULT(a0, a1, a2, a3) \
 	TclDTraceDbgMsg(" | proc-result", "%s %d %s %p", a0, a1, a2, a3)
@@ -1856,10 +1869,10 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *args
 #define TCL_DTRACE_CMD_ARGS_ENABLED()	    1
 #define TCL_DTRACE_CMD_INFO_ENABLED()	    1
 #define TCL_DTRACE_CMD_ENTRY(a0, a1, a2) \
-	tclDTraceDebugIndent++; \
+	tclDTraceDebugIndent++;						\
 	TclDTraceDbgMsg("-> cmd-entry", "%s %" TCL_SIZE_MODIFIER "d %p", a0, a1, a2)
 #define TCL_DTRACE_CMD_RETURN(a0, a1) \
-	TclDTraceDbgMsg("<- cmd-return", "%s %d", a0, a1); \
+	TclDTraceDbgMsg("<- cmd-return", "%s %d", a0, a1);		\
 	tclDTraceDebugIndent--
 #define TCL_DTRACE_CMD_RESULT(a0, a1, a2, a3) \
 	TclDTraceDbgMsg(" | cmd-result", "%s %d %s %p", a0, a1, a2, a3)

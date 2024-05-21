@@ -1079,8 +1079,7 @@ TclNamespaceDeleted(
 
 void
 TclDeleteNamespaceChildren(
-    Namespace *nsPtr	/* Namespace whose children to delete */
-)
+    Namespace *nsPtr)		/* Namespace whose children to delete */
 {
     Interp *iPtr = (Interp *) nsPtr->interp;
     Tcl_HashEntry *entryPtr;
@@ -3963,7 +3962,6 @@ NamespaceOriginCmd(
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -5157,7 +5155,6 @@ Tcl_LogCommandInfo(
 {
     TclLogCommandInfo(interp, script, command, length, NULL, NULL);
 }
-
 
 /*
  * Local Variables:

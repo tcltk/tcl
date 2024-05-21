@@ -1964,7 +1964,6 @@ ConvertLocalToUTC(
 	ltzoc->tzOffset = fields->tzOffset;
     }
 
-
     /* check DST-hole: if retrieved seconds is out of range */
     if (ltzoc->rangesVal[0] > seconds || seconds >= ltzoc->rangesVal[1]) {
     dstHole:
@@ -2900,7 +2899,6 @@ GetJulianDayFromEraYearMonthDay(
  *----------------------------------------------------------------------
  */
 
-
 void
 GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
@@ -4250,7 +4248,6 @@ ClockCalcRelTime(
 
     return TCL_OK;
 }
-
 
 /*----------------------------------------------------------------------
  *
@@ -4309,8 +4306,6 @@ ClockWeekdaysOffs(
 
     return offs;
 }
-
-
 
 /*----------------------------------------------------------------------
  *

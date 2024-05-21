@@ -248,7 +248,6 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }

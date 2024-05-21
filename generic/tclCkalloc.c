@@ -719,7 +719,6 @@ Tcl_AttemptDbCkrealloc(
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1010,7 +1009,6 @@ Tcl_InitMemory(
     Tcl_CreateObjCommand2(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
-
 #else	/* TCL_MEM_DEBUG */
 
 /* This is the !TCL_MEM_DEBUG case */
@@ -1018,7 +1016,6 @@ Tcl_InitMemory(
 #undef Tcl_InitMemory
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-
 
 /*
  *----------------------------------------------------------------------
@@ -1253,11 +1250,11 @@ TclDumpMemoryInfo(
  */
 void *
 TclAllocElemsEx(
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
+    Tcl_Size elemCount,		/* Allocation will store at least these many... */
+    Tcl_Size elemSize,		/* ...elements of this size */
+    Tcl_Size leadSize,		/* Additional leading space in bytes */
+    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
+				 * non-NULL. Only modified on success */
 {
     void *ptr = TclAttemptReallocElemsEx(
 	NULL, elemCount, elemSize, leadSize, capacityPtr);
@@ -1288,13 +1285,13 @@ TclAllocElemsEx(
  */
 void *
 TclAttemptReallocElemsEx(
-    void *oldPtr,	    /* Pointer to memory block to reallocate or
-			     * NULL to indicate this is a new allocation */
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
+    void *oldPtr,		/* Pointer to memory block to reallocate or
+				 * NULL to indicate this is a new allocation */
+    Tcl_Size elemCount,		/* Allocation will store at least these many... */
+    Tcl_Size elemSize,		/* ...elements of this size */
+    Tcl_Size leadSize,		/* Additional leading space in bytes */
+    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
+				 * non-NULL. Only modified on success */
 {
     void *ptr;
     Tcl_Size limit;
@@ -1358,12 +1355,12 @@ TclAttemptReallocElemsEx(
  */
 void *
 TclReallocElemsEx(
-    void *oldPtr,	    /* Pointer to memory block to reallocate */
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
+    void *oldPtr,		/* Pointer to memory block to reallocate */
+    Tcl_Size elemCount,		/* Allocation will store at least these many... */
+    Tcl_Size elemSize,		/* ...elements of this size */
+    Tcl_Size leadSize,		/* Additional leading space in bytes */
+    Tcl_Size *capacityPtr)	/* OUTPUT: Actual capacity is stored here if
+				 * non-NULL. Only modified on success */
 {
     void *ptr = TclAttemptReallocElemsEx(
 	oldPtr, elemCount, elemSize, leadSize, capacityPtr);

@@ -62,27 +62,27 @@ static void		TimerRunWrite(void *clientData);
  */
 
 static const Tcl_ChannelType tclRChannelType = {
-    "tclrchannel",	   /* Type name.				  */
+    "tclrchannel",	   /* Type name. */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    NULL,	   /* Close channel, clean instance data	  */
-    ReflectInput,	   /* Handle read request			  */
-    ReflectOutput,	   /* Handle write request			  */
+    NULL,		   /* Old close	API */
+    ReflectInput,	   /* Handle read request */
+    ReflectOutput,	   /* Handle write request */
     NULL,
-    ReflectSetOption,	   /* Set options.			NULL'able */
-    ReflectGetOption,	   /* Get options.			NULL'able */
-    ReflectWatch,	   /* Initialize notifier			  */
-    NULL,		   /* Get OS handle from the channel.	NULL'able */
-    ReflectClose,	   /* No close2 support.		NULL'able */
-    ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
-    NULL,		   /* Flush channel. Not used by core.	NULL'able */
-    NULL,		   /* Handle events.			NULL'able */
-    ReflectSeekWide,	   /* Move access point (64 bit).	NULL'able */
+    ReflectSetOption,	   /* Set options. */
+    ReflectGetOption,	   /* Get options. */
+    ReflectWatch,	   /* Initialize notifier */
+    NULL,		   /* Get OS handle from the channel. */
+    ReflectClose,	   /* Close channel. Clean instance data */
+    ReflectBlock,	   /* Set blocking/nonblocking. */
+    NULL,		   /* Flush channel. */
+    NULL,		   /* Handle events. */
+    ReflectSeekWide,	   /* Move access point (64 bit). */
 #if TCL_THREADS
-    ReflectThread,	 /* thread action, tracking owner */
+    ReflectThread,	   /* thread action, tracking owner */
 #else
-	NULL,		   /* thread action */
+    NULL,		   /* thread action */
 #endif
-    ReflectTruncate	   /* Truncate.				NULL'able */
+    ReflectTruncate	   /* Truncate. */
 };
 
 /*
@@ -96,11 +96,10 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
-    Tcl_ThreadId owner;	 /* Thread owning the structure.    == Channel thread */
+    Tcl_ThreadId owner;		/* Thread owning the structure.    == Channel thread */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
     Tcl_Obj *methods;		/* Methods to append to command prefix */
@@ -113,16 +112,12 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-				*/
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-				*/
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is readable */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is writable */
 
     /*
      * Note regarding the usage of timers.
@@ -266,7 +261,7 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    Tcl_Size toRead;			/* I: #bytes to read,
+    Tcl_Size toRead;		/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
@@ -513,7 +508,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -2316,6 +2311,28 @@ NextHandle(void)
     return resObj;
 }
 
+static inline void
+CleanRefChannelInstance(
+    ReflectedChannel *rcPtr)
+{
+    if (rcPtr->name) {
+	/*
+	 * Reset obj-type (channel is deleted or dead anyway) to avoid leakage
+	 * by cyclic references (see bug [79474c58800cdf94]).
+	 */
+	TclFreeInternalRep(rcPtr->name);
+	Tcl_DecrRefCount(rcPtr->name);
+	rcPtr->name = NULL;
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+	rcPtr->methods = NULL;
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+	rcPtr->cmd = NULL;
+    }
+}
 static void
 FreeReflectedChannel(
     void *blockPtr)
@@ -2324,15 +2341,7 @@ FreeReflectedChannel(
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-    }
+    CleanRefChannelInstance(rcPtr);
     Tcl_Free(rcPtr);
 }
 
@@ -2602,18 +2611,7 @@ MarkDead(
     if (rcPtr->dead) {
 	return;
     }
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-	rcPtr->name = NULL;
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-	rcPtr->methods = NULL;
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-	rcPtr->cmd = NULL;
-    }
+    CleanRefChannelInstance(rcPtr);
     rcPtr->dead = 1;
 }
 

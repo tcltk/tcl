@@ -155,7 +155,6 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     TCL_OBJTYPE_V0
 };
-
 
 /*
  * ----------------------------------------------------------------------
@@ -942,7 +941,7 @@ AddSimpleChainToCallContext(
 		contextCls, methodNameObj, cbPtr, doneFilters, flags,
 		filterDecl);
     }
-    if (!blockedUnexported) {
+    if (!blockedUnexported && oPtr->selfCls) {
 	foundPrivate |= AddSimpleClassChainToCallContext(oPtr->selfCls,
 		methodNameObj, cbPtr, doneFilters, flags, filterDecl);
     }
@@ -1080,15 +1079,28 @@ InitCallChain(
     Object *oPtr,
     int flags)
 {
+    /*
+     * Note that it's possible to end up with a NULL oPtr->selfCls here if
+     * there is a call into stereotypical object after it has finished running
+     * its destructor phase. Such things can't be cached for a long time so the
+     * epoch can be bogus. [Bug 7842f33a5c]
+     */
+
     callPtr->flags = flags &
 	    (PUBLIC_METHOD | PRIVATE_METHOD | SPECIAL | FILTER_HANDLING);
     if (oPtr->flags & USE_CLASS_CACHE) {
-	oPtr = oPtr->selfCls->thisPtr;
+	oPtr = (oPtr->selfCls ? oPtr->selfCls->thisPtr : NULL);
 	callPtr->flags |= USE_CLASS_CACHE;
     }
-    callPtr->epoch = oPtr->fPtr->epoch;
-    callPtr->objectCreationEpoch = oPtr->creationEpoch;
-    callPtr->objectEpoch = oPtr->epoch;
+    if (oPtr) {
+	callPtr->epoch = oPtr->fPtr->epoch;
+	callPtr->objectCreationEpoch = oPtr->creationEpoch;
+	callPtr->objectEpoch = oPtr->epoch;
+    } else {
+	callPtr->epoch = 0;
+	callPtr->objectCreationEpoch = 0;
+	callPtr->objectEpoch = 0;
+    }
     callPtr->refCount = 1;
     callPtr->numChain = 0;
     callPtr->chain = callPtr->staticChain;
@@ -1119,6 +1131,13 @@ IsStillValid(
     int mask)
 {
     if ((oPtr->flags & USE_CLASS_CACHE)) {
+	/*
+	 * If the object is in a weird state (due to stereotype tricks) then
+	 * just declare the cache invalid. [Bug 7842f33a5c]
+	 */
+	if (!oPtr->selfCls) {
+	    return 0;
+	}
 	oPtr = oPtr->selfCls->thisPtr;
 	flags |= USE_CLASS_CACHE;
     }
@@ -1216,8 +1235,16 @@ TclOOGetCallContext(
 	    Tcl_StoreInternalRep(cacheInThisObj, &methodNameType, NULL);
 	}
 
-	if (oPtr->flags & USE_CLASS_CACHE) {
-	    if (oPtr->selfCls->classChainCache != NULL) {
+	/*
+	 * Note that it's possible to end up with a NULL oPtr->selfCls here if
+	 * there is a call into stereotypical object after it has finished
+	 * running its destructor phase. It's quite a tangle, but at that
+	 * point, we simply can't get stereotypes from the cache.
+	 * [Bug 7842f33a5c]
+	 */
+
+	if (oPtr->flags & USE_CLASS_CACHE && oPtr->selfCls) {
+	    if (oPtr->selfCls->classChainCache) {
 		hPtr = Tcl_FindHashEntry(oPtr->selfCls->classChainCache,
 			methodNameObj);
 	    } else {
@@ -1429,6 +1456,17 @@ TclOOGetStereotypeCallChain(
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
     Object obj;
+
+    /*
+     * Note that it's possible to end up with a NULL clsPtr here if there is
+     * a call into stereotypical object after it has finished running its
+     * destructor phase. It's quite a tangle, but at that point, we simply
+     * can't get stereotypes. [Bug 7842f33a5c]
+     */
+
+    if (clsPtr == NULL) {
+	return NULL;
+    }
 
     /*
      * Synthesize a temporary stereotypical object so that we can use existing
@@ -1657,9 +1695,16 @@ AddPrivatesFromClassChainToCallContext(
      *
      * Note that mixins must be processed before the main class hierarchy.
      * [Bug 1998221]
+     *
+     * Note also that it's possible to end up with a null classPtr here if
+     * there is a call into stereotypical object after it has finished running
+     * its destructor phase. [Bug 7842f33a5c]
      */
 
   tailRecurse:
+    if (classPtr == NULL) {
+	return 0;
+    }
     FOREACH(superPtr, classPtr->mixins) {
 	if (AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
 		methodName, cbPtr, doneFilters, flags|TRAVERSED_MIXIN,

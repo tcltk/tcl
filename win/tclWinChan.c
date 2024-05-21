@@ -108,10 +108,10 @@ static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-	NULL,
+    NULL,
     NULL,			/* Set option proc. */
     FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
@@ -140,7 +140,6 @@ static const Tcl_ChannelType fileChannelType = {
 
 #define POSIX_EPOCH_AS_FILETIME	\
 	((long long) 116444736 * (long long) 1000000000)
-
 
 /*
  *----------------------------------------------------------------------
