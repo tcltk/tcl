@@ -83,8 +83,7 @@ static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
-static int		ClockConfigureObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	ClockConfigureObjCmd;
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
@@ -941,7 +940,8 @@ TimezoneLoaded(
  *
  * ClockConfigureObjCmd --
  *
- *	This function is invoked to process the Tcl "::clock::configure" (internal) command.
+ *	This function is invoked to process the Tcl "::tcl::unsupported::clock::configure"
+ *	(internal, unsupported) command.
  *
  * Usage:
  *	::tcl::unsupported::clock::configure ?-option ?value??
@@ -964,19 +964,16 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
-	"-clear",
+	"-default-locale",	"-clear",	  "-current-locale",
 	"-year-century",  "-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
-	"-init-complete",
-	NULL
+	"-init-complete",	  "-setup-tz", "-system-tz", NULL
     };
     enum optionInd {
-	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
-	CLOCK_CLEAR_CACHE,
+	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
-	CLOCK_INIT_COMPLETE
+	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
     int optionIndex;		/* Index of an option. */
     Tcl_Size i;
@@ -4566,16 +4563,16 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-        int status;			/* return code status */
-        int flags;			/* Each remaining field saves the */
-        int returnLevel;		/* corresponding field of the Interp */
-        int returnCode;			/* struct. These fields taken together are */
-        Tcl_Obj *errorInfo;		/* the "state" of the interp. */
-        Tcl_Obj *errorCode;
-        Tcl_Obj *returnOpts;
-        Tcl_Obj *objResult;
-        Tcl_Obj *errorStack;
-        int resetErrorStack;
+	int status;			/* return code status */
+	int flags;			/* Each remaining field saves the */
+	int returnLevel;		/* corresponding field of the Interp */
+	int returnCode;			/* struct. These fields taken together are */
+	Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+	Tcl_Obj *errorCode;
+	Tcl_Obj *returnOpts;
+	Tcl_Obj *objResult;
+	Tcl_Obj *errorStack;
+	int resetErrorStack;
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;
