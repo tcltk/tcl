@@ -249,7 +249,7 @@ Clock_itoaw(
 	    val /= 10;
 	    *p-- = '0' + c;
 	} while (val > 0);
-	/* fulling with pad-char */
+	/* filling with pad-char */
 	while (p >= buf) {
 	    *p-- = padchar;
 	}
@@ -290,7 +290,7 @@ Clock_itoaw(
     if (padchar != '0') {
 	*p-- = '-';
     }
-    /* fulling with pad-char */
+    /* filling with pad-char */
     while (p >= buf + 1) {
 	*p-- = padchar;
     }
@@ -347,7 +347,7 @@ Clock_witoaw(
 	    val /= 10;
 	    *p-- = '0' + c;
 	} while (val > 0);
-	/* fulling with pad-char */
+	/* filling with pad-char */
 	while (p >= buf) {
 	    *p-- = padchar;
 	}
@@ -398,7 +398,7 @@ Clock_witoaw(
     if (padchar != '0') {
 	*p-- = '-';
     }
-    /* fulling with pad-char */
+    /* filling with pad-char */
     while (p >= buf + 1) {
 	*p-- = padchar;
     }
