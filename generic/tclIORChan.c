@@ -2348,11 +2348,11 @@ CleanRefChannelInstance(
     ReflectedChannel *rcPtr)
 {
     if (rcPtr->name) {
-	/* 
+	/*
 	 * Reset obj-type (channel is deleted or dead anyway) to avoid leakage
 	 * by cyclic references (see bug [79474c58800cdf94]).
 	 */
-	TclFreeIntRep(rcPtr->name);
+	TclFreeInternalRep(rcPtr->name);
 	Tcl_DecrRefCount(rcPtr->name);
 	rcPtr->name = NULL;
     }
