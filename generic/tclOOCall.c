@@ -756,6 +756,9 @@ AddSimpleChainToCallContext(
 	    }
 	}
     }
+    if (!oPtr->selfCls) {
+	return;
+    }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
 	    doneFilters, flags, filterDecl);
 }
