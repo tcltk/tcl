@@ -500,6 +500,8 @@ TclpCreateProcess(
 	posix_spawn_file_actions_t actions;
 	posix_spawnattr_t attr;
 	sigset_t sigs;
+	long setfd[3];
+	char restore[3] = { 0, 0, 0 };
 
 	posix_spawn_file_actions_init(&actions);
 	posix_spawnattr_init(&attr);
@@ -514,13 +516,65 @@ TclpCreateProcess(
 		);
 	posix_spawnattr_setsigdefault(&attr, &sigs);
 
-	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
-	posix_spawn_file_actions_adddup2(&actions, GetFd(outputFile), 1);
-	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
+	fd = GetFd(inputFile);
+	setfd[0] = fcntl(fd, F_GETFD);
+	if (fd != 0) {
+	    posix_spawn_file_actions_adddup2(&actions, fd, 0);
+	    if (setfd[0] & FD_CLOEXEC) {
+		posix_spawn_file_actions_addclose(&actions, fd);
+	    }
+	} else if (setfd[0] & FD_CLOEXEC) {
+	    fcntl(0, F_SETFD, setfd[0] & ~FD_CLOEXEC);
+	    restore[0]++;
+	}
+
+	fd = GetFd(outputFile);
+	setfd[1] = fcntl(fd, F_GETFD);
+	if (fd != 1) {
+	    posix_spawn_file_actions_adddup2(&actions, fd, 1);
+	    if (setfd[1] & FD_CLOEXEC) {
+		posix_spawn_file_actions_addclose(&actions, fd);
+	    }
+	} else if (setfd[1] & FD_CLOEXEC) {
+	    fcntl(1, F_SETFD, setfd[1] & ~FD_CLOEXEC);
+	    restore[1]++;
+	}
+
+	fd = GetFd(errorFile);
+	setfd[2] = fcntl(fd, F_GETFD);
+	if (fd != 2) {
+	    posix_spawn_file_actions_adddup2(&actions, fd, 2);
+	    if (setfd[2] & FD_CLOEXEC) {
+		posix_spawn_file_actions_addclose(&actions, fd);
+	    }
+	} else if (setfd[2] & FD_CLOEXEC) {
+	    fcntl(2, F_SETFD, setfd[2] & ~FD_CLOEXEC);
+	    restore[2]++;
+	}
+
+	/*
+	 * Potential timing problem: file descriptors 0/1/2
+	 * can have their FD_CLOEXEC flags cleared for the
+	 * duration of the posix_spawnp() invocation. This
+	 * could be eliminated by serializing with a mutex.
+	 */
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
 		newArgv, environ);
 	childErrno = errno;
+
+	if (restore[0]) {
+	    fcntl(0, F_SETFD, setfd[0]);
+	}
+
+	if (restore[1]) {
+	    fcntl(1, F_SETFD, setfd[1]);
+	}
+
+	if (restore[2]) {
+	    fcntl(2, F_SETFD, setfd[2]);
+	}
+
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
 
