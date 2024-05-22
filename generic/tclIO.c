@@ -3065,7 +3065,7 @@ FreeChannelState(
 	ReleaseChannelBuffer(statePtr->curOutPtr);
     }
     DiscardOutputQueued(statePtr);
-    
+
     DeleteTimerHandler(statePtr);
 
     if (statePtr->chanMsg) {
