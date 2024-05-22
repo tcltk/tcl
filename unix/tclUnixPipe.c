@@ -620,7 +620,7 @@ TclpCreateProcess(
     }
 
     TclpCloseFile(errPipeIn);
-    *pidPtr = (Tcl_Pid) INT2PTR(pid);
+    *pidPtr = (Tcl_Pid)INT2PTR(pid);
     return TCL_OK;
 
   error:
@@ -1220,12 +1220,14 @@ PipeOutputProc(
  * so do not pass it to directly to Tcl_CreateFileHandler.
  * Instead, pass a wrapper which is a Tcl_FileProc.
  */
+
 static void
 PipeWatchNotifyChannelWrapper(
     void *clientData,
     int mask)
 {
     Tcl_Channel channel = (Tcl_Channel)clientData;
+
     Tcl_NotifyChannel(channel, mask);
 }
 
@@ -1324,7 +1326,7 @@ Tcl_WaitPid(
     while (1) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
-	    return (Tcl_Pid) INT2PTR(result);
+	    return (Tcl_Pid)INT2PTR(result);
 	}
     }
 }
@@ -1370,7 +1372,7 @@ Tcl_PidObjCmd(
 	 * Get the channel and make sure that it refers to a pipe.
 	 */
 
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
