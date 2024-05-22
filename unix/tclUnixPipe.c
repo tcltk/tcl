@@ -59,16 +59,16 @@ typedef struct PipeState {
  * Declarations for local functions defined in this file:
  */
 
-static int		PipeBlockModeProc(ClientData instanceData, int mode);
-static int		PipeClose2Proc(ClientData instanceData,
+static int		PipeBlockModeProc(void *instanceData, int mode);
+static int		PipeClose2Proc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
-static int		PipeGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		PipeInputProc(ClientData instanceData, char *buf,
+static int		PipeGetHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
+static int		PipeInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData,
+static int		PipeOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static void		PipeWatchProc(ClientData instanceData, int mask);
+static void		PipeWatchProc(void *instanceData, int mask);
 static void		RestoreSignals(void);
 static int		SetupStdFile(TclFile file, int type);
 
@@ -118,7 +118,7 @@ TclpMakeFile(
     Tcl_Channel channel,	/* Channel to get file from. */
     int direction)		/* Either TCL_READABLE or TCL_WRITABLE. */
 {
-    ClientData data;
+    void *data;
 
     if (Tcl_GetChannelHandle(channel, direction, &data) != TCL_OK) {
 	return NULL;
@@ -164,7 +164,7 @@ TclpOpenFile(
 	 */
 
 	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
-	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    TclOSseek(fd, 0, SEEK_END);
 	}
 
 	/*
@@ -216,7 +216,7 @@ TclpCreateTempFile(
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	TclOSseek(fd, 0, SEEK_SET);
     }
     return MakeFile(fd);
 }
@@ -507,12 +507,11 @@ TclpCreateProcess(
 	sigdelset(&sigs, SIGKILL);
 	sigdelset(&sigs, SIGSTOP);
 
-	posix_spawnattr_setflags(&attr,
-				 POSIX_SPAWN_SETSIGDEF
+	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF
 #ifdef POSIX_SPAWN_USEVFORK
-				 | POSIX_SPAWN_USEVFORK
+		| POSIX_SPAWN_USEVFORK
 #endif
-				 );
+		);
 	posix_spawnattr_setsigdefault(&attr, &sigs);
 
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
@@ -520,7 +519,7 @@ TclpCreateProcess(
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
-			      newArgv, environ);
+		newArgv, environ);
 	childErrno = errno;
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
@@ -621,7 +620,7 @@ TclpCreateProcess(
     }
 
     TclpCloseFile(errPipeIn);
-    *pidPtr = (Tcl_Pid) INT2PTR(pid);
+    *pidPtr = (Tcl_Pid)INT2PTR(pid);
     return TCL_OK;
 
   error:
@@ -987,7 +986,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
@@ -1027,7 +1026,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    ClientData instanceData,	/* The pipe to close. */
+    void *instanceData,	/* The pipe to close. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -1122,7 +1121,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int toRead,			/* How much space is available in the
 				 * buffer? */
@@ -1173,7 +1172,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
@@ -1221,18 +1220,20 @@ PipeOutputProc(
  * so do not pass it to directly to Tcl_CreateFileHandler.
  * Instead, pass a wrapper which is a Tcl_FileProc.
  */
+
 static void
 PipeWatchNotifyChannelWrapper(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
-    Tcl_Channel channel = clientData;
+    Tcl_Channel channel = (Tcl_Channel)clientData;
+
     Tcl_NotifyChannel(channel, mask);
 }
 
 static void
 PipeWatchProc(
-    ClientData instanceData,	/* The pipe state. */
+    void *instanceData,	/* The pipe state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1280,9 +1281,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    ClientData instanceData,	/* The pipe state. */
+    void *instanceData,	/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr)	/* Where to store the handle. */
+    void **handlePtr)	/* Where to store the handle. */
 {
     PipeState *psPtr = (PipeState *)instanceData;
 
@@ -1325,7 +1326,7 @@ Tcl_WaitPid(
     while (1) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
-	    return (Tcl_Pid) INT2PTR(result);
+	    return (Tcl_Pid)INT2PTR(result);
 	}
     }
 }
@@ -1349,7 +1350,7 @@ Tcl_WaitPid(
 
 int
 Tcl_PidObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -1365,13 +1366,13 @@ Tcl_PidObjCmd(
     }
 
     if (objc == 1) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) getpid()));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long)getpid()));
     } else {
 	/*
 	 * Get the channel and make sure that it refers to a pipe.
 	 */
 
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
