@@ -4212,6 +4212,7 @@ TclSetProcessGlobalValue(
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     int dummy;
+    Tcl_DString ds;
 
     Tcl_MutexLock(&pgvPtr->mutex);
 
@@ -4226,8 +4227,11 @@ TclSetProcessGlobalValue(
 	Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
     }
     bytes = TclGetStringFromObj(newValue, &pgvPtr->numBytes);
+    Tcl_UtfToExternalDString(encoding, bytes, pgvPtr->numBytes, &ds);
+    pgvPtr->numBytes = Tcl_DStringLength(&ds);
     pgvPtr->value = (char *)ckalloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, Tcl_DStringValue(&ds), pgvPtr->numBytes + 1);
+    Tcl_DStringFree(&ds);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
@@ -4269,6 +4273,7 @@ TclGetProcessGlobalValue(
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     int epoch = pgvPtr->epoch;
+    Tcl_DString newValue;
 
     if (pgvPtr->encoding) {
 	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
@@ -4280,7 +4285,7 @@ TclGetProcessGlobalValue(
 	     * system encoding.
 	     */
 
-	    Tcl_DString native, newValue;
+	    Tcl_DString native;
 
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
@@ -4330,10 +4335,13 @@ TclGetProcessGlobalValue(
 	}
 
 	/*
-	 * Store a copy of the shared value in our epoch-indexed cache.
+	 * Store a copy of the shared value (but then in utf-8)
+	 * in our epoch-indexed cache.
 	 */
 
-	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
+	value = Tcl_NewStringObj(Tcl_DStringValue(&newValue), Tcl_DStringLength(&newValue));
+	Tcl_DStringFree(&newValue);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
