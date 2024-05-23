@@ -142,7 +142,7 @@ Tcl_SetStartupScript(
     Tcl_Obj *encodingObj = NULL;
 
     if (encodingName != NULL) {
-	encodingObj = Tcl_NewStringObj(encodingName, -1);
+	encodingObj = TclNewString(encodingName);
 	Tcl_IncrRefCount(encodingObj);
     }
 
@@ -342,7 +342,7 @@ Tcl_MainEx(
     } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-	appName = Tcl_NewStringObj("tclsh", -1);
+	appName = TclNewLiteralString("tclsh");
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
@@ -505,7 +505,7 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
-	    Tcl_AppendToObj(is.commandPtr, "\n", 1);
+	    TclAppendToObj(is.commandPtr, "\n");
 	    if (!TclObjCommandComplete(is.commandPtr)) {
 		is.prompt = PROMPT_CONTINUE;
 		continue;
@@ -777,7 +777,7 @@ StdinProc(
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
-    Tcl_AppendToObj(commandPtr, "\n", 1);
+    TclAppendToObj(commandPtr, "\n");
     if (!TclObjCommandComplete(commandPtr)) {
 	isPtr->prompt = PROMPT_CONTINUE;
 	goto prompt;

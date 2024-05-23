@@ -419,7 +419,7 @@ TclFSNormalizeAbsolutePath(
 		retVal = Tcl_DuplicateObj(retVal);
 		Tcl_IncrRefCount(retVal);
 	    }
-	    Tcl_AppendToObj(retVal, "/", 1);
+	    TclAppendToObj(retVal, "/");
 	}
     }
 
@@ -776,7 +776,7 @@ GetExtension(
     if (extension == NULL) {
 	TclNewObj(ret);
     } else {
-	ret = Tcl_NewStringObj(extension, -1);
+	ret = TclNewString(extension);
     }
     Tcl_IncrRefCount(ret);
     return ret;
@@ -1354,7 +1354,7 @@ AppendPath(
      */
     bytes = TclGetStringFromObj(tail, &length);
     if (length == 0) {
-	Tcl_AppendToObj(copy, "/", 1);
+	TclAppendToObj(copy, "/");
     } else {
 	TclpNativeJoinPath(copy, bytes);
     }

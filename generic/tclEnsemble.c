@@ -17,7 +17,6 @@
  * Declarations for functions local to this file:
  */
 
-static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
@@ -115,18 +114,6 @@ typedef struct {
     Tcl_HashEntry *hPtr;        /* Direct link to entry in the subcommand hash
                                  * table. */
 } EnsembleCmdRep;
-
-static inline Tcl_Obj *
-NewNsObj(
-    Tcl_Namespace *namespacePtr)
-{
-    Namespace *nsPtr = (Namespace *) namespacePtr;
-
-    if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
-	return Tcl_NewStringObj("::", 2);
-    }
-    return Tcl_NewStringObj(nsPtr->fullName, -1);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -303,7 +290,8 @@ TclNamespaceEnsembleCmd(
 		    cmd = TclGetString(listv[0]);
 		    if (!(cmd[0] == ':' && cmd[1] == ':')) {
 			Tcl_Obj *newList = Tcl_NewListObj(len, listv);
-			Tcl_Obj *newCmd = NewNsObj((Tcl_Namespace *) nsPtr);
+			Tcl_Obj *newCmd = TclNewNamespaceObj(
+				(Tcl_Namespace *) nsPtr);
 
 			if (nsPtr->parentPtr) {
 			    Tcl_AppendStringsToObj(newCmd, "::", (void *)NULL);
@@ -431,7 +419,7 @@ TclNamespaceEnsembleCmd(
 	    case CONF_NAMESPACE:
 		namespacePtr = NULL;		/* silence gcc 4 warning */
 		Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
-		Tcl_SetObjResult(interp, NewNsObj(namespacePtr));
+		Tcl_SetObjResult(interp, TclNewNamespaceObj(namespacePtr));
 		break;
 	    case CONF_PREFIX: {
 		int flags = 0;			/* silence gcc 4 warning */
@@ -460,43 +448,43 @@ TclNamespaceEnsembleCmd(
 
 	    /* -map option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_MAP], -1));
+		    TclNewString(ensembleConfigOptions[CONF_MAP]));
 	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -namespace option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
-			    -1));
+		    TclNewString(ensembleConfigOptions[CONF_NAMESPACE]));
 	    namespacePtr = NULL;		/* silence gcc 4 warning */
 	    Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
-	    Tcl_ListObjAppendElement(NULL, resultObj, NewNsObj(namespacePtr));
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    TclNewNamespaceObj(namespacePtr));
 
 	    /* -parameters option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PARAM], -1));
+		    TclNewString(ensembleConfigOptions[CONF_PARAM]));
 	    Tcl_GetEnsembleParameterList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -prefix option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PREFIX], -1));
+		    TclNewString(ensembleConfigOptions[CONF_PREFIX]));
 	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 
 	    /* -subcommands option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_SUBCMDS],-1));
+		    TclNewString(ensembleConfigOptions[CONF_SUBCMDS]));
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -unknown option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_UNKNOWN],-1));
+		    TclNewString(ensembleConfigOptions[CONF_UNKNOWN]));
 	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
@@ -596,7 +584,8 @@ TclNamespaceEnsembleCmd(
 			cmd = TclGetString(listv[0]);
 			if (!(cmd[0] == ':' && cmd[1] == ':')) {
 			    Tcl_Obj *newList = Tcl_DuplicateObj(listObj);
-			    Tcl_Obj *newCmd = NewNsObj((Tcl_Namespace*)nsPtr);
+			    Tcl_Obj *newCmd = TclNewNamespaceObj(
+				    (Tcl_Namespace *) nsPtr);
 
 			    if (nsPtr->parentPtr) {
 				Tcl_AppendStringsToObj(newCmd, "::", (void *)NULL);
@@ -1535,7 +1524,7 @@ TclMakeEnsemble(
     Tcl_DStringInit(&buf);
     Tcl_DStringInit(&hiddenBuf);
     TclDStringAppendLiteral(&hiddenBuf, "tcl:");
-    Tcl_DStringAppend(&hiddenBuf, name, -1);
+    Tcl_DStringAppend(&hiddenBuf, name, TCL_AUTO_LENGTH);
     TclDStringAppendLiteral(&hiddenBuf, ":");
     hiddenLen = Tcl_DStringLength(&hiddenBuf);
     if (name[0] == ':' && name[1] == ':') {
@@ -1544,7 +1533,7 @@ TclMakeEnsemble(
 	 */
 
 	cmdName = name;
-	Tcl_DStringAppend(&buf, name, -1);
+	Tcl_DStringAppend(&buf, name, TCL_AUTO_LENGTH);
 	ensembleFlags = TCL_ENSEMBLE_PREFIX;
     } else {
 	/*
@@ -1560,7 +1549,7 @@ TclMakeEnsemble(
 
 	for (i = 0; i < nameCount; ++i) {
 	    TclDStringAppendLiteral(&buf, "::");
-	    Tcl_DStringAppend(&buf, nameParts[i], -1);
+	    Tcl_DStringAppend(&buf, nameParts[i], TCL_AUTO_LENGTH);
 	}
     }
 
@@ -1605,7 +1594,7 @@ TclMakeEnsemble(
 	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
-	    fromObj = Tcl_NewStringObj(map[i].name, -1);
+	    fromObj = TclNewString(map[i].name);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 		    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
@@ -1626,7 +1615,8 @@ TclMakeEnsemble(
 			    map[i].nreProc, map[i].clientData, NULL);
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
-			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
+			    Tcl_DStringAppend(&hiddenBuf, map[i].name,
+				    TCL_AUTO_LENGTH))) {
 			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
 		} else {
@@ -1723,7 +1713,8 @@ NsEnsembleImplementationCmdNR(
 	Tcl_DStringInit(&buf);
 	if (ensemblePtr->parameterList) {
 	    Tcl_DStringAppend(&buf,
-		    TclGetString(ensemblePtr->parameterList), -1);
+		    TclGetString(ensemblePtr->parameterList),
+		    TCL_AUTO_LENGTH);
 	    TclDStringAppendLiteral(&buf, " ");
 	}
 	TclDStringAppendLiteral(&buf, "subcommand ?arg ...?");
@@ -1854,7 +1845,7 @@ NsEnsembleImplementationCmdNR(
 	 * Record the spelling correction for usage message.
 	 */
 
-	fix = Tcl_NewStringObj(fullName, -1);
+	fix = TclNewString(fullName);
 
 	/*
 	 * Cache for later in the subcommand object.
@@ -1900,7 +1891,7 @@ NsEnsembleImplementationCmdNR(
 		    objv + 2 + ensemblePtr->numParameters);
 	}
 	Tcl_IncrRefCount(copyPtr);
-	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRReleaseValues, copyPtr);
 	TclDecrRefCount(prefixObj);
 
 	/*
@@ -1911,8 +1902,7 @@ NsEnsembleImplementationCmdNR(
 
 	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters,
 		prefixObjc + ensemblePtr->numParameters, objv)) {
-	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, TclClearRootEnsemble);
 	}
 
 	/*
@@ -1971,7 +1961,7 @@ NsEnsembleImplementationCmdNR(
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
-	    Tcl_AppendToObj(errorObj, ", ", 2);
+	    TclAppendToObj(errorObj, ", ");
 	}
 	Tcl_AppendPrintfToObj(errorObj, "or %s",
 		ensemblePtr->subcommandArrayPtr[i]);
@@ -2188,12 +2178,12 @@ TclSpellFix(
 	tmp[2] = (Tcl_Obj *) store;
 	iPtr->ensembleRewrite.sourceObjs = (Tcl_Obj *const *) tmp;
 
-	TclNRAddCallback(interp, FreeER, tmp, store, NULL, NULL);
+	TclNRAddCallback(interp, FreeER, tmp, store);
     }
 
     store[idx] = fix;
     Tcl_IncrRefCount(fix);
-    TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, fix);
 }
 
 Tcl_Obj *const *
@@ -2362,13 +2352,13 @@ EnsembleUnknownCallback(
 		    "unknown subcommand handler returned bad code: ");
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return", -1);
+		TclAppendToObj(Tcl_GetObjResult(interp), "return");
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break", -1);
+		TclAppendToObj(Tcl_GetObjResult(interp), "break");
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue", -1);
+		TclAppendToObj(Tcl_GetObjResult(interp), "continue");
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);
@@ -2610,7 +2600,7 @@ BuildEnsembleConfig(
                 name = TclGetString(subv[i+1]);
                 hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
                 if (isNew) {
-                    cmdObj = Tcl_NewStringObj(name, -1);
+                    cmdObj = TclNewString(name);
                     cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
                     Tcl_SetHashValue(hPtr, cmdPrefixObj);
                     Tcl_IncrRefCount(cmdPrefixObj);
@@ -2648,7 +2638,7 @@ BuildEnsembleConfig(
 		 * programmer (or [::unknown] of course) to provide the procedure.
                  */
 
-                cmdObj = Tcl_NewStringObj(name, -1);
+                cmdObj = TclNewString(name);
                 cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
                 Tcl_SetHashValue(hPtr, cmdPrefixObj);
                 Tcl_IncrRefCount(cmdPrefixObj);
@@ -2696,28 +2686,37 @@ BuildEnsembleConfig(
 	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
 		if (Tcl_StringMatch(nsCmdName,
 			ensemblePtr->nsPtr->exportArrayPtr[i])) {
-		    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
-
-		    /*
-		     * Remember, hash entries have a full reference to the
-		     * substituted part of the command (as a list) as their
-		     * content!
-		     */
-
-		    if (isNew) {
-			Tcl_Obj *cmdObj, *cmdPrefixObj;
-
-			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj,
-				ensemblePtr->nsPtr->fullName,
-				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
-				nsCmdName, (void *)NULL);
-			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
-			Tcl_SetHashValue(hPtr, cmdPrefixObj);
-			Tcl_IncrRefCount(cmdPrefixObj);
-		    }
-		    break;
+		    goto commandIsExported;
 		}
+	    }
+	    /*
+	     * Command isn't exported after all.
+	     */
+	    continue;
+
+	commandIsExported:
+	    /* NB: this temporarily switches hPtr to a different table */
+	    hPtr = Tcl_CreateHashEntry(hash, nsCmdName, &isNew);
+
+	    /*
+	     * Remember, hash entries (in this hash table) have command prefix
+	     * (a list containing a fully qualified reference to the
+	     * substituted part of the command) as their content! We need to
+	     * make that right now.
+	     */
+
+	    if (isNew) {
+		Tcl_Obj *cmdObj;	/* The full name of the command */
+		Tcl_Obj *cmdPrefixObj;	/* List containing the command name */
+
+		TclNewObj(cmdObj);
+		Tcl_AppendStringsToObj(cmdObj,
+			ensemblePtr->nsPtr->fullName,
+			(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
+			nsCmdName, (void *)NULL);
+		cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
+		Tcl_SetHashValue(hPtr, cmdPrefixObj);
+		Tcl_IncrRefCount(cmdPrefixObj);
 	    }
 	}
     }

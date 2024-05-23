@@ -50,8 +50,7 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-    TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(name, length), NULL);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, length), NULL);
 }
 #else
 void
@@ -118,7 +117,7 @@ TclpFindExecutable(
 		TclDStringAppendLiteral(&buffer, "/");
 	    }
 	}
-	name = Tcl_DStringAppend(&buffer, argv0, TCL_INDEX_NONE);
+	name = Tcl_DStringAppend(&buffer, argv0, TCL_AUTO_LENGTH);
 
 	/*
 	 * INTL: The following calls to access() and stat() should not be
@@ -156,9 +155,7 @@ TclpFindExecutable(
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
 	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
-	Tcl_DStringFree(&utfName);
+	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), encoding);
 	goto done;
     }
 
@@ -179,12 +176,12 @@ TclpFindExecutable(
     }
 
     Tcl_DStringInit(&nameString);
-    Tcl_DStringAppend(&nameString, name, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&nameString, name, TCL_AUTO_LENGTH);
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
 	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
-    if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
+    if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) - 1] != '/') {
 	TclDStringAppendLiteral(&buffer, "/");
     }
     Tcl_DStringFree(&cwd);
@@ -194,9 +191,7 @@ TclpFindExecutable(
     encoding = Tcl_GetEncoding(NULL, NULL);
     Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
 	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
-    TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
-    Tcl_DStringFree(&utfName);
+    TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), encoding);
 
   done:
     Tcl_DStringFree(&buffer);
@@ -388,7 +383,7 @@ TclpMatchInDirectory(
 
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
-		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, TCL_INDEX_NONE);
+		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, TCL_AUTO_LENGTH);
 		    matchResult = NativeMatchType(interp, native,
 			    entryPtr->d_name, types);
 		    typeOk = (matchResult == 1);

@@ -578,7 +578,7 @@ StoreElementInDict(
      * duplicate keys.
      */
 
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *nameObj = TclNewString(name);
     Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
@@ -658,7 +658,7 @@ StatOpenFile(
 	    Tcl_GetChangeTimeFromStat(&statBuf)));
     mode = (unsigned short) statBuf.st_mode;
     STORE_ELEM("mode",    Tcl_NewWideIntObj(mode));
-    STORE_ELEM("type",    Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+    STORE_ELEM("type",    TclNewString(GetTypeFromMode(mode)));
 #undef STORE_ELEM
 
     return dictObj;

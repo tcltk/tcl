@@ -352,7 +352,7 @@ ConvertErrorToList(
 	return Tcl_NewListObj(3, objv);
     case Z_ERRNO:
 	TclNewLiteralStringObj(objv[2], "POSIX");
-	objv[3] = Tcl_NewStringObj(Tcl_ErrnoId(), TCL_AUTO_LENGTH);
+	objv[3] = TclNewString(Tcl_ErrnoId());
 	return Tcl_NewListObj(4, objv);
     case Z_NEED_DICT:
 	TclNewLiteralStringObj(objv[2], "NEED_DICT");
@@ -407,7 +407,7 @@ GetValue(
     const char *nameStr,
     Tcl_Obj **valuePtrPtr)
 {
-    Tcl_Obj *name = Tcl_NewStringObj(nameStr, TCL_AUTO_LENGTH);
+    Tcl_Obj *name = TclNewString(nameStr);
     int result = Tcl_DictObjGet(interp, dictObj, name, valuePtrPtr);
 
     TclDecrRefCount(name);
@@ -558,8 +558,7 @@ GenerateHeader(
  */
 
 #define SetValue(dictObj, key, value) \
-	Tcl_DictObjPut(NULL, (dictObj), Tcl_NewStringObj(		\
-		(key), TCL_AUTO_LENGTH), (value))
+	Tcl_DictObjPut(NULL, (dictObj), TclNewLiteralString(key), (value))
 
 static void
 ExtractHeader(
@@ -595,8 +594,8 @@ ExtractHeader(
 	SetValue(dictObj, "time", Tcl_NewWideIntObj(headerPtr->time));
     }
     if (headerPtr->text != Z_UNKNOWN) {
-	SetValue(dictObj, "type", Tcl_NewStringObj(
-		headerPtr->text ? "text" : "binary", TCL_AUTO_LENGTH));
+	SetValue(dictObj, "type", TclNewString(
+		headerPtr->text ? "text" : "binary"));
     }
 
     if (latin1enc != NULL) {
@@ -3269,13 +3268,12 @@ ZlibTransformOutput(
 	return toWrite - chanDataPtr->outStream.avail_in;
     }
 
-    errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
+    errObj = Tcl_NewListObj(3, NULL);
+    Tcl_ListObjAppendElement(NULL, errObj, TclNewLiteralString("-errorcode"));
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, chanDataPtr->outStream.adler));
     Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(chanDataPtr->outStream.msg, TCL_AUTO_LENGTH));
+	    TclNewString(chanDataPtr->outStream.msg));
     Tcl_SetChannelError(chanDataPtr->parent, errObj);
     *errorCodePtr = EINVAL;
     return -1;
@@ -3970,13 +3968,12 @@ ResultDecompress(
     return resBytes;
 
   handleError:
-    errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
+    errObj = Tcl_NewListObj(3, NULL);
+    Tcl_ListObjAppendElement(NULL, errObj, TclNewLiteralString("-errorcode"));
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, chanDataPtr->inStream.adler));
     Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(chanDataPtr->inStream.msg, TCL_AUTO_LENGTH));
+	    TclNewString(chanDataPtr->inStream.msg));
     Tcl_SetChannelError(chanDataPtr->parent, errObj);
     *errorCodePtr = EINVAL;
     return -1;

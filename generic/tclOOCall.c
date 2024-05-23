@@ -348,8 +348,7 @@ TclOOInvokeContext(
 	 * this call is finished.
 	 */
 
-	TclNRAddCallback(interp, FinalizeMethodRefs, contextPtr, NULL, NULL,
-		NULL);
+	TclNRAddCallback(interp, FinalizeMethodRefs, contextPtr);
     }
 
     /*
@@ -357,9 +356,9 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->oPtr->flags & FILTER_HANDLING) {
-	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
+	TclNRAddCallback(interp, SetFilterFlags, contextPtr);
     } else {
-	TclNRAddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
+	TclNRAddCallback(interp, ResetFilterFlags, contextPtr);
     }
     if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
 	contextPtr->oPtr->flags |= FILTER_HANDLING;
@@ -1849,7 +1848,7 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
+	descObjs[3] = TclNewString(miPtr->mPtr->typePtr->name);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
     }

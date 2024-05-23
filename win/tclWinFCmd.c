@@ -923,12 +923,13 @@ TclpObjCopyDirectory(
     if (ret != TCL_OK) {
 	if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normSrcPtr))) {
 	    *errorPtr = srcPathPtr;
+	    Tcl_DStringFree(&ds);
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
+	    Tcl_DStringFree(&ds);
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+	    *errorPtr = Tcl_DStringToObj(&ds);
 	}
-	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
     return ret;
@@ -1937,14 +1938,14 @@ TclpObjListVolumes(void)
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
-		elemPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
+		elemPtr = TclNewString(buf);
 		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	    }
 	}
     } else {
 	for (p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
-	    elemPtr = Tcl_NewStringObj(p, TCL_INDEX_NONE);
+	    elemPtr = TclNewString(p);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	}
     }

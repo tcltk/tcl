@@ -2192,8 +2192,7 @@ IssueSwitchChainedTests(
 		    if (TclReToGlob(NULL, bodyToken[i]->start,
 			    bodyToken[i]->size, &ds, &exact, NULL) == TCL_OK){
 			simple = 1;
-			PushLiteral(envPtr, Tcl_DStringValue(&ds),
-				Tcl_DStringLength(&ds));
+			PushDString(envPtr, &ds, 0);
 			Tcl_DStringFree(&ds);
 		    }
 		}
@@ -2599,9 +2598,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    TclAppendToObj(appendObj, ", ");
 	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+		TclAppendToObj(appendObj, "\n\t\t");
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
@@ -2628,10 +2627,10 @@ DisassembleJumptableInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
+	Tcl_DictObjPut(NULL, mapping, TclNewString(keyPtr),
 		Tcl_NewWideIntObj(offset));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
+    Tcl_DictObjPut(NULL, dictObj, TclNewLiteralString("mapping"), mapping);
 }
 
 /*

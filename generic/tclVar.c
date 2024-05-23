@@ -306,7 +306,7 @@ TclVarHashCreateVar(
     Tcl_Obj *keyPtr;
     Var *varPtr;
 
-    keyPtr = Tcl_NewStringObj(key, -1);
+    keyPtr = TclNewString(key);
     Tcl_IncrRefCount(keyPtr);
     varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
     Tcl_DecrRefCount(keyPtr);
@@ -473,7 +473,7 @@ TclLookupVar(
 				 * is set to NULL. */
 {
     Var *varPtr;
-    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part1Ptr = TclNewString(part1);
 
     if (createPart1) {
 	Tcl_IncrRefCount(part1Ptr);
@@ -555,7 +555,7 @@ TclObjLookupVar(
     Var *resPtr;
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
 	if (createPart2) {
 	    Tcl_IncrRefCount(part2Ptr);
 	}
@@ -953,7 +953,7 @@ TclLookupSimpleVar(
 		return NULL;
 	    }
 	    if (tail != varName) {
-		tailPtr = Tcl_NewStringObj(tail, -1);
+		tailPtr = TclNewString(tail);
 	    } else {
 		tailPtr = varNamePtr;
 	    }
@@ -1177,10 +1177,10 @@ Tcl_GetVar2(
 				 * bits. */
 {
     Tcl_Obj *resultPtr;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = TclNewString(part1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1230,10 +1230,10 @@ Tcl_GetVar2Ex(
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = TclNewString(part1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1551,7 +1551,7 @@ Tcl_SetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, part1, part2,
-	    Tcl_NewStringObj(newValue, -1), flags);
+	    TclNewString(newValue), flags);
 
     if (varValuePtr == NULL) {
 	return NULL;
@@ -1611,11 +1611,11 @@ Tcl_SetVar2Ex(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT or
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = TclNewString(part1);
 
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -2317,10 +2317,10 @@ Tcl_UnsetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     int result;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = TclNewString(part1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
     }
 
     /*
@@ -4575,7 +4575,7 @@ TclPtrMakeUpvar(
     int result;
 
     if (myName) {
-	myNamePtr = Tcl_NewStringObj(myName, -1);
+	myNamePtr = TclNewString(myName);
 	Tcl_IncrRefCount(myNamePtr);
     }
     result = TclPtrObjMakeUpvarIdx(interp, otherPtr, myNamePtr, myFlags,
@@ -4761,9 +4761,9 @@ Tcl_UpVar2(
 	return TCL_ERROR;
     }
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
+    part1Ptr = TclNewString(part1);
     Tcl_IncrRefCount(part1Ptr);
-    localNamePtr = Tcl_NewStringObj(localNameStr, -1);
+    localNamePtr = TclNewString(localNameStr);
     Tcl_IncrRefCount(localNamePtr);
 
     result = ObjMakeUpvar(interp, framePtr, part1Ptr, part2, 0,
@@ -4816,9 +4816,9 @@ Tcl_GetVariableFullName(
 
     nsPtr = TclGetVarNsPtr(varPtr);
     if (nsPtr) {
-	Tcl_AppendToObj(objPtr, nsPtr->fullName, -1);
+	Tcl_AppendToObj(objPtr, nsPtr->fullName, TCL_AUTO_LENGTH);
 	if (nsPtr != iPtr->globalNsPtr) {
-	    Tcl_AppendToObj(objPtr, "::", 2);
+	    TclAppendToObj(objPtr, "::");
 	}
     }
     if (TclIsVarInHash(varPtr)) {
@@ -4976,7 +4976,7 @@ Tcl_GlobalObjCmd(
 	if (tail == varName) {
 	    tailPtr = objPtr;
 	} else {
-	    tailPtr = Tcl_NewStringObj(tail, -1);
+	    tailPtr = TclNewString(tail);
 	    Tcl_IncrRefCount(tailPtr);
 	}
 
@@ -5128,7 +5128,7 @@ Tcl_VariableObjCmd(
 	    if (tail == varName) {
 		tailPtr = varNamePtr;
 	    } else {
-		tailPtr = Tcl_NewStringObj(tail, -1);
+		tailPtr = TclNewString(tail);
 		Tcl_IncrRefCount(tailPtr);
 	    }
 
@@ -5664,10 +5664,10 @@ TclVarErrMsg(
 				 * e.g. "read", "set", or "unset". */
     const char *reason)		/* String describing why operation failed. */
 {
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = TclNewString(part1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = TclNewString(part2);
     }
 
     TclObjVarErrMsg(interp, part1Ptr, part2Ptr, operation, reason, -1);
@@ -5832,7 +5832,7 @@ Tcl_FindNamespaceVar(
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *namePtr = TclNewString(name);
     Tcl_Var var;
 
     var = ObjFindNamespaceVar(interp, namePtr, contextNsPtr, flags);
@@ -5933,7 +5933,7 @@ ObjFindNamespaceVar(
 
     varPtr = NULL;
     if (simpleName != name) {
-	simpleNamePtr = Tcl_NewStringObj(simpleName, -1);
+	simpleNamePtr = TclNewString(simpleName);
     } else {
 	simpleNamePtr = namePtr;
     }
@@ -6025,7 +6025,7 @@ TclInfoVarsCmd(
 	    if (simplePattern == pattern) {
 		simplePatternPtr = objv[1];
 	    } else {
-		simplePatternPtr = Tcl_NewStringObj(simplePattern, -1);
+		simplePatternPtr = TclNewString(simplePattern);
 	    }
 	    Tcl_IncrRefCount(simplePatternPtr);
 	}
@@ -6210,7 +6210,7 @@ TclInfoGlobalsCmd(
 	if (pattern == TclGetString(objv[1])) {
 	    patternPtr = objv[1];
 	} else {
-	    patternPtr = Tcl_NewStringObj(pattern, -1);
+	    patternPtr = TclNewString(pattern);
 	}
 	Tcl_IncrRefCount(patternPtr);
 
@@ -6368,7 +6368,7 @@ TclInfoConstsCmd(
 	    if (simplePattern == pattern) {
 		simplePatternPtr = objv[1];
 	    } else {
-		simplePatternPtr = Tcl_NewStringObj(simplePattern, -1);
+		simplePatternPtr = TclNewString(simplePattern);
 	    }
 	    Tcl_IncrRefCount(simplePatternPtr);
 	}

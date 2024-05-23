@@ -503,7 +503,7 @@ InfoArgsCmd(
 	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    TclNewString(localPtr->name));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -714,7 +714,7 @@ InfoCommandsCmd(
 		Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 	    } else {
 		cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
-		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		elemObjPtr = TclNewString(cmdName);
 	    }
 	    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    Tcl_SetObjResult(interp, listPtr);
@@ -741,8 +741,7 @@ InfoCommandsCmd(
 	    }
 	    if (entryPtr != NULL) {
 		cmdName = (const char *)Tcl_GetHashKey(tablePtr, entryPtr);
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(cmdName, -1));
+		Tcl_ListObjAppendElement(interp, listPtr, TclNewString(cmdName));
 		Tcl_SetObjResult(interp, listPtr);
 		return TCL_OK;
 	    }
@@ -764,7 +763,7 @@ InfoCommandsCmd(
 		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 		} else {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = TclNewString(cmdName);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
@@ -787,7 +786,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(cmdName, -1));
+				TclNewString(cmdName));
 		    }
 		}
 		entryPtr = Tcl_NextHashEntry(&search);
@@ -816,7 +815,7 @@ InfoCommandsCmd(
 	    cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
 	    if ((simplePattern == NULL)
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
-		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		elemObjPtr = TclNewString(cmdName);
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
 			elemObjPtr, &isNew);
@@ -842,7 +841,7 @@ InfoCommandsCmd(
 		cmdName = (const char *)Tcl_GetHashKey(&pathNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = TclNewString(cmdName);
 		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
 			    elemObjPtr, &isNew);
 		    if (isNew) {
@@ -869,7 +868,7 @@ InfoCommandsCmd(
 		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    elemObjPtr = TclNewString(cmdName);
 		    if (Tcl_FindHashEntry(&addedCommandsTable,
 			    (char *) elemObjPtr) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
@@ -1287,7 +1286,7 @@ TclInfoFrame(
 	 * str.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", TclNewString(typeString[framePtr->type]));
 	if (framePtr->line) {
 	    ADD_PAIR("line", Tcl_NewWideIntObj(framePtr->line[0]));
 	} else {
@@ -1301,7 +1300,7 @@ TclInfoFrame(
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", TclNewString(typeString[framePtr->type]));
 	break;
 
     case TCL_LOCATION_BC: {
@@ -1326,7 +1325,7 @@ TclInfoFrame(
 	 * Possibly modified: type, path!
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
+	ADD_PAIR("type", TclNewString(typeString[fPtr->type]));
 	if (fPtr->line) {
 	    ADD_PAIR("line", Tcl_NewWideIntObj(fPtr->line[0]));
 	}
@@ -1354,7 +1353,7 @@ TclInfoFrame(
 	 * Evaluation of a script file.
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", TclNewString(typeString[framePtr->type]));
 	ADD_PAIR("line", Tcl_NewWideIntObj(framePtr->line[0]));
 	ADD_PAIR("file", framePtr->data.eval.path);
 
@@ -1400,7 +1399,7 @@ TclInfoFrame(
 	     */
 
 	    for (i=0 ; i<efiPtr->length ; i++) {
-		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
+		lv[lc++] = TclNewString(efiPtr->fields[i].name);
 		if (efiPtr->fields[i].proc) {
 		    lv[lc++] =
 			efiPtr->fields[i].proc(efiPtr->fields[i].clientData);
@@ -1475,7 +1474,7 @@ InfoFunctionsCmd(
 	return TCL_ERROR;
     }
 
-    script = Tcl_NewStringObj(
+    script = TclNewLiteralString(
 "	    ::apply [::list {{pattern *}} {\n"
 "		::set cmds {}\n"
 "		::foreach cmd [::info commands ::tcl::mathfunc::$pattern] {\n"
@@ -1488,7 +1487,7 @@ InfoFunctionsCmd(
 "		    }\n"
 "		}\n"
 "		::return $cmds\n"
-"	    } [::namespace current]] ", -1);
+"	    } [::namespace current]] ");
 
     if (objc == 2) {
 	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
@@ -1899,7 +1898,7 @@ InfoProcsCmd(
 		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 			    elemObjPtr);
 		} else {
-		    elemObjPtr = Tcl_NewStringObj(simplePattern, -1);
+		    elemObjPtr = TclNewString(simplePattern);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 	    }
@@ -1925,7 +1924,7 @@ InfoProcsCmd(
 			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 				elemObjPtr);
 		    } else {
-			elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+			elemObjPtr = TclNewString(cmdName);
 		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
@@ -2192,7 +2191,7 @@ Tcl_JoinObjCmd(
 	return TCL_OK;
     }
 
-    joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
+    joinObjPtr = (objc == 2) ? TclNewLiteralString(" ") : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
     (void)TclGetStringFromObj(joinObjPtr, &length);

@@ -125,10 +125,10 @@ TclOOInitInfo(
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
-		Tcl_NewStringObj("::oo::InfoObject", -1));
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
-		Tcl_NewStringObj("::oo::InfoClass", -1));
+	Tcl_DictObjPut(NULL, mapDict, TclNewLiteralString("object"),
+		TclNewLiteralString("::oo::InfoObject"));
+	Tcl_DictObjPut(NULL, mapDict, TclNewLiteralString("class"),
+		TclNewLiteralString("::oo::InfoClass"));
 	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
     }
 }
@@ -282,8 +282,7 @@ InfoObjectDefnCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, TclNewString(localPtr->name));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -612,8 +611,7 @@ InfoObjectMethodsCmd(
 		&names);
 
 	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, TclNewString(names[i]));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
@@ -802,7 +800,7 @@ InfoObjectNsCmd(
 	return TCL_ERROR;
     }
 
-    TclSetResult(interp, oPtr->namespacePtr->fullName);
+    Tcl_SetObjResult(interp, TclNewNamespaceObj(oPtr->namespacePtr));
     return TCL_OK;
 }
 
@@ -970,8 +968,7 @@ InfoClassConstrCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, TclNewString(localPtr->name));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1038,8 +1035,7 @@ InfoClassDefnCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, TclNewString(localPtr->name));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1377,8 +1373,7 @@ InfoClassMethodsCmd(
 	Tcl_Size i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
 	for (i=0 ; i<numNames ; i++) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj, TclNewString(names[i]));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);

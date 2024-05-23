@@ -869,8 +869,8 @@ Tcl_AppendAllObjTypes(
     Tcl_MutexLock(&tableMutex);
     for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj((char *)Tcl_GetHashKey(&typeTable, hPtr), -1));
+	Tcl_ListObjAppendElement(NULL, objPtr, TclNewString((char *)
+		Tcl_GetHashKey(&typeTable, hPtr)));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
@@ -2137,7 +2137,7 @@ TclSetBooleanFromAny(
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
+	TclAppendToObj(msg, "\"");
 	Tcl_SetObjResult(interp, msg);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (void *)NULL);
     }
@@ -2720,7 +2720,7 @@ Tcl_GetLongFromObj(
 #endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+		Tcl_Obj *msg = TclNewString(s);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
@@ -4647,7 +4647,8 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_SIZE_MODIFIER "d,"
+    descObj = Tcl_ObjPrintf(
+	    "value is a %s with a refcount of %" TCL_SIZE_MODIFIER "d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);
@@ -4664,12 +4665,12 @@ Tcl_RepresentationCmd(
     }
 
     if (objv[1]->bytes) {
-        Tcl_AppendToObj(descObj, ", string representation \"", -1);
+        TclAppendToObj(descObj, ", string representation \"");
 	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
                 16, "...");
-	Tcl_AppendToObj(descObj, "\"", -1);
+	TclAppendToObj(descObj, "\"");
     } else {
-	Tcl_AppendToObj(descObj, ", no string representation", -1);
+	TclAppendToObj(descObj, ", no string representation");
     }
 
     Tcl_SetObjResult(interp, descObj);

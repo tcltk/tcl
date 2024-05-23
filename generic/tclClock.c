@@ -207,8 +207,7 @@ TclClockInit(
     data->refCount = 0;
     data->literals = (Tcl_Obj **)Tcl_Alloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
-	TclInitObjRef(data->literals[i], Tcl_NewStringObj(
-		Literals[i], TCL_AUTO_LENGTH));
+	TclInitObjRef(data->literals[i], TclNewString(Literals[i]));
     }
     data->mcLiterals = NULL;
     data->mcLitIdxs = NULL;
@@ -725,8 +724,8 @@ ClockMCDict(
 		dataPtr->mcLiterals = (Tcl_Obj **)
 			Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
 		for (i = 0; i < MCLIT__END; ++i) {
-		    TclInitObjRef(dataPtr->mcLiterals[i], Tcl_NewStringObj(
-			    MsgCtLiterals[i], TCL_AUTO_LENGTH));
+		    TclInitObjRef(dataPtr->mcLiterals[i], TclNewString(
+			    MsgCtLiterals[i]));
 		}
 	    }
 	}
@@ -901,8 +900,7 @@ ClockMCSetIdx(
 
 	dataPtr->mcLitIdxs = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
 	for (i = 0; i < MCLIT__END; ++i) {
-	    TclInitObjRef(dataPtr->mcLitIdxs[i],
-		    Tcl_NewStringObj(MsgCtLitIdxs[i], TCL_AUTO_LENGTH));
+	    TclInitObjRef(dataPtr->mcLitIdxs[i], TclNewString(MsgCtLitIdxs[i]));
 	}
     }
 

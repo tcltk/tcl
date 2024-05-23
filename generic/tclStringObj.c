@@ -1815,7 +1815,7 @@ Tcl_AppendStringsToObj(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_AUTO_LENGTH);
     }
     va_end(argList);
 }
@@ -2253,21 +2253,21 @@ Tcl_AppendFormatToObj(
 	    if (gotHash || (ch == 'p')) {
 		switch (ch) {
 		case 'o':
-		    Tcl_AppendToObj(segment, "0o", 2);
+		    TclAppendToObj(segment, "0o");
 		    segmentLimit -= 2;
 		    break;
 		case 'p':
 		case 'x':
 		case 'X':
-		    Tcl_AppendToObj(segment, "0x", 2);
+		    TclAppendToObj(segment, "0x");
 		    segmentLimit -= 2;
 		    break;
 		case 'b':
-		    Tcl_AppendToObj(segment, "0b", 2);
+		    TclAppendToObj(segment, "0b");
 		    segmentLimit -= 2;
 		    break;
 		case 'd':
-		    Tcl_AppendToObj(segment, "0d", 2);
+		    TclAppendToObj(segment, "0d");
 		    segmentLimit -= 2;
 		    break;
 		}
@@ -2314,7 +2314,7 @@ Tcl_AppendFormatToObj(
 			segmentLimit -= precision - length;
 		    }
 		    while (length < precision) {
-			Tcl_AppendToObj(segment, "0", 1);
+			TclAppendToObj(segment, "0");
 			length++;
 		    }
 		    gotZero = 0;
@@ -2325,7 +2325,7 @@ Tcl_AppendFormatToObj(
 			segmentLimit -= width - length;
 		    }
 		    while (length < width) {
-			Tcl_AppendToObj(segment, "0", 1);
+			TclAppendToObj(segment, "0");
 			length++;
 		    }
 		}
@@ -2446,7 +2446,7 @@ Tcl_AppendFormatToObj(
 			segmentLimit -= precision - length;
 		    }
 		    while (length < precision) {
-			Tcl_AppendToObj(segment, "0", 1);
+			TclAppendToObj(segment, "0");
 			length++;
 		    }
 		    gotZero = 0;
@@ -2457,7 +2457,7 @@ Tcl_AppendFormatToObj(
 			segmentLimit -= width - length;
 		    }
 		    while (length < width) {
-			Tcl_AppendToObj(segment, "0", 1);
+			TclAppendToObj(segment, "0");
 			length++;
 		    }
 		}

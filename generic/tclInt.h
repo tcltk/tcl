@@ -3456,6 +3456,7 @@ MODULE_SCOPE Tcl_Size	TclMaxListLength(const char *bytes, Tcl_Size numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
+MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE Tcl_Obj *	TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
@@ -4836,6 +4837,11 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
     TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
+#define TclNewLiteralString(sLiteral) \
+    Tcl_NewStringObj((sLiteral), sizeof(sLiteral "") - 1)
+#define TclNewString(str) \
+    Tcl_NewStringObj((str), TCL_AUTO_LENGTH)
+
 /*
  *----------------------------------------------------------------
  * Convenience macros for DStrings.
@@ -4861,6 +4867,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 #define TclPrintfResult(interp, format, ...) \
     Tcl_SetObjResult((interp), Tcl_ObjPrintf((format), __VA_ARGS__))
+
+#define TclAppendToObj(objPtr, sLiteral) \
+    Tcl_AppendToObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
+
+#define TclAppendPrintfToErrorInfo(interp, format, ...) \
+    Tcl_AppendObjToErrorInfo((interp), Tcl_ObjPrintf((format), __VA_ARGS__))
 
 /*
  *----------------------------------------------------------------
@@ -5039,17 +5051,19 @@ typedef struct NRE_callback {
  * Inline version of Tcl_NRAddCallback.
  */
 
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp,...) \
+    TclNRAddCallback_(interp,__VA_ARGS__,NULL,NULL,NULL,NULL)
+#define TclNRAddCallback_(interp,postProcPtr,data0,data1,data2,data3,...) \
     do {								\
-	NRE_callback *_callbackPtr;					\
-	TCLNR_ALLOC((interp), (_callbackPtr));				\
-	_callbackPtr->procPtr = (postProcPtr);				\
-	_callbackPtr->data[0] = (void *)(data0);			\
-	_callbackPtr->data[1] = (void *)(data1);			\
-	_callbackPtr->data[2] = (void *)(data2);			\
-	_callbackPtr->data[3] = (void *)(data3);			\
-	_callbackPtr->nextPtr = TOP_CB(interp);				\
-	TOP_CB(interp) = _callbackPtr;					\
+	NRE_callback *TclNRAddCallback_callbackPtr;			\
+	TCLNR_ALLOC((interp), (TclNRAddCallback_callbackPtr));		\
+	*TclNRAddCallback_callbackPtr = (NRE_callback) {		\
+	    (postProcPtr), {						\
+		(void *) (data0), (void *) (data1),			\
+		(void *) (data2), (void *) (data3)			\
+	    }, TOP_CB(interp)						\
+	};								\
+	TOP_CB(interp) = TclNRAddCallback_callbackPtr;			\
     } while (0)
 
 #if NRE_USE_SMALL_ALLOC

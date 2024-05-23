@@ -1084,10 +1084,8 @@ TclFileAttrsCmd(
 
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
-		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], -1);
-
-		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+		Tcl_ListObjAppendElement(interp, listPtr, 
+			TclNewString(attributeStrings[index]));
 		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
 		nbAtts++;
 	    }

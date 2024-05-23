@@ -2024,7 +2024,7 @@ TclCompileRegexpCmd(
 	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
-	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	    PushDString(envPtr, &ds, 0);
 	    Tcl_DStringFree(&ds);
 	}
     }

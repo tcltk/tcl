@@ -351,7 +351,7 @@ Tcl_AppendElement(
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
+    Tcl_Obj *elementPtr = TclNewString(element);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
     Tcl_Size length;
@@ -361,7 +361,7 @@ Tcl_AppendElement(
     }
     bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes + length)) {
-	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
+	TclAppendToObj(iPtr->objResultPtr, " ");
     }
     Tcl_AppendObjToObj(iPtr->objResultPtr, listPtr);
     Tcl_DecrRefCount(listPtr);
@@ -508,7 +508,7 @@ Tcl_SetErrorCode(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+	Tcl_ListObjAppendElement(NULL, errorObj, TclNewString(elem));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);

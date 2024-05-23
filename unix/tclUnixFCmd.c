@@ -1027,9 +1027,9 @@ TraverseUnixTree(
 	 * Append name after slash, and recurse on the file.
 	 */
 
-	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, TCL_INDEX_NONE);
+	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, TCL_AUTO_LENGTH);
 	if (targetPtr != NULL) {
-	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, TCL_AUTO_LENGTH);
 	}
 	result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
 		errorPtr, doRewind);
@@ -1377,11 +1377,10 @@ GetGroupAttribute(
 	TclNewIntObj(*attributePtrPtr, statBuf.st_gid);
     } else {
 	Tcl_DString ds;
-	const char *utf;
 
-	utf = Tcl_ExternalToUtfDString(NULL, groupPtr->gr_name, TCL_INDEX_NONE, &ds);
-	*attributePtrPtr = Tcl_NewStringObj(utf, TCL_INDEX_NONE);
-	Tcl_DStringFree(&ds);
+	(void) Tcl_ExternalToUtfDString(NULL, groupPtr->gr_name, TCL_INDEX_NONE,
+		&ds);
+	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
 }
@@ -2210,7 +2209,7 @@ TclUnixOpenTemporaryFile(
 	}
     } else {
 	Tcl_DStringInit(&templ);
-	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
+	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_AUTO_LENGTH); /* INTL: native */
     }
 
     TclDStringAppendLiteral(&templ, "/");
@@ -2346,7 +2345,7 @@ TclpCreateTemporaryDirectory(
 	}
     } else {
 	Tcl_DStringInit(&templ);
-	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
+	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_AUTO_LENGTH); /* INTL: native */
     }
 
     if (Tcl_DStringValue(&templ)[Tcl_DStringLength(&templ) - 1] != '/') {

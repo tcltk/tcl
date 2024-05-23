@@ -2275,7 +2275,9 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Constants for special Tcl_Size-typed values, see TIP #494
  */
 
+/* Indicates that I/O has gone wrong somehow. */
 #define TCL_IO_FAILURE	((Tcl_Size)-1)
+/* Indicates that strlen() should be applied to get the length. */
 #define TCL_AUTO_LENGTH	((Tcl_Size)-1)
 #define TCL_INDEX_NONE  ((Tcl_Size)-1)
 

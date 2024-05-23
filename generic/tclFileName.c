@@ -348,7 +348,7 @@ Tcl_GetPathType(
     const char *path)
 {
     Tcl_PathType type;
-    Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *tempObj = TclNewString(path);
 
     Tcl_IncrRefCount(tempObj);
     type = Tcl_FSGetPathType(tempObj);
@@ -537,7 +537,7 @@ Tcl_SplitPath(
      * Perform the splitting, using objectified, vfs-aware code.
      */
 
-    tmpPtr = Tcl_NewStringObj(path, -1);
+    tmpPtr = TclNewString(path);
     Tcl_IncrRefCount(tmpPtr);
     resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
     Tcl_IncrRefCount(resultPtr);
@@ -839,7 +839,7 @@ TclpNativeJoinPath(
 	 */
 
 	if (length > 0 && (start[length-1] != '/')) {
-	    Tcl_AppendToObj(prefix, "/", 1);
+	    TclAppendToObj(prefix, "/");
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
@@ -875,7 +875,7 @@ TclpNativeJoinPath(
 
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
-	    Tcl_AppendToObj(prefix, "/", 1);
+	    TclAppendToObj(prefix, "/");
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
@@ -942,8 +942,7 @@ Tcl_JoinPath(
 
     TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
-	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewStringObj(argv[i], -1));
+	Tcl_ListObjAppendElement(NULL, listObj, TclNewString(argv[i]));
     }
 
     /*
@@ -1003,7 +1002,7 @@ Tcl_TranslateFileName(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name. */
 {
-    Tcl_Obj *path = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *path = TclNewString(name);
     Tcl_Obj *transPtr;
 
     Tcl_IncrRefCount(path);
@@ -1284,7 +1283,7 @@ Tcl_GlobObjCmd(
 		 * in TclGlob requires a non-NULL pathOrDir.
 		 */
 
-		Tcl_DStringAppend(&pref, first, -1);
+		Tcl_DStringAppend(&pref, first, TCL_AUTO_LENGTH);
 		globFlags &= ~TCL_GLOBMODE_TAILS;
 		pathOrDir = NULL;
 	    } else {
@@ -1305,9 +1304,9 @@ Tcl_GlobObjCmd(
 
 		const char *temp = TclGetString(pathOrDir);
 		if (strpbrk(temp, "\\/") == NULL) {
-		    Tcl_AppendToObj(pathOrDir, last-1, 1);
+		    Tcl_AppendToObj(pathOrDir, last - 1, 1);
 		} else if (!strcmp(temp, "//zipfs:")) {
-		    Tcl_AppendToObj(pathOrDir, "/", 1);
+		    TclAppendToObj(pathOrDir, "/");
 		}
 	    }
 
@@ -1327,7 +1326,7 @@ Tcl_GlobObjCmd(
 		}
 	    }
 	    if (*search != '\0') {
-		Tcl_DStringAppend(&prefix, search, -1);
+		Tcl_DStringAppend(&prefix, search, TCL_AUTO_LENGTH);
 	    }
 	    Tcl_DStringFree(&pref);
 	}
@@ -1639,7 +1638,7 @@ TclGlob(
 		|| (tail[0] == '\\' && tail[1] == '\\'))) {
 	    Tcl_Size driveNameLen;
 	    Tcl_Obj *driveName;
-	    Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
+	    Tcl_Obj *temp = TclNewString(tail);
 	    Tcl_IncrRefCount(temp);
 
 	    switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
@@ -2065,7 +2064,7 @@ DoGlob(
 	    SkipToChar(&p, ',');
 	    Tcl_DStringSetLength(&newName, baseLength);
 	    Tcl_DStringAppend(&newName, element, p-element);
-	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
+	    Tcl_DStringAppend(&newName, closeBrace+1, TCL_AUTO_LENGTH);
 	    result = DoGlob(interp, matchesObj, separators, pathPtr, flags,
 		    Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {
@@ -2249,7 +2248,7 @@ DoGlob(
 		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
-		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		    TclAppendToObj(joinedPtr, "/");
 		}
 	    }
 	    Tcl_AppendToObj(joinedPtr, Tcl_DStringValue(&append),
@@ -2287,7 +2286,7 @@ DoGlob(
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
-		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		    TclAppendToObj(joinedPtr, "/");
 		}
 	    }
 	}

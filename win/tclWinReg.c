@@ -223,9 +223,9 @@ Registry_Unload(
      * Unregister the registry package. There is no Tcl_PkgForget()
      */
 
-    objv[0] = Tcl_NewStringObj("package", -1);
-    objv[1] = Tcl_NewStringObj("forget", -1);
-    objv[2] = Tcl_NewStringObj("registry", -1);
+    objv[0] = TclNewLiteralString("package");
+    objv[1] = TclNewLiteralString("forget");
+    objv[2] = TclNewLiteralString("registry");
     Tcl_EvalObjv(interp, 3, objv, TCL_EVAL_GLOBAL);
 
     /*
@@ -464,8 +464,7 @@ DeleteKey(
     }
 
     if (*keyName == '\0') {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
+	TclSetResult(interp, "bad key: cannot delete root keys");
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
@@ -486,8 +485,7 @@ DeleteKey(
 	if (result == ERROR_FILE_NOT_FOUND) {
 	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	TclSetResult(interp, "unable to delete key: ");
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -502,8 +500,7 @@ DeleteKey(
     Tcl_DStringFree(&buf);
 
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", -1));
+	TclSetResult(interp, "unable to delete key: ");
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -559,9 +556,9 @@ DeleteValue(
     result = RegDeleteValueW(key, (const WCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -636,9 +633,9 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"unable to enumerate subkeys of \"%s\": ",
-			Tcl_GetString(keyNameObj)));
+			Tcl_GetString(keyNameObj));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -651,8 +648,7 @@ GetKeyNames(
 	    continue;
 	}
 	result = Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(name, Tcl_DStringLength(&ds)));
-	Tcl_DStringFree(&ds);
+		Tcl_DStringToObj(&ds));
 	if (result != TCL_OK) {
 	    break;
 	}
@@ -720,9 +716,9 @@ GetType(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -735,7 +731,7 @@ GetType(
     if (type > lastType) {
 	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
+	TclSetResult(interp, typeNames[type]);
     }
     return TCL_OK;
 }
@@ -815,9 +811,9 @@ GetValue(
     Tcl_DStringFree(&buf);
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -849,13 +845,10 @@ GetValue(
 
 	    Tcl_DStringInit(&buf);
 	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
-	    Tcl_ListObjAppendElement(interp, resultPtr,
-		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
-			    Tcl_DStringLength(&buf)));
+	    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_DStringToObj(&buf));
 
 	    while (*wp++ != 0); /* empty loop body */
 	    p = (char *) wp;
-	    Tcl_DStringFree(&buf);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     } else if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
@@ -903,7 +896,7 @@ GetValueNames(
 {
     HKEY key;
     Tcl_Obj *resultPtr;
-    DWORD index, size, result;
+    DWORD index, size;
     Tcl_DString buffer, ds;
     const char *pattern, *name;
 
@@ -920,7 +913,6 @@ GetValueNames(
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer, MAX_KEY_LENGTH * sizeof(WCHAR));
     index = 0;
-    result = TCL_OK;
 
     if (patternObj) {
 	pattern = Tcl_GetString(patternObj);
@@ -941,14 +933,10 @@ GetValueNames(
 	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);
 	name = Tcl_DStringValue(&ds);
 	if (!pattern || Tcl_StringMatch(name, pattern)) {
-	    result = Tcl_ListObjAppendElement(interp, resultPtr,
-		    Tcl_NewStringObj(name, Tcl_DStringLength(&ds)));
-	    if (result != TCL_OK) {
-		Tcl_DStringFree(&ds);
-		break;
-	    }
+	    Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_DStringToObj(&ds));
+	} else {
+	    Tcl_DStringFree(&ds);
 	}
-	Tcl_DStringFree(&ds);
 
 	index++;
 	size = MAX_KEY_LENGTH;
@@ -956,7 +944,7 @@ GetValueNames(
     Tcl_SetObjResult(interp, resultPtr);
     Tcl_DStringFree(&buffer);
     RegCloseKey(key);
-    return result;
+    return TCL_OK;
 }
 
 /*
@@ -997,8 +985,7 @@ OpenKey(
     if (result == TCL_OK) {
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("unable to open key: ", -1));
+	    TclSetResult(interp, "unable to open key: ");
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1166,7 +1153,7 @@ ParseKeyName(
      * Look for a matching root name.
      */
 
-    rootObj = Tcl_NewStringObj(rootName, -1);
+    rootObj = TclNewString(rootName);
     result = Tcl_GetIndexFromObj(interp, rootObj, rootKeyNames, "root name",
 	    TCL_EXACT, &index);
     Tcl_DecrRefCount(rootObj);
@@ -1361,8 +1348,8 @@ SetValue(
 	}
 
 	Tcl_DStringInit(&buf);
-	Tcl_UtfToWCharDString(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
-		&buf);
+	Tcl_UtfToWCharDString(Tcl_DStringValue(&data),
+		Tcl_DStringLength(&data) + 1, &buf);
 	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
@@ -1379,10 +1366,11 @@ SetValue(
 	 * Include the null in the length, padding if needed for WCHAR.
 	 */
 
-	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
+	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
 
 	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
-		(DWORD) type, (BYTE *) data, (DWORD) Tcl_DStringLength(&buf) + 1);
+		(DWORD) type, (BYTE *) data,
+		(DWORD) Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
     } else {
 	BYTE *data;
@@ -1401,8 +1389,7 @@ SetValue(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to set value: ", -1));
+	TclSetResult(interp, "unable to set value: ");
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -1429,7 +1416,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

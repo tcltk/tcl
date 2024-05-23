@@ -188,8 +188,8 @@ TclSetupEnv(
 		p1 = "COMSPEC";
 	    }
 #endif
-	    obj1 = Tcl_NewStringObj(p1, -1);
-	    obj2 = Tcl_NewStringObj(p2, -1);
+	    obj1 = TclNewString(p1);
+	    obj2 = TclNewString(p2);
 	    Tcl_DStringFree(&envString);
 
 	    Tcl_IncrRefCount(obj1);
@@ -596,7 +596,7 @@ TclGetEnv(
 	    if (*result == '=') {
 		result++;
 		Tcl_DStringInit(valuePtr);
-		Tcl_DStringAppend(valuePtr, result, -1);
+		Tcl_DStringAppend(valuePtr, result, TCL_AUTO_LENGTH);
 		result = Tcl_DStringValue(valuePtr);
 	    } else {
 		result = NULL;

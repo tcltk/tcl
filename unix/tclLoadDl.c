@@ -192,7 +192,7 @@ FindSymbol(
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
+	native = Tcl_DStringAppend(&newName, native, TCL_AUTO_LENGTH);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
@@ -202,8 +202,8 @@ FindSymbol(
 	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");
-	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
-	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+	Tcl_DStringAppend(&newName, buf, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_AUTO_LENGTH);
 	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
 	native = Tcl_DStringValue(&newName);
 	proc = dlsym(handle, native + 1);	/* INTL: Native. */

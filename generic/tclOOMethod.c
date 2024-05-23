@@ -386,7 +386,7 @@ TclOONewBasicMethod(
 				/* Name of the method, whether it is public,
 				 * and the function to implement it. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, -1);
+    Tcl_Obj *namePtr = TclNewString(dcm->name);
 
     Tcl_IncrRefCount(namePtr);
     TclNewMethod(interp, (Tcl_Class) clsPtr, namePtr,
@@ -830,7 +830,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }
@@ -1386,8 +1386,7 @@ CloneProcedureMethod(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, TclNewString(localPtr->name));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1701,7 +1700,7 @@ InitEnsembleRewrite(
      */
 
     if (TclInitRewriteEnsemble(interp, toRewrite, rewriteLength, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
     *lengthPtr = len;
     return argObjs;

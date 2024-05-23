@@ -366,14 +366,13 @@ static void		SrcExitProc(void *clientData);
 	do {								\
 	    if ((i) != NULL) {						\
 		Tcl_SetChannelErrorInterp((i),				\
-			Tcl_NewStringObj((p)->base.msgStr, -1));	\
+			TclNewString((p)->base.msgStr));		\
 	    }								\
 	    FreeReceivedError(p);					\
 	} while (0)
 #define PassReceivedError(c,p) \
 	do {								\
-	    Tcl_SetChannelError((c),					\
-		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+	    Tcl_SetChannelError((c), TclNewString((p)->base.msgStr));	\
 	    FreeReceivedError(p);					\
 	} while (0)
 #define ForwardSetStaticError(p,emsg) \
@@ -397,7 +396,7 @@ static void		DeleteThreadReflectedTransformMap(
 #endif /* TCL_THREADS */
 
 #define SetChannelErrorStr(c,msgStr) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
+	Tcl_SetChannelError((c), TclNewString((msgStr)))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
 static void		UnmarshallErrorResult(Tcl_Interp *interp,
@@ -1682,7 +1681,7 @@ DecodeEventMask(
 	break;
     }
 
-    evObj = Tcl_NewStringObj(eventStr, -1);
+    evObj = TclNewString(eventStr);
     Tcl_IncrRefCount(evObj);
     return evObj;
 }
@@ -1924,7 +1923,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = TclNewString(msg_dstlost);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
@@ -1943,7 +1942,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    methObj = Tcl_NewStringObj(method, -1);
+    methObj = TclNewString(method);
     Tcl_IncrRefCount(methObj);
     rtPtr->argv[rtPtr->argc - 2] = methObj;
 

@@ -85,7 +85,7 @@ Tcl_RegisterConfig(
     } else {
 	cdPtr->encoding = NULL;
     }
-    cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
+    cdPtr->pkg = TclNewString(pkgName);
 
     /*
      * Phase I: Adding the provided information to the internal database of
@@ -127,7 +127,7 @@ Tcl_RegisterConfig(
      */
 
     for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+	Tcl_DictObjPut(interp, pkgDict, TclNewString(cfg->key),
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
 
@@ -144,7 +144,7 @@ Tcl_RegisterConfig(
 
     Tcl_DStringInit(&cmdName);
     TclDStringAppendLiteral(&cmdName, "::");
-    Tcl_DStringAppend(&cmdName, pkgName, -1);
+    Tcl_DStringAppend(&cmdName, pkgName, TCL_AUTO_LENGTH);
 
     /*
      * The incomplete command name is the name of the namespace to place it
@@ -262,10 +262,8 @@ QueryConfigObjCmd(
 	if (value == NULL) {
 	    return TCL_ERROR;
 	}
-	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
-		Tcl_DStringLength(&conv)));
-	Tcl_DStringFree(&conv);
+	Tcl_ExternalToUtfDString(venc, value, n, &conv);
+	Tcl_SetObjResult(interp, Tcl_DStringToObj(&conv));
 	return TCL_OK;
 
     case CFG_LIST:

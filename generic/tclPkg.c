@@ -165,7 +165,7 @@ Tcl_PkgProvideEx(
 
     pkgPtr = FindPackage(interp, name);
     if (pkgPtr->version == NULL) {
-	pkgPtr->version = Tcl_NewStringObj(version, -1);
+	pkgPtr->version = TclNewString(version);
 	Tcl_IncrRefCount(pkgPtr->version);
 	pkgPtr->clientData = clientData;
 	return TCL_OK;
@@ -291,7 +291,7 @@ TclPkgFileSeen(
 	} else {
 	    list = (Tcl_Obj *)Tcl_GetHashValue(entry);
 	}
-	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, -1));
+	Tcl_ListObjAppendElement(interp, list, TclNewString(fileName));
     }
 }
 
@@ -407,7 +407,7 @@ Tcl_PkgRequireEx(
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
 	    return NULL;
 	}
-	ov = Tcl_NewStringObj(version, -1);
+	ov = TclNewString(version);
 	if (exact) {
 	    Tcl_AppendStringsToObj(ov, "-", version, (void *)NULL);
 	}
@@ -531,17 +531,13 @@ PkgRequireCoreStep1(
      */
 
     Tcl_DStringInit(&command);
-    Tcl_DStringAppend(&command, script, -1);
+    Tcl_DStringAppend(&command, script, TCL_AUTO_LENGTH);
     Tcl_DStringAppendElement(&command, name);
     AddRequirementsToDString(&command, reqc, reqv);
 
     Tcl_NRAddCallback(interp,
 	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
-    Tcl_NREvalObj(interp,
-	    Tcl_NewStringObj(Tcl_DStringValue(&command),
-		    Tcl_DStringLength(&command)),
-	    TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&command);
+    Tcl_NREvalObj(interp, Tcl_DStringToObj(&command), TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
 
@@ -836,8 +832,7 @@ SelectPackage(
 	Tcl_NRAddCallback(interp,
 		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
 		data[3]);
-	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1),
-		TCL_EVAL_GLOBAL);
+	Tcl_NREvalObj(interp, TclNewString(bestPtr->script), TCL_EVAL_GLOBAL);
     }
     return TCL_OK;
 }
@@ -1244,8 +1239,8 @@ TclNRPackageObjCmd(
 		    hPtr = Tcl_NextHashEntry(&search)) {
 		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
+		    Tcl_ListObjAppendElement(NULL,resultObj, TclNewString(
+			    (char *)Tcl_GetHashKey(tablePtr, hPtr)));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1347,7 +1342,7 @@ TclNRPackageObjCmd(
 	     * Create a new-style requirement for the exact version.
 	     */
 
-	    ov = Tcl_NewStringObj(version, -1);
+	    ov = TclNewString(version);
 	    Tcl_AppendStringsToObj(ov, "-", version, (void *)NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
@@ -1495,7 +1490,7 @@ TclNRPackageObjCmd(
 		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 			availPtr = availPtr->nextPtr) {
 		    Tcl_ListObjAppendElement(NULL, resultObj,
-			    Tcl_NewStringObj(availPtr->version, -1));
+			    TclNewString(availPtr->version));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);

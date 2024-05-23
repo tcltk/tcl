@@ -458,7 +458,7 @@ TclpInitLibraryPath(
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
-    Tcl_Obj *pathPtr, *objPtr;
+    Tcl_Obj *pathPtr;
     const char *str;
     Tcl_DString buffer;
 
@@ -495,7 +495,7 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, TCL_INDEX_NONE));
+	Tcl_ListObjAppendElement(NULL, pathPtr, TclNewString(str));
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -536,8 +536,7 @@ TclpInitLibraryPath(
 	    str = defaultLibraryDir;
 	}
 	if (str[0] != '\0') {
-	    objPtr = Tcl_NewStringObj(str, TCL_INDEX_NONE);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_ListObjAppendElement(NULL, pathPtr, TclNewString(str));
 	}
     }
     Tcl_DStringFree(&buffer);
@@ -641,13 +640,13 @@ Tcl_GetEncodingNameFromEnvironment(
 	 */
 
 	Tcl_DStringInit(&ds);
-	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
+	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_AUTO_LENGTH);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_AUTO_LENGTH);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_AUTO_LENGTH);
 	}
 	Tcl_DStringFree(&ds);
 	if (Tcl_DStringLength(bufPtr)) {
@@ -679,14 +678,14 @@ Tcl_GetEncodingNameFromEnvironment(
 
 	Tcl_DStringInit(&ds);
 	p = encoding;
-	encoding = Tcl_DStringAppend(&ds, p, TCL_INDEX_NONE);
+	encoding = Tcl_DStringAppend(&ds, p, TCL_AUTO_LENGTH);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_AUTO_LENGTH);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_AUTO_LENGTH);
 	}
 	if (Tcl_DStringLength(bufPtr)) {
 	    Tcl_DStringFree(&ds);
@@ -707,9 +706,9 @@ Tcl_GetEncodingNameFromEnvironment(
 	if (*p != '\0') {
 	    knownEncoding = SearchKnownEncodings(p);
 	    if (knownEncoding != NULL) {
-		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
+		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_AUTO_LENGTH);
 	    } else if (NULL != Tcl_GetEncoding(NULL, p)) {
-		Tcl_DStringAppend(bufPtr, p, TCL_INDEX_NONE);
+		Tcl_DStringAppend(bufPtr, p, TCL_AUTO_LENGTH);
 	    }
 	}
 	Tcl_DStringFree(&ds);
@@ -717,7 +716,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	    return Tcl_DStringValue(bufPtr);
 	}
     }
-    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
+    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_AUTO_LENGTH);
 }
 
 /*
@@ -809,7 +808,7 @@ TclpSetVariables(
 	Tcl_DString ds;
 
 	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+	Tcl_ListObjAppendElement(NULL, pkgListObj, TclNewString(tclLibPath));
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
 	if ((str != NULL) && (str[0] != '\0')) {
 	    p = Tcl_DStringValue(&ds);
@@ -818,7 +817,7 @@ TclpSetVariables(
 		p = q+1;
 	    }
 	    if (*p) {
-		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+		Tcl_ListObjAppendElement(NULL, pkgListObj, TclNewString(p));
 	    }
 	    Tcl_DStringFree(&ds);
 	}
@@ -833,7 +832,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, TclNewString(tclLibPath));
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -843,7 +842,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, TclNewString(tclLibPath));
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -856,9 +855,9 @@ TclpSetVariables(
 	p = q+1;
     }
     if (*p) {
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+	Tcl_ListObjAppendElement(NULL, pkgListObj, TclNewString(p));
     }
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
         /* Some platforms build configure scripts expect ~ expansion so do that */
         Tcl_Obj *origPaths;

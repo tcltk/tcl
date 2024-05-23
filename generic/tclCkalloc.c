@@ -190,7 +190,7 @@ TclDumpMemoryInfo(
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
-	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
+	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, TCL_AUTO_LENGTH);
     }
     return 1;
 }
@@ -872,7 +872,7 @@ MemoryCmd(
 	if (fileP == NULL) {
 	    TclPrintfResult(interp,
 		    "cannot open output file: %s",
-		    Tcl_PosixError(interp)));
+		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -938,7 +938,7 @@ MemoryCmd(
     TclPrintfResult(interp,
 	    "bad option \"%s\": should be active, break_on_malloc, info, "
 	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-	    TclGetString(objv[1])));
+	    TclGetString(objv[1]));
     return TCL_ERROR;
 
   argError:

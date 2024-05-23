@@ -2933,7 +2933,7 @@ StringLowerCmd(
 	length2 = Tcl_UtfToLower(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3018,7 +3018,7 @@ StringUpperCmd(
 	length2 = Tcl_UtfToUpper(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3103,7 +3103,7 @@ StringTitleCmd(
 	length2 = Tcl_UtfToTitle(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3625,10 +3625,10 @@ TclNRSwitchObjCmd(
 	if (splitObjs) {
 	    for (i=0 ; i<objc ; i+=2) {
 		if (TclGetString(objv[i])[0] == '#') {
-		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", -1);
+			    " \"switch\" documentation", NULL);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?", (void *)NULL);
 		    break;
@@ -5272,8 +5272,7 @@ TclNRWhileObjCmd(
     iterPtr->msg  = "\n    (\"while\" body line %d)";
     iterPtr->word = 2;
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr);
     return TCL_OK;
 }
 

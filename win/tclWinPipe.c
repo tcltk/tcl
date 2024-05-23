@@ -1286,12 +1286,12 @@ ApplicationType(
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&nameBuf, originalName, TCL_AUTO_LENGTH);
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
+	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_AUTO_LENGTH);
 	Tcl_DStringInit(&ds);
 	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
@@ -1638,7 +1638,7 @@ BuildCommandLine(
 	     * Nothing to escape.
 	     */
 
-	    Tcl_DStringAppend(&ds, arg, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, arg, TCL_AUTO_LENGTH);
 	} else {
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {

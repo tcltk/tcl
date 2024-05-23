@@ -46,7 +46,7 @@ static inline Tcl_Object *
 AddConstructionFinalizer(
     Tcl_Interp *interp)
 {
-    TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeConstruction);
     return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
 }
 
@@ -88,8 +88,7 @@ TclOO_Class_Constructor(
 
     size_t skip = Tcl_ObjectContextSkippedArgs(context);
     if ((size_t)objc > skip + 1) {
-	Tcl_WrongNumArgs(interp, skip, objv,
-		"?definitionScript?");
+	Tcl_WrongNumArgs(interp, skip, objv, "?definitionScript?");
 	return TCL_ERROR;
     } else if ((size_t)objc == skip) {
 	return TCL_OK;
@@ -100,8 +99,8 @@ TclOO_Class_Constructor(
      * here (and the class definition delegate doesn't run any constructors).
      */
 
-    nameObj = Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1);
-    Tcl_AppendToObj(nameObj, ":: oo ::delegate", -1);
+    nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+	    oPtr->namespacePtr->fullName);
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
 	    TclGetString(nameObj), NULL, -1, NULL, -1);
     Tcl_DecrRefCount(nameObj);
@@ -123,8 +122,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
-    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, oPtr, NULL, NULL);
+    TclNRAddCallback(interp, DecrRefsPostClassConstructor, invoke, oPtr);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -148,7 +146,7 @@ DecrRefsPostClassConstructor(
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    invoke[0] = Tcl_NewStringObj("::oo::MixinClassDelegates", -1);
+    invoke[0] = TclNewLiteralString("::oo::MixinClassDelegates");
     invoke[1] = TclOOObjectName(interp, oPtr);
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
@@ -377,8 +375,7 @@ TclOO_Object_Destroy(
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr,
-		    NULL, NULL, NULL);
+	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr);
 	    TclPushTailcallPoint(interp);
 	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
 	}
@@ -471,7 +468,7 @@ TclOO_Object_Eval(
      * the script completes.
      */
 
-    TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeEval, object);
     return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
@@ -597,14 +594,14 @@ TclOO_Object_Unknown(
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(errorMsg, ", ", -1);
+	    TclAppendToObj(errorMsg, ", ");
 	}
-	Tcl_AppendToObj(errorMsg, methodNames[i], -1);
+	Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     }
     if (i) {
-	Tcl_AppendToObj(errorMsg, " or ", -1);
+	TclAppendToObj(errorMsg, " or ");
     }
-    Tcl_AppendToObj(errorMsg, methodNames[i], -1);
+    Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     Tcl_Free((void *)methodNames);
     Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
@@ -735,7 +732,6 @@ TclOO_Object_VarName(
 {
     Var *varPtr, *aryVar;
     Tcl_Obj *varNamePtr, *argPtr;
-    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     const char *arg;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
@@ -760,6 +756,7 @@ TclOO_Object_VarName(
     } else {
 	Tcl_Namespace *namespacePtr =
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
+	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
 	/*
 	 * Private method handling. [TIP 500]
@@ -813,9 +810,8 @@ TclOO_Object_VarName(
 	    }
 	}
 
-	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
-	Tcl_AppendToObj(varNamePtr, "::", 2);
-	Tcl_AppendObjToObj(varNamePtr, argPtr);
+	varNamePtr = Tcl_ObjPrintf("%s::%s",
+		namespacePtr->fullName, TclGetString(argPtr));
     }
     Tcl_IncrRefCount(varNamePtr);
     varPtr = TclObjLookupVar(interp, varNamePtr, NULL,
@@ -839,10 +835,10 @@ TclOO_Object_VarName(
 	 * WARNING! This code pokes inside the implementation of hash tables!
 	 */
 
-	Tcl_AppendToObj(varNamePtr, "(", -1);
+	TclAppendToObj(varNamePtr, "(");
 	Tcl_AppendObjToObj(varNamePtr, ((VarInHash *)
 		varPtr)->entry.key.objPtr);
-	Tcl_AppendToObj(varNamePtr, ")", -1);
+	TclAppendToObj(varNamePtr, ")");
     } else {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
     }
@@ -893,7 +889,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, NextRestoreFrame, framePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, NextRestoreFrame, framePtr);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
@@ -964,7 +960,7 @@ TclOONextToObjCmd(
 	     */
 
 	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
-		    contextPtr, INT2PTR(contextPtr->index), NULL);
+		    contextPtr, INT2PTR(contextPtr->index));
 	    contextPtr->index = i-1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    return TclNRObjectContextInvokeNext(interp,
@@ -1088,7 +1084,8 @@ TclOOSelfObjCmd(
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
-	TclSetResult(interp, contextPtr->oPtr->namespacePtr->fullName);
+	Tcl_SetObjResult(interp,
+		TclNewNamespaceObj(contextPtr->oPtr->namespacePtr));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
@@ -1131,7 +1128,7 @@ TclOOSelfObjCmd(
 	    }
 
 	    result[0] = TclOOObjectName(interp, oPtr);
-	    result[1] = Tcl_NewStringObj(type, -1);
+	    result[1] = TclNewString(type);
 	    result[2] = miPtr->mPtr->namePtr;
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;

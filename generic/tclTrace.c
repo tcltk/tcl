@@ -494,7 +494,7 @@ TraceExecutionObjCmd(
 	    elemObjPtr = NULL;
 
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr,
-		    Tcl_NewStringObj(tcmdPtr->command, -1));
+		    TclNewString(tcmdPtr->command));
 	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
@@ -687,7 +687,7 @@ TraceCommandObjCmd(
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_DecrRefCount(elemObjPtr);
 
-	    elemObjPtr = Tcl_NewStringObj(tcmdPtr->command, -1);
+	    elemObjPtr = TclNewString(tcmdPtr->command);
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
@@ -870,7 +870,7 @@ TraceVariableObjCmd(
 	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 
-	    elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);
+	    elemObjPtr = TclNewString(tvarPtr->command);
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_ListObjAppendElement(interp, resultListPtr,
 		    eachTraceObjPtr);

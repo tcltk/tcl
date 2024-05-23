@@ -3180,11 +3180,11 @@ TclRenameCommand(
      */
 
     Tcl_DStringInit(&newFullName);
-    Tcl_DStringAppend(&newFullName, newNsPtr->fullName, -1);
+    Tcl_DStringAppend(&newFullName, newNsPtr->fullName, TCL_AUTO_LENGTH);
     if (newNsPtr != iPtr->globalNsPtr) {
 	TclDStringAppendLiteral(&newFullName, "::");
     }
-    Tcl_DStringAppend(&newFullName, newTail, -1);
+    Tcl_DStringAppend(&newFullName, newTail, TCL_AUTO_LENGTH);
     cmdPtr->refCount++;
     CallCommandTraces(iPtr, cmdPtr, TclGetString(oldFullName),
 	    Tcl_DStringValue(&newFullName), TCL_TRACE_RENAME);
@@ -3551,15 +3551,15 @@ Tcl_GetCommandFullName(
 
     if ((cmdPtr != NULL) && TclRoutineHasName(cmdPtr)) {
 	if (cmdPtr->nsPtr != NULL) {
-	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
+	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, TCL_AUTO_LENGTH);
 	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
-		Tcl_AppendToObj(objPtr, "::", 2);
+		TclAppendToObj(objPtr, "::");
 	    }
 	}
 	if (cmdPtr->hPtr != NULL) {
 	    name = (char *)
 		    Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
-	    Tcl_AppendToObj(objPtr, name, -1);
+	    Tcl_AppendToObj(objPtr, name, TCL_AUTO_LENGTH);
 	}
     }
 }
@@ -4409,7 +4409,7 @@ TclNREvalObjv(
     if (iPtr->deferredCallbacks) {
 	iPtr->deferredCallbacks = NULL;
     } else {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, NRCommand);
     }
 
     iPtr->numLevels++;
@@ -4610,7 +4610,7 @@ Dispatch(
     }
     if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
 	    && objc) {
-	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
+	TclNRAddCallback(interp, DTraceCmdReturn, objv[0]);
     }
     if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
@@ -4660,7 +4660,7 @@ NRCommand(
 	listPtr = (Tcl_Obj *) data[1];
 	data[1] = NULL;
 
-	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr);
     }
 
     /* OPT ??
@@ -4715,8 +4715,7 @@ TEOV_PushExceptionHandlers(
 	 * Error messages
 	 */
 
-	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		objv, NULL, NULL);
+	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc), objv);
     }
 
     if (iPtr->numLevels == 1) {
@@ -4724,8 +4723,7 @@ TEOV_PushExceptionHandlers(
 	 * No CONTINUE or BREAK at level 0, manage RETURN
 	 */
 
-	TclNRAddCallback(interp, TEOV_Exception, INT2PTR(iPtr->evalFlags),
-		NULL, NULL, NULL);
+	TclNRAddCallback(interp, TEOV_Exception, INT2PTR(iPtr->evalFlags));
     }
 }
 
@@ -4740,8 +4738,7 @@ TEOV_SwitchVarFrame(
      * restore things at the end.
      */
 
-    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr);
     iPtr->varFramePtr = iPtr->rootFramePtr;
 }
 
@@ -4906,7 +4903,7 @@ TEOV_NotFound(
     }
     TclSkipTailcall(interp);
     TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
-	    newObjv, savedNsPtr, NULL);
+	    newObjv, savedNsPtr);
     return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
 }
 
@@ -4978,7 +4975,7 @@ TEOV_RunEnterTraces(
 
 	    TclNewLiteralStringObj(info, "\n    (enter trace on \"");
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
-	    Tcl_AppendToObj(info, "\")", 2);
+	    TclAppendToObj(info, "\")");
 	    Tcl_AppendObjToErrorInfo(interp, info);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
@@ -5030,7 +5027,7 @@ TEOV_RunLeaveTraces(
 
 	    TclNewLiteralStringObj(info, "\n    (leave trace on \"");
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
-	    Tcl_AppendToObj(info, "\")", 2);
+	    TclAppendToObj(info, "\")");
 	    Tcl_AppendObjToErrorInfo(interp, info);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
@@ -6192,8 +6189,7 @@ TclNREvalObjEx(
 	}
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
-		objPtr, NULL);
+	TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr, objPtr);
 
 	TclListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
@@ -6224,7 +6220,7 @@ TclNREvalObjEx(
 	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
-		objPtr, INT2PTR(allowExceptions), NULL);
+		objPtr, INT2PTR(allowExceptions));
 	return TclNRExecuteByteCode(interp, codePtr);
     }
 
@@ -6422,7 +6418,7 @@ Tcl_ExprLong(
 
 	*ptr = 0;
     } else {
-	exprPtr = Tcl_NewStringObj(exprstring, -1);
+	exprPtr = TclNewString(exprstring);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
@@ -6447,7 +6443,7 @@ Tcl_ExprDouble(
 
 	*ptr = 0.0;
     } else {
-	exprPtr = Tcl_NewStringObj(exprstring, -1);
+	exprPtr = TclNewString(exprstring);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
@@ -6472,7 +6468,7 @@ Tcl_ExprBoolean(
 	return TCL_OK;
     } else {
 	int result;
-	Tcl_Obj *exprPtr = Tcl_NewStringObj(exprstring, -1);
+	Tcl_Obj *exprPtr = TclNewString(exprstring);
 
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
@@ -6783,7 +6779,7 @@ Tcl_ExprString(
 
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
     } else {
-	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
+	Tcl_Obj *resultPtr, *exprObj = TclNewString(expr);
 
 	Tcl_IncrRefCount(exprObj);
 	code = Tcl_ExprObj(interp, exprObj, &resultPtr);
@@ -6897,10 +6893,11 @@ Tcl_VarEval(
 	if (string == NULL) {
 	    break;
 	}
-	Tcl_DStringAppend(&buf, string, -1);
+	Tcl_DStringAppend(&buf, string, TCL_AUTO_LENGTH);
     }
 
-    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf),
+	    0);
     Tcl_DStringFree(&buf);
     return result;
 }
@@ -8732,8 +8729,7 @@ TclMarkTailcall(
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->deferredCallbacks == NULL) {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL,
-		NULL, NULL);
+	TclNRAddCallback(interp, NRCommand);
 	iPtr->deferredCallbacks = TOP_CB(interp);
     }
 }
@@ -8752,7 +8748,7 @@ void
 TclPushTailcallPoint(
     Tcl_Interp *interp)
 {
-    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCommand);
     ((Interp *) interp)->numLevels++;
 }
 
@@ -8853,7 +8849,7 @@ TclNRTailcallObjCmd(
 	 * namespace, the rest the command to be tailcalled.
 	 */
 
-	nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+	nsObjPtr = TclNewNamespaceObj(nsPtr);
 	listPtr = Tcl_NewListObj(objc, objv);
  	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
@@ -8906,7 +8902,7 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc - 1, objv + 1, 0, NULL);
 }
@@ -8994,8 +8990,7 @@ TclNRYieldObjCmd(
     }
 
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-	    clientData, NULL, NULL);
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr, clientData);
     return TCL_OK;
 }
 
@@ -9035,7 +9030,7 @@ TclNRYieldToObjCmd(
      */
 
     listPtr = Tcl_NewListObj(objc, objv);
-    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+    nsObjPtr = TclNewNamespaceObj(nsPtr);
     TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
     /*
@@ -9073,8 +9068,7 @@ RewindCoroutine(
     NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
 
     corPtr->eePtr->rewind = 1;
-    TclNRAddCallback(interp, RewindCoroutineCallback, state,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, RewindCoroutineCallback, state);
     return TclNRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 
@@ -9218,8 +9212,7 @@ TclNRCoroutineActivateCallback(
 	 * return.
 	 */
 
-	TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr,
-		NULL, NULL, NULL);
+	TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr);
 
 	/*
 	 * Record the stackLevel at which the resume is happening, then swap
@@ -9308,7 +9301,7 @@ TclNREvalList(
     Tcl_IncrRefCount(listPtr);
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr);
     TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
@@ -9505,8 +9498,7 @@ TclNRCoroProbeObjCmd(
      * Push the callback to restore the caller's context on yield back.
      */
 
-    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr);
 
     /*
      * Record the stackLevel at which the resume is happening, then swap
@@ -9570,10 +9562,10 @@ InjectHandler(
 
 	if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
 	    Tcl_ListObjAppendElement(NULL, listPtr,
-		    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
+		    TclNewLiteralString("yield"));
 	} else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
 	    Tcl_ListObjAppendElement(NULL, listPtr,
-		    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
+		    TclNewLiteralString("yieldto"));
 	} else {
 	    /*
 	     * I don't think this is reachable...
@@ -9684,8 +9676,7 @@ NRInjectObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->eePtr;
-    TclNRAddCallback(interp, TclNREvalList, Tcl_NewListObj(objc - 2, objv + 2),
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNREvalList, Tcl_NewListObj(objc - 2, objv + 2));
     iPtr->execEnvPtr = savedEEPtr;
 
     return TCL_OK;
@@ -9738,8 +9729,7 @@ TclNRInterpCoroutine(
 	break;
     }
 
-    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr);
     return TCL_OK;
 }
 
@@ -9861,8 +9851,7 @@ TclNRCoroutineObjCmd(
     RESTORE_CONTEXT(corPtr->running);
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr);
 
     /*
      * Ensure that the command is looked up in the correct namespace.
@@ -9880,8 +9869,7 @@ TclNRCoroutineObjCmd(
      * Now just resume the coroutine.
      */
 
-    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-	    NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr);
     return TCL_OK;
 }
 

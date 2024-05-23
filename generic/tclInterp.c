@@ -837,7 +837,7 @@ NRInterpCmd(
 		    break;
 		}
 	    }
-	    childPtr = Tcl_NewStringObj(buf, -1);
+	    childPtr = TclNewString(buf);
 	}
 	if (ChildCreate(interp, childPtr, safe) == NULL) {
 	    if (buf[0] != '\0') {
@@ -1051,8 +1051,7 @@ NRInterpCmd(
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
 	    string = (char *)Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
-	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewStringObj(string, -1));
+	    Tcl_ListObjAppendElement(NULL, resultPtr, TclNewString(string));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	return TCL_OK;
@@ -1206,14 +1205,14 @@ Tcl_CreateAlias(
 
     objv = (Tcl_Obj **)TclStackAlloc(childInterp, sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
-	objv[i] = Tcl_NewStringObj(argv[i], -1);
+	objv[i] = TclNewString(argv[i]);
 	Tcl_IncrRefCount(objv[i]);
     }
 
-    childObjPtr = Tcl_NewStringObj(childCmd, -1);
+    childObjPtr = TclNewString(childCmd);
     Tcl_IncrRefCount(childObjPtr);
 
-    targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
+    targetObjPtr = TclNewString(targetCmd);
     Tcl_IncrRefCount(targetObjPtr);
 
     result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
@@ -1257,10 +1256,10 @@ Tcl_CreateAliasObj(
     Tcl_Obj *childObjPtr, *targetObjPtr;
     int result;
 
-    childObjPtr = Tcl_NewStringObj(childCmd, -1);
+    childObjPtr = TclNewString(childCmd);
     Tcl_IncrRefCount(childObjPtr);
 
-    targetObjPtr = Tcl_NewStringObj(targetCmd, -1);
+    targetObjPtr = TclNewString(targetCmd);
     Tcl_IncrRefCount(targetObjPtr);
 
     result = AliasCreate(childInterp, childInterp, targetInterp, childObjPtr,
@@ -1802,7 +1801,7 @@ AliasNRCmd(
      */
 
     if (TclInitRewriteEnsemble(interp, 1, prefc, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
     TclSkipTailcall(interp);
     return Tcl_NREvalObj(interp, listPtr, flags);
@@ -2055,7 +2054,7 @@ Tcl_CreateChild(
     Tcl_Obj *pathPtr;
     Tcl_Interp *childInterp;
 
-    pathPtr = Tcl_NewStringObj(childPath, -1);
+    pathPtr = TclNewString(childPath);
     childInterp = ChildCreate(interp, pathPtr, isSafe);
     Tcl_DecrRefCount(pathPtr);
 
@@ -2086,7 +2085,7 @@ Tcl_GetChild(
     Tcl_Obj *pathPtr;
     Tcl_Interp *childInterp;
 
-    pathPtr = Tcl_NewStringObj(childPath, -1);
+    pathPtr = TclNewString(childPath);
     childInterp = GetInterp(interp, pathPtr);
     Tcl_DecrRefCount(pathPtr);
 
@@ -2231,8 +2230,8 @@ Tcl_GetInterpPath(
 	return TCL_ERROR;
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj((const char *)Tcl_GetHashKey(&iiPtr->parent.childTable,
-		    iiPtr->child.childEntryPtr), -1));
+	    TclNewString((const char *)Tcl_GetHashKey(&iiPtr->parent.childTable,
+		    iiPtr->child.childEntryPtr)));
     return TCL_OK;
 }
 
@@ -2766,8 +2765,7 @@ ChildDebugCmd(
     iPtr = (Interp *) childInterp;
     if (objc == 0) {
 	TclNewObj(resultPtr);
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewStringObj("-frame", -1));
+	Tcl_ListObjAppendElement(NULL, resultPtr, TclNewLiteralString("-frame"));
 	Tcl_ListObjAppendElement(NULL, resultPtr,
 		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
 	Tcl_SetObjResult(interp, resultPtr);
@@ -3042,7 +3040,7 @@ ChildHidden(
 		hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_ListObjAppendElement(NULL, listObjPtr,
-		    Tcl_NewStringObj((const char *)Tcl_GetHashKey(hTblPtr, hPtr), -1));
+		    TclNewString((const char *)Tcl_GetHashKey(hTblPtr, hPtr)));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -4448,7 +4446,7 @@ ChildCommandLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
+		Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[0]),
 			limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
@@ -4458,22 +4456,20 @@ ChildCommandLimitCmd(
 
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[0]), empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
+	Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[1]),
 		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(childInterp,
 		TCL_LIMIT_COMMANDS)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_COMMANDS)) {
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[2]),
 		    Tcl_NewWideIntObj(Tcl_LimitGetCommands(childInterp)));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[2]), empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
@@ -4633,7 +4629,7 @@ ChildTimeLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
+		Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[0]),
 			limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
@@ -4642,10 +4638,9 @@ ChildTimeLimitCmd(
 	    Tcl_Obj *empty;
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[0]), empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
+	Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[1]),
 		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(childInterp,
 		TCL_LIMIT_TIME)));
 
@@ -4653,18 +4648,16 @@ ChildTimeLimitCmd(
 	    Tcl_Time limitMoment;
 
 	    Tcl_LimitGetTime(childInterp, &limitMoment);
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[2]),
 		    Tcl_NewWideIntObj(limitMoment.usec/1000));
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[3]),
 		    Tcl_NewWideIntObj(limitMoment.sec));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[3], -1), empty);
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[2]), empty);
+	    Tcl_DictObjPut(NULL, dictPtr, TclNewString(options[3]), empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;

@@ -2069,7 +2069,7 @@ Tcl_ConcatObj(
 	 */
 
 	if (needSpace) {
-	    Tcl_AppendToObj(resPtr, " ", 1);
+	    TclAppendToObj(resPtr, " ");
 	}
 	Tcl_AppendToObj(resPtr, element, elemLength);
 	needSpace = 1;

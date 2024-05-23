@@ -230,9 +230,9 @@ Tcl_LoadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pfx);
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_AUTO_LENGTH);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
+	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, TCL_AUTO_LENGTH);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -306,7 +306,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (prefix != NULL) {
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_AUTO_LENGTH);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
 	    Tcl_Size pElements;
@@ -662,9 +662,9 @@ Tcl_UnloadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pfx);
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_AUTO_LENGTH);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
+	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, TCL_AUTO_LENGTH);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -1110,8 +1110,8 @@ TclGetLoadedLibraries(
 	Tcl_MutexLock(&libraryMutex);
 	for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 		libraryPtr = libraryPtr->nextPtr) {
-	    pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	    pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	    pkgDesc[0] = TclNewString(libraryPtr->fileName);
+	    pkgDesc[1] = TclNewString(libraryPtr->prefix);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewListObj(2, pkgDesc));
 	}
@@ -1136,7 +1136,7 @@ TclGetLoadedLibraries(
 	    libraryPtr = ipPtr->libraryPtr;
 
 	    if (!strcmp(prefix, libraryPtr->prefix)) {
-		resultObj = Tcl_NewStringObj(libraryPtr->fileName, -1);
+		resultObj = TclNewString(libraryPtr->fileName);
 		break;
 	    }
 	}
@@ -1155,8 +1155,8 @@ TclGetLoadedLibraries(
     TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	pkgDesc[0] = TclNewString(libraryPtr->fileName);
+	pkgDesc[1] = TclNewString(libraryPtr->prefix);
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
     Tcl_SetObjResult(interp, resultObj);

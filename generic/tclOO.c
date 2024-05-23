@@ -353,14 +353,14 @@ InitFoundation(
     Tcl_DStringInit(&buffer);
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
-	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, TCL_AUTO_LENGTH);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
@@ -1828,7 +1828,7 @@ TclNRNewObjectInstance(
      */
 
     if (TclInitRewriteEnsemble(interp, skip, skip, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
 
     /*
@@ -2810,7 +2810,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2962,7 +2962,7 @@ TclNRObjectContextInvokeNext(
      */
 
     TclNRAddCallback(interp, FinalizeNext, contextPtr,
-	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
+	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip));
     contextPtr->index++;
     contextPtr->skip = skip;
 

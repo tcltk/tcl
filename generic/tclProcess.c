@@ -240,9 +240,9 @@ WaitProcessStatus(
 		    "error waiting for process to exit: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("POSIX", -1);
-	    errorStrings[1] = Tcl_NewStringObj(Tcl_ErrnoId(), -1);
-	    errorStrings[2] = Tcl_NewStringObj(msg, -1);
+	    errorStrings[0] = TclNewLiteralString("POSIX");
+	    errorStrings[1] = TclNewString(Tcl_ErrnoId());
+	    errorStrings[2] = TclNewString(msg);
 	    *errorObjPtr = Tcl_NewListObj(3, errorStrings);
 	}
 	return TCL_PROCESS_ERROR;
@@ -269,11 +269,11 @@ WaitProcessStatus(
 	     */
 
 	    if (msgObjPtr) {
-		*msgObjPtr = Tcl_NewStringObj(
-			"child process exited abnormally", -1);
+		*msgObjPtr = TclNewLiteralString(
+			"child process exited abnormally");
 	    }
 	    if (errorObjPtr) {
-		errorStrings[0] = Tcl_NewStringObj("CHILDSTATUS", -1);
+		errorStrings[0] = TclNewLiteralString("CHILDSTATUS");
 		TclNewIntObj(errorStrings[1], resolvedPid);
 		TclNewIntObj(errorStrings[2], WEXITSTATUS(waitStatus));
 		*errorObjPtr = Tcl_NewListObj(3, errorStrings);
@@ -295,10 +295,10 @@ WaitProcessStatus(
 	    *msgObjPtr = Tcl_ObjPrintf("child killed: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("CHILDKILLED", -1);
+	    errorStrings[0] = TclNewLiteralString("CHILDKILLED");
 	    TclNewIntObj(errorStrings[1], resolvedPid);
-	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WTERMSIG(waitStatus)), -1);
-	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
+	    errorStrings[2] = TclNewString(Tcl_SignalId(WTERMSIG(waitStatus)));
+	    errorStrings[3] = TclNewString(msg);
 	    *errorObjPtr = Tcl_NewListObj(4, errorStrings);
 	}
 	return TCL_PROCESS_SIGNALED;
@@ -317,10 +317,10 @@ WaitProcessStatus(
 	    *msgObjPtr = Tcl_ObjPrintf("child suspended: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("CHILDSUSP", -1);
+	    errorStrings[0] = TclNewLiteralString("CHILDSUSP");
 	    TclNewIntObj(errorStrings[1], resolvedPid);
-	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WSTOPSIG(waitStatus)), -1);
-	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
+	    errorStrings[2] = TclNewString(Tcl_SignalId(WSTOPSIG(waitStatus)));
+	    errorStrings[3] = TclNewString(msg);
 	    *errorObjPtr = Tcl_NewListObj(4, errorStrings);
 	}
 	return TCL_PROCESS_STOPPED;
@@ -335,14 +335,14 @@ WaitProcessStatus(
 	    *codePtr = waitStatus;
 	}
 	if (msgObjPtr) {
-	    *msgObjPtr = Tcl_NewStringObj(
-		    "child wait status didn't make sense\n", -1);
+	    *msgObjPtr = TclNewLiteralString(
+		    "child wait status didn't make sense\n");
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("TCL", -1);
-	    errorStrings[1] = Tcl_NewStringObj("OPERATION", -1);
-	    errorStrings[2] = Tcl_NewStringObj("EXEC", -1);
-	    errorStrings[3] = Tcl_NewStringObj("ODDWAITRESULT", -1);
+	    errorStrings[0] = TclNewLiteralString("TCL");
+	    errorStrings[1] = TclNewLiteralString("OPERATION");
+	    errorStrings[2] = TclNewLiteralString("EXEC");
+	    errorStrings[3] = TclNewLiteralString("ODDWAITRESULT");
 	    TclNewIntObj(errorStrings[4], resolvedPid);
 	    *errorObjPtr = Tcl_NewListObj(5, errorStrings);
 	}

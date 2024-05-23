@@ -245,7 +245,7 @@ Tcl_Stat(
 {
     int ret;
     Tcl_StatBuf buf;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = TclNewString(path);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSStat(pathPtr, &buf);
@@ -332,7 +332,7 @@ Tcl_Access(
     int mode)			/* Permission setting. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = TclNewString(path);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSAccess(pathPtr,mode);
@@ -352,7 +352,7 @@ Tcl_OpenFileChannel(
     int permissions)		/* The modes to use if creating a new file. */
 {
     Tcl_Channel ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *pathPtr = TclNewString(path);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
@@ -367,7 +367,7 @@ Tcl_Chdir(
     const char *dirName)
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(dirName,-1);
+    Tcl_Obj *pathPtr = TclNewString(dirName);
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSChdir(pathPtr);
     Tcl_DecrRefCount(pathPtr);
@@ -399,7 +399,7 @@ Tcl_EvalFile(
 				 * pathaname. */
 {
     int ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+    Tcl_Obj *pathPtr = TclNewString(fileName);
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSEvalFile(interp, pathPtr);
@@ -1919,8 +1919,7 @@ TclNREvalFile(
      */
 
     iPtr->evalFlags |= TCL_EVAL_FILE;
-    TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
-	    NULL);
+    TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr);
     return TclNREvalObjEx(interp, objPtr, 0, NULL, INT_MIN);
 }
 
@@ -2465,7 +2464,7 @@ TclFSFileAttrIndex(
 	 * It's a constant attribute table, so use T_GIFO.
 	 */
 
-	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
+	Tcl_Obj *tmpObj = TclNewString(attributeName);
 	int result;
 
 	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
@@ -4546,8 +4545,7 @@ Tcl_FSFileSystemInfo(
     }
 
     resPtr = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, -1));
+    Tcl_ListObjAppendElement(NULL, resPtr, TclNewString(fsPtr->typeName));
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);
@@ -4631,7 +4629,7 @@ NativeFilesystemSeparator(
 	separator = "\\";
 	break;
     }
-    return Tcl_NewStringObj(separator,1);
+    return Tcl_NewStringObj(separator, 1);
 }
 
 /*

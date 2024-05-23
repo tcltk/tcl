@@ -1322,7 +1322,7 @@ TcpGetOptionProc(
 		if (statePtr->connectError != 0) {
 		    Tcl_DStringAppend(dsPtr,
 			    Tcl_ErrnoMsg(statePtr->connectError),
-			    TCL_INDEX_NONE);
+			    TCL_AUTO_LENGTH);
 		    statePtr->connectError = 0;
 		}
 	    } else {
@@ -1358,7 +1358,7 @@ TcpGetOptionProc(
 		if (err) {
 		    Tcl_WinConvertError(err);
 		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()),
-			    TCL_INDEX_NONE);
+			    TCL_AUTO_LENGTH);
 		}
 	    }
 	}
@@ -1368,7 +1368,7 @@ TcpGetOptionProc(
     if (HAVE_OPTION("-connecting")) {
 	Tcl_DStringAppend(dsPtr,
 		GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)
-		? "1" : "0", TCL_INDEX_NONE);
+		? "1" : "0", TCL_AUTO_LENGTH);
 	return TCL_OK;
     }
 

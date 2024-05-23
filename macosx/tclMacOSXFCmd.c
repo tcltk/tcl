@@ -344,8 +344,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    Tcl_DStringAppend(&ds, native, TCL_INDEX_NONE);
-	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, native, TCL_AUTO_LENGTH);
+	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, TCL_AUTO_LENGTH);
 
 	    result = truncate(Tcl_DStringValue(&ds), 0);
 	    if (result != 0) {
@@ -458,11 +458,11 @@ TclMacOSXCopyFileAttributes(
 	 */
 
 	Tcl_DStringInit(&srcBuf);
-	Tcl_DStringAppend(&srcBuf, src, TCL_INDEX_NONE);
-	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&srcBuf, src, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, TCL_AUTO_LENGTH);
 	Tcl_DStringInit(&dstBuf);
-	Tcl_DStringAppend(&dstBuf, dst, TCL_INDEX_NONE);
-	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&dstBuf, dst, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, TCL_AUTO_LENGTH);
 
 	/*
 	 * Do the copy.

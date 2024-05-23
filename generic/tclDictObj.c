@@ -2806,7 +2806,7 @@ DictMapNRCmd(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr);
     return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
 	    iPtr->cmdFramePtr, 3);
 
@@ -2896,7 +2896,7 @@ DictMapLoopCallback(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr);
     return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
 	    iPtr->cmdFramePtr, 3);
 
@@ -3386,7 +3386,7 @@ DictUpdateCmd(
     objPtr = Tcl_NewListObj(objc-3, objv+2);
     Tcl_IncrRefCount(objPtr);
     Tcl_IncrRefCount(objv[1]);
-    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
+    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr);
 
     return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
 }
@@ -3536,8 +3536,7 @@ DictWithCmd(
 	Tcl_IncrRefCount(pathPtr);
     }
     Tcl_IncrRefCount(objv[1]);
-    TclNRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr,
-	    NULL);
+    TclNRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr);
 
     return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
 }

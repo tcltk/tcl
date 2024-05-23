@@ -233,7 +233,7 @@ AppendEnvironment(
     WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
-	objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
+	objPtr = TclNewString(buf);
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	TclWinNoBackslash(buf);
@@ -257,7 +257,7 @@ AppendEnvironment(
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = Tcl_DStringToObj(&ds);
 	} else {
-	    objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
+	    objPtr = TclNewString(buf);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	Tcl_Free((void *)pathv);
@@ -401,10 +401,11 @@ Tcl_GetEncodingNameFromEnvironment(
 
     Tcl_DStringInit(bufPtr);
     if (acp == CP_UTF8) {
-	Tcl_DStringAppend(bufPtr, "utf-8", 5);
+	TclDStringAppendLiteral(bufPtr, "utf-8");
     } else {
-	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-	snprintf(Tcl_DStringValue(bufPtr), 2+TCL_INTEGER_SPACE, "cp%d", GetACP());
+	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
+	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
+		GetACP());
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);
@@ -506,11 +507,11 @@ TclpSetVariables(
     if (ptr == NULL) {
 	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, ptr, TCL_AUTO_LENGTH);
 	}
 	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, ptr, TCL_AUTO_LENGTH);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),

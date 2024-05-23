@@ -888,8 +888,7 @@ Tcl_GetEncodingNames(
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Encoding *encodingPtr = (Encoding *)Tcl_GetHashValue(hPtr);
 
-	Tcl_CreateHashEntry(&table,
-		Tcl_NewStringObj(encodingPtr->name, TCL_INDEX_NONE), &dummy);
+	Tcl_CreateHashEntry(&table, TclNewString(encodingPtr->name), &dummy);
     }
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -1737,7 +1736,7 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
+    Tcl_Obj *nameObj = TclNewString(name);
     Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
@@ -1747,7 +1746,7 @@ OpenEncodingFileChannel(
 
     TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
-    Tcl_AppendToObj(fileNameObj, ".enc", TCL_INDEX_NONE);
+    TclAppendToObj(fileNameObj, ".enc");
     Tcl_IncrRefCount(fileNameObj);
     Tcl_DictObjGet(NULL, map, nameObj, &directory);
 
@@ -4375,15 +4374,16 @@ TclEncodingProfileIdToName(
  *------------------------------------------------------------------------
  */
 void
-TclGetEncodingProfiles(Tcl_Interp *interp)
+TclGetEncodingProfiles(
+    Tcl_Interp *interp)
 {
     size_t i, n;
     Tcl_Obj *objPtr;
     n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
     objPtr = Tcl_NewListObj(n, NULL);
     for (i = 0; i < n; ++i) {
-	Tcl_ListObjAppendElement(
-	    interp, objPtr, Tcl_NewStringObj(encodingProfiles[i].name, TCL_INDEX_NONE));
+	Tcl_ListObjAppendElement(interp, objPtr,
+		TclNewString(encodingProfiles[i].name));
     }
     Tcl_SetObjResult(interp, objPtr);
 }

@@ -869,7 +869,7 @@ TclpFindExecutable(
     GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+    TclSetObjNameOfExecutable(TclNewString(name), NULL);
 }
 
 /*
@@ -1005,7 +1005,7 @@ TclpMatchInDirectory(
 	     * pattern.
 	     */
 
-	    dirName = Tcl_DStringAppend(&dsOrig, pattern, TCL_INDEX_NONE);
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, TCL_AUTO_LENGTH);
 	} else {
 	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
@@ -1520,7 +1520,7 @@ TclpGetUserHome(
 
 		GetProfilesDirectoryW(buf, &size);
 		Tcl_WCharToUtfDString(buf, size-1, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/", 1);
+		TclDStringAppendLiteral(bufferPtr, "/");
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
@@ -2461,7 +2461,7 @@ TclpFilesystemPathType(
 	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(pathPtr),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
     } else {
-	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
+	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path + 1);
 
 	Tcl_IncrRefCount(driveName);
 	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(driveName),
@@ -2903,7 +2903,7 @@ TclWinVolumeRelativeNormalize(
 		 * characters.
 		 */
 
-		Tcl_AppendToObj(absolutePath, "/", 1);
+		TclAppendToObj(absolutePath, "/");
 	    }
 	} else {
 	    Tcl_DecrRefCount(useThisCwd);
@@ -2920,10 +2920,10 @@ TclWinVolumeRelativeNormalize(
 	     */
 
 	    absolutePath = Tcl_NewStringObj(path, 2);
-	    Tcl_AppendToObj(absolutePath, "/", 1);
+	    TclAppendToObj(absolutePath, "/");
 	}
 	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, TCL_INDEX_NONE);
+	Tcl_AppendToObj(absolutePath, path + 2, TCL_INDEX_NONE);
     }
     *useThisCwdPtr = useThisCwd;
     return absolutePath;

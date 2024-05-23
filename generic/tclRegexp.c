@@ -687,8 +687,7 @@ TclRegAbout(
     TclNewObj(infoObj);
     for (inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
-	    Tcl_ListObjAppendElement(NULL, infoObj,
-		    Tcl_NewStringObj(inf->text, -1));
+	    Tcl_ListObjAppendElement(NULL, infoObj, TclNewString(inf->text));
 	}
     }
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);

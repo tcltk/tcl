@@ -396,7 +396,7 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    res = Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    res = Tcl_ListObjAppendElement(NULL, command, TclNewString((char *) op));
     if (res != TCL_OK) {
 	Tcl_DecrRefCount(command);
 	Tcl_Release(eval);
@@ -870,7 +870,7 @@ TransformWideSeekProc(
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 	} else {
 	    *errorCodePtr = EINVAL;
-	    return -1;
+	    return TCL_IO_FAILURE;
 	}
     }
 
@@ -901,9 +901,9 @@ TransformWideSeekProc(
 
     if (parentWideSeekProc == NULL) {
 	*errorCodePtr = EINVAL;
-	return -1;
+	return TCL_IO_FAILURE;
     }
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*

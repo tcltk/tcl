@@ -418,7 +418,7 @@ Tcl_ReadObjCmd(
      * Compute how many bytes to read.
      */
 
-    toRead = -1;
+    toRead = TCL_IO_FAILURE;
     if (i < objc) {
 	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
@@ -437,7 +437,7 @@ Tcl_ReadObjCmd(
 	Tcl_Obj *returnOptsPtr = NULL;
 	if (TclChannelGetBlockingMode(chan)) {
 	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+	    Tcl_DictObjPut(NULL, returnOptsPtr, TclNewLiteralString("-data"),
 		    resultPtr);
 	} else {
 	    Tcl_DecrRefCount(resultPtr);
@@ -1350,9 +1350,9 @@ AcceptCallbackProc(
 
 	objv[0] = acceptCallbackPtr->script;
 	objv[1] = Tcl_NewListObj(3, NULL);
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(
-		Tcl_GetChannelName(chan), -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(address, -1));
+	Tcl_ListObjAppendElement(NULL, objv[1], TclNewString(
+		Tcl_GetChannelName(chan)));
+	Tcl_ListObjAppendElement(NULL, objv[1], TclNewString(address));
 	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewWideIntObj(port));
 
 	script = Tcl_ConcatObj(2, objv);
@@ -1886,7 +1886,7 @@ ChanTruncateObjCmd(
 	 */
 
 	length = Tcl_Tell(chan);
-	if (length == -1) {
+	if (length == TCL_IO_FAILURE) {
 	    TclPrintfResult(interp,
 		    "could not determine current location in \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp));
@@ -1946,10 +1946,8 @@ ChanPipeObjCmd(
     channelNames[1] = Tcl_GetChannelName(wchan);
 
     TclNewObj(resultPtr);
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[0], -1));
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[1], -1));
+    Tcl_ListObjAppendElement(NULL, resultPtr, TclNewString(channelNames[0]));
+    Tcl_ListObjAppendElement(NULL, resultPtr, TclNewString(channelNames[1]));
     Tcl_SetObjResult(interp, resultPtr);
 
     return TCL_OK;
@@ -2029,13 +2027,13 @@ TclInitChanCmd(
 	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
 	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
 	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	/* TIP #219 */
+	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #219 */
 	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #230 */
 	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, NULL, 0},
 	{"read",	Tcl_ReadObjCmd,		NULL, NULL, NULL, 0},
 	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
 	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},		/* TIP #208 */
+	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},	/* TIP #208 */
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char *const extras[] = {
@@ -2053,8 +2051,8 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	Tcl_DictObjPut(NULL, mapObj, TclNewString(extras[i]),
+		TclNewString(extras[i + 1]));
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;

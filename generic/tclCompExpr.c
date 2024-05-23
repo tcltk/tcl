@@ -797,23 +797,20 @@ ParseExpr(
 			if (isdigit(UCHAR(*stop)) || (stop == start + 1)) {
 			    switch (start[1]) {
 			    case 'b':
-				Tcl_AppendToObj(post,
-					" (invalid binary number?)", -1);
+				TclAppendToObj(post, " (invalid binary number?)");
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "BINARY";
 				break;
 			    case 'o':
-				Tcl_AppendToObj(post,
-					" (invalid octal number?)", -1);
+				TclAppendToObj(post, " (invalid octal number?)");
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "OCTAL";
 				break;
 			    default:
 				if (isdigit(UCHAR(start[1]))) {
-				    Tcl_AppendToObj(post,
-					    " (invalid octal number?)", -1);
+				    TclAppendToObj(post, " (invalid octal number?)");
 				    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				    errCode = "BADNUMBER";
 				    subErrCode = "OCTAL";
@@ -1462,7 +1459,7 @@ ParseExpr(
 	 */
 
 	if (post != NULL) {
-	    Tcl_AppendToObj(msg, ";\n", -1);
+	    TclAppendToObj(msg, ";\n");
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
@@ -2347,17 +2344,11 @@ CompileExprTree(
 	    switch (nodePtr->lexeme) {
 	    case FUNCTION: {
 		Tcl_DString cmdName;
-		const char *p;
-		Tcl_Size length;
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
-		p = TclGetStringFromObj(*funcObjv, &length);
-		funcObjv++;
-		Tcl_DStringAppend(&cmdName, p, length);
-		TclEmitPush(TclRegisterLiteral(envPtr,
-			Tcl_DStringValue(&cmdName),
-			Tcl_DStringLength(&cmdName), LITERAL_CMD_NAME), envPtr);
+		TclDStringAppendObj(&cmdName, *funcObjv++);
+		PushDString(envPtr, &cmdName, LITERAL_CMD_NAME);
 		Tcl_DStringFree(&cmdName);
 
 		/*

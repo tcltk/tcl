@@ -591,8 +591,7 @@ PrefixMatchObjCmd(
 	if (Tcl_IsShared(errorPtr)) {
 	    errorPtr = Tcl_DuplicateObj(errorPtr);
 	}
-	Tcl_ListObjAppendElement(interp, errorPtr,
-		Tcl_NewStringObj("-code", 5));
+	Tcl_ListObjAppendElement(interp, errorPtr, TclNewLiteralString("-code"));
 	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewWideIntObj(result));
 
 	return Tcl_SetReturnOptions(interp, errorPtr);
@@ -820,9 +819,9 @@ Tcl_WrongNumArgs(
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
-	Tcl_AppendToObj(objPtr, " or \"", TCL_INDEX_NONE);
+	TclAppendToObj(objPtr, " or \"");
     } else {
-	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", TCL_INDEX_NONE);
+	TclAppendToObj(objPtr, "wrong # args: should be \"");
     }
 
     /*
@@ -1291,7 +1290,7 @@ PrintUsage(
      * Now add the option information, with pretty-printing.
      */
 
-    msg = Tcl_NewStringObj("Command-specific options:", TCL_INDEX_NONE);
+    msg = TclNewLiteralString("Command-specific options:");
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
 	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
 	    Tcl_AppendPrintfToObj(msg, "\n%s", infoPtr->helpStr);

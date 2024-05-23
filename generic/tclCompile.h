@@ -1544,7 +1544,8 @@ TclUpdateStackReqs(
 
 #define CompileTokens(envPtr, tokenPtr, interp) \
     TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr));
+	    (envPtr))
+
 /*
  * Convenience macros for use when pushing literals. The ANSI C "prototype" for
  * these macros are:
@@ -1553,12 +1554,17 @@ TclUpdateStackReqs(
  *			    const char *string, Tcl_Size length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
+ * static void		PushDString(CompileEnv *envPtr,
+ * 			    Tcl_DString *dsPtr, int flags);
  */
 
 #define PushLiteral(envPtr, string, length) \
     TclEmitPush(TclRegisterLiteral((envPtr), (string), (length), 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
     PushLiteral((envPtr), (string), sizeof(string "") - 1)
+#define PushDString(envPtr, dsPtr, flags) \
+    TclEmitPush(TclRegisterLiteral((envPtr), Tcl_DStringValue(dsPtr), \
+	    Tcl_DStringLength(dsPtr), (flags)), (envPtr))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address

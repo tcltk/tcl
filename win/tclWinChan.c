@@ -825,7 +825,7 @@ StoreElementInDict(
      * duplicate keys.
      */
 
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
+    Tcl_Obj *nameObj = TclNewString(name);
     Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
@@ -909,9 +909,9 @@ StatOpenFile(
      * Anything else and we definitely couldn't have got here anyway.
      */
     if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	STORE_ELEM("type", Tcl_NewStringObj("directory", TCL_INDEX_NONE));
+	STORE_ELEM("type", TclNewLiteralString("directory"));
     } else {
-	STORE_ELEM("type", Tcl_NewStringObj("file", TCL_INDEX_NONE));
+	STORE_ELEM("type", TclNewLiteralString("file"));
     }
 #undef STORE_ELEM
 
@@ -968,8 +968,7 @@ FileGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName,
-		"stat");
+    return Tcl_BadChannelOption(interp, optionName, "stat");
 }
 
 /*

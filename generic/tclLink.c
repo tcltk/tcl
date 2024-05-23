@@ -174,7 +174,7 @@ Tcl_LinkVar(
     linkPtr = (Link *)Tcl_Alloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->nsPtr = NULL;
-    linkPtr->varName = Tcl_NewStringObj(varName, -1);
+    linkPtr->varName = TclNewString(varName);
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
@@ -353,7 +353,7 @@ Tcl_LinkArray(
      */
 
     linkPtr->interp = interp;
-    linkPtr->varName = Tcl_NewStringObj(varName, -1);
+    linkPtr->varName = TclNewString(varName);
     Tcl_IncrRefCount(linkPtr->varName);
 
     TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
@@ -1321,7 +1321,7 @@ ObjValue(
 	    TclNewLiteralStringObj(resultObj, "NULL");
 	    return resultObj;
 	}
-	return Tcl_NewStringObj(p, -1);
+	return TclNewString(p);
 
     case TCL_LINK_CHARS:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
