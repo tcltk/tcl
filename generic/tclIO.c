@@ -477,7 +477,7 @@ ChanSeek(
 
     if ((offset >= LONG_MIN) && (offset <= LONG_MAX)) {
 	return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-		offset, mode, errnoPtr);
+		(long)offset, mode, errnoPtr);
     }
     *errnoPtr = EOVERFLOW;
     return -1;
@@ -6143,7 +6143,7 @@ ReadChars(
     if (dstLimit <= 0) {
 	dstLimit = INT_MAX; /* avoid overflow */
     }
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	unsigned int size;
@@ -8140,8 +8140,7 @@ Tcl_SetChannelOption(
     } else if (HaveOpt(2, "-eofchar")) {
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
-	}
-	if (argc == 0) {
+	} else if (argc == 0) {
 	    statePtr->inEofChar = 0;
 	    statePtr->outEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
@@ -9832,8 +9831,8 @@ CopyData(
     }
 
     /*
-     * Make the callback or return the number of bytes transferred. The
-     * local total is used because StopCopy frees csPtr.
+     * Make the callback or return the number of bytes transferred. The local
+     * total is used because StopCopy frees csPtr.
      */
 
     total = csPtr->total;
@@ -10662,8 +10661,7 @@ Tcl_ChannelVersion(
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
- */
+ *---------------------------------------------------------------------- */
 
 Tcl_DriverBlockModeProc *
 Tcl_ChannelBlockModeProc(
@@ -11063,7 +11061,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
 
     if (statePtr->chanMsg != NULL) {
 	TclDecrRefCount(statePtr->chanMsg);
