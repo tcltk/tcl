@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::define, oo::objdefine \- define and configure classes and objects
+oo::define, oo::objdefine, oo::Slot \- define and configure classes and objects
 .SH SYNOPSIS
 .nf
 package require TclOO
@@ -18,9 +18,15 @@ package require TclOO
 \fBoo::define\fI class subcommand arg\fR ?\fIarg ...\fR?
 \fBoo::objdefine\fI object defScript\fR
 \fBoo::objdefine\fI object subcommand arg\fR ?\fIarg ...\fR?
+
+\fBoo::Slot\fR \fIarg...\fR
+.fi
+.SH "CLASS HIERARCHY"
+.nf
+\fBoo::object\fR
+   \(-> \fBoo::Slot\fR
 .fi
 .BE
-
 .SH DESCRIPTION
 The \fBoo::define\fR command is used to control the configuration of classes,
 and the \fBoo::objdefine\fR command is used to control the configuration of
@@ -294,8 +300,10 @@ Some of the configurable definitions of a class or object are \fIslotted
 definitions\fR. This means that the configuration is implemented by a slot
 object, that is an instance of the class \fBoo::Slot\fR, which manages a list
 of values (class names, variable names, etc.) that comprises the contents of
-the slot. The class defines three operations (as methods) that may be done on
-the slot:
+the slot.
+.PP
+The \fBoo::Slot\fR class defines three operations (as methods) that may be done
+on the slot:
 .VE
 .TP
 \fIslot\fR \fB\-append\fR ?\fImember ...\fR?
@@ -315,6 +323,10 @@ This replaces the slot definition with the given \fImember\fR elements.
 A consequence of this is that any use of a slot's default operation where the
 first member argument begins with a hyphen will be an error. One of the above
 operations should be used explicitly in those circumstances.
+.PP
+You only need to make an instance of \fBoo::Slot\fR if you are definining your
+own slot that behaves like a standard slot.
+.PP
 .SS "SLOT IMPLEMENTATION"
 Internally, slot objects also define a method \fB\-\-default\-operation\fR
 which is forwarded to the default operation of the slot (thus, for the class
@@ -331,6 +343,15 @@ always be called from a stack frame created by a call to \fBoo::define\fR or
 \fBoo::objdefine\fR.
 .VE
 .TP
+\fIslot\fR \fBResolve \fIelement\fR
+.VS
+This converts an element of the slotted collection into its resolved form; for
+a simple value, it could just return the value, but for a slot that contains
+references to commands or classes it should convert those into their
+fully-qualified forms (so they can be compared with \fBstring equals\fR): that
+could be done by forwarding to \fBnamespace which\fR or similar.
+.VE
+.TP
 \fIslot\fR \fBSet \fIelementList\fR
 .VS
 Sets the contents of the slot to the list \fIelementList\fR and returns the
@@ -341,8 +362,14 @@ The implementation of these methods is slot-dependent (and responsible for
 accessing the correct part of the class or object definition). Slots also have
 an unknown method handler to tie all these pieces together, and they hide
 their \fBdestroy\fR method so that it is not invoked inadvertently. It is
-\fIrecommended\fR that any user changes to the slot mechanism be restricted to
-defining new operations whose names start with a hyphen.
+\fIrecommended\fR that any user changes to the slot mechanism itself be
+restricted to defining new operations whose names start with a hyphen.
+.PP
+Note that slot instances are not expected to contain the storage for the slot
+they manage; that will be in or attached to the class or object that they
+manage. Those instances should provide their own implementations of the
+\fBGet\fR and \fBSet\fR methods (and optionally \fBResolve\fR; that defaults
+to a do-nothing pass-through).
 .VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
