@@ -487,7 +487,7 @@ TclStrIdxTreeTestObjCmd(
 	"findequal", "index", "puts-index", NULL
     };
     enum optionInd {
-	O_FINDEQUAL, O_INDEX,  O_PUTS_INDEX,
+	O_FINDEQUAL, O_INDEX,  O_PUTS_INDEX
     };
     int optionIndex;
 
