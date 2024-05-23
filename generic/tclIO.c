@@ -496,7 +496,7 @@ ChanSeek(
 	}
 
 	return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-		offset, mode, errnoPtr);
+		(long)offset, mode, errnoPtr);
 #else
 	*errnoPtr = EINVAL;
 	return TCL_INDEX_NONE;
@@ -6359,7 +6359,7 @@ ReadChars(
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
     if (dstLimit <= 0) dstLimit = INT_MAX; /* avoid overflow */
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	unsigned int size;
@@ -11411,7 +11411,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
     Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {
