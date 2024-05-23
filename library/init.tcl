@@ -108,7 +108,7 @@ if {[interp issafe]} {
 	}
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
 	    ::clock -map $cmdmap]
-	::tcl::unsupported::clock::configure -init-complete
+	::tcl::clock::configure -init-complete
     }}
 }
 
