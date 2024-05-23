@@ -6285,7 +6285,7 @@ ReadChars(
     if (dstLimit <= 0) {
 	dstLimit = INT_MAX; /* avoid overflow */
     }
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	Tcl_Size size;
@@ -11186,7 +11186,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
     Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {
