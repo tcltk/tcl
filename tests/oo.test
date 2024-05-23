@@ -1685,6 +1685,19 @@ test oo-11.6.4 {
     rename obj1 {}
 }
 
+test oo-11.7 {Bug 154f0982f2: createWithNamespace and an existing namespace} -setup {
+    oo::class create Aclass {
+	self export createWithNamespace
+	method ns {} {namespace current}
+    }
+} -body {
+    namespace eval test_oo117 {variable name [namespace current]}
+    list [Aclass createWithNamespace aInstance $test_oo117::name] [aInstance ns]
+} -returnCodes error -cleanup {
+    Aclass destroy
+    catch {namespace delete test_oo117}
+} -result {can't create namespace "::test_oo117": already exists}
+
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
     Aclass create Aobject
