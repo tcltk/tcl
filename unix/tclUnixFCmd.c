@@ -778,8 +778,7 @@ TclpObjCopyDirectory(
     Tcl_DStringFree(&dstString);
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
-	Tcl_DStringFree(&ds);
+	*errorPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
     return ret;
@@ -832,8 +831,7 @@ TclpObjRemoveDirectory(
     Tcl_DStringFree(&pathString);
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
-	Tcl_DStringFree(&ds);
+	*errorPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
     return ret;

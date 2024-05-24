@@ -154,9 +154,7 @@ TclpFindExecutable(
 #endif
     {
 	Tcl_ExternalToUtfDString(NULL, name, TCL_INDEX_NONE, &utfName);
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
-	Tcl_DStringFree(&utfName);
+	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 	goto done;
     }
 
@@ -190,9 +188,7 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&buffer), TCL_INDEX_NONE, &utfName);
-    TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
-    Tcl_DStringFree(&utfName);
+    TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 
   done:
     Tcl_DStringFree(&buffer);
