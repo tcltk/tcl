@@ -4259,8 +4259,7 @@ TclGetProcessGlobalValue(
 	 */
 
 	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
-	value = Tcl_NewStringObj(Tcl_DStringValue(&newValue), Tcl_DStringLength(&newValue));
-	Tcl_DStringFree(&newValue);
+	value = Tcl_DStringToObj(&newValue);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
