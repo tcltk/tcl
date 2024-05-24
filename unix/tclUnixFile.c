@@ -59,7 +59,6 @@ TclpFindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    Tcl_Encoding encoding;
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
@@ -154,10 +153,9 @@ TclpFindExecutable(
     if (name[0] == '/')
 #endif
     {
-	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
 	Tcl_DStringFree(&utfName);
 	goto done;
     }
@@ -191,11 +189,10 @@ TclpFindExecutable(
     TclDStringAppendDString(&buffer, &nameString);
     Tcl_DStringFree(&nameString);
 
-    encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
 	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
     Tcl_DStringFree(&utfName);
 
   done:
@@ -270,15 +267,14 @@ TclpMatchInDirectory(
 	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
-	size_t dirLength, nativeDirLen;
+	Tcl_Size dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
