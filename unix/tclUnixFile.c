@@ -59,7 +59,6 @@ TclpFindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    Tcl_Encoding encoding;
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
@@ -154,10 +153,9 @@ TclpFindExecutable(
     if (name[0] == '/')
 #endif
     {
-	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDString(encoding, name, TCL_INDEX_NONE, &utfName);
+	Tcl_ExternalToUtfDString(NULL, name, TCL_INDEX_NONE, &utfName);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
 	Tcl_DStringFree(&utfName);
 	goto done;
     }
@@ -191,11 +189,9 @@ TclpFindExecutable(
     TclDStringAppendDString(&buffer, &nameString);
     Tcl_DStringFree(&nameString);
 
-    encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
-	    &utfName);
+    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&buffer), TCL_INDEX_NONE, &utfName);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
     Tcl_DStringFree(&utfName);
 
   done:
@@ -270,15 +266,14 @@ TclpMatchInDirectory(
 	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
-	size_t dirLength, nativeDirLen;
+	Tcl_Size dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetString(fileNamePtr);
-	dirLength = fileNamePtr->length;
+	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -372,8 +367,7 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, TCL_INDEX_NONE,
-		    &utfDs);
+	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, TCL_INDEX_NONE, &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
 
