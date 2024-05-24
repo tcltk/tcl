@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -810,11 +810,13 @@ IsCryptHeaderValid(
  *------------------------------------------------------------------------
  */
 static int
-DecodeCryptHeader(Tcl_Interp *interp,
-		  ZipEntry *z,
-		  unsigned long keys[3],/* Updated on success. Must have been
-					   initialized by caller. */
-		  unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN]) /* From zip file content */
+DecodeCryptHeader(
+    Tcl_Interp *interp,
+    ZipEntry *z,
+    unsigned long keys[3],	/* Updated on success. Must have been
+				 * initialized by caller. */
+    unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN])
+				/* From zip file content */
 {
     int i;
     int ch;
@@ -1065,11 +1067,12 @@ errorReturn:
  *------------------------------------------------------------------------
  */
 static char *
-MapPathToZipfs(Tcl_Interp *interp,
-	       const char *mountPath,	/* Must be fully normalized */
-	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
-	                                   by caller */
+MapPathToZipfs(
+    Tcl_Interp *interp,
+    const char *mountPath,	/* Must be fully normalized */
+    const char *path,		/* Archive content path to map */
+    Tcl_DString *dsPtr)		/* Must be initialized and cleared
+				 * by caller */
 {
     const char *joiner[2];
     char *joinedPath;

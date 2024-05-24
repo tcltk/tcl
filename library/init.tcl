@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.0b2
+package require -exact tcl 9.0b3
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -109,17 +109,15 @@ if {[interp issafe]} {
 
     # Set up the 'clock' ensemble
 
-    proc clock args {
+    apply {{} {
 	set cmdmap [dict create]
 	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
-	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
-	    -map $cmdmap]
+	    ::clock -map $cmdmap]
 	::tcl::unsupported::clock::configure -init-complete
-	uplevel 1 [info level 0]
-    }
+    }}
 }
 
 # Conditionalize for presence of exec.
