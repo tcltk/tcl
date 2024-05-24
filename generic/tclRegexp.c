@@ -111,22 +111,21 @@ const Tcl_ObjType tclRegexpType = {
     TCL_OBJTYPE_V0
 };
 
-#define RegexpSetInternalRep(objPtr, rePtr)					\
+#define RegexpSetInternalRep(objPtr, rePtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(rePtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (rePtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);		\
     } while (0)
 
-#define RegexpGetInternalRep(objPtr, rePtr)					\
+#define RegexpGetInternalRep(objPtr, rePtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
+	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
-
 
 /*
  *----------------------------------------------------------------------
@@ -223,8 +222,8 @@ Tcl_RegExpExec(
     Tcl_DStringInit(&ds);
     ustr = Tcl_UtfToUniCharDString(text, TCL_INDEX_NONE, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars, TCL_INDEX_NONE /* nmatches */,
-	    flags);
+    result = RegExpExecUniChar(interp, re, ustr, numChars,
+	    TCL_INDEX_NONE /* nmatches */, flags);
     Tcl_DStringFree(&ds);
 
     return result;
@@ -306,7 +305,7 @@ RegExpExecUniChar(
 				 * previous call to Tcl_GetRegExpFromObj */
     const Tcl_UniChar *wString,	/* String against which to match re. */
     size_t numChars,		/* Length of Tcl_UniChar string. */
-    size_t nm,		/* How many subexpression matches (counting
+    size_t nm,			/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means "don't know". */
     int flags)			/* Regular expression flags. */
@@ -367,9 +366,9 @@ TclRegExpRangeUniChar(
 				 * > 0 means give the range of a matching
 				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    Tcl_Size *startPtr,	/* Store address of first character in
+    Tcl_Size *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    Tcl_Size *endPtr)	/* Store address of character just after last
+    Tcl_Size *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -445,7 +444,7 @@ Tcl_RegExpExecObj(
     Tcl_Obj *textObj,		/* Text against which to match re. */
     Tcl_Size offset,		/* Character index that marks where matching
 				 * should begin. */
-    Tcl_Size nmatches,	/* How many subexpression matches (counting
+    Tcl_Size nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */
@@ -859,7 +858,7 @@ static TclRegexp *
 CompileRegexp(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     const char *string,		/* The regexp to compile (UTF-8). */
-    size_t length,			/* The length of the string in bytes. */
+    size_t length,		/* The length of the string in bytes. */
     int flags)			/* Compilation flags. */
 {
     TclRegexp *regexpPtr;

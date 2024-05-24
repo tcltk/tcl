@@ -1,9 +1,9 @@
 /*
  * tclStringObj.c --
  *
- *      This file contains functions that implement string operations on Tcl
- *      objects. Some string operations work with UTF-8 encoding forms.
- *      Functions that require knowledge of the width of each character,
+ *  This file contains functions that implement string operations on Tcl
+ *  objects. Some string operations work with UTF-8 encoding forms.
+ *  Functions that require knowledge of the width of each character,
  * 	such as indexing, operate on fixed width encoding forms such as UTF-32.
  *
  * 	Conceptually, a string is a sequence of Unicode code points. Internally
@@ -15,10 +15,10 @@
  *	numChars, but we don't store the fixed form encoding (unless
  * 	Tcl_GetUnicode is explicitly called).
  *
- *      The String object type stores one or both formats. The default
- *      behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
- *      stored in the internal rep for future access (without an additional
- *      O(n) cost).
+ *  The String object type stores one or both formats. The default
+ *  behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
+ *  stored in the internal rep for future access (without an additional
+ *  O(n) cost).
  *
  *	To allow many appends to be done to an object without constantly
  *	reallocating space, we allocate double the space and use the
@@ -458,7 +458,6 @@ TclGetCharLength(
 
     return numChars;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2413,7 +2412,7 @@ Tcl_AppendFormatToObj(
 		    numDigits = 1;
 		}
 		TclNewObj(pure);
-		Tcl_SetObjLength(pure, numDigits);
+		Tcl_SetObjLength(pure, (Tcl_Size)numDigits);
 		bytes = TclGetString(pure);
 		toAppend = length = numDigits;
 		while (numDigits--) {
@@ -3519,7 +3518,6 @@ TclStringCat(
  *
  *---------------------------------------------------------------------------
  */
-
 
 static int
 UniCharNcasememcmp(

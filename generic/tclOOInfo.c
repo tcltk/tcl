@@ -621,9 +621,22 @@ InfoObjectMethodsCmd(
 	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
-	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
+	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
+	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
+	    }
+	} else {
+	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
 	    }
 	}
     }
@@ -1378,9 +1391,22 @@ InfoClassMethodsCmd(
     } else {
 	FOREACH_HASH_DECLS;
 
-	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
+	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
+	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
+	    }
+	} else {
+	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
 	    }
 	}
     }
