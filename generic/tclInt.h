@@ -3576,7 +3576,7 @@ MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
-			    Tcl_Obj *newValue, Tcl_Encoding encoding);
+			    Tcl_Obj *newValue);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,

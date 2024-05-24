@@ -407,7 +407,7 @@ Tcl_SetEncodingSearchPath(
     if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
-    TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
+    TclSetProcessGlobalValue(&encodingSearchPath, searchPath);
     return TCL_OK;
 }
 
@@ -482,7 +482,7 @@ FillEncodingFileMap(void)
 	Tcl_DecrRefCount(directory);
     }
     Tcl_DecrRefCount(searchPath);
-    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+    TclSetProcessGlobalValue(&encodingFileMap, map);
     Tcl_DecrRefCount(map);
 }
 
@@ -1778,7 +1778,7 @@ OpenEncodingFileChannel(
 
 	    map = Tcl_DuplicateObj(map);
 	    Tcl_DictObjRemove(NULL, map, nameObj);
-	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	    directory = NULL;
 	}
     }
@@ -1812,7 +1812,7 @@ OpenEncodingFileChannel(
 
 	    map = Tcl_DuplicateObj(TclGetProcessGlobalValue(&encodingFileMap));
 	    Tcl_DictObjPut(NULL, map, nameObj, dir[i]);
-	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	}
     }
 
