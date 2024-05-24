@@ -1381,7 +1381,7 @@ TcpGetOptionProc(
 	reverseDNS = NI_NUMERICHOST;
     }
 
-    if (HAVE_OPTION("-peername")) {
+    if ((len == 0) || HAVE_OPTION("-peername")) {
 	address peername;
 	socklen_t size = sizeof(peername);
 
