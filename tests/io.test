@@ -2482,6 +2482,8 @@ test io-28.6 {
 } -body {
     variable done
     variable res
+    # Not a complete / correct channel implementation. Just enough
+    # to exercise the crash - closing from a write handler
     after 0 [list coroutine c1 apply [list {} {
 	variable done
 	set chan [chan create w {apply {{cmd chan args} {
@@ -2489,7 +2491,7 @@ test io-28.6 {
 		blocking - finalize {
 		}
 		watch {
-		    chan postevent $chan write
+		    lappend ::timers286 [after 0 chan postevent $chan write]
 		}
 		initialize {
 		    list initialize finalize watch read write configure blocking
@@ -2510,6 +2512,8 @@ test io-28.6 {
     } [namespace current]]]
     vwait [namespace current]::done
     return success
+} -cleanup {
+    foreach timer $::timers286 {after cancel $timer}
 } -result success
 
 test io-28.7 {
@@ -2522,12 +2526,14 @@ test io-28.7 {
     variable res
     after 0 [list coroutine c1 apply [list {} {
 	variable done
+        # Not a complete / correct channel implementation. Just enough
+        # to exercise the crash - closing from a read handler
 	set chan [chan create r {apply {{cmd chan args} {
 	    switch $cmd {
 		blocking - finalize {
 		}
 		watch {
-		    chan postevent $chan read
+		    lappend ::timers287 [after 0 chan postevent $chan read]
 		}
 		initialize {
 		    list initialize finalize watch read write configure blocking
@@ -2548,6 +2554,8 @@ test io-28.7 {
     } [namespace current]]]
     vwait [namespace current]::done
     return success
+} -cleanup {
+    foreach timer $::timers287 {after cancel $timer}
 } -result success
 
 test io-29.1 {Tcl_WriteChars, channel not writable} {
