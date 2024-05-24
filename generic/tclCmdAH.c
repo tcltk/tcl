@@ -425,14 +425,13 @@ TclInitEncodingCmd(
  */
 static int
 EncodingConvertParseOptions(
-    Tcl_Interp *interp,    /* For error messages. May be NULL */
-    int objc,		   /* Number of arguments */
-    Tcl_Obj *const objv[], /* Argument objects as passed to command. */
-    Tcl_Encoding *encPtr,  /* Where to store the encoding */
-    Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
-    int *profilePtr,         /* Bit mask of encoding option profile */
-    Tcl_Obj **failVarPtr   /* Where to store -failindex option value */
-)
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[],	/* Argument objects as passed to command. */
+    Tcl_Encoding *encPtr,	/* Where to store the encoding */
+    Tcl_Obj **dataObjPtr,	/* Where to store ptr to Tcl_Obj containing data */
+    int *profilePtr,		/* Bit mask of encoding option profile */
+    Tcl_Obj **failVarPtr)	/* Where to store -failindex option value */
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;

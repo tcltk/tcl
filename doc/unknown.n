@@ -47,7 +47,7 @@ The default implementation of \fBunknown\fR behaves as follows.
 It first calls the \fBauto_load\fR library procedure to load the command.
 If this succeeds, then it executes the original command with its
 original arguments.
-If the auto-load fails then \fBunknown\fR calls \fBauto_execok\fR
+If the auto-load fails and Tcl is run interactively then \fBunknown\fR calls \fBauto_execok\fR
 to see if there is an executable file by the name \fIcmd\fR.
 If so, it invokes the Tcl \fBexec\fR command
 with \fIcmd\fR and all the \fIargs\fR as arguments.

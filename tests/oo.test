@@ -2783,6 +2783,30 @@ test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
     o destroy
     c destroy
 } -result $stdmethods
+test oo-17.15 {OO: class method list without -all (bug 36e5517a6850)} -setup {
+    oo::class create c
+} -body {
+    oo::define c {
+	method foo {} {}
+	method Bar {} {}
+	private method gorp {} {}
+    }
+    list [lsort [info class methods c]] [lsort [info class methods c -private]]
+} -cleanup {
+    c destroy
+} -result {foo {Bar foo}}
+test oo-17.16 {OO: instance method list without -all (bug 36e5517a6850)} -setup {
+    oo::object create o
+} -body {
+    oo::objdefine o {
+	method foo {} {}
+	method Bar {} {}
+	private method gorp {} {}
+    }
+    list [lsort [info object methods o]] [lsort [info object methods o -private]]
+} -cleanup {
+    o destroy
+} -result {foo {Bar foo}}
 
 
 test oo-18.1 {OO: define command support} {
@@ -3441,6 +3465,121 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 } -match glob -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
+# Common code for oo-22.{3,4,5,6}
+oo::class create WorkerBase
+oo::class create WorkerSupport {
+    superclass oo::class WorkerBase
+    variable result stop
+    method WithWorkers {nworkers args script} {
+	set workers {}
+	try {
+	    for {set n 1} {$n <= $nworkers} {incr n} {
+		lappend workers [set worker [[self] new]]
+		$worker schedule {*}$args
+	    }
+	    return [uplevel 1 $script]
+	} finally {
+	    foreach worker $workers {$worker destroy}
+	}
+    }
+    method run {nworkers} {
+	set result {}
+	set stopvar [my varname stop]
+	set stop false
+	my WithWorkers $nworkers [list my Work [my varname result]] {
+	    after idle [namespace code {set stop true}]
+	    vwait $stopvar
+	}
+	return $result
+    }
+}
+oo::class create Worker {
+    superclass WorkerBase
+    method schedule {args} {
+	set coro [namespace current]::coro
+	if {![llength [info commands $coro]]} {
+	    coroutine $coro {*}$args
+	}
+    }
+    method Work args {error unimplemented}
+    method dump {} {
+	info frame [expr {[info frame] - 1}]
+    }
+}
+test oo-22.3 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly restored pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    A run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
+test oo-22.4 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works with the source class still around
+    oo::copy A B
+    B run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::B *} {* method Work class ::B *}}
+test oo-22.5 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works with the source class deleted
+    oo::copy A B
+    catch {A destroy}
+    B run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::B *} {* method Work class ::B *}}
+test oo-22.6 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works in the original source class with the copy around
+    oo::copy A B
+    B run 2
+    A run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
+WorkerBase destroy
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {
@@ -4402,7 +4541,112 @@ test oo-35.6 {
 } -cleanup {
     rename obj {}
 } -result done
-
+test oo-35.7.1 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {}
+test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {Destroyed}
+test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	variable interiorObjects
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    set obj [MkObjectRpc create cfg [self] 111]
+	    lappend interiorObjects $obj
+	    return $obj
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	    # Explicit destroy of interior objects
+	    foreach obj $interiorObjects {
+		$obj destroy
+	    }
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result "Destroyed\nRpcClient -> otto-111"
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object
