@@ -3326,13 +3326,13 @@ test interp-34.9 {time limits trigger in blocking after} {
 test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     set i [interp create]
     # Assume someone hasn't set the clock to early 1970!
-    $i limit time -seconds 1 -granularity 4
+    $i limit time -seconds [expr {[clock seconds] + 1}] -granularity 4
     interp alias $i log {} lappend result
     set result {}
     catch {
 	$i eval {
 	    log 1
-	    after 100
+	    after 1000
 	    log 2
 	}
     } msg
@@ -3409,6 +3409,20 @@ test interp-34.13 {time limit granularity and vwait: Bug 2891362} -setup {
 } -cleanup {
     interp delete $i
 } -returnCodes error -result {limit exceeded}
+test interp-34.14 {[Bug e3f4a8b78d]: interp limit and interp eval} -setup {
+    set i [interp create]
+    set result {}
+} -body {
+    $i limit command -value [$i eval {info cmdcount}]
+    catch {$i eval [list expr 1+3]} msg
+    lappend result $msg
+    catch {$i eval [list expr 1+3]} msg
+    lappend result $msg
+    catch {interp eval $i [list expr 1+3]} msg
+    lappend result $msg
+} -cleanup {
+    interp delete $i
+} -result {{command count limit exceeded} {command count limit exceeded} {command count limit exceeded}}
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit
