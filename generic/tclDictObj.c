@@ -1440,6 +1440,120 @@ Tcl_DbNewDictObj(
 #endif
 }
 
+/***** START OF FUNCTIONS ACTING AS HELPERS *****/
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictGet --
+ *
+ *	Given a key, get its value from the dictionary (or NULL if key is not
+ *	found in dictionary.)
+ *
+ * Results:
+ *	A standard Tcl result. The variable pointed to by valuePtrPtr is
+ *	updated with the value for the key. Note that it is not an error for
+ *	the key to have no mapping in the dictionary.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictGet(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    Tcl_Obj **valuePtrPtr)	/* Where to write the value. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    code = Tcl_DictObjGet(interp, dictPtr, keyPtr, valuePtrPtr);
+    Tcl_DecrRefCount(keyPtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictPut --
+ *
+ *	Add a key,value pair to a dictionary, or update the value for a key if
+ *	that key already has a mapping in the dictionary.
+ *
+ *	If valuePtr is a zero-count object and is not written into the
+ *	dictionary because of an error, it is freed by this routine. The caller
+ *	does NOT need to do reference count management.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictPut(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    Tcl_Obj *valuePtr)		/* The value to write in. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_IncrRefCount(valuePtr);
+    code = Tcl_DictObjPut(interp, dictPtr, keyPtr, valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    Tcl_DecrRefCount(valuePtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictPutString --
+ *
+ *	Add a key,value pair to a dictionary, or update the value for a key if
+ *	that key already has a mapping in the dictionary.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictPutString(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    const char *value)		/* The value in a C string. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    Tcl_Obj *valuePtr = Tcl_NewStringObj(value, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_IncrRefCount(valuePtr);
+    code = Tcl_DictObjPut(interp, dictPtr, keyPtr, valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    Tcl_DecrRefCount(valuePtr);
+    return code;
+}
+
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
 /*
