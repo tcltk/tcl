@@ -1117,6 +1117,40 @@ if {$zlibbinf ne ""} {
 unset zlibbinf
 rename _zlibbinf {}
 
+test zlib-14.1 {Bug 9ee9f4d7be: compression header added to source channel} -setup {
+    set data hello
+    set src [file tempfile]
+    puts -nonewline $src $data
+    flush $src
+    chan configure $src -translation binary
+    set dst [file tempfile]
+    chan configure $dst -translation binary
+    set result {}
+} -constraints knownBug -body {
+   for {set i 0} {$i < 3} {incr i} {
+	# Determine size of src channel
+	seek $src 0 end
+	set size [chan tell $src]
+	seek $src 0 start
+	# Determine size of content in src channel
+	set data [read $src]
+	set size2 [string length $data]
+	seek $src 0 start
+	# Copy src over to dst, keep dst empty
+	zlib push deflate $src -level 6
+	chan truncate $dst 0
+	chan copy $src $dst
+	set size3 [chan tell $dst]
+	chan pop $src
+	# Show sizes
+	lappend result $size $size2 ->$size3
+    }
+    return $result
+} -cleanup {
+    chan close $src
+    chan close $dst
+} -result {5 5 ->5 5 5 ->5 5 5 ->5}
+
 
 ::tcltest::cleanupTests
 return
