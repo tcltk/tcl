@@ -2574,10 +2574,9 @@ DisassembleJumptableInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
-		Tcl_NewIntObj(offset));
+	TclDictPut(NULL, mapping, keyPtr, Tcl_NewIntObj(offset));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
+    TclDictPut(NULL, dictObj, "mapping", mapping);
 }
 
 /*

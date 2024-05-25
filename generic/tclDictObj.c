@@ -1554,6 +1554,39 @@ TclDictPutString(
     return code;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictRemove --
+ *
+ *	Remove the key,value pair with the given key from the dictionary; the
+ *	key does not need to be present in the dictionary.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictRemove(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key)		/* The key in a C string. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    code = Tcl_DictObjRemove(interp, dictPtr, keyPtr);
+    Tcl_DecrRefCount(keyPtr);
+    return code;
+}
+
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
 /*
