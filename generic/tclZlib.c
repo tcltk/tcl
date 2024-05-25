@@ -385,7 +385,7 @@ ConvertErrorToList(
  * GenerateHeader --
  *
  *	Function for creating a gzip header from the contents of a dictionary
- *	(as described in the documentation). GetValue is a helper function.
+ *	(as described in the documentation).
  *
  * Results:
  *	A Tcl result code.
@@ -397,20 +397,6 @@ ConvertErrorToList(
  *
  *----------------------------------------------------------------------
  */
-
-static inline int
-GetValue(
-    Tcl_Interp *interp,
-    Tcl_Obj *dictObj,
-    const char *nameStr,
-    Tcl_Obj **valuePtrPtr)
-{
-    Tcl_Obj *name = Tcl_NewStringObj(nameStr, -1);
-    int result = Tcl_DictObjGet(interp, dictObj, name, valuePtrPtr);
-
-    TclDecrRefCount(name);
-    return result;
-}
 
 static int
 GenerateHeader(
@@ -438,7 +424,7 @@ GenerateHeader(
 	Tcl_Panic("no latin-1 encoding");
     }
 
-    if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
@@ -465,14 +451,14 @@ GenerateHeader(
 	}
     }
 
-    if (GetValue(interp, dictObj, "crc", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "crc", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL &&
 	    Tcl_GetBooleanFromObj(interp, value, &headerPtr->header.hcrc)) {
 	goto error;
     }
 
-    if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
@@ -499,7 +485,7 @@ GenerateHeader(
 	}
     }
 
-    if (GetValue(interp, dictObj, "os", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "os", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL && Tcl_GetIntFromObj(interp, value,
 	    &headerPtr->header.os) != TCL_OK) {
@@ -511,14 +497,14 @@ GenerateHeader(
      * input data.
      */
 
-    if (GetValue(interp, dictObj, "time", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "time", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL && Tcl_GetLongFromObj(interp, value,
 	    (long *) &headerPtr->header.time) != TCL_OK) {
 	goto error;
     }
 
-    if (GetValue(interp, dictObj, "type", &value) != TCL_OK) {
+    if (TclDictGet(interp, dictObj, "type", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL && Tcl_GetIndexFromObj(interp, value, types,
 	    "type", TCL_EXACT, &headerPtr->header.text) != TCL_OK) {
@@ -548,9 +534,6 @@ GenerateHeader(
  *----------------------------------------------------------------------
  */
 
-#define SetValue(dictObj, key, value) \
-	Tcl_DictObjPut(NULL, (dictObj), Tcl_NewStringObj((key), -1), (value))
-
 static void
 ExtractHeader(
     gz_header *headerPtr,	/* The gzip header to extract from. */
@@ -573,9 +556,9 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
 		&tmp);
-	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
+	TclDictPut(NULL, dictObj, "comment", TclDStringToObj(&tmp));
     }
-    SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
+    TclDictPut(NULL, dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
 	if (latin1enc == NULL) {
 	    /*
@@ -590,17 +573,18 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
 		&tmp);
-	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
+	TclDictPut(NULL, dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
-	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
+	TclDictPut(NULL, dictObj, "os", Tcl_NewIntObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
-	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
+	TclDictPut(NULL, dictObj, "time",
+		Tcl_NewLongObj((long) headerPtr->time));
     }
     if (headerPtr->text != Z_UNKNOWN) {
-	SetValue(dictObj, "type",
-		Tcl_NewStringObj(headerPtr->text ? "text" : "binary", -1));
+	TclDictPutString(NULL, dictObj, "type",
+		headerPtr->text ? "text" : "binary");
     }
 
     if (latin1enc != NULL) {
@@ -1889,7 +1873,7 @@ Tcl_ZlibInflate(
     Tcl_SetByteArrayLength(obj, stream.total_out);
     if (headerPtr != NULL) {
 	ExtractHeader(&header, gzipHeaderDictObj);
-	SetValue(gzipHeaderDictObj, "size",
+	TclDictPut(NULL, gzipHeaderDictObj, "size",
 		Tcl_NewLongObj(stream.total_out));
 	ckfree(nameBuf);
 	ckfree(commentBuf);
