@@ -538,7 +538,6 @@ PkgRequireCoreStep1(
     Tcl_NRAddCallback(interp,
 	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
     Tcl_NREvalObj(interp, Tcl_DStringToObj(&command), TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&command);
     return TCL_OK;
 }
 
