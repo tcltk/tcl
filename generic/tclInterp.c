@@ -2904,6 +2904,18 @@ ChildEval(
     Tcl_Preserve(childInterp);
     Tcl_AllowExceptions(childInterp);
 
+    /*
+     * If we're transferring to another interpreter, check it's limits first.
+     * It's much more reliable to do that now rather than waiting for the
+     * intermittent checks done during running; the slight performance hit for
+     * a cross-interp call is not a big problem. [Bug e3f4a8b78d]
+     */
+
+    if (interp != childInterp && Tcl_LimitCheck(childInterp) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
+
     if (objc == 1) {
 	/*
 	 * TIP #280: Make actual argument location available to eval'd script.
@@ -2922,6 +2934,7 @@ ChildEval(
 	result = Tcl_EvalObjEx(childInterp, objPtr, 0);
 	Tcl_DecrRefCount(objPtr);
     }
+  done:
     Tcl_TransferResult(childInterp, result, interp);
 
     Tcl_Release(childInterp);
