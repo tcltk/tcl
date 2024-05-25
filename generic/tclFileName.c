@@ -1777,7 +1777,6 @@ TclGlob(
 	    if (c != '\0') {
 		tail++;
 	    }
-	    Tcl_DStringFree(&buffer);
 	} else {
 	    tail = pattern;
 	}
