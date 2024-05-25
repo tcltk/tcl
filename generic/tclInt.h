@@ -2918,6 +2918,12 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    int *sizePtr, int *literalPtr);
+MODULE_SCOPE int	TclDictGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj **valuePtrPtr);
+MODULE_SCOPE int	TclDictPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj *valuePtr);
+MODULE_SCOPE int	TclDictPutString(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, const char *value);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
