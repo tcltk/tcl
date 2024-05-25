@@ -405,13 +405,9 @@ Tcl_MainEx(
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr, *valuePtr;
+		Tcl_Obj *valuePtr = NULL;
 
-		TclNewLiteralStringObj(keyPtr, "-errorinfo");
-		Tcl_IncrRefCount(keyPtr);
-		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
-		Tcl_DecrRefCount(keyPtr);
-
+		TclDictGet(NULL, options, "-errorinfo", &valuePtr);
 		if (valuePtr) {
 		    Tcl_WriteObj(chan, valuePtr);
 		}
