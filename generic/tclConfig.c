@@ -128,7 +128,7 @@ Tcl_RegisterConfig(
      */
 
     for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+	TclDictPut(interp, pkgDict, cfg->key,
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
 
