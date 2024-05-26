@@ -516,7 +516,7 @@ ProcessStatusObjCmd(
 		 */
 
 		TclNewIntObj(elemPtr, info->resolvedPid);
-		Tcl_DictObjPut(interp, dict, elemPtr,
+		Tcl_DictObjPut(NULL, dict, elemPtr,
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -567,7 +567,7 @@ ProcessStatusObjCmd(
 		 */
 
 		TclNewIntObj(elemPtr, info->resolvedPid);
-		Tcl_DictObjPut(interp, dict, elemPtr,
+		Tcl_DictObjPut(NULL, dict, elemPtr,
 			BuildProcessStatusObj(info));
 	    }
 	}

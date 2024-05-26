@@ -286,13 +286,9 @@ HandleBgErrors(
 
 	    if (errChannel != NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr, *valuePtr = NULL;
+		Tcl_Obj *valuePtr = NULL;
 
-		TclNewLiteralStringObj(keyPtr, "-errorinfo");
-		Tcl_IncrRefCount(keyPtr);
-		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
-		Tcl_DecrRefCount(keyPtr);
-
+		TclDictGet(NULL, options, "-errorinfo", &valuePtr);
 		Tcl_WriteChars(errChannel,
 			"error in background error handler:\n", -1);
 		if (valuePtr) {
@@ -340,7 +336,7 @@ TclDefaultBgErrorHandlerObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *keyPtr, *valuePtr;
+    Tcl_Obj *valuePtr;
     Tcl_Obj *tempObjv[2];
     int result, code, level;
     Tcl_InterpState saved;
@@ -354,10 +350,7 @@ TclDefaultBgErrorHandlerObjCmd(
      * Check for a valid return options dictionary.
      */
 
-    TclNewLiteralStringObj(keyPtr, "-level");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-level", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
@@ -367,10 +360,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    TclNewLiteralStringObj(keyPtr, "-code");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-code", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
@@ -432,18 +422,12 @@ TclDefaultBgErrorHandlerObjCmd(
 	Tcl_SetObjResult(interp, tempObjv[1]);
     }
 
-    TclNewLiteralStringObj(keyPtr, "-errorcode");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-errorcode", &valuePtr);
     if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_SetObjErrorCode(interp, valuePtr);
     }
 
-    TclNewLiteralStringObj(keyPtr, "-errorinfo");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-errorinfo", &valuePtr);
     if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
