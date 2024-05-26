@@ -1610,17 +1610,16 @@ TclMakeEnsemble(
      */
 
     if (ensemble != NULL) {
-	Tcl_Obj *mapDict, *fromObj, *toObj;
+	Tcl_Obj *mapDict, *toObj;
 	Command *cmdPtr;
 
 	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
-	    fromObj = Tcl_NewStringObj(map[i].name, -1);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
 		    Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
-	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+	    TclDictPut(NULL, mapDict, map[i].name, toObj);
 
 	    if (map[i].proc || map[i].nreProc) {
 		/*
