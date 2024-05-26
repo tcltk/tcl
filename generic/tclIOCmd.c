@@ -2005,8 +2005,7 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;
