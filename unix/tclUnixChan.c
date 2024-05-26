@@ -636,21 +636,6 @@ FileGetHandleProc(
  *----------------------------------------------------------------------
  */
 
-static inline void
-StoreElementInDict(
-    Tcl_Obj *dictObj,
-    const char *name,
-    Tcl_Obj *valueObj)
-{
-    /*
-     * We assume that the dict is being built fresh and that there's never any
-     * duplicate keys.
-     */
-
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
-    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
-}
-
 static inline const char *
 GetTypeFromMode(
     int mode)
@@ -700,7 +685,7 @@ StatOpenFile(
      */
 
     TclNewObj(dictObj);
-#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, name, value)
 
     STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));
     STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
