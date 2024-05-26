@@ -1121,7 +1121,7 @@ DisassembleByteCodeAsDicts(
 	    Tcl_Obj *desc;
 
 	    TclNewObj(desc);
-	    Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1), auxDesc);
+	    TclDictPut(NULL, desc, "name", auxDesc);
 	    auxDesc = desc;
 	    auxData->type->disassembleProc(auxData->clientData, auxDesc,
 		    codePtr, 0);
@@ -1188,23 +1188,20 @@ DisassembleByteCodeAsDicts(
 	sourceOffset += Decode(srcOffPtr);
 	sourceLength = Decode(srcLenPtr);
 	TclNewObj(cmd);
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codefrom", -1),
-		Tcl_NewWideIntObj(codeOffset));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", -1),
-		Tcl_NewWideIntObj(codeOffset + codeLength - 1));
+	TclDictPut(NULL, cmd, "codefrom", Tcl_NewWideIntObj(codeOffset));
+	TclDictPut(NULL, cmd, "codeto", Tcl_NewWideIntObj(
+		codeOffset + codeLength - 1));
 
 	/*
 	 * Convert byte offsets to character offsets; important if multibyte
 	 * characters are present in the source!
 	 */
 
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
-			sourceOffset)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
-			sourceOffset + sourceLength - 1)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
+	TclDictPut(NULL, cmd, "scriptfrom", Tcl_NewWideIntObj(
+		Tcl_NumUtfChars(codePtr->source, sourceOffset)));
+	TclDictPut(NULL, cmd, "scriptto", Tcl_NewWideIntObj(
+		Tcl_NumUtfChars(codePtr->source, sourceOffset + sourceLength - 1)));
+	TclDictPut(NULL, cmd, "script",
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
 	Tcl_ListObjAppendElement(NULL, commands, cmd);
     }
@@ -1223,32 +1220,26 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(description);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("literals", -1),
-	    literals);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("variables", -1),
-	    variables);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exception", -1), exn);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", -1),
-	    instructions);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", -1), aux);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
-	    commands);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
+    TclDictPut(NULL, description, "literals", literals);
+    TclDictPut(NULL, description, "variables", variables);
+    TclDictPut(NULL, description, "exception", exn);
+    TclDictPut(NULL, description, "instructions", instructions);
+    TclDictPut(NULL, description, "auxiliary", aux);
+    TclDictPut(NULL, description, "commands", commands);
+    TclDictPut(NULL, description, "script",
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
+    TclDictPut(NULL, description, "namespace", 
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
+    TclDictPut(NULL, description, "stackdepth",
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
+    TclDictPut(NULL, description, "exceptdepth",
 	    Tcl_NewWideIntObj(codePtr->maxExceptDepth));
     if (line >= 0) {
-	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("initiallinenumber", -1),
+	TclDictPut(NULL, description, "initiallinenumber",
 		Tcl_NewWideIntObj(line));
     }
     if (file) {
-	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("sourcefile", -1), file);
+	TclDictPut(NULL, description, "sourcefile", file);
     }
     return description;
 }
