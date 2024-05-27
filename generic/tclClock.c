@@ -3437,7 +3437,7 @@ ClockParseFmtScnArgs(
 		goto baseOverflow;
 	    }
 
-	    Tcl_AppendResult(interp, " or integer", NULL);
+	    Tcl_AppendResult(interp, " or integer", (char *)NULL);
 	    i = baseIdx;
 	    goto badOption;
 	}
