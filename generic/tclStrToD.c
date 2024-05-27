@@ -1595,7 +1595,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	}
     }
 
@@ -4859,7 +4859,7 @@ Tcl_InitBignumFromDouble(
 	    const char *s = "integer value too large to represent";
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;
     }
