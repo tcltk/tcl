@@ -4804,6 +4804,10 @@ EvalObjvCore(
     }
 
     if (TclLimitExceeded(iPtr->limit)) {
+	/* generate error message if not yet already logged at this stage */
+	if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
+	    Tcl_LimitCheck(interp);
+	}
 	return TCL_ERROR;
     }
 
