@@ -1281,8 +1281,7 @@ CloneProcedureMethod(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    TclListObjAppendString(NULL, argObj, localPtr->name);
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }

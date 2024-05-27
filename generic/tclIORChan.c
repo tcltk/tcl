@@ -2160,8 +2160,7 @@ NewReflectedChannel(
     Tcl_IncrRefCount(rcPtr->cmd);
     rcPtr->methods = Tcl_NewListObj(METH_WRITE + 1, NULL);
     while (mn <= METH_WRITE) {
-	Tcl_ListObjAppendElement(NULL, rcPtr->methods,
-		Tcl_NewStringObj(methodNames[mn++], -1));
+	TclListObjAppendString(NULL, rcPtr->methods, methodNames[mn++]);
     }
     Tcl_IncrRefCount(rcPtr->methods);
     rcPtr->name = handleObj;

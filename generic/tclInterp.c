@@ -1022,8 +1022,7 @@ NRInterpCmd(
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
 	    string = (char *)Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
-	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewStringObj(string, -1));
+	    TclListObjAppendString(NULL, resultPtr, string);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	return TCL_OK;
@@ -2182,9 +2181,9 @@ Tcl_GetInterpPath(
     if (Tcl_GetInterpPath(interp, iiPtr->child.parentInterp) != TCL_OK){
 	return TCL_ERROR;
     }
-    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj((const char *)Tcl_GetHashKey(&iiPtr->parent.childTable,
-		    iiPtr->child.childEntryPtr), -1));
+    TclListObjAppendString(NULL, Tcl_GetObjResult(interp), (const char *)
+	    Tcl_GetHashKey(&iiPtr->parent.childTable,
+		    iiPtr->child.childEntryPtr));
     return TCL_OK;
 }
 
@@ -2722,8 +2721,7 @@ ChildDebugCmd(
     iPtr = (Interp *) childInterp;
     if (objc == 0) {
 	TclNewObj(resultPtr);
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewStringObj("-frame", -1));
+	TclListObjAppendString(NULL, resultPtr, "-frame");
 	Tcl_ListObjAppendElement(NULL, resultPtr,
 		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
 	Tcl_SetObjResult(interp, resultPtr);
@@ -3001,8 +2999,8 @@ ChildHidden(
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 		hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    Tcl_ListObjAppendElement(NULL, listObjPtr,
-		    Tcl_NewStringObj((const char *)Tcl_GetHashKey(hTblPtr, hPtr), -1));
+	    TclListObjAppendString(NULL, listObjPtr, (const char *)
+		    Tcl_GetHashKey(hTblPtr, hPtr));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);

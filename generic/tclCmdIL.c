@@ -500,8 +500,7 @@ InfoArgsCmd(
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
 	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
-	    Tcl_ListObjAppendElement(interp, listObjPtr,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    TclListObjAppendString(interp, listObjPtr, localPtr->name);
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -750,8 +749,7 @@ InfoCommandsCmd(
 	    }
 	    if (entryPtr != NULL) {
 		cmdName = (const char *)Tcl_GetHashKey(tablePtr, entryPtr);
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(cmdName, -1));
+		TclListObjAppendString(interp, listPtr, cmdName);
 		Tcl_SetObjResult(interp, listPtr);
 		return TCL_OK;
 	    }
@@ -795,8 +793,7 @@ InfoCommandsCmd(
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(cmdName, -1));
+			TclListObjAppendString(interp, listPtr, cmdName);
 		    }
 		}
 		entryPtr = Tcl_NextHashEntry(&search);
@@ -1979,8 +1976,7 @@ InfoProcsCmd(
 
 			if (TclIsProc(cmdPtr) || ((realCmdPtr != NULL)
 				&& TclIsProc(realCmdPtr))) {
-			    Tcl_ListObjAppendElement(interp, listPtr,
-				    Tcl_NewStringObj(cmdName, -1));
+			    TclListObjAppendString(interp, listPtr, cmdName);
 			}
 		    }
 		}
@@ -3488,12 +3484,12 @@ Tcl_LsearchObjCmd(
 
 		TclNewIntObj(itemPtr, i);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
-			    TclIndexDecode(sortInfo.indexv[j], listc)));
+		    TclListObjAppendInt(interp, itemPtr,
+			    TclIndexDecode(sortInfo.indexv[j], listc));
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
-		Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewIntObj(i));
+		TclListObjAppendInt(interp, listPtr, i);
 	    }
 	}
     }
@@ -3510,8 +3506,8 @@ Tcl_LsearchObjCmd(
 
 	    TclNewIntObj(itemPtr, index);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewIntObj(
-			TclIndexDecode(sortInfo.indexv[j], listc)));
+		TclListObjAppendInt(interp, itemPtr,
+			TclIndexDecode(sortInfo.indexv[j], listc));
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {

@@ -248,9 +248,7 @@ AppendEnvironment(
     WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
-	objPtr = Tcl_NewStringObj(buf, -1);
-	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-
+	TclListObjAppendString(NULL, pathPtr, buf);
 	TclWinNoBackslash(buf);
 	Tcl_SplitPath(buf, &pathc, &pathv);
 

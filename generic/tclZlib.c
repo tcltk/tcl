@@ -650,9 +650,8 @@ AppendByteArray(
     int size)
 {
     if (size > 0) {
-	Tcl_Obj *baObj = Tcl_NewByteArrayObj((unsigned char *) buffer, size);
-
-	Tcl_ListObjAppendElement(NULL, listObj, baObj);
+	Tcl_ListObjAppendElement(NULL, listObj, 
+		Tcl_NewByteArrayObj((unsigned char *) buffer, size));
     }
 }
 
@@ -3191,11 +3190,10 @@ ZlibTransformOutput(
     }
 
     errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode",-1));
+    TclListObjAppendString(NULL, errObj, "-errorcode");
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, cd->outStream.adler));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(cd->outStream.msg, -1));
+    TclListObjAppendString(NULL, errObj, cd->outStream.msg);
     Tcl_SetChannelError(cd->parent, errObj);
     *errorCodePtr = EINVAL;
     return -1;
@@ -3868,11 +3866,10 @@ ResultDecompress(
 
   handleError:
     errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode",-1));
+    TclListObjAppendString(NULL, errObj, "-errorcode");
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, cd->inStream.adler));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(cd->inStream.msg, -1));
+    TclListObjAppendString(NULL, errObj, cd->inStream.msg);
     Tcl_SetChannelError(cd->parent, errObj);
     *errorCodePtr = EINVAL;
     return -1;

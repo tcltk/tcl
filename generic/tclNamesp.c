@@ -1501,8 +1501,8 @@ Tcl_AppendExportList(
      */
 
     for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
-	result = Tcl_ListObjAppendElement(interp, objPtr,
-		Tcl_NewStringObj(nsPtr->exportArrayPtr[i], -1));
+	result = TclListObjAppendString(interp, objPtr,
+		nsPtr->exportArrayPtr[i]);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -3044,8 +3044,7 @@ NamespaceChildrenCmd(
 	    Tcl_FindHashEntry(nsPtr->childTablePtr, pattern+length) != NULL
 #endif
 	) {
-	    Tcl_ListObjAppendElement(interp, listPtr,
-		    Tcl_NewStringObj(pattern, -1));
+	    TclListObjAppendString(interp, listPtr, pattern);
 	}
 	goto searchDone;
     }
@@ -3142,10 +3141,8 @@ NamespaceCodeCmd(
      */
 
     TclNewObj(listPtr);
-    TclNewLiteralStringObj(objPtr, "::namespace");
-    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
-    TclNewLiteralStringObj(objPtr, "inscope");
-    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    TclListObjAppendString(interp, listPtr, "::namespace");
+    TclListObjAppendString(interp, listPtr, "inscope");
 
     currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
@@ -3712,8 +3709,8 @@ NamespaceImportCmd(
 	    Command *cmdPtr = (Command *)Tcl_GetHashValue(hPtr);
 
 	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
-		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
-			(char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr) ,-1));
+		TclListObjAppendString(NULL, listPtr,  (const char *)
+			Tcl_GetHashKey(&nsPtr->cmdTable, hPtr));
 	    }
 	}
 	Tcl_SetObjResult(interp, listPtr);
@@ -4026,8 +4023,8 @@ NamespacePathCmd(
 	TclNewObj(resultObj);
 	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
-			nsPtr->commandPathArray[i].nsPtr->fullName, -1));
+		TclListObjAppendString(NULL, resultObj,
+			nsPtr->commandPathArray[i].nsPtr->fullName);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultObj);
@@ -5025,8 +5022,8 @@ TclLogCommandInfo(
 	 */
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
-		iPtr->framePtr->level - iPtr->varFramePtr->level));
+	TclListObjAppendInt(NULL, iPtr->errorStack,
+		iPtr->framePtr->level - iPtr->varFramePtr->level);
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*
 	 * normal case, [lappend errorstack CALL [info level 0]]

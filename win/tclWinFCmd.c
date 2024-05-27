@@ -1911,7 +1911,7 @@ CannotSetAttribute(
 Tcl_Obj *
 TclpObjListVolumes(void)
 {
-    Tcl_Obj *resultPtr, *elemPtr;
+    Tcl_Obj *resultPtr;
     char buf[40 * 4];		/* There couldn't be more than 30 drives??? */
     int i;
     char *p;
@@ -1942,15 +1942,13 @@ TclpObjListVolumes(void)
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
-		elemPtr = Tcl_NewStringObj(buf, -1);
-		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
+		TclListObjAppendString(NULL, resultPtr, buf);
 	    }
 	}
     } else {
 	for (p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
-	    elemPtr = Tcl_NewStringObj(p, -1);
-	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
+	    TclListObjAppendString(NULL, resultPtr, p);
 	}
     }
 

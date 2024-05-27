@@ -10428,8 +10428,7 @@ Tcl_GetChannelNamesEx(
 	    && !((pattern[0] == 's') && (pattern[1] == 't')
 	    && (pattern[2] == 'd'))) {
 	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
-		&& (Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
+		&& (TclListObjAppendString(interp, resultPtr, pattern) != TCL_OK)) {
 	    goto error;
 	}
 	goto done;
@@ -10455,8 +10454,7 @@ Tcl_GetChannelNamesEx(
 	}
 
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
-		(Tcl_ListObjAppendElement(interp, resultPtr,
-			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+		(TclListObjAppendString(interp, resultPtr, name) != TCL_OK)) {
 	error:
 	    TclDecrRefCount(resultPtr);
 	    return TCL_ERROR;

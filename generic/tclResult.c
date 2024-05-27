@@ -1040,7 +1040,7 @@ Tcl_SetErrorCodeVA(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+	TclListObjAppendString(NULL, errorObj, elem);
     }
     Tcl_SetObjErrorCode(interp, errorObj);
 }

@@ -2719,8 +2719,7 @@ AppendPrintfToObjVA(
 		switch (size) {
 		case -1:
 		case 0:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(
-			    va_arg(argList, int)));
+		    TclListObjAppendInt(NULL, list, va_arg(argList, int));
 		    break;
 		case 1:
 		    Tcl_ListObjAppendElement(NULL, list, NewLongObj(*p,
@@ -2739,7 +2738,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		TclListObjAppendInt(NULL, list, lastNum);
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':

@@ -2290,8 +2290,7 @@ DisassembleDictUpdateInfo(
 
     TclNewObj(variables);
     for (i=0 ; i<duiPtr->length ; i++) {
-	Tcl_ListObjAppendElement(NULL, variables,
-		Tcl_NewIntObj(duiPtr->varIndices[i]));
+	TclListObjAppendInt(NULL, variables, duiPtr->varIndices[i]);
     }
     TclDictPut(NULL, dictObj, "variables", variables);
 }
@@ -3031,8 +3030,7 @@ DisassembleForeachInfo(
 
     TclNewObj(objPtr);
     for (i=0 ; i<infoPtr->numLists ; i++) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewIntObj(infoPtr->firstValueTemp + i));
+	TclListObjAppendInt(NULL, objPtr, infoPtr->firstValueTemp + i);
     }
     TclDictPut(NULL, dictObj, "data", objPtr);
 
@@ -3051,8 +3049,7 @@ DisassembleForeachInfo(
 	TclNewObj(innerPtr);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
-	    Tcl_ListObjAppendElement(NULL, innerPtr,
-		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
+	    TclListObjAppendInt(NULL, innerPtr, varsPtr->varIndexes[j]);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
@@ -3086,8 +3083,7 @@ DisassembleNewForeachInfo(
 	TclNewObj(innerPtr);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
-	    Tcl_ListObjAppendElement(NULL, innerPtr,
-		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
+	    TclListObjAppendInt(NULL, innerPtr, varsPtr->varIndexes[j]);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }

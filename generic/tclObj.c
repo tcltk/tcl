@@ -896,8 +896,8 @@ Tcl_AppendAllObjTypes(
     Tcl_MutexLock(&tableMutex);
     for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj(Tcl_GetHashKey(&typeTable, hPtr), -1));
+	TclListObjAppendString(NULL, objPtr, (const char *)
+		Tcl_GetHashKey(&typeTable, hPtr));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
