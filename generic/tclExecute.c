@@ -1520,12 +1520,7 @@ CompileExprObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile == 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -2082,8 +2077,8 @@ TEBCresume(
     Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
 				 * stack. */
     const unsigned char *pc = (const unsigned char *)data[1];
-                                /* The current program counter. */
-    unsigned char inst;         /* The currently running instruction */
+				/* The current program counter. */
+    unsigned char inst;	 /* The currently running instruction */
 
     /*
      * Transfer variables - needed only between opcodes, but not while
@@ -2092,7 +2087,7 @@ TEBCresume(
 
     int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    int checkInterp = 0;        /* Indicates when a check of interp readyness
+    int checkInterp = 0;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
@@ -2146,7 +2141,7 @@ TEBCresume(
 
 	goto cleanup0;
     } else {
-        /* resume from invocation */
+	/* resume from invocation */
 	CACHE_STACK_INFO();
 
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
@@ -2446,7 +2441,7 @@ TEBCresume(
 	    } else {
 		fprintf(stdout, "%" TCL_SIZE_MODIFIER "d: (%" TCL_T_MODIFIER "d) yielding value \"%.30s\"\n",
 			iPtr->numLevels, (pc - codePtr->codeStart),
-			Tcl_GetString(OBJ_AT_TOS));
+			TclGetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
 	}
@@ -6687,7 +6682,7 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listVarPtr = LOCAL(listTmpIndex);
-                /* Do not use TclListObjCopy here - shimmers arithseries to list */
+		/* Do not use TclListObjCopy here - shimmers arithseries to list */
 		listPtr = Tcl_DuplicateObj(listVarPtr->value.objPtr);
 		TclListObjGetElements(interp, listPtr, &listLen, &elements);
 
@@ -9440,21 +9435,21 @@ TclGetSourceFromFrame(
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {
-        return Tcl_NewListObj(objc, objv);
+	return Tcl_NewListObj(objc, objv);
     }
     if (cfPtr->cmdObj == NULL) {
-        if (cfPtr->cmd == NULL) {
+	if (cfPtr->cmd == NULL) {
 	    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-            cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
+	    cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
 		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
-        }
+	}
 	if (cfPtr->cmd) {
 	    cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
 	} else {
 	    cfPtr->cmdObj = Tcl_NewListObj(objc, objv);
 	}
-        Tcl_IncrRefCount(cfPtr->cmdObj);
+	Tcl_IncrRefCount(cfPtr->cmdObj);
     }
     return cfPtr->cmdObj;
 }
