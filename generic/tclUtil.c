@@ -4121,8 +4121,7 @@ FreeProcessGlobalValue(
 void
 TclSetProcessGlobalValue(
     ProcessGlobalValue *pgvPtr,
-    Tcl_Obj *newValue,
-    Tcl_Encoding encoding)
+    Tcl_Obj *newValue)
 {
     const char *bytes;
     Tcl_HashTable *cacheMap;
@@ -4144,7 +4143,7 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
-    Tcl_UtfToExternalDStringEx(NULL, encoding, bytes, pgvPtr->numBytes,
+    Tcl_UtfToExternalDStringEx(NULL, NULL, bytes, pgvPtr->numBytes,
 	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     pgvPtr->numBytes = Tcl_DStringLength(&ds);
     pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
@@ -4153,7 +4152,7 @@ TclSetProcessGlobalValue(
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
-    pgvPtr->encoding = encoding;
+    pgvPtr->encoding = NULL;
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
@@ -4277,6 +4276,8 @@ TclGetProcessGlobalValue(
  *	This function stores the absolute pathname of the executable file
  *	(normally as computed by TclpFindExecutable).
  *
+ *	Starting with Tcl 9.0, encoding parameter is not used any more.
+ *
  * Results:
  *	None.
  *
@@ -4289,9 +4290,9 @@ TclGetProcessGlobalValue(
 void
 TclSetObjNameOfExecutable(
     Tcl_Obj *name,
-    Tcl_Encoding encoding)
+    TCL_UNUSED(Tcl_Encoding))
 {
-    TclSetProcessGlobalValue(&executableName, name, encoding);
+    TclSetProcessGlobalValue(&executableName, name);
 }
 
 /*
