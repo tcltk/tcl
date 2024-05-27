@@ -114,7 +114,7 @@ GetLocationInformation(
 /*
  *----------------------------------------------------------------------
  *
- * TclPrintByteCodeObj --
+ * TclDebugPrintByteCodeObj --
  *
  *	This procedure prints ("disassembles") the instructions of a bytecode
  *	object to stdout.
@@ -129,14 +129,16 @@ GetLocationInformation(
  */
 
 void
-TclPrintByteCodeObj(
-    TCL_UNUSED(Tcl_Interp *),	/* Stuck with this in internal stubs */
+TclDebugPrintByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
+    if (tclTraceCompile >= 2) {
+	Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
 
-    fprintf(stdout, "\n%s", TclGetString(bufPtr));
-    Tcl_DecrRefCount(bufPtr);
+	fprintf(stdout, "\n%s", TclGetString(bufPtr));
+	Tcl_DecrRefCount(bufPtr);
+	fflush(stdout);
+    }
 }
 
 /*
@@ -703,8 +705,8 @@ TclGetInnerContext(
     case INST_TRY_CVT_TO_NUMERIC:
     case INST_EXPAND_STKTOP:
     case INST_EXPR_STK:
-        objc = 1;
-        break;
+	objc = 1;
+	break;
 
     case INST_LIST_IN:
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
@@ -731,22 +733,22 @@ TclGetInnerContext(
     case INST_SUB:
     case INST_DIV:
     case INST_MULT:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_RETURN_STK:
-        /* early pop. TODO: dig out opt dict too :/ */
-        objc = 1;
-        break;
+	/* early pop. TODO: dig out opt dict too :/ */
+	objc = 1;
+	break;
 
     case INST_SYNTAX:
     case INST_RETURN_IMM:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
-        break;
+	break;
 
     case INST_INVOKE_STK1:
 	objc = TclGetUInt1AtPtr(pc+1);
@@ -755,37 +757,37 @@ TclGetInnerContext(
 
     result = iPtr->innerContext;
     if (Tcl_IsShared(result)) {
-        Tcl_DecrRefCount(result);
-        iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
-        Tcl_IncrRefCount(result);
+	Tcl_DecrRefCount(result);
+	iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
+	Tcl_IncrRefCount(result);
     } else {
-        Tcl_Size len;
+	Tcl_Size len;
 
-        /*
-         * Reset while keeping the list internalrep as much as possible.
-         */
+	/*
+	 * Reset while keeping the list internalrep as much as possible.
+	 */
 
 	TclListObjLength(interp, result, &len);
-        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+	Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
 
     for (; objc>0 ; objc--) {
-        Tcl_Obj *objPtr;
+	Tcl_Obj *objPtr;
 
-        objPtr = tosPtr[1 - objc];
-        if (!objPtr) {
-            Tcl_Panic("InnerContext: bad tos -- appending null object");
-        }
-        if ((objPtr->refCount <= 0)
+	objPtr = tosPtr[1 - objc];
+	if (!objPtr) {
+	    Tcl_Panic("InnerContext: bad tos -- appending null object");
+	}
+	if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-                || (objPtr->refCount == 0x61616161)
+		|| (objPtr->refCount == 0x61616161)
 #endif
-        ) {
-            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
-                    objPtr);
-        }
-        Tcl_ListObjAppendElement(NULL, result, objPtr);
+	) {
+	    Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
+		    objPtr);
+	}
+	Tcl_ListObjAppendElement(NULL, result, objPtr);
     }
 
     return result;
@@ -836,7 +838,7 @@ UpdateStringOfInstName(
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
+	snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
@@ -1228,7 +1230,7 @@ DisassembleByteCodeAsDicts(
     TclDictPut(NULL, description, "commands", commands);
     TclDictPut(NULL, description, "script",
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
-    TclDictPut(NULL, description, "namespace", 
+    TclDictPut(NULL, description, "namespace",
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
     TclDictPut(NULL, description, "stackdepth",
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
