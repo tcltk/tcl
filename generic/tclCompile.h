@@ -1175,8 +1175,9 @@ MODULE_SCOPE Tcl_Size TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
-MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclDebugPrintByteCodeObj(Tcl_Obj *objPtr);
+#else
+#define TclDebugPrintByteCodeObj(objPtr) (void)(objPtr)
 #endif
 MODULE_SCOPE int	TclPrintInstruction(ByteCode *codePtr,
 			    const unsigned char *pc);
