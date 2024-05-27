@@ -402,7 +402,7 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    TclListObjAppendString(NULL, command, (char *) op);
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming

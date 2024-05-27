@@ -1016,8 +1016,8 @@ TclNRPackageObjCmd(
 		    hPtr = Tcl_NextHashEntry(&search)) {
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    Tcl_GetHashKey(tablePtr, hPtr), -1));
+		    TclListObjAppendString(NULL, resultObj, (const char *)
+			    Tcl_GetHashKey(tablePtr, hPtr));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1262,8 +1262,7 @@ TclNRPackageObjCmd(
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 			availPtr = availPtr->nextPtr) {
-		    Tcl_ListObjAppendElement(NULL, resultObj,
-			    Tcl_NewStringObj(availPtr->version, -1));
+		    TclListObjAppendString(NULL, resultObj, availPtr->version);
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);

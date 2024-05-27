@@ -506,7 +506,7 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	TclListObjAppendString(NULL, pathPtr, str);
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -547,8 +547,7 @@ TclpInitLibraryPath(
 	    str = defaultLibraryDir;
 	}
 	if (str[0] != '\0') {
-	    objPtr = Tcl_NewStringObj(str, -1);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    TclListObjAppendString(NULL, pathPtr, str);
 	}
     }
     Tcl_DStringFree(&buffer);
@@ -812,7 +811,7 @@ TclpSetVariables(
 	Tcl_DString ds;
 
 	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+	TclListObjAppendString(NULL, pkgListObj, tclLibPath);
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
 	if ((str != NULL) && (str[0] != '\0')) {
 	    p = Tcl_DStringValue(&ds);
@@ -836,7 +835,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+		    TclListObjAppendString(NULL, pkgListObj, tclLibPath);
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -846,7 +845,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
+		    TclListObjAppendString(NULL, pkgListObj, tclLibPath);
 		}
 		CFRelease(frameworksURL);
 	    }

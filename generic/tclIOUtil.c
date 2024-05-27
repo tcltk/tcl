@@ -4664,8 +4664,7 @@ Tcl_FSFileSystemInfo(
     }
 
     resPtr = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, -1));
+    TclListObjAppendString(NULL, resPtr, fsPtr->typeName);
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);

@@ -1898,10 +1898,8 @@ ChanPipeObjCmd(
     channelNames[1] = Tcl_GetChannelName(wchan);
 
     TclNewObj(resultPtr);
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[0], -1));
-    Tcl_ListObjAppendElement(NULL, resultPtr,
-	    Tcl_NewStringObj(channelNames[1], -1));
+    TclListObjAppendString(NULL, resultPtr, channelNames[0]);
+    TclListObjAppendString(NULL, resultPtr, channelNames[1]);
     Tcl_SetObjResult(interp, resultPtr);
 
     return TCL_OK;

@@ -443,44 +443,43 @@ TclNamespaceEnsembleCmd(
 	    TclNewObj(resultObj);
 
 	    /* -map option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_MAP], -1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_MAP]);
 	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -namespace option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
-			    -1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_NAMESPACE]);
 	    namespacePtr = NULL;		/* silence gcc 4 warning */
 	    Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 	    Tcl_ListObjAppendElement(NULL, resultObj, NewNsObj(namespacePtr));
 
 	    /* -parameters option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PARAM], -1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_PARAM]);
 	    Tcl_GetEnsembleParameterList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -prefix option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_PREFIX], -1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_PREFIX]);
 	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 
 	    /* -subcommands option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_SUBCMDS],-1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_SUBCMDS]);
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -unknown option */
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensembleConfigOptions[CONF_UNKNOWN],-1));
+	    TclListObjAppendString(NULL, resultObj,
+		    ensembleConfigOptions[CONF_UNKNOWN]);
 	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());

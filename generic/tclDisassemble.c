@@ -963,28 +963,22 @@ DisassembleByteCodeAsDicts(
 
 	    TclNewObj(descriptor[0]);
 	    if (!(localPtr->flags & (VAR_ARRAY|VAR_LINK))) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("scalar", -1));
+		TclListObjAppendString(NULL, descriptor[0], "scalar");
 	    }
 	    if (localPtr->flags & VAR_ARRAY) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("array", -1));
+		TclListObjAppendString(NULL, descriptor[0], "array");
 	    }
 	    if (localPtr->flags & VAR_LINK) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("link", -1));
+		TclListObjAppendString(NULL, descriptor[0], "link");
 	    }
 	    if (localPtr->flags & VAR_ARGUMENT) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("arg", -1));
+		TclListObjAppendString(NULL, descriptor[0], "arg");
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("temp", -1));
+		TclListObjAppendString(NULL, descriptor[0], "temp");
 	    }
 	    if (localPtr->flags & VAR_RESOLVED) {
-		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("resolved", -1));
+		TclListObjAppendString(NULL, descriptor[0], "resolved");
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, variables,
@@ -1007,8 +1001,7 @@ DisassembleByteCodeAsDicts(
 	int address = pc - codePtr->codeStart;
 
 	TclNewObj(inst);
-	Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
-		instDesc->name, -1));
+	TclListObjAppendString(NULL, inst, instDesc->name);
 	opnd = pc + 1;
 	for (i=0 ; i<instDesc->numOperands ; i++) {
 	    switch (instDesc->opTypes[i]) {
@@ -1028,7 +1021,7 @@ DisassembleByteCodeAsDicts(
 		val = TclGetUInt4AtPtr(opnd);
 		opnd += 4;
 	    formatNumber:
-		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		TclListObjAppendInt(NULL, inst, val);
 		break;
 
 	    case OPERAND_OFFSET1:
@@ -1073,8 +1066,7 @@ DisassembleByteCodeAsDicts(
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".%d", val));
 		} else if (val == -2) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
-			    ".end", -1));
+		    TclListObjAppendString(NULL, inst, ".end");
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".end-%d", -2-val));

@@ -316,7 +316,7 @@ Tcl_TraceObjCmd(
     case TRACE_OLD_VINFO: {
 	ClientData clientData;
 	char ops[5];
-	Tcl_Obj *resultListPtr, *pairObjPtr, *elemObjPtr;
+	Tcl_Obj *resultListPtr, *pairObjPtr;
 
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name");
@@ -354,10 +354,8 @@ Tcl_TraceObjCmd(
 	     * result object list.
 	     */
 
-	    elemObjPtr = Tcl_NewStringObj(ops, -1);
-	    Tcl_ListObjAppendElement(NULL, pairObjPtr, elemObjPtr);
-	    elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, pairObjPtr, elemObjPtr);
+	    TclListObjAppendString(NULL, pairObjPtr, ops);
+	    TclListObjAppendString(NULL, pairObjPtr, tvarPtr->command);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, pairObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
@@ -577,7 +575,7 @@ TraceExecutionObjCmd(
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
 	    int numOps = 0;
-	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -589,20 +587,16 @@ TraceExecutionObjCmd(
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_ENTER_EXEC) {
-		TclNewLiteralStringObj(opObj, "enter");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "enter");
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_EXEC) {
-		TclNewLiteralStringObj(opObj, "leave");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "leave");
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_ENTER_DURING_EXEC) {
-		TclNewLiteralStringObj(opObj, "enterstep");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "enterstep");
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_DURING_EXEC) {
-		TclNewLiteralStringObj(opObj, "leavestep");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "leavestep");
 	    }
 	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
@@ -614,8 +608,7 @@ TraceExecutionObjCmd(
 	    Tcl_DecrRefCount(elemObjPtr);
 	    elemObjPtr = NULL;
 
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr,
-		    Tcl_NewStringObj(tcmdPtr->command, -1));
+	    TclListObjAppendString(NULL, eachTraceObjPtr, tcmdPtr->command);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
@@ -780,7 +773,7 @@ TraceCommandObjCmd(
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
 	    int numOps = 0;
-	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -792,12 +785,10 @@ TraceCommandObjCmd(
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_RENAME) {
-		TclNewLiteralStringObj(opObj, "rename");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "rename");
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_DELETE) {
-		TclNewLiteralStringObj(opObj, "delete");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
+		TclListObjAppendString(NULL, elemObjPtr, "delete");
 	    }
 	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
@@ -808,8 +799,7 @@ TraceCommandObjCmd(
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_DecrRefCount(elemObjPtr);
 
-	    elemObjPtr = Tcl_NewStringObj(tcmdPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
+	    TclListObjAppendString(NULL, eachTraceObjPtr, tcmdPtr->command);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
@@ -970,7 +960,7 @@ TraceVariableObjCmd(
 	TclNewObj(resultListPtr);
 	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
-	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
 	    /*
@@ -981,26 +971,21 @@ TraceVariableObjCmd(
 
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
-		TclNewLiteralStringObj(opObjPtr, "array");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObjPtr);
+		TclListObjAppendString(NULL, elemObjPtr, "array");
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_READS) {
-		TclNewLiteralStringObj(opObjPtr, "read");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObjPtr);
+		TclListObjAppendString(NULL, elemObjPtr, "read");
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_WRITES) {
-		TclNewLiteralStringObj(opObjPtr, "write");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObjPtr);
+		TclListObjAppendString(NULL, elemObjPtr, "write");
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
-		TclNewLiteralStringObj(opObjPtr, "unset");
-		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObjPtr);
+		TclListObjAppendString(NULL, elemObjPtr, "unset");
 	    }
 	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 
-	    elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
+	    TclListObjAppendString(NULL, eachTraceObjPtr, tvarPtr->command);
 	    Tcl_ListObjAppendElement(interp, resultListPtr,
 		    eachTraceObjPtr);
 	}

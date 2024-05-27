@@ -690,6 +690,64 @@ Tcl_ListObjAppendElement(
 /*
  *----------------------------------------------------------------------
  *
+ * TclListObjAppendString, TclListObjAppendInt --
+ *
+ *	Like 'Tcl_ListObjAppendElement', but the value to append is either a C
+ *	string (in Tcl's encoding) or an integer. The value to append is
+ *	converted to a Tcl_Obj prior to appending.
+ *
+ * Value:
+ *	TCL_OK
+ *	    The value is appended to the elements of 'listPtr'.
+ *
+ *	TCL_ERROR
+ *	    listPtr does not refer to a list object and the object can not be
+ *	    converted to one. An error message will be left in the
+ *	    interpreter's result if interp is not NULL.
+ *
+ * Effect
+ *
+ *	If 'listPtr' is not already of type 'tclListType', it is converted.
+ *	Appending the new element may cause the array of element pointers
+ *	in 'listObj' to grow.  Any preexisting string representation of
+ *	'listPtr' is invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclListObjAppendString(
+    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Obj *listPtr,		/* The list to append to. */
+    const char *str)		/* The string to append as an element. */
+{
+    Tcl_Obj *objPtr = Tcl_NewStringObj(str, -1);
+    int result;
+
+    Tcl_IncrRefCount(objPtr);
+    result = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    Tcl_DecrRefCount(objPtr);
+    return result;
+}
+
+int
+TclListObjAppendInt(
+    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Obj *listPtr,		/* The list to append to. */
+    int val)			/* The number to append as an element. */
+{
+    Tcl_Obj *objPtr = Tcl_NewIntObj(val);
+    int result;
+
+    Tcl_IncrRefCount(objPtr);
+    result = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    Tcl_DecrRefCount(objPtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ListObjIndex --
  *
  * 	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index

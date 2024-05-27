@@ -968,8 +968,7 @@ Tcl_JoinPath(
 
     TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
-	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewStringObj(argv[i], -1));
+	TclListObjAppendString(NULL, listObj, argv[i]);
     }
 
     /*

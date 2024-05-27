@@ -678,8 +678,7 @@ TclRegAbout(
      */
 
     TclNewObj(resultObj);
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewIntObj((int) regexpPtr->re.re_nsub));
+    TclListObjAppendInt(NULL, resultObj, (int) regexpPtr->re.re_nsub);
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -688,8 +687,7 @@ TclRegAbout(
     TclNewObj(infoObj);
     for (inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
-	    Tcl_ListObjAppendElement(NULL, infoObj,
-		    Tcl_NewStringObj(inf->text, -1));
+	    TclListObjAppendString(NULL, infoObj, inf->text);
 	}
     }
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
