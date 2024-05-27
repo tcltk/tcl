@@ -1582,12 +1582,7 @@ CompileExprObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile == 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -2519,7 +2514,7 @@ TEBCresume(
 		    "yield can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2550,7 +2545,7 @@ TEBCresume(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2561,7 +2556,7 @@ TEBCresume(
 		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2622,7 +2617,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4408,7 +4403,7 @@ TEBCresume(
 		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
 			"variable isn't array", opnd);
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", (char *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4757,7 +4752,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4785,7 +4780,7 @@ TEBCresume(
 		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (char *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_APPEND(("ERROR: not command\n"));
 	    goto gotError;
@@ -4820,7 +4815,7 @@ TEBCresume(
 		    "self may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4848,7 +4843,7 @@ TEBCresume(
 		    "nextto may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4869,7 +4864,7 @@ TEBCresume(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not a class", TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", (char *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4921,7 +4916,7 @@ TEBCresume(
 			methodType, TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-			NULL);
+			(char *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4929,7 +4924,7 @@ TEBCresume(
 		    "%s has no non-filter implementation by \"%s\"",
 		    methodType, TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4947,7 +4942,7 @@ TEBCresume(
 		    "next may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4976,7 +4971,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no next %s implementation", methodType));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG
@@ -6300,7 +6295,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6349,7 +6344,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6371,7 +6366,7 @@ TEBCresume(
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			    "integer value too large to represent", NULL);
+			    "integer value too large to represent", (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -7325,7 +7320,7 @@ TEBCresume(
 			TclGetString(OBJ_AT_TOS)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-			TclGetString(OBJ_AT_TOS), NULL);
+			TclGetString(OBJ_AT_TOS), (char *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -8012,7 +8007,7 @@ TEBCresume(
     divideByZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
@@ -8026,7 +8021,7 @@ TEBCresume(
 		"exponentiation of zero by negative power", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"exponentiation of zero by negative power", NULL);
+		"exponentiation of zero by negative power", (char *)NULL);
 	CACHE_STACK_INFO();
 
 	/*
@@ -9779,7 +9774,7 @@ IllegalExprOperandType(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s as operand of \"%s\"", description, op));
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
 }
 
 /*
@@ -10156,23 +10151,23 @@ TclExprFloatError(
     if ((errno == EDOM) || TclIsNaN(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *)NULL);
     } else if ((errno == ERANGE) || TclIsInfinite(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *)NULL);
 	} else {
 	    s = "floating-point value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *)NULL);
 	}
     } else {
 	Tcl_Obj *objPtr = Tcl_ObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
-		Tcl_GetString(objPtr), NULL);
+		Tcl_GetString(objPtr), (char *)NULL);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }

@@ -872,12 +872,7 @@ TclSetByteCodeFromAny(
 
     if (result == TCL_OK) {
 	TclInitByteCodeObj(objPtr, &compEnv);
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
 
     TclFreeCompileEnv(&compEnv);
@@ -1322,12 +1317,7 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -2137,7 +2127,7 @@ TclCompileScript(
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "too many nested compilations (infinite loop?)", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
     }
