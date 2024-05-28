@@ -6331,7 +6331,8 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
 	    set x done
 	}
     }]
-    set token [after 10000 [namespace code {
+    # Note: timeout needs to be very long under valgrind
+    set token [after 240000 [namespace code {
 	set x timeout
     }]]
     vwait [namespace which -variable x]
@@ -6357,12 +6358,12 @@ test io-44.7 {refchan + coroutine yield error } -setup {
         proc initialize {chan mode} {
             return [list initialize finalize read watch]
         }
-
-        proc read {chan count} {
-        }
-
+        proc finalize args {}
+        proc read {chan count} {}
         proc watch {chan eventspec} {
-            after idle after 0 chan postevent $chan $eventspec
+            foreach event $eventspec {
+                after idle after 0 chan postevent $chan $event
+            }
         }
     }
 } -cleanup {
@@ -6377,6 +6378,7 @@ test io-44.7 {refchan + coroutine yield error } -setup {
         set chan [schan::open]
         chan event $chan readable [list [info coroutine]]
         yield
+        close $chan
         set ::io-44.7-result success
     } [namespace current]]
     vwait ::io-44.7-result
