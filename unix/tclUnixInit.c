@@ -817,7 +817,7 @@ TclpSetVariables(
 	    p = Tcl_DStringValue(&ds);
 	    while ((q = strchr(p, ':')) != NULL) {
 		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
-		p = q+1;
+		p = q + 1;
 	    }
 	    if (*p) {
 		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
@@ -852,15 +852,15 @@ TclpSetVariables(
 	}
     }
 #endif /* HAVE_COREFOUNDATION */
-	p = pkgPath;
-	while ((q = strchr(p, ':')) != NULL) {
-		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
-		p = q+1;
-	}
-	if (*p) {
-	    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
-	}
-	Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
+    p = pkgPath;
+    while ((q = strchr(p, ':')) != NULL) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+	p = q + 1;
+    }
+    if (*p) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+    }
+    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, pkgListObj, TCL_GLOBAL_ONLY);
 
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);

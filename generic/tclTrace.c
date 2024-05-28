@@ -316,7 +316,7 @@ Tcl_TraceObjCmd(
     case TRACE_OLD_VINFO: {
 	ClientData clientData;
 	char ops[5];
-	Tcl_Obj *resultListPtr, *pairObjPtr;
+	Tcl_Obj *resultListPtr;
 
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name");
@@ -328,7 +328,6 @@ Tcl_TraceObjCmd(
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 	    char *q = ops;
 
-	    pairObjPtr = Tcl_NewListObj(0, NULL);
 	    if (tvarPtr->flags & TCL_TRACE_READS) {
 		*q = 'r';
 		q++;
@@ -348,15 +347,15 @@ Tcl_TraceObjCmd(
 	    *q = '\0';
 
 	    /*
-	     * Build a pair (2-item list) with the ops string as the first obj
-	     * element and the tvarPtr->command string as the second obj
-	     * element. Append the pair (as an element) to the end of the
-	     * result object list.
+	     * Append a pair (2-item list) to the end of the result object
+	     * list, with the ops string as the first obj element of the pair
+	     * and the tvarPtr->command string as the second obj element of the
+	     * pair.
 	     */
 
-	    TclListObjAppendString(NULL, pairObjPtr, ops);
-	    TclListObjAppendString(NULL, pairObjPtr, tvarPtr->command);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, pairObjPtr);
+	    TclListObjAppendSublist(interp, resultListPtr,
+		    Tcl_NewStringObj(ops, -1),
+		    Tcl_NewStringObj(tvarPtr->command, -1), NULL);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -575,7 +574,7 @@ TraceExecutionObjCmd(
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
 	    int numOps = 0;
-	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -603,13 +602,11 @@ TraceExecutionObjCmd(
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
 	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
-	    Tcl_DecrRefCount(elemObjPtr);
-	    elemObjPtr = NULL;
 
-	    TclListObjAppendString(NULL, eachTraceObjPtr, tcmdPtr->command);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
+	    TclListObjAppendSublist(interp, resultListPtr,
+		    elemObjPtr, Tcl_NewStringObj(tcmdPtr->command, -1),
+		    NULL);
+	    Tcl_DecrRefCount(elemObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -773,7 +770,7 @@ TraceCommandObjCmd(
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
 	    int numOps = 0;
-	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -791,16 +788,12 @@ TraceCommandObjCmd(
 		TclListObjAppendString(NULL, elemObjPtr, "delete");
 	    }
 	    TclListObjLength(NULL, elemObjPtr, &numOps);
-	    if (0 == numOps) {
-		Tcl_DecrRefCount(elemObjPtr);
-		continue;
+	    if (numOps) {
+		TclListObjAppendSublist(interp, resultListPtr,
+			elemObjPtr, Tcl_NewStringObj(tcmdPtr->command, -1),
+			NULL);
 	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_DecrRefCount(elemObjPtr);
-
-	    TclListObjAppendString(NULL, eachTraceObjPtr, tcmdPtr->command);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -960,7 +953,7 @@ TraceVariableObjCmd(
 	TclNewObj(resultListPtr);
 	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
-	    Tcl_Obj *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *elemObjPtr;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
 	    /*
@@ -982,12 +975,8 @@ TraceVariableObjCmd(
 	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
 		TclListObjAppendString(NULL, elemObjPtr, "unset");
 	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
-
-	    TclListObjAppendString(NULL, eachTraceObjPtr, tvarPtr->command);
-	    Tcl_ListObjAppendElement(interp, resultListPtr,
-		    eachTraceObjPtr);
+	    TclListObjAppendSublist(interp, resultListPtr,
+		    elemObjPtr, Tcl_NewStringObj(tvarPtr->command, -1), NULL);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;

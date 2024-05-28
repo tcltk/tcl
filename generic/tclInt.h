@@ -3044,6 +3044,8 @@ MODULE_SCOPE int	TclListObjAppendInt(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, int val);
 MODULE_SCOPE int	TclListObjAppendString(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, const char *str);
+MODULE_SCOPE int	TclListObjAppendSublist(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, ...);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);

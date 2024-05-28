@@ -2986,7 +2986,7 @@ NamespaceChildrenCmd(
     Tcl_DString buffer;
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    Tcl_Obj *listPtr, *elemPtr;
+    Tcl_Obj *listPtr;
 
     /*
      * Get a pointer to the specified namespace, or the current namespace.
@@ -3044,7 +3044,7 @@ NamespaceChildrenCmd(
 	    Tcl_FindHashEntry(nsPtr->childTablePtr, pattern+length) != NULL
 #endif
 	) {
-	    TclListObjAppendString(interp, listPtr, pattern);
+	    TclListObjAppendString(NULL, listPtr, pattern);
 	}
 	goto searchDone;
     }
@@ -3060,8 +3060,7 @@ NamespaceChildrenCmd(
 	childNsPtr = (Namespace *)Tcl_GetHashValue(entryPtr);
 	if ((pattern == NULL)
 		|| Tcl_StringMatch(childNsPtr->fullName, pattern)) {
-	    elemPtr = Tcl_NewStringObj(childNsPtr->fullName, -1);
-	    Tcl_ListObjAppendElement(interp, listPtr, elemPtr);
+	    TclListObjAppendString(NULL, listPtr, childNsPtr->fullName);
 	}
 	entryPtr = Tcl_NextHashEntry(&search);
     }
