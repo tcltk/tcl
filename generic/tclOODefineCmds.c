@@ -587,7 +587,7 @@ InstallPrivateVariableMapping(
 		privatePtr->variableObj = varv[i];
 		privatePtr->fullNameObj = Tcl_ObjPrintf(
 			PRIVATE_VARIABLE_PATTERN,
-			creationEpoch, Tcl_GetString(varv[i]));
+			creationEpoch, TclGetString(varv[i]));
 		Tcl_IncrRefCount(privatePtr->fullNameObj);
 	    } else {
 		Tcl_DecrRefCount(varv[i]);
@@ -1655,7 +1655,7 @@ TclOODefineDefnNsObjCmd(
 	    &kind) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (!Tcl_GetString(objv[objc - 1])[0]) {
+    if (!TclGetString(objv[objc - 1])[0]) {
 	nsNamePtr = NULL;
     } else {
 	nsPtr = GetNamespaceInOuterContext(interp, objv[objc - 1]);
