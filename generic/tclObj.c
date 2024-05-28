@@ -187,7 +187,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(bignum).dp;   \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR((mp_isneg(&(bignum)) << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));                \
     }
 
@@ -2823,10 +2823,10 @@ Tcl_GetLongFromObj(
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
-		    if (big.sign) {
-			*longPtr = (long) (-value);
+		    if (mp_isneg(&big)) {
+			*longPtr = (long)(-value);
 		    } else {
-			*longPtr = (long) value;
+			*longPtr = (long)value;
 		    }
 		    return TCL_OK;
 		}
@@ -3041,8 +3041,8 @@ Tcl_SetWideIntObj(
     }
 
 #ifndef TCL_WIDE_INT_IS_LONG
-    if ((wideValue < (Tcl_WideInt) LONG_MIN)
-	    || (wideValue > (Tcl_WideInt) LONG_MAX)) {
+    if ((wideValue < (Tcl_WideInt)LONG_MIN)
+	    || (wideValue > (Tcl_WideInt)LONG_MAX)) {
 	TclSetWideIntObj(objPtr, wideValue);
     } else
 #endif
@@ -3085,7 +3085,7 @@ Tcl_GetWideIntFromObj(
 	}
 #endif
 	if (objPtr->typePtr == &tclIntType) {
-	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.longValue;
+	    *wideIntPtr = (Tcl_WideInt)objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -3117,10 +3117,10 @@ Tcl_GetWideIntFromObj(
 		    while (numBytes-- > 0) {
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
-		    if (big.sign) {
-			*wideIntPtr = (Tcl_WideInt) (-value);
+		    if (mp_isneg(&big)) {
+			*wideIntPtr = (Tcl_WideInt)(-value);
 		    } else {
-			*wideIntPtr = (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)value;
 		    }
 		    return TCL_OK;
 		}
@@ -3545,10 +3545,10 @@ Tcl_SetBignumObj(
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
-	if (value > (((~(unsigned long)0) >> 1) + bignumValue->sign)) {
+	if (value > (((~(unsigned long)0) >> 1) + mp_isneg(bignumValue))) {
 	    goto tooLargeForLong;
 	}
-	if (bignumValue->sign) {
+	if (mp_isneg(bignumValue)) {
 	    TclSetLongObj(objPtr, (long)(-value));
 	} else {
 	    TclSetLongObj(objPtr, (long)value);
@@ -3571,10 +3571,10 @@ Tcl_SetBignumObj(
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
-	if (value > ((UWIDE_MAX >> 1) + bignumValue->sign)) {
+	if (value > ((UWIDE_MAX >> 1) + mp_isneg(bignumValue))) {
 	    goto tooLargeForWide;
 	}
-	if (bignumValue->sign) {
+	if (mp_isneg(bignumValue)) {
 	    TclSetWideIntObj(objPtr, (Tcl_WideInt)(-value));
 	} else {
 	    TclSetWideIntObj(objPtr, (Tcl_WideInt)value);

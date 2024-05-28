@@ -2159,7 +2159,7 @@ Tcl_AppendFormatToObj(
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
+		isNegative = mp_isneg(&big);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
@@ -2174,7 +2174,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_GetWideIntFromObj(NULL, objPtr, &w);
 		    Tcl_DecrRefCount(objPtr);
 		}
-		isNegative = (w < (Tcl_WideInt) 0);
+		isNegative = (w < 0);
 #endif
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
@@ -2327,14 +2327,14 @@ Tcl_AppendFormatToObj(
 		if (useShort) {
 		    unsigned short us = (unsigned short) s;
 
-		    bits = (Tcl_WideUInt) us;
+		    bits = (Tcl_WideUInt)us;
 		    while (us) {
 			numDigits++;
 			us /= base;
 		    }
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
-		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
+		    Tcl_WideUInt uw = (Tcl_WideUInt)w;
 
 		    bits = uw;
 		    while (uw) {
@@ -2347,7 +2347,7 @@ Tcl_AppendFormatToObj(
 		    mp_digit mask = (~(mp_digit)0) << (MP_DIGIT_BIT-leftover);
 
 		    numDigits = 1 +
-			    (((Tcl_WideInt) big.used * MP_DIGIT_BIT) / numBits);
+			    (((Tcl_WideInt)big.used * MP_DIGIT_BIT) / numBits);
 		    while ((mask & big.dp[big.used-1]) == 0) {
 			numDigits--;
 			mask >>= numBits;
@@ -2360,7 +2360,7 @@ Tcl_AppendFormatToObj(
 		} else if (!useBig) {
 		    unsigned long ul = (unsigned long) l;
 
-		    bits = (Tcl_WideUInt) ul;
+		    bits = (Tcl_WideUInt)ul;
 		    while (ul) {
 			numDigits++;
 			ul /= base;
@@ -2384,7 +2384,7 @@ Tcl_AppendFormatToObj(
 		    if (useBig && !mp_iszero(&big)) {
 			if (index < big.used && (size_t) shift <
 				CHAR_BIT*sizeof(Tcl_WideUInt) - MP_DIGIT_BIT) {
-			    bits |= ((Tcl_WideUInt) big.dp[index++]) << shift;
+			    bits |= ((Tcl_WideUInt)big.dp[index++]) << shift;
 			    shift += MP_DIGIT_BIT;
 			}
 			shift -= numBits;
@@ -2635,7 +2635,7 @@ NewLongObj(
 	mp_init_u64(&bignumValue, (unsigned long)value);
 	return Tcl_NewBignumObj(&bignumValue);
 #else
-	return Tcl_NewWideIntObj((unsigned long)value | ~(unsigned long)LONG_MAX);
+	return Tcl_NewWideIntObj((unsigned long)value);
 #endif
     }
     return Tcl_NewLongObj(value);
