@@ -29,7 +29,7 @@
  */
 
 #define POSIX_EPOCH_AS_FILETIME	\
-	((Tcl_WideInt) 116444736 * (Tcl_WideInt) 1000000000)
+	((Tcl_WideInt)116444736 * (Tcl_WideInt)1000000000)
 
 /*
  * Declarations for 'link' related information. This information should come
@@ -2094,8 +2094,8 @@ NativeStat(
             statPtr->st_ctime = ToCTime(data.ftCreationTime);
         }
 	attr = data.dwFileAttributes;
-	statPtr->st_size = ((Tcl_WideInt) data.nFileSizeLow) |
-		(((Tcl_WideInt) data.nFileSizeHigh) << 32);
+	statPtr->st_size = ((Tcl_WideInt)data.nFileSizeLow) |
+		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
 
 	/*
 	 * On Unix, for directories, nlink apparently depends on the number of
@@ -2142,8 +2142,8 @@ NativeStat(
 
 	attr = data.dwFileAttributes;
 
-	statPtr->st_size = ((Tcl_WideInt) data.nFileSizeLow) |
-		(((Tcl_WideInt) data.nFileSizeHigh) << 32);
+	statPtr->st_size = ((Tcl_WideInt)data.nFileSizeLow) |
+		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
 	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
 	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
 	statPtr->st_ctime = ToCTime(data.ftCreationTime);
@@ -2303,7 +2303,7 @@ ToCTime(
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
     return (time_t) ((convertedTime.QuadPart -
-	    (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME) / (Tcl_WideInt) 10000000);
+	    (Tcl_WideInt)POSIX_EPOCH_AS_FILETIME) / (Tcl_WideInt)10000000);
 }
 
 /*

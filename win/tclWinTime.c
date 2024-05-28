@@ -97,11 +97,11 @@ static TimeInfo timeInfo = {
     (HANDLE) NULL,
     (HANDLE) NULL,
 #ifdef HAVE_CAST_TO_UNION
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
-    (ULARGE_INTEGER) (DWORDLONG) 0,
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
-    (LARGE_INTEGER) (Tcl_WideInt) 0,
+    (LARGE_INTEGER) (Tcl_WideInt)0,
+    (ULARGE_INTEGER) (DWORDLONG)0,
+    (LARGE_INTEGER) (Tcl_WideInt)0,
+    (LARGE_INTEGER) (Tcl_WideInt)0,
+    (LARGE_INTEGER) (Tcl_WideInt)0,
 #else
     {{0, 0}},
     {{0, 0}},
@@ -506,7 +506,7 @@ NativeGetMicroseconds(void)
 		     * && timeInfo.nominalFreq.QuadPart != (Tcl_WideInt)1193182
 		     * && timeInfo.nominalFreq.QuadPart != (Tcl_WideInt)3579545
 		     */
-		    && timeInfo.nominalFreq.QuadPart > (Tcl_WideInt) 15000000){
+		    && timeInfo.nominalFreq.QuadPart > 15000000){
 		/*
 		 * As an exception, if every logical processor on the system
 		 * is on the same chip, we use the performance counter anyway,
@@ -1318,7 +1318,7 @@ AccumulateSample(
 	estFreq = 10000000 * (perfCounter - workPCSample)
 		/ (fileTime - workFTSample);
 	timeInfo.perfCounterSample[timeInfo.sampleNo] = perfCounter;
-	timeInfo.fileTimeSample[timeInfo.sampleNo] = (Tcl_WideInt) fileTime;
+	timeInfo.fileTimeSample[timeInfo.sampleNo] = fileTime;
 
 	/*
 	 * Advance the sample number.
