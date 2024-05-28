@@ -819,7 +819,7 @@ InfoObjectVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1598,7 +1598,7 @@ InfoClassVariablesCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	if (strcmp("-private", Tcl_GetString(objv[2])) != 0) {
+	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1880,7 +1880,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return strcmp(Tcl_GetString(first), Tcl_GetString(second));
+    return strcmp(TclGetString(first), TclGetString(second));
 }
 
 static void

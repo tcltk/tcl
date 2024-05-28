@@ -2947,7 +2947,7 @@ TclLsetFlat(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
 		                 Tcl_ObjPrintf("index \"%s\" out of range",
-		                               Tcl_GetString(indexArray[-1])));
+		                               TclGetString(indexArray[-1])));
 		Tcl_SetErrorCode(interp,
 		                 "TCL",
 		                 "VALUE",
