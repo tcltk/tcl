@@ -690,10 +690,11 @@ Tcl_ListObjAppendElement(
 /*
  *----------------------------------------------------------------------
  *
- * TclListObjAppendString, TclListObjAppendInt --
+ * TclListObjAppendString, TclListObjAppendInt, TclListObjAppendSublist --
  *
  *	Like 'Tcl_ListObjAppendElement', but the value to append is either a C
- *	string (in Tcl's encoding) or an integer. The value to append is
+ *	string (in Tcl's encoding), an integer, or a sublist of a sequence of
+ *	other Tcl_Obj values. The value to append (if a string or int) is
  *	converted to a Tcl_Obj prior to appending.
  *
  * Value:
@@ -742,6 +743,29 @@ TclListObjAppendInt(
     Tcl_IncrRefCount(objPtr);
     result = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
     Tcl_DecrRefCount(objPtr);
+    return result;
+}
+
+int
+TclListObjAppendSublist(
+    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_Obj *listPtr,		/* The main list to append to. */
+    ...)			/* The items in the sublist, with terminating
+				 * NULL. */
+{
+    va_list args;
+    Tcl_Obj *sublist = Tcl_NewObj();
+    Tcl_Obj *objPtr;
+    int result;
+
+    Tcl_IncrRefCount(sublist);
+    va_start(args, listPtr);
+    while ((objPtr = va_arg(args, Tcl_Obj *)) != NULL) {
+	Tcl_ListObjAppendElement(NULL, sublist, objPtr);
+    }
+    va_end(args);
+    result = Tcl_ListObjAppendElement(interp, listPtr, sublist);
+    Tcl_DecrRefCount(sublist);
     return result;
 }
 

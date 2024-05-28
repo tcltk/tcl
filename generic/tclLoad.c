@@ -1042,7 +1042,7 @@ TclGetLoadedPackages(
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
-    Tcl_Obj *resultObj, *pkgDesc[2];
+    Tcl_Obj *resultObj;
 
     if (targetName == NULL) {
 	/*
@@ -1053,10 +1053,9 @@ TclGetLoadedPackages(
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
-	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
-	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewListObj(2, pkgDesc));
+	    TclListObjAppendSublist(NULL, resultObj,
+		    Tcl_NewStringObj(pkgPtr->fileName, -1),
+		    Tcl_NewStringObj(pkgPtr->packageName, -1), NULL);
 	}
 	Tcl_MutexUnlock(&packageMutex);
 	Tcl_SetObjResult(interp, resultObj);
@@ -1076,9 +1075,9 @@ TclGetLoadedPackages(
     TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
-	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
-	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
-	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
+	TclListObjAppendSublist(NULL, resultObj,
+		Tcl_NewStringObj(pkgPtr->fileName, -1),
+		Tcl_NewStringObj(pkgPtr->packageName, -1), NULL);
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
