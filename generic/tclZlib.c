@@ -1980,7 +1980,7 @@ ZlibCmd(
 	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		(uLong) Tcl_ZlibAdler32(start, data, dlen)));
 	return TCL_OK;
     case CMD_CRC:			/* crc32 str ?startvalue?
@@ -1997,7 +1997,7 @@ ZlibCmd(
 	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		(uLong) Tcl_ZlibCRC32(start, data, dlen)));
 	return TCL_OK;
     case CMD_DEFLATE:			/* deflate data ?level?
@@ -2643,7 +2643,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		(uLong) Tcl_ZlibStreamChecksum(zstream)));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
