@@ -513,7 +513,7 @@ LinkTraceProc(
     case TCL_LINK_ULONG:
 	if ((Tcl_GetWideIntFromObj(NULL, valueObj, &valueWide) != TCL_OK
 		&& GetInvalidWideFromObj(valueObj, &valueWide) != TCL_OK)
-		|| valueWide < 0 || (Tcl_WideUInt) valueWide > ULONG_MAX) {
+		|| valueWide < 0 || (Tcl_WideUInt)valueWide > ULONG_MAX) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 	    return (char *) "variable must have unsigned long value";
@@ -612,13 +612,13 @@ ObjValue(
 	return Tcl_NewIntObj(linkPtr->lastValue.us);
     case TCL_LINK_UINT:
 	linkPtr->lastValue.ui = LinkedVar(unsigned int);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ui);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.ui);
     case TCL_LINK_LONG:
 	linkPtr->lastValue.l = LinkedVar(long);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.l);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.l);
     case TCL_LINK_ULONG:
 	linkPtr->lastValue.ul = LinkedVar(unsigned long);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.ul);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.ul);
     case TCL_LINK_FLOAT:
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
@@ -627,7 +627,7 @@ ObjValue(
 	/*
 	 * FIXME: represent as a bignum.
 	 */
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.uw);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.uw);
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);
 	if (p == NULL) {

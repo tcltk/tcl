@@ -29,7 +29,7 @@
 
 #define JULIAN_DAY_POSIX_EPOCH		2440588
 #define SECONDS_PER_DAY			86400
-#define JULIAN_SEC_POSIX_EPOCH	      (((Tcl_WideInt) JULIAN_DAY_POSIX_EPOCH) \
+#define JULIAN_SEC_POSIX_EPOCH	      (((Tcl_WideInt)JULIAN_DAY_POSIX_EPOCH) \
 					* SECONDS_PER_DAY)
 #define FOUR_CENTURIES			146097	/* days */
 #define JDAY_1_JAN_1_CE_JULIAN		1721424
@@ -912,7 +912,7 @@ ConvertLocalToUTCUsingC(
     TzsetIfNecessary();
     Tcl_MutexLock(&clockMutex);
     errno = 0;
-    fields->seconds = (Tcl_WideInt) mktime(&timeVal);
+    fields->seconds = (Tcl_WideInt)mktime(&timeVal);
     localErrno = (fields->seconds == -1) ? errno : 0;
     Tcl_MutexUnlock(&clockMutex);
 
@@ -1061,7 +1061,7 @@ ConvertUTCToLocalUsingC(
      */
 
     tock = (time_t) fields->seconds;
-    if ((Tcl_WideInt) tock != fields->seconds) {
+    if ((Tcl_WideInt)tock != fields->seconds) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"number too large to represent as a Posix time", -1));
 	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
@@ -1091,7 +1091,7 @@ ConvertUTCToLocalUsingC(
      * Convert that value to seconds.
      */
 
-    fields->localSeconds = (((fields->julianDay * (Tcl_WideInt) 24
+    fields->localSeconds = (((fields->julianDay * (Tcl_WideInt)24
 	    + timeVal->tm_hour) * 60 + timeVal->tm_min) * 60
 	    + timeVal->tm_sec) - JULIAN_SEC_POSIX_EPOCH;
 
@@ -1783,13 +1783,13 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+	clicks = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
 	clicks = TclpGetWideClicks();
 #else
-	clicks = (Tcl_WideInt) TclpGetClicks();
+	clicks = TclpGetClicks();
 #endif
 	break;
     case CLICKS_MICROS:
@@ -1834,8 +1834,8 @@ ClockMillisecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-	    now.sec * 1000 + now.usec / 1000));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+	    (Tcl_WideInt)now.sec * 1000 + now.usec / 1000));
     return TCL_OK;
 }
 
@@ -1940,7 +1940,7 @@ ClockParseformatargsObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    Tcl_GetString(objv[i]), NULL);
+		    TclGetString(objv[i]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -2024,7 +2024,7 @@ ClockSecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(now.sec));
     return TCL_OK;
 }
 
