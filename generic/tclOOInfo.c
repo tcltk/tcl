@@ -1909,7 +1909,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return strcmp(Tcl_GetString(first), Tcl_GetString(second));
+    return strcmp(TclGetString(first), TclGetString(second));
 }
 
 static void
