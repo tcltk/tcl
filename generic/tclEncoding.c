@@ -1575,7 +1575,7 @@ OpenEncodingFileChannel(
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown encoding \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(searchPath);
@@ -1649,7 +1649,7 @@ LoadEncodingFile(
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invalid encoding file \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_Close(NULL, chan);
 

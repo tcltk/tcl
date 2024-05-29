@@ -168,7 +168,7 @@ AttemptNewList(
 		    "list creation failed: unable to alloc %u bytes",
 		    LIST_SIZE(objc)));
 	}
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return listRepPtr;
 }
@@ -582,7 +582,7 @@ Tcl_ListObjAppendElement(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "max length of a Tcl list (%d elements) exceeded",
 		    LIST_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1447,7 +1447,7 @@ TclLsetFlat(
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
-			"BADINDEX", NULL);
+			"BADINDEX", (char *)NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -1637,7 +1637,7 @@ TclListObjSetElement(
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("list index out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET",
-			"BADINDEX", NULL);
+			"BADINDEX", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1659,7 +1659,7 @@ TclListObjSetElement(
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("list index out of range", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSET", "BADINDEX",
-		    NULL);
+		    (char *)NULL);
 	}
 	return TCL_ERROR;
     }
