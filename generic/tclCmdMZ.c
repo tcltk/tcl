@@ -1863,7 +1863,7 @@ StringMapCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase", string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
+		    string, (char *)NULL);
 	    return TCL_ERROR;
 	}
     }

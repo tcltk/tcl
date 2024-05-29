@@ -1539,7 +1539,7 @@ Tcl_GlobObjCmd(
 	    badTypesArg:
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad argument to \"-types\": %s",
-			TclGetString(look)));
+			Tcl_GetString(look)));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		result = TCL_ERROR;
 		join = 0;

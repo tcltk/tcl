@@ -327,7 +327,7 @@ TclCleanupChildren(
 	    if (WIFEXITED(waitStatus)) {
 		if (interp != NULL) {
 		    snprintf(msg2, sizeof(msg2), "%u", WEXITSTATUS(waitStatus));
-		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
+		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, (char *)NULL);
 		}
 		abnormalExit = 1;
 	    } else if (interp != NULL) {
@@ -336,20 +336,20 @@ TclCleanupChildren(
 		if (WIFSIGNALED(waitStatus)) {
 		    p = Tcl_SignalMsg(WTERMSIG(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDKILLED", msg1,
-			    Tcl_SignalId(WTERMSIG(waitStatus)), p, NULL);
+			    Tcl_SignalId(WTERMSIG(waitStatus)), p, (char *)NULL);
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "child killed: %s\n", p));
 		} else if (WIFSTOPPED(waitStatus)) {
 		    p = Tcl_SignalMsg(WSTOPSIG(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDSUSP", msg1,
-			    Tcl_SignalId(WSTOPSIG(waitStatus)), p, NULL);
+			    Tcl_SignalId(WSTOPSIG(waitStatus)), p, (char *)NULL);
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "child suspended: %s\n", p));
 		} else {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "child wait status didn't make sense\n", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			    "ODDWAITRESULT", msg1, NULL);
+			    "ODDWAITRESULT", msg1, (char *)NULL);
 		}
 	    }
 	}

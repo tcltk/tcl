@@ -425,7 +425,7 @@ ValidateFormat(
 	    if (flags & SCAN_BIG) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"unsigned bignum scans are invalid", -1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED", (char *)NULL);
 		goto error;
 	    }
 	    break;

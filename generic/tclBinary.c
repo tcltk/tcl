@@ -2437,7 +2437,7 @@ BinaryDecodeHex(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" at position %d",
 	    ch, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (char *)NULL);
     return TCL_ERROR;
 }
 

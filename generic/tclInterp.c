@@ -3118,7 +3118,7 @@ ChildMarkTrusted(
 		"permission denied: safe interpreter cannot mark trusted",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     ((Interp *) childInterp)->flags &= ~SAFE_INTERP;
