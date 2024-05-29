@@ -327,7 +327,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
@@ -337,7 +337,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &code) == TCL_ERROR) {
@@ -1425,7 +1425,7 @@ Tcl_VwaitObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't wait for variable \"%s\": would wait forever",
 		nameString));
-	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	return TCL_ERROR;
     }
     if (!done) {
