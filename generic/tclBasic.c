@@ -1979,10 +1979,10 @@ DeleteInterpProc(
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
-	    Tcl_DeleteHashEntry(hPtr);
 	    Tcl_Free(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
