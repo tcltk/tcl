@@ -367,6 +367,7 @@ static Tcl_ObjCmdProc	TestInterpResolverCmd;
 static Tcl_ObjCmdProc	TestcpuidCmd;
 #endif
 static Tcl_ObjCmdProc	TestApplyLambdaObjCmd;
+static Tcl_ObjCmdProc	C99Format;
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -744,6 +745,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testapplylambda", TestApplyLambdaObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "c99format", C99Format,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -8799,6 +8802,141 @@ int TestApplyLambdaObjCmd (
     Tcl_DecrRefCount(lambdaObj);
 
     return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * C99Format --
+ *
+ *      Returns a C99 formatted printf string as interpreter result.
+ *      Does not actually *test* anything.
+ *
+ *      Does not handle XPG3 or presence of "*" in width/precision.
+ *
+ * Results:
+ *	TCL_OK
+ *	TCL_ERROR
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+C99Format(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    double dbl;
+    Tcl_WideInt wide;
+    char fmt[100];
+    char buf[256];
+    Tcl_Size len;
+    const char *otherSpec;
+    const char *sizeSpec;
+    const char *typeSpec;
+    Tcl_Obj *valueObj;
+
+    if (objc < 3 || objc > 5) {
+	/*
+	 * Order of components is same as in format specifier but some optional 
+	 */
+	Tcl_WrongNumArgs(interp, 1, objv, "? ?otherspec? size? type value");
+	return TCL_ERROR;
+    }
+    valueObj = objv[objc - 1];
+    typeSpec = Tcl_GetStringFromObj(objv[objc - 2], &len);
+    if (len != 1) {
+	Tcl_AppendResult(
+	    interp, "Invalid type specifier: ", typeSpec, (char *)NULL);
+
+	return TCL_ERROR;
+    }
+    sizeSpec = otherSpec = "";
+    if (objc > 3) {
+	sizeSpec = Tcl_GetString(objv[objc-3]);
+	if (objc > 4) {
+	    otherSpec = Tcl_GetString(objv[objc - 4]);
+	}
+    }
+
+    snprintf(fmt, sizeof(fmt), "%%%s%s%s", otherSpec, sizeSpec, typeSpec);
+
+
+#define PRINTIF(spec_, type_, val_)                          \
+    do {                                                     \
+	if (!strcmp(spec_, sizeSpec)) {                      \
+	    snprintf(buf, sizeof(buf), fmt, (type_)(val_)); \
+	    goto done;                                           \
+	}                                                    \
+    } while (0)
+
+    buf[0] = 0;
+    switch (*typeSpec) {
+    /* Doubles */
+    case 'f':
+    case 'a':
+    case 'A':
+    case 'e':
+    case 'E':
+    case 'g':
+    case 'G':
+	if (Tcl_GetDoubleFromObj(interp, valueObj, &dbl) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	snprintf(buf, sizeof(buf), fmt, dbl);
+	break;
+
+    /* Integers */
+    case 'd':
+    case 'u':
+    case 'i':
+    case 'o':
+    case 'x':
+    case 'X':
+    case 'p':
+	/*
+	 * C does not distinguish between signed vs unsigned passed to printf.
+	 * Below assumes Tcl_WideInt enough for all C integer types of interest.
+	 */
+	if (Tcl_GetWideIntFromObj(NULL, valueObj, &wide) != TCL_OK) {
+	    Tcl_WideUInt uwide;
+	    if (Tcl_GetWideUIntFromObj(interp, valueObj, &uwide) !=
+		TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    wide = (Tcl_WideInt)uwide;
+	}
+
+	/*
+	 * Code below relies on printf passing signed/unsigned the same way
+	 * else we would have to distinguish between "d" and "u" etc.
+	 */
+	PRINTIF("", int, wide);
+	PRINTIF("hh", int, wide);
+	PRINTIF("h", int, wide);
+	PRINTIF("l", long, wide);
+	PRINTIF("ll", long long, wide);
+	PRINTIF("t", ptrdiff_t, wide);
+	PRINTIF("z", size_t, wide);
+	PRINTIF("j", intmax_t, wide);
+#ifdef _WIN32
+	PRINTIF("I32", int32_t, wide);
+	PRINTIF("I64", int64_t, wide);
+#endif
+	Tcl_AppendResult(
+	    interp, "Invalid size specifier: ", sizeSpec, (char *)NULL);
+	return TCL_ERROR;
+
+    default:
+	Tcl_AppendResult(
+	    interp, "Invalid type specifier: ", typeSpec, (char *)NULL);
+	return TCL_ERROR;
+    }
+
+done:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+    return TCL_OK;
 }
 
 /*
