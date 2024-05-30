@@ -2457,6 +2457,12 @@ Tcl_AppendFormatToObj(
 		format += step;
 		step = TclUtfToUniChar(format, &ch);
 	    }
+	} else if ((ch == 'q') || (ch == 'j')) {
+	    format += step;
+	    step = TclUtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    useWide = 1;
+#endif
 	} else if ((ch == 't') || (ch == 'z')) {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
@@ -2465,7 +2471,7 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 	    }
 #endif
-	} else if ((ch == 'q') || (ch == 'j') || (ch == 'L')) {
+	} else if (ch == 'L') {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
 	    useBig = 1;
