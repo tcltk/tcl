@@ -88,6 +88,7 @@ typedef struct {
 #define TCL_TRACE_ANY_EXEC		15
 #define TCL_TRACE_EXEC_IN_PROGRESS	0x10
 #define TCL_TRACE_EXEC_DIRECT		0x20
+#define TCL_TRACE_ANY_RENAME		(TCL_TRACE_RENAME | TCL_TRACE_DELETE)
 
 /*
  * Forward declarations for functions defined in this file:
@@ -516,7 +517,7 @@ TraceExecutionObjCmd(
 
 		if ((tcmdPtr->length == length)
 			&& ((tcmdPtr->flags & (TCL_TRACE_ANY_EXEC |
-				TCL_TRACE_RENAME | TCL_TRACE_DELETE)) == flags)
+				TCL_TRACE_ANY_RENAME)) == flags)
 			&& (strncmp(command, tcmdPtr->command,
 				length) == 0)) {
 		    flags |= TCL_TRACE_DELETE;
@@ -573,40 +574,37 @@ TraceExecutionObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
-	    Tcl_Obj *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
-	     * Build a list with the ops list as the first obj element and the
-	     * tcmdPtr->command string as the second obj element. Append this
-	     * list (as an element) to the end of the result object list.
+	     * If any flag we care about here is set...
 	     */
 
-	    elemObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_IncrRefCount(elemObjPtr);
-	    if (tcmdPtr->flags & TCL_TRACE_ENTER_EXEC) {
-		TclListObjAppendString(NULL, elemObjPtr, "enter");
-	    }
-	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_EXEC) {
-		TclListObjAppendString(NULL, elemObjPtr, "leave");
-	    }
-	    if (tcmdPtr->flags & TCL_TRACE_ENTER_DURING_EXEC) {
-		TclListObjAppendString(NULL, elemObjPtr, "enterstep");
-	    }
-	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_DURING_EXEC) {
-		TclListObjAppendString(NULL, elemObjPtr, "leavestep");
-	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
-	    if (0 == numOps) {
-		Tcl_DecrRefCount(elemObjPtr);
-		continue;
-	    }
+	    if (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) {
+		/*
+		 * Build a list with the ops list as the first obj element and
+		 * the tcmdPtr->command string as the second obj element.
+		 * Append this list (as an element) to the end of the result
+		 * object list.
+		 */
 
-	    TclListObjAppendSublist(interp, resultListPtr,
-		    elemObjPtr, Tcl_NewStringObj(tcmdPtr->command, -1),
-		    NULL);
-	    Tcl_DecrRefCount(elemObjPtr);
+		Tcl_Obj *elemObjPtr = Tcl_NewListObj(0, NULL);
+		if (tcmdPtr->flags & TCL_TRACE_ENTER_EXEC) {
+		    TclListObjAppendString(NULL, elemObjPtr, "enter");
+		}
+		if (tcmdPtr->flags & TCL_TRACE_LEAVE_EXEC) {
+		    TclListObjAppendString(NULL, elemObjPtr, "leave");
+		}
+		if (tcmdPtr->flags & TCL_TRACE_ENTER_DURING_EXEC) {
+		    TclListObjAppendString(NULL, elemObjPtr, "enterstep");
+		}
+		if (tcmdPtr->flags & TCL_TRACE_LEAVE_DURING_EXEC) {
+		    TclListObjAppendString(NULL, elemObjPtr, "leavestep");
+		}
+		TclListObjAppendSublist(interp, resultListPtr, elemObjPtr,
+			Tcl_NewStringObj(tcmdPtr->command, tcmdPtr->length),
+			NULL);
+	    }
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -769,31 +767,31 @@ TraceCommandObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
-	    Tcl_Obj *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
-	     * Build a list with the ops list as the first obj element and the
-	     * tcmdPtr->command string as the second obj element. Append this
-	     * list (as an element) to the end of the result object list.
+	     * If any flag we care about here is set...
 	     */
 
-	    elemObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_IncrRefCount(elemObjPtr);
-	    if (tcmdPtr->flags & TCL_TRACE_RENAME) {
-		TclListObjAppendString(NULL, elemObjPtr, "rename");
-	    }
-	    if (tcmdPtr->flags & TCL_TRACE_DELETE) {
-		TclListObjAppendString(NULL, elemObjPtr, "delete");
-	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
-	    if (numOps) {
-		TclListObjAppendSublist(interp, resultListPtr,
-			elemObjPtr, Tcl_NewStringObj(tcmdPtr->command, -1),
+	    if (tcmdPtr->flags & TCL_TRACE_ANY_RENAME) {
+		/*
+		 * Build a list with the ops list as the first obj element and
+		 * the tcmdPtr->command string as the second obj element.
+		 * Append this list (as an element) to the end of the result
+		 * object list.
+		 */
+
+		Tcl_Obj *elemObjPtr = Tcl_NewListObj(0, NULL);
+		if (tcmdPtr->flags & TCL_TRACE_RENAME) {
+		    TclListObjAppendString(NULL, elemObjPtr, "rename");
+		}
+		if (tcmdPtr->flags & TCL_TRACE_DELETE) {
+		    TclListObjAppendString(NULL, elemObjPtr, "delete");
+		}
+		TclListObjAppendSublist(interp, resultListPtr, elemObjPtr,
+			Tcl_NewStringObj(tcmdPtr->command, tcmdPtr->length),
 			NULL);
 	    }
-	    Tcl_DecrRefCount(elemObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -928,9 +926,9 @@ TraceVariableObjCmd(
 		if ((tvarPtr->length == length)
 			&& ((tvarPtr->flags
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
-& ~TCL_TRACE_OLD_STYLE
+				& ~TCL_TRACE_OLD_STYLE
 #endif
-						)==flags)
+				) == flags)
 			&& (strncmp(command, tvarPtr->command,
 				length) == 0)) {
 		    Tcl_UntraceVar2(interp, name, NULL,
@@ -953,7 +951,6 @@ TraceVariableObjCmd(
 	TclNewObj(resultListPtr);
 	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
-	    Tcl_Obj *elemObjPtr;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
 	    /*
@@ -962,7 +959,7 @@ TraceVariableObjCmd(
 	     * list (as an element) to the end of the result object list.
 	     */
 
-	    elemObjPtr = Tcl_NewListObj(0, NULL);
+	    Tcl_Obj *elemObjPtr = Tcl_NewListObj(0, NULL);
 	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
 		TclListObjAppendString(NULL, elemObjPtr, "array");
 	    }
@@ -1103,8 +1100,7 @@ Tcl_TraceCommand(
     tracePtr = (CommandTrace *)ckalloc(sizeof(CommandTrace));
     tracePtr->traceProc = proc;
     tracePtr->clientData = clientData;
-    tracePtr->flags = flags &
-	    (TCL_TRACE_RENAME | TCL_TRACE_DELETE | TCL_TRACE_ANY_EXEC);
+    tracePtr->flags = flags & (TCL_TRACE_ANY_RENAME | TCL_TRACE_ANY_EXEC);
     tracePtr->nextPtr = cmdPtr->tracePtr;
     tracePtr->refCount = 1;
     cmdPtr->tracePtr = tracePtr;
@@ -1164,7 +1160,7 @@ Tcl_UntraceCommand(
 	return;
     }
 
-    flags &= (TCL_TRACE_RENAME | TCL_TRACE_DELETE | TCL_TRACE_ANY_EXEC);
+    flags &= TCL_TRACE_ANY_RENAME | TCL_TRACE_ANY_EXEC;
 
     for (tracePtr = cmdPtr->tracePtr, prevPtr = NULL; ;
 	    prevPtr = tracePtr, tracePtr = tracePtr->nextPtr) {
@@ -1172,7 +1168,7 @@ Tcl_UntraceCommand(
 	    return;
 	}
 	if ((tracePtr->traceProc == proc)
-		&& ((tracePtr->flags & (TCL_TRACE_RENAME | TCL_TRACE_DELETE |
+		&& ((tracePtr->flags & (TCL_TRACE_ANY_RENAME |
 			TCL_TRACE_ANY_EXEC)) == flags)
 		&& (tracePtr->clientData == clientData)) {
 	    if (tracePtr->flags & TCL_TRACE_ANY_EXEC) {
