@@ -24,6 +24,7 @@ testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 # particularly in Continuous Integration, and there isn't anything much we can
 # do about it.
 testConstraint knownMsvcBug [expr {![string match msvc-* [tcl::build-info compiler]]}]
+testConstraint c99format [expr {[llength [info commands ::c99format]] != 0}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -638,6 +639,42 @@ test format-20.1 {Bug 2932421: plain %s caused internalrep change of args} -body
     # Whether or not there is a string rep - we should not care!
     tcl::unsupported::representation $x
 } -match glob -result {value is a dict *}
+
+#
+# Match up formatting against C99
+foreach type {f a A e E g G} {
+    set testNum 0
+    foreach dbl {0} {
+        test format-c99-$type-[incr testNum] \
+            "Compare c99format %$type $dbl" \
+            -constraints c99format -body {
+                format %$type $dbl
+            } -result [c99format $type $dbl]
+    }
+}
+
+set sizeSpecs [list {} h l ll t z j]
+if {$::tcl_platform(platform) eq "windows"} {
+    lappend sizeSpecs I32 I64
+}
+foreach type {d u i o x X p} {
+    set testNum 0
+    foreach size $sizeSpecs {
+        foreach ival {
+            0 0x1 0x7fff 0xffff
+            0x10001 0x7fffffff 0x80000000 0xffffffff
+            0x100000001 0x7fffffffffffffff 0x8000000000000000 0xffffffffffffffff
+        } {
+            test format-c99-$type-$size-[incr testNum] \
+                "Compare c99format %$size$type $ival" \
+                -constraints c99format -body {
+                    format %$size$type $ival
+                } -result [c99format $size $type $ival]
+        }
+    }
+}
+
+
 
 # cleanup
 catch {unset a}
