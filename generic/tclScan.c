@@ -605,7 +605,7 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
-    long value;
+    int value;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -1006,19 +1006,7 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-#ifdef TCL_WIDE_INT_IS_LONG
-		    mp_int big;
-		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-			return TCL_ERROR;
-		    } else {
-			Tcl_SetBignumObj(objPtr, &big);
-		    }
-#else
-		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
-#endif
+		    Tcl_SetWideIntObj(objPtr, (unsigned int)value);
 		} else {
 		    TclSetIntObj(objPtr, value);
 		}
