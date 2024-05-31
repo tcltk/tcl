@@ -4649,7 +4649,7 @@ test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
 } -body {
     # In this case, sub-objects are deleted while the destructor is running and
     # the destroy is neat, so things work sanely. Error follows standard Tcl
-    # error flow route; bgerror is not used. 
+    # error flow route; bgerror is not used.
     bgerrorIntercept ::result {
 	set FH [RpcClient new]
 	$FH create_bug
