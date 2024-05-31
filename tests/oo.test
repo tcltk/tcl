@@ -13,6 +13,20 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+# A helper for intercepting background errors
+proc ::bgerrorIntercept {varName body} {
+    set old [interp bgerror {}]
+    interp bgerror {} [list apply {{var msg args} {
+	upvar #0 $var v
+	lappend v $msg
+    }} $varName]
+    try {
+	uplevel 1 $body
+    } finally {
+	interp bgerror {} $old
+    }
+}
+
 
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
@@ -668,28 +682,30 @@ test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
 } -result {1 foo {}}
 test oo-3.7 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [rename [cls create obj] {}] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [rename obj {}]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [namespace delete [info object namespace [cls create obj]]] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [namespace delete [info object namespace obj]]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
     oo::class create cls
     set result {}
@@ -4204,16 +4220,6 @@ test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
 } {{-append -clear -set} {Get Set}}
 
-proc ::bgerrorIntercept {varName body} {
-    catch {rename bgerror ___old_bgerror}
-    interp alias {} ::bgerror {} ::lappend $varName
-    try {
-	uplevel 1 $body
-    } finally {
-	rename ::bgerror ""
-	catch {rename ___old_bgerror bgerror}
-    }
-}
 test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     oo::class create fruit {
 	method eat {} {}
