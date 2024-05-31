@@ -4204,6 +4204,16 @@ test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
 } {{-append -clear -set} {Get Set}}
 
+proc ::bgerrorIntercept {varName body} {
+    catch {rename bgerror ___old_bgerror}
+    interp alias {} ::bgerror {} ::lappend $varName
+    try {
+	uplevel 1 $body
+    } finally {
+	rename ::bgerror ""
+	catch {rename ___old_bgerror bgerror}
+    }
+}
 test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     oo::class create fruit {
 	method eat {} {}
@@ -4319,13 +4329,20 @@ test oo-35.7.1 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted during major object NS cleanup and
+    # are trying to call back into the major object (which is mostky gone at
+    # this point). Things are messy; error is reported via bgerror as the
+    # avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
-} -result {}
+} -result {impossible to invoke method "write": no defined method or unknown method}
 test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     oo::class create base
     oo::class create RpcClient {
@@ -4353,13 +4370,21 @@ test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted during major object NS cleanup, and
+    # we've a destructor on the major class to monitor when it happens. Things
+    # are still messy, but the order is clear; error is reported via bgerror as
+    # the avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
-} -result {Destroyed}
+} -result {Destroyed
+impossible to invoke method "write": no defined method or unknown method}
 test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     oo::class create base
     oo::class create RpcClient {
@@ -4394,14 +4419,20 @@ test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted while the destructor is running and
+    # the destroy is neat, so things work sanely. Error follows standard Tcl
+    # error flow route; bgerror is not used. 
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
 } -result "Destroyed\nRpcClient -> otto-111"
-
+rename bgerrorIntercept {}
 
 cleanupTests
 return
