@@ -379,6 +379,17 @@ ValidateFormat(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -387,7 +398,8 @@ ValidateFormat(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
@@ -986,11 +998,11 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
-			value = LONG_MIN;
+			value = INT_MIN;
 		    } else {
-			value = LONG_MAX;
+			value = INT_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
