@@ -2443,6 +2443,8 @@ Tcl_AppendFormatToObj(
 		useWide = 1;
 #endif
 	    }
+#if defined(_WIN32) || defined(__CYGWIN__)
+	/* 'I', 'I32' and 'I64' are not documented, and only available on Windows */
 	} else if (ch == 'I') {
 	    if ((format[1] == '6') && (format[2] == '4')) {
 		format += (step + 2);
@@ -2457,6 +2459,7 @@ Tcl_AppendFormatToObj(
 		format += step;
 		step = TclUtfToUniChar(format, &ch);
 	    }
+#endif
 	} else if ((ch == 'q') || (ch == 'j')) {
 	    format += step;
 	    step = TclUtfToUniChar(format, &ch);
@@ -3205,6 +3208,8 @@ AppendPrintfToObjVA(
 		size = 2;
 		p++;
 		break;
+#if defined(_WIN32) || defined(__CYGWIN__)
+	    /* 'I', 'I32' and 'I64' are not documented, and only available on Windows */
 	    case 'I':
 		if (p[1]=='6' && p[2]=='4') {
 		    p += 2;
@@ -3216,6 +3221,7 @@ AppendPrintfToObjVA(
 		}
 		p++;
 		break;
+#endif
 	    case 'L':
 		size = 3;
 		p++;
