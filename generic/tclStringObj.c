@@ -124,8 +124,8 @@ const Tcl_ObjType tclStringType = {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    Tcl_Size needed, /* Not including terminating nul */
-    int flag)      /* If 0, try to overallocate */
+    Tcl_Size needed,		/* Not including terminating nul */
+    int flag)			/* If 0, try to overallocate */
 {
     /*
      * Preconditions:
@@ -718,8 +718,8 @@ Tcl_GetUnicodeFromObj(
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    Tcl_Size first,			/* First index of the range. */
-    Tcl_Size last)			/* Last index of the range. */
+    Tcl_Size first,		/* First index of the range. */
+    Tcl_Size last)		/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -3051,11 +3051,9 @@ TclStringRepeat(
     /* maxCount includes space for null */
     if (count > (maxCount-1)) {
 	if (interp) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("max size for a Tcl value (%" TCL_SIZE_MODIFIER
-			      "d bytes) exceeded",
-			      TCL_SIZE_MAX));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		    "d bytes) exceeded", TCL_SIZE_MAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return NULL;
@@ -3510,7 +3508,8 @@ TclStringCat(
   overflow:
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX));
+		"max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		"d bytes) exceeded", TCL_SIZE_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return NULL;
@@ -3534,9 +3533,9 @@ TclStringCat(
 
 static int
 UniCharNcasememcmp(
-    const void *ucsPtr,	/* Unicode string to compare to uct. */
-    const void *uctPtr,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of Unichars to compare. */
+    const void *ucsPtr,		/* Unicode string to compare to uct. */
+    const void *uctPtr,		/* Unicode string ucs is compared to. */
+    size_t numChars)		/* Number of Unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3557,7 +3556,7 @@ static int
 UtfNmemcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3589,7 +3588,7 @@ static int
 UtfNcasememcmp(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
     const char *cs = (const char *)csPtr;
@@ -3616,9 +3615,9 @@ UtfNcasememcmp(
 
 static int
 UniCharNmemcmp(
-    const void *ucsPtr,	/* Unicode string to compare to uct. */
-    const void *uctPtr,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of unichars to compare. */
+    const void *ucsPtr,		/* Unicode string to compare to uct. */
+    const void *uctPtr,		/* Unicode string ucs is compared to. */
+    size_t numChars)		/* Number of unichars to compare. */
 {
     const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
     const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
@@ -3650,7 +3649,7 @@ TclStringCmp(
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
     Tcl_Size reqlength)		/* requested length in characters;
-						 * TCL_INDEX_NONE to compare whole strings */
+				 * TCL_INDEX_NONE to compare whole strings */
 {
     const char *s1, *s2;
     int empty, match;
@@ -3696,9 +3695,8 @@ TclStringCmp(
 			&& (value1Ptr->bytes != NULL)
 			&& (s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
-			/* each byte represents one character so s1l3n, s2l3n, and
-			 * reqlength are in both bytes and characters
-			 */
+			/* each byte represents one character so s1l3n, s2l3n,
+			 * and reqlength are in both bytes and characters */
 		    s1 = value1Ptr->bytes;
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;
