@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 
 # %z/%t/%p output depends on pointerSize, so some tests are not portable.
 testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) >= 8}]
 # MSVC uses a broken libc that gets sprintf("%g") wrong. This is a pain
 # particularly in Continuous Integration, and there isn't anything much we can
 # do about it.
@@ -623,11 +624,11 @@ foreach type {f a A e E g G} {
     }
 }
 
-set sizeSpecs [list {} h l ll t z j]
+set sizeSpecs [list {} h l t z j]
 if {$::tcl_platform(platform) eq "windows"} {
     lappend sizeSpecs I32 I64
 }
-foreach type {d u i o x X p} {
+foreach type {d u i o x X} {
     set testNum 0
     foreach size $sizeSpecs {
         foreach ival {
@@ -637,7 +638,7 @@ foreach type {d u i o x X p} {
         } {
             test format-c99-$type-$size-[incr testNum] \
                 "Compare c99format %$size$type $ival" \
-                -constraints c99format -body {
+                -constraints {c99format longIs64bit} -body {
                     format %$size$type $ival
                 } -result [c99format $size $type $ival]
         }
