@@ -248,6 +248,9 @@ For example, to print the contents of the \fBtcl_platform\fR array, do:
 \fBparray\fR tcl_platform
 .CE
 .RE
+.SS "WORD BOUNDARY HELPERS"
+.PP
+These procedures are mainly used internally by Tk.
 .TP
 \fBtcl_endOfWord \fIstr start\fR
 .
