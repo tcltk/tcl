@@ -149,7 +149,7 @@ of any length, concatenates them into a single string,
 then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
 It returns the result of the command and also modifies
 the interpreter result in the same way as \fBTcl_Eval\fR.
-The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
+The last argument to \fBTcl_VarEval\fR must be (char *)NULL to indicate the end
 of arguments.
 .PP
 \fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that

@@ -141,7 +141,7 @@ It also manages conversion to and from the \fIresult\fR field of the
 \fIinterp\fR so as to handle backward-compatibility with old-style
 extensions.
 Any number of \fIresult\fR arguments may be passed in a single
-call; the last argument in the list must be a NULL pointer.
+call; the last argument in the list must (char *)NULL.
 .PP
 \fBTcl_AppendResultVA\fR is the same as \fBTcl_AppendResult\fR except that
 instead of taking a variable number of arguments it takes an argument list.
