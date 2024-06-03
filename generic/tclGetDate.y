@@ -59,7 +59,7 @@
 #include "tclDate.h"
 
 #define YYMALLOC	ckalloc
-#define YYFREE(x)	(ckree((void*) (x)))
+#define YYFREE(x)	(ckfree((void*) (x)))
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
