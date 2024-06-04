@@ -1241,9 +1241,13 @@ ObjListSearch(
 /* currently unused */
 
 static int
-LocaleListSearch(ClockFmtScnCmdArgs *opts,
-    DateInfo *info, int mcKey, int *val,
-    int minLen, int maxLen)
+LocaleListSearch(
+    ClockFmtScnCmdArgs *opts,
+    DateInfo *info,
+    int mcKey,
+    int *val,
+    int minLen,
+    int maxLen)
 {
     Tcl_Obj **lstv;
     Tcl_Size lstc;
