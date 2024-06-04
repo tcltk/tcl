@@ -219,47 +219,33 @@ an unshared dictionary value).
 .PP
 The following fields in the dictionary value are understood. All other fields
 are ignored. No field is required when creating a gzip-format stream.
-.TP
-\fBcomment\fR
-.
+.IP \fBcomment\fR
 This holds the comment field of the header, if present. If absent, no comment
 was supplied (on decompression) or will be created (on compression).
-.TP
-\fBcrc\fR
-.
+.IP \fBcrc\fR
 A boolean value describing whether a CRC of the header is computed. Note that
 the \fBgzip\fR program does \fInot\fR use or allow a CRC on the header.
-.TP
-\fBfilename\fR
-.
+.IP \fBfilename\fR
 The name of the file that held the uncompressed data. This should not contain
 any directory separators, and should be sanitized before use on decompression
 with \fBfile tail\fR.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The operating system type code field from the header (if not the
 .QW unknown
 value). See RFC 1952 for the meaning of these codes. On compression, if this
 is absent then the field will be set to the
 .QW unknown
 value.
-.TP
-\fBsize\fR
-.
+.IP \fBsize\fR
 The size of the uncompressed data. This is ignored on compression; the size
 of the data compressed depends on how much data is supplied to the
 compression engine.
-.TP
-\fBtime\fR
-.
+.IP \fBtime\fR
 The time field from the header if non-zero, expected to be the time that the
 file named by the \fBfilename\fR field was modified. Suitable for use with
 \fBclock format\fR. On creation, the right value to use is that from
 \fBclock seconds\fR or \fBfile mtime\fR.
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 The type of the uncompressed data (either \fBbinary\fR or \fBtext\fR) if
 known.
 .SH "REFERENCE COUNT MANAGEMENT"

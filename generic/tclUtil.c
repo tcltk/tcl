@@ -658,7 +658,7 @@ FindElement(
 			    "%s element in braces followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -710,7 +710,7 @@ FindElement(
 			    "%s element in quotes followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -743,7 +743,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open brace in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
@@ -751,7 +751,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open quote in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -902,7 +902,7 @@ Tcl_SplitList(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1672,7 +1672,7 @@ TclTrimRight(
 	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
- 	    pInc = Tcl_UtfToUniChar(pp, &ch1);
+ 	    pInc = TclUtfToUniChar(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1680,7 +1680,7 @@ TclTrimRight(
 	 */
 
 	do {
-	    pInc = Tcl_UtfToUniChar(q, &ch2);
+	    pInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1745,7 +1745,7 @@ TclTrimLeft(
      */
 
     do {
-	Tcl_Size pInc = Tcl_UtfToUniChar(p, &ch1);
+	Tcl_Size pInc = TclUtfToUniChar(p, &ch1);
 	const char *q = trim;
 	Tcl_Size bytesLeft = numTrim;
 
@@ -1754,7 +1754,7 @@ TclTrimLeft(
 	 */
 
 	do {
-	    Tcl_Size qInc = Tcl_UtfToUniChar(q, &ch2);
+	    Tcl_Size qInc = TclUtfToUniChar(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1821,7 +1821,7 @@ TclTrim(
 	if (numBytes > 0) {
 	    int ch;
 	    const char *first = bytes + trimLeft;
-	    bytes += Tcl_UtfToUniChar(first, &ch);
+	    bytes += TclUtfToUniChar(first, &ch);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
@@ -1978,10 +1978,10 @@ Tcl_ConcatObj(
 
 	objPtr = objv[i];
 	if (TclListObjIsCanonical(objPtr) ||
-            TclObjTypeHasProc(objPtr,indexProc)) {
+		TclObjTypeHasProc(objPtr, indexProc)) {
 	    continue;
 	}
-	(void)Tcl_GetStringFromObj(objPtr, &length);
+	(void)TclGetStringFromObj(objPtr, &length);
 	if (length > 0) {
 	    break;
 	}
@@ -1991,7 +1991,7 @@ Tcl_ConcatObj(
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    if (!TclListObjIsCanonical(objPtr) &&
-		!TclObjTypeHasProc(objPtr,indexProc)) {
+		    !TclObjTypeHasProc(objPtr, indexProc)) {
 		continue;
 	    }
 	    if (resPtr) {
@@ -2001,7 +2001,7 @@ Tcl_ConcatObj(
 		if (elemPtr == NULL) {
 		    continue;
 		}
-		if (Tcl_GetString(elemPtr)[0] == '#' || TCL_OK
+		if (TclGetString(elemPtr)[0] == '#' || TCL_OK
 			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
@@ -2028,7 +2028,7 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	element = Tcl_GetStringFromObj(objv[i], &elemLength);
+	element = TclGetStringFromObj(objv[i], &elemLength);
 	if (bytesNeeded > (TCL_SIZE_MAX - elemLength)) {
 	    break; /* Overflow. Do not preallocate. See comment below. */
 	}
@@ -2048,7 +2048,7 @@ Tcl_ConcatObj(
     for (i = 0;  i < objc;  i++) {
 	Tcl_Size triml, trimr;
 
-	element = Tcl_GetStringFromObj(objv[i], &elemLength);
+	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading/trailing whitespace. */
 	triml = TclTrim(element, elemLength, CONCAT_TRIM_SET,
@@ -2137,7 +2137,7 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*') {}
+	    while (*(++pattern) == '*');
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -2151,7 +2151,7 @@ Tcl_StringCaseMatch(
 		ch2 = (int)
 			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 	    } else {
-		Tcl_UtfToUniChar(pattern, &ch2);
+		TclUtfToUniChar(pattern, &ch2);
 		if (nocase) {
 		    ch2 = Tcl_UniCharToLower(ch2);
 		}
@@ -2167,7 +2167,7 @@ Tcl_StringCaseMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*str) {
-			    charLen = Tcl_UtfToUniChar(str, &ch1);
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
@@ -2181,7 +2181,7 @@ Tcl_StringCaseMatch(
 			 */
 
 			while (*str) {
-			    charLen = Tcl_UtfToUniChar(str, &ch1);
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
@@ -2195,7 +2195,7 @@ Tcl_StringCaseMatch(
 		if (*str == '\0') {
 		    return 0;
 		}
-		str += Tcl_UtfToUniChar(str, &ch1);
+		str += TclUtfToUniChar(str, &ch1);
 	    }
 	}
 
@@ -2206,7 +2206,7 @@ Tcl_StringCaseMatch(
 
 	if (p == '?') {
 	    pattern++;
-	    str += Tcl_UtfToUniChar(str, &ch1);
+	    str += TclUtfToUniChar(str, &ch1);
 	    continue;
 	}
 
@@ -2225,7 +2225,7 @@ Tcl_StringCaseMatch(
 			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
 		str++;
 	    } else {
-		str += Tcl_UtfToUniChar(str, &ch1);
+		str += TclUtfToUniChar(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -2239,7 +2239,7 @@ Tcl_StringCaseMatch(
 			    ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 		    pattern++;
 		} else {
-		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		    pattern += TclUtfToUniChar(pattern, &startChar);
 		    if (nocase) {
 			startChar = Tcl_UniCharToLower(startChar);
 		    }
@@ -2254,7 +2254,7 @@ Tcl_StringCaseMatch(
 				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 			pattern++;
 		    } else {
-			pattern += Tcl_UtfToUniChar(pattern, &endChar);
+			pattern += TclUtfToUniChar(pattern, &endChar);
 			if (nocase) {
 			    endChar = Tcl_UniCharToLower(endChar);
 			}
@@ -2302,8 +2302,8 @@ Tcl_StringCaseMatch(
 	 * each string match.
 	 */
 
-	str += Tcl_UtfToUniChar(str, &ch1);
-	pattern += Tcl_UtfToUniChar(pattern, &ch2);
+	str += TclUtfToUniChar(str, &ch1);
+	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
 		return 0;
@@ -2398,7 +2398,7 @@ TclByteArrayMatch(
 		    }
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
-				pattern, patternEnd - pattern, 0)) {
+			pattern, patternEnd - pattern, 0)) {
 		    return 1;
 		}
 		if (string == stringEnd) {
@@ -2598,10 +2598,11 @@ char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
-				 * TCL_INDEX_NONE then this must be null-terminated. */
+				 * TCL_INDEX_NONE then this must be
+				 * null-terminated. */
     Tcl_Size length)		/* Number of bytes from "bytes" to append. If
-				 * TCL_INDEX_NONE, then append all of bytes, up to null
-				 * at end. */
+				 * TCL_INDEX_NONE, then append all of bytes, up
+				 * to null at end. */
 {
     Tcl_Size newSize;
 
@@ -2616,7 +2617,6 @@ Tcl_DStringAppend(
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
-
 
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
@@ -2668,7 +2668,7 @@ TclDStringAppendObj(
     Tcl_Obj *objPtr)
 {
     Tcl_Size length;
-    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+    const char *bytes = TclGetStringFromObj(objPtr, &length);
 
     return Tcl_DStringAppend(dsPtr, bytes, length);
 }
@@ -3508,7 +3508,7 @@ GetEndOffsetFromObj(
     while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
 	Tcl_Size length;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
 	if (*bytes != 'e') {
 	    int numType;
@@ -3531,9 +3531,8 @@ GetEndOffsetFromObj(
 	     * This relies on TclGetString() returning a NUL-terminated string.
 	     */
 	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
-
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == TclListObjLengthM(NULL, objPtr, &length))
+	            && (TCL_OK == TclListObjLength(NULL, objPtr, &length))
 	            && (length > 1)) {
 	        goto parseError;
 	    }
@@ -3657,7 +3656,7 @@ GetEndOffsetFromObj(
 
 	    /* Parse the integer offset */
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
-			bytes+4, length-4, NULL, TCL_PARSE_INTEGER_ONLY)) {
+		    bytes + 4, length - 4, NULL, TCL_PARSE_INTEGER_ONLY)) {
 		/* Not a recognized integer format */
 		goto parseError;
 	    }
@@ -3732,7 +3731,7 @@ GetEndOffsetFromObj(
         if (!strncmp(bytes, "end-", 4)) {
             bytes += 4;
         }
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (void *)NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (char *)NULL);
     }
 
     return TCL_ERROR;
@@ -3866,7 +3865,7 @@ TclIndexEncode(
 	 * the position after the end and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
+		(wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
 	}
@@ -3896,7 +3895,7 @@ TclIndexEncode(
 	 * and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
+		(wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
 	}
@@ -3922,10 +3921,8 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (void *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -3963,36 +3960,6 @@ TclIndexDecode(
 /*
  *------------------------------------------------------------------------
  *
- * TclIndexInvalidError --
- *
- *    Generates an error message including the invalid index.
- *
- * Results:
- *    Always return TCL_ERROR.
- *
- * Side effects:
- *    If interp is not-NULL, an error message is stored in it.
- *
- *------------------------------------------------------------------------
- */
-int
-TclIndexInvalidError (
-    Tcl_Interp *interp,   /* May be NULL */
-    const char *idxType,  /* The descriptive string for idx. Defaults to "index" */
-    Tcl_Size idx)         /* Invalid index value */
-{
-    if (interp) {
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-				       idxType ? idxType : "index",
-				       idx));
-    }
-    return TCL_ERROR; /* Always */
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * TclCommandWordLimitErrpr --
  *
  *    Generates an error message limit on number of command words exceeded.
@@ -4006,25 +3973,21 @@ TclIndexInvalidError (
  *------------------------------------------------------------------------
  */
 int
-TclCommandWordLimitError (
+TclCommandWordLimitError(
     Tcl_Interp *interp,   /* May be NULL */
     Tcl_Size count)       /* If <= 0, "unknown" */
 {
     if (interp) {
 	if (count > 0) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Number of words (%" TCL_SIZE_MODIFIER
-			      "d) in command exceeds limit %" TCL_SIZE_MODIFIER
-			      "d.",
-			      count,
-			      (Tcl_Size)INT_MAX));
-	}
-	else {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Number of words in command exceeds "
-					   "limit %" TCL_SIZE_MODIFIER "d.",
-					   (Tcl_Size)INT_MAX));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words (%" TCL_SIZE_MODIFIER
+		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
+		    count, (Tcl_Size)INT_MAX));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words in command exceeds limit %"
+		    TCL_SIZE_MODIFIER "d.",
+		    (Tcl_Size)INT_MAX));
 	}
     }
     return TCL_ERROR; /* Always */
@@ -4156,13 +4119,13 @@ FreeProcessGlobalValue(
 void
 TclSetProcessGlobalValue(
     ProcessGlobalValue *pgvPtr,
-    Tcl_Obj *newValue,
-    Tcl_Encoding encoding)
+    Tcl_Obj *newValue)
 {
     const char *bytes;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     int dummy;
+    Tcl_DString ds;
 
     Tcl_MutexLock(&pgvPtr->mutex);
 
@@ -4178,12 +4141,16 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
+    Tcl_UtfToExternalDStringEx(NULL, NULL, bytes, pgvPtr->numBytes,
+	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    pgvPtr->numBytes = Tcl_DStringLength(&ds);
     pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, Tcl_DStringValue(&ds), pgvPtr->numBytes + 1);
+    Tcl_DStringFree(&ds);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
-    pgvPtr->encoding = encoding;
+    pgvPtr->encoding = NULL;
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
@@ -4221,6 +4188,7 @@ TclGetProcessGlobalValue(
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     Tcl_Size epoch = pgvPtr->epoch;
+    Tcl_DString newValue;
 
     if (pgvPtr->encoding) {
 	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
@@ -4232,7 +4200,7 @@ TclGetProcessGlobalValue(
 	     * system encoding.
 	     */
 
-	    Tcl_DString native, newValue;
+	    Tcl_DString native;
 
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
@@ -4283,10 +4251,12 @@ TclGetProcessGlobalValue(
 	}
 
 	/*
-	 * Store a copy of the shared value in our epoch-indexed cache.
+	 * Store a copy of the shared value (but then in utf-8)
+	 * in our epoch-indexed cache.
 	 */
 
-	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
+	value = Tcl_DStringToObj(&newValue);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
@@ -4304,6 +4274,8 @@ TclGetProcessGlobalValue(
  *	This function stores the absolute pathname of the executable file
  *	(normally as computed by TclpFindExecutable).
  *
+ *	Starting with Tcl 9.0, encoding parameter is not used any more.
+ *
  * Results:
  *	None.
  *
@@ -4316,9 +4288,9 @@ TclGetProcessGlobalValue(
 void
 TclSetObjNameOfExecutable(
     Tcl_Obj *name,
-    Tcl_Encoding encoding)
+    TCL_UNUSED(Tcl_Encoding))
 {
-    TclSetProcessGlobalValue(&executableName, name, encoding);
+    TclSetProcessGlobalValue(&executableName, name);
 }
 
 /*
@@ -4621,7 +4593,7 @@ TclReToGlob(
   invalidGlob:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (char *)NULL);
     }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;

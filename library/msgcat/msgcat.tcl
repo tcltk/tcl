@@ -1220,27 +1220,32 @@ proc msgcat::mcutil::ConvertLocale {value} {
 # - called from an class defined oo object
 # - called from a classless oo object
 proc ::msgcat::PackageNamespaceGet {} {
-    uplevel 2 {
-	# Check self namespace to determine environment
-	switch -exact -- [namespace which self] {
-	    {::oo::define::self} {
-		# We are within a class definition
-		return [namespace qualifiers [self]]
+    set ns [uplevel 2 { namespace current }]
+
+    if {![string match {::oo::*} $ns]} {
+	# Not in object environment
+	return $ns
+    }
+
+    # Check self namespace to determine environment
+    switch -exact -- [uplevel 2 { namespace which -command self }] {
+	{::oo::define::self} {
+	    # We are within a class definition
+	    return [namespace qualifiers [uplevel 2 { self }]]
+	}
+	{::oo::Helpers::self} {
+	    # We are within an object
+	    set Class [info object class [uplevel 2 { self }]]
+	    # Check for classless defined object
+	    if {$Class eq {::oo::object}} {
+		return [namespace qualifiers [uplevel 2 { self }]]
 	    }
-	    {::oo::Helpers::self} {
-		# We are within an object
-		set Class [info object class [self]]
-		# Check for classless defined object
-		if {$Class eq {::oo::object}} {
-		    return [namespace qualifiers [self]]
-		}
-		# Class defined object
-		return [namespace qualifiers $Class]
-	    }
-	    default {
-		# Not in object environment
-		return [namespace current]
-	    }
+	    # Class defined object
+	    return [namespace qualifiers $Class]
+	}
+	default {
+	    # Not in object environment
+	    return $ns
 	}
     }
 }

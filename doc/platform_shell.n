@@ -13,7 +13,7 @@ platform::shell \- System identification support code and utilities
 .SH SYNOPSIS
 .nf
 \fBpackage require platform::shell\fR ?\fB1.1.4\fR?
-.sp
+
 \fBplatform::shell::generic \fIshell\fR
 \fBplatform::shell::identify \fIshell\fR
 \fBplatform::shell::platform \fIshell\fR
@@ -41,16 +41,22 @@ the architecture of the shell which will actually run the installed
 packages, versus the architecture of the shell running the repository
 software.
 .SH COMMANDS
+.\" COMMAND: identify
 .TP
 \fBplatform::shell::identify \fIshell\fR
+.
 This command does the same identification as \fBplatform::identify\fR,
 for the specified Tcl shell, in contrast to the running shell.
+.\" COMMAND: generic
 .TP
 \fBplatform::shell::generic \fIshell\fR
+.
 This command does the same identification as \fBplatform::generic\fR,
 for the specified Tcl shell, in contrast to the running shell.
+.\" COMMAND: platform
 .TP
 \fBplatform::shell::platform \fIshell\fR
+.
 This command returns the contents of \fBtcl_platform(platform)\fR for
 the specified Tcl shell.
 .SH KEYWORDS

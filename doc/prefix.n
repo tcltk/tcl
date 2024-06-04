@@ -12,8 +12,8 @@
 tcl::prefix \- facilities for prefix matching
 .SH SYNOPSIS
 .nf
-\fB::tcl::prefix all\fR \fItable string\fR
-\fB::tcl::prefix longest\fR \fItable string\fR
+\fB::tcl::prefix all\fI table string\fR
+\fB::tcl::prefix longest\fI table string\fR
 \fB::tcl::prefix match\fR ?\fIoption ...\fR? \fItable string\fR
 .fi
 .BE
@@ -21,16 +21,19 @@ tcl::prefix \- facilities for prefix matching
 .PP
 This document describes commands looking up a prefix in a list of strings.
 The following commands are supported:
+.\" METHOD: all
 .TP
-\fB::tcl::prefix all\fR \fItable string\fR
+\fB::tcl::prefix all\fI table string\fR
 .
 Returns a list of all elements in \fItable\fR that begin with the prefix
 \fIstring\fR.
+.\" METHOD: longest
 .TP
-\fB::tcl::prefix longest\fR \fItable string\fR
+\fB::tcl::prefix longest\fI table string\fR
 .
 Returns the longest common prefix of all elements in \fItable\fR that
 begin with the prefix \fIstring\fR.
+.\" METHOD: match
 .TP
 \fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable string\fR
 .
@@ -41,15 +44,18 @@ before use with this subcommand, so that the list of matches presented in the
 error message also becomes sorted, though this is not strictly necessary for
 the operation of this subcommand itself.)
 .RS
+.\" OPTION: -exact
 .TP
-\fB\-exact\fR\0
+\fB\-exact\fR
 .
 Accept only exact matches.
+.\" OPTION: -message
 .TP
 \fB\-message\0\fIstring\fR
 .
 Use \fIstring\fR in the error message at a mismatch. Default is
 .QW option .
+.\" OPTION: -error
 .TP
 \fB\-error\0\fIoptions\fR
 .
@@ -64,7 +70,7 @@ is used, an error would be generated as:
 .RS
 .PP
 .CS
-return \-errorcode MyError \-level 1 \-code error \e
+return -errorcode MyError -level 1 -code error \e
        "ambiguous option ..."
 .CE
 .RE
@@ -79,9 +85,9 @@ namespace import ::tcl::prefix
      \fI\(-> apa\fR
 \fBprefix match\fR {apa bepa cepa} a
      \fI\(-> apa\fR
-\fBprefix match\fR \-exact {apa bepa cepa} a
+\fBprefix match\fR -exact {apa bepa cepa} a
      \fI\(-> bad option "a": must be apa, bepa, or cepa\fR
-\fBprefix match\fR \-message "switch" {apa ada bepa cepa} a
+\fBprefix match\fR -message "switch" {apa ada bepa cepa} a
      \fI\(-> ambiguous switch "a": must be apa, ada, bepa, or cepa\fR
 \fBprefix longest\fR {fblocked fconfigure fcopy file fileevent flush} fc
      \fI\(-> fco\fR
@@ -92,9 +98,9 @@ namespace import ::tcl::prefix
 Simplifying option matching:
 .PP
 .CS
-array set opts {\-apa 1 \-bepa "" \-cepa 0}
+array set opts {-apa 1 -bepa "" -cepa 0}
 foreach {arg val} $args {
-    set opts([\fBprefix match\fR {\-apa \-bepa \-cepa} $arg]) $val
+    set opts([\fBprefix match\fR {-apa -bepa -cepa} $arg]) $val
 }
 .CE
 .PP

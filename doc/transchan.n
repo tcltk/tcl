@@ -44,6 +44,7 @@ create the transformation.
 .SS "GENERIC SUBCOMMANDS"
 .PP
 The following subcommands are relevant to all types of channel.
+.\" METHOD: clear
 .TP
 \fIcmdPrefix \fBclear \fIhandle\fR
 .
@@ -51,6 +52,7 @@ This optional subcommand is called to signify to the transformation that any
 data stored in internal buffers (either incoming or outgoing) must be
 cleared. It is called when a \fBchan seek\fR is performed on the channel being
 transformed.
+.\" METHOD: finalize
 .TP
 \fIcmdPrefix \fBfinalize \fIhandle\fR
 .
@@ -59,6 +61,7 @@ never again, and it exists to allow for cleaning up any Tcl-level data
 structures associated with the transformation. \fIWarning!\fR Any errors
 thrown by this subcommand will be ignored. It is not guaranteed to be called
 if the interpreter is deleted.
+.\" METHOD: initialize
 .TP
 \fIcmdPrefix \fBinitialize \fIhandle mode\fR
 .
@@ -67,13 +70,9 @@ This mandatory subcommand is called first, and then never again (for the given
 transformation at the Tcl level. The \fImode\fR is a list containing any of
 \fBread \fRand \fBwrite\fR.
 .RS
-.TP
-\fBwrite\fR
-.
+.IP \fBwrite\fR
 implies that the channel is writable.
-.TP
-\fBread\fR
-.
+.IP \fBread\fR
 implies that the channel is readable.
 .PP
 The return value of the subcommand should be a list containing the names of
@@ -86,6 +85,7 @@ as error thrown by \fBchan push\fR.
 These subcommands are used for handling transformations applied to readable
 channels; though strictly \fBread \fRis optional, it must be supported if any
 of the others is or the channel will be made non-readable.
+.\" METHOD: drain
 .TP
 \fIcmdPrefix \fBdrain \fIhandle\fR
 .
@@ -100,6 +100,7 @@ In other words, when this method is called the transformation cannot defer the
 actual transformation operation anymore and has to transform all data waiting
 in its internal read buffers and return the result of that action.
 .RE
+.\" METHOD: limit?
 .TP
 \fIcmdPrefix \fBlimit? \fIhandle\fR
 .
@@ -108,6 +109,7 @@ how far ahead it should read. If present, it should return an integer number
 greater than zero which indicates how many bytes ahead should be read, or an
 integer less than zero to indicate that the I/O engine may read as far ahead
 as it likes.
+.\" METHOD: read
 .TP
 \fIcmdPrefix \fBread \fIhandle buffer\fR
 .
@@ -131,6 +133,7 @@ defer the actual transformation until it has more data.
 These subcommands are used for handling transformations applied to writable
 channels; though strictly \fBwrite\fR is optional, it must be supported if any
 of the others is or the channel will be made non-writable.
+.\" METHOD: flush
 .TP
 \fIcmdPrefix \fBflush \fIhandle\fR
 .
@@ -145,6 +148,7 @@ In other words, when this subcommand is called the transformation cannot defer
 the actual transformation operation anymore and has to transform all data
 waiting in its internal write buffers and return the result of that action.
 .RE
+.\" METHOD: write
 .TP
 \fIcmdPrefix \fBwrite \fIhandle buffer\fR
 .

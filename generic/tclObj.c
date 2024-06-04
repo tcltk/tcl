@@ -264,7 +264,7 @@ const Tcl_ObjType tclBignumType = {
 
 const Tcl_HashKeyType tclObjHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
-    0,				/* flags */
+    TCL_HASH_KEY_DIRECT_COMPARE,/* allows compare keys by pointers */
     TclHashObjKey,		/* hashKeyProc */
     TclCompareObjKeys,		/* compareKeysProc */
     AllocObjEntry,		/* allocEntryProc */
@@ -349,7 +349,6 @@ typedef struct ResolvedCmdName {
 #define FREEDREFCOUNTFILLER \
     (Tcl_Size)(sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
 #endif
-
 
 /*
  *-------------------------------------------------------------------------
@@ -637,7 +636,7 @@ TclContinuationsEnterDerived(
      * better way which doesn't shimmer?)
      */
 
-    (void)Tcl_GetStringFromObj(objPtr, &length);
+    (void)TclGetStringFromObj(objPtr, &length);
     end = start + length;       /* First char after the word */
 
     /*
@@ -858,7 +857,7 @@ Tcl_AppendAllObjTypes(
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLengthM(interp, objPtr, &numElems) != TCL_OK) {
+    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -950,7 +949,7 @@ Tcl_ConvertToType(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't convert value to type %s", typePtr->name));
-	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1319,7 +1318,7 @@ TclFreeObj(
      * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
      * and so on, is always a sign of a botch in the caller.
      */
-    if (objPtr->refCount == (Tcl_Size)-2) {
+    if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
     /*
@@ -1660,6 +1659,7 @@ Tcl_GetString(
  */
 
 #if !defined(TCL_NO_DEPRECATED)
+#undef TclGetStringFromObj
 char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1743,7 +1743,6 @@ Tcl_GetStringFromObj(
     }
     return objPtr->bytes;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2021,11 +2020,11 @@ Tcl_GetBoolFromObj(
 	return TCL_ERROR;
     }
     do {
-	if (objPtr->typePtr == &tclIntType || objPtr->typePtr == &tclBooleanType) {
+	if (TclHasInternalRep(objPtr, &tclIntType) || TclHasInternalRep(objPtr, &tclBooleanType)) {
 	    result = (objPtr->internalRep.wideValue != 0);
 	    goto boolEnd;
 	}
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    /*
 	     * Caution: Don't be tempted to check directly for the "double"
 	     * Tcl_ObjType and then compare the internalrep to 0.0. This isn't
@@ -2042,7 +2041,7 @@ Tcl_GetBoolFromObj(
 	    result = (d != 0.0);
 	    goto boolEnd;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    result = 1;
 	boolEnd:
 	    if (charPtr != NULL) {
@@ -2110,18 +2109,18 @@ TclSetBooleanFromAny(
      */
 
     if (objPtr->bytes == NULL) {
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    if ((Tcl_WideUInt)objPtr->internalRep.wideValue < 2) {
 		return TCL_OK;
 	    }
 	    goto badBoolean;
 	}
 
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    goto badBoolean;
 	}
 
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    goto badBoolean;
 	}
     }
@@ -2140,7 +2139,7 @@ TclSetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -2154,7 +2153,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length <= 0) || (length > 5)) {
+    if ((length < 1) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */
@@ -2423,24 +2422,24 @@ Tcl_GetDoubleFromObj(
     double *dblPtr)	/* Place to store resulting double. */
 {
     do {
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
                     Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-                            (void *)NULL);
+                            (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
 	    *dblPtr = (double) objPtr->internalRep.doubleValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *dblPtr = (double) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    mp_int big;
 
 	    TclUnpackBignum(objPtr, big);
@@ -2506,7 +2505,7 @@ UpdateStringOfDouble(
 {
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
-    TclOOM(dst, (size_t)TCL_DOUBLE_SPACE + 1);
+    TclOOM(dst, TCL_DOUBLE_SPACE + 1);
 
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
     (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
@@ -2560,7 +2559,7 @@ Tcl_GetIntFromObj(
 	    const char *s =
 		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2568,7 +2567,6 @@ Tcl_GetIntFromObj(
     return TCL_OK;
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2592,7 +2590,7 @@ SetIntFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     Tcl_WideInt w;
-    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
+    return TclGetWideIntFromObj(interp, objPtr, &w);
 }
 
 /*
@@ -2620,7 +2618,7 @@ UpdateStringOfInt(
 {
     char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
 
-    TclOOM(dst, (size_t)TCL_INTEGER_SPACE + 1);
+    TclOOM(dst, TCL_INTEGER_SPACE + 1);
     (void) Tcl_InitStringRep(objPtr, NULL,
 	    TclFormatInt(dst, objPtr->internalRep.wideValue));
 }
@@ -2654,12 +2652,12 @@ Tcl_GetLongFromObj(
 {
     do {
 #ifdef TCL_WIDE_INT_IS_LONG
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *longPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
 #else
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    /*
 	     * We return any integer in the range LONG_MIN to ULONG_MAX
 	     * converted to a long, ignoring overflow. The rule preserves
@@ -2678,16 +2676,16 @@ Tcl_GetLongFromObj(
 	    goto tooLarge;
 	}
 #endif
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    /*
 	     * Must check for those bignum values that can fit in a long, even
 	     * when auto-narrowing is enabled. Only those values in the signed
@@ -2727,7 +2725,7 @@ Tcl_GetLongFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2789,6 +2787,33 @@ Tcl_NewWideIntObj(
 }
 #endif /* if TCL_MEM_DEBUG */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NewWideUIntObj --
+ *
+ * Results:
+ *	The newly created object is returned. This object will have an invalid
+ *	string representation. The returned object has ref count 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_NewWideUIntObj(
+    Tcl_WideUInt uwideValue)
+				/* Wide integer used to initialize the new
+				 * object. */
+{
+    Tcl_Obj *objPtr;
+
+    TclNewUIntObj(objPtr, uwideValue);
+    return objPtr;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2885,6 +2910,46 @@ Tcl_SetWideIntObj(
 
     TclSetIntObj(objPtr, wideValue);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetWideUIntObj --
+ *
+ *	Modify an object to be a wide integer object or a bignum object
+ *	and to have the specified unsigned wide integer value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's old string rep, if any, is freed. Also, any old internal
+ *	rep is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetWideUIntObj(
+    Tcl_Obj *objPtr,	/* Object w. internal rep to init. */
+    Tcl_WideUInt uwideValue)
+				/* Wide integer used to initialize the
+				 * object's value. */
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetWideUIntObj");
+    }
+
+    if (uwideValue > WIDE_MAX) {
+	mp_int bignumValue;
+	if (mp_init_u64(&bignumValue, uwideValue) != MP_OKAY) {
+	    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+	}
+	TclSetBignumInternalRep(objPtr, &bignumValue);
+    } {
+	TclSetIntObj(objPtr, (Tcl_WideInt)uwideValue);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2915,20 +2980,20 @@ Tcl_GetWideIntFromObj(
 				/* Place to store resulting long. */
 {
     do {
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    /*
 	     * Must check for those bignum values that can fit in a
 	     * Tcl_WideInt, even when auto-narrowing is enabled.
@@ -2962,7 +3027,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3000,24 +3065,24 @@ Tcl_GetWideUIntFromObj(
 				/* Place to store resulting long. */
 {
     do {
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    if (objPtr->internalRep.wideValue < 0) {
 	wideUIntOutOfRange:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr)));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
 	    *wideUIntPtr = (Tcl_WideUInt)objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    goto wideUIntOutOfRange;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    /*
 	     * Must check for those bignum values that can fit in a
 	     * Tcl_WideUInt, even when auto-narrowing is enabled.
@@ -3046,7 +3111,7 @@ Tcl_GetWideUIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3084,20 +3149,20 @@ TclGetWideBitsFromObj(
     Tcl_WideInt *wideIntPtr)    /* Place to store resulting wide integer. */
 {
     do {
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    mp_int big;
 	    mp_err err;
 
@@ -3147,7 +3212,16 @@ Tcl_GetSizeIntFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a int. */
     Tcl_Size *sizePtr)  /* Place to store resulting int. */
 {
-    return TclGetSizeIntFromObj(interp, objPtr, sizePtr);
+    if (sizeof(Tcl_Size) == sizeof(int)) {
+	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
+    } else {
+	Tcl_WideInt wide;
+	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*sizePtr = (Tcl_Size)wide;
+	return TCL_OK;
+    }
 }
 
 /*
@@ -3371,7 +3445,7 @@ GetBignumFromObj(
     mp_int *bignumValue)	/* Returned bignum value. */
 {
     do {
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    if (copy || Tcl_IsShared(objPtr)) {
 		mp_int temp;
 
@@ -3396,19 +3470,19 @@ GetBignumFromObj(
 	    }
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    if (mp_init_i64(bignumValue,
 		    objPtr->internalRep.wideValue) != MP_OKAY) {
 		return TCL_ERROR;
 	    }
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3606,7 +3680,7 @@ Tcl_GetNumberFromObj(
     int *typePtr)
 {
     do {
-	if (objPtr->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		*typePtr = TCL_NUMBER_NAN;
 	    } else {
@@ -3615,12 +3689,12 @@ Tcl_GetNumberFromObj(
 	    *clientDataPtr = &objPtr->internalRep.doubleValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclIntType) {
+	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *typePtr = TCL_NUMBER_INT;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
-	if (objPtr->typePtr == &tclBignumType) {
+	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    static Tcl_ThreadDataKey bignumKey;
 	    mp_int *bigPtr = (mp_int *)Tcl_GetThreadData(&bignumKey,
 		    sizeof(mp_int));
@@ -4079,7 +4153,9 @@ TclCompareObjKeys(
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
 
-       if (objPtr1 == objPtr2) return 1;
+       if (objPtr1 == objPtr2) {
+           return 1;
+       }
     */
 
     /*
@@ -4258,7 +4334,7 @@ Tcl_GetCommandFromObj(
      */
 
     resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
-    if (objPtr->typePtr == &tclCmdNameType) {
+    if (TclHasInternalRep(objPtr, &tclCmdNameType)) {
         Command *cmdPtr = resPtr->cmdPtr;
 
         if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
@@ -4268,7 +4344,7 @@ Tcl_GetCommandFromObj(
                     TclGetCurrentNamespace(interp);
 
             if ((resPtr->refNsPtr == NULL)
-                || ((refNsPtr == resPtr->refNsPtr)
+		    || ((refNsPtr == resPtr->refNsPtr)
                     && (resPtr->refNsId == refNsPtr->nsId)
                     && (resPtr->refNsCmdEpoch == refNsPtr->cmdRefEpoch))) {
                 return (Tcl_Command) cmdPtr;
@@ -4373,7 +4449,7 @@ TclSetCmdNameObj(
 {
     ResolvedCmdName *resPtr;
 
-    if (objPtr->typePtr == &tclCmdNameType) {
+    if (TclHasInternalRep(objPtr, &tclCmdNameType)) {
 	resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
 	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
 	    return;
@@ -4520,7 +4596,7 @@ SetCmdNameFromAny(
     }
 
     resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
-    if ((objPtr->typePtr == &tclCmdNameType) && (resPtr->refCount == 1)) {
+    if (TclHasInternalRep(objPtr, &tclCmdNameType) && (resPtr->refCount == 1)) {
 	/*
 	 * Re-use existing ResolvedCmdName struct when possible.
 	 * Cleanup the old fields that need it.
@@ -4575,13 +4651,13 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "u,"
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_SIZE_MODIFIER "d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {
-	if (objv[1]->typePtr == &tclDoubleType) {
+	if (TclHasInternalRep(objv[1], &tclDoubleType)) {
 	    Tcl_AppendPrintfToObj(descObj, ", internal representation %g",
 		    objv[1]->internalRep.doubleValue);
 	} else {

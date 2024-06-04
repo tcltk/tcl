@@ -44,18 +44,18 @@ interpreted relative to the global namespace even if its name does not start
 with
 .QW :: .
 .PP
-The semantics of \fBapply\fR can also be described by:
+The semantics of \fBapply\fR can also be described by approximately this:
 .PP
 .CS
 proc apply {fun args} {
     set len [llength $fun]
     if {($len < 2) || ($len > 3)} {
-         error "can't interpret \e"$fun\e" as anonymous function"
+        error "can't interpret \e"$fun\e" as anonymous function"
     }
     lassign $fun argList body ns
     set name ::$ns::[getGloballyUniqueName]
     set body0 {
-         rename [lindex [info level 0] 0] {}
+        rename [lindex [info level 0] 0] {}
     }
     proc $name $argList ${body0}$body
     set code [catch {uplevel 1 $name $args} res opt]

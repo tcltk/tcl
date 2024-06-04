@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #include "tclTomMath.h"
 
 /*
@@ -41,9 +42,9 @@ static Tcl_ExitProc		FinalizeIOCmdTSD;
 static Tcl_TcpAcceptProc 	AcceptCallbackProc;
 static Tcl_ObjCmdProc		ChanPendingObjCmd;
 static Tcl_ObjCmdProc		ChanTruncateObjCmd;
-static void			RegisterTcpServerInterpCleanup(
-				    Tcl_Interp *interp,
-				    AcceptCallback *acceptCallbackPtr);
+static void		RegisterTcpServerInterpCleanup(
+			    Tcl_Interp *interp,
+			    AcceptCallback *acceptCallbackPtr);
 static Tcl_InterpDeleteProc	TcpAcceptCallbacksDeleteProc;
 static void		TcpServerCloseProc(void *callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
@@ -421,11 +422,11 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected non-negative integer but got \"%s\"",
-			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
-		return TCL_ERROR;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected non-negative integer but got \"%s\"",
+		    TclGetString(objv[i])));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
+	    return TCL_ERROR;
 	}
     }
 
@@ -433,7 +434,14 @@ Tcl_ReadObjCmd(
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
-	Tcl_DecrRefCount(resultPtr);
+	Tcl_Obj *returnOptsPtr = NULL;
+	if (TclChannelGetBlockingMode(chan)) {
+	    returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+		    resultPtr);
+	} else {
+	    Tcl_DecrRefCount(resultPtr);
+	}
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -447,6 +455,9 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
+	if (returnOptsPtr) {
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	}
 	return TCL_ERROR;
     }
 
@@ -458,7 +469,7 @@ Tcl_ReadObjCmd(
 	const char *result;
 	Tcl_Size length;
 
-	result = Tcl_GetStringFromObj(resultPtr, &length);
+	result = TclGetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -510,7 +521,7 @@ Tcl_SeekObjCmd(
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
 	return TCL_ERROR;
     }
     mode = SEEK_SET;
@@ -594,7 +605,6 @@ Tcl_TellObjCmd(
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result.
      */
-
 
     code  = TclChanCaughtErrorBypass(interp, chan);
     TclChannelRelease(chan);
@@ -704,7 +714,7 @@ Tcl_CloseObjCmd(
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
 	    Tcl_SetObjResult(interp, resultPtr);
 	}
-	string = Tcl_GetStringFromObj(resultPtr, &len);
+	string = TclGetStringFromObj(resultPtr, &len);
 	if ((len > 0) && (string[len - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, len - 1);
 	}
@@ -936,6 +946,11 @@ Tcl_ExecObjCmd(
 	return TCL_ERROR;
     }
 
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     if (background) {
 	/*
 	 * Store the list of PIDs from the pipeline in interp's result and
@@ -984,7 +999,7 @@ Tcl_ExecObjCmd(
      */
 
     if (keepNewline == 0) {
-	string = Tcl_GetStringFromObj(resultPtr, &length);
+	string = TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (string[length - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -1118,7 +1133,7 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, binary;
+	int mode, modeFlags;
 	Tcl_Size cmdObjc;
 	const char **cmdArgv;
 
@@ -1126,13 +1141,13 @@ Tcl_OpenObjCmd(
 	    return TCL_ERROR;
 	}
 
-	mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    chan = NULL;
 	} else {
 	    int flags = TCL_STDERR | TCL_ENFORCE_MODE;
 
-	    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+	    switch (mode & O_ACCMODE) {
 	    case O_RDONLY:
 		flags |= TCL_STDOUT;
 		break;
@@ -1147,7 +1162,7 @@ Tcl_OpenObjCmd(
 		break;
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
-	    if (binary && chan) {
+	    if ((modeFlags & CHANNEL_RAW_MODE) && chan) {
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
@@ -1738,7 +1753,7 @@ Tcl_FcopyObjCmd(
 	}
 	switch (index) {
 	case FcopySize:
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (toRead < 0) {
@@ -1865,7 +1880,7 @@ ChanTruncateObjCmd(
 	 * User is supplying an explicit length.
 	 */
 
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 0) {
@@ -2046,8 +2061,7 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;
