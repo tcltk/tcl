@@ -39,7 +39,6 @@ testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
-testConstraint testgetencpath [llength [info commands testgetencpath]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -882,8 +881,8 @@ test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
 test encoding-24.38.1 {Try to generate invalid utf-8} -body {
     encoding convertto -profile tcl8 utf-8 \uD800
 } -result \xED\xA0\x80
-test encoding-24.38.2 {Try to generate invalid utf-8} -body {
-    encoding convertto -profile strict utf-8 \uD800
+test encoding-24.38.2 {Try to generate invalid utf-8 - default profile} -body {
+    encoding convertto utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
     encoding convertto -profile strict utf-8 \uD800
@@ -1029,15 +1028,13 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
-    testgetencpath
-} -setup {
-    set origPath [testgetencpath]
-    testsetencpath slappy
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -setup {
+    set origPath [encoding dirs]
+    encoding dirs slappy
 } -body {
-    testgetencpath
+    encoding dirs
 } -cleanup {
-    testsetencpath $origPath
+    encoding dirs $origPath
 } -result slappy
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
@@ -1070,7 +1067,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 91
+} -result 93
 
 runtests
 
@@ -1178,6 +1175,8 @@ test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     # Not truncated but invalid
     encoding convertfrom -profile replace jis0208 \x78\x79
 } -result \uFFFD\uFFFD
+
+
 
 # cleanup
 namespace delete ::tcl::test::encoding

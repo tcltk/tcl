@@ -18,6 +18,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -49,17 +50,24 @@ static Tcl_ObjCmdProc	TestbigdataCmd;
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
 
-static void VarPtrDeleteProc(void *clientData, TCL_UNUSED(Tcl_Interp *))
+static void
+VarPtrDeleteProc(
+    void *clientData,
+    TCL_UNUSED(Tcl_Interp *))
 {
     int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
-	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
+	if (varPtr[i]) {
+	    Tcl_DecrRefCount(varPtr[i]);
+	}
     }
     Tcl_Free(varPtr);
 }
 
-static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
+static Tcl_Obj **
+GetVarPtr(
+    Tcl_Interp *interp)
 {
     Tcl_InterpDeleteProc *proc;
 
@@ -96,7 +104,12 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) Tcl_Alloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
+	return TCL_ERROR;
+    }
+#endif
+    varPtr = (Tcl_Obj **)Tcl_Alloc(NUMBER_OF_OBJECT_VARS * sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -152,7 +165,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char *const subcmds[] = {
+    static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
     };
     enum options {
@@ -407,7 +420,7 @@ TestbooleanobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetBooleanFromObj(interp, varPtr[varIndex],
-				  &boolValue) != TCL_OK) {
+		&boolValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -419,7 +432,7 @@ TestbooleanobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", (void *)NULL);
+		"\": must be set, get, or not", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -507,7 +520,7 @@ TestdoubleobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, varPtr[varIndex],
-				 &doubleValue) != TCL_OK) {
+		&doubleValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -536,7 +549,7 @@ TestdoubleobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", (void *)NULL);
+		"\": must be set, get, mult10, or div10", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -825,7 +838,7 @@ TestintobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", (void *)NULL);
+		"\": must be set, get, get2, mult10, or div10", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -886,7 +899,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    const char* const subcommands[] = {
+    static const char* const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -946,7 +959,7 @@ TestlistobjCmd(
     case LISTOBJ_REPLACE:
 	if (objc < 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex start count ?element...?");
+		    "varIndex start count ?element...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK
@@ -958,7 +971,7 @@ TestlistobjCmd(
 	}
 	Tcl_ResetResult(interp);
 	return Tcl_ListObjReplace(interp, varPtr[varIndex], first, count,
-				  objc-5, objv+5);
+		objc-5, objv+5);
 
     case LISTOBJ_INDEXMEMCHECK:
 	if (objc != 3) {
@@ -1016,8 +1029,7 @@ TestlistobjCmd(
 	 * Hence this explicit test.
 	 */
 	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex listIndex");
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex listIndex");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK) {
@@ -1089,7 +1101,7 @@ TestobjCmd(
     int i;
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
-    const char *subcommands[] = {
+    static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
@@ -1235,7 +1247,7 @@ TestobjCmd(
 	}
 	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", Tcl_GetString(objv[3]), " found", (void *)NULL);
+		    "no type ", Tcl_GetString(objv[3]), " found", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1392,7 +1404,7 @@ TeststringobjCmd(
 	    Tcl_AppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
 		    strings[2], strings[3], strings[4], strings[5],
 		    strings[6], strings[7], strings[8], strings[9],
-		    strings[10], strings[11], (void *)NULL);
+		    strings[10], strings[11], (char *)NULL);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 2:				/* get */
@@ -1653,12 +1665,9 @@ TestbigdataCmd (
     /* Need one byte for nul terminator */
     Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
-		Tcl_GetString(objv[2]),
-		limit));
+		Tcl_GetString(objv[2]), limit));
 	return TCL_ERROR;
     }
 

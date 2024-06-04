@@ -27,7 +27,6 @@ Tcl_RegExp
 int
 \fBTcl_RegExpExec\fR(\fIinterp\fR, \fIregexp\fR, \fItext\fR, \fIstart\fR)
 .sp
-void
 \fBTcl_RegExpRange\fR(\fIregexp\fR, \fIindex\fR, \fIstartPtr\fR, \fIendPtr\fR)
 .sp
 Tcl_RegExp
@@ -36,7 +35,6 @@ Tcl_RegExp
 int
 \fBTcl_RegExpExecObj\fR(\fIinterp\fR, \fIregexp\fR, \fItextObj\fR, \fIoffset\fR, \fInmatches\fR, \fIeflags\fR)
 .sp
-void
 \fBTcl_RegExpGetInfo\fR(\fIregexp\fR, \fIinfoPtr\fR)
 .fi
 .SH ARGUMENTS
@@ -124,7 +122,7 @@ used in subsequent calls to \fBTcl_RegExpExec\fR or \fBTcl_RegExpRange\fR.
 If an error occurs while compiling the regular expression then
 \fBTcl_RegExpCompile\fR returns NULL and leaves an error message
 in the interpreter result.
-Note:  the return value from \fBTcl_RegExpCompile\fR is only valid
+Note that the return value from \fBTcl_RegExpCompile\fR is only valid
 up to the next call to \fBTcl_RegExpCompile\fR;  it is not safe to
 retain these values for long periods of time.
 .PP
@@ -190,6 +188,7 @@ zero or more of the following flags that control the compilation of
 .RS 2
 .TP
 \fBTCL_REG_ADVANCED\fR
+.
 Compile advanced regular expressions
 .PQ ARE s .
 This mode corresponds to
@@ -197,6 +196,7 @@ the normal regular expression syntax accepted by the Tcl \fBregexp\fR and
 \fBregsub\fR commands.
 .TP
 \fBTCL_REG_EXTENDED\fR
+.
 Compile extended regular expressions
 .PQ ERE s .
 This mode corresponds
@@ -204,6 +204,7 @@ to the regular expression syntax recognized by Tcl 8.0 and earlier
 versions.
 .TP
 \fBTCL_REG_BASIC\fR
+.
 Compile basic regular expressions
 .PQ BRE s .
 This mode corresponds
@@ -212,18 +213,22 @@ like \fBsed\fR and \fBgrep\fR.  This is the default if no flags are
 specified.
 .TP
 \fBTCL_REG_EXPANDED\fR
+.
 Compile the regular expression (basic, extended, or advanced) using an
 expanded syntax that allows comments and whitespace.  This mode causes
 non-backslashed non-bracket-expression white
 space and #-to-end-of-line comments to be ignored.
 .TP
 \fBTCL_REG_QUOTE\fR
+.
 Compile a literal string, with all characters treated as ordinary characters.
 .TP
 \fBTCL_REG_NOCASE\fR
+.
 Compile for matching that ignores upper/lower case distinctions.
 .TP
 \fBTCL_REG_NEWLINE\fR
+.
 Compile for newline-sensitive matching.  By default, newline is a
 completely ordinary character with no special meaning in either
 regular expressions or strings.  With this flag,
@@ -241,6 +246,7 @@ an empty string before any newline in addition to its normal function.
 \fBREG_NLANCH\fR.
 .TP
 \fBTCL_REG_NLSTOP\fR
+.
 Compile for partial newline-sensitive matching,
 with the behavior of
 .QW [^
@@ -257,6 +263,7 @@ bracket expressions and
 never match newline.
 .TP
 \fBTCL_REG_NLANCH\fR
+.
 Compile for inverse partial newline-sensitive matching,
 with the behavior of
 .QW ^
@@ -277,12 +284,14 @@ matches
 an empty string before any newline in addition to its normal function.
 .TP
 \fBTCL_REG_NOSUB\fR
+.
 Compile for matching that reports only success or failure,
 not what was matched.  This reduces compile overhead and may improve
 performance.  Subsequent calls to \fBTcl_RegExpGetInfo\fR or
 \fBTcl_RegExpRange\fR will not report any match information.
 .TP
 \fBTCL_REG_CANMATCH\fR
+.
 Compile for matching that reports the potential to complete a partial
 match given more text (see below).
 .RE
@@ -312,6 +321,7 @@ zero or more of the following flags:
 .RS 2
 .TP
 \fBTCL_REG_NOTBOL\fR
+.
 The starting character will not be treated as the beginning of a
 line or the beginning of the string, so
 .QW ^
@@ -321,6 +331,7 @@ Note that this flag has no effect on how
 matches.
 .TP
 \fBTCL_REG_NOTEOL\fR
+.
 The last character in the string will not be treated as the end of a
 line or the end of the string, so
 .QW $
@@ -336,7 +347,7 @@ performed with a given regular expression \fIregexp\fR.  The
 defined as follows:
 .PP
 .CS
-typedef struct Tcl_RegExpInfo {
+typedef struct {
     Tcl_Size \fInsubs\fR;
     Tcl_RegExpIndices *\fImatches\fR;
     Tcl_Size \fIextendStart\fR;
@@ -354,7 +365,7 @@ appear in the pattern.  Each element is a structure that is defined as
 follows:
 .PP
 .CS
-typedef struct Tcl_RegExpIndices {
+typedef struct {
     Tcl_Size \fIstart\fR;
     Tcl_Size \fIend\fR;
 } \fBTcl_RegExpIndices\fR;
@@ -396,4 +407,5 @@ additional reference being taken.
 .SH "SEE ALSO"
 re_syntax(n)
 .SH KEYWORDS
-match, pattern, regular expression, string, subexpression, Tcl_RegExpIndices, Tcl_RegExpInfo
+match, pattern, regular expression, string, subexpression,
+Tcl_RegExpIndices, Tcl_RegExpInfo

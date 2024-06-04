@@ -12,15 +12,12 @@
 Tcl_CreateChannelHandler, Tcl_DeleteChannelHandler \- call a procedure when a channel becomes readable or writable
 .SH SYNOPSIS
 .nf
-.nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_CreateChannelHandler\fR(\fIchannel, mask, proc, clientData\fR)
 .sp
-void
 \fBTcl_DeleteChannelHandler\fR(\fIchannel, proc, clientData\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_ChannelProc clientData
 .AP Tcl_Channel channel in

@@ -13,10 +13,11 @@ coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values fr
 .SH SYNOPSIS
 .nf
 \fBcoroutine \fIname command\fR ?\fIarg...\fR?
+
 \fByield\fR ?\fIvalue\fR?
-\fByieldto\fR \fIcommand\fR ?\fIarg...\fR?
+\fByieldto\fI command\fR ?\fIarg...\fR?
 \fIname\fR ?\fIvalue...\fR?
-.sp
+
 .VS "8.7, TIP383"
 \fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
 \fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?
@@ -119,7 +120,10 @@ The injection is a one-off. It is not retained once it has been executed. It
 may \fByield\fR or \fByieldto\fR as part of its execution.
 .PP
 Note that running coroutines may be neither probed nor injected; the
-operations may only be applied to
+operations may only be applied to coroutines that are suspended. (If a
+coroutine is running then any introspection code would be merely inspecting
+the state of where it is currently running; \fBcoroinject\fR/\fBcoroprobe\fR
+are unnecessary in that case.)
 .VE "8.7, TIP383"
 .SH EXAMPLES
 .PP
@@ -195,7 +199,7 @@ proc juggler {name target {value ""}} {
     while {$value ne ""} {
         puts "$name : $value"
         set value [string range $value 0 end-1]
-        lassign [\fByieldto\fR \fI$target\fR $value] value
+        lassign [\fByieldto\fI $target\fR $value] value
     }
 }
 \fBcoroutine\fR j1 juggler Larry [

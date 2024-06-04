@@ -29,7 +29,8 @@ If \fIlast\fR is greater than or equal to the number of elements
 in the list, then it is treated as if it were \fBend\fR.
 If \fIfirst\fR is greater than \fIlast\fR then an empty string
 is returned.
-Note:
+.PP
+Note that
 .QW "\fBlrange \fIlist first first\fR"
 does not always produce the same result as
 .QW "\fBlindex \fIlist first\fR"

@@ -62,27 +62,15 @@
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
-#undef TclpInetNtoa
-#undef TclWinGetServByName
-#undef TclWinGetSockOpt
-#undef TclWinSetSockOpt
-#undef TclWinNToHS
 #undef TclStaticLibrary
-#undef Tcl_BackgroundError
 #define TclStaticLibrary Tcl_StaticLibrary
-#undef Tcl_UniCharToUtfDString
-#undef Tcl_UtfToUniCharDString
-#undef Tcl_UtfToUniChar
-#undef Tcl_UniCharLen
 #undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
+#undef TclGetStringFromObj
 #if defined(TCL_NO_DEPRECATED)
-# undef TclGetStringFromObj
-# undef TclGetBytesFromObj
-# undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
@@ -95,6 +83,8 @@
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
+#undef TclListObjGetElements
+#undef TclListObjLength
 
 #if defined(TCL_NO_DEPRECATED)
 # define TclListObjGetElements 0
@@ -104,13 +94,14 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
+# define TclGetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -125,7 +116,7 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -140,7 +131,7 @@ int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "Dict too large to be processed", (void *)NULL);
 	    }
@@ -155,7 +146,7 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -170,7 +161,7 @@ void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (n > INT_MAX)) {
 	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
 	    Tcl_Free((void *)*argvPtr);
 	    *argvPtr = NULL;
@@ -182,7 +173,7 @@ Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && result && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && result && (n > INT_MAX)) {
 	    Tcl_DecrRefCount(result);
 	    return NULL;
 	}
@@ -196,6 +187,22 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     Tcl_Size n = (*(int *)objcPtr < 0) ? TCL_INDEX_NONE: (Tcl_Size)*(int *)objcPtr ;
     int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
     *(int *)objcPtr = (int)n;
+    return result;
+}
+int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	int *objcPtr, Tcl_Obj ***objv) {
+    Tcl_Size n = TCL_INDEX_NONE;
+    int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
+    if (objcPtr) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*objcPtr = (int)n;
+    }
     return result;
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
@@ -217,7 +224,6 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_div_2 mp_div_2
 #define TclBN_mp_div_2d mp_div_2d
 #define TclBN_mp_exch mp_exch
-#define TclBN_mp_expt_u32 mp_expt_u32
 #define TclBN_mp_get_mag_u64 mp_get_mag_u64
 #define TclBN_mp_grow mp_grow
 #define TclBN_mp_init mp_init
@@ -257,13 +263,14 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
 #define TclBN_mp_balance_mul s_mp_balance_mul
+#define TclBN_mp_div_3 s_mp_div_3
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
-#define TclBN_s_mp_mul_digs s_mp_mul_digs
-#define TclBN_s_mp_mul_digs_fast s_mp_mul_digs_fast
-#define TclBN_s_mp_reverse s_mp_reverse
+#define TclBN_mp_mul_digs s_mp_mul_digs
+#define TclBN_mp_mul_digs_fast s_mp_mul_digs_fast
+#define TclBN_mp_reverse s_mp_reverse
 #define TclBN_s_mp_sqr s_mp_sqr
-#define TclBN_s_mp_sqr_fast s_mp_sqr_fast
+#define TclBN_mp_sqr_fast s_mp_sqr_fast
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
@@ -294,7 +301,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #define TclWinNoBackslash winNoBackslash
@@ -311,7 +318,7 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-void *TclWinGetTclInstance()
+void *TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -319,10 +326,10 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-size_t
+Tcl_Size
 TclpGetPid(Tcl_Pid pid)
 {
-    return (size_t)pid;
+    return (Tcl_Size)PTR2INT(pid);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -331,12 +338,13 @@ TclpGetPid(Tcl_Pid pid)
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= (long)(INT_MIN))
-		    && (longValue <= (long)(UINT_MAX))) {
+	if ((longValue >= (long)(INT_MIN))
+		&& (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -346,13 +354,13 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))exprInt
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
 static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
-	    if ((longValue >= (long)(INT_MIN))
-		    && (longValue <= (long)(UINT_MAX))) {
+	if ((longValue >= (long)(INT_MIN))
+		&& (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -362,16 +370,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
-
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
@@ -399,6 +398,17 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
  */
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+/* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
+ * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
+mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+      return MP_VAL;
+   }
+    return mp_expt_u32(a, (uint32_t)b, c);;
+}
+#endif /* TCL_WITH_EXTERNAL_TOMMATH */
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -557,8 +567,8 @@ static const TclIntStubs tclIntStubs = {
     TclHandleRelease, /* 149 */
     TclRegAbout, /* 150 */
     TclRegExpRangeUniChar, /* 151 */
-    TclSetLibraryPath, /* 152 */
-    TclGetLibraryPath, /* 153 */
+    0, /* 152 */
+    0, /* 153 */
     0, /* 154 */
     0, /* 155 */
     TclRegError, /* 156 */
@@ -736,7 +746,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     0, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_u32, /* 19 */
+    TclBN_mp_expt_n, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -957,8 +967,8 @@ const TclStubs tclStubs = {
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     0, /* 147 */
-    Tcl_GetAlias, /* 148 */
-    Tcl_GetAliasObj, /* 149 */
+    0, /* 148 */
+    TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */
@@ -1094,7 +1104,7 @@ const TclStubs tclStubs = {
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
     Tcl_SetMainLoop, /* 284 */
-    0, /* 285 */
+    Tcl_GetAliasObj, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
@@ -1178,8 +1188,8 @@ const TclStubs tclStubs = {
     Tcl_Chdir, /* 366 */
     Tcl_Access, /* 367 */
     Tcl_Stat, /* 368 */
-    Tcl_UtfNcmp, /* 369 */
-    Tcl_UtfNcasecmp, /* 370 */
+    TclUtfNcmp, /* 369 */
+    TclUtfNcasecmp, /* 370 */
     Tcl_StringCaseMatch, /* 371 */
     Tcl_UniCharIsControl, /* 372 */
     Tcl_UniCharIsGraph, /* 373 */
@@ -1466,7 +1476,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
-    Tcl_UniCharIsUnicode, /* 657 */
+    0, /* 657 */
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
@@ -1495,9 +1505,11 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    0, /* 686 */
-    0, /* 687 */
-    TclUnusedStubEntry, /* 688 */
+    Tcl_UtfNcmp, /* 686 */
+    Tcl_UtfNcasecmp, /* 687 */
+    Tcl_NewWideUIntObj, /* 688 */
+    Tcl_SetWideUIntObj, /* 689 */
+    TclUnusedStubEntry, /* 690 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -310,7 +310,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -322,7 +322,7 @@ TraceExecutionObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -346,7 +346,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
@@ -483,7 +483,7 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
+	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -552,7 +552,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -564,7 +564,7 @@ TraceCommandObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -583,7 +583,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
@@ -678,7 +678,7 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
+	    TclListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -751,7 +751,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjLengthM(interp, objv[4], &listLen);
+	result = TclListObjLength(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -763,7 +763,7 @@ TraceVariableObjCmd(
 		    (void *)NULL);
 	    return TCL_ERROR;
 	}
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -787,7 +787,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)Tcl_Alloc(
 		    offsetof(CombinedTraceVarInfo, traceCmdInfo.command)
@@ -1015,7 +1015,6 @@ Tcl_TraceCommand(
 	}
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
-
 
     return TCL_OK;
 }
@@ -1985,7 +1984,8 @@ typedef struct {
     void *clientData;
 } TraceWrapperInfo;
 
-static int traceWrapperProc(
+static int
+traceWrapperProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size level,
@@ -2001,7 +2001,9 @@ static int traceWrapperProc(
     return info->proc(info->clientData, interp, (int)level, command, commandInfo, objc, objv);
 }
 
-static void traceWrapperDelProc(void *clientData)
+static void
+traceWrapperDelProc(
+    void *clientData)
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
     clientData = info->clientData;
@@ -2396,7 +2398,7 @@ TclCheckArrayTraces(
     int code = TCL_OK;
 
     if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-	&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	Interp *iPtr = (Interp *)interp;
 
 	code = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, name, NULL,

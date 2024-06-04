@@ -111,7 +111,7 @@ FileForRedirect(
 			Tcl_GetChannelName(chan),
 			((writing) ? "writing" : "reading")));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			"BADCHAN", (void *)NULL);
+			"BADCHAN", (char *)NULL);
 	    }
 	    return NULL;
 	}
@@ -155,7 +155,7 @@ FileForRedirect(
   badLastArg:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't specify \"%s\" as last word in command", arg));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "SYNTAX", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "SYNTAX", (char *)NULL);
     return NULL;
 }
 
@@ -514,7 +514,7 @@ TclCreatePipeline(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "illegal use of | or |& in command", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			    "PIPESYNTAX", (void *)NULL);
+			    "PIPESYNTAX", (char *)NULL);
 		    goto error;
 		}
 	    }
@@ -543,7 +543,7 @@ TclCreatePipeline(
 				"can't specify \"%s\" as last word in command",
 				argv[i]));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-				"PIPESYNTAX", (void *)NULL);
+				"PIPESYNTAX", (char *)NULL);
 			goto error;
 		    }
 		    skip = 2;
@@ -660,7 +660,7 @@ TclCreatePipeline(
 			    "must specify \"%s\" as last word in command",
 			    argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			    "PIPESYNTAX", (void *)NULL);
+			    "PIPESYNTAX", (char *)NULL);
 		    goto error;
 		}
 		errorFile = outputFile;
@@ -702,7 +702,7 @@ TclCreatePipeline(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"illegal use of | or |& in command", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
-		(void *)NULL);
+		(char *)NULL);
 	goto error;
     }
 
@@ -975,7 +975,7 @@ TclCreatePipeline(
     }
     if (pidPtr != NULL) {
 	for (i = 0; i < numPids; i++) {
-	    if (pidPtr[i] != (Tcl_Pid) -1) {
+	    if (pidPtr[i] != (Tcl_Pid)-1) {
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }
 	}
@@ -1021,7 +1021,7 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    Tcl_Size argc,			/* How many arguments. */
+    Tcl_Size argc,		/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */
@@ -1056,7 +1056,7 @@ Tcl_OpenCommandChannel(
 		    "can't read output from command:"
 		    " standard output was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-		    "BADREDIRECT", (void *)NULL);
+		    "BADREDIRECT", (char *)NULL);
 	    goto error;
 	}
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
@@ -1064,7 +1064,7 @@ Tcl_OpenCommandChannel(
 		    "can't write input to command:"
 		    " standard input was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-		    "BADREDIRECT", (void *)NULL);
+		    "BADREDIRECT", (char *)NULL);
 	    goto error;
 	}
     }
@@ -1075,7 +1075,7 @@ Tcl_OpenCommandChannel(
     if (channel == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"pipe for command could not be created", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", (char *)NULL);
 	goto error;
     }
     return channel;

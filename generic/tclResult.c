@@ -359,7 +359,7 @@ Tcl_AppendElement(
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = Tcl_GetStringFromObj(iPtr->objResultPtr, &length);
+    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes + length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
@@ -388,7 +388,7 @@ Tcl_AppendElement(
 
 void
 Tcl_ResetResult(
-    Tcl_Interp *interp)/* Interpreter for which to clear result. */
+    Tcl_Interp *interp)		/* Interpreter for which to clear result. */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -441,7 +441,7 @@ Tcl_ResetResult(
 
 static void
 ResetObjResult(
-    Interp *iPtr)	/* Points to the interpreter whose result
+    Interp *iPtr)		/* Points to the interpreter whose result
 				 * object should be reset. */
 {
     Tcl_Obj *objResultPtr = iPtr->objResultPtr;
@@ -720,7 +720,7 @@ TclProcessReturn(
 	if (valuePtr != NULL) {
 	    Tcl_Size length;
 
-	    (void) Tcl_GetStringFromObj(valuePtr, &length);
+	    (void)TclGetStringFromObj(valuePtr, &length);
 	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
@@ -747,12 +747,12 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (TclListObjGetElementsM(interp, valuePtr, &valueObjc,
+            if (TclListObjGetElements(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            TclListObjLengthM(interp, iPtr->errorStack, &len);
+            TclListObjLength(interp, iPtr->errorStack, &len);
 
             /*
              * Reset while keeping the list internalrep as much as possible.
@@ -909,7 +909,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -931,7 +931,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length)) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
@@ -1102,7 +1102,7 @@ Tcl_SetReturnOptions(
     Tcl_Obj **objv, *mergedOpts;
 
     Tcl_IncrRefCount(options);
-    if (TCL_ERROR == TclListObjGetElementsM(interp, options, &objc, &objv)
+    if (TCL_ERROR == TclListObjGetElements(interp, options, &objc, &objv)
 	    || (objc % 2)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "expected dict but got \"%s\"", TclGetString(options)));

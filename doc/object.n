@@ -48,6 +48,7 @@ The \fBoo::object\fR class does not define an explicit constructor.
 The \fBoo::object\fR class does not define an explicit destructor.
 .SS "EXPORTED METHODS"
 The \fBoo::object\fR class supports the following exported methods:
+.\" METHOD: destroy
 .TP
 \fIobj \fBdestroy\fR
 .
@@ -58,12 +59,14 @@ always the empty string.
 .SS "NON-EXPORTED METHODS"
 .PP
 The \fBoo::object\fR class supports the following non-exported methods:
+.\" METHOD: eval
 .TP
 \fIobj \fBeval\fR ?\fIarg ...\fR?
 .
 This method concatenates the arguments, \fIarg\fR, as if with \fBconcat\fR,
 and then evaluates the resulting script in the namespace that is uniquely
 associated with \fIobj\fR, returning the result of the evaluation.
+.\" METHOD: unknown
 .TP
 \fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
 .
@@ -78,6 +81,7 @@ The default implementation (i.e., the one defined by the \fBoo::object\fR
 class) generates a suitable error, detailing what methods the object supports
 given whether the object was invoked by its public name or through the
 \fBmy\fR command.
+.\" METHOD: variable
 .TP
 \fIobj \fBvariable \fR?\fIvarName ...\fR?
 .
@@ -86,11 +90,13 @@ the object \fIobj\fR's unique namespace into the caller's context. Thus, if it
 is invoked from inside a procedure then the namespace variable in the object
 is linked to the local variable in the procedure. Each \fIvarName\fR argument
 must not have any namespace separators in it. The result is the empty string.
+.\" METHOD: varname
 .TP
 \fIobj \fBvarname \fIvarName\fR
 .
 This method returns the globally qualified name of the variable \fIvarName\fR
 in the unique namespace for the object \fIobj\fR.
+.\" METHOD: <cloned>
 .TP
 \fIobj \fB<cloned> \fIsourceObjectName\fR
 .VS

@@ -17,6 +17,7 @@ Tcl_CallWhenDeleted, Tcl_DontCallWhenDeleted \- Arrange for callback when interp
 \fBTcl_CallWhenDeleted\fR(\fIinterp\fR, \fIproc\fR, \fIclientData\fR)
 .sp
 \fBTcl_DontCallWhenDeleted\fR(\fIinterp\fR, \fIproc\fR, \fIclientData\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_InterpDeleteProc clientData
 .AP Tcl_Interp *interp in
@@ -60,7 +61,8 @@ If there is no deletion callback that matches \fIinterp\fR,
 .PP
 Note that if the callback is being used to delete a resource that \fImust\fR
 be released on exit, \fBTcl_CreateExitHandler\fR should be used to ensure that
-a callback is received even if the application terminates without deleting the interpreter.
+a callback is received even if the application terminates without deleting the
+interpreter.
 .SH "SEE ALSO"
 Tcl_CreateExitHandler(3), Tcl_CreateThreadExitHandler(3)
 .SH KEYWORDS

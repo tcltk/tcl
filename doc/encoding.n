@@ -28,10 +28,11 @@ formats.
 .PP
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
+.\" METHOD: convertfrom
 .TP
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding\fR \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
 .
 Converts \fIdata\fR, which should be in binary string encoded as per
 \fIencoding\fR, to a Tcl string. If \fIencoding\fR is not specified, the current
@@ -50,10 +51,11 @@ of the source byte triggering the error is stored in \fBvar\fR. If no
 errors are encountered, the entire result of the conversion is returned and
 the value \fB-1\fR is stored in \fBvar\fR.
 .VE "TCL8.7 TIP607, TIP656"
+.\" METHOD: convertto
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding\fR \fIdata\fR
+\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
 .
 Convert \fIstring\fR to the specified \fIencoding\fR. The result is a Tcl binary
 string that contains the sequence of bytes representing the converted string in
@@ -64,6 +66,7 @@ encoding is used.
 The \fB-profile\fR and \fB-failindex\fR options have the same effect as
 described for the \fBencoding convertfrom\fR command.
 .VE "TCL8.7 TIP607, TIP656"
+.\" METHOD: dirs
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -76,6 +79,7 @@ search path. It is an error for \fIdirectoryList\fR to not be a valid
 list. If, when a search for an encoding data file is happening, an
 element in \fIdirectoryList\fR does not refer to a readable,
 searchable directory, that element is ignored.
+.\" METHOD: names
 .TP
 \fBencoding names\fR
 .
@@ -91,6 +95,7 @@ are guaranteed to be present in the list.
 \fBencoding profiles\fR
 Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
 .VE "TCL8.7 TIP656"
+.\" METHOD: system
 .TP
 \fBencoding system\fR ?\fIencoding\fR?
 .
@@ -121,9 +126,16 @@ Continue further processing of the source data using a fallback strategy such
 as replacing or discarding the offending bytes in a profile-defined manner.
 .VE "TCL8.7 TIP656"
 .PP
-The following profiles are currently implemented with \fBtcl8\fR being
+The following profiles are currently implemented with \fBstrict\fR being
 the default if the \fB-profile\fR is not specified.
 .VS "TCL8.7 TIP656"
+.TP
+\fBstrict\fR
+.
+The \fBstrict\fR profile always stops processing when an conversion error is
+encountered. The error is signalled via an exception or the \fB-failindex\fR
+option mechanism. The \fBstrict\fR profile implements a Unicode standard
+conformant behavior.
 .TP
 \fBtcl8\fR
 .
@@ -143,13 +155,6 @@ When converting from Tcl strings to an external encoding format using
 \fBencoding convertto\fR, characters that cannot be represented in the
 target encoding are replaced by an encoding-dependent character, usually
 the question mark \fB?\fR.
-.TP
-\fBstrict\fR
-.
-The \fBstrict\fR profile always stops processing when an conversion error is
-encountered. The error is signalled via an exception or the \fB-failindex\fR
-option mechanism. The \fBstrict\fR profile implements a Unicode standard
-conformant behavior.
 .TP
 \fBreplace\fR
 .

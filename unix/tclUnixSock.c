@@ -1322,7 +1322,6 @@ TcpConnect(
         for (statePtr->myaddr = statePtr->myaddrlist;
                 statePtr->myaddr != NULL;
                 statePtr->myaddr = statePtr->myaddr->ai_next) {
-
 	    /*
 	     * No need to try combinations of local and remote addresses of
 	     * different families.

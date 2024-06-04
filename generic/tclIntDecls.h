@@ -124,7 +124,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 EXTERN Tcl_ObjCmdProc *	 TclGetObjInterpProc(void);
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
-				int *seekFlagPtr);
+				int *modeFlagsPtr);
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
@@ -320,10 +320,8 @@ EXTERN int		TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re);
 /* 151 */
 EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index,
 				Tcl_Size *startPtr, Tcl_Size *endPtr);
-/* 152 */
-EXTERN void		TclSetLibraryPath(Tcl_Obj *pathPtr);
-/* 153 */
-EXTERN Tcl_Obj *	TclGetLibraryPath(void);
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 /* 156 */
@@ -354,7 +352,7 @@ EXTERN int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 167 is reserved */
 /* Slot 168 is reserved */
 /* 169 */
-EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
+EXTERN int		TclpUtfNcmp2(const void *s1, const void *s2,
 				size_t n);
 /* 170 */
 EXTERN int		TclCheckInterpTraces(Tcl_Interp *interp,
@@ -622,7 +620,7 @@ typedef struct TclIntStubs {
     void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
     Tcl_ObjCmdProc * (*tclGetObjInterpProc) (void); /* 39 */
-    int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
+    int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *modeFlagsPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
     Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */
@@ -734,8 +732,8 @@ typedef struct TclIntStubs {
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
     int (*tclRegAbout) (Tcl_Interp *interp, Tcl_RegExp re); /* 150 */
     void (*tclRegExpRangeUniChar) (Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr, Tcl_Size *endPtr); /* 151 */
-    void (*tclSetLibraryPath) (Tcl_Obj *pathPtr); /* 152 */
-    Tcl_Obj * (*tclGetLibraryPath) (void); /* 153 */
+    void (*reserved152)(void);
+    void (*reserved153)(void);
     void (*reserved154)(void);
     void (*reserved155)(void);
     void (*tclRegError) (Tcl_Interp *interp, const char *msg, int status); /* 156 */
@@ -751,7 +749,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
+    int (*tclpUtfNcmp2) (const void *s1, const void *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
@@ -1080,10 +1078,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclRegAbout) /* 150 */
 #define TclRegExpRangeUniChar \
 	(tclIntStubsPtr->tclRegExpRangeUniChar) /* 151 */
-#define TclSetLibraryPath \
-	(tclIntStubsPtr->tclSetLibraryPath) /* 152 */
-#define TclGetLibraryPath \
-	(tclIntStubsPtr->tclGetLibraryPath) /* 153 */
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 #define TclRegError \

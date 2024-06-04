@@ -185,8 +185,7 @@ PlatformEventsControl(
 	Tcl_Panic("fstat: %s", strerror(errno));
     } else if ((fdStat.st_mode & S_IFMT) == S_IFREG
 	    || (fdStat.st_mode & S_IFMT) == S_IFDIR
-	    || (fdStat.st_mode & S_IFMT) == S_IFLNK
-	    ) {
+	    || (fdStat.st_mode & S_IFMT) == S_IFLNK) {
 	switch (op) {
 	case EV_ADD:
 	    if (isNew) {
@@ -740,7 +739,7 @@ TclpWaitForEvent(
 	    i = read(tsdPtr->triggerPipe[0], buf, 1);
 	    if ((i == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: read from %p->triggerPipe: %s",
-			(void *) tsdPtr, strerror(errno));
+			tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}

@@ -45,8 +45,7 @@ standard channels.  (A channel is not
 if it could not be
 successfully opened; for example, in a Tcl application run as a
 Windows NT service.)
-.TP
-1)
+.IP 1)
 A single standard channel is initialized when it is explicitly
 specified in a call to \fBTcl_SetStdChannel\fR.  The states of the
 other standard channels are unaffected.
@@ -55,17 +54,14 @@ other standard channels are unaffected.
 Missing platform-specific standard channels do not matter here. This
 approach is not available at the script level.
 .RE
-.TP
-2)
+.IP 2)
 All uninitialized standard channels are initialized to
 platform-specific default values:
 .RS
-.TP
-(a)
+.IP (a)
 when open channels are listed with \fBTcl_GetChannelNames\fR (or the
 \fBfile channels\fR script command), or
-.TP
-(b)
+.IP (b)
 when information about any standard channel is requested with a call
 to \fBTcl_GetStdChannel\fR, or with a call to \fBTcl_GetChannel\fR
 which specifies one of the standard names (\fBstdin\fR, \fBstdout\fR
@@ -76,8 +72,7 @@ standard channels are considered as initialized and then immediately
 closed. This means that the first three Tcl channels then opened by
 the application are designated as the Tcl standard channels.
 .RE
-.TP
-3)
+.IP 3)
 All uninitialized standard channels are initialized to
 platform-specific default values when a user-requested channel is
 registered with \fBTcl_RegisterChannel\fR.

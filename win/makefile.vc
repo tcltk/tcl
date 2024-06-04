@@ -17,13 +17,13 @@
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
 # For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md)
-# or examine Sections 6-8 in rules.vc.
+# or examine Sections 7-9 in rules.vc.
 #
-# Possible values of TARGET are:
+# Possible values for TARGET are:
 #	release  -- Builds everything that ships with a release. (default)
 #	core     -- Builds the core [tclXX.(dll|lib)]
 #	shell    -- Builds tclsh and the core.
-#	dlls     -- Just builds the windows extensions
+#	dlls     -- Just builds the windows extensions.
 #	all      -- Builds everything.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
@@ -47,9 +47,9 @@
 # Visual Studio/Windows SDK for the appropriate target architecture.
 #
 # NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-# SDK (not expressly needed), run setenv.bat after
-# vcvars32.bat according to the instructions for it.  This can also
-# turn on the 64-bit compiler, if your SDK has it.
+# SDK (not expressly needed), run setenv.bat after vcvars32.bat
+# according to the instructions for it.  This can also turn on the
+# 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
 #	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
@@ -134,10 +134,10 @@ PROJECT = tcl
 # rules.vc file will set up "all" as the target.
 DEFAULT_BUILD_TARGET = release
 
-# We want to use our own resource file, not the standard template one.
+# We have a custom resource file
 RCFILE = tcl.rc
 
-# The rules.vc file does most of the hard work in terms of defining
+# The rules.vc file does much of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
 
@@ -221,7 +221,7 @@ TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 TCLDDELIBNAME	= $(PROJECT)9dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
-TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
 TCLSHOBJS = \
@@ -238,7 +238,8 @@ TCLTESTOBJS = \
 !if !$(STATIC_BUILD)
 	$(OUT_DIR)\tommath.lib \
 !endif
-	$(TMP_DIR)\testMain.obj
+	$(TMP_DIR)\testMain.obj \
+	$(TMP_DIR)\tcltest.res
 
 COREOBJS = \
 	$(TMP_DIR)\regcomp.obj \
@@ -253,6 +254,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclBinary.obj \
 	$(TMP_DIR)\tclCkalloc.obj \
 	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclClockFmt.obj \
 	$(TMP_DIR)\tclCmdAH.obj \
 	$(TMP_DIR)\tclCmdIL.obj \
 	$(TMP_DIR)\tclCmdMZ.obj \
@@ -316,6 +318,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclResult.obj \
 	$(TMP_DIR)\tclScan.obj \
 	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrIdxTree.obj \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
@@ -366,9 +369,9 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_d.obj \
 	$(TMP_DIR)\bn_mp_div_2.obj \
 	$(TMP_DIR)\bn_mp_div_2d.obj \
-	$(TMP_DIR)\bn_mp_div_3.obj \
+	$(TMP_DIR)\bn_s_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
-	$(TMP_DIR)\bn_mp_expt_u32.obj \
+	$(TMP_DIR)\bn_mp_expt_n.obj \
 	$(TMP_DIR)\bn_mp_get_mag_u64.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
@@ -461,12 +464,17 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+LIBTCLVFSSUBDIR = libtcl.vfs
+LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+
+!if $(STATIC_BUILD)
+PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
+!endif
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
@@ -582,6 +590,7 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLSHRAW)
@@ -590,6 +599,7 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLTESTRAW)
@@ -659,9 +669,10 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
     @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
     @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
 !endif
-	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
+	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
+	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -729,7 +740,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) -encoding utf-8 $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
@@ -816,7 +827,7 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
 @TCL_SRC_DIR@        $(ROOT)
-@TCL_PACKAGE_PATH@
+@TCL_PACKAGE_PATH@   $(LIB_INSTALL_DIR)
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
@@ -1018,6 +1029,7 @@ $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
 
+$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 #---------------------------------------------------------------------
 # Installation.

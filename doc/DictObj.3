@@ -33,10 +33,8 @@ int
 \fBTcl_DictObjFirst\fR(\fIinterp, dictPtr, searchPtr,
                  keyPtrPtr, valuePtrPtr, donePtr\fR)
 .sp
-void
 \fBTcl_DictObjNext\fR(\fIsearchPtr, keyPtrPtr, valuePtrPtr, donePtr\fR)
 .sp
-void
 \fBTcl_DictObjDone\fR(\fIsearchPtr\fR)
 .sp
 int
@@ -44,6 +42,7 @@ int
 .sp
 int
 \fBTcl_DictObjRemoveKeyList\fR(\fIinterp, dictPtr, keyc, keyv\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_DictSearch "**valuePtrPtr" in/out
 .AP Tcl_Interp *interp in
@@ -72,11 +71,12 @@ placed within it.  For \fBTcl_DictObjFirst\fR and
 not interested in the value.
 .AP "Tcl_Size \&| int" *sizePtr out
 Points to a variable that will have the number of key/value pairs
-contained within the dictionary placed within it. May be (Tcl_Size *)NULL when not used. If it points to a variable which
-type is not \fBTcl_Size\fR, a compiler warning will be generated, in
-order to indicate that when size of the dictionary is larger than INT_MAX
-this function will return TCL_ERROR (which should trigger proper error-handling).
-Apart from that, it will function as expected.
+contained within the dictionary placed within it.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+NULL for dictionaries larger than INT_MAX (which should
+trigger proper error-handling), otherwise expect it to crash.
 .AP Tcl_DictSearch *searchPtr in/out
 Pointer to record to use to keep track of progress in enumerating all
 key/value pairs in a dictionary.  The contents of the record will be
