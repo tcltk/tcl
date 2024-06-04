@@ -113,14 +113,14 @@ ExtractWinRoot(
 {
     int extended = 0;
 
-    if (   (path[0] == '/' || path[0] == '\\')
-	&& (path[1] == '/' || path[1] == '\\')
-	&& (path[2] == '?')
-	&& (path[3] == '/' || path[3] == '\\')) {
+    if (       (path[0] == '/' || path[0] == '\\')
+	    && (path[1] == '/' || path[1] == '\\')
+	    && (path[2] == '?')
+	    && (path[3] == '/' || path[3] == '\\')) {
 	extended = 1;
 	path = path + 4;
 	if (path[0] == 'U' && path[1] == 'N' && path[2] == 'C'
-	    && (path[3] == '/' || path[3] == '\\')) {
+		&& (path[3] == '/' || path[3] == '\\')) {
 	    extended = 2;
 	    path = path + 4;
 	}
@@ -488,7 +488,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	TclListObjLengthM(NULL, resultPtr, lenPtr);
+	TclListObjLength(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -550,7 +550,7 @@ Tcl_SplitPath(
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	(void)Tcl_GetStringFromObj(eltPtr, &len);
+	(void)TclGetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
 
@@ -570,7 +570,7 @@ Tcl_SplitPath(
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	str = Tcl_GetStringFromObj(eltPtr, &len);
+	str = TclGetStringFromObj(eltPtr, &len);
 	memcpy(p, str, len + 1);
 	p += len+1;
     }
@@ -583,7 +583,7 @@ Tcl_SplitPath(
 
     for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
-	for (; *(p++)!='\0'; );
+	while (*(p++) != '\0');
     }
     (*argvPtr)[i] = NULL;
 
@@ -812,7 +812,7 @@ TclpNativeJoinPath(
     const char *p;
     const char *start;
 
-    start = Tcl_GetStringFromObj(prefix, &length);
+    start = TclGetStringFromObj(prefix, &length);
 
     /*
      * Remove the ./ from drive-letter prefixed
@@ -823,8 +823,8 @@ TclpNativeJoinPath(
 
     if (length != 0) {
 	if ((p[0] == '.') && (p[1] == '/') &&
-	    (tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
-	    && (p[3] == ':')) {
+		(tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
+		&& (p[3] == ':')) {
 	    p += 2;
 	}
     }
@@ -840,7 +840,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    (void)Tcl_GetStringFromObj(prefix, &length);
+	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -876,7 +876,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    (void)Tcl_GetStringFromObj(prefix, &length);
+	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -959,7 +959,7 @@ Tcl_JoinPath(
      * Store the result.
      */
 
-    resultStr = Tcl_GetStringFromObj(resultObj, &len);
+    resultStr = TclGetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
 
@@ -1225,7 +1225,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (TclListObjLengthM(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLength(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1259,7 +1259,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	Tcl_Size pathlength;
 	const char *last;
-	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
+	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1267,7 +1267,7 @@ Tcl_GlobObjCmd(
 
 	last = first + pathlength;
 	for (; last != first; last--) {
-	    if (strchr(separators, *(last-1)) != NULL) {
+	    if (strchr(separators, last[-1]) != NULL) {
 		break;
 	    }
 	}
@@ -1351,7 +1351,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	TclListObjLengthM(interp, typePtr, &length);
+	TclListObjLength(interp, typePtr, &length);
 	if (length == 0) {
 	    goto skipTypes;
 	}
@@ -1366,7 +1366,7 @@ Tcl_GlobObjCmd(
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
-	    str = Tcl_GetStringFromObj(look, &len);
+	    str = TclGetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
 	    } else if (strcmp("hidden", str) == 0) {
@@ -1422,7 +1422,7 @@ Tcl_GlobObjCmd(
 		Tcl_Obj *item;
 		Tcl_Size llen;
 
-		if ((TclListObjLengthM(NULL, look, &llen) == TCL_OK)
+		if ((TclListObjLength(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", TclGetString(item))) {
@@ -1810,7 +1810,7 @@ TclGlob(
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
 
-	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
+	pre = TclGetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
 	    /*
@@ -1825,10 +1825,10 @@ TclGlob(
 	    }
 	}
 
-	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    Tcl_Size len;
-	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
+	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
@@ -2152,7 +2152,7 @@ DoGlob(
 	    Tcl_Size i, subdirc, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = TclListObjGetElementsM(interp, subdirsPtr,
+	    result = TclListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
@@ -2164,14 +2164,14 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    TclListObjLengthM(NULL, matchesObj, &end);
+		    TclListObjLength(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			Tcl_Size numBytes;
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
-			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
+			bytes = TclGetStringFromObj(fixme, &numBytes);
 			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
 			Tcl_ListObjReplace(NULL, matchesObj, repair, 1,
 				1, &newObj);
@@ -2209,7 +2209,7 @@ DoGlob(
 	Tcl_DStringAppend(&append, pattern, p-pattern);
 
 	if (pathPtr != NULL) {
-	    (void) Tcl_GetStringFromObj(pathPtr, &length);
+	    (void) TclGetStringFromObj(pathPtr, &length);
 	} else {
 	    length = 0;
 	}
@@ -2255,7 +2255,7 @@ DoGlob(
 		 */
 
 		Tcl_Size len;
-		const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2292,7 +2292,7 @@ DoGlob(
 	     */
 
 	    Tcl_Size len;
-	    const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {

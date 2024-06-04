@@ -56,10 +56,12 @@ unix/dltest.marker
 unix/dltest/embtest
 unix/tcl.pc
 unix/tclIndex
+unix/pkgs8/*
 unix/pkgs/*
 win/Debug*
 win/Release*
 win/*.manifest
+win/pkgs8/*
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj

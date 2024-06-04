@@ -54,6 +54,7 @@ backslashes.
 If the initial arguments to \fBregsub\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
 currently supported:
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
@@ -67,6 +68,7 @@ and
 .QW \e\fIn\fR
 sequences are handled for each substitution using the information
 from the corresponding match.
+.\" OPTION: -command
 .TP
 \fB\-command\fR
 .VS 8.7
@@ -80,7 +82,7 @@ command prefix, that is, a non-empty list.  The substring of \fIstring\fR
 that matches \fIexp\fR, and then each substring that matches each
 capturing sub-RE within \fIexp\fR are appended as additional elements
 to that list. (The items appended to the list are much like what
-\fBregexp\fR \fB-inline\fR would return).  The completed list is then
+\fBregexp\fR \fB\-inline\fR would return).  The completed list is then
 evaluated as a Tcl command, and the result of that command is the
 substitution string.  Any error or exception from command evaluation
 becomes an error or exception from the \fBregsub\fR command.
@@ -94,12 +96,14 @@ The exact location indices that matched are not made available to the script.
 See \fBEXAMPLES\fR below for illustrative cases.
 .RE
 .VE 8.7
+.\" OPTION: -expanded
 .TP
 \fB\-expanded\fR
 .
 Enables use of the expanded regular expression syntax where
 whitespace and comments are ignored.  This is the same as specifying
 the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -line
 .TP
 \fB\-line\fR
 .
@@ -117,6 +121,7 @@ matches an empty string before any newline in
 addition to its normal function.  This flag is equivalent to
 specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
 \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -linestop
 .TP
 \fB\-linestop\fR
 .
@@ -127,6 +132,7 @@ bracket expressions and
 so that they
 stop at newlines.  This is the same as specifying the \fB(?p)\fR
 embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -lineanchor
 .TP
 \fB\-lineanchor\fR
 .
@@ -140,14 +146,16 @@ so they match the
 beginning and end of a line respectively.  This is the same as
 specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
 manual page).
+.\" OPTION: -nocase
 .TP
 \fB\-nocase\fR
 .
 Upper-case characters in \fIstring\fR will be converted to lower-case
 before matching against \fIexp\fR;  however, substitutions specified
 by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
+.\" OPTION: -start
 .TP
-\fB\-start\fR \fIindex\fR
+\fB\-start\fI index\fR
 .
 Specifies a character index offset into the string to start
 matching the regular expression at.
@@ -158,6 +166,7 @@ When using this switch,
 will not match the beginning of the line, and \eA will still
 match the start of the string at \fIindex\fR.
 \fIindex\fR will be constrained to the bounds of the input string.
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .
@@ -255,6 +264,15 @@ set decoded [\fBregsub\fR -all -command $RE $string {apply {{- p h} {
     scan $h %x charNumber
     format %c $charNumber
 }}}]
+.CE
+.PP
+The \fB\-command\fR option can also be useful for restricting the range of
+commands such as \fBstring totitle\fR:
+.PP
+.CS
+set message "the quIck broWn fOX JUmped oVer the laZy dogS..."
+puts [\fBregsub\fR -all -command {\ew+} $message {string totitle}]
+# \(-> \fIThe Quick Brown Fox Jumped Over The Lazy Dogs..\fR
 .CE
 .VE 8.7
 .SH "SEE ALSO"

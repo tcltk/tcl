@@ -12,7 +12,6 @@
 
 #include "tclInt.h"
 
-
 /*
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
@@ -92,17 +91,16 @@ typedef struct InterpLibrary {
 
 static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
-static int	IsStatic (LoadedLibrary *libraryPtr);
+static int	IsStatic(LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
 		    LoadedLibrary *library, int keepLibrary,
 		    const char *fullFileName, int interpExiting);
-
 
 static int
-IsStatic (LoadedLibrary *libraryPtr) {
-    int res;
-    res = (libraryPtr->fileName[0] == '\0');
-    return res;
+IsStatic(
+    LoadedLibrary *libraryPtr)
+{
+    return (libraryPtr->fileName[0] == '\0');
 }
 
 /*
@@ -144,7 +142,7 @@ Tcl_LoadObjCmd(
     int flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
-	"-global",		"-lazy",		"--",	NULL
+	"-global",	"-lazy",	"--",	NULL
     };
     enum loadOptionsEnum {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
@@ -168,7 +166,8 @@ Tcl_LoadObjCmd(
 	}
     }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, savedobjv, "?-global? ?-lazy? ?--? fileName ?prefix? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv,
+		"?-global? ?-lazy? ?--? fileName ?prefix? ?interp?");
 	return TCL_ERROR;
     }
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
@@ -194,7 +193,7 @@ Tcl_LoadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -260,7 +259,7 @@ Tcl_LoadObjCmd(
 		    "file \"%s\" is already loaded for prefix \"%s\"",
 		    fullFileName, libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-		    "SPLITPERSONALITY", (void *)NULL);
+		    "SPLITPERSONALITY", (char *)NULL);
 	    code = TCL_ERROR;
 	    Tcl_MutexUnlock(&libraryMutex);
 	    goto done;
@@ -297,7 +296,7 @@ Tcl_LoadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no library with prefix \"%s\" is loaded statically", prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -359,7 +358,7 @@ Tcl_LoadObjCmd(
 			"couldn't figure out prefix for %s",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-			"WHATLIBRARY", (void *)NULL);
+			"WHATLIBRARY", (char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -456,7 +455,7 @@ Tcl_LoadObjCmd(
 		    "can't use library in a safe interpreter: no"
 		    " %s_SafeInit procedure", libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -467,7 +466,7 @@ Tcl_LoadObjCmd(
 		    "can't attach library to interpreter: no %s_Init procedure",
 		    libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
-		    (void *)NULL);
+		    (char *)NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -627,7 +626,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -695,7 +694,7 @@ Tcl_UnloadObjCmd(
 		"library with prefix \"%s\" is loaded statically and cannot be unloaded",
 		prefix));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -707,7 +706,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"file \"%s\" has never been loaded", fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -737,7 +736,7 @@ Tcl_UnloadObjCmd(
 		"file \"%s\" has never been loaded in this interpreter",
 		fullFileName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(void *)NULL);
+		(char *)NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -753,7 +752,6 @@ Tcl_UnloadObjCmd(
     }
     return code;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -773,13 +771,12 @@ Tcl_UnloadObjCmd(
  */
 static int
 UnloadLibrary(
-	Tcl_Interp *interp,
-	Tcl_Interp *target,
-	LoadedLibrary *libraryPtr,
-	int keepLibrary,
-	const char *fullFileName,
-	int interpExiting
-)
+    Tcl_Interp *interp,
+    Tcl_Interp *target,
+    LoadedLibrary *libraryPtr,
+    int keepLibrary,
+    const char *fullFileName,
+    int interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -800,7 +797,7 @@ UnloadLibrary(
 			"file \"%s\" cannot be unloaded under a safe interpreter",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(void *)NULL);
+			(char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -813,15 +810,13 @@ UnloadLibrary(
 			"file \"%s\" cannot be unloaded under a trusted interpreter",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(void *)NULL);
+			(char *)NULL);
 		code = TCL_ERROR;
 		goto done;
 	    }
 	}
 	unloadProc = libraryPtr->unloadProc;
     }
-
-
 
     /*
      * We are ready to unload the library. First, evaluate the unload
@@ -856,12 +851,10 @@ UnloadLibrary(
 	code = unloadProc(target, code);
     }
 
-
     if (code != TCL_OK) {
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
-
 
     /*
      * Remove this library from the interpreter's library cache.
@@ -884,7 +877,6 @@ UnloadLibrary(
     }
     Tcl_Free(ipPtr);
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
-
 
     if (IsStatic(libraryPtr)) {
 	goto done;
@@ -1107,9 +1099,8 @@ TclGetLoadedLibraries(
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
-    const char *prefix)	/* Prefix or NULL. If NULL, return info
-				 * for all prefixes.
-				 */
+    const char *prefix)		/* Prefix or NULL. If NULL, return info
+				 * for all prefixes. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;

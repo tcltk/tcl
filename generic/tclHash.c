@@ -36,7 +36,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t		HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the string hash key methods.
@@ -45,7 +45,7 @@ static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t		HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -214,7 +214,6 @@ FindHashEntry(
 {
     return CreateHashEntry(tablePtr, key, NULL);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -278,20 +277,35 @@ CreateHashEntry(
 
     if (typePtr->compareKeysProc) {
 	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
-
-	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
-		hPtr = hPtr->nextPtr) {
-	    if (hash != hPtr->hash) {
-		continue;
-	    }
-	    /* if keys pointers or values are equal */
-	    if ((key == hPtr->key.oneWordValue)
-		|| compareKeysProc((void *) key, hPtr)
-	    ) {
-		if (newPtr) {
-		    *newPtr = 0;
+	if (typePtr->flags & TCL_HASH_KEY_DIRECT_COMPARE) {
+	    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+		    hPtr = hPtr->nextPtr) {
+		if (hash != hPtr->hash) {
+		    continue;
 		}
-		return hPtr;
+		/* if keys pointers or values are equal */
+		if ((key == hPtr->key.oneWordValue)
+		    || compareKeysProc((void *) key, hPtr)) {
+		    if (newPtr) {
+			*newPtr = 0;
+		    }
+		    return hPtr;
+		}
+	    }
+	} else { /* no direct compare - compare key addresses only */
+	    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+		    hPtr = hPtr->nextPtr) {
+		if (hash != hPtr->hash) {
+		    continue;
+		}
+		/* if needle pointer equals content pointer or values equal */
+		if ((key == hPtr->key.string)
+			|| compareKeysProc((void *) key, hPtr)) {
+		    if (newPtr) {
+			*newPtr = 0;
+		    }
+		    return hPtr;
+		}
 	    }
 	}
     } else {
@@ -623,15 +637,15 @@ Tcl_HashStats(
      */
 
     result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
-    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+    snprintf(result, 60, "%" TCL_SIZE_MODIFIER "u entries in table, %" TCL_SIZE_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_SIZE_MODIFIER "u entries: %" TCL_SIZE_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_SIZE_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     snprintf(p, 60, "average search distance for entry: %.1f", average);

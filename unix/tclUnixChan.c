@@ -112,7 +112,7 @@ typedef struct {
     if (interp) {							\
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(				\
 		"%s not supported for this platform", (detail)));	\
-	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (void *)NULL);		\
+	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);		\
     }
 
 /*
@@ -567,21 +567,6 @@ FileGetHandleProc(
  *----------------------------------------------------------------------
  */
 
-static inline void
-StoreElementInDict(
-    Tcl_Obj *dictObj,
-    const char *name,
-    Tcl_Obj *valueObj)
-{
-    /*
-     * We assume that the dict is being built fresh and that there's never any
-     * duplicate keys.
-     */
-
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
-    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
-}
-
 static inline const char *
 GetTypeFromMode(
     int mode)
@@ -631,7 +616,7 @@ StatOpenFile(
      */
 
     TclNewObj(dictObj);
-#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, name, value)
 
     STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));
     STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
@@ -706,7 +691,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	dictContents = TclGetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
@@ -819,20 +804,20 @@ TtySetOptionProc(
 #ifdef CRTSCTS
 	CLEAR_BITS(iostate.c_cflag, CRTSCTS);
 #endif /* CRTSCTS */
-	if (Tcl_UtfNcasecmp(value, "NONE", vlen) == 0) {
+	if (strncasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (Tcl_UtfNcasecmp(value, "XONXOFF", vlen) == 0) {
+	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
-	} else if (Tcl_UtfNcasecmp(value, "RTSCTS", vlen) == 0) {
+	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
 #ifdef CRTSCTS
 	    SET_BITS(iostate.c_cflag, CRTSCTS);
 #else /* !CRTSTS */
 	    UNSUPPORTED_OPTION("-handshake RTSCTS");
 	    return TCL_ERROR;
 #endif /* CRTSCTS */
-	} else if (Tcl_UtfNcasecmp(value, "DTRDSR", vlen) == 0) {
+	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
 	    UNSUPPORTED_OPTION("-handshake DTRDSR");
 	    return TCL_ERROR;
 	} else {
@@ -841,7 +826,7 @@ TtySetOptionProc(
 			"bad value for -handshake: must be one of"
 			" xonxoff, rtscts, dtrdsr or none", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -862,7 +847,7 @@ TtySetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
 			" two elements with each a single 8-bit character", -1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    Tcl_Free(argv);
 	    return TCL_ERROR;
@@ -876,12 +861,12 @@ TtySetOptionProc(
 	    Tcl_UniChar character = 0;
 	    int charLen;
 
-	    charLen = Tcl_UtfToUniChar(argv[0], &character);
+	    charLen = TclUtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    iostate.c_cc[VSTART] = character;
-	    charLen = Tcl_UtfToUniChar(argv[1], &character);
+	    charLen = TclUtfToUniChar(argv[1], &character);
 	    if ((character > 0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
@@ -928,7 +913,7 @@ TtySetOptionProc(
 			"bad value for -ttycontrol: should be a list of"
 			" signal,value pairs", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    Tcl_Free(argv);
 	    return TCL_ERROR;
@@ -940,19 +925,19 @@ TtySetOptionProc(
 		Tcl_Free(argv);
 		return TCL_ERROR;
 	    }
-	    if (Tcl_UtfNcasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_DTR);
 		} else {
 		    CLEAR_BITS(control, TIOCM_DTR);
 		}
-	    } else if (Tcl_UtfNcasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_RTS);
 		} else {
 		    CLEAR_BITS(control, TIOCM_RTS);
 		}
-	    } else if (Tcl_UtfNcasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 #if defined(TIOCSBRK) && defined(TIOCCBRK)
 		if (flag) {
 		    ioctl(fsPtr->fileState.fd, TIOCSBRK, NULL);
@@ -970,7 +955,7 @@ TtySetOptionProc(
 			    "bad signal \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 		}
 		Tcl_Free(argv);
 		return TCL_ERROR;
@@ -990,11 +975,11 @@ TtySetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-closemode", len) == 0)) {
-	if (Tcl_UtfNcasecmp(value, "DEFAULT", vlen) == 0) {
+	if (strncasecmp(value, "DEFAULT", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DEFAULT;
-	} else if (Tcl_UtfNcasecmp(value, "DRAIN", vlen) == 0) {
+	} else if (strncasecmp(value, "DRAIN", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DRAIN;
-	} else if (Tcl_UtfNcasecmp(value, "DISCARD", vlen) == 0) {
+	} else if (strncasecmp(value, "DISCARD", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DISCARD;
 	} else {
 	    if (interp) {
@@ -1002,7 +987,7 @@ TtySetOptionProc(
 			"bad mode \"%s\" for -closemode: must be"
 			" default, discard, or drain", value));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1022,11 +1007,11 @@ TtySetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfNcasecmp(value, "NORMAL", vlen) == 0) {
+	if (strncasecmp(value, "NORMAL", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, BRKINT | IGNPAR | ISTRIP | ICRNL | IXON);
 	    SET_BITS(iostate.c_oflag, OPOST);
 	    SET_BITS(iostate.c_lflag, ECHO | ECHONL | ICANON | ISIG);
-	} else if (Tcl_UtfNcasecmp(value, "PASSWORD", vlen) == 0) {
+	} else if (strncasecmp(value, "PASSWORD", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, BRKINT | IGNPAR | ISTRIP | ICRNL | IXON);
 	    SET_BITS(iostate.c_oflag, OPOST);
 	    CLEAR_BITS(iostate.c_lflag, ECHO);
@@ -1037,7 +1022,7 @@ TtySetOptionProc(
 	     * feels highly unnatural to do so in practice.
 	     */
 	    SET_BITS(iostate.c_lflag, ECHONL | ICANON | ISIG);
-	} else if (Tcl_UtfNcasecmp(value, "RAW", vlen) == 0) {
+	} else if (strncasecmp(value, "RAW", vlen) == 0) {
 #ifdef HAVE_CFMAKERAW
 	    cfmakeraw(&iostate);
 #else /* !HAVE_CFMAKERAW */
@@ -1048,7 +1033,7 @@ TtySetOptionProc(
 	    CLEAR_BITS(iostate.c_cflag, CSIZE | PARENB);
 	    SET_BITS(iostate.c_cflag, CS8);
 #endif /* HAVE_CFMAKERAW */
-	} else if (Tcl_UtfNcasecmp(value, "RESET", vlen) == 0) {
+	} else if (strncasecmp(value, "RESET", vlen) == 0) {
 	    /*
 	     * Reset to the initial state, whatever that is.
 	     */
@@ -1060,7 +1045,7 @@ TtySetOptionProc(
 			"bad mode \"%s\" for -inputmode: must be"
 			" normal, password, raw, or reset", value));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1292,7 +1277,7 @@ TtyGetOptionProc(
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName,
-		"closemode inputmode mode queue ttystatus winsize xchar");
+	    "closemode inputmode mode queue ttystatus winsize xchar");
 }
 
 static const struct {int baud; speed_t speed;} speeds[] = {
@@ -1638,7 +1623,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s: should be baud,parity,data,stop", bad));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1668,7 +1653,7 @@ TtyParseMode(
 		    "n, o, or e"
 #endif /* PAREXT */
 		    ));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1677,7 +1662,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s data: should be 5, 6, 7, or 8", bad));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1685,7 +1670,7 @@ TtyParseMode(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s stop: should be 1 or 2", bad));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1768,7 +1753,7 @@ TclpOpenFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     const Tcl_ChannelType *channelTypePtr;
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	channelPermissions = TCL_READABLE;
 	break;
@@ -1792,7 +1777,7 @@ TclpOpenFileChannel(
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "couldn't open \"",
 	    TclGetString(pathPtr), "\": filename is invalid on this platform",
-	    (void *)NULL);
+	    (char *)NULL);
 	}
 	return NULL;
     }
@@ -1906,7 +1891,7 @@ Tcl_MakeFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
     const Tcl_ChannelType *channelTypePtr;
-    struct stat buf;
+    Tcl_StatBuf buf;
 
     if (mode == 0) {
 	return NULL;
@@ -1918,7 +1903,7 @@ Tcl_MakeFileChannel(
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if (fstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
+    if (TclOSfstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
 	struct sockaddr sockaddr;
 	socklen_t sockaddrLen = sizeof(sockaddr);
 
@@ -2085,13 +2070,13 @@ Tcl_GetOpenFile(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" wasn't opened for writing", chanID));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_WRITABLE",
-		(void *)NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     } else if (!forWriting && !(chanMode & TCL_READABLE)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" wasn't opened for reading", chanID));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_READABLE",
-		(void *)NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2123,7 +2108,7 @@ Tcl_GetOpenFile(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"cannot get a FILE * for \"%s\"", chanID));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL",
-			"FILE_FAILURE", (void *)NULL);
+			"FILE_FAILURE", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    *filePtr = f;
@@ -2134,7 +2119,7 @@ Tcl_GetOpenFile(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "\"%s\" cannot be used to get a FILE *", chanID));
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NO_DESCRIPTOR",
-	    (void *)NULL);
+	    (char *)NULL);
     return TCL_ERROR;
 }
 

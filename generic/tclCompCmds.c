@@ -302,7 +302,7 @@ TclCompileArraySetCmd(
     TclNewObj(literalObj);
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
     isDataValid = (isDataLiteral
-	    && TclListObjLengthM(NULL, literalObj, &len) == TCL_OK);
+	    && TclListObjLength(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
@@ -657,7 +657,6 @@ TclCompileCatchCmd(
     }
     ExceptionRangeEnds(envPtr, range);
 
-
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
@@ -678,7 +677,6 @@ TclCompileCatchCmd(
     if (dropScript) {
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-
 
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -772,15 +770,15 @@ TclCompileClockClicksCmd(
 	 */
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
-	    || tokenPtr[1].size < 4
-	    || tokenPtr[1].size > 13) {
+		|| tokenPtr[1].size < 4
+		|| tokenPtr[1].size > 13) {
 	    return TCL_ERROR;
 	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
-			    tokenPtr[1].size)) {
+		tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 1, envPtr);
 	    break;
 	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
-			    tokenPtr[1].size)) {
+		tokenPtr[1].size)) {
 	    TclEmitInstInt1(INST_CLOCK_READ, 2, envPtr);
 	    break;
 	} else {
@@ -791,7 +789,6 @@ TclCompileClockClicksCmd(
     }
     return TCL_OK;
 }
-
 
 /*----------------------------------------------------------------------
  *
@@ -893,10 +890,10 @@ TclCompileConcatCmd(
 	const char *bytes;
 	Tcl_Size len, slen;
 
-	TclListObjGetElementsM(NULL, listObj, &len, &objs);
+	TclListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
-	bytes = Tcl_GetStringFromObj(objPtr, &slen);
+	bytes = TclGetStringFromObj(objPtr, &slen);
 	PushLiteral(envPtr, bytes, slen);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_OK;
@@ -913,6 +910,84 @@ TclCompileConcatCmd(
 
     TclEmitInstInt4(	INST_CONCAT_STK, i-1,		envPtr);
 
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileConstCmd --
+ *
+ *	Procedure called to compile the "const" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "const" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileConstCmd(
+    Tcl_Interp *interp,		/* The interpreter. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *varTokenPtr, *valueTokenPtr;
+    int isScalar, localIndex;
+
+    /*
+     * Need exactly two arguments.
+     */
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we need
+     * to emit code to compute and push the name at runtime. We use a frame
+     * slot (entry in the array of local vars) if we are compiling a procedure
+     * body and if the name is simple text that does not include namespace
+     * qualifiers.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &isScalar, 1);
+
+    /*
+     * If the user specified an array element, we don't bother handling
+     * that.
+     */
+    if (!isScalar) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * We are doing an assignment to set the value of the constant. This will
+     * need to be extended to push a value for each argument.
+     */
+
+    valueTokenPtr = TokenAfter(varTokenPtr);
+    CompileWord(envPtr, valueTokenPtr, interp, 2);
+
+    if (localIndex < 0) {
+	TclEmitOpcode(INST_CONST_STK, envPtr);
+    } else {
+	TclEmitInstInt4(INST_CONST_IMM, localIndex, envPtr);
+    }
+
+    /*
+     * The const command's result is an empty string.
+     */
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -1333,7 +1408,7 @@ TclCompileDictCreateCmd(
      * We did! Excellent. The "verifyDict" is to do type forcing.
      */
 
-    bytes = Tcl_GetStringFromObj(dictObj, &len);
+    bytes = TclGetStringFromObj(dictObj, &len);
     PushLiteral(envPtr, bytes, len);
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
@@ -2322,8 +2397,7 @@ DisassembleDictUpdateInfo(
 	Tcl_ListObjAppendElement(NULL, variables,
 		Tcl_NewWideIntObj(duiPtr->varIndices[i]));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
-	    variables);
+    TclDictPut(NULL, dictObj, "variables", variables);
 }
 
 /*
@@ -2755,7 +2829,7 @@ CompileEachloopCmd(
 	 */
 
 	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
-		TCL_OK != TclListObjLengthM(NULL, varListObj, &numVars) ||
+		TCL_OK != TclListObjLength(NULL, varListObj, &numVars) ||
 		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;
@@ -2773,9 +2847,8 @@ CompileEachloopCmd(
 	    int varIndex;
 	    Tcl_Size length;
 
-
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = Tcl_GetStringFromObj(varNameObj, &length);
+	    bytes = TclGetStringFromObj(varNameObj, &length);
 	    varIndex = LocalScalar(bytes, length, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
@@ -3062,14 +3135,13 @@ DisassembleForeachInfo(
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewWideIntObj(infoPtr->firstValueTemp + i));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
+    TclDictPut(NULL, dictObj, "data", objPtr);
 
     /*
      * Loop counter.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
-	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "loop", Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3085,7 +3157,7 @@ DisassembleForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 static void
@@ -3104,8 +3176,8 @@ DisassembleNewForeachInfo(
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
-	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "jumpOffset",
+	    Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3121,7 +3193,7 @@ DisassembleNewForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 /*
@@ -3211,7 +3283,7 @@ TclCompileFormatCmd(
      * literal. Job done.
      */
 
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     PushLiteral(envPtr, bytes, len);
     Tcl_DecrRefCount(tmpObj);
     return TCL_OK;
@@ -3282,7 +3354,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		const char *b = Tcl_GetStringFromObj(tmpObj, &len);
+		const char *b = TclGetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3316,7 +3388,7 @@ TclCompileFormatCmd(
      */
 
     Tcl_AppendToObj(tmpObj, start, bytes - start);
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    bytes = TclGetStringFromObj(tmpObj, &len);
     if (len > 0) {
 	PushLiteral(envPtr, bytes, len);
 	i++;
@@ -3374,8 +3446,10 @@ TclLocalScalar(
     size_t numBytes,
     CompileEnv *envPtr)
 {
-    Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-                                 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+    Tcl_Token token[2] = {
+	{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+        {TCL_TOKEN_TEXT, NULL, 0, 0}
+    };
 
     token[1].start = bytes;
     token[1].size = numBytes;
@@ -3492,8 +3566,8 @@ TclPushVarName(
 	 */
 
 	simpleVarName = 0;
-	for (p = varTokenPtr[1].start,
-	     last = p + varTokenPtr[1].size;  p < last;  p++) {
+	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
+		p < last;  p++) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
@@ -3562,7 +3636,7 @@ TclPushVarName(
 	int hasNsQualifiers = 0;
 
 	for (p = name, last = p + nameLen-1;  p < last;  p++) {
-	    if ((*p == ':') && (*(p+1) == ':')) {
+	    if ((p[0] == ':') && (p[1] == ':')) {
 		hasNsQualifiers = 1;
 		break;
 	    }

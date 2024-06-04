@@ -32,7 +32,6 @@ int
 int
 \fBTcl_GetChannelNamesEx\fR(\fIinterp, pattern\fR)
 .sp
-void
 \fBTcl_RegisterChannel\fR(\fIinterp, channel\fR)
 .sp
 int
@@ -106,7 +105,7 @@ int
 .sp
 int
 \fBTcl_SetChannelOption\fR(\fIinterp, channel, optionName, newValue\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_DString *channelName in/out
 .AP Tcl_Interp *interp in
@@ -391,7 +390,7 @@ If the channel is being closed synchronously and an error occurs during
 closing of the channel and \fIinterp\fR is not NULL, an error message is
 left in the interpreter's result.
 .PP
-Note: it is not safe to call \fBTcl_Close\fR on a channel that has been
+Note that it is not safe to call \fBTcl_Close\fR on a channel that has been
 registered using \fBTcl_RegisterChannel\fR; see the documentation for
 \fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
 been given as the \fBchan\fR argument in a call to

@@ -81,11 +81,11 @@ static TimeInfo timeInfo = {
     (LARGE_INTEGER) (long long) 0,
     (LARGE_INTEGER) (long long) 0,
 #else
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
-    {0, 0},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
+    {{0, 0}},
 #endif
     { 0 },
     { 0 },
@@ -102,7 +102,6 @@ static struct {
 				 * clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
-
 
 /*
  * Declarations for functions defined later in this file.

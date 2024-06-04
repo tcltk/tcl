@@ -87,8 +87,9 @@ The \fBinterp\fR command is used to create, delete, and manipulate
 child interpreters, and to share or transfer
 channels between interpreters.  It can have any of several forms, depending
 on the \fIsubcommand\fR argument:
+.\" METHOD: alias
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR
+\fBinterp alias\fI srcPath srcToken\fR
 .
 Returns a Tcl list whose elements are the \fItargetCmd\fR and
 \fIarg\fRs associated with the alias represented by \fIsrcToken\fR
@@ -96,7 +97,7 @@ Returns a Tcl list whose elements are the \fItargetCmd\fR and
 created; it is possible that the name of the source command in the
 child is different from \fIsrcToken\fR).
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR \fB{}\fR
+\fBinterp alias\fI srcPath srcToken\fR \fB{}\fR
 .
 Deletes the alias for \fIsrcToken\fR in the child interpreter identified by
 \fIsrcPath\fR.
@@ -104,7 +105,7 @@ Deletes the alias for \fIsrcToken\fR in the child interpreter identified by
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcCmd\fR \fItargetPath\fR \fItargetCmd \fR?\fIarg arg ...\fR?
+\fBinterp alias\fI srcPath srcCmd targetPath targetCmd \fR?\fIarg arg ...\fR?
 .
 This command creates an alias between one child and another (see the
 \fBalias\fR child command below for creating aliases between a child
@@ -135,14 +136,16 @@ more details.
 The command returns a token that uniquely identifies the command created
 \fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
 does not have to be equal to \fIsrcCmd\fR.
+.\" METHOD: aliases
 .TP
-\fBinterp\fR \fBaliases \fR?\fIpath\fR?
+\fBinterp aliases \fR?\fIpath\fR?
 .
 This command returns a Tcl list of the tokens of all the source commands for
 aliases defined in the interpreter identified by \fIpath\fR. The tokens
 correspond to the values returned when
 the aliases were created (which may not be the same
 as the current names of the commands).
+.\" METHOD: bgerror
 .TP
 \fBinterp bgerror \fIpath\fR ?\fIcmdPrefix\fR?
 .
@@ -152,8 +155,10 @@ absent, the current background exception handler is returned, and if it is
 present, it is a list of words (of minimum length one) that describes
 what to set the interpreter's background exception handler to. See the
 \fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
+.\" METHOD: cancel
 .TP
-\fBinterp\fR \fBcancel \fR?\fB\-unwind\fR? ?\fB\-\|\-\fR? ?\fIpath\fR? ?\fIresult\fR?
+\fBinterp cancel \fR?\fB\-unwind\fR? ?\fB\-\|\-\fR? ?\fIpath\fR? ?\fIresult\fR?
+.
 Cancels the script being evaluated in the interpreter identified by
 \fIpath\fR. Without the \fB\-unwind\fR switch the evaluation stack for
 the interpreter is unwound until an enclosing catch command is found or
@@ -166,8 +171,16 @@ switches; it may be needed if \fIpath\fR is an unusual value such
 as \fB\-safe\fR. If \fIresult\fR is present, it will be used as the
 error message string; otherwise, a default error message string will be
 used.
+.\" METHOD: children
 .TP
-\fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
+\fBinterp children\fR ?\fIpath\fR?
+.
+Returns a Tcl list of the names of all the child interpreters associated
+with the interpreter identified by \fIpath\fR. If \fIpath\fR is omitted,
+the invoking interpreter is used.
+.\" METHOD: create
+.TP
+\fBinterp create \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 .
 Creates a child interpreter identified by \fIpath\fR and a new command,
 called a \fIchild command\fR. The name of the child command is the last
@@ -191,8 +204,9 @@ the children for its parent;  an error occurs if a child interpreter by the
 given name already exists in this parent.
 The initial recursion limit of the child interpreter is set to the
 current recursion limit of its parent interpreter.
+.\" METHOD: debug
 .TP
-\fBinterp\fR \fBdebug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
+\fBinterp debug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
 .
 Controls whether frame-level stack information is captured in the
 child interpreter identified by \fIpath\fR.  If no arguments are
@@ -233,16 +247,18 @@ Note that once it is on, this flag cannot be switched back off: such
 attempts are silently ignored. This is needed to maintain the
 consistency of the underlying interpreter's state.
 .RE
+.\" METHOD: delete
 .TP
-\fBinterp\fR \fBdelete \fR?\fIpath ...\fR?
+\fBinterp delete \fR?\fIpath ...\fR?
 .
 Deletes zero or more interpreters given by the optional \fIpath\fR
 arguments, and for each interpreter, it also deletes its children. The
 command also deletes the child command for each interpreter deleted.
 For each \fIpath\fR argument, if no interpreter by that name
 exists, the command raises an error.
+.\" METHOD: eval
 .TP
-\fBinterp\fR \fBeval\fR \fIpath arg \fR?\fIarg ...\fR?
+\fBinterp eval\fI path arg \fR?\fIarg ...\fR?
 .
 This command concatenates all of the \fIarg\fR arguments in the same
 fashion as the \fBconcat\fR command, then evaluates the resulting string as
@@ -250,19 +266,24 @@ a Tcl script in the child interpreter identified by \fIpath\fR. The result
 of this evaluation (including all \fBreturn\fR options,
 such as \fB\-errorinfo\fR and \fB\-errorcode\fR information, if an
 error occurs) is returned to the invoking interpreter.
+.RS
+.PP
 Note that the script will be executed in the current context stack frame of the
 \fIpath\fR interpreter; this is so that the implementations (in a parent
 interpreter) of aliases in a child interpreter can execute scripts in
 the child that find out information about the child's current state
 and stack frame.
+.RE
+.\" METHOD: exists
 .TP
 \fBinterp exists \fIpath\fR
 .
 Returns \fB1\fR if a child interpreter by the specified \fIpath\fR
 exists in this parent, \fB0\fR otherwise. If \fIpath\fR is omitted, the
 invoking interpreter is used.
+.\" METHOD: expose
 .TP
-\fBinterp expose \fIpath\fR \fIhiddenName\fR ?\fIexposedCmdName\fR?
+\fBinterp expose \fIpath hiddenName\fR ?\fIexposedCmdName\fR?
 .
 Makes the hidden command \fIhiddenName\fR exposed, eventually bringing
 it back under a new \fIexposedCmdName\fR name (this name is currently
@@ -272,8 +293,9 @@ denoted by \fIpath\fR.
 If an exposed command with the targeted name already exists, this command
 fails.
 Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
+.\" METHOD: hide
 .TP
-\fBinterp\fR \fBhide\fR \fIpath\fR \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
+\fBinterp hide\fI path exposedCmdName\fR ?\fIhiddenCmdName\fR?
 .
 Makes the exposed command \fIexposedCmdName\fR hidden, renaming
 it to the hidden command \fIhiddenCmdName\fR, or keeping the same name if
@@ -288,13 +310,15 @@ namespace even if the current namespace is not the global one. This
 prevents children from fooling a parent interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
 Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
+.\" METHOD: hidden
 .TP
-\fBinterp\fR \fBhidden\fR \fIpath\fR
+\fBinterp hidden\fI path\fR
 .
 Returns a list of the names of all hidden commands in the interpreter
 identified by \fIpath\fR.
+.\" METHOD: invokehidden
 .TP
-\fBinterp\fR \fBinvokehidden\fR \fIpath\fR ?\fI\-option ...\fR? \fIhiddenCmdName\fR ?\fIarg ...\fR?
+\fBinterp invokehidden\fI path\fR ?\fI\-option ...\fR? \fIhiddenCmdName\fR ?\fIarg ...\fR?
 .
 Invokes the hidden command \fIhiddenCmdName\fR with the arguments supplied
 in the interpreter denoted by \fIpath\fR. No substitutions or evaluation
@@ -312,16 +336,22 @@ The \fB\-\|\-\fR flag allows the \fIhiddenCmdName\fR argument to start with a
 character, and is otherwise unnecessary.
 If both the \fB\-namespace\fR and \fB\-global\fR flags are present, the
 \fB\-namespace\fR flag is ignored.
+.RS
+.PP
 Note that the hidden command will be executed (by default) in the
 current context stack frame of the \fIpath\fR interpreter.
+.PP
 Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
+.RE
+.\" METHOD: issafe
 .TP
 \fBinterp issafe\fR ?\fIpath\fR?
 .
 Returns \fB1\fR if the interpreter identified by the specified \fIpath\fR
 is safe, \fB0\fR otherwise.
+.\" METHOD: limit
 .TP
-\fBinterp\fR \fBlimit\fR \fIpath\fR \fIlimitType\fR ?\fI\-option\fR? ?\fIvalue\fR \fI...\fR?
+\fBinterp limit\fI path limitType\fR ?\fI\-option\fR? ?\fIvalue ...\fR?
 .
 Sets up, manipulates and queries the configuration of the resource
 limit \fIlimitType\fR for the interpreter denoted by \fIpath\fR.  If
@@ -330,16 +360,18 @@ limit.  If \fI\-option\fR is the sole argument, return the value of that
 option.  Otherwise, a list of \fI\-option\fR/\fIvalue\fR argument pairs
 must supplied. See \fBRESOURCE LIMITS\fR below for a more detailed
 explanation of what limits and options are supported.
+.\" METHOD: marktrusted
 .TP
-\fBinterp marktrusted\fR \fIpath\fR
+\fBinterp marktrusted\fI path\fR
 .
 Marks the interpreter identified by \fIpath\fR as trusted. Does
 not expose the hidden commands. This command can only be invoked from a
 trusted interpreter.
 The command has no effect if the interpreter identified by \fIpath\fR is
 already trusted.
+.\" METHOD: recursionlimit
 .TP
-\fBinterp\fR \fBrecursionlimit\fR \fIpath\fR ?\fInewlimit\fR?
+\fBinterp recursionlimit\fI path\fR ?\fInewlimit\fR?
 .
 Returns the maximum allowable nesting depth for the interpreter
 specified by \fIpath\fR.  If \fInewlimit\fR is specified,
@@ -358,8 +390,9 @@ may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
 .RE
+.\" METHOD: share
 .TP
-\fBinterp\fR \fBshare\fR \fIsrcPath channelId destPath\fR
+\fBinterp share\fI srcPath channelId destPath\fR
 .
 Causes the IO channel identified by \fIchannelId\fR to become shared
 between the interpreter identified by \fIsrcPath\fR and the interpreter
@@ -368,14 +401,9 @@ on the IO channel.
 Both interpreters must close it to close the underlying IO channel; IO
 channels accessible in an interpreter are automatically closed when an
 interpreter is destroyed.
+.\" METHOD: target
 .TP
-\fBinterp\fR \fBchildren\fR ?\fIpath\fR?
-.
-Returns a Tcl list of the names of all the child interpreters associated
-with the interpreter identified by \fIpath\fR. If \fIpath\fR is omitted,
-the invoking interpreter is used.
-.TP
-\fBinterp\fR \fBtarget\fR \fIpath alias\fR
+\fBinterp target\fI path alias\fR
 .
 Returns a Tcl list describing the target interpreter for an alias. The
 alias is specified with an interpreter path and source command name, just
@@ -385,8 +413,9 @@ If the target interpreter for the alias is the invoking interpreter then an
 empty list is returned. If the target interpreter for the alias is not the
 invoking interpreter or one of its descendants then an error is generated.
 The target command does not have to be defined at the time of this invocation.
+.\" METHOD: transfer
 .TP
-\fBinterp\fR \fBtransfer\fR \fIsrcPath channelId destPath\fR
+\fBinterp transfer\fI srcPath channelId destPath\fR
 .
 Causes the IO channel identified by \fIchannelId\fR to become available in
 the interpreter identified by \fIdestPath\fR and unavailable in the
@@ -406,6 +435,7 @@ general form:
 \fIChild\fR is the name of the interpreter, and \fIcommand\fR
 and the \fIarg\fRs determine the exact behavior of the command.
 The valid forms of this command are:
+.\" METHOD: aliases
 .TP
 \fIchild \fBaliases\fR
 .
@@ -413,6 +443,7 @@ Returns a Tcl list whose elements are the tokens of all the
 aliases in \fIchild\fR.  The tokens correspond to the values returned when
 the aliases were created (which may not be the same
 as the current names of the commands).
+.\" METHOD: alias
 .TP
 \fIchild \fBalias \fIsrcToken\fR
 .
@@ -440,6 +471,7 @@ See \fBALIAS INVOCATION\fR below for details.
 The command returns a token that uniquely identifies the command created
 \fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
 does not have to be equal to \fIsrcCmd\fR.
+.\" METHOD: bgerror
 .TP
 \fIchild \fBbgerror\fR ?\fIcmdPrefix\fR?
 .
@@ -449,6 +481,7 @@ absent, the current background exception handler is returned, and if it is
 present, it is a list of words (of minimum length one) that describes
 what to set the interpreter's background exception handler to. See the
 \fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
+.\" METHOD: eval
 .TP
 \fIchild \fBeval \fIarg \fR?\fIarg ..\fR?
 .
@@ -458,11 +491,15 @@ the resulting string as a Tcl script in \fIchild\fR.
 The result of this evaluation (including all \fBreturn\fR options,
 such as \fB\-errorinfo\fR and \fB\-errorcode\fR information, if an
 error occurs) is returned to the invoking interpreter.
+.RS
+.PP
 Note that the script will be executed in the current context stack frame
 of \fIchild\fR; this is so that the implementations (in a parent
 interpreter) of aliases in a child interpreter can execute scripts in
 the child that find out information about the child's current state
 and stack frame.
+.RE
+.\" METHOD: expose
 .TP
 \fIchild \fBexpose \fIhiddenName \fR?\fIexposedCmdName\fR?
 .
@@ -473,6 +510,7 @@ in \fIchild\fR.
 If an exposed command with the targeted name already exists, this command
 fails.
 For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
+.\" METHOD: hide
 .TP
 \fIchild \fBhide \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
 .
@@ -488,10 +526,12 @@ namespace even if the current namespace is not the global one. This
 prevents children from fooling a parent interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
 For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
+.\" METHOD: hidden
 .TP
 \fIchild \fBhidden\fR
 .
 Returns a list of the names of all hidden commands in \fIchild\fR.
+.\" METHOD: invokehidden
 .TP
 \fIchild \fBinvokehidden\fR ?\fI\-option ...\fR? \fIhiddenName \fR?\fIarg ..\fR?
 .
@@ -510,16 +550,21 @@ The \fB\-\|\-\fR flag allows the \fIhiddenCmdName\fR argument to start with a
 character, and is otherwise unnecessary.
 If both the \fB\-namespace\fR and \fB\-global\fR flags are given, the
 \fB\-namespace\fR flag is ignored.
+.RS
+.PP
 Note that the hidden command will be executed (by default) in the
 current context stack frame of \fIchild\fR.
-For more details on hidden commands,
-see \fBHIDDEN COMMANDS\fR, below.
+.PP
+For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
+.RE
+.\" METHOD: issafe
 .TP
 \fIchild \fBissafe\fR
 .
-Returns  \fB1\fR if the child interpreter is safe, \fB0\fR otherwise.
+Returns \fB1\fR if the child interpreter is safe, \fB0\fR otherwise.
+.\" METHOD: limit
 .TP
-\fIchild \fBlimit\fR \fIlimitType\fR ?\fI\-option\fR? ?\fIvalue\fR \fI...\fR?
+\fIchild \fBlimit\fI limitType\fR ?\fI\-option\fR? ?\fIvalue ...\fR?
 .
 Sets up, manipulates and queries the configuration of the resource
 limit \fIlimitType\fR for the child interpreter.  If no \fI\-option\fR
@@ -528,6 +573,7 @@ is specified, return the current configuration of the limit.  If
 Otherwise, a list of \fI\-option\fR/\fIvalue\fR argument pairs must
 supplied. See \fBRESOURCE LIMITS\fR below for a more detailed explanation of
 what limits and options are supported.
+.\" METHOD: marktrusted
 .TP
 \fIchild \fBmarktrusted\fR
 .
@@ -535,8 +581,9 @@ Marks the child interpreter as trusted. Can only be invoked by a
 trusted interpreter. This command does not expose any hidden
 commands in the child interpreter. The command has no effect if the child
 is already trusted.
+.\" METHOD: recursionlimit
 .TP
-\fIchild\fR \fBrecursionlimit\fR ?\fInewlimit\fR?
+\fIchild \fBrecursionlimit\fR ?\fInewlimit\fR?
 .
 Returns the maximum allowable nesting depth for the \fIchild\fR interpreter.
 If \fInewlimit\fR is specified, the recursion limit in \fIchild\fR will be
@@ -789,6 +836,7 @@ catch and handle.
 Every limit has a number of options associated with it, some of which are
 common across all kinds of limits, and others of which are particular to the
 kind of limit.
+.\" OPTION: -command
 .TP
 \fB\-command\fR
 .
@@ -799,9 +847,13 @@ The callback may modify the limit on the interpreter if it wishes the limited
 interpreter to continue executing. If the callback generates an exception, it
 is reported through the background exception mechanism (see
 \fBBACKGROUND EXCEPTION HANDLING\fR).
+.RS
+.PP
 Note that the callbacks defined by one interpreter are
 completely isolated from the callbacks defined by another, and that the order
 in which those callbacks are called is undefined.
+.RE
+.\" OPTION: -granularity
 .TP
 \fB\-granularity\fR
 .
@@ -810,6 +862,7 @@ points when the Tcl interpreter is in a consistent state where limit checking
 is possible) that the limit is actually checked. This allows the tuning of how
 frequently a limit is checked, and hence how often the limit-checking overhead
 (which may be substantial in the case of time limits) is incurred.
+.\" OPTION: -milliseconds
 .TP
 \fB\-milliseconds\fR
 .
@@ -817,6 +870,7 @@ This option specifies the number of milliseconds after the moment defined in
 the \fB\-seconds\fR option that the time limit will fire. It should only ever
 be specified in conjunction with the \fB\-seconds\fR option (whether it was
 set previously or is being set this invocation.)
+.\" OPTION: -seconds
 .TP
 \fB\-seconds\fR
 .
@@ -826,6 +880,7 @@ limit will be triggered at the start of the second unless specified at a
 sub-second level using the \fB\-milliseconds\fR option. This option may be the
 empty string, which indicates that a time limit is not set for the
 interpreter.
+.\" OPTION: -value
 .TP
 \fB\-value\fR
 .
@@ -845,14 +900,15 @@ necessary.
 .PP
 When an exception happens in a situation where it cannot be reported directly up
 the stack (e.g. when processing events in an \fBupdate\fR or \fBvwait\fR call)
-the exception is instead reported through the background exception handling mechanism.
-Every interpreter has a background exception handler registered; the default exception
+the exception is instead reported through the background exception handling
+mechanism. Every interpreter has a background exception handler registered;
+the default exception
 handler arranges for the \fBbgerror\fR command in the interpreter's global
 namespace to be called, but other exception handlers may be installed and process
 background exceptions in substantially different ways.
 .PP
-A background exception handler consists of a non-empty list of words to which will
-be appended two further words at invocation time. The first word will be the
+A background exception handler consists of a non-empty list of words to which
+will be appended two further words at invocation time. The first word will be the
 interpreter result at time of the exception, typically an error message,
 and the second will be the dictionary of return options at the time of
 the exception.  These are the same values that \fBcatch\fR can capture
@@ -900,7 +956,8 @@ set i [\fBinterp create\fR]
 }
 .CE
 .SH "SEE ALSO"
-bgerror(n), load(n), safe(n), Tcl_CreateChild(3), Tcl_Eval(3), Tcl_BackgroundException(3)
+bgerror(n), load(n), safe(n),
+Tcl_CreateChild(3), Tcl_Eval(3), Tcl_BackgroundException(3)
 .SH KEYWORDS
 alias, parent interpreter, safe interpreter, child interpreter
 '\"Local Variables:

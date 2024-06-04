@@ -40,12 +40,11 @@ int
 const char *
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .sp
-void
 \fBTcl_GetCommandFullName\fR(\fIinterp, token, objPtr\fR)
 .sp
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
@@ -295,8 +294,7 @@ Note that \fBTcl_SetCommandInfo\fR and
 \fBTcl_SetCommandInfoFromToken\fR both allow the clientData for a
 command's deletion procedure to be given a different value than the
 clientData for its command procedure.
-.PP
-Note that neither \fBTcl_SetCommandInfo\fR nor
+Note also that neither \fBTcl_SetCommandInfo\fR nor
 \fBTcl_SetCommandInfoFromToken\fR will change a command's namespace.
 Use \fBTcl_Eval\fR to call the \fBrename\fR command to do that.
 .PP

@@ -45,21 +45,20 @@ static const Tcl_ObjType instNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define InstNameSetInternalRep(objPtr, inst)				\
-    do {							\
-	Tcl_ObjInternalRep ir;					\
-	ir.wideValue = (inst);					\
+#define InstNameSetInternalRep(objPtr, inst) \
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.wideValue = (inst);						\
 	Tcl_StoreInternalRep((objPtr), &instNameType, &ir);		\
     } while (0)
 
-#define InstNameGetInternalRep(objPtr, inst)				\
-    do {							\
+#define InstNameGetInternalRep(objPtr, inst) \
+    do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &instNameType);	\
-	assert(irPtr != NULL);					\
-	(inst) = irPtr->wideValue;			\
+	irPtr = TclFetchInternalRep((objPtr), &instNameType);		\
+	assert(irPtr != NULL);						\
+	(inst) = irPtr->wideValue;					\
     } while (0)
-
 
 /*
  *----------------------------------------------------------------------
@@ -115,7 +114,7 @@ GetLocationInformation(
 /*
  *----------------------------------------------------------------------
  *
- * TclPrintByteCodeObj --
+ * TclDebugPrintByteCodeObj --
  *
  *	This procedure prints ("disassembles") the instructions of a bytecode
  *	object to stdout.
@@ -130,14 +129,16 @@ GetLocationInformation(
  */
 
 void
-TclPrintByteCodeObj(
-    TCL_UNUSED(Tcl_Interp *),	/* Stuck with this in internal stubs */
+TclDebugPrintByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
+    if (tclTraceCompile >= 2) {
+	Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
 
-    fprintf(stdout, "\n%s", TclGetString(bufPtr));
-    Tcl_DecrRefCount(bufPtr);
+	fprintf(stdout, "\n%s", TclGetString(bufPtr));
+	Tcl_DecrRefCount(bufPtr);
+	fflush(stdout);
+    }
 }
 
 /*
@@ -199,7 +200,7 @@ TclPrintObject(
     char *bytes;
     Tcl_Size length;
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
@@ -279,7 +280,7 @@ DisassembleByteCodeObj(
      */
 
     Tcl_AppendPrintfToObj(bufferObj,
-	    "ByteCode %p, refCt %" TCL_SIZE_MODIFIER "u, epoch %" TCL_SIZE_MODIFIER "u, interp %p (epoch %" TCL_SIZE_MODIFIER "u)\n",
+	    "ByteCode %p, refCt %" TCL_SIZE_MODIFIER "d, epoch %" TCL_SIZE_MODIFIER "d, interp %p (epoch %" TCL_SIZE_MODIFIER "d)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
@@ -290,7 +291,7 @@ DisassembleByteCodeObj(
 		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
-	    "\n  Cmds %d, src %" TCL_SIZE_MODIFIER "u, inst %" TCL_SIZE_MODIFIER "u, litObjs %" TCL_SIZE_MODIFIER "u, aux %" TCL_SIZE_MODIFIER "u, stkDepth %" TCL_SIZE_MODIFIER "u, code/src %.2f\n",
+	    "\n  Cmds %d, src %" TCL_SIZE_MODIFIER "d, inst %" TCL_SIZE_MODIFIER "d, litObjs %" TCL_SIZE_MODIFIER "d, aux %" TCL_SIZE_MODIFIER "d, stkDepth %" TCL_SIZE_MODIFIER "d, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
@@ -302,8 +303,8 @@ DisassembleByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     Tcl_AppendPrintfToObj(bufferObj,
-	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_SIZE_MODIFIER "u+litObj %"
-	    TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_SIZE_MODIFIER "u\n",
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_SIZE_MODIFIER "d+litObj %"
+	    TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_SIZE_MODIFIER "d\n",
 	    codePtr->structureSize,
 	    offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
@@ -324,7 +325,7 @@ DisassembleByteCodeObj(
 	Tcl_Size numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "u, args %" TCL_SIZE_MODIFIER "u, compiled locals %" TCL_SIZE_MODIFIER "u\n",
+		"  Proc %p, refCt %" TCL_SIZE_MODIFIER "d, args %" TCL_SIZE_MODIFIER "d, compiled locals %" TCL_SIZE_MODIFIER "d\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -332,7 +333,7 @@ DisassembleByteCodeObj(
 
 	    for (i = 0;  i < numCompiledLocals;  i++) {
 		Tcl_AppendPrintfToObj(bufferObj,
-			"      slot %" TCL_SIZE_MODIFIER "u%s%s%s%s%s%s", i,
+			"      slot %" TCL_SIZE_MODIFIER "d%s%s%s%s%s%s", i,
 			(localPtr->flags & (VAR_ARRAY|VAR_LINK)) ? "" : ", scalar",
 			(localPtr->flags & VAR_ARRAY) ? ", array" : "",
 			(localPtr->flags & VAR_LINK) ? ", link" : "",
@@ -355,24 +356,24 @@ DisassembleByteCodeObj(
      */
 
     if ((int)codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_SIZE_MODIFIER "u, depth %" TCL_SIZE_MODIFIER "u:\n",
+	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_SIZE_MODIFIER "d, depth %" TCL_SIZE_MODIFIER "d:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
 	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
-		    "      %" TCL_SIZE_MODIFIER "u: level %" TCL_SIZE_MODIFIER "u, %s, pc %" TCL_SIZE_MODIFIER "u-%" TCL_SIZE_MODIFIER "u, ",
+		    "      %" TCL_SIZE_MODIFIER "d: level %" TCL_SIZE_MODIFIER "d, %s, pc %" TCL_SIZE_MODIFIER "d-%" TCL_SIZE_MODIFIER "d, ",
 		    i, rangePtr->nestingLevel,
 		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
 		    rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
 	    switch (rangePtr->type) {
 	    case LOOP_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "continue %" TCL_SIZE_MODIFIER "u, break %" TCL_SIZE_MODIFIER "u\n",
+		Tcl_AppendPrintfToObj(bufferObj, "continue %" TCL_SIZE_MODIFIER "d, break %" TCL_SIZE_MODIFIER "d\n",
 			rangePtr->continueOffset, rangePtr->breakOffset);
 		break;
 	    case CATCH_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "catch %" TCL_SIZE_MODIFIER "u\n",
+		Tcl_AppendPrintfToObj(bufferObj, "catch %" TCL_SIZE_MODIFIER "d\n",
 			rangePtr->catchOffset);
 		break;
 	    default:
@@ -446,7 +447,7 @@ DisassembleByteCodeObj(
 	    srcLengthNext++;
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "%s%4" TCL_SIZE_MODIFIER "u: pc %d-%d, src %d-%d",
+	Tcl_AppendPrintfToObj(bufferObj, "%s%4" TCL_SIZE_MODIFIER "d: pc %d-%d, src %d-%d",
 		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
@@ -505,7 +506,7 @@ DisassembleByteCodeObj(
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "  Command %" TCL_SIZE_MODIFIER "u: ", i+1);
+	Tcl_AppendPrintfToObj(bufferObj, "  Command %" TCL_SIZE_MODIFIER "d: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
 	Tcl_AppendToObj(bufferObj, "\n", -1);
@@ -626,7 +627,7 @@ FormatInstruction(
 	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
-		    Tcl_Panic("FormatInstruction: bad local var index %u (%" TCL_SIZE_MODIFIER "u locals)",
+		    Tcl_Panic("FormatInstruction: bad local var index %u (%" TCL_SIZE_MODIFIER "d locals)",
 			    opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
@@ -656,7 +657,7 @@ FormatInstruction(
 	Tcl_Size length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
-	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
+	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
 	Tcl_AppendPrintfToObj(bufferObj, "\t# %s", suffixBuffer);
@@ -704,8 +705,8 @@ TclGetInnerContext(
     case INST_TRY_CVT_TO_NUMERIC:
     case INST_EXPAND_STKTOP:
     case INST_EXPR_STK:
-        objc = 1;
-        break;
+	objc = 1;
+	break;
 
     case INST_LIST_IN:
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
@@ -732,22 +733,22 @@ TclGetInnerContext(
     case INST_SUB:
     case INST_DIV:
     case INST_MULT:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_RETURN_STK:
-        /* early pop. TODO: dig out opt dict too :/ */
-        objc = 1;
-        break;
+	/* early pop. TODO: dig out opt dict too :/ */
+	objc = 1;
+	break;
 
     case INST_SYNTAX:
     case INST_RETURN_IMM:
-        objc = 2;
-        break;
+	objc = 2;
+	break;
 
     case INST_INVOKE_STK4:
 	objc = TclGetUInt4AtPtr(pc+1);
-        break;
+	break;
 
     case INST_INVOKE_STK1:
 	objc = TclGetUInt1AtPtr(pc+1);
@@ -756,37 +757,37 @@ TclGetInnerContext(
 
     result = iPtr->innerContext;
     if (Tcl_IsShared(result)) {
-        Tcl_DecrRefCount(result);
-        iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
-        Tcl_IncrRefCount(result);
+	Tcl_DecrRefCount(result);
+	iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
+	Tcl_IncrRefCount(result);
     } else {
-        Tcl_Size len;
+	Tcl_Size len;
 
-        /*
-         * Reset while keeping the list internalrep as much as possible.
-         */
+	/*
+	 * Reset while keeping the list internalrep as much as possible.
+	 */
 
-	TclListObjLengthM(interp, result, &len);
-        Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
+	TclListObjLength(interp, result, &len);
+	Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
 
     for (; objc>0 ; objc--) {
-        Tcl_Obj *objPtr;
+	Tcl_Obj *objPtr;
 
-        objPtr = tosPtr[1 - objc];
-        if (!objPtr) {
-            Tcl_Panic("InnerContext: bad tos -- appending null object");
-        }
-        if ((objPtr->refCount<=0)
+	objPtr = tosPtr[1 - objc];
+	if (!objPtr) {
+	    Tcl_Panic("InnerContext: bad tos -- appending null object");
+	}
+	if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-                || (objPtr->refCount==0x61616161)
+		|| (objPtr->refCount == 0x61616161)
 #endif
-        ) {
-            Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
-                    objPtr);
-        }
-        Tcl_ListObjAppendElement(NULL, result, objPtr);
+	) {
+	    Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
+		    objPtr);
+	}
+	Tcl_ListObjAppendElement(NULL, result, objPtr);
     }
 
     return result;
@@ -837,7 +838,7 @@ UpdateStringOfInstName(
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
+	snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
@@ -876,7 +877,7 @@ PrintSourceToObj(
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
 	int ucs4;
 
-	len = Tcl_UtfToUniChar(p, &ucs4);
+	len = TclUtfToUniChar(p, &ucs4);
 	switch (ucs4) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);
@@ -1122,7 +1123,7 @@ DisassembleByteCodeAsDicts(
 	    Tcl_Obj *desc;
 
 	    TclNewObj(desc);
-	    Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1), auxDesc);
+	    TclDictPut(NULL, desc, "name", auxDesc);
 	    auxDesc = desc;
 	    auxData->type->disassembleProc(auxData->clientData, auxDesc,
 		    codePtr, 0);
@@ -1147,14 +1148,14 @@ DisassembleByteCodeAsDicts(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %" TCL_SIZE_MODIFIER "u from %" TCL_SIZE_MODIFIER "u to %" TCL_SIZE_MODIFIER "u break %" TCL_SIZE_MODIFIER "u continue %" TCL_SIZE_MODIFIER "u",
+		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d to %" TCL_SIZE_MODIFIER "d break %" TCL_SIZE_MODIFIER "d continue %" TCL_SIZE_MODIFIER "d",
 		    "loop", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->breakOffset, rangePtr->continueOffset));
 	    break;
 	case CATCH_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %" TCL_SIZE_MODIFIER "u from %" TCL_SIZE_MODIFIER "u to %" TCL_SIZE_MODIFIER "u catch %" TCL_SIZE_MODIFIER "u",
+		    "type %s level %" TCL_SIZE_MODIFIER "d from %" TCL_SIZE_MODIFIER "d to %" TCL_SIZE_MODIFIER "d catch %" TCL_SIZE_MODIFIER "d",
 		    "catch", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->catchOffset));
@@ -1189,23 +1190,20 @@ DisassembleByteCodeAsDicts(
 	sourceOffset += Decode(srcOffPtr);
 	sourceLength = Decode(srcLenPtr);
 	TclNewObj(cmd);
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codefrom", -1),
-		Tcl_NewWideIntObj(codeOffset));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", -1),
-		Tcl_NewWideIntObj(codeOffset + codeLength - 1));
+	TclDictPut(NULL, cmd, "codefrom", Tcl_NewWideIntObj(codeOffset));
+	TclDictPut(NULL, cmd, "codeto", Tcl_NewWideIntObj(
+		codeOffset + codeLength - 1));
 
 	/*
 	 * Convert byte offsets to character offsets; important if multibyte
 	 * characters are present in the source!
 	 */
 
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
-			sourceOffset)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
-			sourceOffset + sourceLength - 1)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
+	TclDictPut(NULL, cmd, "scriptfrom", Tcl_NewWideIntObj(
+		Tcl_NumUtfChars(codePtr->source, sourceOffset)));
+	TclDictPut(NULL, cmd, "scriptto", Tcl_NewWideIntObj(
+		Tcl_NumUtfChars(codePtr->source, sourceOffset + sourceLength - 1)));
+	TclDictPut(NULL, cmd, "script",
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
 	Tcl_ListObjAppendElement(NULL, commands, cmd);
     }
@@ -1224,32 +1222,26 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(description);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("literals", -1),
-	    literals);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("variables", -1),
-	    variables);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exception", -1), exn);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", -1),
-	    instructions);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", -1), aux);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
-	    commands);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
+    TclDictPut(NULL, description, "literals", literals);
+    TclDictPut(NULL, description, "variables", variables);
+    TclDictPut(NULL, description, "exception", exn);
+    TclDictPut(NULL, description, "instructions", instructions);
+    TclDictPut(NULL, description, "auxiliary", aux);
+    TclDictPut(NULL, description, "commands", commands);
+    TclDictPut(NULL, description, "script",
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
+    TclDictPut(NULL, description, "namespace",
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
+    TclDictPut(NULL, description, "stackdepth",
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
+    TclDictPut(NULL, description, "exceptdepth",
 	    Tcl_NewWideIntObj(codePtr->maxExceptDepth));
     if (line >= 0) {
-	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("initiallinenumber", -1),
+	TclDictPut(NULL, description, "initiallinenumber",
 		Tcl_NewWideIntObj(line));
     }
     if (file) {
-	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("sourcefile", -1), file);
+	TclDictPut(NULL, description, "sourcefile", file);
     }
     return description;
 }
@@ -1345,7 +1337,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" isn't a procedure", TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
-		    TclGetString(objv[2]), (void *)NULL);
+		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1395,7 +1387,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" is not a class", TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (void *)NULL);
+		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1405,7 +1397,7 @@ Tcl_DisassembleObjCmd(
 		    "\"%s\" has no defined constructor",
 		    TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "CONSRUCTOR", (void *)NULL);
+		    "CONSRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
@@ -1413,7 +1405,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of constructor", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (void *)NULL);
+		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1460,7 +1452,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" is not a class", TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (void *)NULL);
+		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1470,7 +1462,7 @@ Tcl_DisassembleObjCmd(
 		    "\"%s\" has no defined destructor",
 		    TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "DESRUCTOR", (void *)NULL);
+		    "DESRUCTOR", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
@@ -1478,7 +1470,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of destructor", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (void *)NULL);
+		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1525,7 +1517,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "\"%s\" is not a class", TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), (void *)NULL);
+		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
@@ -1560,7 +1552,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "unknown method \"%s\"", TclGetString(objv[3])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(objv[3]), (void *)NULL);
+		    TclGetString(objv[3]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
@@ -1568,7 +1560,7 @@ Tcl_DisassembleObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of method", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", (void *)NULL);
+		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
@@ -1605,7 +1597,7 @@ Tcl_DisassembleObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		"BYTECODE", (void *)NULL);
+		"BYTECODE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (clientData) {

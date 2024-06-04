@@ -61,8 +61,6 @@ static Tcl_ObjCmdProc		DictForNRCmd;
 static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
-static Tcl_ObjTypeLengthProc    DictAsListLength;
-/* static Tcl_ObjTypeIndexProc     DictAsListIndex; Needs rewrite */
 
 /*
  * Table of dict subcommand names and implementations.
@@ -131,7 +129,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    size_t epoch; 	/* Epoch counter */
+    size_t epoch; 		/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -149,33 +147,22 @@ const Tcl_ObjType tclDictType = {
     DupDictInternalRep,		/* dupIntRepProc */
     UpdateStringOfDict,		/* updateStringProc */
     SetDictFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
-    DictAsListLength,		/* return "list" length of dict value w/o
-				 * shimmering */
-    NULL,			/* return key or value at "list" index
-				 * location.  (keysare at even indicies,
-				 * values at odd indicies) */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V0
 };
 
 #define DictSetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        Tcl_ObjInternalRep ir;                                               \
+        Tcl_ObjInternalRep ir;						\
         ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
         ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);                   \
+        Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
     } while (0)
 
 #define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        const Tcl_ObjInternalRep *irPtr;                                     \
-        irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
-        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
+        const Tcl_ObjInternalRep *irPtr;				\
+        irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
+        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -190,7 +177,7 @@ const Tcl_ObjType tclDictType = {
 
 static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
-    0,
+    TCL_HASH_KEY_DIRECT_COMPARE,        /* allows compare keys by pointers */
     TclHashObjKey,
     TclCompareObjKeys,
     AllocChainEntry,
@@ -543,11 +530,11 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -561,13 +548,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
@@ -621,7 +608,7 @@ SetDictFromAny(
 	Tcl_Obj **objv;
 
 	/* Cannot fail, we already know the Tcl_ObjType is "list". */
-	TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
+	TclListObjGetElements(NULL, objPtr, &objc, &objv);
 	if (objc & 1) {
 	    goto missingValue;
 	}
@@ -648,7 +635,7 @@ SetDictFromAny(
 	}
     } else {
 	Tcl_Size length;
-	const char *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+	const char *nextElem = TclGetStringFromObj(objPtr, &length);
 	const char *limit = (nextElem + length);
 
 	while (nextElem < limit) {
@@ -731,7 +718,7 @@ SetDictFromAny(
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing value to go with key", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
     }
   errorInFindDictElement:
     DeleteChainTable(dict);
@@ -826,7 +813,7 @@ TclTraceDictPath(
 			    "key \"%s\" not known in dictionary",
 			    TclGetString(keyv[i])));
 		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-			    TclGetString(keyv[i]), (void *)NULL);
+			    TclGetString(keyv[i]), (char *)NULL);
 		}
 		return NULL;
 	    }
@@ -1500,6 +1487,153 @@ Tcl_DbNewDictObj(
 }
 #endif
 
+/***** START OF FUNCTIONS ACTING AS HELPERS *****/
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictGet --
+ *
+ *	Given a key, get its value from the dictionary (or NULL if key is not
+ *	found in dictionary.)
+ *
+ * Results:
+ *	A standard Tcl result. The variable pointed to by valuePtrPtr is
+ *	updated with the value for the key. Note that it is not an error for
+ *	the key to have no mapping in the dictionary.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictGet(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    Tcl_Obj **valuePtrPtr)	/* Where to write the value. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    code = Tcl_DictObjGet(interp, dictPtr, keyPtr, valuePtrPtr);
+    Tcl_DecrRefCount(keyPtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictPut --
+ *
+ *	Add a key,value pair to a dictionary, or update the value for a key if
+ *	that key already has a mapping in the dictionary.
+ *
+ *	If valuePtr is a zero-count object and is not written into the
+ *	dictionary because of an error, it is freed by this routine. The caller
+ *	does NOT need to do reference count management.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictPut(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    Tcl_Obj *valuePtr)		/* The value to write in. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_IncrRefCount(valuePtr);
+    code = Tcl_DictObjPut(interp, dictPtr, keyPtr, valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    Tcl_DecrRefCount(valuePtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictPutString --
+ *
+ *	Add a key,value pair to a dictionary, or update the value for a key if
+ *	that key already has a mapping in the dictionary.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictPutString(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key,		/* The key in a C string. */
+    const char *value)		/* The value in a C string. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    Tcl_Obj *valuePtr = Tcl_NewStringObj(value, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_IncrRefCount(valuePtr);
+    code = Tcl_DictObjPut(interp, dictPtr, keyPtr, valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    Tcl_DecrRefCount(valuePtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictRemove --
+ *
+ *	Remove the key,value pair with the given key from the dictionary; the
+ *	key does not need to be present in the dictionary.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The object pointed to by dictPtr is converted to a dictionary if it is
+ *	not already one, and any string representation that it has is
+ *	invalidated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclDictRemove(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr,
+    const char *key)		/* The key in a C string. */
+{
+    Tcl_Obj *keyPtr = Tcl_NewStringObj(key, -1);
+    int code;
+
+    Tcl_IncrRefCount(keyPtr);
+    code = Tcl_DictObjRemove(interp, dictPtr, keyPtr);
+    Tcl_DecrRefCount(keyPtr);
+    return code;
+}
+
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
 /*
@@ -1638,7 +1772,7 @@ DictGetCmd(
 		"key \"%s\" not known in dictionary",
 		TclGetString(objv[objc-1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		TclGetString(objv[objc-1]), (void *)NULL);
+		TclGetString(objv[objc-1]), (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
@@ -2058,7 +2192,7 @@ DictSizeCmd(
     Tcl_Obj *const *objv)
 {
     int result;
-	Tcl_Size size;
+    Tcl_Size size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2068,6 +2202,60 @@ DictSizeCmd(
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
     }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDictObjSmartRef --
+ *
+ *	This function returns new tcl-object with the smart reference to
+ *	dictionary object.
+ *
+ *	Object returned with this function is a smart reference (pointer),
+ *	so new object of type tclDictType, that directly references given
+ *	dictionary object (with internally increased refCount).
+ *
+ *	The usage of such pointer objects allows to hold more as one
+ *	reference to the same real dictionary object, allows to make a pointer
+ *	to part of another dictionary, allows to change the dictionary without
+ *	regarding of the "shared" state of the dictionary object.
+ *
+ *	Prevents "called with shared object" exception if object is multiple
+ *	referenced.
+ *
+ * Results:
+ *	The newly create object (contains smart reference) is returned.
+ *	The returned object has a ref count of 0.
+ *
+ * Side effects:
+ *	Increases ref count of the referenced dictionary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclDictObjSmartRef(
+    Tcl_Interp *interp,
+    Tcl_Obj    *dictPtr)
+{
+    Tcl_Obj *result;
+    Dict    *dict;
+
+    if (!TclHasInternalRep(dictPtr, &tclDictType)
+	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
+	return NULL;
+    }
+
+    DictGetInternalRep(dictPtr, dict);
+
+    result = Tcl_NewObj();
+    DictSetInternalRep(result, dict);
+    dict->refCount++;
+    result->internalRep.twoPtrValue.ptr2 = NULL;
+    result->typePtr = &tclDictType;
+
     return result;
 }
 
@@ -2509,13 +2697,13 @@ DictForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElementsM(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (char *)NULL);
 	return TCL_ERROR;
     }
     searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
@@ -2528,7 +2716,7 @@ DictForNRCmd(
 	TclStackFree(interp, searchPtr);
 	return TCL_OK;
     }
-    TclListObjGetElementsM(NULL, objv[1], &varc, &varv);
+    TclListObjGetElements(NULL, objv[1], &varc, &varv);
     keyVarObj = varv[0];
     valueVarObj = varv[1];
     scriptObj = objv[3];
@@ -2704,13 +2892,13 @@ DictMapNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElementsM(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (char *)NULL);
 	return TCL_ERROR;
     }
     storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
@@ -2730,7 +2918,7 @@ DictMapNRCmd(
 	return TCL_OK;
     }
     TclNewObj(storagePtr->accumulatorObj);
-    TclListObjGetElementsM(NULL, objv[1], &varc, &varv);
+    TclListObjGetElements(NULL, objv[1], &varc, &varv);
     storagePtr->keyVarObj = varv[0];
     storagePtr->valueVarObj = varv[1];
     storagePtr->scriptObj = objv[3];
@@ -3144,13 +3332,13 @@ DictFilterCmd(
 	 * copying from the "dict for" implementation has occurred!
 	 */
 
-	if (TclListObjGetElementsM(interp, objv[3], &varc, &varv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objv[3], &varc, &varv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "must have exactly two variable names", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];
@@ -3406,7 +3594,7 @@ FinalizeDictUpdate(
      * an instruction to remove the key.
      */
 
-    TclListObjGetElementsM(NULL, argsObj, &objc, &objv);
+    TclListObjGetElements(NULL, argsObj, &objc, &objv);
     for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
@@ -3530,7 +3718,7 @@ FinalizeDictWith(
 
     state = Tcl_SaveInterpState(interp, result);
     if (pathPtr != NULL) {
-	TclListObjGetElementsM(NULL, pathPtr, &pathc, &pathv);
+	TclListObjGetElements(NULL, pathPtr, &pathc, &pathv);
     } else {
 	pathc = 0;
 	pathv = NULL;
@@ -3736,7 +3924,7 @@ TclDictWithFinish(
      * Now process our updates on the leaf dictionary.
      */
 
-    TclListObjGetElementsM(NULL, keysPtr, &keyc, &keyv);
+    TclListObjGetElements(NULL, keysPtr, &keyc, &keyv);
     for (i=0 ; i<keyc ; i++) {
 	valPtr = Tcl_ObjGetVar2(interp, keyv[i], NULL, 0);
 	if (valPtr == NULL) {
@@ -3800,159 +3988,6 @@ TclInitDictCmd(
 {
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * DictAsListLength --
- *
- *   Compute the length of a list as if the dict value were converted to a
- *   list.
- *
- *   Note: the list length may not match the dict size * 2.  This occurs when
- *   there are duplicate keys in the original string representation.
- *
- * Side Effects --
- *
- *   The intent is to have no side effects.
- */
-
-static Tcl_Size
-DictAsListLength(
-    Tcl_Obj *objPtr)
-{
-    Tcl_Size estCount, length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_Obj *elemPtr;
-
-    /*
-     * Allocate enough space to hold a (Tcl_Obj *) for each
-     * (possible) list element.
-     */
-
-    estCount = TclMaxListLength(nextElem, length, &limit);
-    estCount += (estCount == 0); /* Smallest list struct holds 1
-				  * element. */
-    elemPtr = Tcl_NewObj();
-
-    llen = 0;
-
-    while (nextElem < limit) {
-	const char *elemStart;
-	char *check;
-	Tcl_Size elemSize;
-	int literal;
-
-	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (elemStart == limit) {
-	    break;
-	}
-
-	TclInvalidateStringRep(elemPtr);
-	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
-	if (elemSize && check == NULL) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (!literal) {
-	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
-	}
-	llen++;
-    }
-    Tcl_DecrRefCount(elemPtr);
-    return llen;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DictAsListIndex --
- *
- *   Return the key or value at the given "list" index, i.e., as if the string
- *   value where treated as a list. The intent is to support this list
- *   operation w/o causing the Obj value to shimmer into a List.
- *
- * Side Effects --
- *
- *   The intent is to have no side effects.
- *
- */
-#if 0 /* Needs rewrite */
-static int
-DictAsListIndex(
-    Tcl_Interp *interp,
-    struct Tcl_Obj *objPtr,
-    Tcl_Size index,
-    Tcl_Obj** elemObjPtr)
-{
-    Tcl_Size /*estCount,*/ length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_Obj *elemPtr;
-
-    /*
-     * Compute limit of the list string
-     */
-
-    TclMaxListLength(nextElem, length, &limit);
-    elemPtr = Tcl_NewObj();
-
-    llen = 0;
-
-    /*
-     * parse out each element until reaching the "index"th element.
-     * Sure this is slow, but shimmering is slower.
-     */
-    while (nextElem < limit) {
-	const char *elemStart;
-	char *check;
-	Tcl_Size elemSize;
-	int literal;
-
-	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (elemStart == limit) {
-	    break;
-	}
-
-	TclInvalidateStringRep(elemPtr);
-	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
-	if (elemSize && check == NULL) {
-	    Tcl_DecrRefCount(elemPtr);
-	    if (interp) {
-		// Need error message here
-	    }
-	    return TCL_ERROR;
-	}
-	if (!literal) {
-	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
-	}
-	if (llen == index) {
-	    *elemObjPtr = elemPtr;
-	    return TCL_OK;
-	}
-	llen++;
-    }
-
-    /*
-     * Index is beyond end of list - return empty
-     */
-    Tcl_InitStringRep(elemPtr, NULL, 0);
-    *elemObjPtr = elemPtr;
-    return TCL_OK;
-}
-#endif
 
 /*
  * Local Variables:

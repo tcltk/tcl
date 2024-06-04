@@ -46,6 +46,7 @@ Tcl_HashEntry *
 .sp
 char *
 \fBTcl_HashStats\fR(\fItablePtr\fR)
+.fi
 .SH ARGUMENTS
 .AS "const Tcl_HashKeyType" *searchPtr out
 .AP Tcl_HashTable *tablePtr in
@@ -241,7 +242,7 @@ calling \fBTcl_InitCustomHashTable\fR. The \fBTcl_HashKeyType\fR structure is
 defined as follows:
 .PP
 .CS
-typedef struct Tcl_HashKeyType {
+typedef struct {
     int \fIversion\fR;
     int \fIflags\fR;
     Tcl_HashKeyProc *\fIhashKeyProc\fR;
