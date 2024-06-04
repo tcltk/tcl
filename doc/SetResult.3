@@ -24,13 +24,14 @@ Tcl_Obj *
 const char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
-\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fBNULL\fR)
+\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *)NULL\fR)
 .sp
 \fBTcl_ResetResult\fR(\fIinterp\fR)
 .sp
 \fBTcl_TransferResult\fR(\fIsourceInterp, code, targetInterp\fR)
 .sp
 \fBTcl_AppendElement\fR(\fIinterp, element\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_FreeProc sourceInterp out
 .AP Tcl_Interp *interp out
@@ -92,7 +93,7 @@ storage for the \fIinterp\fR's result, allocating a larger result area if
 necessary.  It also manages conversion to and from the \fIresult\fR field of
 the \fIinterp\fR to handle backward-compatibility with old-style extensions.
 Any number of \fIresult\fR arguments may be passed in a single call; the last
-argument in the list must be a NULL pointer.
+argument in the list must be (char *)NULL.
 .PP
 \fBTcl_TransferResult\fR transfers interpreter state from \fIsourceInterp\fR to
 \fItargetInterp\fR, both of which must have been created in the same thread,

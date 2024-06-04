@@ -152,7 +152,11 @@ TclpOpenFile(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, fname, TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, fname, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
@@ -209,7 +213,12 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	    close(fd);
+	    Tcl_DStringFree(&dstring);
+	    return NULL;
+	}
+	native = Tcl_DStringValue(&dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
@@ -452,7 +461,15 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE, 0, &dsArray[i], NULL) != TCL_OK) {
+	    while (i-- > 0) {
+		Tcl_DStringFree(&dsArray[i]);
+	    }
+	    TclStackFree(interp, newArgv);
+	    TclStackFree(interp, dsArray);
+	    goto error;
+	}
+	newArgv[i] = Tcl_DStringValue(&dsArray[i]);
     }
 
 #if defined(HAVE_VFORK) || defined(HAVE_POSIX_SPAWNP)
@@ -507,12 +524,11 @@ TclpCreateProcess(
 	sigdelset(&sigs, SIGKILL);
 	sigdelset(&sigs, SIGSTOP);
 
-	posix_spawnattr_setflags(&attr,
-				 POSIX_SPAWN_SETSIGDEF
+	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF
 #ifdef POSIX_SPAWN_USEVFORK
-				 | POSIX_SPAWN_USEVFORK
+		| POSIX_SPAWN_USEVFORK
 #endif
-				 );
+		);
 	posix_spawnattr_setsigdefault(&attr, &sigs);
 
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
@@ -520,7 +536,7 @@ TclpCreateProcess(
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
-			      newArgv, environ);
+		newArgv, environ);
 	childErrno = errno;
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
@@ -621,7 +637,7 @@ TclpCreateProcess(
     }
 
     TclpCloseFile(errPipeIn);
-    *pidPtr = (Tcl_Pid) INT2PTR(pid);
+    *pidPtr = (Tcl_Pid)INT2PTR(pid);
     return TCL_OK;
 
   error:
@@ -1085,6 +1101,8 @@ PipeClose2Proc(
 	    errChan = Tcl_MakeFileChannel(
 		    INT2PTR(GetFd(pipePtr->errorFile)),
 		    TCL_READABLE);
+	    /* Error channels should not raise encoding errors */
+	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
 	} else {
 	    errChan = NULL;
 	}
@@ -1221,12 +1239,14 @@ PipeOutputProc(
  * so do not pass it to directly to Tcl_CreateFileHandler.
  * Instead, pass a wrapper which is a Tcl_FileProc.
  */
+
 static void
 PipeWatchNotifyChannelWrapper(
     void *clientData,
     int mask)
 {
     Tcl_Channel channel = (Tcl_Channel)clientData;
+
     Tcl_NotifyChannel(channel, mask);
 }
 
@@ -1325,7 +1345,7 @@ Tcl_WaitPid(
     while (1) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
-	    return (Tcl_Pid) INT2PTR(result);
+	    return (Tcl_Pid)INT2PTR(result);
 	}
     }
 }

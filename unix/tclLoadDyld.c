@@ -184,8 +184,12 @@ TclpDlopen(
      */
 
     nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
-    nativeFileName = Tcl_UtfToExternalDString(NULL, TclGetString(pathPtr),
-	    TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, TclGetString(pathPtr),
+	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
+    nativeFileName = Tcl_DStringValue(&ds);
 
 #if TCL_DYLD_USE_DLFCN
     /*
@@ -253,8 +257,12 @@ TclpDlopen(
 			&dyldObjFileImage);
 		if (err == NSObjectFileImageSuccess && dyldObjFileImage) {
 		    int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
-		    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-		    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+		    if (!(flags & 1)) {
+			nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+		    }
+		    if (!(flags & 2)) {
+			nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+		    }
 		    module = NSLinkModule(dyldObjFileImage, nativePath, nsflags);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
@@ -341,7 +349,11 @@ FindSymbol(
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
 	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
@@ -410,7 +422,7 @@ FindSymbol(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\": %s", symbol, errMsg));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		(void *)NULL);
+		(char *)NULL);
     }
     return (void *)proc;
 }
@@ -646,8 +658,12 @@ TclpLoadMemory(
      * Extract the module we want from the image of the object file.
      */
 
-    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    if (!(flags & 1)) {
+	nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+    }
+    if (!(flags & 2)) {
+	nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    }
     module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]", nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {

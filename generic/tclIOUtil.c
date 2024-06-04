@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -34,7 +35,7 @@
  */
 
 typedef struct FilesystemRecord {
-    void *clientData;	/* Client-specific data for the filesystem
+    void *clientData;		/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -51,13 +52,11 @@ typedef struct FilesystemRecord {
 typedef struct {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
-				 * determine whether cwdPathPtr is stale.
-				 */
+				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
-				 * changed.
-				 */
+				 * changed. */
     void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
@@ -104,7 +103,6 @@ static Tcl_FSFileAttrsSetProc	NativeFileAttrsSet;
 
 MODULE_SCOPE const char *const		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
-
 
 /*
  * These these functions are not static either because routines in the native
@@ -241,7 +239,8 @@ typedef struct {
 /* Obsolete */
 int
 Tcl_Stat(
-    const char *path,		/* Pathname of file to stat (in current CP). */
+    const char *path,		/* Pathname of file to stat (in current system
+				 * encoding). */
     struct stat *oldStyleBuf)	/* Filled with results of stat call. */
 {
     int ret;
@@ -328,8 +327,8 @@ Tcl_Stat(
 /* Obsolete */
 int
 Tcl_Access(
-    const char *path,		/* Pathname of file to access (in current CP).
-				*/
+    const char *path,		/* Pathname of file to access (in current
+				 * system encoding). */
     int mode)			/* Permission setting. */
 {
     int ret;
@@ -524,8 +523,8 @@ TclFSCwdPointerEquals(
 	Tcl_Size len1, len2;
 	const char *str1, *str2;
 
-	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
+	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * The values are equal but the objects are different.  Cache the
@@ -668,7 +667,7 @@ FsUpdateCwd(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = Tcl_GetStringFromObj(cwdObj, &len);
+	str = TclGetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -844,7 +843,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    void *clientData,	/* Client-specific data for this filesystem. */
+    void *clientData,		/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -1067,7 +1066,7 @@ Tcl_FSMatchInDirectory(
 	     * resultPtr and tmpResultPtr are guaranteed to be distinct.
 	     */
 
-	    ret = TclListObjGetElementsM(interp, tmpResultPtr,
+	    ret = TclListObjGetElements(interp, tmpResultPtr,
 		    &resLength, &elemsPtr);
 	    for (i=0 ; ret==TCL_OK && i<resLength ; i++) {
 		ret = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1104,8 +1103,7 @@ FsAddMountsToGlobResult(
     Tcl_Obj *pathPtr,		/* The directory that was searched. */
     const char *pattern,	/* Pattern to match mounts against. */
     Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
-				 * directory flag is particularly significant.
-				 */
+				 * directory flag is particularly significant. */
 {
     Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
@@ -1115,10 +1113,10 @@ FsAddMountsToGlobResult(
 	return;
     }
 
-    if (TclListObjLengthM(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
+    if (TclListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
 	goto endOfMounts;
     }
-    if (TclListObjLengthM(NULL, resultPtr, &gLength) != TCL_OK) {
+    if (TclListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
     for (i=0 ; i<mLength ; i++) {
@@ -1159,8 +1157,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = Tcl_GetStringFromObj(mElt, &mlen);
-		path = Tcl_GetStringFromObj(norm, &len);
+		mount = TclGetStringFromObj(mElt, &mlen);
+		path = TclGetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1169,7 +1167,6 @@ FsAddMountsToGlobResult(
 		    len--;
 		}
 		len++;		/* account for '/' in the mElt [Bug 1602539] */
-
 
 		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
@@ -1338,16 +1335,22 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = Tcl_GetStringFromObj(pathPtr, &i);
+    path = TclGetStringFromObj(pathPtr, &i);
 
-    if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
-		    || (path[0] == '\\' && path[1] == '\\') ) ) {
-	for ( i = 2; ; i++) {
-	    if (path[i] == '\0') break;
-	    if (path[i] == path[0]) break;
+    if ((i >= 3) && ((path[0] == '/' && path[1] == '/')
+	    || (path[0] == '\\' && path[1] == '\\'))) {
+	for (i = 2; ; i++) {
+	    if (path[i] == '\0') {
+		break;
+	    }
+	    if (path[i] == path[0]) {
+		break;
+	    }
 	}
 	--i;
-	if (path[i] == ':') isVfsPath = 1;
+	if (path[i] == ':') {
+	    isVfsPath = 1;
+	}
     }
 
     /*
@@ -1358,7 +1361,6 @@ TclFSNormalizeToUniquePath(
     Claim();
 
     if (!isVfsPath) {
-
 	/*
 	 * Find and call the native filesystem handler first if there is one
 	 * because the root of Tcl's filesystem is always a native filesystem
@@ -1412,51 +1414,20 @@ TclFSNormalizeToUniquePath(
  *
  * TclGetOpenMode --
  *
- *	Obsolete.  A limited version of TclGetOpenModeEx() which exists only to
- *	satisfy any extensions imprudently using it via Tcl's internal stubs
- *	table.
- *
- * Results:
- *	See TclGetOpenModeEx().
- *
- * Side effects:
- *	See TclGetOpenModeEx().
- *
- *---------------------------------------------------------------------------
- */
-
-int
-TclGetOpenMode(
-    Tcl_Interp *interp,		/* Interpreter to use for error reporting.  May
-				 *  be NULL. */
-    const char *modeString,	/* e.g. "r+" or "RDONLY CREAT". */
-    int *seekFlagPtr)		/* Sets this to 1 to tell the caller to seek to
-				   EOF after opening the file, and
-				 * 0 otherwise. */
-{
-    int binary = 0;
-    return TclGetOpenModeEx(interp, modeString, seekFlagPtr, &binary);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclGetOpenModeEx --
- *
  *	Computes a POSIX mode mask for opening a file.
  *
  * Results:
  *	The mode to pass to "open", or -1 if an error occurs.
  *
  * Side effects:
- *	Sets *seekFlagPtr to 1 to tell the caller to
+ *	Sets *modeFlagsPtr to 1 to tell the caller to
  *	seek to EOF after opening the file, or to 0 otherwise.
  *
- *	Sets *binaryPtr to 1 to tell the caller to configure the channel as a
- *	binary channel, or to 0 otherwise.
+ *	Adds CHANNEL_RAW_MODE to *modeFlagsPtr to tell the caller
+ *	to configure the channel as a binary channel.
  *
- *	If there is an error and interp is not NULL, sets interpreter result to
- *	an error message.
+ *	If there is an error and interp is not NULL, sets
+ *	interpreter result to an error message.
  *
  * Special note:
  *	Based on a prototype implementation contributed by Mark Diekhans.
@@ -1465,20 +1436,15 @@ TclGetOpenMode(
  */
 
 int
-TclGetOpenModeEx(
+TclGetOpenMode(
     Tcl_Interp *interp,		/* Interpreter, possibly NULL, to use for
 				 * error reporting. */
     const char *modeString,	/* Mode string, e.g. "r+" or "RDONLY CREAT" */
-    int *seekFlagPtr,		/* Sets this to 1 to tell the the caller to seek to
-				 * EOF after opening the file, and 0 otherwise. */
-    int *binaryPtr)		/* Sets this to 1 to tell the caller to
-				 * configure the channel for binary
-				 * operations after opening the file. */
+    int *modeFlagsPtr)
 {
     int mode, c, gotRW;
     Tcl_Size modeArgc, i;
-    const char **modeArgv, *flag;
-#define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
+    const char **modeArgv = NULL, *flag;
 
     /*
      * Check for the simpler fopen-like access modes like "r" which are
@@ -1486,9 +1452,8 @@ TclGetOpenModeEx(
      * lower-case first letter.
      */
 
-    *seekFlagPtr = 0;
-    *binaryPtr = 0;
-    mode = 0;
+    *modeFlagsPtr = 0;
+    mode = O_RDONLY;
 
     /*
      * Guard against wide characters before using byte-oriented routines.
@@ -1498,7 +1463,6 @@ TclGetOpenModeEx(
 	    && islower(UCHAR(modeString[0]))) { /* INTL: ISO only. */
 	switch (modeString[0]) {
 	case 'r':
-	    mode = O_RDONLY;
 	    break;
 	case 'w':
 	    mode = O_WRONLY|O_CREAT|O_TRUNC;
@@ -1510,7 +1474,7 @@ TclGetOpenModeEx(
 	     */
 
 	    mode = O_WRONLY|O_CREAT|O_APPEND;
-	    *seekFlagPtr = 1;
+	    *modeFlagsPtr |= 1;
 	    break;
 	default:
 	    goto error;
@@ -1527,11 +1491,10 @@ TclGetOpenModeEx(
 		 * 1773127]
 		 */
 
-		mode &= ~(O_RDONLY|O_WRONLY|O_APPEND);
-		mode |= O_RDWR;
+		mode = (mode & ~(O_ACCMODE|O_APPEND)) | O_RDWR;
 		break;
 	    case 'b':
-		*binaryPtr = 1;
+		*modeFlagsPtr |= CHANNEL_RAW_MODE;
 		break;
 	    default:
 		goto error;
@@ -1543,11 +1506,11 @@ TclGetOpenModeEx(
 	return mode;
 
     error:
-	*seekFlagPtr = 0;
-	*binaryPtr = 0;
+	*modeFlagsPtr = 0;
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "illegal access mode \"%s\"", modeString));
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	return -1;
     }
@@ -1559,11 +1522,16 @@ TclGetOpenModeEx(
      */
 
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
+    invAccessMode:
 	if (interp != NULL) {
 	    Tcl_AddErrorInfo(interp,
 		    "\n    while processing open access modes \"");
 	    Tcl_AddErrorInfo(interp, modeString);
 	    Tcl_AddErrorInfo(interp, "\"");
+	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
+	}
+	if (modeArgv) {
+	    Tcl_Free((void *)modeArgv);
 	}
 	return -1;
     }
@@ -1573,24 +1541,55 @@ TclGetOpenModeEx(
 	flag = modeArgv[i];
 	c = flag[0];
 	if ((c == 'R') && (strcmp(flag, "RDONLY") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_RDONLY;
+	    if (gotRW) {
+	    invRW:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				"invalid access mode \"%s\": modes RDONLY, "
+				"RDWR, and WRONLY cannot be combined", flag));
+		}
+		goto invAccessMode;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_RDONLY;
 	    gotRW = 1;
 	} else if ((c == 'W') && (strcmp(flag, "WRONLY") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_WRONLY;
+	    if (gotRW) {
+		goto invRW;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_WRONLY;
 	    gotRW = 1;
 	} else if ((c == 'R') && (strcmp(flag, "RDWR") == 0)) {
-	    mode = (mode & ~RW_MODES) | O_RDWR;
+	    if (gotRW) {
+		goto invRW;
+	    }
+	    mode = (mode & ~O_ACCMODE) | O_RDWR;
 	    gotRW = 1;
 	} else if ((c == 'A') && (strcmp(flag, "APPEND") == 0)) {
+	    if (mode & O_APPEND) {
+	    accessFlagRepeated:
+		if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"access mode \"%s\" repeated", flag));
+		}
+	    goto invAccessMode;
+	    }
 	    mode |= O_APPEND;
-	    *seekFlagPtr = 1;
+	    *modeFlagsPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
+	    if (mode & O_CREAT) {
+	    goto accessFlagRepeated;
+	    }
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {
+	    if (mode & O_EXCL) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_EXCL;
-
 	} else if ((c == 'N') && (strcmp(flag, "NOCTTY") == 0)) {
 #ifdef O_NOCTTY
+	    if (mode & O_NOCTTY) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NOCTTY;
 #else
 	    if (interp != NULL) {
@@ -1598,12 +1597,14 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
 
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
 #ifdef O_NONBLOCK
+	    if (mode & O_NONBLOCK) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_NONBLOCK;
 #else
 	    if (interp != NULL) {
@@ -1611,24 +1612,26 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 #endif
-
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
+	    if (mode & O_TRUNC) {
+		goto accessFlagRepeated;
+	    }
 	    mode |= O_TRUNC;
 	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
-	    *binaryPtr = 1;
+	    if (*modeFlagsPtr & CHANNEL_RAW_MODE) {
+		goto accessFlagRepeated;
+	    }
+	    *modeFlagsPtr |= CHANNEL_RAW_MODE;
 	} else {
-
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"invalid access mode \"%s\": must be RDONLY, WRONLY, "
-			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
-			" or TRUNC", flag));
+			"invalid access mode \"%s\": must be APPEND, BINARY, "
+			"CREAT, EXCL, NOCTTY, NONBLOCK, RDONLY, RDWR, "
+			"TRUNC, or WRONLY", flag));
 	    }
-	    Tcl_Free((void *)modeArgv);
-	    return -1;
+	    goto invAccessMode;
 	}
     }
 
@@ -1637,7 +1640,7 @@ TclGetOpenModeEx(
     if (!gotRW) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "access mode must include either RDONLY, WRONLY, or RDWR",
+		    "access mode must include either RDONLY, RDWR, or WRONLY",
 		    -1));
 	}
 	return -1;
@@ -1652,7 +1655,7 @@ TclGetOpenModeEx(
  *
  *	Reads a file and evaluates it as a script.
  *
- *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encoding argument.
+ *	Tcl_FSEvalFile is Tcl_FSEvalFileEx without the encodingName argument.
  *
  *	TclNREvalFile is an NRE-enabled version of Tcl_FSEvalFileEx.
  *
@@ -1685,7 +1688,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the utf-8 encoding. */
+				 * use the utf-8 encoding. */
 {
     Tcl_Size length;
     int result = TCL_ERROR;
@@ -1774,7 +1777,7 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    string = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280:  Open a frame for the evaluated script.
@@ -1801,13 +1804,13 @@ Tcl_FSEvalFileEx(
 	 * Record information about where the error occurred.
 	 */
 
-	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	unsigned limit = 150;
-	int overflow = ((unsigned)length > limit);
+	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	int limit = 150;
+	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : (unsigned)length), pathString,
+		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -1954,13 +1957,13 @@ EvalFileCallback(
 	 */
 
 	Tcl_Size length;
-	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	const unsigned limit = 150;
-	int overflow = ((unsigned)length > limit);
+	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const int limit = 150;
+	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : (unsigned)length), pathString,
+		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -2053,7 +2056,7 @@ Tcl_PosixError(
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
     if (interp) {
-	Tcl_SetErrorCode(interp, "POSIX", id, msg, (void *)NULL);
+	Tcl_SetErrorCode(interp, "POSIX", id, msg, (char *)NULL);
     }
     return msg;
 }
@@ -2078,7 +2081,7 @@ Tcl_PosixError(
 int
 Tcl_FSStat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 *  current CP). */
+				 *  current system encoding). */
     Tcl_StatBuf *buf)		/* A buffer to hold the results of the call to
 				 *  stat. */
 {
@@ -2113,7 +2116,7 @@ Tcl_FSStat(
 int
 Tcl_FSLstat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				   current CP). */
+				 * current system encoding). */
     Tcl_StatBuf *buf)		/* Filled with results of that call to stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2150,7 +2153,8 @@ Tcl_FSLstat(
 
 int
 Tcl_FSAccess(
-    Tcl_Obj *pathPtr,		/* Pathname of file to access (in current CP). */
+    Tcl_Obj *pathPtr,		/* Pathname of file to access (in current
+				 * system encoding). */
     int mode)			/* Permission setting. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2187,11 +2191,10 @@ Tcl_FSOpenFileChannel(
     const char *modeString,	/* A list of POSIX open modes or a string such
 				 * as "rw". */
     int permissions)		/* What modes to use if opening the file
-				   involves creating it. */
+				 * involves creating it. */
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
-
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	/*
@@ -2202,14 +2205,14 @@ Tcl_FSOpenFileChannel(
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {
-	int mode, seekFlag, binary;
+	int mode, modeFlags;
 
 	/*
 	 * Parse the mode to determine whether to seek at the outset
 	 * and/or set the channel into binary mode.
 	 */
 
-	mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    return NULL;
 	}
@@ -2228,7 +2231,7 @@ Tcl_FSOpenFileChannel(
 	 * Seek and/or set binary mode as determined above.
 	 */
 
-	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
+	if ((modeFlags & 1) && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
 		< (Tcl_WideInt) 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2238,7 +2241,7 @@ Tcl_FSOpenFileChannel(
 	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
-	if (binary) {
+	if (modeFlags & CHANNEL_RAW_MODE) {
 	    Tcl_SetChannelOption(interp, retVal, "-translation", "binary");
 	}
 	return retVal;
@@ -2483,7 +2486,7 @@ TclFSFileAttrIndex(
 	Tcl_Size i, objc;
 	Tcl_Obj **objv;
 
-	if (TclListObjGetElementsM(NULL, listObj, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
 	    TclDecrRefCount(listObj);
 	    return TCL_ERROR;
 	}
@@ -2804,8 +2807,8 @@ Tcl_FSGetCwd(
 	    Tcl_Size len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = Tcl_GetStringFromObj(norm, &len2);
+	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = TclGetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * The pathname values are equal so retain the old pathname
@@ -3012,8 +3015,8 @@ Tcl_FSChdir(
 int
 Tcl_FSLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic shared object.
-				 */
+    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic
+				 * shared object. */
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
@@ -3101,13 +3104,12 @@ skipUnlink(
      *
      * 1. The operating system is HPUX.
      *
-     * 2.   If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
-     * set to true (an integer > 0)
+     * 2. If the environment variable TCL_TEMPLOAD_NO_UNLINK is present and
+     *    set to true (an integer > 0)
      *
-     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS filesystem can be detected (using statfs, if available).
-     *
+     * 3. TCL_TEMPLOAD_NO_UNLINK is not true (an integer > 0) and AUFS
+     *    filesystem can be detected (using statfs, if available).
      */
-
 
 #ifdef hpux
     (void)shlibFile;
@@ -3647,9 +3649,7 @@ Tcl_FSUnloadFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/*
-				 * NULL or the pathname of a file to link to.
-				 */
+    Tcl_Obj *toPtr,		/* NULL or the pathname of a file to link to. */
     int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -3798,7 +3798,6 @@ FsListMounts(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_FSSplitPath
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */
@@ -3862,8 +3861,8 @@ Tcl_FSSplitPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-            nextElt = Tcl_NewStringObj(elementStart, length);
-            Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    nextElt = Tcl_NewStringObj(elementStart, length);
+	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*p++ == '\0') {
 	    break;
@@ -3871,7 +3870,7 @@ Tcl_FSSplitPath(
     }
 
     if (lenPtr != NULL) {
-	TclListObjLengthM(NULL, result, lenPtr);
+	TclListObjLength(NULL, result, lenPtr);
     }
     return result;
 }
@@ -3899,7 +3898,8 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,
+				/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
@@ -3907,7 +3907,7 @@ TclGetPathType(
 				 * of the volume. */
 {
     Tcl_Size pathLen;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -3953,9 +3953,9 @@ TclFSNonnativePathType(
 				/* If not NULL, a  place to store a pointer to
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
-    Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
-				 * the volume name if the pathname is absolute.
-				 */
+    Tcl_Size *driveNameLengthPtr,
+				/* If not NULL, a place to store the length of
+				 * the volume name if the pathname is absolute. */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
 				 * an object having its its refCount already
 				 * incremented, and contining the name of the
@@ -3994,7 +3994,7 @@ TclFSNonnativePathType(
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
-		if (TclListObjLengthM(NULL, thisFsVolumes, &numVolumes)
+		if (TclListObjLength(NULL, thisFsVolumes, &numVolumes)
 			!= TCL_OK) {
 		    /*
 		     * This is VERY bad; the listVolumesProc didn't return a
@@ -4014,7 +4014,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = Tcl_GetStringFromObj(vol,&len);
+		    strVol = TclGetStringFromObj(vol,&len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -4071,7 +4071,7 @@ TclFSNonnativePathType(
 int
 Tcl_FSRenameFile(
     Tcl_Obj *srcPathPtr,	/* The pathname of a file or directory to be
-				   renamed. */
+				 * renamed. */
     Tcl_Obj *destPathPtr)	/* The new pathname for the file. */
 {
     int retVal = -1;
@@ -4346,16 +4346,14 @@ Tcl_FSCopyDirectory(
 
 int
 Tcl_FSRemoveDirectory(
-    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed.
-                                 */
+    Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed. */
     int recursive,		/* If zero, removes only an empty directory.
 				 * Otherwise, removes the directory and all its
 				 * contents.  */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
 				 * place to store a a pointer to a new
 				 * object having a refCount of 1 and containing
-				 * the name of the file that produced an error.
-				 * */
+				 * the name of the file that produced an error. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
@@ -4376,8 +4374,8 @@ Tcl_FSRemoveDirectory(
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
-		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = TclGetStringFromObj(normPath, &normLen);
+		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
 			normLen) == 0)) {
 		    /*

@@ -11,28 +11,26 @@
 .SH NAME
 safe \- Creating and manipulating safe interpreters
 .SH SYNOPSIS
+.nf
 \fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions...\fR?
-.sp
-\fB::safe::interpInit\fR \fIchild\fR ?\fIoptions...\fR?
-.sp
-\fB::safe::interpConfigure\fR \fIchild\fR ?\fIoptions...\fR?
-.sp
-\fB::safe::interpDelete\fR \fIchild\fR
-.sp
-\fB::safe::interpAddToAccessPath\fR \fIchild\fR \fIdirectory\fR
-.sp
-\fB::safe::interpFindInAccessPath\fR \fIchild\fR \fIdirectory\fR
-.sp
+\fB::safe::interpInit\fI child\fR ?\fIoptions...\fR?
+\fB::safe::interpConfigure\fI child\fR ?\fIoptions...\fR?
+\fB::safe::interpDelete\fI child\fR
+\fB::safe::interpAddToAccessPath\fI child directory\fR
+\fB::safe::interpFindInAccessPath\fI child directory\fR
 \fB::safe::setSyncMode\fR ?\fInewValue\fR?
-.sp
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+.fi
 .SS OPTIONS
-.PP
-?\fB\-accessPath\fR \fIpathList\fR?
-?\fB\-autoPath\fR \fIpathList\fR?
-?\fB\-statics\fR \fIboolean\fR? ?\fB\-noStatics\fR?
-?\fB\-nested\fR \fIboolean\fR? ?\fB\-nestedLoadOk\fR?
-?\fB\-deleteHook\fR \fIscript\fR?
+.nf
+?\fB\-accessPath\fI pathList\fR?
+?\fB\-autoPath\fI pathList\fR?
+?\fB\-statics\fI boolean\fR?
+?\fB\-noStatics\fR?
+?\fB\-nested\fI boolean\fR?
+?\fB\-nestedLoadOk\fR?
+?\fB\-deleteHook\fI script\fR?
+.fi
 .BE
 .SH DESCRIPTION
 Safe Tcl is a mechanism for executing untrusted Tcl scripts
@@ -66,8 +64,10 @@ All commands provided in the parent interpreter by Safe Tcl reside in
 the \fBsafe\fR namespace.
 .SH COMMANDS
 The following commands are provided in the parent interpreter:
+.\" COMMAND: interpCreate
 .TP
 \fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions...\fR?
+.
 Creates a safe interpreter, installs the aliases described in the section
 \fBALIASES\fR and initializes the auto-loading and package mechanism as
 specified by the supplied \fIoptions\fR.
@@ -75,21 +75,27 @@ See the \fBOPTIONS\fR section below for a description of the
 optional arguments.
 If the \fIchild\fR argument is omitted, a name will be generated.
 \fB::safe::interpCreate\fR always returns the interpreter name.
-.sp
+.RS
+.PP
 The interpreter name \fIchild\fR may include namespace separators,
 but may not have leading or trailing namespace separators, or excess
 colon characters in namespace separators.  The interpreter name is
 qualified relative to the global namespace ::, not the namespace in which
 the \fB::safe::interpCreate\fR command is evaluated.
+.RE
+.\" COMMAND: interpInit
 .TP
-\fB::safe::interpInit\fR \fIchild\fR ?\fIoptions...\fR?
+\fB::safe::interpInit\fI child\fR ?\fIoptions...\fR?
+.
 This command is similar to \fBinterpCreate\fR except it that does not
 create the safe interpreter. \fIchild\fR must have been created by some
 other means, like \fBinterp create\fR \fB\-safe\fR.  The interpreter
 name \fIchild\fR may include namespace separators, subject to the same
 restrictions as for \fBinterpCreate\fR.
+.\" COMMAND: interpConfigure
 .TP
-\fB::safe::interpConfigure\fR \fIchild\fR ?\fIoptions...\fR?
+\fB::safe::interpConfigure\fI child\fR ?\fIoptions...\fR?
+.
 If no \fIoptions\fR are given, returns the settings for all options for the
 named safe interpreter as a list of options and their current values
 for that \fIchild\fR.
@@ -108,22 +114,26 @@ Example of use:
 set i1 [safe::interpCreate {*}[safe::interpConfigure $i0]]
 
 # Get the current deleteHook
-set dh [safe::interpConfigure $i0  \-del]
+set dh [safe::interpConfigure $i0  -del]
 
 # Change (only) the statics loading ok attribute of an
 # interp and its deleteHook (leaving the rest unchanged):
-safe::interpConfigure $i0  \-delete {foo bar} \-statics 0
+safe::interpConfigure $i0  -delete {foo bar} -statics 0
 .CE
 .RE
+.\" COMMAND: interpDelete
 .TP
-\fB::safe::interpDelete\fR \fIchild\fR
+\fB::safe::interpDelete\fI child\fR
+.
 Deletes the safe interpreter and cleans up the corresponding
 parent interpreter data structures.
 If a \fIdeleteHook\fR script was specified for this interpreter it is
 evaluated before the interpreter is deleted, with the name of the
 interpreter as an additional argument.
+.\" COMMAND: interpFindInAccessPath
 .TP
-\fB::safe::interpFindInAccessPath\fR \fIchild\fR \fIdirectory\fR
+\fB::safe::interpFindInAccessPath\fI child directory\fR
+.
 This command finds and returns the token for the real directory
 \fIdirectory\fR in the safe interpreter's current virtual access path.
 It generates an error if the directory is not found.
@@ -135,8 +145,10 @@ $child eval [list set tk_library \e
       [::safe::interpFindInAccessPath $name $tk_library]]
 .CE
 .RE
+.\" COMMAND: interpAddToAccessPath
 .TP
-\fB::safe::interpAddToAccessPath\fR \fIchild\fR \fIdirectory\fR
+\fB::safe::interpAddToAccessPath\fI child directory\fR
+.
 This command adds \fIdirectory\fR to the virtual path maintained for the
 safe interpreter in the parent, and returns the token that can be used in
 the safe interpreter to obtain access to files in that directory.
@@ -150,8 +162,10 @@ $child eval [list set tk_library \e
       [::safe::interpAddToAccessPath $name $tk_library]]
 .CE
 .RE
+.\" COMMAND: setSyncMode
 .TP
 \fB::safe::setSyncMode\fR ?\fInewValue\fR?
+.
 This command is used to get or set the "Sync Mode" of the Safe Base.
 When an argument is supplied, the command returns an error if the argument
 is not a boolean value, or if any Safe Base interpreters exist.  Typically
@@ -159,8 +173,10 @@ the value will be set as part of initialization - boolean true for
 "Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode"
 on, the Safe Base keeps each child interpreter's ::auto_path synchronized
 with its access path.  See the section \fBSYNC MODE\fR below for details.
+.\" COMMAND: setLogCmd
 .TP
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+.
 This command installs a script that will be called when interesting
 life cycle events occur for a safe interpreter.
 When called with no arguments, it returns the currently installed script.
@@ -201,8 +217,10 @@ and \fB::safe::interpConfigure\fR.
 Any option name can be abbreviated to its minimal
 non-ambiguous name.
 Option names are not case sensitive.
+.\" OPTION: -accessPath
 .TP
-\fB\-accessPath\fR \fIdirectoryList\fR
+\fB\-accessPath\fI directoryList\fR
+.
 This option sets the list of directories from which the safe interpreter
 can \fBsource\fR and \fBload\fR files.
 If this option is not specified, or if it is given as the
@@ -210,38 +228,50 @@ empty list, the safe interpreter will use the same directories as its
 parent for auto-loading.
 See the section \fBSECURITY\fR below for more detail about virtual paths,
 tokens and access control.
+.\" OPTION: -autoPath
 .TP
-\fB\-autoPath\fR \fIdirectoryList\fR
+\fB\-autoPath\fI directoryList\fR
+.
 This option sets the list of directories in the safe interpreter's
 ::auto_path.  The option is undefined if the Safe Base has "Sync Mode" on
 - in that case the safe interpreter's ::auto_path is managed by the Safe
 Base and is a tokenized form of its access path.
 See the section \fBSYNC MODE\fR below for details.
+.\" OPTION: -statics
 .TP
-\fB\-statics\fR \fIboolean\fR
+\fB\-statics\fI boolean\fR
+.
 This option specifies if the safe interpreter will be allowed
 to load statically linked packages (like \fBload {} Tk\fR).
 The default value is \fBtrue\fR :
 safe interpreters are allowed to load statically linked packages.
+.\" OPTION: -noStatics
 .TP
 \fB\-noStatics\fR
+.
 This option is a convenience shortcut for \fB\-statics false\fR and
 thus specifies that the safe interpreter will not be allowed
 to load statically linked packages.
+.\" OPTION: -nested
 .TP
-\fB\-nested\fR \fIboolean\fR
+\fB\-nested\fI boolean\fR
+.
 This option specifies if the safe interpreter will be allowed
 to load packages into its own sub-interpreters.
 The default value is \fBfalse\fR :
 safe interpreters are not allowed to load packages into
 their own sub-interpreters.
+.\" OPTION: -nestedLoadOk
 .TP
 \fB\-nestedLoadOk\fR
+.
 This option is a convenience shortcut for \fB\-nested true\fR and
 thus specifies the safe interpreter will be allowed
 to load packages into its own sub-interpreters.
+.\" OPTION: -deleteHook
 .TP
-\fB\-deleteHook\fR \fIscript\fR
+\fB\-deleteHook\fI script\fR
+.
 When this option is given a non-empty \fIscript\fR, it will be
 evaluated in the parent with the name of
 the safe interpreter as an additional argument
@@ -252,7 +282,8 @@ The default value (\fB{}\fR) is not to have any deletion call back.
 .SH ALIASES
 The following aliases are provided in a safe interpreter:
 .TP
-\fBsource\fR \fIfileName\fR
+\fBsource\fI fileName\fR
+.
 The requested file, a Tcl source file, is sourced into the safe interpreter
 if it is found.
 The \fBsource\fR alias can only source files from directories in
@@ -263,7 +294,8 @@ which the file to be sourced can be found.
 See the section on \fBSECURITY\fR for more discussion of restrictions on
 valid filenames.
 .TP
-\fBload\fR \fIfileName\fR
+\fBload\fI fileName\fR
+.
 The requested file, a shared object file, is dynamically loaded into the
 safe interpreter if it is found.
 The filename must contain a token name mentioned in the virtual path for
@@ -271,20 +303,23 @@ the safe interpreter for it to be found successfully.
 Additionally, the shared object file must contain a safe entry point; see
 the manual page for the \fBload\fR command for more details.
 .TP
-\fBfile\fR ?\fIsubCmd args...\fR?
+\fBfile\fR ?\fIsubcommand args...\fR?
+.
 The \fBfile\fR alias provides access to a safe subset of the subcommands of
 the \fBfile\fR command; it allows only \fBdirname\fR, \fBjoin\fR,
 \fBextension\fR, \fBroot\fR, \fBtail\fR, \fBpathname\fR and \fBsplit\fR
 subcommands. For more details on what these subcommands do see the manual
 page for the \fBfile\fR command.
 .TP
-\fBencoding\fR ?\fIsubCmd args...\fR?
+\fBencoding\fR ?\fIsubcommand args...\fR?
+.
 The \fBencoding\fR alias provides access to a safe subset of the
 subcommands of the \fBencoding\fR command;  it disallows setting of
 the system encoding, but allows all other subcommands including
 \fBsystem\fR to check the current encoding.
 .TP
 \fBexit\fR
+.
 The calling interpreter is deleted and its computation is stopped, but the
 Tcl process in which this interpreter exists is not terminated.
 .SH SECURITY
@@ -435,9 +470,9 @@ parent interpreter to packages, modules, and autoloader files.  With
 parent's ::auto_path, and will set the child's ::auto_path to a tokenized form
 of the parent's ::auto_path.
 .PP
-With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the empty
-list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR, or
-\fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
+With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the
+empty list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR,
+or \fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
 interpreter's ::auto_path.  Any directories that do not also belong to the
 access path cannot be tokenized and will be silently ignored.  However, the
 value of \fB\-autoPath\fR will remain as specified, and will be used to
@@ -446,26 +481,26 @@ to change the value of \fB\-accessPath\fR.
 .PP
 With "Sync Mode" off, if the access path is reset to the values in the
 parent interpreter by calling \fB::safe::interpConfigure\fR with arguments
-\fB\-accessPath\fR {}, then the ::auto_path will also be reset unless the argument
-\fB\-autoPath\fR is supplied to specify a different value.
+\fB\-accessPath\fR {}, then the ::auto_path will also be reset unless the
+argument \fB\-autoPath\fR is supplied to specify a different value.
 .PP
 With "Sync Mode" off, if a non-empty value of \fB\-accessPath\fR is supplied, the
 safe interpreter's ::auto_path will be set to {} (by
 \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR) or left unchanged
 (by \fB::safe::interpConfigure\fR).  If the same command specifies a new
-value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR argument has
-been processed.
-
+value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR
+argument has been processed.
+.PP
 Examples of use with "Sync Mode" off: any of these commands will set the
 ::auto_path to a tokenized form of its value in the parent interpreter:
 .RS
 .PP
 .CS
- safe::interpCreate foo
- safe::interpCreate foo -accessPath {}
- safe::interpInit bar
- safe::interpInit bar -accessPath {}
- safe::interpConfigure foo -accessPath {}
+safe::interpCreate foo
+safe::interpCreate foo -accessPath {}
+safe::interpInit bar
+safe::interpInit bar -accessPath {}
+safe::interpConfigure foo -accessPath {}
 .CE
 .RE
 .PP
@@ -475,35 +510,35 @@ own value is also specified:
 .RS
 .PP
 .CS
- safe::interpCreate foo -accessPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib/tcl8.6/http1.0
-     /usr/local/TclHome/lib/tcl8.6/opt0.4
-     /usr/local/TclHome/lib/tcl8.6/msgs
-     /usr/local/TclHome/lib/tcl8.6/encoding
-     /usr/local/TclHome/lib
- }
+safe::interpCreate foo -accessPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl8.6/http1.0
+    /usr/local/TclHome/lib/tcl8.6/opt0.4
+    /usr/local/TclHome/lib/tcl8.6/msgs
+    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib
+}
 
- # The child's ::auto_path must be given a suitable value:
+# The child's ::auto_path must be given a suitable value:
 
- safe::interpConfigure foo -autoPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib
- }
+safe::interpConfigure foo -autoPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib
+}
 
- # The two commands can be combined:
+# The two commands can be combined:
 
- safe::interpCreate foo -accessPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib/tcl8.6/http1.0
-     /usr/local/TclHome/lib/tcl8.6/opt0.4
-     /usr/local/TclHome/lib/tcl8.6/msgs
-     /usr/local/TclHome/lib/tcl8.6/encoding
-     /usr/local/TclHome/lib
- } -autoPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib
- }
+safe::interpCreate foo -accessPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl8.6/http1.0
+    /usr/local/TclHome/lib/tcl8.6/opt0.4
+    /usr/local/TclHome/lib/tcl8.6/msgs
+    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib
+} -autoPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib
+}
 .CE
 .RE
 .PP
@@ -513,18 +548,18 @@ Example of use with "Sync Mode" off: the command
 .RS
 .PP
 .CS
- safe::interpAddToAccessPath foo /usr/local/TclHome/lib/extras/Img1.4.11
+safe::interpAddToAccessPath foo /usr/local/TclHome/lib/extras/Img1.4.11
 
- lassign [safe::interpConfigure foo -autoPath] DUM childAutoPath
- lappend childAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
- safe::interpConfigure foo -autoPath $childAutoPath
+lassign [safe::interpConfigure foo -autoPath] DUM childAutoPath
+lappend childAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
+safe::interpConfigure foo -autoPath $childAutoPath
 .CE
 .RE
 .SH "SEE ALSO"
 interp(n), library(n), load(n), package(n), pkg_mkIndex(n), source(n),
 tm(n), unknown(n)
 .SH KEYWORDS
-alias, auto\-loading, auto_mkindex, load, parent interpreter, safe
+alias, auto-loading, auto_mkindex, load, parent interpreter, safe
 interpreter, child interpreter, source
 '\" Local Variables:
 '\" mode: nroff

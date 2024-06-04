@@ -14,7 +14,7 @@ TclZipfs_AppHook, TclZipfs_Mount, TclZipfs_MountBuffer, TclZipfs_Unmount \- hand
 .SH SYNOPSIS
 .nf
 const char *
-\fBTclZipfs_AppHook(\fIargcPtr, argvPtr\fR)
+\fBTclZipfs_AppHook\fR(\fIargcPtr, argvPtr\fR)
 .sp
 int
 \fBTclZipfs_Mount\fR(\fIinterp, zipname, mountpoint, password\fR)
@@ -83,7 +83,7 @@ example, the Tcl 8.7.2 release would be searched for in a file
 On Windows, \fBTclZipfs_AppHook\fR has a slightly different signature, since
 it uses WCHAR instead of char. As a result, it requires your application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
-\fB-DUNICODE\fR compiler flag).
+\fB\-DUNICODE\fR compiler flag).
 .PP
 The result of \fBTclZipfs_AppHook\fR is the full Tcl version with build
 information (e.g., \fB9.0.0+abcdef...abcdef.gcc-1002\fR).

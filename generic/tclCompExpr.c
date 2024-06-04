@@ -1479,7 +1479,7 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
-		    subErrCode, (void *)NULL);
+		    subErrCode, (char *)NULL);
 	}
     }
 
@@ -1924,7 +1924,7 @@ ParseLexeme(
     unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
 				 * storage. */
     Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
-				   storage, if non-NULL. */
+				 * storage, if non-NULL. */
 {
     const char *end;
     int ch;
@@ -2149,13 +2149,13 @@ ParseLexeme(
     if (!TclIsBareword(*start) || *start == '_') {
 	Tcl_Size scanned;
 	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = Tcl_UtfToUniChar(start, &ch);
+	    scanned = TclUtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[8];
 
 	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
+	    scanned = TclUtfToUniChar(utfBytes, &ch);
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
@@ -2226,8 +2226,8 @@ TclCompileExpr(
 	TclAdvanceLines(&envPtr->line, script,
 		script + TclParseAllWhiteSpace(script, numBytes));
 
-	TclListObjGetElementsM(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
-	TclListObjGetElementsM(NULL, funcList, &objc, &funcObjv);
+	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
 		parsePtr->tokenPtr, envPtr, optimize);
     } else {
@@ -2352,7 +2352,7 @@ CompileExprTree(
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
-		p = Tcl_GetStringFromObj(*funcObjv, &length);
+		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);
 		TclEmitPush(TclRegisterLiteral(envPtr,
@@ -2508,7 +2508,7 @@ CompileExprTree(
 
 	    if (optimize) {
 		Tcl_Size length;
-		const char *bytes = Tcl_GetStringFromObj(literal, &length);
+		const char *bytes = TclGetStringFromObj(literal, &length);
 		int idx = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
 
@@ -2568,7 +2568,7 @@ CompileExprTree(
 			Tcl_Obj *tableValue;
 			Tcl_Size numBytes;
 			const char *bytes
-				= Tcl_GetStringFromObj(objPtr, &numBytes);
+				= TclGetStringFromObj(objPtr, &numBytes);
 
 			idx = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, idx);

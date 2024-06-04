@@ -73,7 +73,7 @@ mp_err mp_prime_strong_lucas_selfridge(const mp_int *a, mp_bool *result)
    */
 
    if ((err = mp_init_multi(&Dz, &gcd, &Np1, &Uz, &Vz, &U2mz, &V2mz, &Qmz, &Q2mz, &Qkdz, &T1z, &T2z, &T3z, &T4z, &Q2kdz,
-                            NULL)) != MP_OKAY) {
+                            (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -281,7 +281,7 @@ mp_err mp_prime_strong_lucas_selfridge(const mp_int *a, mp_bool *result)
       }
    }
 LBL_LS_ERR:
-   mp_clear_multi(&Q2kdz, &T4z, &T3z, &T2z, &T1z, &Qkdz, &Q2mz, &Qmz, &V2mz, &U2mz, &Vz, &Uz, &Np1, &gcd, &Dz, NULL);
+   mp_clear_multi(&Q2kdz, &T4z, &T3z, &T2z, &T1z, &Qkdz, &Q2mz, &Qmz, &V2mz, &U2mz, &Vz, &Uz, &Np1, &gcd, &Dz, (void *)NULL);
    return err;
 }
 #endif

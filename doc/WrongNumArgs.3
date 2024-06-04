@@ -14,6 +14,7 @@ Tcl_WrongNumArgs \- generate standard error message for wrong number of argument
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_WrongNumArgs\fR(\fIinterp, objc, objv, message\fR)
+.fi
 .SH ARGUMENTS
 .AS "Tcl_Obj *const" *message
 .AP Tcl_Interp interp in
@@ -63,7 +64,7 @@ a subcommand.  The command
 into an \fIindexObject\fR.  If an error occurs in the parsing of the
 subcommand we would like to use the full subcommand name rather than
 the abbreviation.  If the \fBTcl_WrongNumArgs\fR command finds any
-\fIindexObjects\fR in the \fIobjv\fR array it will use the full subcommand
+\fIindexObject\fRs in the \fIobjv\fR array, it will use the full subcommand
 name in the error message instead of the abbreviated name that was
 originally passed in.  Using the above example, let us assume that
 \fIbar\fR is actually an abbreviation for \fIbarfly\fR and the value

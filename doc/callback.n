@@ -14,8 +14,8 @@ callback, mymethod \- generate callbacks to methods
 .nf
 package require tcl::oo
 
-\fBcallback\fR \fImethodName\fR ?\fIarg ...\fR?
-\fBmymethod\fR \fImethodName\fR ?\fIarg ...\fR?
+\fBcallback\fI methodName\fR ?\fIarg ...\fR?
+\fBmymethod\fI methodName\fR ?\fIarg ...\fR?
 .fi
 .BE
 .SH DESCRIPTION

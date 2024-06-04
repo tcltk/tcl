@@ -117,7 +117,7 @@ use this when you know what you are doing, you will not get a nice
 error message when something is wrong with the loaded library.
 .SH "PORTABILITY ISSUES"
 .TP
-\fBWindows\fR\0\0\0\0\0
+\fBWindows\fR
 .
 When a load fails with
 .QW "library not found"

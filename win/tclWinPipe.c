@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct ProcInfo {
     HANDLE hProcess;
-    size_t dwProcessId;
+    int dwProcessId;
     struct ProcInfo *nextPtr;
 } ProcInfo;
 
@@ -538,7 +538,7 @@ TclpOpenFile(
      * Map the access bits to the NT access mode.
      */
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	accessMode = GENERIC_READ;
 	break;
@@ -651,7 +651,7 @@ TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
-    const char *native;
+    const char *native = NULL;
     Tcl_DString dstring;
     HANDLE handle;
 
@@ -679,7 +679,10 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	   goto error;
+	}
+	native = Tcl_DStringValue(&dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -719,7 +722,9 @@ TclpCreateTempFile(
 	Tcl_DStringFree(&dstring);
     }
 
-    Tcl_WinConvertError(GetLastError());
+    if (native != NULL) {
+	Tcl_WinConvertError(GetLastError());
+    }
     CloseHandle(handle);
     DeleteFileW(name);
     return NULL;
@@ -859,7 +864,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -869,13 +874,13 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (size_t)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_INDEX_NONE;
+    return -1;
 }
 
 /*
@@ -1096,7 +1101,7 @@ TclpCreateProcess(
      */
 
     if (HasConsole()) {
-	    createFlags = 0;
+	createFlags = 0;
     } else if (applType == APPL_DOS) {
 	/*
 	 * Under NT, 16-bit DOS applications will not run unless they can
@@ -1163,7 +1168,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid)INT2PTR(procInfo.dwProcessId);
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1182,7 +1187,6 @@ TclpCreateProcess(
     }
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1316,7 +1320,7 @@ ApplicationType(
 
 	ext = strrchr(fullName, '.');
 	if ((ext != NULL) &&
-            (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -1329,7 +1333,7 @@ ApplicationType(
 	}
 
 	header.e_magic = 0;
-	ReadFile(hFile, (void *) &header, sizeof(header), &read, NULL);
+	ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
 	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
 	    /*
 	     * Doesn't have the magic number for relocatable executables. If
@@ -1364,7 +1368,7 @@ ApplicationType(
 
 	buf[0] = '\0';
 	SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-	ReadFile(hFile, (void *) buf, 2, &read, NULL);
+	ReadFile(hFile, (void *)buf, 2, &read, NULL);
 	CloseHandle(hFile);
 
 	if ((buf[0] == 'N') && (buf[1] == 'E')) {
@@ -1545,12 +1549,20 @@ BuildCommandLine(
     int quote = 0;
     size_t i;
     Tcl_DString ds;
+#ifdef TCL_WIN_PIPE_FULLESC
+    /* full escape inclusive %-subst avoidance */
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
 				 * quote flag set. */
     static const char specMetaChars2[] = "%";
 				/* Character to enclose in quotes in any case
 				 * (regardless of unpaired-flag). */
+#else
+    /* escape considering quotation only (no %-subst avoidance) */
+    static const char specMetaChars[] = "&|^<>!()";
+				/* Characters to enclose in quotes if unpaired
+				 * quote flag set. */
+#endif
     /*
      * Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1688,7 +1700,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
-
+#ifdef TCL_WIN_PIPE_FULLESC
 		/*
 		 * Special case for % - should be enclosed always (paired
 		 * also)
@@ -1705,6 +1717,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
+#endif
 
 		/*
 		 * Other not special (and not meta) character
@@ -1823,7 +1836,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -1866,10 +1879,10 @@ Tcl_CreatePipe(
 	return TCL_ERROR;
     }
 
-    *rchan = Tcl_MakeFileChannel((void *) readHandle, TCL_READABLE);
+    *rchan = Tcl_MakeFileChannel((void *)readHandle, TCL_READABLE);
     Tcl_RegisterChannel(interp, *rchan);
 
-    *wchan = Tcl_MakeFileChannel((void *) writeHandle, TCL_WRITABLE);
+    *wchan = Tcl_MakeFileChannel((void *)writeHandle, TCL_WRITABLE);
     Tcl_RegisterChannel(interp, *wchan);
 
     return TCL_OK;
@@ -2106,9 +2119,10 @@ PipeClose2Proc(
 	if (pipePtr->errorFile) {
 	    WinFile *filePtr = (WinFile *) pipePtr->errorFile;
 
-	    errChan = Tcl_MakeFileChannel((void *) filePtr->handle,
+	    errChan = Tcl_MakeFileChannel((void *)filePtr->handle,
 		    TCL_READABLE);
 	    Tcl_Free(filePtr);
+	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
 	} else {
 	    errChan = NULL;
 	}
@@ -2500,12 +2514,12 @@ PipeGetHandleProc(
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     if (direction == TCL_WRITABLE && infoPtr->writeFile) {
 	filePtr = (WinFile*) infoPtr->writeFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -2559,7 +2573,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (size_t) pid) {
+	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2669,7 +2683,7 @@ Tcl_WaitPid(
     } else {
 	errno = ECHILD;
 	*statPtr = 0xC0000000 | ECHILD;
-	result = (Tcl_Pid) -1;
+	result = (Tcl_Pid)-1;
     }
 
     /*
@@ -2703,7 +2717,7 @@ Tcl_WaitPid(
 void
 TclWinAddProcess(
     void *hProcess,		/* Handle to process */
-    size_t id)		/* Global process identifier */
+    Tcl_Size id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 
@@ -3206,7 +3220,7 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(WCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(string, length, &buf);
@@ -3251,7 +3265,7 @@ TclpOpenTemporaryFile(
 	TclDecrRefCount(tmpObj);
     }
 
-    return Tcl_MakeFileChannel((void *) handle,
+    return Tcl_MakeFileChannel((void *)handle,
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:

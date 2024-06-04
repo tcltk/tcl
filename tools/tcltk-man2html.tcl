@@ -514,12 +514,12 @@ proc make-man-pages {html args} {
 proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
-	if {[file exists $tcltkdir/$root/README]} {
-	    set f [open $tcltkdir/$root/README]
+	if {[file exists $tcltkdir/$root/README.md]} {
+	    set f [open $tcltkdir/$root/README.md]
 	    fconfigure $f -encoding utf-8
 	    set d [read $f]
 	    close $f
-	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	    if {[regexp {This is the \*\*\w+ (\S+)\*\* source distribution} $d -> version]} {
 	       append name ", version $version"
 	    }
 	}
@@ -578,7 +578,7 @@ proc plus-pkgs {type args} {
 ## Set up some special cases. It would be nice if we didn't have them,
 ## but we do...
 ##
-set excluded_pages {case menubar pack-old}
+set excluded_pages {}
 set forced_index_pages {GetDash}
 set process_first_patterns {*/ttk_widget.n */options.n}
 set ensemble_commands {
