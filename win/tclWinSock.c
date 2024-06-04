@@ -618,8 +618,8 @@ TcpBlockModeProc(
  *	    return any error code.
  *
  * Results:
- * 	0 if the connection has completed, -1 if still in progress or there is
- * 	an error.
+ *	0 if the connection has completed, -1 if still in progress or there is
+ *	an error.
  *
  * Side effects:
  *	Processes socket events off the system queue. May process

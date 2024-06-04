@@ -1668,7 +1668,7 @@ Tcl_ListObjGetElements(
 	return TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr);
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
@@ -1730,8 +1730,8 @@ Tcl_ListObjAppendList(
  *      the passed Tcl_Obj is not a list object, it will be converted to one
  *      and an error raised if the conversion fails.
  *
- * 	The Tcl_Obj must not be shared though the internal representation
- * 	may be.
+ *	The Tcl_Obj must not be shared though the internal representation
+ *	may be.
  *
  * Results:
  *	On success, TCL_OK is returned with the specified elements appended.
@@ -1918,27 +1918,23 @@ Tcl_ListObjAppendElement(
  *
  * Tcl_ListObjIndex --
  *
- * 	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
- * 	of the first element is 0.
+ *	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
+ *	of the first element is 0.
  *
- * Value
- *
- * 	TCL_OK
- *
+ * Returns:
+ *	TCL_OK
  *	    A pointer to the element at 'index' is stored in 'objPtrPtr'.  If
  *	    'index' is out of range, NULL is stored in 'objPtrPtr'.  This
  *	    object should be treated as readonly and its 'refCount' is _not_
  *	    incremented. The caller must do that if it holds on to the
  *	    reference.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
+ *	    'listPtr' is not a valid list. An error message is left in the
+ *	    interpreter's result if 'interp' is not NULL.
  *
- * 	    'listPtr' is not a valid list. An error message is left in the
- * 	    interpreter's result if 'interp' is not NULL.
- *
- *  Effect
- *
- * 	If 'listPtr' is not already of type 'tclListType', it is converted.
+ * Effect:
+ *	If 'listPtr' is not already of type 'tclListType', it is converted.
  *
  *----------------------------------------------------------------------
  */
