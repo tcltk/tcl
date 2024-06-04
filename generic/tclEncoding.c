@@ -4373,7 +4373,8 @@ TclEncodingProfileIdToName(
  *------------------------------------------------------------------------
  */
 void
-TclGetEncodingProfiles(Tcl_Interp *interp)
+TclGetEncodingProfiles(
+    Tcl_Interp *interp)
 {
     size_t i, n;
     Tcl_Obj *objPtr;
