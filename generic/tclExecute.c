@@ -3951,7 +3951,7 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
-    	if (TclIsVarConstant(varPtr)) {
+	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND(("\n"));
 	    NEXT_INST_V(pcAdjustment, cleanup, 0);
 	}

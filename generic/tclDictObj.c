@@ -80,7 +80,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
-    {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
+    {"map",	NULL,		TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
     {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
     {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
@@ -129,7 +129,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    size_t epoch; 		/* Epoch counter */
+    size_t epoch;		/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
