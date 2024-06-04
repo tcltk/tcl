@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
+Tcl_NRCreateCommand, Tcl_NRCreateCommand2, Tcl_NRCallObjProc, Tcl_NRCallObjProc2, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -17,8 +17,15 @@ Tcl_Command
 \fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData,
                     deleteProc\fR)
 .sp
+Tcl_Command
+\fBTcl_NRCreateCommand2\fR(\fIinterp, cmdName, proc2, nreProc2, clientData,
+                    deleteProc\fR)
+.sp
 int
 \fBTcl_NRCallObjProc\fR(\fIinterp, nreProc, clientData, objc, objv\fR)
+.sp
+int
+\fBTcl_NRCallObjProc2\fR(\fIinterp, nreProc2, clientData, objc, objv\fR)
 .sp
 int
 \fBTcl_NREvalObj\fR(\fIinterp, objPtr, flags\fR)
@@ -44,7 +51,13 @@ Name of a new command to create.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of a command that will be called whenever \fIcmdName\fR
 is invoked as a command in the unoptimized way.
+.AP Tcl_ObjCmdProc2 *proc2 in
+Implementation of a command that will be called whenever \fIcmdName\fR
+is invoked as a command in the unoptimized way.
 .AP Tcl_ObjCmdProc *nreProc in
+Implementation of a command that will be called whenever \fIcmdName\fR
+is invoked and requested to conserve the C stack.
+.AP Tcl_ObjCmdProc2 *nreProc2 in
 Implementation of a command that will be called whenever \fIcmdName\fR
 is invoked and requested to conserve the C stack.
 .AP ClientData clientData in
@@ -62,10 +75,8 @@ single word in the command to execute.
 .AP Tcl_Obj *objPtr in
 Pointer to a Tcl_Obj whose value is a script or expression to execute.
 .AP int flags in
-ORed combination of flag bits that specify additional options.
-\fBTCL_EVAL_GLOBAL\fR is the only flag that is currently supported.
-.\" TODO: This is a lie. But kbk didn't grasp TCL_EVAL_INVOKE and
-.\"       TCL_EVAL_NOERR well enough to document them.
+As described for \fITcl_EvalObjv\fR.
+.PP
 .AP Tcl_Command cmd in
 Token for a command that is to be used instead of the currently
 executing command.
@@ -129,6 +140,9 @@ means of \fBTcl_NRCallObjProc\fR. In the call to
 passed to \fIproc\fR. The \fInreProc\fR parameter should designate the
 trampoline-enabled implementation of the command.
 .PP
+\fBTcl_NRCreateCommand2\fR, is an alternative to \fBTcl_NRCreateCommand\fR
+in the same way as \fBTcl_CreateObjCommand2\fR.
+.PP
 \fBTcl_NREvalObj\fR arranges for the script contained in \fIobjPtr\fR
 to be evaluated in the interpreter designated by \fIinterp\fR after
 the current command (which must be trampoline-enabled) returns. It is
@@ -150,11 +164,10 @@ The remaining arguments are as for \fBTcl_NREvalObjv\fR.
 all accept a \fIflags\fR parameter, which is an OR-ed-together set of
 bits to control evaluation. At the present time, the only supported flag
 available to callers is \fBTCL_EVAL_GLOBAL\fR.
-.\" TODO: Again, this is a lie. Do we want to explain TCL_EVAL_INVOKE
-.\"       and TCL_EVAL_NOERR?
 If the \fBTCL_EVAL_GLOBAL\fR flag is set, the script or command is
 evaluated in the global namespace. If it is not set, it is evaluated
 in the current namespace.
+.\" TODO: document TCL_EVAL_INVOKE and TCL_EVAL_NOERR.
 .PP
 \fBTcl_NRExprObj\fR arranges for the expression contained in \fIobjPtr\fR
 to be evaluated in the interpreter designated by \fIinterp\fR after
