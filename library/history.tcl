@@ -89,7 +89,7 @@ trace add command ::history delete [list apply {{oldName newName op} {
 #	exec		(optional) a substring of "exec" causes the command to
 #			be evaled.
 # Results:
-# 	If executing, then the results of the command are returned
+#	If executing, then the results of the command are returned
 #
 # Side Effects:
 #	Adds to the history list

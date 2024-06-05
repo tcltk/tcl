@@ -1025,7 +1025,7 @@ TclClockFreeScan(
     /* parse */
     status = yyparse(info);
     if (status == 1) {
-    	const char *msg = NULL;
+	const char *msg = NULL;
 	if (info->errFlags & CLF_HAVEDATE) {
 	    msg = "more than one date in string";
 	} else if (info->errFlags & CLF_TIME) {
