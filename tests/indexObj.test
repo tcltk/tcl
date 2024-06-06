@@ -238,6 +238,12 @@ test indexObj-8.16 {Tcl_GetIntForIndex integer} testgetintforindex {
 test indexObj-8.17 {Tcl_GetIntForIndex integer} testgetintforindex {
     testgetintforindex -2 -1
 } -2147483648
+test indexObj-8.18 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 -1
+} -2147483648
+test indexObj-8.19 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 0
+} -1
 
 # cleanup
 ::tcltest::cleanupTests
