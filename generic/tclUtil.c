@@ -3972,8 +3972,6 @@ GetEndOffsetFromObj(
 
     if (offset == WIDE_MAX) {
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
-    } else if (offset == WIDE_MIN) {
-	*widePtr = -1;
     } else if (endValue == -1) {
 	*widePtr = offset;
     } else if (offset < 0) {
