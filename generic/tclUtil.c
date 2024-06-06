@@ -3706,18 +3706,12 @@ GetEndOffsetFromObj(
          * as endValue will have to adjust accordingly.
 	 */
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
-    } else if (offset == WIDE_MIN) {
-	/* -1 - position before first */
-	*widePtr = -1;
     } else if (offset < 0) {
 	/* end-(n-1) - Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
-    } else if (offset < WIDE_MAX) {
-	/* 0:WIDE_MAX-1 - plain old index. */
-	*widePtr = offset;
     } else {
-	/* Huh, what case remains here? */
-	*widePtr = WIDE_MAX;
+	/* 0:WIDE_MAX - plain old index. */
+	*widePtr = offset;
     }
     return TCL_OK;
 
