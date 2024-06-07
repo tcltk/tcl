@@ -3706,6 +3706,8 @@ GetEndOffsetFromObj(
          * as endValue will have to adjust accordingly.
 	 */
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
+    } else if (offset == WIDE_MIN) {
+	*widePtr = (endValue == -1) ? WIDE_MIN : -1;
     } else if (offset < 0) {
 	/* end-(n-1) - Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
