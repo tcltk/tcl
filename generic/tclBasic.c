@@ -1341,6 +1341,8 @@ Tcl_CreateInterp(void)
     }
 #endif
 
+    TclIcuInit(interp);
+
     TOP_CB(iPtr) = NULL;
     return interp;
 }
