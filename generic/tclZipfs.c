@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -258,7 +258,7 @@ typedef struct ZipChannel {
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
+				   need freeing. Else memory to free (ubuf
 				   may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */
@@ -875,7 +875,7 @@ static char *
 DecodeZipEntryText(
     const unsigned char *inputBytes,
     unsigned int inputLength,
-    Tcl_DString *dstPtr) /* Must have been initialized by caller! */
+    Tcl_DString *dstPtr)	/* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
     const char *src;
@@ -980,9 +980,10 @@ DecodeZipEntryText(
  *------------------------------------------------------------------------
  */
 static int
-NormalizeMountPoint(Tcl_Interp *interp,
-		    const char *mountPath,
-		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
+NormalizeMountPoint(
+    Tcl_Interp *interp,
+    const char *mountPath,
+    Tcl_DString *dsPtr)		/* Must be initialized by caller! */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -2230,7 +2231,8 @@ ListMountPoints(
  *------------------------------------------------------------------------
  */
 static void
-CleanupMount(ZipFile *zf)        /* Mount point */
+CleanupMount(
+    ZipFile *zf)		/* Mount point */
 {
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
@@ -6262,8 +6264,7 @@ TclZipfs_Init(
 	 */
 
 	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj("find", -1),
-		Tcl_NewStringObj("::tcl::zipfs::find", -1));
+	TclDictPutString(NULL, mapObj, "find", "::tcl::zipfs::find");
 	Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
 	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");

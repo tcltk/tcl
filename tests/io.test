@@ -2482,6 +2482,8 @@ test io-28.6 {
 } -body {
     variable done
     variable res
+    # Not a complete / correct channel implementation. Just enough
+    # to exercise the crash - closing from a write handler
     after 0 [list coroutine c1 apply [list {} {
 	variable done
 	set chan [chan create w {apply {{cmd chan args} {
@@ -2489,7 +2491,7 @@ test io-28.6 {
 		blocking - finalize {
 		}
 		watch {
-		    chan postevent $chan write
+		    lappend ::timers286 [after 0 chan postevent $chan write]
 		}
 		initialize {
 		    list initialize finalize watch read write configure blocking
@@ -2510,6 +2512,8 @@ test io-28.6 {
     } [namespace current]]]
     vwait [namespace current]::done
     return success
+} -cleanup {
+    foreach timer $::timers286 {after cancel $timer}
 } -result success
 
 test io-28.7 {
@@ -2522,12 +2526,14 @@ test io-28.7 {
     variable res
     after 0 [list coroutine c1 apply [list {} {
 	variable done
+        # Not a complete / correct channel implementation. Just enough
+        # to exercise the crash - closing from a read handler
 	set chan [chan create r {apply {{cmd chan args} {
 	    switch $cmd {
 		blocking - finalize {
 		}
 		watch {
-		    chan postevent $chan read
+		    lappend ::timers287 [after 0 chan postevent $chan read]
 		}
 		initialize {
 		    list initialize finalize watch read write configure blocking
@@ -2548,6 +2554,8 @@ test io-28.7 {
     } [namespace current]]]
     vwait [namespace current]::done
     return success
+} -cleanup {
+    foreach timer $::timers287 {after cancel $timer}
 } -result success
 
 test io-29.1 {Tcl_WriteChars, channel not writable} {
@@ -6245,21 +6253,27 @@ test io-44.5 {FileEventProc procedure: end of file} -constraints {
 
 close $f
 
+# Bug https://core.tcl-lang.org/tcl/info/de232b49f26da1c1 with a corrected
+# refchan implementation. refchans should be responsible for their own
+# event generation and the one in the bug report was not doing so.
 test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
-} -constraints {stdio fileevent openpipe} -body {
+} -constraints {stdio fileevent} -body {
 
     namespace eval refchan {
 	namespace ensemble create
 	namespace export *
-
+        # Change to taste depending on how much CPU you want to hog
+        variable delay 0
 
 	proc finalize {chan args} {
+            namespace upvar c_$chan timer timer
+            catch {after cancel $timer}
 	    namespace delete c_$chan
 	}
 
 	proc initialize {chan args} {
 	    namespace eval c_$chan {}
-	    namespace upvar c_$chan watching watching
+	    namespace upvar c_$chan watching watching timer timer
 	    set watching {}
 	    list finalize initialize seek watch write
 	}
@@ -6273,17 +6287,37 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
 			if {$arg ni $watching} {
 			    lappend watching $arg
 			}
-			chan postevent $chan $arg
 		    }
 		}
 	    }
+            update $chan
 	}
-
 
 	proc write {chan args} {
-	    chan postevent $chan write
 	    return 1
 	}
+
+        # paraphrased from tcllib
+        proc update {chan} {
+            namespace upvar c_$chan watching watching timer timer
+            variable delay
+            catch {after cancel $timer}
+            if {"write" in $watching} {
+                set timer [after idle after $delay \
+                               [namespace code [list post $chan]]]
+            }
+        }
+
+        # paraphrased from tcllib
+        proc post {chan} {
+            variable delay
+            namespace upvar c_$chan watching watching timer timer
+            if {"write" in $watching} {
+                set timer [after idle after $delay \
+                               [namespace code [list post $chan]]]
+                chan postevent $chan write
+            }
+        }
     }
     set f [chan create w [namespace which refchan]]
     chan configure $f -blocking 0
@@ -6297,7 +6331,8 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
 	    set x done
 	}
     }]
-    set token [after 10000 [namespace code {
+    # Note: timeout needs to be very long under valgrind
+    set token [after 240000 [namespace code {
 	set x timeout
     }]]
     vwait [namespace which -variable x]
@@ -6307,6 +6342,48 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
     catch {chan close $f}
 } -result done
 
+# Bug https://core.tcl-lang.org/tcl/info/67a5eabbd3d1 with a corrected
+# refchan implementation. refchans that are not reentrant should use
+# event loop to post events and the script in the bug report was not
+# doing so.
+test io-44.7 {refchan + coroutine yield error } -setup {
+    set bghandler [interp bgerror {}]
+    namespace eval schan {
+        namespace ensemble create
+        namespace export *
+        proc open {} {
+            set chan [chan create read [namespace current]]
+
+        }
+        proc initialize {chan mode} {
+            return [list initialize finalize read watch]
+        }
+        proc finalize args {}
+        proc read {chan count} {}
+        proc watch {chan eventspec} {
+            foreach event $eventspec {
+                after idle after 0 chan postevent $chan $event
+            }
+        }
+    }
+} -cleanup {
+    interp bgerror {} $bghandler
+    unset -nocomplain ::io-44.7-result
+    namespace delete schan
+} -body {
+    interp bgerror {} [list apply {{res opts} {
+        set ::io-44.7-result [dict get $opts -errorinfo]
+    }}]
+    coroutine c1 apply [list {} {
+        set chan [schan::open]
+        chan event $chan readable [list [info coroutine]]
+        yield
+        close $chan
+        set ::io-44.7-result success
+    } [namespace current]]
+    vwait ::io-44.7-result
+    set ::io-44.7-result
+} -result success
 
 makeFile "foo bar" foo
 

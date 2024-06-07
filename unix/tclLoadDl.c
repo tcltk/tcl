@@ -88,14 +88,14 @@ TclpDlopen(
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
     if (flags & TCL_LOAD_GLOBAL) {
-    	dlopenflags |= RTLD_GLOBAL;
+	dlopenflags |= RTLD_GLOBAL;
     } else {
-    	dlopenflags |= RTLD_LOCAL;
+	dlopenflags |= RTLD_LOCAL;
     }
     if (flags & TCL_LOAD_LAZY) {
-    	dlopenflags |= RTLD_LAZY;
+	dlopenflags |= RTLD_LAZY;
     } else {
-    	dlopenflags |= RTLD_NOW;
+	dlopenflags |= RTLD_NOW;
     }
     handle = dlopen(native, dlopenflags);
     if (handle == NULL) {

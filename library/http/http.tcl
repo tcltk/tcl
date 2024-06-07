@@ -2449,7 +2449,7 @@ proc http::Connected {token proto phost srvurl} {
 	if {[info exists state(reusing)] && $state(reusing)} {
 	    # The socket was closed at the server end, and closed at
 	    # this end by http::CheckEof.
-    	    if {[TestForReplay $token write $err a]} {
+	    if {[TestForReplay $token write $err a]} {
 		return
 	    } else {
 		Finish $token {failed to re-use socket}
@@ -3396,7 +3396,7 @@ proc http::cleanup {token} {
 #
 # Side Effects
 #	Sets the status of the connection, which unblocks
-# 	the waiting geturl call
+#	the waiting geturl call
 
 proc http::Connect {token proto phost srvurl} {
     variable $token
@@ -4925,7 +4925,7 @@ proc http::ReceiveChunked {chan command} {
 }
 
 # http::SplitCommaSeparatedFieldValue --
-# 	Return the individual values of a comma-separated field value.
+#	Return the individual values of a comma-separated field value.
 #
 # Arguments:
 #	fieldValue	Comma-separated header field value.
@@ -4942,7 +4942,7 @@ proc http::SplitCommaSeparatedFieldValue {fieldValue} {
 
 
 # http::GetFieldValue --
-# 	Return the value of a header field.
+#	Return the value of a header field.
 #
 # Arguments:
 #	headers	Headers key-value list

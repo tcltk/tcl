@@ -125,10 +125,8 @@ TclOOInitInfo(
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
-		Tcl_NewStringObj("::oo::InfoObject", -1));
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
-		Tcl_NewStringObj("::oo::InfoClass", -1));
+	TclDictPutString(NULL, mapDict, "object", "::oo::InfoObject");
+	TclDictPutString(NULL, mapDict, "class", "::oo::InfoClass");
 	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
     }
 }
@@ -1913,7 +1911,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return strcmp(Tcl_GetString(first), Tcl_GetString(second));
+    return strcmp(TclGetString(first), TclGetString(second));
 }
 
 static void

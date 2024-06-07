@@ -266,7 +266,8 @@ ListSpanNew(
  *------------------------------------------------------------------------
  */
 static inline void
-ListSpanDecrRefs(ListSpan *spanPtr)
+ListSpanDecrRefs(
+    ListSpan *spanPtr)
 {
     if (spanPtr->refCount <= 1) {
 	Tcl_Free(spanPtr);
@@ -343,7 +344,8 @@ ListSpanMerited(
  *------------------------------------------------------------------------
  */
 static inline void
-ListRepFreeUnreferenced(const ListRep *repPtr)
+ListRepFreeUnreferenced(
+    const ListRep *repPtr)
 {
     if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
 	/* T:listrep-1.5.1 */
@@ -471,7 +473,7 @@ MemoryAllocationError(
 		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
 		size));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -492,13 +494,14 @@ MemoryAllocationError(
  *------------------------------------------------------------------------
  */
 static int
-ListLimitExceededError(Tcl_Interp *interp)
+ListLimitExceededError(
+    Tcl_Interp *interp)
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -523,7 +526,9 @@ ListLimitExceededError(Tcl_Interp *interp)
  *------------------------------------------------------------------------
  */
 static inline void
-ListRepUnsharedShiftDown(ListRep *repPtr, Tcl_Size shiftCount)
+ListRepUnsharedShiftDown(
+    ListRep *repPtr,
+    Tcl_Size shiftCount)
 {
     ListStore *storePtr;
 
@@ -578,7 +583,9 @@ ListRepUnsharedShiftDown(ListRep *repPtr, Tcl_Size shiftCount)
  */
 #if 0
 static inline void
-ListRepUnsharedShiftUp(ListRep *repPtr, Tcl_Size shiftCount)
+ListRepUnsharedShiftUp(
+    ListRep *repPtr,
+    Tcl_Size shiftCount)
 {
     ListStore *storePtr;
 
@@ -624,7 +631,10 @@ ListRepUnsharedShiftUp(ListRep *repPtr, Tcl_Size shiftCount)
  *------------------------------------------------------------------------
  */
 static void
-ListRepValidate(const ListRep *repPtr, const char *file, int lineNum)
+ListRepValidate(
+    const ListRep *repPtr,
+    const char *file,
+    int lineNum)
 {
     ListStore *storePtr = repPtr->storePtr;
     const char *condition;
@@ -689,7 +699,9 @@ failure:
  *------------------------------------------------------------------------
  */
 void
-TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+TclListObjValidate(
+    Tcl_Interp *interp,
+    Tcl_Obj *listObj)
 {
     ListRep listRep;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
@@ -1668,7 +1680,7 @@ Tcl_ListObjGetElements(
 	return TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr);
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
@@ -1730,8 +1742,8 @@ Tcl_ListObjAppendList(
  *      the passed Tcl_Obj is not a list object, it will be converted to one
  *      and an error raised if the conversion fails.
  *
- * 	The Tcl_Obj must not be shared though the internal representation
- * 	may be.
+ *	The Tcl_Obj must not be shared though the internal representation
+ *	may be.
  *
  * Results:
  *	On success, TCL_OK is returned with the specified elements appended.
@@ -1918,27 +1930,23 @@ Tcl_ListObjAppendElement(
  *
  * Tcl_ListObjIndex --
  *
- * 	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
- * 	of the first element is 0.
+ *	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
+ *	of the first element is 0.
  *
- * Value
- *
- * 	TCL_OK
- *
+ * Returns:
+ *	TCL_OK
  *	    A pointer to the element at 'index' is stored in 'objPtrPtr'.  If
  *	    'index' is out of range, NULL is stored in 'objPtrPtr'.  This
  *	    object should be treated as readonly and its 'refCount' is _not_
  *	    incremented. The caller must do that if it holds on to the
  *	    reference.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
+ *	    'listPtr' is not a valid list. An error message is left in the
+ *	    interpreter's result if 'interp' is not NULL.
  *
- * 	    'listPtr' is not a valid list. An error message is left in the
- * 	    interpreter's result if 'interp' is not NULL.
- *
- *  Effect
- *
- * 	If 'listPtr' is not already of type 'tclListType', it is converted.
+ * Effect:
+ *	If 'listPtr' is not already of type 'tclListType', it is converted.
  *
  *----------------------------------------------------------------------
  */
@@ -2917,7 +2925,7 @@ TclLsetFlat(
     result = TCL_OK;
 
     /* Allocate if static array for pending invalidations is too small */
-    if (indexCount > (int) (sizeof(pendingInvalidates) /
+    if (indexCount > (Tcl_Size) (sizeof(pendingInvalidates) /
 	    sizeof(pendingInvalidates[0]))) {
 	pendingInvalidatesPtr =
 	    (Tcl_Obj **) Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
@@ -2970,10 +2978,8 @@ TclLsetFlat(
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%s\" out of range",
-		        Tcl_GetString(indexArray[-1])));
-		Tcl_SetErrorCode(interp,
-			"TCL", "VALUE", "INDEX" "OUTOFRANGE", (void *)NULL);
+			"index \"%s\" out of range", TclGetString(indexArray[-1])));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -3026,9 +3032,8 @@ TclLsetFlat(
 	     * value of the lset variable.  Later on, when we set valueObj
 	     * in its proper place, then all containing lists will have
 	     * their values changed, and will need their string reps
-	     * spoiled.  We maintain a list of all those Tcl_Obj's (via a
-	     * little internalrep surgery) so we can spoil them at that
-	     * time.
+	     * spoiled.  We maintain a list of all those Tcl_Obj's
+	     * pendingInvalidatesPtr[] so we can spoil them at that time.
 	     */
 
 	    pendingInvalidatesPtr[numPendingInvalidates] = parentList;
@@ -3163,8 +3168,7 @@ TclListObjSetElement(
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
-		    "OUTOFRANGE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }

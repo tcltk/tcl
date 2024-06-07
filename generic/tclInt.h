@@ -1076,10 +1076,10 @@ typedef struct ActiveInterpTrace {
  * related flag values.
  *
  * TCL_TRACE_ENTER_EXEC		- triggers enter/enterstep traces.
- * 				- passed to Tcl_CreateObjTrace to set up
+ *				- passed to Tcl_CreateObjTrace to set up
  *				  "enterstep" traces.
  * TCL_TRACE_LEAVE_EXEC		- triggers leave/leavestep traces.
- * 				- passed to Tcl_CreateObjTrace to set up
+ *				- passed to Tcl_CreateObjTrace to set up
  *				  "leavestep" traces.
  */
 
@@ -1529,15 +1529,15 @@ struct CompileEnv;
  * be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_ERROR 		Compilation could not be completed. This can be just a
- * 			judgment by the CompileProc that the command is too
- * 			complex to compile effectively, or it can indicate
- * 			that in the current state of the interp, the command
- * 			would raise an error. The bytecode compiler will not
- * 			do any error reporting at compiler time. Error
- * 			reporting is deferred until the actual runtime,
- * 			because by then changes in the interp state may allow
- * 			the command to be successfully evaluated.
+ * TCL_ERROR		Compilation could not be completed. This can be just a
+ *			judgment by the CompileProc that the command is too
+ *			complex to compile effectively, or it can indicate
+ *			that in the current state of the interp, the command
+ *			would raise an error. The bytecode compiler will not
+ *			do any error reporting at compiler time. Error
+ *			reporting is deferred until the actual runtime,
+ *			because by then changes in the interp state may allow
+ *			the command to be successfully evaluated.
  */
 
 typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
@@ -2876,7 +2876,7 @@ typedef struct ProcessGlobalValue {
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
     TclInitProcessGlobalValueProc *proc;
-    				/* A procedure to initialize the global string
+				/* A procedure to initialize the global string
 				 * copy when a "get" request comes in before
 				 * any "set" request has been received. */
     Tcl_Mutex mutex;		/* Enforce orderly access from multiple
@@ -3267,6 +3267,14 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char **elementPtr, const char **nextPtr,
 			    Tcl_Size *sizePtr, int *literalPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictObjSmartRef(Tcl_Interp *interp, Tcl_Obj *);
+MODULE_SCOPE int	TclDictGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj **valuePtrPtr);
+MODULE_SCOPE int	TclDictPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj *valuePtr);
+MODULE_SCOPE int	TclDictPutString(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, const char *value);
+MODULE_SCOPE int	TclDictRemove(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
@@ -3435,7 +3443,7 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
-MODULE_SCOPE void 	TclUndoRefCount(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileNameForLibrary(Tcl_Interp *interp,
@@ -3533,7 +3541,7 @@ MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
-			    Tcl_Obj *newValue, Tcl_Encoding encoding);
+			    Tcl_Obj *newValue);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,

@@ -570,7 +570,7 @@ findarc(
 /*
  - cparc - allocate a new arc within an NFA, copying details from old one
  ^ static void cparc(struct nfa *, struct arc *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 cparc(
@@ -641,19 +641,19 @@ sortins_cmp(
 	return -1;
     }
     if (aa->from->no > bb->from->no) {
- 	return 1;
+	return 1;
     }
     if (aa->co < bb->co) {
- 	return -1;
+	return -1;
     }
     if (aa->co > bb->co) {
- 	return 1;
+	return 1;
     }
     if (aa->type < bb->type) {
- 	return -1;
+	return -1;
     }
     if (aa->type > bb->type) {
- 	return 1;
+	return 1;
     }
     return 0;
 }
@@ -1118,7 +1118,7 @@ copyouts(
 	    cparc(nfa, a, newState, a->to);
 	}
     } else {
- 	/*
+	/*
 	 * With many arcs, use a sort-merge approach.  Note that createarc()
 	 * will put new arcs onto the front of newState's chain, so it does
 	 * not break our walk through the sorted part of the chain.
@@ -1177,7 +1177,7 @@ copyouts(
 /*
  - cloneouts - copy out arcs of a state to another state pair, modifying type
  ^ static void cloneouts(struct nfa *, struct state *, struct state *,
- ^ 	struct state *, int);
+ ^	struct state *, int);
  */
 static void
 cloneouts(
@@ -1267,7 +1267,7 @@ deltraverse(
  * well as mark already-seen states. (You knew there was a reason why it's a
  * state pointer, didn't you? :-))
  ^ static void dupnfa(struct nfa *, struct state *, struct state *,
- ^ 	struct state *, struct state *);
+ ^	struct state *, struct state *);
  */
 static void
 dupnfa(
@@ -1599,10 +1599,10 @@ pull(
 		s->tmp = *intermediates;
 		*intermediates = s;
 	    }
-  	    cparc(nfa, con, a->from, s);
+	    cparc(nfa, con, a->from, s);
 	    cparc(nfa, a, s, to);
- 	    freearc(nfa, a);
-  	    break;
+	    freearc(nfa, a);
+	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -1779,9 +1779,9 @@ push(
 		*intermediates = s;
 	    }
 	    cparc(nfa, con, s, a->to);
-  	    cparc(nfa, a, from, s);
-  	    freearc(nfa, a);
-  	    break;
+	    cparc(nfa, a, from, s);
+	    freearc(nfa, a);
+	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -2021,11 +2021,11 @@ fixempties(
 		}
 	    }
 
-  	    /* Reset the tmp fields as we walk back */
-  	    nexts = s2->tmp;
-  	    s2->tmp = NULL;
-  	}
-  	s->tmp = NULL;
+	    /* Reset the tmp fields as we walk back */
+	    nexts = s2->tmp;
+	    s2->tmp = NULL;
+	}
+	s->tmp = NULL;
 	assert(arccount <= totalinarcs);
 
 	/* Remember how many original inarcs this state has */
@@ -2185,12 +2185,12 @@ fixconstraintloops(
 		    freearc(nfa, a);
 		} else {
 		    hasconstraints = 1;
- 		}
+		}
 	    }
 	}
- 	/* If we removed all the outarcs, the state is useless. */
- 	if (s->nouts == 0 && !s->flag) {
- 	    dropstate(nfa, s);
+	/* If we removed all the outarcs, the state is useless. */
+	if (s->nouts == 0 && !s->flag) {
+	    dropstate(nfa, s);
 	}
     }
 
@@ -2235,7 +2235,7 @@ fixconstraintloops(
     }
 
     if (f != NULL) {
- 	dumpnfa(nfa, f);
+	dumpnfa(nfa, f);
     }
 }
 
@@ -2725,7 +2725,7 @@ cleanup(
 /*
  - markreachable - recursive marking of reachable states
  ^ static void markreachable(struct nfa *, struct state *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 markreachable(
@@ -2749,7 +2749,7 @@ markreachable(
 /*
  - markcanreach - recursive marking of states which can reach here
  ^ static void markcanreach(struct nfa *, struct state *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 markcanreach(

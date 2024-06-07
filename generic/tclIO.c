@@ -168,7 +168,6 @@ static int		CheckForDeadChannel(Tcl_Interp *interp,
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
 static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
-static void		CleanupTimerHandler(ChannelState *statePtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
@@ -1531,8 +1530,8 @@ TclGetChannelFromObj(
     ChanGetInternalRep(objPtr, resPtr);
     if (resPtr) {
 	/*
- 	 * Confirm validity of saved lookup results.
- 	 */
+	 * Confirm validity of saved lookup results.
+	 */
 
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
@@ -3534,11 +3533,6 @@ TclClose(
     Tcl_ClearChannelHandlers(chan);
 
     /*
-     * Cancel any outstanding timer.
-     */
-    DeleteTimerHandler(statePtr);
-
-    /*
      * Invoke the registered close callbacks and delete their records.
      */
 
@@ -4520,15 +4514,15 @@ Write(
 	    flushed += statePtr->bufSize;
 
 	    /*
- 	     * We just flushed.  So if we have needNlFlush set to record that
- 	     * we need to flush because there is a (translated) newline in the
- 	     * buffer, that's likely not true any more.  But there is a tricky
- 	     * exception.  If we have saved bytes that did not really get
- 	     * flushed and those bytes came from a translation of a newline as
- 	     * the last thing taken from the src array, then needNlFlush needs
- 	     * to remain set to flag that the next buffer still needs a
- 	     * newline flush.
- 	     */
+	     * We just flushed.  So if we have needNlFlush set to record that
+	     * we need to flush because there is a (translated) newline in the
+	     * buffer, that's likely not true any more.  But there is a tricky
+	     * exception.  If we have saved bytes that did not really get
+	     * flushed and those bytes came from a translation of a newline as
+	     * the last thing taken from the src array, then needNlFlush needs
+	     * to remain set to flag that the next buffer still needs a
+	     * newline flush.
+	     */
 
 	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
@@ -6285,7 +6279,7 @@ ReadChars(
     if (dstLimit <= 0) {
 	dstLimit = INT_MAX; /* avoid overflow */
     }
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	Tcl_Size size;
@@ -8664,7 +8658,6 @@ UpdateInterest(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    ChannelBuffer *bufPtr = statePtr->outQueueHead;
     int mask = statePtr->interestMask;
 
     if (chanPtr->typePtr == NULL) {
@@ -8742,19 +8735,6 @@ UpdateInterest(
 	    }
 	}
     }
-
-    if (!statePtr->timer
-	    && (mask & TCL_WRITABLE)
-	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	    && bufPtr
-	    && !IsBufferEmpty(bufPtr)
-	    && !IsBufferFull(bufPtr)) {
-	TclChannelPreserve((Tcl_Channel)chanPtr);
-	statePtr->timerChanPtr = chanPtr;
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
-    }
-
     ChanWatch(chanPtr, mask);
 }
 
@@ -8783,51 +8763,30 @@ ChannelTimerProc(
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
 
-    /* TclChannelPreserve() must be called before the current function was
-     * scheduled, is already in effect.  In this function it guards against
-     * deallocation in Tcl_NotifyChannel and also keps the channel preserved
-     * until ChannelTimerProc is later called again.
-     */
-
     if (chanPtr->typePtr == NULL) {
-	CleanupTimerHandler(statePtr);
-    } else {
-	Tcl_Preserve(statePtr);
 	statePtr->timer = NULL;
-	if (statePtr->interestMask & TCL_WRITABLE
-		&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
-		&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
+    } else {
+	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+		&& (statePtr->interestMask & TCL_READABLE)
+		&& (statePtr->inQueueHead != NULL)
+		&& IsBufferReady(statePtr->inQueueHead)) {
 	    /*
 	     * Restart the timer in case a channel handler reenters the event loop
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
-	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
+	    Tcl_Preserve(statePtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+	    Tcl_Release(statePtr);
 	} else {
-	    /* The channel may have just been closed from within Tcl_NotifyChannel */
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
-		if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-			&& (statePtr->interestMask & TCL_READABLE)
-			&& (statePtr->inQueueHead != NULL)
-			&& IsBufferReady(statePtr->inQueueHead)) {
-		    /*
-		     * Restart the timer in case a channel handler reenters the event loop
-		     * before UpdateInterest gets called by Tcl_NotifyChannel.
-		     */
-
-		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			ChannelTimerProc,chanPtr);
-		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-		} else {
-		    CleanupTimerHandler(statePtr);
-		    UpdateInterest(chanPtr);
-		}
-	    } else {
-		CleanupTimerHandler(statePtr);
-	    }
+	    statePtr->timer = NULL;
+	    UpdateInterest(chanPtr);
+	    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	    statePtr->timerChanPtr = NULL;
 	}
-	Tcl_Release(statePtr);
     }
 }
 
@@ -8837,16 +8796,10 @@ DeleteTimerHandler(
 {
     if (statePtr->timer != NULL) {
 	Tcl_DeleteTimerHandler(statePtr->timer);
-	CleanupTimerHandler(statePtr);
+	statePtr->timer = NULL;
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
     }
-}
-static void
-CleanupTimerHandler(
-    ChannelState *statePtr)
-{
-    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
-    statePtr->timer = NULL;
-    statePtr->timerChanPtr = NULL;
 }
 
 /*
@@ -9430,7 +9383,7 @@ TclCopyChannel(
     csPtr->readFlags = readFlags;
     csPtr->writeFlags = writeFlags;
     csPtr->toRead = toRead;
-    csPtr->total = (Tcl_WideInt) 0;
+    csPtr->total = 0;
     csPtr->interp = interp;
     if (cmdPtr) {
 	Tcl_IncrRefCount(cmdPtr);
@@ -9753,7 +9706,7 @@ CopyData(
 	Tcl_IncrRefCount(bufObj);
     }
 
-    while (csPtr->toRead != (Tcl_WideInt) 0) {
+    while (csPtr->toRead != 0) {
 	/*
 	 * Check for unreported background errors.
 	 */
@@ -9792,8 +9745,8 @@ CopyData(
 	     * Read up to bufSize characters.
 	     */
 
-	    if ((csPtr->toRead == (Tcl_WideInt) -1)
-		    || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
+	    if ((csPtr->toRead == -1)
+		    || (csPtr->toRead > (Tcl_WideInt)csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
 		sizeb = csPtr->toRead;
@@ -10053,12 +10006,12 @@ CopyData(
  *
  * Results:
  *	The number of bytes actually stored (<= bytesToRead),
- * 	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
- * 	Tcl_GetErrno() to retrieve the error code for the error
+ *	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
+ *	Tcl_GetErrno() to retrieve the error code for the error
  *	that occurred.
  *
  *	The number of bytes stored can be less than the number
- * 	requested when
+ *	requested when
  *	  - EOF is reached on the channel; or
  *	  - the channel is non-blocking, and we've read all we can
  *	    without blocking.
@@ -10137,7 +10090,7 @@ DoRead(
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
-		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
@@ -11186,7 +11139,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
     Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {

@@ -404,7 +404,7 @@ AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
 	#include <sys/types.h>
 	#include <sys/socket.h>
     ]], [[
-    	socklen_t foo;
+	socklen_t foo;
     ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])

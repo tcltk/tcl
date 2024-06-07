@@ -360,12 +360,12 @@ AlertSingleThread(
 	 */
 
 	if (tsdPtr->prevPtr) {
-    	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
+	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
 	} else {
-    	    waitingListPtr = tsdPtr->nextPtr;
+	    waitingListPtr = tsdPtr->nextPtr;
 	}
 	if (tsdPtr->nextPtr) {
-    	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
+	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
 	}
 	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	tsdPtr->onList = 0;

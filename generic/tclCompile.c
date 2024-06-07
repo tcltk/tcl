@@ -397,17 +397,17 @@ InstructionDesc const tclInstructionTable[] = {
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
     {"dictExpand",       1,    -1,        0,    {OPERAND_NONE}},
-        /* Probe into a dict and extract it (or a subdict of it) into
-         * variables with matched names. Produces list of keys bound as
-         * result. Part of [dict with].
+	/* Probe into a dict and extract it (or a subdict of it) into
+	 * variables with matched names. Produces list of keys bound as
+	 * result. Part of [dict with].
 	 * Stack:  ... dict path => ... keyList */
     {"dictRecombineStk", 1,    -3,        0,    {OPERAND_NONE}},
-        /* Map variable contents back into a dictionary in a variable. Part of
-         * [dict with].
+	/* Map variable contents back into a dictionary in a variable. Part of
+	 * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
     {"dictRecombineImm", 5,    -2,        1,    {OPERAND_LVT4}},
-        /* Map variable contents back into a dictionary in the local variable
-         * indicated by the LVT index. Part of [dict with].
+	/* Map variable contents back into a dictionary in the local variable
+	 * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
     {"dictExists",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
 	/* The top op4 words (min 1) are a key path into the dictionary just
@@ -637,7 +637,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... varName list => ... listVarContents */
 
     {"clockRead",	 2,	+1,	1,	{OPERAND_UINT1}},
-        /* Read clock out to the stack. Operand is which clock to read
+	/* Read clock out to the stack. Operand is which clock to read
 	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
 	 * Stack: ... => ... time */
 
@@ -900,12 +900,7 @@ TclSetByteCodeFromAny(
 
     if (result == TCL_OK) {
 	(void) TclInitByteCodeObj(objPtr, &tclByteCodeType, &compEnv);
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
 
     TclFreeCompileEnv(&compEnv);
@@ -1365,12 +1360,7 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -2514,7 +2504,7 @@ TclCompileTokens(
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
 			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
-                                maxNumCL * sizeof(Tcl_Size));
+				maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL ++;
@@ -2827,7 +2817,7 @@ PreventCycle(
 	     *
 	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
 	     * on the string value, and do not call Tcl_DuplicateObj() so we
-             * can be sure we do not have any lingering cycles hiding in
+	     * can be sure we do not have any lingering cycles hiding in
 	     * the internalrep.
 	     */
 	    Tcl_Size numBytes;

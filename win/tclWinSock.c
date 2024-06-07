@@ -371,13 +371,18 @@ InitializeHostName(
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf,
-	    &length) != 0) {
+    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
 	/*
-	 * Convert string from native to UTF then change to lowercase.
+	 * Convert string from WCHAR to utf-8, then change to lowercase,
+	 * then to system encoding.
 	 */
+	Tcl_DString inDs;
 
-	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, TCL_INDEX_NONE, &ds));
+	Tcl_DStringInit(&inDs);
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, TCL_INDEX_NONE, &inDs));
+	Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&inDs),
+		TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	Tcl_DStringFree(&inDs);
     } else {
 	TclInitSockets();
 	/*
@@ -385,19 +390,13 @@ InitializeHostName(
 	 * documents gethostname() as being always adequate.
 	 */
 
-	Tcl_DString inDs;
-
-	Tcl_DStringInit(&inDs);
-	Tcl_DStringSetLength(&inDs, 256);
-	if (gethostname(Tcl_DStringValue(&inDs),
-		Tcl_DStringLength(&inDs)) == 0) {
-	    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&inDs),
-		    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
-	}
-	Tcl_DStringFree(&inDs);
+	Tcl_DStringInit(&ds);
+	Tcl_DStringSetLength(&ds, 256);
+	gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
     }
 
-    *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
+    *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = Tcl_DStringLength(&ds);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
@@ -588,7 +587,7 @@ TcpBlockModeProc(
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    TcpState *statePtr = (TcpState *) instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
 	SET_BITS(statePtr->flags, TCP_NONBLOCKING);
@@ -619,8 +618,8 @@ TcpBlockModeProc(
  *	    return any error code.
  *
  * Results:
- * 	0 if the connection has completed, -1 if still in progress or there is
- * 	an error.
+ *	0 if the connection has completed, -1 if still in progress or there is
+ *	an error.
  *
  * Side effects:
  *	Processes socket events off the system queue. May process
@@ -1379,7 +1378,7 @@ TcpGetOptionProc(
 	reverseDNS = NI_NUMERICHOST;
     }
 
-    if (HAVE_OPTION("-peername")) {
+    if ((len == 0) || HAVE_OPTION("-peername")) {
 	address peername;
 	socklen_t size = sizeof(peername);
 

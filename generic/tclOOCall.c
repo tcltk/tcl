@@ -936,12 +936,15 @@ AddSimpleChainToCallContext(
 	    }
 	}
     }
+    if (!oPtr->selfCls) {
+	return foundPrivate;
+    }
     if (contextCls) {
 	foundPrivate |= AddPrivatesFromClassChainToCallContext(oPtr->selfCls,
 		contextCls, methodNameObj, cbPtr, doneFilters, flags,
 		filterDecl);
     }
-    if (!blockedUnexported && oPtr->selfCls) {
+    if (!blockedUnexported) {
 	foundPrivate |= AddSimpleClassChainToCallContext(oPtr->selfCls,
 		methodNameObj, cbPtr, doneFilters, flags, filterDecl);
     }
@@ -1784,6 +1787,9 @@ AddSimpleClassChainToCallContext(
      */
 
   tailRecurse:
+    if (classPtr == NULL) {
+	return privateDanger;
+    }
     FOREACH(superPtr, classPtr->mixins) {
 	privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		methodNameObj, cbPtr, doneFilters, flags | TRAVERSED_MIXIN,

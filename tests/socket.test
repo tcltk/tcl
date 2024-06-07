@@ -1110,6 +1110,25 @@ test socket_$af-7.5 {testing socket specific options} -setup {
     close $s
     close $s1
 } -result [list $localhost 1 3]
+test socket_$af-7.6 {testing socket specific options - bug e589d9bdab} -setup {
+    set timer [after 10000 "set x timed_out"]
+    set l ""
+} -constraints [list socket supported_$af unixOrWin] -body {
+    set s [socket -server accept 0]
+    proc accept {s a p} {
+	global x
+	set x [fconfigure $s -sockname]
+	close $s
+    }
+    set listen [lindex [fconfigure $s -sockname] 2]
+    set s1 [socket $localhost $listen]
+    vwait x
+    lsort [dict keys [fconfigure $s1]]
+} -cleanup {
+    after cancel $timer
+    close $s
+    close $s1
+} -result {-blocking -buffering -buffersize -encoding -eofchar -keepalive -nodelay -peername -profile -sockname -translation}
 
 test socket_$af-8.1 {testing -async flag on sockets} -constraints [list socket supported_$af] -body {
     # NOTE: This test may fail on some Solaris 2.4 systems. If it does, check

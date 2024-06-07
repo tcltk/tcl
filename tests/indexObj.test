@@ -20,7 +20,6 @@ testConstraint testindexobj [llength [info commands testindexobj]]
 testConstraint testgetintforindex [llength [info commands testgetintforindex]]
 testConstraint testparseargs [llength [info commands testparseargs]]
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
-testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
 
 test indexObj-1.1 {exact match} testindexobj {
     testindexobj 1 1 xyz abc def xyz alm
@@ -228,18 +227,23 @@ test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
 test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -2
 } -2
-test indexObj-8.14 {Tcl_GetIntForIndex end+1} -constraints {
-    testgetintforindex has64BitLengths
-} -body {
+test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -1
-} -result 9223372036854775807
-test indexObj-8.14.32bits {Tcl_GetIntForIndex end+1} -constraints {
-    testgetintforindex has32BitLengths
-} -body {
-    testgetintforindex end+1 -1
-} -result 2147483647
+} [expr {[testConstraint has64BitLengths] ? 9223372036854775807 : 2147483647}]
 test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -2
+} -1
+test indexObj-8.16 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.17 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.18 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.19 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 0
 } -1
 
 # cleanup

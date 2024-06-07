@@ -39,12 +39,12 @@ typedef struct ChannelBuffer {
     Tcl_Size refCount;		/* Current uses count */
     Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;	/* Position of next byte to be removed from
 				 * the buffer. */
     Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
-    				/* Next buffer in chain. */
-    char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
+				/* Next buffer in chain. */
+    char buf[TCLFLEXARRAY];	/* Placeholder for real buffer. The real
 				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */

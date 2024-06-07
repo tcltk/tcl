@@ -379,9 +379,9 @@ TclCompileArraySetCmd(
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
-	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
-	TclEmitOpcode(INST_POP,          			envPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	TclEmitInstInt4(INST_UPVAR, localIndex,			envPtr);
+	TclEmitOpcode(INST_POP,					envPtr);
     }
 
     /*
@@ -2397,8 +2397,7 @@ DisassembleDictUpdateInfo(
 	Tcl_ListObjAppendElement(NULL, variables,
 		Tcl_NewWideIntObj(duiPtr->varIndices[i]));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
-	    variables);
+    TclDictPut(NULL, dictObj, "variables", variables);
 }
 
 /*
@@ -3136,14 +3135,13 @@ DisassembleForeachInfo(
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewWideIntObj(infoPtr->firstValueTemp + i));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
+    TclDictPut(NULL, dictObj, "data", objPtr);
 
     /*
      * Loop counter.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
-	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "loop", Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3159,7 +3157,7 @@ DisassembleForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 static void
@@ -3178,8 +3176,8 @@ DisassembleNewForeachInfo(
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
-	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "jumpOffset",
+	    Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3195,7 +3193,7 @@ DisassembleNewForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 /*
@@ -3417,10 +3415,10 @@ TclCompileFormatCmd(
  *	to a local scalar variable name.
  *
  * Results:
- * 	Returns the non-negative integer index value into the table of
- * 	compiled locals corresponding to a local scalar variable name.
- * 	If the arguments passed in do not identify a local scalar variable
- * 	then return TCL_INDEX_NONE.
+ *	Returns the non-negative integer index value into the table of
+ *	compiled locals corresponding to a local scalar variable name.
+ *	If the arguments passed in do not identify a local scalar variable
+ *	then return TCL_INDEX_NONE.
  *
  * Side effects:
  *	May add an entry into the table of compiled locals.

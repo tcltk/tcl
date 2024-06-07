@@ -158,7 +158,7 @@ TclLengthOne(
  *	\u000A	\n	NEWLINE
  *	\u000B	\v	VERTICAL TAB
  *	\u000C	\f	FORM FEED
- * 	\u000D	\r	CARRIAGE RETURN
+ *	\u000D	\r	CARRIAGE RETURN
  *	\u0020		SPACE
  *
  * NOTE: differences between this and other places where Tcl defines a role
@@ -276,7 +276,7 @@ TclLengthOne(
  *	* The command terminating character,
  *		\u003b	;	SEMICOLON
  *	  must be BRACEd, QUOTEd, or escaped so that it does not terminate the
- * 	  command prematurely.
+ *	  command prematurely.
  *	* Any of the characters that begin substitutions in scripts,
  *		\u0024	$	DOLLAR
  *		\u005b	[	OPEN BRACKET
@@ -1672,7 +1672,7 @@ TclTrimRight(
 	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
- 	    pInc = TclUtfToUniChar(pp, &ch1);
+	    pInc = TclUtfToUniChar(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1881,7 +1881,7 @@ Tcl_Concat(
 
     for (i = 0;  i < argc;  i++) {
 	bytesNeeded += strlen(argv[i]);
-    	if (bytesNeeded < 0) {
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
 	}
     }
@@ -3413,19 +3413,19 @@ GetWideForIndex(
  *	list.
  *
  * Results:
- * 	TCL_OK
+ *	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ *	    The index is stored at the address given by by 'indexPtr'.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
  *
- * 	    The value of 'objPtr' does not have one of the expected formats. If
- * 	    'interp' is non-NULL, an error message is left in the interpreter's
- * 	    result object.
+ *	    The value of 'objPtr' does not have one of the expected formats. If
+ *	    'interp' is non-NULL, an error message is left in the interpreter's
+ *	    result object.
  *
  * Side effects:
  *
- * 	The internal representation contained within objPtr may shimmer.
+ *	The internal representation contained within objPtr may shimmer.
  *
  *----------------------------------------------------------------------
  */
@@ -3707,17 +3707,13 @@ GetEndOffsetFromObj(
 	 */
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
-	/* -1 - position before first */
-	*widePtr = -1;
+	*widePtr = (endValue == -1) ? WIDE_MIN : -1;
     } else if (offset < 0) {
 	/* end-(n-1) - Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
-    } else if (offset < WIDE_MAX) {
-	/* 0:WIDE_MAX-1 - plain old index. */
-	*widePtr = offset;
     } else {
-	/* Huh, what case remains here? */
-	*widePtr = WIDE_MAX;
+	/* 0:WIDE_MAX - plain old index. */
+	*widePtr = offset;
     }
     return TCL_OK;
 
@@ -3921,10 +3917,8 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (void *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -4121,13 +4115,13 @@ FreeProcessGlobalValue(
 void
 TclSetProcessGlobalValue(
     ProcessGlobalValue *pgvPtr,
-    Tcl_Obj *newValue,
-    Tcl_Encoding encoding)
+    Tcl_Obj *newValue)
 {
     const char *bytes;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     int dummy;
+    Tcl_DString ds;
 
     Tcl_MutexLock(&pgvPtr->mutex);
 
@@ -4143,12 +4137,16 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
+    Tcl_UtfToExternalDStringEx(NULL, NULL, bytes, pgvPtr->numBytes,
+	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    pgvPtr->numBytes = Tcl_DStringLength(&ds);
     pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, Tcl_DStringValue(&ds), pgvPtr->numBytes + 1);
+    Tcl_DStringFree(&ds);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
     }
-    pgvPtr->encoding = encoding;
+    pgvPtr->encoding = NULL;
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
@@ -4186,6 +4184,7 @@ TclGetProcessGlobalValue(
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     Tcl_Size epoch = pgvPtr->epoch;
+    Tcl_DString newValue;
 
     if (pgvPtr->encoding) {
 	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
@@ -4197,7 +4196,7 @@ TclGetProcessGlobalValue(
 	     * system encoding.
 	     */
 
-	    Tcl_DString native, newValue;
+	    Tcl_DString native;
 
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
@@ -4248,10 +4247,12 @@ TclGetProcessGlobalValue(
 	}
 
 	/*
-	 * Store a copy of the shared value in our epoch-indexed cache.
+	 * Store a copy of the shared value (but then in utf-8)
+	 * in our epoch-indexed cache.
 	 */
 
-	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	Tcl_ExternalToUtfDString(NULL, pgvPtr->value, pgvPtr->numBytes, &newValue);
+	value = Tcl_DStringToObj(&newValue);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
@@ -4269,6 +4270,8 @@ TclGetProcessGlobalValue(
  *	This function stores the absolute pathname of the executable file
  *	(normally as computed by TclpFindExecutable).
  *
+ *	Starting with Tcl 9.0, encoding parameter is not used any more.
+ *
  * Results:
  *	None.
  *
@@ -4281,9 +4284,9 @@ TclGetProcessGlobalValue(
 void
 TclSetObjNameOfExecutable(
     Tcl_Obj *name,
-    Tcl_Encoding encoding)
+    TCL_UNUSED(Tcl_Encoding))
 {
-    TclSetProcessGlobalValue(&executableName, name, encoding);
+    TclSetProcessGlobalValue(&executableName, name);
 }
 
 /*
