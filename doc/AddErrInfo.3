@@ -28,7 +28,7 @@ int
 .sp
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
-\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fBNULL\fR)
+\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *)NULL\fR)
 .sp
 int
 \fBTcl_GetErrorLine\fR(\fIinterp\fR)
@@ -67,7 +67,7 @@ If negative, all bytes up to the first null byte are used.
 The \fB\-errorcode\fR return option will be set to this value.
 .AP "const char" *element in
 String to record as one element of the \fB\-errorcode\fR return option.
-Last \fIelement\fR argument must be NULL.
+Last \fIelement\fR argument must be (char *)NULL.
 .AP int lineNum
 The line number of a script where an error occurred.
 .AP "const char" *script in

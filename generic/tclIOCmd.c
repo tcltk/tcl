@@ -39,7 +39,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static Tcl_ExitProc		FinalizeIOCmdTSD;
-static Tcl_TcpAcceptProc 	AcceptCallbackProc;
+static Tcl_TcpAcceptProc	AcceptCallbackProc;
 static Tcl_ObjCmdProc2		ChanPendingObjCmd;
 static Tcl_ObjCmdProc2		ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(
@@ -2063,8 +2063,7 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;

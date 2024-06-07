@@ -2019,7 +2019,7 @@ static void SpecialFree(
  *    these functions (i/o command cannot test all combinations)
  *    The arguments at the script level are roughly those of the above
  *    functions:
- *        encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
+ *	encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
  * Results:
  *    TCL_OK or TCL_ERROR. This any errors running the test, NOT the
@@ -3488,7 +3488,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	}
     } else if (strcmp(argv[1], "update") == 0) {
 	int v;
@@ -3605,7 +3605,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
@@ -3704,7 +3704,7 @@ TestlinkarrayCmd(
 	    i++;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i++], LinkType, "type", 0,
- 		&typeIndex) != TCL_OK) {
+		&typeIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
@@ -3719,7 +3719,7 @@ TestlinkarrayCmd(
 
 	if (i < objc) {
 	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
- 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong address value", -1));
 		return TCL_ERROR;
 	    }
@@ -6264,7 +6264,7 @@ TestChannelCmd(
 	}
 
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
+		(Tcl_WideInt)(size_t)Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 
@@ -8483,15 +8483,15 @@ InterpCompiledVarResolver(
     Tcl_ResolvedVarInfo **rPtr)
 {
     if (*name == 'T') {
- 	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
+	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
 
- 	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
- 	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
- 	resVarInfo->var = NULL;
- 	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
- 	Tcl_IncrRefCount(resVarInfo->nameObj);
- 	*rPtr = &resVarInfo->vInfo;
- 	return TCL_OK;
+	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
+	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
+	resVarInfo->var = NULL;
+	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
+	Tcl_IncrRefCount(resVarInfo->nameObj);
+	*rPtr = &resVarInfo->vInfo;
+	return TCL_OK;
     }
     return TCL_CONTINUE;
 }
@@ -8608,8 +8608,7 @@ int TestApplyLambdaObjCmd (
      *  - The body of the lambda (lambdaObjs[1]) ALREADY has internal
      *    representation of ByteCode and thus will not be compiled again
      */
-    evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so
-     				no need for IncrRef */
+    evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so no need for IncrRef */
     result = Tcl_EvalObjv(interp, 2, evalObjs, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(evalObjs[0]);
     Tcl_DecrRefCount(lambdaObj);

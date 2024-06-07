@@ -407,7 +407,7 @@ Tcl_SetEncodingSearchPath(
     if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
-    TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
+    TclSetProcessGlobalValue(&encodingSearchPath, searchPath);
     return TCL_OK;
 }
 
@@ -482,7 +482,7 @@ FillEncodingFileMap(void)
 	Tcl_DecrRefCount(directory);
     }
     Tcl_DecrRefCount(searchPath);
-    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+    TclSetProcessGlobalValue(&encodingFileMap, map);
     Tcl_DecrRefCount(map);
 }
 
@@ -1736,8 +1736,7 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
-    Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
+    Tcl_Obj *fileNameObj = Tcl_ObjPrintf("%s.enc", name);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;
@@ -1745,10 +1744,8 @@ OpenEncodingFileChannel(
     Tcl_Size i, numDirs;
 
     TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
-    Tcl_IncrRefCount(nameObj);
-    Tcl_AppendToObj(fileNameObj, ".enc", TCL_INDEX_NONE);
     Tcl_IncrRefCount(fileNameObj);
-    Tcl_DictObjGet(NULL, map, nameObj, &directory);
+    TclDictGet(NULL, map, name, &directory);
 
     /*
      * Check that any cached directory is still on the encoding search path.
@@ -1777,8 +1774,8 @@ OpenEncodingFileChannel(
 	     */
 
 	    map = Tcl_DuplicateObj(map);
-	    Tcl_DictObjRemove(NULL, map, nameObj);
-	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	    TclDictRemove(NULL, map, name);
+	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	    directory = NULL;
 	}
     }
@@ -1811,8 +1808,8 @@ OpenEncodingFileChannel(
 	     */
 
 	    map = Tcl_DuplicateObj(TclGetProcessGlobalValue(&encodingFileMap));
-	    Tcl_DictObjPut(NULL, map, nameObj, dir[i]);
-	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	    TclDictPut(NULL, map, name, dir[i]);
+	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	}
     }
 
@@ -1822,7 +1819,6 @@ OpenEncodingFileChannel(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
-    Tcl_DecrRefCount(nameObj);
     Tcl_DecrRefCount(searchPath);
 
     return chan;
@@ -4295,7 +4291,7 @@ int
 TclEncodingProfileNameToId(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     const char *profileName,	/* Name of profile */
-    int *profilePtr)  		/* Output */
+    int *profilePtr)		/* Output */
 {
     size_t i;
     size_t numProfiles = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
@@ -4377,7 +4373,8 @@ TclEncodingProfileIdToName(
  *------------------------------------------------------------------------
  */
 void
-TclGetEncodingProfiles(Tcl_Interp *interp)
+TclGetEncodingProfiles(
+    Tcl_Interp *interp)
 {
     size_t i, n;
     Tcl_Obj *objPtr;

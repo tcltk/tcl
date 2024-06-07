@@ -79,10 +79,10 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
-#CFLAGS = 		$(CFLAGS_DEBUG)
-#CFLAGS = 		$(CFLAGS_OPTIMIZE)
-#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
+#CFLAGS =		$(CFLAGS_DEBUG)
+#CFLAGS =		$(CFLAGS_OPTIMIZE)
+#CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -160,7 +160,7 @@ TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [l
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE	= libtommath.dll
 
-SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
+SHARED_LIBRARIES	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
