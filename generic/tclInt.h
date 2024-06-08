@@ -5101,6 +5101,7 @@ typedef struct NRE_callback {
 
 MODULE_SCOPE size_t TclEnvEpoch;	/* Epoch of the tcl environment
 					 * (if changed with tcl-env). */
+MODULE_SCOPE void TclIcuInit(Tcl_Interp *);
 
 #endif /* _TCLINT */
 
