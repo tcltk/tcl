@@ -629,7 +629,7 @@ TclIcuInit(
 	}
 	/* Commands needing only libs[0] (icuuc) */
 	Tcl_CreateObjCommand(interp,
-			     "::tcl::unsupported::icu::converter",
+			     "::tcl::unsupported::icu::converters",
 			     IcuConverterNamesObjCmd,
 			     0,
 			     TclIcuCleanup);
