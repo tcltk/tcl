@@ -1109,7 +1109,7 @@ struct Tcl_HashEntry {
  *                              allocated for the hash table that is not for an
  *                              entry will use the system heap.
  * TCL_HASH_KEY_DIRECT_COMPARE -
- * 	                        Allows fast comparison for hash keys directly
+ *	                        Allows fast comparison for hash keys directly
  *                              by compare of their key.oneWordValue values,
  *                              before call of compareKeysProc (much slower
  *                              than a direct compare, so it is speed-up only
@@ -1254,7 +1254,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    TCL_HASH_TYPE epoch; 	/* Epoch marker for dictionary being searched,
+    TCL_HASH_TYPE epoch;	/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -2002,7 +2002,7 @@ typedef struct Tcl_EncodingType {
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
  * TCL_ENCODING_STOPONERROR -	Not used any more.
- * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
+ * TCL_ENCODING_NO_TERMINATE -	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
  *				all dstLen bytes with encoded UTF-8 content if
