@@ -206,13 +206,11 @@ Invalid(
 
 Tcl_Size
 Tcl_UniCharToUtf(
-    int ch,	/* The Tcl_UniChar to be stored in the
-		 * buffer. Can be or'ed with flag TCL_COMBINE.
-		 */
-    char *buf)	/* Buffer in which the UTF-8 representation of
-		 * ch is stored. Must be large enough to hold the UTF-8
-		 * character (at most 4 bytes).
-		 */
+    int ch,			/* The Tcl_UniChar to be stored in the buffer.
+				 * Can be or'ed with flag TCL_COMBINE. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * ch is stored. Must be large enough to hold
+				 * the UTF-8 character (at most 4 bytes). */
 {
     int flags = ch;
 
@@ -309,9 +307,9 @@ three:
 
 char *
 Tcl_UniCharToUtfDString(
-    const int *uniStr,	/* Unicode string to convert to UTF-8. */
+    const int *uniStr,		/* Unicode string to convert to UTF-8. */
     Tcl_Size uniLength,		/* Length of Unicode string. Negative for nul
-    				 * terminated string */
+				 * terminated string */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -440,9 +438,9 @@ static const unsigned short cp1252[32] = {
 
 Tcl_Size
 Tcl_UtfToUniChar(
-    const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the Unicode character represented by
-				 * the UTF-8 string. */
+    const char *src,		/* The UTF-8 string. */
+    int *chPtr)			/* Filled with the Unicode character
+				 * represented by the UTF-8 string. */
 {
     int byte;
 

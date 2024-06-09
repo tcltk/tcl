@@ -201,23 +201,23 @@ static void		PipeThreadActionProc(void *instanceData,
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    PipeInputProc,
+    PipeOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Set up notifier to watch the channel. */
-    PipeGetHandleProc,		/* Get an OS handle from channel. */
-    PipeClose2Proc,		/* close2proc */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    PipeThreadActionProc,	/* thread action proc */
-    NULL			/* truncate */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    PipeThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -1462,7 +1462,7 @@ QuoteCmdLineBackslash(
 	    Tcl_DStringAppend(dsPtr, start, (int) (current - start));
 	}
     } else {
-    	if (bspos > start) {	/* part before first backslash */
+	if (bspos > start) {	/* part before first backslash */
 	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
 	}
 	while (bspos++ < current) { /* each backslash twice */
@@ -1505,7 +1505,7 @@ QuoteCmdLinePart(
 
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
     do {
-    	*bspos = NULL;
+	*bspos = NULL;
 	special++;
 	if (*special == '\\') {
 	    /*
@@ -1810,7 +1810,7 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
-    	infoPtr->readTI = NULL;
+	infoPtr->readTI = NULL;
 	infoPtr->readThread = 0;
     }
     if (writeFile != NULL) {
@@ -1825,8 +1825,8 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
-    	infoPtr->writeTI = NULL;
-    	infoPtr->writeThread = 0;
+	infoPtr->writeTI = NULL;
+	infoPtr->writeThread = 0;
     }
 
     /*
@@ -3397,10 +3397,10 @@ TclPipeThreadWaitForSignal(
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
     } else {
-    	pipeTI->evWakeUp = NULL;
+	pipeTI->evWakeUp = NULL;
     }
     if (wakeEvent) {
-    	SetEvent(wakeEvent);
+	SetEvent(wakeEvent);
     }
     return 0;
 }
