@@ -22,20 +22,28 @@ static void		ClockFmtObj_DupInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		ClockFmtObj_FreeInternalRep(Tcl_Obj *objPtr);
 static int		ClockFmtObj_SetFromAny(Tcl_Interp *, Tcl_Obj *objPtr);
 static void		ClockFmtObj_UpdateString(Tcl_Obj *objPtr);
+static Tcl_HashEntry *	ClockFmtScnStorageAllocProc(Tcl_HashTable *, void *keyPtr);
+static void		ClockFmtScnStorageFreeProc(Tcl_HashEntry *hPtr);
+static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 TCL_DECLARE_MUTEX(ClockFmtMutex);	/* Serializes access to common format list. */
-
-static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 #ifndef TCL_CLOCK_FULL_COMPAT
 #define TCL_CLOCK_FULL_COMPAT 1
 #endif
 
 /*
- * Derivation of tclStringHashKeyType with another allocEntryProc
+ * Derivation of tclStringHashKeyType with extra memory management trickery.
  */
 
-static Tcl_HashKeyType ClockFmtScnStorageHashKeyType;
+static const Tcl_HashKeyType ClockFmtScnStorageHashKeyType = {
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
+    0,					/* flags */
+    TclHashStringKey,			/* hashKeyProc */
+    TclCompareStringKeys,		/* compareKeysProc */
+    ClockFmtScnStorageAllocProc,	/* allocEntryProc */
+    ClockFmtScnStorageFreeProc		/* freeEntryProc */
+};
 
 #define IntFieldAt(info, offset) \
 	((int *) (((char *) (info)) + (offset)))
@@ -543,7 +551,7 @@ FmtScn4HashEntry(
 
 static Tcl_HashEntry *
 ClockFmtScnStorageAllocProc(
-    TCL_UNUSED(Tcl_HashTable *),	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     ClockFmtScnStorage *fss;
@@ -825,11 +833,6 @@ FindOrCreateFmtScnStorage(
 
     /* if not yet initialized */
     if (!initialized) {
-	/* initialize type */
-	memcpy(&ClockFmtScnStorageHashKeyType, &tclStringHashKeyType, sizeof(tclStringHashKeyType));
-	ClockFmtScnStorageHashKeyType.allocEntryProc = ClockFmtScnStorageAllocProc;
-	ClockFmtScnStorageHashKeyType.freeEntryProc = ClockFmtScnStorageFreeProc;
-
 	/* initialize hash table */
 	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
 		&ClockFmtScnStorageHashKeyType);
