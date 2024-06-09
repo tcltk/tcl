@@ -163,34 +163,34 @@ proc ::platform::shell::TEMP {} {
     set checked_dir_writable 0
     set mypid [pid]
     for {set i 0} {$i < $maxtries} {incr i} {
- 	set newname $prefix
- 	for {set j 0} {$j < $nrand_chars} {incr j} {
- 	    append newname [string index $chars \
+	set newname $prefix
+	for {set j 0} {$j < $nrand_chars} {incr j} {
+	    append newname [string index $chars \
 		    [expr {int(rand()*62)}]]
- 	}
+	}
 	set newname [file join $tmpdir $newname]
- 	if {[file exists $newname]} {
- 	    after 1
- 	} else {
- 	    if {[catch {open $newname $access $permission} channel]} {
- 		if {!$checked_dir_writable} {
- 		    set dirname [file dirname $newname]
- 		    if {![file writable $dirname]} {
- 			return -code error "Directory $dirname is not writable"
- 		    }
- 		    set checked_dir_writable 1
- 		}
- 	    } else {
- 		# Success
+	if {[file exists $newname]} {
+	    after 1
+	} else {
+	    if {[catch {open $newname $access $permission} channel]} {
+		if {!$checked_dir_writable} {
+		set dirname [file dirname $newname]
+		    if {![file writable $dirname]} {
+			return -code error "Directory $dirname is not writable"
+		    }
+		    set checked_dir_writable 1
+		}
+	    } else {
+		# Success
 		close $channel
- 		return [file normalize $newname]
- 	    }
- 	}
+		return [file normalize $newname]
+	    }
+	}
     }
     if {$channel ne ""} {
- 	return -code error "Failed to open a temporary file: $channel"
+	return -code error "Failed to open a temporary file: $channel"
     } else {
- 	return -code error "Failed to find an unused temporary file name"
+	return -code error "Failed to find an unused temporary file name"
     }
 }
 

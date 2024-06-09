@@ -319,7 +319,7 @@ static const CmdInfo builtInCmds[] = {
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
     {"concat",		Tcl_ConcatObjCmd,	TclCompileConcatCmd,	NULL,	CMD_IS_SAFE},
-    {"const", 		Tcl_ConstObjCmd,	TclCompileConstCmd,	NULL,	CMD_IS_SAFE},
+    {"const",		Tcl_ConstObjCmd,	TclCompileConstCmd,	NULL,	CMD_IS_SAFE},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
     {"coroinject",	NULL,			NULL,			TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
     {"coroprobe",	NULL,			NULL,			TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
@@ -345,7 +345,7 @@ static const CmdInfo builtInCmds[] = {
     {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
     {"lpop",		Tcl_LpopObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	CMD_IS_SAFE},
-    {"lremove", 	Tcl_LremoveObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lremove",		Tcl_LremoveObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -433,6 +433,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"file", "executable"},
     {"file", "exists"},
     {"file", "extension"},
+    {"file", "home"},
     {"file", "isdirectory"},
     {"file", "isfile"},
     {"file", "link"},
@@ -451,6 +452,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"file", "tail"},
     {"file", "tempdir"},
     {"file", "tempfile"},
+    {"file", "tildeexpand"},
     {"file", "type"},
     {"file", "volumes"},
     {"file", "writable"},
@@ -749,7 +751,7 @@ buildInfoObjCmd2(
 		    p += len;
 		    q = strchr(++p, '.');
 		    if (!q) {
-		 	q = p + strlen(p);
+			q = p + strlen(p);
 		    }
 		    memcpy(buf, p, q - p);
 		    buf[q - p] = '\0';
@@ -8868,7 +8870,7 @@ TclNRTailcallObjCmd(
 
 	nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
 	listPtr = Tcl_NewListObj(objc, objv);
- 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }

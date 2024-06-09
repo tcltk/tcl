@@ -3464,7 +3464,7 @@ Tcl_LoadFile(
 
 static void *
 DivertFindSymbol(
-    Tcl_Interp *interp, 	/* The relevant interpreter. */
+    Tcl_Interp *interp,		/* The relevant interpreter. */
     Tcl_LoadHandle loadHandle,	/* A handle to the diverted module. */
     const char *symbol)		/* The name of symbol to resolve. */
 {
