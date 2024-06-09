@@ -96,7 +96,7 @@ typedef struct EventScriptRecord {
 
 typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
-    void *instanceData;	/* Instance-specific data provided by creator
+    void *instanceData;		/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
@@ -160,7 +160,8 @@ typedef struct ChannelState {
 				 * input. */
 #if TCL_MAJOR_VERSION < 9
     int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. For Tcl 8.x only */
+				 * it is closed if it is open for writing.
+				 * For Tcl 8.x only */
 #endif
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
@@ -214,8 +215,8 @@ typedef struct ChannelState {
      * precedence over a Posix error code returned by a channel operation.
      */
 
-    Tcl_Obj* chanMsg;
-    Tcl_Obj* unreportedMsg;     /* Non-NULL if an error report was deferred
+    Tcl_Obj *chanMsg;
+    Tcl_Obj *unreportedMsg;	/* Non-NULL if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */
