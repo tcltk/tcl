@@ -515,9 +515,8 @@ typedef struct stat *Tcl_OldStat_;
  *			exited; the interpreter's result is meaningless.
  * TCL_CONTINUE		Go on to the next iteration of the current loop; the
  *			interpreter's result is meaningless.
- * Integer return codes in the range TCL_CODE_MIN to TCL_CODE_MAX are
- * reserved for the use of Tcl. Extensions and packages are free to use
- * values outside this range for their own purposes.
+ * Integer return codes in the range TCL_CODE_USER_MIN to TCL_CODE_USER_MAX are
+ * reserved for the use of packages.
  */
 
 #define TCL_OK			0
@@ -525,8 +524,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_RETURN		2
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
-#define TCL_CODE_MAX		0x40000000
-#define TCL_CODE_MIN		(-TCL_CODE_MAX)
+#define TCL_CODE_USER_MIN	5
+#define TCL_CODE_USER_MAX	0x3fffffff /* 268435455  */
 
 /*
  *----------------------------------------------------------------------------
