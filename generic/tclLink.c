@@ -25,7 +25,7 @@
  * variable.
  */
 
-typedef struct Link {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
     Namespace *nsPtr;		/* Namespace containing Tcl variable */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
@@ -33,10 +33,10 @@ typedef struct Link {
 				 * actual variable may be aliased at that time
 				 * via upvar. */
     void *addr;			/* Location of C variable. */
-    int bytes;			/* Size of C variable array. This is 0 when
+    Tcl_Size bytes;		/* Size of C variable array. This is 0 when
 				 * single variables, and >0 used for array
 				 * variables. */
-    int numElems;		/* Number of elements in C variable array.
+    Tcl_Size numElems;	/* Number of elements in C variable array.
 				 * Zero for single variables. */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
@@ -109,7 +109,7 @@ static int		SetInvalidRealFromAny(Tcl_Interp *interp,
  * A marker type used to flag weirdnesses so we can pass them around right.
  */
 
-static Tcl_ObjType invalidRealType = {
+static const Tcl_ObjType invalidRealType = {
     "invalidReal",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -245,7 +245,7 @@ Tcl_LinkArray(
 				 * interpreter result. */
     int type,			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
-    int size)			/* Size of C variable array, >1 if array */
+    Tcl_Size size)		/* Size of C variable array, >1 if array */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -510,7 +510,7 @@ GetWide(
     Tcl_Obj *objPtr,
     Tcl_WideInt *widePtr)
 {
-    if (Tcl_GetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK) {
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
@@ -591,7 +591,7 @@ SetInvalidRealFromAny(
 {
     const char *str;
     const char *endPtr;
-    int length;
+    Tcl_Size length;
 
     str = TclGetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
@@ -637,7 +637,7 @@ GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
     int *intPtr)
 {
-    int length;
+    Tcl_Size length;
     const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || ((length == 2) && (str[0] == '0')
@@ -714,7 +714,7 @@ LinkTraceProc(
 {
     Link *linkPtr = (Link *)clientData;
     int changed;
-    int valueLength;
+    Tcl_Size valueLength;
     const char *value;
     char **pp;
     Tcl_Obj *valueObj;
@@ -722,9 +722,8 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    int objc;
+    Tcl_Size objc, i;
     Tcl_Obj **objv;
-    int i;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
@@ -857,10 +856,9 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
 	value = TclGetStringFromObj(valueObj, &valueLength);
-	valueLength++;		/* include end of string char */
 	pp = (char **) linkPtr->addr;
 
-	*pp = (char *)ckrealloc(*pp, valueLength);
+	*pp = (char *)ckrealloc(*pp, ++valueLength);
 	memcpy(*pp, value, valueLength);
 	return NULL;
 
@@ -916,7 +914,7 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    for (i=0; i < objc; i++) {
+	    for (i = 0; i < objc; i++) {
 		int *varPtr = &linkPtr->lastValue.iPtr[i];
 
 		if (GetInt(objv[i], varPtr)) {
@@ -1248,7 +1246,7 @@ ObjValue(
 {
     char *p;
     Tcl_Obj *resultObj, **objv;
-    int i;
+    Tcl_Size i;
 
     switch (linkPtr->type) {
     case TCL_LINK_INT:
@@ -1493,7 +1491,7 @@ LinkFree(
     if (linkPtr->flags & LINK_ALLOC_LAST) {
 	ckfree(linkPtr->lastValue.aryPtr);
     }
-    ckfree((char *) linkPtr);
+    ckfree((char *)linkPtr);
 }
 
 /*
