@@ -78,10 +78,10 @@ were the command \fBcontinue\fR.
 \fIvalue\fR
 .
 \fIValue\fR must be an integer;  it will be returned as the
-return code for the current procedure. Values in the range
--0x40000000 (-1073741824) to 0x40000000 (1073741824) are reserved
-for Tcl. Applications and extensions should use codes outside
-this range.
+return code for the current procedure. Applications
+and packages should use values in the range 5 to 268435455 (0x3fffffff)
+for their own purposes. Values outside this range are reserved
+for use by Tcl.
 .LP
 When a procedure wants to signal that it has received invalid
 arguments from its caller, it may use \fBreturn -code error\fR
