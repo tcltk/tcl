@@ -13,6 +13,8 @@
 #
 #----------------------------------------------------------------------
 
+loadIcu
+
 namespace eval ::tcl::unsupported::icu {
     # Map Tcl encoding names to ICU and back. Note ICU has multiple aliases
     # for the same encoding.
@@ -22,6 +24,8 @@ namespace eval ::tcl::unsupported::icu {
     proc Init {} {
         variable tclToIcu
         variable icuToTcl
+
+        ::tcl::unsupported::loadIcu
 
         # There are some special cases where names do not line up
         # at all. Map Tcl -> ICU
@@ -141,11 +145,16 @@ namespace eval ::tcl::unsupported::icu {
         return [expr {$x < 0}]
     }
 
-    # Detect the encoding for a file.
-    proc detectFileEncoding {path {sampleLength 4000}} {
+    # Detect the encoding for a file. If sampleLength is the
+    # empty string, entire file is read.
+    # NOTE: sampleLength other than "" has the problem that
+    # the encoding may be perfectly valid but the data at
+    # end is a truncated encoding sequence.
+    # TODO - may be do line at a time to get around this problem
+    proc detectFileEncoding {path {sampleLength {}}} {
         set fd [open $path rb]
         try {
-            set data [read $fd 4000]
+            set data [read $fd {*}$sampleLength]
         } finally {
             close $fd
         }

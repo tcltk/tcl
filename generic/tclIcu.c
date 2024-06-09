@@ -39,6 +39,7 @@ typedef struct UCharsetMatch UCharsetMatch;
 /*
  * Prototypes for ICU functions sorted by category.
  */
+typedef void        (*fn_u_cleanup)(void);
 typedef const char *(*fn_u_errorName)(UErrorCodex);
 
 typedef uint16_t    (*fn_ucnv_countAliases)(const char *, UErrorCodex *);
@@ -77,6 +78,7 @@ static struct {
      */
     Tcl_LoadHandle      libs[2];
 
+    FIELD(u_cleanup);
     FIELD(u_errorName);
 
     FIELD(ucnv_countAliases);
@@ -105,14 +107,15 @@ static struct {
     FIELD(uenum_next);
 
 } icu_fns = {
-    0, {NULL, NULL},
-    NULL, /* u_* */
+    0, {NULL, NULL}, /* Reference count, library handles */
+    NULL, NULL, /* u_* */
     NULL, NULL, /* ucnv_* */
     NULL, NULL, NULL, /* uenum_* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ubrk* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ucsdet* */
 };
 
+#define u_cleanup        icu_fns._u_cleanup
 #define u_errorName      icu_fns._u_errorName
 
 #define ubrk_open        icu_fns._ubrk_open
@@ -444,6 +447,9 @@ TclIcuCleanup(
     Tcl_MutexLock(&icu_mutex);
     if (icu_fns.nopen-- <= 1) {
         int i;
+        if (u_cleanup != NULL) {
+	    u_cleanup();
+	}
 	for (i = 0; i < (int)(sizeof(icu_fns.libs) / sizeof(icu_fns.libs[0]));
 	     ++i) {
 	    if (icu_fns.libs[i] != NULL) {
@@ -455,7 +461,7 @@ TclIcuCleanup(
     Tcl_MutexUnlock(&icu_mutex);
 }
 
-void
+static void
 TclIcuInit(
     Tcl_Interp *interp)
 {
@@ -573,6 +579,7 @@ TclIcuInit(
         icu_fns._##name = (fn_ ## name)                         \
             Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol)
         if (icu_fns.libs[0] != NULL) {
+	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
 
 	    ICUUC_SYM(ucnv_countAliases);
@@ -617,17 +624,25 @@ TclIcuInit(
     Tcl_MutexUnlock(&icu_mutex);
 
     if (icu_fns.libs[0] != NULL) {
+        /*
+         * Note refcounts updated BEFORE command definition to protect
+         * against self redefinition.
+         */
 	if (icu_fns.libs[1] != NULL) {
             /* Commands needing both libraries */
+
+	    /* Ref count number of commands */
+	    icu_fns.nopen += 1;
 	    Tcl_CreateObjCommand(interp,
 				 "::tcl::unsupported::icu::detect",
 				 IcuDetectObjCmd,
 				 0,
 				 TclIcuCleanup);
-	    /* Ref count number of commands */
-	    icu_fns.nopen += 1;
 	}
 	/* Commands needing only libs[0] (icuuc) */
+
+	/* Ref count number of commands */
+	icu_fns.nopen += 2;
 	Tcl_CreateObjCommand(interp,
 			     "::tcl::unsupported::icu::converters",
 			     IcuConverterNamesObjCmd,
@@ -638,9 +653,38 @@ TclIcuInit(
 			     IcuConverterAliasesObjCmd,
 			     0,
 			     TclIcuCleanup);
-	/* Ref count number of commands */
-	icu_fns.nopen += 2;
     }
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclLoadIcuObjCmd --
+ *
+ *    Loads and initializes ICU
+ *
+ * Results:
+ *    TCL_OK    - Success.
+ *    TCL_ERROR - Error.
+ *
+ * Side effects:
+ *    Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclLoadIcuObjCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1 , objv, "");
+	return TCL_ERROR;
+    }
+    TclIcuInit(interp);
+    return TCL_OK;
 }
 
 /*
