@@ -1199,6 +1199,10 @@ Tcl_CreateInterp(void)
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
 	    CoroTypeObjCmd, NULL, NULL);
 
+    /* Load and intialize ICU */
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::loadIcu",
+	    TclLoadIcuObjCmd, NULL, NULL);
+
     /* Export unsupported commands */
     nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
     if (nsPtr) {
@@ -1340,8 +1344,6 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 #endif
-
-    TclIcuInit(interp);
 
     TOP_CB(iPtr) = NULL;
     return interp;
