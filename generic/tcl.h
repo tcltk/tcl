@@ -525,7 +525,7 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 #define TCL_CODE_USER_MIN	5
-#define TCL_CODE_USER_MAX	0x3fffffff /* 268435455  */
+#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
 
 /*
  *----------------------------------------------------------------------------
