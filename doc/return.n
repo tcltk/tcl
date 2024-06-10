@@ -79,7 +79,7 @@ were the command \fBcontinue\fR.
 .
 \fIValue\fR must be an integer;  it will be returned as the
 return code for the current procedure. Applications
-and packages should use values in the range 5 to 268435455 (0x3fffffff)
+and packages should use values in the range 5 to 1073741823 (0x3fffffff)
 for their own purposes. Values outside this range are reserved
 for use by Tcl.
 .LP
