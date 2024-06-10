@@ -207,7 +207,7 @@ result that match the type \fBTcl_FreeProc\fR:
 .PP
 .CS
 typedef void \fBTcl_FreeProc\fR(
-        char *\fIblockPtr\fR);
+        void *\fIblockPtr\fR);
 .CE
 .PP
 When \fIfreeProc\fR is called, its \fIblockPtr\fR will be set to
