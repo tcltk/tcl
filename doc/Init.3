@@ -16,6 +16,7 @@ int
 .sp
 const char *
 \fBTcl_SetPreInitScript\fR(\fIscriptPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
@@ -38,9 +39,8 @@ A value of \fINULL\fR may be passed to not register any script.
 The pre-initialization script is executed by \fBTcl_Init\fR before accessing
 the file system. The purpose is to typically prepare a custom file system
 (like an embedded zip-file) to be activated before the search.
-
+.PP
 .SH "SEE ALSO"
 Tcl_AppInit, Tcl_Main
-
 .SH KEYWORDS
 application, initialization, interpreter
