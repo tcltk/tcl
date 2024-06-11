@@ -354,7 +354,7 @@ first non-hexadecimal character is encountered, the maximum of eight
 hexadecimal digits are reached, or an overflow would occur in the maximum
 value of \fBU+\fI10ffff\fR.
 .IP \fB\ev\fR 5
-vertical tab, as in C are all available.
+vertical tab, as in C
 .IP \fB\ex\fIhh\fR 5
 (where \fIhh\fR is one or two hexadecimal digits) the character
 whose hexadecimal value is \fB0x\fIhh\fR.

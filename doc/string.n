@@ -445,8 +445,8 @@ and then apply \fBstring length\fR to that.
 \fBstring length\fR [encoding convertto utf-8 $theString]
 .CE
 .RE
-.TP
 .\" METHOD: wordend
+.TP
 \fBstring wordend \fIstring charIndex\fR
 .
 Returns the index of the character just after the last one in the word

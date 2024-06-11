@@ -140,7 +140,7 @@ regular expression.  Examples are:
 .RE
 .\" OPTION: -start
 .TP 15
-\fB\-start\fR \fIindex\fR
+\fB\-start\fI index\fR
 .
 Specifies a character index offset into the string to start
 matching the regular expression at.
