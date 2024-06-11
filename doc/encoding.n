@@ -49,11 +49,14 @@ Performs one of the following encoding \fIoperations\fR:
 .\" METHOD: convertfrom
 .TP
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
+.VS "TCL8.7 TIP607, TIP656"
 .TP
-\fBencoding convertfrom\fR ?\fB\-profile \fIprofile\fR? ?\fB\-failindex var\fR? \fIencoding data\fR
+\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
+.VE "TCL8.7 TIP607, TIP656"
 .
 Decodes \fIdata\fR encoded in \fIencoding\fR. If \fIencoding\fR is not
 specified the current system encoding is used.
+.PP
 .VS "TCL8.7 TIP607, TIP656"
 \fB\-profile\fR determines how invalid data for the encoding are handled.  See
 the \fBPROFILES\fR section below for details.  Returns an error if decoding
@@ -67,7 +70,7 @@ entire result of the conversion is returned and the value \fB-1\fR is stored in
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertto\fR ?\fB\-profile \fIprofile\fR? ?\fB\-failindex var\fR? \fIencoding data\fR
+\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
 .
 Converts \fIstring\fR to \fIencoding\fR.  If \fIencoding\fR is not given, the
 current system encoding is used.

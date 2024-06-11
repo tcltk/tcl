@@ -876,7 +876,7 @@ full line.
 .CS
 % set f [open test_A_195_B.txt r]
 file384b6a8
-% chan configure $f -encoding utf-8 -profile strict
+% chan configure $f -encoding utf-8
 % catch {chan gets $f} e d
 1
 % set d
@@ -886,7 +886,7 @@ file384b6a8
 -errorinfo {...} -errorline 1
 % chan tell $f
 0
-% chan configure $f -encoding binary -profile strict
+% chan configure $f -encoding binary
 % chan gets $f
 AÃB
 .CE
@@ -900,7 +900,7 @@ position 1. The data at the error position is thus recovered by the next
 .CS
 % set f [open test_A_195_B.txt r]
 file35a65a0
-% chan configure $f -encoding utf-8 -profile strict -blocking 1
+% chan configure $f -encoding utf-8 -blocking 1
 % catch {chan read $f} e d
 1
 % set d
@@ -910,7 +910,7 @@ file35a65a0
 -errorinfo {...} -errorline 1
 % chan tell $f
 1
-% chan configure $f -encoding binary -profile strict
+% chan configure $f -encoding binary
 % chan read $f
 ÃB
 % chan close $f
@@ -921,7 +921,7 @@ Finally the same example, but this time with a non-blocking channel.
 .CS
 % set f [open test_A_195_B.txt r]
 file35a65a0
-% chan configure $f -encoding utf-8 -profile strict -blocking 0
+% chan configure $f -encoding utf-8 -blocking 0
 % chan read $f
 A
 % chan tell $f
