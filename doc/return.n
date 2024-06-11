@@ -13,11 +13,11 @@
 .SH NAME
 return \- Return from a procedure, or set return code of a script
 .SH SYNOPSIS
+.nf
 \fBreturn \fR?\fIresult\fR?
-.sp
 \fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
-.sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -54,7 +54,7 @@ of the procedure is 0 (\fBTCL_OK\fR).
 .
 Error return: the return code of the procedure is 1 (\fBTCL_ERROR\fR).
 The procedure command behaves in its calling context as if it
-were the command \fBerror\fR \fIresult\fR.  See below for additional
+were the command \fBerror\fI result\fR.  See below for additional
 options.
 .TP 13
 \fBreturn\fR (or \fB2\fR)
