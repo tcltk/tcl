@@ -12,10 +12,10 @@
 .SH NAME
 socket \- Open a TCP network connection
 .SH SYNOPSIS
-.sp
+.nf
 \fBsocket \fR?\fIoptions\fR? \fIhost port\fR
-.sp
 \fBsocket\fR \fB\-server \fIcommand\fR ?\fIoptions\fR? \fIport\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP

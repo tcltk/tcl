@@ -96,6 +96,17 @@ its version number as part of the name.  This has the advantage of
 allowing multiple versions of Tcl to exist on the same system at once,
 but also the disadvantage of making it harder to write scripts that
 start up uniformly across different versions of Tcl.
+.PP
+Alternatively, you can use /usr/bin/env to locate tclsh on the path,
+like this:
+.PP
+.CS
+\fB#!/usr/bin/env tclsh\fR
+.CE
+.PP
+That has the advantages of being succinct and simple, but the
+disadvantage of not being flexible in the face of varying names for
+the binary.
 .SH "VARIABLES"
 .PP
 \fBTclsh\fR sets the following global Tcl variables in addition to those
