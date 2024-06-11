@@ -92,7 +92,7 @@ calling Tcl are compiled with \fBTCL_MEM_DEBUG\fR defined, however,
 these macros are redefined to be special debugging versions
 of these procedures.  To support Tcl's memory debugging within a
 module, use the macros rather than direct calls to \fBTcl_Alloc\fR, etc.
-
+.PP
 \fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the
 provided DString. This function cannot be used in stub-enabled extensions,
 and it is only available if Tcl is compiled with the threaded memory allocator.

@@ -328,7 +328,7 @@ details about the old structure.
 The \fBTcl_ChannelType\fR structure contains the following fields:
 .PP
 .CS
-typedef struct Tcl_ChannelType {
+typedef struct {
         const char *\fItypeName\fR;
         Tcl_ChannelTypeVersion \fIversion\fR;
         Tcl_DriverCloseProc *\fIcloseProc\fR;
@@ -386,7 +386,6 @@ This value can be retrieved with \fBTcl_ChannelName\fR, which returns
 a pointer to the string.
 .SS VERSION
 .PP
-
 The \fIversion\fR field should be set to the version of the structure
 that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
 \fBTCL_CHANNEL_VERSION_3\fR must be set to specify the \fIwideSeekProc\fR member.

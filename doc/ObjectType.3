@@ -154,17 +154,16 @@ This definition permits us to pass internal representations and pointers to
 them as arguments and results in public routines.
 .SH "THE TCL_OBJTYPE STRUCTURE"
 .PP
-Extension writers can define new value types by defining four
-procedures and
-initializing a Tcl_ObjType structure to describe the type.
-Extension writers may also pass a pointer to their Tcl_ObjType
-structure to \fBTcl_RegisterObjType\fR if they wish to permit
-other extensions to look up their Tcl_ObjType by name with
-the \fBTcl_GetObjType\fR routine.
-The \fBTcl_ObjType\fR structure is defined as follows:
+Extension writers can define new value types by defining four to eight
+procedures and initializing a Tcl_ObjType structure to describe the
+type.  Extension writers may also pass a pointer to their Tcl_ObjType
+structure to \fBTcl_RegisterObjType\fR if they wish to permit other
+extensions to look up their Tcl_ObjType by name with the
+\fBTcl_GetObjType\fR routine.  The \fBTcl_ObjType\fR structure is
+defined as follows:
 .PP
 .CS
-typedef struct Tcl_ObjType {
+typedef struct {
     const char *\fIname\fR;
     Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
@@ -334,4 +333,5 @@ then those subsidiary values may have their reference counts modified.
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3)
 .SH KEYWORDS
-internal representation, value, value type, string representation, type conversion
+internal representation, value, value type, string representation,
+type conversion
