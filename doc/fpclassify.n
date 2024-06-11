@@ -19,26 +19,16 @@ package require \fBtcl 8.7\fR
 .SH DESCRIPTION
 The \fBfpclassify\fR command takes a floating point number, \fIvalue\fR, and
 returns one of the following strings that describe it:
-.TP
-\fBzero\fR
-.
+.IP \fBzero\fR
 \fIvalue\fR is a floating point zero.
-.TP
-\fBsubnormal\fR
-.
+.IP \fBsubnormal\fR
 \fIvalue\fR is the result of a gradual underflow.
-.TP
-\fBnormal\fR
-.
+.IP \fBnormal\fR
 \fIvalue\fR is an ordinary floating-point number (not zero, subnormal,
 infinite, nor NaN).
-.TP
-\fBinfinite\fR
-.
+.IP \fBinfinite\fR
 \fIvalue\fR is a floating-point infinity.
-.TP
-\fBnan\fR
-.
+.IP \fBnan\fR
 \fIvalue\fR is Not-a-Number.
 .PP
 The \fBfpclassify\fR command throws an error if value is not a floating-point
