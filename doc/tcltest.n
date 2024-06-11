@@ -89,8 +89,9 @@ See \fBCREATING TEST SUITES WITH TCLTEST\fR below for an extended example
 of how to use the commands of \fBtcltest\fR to produce test suites
 for your Tcl-enabled code.
 .SH COMMANDS
+.\" COMMAND: test
 .TP
-\fBtest\fR \fIname description\fR ?\fI\-option value ...\fR?
+\fBtest\fI name description\fR ?\fI\-option value ...\fR?
 .
 Defines and possibly runs a test with the name \fIname\fR and
 description \fIdescription\fR.  The name and description of a test
@@ -104,17 +105,18 @@ See \fBTESTS\fR below for a complete description of the valid
 options and how they define a test.  The \fBtest\fR command
 returns an empty string.
 .TP
-\fBtest\fR \fIname description\fR ?\fIconstraints\fR? \fIbody result\fR
+\fBtest\fI name description\fR ?\fIconstraints\fR? \fIbody result\fR
 .
 This form of \fBtest\fR is provided to support test suites written
 for version 1 of the \fBtcltest\fR package, and also a simpler
 interface for a common usage.  It is the same as
-.QW "\fBtest\fR \fIname description\fB \-constraints \fIconstraints\fB \-body \fIbody\fB \-result \fIresult\fR" .
+.QW "\fBtest\fI name description\fB \-constraints \fIconstraints\fB \-body \fIbody\fB \-result \fIresult\fR" .
 All other options to \fBtest\fR
 take their default values.  When \fIconstraints\fR is omitted, this
 form of \fBtest\fR can be distinguished from the first because
 all \fIoption\fRs begin with
 .QW \- .
+.\" COMMAND: loadTestedCommands
 .TP
 \fBloadTestedCommands\fR
 .
@@ -124,8 +126,9 @@ Returns the result of that script evaluation, including any error
 raised by the script.  Use this command and the related
 configuration options to provide the commands to be tested to
 the interpreter running the test suite.
+.\" COMMAND: makeFile
 .TP
-\fBmakeFile\fR \fIcontents name\fR ?\fIdirectory\fR?
+\fBmakeFile\fI contents name\fR ?\fIdirectory\fR?
 .
 Creates a file named \fIname\fR relative to
 directory \fIdirectory\fR and write \fIcontents\fR
@@ -140,16 +143,18 @@ of \fBcleanupTests\fR, unless it is removed by
 \fIdirectory\fR is the directory \fBconfigure \-tmpdir\fR.
 Returns the full path of the file created.  Use this command
 to create any text file required by a test with contents as needed.
+.\" COMMAND: removeFile
 .TP
-\fBremoveFile\fR \fIname\fR ?\fIdirectory\fR?
+\fBremoveFile\fI name\fR ?\fIdirectory\fR?
 .
 Forces the file referenced by \fIname\fR to be removed.  This file name
 should be relative to \fIdirectory\fR.   The default value of
 \fIdirectory\fR is the directory \fBconfigure \-tmpdir\fR.
 Returns an empty string.  Use this command to delete files
 created by \fBmakeFile\fR.
+.\" COMMAND: makeDirectory
 .TP
-\fBmakeDirectory\fR \fIname\fR ?\fIdirectory\fR?
+\fBmakeDirectory\fI name\fR ?\fIdirectory\fR?
 .
 Creates a directory named \fIname\fR relative to directory \fIdirectory\fR.
 The directory will be removed by the next evaluation of \fBcleanupTests\fR,
@@ -158,8 +163,9 @@ The default value of \fIdirectory\fR is the directory
 \fBconfigure \-tmpdir\fR.
 Returns the full path of the directory created.  Use this command
 to create any directories that are required to exist by a test.
+.\" COMMAND: removeDirectory
 .TP
-\fBremoveDirectory\fR \fIname\fR ?\fIdirectory\fR?
+\fBremoveDirectory\fI name\fR ?\fIdirectory\fR?
 .
 Forces the directory referenced by \fIname\fR to be removed. This
 directory should be relative to \fIdirectory\fR.
@@ -167,8 +173,9 @@ The default value of \fIdirectory\fR is the directory
 \fBconfigure \-tmpdir\fR.
 Returns an empty string.  Use this command to delete any directories
 created by \fBmakeDirectory\fR.
+.\" COMMAND: viewFile
 .TP
-\fBviewFile\fR \fIfile\fR ?\fIdirectory\fR?
+\fBviewFile\fI file\fR ?\fIdirectory\fR?
 .
 Returns the contents of \fIfile\fR, except for any
 final newline, just as \fBread \-nonewline\fR would return.
@@ -180,6 +187,7 @@ by a test into the result of that test for matching against
 an expected result.  The contents of the file are read using
 the system encoding, so its usefulness is limited to text
 files.
+.\" COMMAND: cleanupTests
 .TP
 \fBcleanupTests\fR
 .
@@ -200,6 +208,7 @@ to \fBoutputChannel\fR.  This command also restores the original
 shell environment, as described by the global \fBenv\fR
 array. Returns an empty string.
 .RE
+.\" COMMAND: runAllTests
 .TP
 \fBrunAllTests\fR
 .
@@ -209,6 +218,7 @@ the configurable options of \fBtcltest\fR.  See \fBRUNNING ALL TESTS\fR
 below for a complete description of the many variations possible
 with \fBrunAllTests\fR.
 .SS "CONFIGURATION COMMANDS"
+.\" COMMAND: configure
 .TP
 \fBconfigure\fR
 .
@@ -238,6 +248,7 @@ then its value is taken as a list of arguments to pass to \fBconfigure\fR.
 This allows the default values of the configuration options to be
 set by the environment.
 .RE
+.\" COMMAND: customMatch
 .TP
 \fBcustomMatch \fImode script\fR
 .
@@ -252,11 +263,13 @@ is evaluated in the global namespace.
 The completed script is expected to return a boolean value indicating
 whether or not the results match.  The built-in matching modes of
 \fBtest\fR are \fBexact\fR, \fBglob\fR, and \fBregexp\fR.
+.\" COMMAND: testConstraint
 .TP
 \fBtestConstraint \fIconstraint\fR ?\fIboolean\fR?
 .
 Sets or returns the boolean value associated with the named \fIconstraint\fR.
 See \fBTEST CONSTRAINTS\fR below for more information.
+.\" COMMAND: interpreter
 .TP
 \fBinterpreter\fR ?\fIexecutableName\fR?
 .
@@ -265,6 +278,7 @@ Sets or returns the name of the executable to be \fBexec\fRed by
 \fBconfigure \-singleproc\fR is false.
 The default value for \fBinterpreter\fR is the name of the
 currently running program as returned by \fBinfo nameofexecutable\fR.
+.\" COMMAND: outputChannel
 .TP
 \fBoutputChannel\fR ?\fIchannelID\fR?
 .
@@ -272,6 +286,7 @@ Sets or returns the output channel ID.  This defaults to \fBstdout\fR.
 Any test that prints test related output should send
 that output to \fBoutputChannel\fR rather than letting
 that output default to \fBstdout\fR.
+.\" COMMAND: errorChannel
 .TP
 \fBerrorChannel\fR ?\fIchannelID\fR?
 .
@@ -280,6 +295,7 @@ Any test that prints error messages should send
 that output to \fBerrorChannel\fR rather than printing
 directly to \fBstderr\fR.
 .SS "SHORTCUT CONFIGURATION COMMANDS"
+.\" COMMAND: debug
 .TP
 \fBdebug\fR ?\fIlevel\fR?
 .
@@ -290,76 +306,91 @@ Same as
 .
 Same as
 .QW "\fBconfigure \-errfile\fR ?\fIfilename\fR?" .
+.\" COMMAND: limitConstraints
 .TP
 \fBlimitConstraints\fR ?\fIboolean\fR?
 .
 Same as
 .QW "\fBconfigure \-limitconstraints\fR ?\fIboolean\fR?" .
+.\" COMMAND: loadFile
 .TP
 \fBloadFile\fR ?\fIfilename\fR?
 .
 Same as
 .QW "\fBconfigure \-loadfile\fR ?\fIfilename\fR?" .
+.\" COMMAND: loadScript
 .TP
 \fBloadScript\fR ?\fIscript\fR?
 .
 Same as
 .QW "\fBconfigure \-load\fR ?\fIscript\fR?" .
+.\" COMMAND: match
 .TP
 \fBmatch\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-match\fR ?\fIpatternList\fR?" .
+.\" COMMAND: matchDirectories
 .TP
 \fBmatchDirectories\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-relateddir\fR ?\fIpatternList\fR?" .
+.\" COMMAND: matchFiles
 .TP
 \fBmatchFiles\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-file\fR ?\fIpatternList\fR?" .
+.\" COMMAND: outputFile
 .TP
 \fBoutputFile\fR ?\fIfilename\fR?
 .
 Same as
 .QW "\fBconfigure \-outfile\fR ?\fIfilename\fR?" .
+.\" COMMAND: preserveCore
 .TP
 \fBpreserveCore\fR ?\fIlevel\fR?
 .
 Same as
 .QW "\fBconfigure \-preservecore\fR ?\fIlevel\fR?" .
+.\" COMMAND: singleProcess
 .TP
 \fBsingleProcess\fR ?\fIboolean\fR?
 .
 Same as
 .QW "\fBconfigure \-singleproc\fR ?\fIboolean\fR?" .
+.\" COMMAND: skip
 .TP
 \fBskip\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-skip\fR ?\fIpatternList\fR?" .
+.\" COMMAND: skipDirectories
 .TP
 \fBskipDirectories\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-asidefromdir\fR ?\fIpatternList\fR?" .
+.\" COMMAND: skipFiles
 .TP
 \fBskipFiles\fR ?\fIpatternList\fR?
 .
 Same as
 .QW "\fBconfigure \-notfile\fR ?\fIpatternList\fR?" .
+.\" COMMAND: temporaryDirectory
 .TP
 \fBtemporaryDirectory\fR ?\fIdirectory\fR?
 .
 Same as
 .QW "\fBconfigure \-tmpdir\fR ?\fIdirectory\fR?" .
+.\" COMMAND: testsDirectory
 .TP
 \fBtestsDirectory\fR ?\fIdirectory\fR?
 .
 Same as
 .QW "\fBconfigure \-testdir\fR ?\fIdirectory\fR?" .
+.\" COMMAND: verbose
 .TP
 \fBverbose\fR ?\fIlevel\fR?
 .
@@ -372,7 +403,7 @@ alternatives provided by \fBtcltest\fR or \fBTcl\fR itself.  They
 are retained to support existing test suites, but should be avoided
 in new code.
 .TP
-\fBtest\fR \fIname description optionList\fR
+\fBtest\fI name description optionList\fR
 .
 This form of \fBtest\fR was provided to enable passing many
 options spanning several lines to \fBtest\fR as a single
@@ -396,6 +427,7 @@ If you insist on using this form, examine
 the source code of \fBtcltest\fR if you want to know the substitution
 details, or just enclose the third through last argument
 to \fBtest\fR in braces and hope for the best.
+.\" COMMAND: workingDirectory
 .TP
 \fBworkingDirectory\fR ?\fIdirectoryName\fR?
 .
@@ -403,6 +435,7 @@ Sets or returns the current working directory when the test suite is
 running.  The default value for workingDirectory is the directory in
 which the test suite was launched.  The Tcl commands \fBcd\fR and
 \fBpwd\fR are sufficient replacements.
+.\" COMMAND: normalizeMsg
 .TP
 \fBnormalizeMsg \fImsg\fR
 .
@@ -414,6 +447,7 @@ is rather imprecise.  Tcl offers plenty of string
 processing commands to modify strings as you wish, and
 \fBcustomMatch\fR allows flexible matching of actual and expected
 results.
+.\" COMMAND: normalizePath
 .TP
 \fBnormalizePath \fIpathVar\fR
 .
@@ -421,6 +455,7 @@ Resolves symlinks in a path, thus creating a path without internal
 redirection.  It is assumed that \fIpathVar\fR is absolute.
 \fIpathVar\fR is modified in place.  The Tcl command \fBfile normalize\fR
 is a sufficient replacement.
+.\" COMMAND: bytestring
 .TP
 \fBbytestring \fIstring\fR
 .
@@ -445,7 +480,7 @@ also influence how \fBtest\fR operates.
 The valid options for \fBtest\fR are summarized:
 .PP
 .CS
-\fBtest\fR \fIname\fR \fIdescription\fR
+\fBtest\fI name description\fR
         ?\fB\-constraints \fIkeywordList|expression\fR?
         ?\fB\-setup \fIsetupScript\fR?
         ?\fB\-body \fItestScript\fR?

@@ -23,6 +23,8 @@ tm \- Facilities for locating and loading of Tcl Modules
 This document describes the facilities for locating and loading Tcl
 Modules (see \fBMODULE DEFINITION\fR for the definition of a Tcl Module).
 The following commands are supported:
+.\" COMMAND: path
+.\" METHOD: add
 .TP
 \fB::tcl::tm::path add \fR?\fIpath\fR...?
 .
@@ -45,16 +47,19 @@ list. As they are added to the front of the list they are searched in
 reverse order of addition. In other words, the paths added last are
 looked at first.
 .RE
+.\" METHOD: remove
 .TP
 \fB::tcl::tm::path remove \fR?\fIpath\fR...?
 .
 Removes the paths from the list of module paths. The command silently
 ignores all paths which are not on the list.
+.\" METHOD: list
 .TP
 \fB::tcl::tm::path list\fR
 .
 Returns a list containing all registered module paths, in the order
 that they are searched for modules.
+.\" COMMAND: roots
 .TP
 \fB::tcl::tm::roots \fR?\fIpath\fR...?
 .
