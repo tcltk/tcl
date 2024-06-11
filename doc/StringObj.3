@@ -84,6 +84,7 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.fi
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
 .AP "const char" *bytes in
@@ -118,7 +119,7 @@ The index of the last Unicode character in the Unicode range to be
 returned as a new value. If negative, take all characters up to
 the last one available.
 .AP Tcl_Obj *objPtr in/out
-Points to a value to manipulate.
+A pointer to a value to read, or to an unshared value to modify.
 .AP Tcl_Obj *appendObjPtr in
 The value to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
 .AP int *lengthPtr out
