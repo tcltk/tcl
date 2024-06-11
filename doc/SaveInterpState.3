@@ -36,9 +36,9 @@ Saved state token to be restored or discarded.
 These routines allows a C procedure to take a snapshot of the current
 state of an interpreter so that it can be restored after a call
 to \fBTcl_Eval\fR or some other routine that modifies the interpreter
-state.  There are two triplets of routines meant to work together.
+state.
 .PP
-The first triplet stores the snapshot of interpreter state in
+\fBTcl_SaveInterpState\fR stores a snapshot of the interpreter state in
 an opaque token returned by \fBTcl_SaveInterpState\fR.  That token
 value may then be passed back to one of \fBTcl_RestoreInterpState\fR
 or \fBTcl_DiscardInterpState\fR, depending on whether the interp
