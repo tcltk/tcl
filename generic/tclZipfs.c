@@ -433,28 +433,26 @@ static const Tcl_Filesystem zipfsFilesystem = {
 /*
  * The channel type/driver definition used for ZIP archive members.
  */
-
-static Tcl_ChannelType ZipChannelType = {
-    "zip",			/* Type name. */
+static const Tcl_ChannelType zipChannelType = {
+    "zip",
     TCL_CHANNEL_VERSION_5,
-    NULL,			/* Close channel, clean instance data */
-    ZipChannelRead,		/* Handle read request */
-    ZipChannelWrite,		/* Handle write request */
-    NULL,			/* Move location of access point, NULL'able */
-    NULL,			/* Set options, NULL'able */
-    NULL,			/* Get options, NULL'able */
-    ZipChannelWatchChannel,	/* Initialize notifier */
-    ZipChannelGetFile,		/* Get OS handle from the channel */
-    ZipChannelClose,		/* 2nd version of close channel, NULL'able */
-    NULL,			/* Set blocking mode for raw channel,
-				 * NULL'able */
-    NULL,			/* Function to flush channel, NULL'able */
-    NULL,			/* Function to handle event, NULL'able */
-    ZipChannelWideSeek,		/* Wide seek function, NULL'able */
-    NULL,			/* Thread action function, NULL'able */
-    NULL,			/* Truncate function, NULL'able */
+    NULL,			/* Deprecated. */
+    ZipChannelRead,
+    ZipChannelWrite,
+    NULL,			/* Deprecated. */
+    NULL,			/* Set options proc. */
+    NULL,			/* Get options proc. */
+    ZipChannelWatchChannel,
+    ZipChannelGetFile,
+    ZipChannelClose,
+    NULL,			/* Set blocking mode for raw channel. */
+    NULL,			/* Function to flush channel. */
+    NULL,			/* Function to handle bubbled events. */
+    ZipChannelWideSeek,
+    NULL,			/* Thread action function. */
+    NULL,			/* Truncate function. */
 };
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -4903,7 +4901,7 @@ ZipChannelOpen(
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
-    return Tcl_CreateChannel(&ZipChannelType, cname, info, flags);
+    return Tcl_CreateChannel(&zipChannelType, cname, info, flags);
 
   error:
     Unlock();

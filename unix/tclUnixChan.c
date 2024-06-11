@@ -161,22 +161,22 @@ static int		TtySetOptionProc(void *instanceData,
 
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Deprecated close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
-    NULL,
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    FileInputProc,
+    FileOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
-    FileGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Initialize notifier. */
-    FileGetHandleProc,		/* Get OS handles out of channel. */
-    FileCloseProc,		/* Close proc. */
-    FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    FileWideSeekProc,		/* wide seek proc. */
-    NULL,
-    FileTruncateProc		/* truncate proc. */
+    FileGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    FileCloseProc,
+    FileBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    FileWideSeekProc,
+    NULL,			/* Thread action proc. */
+    FileTruncateProc
 };
 
 #ifdef SUPPORTS_TTY
@@ -186,23 +186,23 @@ static const Tcl_ChannelType fileChannelType = {
  */
 
 static const Tcl_ChannelType ttyChannelType = {
-    "tty",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Deprecated close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
+    "tty",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    FileInputProc,
+    FileOutputProc,
+    NULL,			/* Deprecated. */
+    TtySetOptionProc,
+    TtyGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    TtyCloseProc,
+    FileBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
     NULL,			/* Seek proc. */
-    TtySetOptionProc,		/* Set option proc. */
-    TtyGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Initialize notifier. */
-    FileGetHandleProc,		/* Get OS handles out of channel. */
-    TtyCloseProc,		/* Close proc. */
-    FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc. */
-    NULL,			/* thread action proc. */
-    NULL			/* truncate proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 

@@ -13,7 +13,7 @@ Tcl_Alloc, Tcl_Free, Tcl_Realloc, Tcl_AttemptAlloc, Tcl_AttemptRealloc, Tcl_GetM
 .nf
 \fB#include <tcl.h>\fR
 .sp
-char *
+void *
 \fBTcl_Alloc\fR(\fIsize\fR)
 .sp
 \fBTcl_Free\fR(\fIptr\fR)
@@ -33,7 +33,7 @@ void *
 .AS char *size
 .AP "size_t" size in
 Size in bytes of the memory block to allocate.
-.AP char *ptr in
+.AP void *ptr in
 Pointer to memory block to free or realloc.
 .AP Tcl_DString *dsPtr in
 Initialized DString pointer.

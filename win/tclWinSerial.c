@@ -202,23 +202,23 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
  */
 
 static const Tcl_ChannelType serialChannelType = {
-    "serial",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    SerialInputProc,		/* Input proc. */
-    SerialOutputProc,		/* Output proc. */
+    "serial",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    SerialInputProc,
+    SerialOutputProc,
+    NULL,			/* Deprecated. */
+    SerialSetOptionProc,
+    SerialGetOptionProc,
+    SerialWatchProc,
+    SerialGetHandleProc,
+    SerialCloseProc,
+    SerialBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
     NULL,			/* Seek proc. */
-    SerialSetOptionProc,	/* Set option proc. */
-    SerialGetOptionProc,	/* Get option proc. */
-    SerialWatchProc,		/* Set up notifier to watch the channel. */
-    SerialGetHandleProc,	/* Get an OS handle from channel. */
-    SerialCloseProc,		/* close2proc. */
-    SerialBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    SerialThreadActionProc,	/* thread action proc */
-    NULL                       /* truncate */
+    SerialThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*

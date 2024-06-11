@@ -208,21 +208,21 @@ static void		ZlibTransformTimerRun(void *clientData);
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
     TCL_CHANNEL_VERSION_5,
-    NULL,
+    NULL,			/* Deprecated. */
     ZlibTransformInput,
     ZlibTransformOutput,
-    NULL,			/* seekProc */
+    NULL,			/* Deprecated. */
     ZlibTransformSetOption,
     ZlibTransformGetOption,
     ZlibTransformWatch,
     ZlibTransformGetHandle,
-    ZlibTransformClose,		/* close2Proc */
+    ZlibTransformClose,
     ZlibTransformBlockMode,
-    NULL,			/* flushProc */
+    NULL,			/* Flush proc. */
     ZlibTransformEventHandler,
-    NULL,			/* wideSeekProc */
-    NULL,
-    NULL
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 
 /*
