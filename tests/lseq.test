@@ -109,12 +109,16 @@ test lseq-1.15 {count with decreasing step} {
     -result {5 3 1 -1 -3}
 }
 
-test lseq-1.16 {large numbers} {
+test lseq-1.16 {large doubles} {
     -body {
 	lseq [expr {int(1e6)}] [expr {int(2e6)}] [expr {int(1e5)}]
     }
     -result {1000000 1100000 1200000 1300000 1400000 1500000 1600000 1700000 1800000 1900000 2000000}
 }
+
+test lseq-1.16.2 {large numbers (bigints are not supported yet)} -body {
+    lseq 0xfffffffffffffffe 0xffffffffffffffff
+} -returnCodes 1 -result {integer value too large to represent}
 
 test lseq-1.17 {too many arguments} -body {
     lseq 12 to 24 by 2 with feeling
