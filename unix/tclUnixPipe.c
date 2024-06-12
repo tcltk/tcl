@@ -78,23 +78,23 @@ static int		SetupStdFile(TclFile file, int type);
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TCL_CLOSE2PROC,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
+    TCL_CLOSE2PROC,		/* Deprecated. */
+    PipeInputProc,
+    PipeOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Initialize notifier. */
-    PipeGetHandleProc,		/* Get OS handles out of channel. */
-    PipeClose2Proc,		/* close2proc. */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    NULL,			/* thread action proc */
-    NULL			/* truncation */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncation proc. */
 };
 
 /*
@@ -827,7 +827,7 @@ TclpCreateCommandChannel(
 				 * background exec). */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
+    int fd;
     PipeState *statePtr = (PipeState *)ckalloc(sizeof(PipeState));
     int mode;
 
@@ -851,13 +851,13 @@ TclpCreateCommandChannel(
      */
 
     if (readFile) {
-	channelId = GetFd(readFile);
+	fd = GetFd(readFile);
     } else if (writeFile) {
-	channelId = GetFd(writeFile);
+	fd = GetFd(writeFile);
     } else if (errorFile) {
-	channelId = GetFd(errorFile);
+	fd = GetFd(errorFile);
     } else {
-	channelId = 0;
+	fd = 0;
     }
 
     /*
@@ -866,7 +866,7 @@ TclpCreateCommandChannel(
      * natural to use "pipe%d".
      */
 
-    snprintf(channelName, sizeof(channelName), "file%d", channelId);
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
     statePtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    statePtr, mode);
     return statePtr->channel;
@@ -1388,7 +1388,7 @@ Tcl_PidObjCmd(
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
