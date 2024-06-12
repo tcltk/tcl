@@ -13,7 +13,7 @@
 #
 #----------------------------------------------------------------------
 
-loadIcu
+::tcl::unsupported::loadIcu
 
 namespace eval ::tcl::unsupported::icu {
     # Map Tcl encoding names to ICU and back. Note ICU has multiple aliases
@@ -68,10 +68,8 @@ namespace eval ::tcl::unsupported::icu {
         array default set tclToIcu ""
         array default set icuToTcl ""
 
-        # Redefine ourselves to no-op. Note "args" argument as it
-        # seems required for byte code compiler to optimize the
-        # to a single noop
-        proc Init args {}
+        # Redefine ourselves to no-op.
+        proc Init {} {}
     }
     # Primarily used during development
     proc MappedIcuNames {{pat *}} {
@@ -133,15 +131,15 @@ namespace eval ::tcl::unsupported::icu {
         tclToIcu $tclName
     }
 
-    # Prints a log message
-    proc log {message} {
-        puts stderr $message
+    # Prints a warning
+    proc warn {message} {
+        puts stderr "Warning: $message"
     }
 
     # Return 1 / 0 depending on whether the data can
     # be decoded with a given encoding
     proc checkEncoding {data enc} {
-        encoding convertfrom -failindex x $enc $data
+        encoding convertfrom -profile strict -failindex x $enc $data
         return [expr {$x < 0}]
     }
 
@@ -151,18 +149,24 @@ namespace eval ::tcl::unsupported::icu {
     # the encoding may be perfectly valid but the data at
     # end is a truncated encoding sequence.
     # TODO - may be do line at a time to get around this problem
-    proc detectFileEncoding {path {sampleLength {}}} {
+    proc detectFileEncoding {path {expectedEncoding utf-8} {sampleLength {}}} {
+        Init
         set fd [open $path rb]
         try {
             set data [read $fd {*}$sampleLength]
         } finally {
             close $fd
         }
-        # ICU sometimes returns ISO8859-1 for UTF-8 since
-        # all bytes are always valid is 8859-1. So always check
-        # UTF-8 first
-        if {[checkEncoding $data utf-8]} {
-            return utf-8
+        if {[checkEncoding $data $expectedEncoding]} {
+            return $expectedEncoding
+        }
+
+        # ICU sometimes returns ISO8859-1 for UTF-8 since all bytes are always
+        # valid in 8859-1. So always check UTF-8 first
+        if {$expectedEncoding ne "utf-8"} {
+            if {[checkEncoding $data "utf-8"]} {
+                return utf-8
+            }
         }
 
         # Get possible encodings in order of confidence
@@ -171,17 +175,115 @@ namespace eval ::tcl::unsupported::icu {
         # as already checked above.
         foreach icuName $encodingCandidates {
             set tclName [icuToTcl $icuName]
-            if {$tclName ne "" && $tclName ne "utf-8" && [checkEncoding $data $tclName]} {
+            if {$tclName ne "" &&
+                $tclName ne $expectedEncoding &&
+                $tclName ne "utf-8" &&
+                [checkEncoding $data $tclName]} {
                 return $tclName
             }
         }
+
         return ""
+    }
+
+    # Checks if path begins with a tilde and expands it after
+    # logging a warning
+    proc tildeexpand {path {cmd {}}} {
+        if {[string index $path 0] eq "~" && ![file exists $path]} {
+            if {$cmd ne ""} {
+                append cmd " command "
+            }
+            warn [string cat "Tcl 9 ${cmd}does not do tilde expansion on paths." \
+                      " Change code to explicitly call \"file tildeexpand\"." \
+                      " Expanding \"$path\"."]
+            set path [::file tildeexpand $path]
+        }
+        return $path
+    }
+
+    # Checks if file command argument needs tilde expansion,
+    # expanding it if so after a warning.
+    proc file {cmd args} {
+        switch $cmd {
+            atime - attributes - dirname - executable - exists - extension -
+            isdirectory - isfile - lstat - mtime - nativename - normalize -
+            owned - pathtype - readable - readlink - rootname - size - split -
+            separator - stat - system - tail - type - writable {
+                # First argument if present is the name
+                if {[llength $args]} {
+                    # Replace first arg with expanded form
+                    ledit args 0 0 [tildeexpand [lindex $args 0] "file $cmd"]
+                }
+            }
+            copy -
+            delete -
+            link -
+            mkdir -
+            rename {
+                # Some arguments may be options, all others paths. Only check
+                # if beginning with tilde. Option will not begin with tilde
+                set args [lmap arg $args {
+                    tildeexpand $arg "file $cmd"
+                }]
+            }
+            join {
+                # Cannot tilde expand as semantics will not be same.
+                # Just warn, throw away result
+                foreach arg $args {
+                    tildeexpand $arg "file $cmd"
+                }
+            }
+            home -
+            tempdir -
+            tempfile -
+            tildeexpand {
+                # Naught to do
+            }
+        }
+        tailcall ::file $cmd {*}$args
+    }
+
+    # Opens a channel with an appropriate encoding if it cannot be read with
+    # configured encoding. Also prints warning if path begins with a ~ and
+    # tilde expands it on caller's behalf, again emitting a warning.
+    proc open {path args} {
+        if {[catch {
+            set path [tildeexpand $path]
+
+            # Avoid /dev/random etc.
+            if {[file isfile $path] && [file size $path] > 0} {
+                # Files are opened in system encoding by default. Ensure file
+                # readable with that encoding.
+                set encoding [detectFileEncoding $path [encoding system]]
+                if {$encoding eq ""} {
+                    unset encoding
+                }
+            }
+        } message]} {
+           warn $message
+        }
+
+        # Actual open should not be in a catch!
+        set fd [::open $path {*}$args]
+
+        catch {
+            if {[info exists encoding]} {
+                if {[fconfigure $fd -encoding] ne "binary"} {
+                    if {$encoding ne [encoding system]} {
+                        warn [string cat "File \"$path\" is not in the system encoding." \
+                                  " Configuring channel for encoding $encoding." \
+                                  " This warning may be ignored if the code subsequently sets the encoding."]
+                    fconfigure $fd -encoding $encoding
+                    }
+                }
+            }
+        }
+        return $fd
     }
 
     # Sources a file, attempting to guess an encoding if one is not
     # specified. Logs a message if encoding was not the default UTF-8
     proc source {args} {
-        Init
         if {[llength $args] == 1} {
             # No options specified. Try to determine encoding.
             # In case of errors, just invoke ::source as is
@@ -189,11 +291,11 @@ namespace eval ::tcl::unsupported::icu {
                 set path [lindex $args end]
                 set tclName [detectFileEncoding $path]
                 if {$tclName ne "" && $tclName ne "utf-8"} {
-                    log "Warning: Encoding of $path is not UTF-8. Sourcing with encoding $tclName."
+                    warn "Encoding of $path is not UTF-8. Sourcing with encoding $tclName."
                     set args [linsert $args 0 -encoding $tclName]
                 }
             } message]} {
-                log "Warning: Error detecting encoding for $path: $message"
+                warn "Error detecting encoding for $path: $message"
             }
         }
         tailcall ::source {*}$args
