@@ -987,14 +987,14 @@ proc ::safe::AliasSource {child args} {
 	    fconfigure $f -encoding $encoding
 	}
 	set contents [read $f]
-	# See [Bug 1d26e580cf]
-	if {[string index $contents 0] eq "\uFEFF"} {
-	    set contents [string range $contents 1 end]
-	}
 	close $f
 	::interp eval $child [list info script $file]
     } msg opt]
     if {$code == 0} {
+	# See [Bug 1d26e580cf]
+	if {[string index $contents 0] eq "\uFEFF"} {
+	    set contents [string range $contents 1 end]
+	}
 	set code [catch {::interp eval $child $contents} msg opt]
 	set replacementMsg $msg
     }
