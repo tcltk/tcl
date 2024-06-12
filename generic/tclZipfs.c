@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -258,7 +258,7 @@ typedef struct ZipChannel {
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
+				   need freeing. Else memory to free (ubuf
 				   may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */
@@ -433,28 +433,26 @@ static const Tcl_Filesystem zipfsFilesystem = {
 /*
  * The channel type/driver definition used for ZIP archive members.
  */
-
-static Tcl_ChannelType ZipChannelType = {
-    "zip",			/* Type name. */
+static const Tcl_ChannelType zipChannelType = {
+    "zip",
     TCL_CHANNEL_VERSION_5,
-    NULL,			/* Close channel, clean instance data */
-    ZipChannelRead,		/* Handle read request */
-    ZipChannelWrite,		/* Handle write request */
-    NULL,			/* Move location of access point, NULL'able */
-    NULL,			/* Set options, NULL'able */
-    NULL,			/* Get options, NULL'able */
-    ZipChannelWatchChannel,	/* Initialize notifier */
-    ZipChannelGetFile,		/* Get OS handle from the channel */
-    ZipChannelClose,		/* 2nd version of close channel, NULL'able */
-    NULL,			/* Set blocking mode for raw channel,
-				 * NULL'able */
-    NULL,			/* Function to flush channel, NULL'able */
-    NULL,			/* Function to handle event, NULL'able */
-    ZipChannelWideSeek,		/* Wide seek function, NULL'able */
-    NULL,			/* Thread action function, NULL'able */
-    NULL,			/* Truncate function, NULL'able */
+    NULL,			/* Deprecated. */
+    ZipChannelRead,
+    ZipChannelWrite,
+    NULL,			/* Deprecated. */
+    NULL,			/* Set options proc. */
+    NULL,			/* Get options proc. */
+    ZipChannelWatchChannel,
+    ZipChannelGetFile,
+    ZipChannelClose,
+    NULL,			/* Set blocking mode for raw channel. */
+    NULL,			/* Function to flush channel. */
+    NULL,			/* Function to handle bubbled events. */
+    ZipChannelWideSeek,
+    NULL,			/* Thread action function. */
+    NULL,			/* Truncate function. */
 };
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -875,7 +873,7 @@ static char *
 DecodeZipEntryText(
     const unsigned char *inputBytes,
     unsigned int inputLength,
-    Tcl_DString *dstPtr) /* Must have been initialized by caller! */
+    Tcl_DString *dstPtr)	/* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
     const char *src;
@@ -980,9 +978,10 @@ DecodeZipEntryText(
  *------------------------------------------------------------------------
  */
 static int
-NormalizeMountPoint(Tcl_Interp *interp,
-		    const char *mountPath,
-		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
+NormalizeMountPoint(
+    Tcl_Interp *interp,
+    const char *mountPath,
+    Tcl_DString *dsPtr)		/* Must be initialized by caller! */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -2230,7 +2229,8 @@ ListMountPoints(
  *------------------------------------------------------------------------
  */
 static void
-CleanupMount(ZipFile *zf)        /* Mount point */
+CleanupMount(
+    ZipFile *zf)		/* Mount point */
 {
     ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
@@ -4901,7 +4901,7 @@ ZipChannelOpen(
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
-    return Tcl_CreateChannel(&ZipChannelType, cname, info, flags);
+    return Tcl_CreateChannel(&zipChannelType, cname, info, flags);
 
   error:
     Unlock();

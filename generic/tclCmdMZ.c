@@ -2765,9 +2765,9 @@ StringCmpOpts(
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)wreqlength > TCL_SIZE_MAX) {
-	    	*reqlength = -1;
+		*reqlength = -1;
 	    } else {
-	    	*reqlength = wreqlength;
+		*reqlength = wreqlength;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(

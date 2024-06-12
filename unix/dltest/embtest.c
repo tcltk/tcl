@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 	exitcode = 1;
     }
     if (!exitcode) {
-    	printf("All OK!\n");
+	printf("All OK!\n");
     }
     return exitcode;
 }

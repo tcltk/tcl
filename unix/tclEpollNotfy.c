@@ -263,7 +263,7 @@ PlatformEventsControl(
  *	None.
  *
  * Side effects:
- * 	While tsdPtr->notifierMutex is held:
+ *	While tsdPtr->notifierMutex is held:
  *	- The per-thread eventfd(2) is closed, if non-zero, and set to -1.
  *	- The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
  *	- The per-thread epoll_event structs are freed, if any, and set to 0.

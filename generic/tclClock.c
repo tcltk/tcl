@@ -128,7 +128,7 @@ struct ClockCommand {
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
     void *clientData;		/* Any clientData to give the command (if NULL
-    				 * a reference to ClockClientData will be sent) */
+				 * a reference to ClockClientData will be sent) */
 };
 
 static const struct ClockCommand clockCommands[] = {
@@ -257,7 +257,7 @@ TclClockInit(
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
     memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
-    	void *clientData;
+	void *clientData;
 
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	if (!(clientData = clockCmdPtr->clientData)) {
@@ -438,7 +438,7 @@ NormTimezoneObj(
     }
     if (timezoneObj == dataPtr->prevSetupTimeZoneUnnorm
 	    && dataPtr->prevSetupTimeZone != NULL) {
-    	return dataPtr->prevSetupTimeZone;
+	return dataPtr->prevSetupTimeZone;
     }
     if (timezoneObj == dataPtr->gmtSetupTimeZoneUnnorm
 	    && dataPtr->gmtSetupTimeZone != NULL) {
@@ -648,7 +648,7 @@ NormLocaleObj(
     if ((localeObj->length == 1 /* C */
 	    && strcasecmp(loc, Literals[LIT_C]) == 0)
 	    || (dataPtr->defaultLocale && (loc2 = TclGetString(dataPtr->defaultLocale))
-      	    && localeObj->length == dataPtr->defaultLocale->length
+	    && localeObj->length == dataPtr->defaultLocale->length
 	    && strcasecmp(loc, loc2) == 0)) {
 	*mcDictObj = dataPtr->defaultLocaleDict;
 	return dataPtr->defaultLocale ?
@@ -1323,8 +1323,8 @@ ClockSetupTimeZone(
 
     /* before setup just take a look in TZData variable */
     if (Tcl_ObjGetVar2(interp, dataPtr->literals[LIT_TZDATA], timezoneObj, 0)) {
-    	/* put it to last slot and return normalized */
-    	TimezoneLoaded(dataPtr, callargs[1], timezoneObj);
+	/* put it to last slot and return normalized */
+	TimezoneLoaded(dataPtr, callargs[1], timezoneObj);
 	return callargs[1];
     }
     /* setup now */
@@ -3305,10 +3305,10 @@ ClockParseFmtScnArgs(
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
     if (operation == CLC_OP_SCN) {
-    	/* default flags (from configure) */
-    	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
+	/* default flags (from configure) */
+	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
     } else {
-    	/* clock value (as current base) */
+	/* clock value (as current base) */
 	opts->baseObj = objv[(baseIdx = 1)];
 	saw |= 1 << CLC_ARGS_BASE;
     }

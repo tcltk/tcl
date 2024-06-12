@@ -30,7 +30,7 @@ struct ForeachState {
     Tcl_Size j, maxj;		/* Number of loop iterations. */
     Tcl_Size numLists;		/* Count of value lists. */
     Tcl_Size *index;		/* Array of value list indices. */
-    Tcl_Size *varcList; 	/* # loop variables per list. */
+    Tcl_Size *varcList;		/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
     Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
     Tcl_Size *argcList;		/* Array of value list sizes. */

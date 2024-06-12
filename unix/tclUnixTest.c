@@ -549,7 +549,7 @@ TestalarmCmd(
  *	None.
  *
  * Side effects:
- * 	Calls the Tcl Async handler.
+ *	Calls the Tcl Async handler.
  *
  *----------------------------------------------------------------------
  */
@@ -566,7 +566,7 @@ AlarmHandler(
  *
  * TestgotsigCmd --
  *
- * 	Verify the signal was handled after the testalarm command.
+ *	Verify the signal was handled after the testalarm command.
  *
  * Results:
  *	None.

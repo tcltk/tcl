@@ -158,7 +158,7 @@ TclLengthOne(
  *	\u000A	\n	NEWLINE
  *	\u000B	\v	VERTICAL TAB
  *	\u000C	\f	FORM FEED
- * 	\u000D	\r	CARRIAGE RETURN
+ *	\u000D	\r	CARRIAGE RETURN
  *	\u0020		SPACE
  *
  * NOTE: differences between this and other places where Tcl defines a role
@@ -276,7 +276,7 @@ TclLengthOne(
  *	* The command terminating character,
  *		\u003b	;	SEMICOLON
  *	  must be BRACEd, QUOTEd, or escaped so that it does not terminate the
- * 	  command prematurely.
+ *	  command prematurely.
  *	* Any of the characters that begin substitutions in scripts,
  *		\u0024	$	DOLLAR
  *		\u005b	[	OPEN BRACKET
@@ -1672,7 +1672,7 @@ TclTrimRight(
 	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
- 	    pInc = TclUtfToUniChar(pp, &ch1);
+	    pInc = TclUtfToUniChar(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1881,7 +1881,7 @@ Tcl_Concat(
 
     for (i = 0;  i < argc;  i++) {
 	bytesNeeded += strlen(argv[i]);
-    	if (bytesNeeded < 0) {
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
 	}
     }
@@ -3413,19 +3413,19 @@ GetWideForIndex(
  *	list.
  *
  * Results:
- * 	TCL_OK
+ *	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ *	    The index is stored at the address given by by 'indexPtr'.
  *
- * 	TCL_ERROR
+ *	TCL_ERROR
  *
- * 	    The value of 'objPtr' does not have one of the expected formats. If
- * 	    'interp' is non-NULL, an error message is left in the interpreter's
- * 	    result object.
+ *	    The value of 'objPtr' does not have one of the expected formats. If
+ *	    'interp' is non-NULL, an error message is left in the interpreter's
+ *	    result object.
  *
  * Side effects:
  *
- * 	The internal representation contained within objPtr may shimmer.
+ *	The internal representation contained within objPtr may shimmer.
  *
  *----------------------------------------------------------------------
  */
@@ -3707,17 +3707,13 @@ GetEndOffsetFromObj(
 	 */
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
-	/* -1 - position before first */
-	*widePtr = -1;
+	*widePtr = (endValue == -1) ? WIDE_MIN : -1;
     } else if (offset < 0) {
 	/* end-(n-1) - Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
-    } else if (offset < WIDE_MAX) {
-	/* 0:WIDE_MAX-1 - plain old index. */
-	*widePtr = offset;
     } else {
-	/* Huh, what case remains here? */
-	*widePtr = WIDE_MAX;
+	/* 0:WIDE_MAX - plain old index. */
+	*widePtr = offset;
     }
     return TCL_OK;
 

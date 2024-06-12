@@ -140,9 +140,9 @@ proc ::tcl::clock::Initialize {} {
 	    Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
 	}
 	MONTHS_FULL		{
-	    	January		February	March
-	    	April		May		June
-	    	July		August		September
+		January		February	March
+		April		May		June
+		July		August		September
 		October		November	December
 	}
 	PM {pm}
@@ -292,7 +292,7 @@ proc ::tcl::clock::Initialize {} {
 
     # The keys are long lists of values obtained from the time zone
     # information in the Registry.  In order, the list elements are:
-    # 	Bias StandardBias DaylightBias
+    #   Bias StandardBias DaylightBias
     #   StandardDate.wYear StandardDate.wMonth StandardDate.wDayOfWeek
     #   StandardDate.wDay StandardDate.wHour StandardDate.wMinute
     #   StandardDate.wSecond StandardDate.wMilliseconds
@@ -339,7 +339,7 @@ proc ::tcl::clock::Initialize {} {
 	{3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :CET
 	{7200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Harare
 	{7200 0 3600 0 9 4 5 23 59 59 0 0 4 4 5 23 59 59 0}
-			      				 :Africa/Cairo
+							 :Africa/Cairo
 	{7200 0 3600 0 10 0 5 4 0 0 0 0 3 0 5 3 0 0 0}   :Europe/Helsinki
 	{7200 0 3600 0 9 0 3 2 0 0 0 0 3 5 5 2 0 0 0}    :Asia/Jerusalem
 	{7200 0 3600 0 9 0 5 1 0 0 0 0 3 0 5 0 0 0 0}    :Europe/Bucharest
@@ -480,9 +480,9 @@ proc ::tcl::clock::Initialize {} {
     variable LocFmtMap [dict create];	# Dictionary with localized format maps
 
     variable TimeZoneBad [dict create]; # Dictionary whose keys are time zone
-    					# names and whose values are 1 if
+					# names and whose values are 1 if
 					# the time zone is unknown and 0
-    					# if it is known.
+					# if it is known.
     variable TZData;			# Array whose keys are time zone names
 					# and whose values are lists of quads
 					# comprising start time, UTC offset,
@@ -518,7 +518,7 @@ proc ::tcl::clock::mcget {loc} {
 	set loc [mclocale]
     }
     if {$loc ne {}} {
-    	set loc [string tolower $loc]
+	set loc [string tolower $loc]
     }
 
     # try to retrieve now if already available:
@@ -651,7 +651,7 @@ proc ::tcl::clock::GetSystemLocale {} {
 
 proc ::tcl::clock::EnterLocale { locale } {
     switch -- $locale system {
-    	set locale [GetSystemLocale]
+	set locale [GetSystemLocale]
     } current {
 	set locale [mclocale]
     }
@@ -1001,7 +1001,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		    LoadZoneinfoFile [string range $timezone 1 end]
 		}]
 	    } then {
-	    	dict set TimeZoneBad $timezone 1
+		dict set TimeZoneBad $timezone 1
 		return -code error \
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"

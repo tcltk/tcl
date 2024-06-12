@@ -270,23 +270,23 @@ static Tcl_DriverGetHandleProc	TcpGetHandleProc;
  */
 
 static const Tcl_ChannelType tcpChannelType = {
-    "tcp",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Old close proc. Deprecated. */
-    TcpInputProc,		/* Input proc. */
-    TcpOutputProc,		/* Output proc. */
+    "tcp",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    TcpInputProc,
+    TcpOutputProc,
+    NULL,			/* Deprecated. */
+    TcpSetOptionProc,
+    TcpGetOptionProc,
+    TcpWatchProc,
+    TcpGetHandleProc,
+    TcpClose2Proc,
+    TcpBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
     NULL,			/* Seek proc. */
-    TcpSetOptionProc,		/* Set option proc. */
-    TcpGetOptionProc,		/* Get option proc. */
-    TcpWatchProc,		/* Initialize notifier. */
-    TcpGetHandleProc,		/* Get OS handles out of channel. */
-    TcpClose2Proc,		/* New close2 proc. */
-    TcpBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc. */
-    TcpThreadActionProc,	/* thread action proc. */
-    NULL			/* truncate proc. */
+    TcpThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -618,8 +618,8 @@ TcpBlockModeProc(
  *	    return any error code.
  *
  * Results:
- * 	0 if the connection has completed, -1 if still in progress or there is
- * 	an error.
+ *	0 if the connection has completed, -1 if still in progress or there is
+ *	an error.
  *
  * Side effects:
  *	Processes socket events off the system queue. May process

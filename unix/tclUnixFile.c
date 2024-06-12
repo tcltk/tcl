@@ -13,8 +13,9 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
-	const char* nativeName, Tcl_GlobTypeData *types);
+static int		NativeMatchType(Tcl_Interp *interp,
+			    const char* nativeEntry, const char* nativeName,
+			    Tcl_GlobTypeData *types);
 
 /*
  *---------------------------------------------------------------------------

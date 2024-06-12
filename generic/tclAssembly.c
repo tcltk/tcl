@@ -51,7 +51,7 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_CAUGHT 		/* Block is within a catch context and
+    BBCS_CAUGHT			/* Block is within a catch context and
 				 * may be executed after an exception fires */
 } BasicBlockCatchState;
 
@@ -1930,7 +1930,7 @@ MoveExceptionRangesToBasicBlock(
     curr_bb->foreignExceptionBase = savedExceptArrayNext;
     curr_bb->foreignExceptionCount = exceptionCount;
     curr_bb->foreignExceptions =
-    		(ExceptionRange*)Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
+		(ExceptionRange*)Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
     memcpy(curr_bb->foreignExceptions,
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
