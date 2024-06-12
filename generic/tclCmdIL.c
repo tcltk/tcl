@@ -4355,10 +4355,12 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
+    arithSeriesPtr = TclNewArithSeriesObj(interp,
 		  useDoubles, start, end, step, elementCount);
 
-    if (status == TCL_OK) {
+    status = TCL_ERROR;
+    if (arithSeriesPtr) {
+	status = TCL_OK;
 	Tcl_SetObjResult(interp, arithSeriesPtr);
     }
 
