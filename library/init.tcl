@@ -1,4 +1,4 @@
-# init.tcl --
+﻿# init.tcl --
 #
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
