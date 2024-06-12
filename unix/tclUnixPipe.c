@@ -844,7 +844,7 @@ TclpCreateCommandChannel(
 				 * background exec). */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
+    int fd;
     PipeState *statePtr = (PipeState *)Tcl_Alloc(sizeof(PipeState));
     int mode;
 
@@ -868,13 +868,13 @@ TclpCreateCommandChannel(
      */
 
     if (readFile) {
-	channelId = GetFd(readFile);
+	fd = GetFd(readFile);
     } else if (writeFile) {
-	channelId = GetFd(writeFile);
+	fd = GetFd(writeFile);
     } else if (errorFile) {
-	channelId = GetFd(errorFile);
+	fd = GetFd(errorFile);
     } else {
-	channelId = 0;
+	fd = 0;
     }
 
     /*
@@ -883,7 +883,7 @@ TclpCreateCommandChannel(
      * natural to use "pipe%d".
      */
 
-    snprintf(channelName, sizeof(channelName), "file%d", channelId);
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
     statePtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    statePtr, mode);
     return statePtr->channel;
