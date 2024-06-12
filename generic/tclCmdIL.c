@@ -104,12 +104,8 @@ static const char *const seq_operations[] = {
 typedef enum Sequence_Operators {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
-static const char *const seq_step_keywords[] = {"by", NULL};
-typedef enum Step_Operators {
-    STEP_BY = 4
-} SequenceByMode;
 typedef enum Sequence_Decoded {
-     NoneArg, NumericArg, RangeKeywordArg, ByKeywordArg
+     NoneArg, NumericArg, RangeKeywordArg
 } SequenceDecoded;
 
 /*
@@ -4017,7 +4013,7 @@ Tcl_LsearchObjCmd(
  *    3 - value is a by keyword
  *
  *  The decoded value will be assigned to the appropriate
- *  pointer, if supplied.
+ *  pointer, numValuePtr reference count is incremented.
  */
 
 static SequenceDecoded
@@ -4027,71 +4023,45 @@ SequenceIdentifyArgument(
      Tcl_Obj **numValuePtr,     /* Return numeric value */
      int *keywordIndexPtr)      /* Return keyword enum  */
 {
-    int status;
+    int result;
     SequenceOperators opmode;
-    SequenceByMode bymode;
-    void *clientData;
+    void *internalPtr;
 
-    status = Tcl_GetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
-    if (status == TCL_OK) {
-	if (numValuePtr) {
-	    *numValuePtr = argPtr;
-	}
+    result = Tcl_GetNumberFromObj(NULL, argPtr, &internalPtr, keywordIndexPtr);
+    if (result == TCL_OK) {
+	*numValuePtr = argPtr;
+	Tcl_IncrRefCount(argPtr);
 	return NumericArg;
+    }
+
+    result = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
+				 "range operation", 0, &opmode);
+    if (result == TCL_OK) {
+	*keywordIndexPtr = opmode;
+	return RangeKeywordArg;
     } else {
 	/* Check for an index expression */
-	long value;
-	double dvalue;
+	SequenceDecoded ret = NoneArg;
 	Tcl_Obj *exprValueObj;
 	int keyword;
 	Tcl_InterpState savedstate;
-	savedstate = Tcl_SaveInterpState(interp, status);
-	if (Tcl_ExprLongObj(interp, argPtr, &value) != TCL_OK) {
-	    status = Tcl_RestoreInterpState(interp, savedstate);
-	    exprValueObj = argPtr;
-	} else {
-	    // Determine if expression is double or int
-	    if (Tcl_ExprDoubleObj(interp, argPtr, &dvalue) != TCL_OK) {
-		keyword = TCL_NUMBER_INT;
-		exprValueObj = argPtr;
-	    } else {
-		if (floor(dvalue) == dvalue) {
-		    TclNewIntObj(exprValueObj, value);
-		    keyword = TCL_NUMBER_INT;
-		} else {
-		    TclNewDoubleObj(exprValueObj, dvalue);
-		    keyword = TCL_NUMBER_DOUBLE;
-		}
-	    }
-	    status = Tcl_RestoreInterpState(interp, savedstate);
-	    if (numValuePtr) {
-		*numValuePtr = exprValueObj;
-	    }
-	    if (keywordIndexPtr) {
-		*keywordIndexPtr = keyword ;// type of expression result
-	    }
-	    return NumericArg;
+	savedstate = Tcl_SaveInterpState(interp, result);
+	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
+	    goto done;
 	}
-    }
-
-    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
-				 "range operation", 0, &opmode);
-    if (status == TCL_OK) {
-	if (keywordIndexPtr) {
-	    *keywordIndexPtr = opmode;
+	/* Determine if result of expression is double or int */
+	if (Tcl_GetNumberFromObj(NULL, exprValueObj, &internalPtr,
+		&keyword) != TCL_OK
+	) {
+	    goto done;
 	}
-	return RangeKeywordArg;
+	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
+	*keywordIndexPtr = keyword; /* type of expression result */
+	ret = NumericArg;
+    done:
+	(void)Tcl_RestoreInterpState(interp, savedstate);
+	return ret;
     }
-
-    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_step_keywords,
-				 "step keyword", 0, &bymode);
-    if (status == TCL_OK) {
-	if (keywordIndexPtr) {
-	    *keywordIndexPtr = bymode;
-	}
-	return ByKeywordArg;
-    }
-    return NoneArg;
 }
 
 /*
@@ -4147,9 +4117,9 @@ Tcl_LseqObjCmd(
     SequenceOperators opmode;
     SequenceDecoded decoded;
     int i, arg_key = 0, value_i = 0;
-    // Default constants
-    Tcl_Obj *zero = Tcl_NewIntObj(0);
-    Tcl_Obj *one = Tcl_NewIntObj(1);
+    /* Default constants */
+    #define zero ((Interp *)interp)->execEnvPtr->constants[0];
+    #define one ((Interp *)interp)->execEnvPtr->constants[1];
 
     /*
      * Create a decoding key by looping through the arguments and identify
@@ -4177,7 +4147,6 @@ Tcl_LseqObjCmd(
 	 case NumericArg:
 	      arg_key += NumericArg;
 	      numValues[value_i] = numberObj;
-	      Tcl_IncrRefCount(numValues[value_i]);
 	      values[value_i] = keyword;  // This is the TCL_NUMBER_* value
 	      useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
 	      value_i++;
@@ -4185,12 +4154,6 @@ Tcl_LseqObjCmd(
 
 	 case RangeKeywordArg:
 	      arg_key += RangeKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
-
-	 case ByKeywordArg:
-	      arg_key += ByKeywordArg;
 	      values[value_i] = keyword;
 	      value_i++;
 	      break;
@@ -4379,6 +4342,27 @@ Tcl_LseqObjCmd(
 	 break;
     }
 
+    /* Count needs to be integer, so try to convert if possible */
+    if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
+	double d;
+	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
+	if (floor(d) == d) {
+	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
+		mp_int big;
+
+		if (Tcl_InitBignumFromDouble(NULL, d, &big) == TCL_OK) {
+		    elementCount = Tcl_NewBignumObj(&big);
+		    keyword = TCL_NUMBER_INT;
+		}
+		/* Infinity, don't convert, let fail later */
+	    } else {
+		elementCount = Tcl_NewWideIntObj((Tcl_WideInt)d);
+		keyword = TCL_NUMBER_INT;
+	    }
+	}
+    }
+
+
     /*
      * Success!  Now lets create the series object.
      */
@@ -4392,12 +4376,20 @@ Tcl_LseqObjCmd(
  done:
     // Free number arguments.
     while (--value_i>=0) {
-	if (numValues[value_i]) Tcl_DecrRefCount(numValues[value_i]);
+	if (numValues[value_i]) {
+	    if (elementCount == numValues[value_i]) {
+		elementCount = NULL;
+	    }
+	    Tcl_DecrRefCount(numValues[value_i]);
+	}
+    }
+    if (elementCount) {
+	Tcl_DecrRefCount(elementCount);
     }
 
-    // Free constants
-    Tcl_DecrRefCount(zero);
-    Tcl_DecrRefCount(one);
+    /* Undef constants */
+    #undef zero
+    #undef one
 
     return status;
 }
