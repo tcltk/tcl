@@ -1081,9 +1081,8 @@ MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
-MODULE_SCOPE int 	TclNewArithSeriesObj(Tcl_Interp *interp,
-			    Tcl_Obj **arithSeriesObj, int useDoubles,
-			    Tcl_Obj *startObj, Tcl_Obj *endObj,
+MODULE_SCOPE Tcl_Obj *  TclNewArithSeriesObj(Tcl_Interp *interp,
+			    int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
 			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 
 /*
