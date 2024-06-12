@@ -1807,7 +1807,7 @@ Tcl_FSEvalFileEx(
 
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	unsigned limit = 150;
-	int overflow = (length > limit);
+	int overflow = ((unsigned)length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
@@ -1964,7 +1964,7 @@ EvalFileCallback(
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : (unsigned int)length), pathString,
+		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 

@@ -1067,7 +1067,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, i;
+    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs, i;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
@@ -1348,7 +1348,7 @@ InitArgsAndLocals(
     Proc *procPtr = framePtr->procPtr;
     ByteCode *codePtr;
     Var *varPtr, *defPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
+    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
