@@ -421,8 +421,9 @@ NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
  * 	None.
  *----------------------------------------------------------------------
  */
-static void
+static int
 assignNumber(
+    Tcl_Interp *interp,
     int useDoubles,
     Tcl_WideInt *intNumberPtr,
     double *dblNumberPtr,
@@ -431,9 +432,15 @@ assignNumber(
     void *clientData;
     int tcl_number_type;
 
-    if (Tcl_GetNumberFromObj(NULL, numberObj, &clientData, &tcl_number_type) != TCL_OK
-	    || tcl_number_type == TCL_NUMBER_BIG) {
-	return;
+    if (Tcl_GetNumberFromObj(interp, numberObj, &clientData, 
+		&tcl_number_type) != TCL_OK) {
+    	return TCL_ERROR;
+    }
+    if (tcl_number_type == TCL_NUMBER_BIG) {
+    	/* bignum is not supported yet. */
+    	Tcl_WideInt w;
+	(void)Tcl_GetWideIntFromObj(interp, numberObj, &w);
+	return TCL_ERROR;
     }
     if (useDoubles) {
 	if (tcl_number_type != TCL_NUMBER_INT) {
@@ -448,6 +455,7 @@ assignNumber(
 	    *intNumberPtr = (Tcl_WideInt)*(double *)clientData;
 	}
     }
+    return TCL_OK;
 }
 
 /*
@@ -462,7 +470,7 @@ assignNumber(
  * Results:
  *
  * 	A Tcl_Obj pointer to the created ArithSeries object.
- * 	An empty Tcl_Obj if the range is invalid.
+ * 	NULL if the range is invalid.
  *
  * Side Effects:
  *
@@ -470,10 +478,9 @@ assignNumber(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Obj *
 TclNewArithSeriesObj(
     Tcl_Interp *interp,       /* For error reporting */
-    Tcl_Obj **arithSeriesObj, /* return value */
     int useDoubles,           /* Flag indicates values start,
 			      ** end, step, are treated as doubles */
     Tcl_Obj *startObj,        /* Starting value */
@@ -484,31 +491,38 @@ TclNewArithSeriesObj(
     double dstart, dend, dstep;
     Tcl_WideInt start, end, step;
     Tcl_WideInt len = -1;
+    Tcl_Obj *objPtr;
 
     if (startObj) {
-	assignNumber(useDoubles, &start, &dstart, startObj);
+	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
+	    return NULL;
+	}
     } else {
 	start = 0;
 	dstart = start;
     }
     if (stepObj) {
-	assignNumber(useDoubles, &step, &dstep, stepObj);
+	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
+	    return NULL;
+	}
 	if (useDoubles) {
 	    step = dstep;
 	} else {
 	    dstep = step;
 	}
 	if (dstep == 0) {
-	    TclNewObj(*arithSeriesObj);
-	    return TCL_OK;
+	    TclNewObj(objPtr);
+	    return objPtr;
 	}
     }
     if (endObj) {
-	assignNumber(useDoubles, &end, &dend, endObj);
+	if (assignNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
+	    return NULL;
+	}
     }
     if (lenObj) {
 	if (TCL_OK != Tcl_GetWideIntFromObj(interp, lenObj, &len)) {
-	    return TCL_ERROR;
+	    return NULL;
 	}
     }
 
@@ -552,15 +566,13 @@ TclNewArithSeriesObj(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
-	return TCL_ERROR;
+	return NULL;
     }
 
-    if (arithSeriesObj) {
-	*arithSeriesObj = (useDoubles)
+    objPtr = (useDoubles)
 	    ? NewArithSeriesDbl(dstart, dend, dstep, len)
 	    : NewArithSeriesInt(start, end, step, len);
-    }
-    return TCL_OK;
+    return objPtr;
 }
 
 /*
@@ -769,12 +781,8 @@ TclArithSeriesObjRange(
 
     if (Tcl_IsShared(arithSeriesObj) ||
 	    ((arithSeriesObj->refCount > 1))) {
-	Tcl_Obj *newSlicePtr;
-	if (TclNewArithSeriesObj(interp, &newSlicePtr,
-		arithSeriesRepPtr->isDouble, startObj, endObj,
-		stepObj, NULL) != TCL_OK) {
-	    newSlicePtr = NULL;
-	}
+	Tcl_Obj *newSlicePtr = TclNewArithSeriesObj(interp,
+	    arithSeriesRepPtr->isDouble, startObj, endObj, stepObj, NULL);
 	Tcl_DecrRefCount(startObj);
 	Tcl_DecrRefCount(endObj);
 	Tcl_DecrRefCount(stepObj);
@@ -974,10 +982,8 @@ TclArithSeriesObjReverse(
 	    ((arithSeriesObj->refCount > 1))) {
 	Tcl_Obj *lenObj;
 	TclNewIntObj(lenObj, len);
-	if (TclNewArithSeriesObj(interp, &resultObj, isDouble,
-		startObj, endObj, stepObj, lenObj) != TCL_OK) {
-	    resultObj = NULL;
-	}
+	resultObj = TclNewArithSeriesObj(interp, isDouble,
+	    startObj, endObj, stepObj, lenObj);
 	Tcl_DecrRefCount(lenObj);
     } else {
 
