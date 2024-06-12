@@ -262,6 +262,10 @@ test lseq-2.20 {expressions as indices, no duplicative eval of expr} {
     list [lseq {[incr i]}] $i [lseq {0 + [incr i]}] $i [lseq {0.0 + [incr i]}] $i
 } {{0 1} 2 {0 1 2} 3 {0.0 1.0 2.0 3.0} 4}
 
+test lseq-3.0 {expr error: don't swalow expr error (here: divide by zero)} -body {
+    set i 0; lseq {3/$i}
+} -returnCodes [catch {expr {3/0}} res] -result $res
+
 test lseq-3.1 {experiement} -body {
     set ans {}
     foreach factor [lseq 2.0 10.0] {
@@ -286,15 +290,15 @@ test lseq-3.1 {experiement} -body {
 
 test lseq-3.2 {error case} -body {
     lseq foo
-} -returnCodes 1 -result {bad operation "foo": must be .., to, count, or by}
+} -returnCodes 1 -match glob -result {invalid bareword "foo"*}
 
 test lseq-3.3 {error case} -body {
     lseq 10 foo
-} -returnCodes 1 -result {bad operation "foo": must be .., to, count, or by}
+} -returnCodes 1 -match glob -result {invalid bareword "foo"*}
 
 test lseq-3.4 {error case} -body {
     lseq 25 or 6
-} -returnCodes 1 -result {bad operation "or": must be .., to, count, or by}
+} -returnCodes 1 -match glob -result {invalid bareword "or"*}
 
 test lseq-3.5 {simple count and step arguments} -body {
     set s [lseq 25 by 6]
@@ -305,6 +309,9 @@ test lseq-3.5 {simple count and step arguments} -body {
 
 test lseq-3.6 {error case} -body {
     lseq 1 7 or 3
+} -returnCodes 1  -result {bad operation "or": must be .., to, count, or by}
+test lseq-3.6b {error case} -body {
+    lseq 1 to 7 or 3
 } -returnCodes 1  -result {bad operation "or": must be .., to, count, or by}
 
 test lseq-3.7 {lmap lseq} -body {
