@@ -918,7 +918,7 @@ TclFinalizeExecution(void)
 }
 
 /*
- * Auxiliary code to insure that GrowEvaluationStack always returns correctly
+ * Auxiliary code to ensure that GrowEvaluationStack returns correctly
  * aligned memory.
  *
  * WALLOCALIGN represents the alignment reqs in words, just as TCL_ALLOCALIGN
@@ -7657,10 +7657,10 @@ TEBCresume(
     return result;
 
     /*
-     * INST_START_CMD failure case removed where it doesn't bother that much
+     * INST_START_CMD failure case removed where it doesn't bother that much.
      *
-     * Remark that if the interpreter is marked for deletion its
-     * compileEpoch is modified, so that the epoch check also verifies
+     * If the interpreter is marked for deletion, its
+     * compileEpoch is modified, Therefore the epoch check also verifies
      * that the interp is not deleted. If no outside call has been made
      * since the last check, it is safe to omit the check.
 
