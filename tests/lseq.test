@@ -140,6 +140,19 @@ test lseq-1.22 {n n by -n} {
     lseq 84 66 by -3
 } {84 81 78 75 72 69 66}
 
+test lseq-1.23 {consistence, accept double count representable as integer (but use double in series)} {
+    list [lseq 0.0 2.0] [lseq 3.0] [lseq 0 count 3.0] \
+	 [lseq 0.0 count 3.0] [lseq 0 count 3.0 by 1.0]
+} [lrepeat 5 {0.0 1.0 2.0}]
+test lseq-1.24 {consistence, use double (even if representable as integer) in all variants, if contains a double somewhere} {
+    list [lseq 0.0 2] [lseq 0 2.0] [lseq 0.0 count 3] \
+	 [lseq 0 count 3 by 1.0] [lseq 0 .. 2.0] [lseq 0 to 2 by 1.0]
+} [lrepeat 6 {0.0 1.0 2.0}]
+test lseq-1.25 {consistence, use double (even if representable as integer) in all variants, if contains a double somewhere} {
+    list [lseq double(0) 2] [lseq 0 double(2)] [lseq double(0) count 3] \
+	 [lseq 0 count 3 by double(1)] [lseq 0 .. double(2)] [lseq 0 to 2 by double(1)]
+} [lrepeat 6 {0.0 1.0 2.0}]
+
 #
 # Short-hand use cases
 #
@@ -220,6 +233,19 @@ test lseq-2.18 {signs} {
 	[lseq 10 1 -5]
 
 } {{-10 -8 -6 -4 -2} {} {} {10 6 2} {-10 -7 -4 -1} {10 5}}
+
+test lseq-2.19 {expressions as indices} {
+    list [lseq {1+1}] \
+	 [lseq {1+1} {2+2}] \
+	 [lseq {1+1} count {2+2}] \
+	 [lseq {1+1} {5+5} {2+2}] \
+	 [lseq {1+1} count {2+2} by {2+2}]
+} {{0 1} {2 3 4} {2 3 4 5} {2 6 10} {2 6 10 14}}
+
+test lseq-2.20 {expressions as indices, no duplicative eval of expr} {
+    set i 1
+    list [lseq {[incr i]}] $i [lseq {0 + [incr i]}] $i [lseq {0.0 + [incr i]}] $i
+} {{0 1} 2 {0 1 2} 3 {0.0 1.0 2.0 3.0} 4}
 
 test lseq-3.1 {experiement} -body {
     set ans {}
