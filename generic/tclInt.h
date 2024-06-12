@@ -1091,10 +1091,10 @@ typedef struct ActiveInterpTrace {
  * related flag values.
  *
  * TCL_TRACE_ENTER_EXEC		- triggers enter/enterstep traces.
- * 				- passed to Tcl_CreateObjTrace to set up
+ *				- passed to Tcl_CreateObjTrace to set up
  *				  "enterstep" traces.
  * TCL_TRACE_LEAVE_EXEC		- triggers leave/leavestep traces.
- * 				- passed to Tcl_CreateObjTrace to set up
+ *				- passed to Tcl_CreateObjTrace to set up
  *				  "leavestep" traces.
  */
 
@@ -1546,15 +1546,15 @@ struct CompileEnv;
  * be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_ERROR 		Compilation could not be completed. This can be just a
- * 			judgment by the CompileProc that the command is too
- * 			complex to compile effectively, or it can indicate
- * 			that in the current state of the interp, the command
- * 			would raise an error. The bytecode compiler will not
- * 			do any error reporting at compiler time. Error
- * 			reporting is deferred until the actual runtime,
- * 			because by then changes in the interp state may allow
- * 			the command to be successfully evaluated.
+ * TCL_ERROR		Compilation could not be completed. This can be just a
+ *			judgment by the CompileProc that the command is too
+ *			complex to compile effectively, or it can indicate
+ *			that in the current state of the interp, the command
+ *			would raise an error. The bytecode compiler will not
+ *			do any error reporting at compiler time. Error
+ *			reporting is deferred until the actual runtime,
+ *			because by then changes in the interp state may allow
+ *			the command to be successfully evaluated.
  */
 
 typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
@@ -2924,7 +2924,7 @@ typedef struct ProcessGlobalValue {
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
     TclInitProcessGlobalValueProc *proc;
-    				/* A procedure to initialize the global string
+				/* A procedure to initialize the global string
 				 * copy when a "get" request comes in before
 				 * any "set" request has been received. */
     Tcl_Mutex mutex;		/* Enforce orderly access from multiple
@@ -3405,6 +3405,8 @@ MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *packageName);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
+MODULE_SCOPE int	TclCompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+MODULE_SCOPE size_t	TclHashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3486,7 +3488,7 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
-MODULE_SCOPE void 	TclUndoRefCount(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileNameForLibrary(Tcl_Interp *interp,

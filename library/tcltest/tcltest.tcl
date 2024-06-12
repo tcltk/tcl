@@ -515,7 +515,7 @@ namespace eval tcltest {
 		unset $varName
 	    }
 	    namespace eval [namespace current] \
-	    	    [list upvar 0 Option($option) $varName]
+		    [list upvar 0 Option($option) $varName]
 	    # Workaround for Bug (now Feature Request) 572889.  Grrrr....
 	    # Track all the variables tied to options
 	    lappend OptionControlledVariables $varName
@@ -1914,7 +1914,7 @@ proc tcltest::SubstArguments {argList} {
 # Arguments:
 #   name -		Name of test, in the form foo-1.2.
 #   description -	Short textual description of the test, to
-#  		  	help humans understand what it does.
+#			help humans understand what it does.
 #
 # Results:
 #	None.
@@ -2128,7 +2128,7 @@ proc tcltest::test {name description args} {
     # check if the answer matched the expected answer
     # Only check if we ran the body of the test (no setup failure)
     if {!$processTest} {
-    	set scriptFailure 0
+	set scriptFailure 0
     } elseif {$setupFailure || $codeFailure} {
 	set scriptFailure 0
     } elseif {[set scriptCompare [catch {

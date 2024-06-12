@@ -208,21 +208,21 @@ static void		ZlibTransformTimerRun(void *clientData);
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
     TCL_CHANNEL_VERSION_5,
-    NULL,
+    NULL,			/* Deprecated. */
     ZlibTransformInput,
     ZlibTransformOutput,
-    NULL,			/* seekProc */
+    NULL,			/* Deprecated. */
     ZlibTransformSetOption,
     ZlibTransformGetOption,
     ZlibTransformWatch,
     ZlibTransformGetHandle,
-    ZlibTransformClose,		/* close2Proc */
+    ZlibTransformClose,
     ZlibTransformBlockMode,
-    NULL,			/* flushProc */
+    NULL,			/* Flush proc. */
     ZlibTransformEventHandler,
-    NULL,			/* wideSeekProc */
-    NULL,
-    NULL
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -3111,7 +3111,7 @@ ZlibTransformInput(
     gotBytes = 0;
     readBytes = chanDataPtr->inStream.avail_in; /* how many bytes in buffer now */
     while (!HaveFlag(chanDataPtr, STREAM_DONE) && toRead > 0) {
-    	unsigned int n;
+	unsigned int n;
 	int decBytes;
 
 	/* if starting from scratch or continuation after full decompression */

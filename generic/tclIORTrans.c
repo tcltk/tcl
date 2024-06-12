@@ -55,24 +55,24 @@ static int		ReflectNotify(void *clientData, int mask);
  * The C layer channel type/driver definition used by the reflection.
  */
 
-static const Tcl_ChannelType tclRTransformType = {
-    "tclrtransform",		/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel. */
-    NULL,
-    ReflectInput,		/* Handle read request. */
-    ReflectOutput,		/* Handle write request. */
-    NULL,			/* Move location of access point. */
-    ReflectSetOption,		/* Set options. */
-    ReflectGetOption,		/* Get options. */
-    ReflectWatch,		/* Initialize notifier. */
-    ReflectHandle,		/* Get OS handle from the channel. */
-    ReflectClose,		/* Close channel, clean instance data. */
-    ReflectBlock,		/* Set blocking/nonblocking. */
+static const Tcl_ChannelType reflectedTransformType = {
+    "tclrtransform",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    ReflectInput,
+    ReflectOutput,
+    NULL,			/* Deprecated. */
+    ReflectSetOption,
+    ReflectGetOption,
+    ReflectWatch,
+    ReflectHandle,
+    ReflectClose,
+    ReflectBlock,
     NULL,			/* Flush channel. Not used by core. */
-    ReflectNotify,		/* Handle events. */
-    ReflectSeekWide,		/* Move access point (64 bit). */
-    NULL,			/* thread action */
-    NULL			/* truncate */
+    ReflectNotify,
+    ReflectSeekWide,
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -678,7 +678,7 @@ TclChanPushObjCmd(
 
     rtPtr->methods = methods;
     rtPtr->mode = mode;
-    rtPtr->chan = Tcl_StackChannel(interp, &tclRTransformType, rtPtr, mode,
+    rtPtr->chan = Tcl_StackChannel(interp, &reflectedTransformType, rtPtr, mode,
 	    rtPtr->parent);
 
     /*
@@ -1374,8 +1374,8 @@ ReflectSeekWide(
 	*errorCodePtr = EINVAL;
 	curPos = -1;
     } else {
-    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-    		seekMode, errorCodePtr);
+	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
+		seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
