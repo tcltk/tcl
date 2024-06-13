@@ -1158,15 +1158,15 @@ proc tcltest::SafeFetch {n1 n2 op} {
 proc tcltest::Asciify {s} {
     set print ""
     foreach c [split $s ""] {
-        if {(($c < "\x7F") && [string is print $c]) || ($c eq "\n")} {
-            append print $c
-        } elseif {$c < "\u0100"} {
-            append print \\x[format %02X [scan $c %c]]
-        } elseif {$c > "\uFFFF"} {
-            append print \\U[format %08X [scan $c %c]]
-        } else {
-            append print \\u[format %04X [scan $c %c]]
-        }
+	if {(($c < "\x7F") && [string is print $c]) || ($c eq "\n")} {
+	    append print $c
+	} elseif {$c < "\u0100"} {
+	    append print \\x[format %02X [scan $c %c]]
+	} elseif {$c > "\uFFFF"} {
+	    append print \\U[format %08X [scan $c %c]]
+	} else {
+	    append print \\u[format %04X [scan $c %c]]
+	}
     }
     return $print
 }
@@ -1347,33 +1347,33 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer unixExecs {
 	set code 1
-        if {$::tcl_platform(platform) eq "macintosh"} {
+	if {$::tcl_platform(platform) eq "macintosh"} {
 	    set code 0
-        }
-        if {$::tcl_platform(platform) eq "windows"} {
+	}
+	if {$::tcl_platform(platform) eq "windows"} {
 	    if {[catch {
-	        set file _tcl_test_remove_me.txt
-	        makeFile {hello} $file
+		set file _tcl_test_remove_me.txt
+		makeFile {hello} $file
 	    }]} {
-	        set code 0
+		set code 0
 	    } elseif {
-	        [catch {exec cat $file}] ||
-	        [catch {exec echo hello}] ||
-	        [catch {exec sh -c echo hello}] ||
-	        [catch {exec wc $file}] ||
-	        [catch {exec sleep 1}] ||
-	        [catch {exec echo abc > $file}] ||
-	        [catch {exec chmod 644 $file}] ||
-	        [catch {exec rm $file}] ||
-	        [llength [auto_execok mkdir]] == 0 ||
-	        [llength [auto_execok fgrep]] == 0 ||
-	        [llength [auto_execok grep]] == 0 ||
-	        [llength [auto_execok ps]] == 0
+		[catch {exec cat $file}] ||
+		[catch {exec echo hello}] ||
+		[catch {exec sh -c echo hello}] ||
+		[catch {exec wc $file}] ||
+		[catch {exec sleep 1}] ||
+		[catch {exec echo abc > $file}] ||
+		[catch {exec chmod 644 $file}] ||
+		[catch {exec rm $file}] ||
+		[llength [auto_execok mkdir]] == 0 ||
+		[llength [auto_execok fgrep]] == 0 ||
+		[llength [auto_execok grep]] == 0 ||
+		[llength [auto_execok ps]] == 0
 	    } {
-	        set code 0
+		set code 0
 	    }
 	    removeFile $file
-        }
+	}
 	set code
     }
 
@@ -1548,8 +1548,8 @@ proc tcltest::ProcessFlags {flagArray} {
 
     # Call the hook
     catch {
-        array set flag $flagArray
-        processCmdLineArgsHook [array get flag]
+	array set flag $flagArray
+	processCmdLineArgsHook [array get flag]
     }
     return
 }
@@ -1732,7 +1732,7 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
 proc tcltest::CompareStrings {actual expected mode} {
     variable CustomMatch
     if {![info exists CustomMatch($mode)]} {
-        return -code error "No matching command registered for `-match $mode'"
+	return -code error "No matching command registered for `-match $mode'"
     }
     set match [namespace eval :: $CustomMatch($mode) [list $expected $actual]]
     if {[catch {expr {$match && $match}} result]} {
@@ -1810,55 +1810,55 @@ proc tcltest::SubstArguments {argList} {
     set token ""
 
     while {[string length $argList]} {
-        # Look for the next word containing a quote: " { }
-        if {[regexp -indices {[^ \t\n]*[\"\{\}]+[^ \t\n]*} \
+	# Look for the next word containing a quote: " { }
+	if {[regexp -indices {[^ \t\n]*[\"\{\}]+[^ \t\n]*} \
 		$argList all]} {
-            # Get the text leading up to this word, but not including
+	    # Get the text leading up to this word, but not including
 	    # this word, from the argList.
-            set text [string range $argList 0 \
+	    set text [string range $argList 0 \
 		    [expr {[lindex $all 0] - 1}]]
-            # Get the word with the quote
-            set word [string range $argList \
-                    [lindex $all 0] [lindex $all 1]]
+	    # Get the word with the quote
+	    set word [string range $argList \
+		    [lindex $all 0] [lindex $all 1]]
 
-            # Remove all text up to and including the word from the
-            # argList.
-            set argList [string range $argList \
-                    [expr {[lindex $all 1] + 1}] end]
-        } else {
-            # Take everything up to the end of the argList.
-            set text $argList
-            set word {}
-            set argList {}
-        }
+	    # Remove all text up to and including the word from the
+	    # argList.
+	    set argList [string range $argList \
+		    [expr {[lindex $all 1] + 1}] end]
+	} else {
+	    # Take everything up to the end of the argList.
+	    set text $argList
+	    set word {}
+	    set argList {}
+	}
 
-        if {$token ne {}} {
-            # If we saw a word with quote before, then there is a
-            # multi-word token starting with that word.  In this case,
-            # add the text and the current word to this token.
-            append token $text $word
-        } else {
-            # Add the text to the result.  There is no need to parse
-            # the text because it couldn't be a part of any multi-word
-            # token.  Then start a new multi-word token with the word
-            # because we need to pass this token to the Tcl parser to
-            # check for balancing quotes
-            append result $text
-            set token $word
-        }
+	if {$token ne {}} {
+	    # If we saw a word with quote before, then there is a
+	    # multi-word token starting with that word.  In this case,
+	    # add the text and the current word to this token.
+	    append token $text $word
+	} else {
+	    # Add the text to the result.  There is no need to parse
+	    # the text because it couldn't be a part of any multi-word
+	    # token.  Then start a new multi-word token with the word
+	    # because we need to pass this token to the Tcl parser to
+	    # check for balancing quotes
+	    append result $text
+	    set token $word
+	}
 
-        if { [catch {llength $token} length] == 0 && $length == 1} {
-            # The token is a valid list so add it to the result.
-            # lappend result [string trim $token]
-            append result \{$token\}
-            set token {}
-        }
+	if { [catch {llength $token} length] == 0 && $length == 1} {
+	    # The token is a valid list so add it to the result.
+	    # lappend result [string trim $token]
+	    append result \{$token\}
+	    set token {}
+	}
     }
 
     # If the last token has not been added to the list then there
     # is a problem.
     if { [string length $token] } {
-        error "incomplete token \"$token\""
+	error "incomplete token \"$token\""
     }
 
     return $result
@@ -2009,10 +2009,10 @@ proc tcltest::test {name description args} {
 	foreach {strcode numcode} {ok 0 normal 0 error 1 return 2 break 3 continue 4} {
 	    set returnCodes [string map -nocase [list $strcode $numcode] $returnCodes]
 	}
-        # errorCode without returnCode 1 is meaningless
-        if {$errorCode ne "*" && 1 ni $returnCodes} {
-            set returnCodes 1
-        }
+	# errorCode without returnCode 1 is meaningless
+	if {$errorCode ne "*" && 1 ni $returnCodes} {
+	    set returnCodes 1
+	}
     } else {
 	# This is parsing for the old test command format; it is here
 	# for backward compatibility.
@@ -2095,7 +2095,7 @@ proc tcltest::test {name description args} {
     }
     set errorCodeFailure 0
     if {$processTest && !$setupFailure && !$codeFailure && $returnCode == 1 && \
-                ![string match $errorCode $errorCodeRes(body)]} {
+	    ![string match $errorCode $errorCodeRes(body)]} {
 	set errorCodeFailure 1
     }
 
@@ -2414,7 +2414,7 @@ proc tcltest::Skipped {name constraints} {
 	# make sure that the constraints are satisfied.
 
 	set doTest 0
-        set constraints [string trim $constraints]
+	set constraints [string trim $constraints]
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 [list expr $constraints]]}
