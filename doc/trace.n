@@ -231,7 +231,7 @@ When the trace triggers, three arguments are appended to
 .PP
 \fIName1\fR gives the name for the variable being accessed.
 This is not necessarily the same as the name used in the
-\fBtrace variable\fR command:  the \fBupvar\fR command allows a
+\fBtrace add variable\fR command:  the \fBupvar\fR command allows a
 procedure to reference a variable under a different name.
 If the trace was originally set on an array or array element,
 \fIname2\fR provides which index into the array was affected.
