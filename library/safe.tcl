@@ -80,7 +80,7 @@ proc ::safe::InterpNested {} {
 proc ::safe::interpCreate {args} {
     variable AutoPathSync
     if {$AutoPathSync} {
-        set autoPath {}
+	set autoPath {}
     }
     set Args [::tcl::OptKeyParse ::safe::interpCreate $args]
     RejectExcessColons $child
@@ -93,7 +93,7 @@ proc ::safe::interpCreate {args} {
 proc ::safe::interpInit {args} {
     variable AutoPathSync
     if {$AutoPathSync} {
-        set autoPath {}
+	set autoPath {}
     }
     set Args [::tcl::OptKeyParse ::safe::interpIC $args]
     if {![::interp exists $child]} {
@@ -144,10 +144,10 @@ proc ::safe::interpConfigure {args} {
 		[list -accessPath $state(access_path)] \
 		[list -statics    $state(staticsok)]   \
 		[list -nested     $state(nestedok)]    \
-	        [list -deleteHook $state(cleanupHook)] \
+		[list -deleteHook $state(cleanupHook)] \
 	    ]
 	    if {!$AutoPathSync} {
-	        lappend TMP [list -autoPath $state(auto_path)]
+		lappend TMP [list -autoPath $state(auto_path)]
 	    }
 	    return [join $TMP]
 	}
@@ -176,9 +176,9 @@ proc ::safe::interpConfigure {args} {
 		}
 		-autoPath {
 		    if {$AutoPathSync} {
-		        return -code error "unknown flag $name (bug)"
+			return -code error "unknown flag $name (bug)"
 		    } else {
-		        return [list -autoPath $state(auto_path)]
+			return [list -autoPath $state(auto_path)]
 		    }
 		}
 		-statics    {
@@ -380,17 +380,17 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 	# so by default it works the same).
 	set access_path [AddSubDirs $access_path]
     } else {
-        set raw_auto_path $autoPath
+	set raw_auto_path $autoPath
     }
 
     if {$withAutoPath} {
-        set raw_auto_path $autoPath
+	set raw_auto_path $autoPath
     }
 
     Log $child "Setting accessPath=($access_path) staticsok=$staticsok\
 		nestedok=$nestedok deletehook=($deletehook)" NOTICE
     if {!$AutoPathSync} {
-        Log $child "Setting auto_path=($raw_auto_path)" NOTICE
+	Log $child "Setting auto_path=($raw_auto_path)" NOTICE
     }
 
     namespace upvar ::safe [VarName $child] state
@@ -441,7 +441,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 	    # Prevent the addition of dirs on the tm list to the
 	    # result if they are already known.
 	    if {[dict exists $remap_access_path $dir]} {
-	        if {$firstpass} {
+		if {$firstpass} {
 		    # $dir is in [::tcl::tm::list] and belongs in the child_tm_path.
 		    # Later passes handle subdirectories, which belong in the
 		    # access path but not in the module path.
@@ -486,7 +486,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
     set state(cleanupHook)       $deletehook
 
     if {!$AutoPathSync} {
-        set state(auto_path)     $raw_auto_path
+	set state(auto_path)     $raw_auto_path
     }
 
     SyncAccessPath $child
@@ -689,9 +689,9 @@ proc ::safe::interpDelete {child} {
     # Safe Base sub-interpreter, so each one is deleted cleanly and not by
     # the automatic mechanism built into [interp delete].
     foreach sub [interp children $child] {
-        if {[info exists ::safe::[VarName [list $child $sub]]]} {
-            ::safe::interpDelete [list $child $sub]
-        }
+	if {[info exists ::safe::[VarName [list $child $sub]]]} {
+	    ::safe::interpDelete [list $child $sub]
+	}
     }
 
     # If the child has a cleanup hook registered, call it.  Check the
@@ -1285,14 +1285,14 @@ proc ::safe::AliasExeName {child} {
 proc ::safe::RejectExcessColons {child} {
     set stripped [regsub -all -- {:::*} $child ::]
     if {[string range $stripped end-1 end] eq {::}} {
-        return -code error {interpreter name must not end in "::"}
+	return -code error {interpreter name must not end in "::"}
     }
     if {$stripped ne $child} {
-        set msg {interpreter name has excess colons in namespace separators}
-        return -code error $msg
+	set msg {interpreter name has excess colons in namespace separators}
+	return -code error $msg
     }
     if {[string range $stripped 0 1] eq {::}} {
-        return -code error {interpreter name must not begin "::"}
+	return -code error {interpreter name must not begin "::"}
     }
     return
 }
@@ -1320,7 +1320,7 @@ proc ::safe::Setup {} {
 	{-deleteHook -script {} "delete hook"}
     }
     if {!$AutoPathSync} {
-        lappend OptList {-autoPath -list {} "::auto_path for the child"}
+	lappend OptList {-autoPath -list {} "::auto_path for the child"}
     }
     set temp [::tcl::OptKeyRegister $OptList]
 
@@ -1378,26 +1378,26 @@ proc ::safe::setSyncMode {args} {
 
     if {[llength $args] == 0} {
     } elseif {[llength $args] == 1} {
-        set newValue [lindex $args 0]
-        if {![string is boolean -strict $newValue]} {
-            return -code error "new value must be a valid boolean"
-        }
-        set args [expr {$newValue && $newValue}]
-        if {([info vars ::safe::S*] ne {}) && ($args != $AutoPathSync)} {
-            return -code error \
-                    "cannot set new value while Safe Base child interpreters exist"
-        }
-        if {($args != $AutoPathSync)} {
-            set AutoPathSync {*}$args
-            ::tcl::OptKeyDelete ::safe::interpCreate
-            ::tcl::OptKeyDelete ::safe::interpIC
-            set TmpLog [setLogCmd]
-            Setup
-            setLogCmd $TmpLog
-        }
+	set newValue [lindex $args 0]
+	if {![string is boolean -strict $newValue]} {
+	    return -code error "new value must be a valid boolean"
+	}
+	set args [expr {$newValue && $newValue}]
+	if {([info vars ::safe::S*] ne {}) && ($args != $AutoPathSync)} {
+	    return -code error \
+		    "cannot set new value while Safe Base child interpreters exist"
+	}
+	if {($args != $AutoPathSync)} {
+	    set AutoPathSync {*}$args
+	    ::tcl::OptKeyDelete ::safe::interpCreate
+	    ::tcl::OptKeyDelete ::safe::interpIC
+	    set TmpLog [setLogCmd]
+	    Setup
+	    setLogCmd $TmpLog
+	}
     } else {
-        set msg {wrong # args: should be "safe::setSyncMode ?newValue?"}
-        return -code error $msg
+	set msg {wrong # args: should be "safe::setSyncMode ?newValue?"}
+	return -code error $msg
     }
 
     return $AutoPathSync
