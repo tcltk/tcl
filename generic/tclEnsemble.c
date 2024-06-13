@@ -1615,7 +1615,7 @@ TclMakeEnsemble(
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
 			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
 		    }
-		    /* don't compile unsafe subcommands in unsafe interp */
+		    /* don't compile unsafe subcommands in safe interp */
 		    cmdPtr->compileProc = NULL;
 		} else {
 		    /*
