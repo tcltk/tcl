@@ -156,9 +156,9 @@ to \fBnone\fR.
 .TP
 \fB\-buffersize\fI newSize\fR
 .
-\fINewvalue\fR must be an integer; its value is used to set the size
+\fInewSize\fR must be an integer; its value is used to set the size
 of buffers, in bytes, subsequently allocated for this channel to store
-input or output. \fINewvalue\fR must be a number of no more than one
+input or output. \fInewSize\fR must be a number of no more than one
 million, allowing buffers of up to one million bytes in size.
 .\" OPTION: -encoding
 .TP
