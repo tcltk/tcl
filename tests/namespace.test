@@ -3306,7 +3306,7 @@ test namespace-55.2 {compiled ensembles inside safe interpreters (for safe sub-c
     list [expr {$a eq $b}] [regexp { dictFirst } $a] [regexp { dictFirst } $b] $a $b
 } -cleanup {
     rename test_comp_dict {}
-    unset -nocomplain a b
+    unset -nocomplain code a b
     interp delete si
 } -match glob -result {1 1 1 *}
 
