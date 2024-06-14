@@ -1574,7 +1574,8 @@ Tcl_Merge(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_Size i, bytesNeeded = 0;
+    Tcl_Size i;
+    size_t bytesNeeded = 0;
     char *result, *dst;
 
     /*
@@ -1583,6 +1584,9 @@ Tcl_Merge(
      */
 
     if (argc <= 0) {
+	if (argc < 0) {
+	    Tcl_Panic("Tcl_Merge called with negative argc (%" TCL_SIZE_MODIFIER "d)", argc);
+	}
 	result = (char *)Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
@@ -2749,8 +2753,7 @@ Tcl_DStringAppendElement(
     newSize += 1; /* For terminating nul */
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString;
-	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
+	    char *newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2763,7 +2766,7 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 	    dsPtr->string =
-		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+		    (char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
@@ -2936,7 +2939,7 @@ Tcl_DStringGetResult(
 				 * of interp. */
 {
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    char *bytes = TclGetString(obj);
+    const char *bytes = TclGetString(obj);
 
     Tcl_DStringFree(dsPtr);
     Tcl_DStringAppend(dsPtr, bytes, obj->length);
