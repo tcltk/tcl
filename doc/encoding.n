@@ -8,21 +8,32 @@
 .so man.macros
 .BS
 .SH NAME
-encoding \- Manipulate encodings
+encoding \- Work with encodings
 .SH SYNOPSIS
 \fBencoding \fIoption\fR ?\fIarg arg ...\fR?
 .BE
 .SH INTRODUCTION
 .PP
-Strings in Tcl are logically a sequence of Unicode characters.
-These strings are represented in memory as a sequence of bytes that
-may be in one of several encodings: modified UTF\-8 (which uses 1 to 4
-bytes per character), or a custom encoding start as 8 bit binary data.
+Strings in Tcl are a sequence of Unicode codepoints.
+If strings are imported or exported from Tcl, they should be transfered to an
+encoding like cp1252, iso8859-1, Shift\-JIS, utf-8, utf-16, etc.
 .PP
-Different operating system interfaces or applications may generate
-strings in other encodings such as Shift\-JIS.  The \fBencoding\fR
-command helps to bridge the gap between Unicode and these other
-formats.
+Strings in a certain encoding are represented within Tcl as binary data
+and may not be handled as Tcl strings any more.
+Binary data is represented as a Tcl value composed of character values of 0 to255.
+.PP
+As an illustrative example, the Tcl string consisting of one character "\N'196'"
+(Unicode codepoint 0xC4) may be transfered to binary data containing the string
+in utf-8 encoding like this:
+.CS
+% set e [encoding convertto utf-8 \N'196']
+% binary scan $e cucu b1 b2
+%set b1
+195
+% set b2
+132
+.CE
+The resulting utf-8 data is stored as binary data consisting of the two bytes 195 and 132.
 .SH DESCRIPTION
 .PP
 Performs one of several encoding related operations, depending on
@@ -45,7 +56,7 @@ of conversion errors. See the \fBPROFILES\fR section below for details. Any prem
 termination of processing due to errors is reported through an exception if
 the \fB-failindex\fR option is not specified.
 .PP
-If the \fB-failindex\fR is specified, instead of an exception being raised
+If \fB-failindex\fR is specified, instead of an exception being raised
 on premature termination, the result of the conversion up to the point of the
 error is returned as the result of the command. In addition, the index
 of the source byte triggering the error is stored in \fBvar\fR. If no
@@ -64,8 +75,8 @@ the specified encoding. If \fIencoding\fR is not specified, the current system
 encoding is used.
 .PP
 .VS "TCL8.7 TIP607, TIP656"
-The \fB-profile\fR and \fB-failindex\fR options have the same effect as
-described for the \fBencoding convertfrom\fR command.
+See \fBencoding convertfrom\fR for the meaning of \fB\-profile\fR and
+\fB\-failindex\fR.
 .VE "TCL8.7 TIP607, TIP656"
 .\" METHOD: dirs
 .TP
@@ -101,8 +112,8 @@ Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
 .TP
 \fBencoding system\fR ?\fIencoding\fR?
 .
-Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
-omitted then the command returns the current system encoding.  The
+Set the system encoding to \fIencoding\fR. If \fIencoding\fR is not given,
+returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
 .\" Do not put .VS on whole section as that messes up the bullet list alignment
 .SH PROFILES
@@ -192,7 +203,7 @@ Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 U+00306F
 .CE
 .PP
-The result is the unicode codepoint
+The result is the Unicode codepoint
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
 .VS "TCL8.7 TIP607, TIP656"
