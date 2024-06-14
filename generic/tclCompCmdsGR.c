@@ -49,8 +49,8 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    size_t before,
-    size_t after,
+    int before,
+    int after,
     int *indexPtr)
 {
     Tcl_Obj *tmpObj;
