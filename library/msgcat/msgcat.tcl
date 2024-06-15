@@ -20,7 +20,7 @@ package provide msgcat 1.7.1
 namespace eval msgcat {
     namespace export mc mcn mcexists mcload mclocale mcmax\
 	    mcmset mcpreferences mcset\
-            mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
+	    mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
 	    mcpackagenamespaceget mcpackageconfig mcpackagelocale mcutil
 
     # Records the list of locales to search
@@ -738,7 +738,7 @@ proc msgcat::mcpackageconfig {subcommand option {value ""}} {
 		    \"[lrange [info level 0] 0 2] value\""
 	}
     } elseif {$subcommand eq "set"} {
-        return -code error\
+	return -code error\
 		"wrong # args: should be \"[lrange [info level 0] 0 2]\""
     }
 

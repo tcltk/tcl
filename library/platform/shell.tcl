@@ -131,7 +131,7 @@ proc ::platform::shell::RUN {shell code} {
     set e [TEMP]
 
     set code [catch {
-        exec $shell $c 2> $e
+	exec $shell $c 2> $e
     } res]
 
     file delete $c
