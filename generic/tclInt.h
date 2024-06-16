@@ -1968,7 +1968,7 @@ typedef struct Interp {
 				 * compiled by the interpreter. Indexed by the
 				 * string representations of literals. Used to
 				 * avoid creating duplicate objects. */
-    Tcl_Size compileEpoch;		/* Holds the current "compilation epoch" for
+    Tcl_Size compileEpoch;	/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a
 				 * command with a compile procedure is
@@ -1978,8 +1978,7 @@ typedef struct Interp {
 				 * NULL. Set by ObjInterpProc in tclProc.c and
 				 * used by tclCompile.c to process local
 				 * variables appropriately. */
-    ResolverScheme *resolverPtr;
-				/* Linked list of name resolution schemes
+    ResolverScheme *resolverPtr;/* Linked list of name resolution schemes
 				 * added to this interpreter. Schemes are
 				 * added and removed by calling
 				 * Tcl_AddInterpResolvers and
@@ -2018,7 +2017,8 @@ typedef struct Interp {
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
 
-    Tcl_Size tracesForbiddingInline;	/* Count of traces (in the list headed by
+    Tcl_Size tracesForbiddingInline;
+				/* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation. */
 
@@ -2048,7 +2048,7 @@ typedef struct Interp {
 				 * as flag values the same as the 'active'
 				 * field. */
 
-	Tcl_Size cmdCount;		/* Limit for how many commands to execute in
+	Tcl_Size cmdCount;	/* Limit for how many commands to execute in
 				 * the interpreter. */
 	LimitHandler *cmdHandlers;
 				/* Handlers to execute when the limit is
@@ -2084,9 +2084,10 @@ typedef struct Interp {
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
 				 * processing an ensemble. */
-	Tcl_Size numRemovedObjs;	/* How many arguments have been stripped off
+	Tcl_Size numRemovedObjs;/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	Tcl_Size numInsertedObjs;	/* How many of the current arguments were
+	Tcl_Size numInsertedObjs;
+				/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
@@ -2146,8 +2147,7 @@ typedef struct Interp {
 				 * used by function ...() in the same file.
 				 * It does for the eval/direct path of script
 				 * execution what CompileEnv.clLoc does for
-				 * the bytecode compiler.
-				 */
+				 * the bytecode compiler. */
     /*
      * TIP #268. The currently active selection mode, i.e. the package require
      * preferences.
