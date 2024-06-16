@@ -2166,7 +2166,8 @@ typedef struct Interp {
 				 * processing an ensemble. */
 	Tcl_Size numRemovedObjs;/* How many arguments have been stripped off
 				 * because of ensemble processing. */
-	Tcl_Size numInsertedObjs;/* How many of the current arguments were
+	Tcl_Size numInsertedObjs;
+				/* How many of the current arguments were
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
