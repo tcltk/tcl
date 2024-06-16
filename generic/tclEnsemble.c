@@ -166,7 +166,6 @@ TclNamespaceEnsembleCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Namespace *namespacePtr;
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     Tcl_Command token;
     int index;
@@ -184,8 +183,7 @@ TclNamespaceEnsembleCmd(
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
 	    "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -248,7 +246,24 @@ TclNamespaceEnsembleCmd(
     }
     return TCL_OK;
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitEnsembleFromOptions --
+ *
+ *	Core of implementation of "namespace ensemble create".
+ *
+ * Results:
+ *	Returns created ensemble's command token if successful, and NULL if
+ *	anything goes wrong.
+ *
+ * Side effects:
+ *	Creates the ensemble for the namespace if one did not previously
+ *	exist.
+ *
+ *----------------------------------------------------------------------
+ */
 static Tcl_Command
 InitEnsembleFromOptions(
     Tcl_Interp *interp,
@@ -408,7 +423,23 @@ InitEnsembleFromOptions(
     }
     return NULL;
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReadOneEnsembleOption --
+ *
+ *	Core of implementation of "namespace ensemble configure" with just a
+ *	single option name.
+ *
+ * Results:
+ *	Tcl result code. Modifies the interpreter result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ReadOneEnsembleOption(
     Tcl_Interp *interp,
@@ -464,7 +495,22 @@ ReadOneEnsembleOption(
     }
     return TCL_OK;
 }
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReadAllEnsembleOptions --
+ *
+ *	Core of implementation of "namespace ensemble configure" without
+ *	option names.
+ *
+ * Results:
+ *	Tcl result code. Modifies the interpreter result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 ReadAllEnsembleOptions(
     Tcl_Interp *interp,
@@ -526,7 +572,22 @@ ReadAllEnsembleOptions(
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetEnsembleConfigOptions --
+ *
+ *	Core of implementation of "namespace ensemble configure" with even
+ *	number of arguments (where there is at least one pair).
+ *
+ * Results:
+ *	Tcl result code. Modifies the interpreter result.
+ *
+ * Side effects:
+ *	Modifies the ensemble's configuration.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 SetEnsembleConfigOptions(
     Tcl_Interp *interp,
@@ -2194,12 +2255,24 @@ TclSpellFix(
     TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
-Tcl_Obj *const *TclEnsembleGetRewriteValues(
-    Tcl_Interp *interp		/* Current interpreter. */
-)
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclEnsembleGetRewriteValues --
+ *
+ *	Get the original arguments to the current command before any rewrite
+ *	rules (from aliases, ensembles, and method forwards) were applied.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *const *
+TclEnsembleGetRewriteValues(
+    Tcl_Interp *interp)		/* Current interpreter. */
+
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
+
     if (origObjv[0] == NULL) {
 	origObjv = (Tcl_Obj *const *) origObjv[2];
     }
@@ -3448,7 +3521,8 @@ CompileToInvokedCommand(
      * Do the replacing dispatch.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,numWords+1);
+    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,
+	    numWords + 1);
 }
 
 /*
