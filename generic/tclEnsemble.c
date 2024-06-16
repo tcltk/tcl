@@ -125,6 +125,18 @@ typedef struct {
 				 * table. */
 } EnsembleCmdRep;
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NewNsObj --
+ *
+ *	Make an object that contains a namespace's name.
+ *
+ * TODO:
+ * 	This is a candidate for doing something better!
+ *
+ *----------------------------------------------------------------------
+ */
 static inline Tcl_Obj *
 NewNsObj(
     Tcl_Namespace *namespacePtr)
@@ -167,7 +179,7 @@ TclNamespaceEnsembleCmd(
     Tcl_Obj *const objv[])
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    Tcl_Command token;
+    Tcl_Command token;		/* The ensemble command. */
     int index;
 
     if (nsPtr == NULL || nsPtr->flags & NS_DEAD) {
@@ -262,6 +274,10 @@ TclNamespaceEnsembleCmd(
  *	Creates the ensemble for the namespace if one did not previously
  *	exist.
  *
+ * Note:
+ *	Can't use SetEnsembleConfigOptions() here. Different (but overlapping)
+ *	options are supported. 
+ *
  *----------------------------------------------------------------------
  */
 static Tcl_Command
@@ -277,7 +293,7 @@ InitEnsembleFromOptions(
     Tcl_Size len;
     int allocatedMapFlag = 0;
     int index;
-    Tcl_Command token;
+    Tcl_Command token;		/* The created ensemble command. */
     Namespace *foundNsPtr;
     const char *simpleName;
     /*
@@ -443,7 +459,7 @@ InitEnsembleFromOptions(
 static int
 ReadOneEnsembleOption(
     Tcl_Interp *interp,
-    Tcl_Command token,		/* The ensemble. */
+    Tcl_Command token,		/* The ensemble to read from. */
     Tcl_Obj *optionObj)		/* The name of the option to read. */
 {
     Tcl_Obj *resultObj = NULL;			/* silence gcc 4 warning */
@@ -514,7 +530,7 @@ ReadOneEnsembleOption(
 static int
 ReadAllEnsembleOptions(
     Tcl_Interp *interp,
-    Tcl_Command token)		/* The ensemble. */
+    Tcl_Command token)		/* The ensemble to read from. */
 {
     Tcl_Obj *resultObj, *tmpObj = NULL;	/* silence gcc 4 warning */
     int flags = 0;			/* silence gcc 4 warning */
@@ -591,7 +607,7 @@ ReadAllEnsembleOptions(
 static int
 SetEnsembleConfigOptions(
     Tcl_Interp *interp,
-    Tcl_Command token,		/* The ensemble. */
+    Tcl_Command token,		/* The ensemble to configure. */
     int objc,			/* The count of option-related arguments. */
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
@@ -904,7 +920,7 @@ GetEnsembleFromCommand(
 static inline void
 BumpEpochIfNecessary(
     Tcl_Interp *interp,
-    Tcl_Command token)
+    Tcl_Command token)		/* The ensemble command to check. */
 {
     /*
      * Special hack to make compiling of [info exists] work when the
@@ -936,7 +952,7 @@ BumpEpochIfNecessary(
 int
 Tcl_SetEnsembleSubcommandList(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to write to. */
     Tcl_Obj *subcmdList)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -997,7 +1013,7 @@ Tcl_SetEnsembleSubcommandList(
 int
 Tcl_SetEnsembleParameterList(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to write to. */
     Tcl_Obj *paramList)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1060,7 +1076,7 @@ Tcl_SetEnsembleParameterList(
 int
 Tcl_SetEnsembleMappingDict(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to write to. */
     Tcl_Obj *mapDict)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1146,7 +1162,7 @@ Tcl_SetEnsembleMappingDict(
 int
 Tcl_SetEnsembleUnknownHandler(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to write to. */
     Tcl_Obj *unknownList)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1207,7 +1223,7 @@ Tcl_SetEnsembleUnknownHandler(
 int
 Tcl_SetEnsembleFlags(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to write to. */
     int flags)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1271,7 +1287,7 @@ Tcl_SetEnsembleFlags(
 int
 Tcl_GetEnsembleSubcommandList(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     Tcl_Obj **subcmdListPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1305,7 +1321,7 @@ Tcl_GetEnsembleSubcommandList(
 int
 Tcl_GetEnsembleParameterList(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     Tcl_Obj **paramListPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1339,7 +1355,7 @@ Tcl_GetEnsembleParameterList(
 int
 Tcl_GetEnsembleMappingDict(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     Tcl_Obj **mapDictPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1372,7 +1388,7 @@ Tcl_GetEnsembleMappingDict(
 int
 Tcl_GetEnsembleUnknownHandler(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     Tcl_Obj **unknownListPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1405,7 +1421,7 @@ Tcl_GetEnsembleUnknownHandler(
 int
 Tcl_GetEnsembleFlags(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     int *flagsPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1438,7 +1454,7 @@ Tcl_GetEnsembleFlags(
 int
 Tcl_GetEnsembleNamespace(
     Tcl_Interp *interp,
-    Tcl_Command token,
+    Tcl_Command token,		/* The ensemble command to read from. */
     Tcl_Namespace **namespacePtrPtr)
 {
     EnsembleConfig *ensemblePtr = GetEnsembleFromCommand(interp, token);
@@ -1528,7 +1544,7 @@ Tcl_FindEnsemble(
 
 int
 Tcl_IsEnsemble(
-    Tcl_Command token)
+    Tcl_Command token)		/* The command to check. */
 {
     Command *cmdPtr = (Command *) token;
 
@@ -2295,7 +2311,6 @@ TclEnsembleGetRewriteValues(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *const *
 TclFetchEnsembleRoot(
     Tcl_Interp *interp,
