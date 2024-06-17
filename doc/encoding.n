@@ -18,22 +18,26 @@ Strings in Tcl are a sequence of Unicode codepoints.
 If strings are imported or exported from Tcl, they should be transfered to an
 encoding like cp1252, iso8859-1, Shift\-JIS, utf-8, utf-16, etc.
 .PP
-Strings in a certain encoding are represented within Tcl as binary data
-and may not be handled as Tcl strings any more.
-Binary data is represented as a Tcl value composed of character values of 0 to255.
+Tcl Strings which are transfered to an encoding are represented within Tcl as
+binary strings, where each byte is represented by a codepoint with a value in
+the range of 0 to 255.
+Binary strings are typically handled using the \fBbinary\fR command.
+The command \fBstring length\fR returns the required byte count which may be
+different to the original character count.
 .PP
 As an illustrative example, the Tcl string consisting of one character "\N'196'"
-(Unicode codepoint 0xC4) may be transfered to binary data containing the string
-in utf-8 encoding like this:
+(Unicode codepoint 0xC4) may be transfered to utf-8 encoding like this:
 .CS
 % set e [encoding convertto utf-8 \N'196']
+% string length $e
+2
 % binary scan $e cucu b1 b2
 %set b1
 195
 % set b2
 132
 .CE
-The resulting utf-8 data is stored as binary data consisting of the two bytes 195 and 132.
+The resulting utf-8 data is stored as a binary string consisting of the two bytes 195 and 132.
 .SH DESCRIPTION
 .PP
 Performs one of several encoding related operations, depending on
