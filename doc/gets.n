@@ -12,7 +12,7 @@
 .SH NAME
 gets \- Read a line from a channel
 .SH SYNOPSIS
-\fBgets \fIchannelId\fR ?\fIvarName\fR?
+\fBgets \fIchannel\fR ?\fIvarName\fR?
 .BE
 .SH DESCRIPTION
 .PP

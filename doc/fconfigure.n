@@ -12,9 +12,9 @@
 fconfigure \- Set and get options on a channel
 .SH SYNOPSIS
 .nf
-\fBfconfigure \fIchannelId\fR
-\fBfconfigure \fIchannelId name\fR
-\fBfconfigure \fIchannelId name value \fR?\fIname value ...\fR?
+\fBfconfigure \fIchannel\fR
+\fBfconfigure \fIchannel name\fR
+\fBfconfigure \fIchannel name value \fR?\fIname value ...\fR?
 .fi
 .BE
 .SH DESCRIPTION
