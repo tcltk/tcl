@@ -319,7 +319,7 @@ ValidateFormat(
 	    if (ul == 0 || ul >= INT_MAX) {
 		goto badIndex;
 	    }
-	    objIndex = (int) ul - 1;
+	    objIndex = (int)ul - 1;
 	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
 	    } else if (numVars == 0) {
@@ -361,6 +361,13 @@ ValidateFormat(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -370,6 +377,8 @@ ValidateFormat(
 	    }
 	    /* FALLTHRU */
 	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
@@ -567,7 +576,7 @@ ValidateFormat(
 
 int
 Tcl_ScanObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -578,7 +587,8 @@ Tcl_ScanObjCmd(
     long value;
     const char *string, *end, *baseString;
     char op = 0;
-    int width, underflow = 0;
+    int underflow = 0;
+    Tcl_Size width;
     Tcl_WideInt wideValue;
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
@@ -677,7 +687,7 @@ Tcl_ScanObjCmd(
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
 		format += TclUtfToUniChar(format, &ch);
-		objIndex = (int) value - 1;
+		objIndex = (int)value - 1;
 	    }
 	}
 
@@ -686,7 +696,7 @@ Tcl_ScanObjCmd(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    width = (int) strtoul(format-1, (char **) &format, 10);/* INTL: "C" locale. */
+	    width = (int)strtoul(format-1, (char **)&format, 10);/* INTL: "C" locale. */
 	    format += TclUtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
@@ -899,7 +909,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
+		    &end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -918,7 +928,7 @@ Tcl_ScanObjCmd(
 		break;
 	    }
 	    if (flags & SCAN_LONGER) {
-		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue = WIDE_MIN;
 		    } else {
@@ -1070,22 +1080,24 @@ Tcl_ScanObjCmd(
     } else {
 	/*
 	 * Here no vars were specified, we want a list returned (inline scan)
+	 * We create an empty Tcl_Obj to fill missing values rather than
+	 * allocating a new Tcl_Obj every time.
 	 */
-
+	Tcl_Obj *emptyObj = NULL;
 	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
 		Tcl_DecrRefCount(objs[i]);
 	    } else {
-		Tcl_Obj *obj;
 		/*
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
-
-		TclNewObj(obj);
-		Tcl_ListObjAppendElement(NULL, objPtr, obj);
+		if (!emptyObj) {
+		    TclNewObj(emptyObj);
+		}
+		Tcl_ListObjAppendElement(NULL, objPtr, emptyObj);
 	    }
 	}
     }
