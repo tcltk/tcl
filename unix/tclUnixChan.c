@@ -1708,11 +1708,11 @@ TtyParseMode(
 
     if (
 #if defined(PAREXT)
-        strchr("noems", parity)
+	strchr("noems", parity)
 #else
-        strchr("noe", parity)
+	strchr("noe", parity)
 #endif /* PAREXT */
-                               == NULL) {
+			       == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s parity: should be %s", bad,
