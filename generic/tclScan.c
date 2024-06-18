@@ -378,6 +378,13 @@ ValidateFormat(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -387,6 +394,8 @@ ValidateFormat(
 	    }
 	    /* FALLTHRU */
 	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
@@ -1095,9 +1104,7 @@ Tcl_ScanObjCmd(
 	 * We create an empty Tcl_Obj to fill missing values rather than
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-	Tcl_Obj *emptyObj;
-	TclNewObj(emptyObj);
-	Tcl_IncrRefCount(emptyObj);
+	Tcl_Obj *emptyObj = NULL;
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
@@ -1108,11 +1115,12 @@ Tcl_ScanObjCmd(
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
-
+		if (!emptyObj) {
+		    TclNewObj(emptyObj);
+		}
 		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
 	}
-	Tcl_DecrRefCount(emptyObj);
 	if (code != TCL_OK) {
 	    /* If error'ed out, free up remaining. i contains last index freed */
 	    while (++i < totalVars) {
