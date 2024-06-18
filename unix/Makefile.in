@@ -1095,7 +1095,7 @@ install-libraries: libraries
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
-	        "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+		    "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
 install-tzdata:
