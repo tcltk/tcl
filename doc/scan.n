@@ -77,13 +77,13 @@ The syntactically valid values for the size modifier are \fBh\fR, \fBL\fR,
 \fBl\fR, \fBz\fR, \fBt\fR, and \fBll\fR.  The \fBh\fR size
 modifier value is equivalent
 to the absence of a size modifier in the the conversion specifier.
-Either one indicates the integer range to be stored is limited to
-the 32-bit range.
-The \fBL\fR size modifier is equivalent to the \fBll\fR size
-modifier. Either one indicates the integer range to be stored is unlimited.
-The \fBl\fR (or \fBq\fR or \fBj\fR) size modifier indicates that the integer
-range to be stored is limited to the same range produced by the
-\fBwide()\fR function of the \fBexpr\fR command.
+Either one indicates the integer range to be stored is limited to the range
+determined by the value of the \fBwordSize\fR element of the \fBtcl_platform\fR
+array).  The \fBL\fR, \fBq\fR or \fBj\fR size modifiers are equivalent to the
+\fBl\fR size modifier. Either of them indicates the integer range to be stored is
+limited to the same range produced by the \fBwide()\fR function of
+the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
+the integer range to be stored is unlimited.
 .SS "MANDATORY CONVERSION CHARACTER"
 .PP
 The following conversion characters are supported:
@@ -248,6 +248,8 @@ An interactive session demonstrating the truncation of integer
 values determined by size modifiers:
 .PP
 .CS
+\fI%\fR set tcl_platform(wordSize)
+4
 \fI%\fR scan 20000000000000000000 %d
 2147483647
 \fI%\fR scan 20000000000000000000 %ld

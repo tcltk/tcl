@@ -81,11 +81,6 @@ static struct {
     FIELD(u_cleanup);
     FIELD(u_errorName);
 
-    FIELD(ucnv_countAliases);
-    FIELD(ucnv_countAvailable);
-    FIELD(ucnv_getAlias);
-    FIELD(ucnv_getAvailableName);
-
     FIELD(ubrk_open);
     FIELD(ubrk_close);
     FIELD(ubrk_preceding);
@@ -93,6 +88,11 @@ static struct {
     FIELD(ubrk_previous);
     FIELD(ubrk_next);
     FIELD(ubrk_setText);
+
+    FIELD(ucnv_countAliases);
+    FIELD(ucnv_countAvailable);
+    FIELD(ucnv_getAlias);
+    FIELD(ucnv_getAvailableName);
 
     FIELD(ucsdet_close);
     FIELD(ucsdet_detect);
@@ -109,10 +109,10 @@ static struct {
 } icu_fns = {
     0, {NULL, NULL}, /* Reference count, library handles */
     NULL, NULL, /* u_* */
-    NULL, NULL, /* ucnv_* */
-    NULL, NULL, NULL, /* uenum_* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ubrk* */
+    NULL, NULL, NULL, NULL, /* ucnv_* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ucsdet* */
+    NULL, NULL, NULL, /* uenum_* */
 };
 
 #define u_cleanup        icu_fns._u_cleanup
@@ -365,7 +365,6 @@ IcuConverterNamesObjCmd (
 	return FunctionNotAvailableError(interp);
     }
 
-    UErrorCodex status = U_ZERO_ERRORZ;
     int32_t count = ucnv_countAvailable();
     if (count <= 0) {
 	return TCL_OK;
