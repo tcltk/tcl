@@ -124,7 +124,7 @@ TclpDlopen(
      */
 
     if ((pkg = strrchr(fileName, '/')) == NULL) {
-        pkg = fileName;
+	pkg = fileName;
     } else {
 	pkg++;
     }
@@ -164,7 +164,7 @@ FindSymbol(
     if (retval == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\"", symbol));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return retval;
 }
