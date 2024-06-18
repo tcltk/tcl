@@ -83,7 +83,7 @@ typedef struct TtyAttrs {
     int stop;
 } TtyAttrs;
 
-#endif	/* !SUPPORTS_TTY */
+#endif	/* SUPPORTS_TTY */
 
 #define UNSUPPORTED_OPTION(detail) \
     if (interp) {							\
@@ -137,22 +137,22 @@ static int		TtySetOptionProc(ClientData instanceData,
 
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
-    FileSeekProc,		/* Seek proc. */
+    TCL_CHANNEL_VERSION_5,
+    FileCloseProc,
+    FileInputProc,
+    FileOutputProc,
+    FileSeekProc,
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    FileWatchProc,		/* Initialize notifier. */
-    FileGetHandleProc,		/* Get OS handles out of channel. */
-    FileClose2Proc,			/* close2proc. */
-    FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    FileWideSeekProc,		/* wide seek proc. */
-    NULL,
-    FileTruncateProc		/* truncate proc. */
+    FileWatchProc,
+    FileGetHandleProc,
+    FileClose2Proc,
+    FileBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    FileWideSeekProc,
+    NULL,			/* Thread action proc. */
+    FileTruncateProc
 };
 
 #ifdef SUPPORTS_TTY
@@ -162,23 +162,23 @@ static const Tcl_ChannelType fileChannelType = {
  */
 
 static const Tcl_ChannelType ttyChannelType = {
-    "tty",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
+    "tty",
+    TCL_CHANNEL_VERSION_5,
+    FileCloseProc,
+    FileInputProc,
+    FileOutputProc,
     NULL,			/* Seek proc. */
-    TtySetOptionProc,		/* Set option proc. */
-    TtyGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Initialize notifier. */
-    FileGetHandleProc,		/* Get OS handles out of channel. */
-    FileClose2Proc,			/* close2proc. */
-    FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc. */
-    NULL,			/* thread action proc. */
-    NULL			/* truncate proc. */
+    TtySetOptionProc,
+    TtyGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    FileClose2Proc,
+    FileBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
@@ -390,7 +390,7 @@ FileSeekProc(
 				 * one of SEEK_START, SEEK_SET or SEEK_END. */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     Tcl_WideInt oldLoc, newLoc;
 
     /*
@@ -871,11 +871,11 @@ TtyGetOptionProc(
 	tcgetattr(fsPtr->fd, &iostate);
 	Tcl_DStringInit(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
+	Tcl_ExternalToUtfDString(NULL, (char *)&iostate.c_cc[VSTART], 1, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	TclDStringClear(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTOP], 1, &ds);
+	Tcl_ExternalToUtfDString(NULL, (char *)&iostate.c_cc[VSTOP], 1, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
     }
@@ -1284,22 +1284,18 @@ TtyParseMode(
      * not allow preprocessor directives in their arguments.
      */
 
-    if (
-#if defined(PAREXT)
-        strchr("noems", parity)
+#ifdef PAREXT
+#define PARITY_CHARS	"noems"
+#define PARITY_MSG	"n, o, e, m, or s"
 #else
-        strchr("noe", parity)
+#define PARITY_CHARS	"noe"
+#define PARITY_MSG	"n, o, or e"
 #endif /* PAREXT */
-                               == NULL) {
+
+    if (strchr(PARITY_CHARS, parity) == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s parity: should be %s", bad,
-#if defined(PAREXT)
-		    "n, o, e, m, or s"
-#else
-		    "n, o, or e"
-#endif /* PAREXT */
-		    ));
+		    "%s parity: should be %s", bad, PARITY_MSG));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1598,12 +1594,11 @@ TclpGetDefaultStdChannel(
      * Some #def's to make the code a little clearer!
      */
 
-#define ZERO_OFFSET	((Tcl_SeekOffset) 0)
 #define ERROR_OFFSET	((Tcl_SeekOffset) -1)
 
     switch (type) {
     case TCL_STDIN:
-	if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(0, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1612,7 +1607,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDOUT:
-	if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(1, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1621,7 +1616,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDERR:
-	if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(2, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1634,7 +1629,6 @@ TclpGetDefaultStdChannel(
 	break;
     }
 
-#undef ZERO_OFFSET
 #undef ERROR_OFFSET
 
     channel = Tcl_MakeFileChannel(INT2PTR(fd), mode);
