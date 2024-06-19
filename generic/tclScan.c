@@ -385,6 +385,10 @@ ValidateFormat(
 	    }
 	    format += TclUtfToUniChar(format, &ch);
 	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -393,7 +397,6 @@ ValidateFormat(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
 	case 'j':
 	case 'q':
 	    flags |= SCAN_LONGER;
@@ -601,7 +604,7 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
-    long value;
+    int value;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -994,11 +997,11 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
-			value = LONG_MIN;
+			value = INT_MIN;
 		    } else {
-			value = LONG_MAX;
+			value = INT_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {

@@ -277,7 +277,7 @@ TclNamespaceEnsembleCmd(
  *
  * Note:
  *	Can't use SetEnsembleConfigOptions() here. Different (but overlapping)
- *	options are supported. 
+ *	options are supported.
  *
  *----------------------------------------------------------------------
  */
@@ -886,7 +886,7 @@ Tcl_CreateEnsemble(
  */
 static inline EnsembleConfig *
 GetEnsembleFromCommand(
-    Tcl_Interp *interp,		/* Where to report an error. May be NULL. */	
+    Tcl_Interp *interp,		/* Where to report an error. May be NULL. */
     Tcl_Command token)		/* What to check for ensemble-ness. */
 {
     Command *cmdPtr = (Command *) token;
