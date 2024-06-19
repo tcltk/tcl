@@ -13,9 +13,9 @@
 .SH NAME
 fileevent \- Execute a script when a channel becomes readable or writable
 .SH SYNOPSIS
-\fBfileevent \fIchannelId \fBreadable \fR?\fIscript\fR?
+\fBfileevent \fIchannel \fBreadable \fR?\fIscript\fR?
 .sp
-\fBfileevent \fIchannelId \fBwritable \fR?\fIscript\fR?
+\fBfileevent \fIchannel \fBwritable \fR?\fIscript\fR?
 .BE
 .SH DESCRIPTION
 .PP
