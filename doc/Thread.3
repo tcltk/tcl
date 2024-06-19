@@ -76,10 +76,7 @@ waited upon into it.
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
 allows you to incorporate Tcl into multithreaded applications without
-customizing the Tcl core.  Starting with the 8.6 release, Tcl
-multithreading support is on by default. To disable Tcl multithreading
-support, you must include the \fB\-\|\-disable-threads\fR option to
-\fBconfigure\fR when you configure and compile your Tcl core.
+customizing the Tcl core.
 .PP
 An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that

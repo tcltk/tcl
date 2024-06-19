@@ -388,7 +388,7 @@ Tcl_AppendElement(
 
 void
 Tcl_ResetResult(
-    Tcl_Interp *interp)/* Interpreter for which to clear result. */
+    Tcl_Interp *interp)		/* Interpreter for which to clear result. */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -441,7 +441,7 @@ Tcl_ResetResult(
 
 static void
 ResetObjResult(
-    Interp *iPtr)	/* Points to the interpreter whose result
+    Interp *iPtr)		/* Points to the interpreter whose result
 				 * object should be reset. */
 {
     Tcl_Obj *objResultPtr = iPtr->objResultPtr;
@@ -760,7 +760,7 @@ TclProcessReturn(
 
             Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
                     valueObjv);
- 	}
+	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE],
                 &valuePtr);
 	if (valuePtr != NULL) {

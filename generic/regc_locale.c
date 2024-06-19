@@ -1187,24 +1187,24 @@ cclass(
 	}
 	break;
     case CC_PRINT:
-    	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
-    	if (cv) {
-    	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
-    		addrange(cv, spaceRangeTable[i].start,
-    				spaceRangeTable[i].end);
-    	    }
-    	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
-    		addchr(cv, spaceCharTable[i]);
-    	    }
-    	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
-    		addrange(cv, graphRangeTable[i].start,
-    				graphRangeTable[i].end);
-    	    }
-    	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
-    		addchr(cv, graphCharTable[i]);
-    	    }
-    	}
-    	break;
+	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
+	if (cv) {
+	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
+		addrange(cv, spaceRangeTable[i].start,
+				spaceRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
+		addchr(cv, spaceCharTable[i]);
+	    }
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
+		addrange(cv, graphRangeTable[i].start,
+				graphRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
+		addchr(cv, graphCharTable[i]);
+	    }
+	}
+	break;
     case CC_GRAPH:
 	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE);
 	if (cv) {

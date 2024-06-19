@@ -22,20 +22,28 @@ static void		ClockFmtObj_DupInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		ClockFmtObj_FreeInternalRep(Tcl_Obj *objPtr);
 static int		ClockFmtObj_SetFromAny(Tcl_Interp *, Tcl_Obj *objPtr);
 static void		ClockFmtObj_UpdateString(Tcl_Obj *objPtr);
+static Tcl_HashEntry *	ClockFmtScnStorageAllocProc(Tcl_HashTable *, void *keyPtr);
+static void		ClockFmtScnStorageFreeProc(Tcl_HashEntry *hPtr);
+static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 TCL_DECLARE_MUTEX(ClockFmtMutex);	/* Serializes access to common format list. */
-
-static void		ClockFmtScnStorageDelete(ClockFmtScnStorage *fss);
 
 #ifndef TCL_CLOCK_FULL_COMPAT
 #define TCL_CLOCK_FULL_COMPAT 1
 #endif
 
 /*
- * Derivation of tclStringHashKeyType with another allocEntryProc
+ * Derivation of tclStringHashKeyType with extra memory management trickery.
  */
 
-static Tcl_HashKeyType ClockFmtScnStorageHashKeyType;
+static const Tcl_HashKeyType ClockFmtScnStorageHashKeyType = {
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
+    0,					/* flags */
+    TclHashStringKey,			/* hashKeyProc */
+    TclCompareStringKeys,		/* compareKeysProc */
+    ClockFmtScnStorageAllocProc,	/* allocEntryProc */
+    ClockFmtScnStorageFreeProc		/* freeEntryProc */
+};
 
 #define IntFieldAt(info, offset) \
 	((int *) (((char *) (info)) + (offset)))
@@ -543,7 +551,7 @@ FmtScn4HashEntry(
 
 static Tcl_HashEntry *
 ClockFmtScnStorageAllocProc(
-    TCL_UNUSED(Tcl_HashTable *),	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     ClockFmtScnStorage *fss;
@@ -758,7 +766,7 @@ ClockFmtObj_UpdateString(
  *	Returns tcl object with key or format object if not localizable.
  *
  * Side effects:
- * 	Converts given format object to ClockFmtObjType on demand for caching
+ *	Converts given format object to ClockFmtObjType on demand for caching
  *	the key inside its internal representation.
  *
  *----------------------------------------------------------------------
@@ -804,7 +812,7 @@ ClockFrmObjGetLocFmtKey(
  *	Returns scan/format storage pointer to ClockFmtScnStorage.
  *
  * Side effects:
- * 	Converts given format object to ClockFmtObjType on demand for caching
+ *	Converts given format object to ClockFmtObjType on demand for caching
  *	the format storage reference inside its internal representation.
  *	Increments objRefCount of the ClockFmtScnStorage reference.
  *
@@ -825,11 +833,6 @@ FindOrCreateFmtScnStorage(
 
     /* if not yet initialized */
     if (!initialized) {
-	/* initialize type */
-	memcpy(&ClockFmtScnStorageHashKeyType, &tclStringHashKeyType, sizeof(tclStringHashKeyType));
-	ClockFmtScnStorageHashKeyType.allocEntryProc = ClockFmtScnStorageAllocProc;
-	ClockFmtScnStorageHashKeyType.freeEntryProc = ClockFmtScnStorageFreeProc;
-
 	/* initialize hash table */
 	Tcl_InitCustomHashTable(&FmtScnHashTable, TCL_CUSTOM_TYPE_KEYS,
 		&ClockFmtScnStorageHashKeyType);
@@ -1241,9 +1244,13 @@ ObjListSearch(
 /* currently unused */
 
 static int
-LocaleListSearch(ClockFmtScnCmdArgs *opts,
-    DateInfo *info, int mcKey, int *val,
-    int minLen, int maxLen)
+LocaleListSearch(
+    ClockFmtScnCmdArgs *opts,
+    DateInfo *info,
+    int mcKey,
+    int *val,
+    int minLen,
+    int maxLen)
 {
     Tcl_Obj **lstv;
     Tcl_Size lstc;
@@ -1416,7 +1423,7 @@ ClockMCGetMultiListIdxTree(
  * Results:
  *	TCL_OK - match found and the index stored in *val,
  *	TCL_RETURN - not matched or ambigous,
- * 	TCL_ERROR - in error case.
+ *	TCL_ERROR - in error case.
  *
  * Side effects:
  *	Input points to end of the found token in string.
@@ -1770,7 +1777,7 @@ ClockScnToken_JDN_Proc(
     }
     s = p;
     while (p < end && isdigit(UCHAR(*p))) {
-    	fractJDDiv *= 10;
+	fractJDDiv *= 10;
 	p++;
     }
     if (Clock_str2int(&fractJD, s, p, 1) != TCL_OK) {
@@ -2649,7 +2656,7 @@ ClockScan(
 		}
 		if (flags & (CLF_ISO8601WEEK | CLF_ISO8601YEAR)) {
 		    if ((flags & (CLF_ISO8601YEAR | CLF_YEAR)) == CLF_YEAR) {
-		    	/* for calculations expected iso year */
+			/* for calculations expected iso year */
 			info->date.iso8601Year = yyYear;
 		    } else if (info->date.iso8601Year < 100) {
 			if (!(flags & CLF_ISO8601CENTURY)) {
@@ -2662,7 +2669,7 @@ ClockScan(
 			}
 		    }
 		    if ((flags & (CLF_ISO8601YEAR | CLF_YEAR)) == CLF_ISO8601YEAR) {
-		    	/* for calculations expected year (e. g. CLF_ISO8601WEEK not set) */
+			/* for calculations expected year (e. g. CLF_ISO8601WEEK not set) */
 			yyYear = info->date.iso8601Year;
 		    }
 		}
@@ -2862,7 +2869,7 @@ ClockFmtToken_JDN_Proc(
     fractJD = dateFmt->date.secondOfDay
 	    - (int)tok->map->offs;	/* 0 for calendar or 43200 for astro JD */
     if (fractJD < 0) {
-    	intJD--;
+	intJD--;
 	fractJD += SECONDS_PER_DAY;
     }
     if (fractJD && intJD < 0) {		/* avoid jump over 0, by negative JD's */
