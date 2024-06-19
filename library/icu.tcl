@@ -21,10 +21,13 @@ namespace eval ::tcl::unsupported::icu {
     variable tclToIcu
     variable icuToTcl
 
+    proc LogError {message} {
+        puts stderr $message
+    }
+
     proc Init {} {
         variable tclToIcu
         variable icuToTcl
-
         # There are some special cases where names do not line up
         # at all. Map Tcl -> ICU
         array set specialCases {
@@ -37,9 +40,14 @@ namespace eval ::tcl::unsupported::icu {
         }
         # Ignore all errors. Do not want to hold up Tcl
         # if ICU not available
-        catch {
+        if {[catch {
             foreach tclName [encoding names] {
-                set icuNames [aliases $tclName]
+                if {[catch {
+                    set icuNames [aliases $tclName]
+                } erMsg]} {
+                    LogError "Could not get aliases for $tclName: $erMsg"
+                    continue
+                }
                 if {[llength $icuNames] == 0} {
                     # E.g. macGreek -> x-MacGreek
                     set icuNames [aliases x-$tclName]
@@ -62,6 +70,8 @@ namespace eval ::tcl::unsupported::icu {
                     lappend icuToTcl($icuName) $tclName
                 }
             }
+        } errMsg]} {
+            LogError $errMsg
         }
         array default set tclToIcu ""
         array default set icuToTcl ""
