@@ -825,6 +825,30 @@ test coroutine-7.14 {
 	return [list $done0 $done1]
 } -result {failure failure}
 
+test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
+    interp create child
+    child eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	coroinject demo set ::result inject-executed
+    }
+    interp delete child
+} -result {}
+test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
+    interp create child
+    child eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	coroinject demo lappend ::result inject-executed
+    }
+    child eval demo
+    set result [child eval {set ::result}]
+
+    interp delete child
+    set result
+} -result {inject-executed yield {}}
+
+
 test coroutine-9.1 {coroprobe with yield} -body {
     coroutine demo apply {{} { foreach i {1 2} yield }}
     list [coroprobe demo set i] [demo] [coroprobe demo set i] [demo]
