@@ -610,8 +610,8 @@ array set remap_link_target {
     Tcl_Obj     Tcl_NewObj
     Tcl_ObjType Tcl_RegisterObjType
     Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
-    errorinfo 	env
-    errorcode 	env
+    errorinfo	env
+    errorcode	env
     tcl_pkgpath env
     Tcl_Command Tcl_CreateObjCommand
     Tcl_CmdProc Tcl_CreateObjCommand

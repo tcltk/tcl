@@ -16,14 +16,15 @@
 /*
  * Flag values used by Tcl_ScanObjCmd.
  */
+enum ScanFlags {
+    SCAN_NOSKIP = 0x1,		/* Don't skip blanks. */
+    SCAN_SUPPRESS = 0x2,	/* Suppress assignment. */
+    SCAN_UNSIGNED = 0x4,	/* Read an unsigned value. */
+    SCAN_WIDTH = 0x8,		/* A width value was supplied. */
 
-#define SCAN_NOSKIP	0x1		/* Don't skip blanks. */
-#define SCAN_SUPPRESS	0x2		/* Suppress assignment. */
-#define SCAN_UNSIGNED	0x4		/* Read an unsigned value. */
-#define SCAN_WIDTH	0x8		/* A width value was supplied. */
-
-#define SCAN_LONGER	0x400		/* Asked for a wide value. */
-#define SCAN_BIG	0x800		/* Asked for a bignum value. */
+    SCAN_LONGER = 0x400,	/* Asked for a wide value. */
+    SCAN_BIG = 0x800		/* Asked for a bignum value. */
+};
 
 /*
  * The following structure contains the information associated with a
@@ -357,17 +358,15 @@ ValidateFormat(
 	    /* Note ull >= 0 because of isdigit check above */
 	    unsigned long long ull;
 	    ull = strtoull(
-		format - 1, (char **)&format, 10); /* INTL: "C" locale. */
+		    format - 1, (char **)&format, 10);	/* INTL: "C" locale. */
 	    /* Note >=, not >, to leave room for a nul */
 	    if (ull >= TCL_SIZE_MAX) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("specified field width %" TCL_LL_MODIFIER
-				  "u exceeds limit %" TCL_SIZE_MODIFIER "d.",
-				  ull,
-				  (Tcl_Size)TCL_SIZE_MAX-1));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"specified field width %" TCL_LL_MODIFIER
+			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
+			ull, (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
-		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (void *)NULL);
+			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;
@@ -1006,7 +1005,19 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-		    Tcl_SetWideIntObj(objPtr, (unsigned int)value);
+#ifdef TCL_WIDE_INT_IS_LONG
+		    mp_int big;
+		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to create bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+			return TCL_ERROR;
+		    } else {
+			Tcl_SetBignumObj(objPtr, &big);
+		    }
+#else
+		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
+#endif
 		} else {
 		    TclSetIntObj(objPtr, value);
 		}
@@ -1096,9 +1107,7 @@ Tcl_ScanObjCmd(
 	 * We create an empty Tcl_Obj to fill missing values rather than
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-	Tcl_Obj *emptyObj;
-	TclNewObj(emptyObj);
-	Tcl_IncrRefCount(emptyObj);
+	Tcl_Obj *emptyObj = NULL;
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
@@ -1109,11 +1118,12 @@ Tcl_ScanObjCmd(
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
-
+		if (!emptyObj) {
+		    TclNewObj(emptyObj);
+		}
 		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
 	}
-	Tcl_DecrRefCount(emptyObj);
 	if (code != TCL_OK) {
 	    /* If error'ed out, free up remaining. i contains last index freed */
 	    while (++i < totalVars) {

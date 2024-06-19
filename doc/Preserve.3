@@ -81,14 +81,11 @@ type \fBTcl_FreeProc\fR:
 .PP
 .CS
 typedef void \fBTcl_FreeProc\fR(
-        char *\fIblockPtr\fR);
+        void *\fIblockPtr\fR);
 .CE
 .PP
 The \fIblockPtr\fR argument to \fIfreeProc\fR will be the
 same as the \fIclientData\fR argument to \fBTcl_EventuallyFree\fR.
-The type of \fIblockPtr\fR (\fBchar *\fR) is different than the type of the
-\fIclientData\fR argument to \fBTcl_EventuallyFree\fR for historical
-reasons, but the value is the same.
 .PP
 When the \fIclientData\fR argument to \fBTcl_EventuallyFree\fR
 refers to storage allocated and returned by a prior call to

@@ -1635,7 +1635,7 @@ static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp, 	/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -2108,7 +2108,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)	/* Procedure to be deleted. */
+    void *clientData)		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 

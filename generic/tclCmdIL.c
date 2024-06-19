@@ -102,15 +102,11 @@ typedef struct {
 static const char *const seq_operations[] = {
     "..", "to", "count", "by", NULL
 };
-typedef enum Sequence_Operators {
+typedef enum {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
-static const char *const seq_step_keywords[] = {"by", NULL};
-typedef enum Step_Operators {
-    STEP_BY = 4
-} SequenceByMode;
-typedef enum Sequence_Decoded {
-     NoneArg, NumericArg, RangeKeywordArg, ByKeywordArg
+typedef enum {
+     NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
 /*
@@ -4027,81 +4023,67 @@ Tcl_LsearchObjCmd(
  *    3 - value is a by keyword
  *
  *  The decoded value will be assigned to the appropriate
- *  pointer, if supplied.
+ *  pointer, numValuePtr reference count is incremented.
  */
 
 static SequenceDecoded
 SequenceIdentifyArgument(
      Tcl_Interp *interp,        /* for error reporting  */
      Tcl_Obj *argPtr,           /* Argument to decode   */
+     int allowedArgs,		/* Flags if keyword or numeric allowed. */
      Tcl_Obj **numValuePtr,     /* Return numeric value */
      int *keywordIndexPtr)      /* Return keyword enum  */
 {
-    int status;
+    int result = TCL_ERROR;
     SequenceOperators opmode;
-    SequenceByMode bymode;
-    void *clientData;
+    void *internalPtr;
 
-    status = Tcl_GetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
-    if (status == TCL_OK) {
-	if (numValuePtr) {
-	    *numValuePtr = argPtr;
+    if (allowedArgs & NumericArg) {
+	/* speed-up a bit (and avoid shimmer for compiled expressions) */
+	if (TclHasInternalRep(argPtr, &tclExprCodeType)) {
+	   goto doExpr;
 	}
-	return NumericArg;
-    } else {
-	/* Check for an index expression */
-	long value;
-	double dvalue;
-	Tcl_Obj *exprValueObj;
-	int keyword;
-	Tcl_InterpState savedstate;
-	savedstate = Tcl_SaveInterpState(interp, status);
-	if (Tcl_ExprLongObj(interp, argPtr, &value) != TCL_OK) {
-	    status = Tcl_RestoreInterpState(interp, savedstate);
-	    exprValueObj = argPtr;
-	} else {
-	    // Determine if expression is double or int
-	    if (Tcl_ExprDoubleObj(interp, argPtr, &dvalue) != TCL_OK) {
-		keyword = TCL_NUMBER_INT;
-		exprValueObj = argPtr;
-	    } else {
-		if (floor(dvalue) == dvalue) {
-		    TclNewIntObj(exprValueObj, value);
-		    keyword = TCL_NUMBER_INT;
-		} else {
-		    TclNewDoubleObj(exprValueObj, dvalue);
-		    keyword = TCL_NUMBER_DOUBLE;
-		}
-	    }
-	    status = Tcl_RestoreInterpState(interp, savedstate);
-	    if (numValuePtr) {
-		*numValuePtr = exprValueObj;
-	    }
-	    if (keywordIndexPtr) {
-		*keywordIndexPtr = keyword ;// type of expression result
-	    }
+	result = Tcl_GetNumberFromObj(NULL, argPtr, &internalPtr, keywordIndexPtr);
+	if (result == TCL_OK) {
+	    *numValuePtr = argPtr;
+	    Tcl_IncrRefCount(argPtr);
 	    return NumericArg;
 	}
     }
-
-    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
-				 "range operation", 0, &opmode);
-    if (status == TCL_OK) {
-	if (keywordIndexPtr) {
-	    *keywordIndexPtr = opmode;
+    if (allowedArgs & RangeKeywordArg) {
+	result = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
+			"range operation", 0, &opmode);
+    }
+    if (result == TCL_OK) {
+	if (allowedArgs & LastArg) {
+	    /* keyword found, but no followed number */
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"%s\" value.", TclGetString(argPtr)));
+	    return ErrArg;
 	}
+	*keywordIndexPtr = opmode;
 	return RangeKeywordArg;
-    }
-
-    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_step_keywords,
-				 "step keyword", 0, &bymode);
-    if (status == TCL_OK) {
-	if (keywordIndexPtr) {
-	    *keywordIndexPtr = bymode;
+    } else {
+	Tcl_Obj *exprValueObj;
+	if (!(allowedArgs & NumericArg)) {
+	    return NoneArg;
 	}
-	return ByKeywordArg;
+    doExpr:
+	/* Check for an index expression */
+	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
+	    return ErrArg;
+	}
+	int keyword;
+	/* Determine if result of expression is double or int */
+	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
+		&keyword) != TCL_OK
+	) {
+	    return ErrArg;
+	}
+	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
+	*keywordIndexPtr = keyword; /* type of expression result */
+	return NumericArg;
     }
-    return NoneArg;
 }
 
 /*
@@ -4152,14 +4134,15 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status = TCL_ERROR, keyword, useDoubles = 0;
+    int status = TCL_ERROR, keyword, useDoubles = 0, allowedArgs = NumericArg;
+    int remNums = 3;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
     SequenceDecoded decoded;
     int i, arg_key = 0, value_i = 0;
-    // Default constants
-    Tcl_Obj *zero = Tcl_NewIntObj(0);
-    Tcl_Obj *one = Tcl_NewIntObj(1);
+    /* Default constants */
+    #define zero ((Interp *)interp)->execEnvPtr->constants[0];
+    #define one ((Interp *)interp)->execEnvPtr->constants[1];
 
     /*
      * Create a decoding key by looping through the arguments and identify
@@ -4167,49 +4150,50 @@ Tcl_LseqObjCmd(
      * digit.
      */
     if (objc > 6) {
-	 /* Too many arguments */
-	 arg_key=0;
-    } else for (i=1; i<objc; i++) {
-	 arg_key = (arg_key * 10);
-	 numValues[value_i] = NULL;
-	 decoded = SequenceIdentifyArgument(interp, objv[i], &numberObj, &keyword);
-	 switch (decoded) {
+	/* Too many arguments */
+	goto syntax;
+    }
+    for (i = 1; i < objc; i++) {
+	arg_key = (arg_key * 10);
+	numValues[value_i] = NULL;
+	decoded = SequenceIdentifyArgument(interp, objv[i],
+			allowedArgs | (i == objc-1 ? LastArg : 0),
+			&numberObj, &keyword);
+	switch (decoded) {
+	  case NoneArg:
+	    /*
+	     * Unrecognizable argument
+	     * Reproduce operation error message
+	     */
+	    status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
+			"operation", 0, &opmode);
+	    goto done;
 
-	 case NoneArg:
-	      /*
-	       * Unrecognizable argument
-	       * Reproduce operation error message
-	       */
-	      status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
-		           "operation", 0, &opmode);
-	      goto done;
+	  case NumericArg:
+	    remNums--;
+	    arg_key += NumericArg;
+	    allowedArgs = RangeKeywordArg;
+	    /* if last number but 2 arguments remain, next is not numeric */
+	    if ((remNums != 1) || ((objc-1-i) != 2)) {
+		allowedArgs |= NumericArg;
+	    }
+	    numValues[value_i] = numberObj;
+	    values[value_i] = keyword;  /* TCL_NUMBER_* */
+	    useDoubles |= (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    value_i++;
+	    break;
 
-	 case NumericArg:
-	      arg_key += NumericArg;
-	      numValues[value_i] = numberObj;
-	      Tcl_IncrRefCount(numValues[value_i]);
-	      values[value_i] = keyword;  // This is the TCL_NUMBER_* value
-	      useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
-	      value_i++;
-	      break;
+	  case RangeKeywordArg:
+	    arg_key += RangeKeywordArg;
+	    allowedArgs = NumericArg;   /* after keyword always numeric only */
+	    values[value_i] = keyword;  /* SequenceOperators */
+	    value_i++;
+	    break;
 
-	 case RangeKeywordArg:
-	      arg_key += RangeKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
-
-	 case ByKeywordArg:
-	      arg_key += ByKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
-
-	 default:
-	      arg_key += 9; // Error state
-	      value_i++;
-	      break;
-	 }
+	  default: /* Error state */
+	    status = TCL_ERROR;
+	    goto done;
+	}
     }
 
     /*
@@ -4217,13 +4201,6 @@ Tcl_LseqObjCmd(
      * error condition; process the values accordningly.
      */
     switch (arg_key) {
-
-/*    No argument */
-    case 0:
-	 Tcl_WrongNumArgs(interp, 1, objv,
-	     "n ??op? n ??by? n??");
-	 goto done;
-	 break;
 
 /*    lseq n */
     case 1:
@@ -4346,46 +4323,44 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    Error cases: incomplete arguments */
-    case 12:
-	 opmode = (SequenceOperators)values[1]; goto KeywordError; break;
-    case 112:
-	 opmode = (SequenceOperators)values[2]; goto KeywordError; break;
-    case 1212:
-	 opmode = (SequenceOperators)values[3]; goto KeywordError; break;
-    KeywordError:
-	 switch (opmode) {
-	 case LSEQ_DOTS:
-	 case LSEQ_TO:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"to\" value."));
-	      break;
-	 case LSEQ_COUNT:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"count\" value."));
-	      break;
-	 case LSEQ_BY:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"by\" value."));
-	      break;
-	 }
-	 goto done;
-	 break;
-
 /*    All other argument errors */
     default:
+      syntax:
 	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
 	 goto done;
 	 break;
     }
 
+    /* Count needs to be integer, so try to convert if possible */
+    if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
+	double d;
+	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
+	if (floor(d) == d) {
+	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
+		mp_int big;
+
+		if (Tcl_InitBignumFromDouble(NULL, d, &big) == TCL_OK) {
+		    elementCount = Tcl_NewBignumObj(&big);
+		    keyword = TCL_NUMBER_INT;
+		}
+		/* Infinity, don't convert, let fail later */
+	    } else {
+		elementCount = Tcl_NewWideIntObj((Tcl_WideInt)d);
+		keyword = TCL_NUMBER_INT;
+	    }
+	}
+    }
+
+
     /*
      * Success!  Now lets create the series object.
      */
-    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
+    arithSeriesPtr = TclNewArithSeriesObj(interp,
 		  useDoubles, start, end, step, elementCount);
 
-    if (status == TCL_OK) {
+    status = TCL_ERROR;
+    if (arithSeriesPtr) {
+	status = TCL_OK;
 	Tcl_SetObjResult(interp, arithSeriesPtr);
     }
 
@@ -4393,13 +4368,19 @@ Tcl_LseqObjCmd(
     // Free number arguments.
     while (--value_i>=0) {
 	if (numValues[value_i]) {
+	    if (elementCount == numValues[value_i]) {
+		elementCount = NULL;
+	    }
 	    Tcl_DecrRefCount(numValues[value_i]);
 	}
     }
+    if (elementCount) {
+	Tcl_DecrRefCount(elementCount);
+    }
 
-    // Free constants
-    Tcl_DecrRefCount(zero);
-    Tcl_DecrRefCount(one);
+    /* Undef constants */
+    #undef zero
+    #undef one
 
     return status;
 }

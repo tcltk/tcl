@@ -176,7 +176,7 @@ typedef struct ConsoleHandleInfo {
  *     is queued and dropped on receipt.
  */
 typedef struct ConsoleChannelInfo {
-    HANDLE handle; 		/* Console handle */
+    HANDLE handle;		/* Console handle */
     Tcl_ThreadId threadId;	/* Id of owning thread */
     struct ConsoleChannelInfo *nextWatchingChannelPtr;
 				/* Pointer to next channel watching events. */
@@ -298,23 +298,23 @@ static ConsoleChannelInfo *gWatchingChannelList;
  */
 
 static const Tcl_ChannelType consoleChannelType = {
-    "console",               /* Type name. */
-    TCL_CHANNEL_VERSION_5,   /* v5 channel */
-    NULL,                    /* Close proc. */
-    ConsoleInputProc,        /* Input proc. */
-    ConsoleOutputProc,       /* Output proc. */
-    NULL,                    /* Seek proc. */
-    ConsoleSetOptionProc,    /* Set option proc. */
-    ConsoleGetOptionProc,    /* Get option proc. */
-    ConsoleWatchProc,        /* Set up notifier to watch the channel. */
-    ConsoleGetHandleProc,    /* Get an OS handle from channel. */
-    ConsoleCloseProc,        /* close2proc. */
-    ConsoleBlockModeProc,    /* Set blocking or non-blocking mode. */
-    NULL,                    /* Flush proc. */
-    NULL,                    /* Handler proc. */
-    NULL,                    /* Wide seek proc. */
-    ConsoleThreadActionProc, /* Thread action proc. */
-    NULL                     /* Truncation proc. */
+    "console",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    ConsoleInputProc,
+    ConsoleOutputProc,
+    NULL,			/* Deprecated. */
+    ConsoleSetOptionProc,
+    ConsoleGetOptionProc,
+    ConsoleWatchProc,
+    ConsoleGetHandleProc,
+    ConsoleCloseProc,
+    ConsoleBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    ConsoleThreadActionProc,
+    NULL			/* Truncation proc. */
 };
 
 /*
@@ -2067,7 +2067,8 @@ AllocateConsoleHandleInfo(
  *------------------------------------------------------------------------
  */
 static ConsoleHandleInfo *
-FindConsoleInfo(const ConsoleChannelInfo *chanInfoPtr)
+FindConsoleInfo(
+    const ConsoleChannelInfo *chanInfoPtr)
 {
     ConsoleHandleInfo *handleInfoPtr;
     for (handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr; handleInfoPtr = handleInfoPtr->nextPtr) {

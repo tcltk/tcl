@@ -659,7 +659,7 @@ static Tcl_NRPostProc   TEBCresume;
  * compiled bytecode for Tcl expressions.
  */
 
-static const Tcl_ObjType exprCodeType = {
+const Tcl_ObjType tclExprCodeType = {
     "exprcode",
     FreeExprCodeInternalRep,	/* freeIntRepProc */
     DupExprCodeInternalRep,	/* dupIntRepProc */
@@ -1417,7 +1417,7 @@ CompileExprObj(
      * is valid in the current context.
      */
 
-    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclExprCodeType, codePtr);
 
     if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -1427,7 +1427,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    Tcl_StoreInternalRep(objPtr, &exprCodeType, NULL);
+	    Tcl_StoreInternalRep(objPtr, &tclExprCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
@@ -1460,7 +1460,7 @@ CompileExprObj(
 	 */
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	codePtr = TclInitByteCodeObj(objPtr, &exprCodeType, &compEnv);
+	codePtr = TclInitByteCodeObj(objPtr, &tclExprCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
@@ -1529,7 +1529,7 @@ FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
     ByteCode *codePtr;
-    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclExprCodeType, codePtr);
     assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
@@ -3951,7 +3951,7 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
-    	if (TclIsVarConstant(varPtr)) {
+	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND(("\n"));
 	    NEXT_INST_V(pcAdjustment, cleanup, 0);
 	}
@@ -7865,8 +7865,10 @@ FinalizeOONextFilter(
  * Helper to calculate small powers of integers whose result is wide.
  */
 static inline Tcl_WideInt
-WidePwrSmallExpon(Tcl_WideInt w1, long exponent) {
-
+WidePwrSmallExpon(
+    Tcl_WideInt w1,
+    long exponent)
+{
     Tcl_WideInt wResult;
 
     wResult = w1 * w1;		/* b**2 */
