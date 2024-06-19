@@ -3294,6 +3294,22 @@ test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a0
     info class [format %s constructor] oo::object
 } ""
 
+test namespace-55.2 {compiled ensembles inside safe interpreters (for safe sub-commands), bug [1095bf7f756f9aed]} -setup {
+    interp create -safe si
+    set code {
+	proc test_comp_dict d { dict for {k v} $d {expr $v} }
+    	regexp -inline {Command 1:(?:[^\n]*\n){1,5}} [::tcl::unsupported::disassemble proc test_comp_dict]
+    }
+} -body {
+    set a [   eval $code]
+    set b [si eval $code]
+    list [expr {$a eq $b}] [regexp { dictFirst } $a] [regexp { dictFirst } $b] $a $b
+} -cleanup {
+    rename test_comp_dict {}
+    unset -nocomplain code a b
+    interp delete si
+} -match glob -result {1 1 1 *}
+
 test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
     namespace eval ::testing {
 	proc abc {} {}
