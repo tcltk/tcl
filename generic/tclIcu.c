@@ -23,7 +23,8 @@ typedef enum UBreakIteratorTypex {
 } UBreakIteratorTypex;
 
 typedef enum UErrorCodex {
-    U_ZERO_ERRORZ              =  0     /**< No error, no warning. */
+    U_AMBIGUOUS_ALIAS_WARNING = -122,
+    U_ZERO_ERRORZ              =  0,     /**< No error, no warning. */
 } UErrorCodex;
 
 #define U_SUCCESS(x) ((x)<=U_ZERO_ERRORZ)
@@ -416,7 +417,7 @@ IcuConverterAliasesObjCmd (
     const char *name = Tcl_GetString(objv[1]);
     UErrorCodex status = U_ZERO_ERRORZ;
     uint16_t count = ucnv_countAliases(name, &status);
-    if (U_FAILURE(status)) {
+    if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
 	return IcuError(interp, "Could not get aliases.", status);
     }
     if (count <= 0) {
@@ -425,8 +426,9 @@ IcuConverterAliasesObjCmd (
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
     uint16_t i;
     for (i = 0; i < count; ++i) {
+        status = U_ZERO_ERRORZ; /* Reset in case U_AMBIGUOUS_ALIAS_WARNING */
 	const char *aliasName = ucnv_getAlias(name, i, &status);
-        if (U_FAILURE(status)) {
+        if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
 	    status = U_ZERO_ERRORZ; /* Reset error for next iteration */
 	    continue;
 	}
