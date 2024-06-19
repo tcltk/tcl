@@ -23,19 +23,19 @@ the process's standard input, output and error streams respectively).
 abbreviation for \fIoption\fR is acceptable. Valid options are:
 .\" METHOD: blocked
 .TP
-\fBchan blocked \fIchannelId\fR
+\fBchan blocked \fIchannel\fR
 .
 This tests whether the last input operation on the channel called
-\fIchannelId\fR failed because it would have otherwise caused the
+\fIchannel\fR failed because it would have otherwise caused the
 process to block, and returns 1 if that was the case. It returns 0
 otherwise. Note that this only ever returns 1 when the channel has
 been configured to be non-blocking; all Tcl channels have blocking
 turned on by default.
 .\" METHOD: close
 .TP
-\fBchan close \fIchannelId\fR ?\fIdirection\fR?
+\fBchan close \fIchannel\fR ?\fIdirection\fR?
 .
-Close and destroy the channel called \fIchannelId\fR. Note that this
+Close and destroy the channel called \fIchannel\fR. Note that this
 deletes all existing file-events registered on the channel.
 If the \fIdirection\fR argument (which must be \fBread\fR or \fBwrite\fR or
 any unique abbreviation of them) is present, the channel will only be
@@ -51,7 +51,7 @@ write-only channel for reading.
 As part of closing the channel, all buffered output is flushed to the
 channel's output device (only if the channel is ceasing to be writable), any
 buffered input is discarded (only if the channel is ceasing to be readable),
-the underlying operating system resource is closed and \fIchannelId\fR becomes
+the underlying operating system resource is closed and \fIchannel\fR becomes
 unavailable for future use (both only if the channel is being completely
 closed).
 .PP
@@ -61,11 +61,11 @@ non-blocking and there is unflushed output, the channel remains open and the
 command returns immediately; output will be flushed in the background and the
 channel will be closed when all the flushing is complete.
 .PP
-If \fIchannelId\fR is a blocking channel for a command pipeline then
+If \fIchannel\fR is a blocking channel for a command pipeline then
 \fBchan close\fR waits for the child processes to complete.
 .PP
 If the channel is shared between interpreters, then \fBchan close\fR
-makes \fIchannelId\fR unavailable in the invoking interpreter but has
+makes \fIchannel\fR unavailable in the invoking interpreter but has
 no other effect until all of the sharing interpreters have closed the
 channel. When the last interpreter in which the channel is registered
 invokes \fBchan close\fR (or \fBclose\fR), the cleanup actions
@@ -101,10 +101,10 @@ restores the previous behavior.
 .RE
 .\" METHOD: configure
 .TP
-\fBchan configure \fIchannelId\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
+\fBchan configure \fIchannel\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
 .
 Query or set the configuration options of the channel named
-\fIchannelId\fR.
+\fIchannel\fR.
 .RS
 .PP
 If no \fIoptionName\fR or \fIvalue\fR arguments are supplied, the
@@ -404,18 +404,18 @@ within the safe interpreter.
 .RE
 .\" METHOD: eof
 .TP
-\fBchan eof \fIchannelId\fR
+\fBchan eof \fIchannel\fR
 .
 Test whether the last input operation on the channel called
-\fIchannelId\fR failed because the end of the data stream was reached,
+\fIchannel\fR failed because the end of the data stream was reached,
 returning 1 if end-of-file was reached, and 0 otherwise.
 .\" METHOD: event
 .TP
-\fBchan event \fIchannelId event\fR ?\fIscript\fR?
+\fBchan event \fIchannel event\fR ?\fIscript\fR?
 .
 Arrange for the Tcl script \fIscript\fR to be installed as a \fIfile
 event handler\fR to be called whenever the channel called
-\fIchannelId\fR enters the state described by \fIevent\fR (which must
+\fIchannel\fR enters the state described by \fIevent\fR (which must
 be either \fBreadable\fR or \fBwritable\fR); only one such handler may
 be installed per event per channel at a time.  If \fIscript\fR is the
 empty string, the current handler is deleted (this also happens if the
@@ -481,9 +481,9 @@ loops due to buggy handlers.
 .RE
 .\" METHOD: flush
 .TP
-\fBchan flush \fIchannelId\fR
+\fBchan flush \fIchannel\fR
 .
-Ensures that all pending output for the channel called \fIchannelId\fR
+Ensures that all pending output for the channel called \fIchannel\fR
 is written.
 .RS
 .PP
@@ -496,7 +496,7 @@ it.
 .RE
 .\" METHOD: gets
 .TP
-\fBchan gets \fIchannelId\fR ?\fIvarName\fR?
+\fBchan gets \fIchannel\fR ?\fIvarName\fR?
 .
 Reads a line from the channel consisting of all characters up to the next
 end-of-line sequence or until end of file is seen. The line feed character
@@ -549,12 +549,12 @@ only those channel names that match it (according to the rules of
 \fBstring match\fR) will be returned.
 .\" METHOD: pending
 .TP
-\fBchan pending \fImode channelId\fR
+\fBchan pending \fImode channel\fR
 .
 Depending on whether \fImode\fR is \fBinput\fR or \fBoutput\fR,
 returns the number of
 bytes of input or output (respectively) currently buffered
-internally for \fIchannelId\fR (especially useful in a readable event
+internally for \fIchannel\fR (especially useful in a readable event
 callback to impose application-specific limits on input line lengths to avoid
 a potential denial-of-service attack where a hostile user crafts
 an extremely long line that exceeds the available memory to buffer it).
@@ -585,20 +585,20 @@ allowed for.
 .RE
 .\" METHOD: pop
 .TP
-\fBchan pop \fIchannelId\fR
+\fBchan pop \fIchannel\fR
 .
-Removes the topmost transformation from the channel \fIchannelId\fR, if there
-is any. If there are no transformations added to \fIchannelId\fR, this is
+Removes the topmost transformation from the channel \fIchannel\fR, if there
+is any. If there are no transformations added to \fIchannel\fR, this is
 equivalent to \fBchan close\fR of that channel. The result is normally the
 empty string, but can be an error in some situations (i.e. where the
 underlying system stream is closed and that results in an error).
 .\" METHOD: postevent
 .TP
-\fBchan postevent \fIchannelId eventSpec\fR
+\fBchan postevent \fIchannel eventSpec\fR
 .
 This subcommand is used by command handlers specified with \fBchan
 create\fR. It notifies the channel represented by the handle
-\fIchannelId\fR that the event(s) listed in the \fIeventSpec\fR have
+\fIchannel\fR that the event(s) listed in the \fIeventSpec\fR have
 occurred. The argument has to be a list containing any of the strings
 \fBread\fR and \fBwrite\fR. The list must contain at least one
 element as it does not make sense to invoke the command if there are
@@ -631,9 +631,9 @@ executed in the interpreter that set them up.
 .RE
 .\" METHOD: push
 .TP
-\fBchan push \fIchannelId cmdPrefix\fR
+\fBchan push \fIchannel cmdPrefix\fR
 .
-Adds a new transformation on top of the channel \fIchannelId\fR. The
+Adds a new transformation on top of the channel \fIchannel\fR. The
 \fIcmdPrefix\fR argument describes a list of one or more words which represent
 a handler that will be used to implement the transformation. The command
 prefix must provide the API described in the \fBtranschan\fR manual page.
@@ -643,11 +643,11 @@ channel mode that it is used with or this can make the channel neither
 readable nor writable.
 .\" METHOD: puts
 .TP
-\fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
+\fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannel\fR? \fIstring\fR
 .
-Writes \fIstring\fR to the channel named \fIchannelId\fR followed by a
+Writes \fIstring\fR to the channel named \fIchannel\fR followed by a
 newline character. A trailing newline character is written unless the
-optional flag \fB\-nonewline\fR is given. If \fIchannelId\fR is
+optional flag \fB\-nonewline\fR is given. If \fIchannel\fR is
 omitted, the string is written to the standard output channel,
 \fBstdout\fR.
 .RS
@@ -667,7 +667,7 @@ flush\fR command.
 .PP
 When the output buffer fills up, the \fBchan puts\fR command will
 normally block until all the buffered data has been accepted for
-output by the operating system.  If \fIchannelId\fR is in non-blocking
+output by the operating system.  If \fIchannel\fR is in non-blocking
 mode then the \fBchan puts\fR command will not block even if the
 operating system cannot accept the data.  Instead, Tcl continues to
 buffer the data and writes it in the background as fast as the
@@ -688,12 +688,12 @@ may be partially written to the channel in this case.
 .RE
 .\" METHOD: read
 .TP
-\fBchan read \fIchannelId\fR ?\fInumChars\fR?
+\fBchan read \fIchannel\fR ?\fInumChars\fR?
 .TP
-\fBchan read \fR?\fB\-nonewline\fR? \fIchannelId\fR
+\fBchan read \fR?\fB\-nonewline\fR? \fIchannel\fR
 .
 In the first form, the result will be the next \fInumChars\fR
-characters read from the channel named \fIchannelId\fR; if
+characters read from the channel named \fIchannel\fR; if
 \fInumChars\fR is omitted, all characters up to the point when the
 channel would signal a failure (whether an end-of-file, blocked or
 other error condition) are read. In the second form (i.e. when
@@ -702,7 +702,7 @@ given to indicate that any trailing newline in the string that has
 been read should be trimmed.
 .RS
 .PP
-If \fIchannelId\fR is in non-blocking mode, \fBchan read\fR may not
+If \fIchannel\fR is in non-blocking mode, \fBchan read\fR may not
 read as many characters as requested: once all available input has
 been read, the command will return the data that is available rather
 than blocking for more input.  If the channel is configured to use a
@@ -721,7 +721,7 @@ When reading from a serial port, most applications should configure
 the serial port channel to be non-blocking, like this:
 .PP
 .CS
-\fBchan configure \fIchannelId \fB\-blocking \fI0\fR.
+\fBchan configure \fIchannel \fB\-blocking \fI0\fR.
 .CE
 .PP
 Then \fBchan read\fR behaves much like described above.  Note that
@@ -729,12 +729,12 @@ most serial ports are comparatively slow; it is entirely possible to
 get a \fBreadable\fR event for each character read from them. Care
 must be taken when using \fBchan read\fR on blocking serial ports:
 .TP
-\fBchan read \fIchannelId numChars\fR
+\fBchan read \fIchannel numChars\fR
 .
 In this form \fBchan read\fR blocks until \fInumChars\fR have been
 received from the serial port.
 .TP
-\fBchan read \fIchannelId\fR
+\fBchan read \fIchannel\fR
 .
 In this form \fBchan read\fR blocks until the reception of the
 end-of-file character, see \fBchan configure -eofchar\fR. If there no
@@ -758,10 +758,10 @@ changing the encoding in use. See \fBENCODING ERROR EXAMPLES\fR later.
 .RE
 .\" METHOD: seek
 .TP
-\fBchan seek \fIchannelId offset\fR ?\fIorigin\fR?
+\fBchan seek \fIchannel offset\fR ?\fIorigin\fR?
 .
 Sets the current access position within the underlying data stream for
-the channel named \fIchannelId\fR to be \fIoffset\fR bytes relative to
+the channel named \fIchannel\fR to be \fIoffset\fR bytes relative to
 \fIorigin\fR. \fIOffset\fR must be an integer (which may be negative)
 and \fIorigin\fR must be one of the following:
 .RS
@@ -792,20 +792,20 @@ not characters, unlike \fBchan read\fR.
 .RE
 .\" METHOD: tell
 .TP
-\fBchan tell \fIchannelId\fR
+\fBchan tell \fIchannel\fR
 .
 Returns a number giving the current access position within the
-underlying data stream for the channel named \fIchannelId\fR. This
+underlying data stream for the channel named \fIchannel\fR. This
 value returned is a byte offset that can be passed to \fBchan seek\fR
 in order to set the channel to a particular position.  Note that this
 value is in terms of bytes, not characters like \fBchan read\fR.  The
 value returned is -1 for channels that do not support seeking.
 .\" METHOD: truncate
 .TP
-\fBchan truncate \fIchannelId\fR ?\fIlength\fR?
+\fBchan truncate \fIchannel\fR ?\fIlength\fR?
 .
 Sets the byte length of the underlying data stream for the channel
-named \fIchannelId\fR to be \fIlength\fR (or to the current byte
+named \fIchannel\fR to be \fIlength\fR (or to the current byte
 offset within the underlying data stream if \fIlength\fR is
 omitted). The channel is flushed before truncation.
 .

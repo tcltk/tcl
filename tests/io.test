@@ -6009,10 +6009,10 @@ test io-40.17 {tilde substitution in open} {
 
 test io-41.1 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent foo} msg] $msg
-} {1 {wrong # args: should be "fileevent channelId event ?script?"}}
+} {1 {wrong # args: should be "fileevent channel event ?script?"}}
 test io-41.2 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent foo bar baz q} msg] $msg
-} {1 {wrong # args: should be "fileevent channelId event ?script?"}}
+} {1 {wrong # args: should be "fileevent channel event ?script?"}}
 test io-41.3 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent gorp readable} msg] $msg
 } {1 {can not find channel named "gorp"}}

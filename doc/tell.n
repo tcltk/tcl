@@ -12,7 +12,7 @@
 .SH NAME
 tell \- Return current access position for an open channel
 .SH SYNOPSIS
-\fBtell \fIchannelId\fR
+\fBtell \fIchannel\fR
 .BE
 .SH DESCRIPTION
 .PP
