@@ -9303,35 +9303,6 @@ TclNRCoroutineActivateCallback(
 /*
  *----------------------------------------------------------------------
  *
- * TclNREvalList --
- *
- *	Callback to invoke command as list, used in order to delayed
- *	processing of canonical list command in sane environment.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TclNREvalList(
-    void *data[],
-    Tcl_Interp *interp,
-    TCL_UNUSED(int) /*result*/)
-{
-    Tcl_Size objc;
-    Tcl_Obj **objv;
-    Tcl_Obj *listPtr = (Tcl_Obj *)data[0];
-
-    Tcl_IncrRefCount(listPtr);
-
-    TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
-    return TclNREvalObjv(interp, objc, objv, 0, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CoroTypeObjCmd --
  *
  *	Implementation of [::tcl::unsupported::corotype] command.
