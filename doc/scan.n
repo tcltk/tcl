@@ -73,17 +73,20 @@ The size modifier field is used only when scanning a substring into
 one of Tcl's integer values.  The size modifier field dictates the
 integer range acceptable to be stored in a variable, or, for the inline
 case, in a position in the result list.
-The syntactically valid values for the size modifier are \fBh\fR, \fBL\fR,
-\fBl\fR, \fBz\fR, \fBt\fR, and \fBll\fR.  The \fBh\fR size
-modifier value is equivalent
-to the absence of a size modifier in the the conversion specifier.
-Either one indicates the integer range to be stored is limited to the range
-determined by the value of the \fBwordSize\fR element of the \fBtcl_platform\fR
-array).  The \fBL\fR, \fBq\fR or \fBj\fR size modifiers are equivalent to the
-\fBl\fR size modifier. Either of them indicates the integer range to be stored is
-limited to the same range produced by the \fBwide()\fR function of
-the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
-the integer range to be stored is unlimited.
+The syntactically valid values for the size modifier are \fBh\fR,
+\fBl\fR, \fBq\fR, \fBj\fR, \fBz\fR, \fBt\fR, \fBll\fR, and \fBL\fR.
+The \fBh\fR size modifier value is equivalent to the absence of a size
+modifier in the the conversion specifier.  Either one indicates the
+integer range to be stored is limited to the range determined by the
+value of the \fBwordSize\fR element of the \fBtcl_platform\fR array).
+The \fBL\fR, \fBq\fR or \fBj\fR size modifiers are equivalent to the
+\fBl\fR size modifier. Either of them indicates the integer range to
+be stored is limited to the same range produced by the \fBwide()\fR
+function of the \fBexpr\fR command.  The \fBll\fR size modifier
+indicates that the integer range to be stored is unlimited.
+The \fBz\fR and \fBt\fR modifiers indicate the integer range to be
+the same as for either \fBh\fR or \fBl\fR, depending on the
+value of the \fBpointerSize\fR element of the \fBtcl_platform\fR array.
 .SS "MANDATORY CONVERSION CHARACTER"
 .PP
 The following conversion characters are supported:
