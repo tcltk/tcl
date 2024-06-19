@@ -12,7 +12,7 @@
 .SH NAME
 eof \- Check for end of file condition on channel
 .SH SYNOPSIS
-\fBeof \fIchannelId\fR
+\fBeof \fIchannel\fR
 .BE
 .SH DESCRIPTION
 .PP
