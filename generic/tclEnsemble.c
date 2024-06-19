@@ -1702,6 +1702,8 @@ TclMakeEnsemble(
 				    TCL_AUTO_LENGTH))) {
 			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
+		    /* don't compile unsafe subcommands in safe interp */
+		    cmdPtr->compileProc = NULL;
 		} else {
 		    /*
 		     * Not hidden, so just create it. Yay!
@@ -1711,8 +1713,8 @@ TclMakeEnsemble(
 			    Tcl_NRCreateCommand(interp, TclGetString(toObj),
 			    map[i].proc, map[i].nreProc, map[i].clientData,
 			    NULL);
+		    cmdPtr->compileProc = map[i].compileProc;
 		}
-		cmdPtr->compileProc = map[i].compileProc;
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
@@ -3223,7 +3225,7 @@ TclCompileEnsemble(
     Tcl_IncrRefCount(targetCmdObj);
     newCmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
-    if (newCmdPtr == NULL || Tcl_IsSafe(interp)
+    if (newCmdPtr == NULL || (Tcl_IsSafe(interp) && !cmdPtr->compileProc)
 	    || newCmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION
 	    || newCmdPtr->flags & CMD_HAS_EXEC_TRACES
 	    || ((Interp *) interp)->flags & DONT_COMPILE_CMDS_INLINE) {
@@ -3231,7 +3233,6 @@ TclCompileEnsemble(
 	 * Maps to an undefined command or a command without a compiler.
 	 * Cannot compile.
 	 */
-
 	goto cleanup;
     }
     cmdPtr = newCmdPtr;
