@@ -6580,7 +6580,7 @@ TestChannelCmd(
 
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " transform channelId -command cmd\"", (char *)NULL);
+		    " transform channel -command cmd\"", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (strcmp(argv[3], "-command") != 0) {

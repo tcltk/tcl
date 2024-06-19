@@ -1059,7 +1059,7 @@ NRInterpCmd(
 	Tcl_Channel chan;
 
 	if (objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "srcPath channelId destPath");
+	    Tcl_WrongNumArgs(interp, 2, objv, "srcPath channel destPath");
 	    return TCL_ERROR;
 	}
 	parentInterp = GetInterp(interp, objv[2]);

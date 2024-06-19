@@ -12,7 +12,7 @@
 .SH NAME
 flush \- Flush buffered output for a channel
 .SH SYNOPSIS
-\fBflush \fIchannelId\fR
+\fBflush \fIchannel\fR
 .BE
 .SH DESCRIPTION
 .PP

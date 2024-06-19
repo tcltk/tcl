@@ -54,11 +54,11 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-        unsigned int  dwOemId;
-        struct {
-            int wProcessorArchitecture;
-            int wReserved;
-        };
+	unsigned int  dwOemId;
+	struct {
+	    int wProcessorArchitecture;
+	    int wReserved;
+	};
     };
     unsigned int     dwPageSize;
     void *lpMinimumApplicationAddress;
