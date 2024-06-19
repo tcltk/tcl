@@ -5510,10 +5510,10 @@ test chan-io-40.17 {tilde substitution in open} -setup {
 
 test chan-io-41.1 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event foo
-} -returnCodes error -result {wrong # args: should be "chan event channelId event ?script?"}
+} -returnCodes error -result {wrong # args: should be "chan event channel event ?script?"}
 test chan-io-41.2 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event foo bar baz q
-} -returnCodes error -result {wrong # args: should be "chan event channelId event ?script?"}
+} -returnCodes error -result {wrong # args: should be "chan event channel event ?script?"}
 test chan-io-41.3 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event gorp readable
 } -returnCodes error -result {can not find channel named "gorp"}
