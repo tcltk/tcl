@@ -1639,7 +1639,7 @@ proc tcltest::Replace::puts {args} {
 	    # return [Puts [lindex $args 0]]
 	}
 	2 {
-	    # Either -nonewline or channelId has been specified
+	    # Either -nonewline or channel has been specified
 	    if {[lindex $args 0] eq "-nonewline"} {
 		append outData [lindex $args end]
 		return
@@ -1651,7 +1651,7 @@ proc tcltest::Replace::puts {args} {
 	}
 	3 {
 	    if {[lindex $args 0] eq "-nonewline"} {
-		# Both -nonewline and channelId are specified, unless
+		# Both -nonewline and channel are specified, unless
 		# it's an error.  -nonewline is supposed to be argv[0].
 		set channel [lindex $args 1]
 		set newline ""
