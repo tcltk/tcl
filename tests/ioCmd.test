@@ -30,13 +30,13 @@ testConstraint testchannel	[llength [info commands testchannel]]
 
 test iocmd-1.1 {puts command} {
    list [catch {puts} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.2 {puts command} {
    list [catch {puts a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.3 {puts command} {
    list [catch {puts froboz -nonewline kablooie} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.4 {puts command} {
    list [catch {puts froboz hello} msg] $msg
 } {1 {can not find channel named "froboz"}}
@@ -70,10 +70,10 @@ test iocmd-1.8 {puts command} {
 
 test iocmd-2.1 {flush command} {
    list [catch {flush} msg] $msg
-} {1 {wrong # args: should be "flush channelId"}}
+} {1 {wrong # args: should be "flush channel"}}
 test iocmd-2.2 {flush command} {
    list [catch {flush a b c d e} msg] $msg
-} {1 {wrong # args: should be "flush channelId"}}
+} {1 {wrong # args: should be "flush channel"}}
 test iocmd-2.3 {flush command} {
    list [catch {flush foo} msg] $msg
 } {1 {can not find channel named "foo"}}
@@ -83,10 +83,10 @@ test iocmd-2.4 {flush command} {
 
 test iocmd-3.1 {gets command} {
    list [catch {gets} msg] $msg
-} {1 {wrong # args: should be "gets channelId ?varName?"}}
+} {1 {wrong # args: should be "gets channel ?varName?"}}
 test iocmd-3.2 {gets command} {
    list [catch {gets a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "gets channelId ?varName?"}}
+} {1 {wrong # args: should be "gets channel ?varName?"}}
 test iocmd-3.3 {gets command} {
    list [catch {gets aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
@@ -107,16 +107,16 @@ test iocmd-3.5 {gets command} {
 
 test iocmd-4.1 {read command} {
    list [catch {read} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.2 {read command} {
    list [catch {read a b c d e f g h} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.3 {read command} {
    list [catch {read aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
 test iocmd-4.4 {read command} {
    list [catch {read -nonewline} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.5 {read command} {
    list [catch {read -nonew file4} msg] $msg $::errorCode
 } {1 {can not find channel named "-nonew"} {TCL LOOKUP CHANNEL -nonew}}
@@ -136,7 +136,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
     set x [list [catch {read -nonewline $f 20 z} msg] $msg $::errorCode]
     close $f
     set x
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"} {TCL WRONGARGS}}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $::errorCode
 } {1 {expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
@@ -161,10 +161,10 @@ test iocmd-4.12 {read command} -setup {
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
-} -result {wrong # args: should be "seek channelId offset ?origin?"}
+} -result {wrong # args: should be "seek channel offset ?origin?"}
 test iocmd-5.2 {seek command} -returnCodes error -body {
     seek a b c d e f g
-} -result {wrong # args: should be "seek channelId offset ?origin?"}
+} -result {wrong # args: should be "seek channel offset ?origin?"}
 test iocmd-5.3 {seek command} -returnCodes error -body {
     seek stdin gugu
 } -result {expected integer but got "gugu"}
@@ -174,20 +174,20 @@ test iocmd-5.4 {seek command} -returnCodes error -body {
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
-} {1 {wrong # args: should be "tell channelId"}}
+} {1 {wrong # args: should be "tell channel"}}
 test iocmd-6.2 {tell command} {
     list [catch {tell a b c d e} msg] $msg
-} {1 {wrong # args: should be "tell channelId"}}
+} {1 {wrong # args: should be "tell channel"}}
 test iocmd-6.3 {tell command} {
     list [catch {tell aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
 
 test iocmd-7.1 {close command} {
     list [catch {close} msg] $msg
-} {1 {wrong # args: should be "close channelId ?direction?"}}
+} {1 {wrong # args: should be "close channel ?direction?"}}
 test iocmd-7.2 {close command} {
     list [catch {close a b c d e} msg] $msg
-} {1 {wrong # args: should be "close channelId ?direction?"}}
+} {1 {wrong # args: should be "close channel ?direction?"}}
 test iocmd-7.3 {close command} {
     list [catch {close aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
@@ -216,10 +216,10 @@ proc expectedOpts {got extra} {
 }
 test iocmd-8.1 {fconfigure command} -returnCodes error -body {
     fconfigure
-} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+} -result {wrong # args: should be "fconfigure channel ?-option value ...?"}
 test iocmd-8.2 {fconfigure command} -returnCodes error -body {
     fconfigure a b c d e f
-} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+} -result {wrong # args: should be "fconfigure channel ?-option value ...?"}
 test iocmd-8.3 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -376,10 +376,10 @@ test iocmd-8.23 {fconfigure -profile badprofile} -body {
 
 test iocmd-9.1 {eof command} {
     list [catch {eof} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "eof channel"} {TCL WRONGARGS}}
 test iocmd-9.2 {eof command} {
     list [catch {eof a b} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "eof channel"} {TCL WRONGARGS}}
 test iocmd-9.3 {eof command} {
     catch {close file100}
     list [catch {eof file100} msg] $msg $::errorCode
@@ -389,10 +389,10 @@ test iocmd-9.3 {eof command} {
 
 test iocmd-10.1 {fblocked command} {
     list [catch {fblocked} msg] $msg
-} {1 {wrong # args: should be "fblocked channelId"}}
+} {1 {wrong # args: should be "fblocked channel"}}
 test iocmd-10.2 {fblocked command} {
     list [catch {fblocked a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "fblocked channelId"}}
+} {1 {wrong # args: should be "fblocked channel"}}
 test iocmd-10.3 {fblocked command} {
     list [catch {fblocked file1000} msg] $msg
 } {1 {can not find channel named "file1000"}}
