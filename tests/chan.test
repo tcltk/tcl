@@ -29,10 +29,10 @@ test chan-1.2 {chan command general syntax} -body {
 
 test chan-2.1 {chan command: blocked subcommand} -body {
     chan blocked foo bar
-} -returnCodes error -result "wrong # args: should be \"chan blocked channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan blocked channel\""
 test chan-3.1 {chan command: close subcommand} -body {
     chan close foo bar zet
-} -returnCodes error -result "wrong # args: should be \"chan close channelId ?direction?\""
+} -returnCodes error -result "wrong # args: should be \"chan close channel ?direction?\""
 test chan-3.2 {chan command: close subcommand} -setup {
     set chan [open [info script] r]
 } -body {
@@ -49,7 +49,7 @@ test chan-3.3 {chan command: close subcommand} -setup {
 } -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
 test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
-} -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
+} -returnCodes error -result "wrong # args: should be \"chan configure channel ?-option value ...?\""
 test chan-4.2 {chan command: [Bug 800753]} -body {
     chan configure stdout -eofchar Ā
 } -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
@@ -72,19 +72,19 @@ test chan-5.1 {chan command: copy subcommand} -body {
 
 test chan-6.1 {chan command: eof subcommand} -body {
     chan eof foo bar
-} -returnCodes error -result "wrong # args: should be \"chan eof channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan eof channel\""
 
 test chan-7.1 {chan command: event subcommand} -body {
     chan event foo
-} -returnCodes error -result "wrong # args: should be \"chan event channelId event ?script?\""
+} -returnCodes error -result "wrong # args: should be \"chan event channel event ?script?\""
 
 test chan-8.1 {chan command: flush subcommand} -body {
     chan flush foo bar
-} -returnCodes error -result "wrong # args: should be \"chan flush channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan flush channel\""
 
 test chan-9.1 {chan command: gets subcommand} -body {
     chan gets
-} -returnCodes error -result "wrong # args: should be \"chan gets channelId ?varName?\""
+} -returnCodes error -result "wrong # args: should be \"chan gets channel ?varName?\""
 
 test chan-10.1 {chan command: names subcommand} -body {
     chan names foo bar
@@ -92,23 +92,23 @@ test chan-10.1 {chan command: names subcommand} -body {
 
 test chan-11.1 {chan command: puts subcommand} -body {
     chan puts foo bar foo bar
-} -returnCodes error -result "wrong # args: should be \"chan puts ?-nonewline? ?channelId? string\""
+} -returnCodes error -result "wrong # args: should be \"chan puts ?-nonewline? ?channel? string\""
 
 test chan-12.1 {chan command: read subcommand} -body {
     chan read
-} -returnCodes error -result "wrong # args: should be \"chan read channelId ?numChars?\" or \"chan read ?-nonewline? channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan read channel ?numChars?\" or \"chan read ?-nonewline? channel\""
 
 test chan-13.1 {chan command: seek subcommand} -body {
     chan seek foo bar foo bar
-} -returnCodes error -result "wrong # args: should be \"chan seek channelId offset ?origin?\""
+} -returnCodes error -result "wrong # args: should be \"chan seek channel offset ?origin?\""
 
 test chan-14.1 {chan command: tell subcommand} -body {
     chan tell foo bar
-} -returnCodes error -result "wrong # args: should be \"chan tell channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan tell channel\""
 
 test chan-15.1 {chan command: truncate subcommand} -body {
     chan truncate foo bar foo bar
-} -returnCodes error -result "wrong \# args: should be \"chan truncate channelId ?length?\""
+} -returnCodes error -result "wrong \# args: should be \"chan truncate channel ?length?\""
 test chan-15.2 {chan command: truncate subcommand} -setup {
     set file [makeFile {} testTruncate]
     set f [open $file w+]
@@ -127,13 +127,13 @@ test chan-15.2 {chan command: truncate subcommand} -setup {
 # TIP 287: chan pending
 test chan-16.1 {chan command: pending subcommand} -body {
     chan pending
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.2 {chan command: pending subcommand} -body {
     chan pending stdin
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.3 {chan command: pending subcommand} -body {
     chan pending stdin stdout stderr
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.4 {chan command: pending subcommand} -body {
     chan pending {input output} stdout
 } -returnCodes error -result "bad mode \"input output\": must be input or output"
