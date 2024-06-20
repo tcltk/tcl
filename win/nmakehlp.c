@@ -90,7 +90,7 @@ main(
 	case 'c':
 	    if (argc != 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-		        "usage: %s -c <compiler option>\n"
+			"usage: %s -c <compiler option>\n"
 			"Tests for whether cl.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -271,7 +271,7 @@ CheckForCompilerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
@@ -318,11 +318,11 @@ CheckForCompilerFeature(
      */
 
     return !(strstr(Out.buffer, "D4002") != NULL
-             || strstr(Err.buffer, "D4002") != NULL
-             || strstr(Out.buffer, "D9002") != NULL
-             || strstr(Err.buffer, "D9002") != NULL
-             || strstr(Out.buffer, "D2021") != NULL
-             || strstr(Err.buffer, "D2021") != NULL);
+	    || strstr(Err.buffer, "D4002") != NULL
+	    || strstr(Out.buffer, "D9002") != NULL
+	    || strstr(Err.buffer, "D9002") != NULL
+	    || strstr(Out.buffer, "D2021") != NULL
+	    || strstr(Err.buffer, "D2021") != NULL);
 }
 
 static int
@@ -405,7 +405,7 @@ CheckForLinkerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
@@ -600,9 +600,9 @@ list_free(list_item_t **listPtrPtr)
  *
  *	Usage is something like:
  *	  nmakehlp -S << $** > $@
- *        @PACKAGE_NAME@ $(PACKAGE_NAME)
- *        @PACKAGE_VERSION@ $(PACKAGE_VERSION)
- *        <<
+ *	    @PACKAGE_NAME@ $(PACKAGE_NAME)
+ *	    @PACKAGE_VERSION@ $(PACKAGE_VERSION)
+ *	    <<
  */
 
 static int
@@ -730,7 +730,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 	return 2; /* Have no real error reporting mechanism into nmake */
     }
     dirlen = strlen(dir);
-    if (dirlen > sizeof(path) - 3) {
+    if ((dirlen + 3) > sizeof(path)) {
 	return 2;
     }
     strncpy(path, dir, dirlen);
@@ -747,8 +747,9 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 #else
     hSearch = FindFirstFile(path, &finfo);
 #endif
-    if (hSearch == INVALID_HANDLE_VALUE)
+    if (hSearch == INVALID_HANDLE_VALUE) {
 	return 1; /* Not found */
+    }
 
     /* Loop through all subdirs checking if the keypath is under there */
     ret = 1; /* Assume not found */
@@ -758,11 +759,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 	 * We need to check it is a directory despite the
 	 * FindExSearchLimitToDirectories in the above call. See SDK docs
 	 */
-	if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+	if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	    continue;
+	}
 	sublen = strlen(finfo.cFileName);
-	if ((dirlen+1+sublen+1+keylen+1) > sizeof(path))
+	if ((dirlen+1+sublen+1+keylen+1) > sizeof(path)) {
 	    continue;		/* Path does not fit, assume not matched */
+	}
 	strncpy(path+dirlen+1, finfo.cFileName, sublen);
 	path[dirlen+1+sublen] = '\\';
 	strncpy(path+dirlen+1+sublen+1, keypath, keylen+1);
@@ -782,13 +785,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
  * LocateDependency --
  *
  *	Locates a dependency for a package.
- *        keypath - a relative path within the package directory
- *          that is used to confirm it is the correct directory.
+ *	    keypath - a relative path within the package directory
+ *	      that is used to confirm it is the correct directory.
  *	The search path for the package directory is currently only
- *      the parent and grandparent of the current working directory.
- *      If found, the command prints
- *         name_DIRPATH=<full path of located directory>
- *      and returns 0. If not found, does not print anything and returns 1.
+ *	    the parent and grandparent of the current working directory.
+ *	    If found, the command prints
+ *	      name_DIRPATH=<full path of located directory>
+ *	    and returns 0. If not found, does not print anything and returns 1.
  */
 static int LocateDependency(const char *keypath)
 {

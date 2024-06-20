@@ -207,10 +207,10 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = (struct PlatformEventData *)
+	newPedPtr = (struct PlatformEventData *)
 		Tcl_Alloc(sizeof(struct PlatformEventData));
-        newPedPtr->filePtr = filePtr;
-        newPedPtr->tsdPtr = tsdPtr;
+	newPedPtr->filePtr = filePtr;
+	newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
     }
     newEvent.data.ptr = filePtr->pedPtr;
@@ -367,7 +367,7 @@ PlatformEventsInit(void)
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
-        tsdPtr->maxReadyEvents = 512;
+	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }

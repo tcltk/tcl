@@ -12,7 +12,7 @@
 .SH NAME
 seek \- Change the access position for an open channel
 .SH SYNOPSIS
-\fBseek \fIchannelId offset \fR?\fIorigin\fR?
+\fBseek \fIchannel offset \fR?\fIorigin\fR?
 .BE
 .SH DESCRIPTION
 .PP

@@ -234,7 +234,7 @@ interpreter result value; it should be copied instead of being relied upon to
 persist after the next Tcl API call, as most Tcl operations can modify the
 interpreter result.
 .PP
-\fBTcl_SetResult\fR, \fBTcl_AppendResult\fR, \fBTcl_AppendResultVA\fR,
+\fBTcl_SetResult\fR, \fBTcl_AppendResult\fR,
 \fBTcl_AppendElement\fR, and \fBTcl_ResetResult\fR all modify the interpreter
 result. They may cause the old interpreter result to have its reference count
 decremented and a new interpreter result to be allocated. After they have been

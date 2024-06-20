@@ -1324,7 +1324,7 @@ DdeObjCmd(
 	"-async", "-binary", NULL
     };
     enum DdeExecOptions {
-        DDE_EXEC_ASYNC, DDE_EXEC_BINARY
+	DDE_EXEC_ASYNC, DDE_EXEC_BINARY
     };
     static const char *const ddeEvalOptions[] = {
 	"-async", NULL

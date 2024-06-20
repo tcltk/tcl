@@ -12,7 +12,7 @@
 .SH NAME
 puts \- Write to a channel
 .SH SYNOPSIS
-\fBputs \fR?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
+\fBputs \fR?\fB\-nonewline\fR? ?\fIchannel\fR? \fIstring\fR
 .BE
 .SH DESCRIPTION
 .PP

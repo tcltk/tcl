@@ -1711,8 +1711,8 @@ ConvertFileNameFormat(
 	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-            tempPath = Tcl_DStringToObj(&dsTemp);
-            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+	    tempPath = Tcl_DStringToObj(&dsTemp);
+	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }

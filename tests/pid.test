@@ -47,7 +47,7 @@ test pid-1.3 {pid command} -constraints pidDefined -setup {
 } -result {}
 test pid-1.4 {pid command} pidDefined {
     list [catch {pid a b} msg] $msg
-} {1 {wrong # args: should be "pid ?channelId?"}}
+} {1 {wrong # args: should be "pid ?channel?"}}
 test pid-1.5 {pid command} pidDefined {
     list [catch {pid gorp} msg] $msg
 } {1 {can not find channel named "gorp"}}

@@ -132,9 +132,10 @@ that \fIobjv\fR[\fB2\fR] points at, but will not change where
 .PP
 \fIproc\fR must return an integer code that is either \fBTCL_OK\fR,
 \fBTCL_ERROR\fR, \fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.
-See the Tcl overview man page
-for details on what these codes mean.  Most normal commands will only
-return \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+See the \fBreturn\fR man page for details on what these codes mean and the
+use of extended values for an extension's private use. Most normal commands
+will only return \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+.PP
 In addition, if \fIproc\fR needs to return a non-empty result,
 it can call \fBTcl_SetObjResult\fR to set the interpreter's result.
 In the case of a \fBTCL_OK\fR return code this gives the result
