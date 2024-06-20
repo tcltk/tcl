@@ -5842,7 +5842,7 @@ test expr-33.1 {parse largest long value} {
         [expr {int(2147483647 + 1) > 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
-test expr-33.2 {parse smallest long value} longIs32bit {
+test expr-33.2 {parse smallest long value} {
     set min_long_str -2147483648
     set min_long_hex "-0x80000000 "
 

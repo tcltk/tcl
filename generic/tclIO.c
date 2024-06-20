@@ -9195,7 +9195,7 @@ Tcl_FileEventObjCmd(
     static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
     if ((objc != 3) && (objc != 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel event ?script?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], modeOptions, "event name", 0,
