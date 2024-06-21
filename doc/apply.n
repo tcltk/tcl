@@ -96,7 +96,7 @@ set vbl abc
 .SH "SEE ALSO"
 proc(n), uplevel(n)
 .SH KEYWORDS
-anonymous function, argument, lambda, procedure,
+anonymous function, argument, lambda, procedure
 '\" Local Variables:
 '\" mode: nroff
 '\" End:
