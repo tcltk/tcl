@@ -7,7 +7,7 @@ if {"::tcltest" ni [namespace children]} {
 
 # Force late loading of ICU if present
 catch {::tcl::unsupported::icu}
-testConstraint icu [expr {[info commands ::tcl::unsupported::icu] ne ""}]
+testConstraint icu [expr {[info commands ::tcl::unsupported::icu::detect] ne ""}]
 
 namespace eval icu {
     test icu-detect-0 {Return list of ICU encodings} -constraints icu -body {
