@@ -892,7 +892,7 @@ proc GetData {chan} {
     }
 }
 
-chan configure $chan -blocking 0 -encoding binary
+chan configure $chan -blocking 0 -translation binary
 \fBchan event\fR $chan readable [list GetData $chan]
 .CE
 .PP
@@ -1051,7 +1051,7 @@ file384b6a8
 -errorinfo {...} -errorline 1
 % chan tell $f
 0
-% chan configure $f -encoding binary -profile strict
+% chan configure $f -translation binary
 % chan gets $f
 AÃB
 .CE
@@ -1075,7 +1075,7 @@ file35a65a0
 -errorinfo {...} -errorline 1
 % chan tell $f
 1
-% chan configure $f -encoding binary -profile strict
+% chan configure $f -translation binary
 % chan read $f
 ÃB
 % chan close $f
