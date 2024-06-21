@@ -189,11 +189,11 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f "ab\x8C\xC1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -217,11 +217,11 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     puts -nonewline $f ab乎g
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
