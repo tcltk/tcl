@@ -212,9 +212,8 @@ No
 expansion or other shell-like substitutions
 are performed on the arguments to commands.
 .SH "PORTABILITY ISSUES"
-.TP
-\fBWindows\fR (all versions)
-.
+.SS "WINDOWS (all versions)"
+.PP
 Reading from or writing to a socket, using the
 .QW \fB@\0\fIfileId\fR
 notation, does not work.  When reading from a socket, a 16-bit DOS
@@ -222,7 +221,6 @@ application will hang and a 32-bit application will return immediately with
 end-of-file.  When either type of application writes to a socket, the
 information is instead sent to the console, if one is present, or is
 discarded.
-.RS
 .PP
 Note that the current escape resp. quoting of arguments for windows works only
 with executables using CommandLineToArgv, CRT-library or similar, as well as
@@ -237,8 +235,10 @@ processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
 (also the argument chain) on the first newline character.
 But it works properly with an executable (using CommandLineToArgv, etc).
 .PP
-\fBArgument quoting\fR
 .RS
+.PP
+\fBArgument quoting\fR
+.PP
 The arguments of the \fBexec\fR command are mapped to the arguments of the called
 program. Additional quote characters (\fB"\fR) are automatically  added around
 arguments if expected. Special characters are escaped by inserting backslash
@@ -249,6 +249,7 @@ called batch files (conspec) replace environment variables, which may have side
 effects (vulnerabilities) or break any already existing quoting (for example,
 if the environment variable contains a special character like a \fB"\fR).
 Examples are:
+.PP
 .CS
 % exec my-echo.cmd {test&whoami}
   test
@@ -256,6 +257,7 @@ Examples are:
 % exec my-echo.cmd "ENV X:%X%"
   ENV X: CONTENT OF X
 .CE
+.PP
 The following formatting is automatically performed on any
 argument item to avoid subprogram execution:
 Any special character argument containing a special character (\fB&\fR, \fB|\fR,
@@ -333,10 +335,8 @@ In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
 the caller must prepend the desired command with
 .QW "\fBcmd.exe /c\0\fR"
 because built-in commands are not implemented using executables.
-.RE
-.TP
-\fBUnix\fR (including Mac OS X)
-.
+.SS UNIX (including Mac OS X)
+.PP
 The \fBexec\fR command is fully functional and works as described.
 .SH "UNIX EXAMPLES"
 .PP
