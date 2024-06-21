@@ -62,7 +62,7 @@ test iocmd-1.7 {puts command} {
 } 7
 test iocmd-1.8 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {} -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f [binary format a4a5 foo bar]
     close $f
     file size $path(test1)
@@ -262,8 +262,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary
+    fconfigure $f1 -translation binary -buffering none -buffersize 4040
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
