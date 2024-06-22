@@ -67,7 +67,7 @@ testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~
 
 set path(longfile) [makeFile {} longfile]
 set f [open $path(longfile) w]
-fconfigure $f -eofchar {} -translation lf
+fconfigure $f -translation lf
 for { set i 0 } { $i < 100 } { incr i} {
     puts $f "#123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 \#123456789abcdef01
@@ -2229,7 +2229,7 @@ test io-24.1 {Tcl_GetChannelType} {testchannel} {
 
 test io-25.1 {Tcl_GetChannelHandle, input} {testchannel} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f "1234567890\n098765432"
     close $f
     set f [open $path(test1) r]
@@ -2278,7 +2278,7 @@ test io-27.1 {FlushChannel, no output buffered} {
 test io-27.2 {FlushChannel, some output buffered} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set l ""
     puts $f hello
     lappend l [file size $path(test1)]
@@ -2291,7 +2291,7 @@ test io-27.2 {FlushChannel, some output buffered} {
 test io-27.3 {FlushChannel, implicit flush on close} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set l ""
     puts $f hello
     lappend l [file size $path(test1)]
@@ -2302,7 +2302,7 @@ test io-27.3 {FlushChannel, implicit flush on close} {
 test io-27.4 {FlushChannel, implicit flush when buffer fills} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     fconfigure $f -buffersize 60
     set l ""
     lappend l [file size $path(test1)]
@@ -2319,7 +2319,7 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
 	{unixOrWin} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -buffersize 60 -eofchar {}
+    fconfigure $f -translation lf -buffersize 60
     set l ""
     lappend l [file size $path(test1)]
     for {set i 0} {$i < 12} {incr i} {
@@ -2341,7 +2341,7 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     set f [open $path(pipe) w]
     puts $f "set f \[[list open $path(output) w]]"
     puts $f {
-	fconfigure $f -translation lf -buffering none -eofchar {}
+	fconfigure $f -translation lf -buffering none
 	while {![eof stdin]} {
 	    after 20
 	    puts -nonewline $f [read stdin 1024]
@@ -2412,8 +2412,8 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
 	# side of the pipe already closed, so that writing would cause an
 	# error "invalid file".
 
-	fconfigure stdout -eofchar {}
-	fconfigure stderr -eofchar {}
+	fconfigure stdout
+	fconfigure stderr
 
 	set f [open $path(output) w]
 	fconfigure $f -translation lf -buffering none
@@ -2431,7 +2431,7 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
     set f [open $path(output) w]
     close $f
     set f [open "|[list [interpreter] pipe]" r+]
-    fconfigure $f -blocking off -eofchar {}
+    fconfigure $f -blocking off
 
     puts -nonewline $f $x
     close $f
@@ -2564,7 +2564,7 @@ test io-29.1 {Tcl_WriteChars, channel not writable} {
 test io-29.2 {Tcl_WriteChars, empty string} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f ""
     close $f
     file size $path(test1)
@@ -2572,7 +2572,7 @@ test io-29.2 {Tcl_WriteChars, empty string} {
 test io-29.3 {Tcl_WriteChars, nonempty string} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f hello
     close $f
     file size $path(test1)
@@ -2580,7 +2580,7 @@ test io-29.3 {Tcl_WriteChars, nonempty string} {
 test io-29.4 {Tcl_WriteChars, buffering in full buffering mode} {testchannel} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -buffering full -eofchar {}
+    fconfigure $f -translation lf -buffering full
     puts $f hello
     set l ""
     lappend l [testchannel outputbuffered $f]
@@ -2594,7 +2594,7 @@ test io-29.4 {Tcl_WriteChars, buffering in full buffering mode} {testchannel} {
 test io-29.5 {Tcl_WriteChars, buffering in line buffering mode} {testchannel} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -buffering line -eofchar {}
+    fconfigure $f -translation lf -buffering line
     puts -nonewline $f hello
     set l ""
     lappend l [testchannel outputbuffered $f]
@@ -2608,7 +2608,7 @@ test io-29.5 {Tcl_WriteChars, buffering in line buffering mode} {testchannel} {
 test io-29.6 {Tcl_WriteChars, buffering in no buffering mode} {testchannel} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -buffering none -eofchar {}
+    fconfigure $f -translation lf -buffering none
     puts -nonewline $f hello
     set l ""
     lappend l [testchannel outputbuffered $f]
@@ -2622,7 +2622,7 @@ test io-29.6 {Tcl_WriteChars, buffering in no buffering mode} {testchannel} {
 test io-29.7 {Tcl_Flush, full buffering} {testchannel} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -buffering full -eofchar {}
+    fconfigure $f -translation lf -buffering full
     puts -nonewline $f hello
     set l ""
     lappend l [testchannel outputbuffered $f]
@@ -2662,7 +2662,7 @@ test io-29.9 {Tcl_Flush, channel not writable} {
 test io-29.10 {Tcl_WriteChars, looping and buffering} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     set f2 [open $path(longfile) r]
     for {set x 0} {$x < 10} {incr x} {
 	puts $f1 [gets $f2]
@@ -2674,7 +2674,7 @@ test io-29.10 {Tcl_WriteChars, looping and buffering} {
 test io-29.11 {Tcl_WriteChars, no newline, implicit flush} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -eofchar {}
+    fconfigure $f1
     set f2 [open $path(longfile) r]
     for {set x 0} {$x < 10} {incr x} {
 	puts -nonewline $f1 [gets $f2]
@@ -2800,7 +2800,7 @@ test io-29.18 {Tcl_WriteChars and Tcl_Flush intermixed} {
 test io-29.19 {Explicit and implicit flushes} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     set x ""
     puts $f1 hello
     puts $f1 hello
@@ -2818,7 +2818,7 @@ test io-29.19 {Explicit and implicit flushes} {
 test io-29.20 {Implicit flush when buffer is full} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     set line "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     for {set x 0} {$x < 100} {incr x} {
       puts $f1 $line
@@ -2956,7 +2956,7 @@ test io-29.27 {Tcl_Flush on closed pipeline} stdio {
 test io-29.28 {Tcl_WriteChars, lf mode} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f hello\nthere\nand\nhere
     flush $f
     set s [file size $path(test1)]
@@ -2966,7 +2966,7 @@ test io-29.28 {Tcl_WriteChars, lf mode} {
 test io-29.29 {Tcl_WriteChars, cr mode} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     puts $f hello\nthere\nand\nhere
     close $f
     file size $path(test1)
@@ -2974,7 +2974,7 @@ test io-29.29 {Tcl_WriteChars, cr mode} {
 test io-29.30 {Tcl_WriteChars, crlf mode} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     puts $f hello\nthere\nand\nhere
     close $f
     file size $path(test1)
@@ -3548,12 +3548,12 @@ test io-30.19 {Tcl_Write, ^Z no newline in middle, Tcl_Read auto} {
 test io-30.20 {Tcl_Write, ^Z in middle ignored, Tcl_Read lf} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set s [format "abc\ndef\n%cghi\nqrs" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3570,12 +3570,12 @@ test io-30.20 {Tcl_Write, ^Z in middle ignored, Tcl_Read lf} {
 test io-30.21 {Tcl_Write, ^Z in middle ignored, Tcl_Read cr} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set s [format "abc\ndef\n%cghi\nqrs" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set l ""
     set x [gets $f]
     lappend l [string compare $x "abc\ndef\n\x1Aghi\nqrs\n"]
@@ -3588,12 +3588,12 @@ test io-30.21 {Tcl_Write, ^Z in middle ignored, Tcl_Read cr} {
 test io-30.22 {Tcl_Write, ^Z in middle ignored, Tcl_Read crlf} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set s [format "abc\ndef\n%cghi\nqrs" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set l ""
     set x [gets $f]
     lappend l [string compare $x "abc\ndef\n\x1Aghi\nqrs\n"]
@@ -4084,12 +4084,12 @@ test io-31.21 {Tcl_Write, no newline ^Z in middle, Tcl_Gets auto, eofChar} {
 test io-31.22 {Tcl_Write, ^Z in middle ignored, Tcl_Gets lf} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4106,12 +4106,12 @@ test io-31.22 {Tcl_Write, ^Z in middle ignored, Tcl_Gets lf} {
 test io-31.23 {Tcl_Write, ^Z in middle ignored, Tcl_Gets cr} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4128,12 +4128,12 @@ test io-31.23 {Tcl_Write, ^Z in middle ignored, Tcl_Gets cr} {
 test io-31.24 {Tcl_Write, ^Z in middle ignored, Tcl_Gets crlf} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4186,7 +4186,7 @@ test io-31.26 {Tcl_Write lf, ^Z in middle, Tcl_Gets lf} {
 test io-31.27 {Tcl_Write cr, ^Z in middle, Tcl_Gets auto} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
@@ -4204,7 +4204,7 @@ test io-31.27 {Tcl_Write cr, ^Z in middle, Tcl_Gets auto} {
 test io-31.28 {Tcl_Write cr, ^Z in middle, Tcl_Gets cr} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
@@ -4222,7 +4222,7 @@ test io-31.28 {Tcl_Write cr, ^Z in middle, Tcl_Gets cr} {
 test io-31.29 {Tcl_Write crlf, ^Z in middle, Tcl_Gets auto} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
@@ -4240,7 +4240,7 @@ test io-31.29 {Tcl_Write crlf, ^Z in middle, Tcl_Gets auto} {
 test io-31.30 {Tcl_Write crlf, ^Z in middle, Tcl_Gets crlf} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set s [format "abc\ndef\n%cqrs\ntuv" 26]
     puts $f $s
     close $f
@@ -4609,7 +4609,7 @@ test io-33.7 {Tcl_Gets and bad variable} {
 } {1 {can't set "x(0)": variable isn't array}}
 test io-33.8 {Tcl_Gets, exercising double buffering} {
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set x ""
     for {set y 0} {$y < 99} {incr y} {set x "a$x"}
     for {set y 0} {$y < 100} {incr y} {puts $f $x}
@@ -4622,7 +4622,7 @@ test io-33.8 {Tcl_Gets, exercising double buffering} {
 } 100
 test io-33.9 {Tcl_Gets, exercising double buffering} {
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set x ""
     for {set y 0} {$y < 99} {incr y} {set x "a$x"}
     for {set y 0} {$y < 200} {incr y} {puts $f $x}
@@ -4635,7 +4635,7 @@ test io-33.9 {Tcl_Gets, exercising double buffering} {
 } 200
 test io-33.10 {Tcl_Gets, exercising double buffering} {
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set x ""
     for {set y 0} {$y < 99} {incr y} {set x "a$x"}
     for {set y 0} {$y < 300} {incr y} {puts $f $x}
@@ -4763,7 +4763,7 @@ test io-34.1 {Tcl_Seek to current position at start of file} {
 test io-34.2 {Tcl_Seek to offset from start} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4776,7 +4776,7 @@ test io-34.2 {Tcl_Seek to offset from start} {
 test io-34.3 {Tcl_Seek to end of file} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4789,7 +4789,7 @@ test io-34.3 {Tcl_Seek to end of file} {
 test io-34.4 {Tcl_Seek to offset from end of file} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4802,7 +4802,7 @@ test io-34.4 {Tcl_Seek to offset from end of file} {
 test io-34.5 {Tcl_Seek to offset from current position} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4816,7 +4816,7 @@ test io-34.5 {Tcl_Seek to offset from current position} {
 test io-34.6 {Tcl_Seek to offset from end of file} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4831,7 +4831,7 @@ test io-34.6 {Tcl_Seek to offset from end of file} {
 test io-34.7 {Tcl_Seek to offset from end of file, then to current position} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4854,7 +4854,7 @@ test io-34.8 {Tcl_Seek on pipes: not supported} stdio {
 test io-34.9 {Tcl_Seek, testing buffered input flushing} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     close $f
     set f [open $path(test3) RDWR]
@@ -4902,11 +4902,11 @@ test io-34.11 {Tcl_Seek testing flushing of buffered output} {
 } "zzy xyzzy"
 test io-34.12 {Tcl_Seek testing combination of write, seek back and read} {
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f xyz\n123
     close $f
     set f [open $path(test3) a+]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f xyzzy
     flush $f
     set x [tell $f]
@@ -4927,7 +4927,7 @@ test io-34.13 {Tcl_Tell at start of file} {
 test io-34.14 {Tcl_Tell after seek to end of file} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4940,7 +4940,7 @@ test io-34.14 {Tcl_Tell after seek to end of file} {
 test io-34.15 {Tcl_Tell combined with seeking} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     puts $f1 "abcdefghijklmnopqrstuvwxyz"
     close $f1
@@ -4970,7 +4970,7 @@ test io-34.17 {Tcl_Tell on pipe: always -1} stdio {
 test io-34.18 {Tcl_Tell combined with seeking and reading} {
     file delete $path(test2)
     set f [open $path(test2) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts -nonewline $f "line1\nline2\nline3\nline4\nline5\n"
     close $f
     set f [open $path(test2)]
@@ -4989,7 +4989,7 @@ test io-34.18 {Tcl_Tell combined with seeking and reading} {
 } {0 3 2 12 30}
 test io-34.19 {Tcl_Tell combined with opening in append mode} {
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f "abcdefghijklmnopqrstuvwxyz"
     puts $f "abcdefghijklmnopqrstuvwxyz"
     close $f
@@ -5210,7 +5210,7 @@ test io-35.11 {Tcl_Eof, eof char, crlf write, crlf read} {
 test io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5225,7 +5225,7 @@ test io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} {
 test io-35.13 {Tcl_Eof, eof char in middle, lf write, lf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5240,7 +5240,7 @@ test io-35.13 {Tcl_Eof, eof char in middle, lf write, lf read} {
 test io-35.14 {Tcl_Eof, eof char in middle, cr write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5255,7 +5255,7 @@ test io-35.14 {Tcl_Eof, eof char in middle, cr write, auto read} {
 test io-35.15 {Tcl_Eof, eof char in middle, cr write, cr read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5270,7 +5270,7 @@ test io-35.15 {Tcl_Eof, eof char in middle, cr write, cr read} {
 test io-35.16 {Tcl_Eof, eof char in middle, crlf write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5285,7 +5285,7 @@ test io-35.16 {Tcl_Eof, eof char in middle, crlf write, auto read} {
 test io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar {}
+    fconfigure $f -translation crlf
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5356,7 +5356,7 @@ test io-35.18c {Tcl_Eof, eof char, cr write, crlf read} -body {
 test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set i [format abc\ndef\n%cqrs\nuvw 26]
     puts $f $i
     close $f
@@ -5371,7 +5371,7 @@ test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
 test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar {}
+    fconfigure $f -translation cr
     set i [format \n%cqrsuvw 26]
     puts $f $i
     close $f
@@ -5407,9 +5407,9 @@ test io-36.1 {Tcl_InputBlocked on nonblocking pipe} stdio {
 } {{} 1 hello 0 {} 1}
 test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} stdio {
     set f1 [open "|[list [interpreter]]" r+]
-    chan configure $f1 -encoding binary -translation lf -eofchar {}
+    chan configure $f1 -encoding binary -translation lf
     puts $f1 {
-	chan configure stdout -encoding binary -translation lf -eofchar {}
+	chan configure stdout -encoding binary -translation lf
 	puts hello_from_pipe
     }
     flush $f1
@@ -5657,7 +5657,7 @@ test io-39.8 {Tcl_SetChannelOption, different buffering options} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
     set l ""
-    fconfigure $f1 -translation lf -buffering none -eofchar {}
+    fconfigure $f1 -translation lf -buffering none
     puts -nonewline $f1 hello
     lappend l [file size $path(test1)]
     puts -nonewline $f1 hello
@@ -5941,11 +5941,11 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask notWsl} {
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts $f xyzzy
     close $f
     set f [open $path(test3) {WRONLY CREAT}]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f "ab"
     close $f
     set f [open $path(test3) r]
@@ -5956,7 +5956,7 @@ test io-40.4 {POSIX open access modes: CREAT} {
 test io-40.5 {POSIX open access modes: APPEND} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f xyzzy
     close $f
     set f [open $path(test3) {WRONLY APPEND}]
@@ -5984,7 +5984,7 @@ test io-40.6 {POSIX open access modes: EXCL} -match regexp -body {
 test io-40.7 {POSIX open access modes: EXCL} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT EXCL}]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts $f "A test line"
     close $f
     viewFile test3
@@ -6035,7 +6035,7 @@ test io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
 test io-40.13 {POSIX open access modes: WRONLY} {
     makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
@@ -9426,7 +9426,7 @@ test io-75.6 {incomplete utf-8 encoding, blocking gets is not ignored (-profile 
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $f -encoding utf-8 -buffering none \
 	    -translation lf -profile strict
 } -body {
     gets $f
@@ -9444,7 +9444,7 @@ test io-75.6.1 {invalid utf-8 encoding, blocking gets is not ignored (-profile s
     puts -nonewline $f A\xC3B
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $f -encoding utf-8 -buffering none \
 	    -translation lf -profile strict
 } -body {
     gets $f
@@ -9462,7 +9462,7 @@ test io-75.6.2 {invalid utf-8 encoding, blocking gets is not ignored (-profile s
     puts -nonewline $f A\xC3B
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $f -encoding utf-8 -buffering none \
 	    -translation lf -profile strict
 } -body {
     set l {}
@@ -9484,7 +9484,7 @@ test io-75.6.3 {invalid utf-8 encoding, non blocking gets is not ignored (-profi
     puts -nonewline $f A\xC3B
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $f -encoding utf-8 -buffering none \
 	    -translation lf -profile strict -blocking 0
 } -body {
     gets $f
@@ -9502,7 +9502,7 @@ test io-75.6.4 {incomplete utf-8 encoding, non blocking gets is not ignored (-pr
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $f -encoding utf-8 -buffering none \
 	    -translation lf -profile strict -blocking 0
 } -body {
     gets $f
@@ -9524,7 +9524,7 @@ test io-75.7 {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
+    fconfigure $f -encoding utf-8 -buffering none -translation lf \
 	    -profile strict
 } -body {
     list [catch {read $f} msg data] $msg [dict get $data -data]
@@ -9660,7 +9660,7 @@ test io-75.11 {shiftjis encoding error read results in error (strict profile)} -
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -blocking 0 -eofchar {} -translation lf \
+    fconfigure $f -encoding shiftjis -blocking 0 -translation lf \
 	-profile strict
 } -body {
     set d [read $f]
@@ -9684,7 +9684,7 @@ test io-75.12 {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf
+    fconfigure $f -encoding utf-8 -buffering none -translation lf
 } -body {
     catch {read $f} errmsg
     lappend res $errmsg
@@ -9712,7 +9712,7 @@ test io-75.13 {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -blocking 0 -eofchar {} -translation lf \
+    fconfigure $f -encoding utf-8 -blocking 0 -translation lf \
 	-profile strict
 } -body {
     set d [read $f]
@@ -9736,7 +9736,7 @@ test io-75.14 {
     puts -nonewline $chan a\nb\nc\xC0\nd\n
     flush $chan
     seek $chan 0
-    fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
+    fconfigure $chan -encoding utf-8 -buffering none \
 	-translation auto -profile strict
 } -body {
     set res [gets $chan]
