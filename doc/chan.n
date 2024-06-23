@@ -527,6 +527,14 @@ errors are encountered in the channel input data. The file pointer remains
 unchanged and it is possible to introspect, and in some cases recover, by
 changing the encoding in use. See \fBENCODING ERROR EXAMPLES\fR later.
 .RE
+.\" METHOD: isbinary
+.TP
+\fBchan isbinary \fIchannel\fR
+.
+Test whether the channel called \fIchannel\fR is a binary channel,
+returning 1 if it is and, and 0 otherwise. A binary channel is
+a channel with iso8859-1 encoding, -eofchar set to {} and
+-translation set to cr.
 .\" METHOD: names
 .TP
 \fBchan names\fR ?\fIpattern\fR?
