@@ -369,7 +369,6 @@ test chan-io-4.5 {TranslateOutputEOL: crlf} {
 
 test chan-io-5.1 {CheckFlush: not full} {
     set f [open $path(test1) w]
-    chan configure $f
     chan puts -nonewline $f "12345678901234567890"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -2133,11 +2132,6 @@ test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -
 } -constraints {stdio asyncPipeChan Close nonPortable} -body {
     set f [open $path(pipe) w]
     chan puts $f {
-	# Need to not have eof char appended on chan close, because the other
-	# side of the pipe already chan closed, so that writing would cause an
-	# error "invalid file".
-	chan configure stdout
-	chan configure stderr
 	set f [open $path(output) w]
 	chan configure $f -translation lf -buffering none
 	for {set x 0} {$x < 20} {incr x} {
@@ -2271,7 +2265,6 @@ test chan-io-29.2 {Tcl_WriteChars, empty string} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f
     chan puts -nonewline $f ""
     chan close $f
     file size $path(test1)
@@ -2280,7 +2273,6 @@ test chan-io-29.3 {Tcl_WriteChars, nonempty string} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f
     chan puts -nonewline $f hello
     chan close $f
     file size $path(test1)
@@ -2389,7 +2381,6 @@ test chan-io-29.11 {Tcl_WriteChars, no newline, implicit flush} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    chan configure $f1
     set f2 [open $path(longfile) r]
     for {set x 0} {$x < 10} {incr x} {
 	chan puts -nonewline $f1 [chan gets $f2]
@@ -4368,7 +4359,6 @@ test chan-io-34.9 {Tcl_Seek, testing buffered input flushing} -setup {
     file delete $path(test3)
 } -body {
     set f [open $path(test3) w]
-    chan configure $f
     chan puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     chan close $f
     set f [open $path(test3) RDWR]
@@ -5375,11 +5365,9 @@ test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
     set f [open $path(test3) w]
-    chan configure $f
     chan puts $f xyzzy
     chan close $f
     set f [open $path(test3) {WRONLY CREAT}]
-    chan configure $f
     chan puts -nonewline $f "ab"
     chan close $f
     set f [open $path(test3) r]
@@ -5421,7 +5409,6 @@ test chan-io-40.7 {POSIX open access modes: EXCL} -setup {
     file delete $path(test3)
 } -body {
     set f [open $path(test3) {WRONLY CREAT EXCL}]
-    chan configure $f
     chan puts $f "A test line"
     chan close $f
     viewFile test3
@@ -5472,7 +5459,6 @@ test chan-io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
 test chan-io-40.13 {POSIX open access modes: WRONLY} -body {
     makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
-    chan configure $f
     chan puts -nonewline $f "ab"
     chan seek $f 0 current
     set x [list [catch {chan gets $f} msg] $msg]
