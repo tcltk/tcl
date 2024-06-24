@@ -166,7 +166,7 @@ million, allowing buffers of up to one million bytes in size.
 .
 This option is used to specify the encoding of the channel as one of
 the named encodings returned by \fBencoding names\fR or the special
-value \fBbinary\fR, so that the data can be converted to and from
+value \fB{}\fR, so that the data can be converted to and from
 Unicode for use in Tcl.  For instance, in order for Tcl to read
 characters from a Japanese file in \fBshiftjis\fR and properly process
 and display the contents, the encoding would be set to \fBshiftjis\fR.
@@ -177,7 +177,7 @@ automatically be converted to the specified encoding on output.
 .RS
 .PP
 If a file contains pure binary data (for instance, a JPEG image), the
-encoding for the channel should be configured to be \fBbinary\fR.  Tcl
+encoding for the channel should be configured to be \fBiso8859-1\fR.  Tcl
 will then assign no interpretation to the data in the file and simply
 read or write raw bytes.  The Tcl \fBbinary\fR command can be used to
 manipulate this byte-oriented data.  It is usually better to set the
