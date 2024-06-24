@@ -82,8 +82,8 @@ namespace eval ::tcl::test::io {
 	if {$argv != ""} {
 	    set f [open [lindex $argv 0]]
 	}
-	chan configure $f -encoding binary -translation lf -blocking 0 -eofchar \x1A
-	chan configure stdout -encoding binary -translation lf -buffering none
+	chan configure $f -translation binary -blocking 0 -eofchar \x1A
+	chan configure stdout -translation binary -buffering none
 	chan event $f readable "foo $f"
 	proc foo {f} {
 	    set x [chan read $f]
@@ -117,7 +117,7 @@ test chan-io-1.5 {Tcl_WriteChars: CheckChannelErrors} {emptyTest} {
 set path(test1) [makeFile {} test1]
 test chan-io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     chan puts -nonewline $f "a\x4D\x00"
     chan close $f
     contents $path(test1)
@@ -186,7 +186,7 @@ test chan-io-1.9 {Tcl_WriteChars: WriteChars} {
 test chan-io-2.1 {WriteBytes} {
     # loop until all bytes are written
     set f [open $path(test1) w]
-    chan configure $f  -encoding binary -buffersize 16 -translation crlf
+    chan configure $f  -encoding {} -buffersize 16 -translation crlf
     chan puts $f "abcdefghijklmnopqrstuvwxyz"
     chan close $f
     contents $path(test1)
@@ -195,7 +195,7 @@ test chan-io-2.2 {WriteBytes: savedLF > 0} {
     # After flushing buffer, there was a \n left over from the last
     # \n -> \r\n expansion.  It gets stuck at beginning of this buffer.
     set f [open $path(test1) w]
-    chan configure $f -encoding binary -buffersize 16 -translation crlf
+    chan configure $f -encoding {} -buffersize 16 -translation crlf
     chan puts -nonewline $f "123456789012345\n12"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -206,7 +206,7 @@ test chan-io-2.3 {WriteBytes: flush on line} -body {
     # \n, entire buffer gets flushed.  Logical behavior would be to flush only
     # up to the \n.
     set f [open $path(test1) w]
-    chan configure $f -encoding binary -buffering line -translation crlf
+    chan configure $f -encoding {} -buffering line -translation crlf
     chan puts -nonewline $f "\n12"
     contents $path(test1)
 } -cleanup {
@@ -214,8 +214,7 @@ test chan-io-2.3 {WriteBytes: flush on line} -body {
 } -result "\r\n12"
 test chan-io-2.4 {WriteBytes: reset sawLF after each buffer} {
     set f [open $path(test1) w]
-     chan configure $f -encoding binary -buffering line -translation lf \
-	     -buffersize 16
+     chan configure $f -translation binary -buffering line -buffersize 16
     chan puts -nonewline $f "abcdefg\nhijklmnopqrstuvwxyz"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -1080,7 +1079,7 @@ test chan-io-7.1 {FilterInputBytes: split up character at end of buffer} -body {
 test chan-io-7.2 {FilterInputBytes: split up character in middle of buffer} -body {
     # (bufPtr->nextAdded < bufPtr->bufLength)
     set f [open $path(test1) w]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     chan puts -nonewline $f "1234567890\n123\x82\x4F\x82\x50\x82"
     chan close $f
     set f [open $path(test1)]
@@ -1093,7 +1092,7 @@ test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
     set x ""
 } -constraints {testchannel} -body {
     set f [open $path(test1) w]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     chan puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
     chan close $f
     set f [open $path(test1)]
@@ -1108,14 +1107,14 @@ test chan-io-7.4 {FilterInputBytes: recover from split up character} -setup {
     variable x ""
 } -constraints {stdio fileevent} -body {
     set f [openpipe w+ $path(cat)]
-    chan configure $f -encoding binary -buffering none
+    chan configure $f -encoding {} -buffering none
     chan puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
     chan configure $f -encoding shiftjis -blocking 0
     chan event $f read [namespace code {
 	lappend x [chan gets $f line] $line [chan blocked $f]
     }]
     vwait [namespace which -variable x]
-    chan configure $f -encoding binary -blocking 1
+    chan configure $f -encoding {} -blocking 1
     chan puts $f "\x51\x82\x52"
     chan configure $f -encoding shiftjis
     vwait [namespace which -variable x]
@@ -1177,7 +1176,7 @@ test chan-io-8.4 {PeekAhead: cached data available in this buffer} -body {
     chan puts $f "${a}\r\nabcdef"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -encoding binary -translation auto
+    chan configure $f -encoding {} -translation auto
     # "${a}\r" was converted in one operation (because ENCODING_LINESIZE is
     # 30). To check if "\n" follows, calls PeekAhead and determines that
     # cached data is available in buffer w/o having to call driver.
@@ -1282,7 +1281,7 @@ test chan-io-11.1 {ReadBytes: want to read a lot} -body {
     chan puts -nonewline $f abcdefghijkl
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     # here
     chan read $f 1000
 } -cleanup {
@@ -1294,7 +1293,7 @@ test chan-io-11.2 {ReadBytes: want to read all} -body {
     chan puts -nonewline $f abcdefghijkl
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     # here
     chan read $f
 } -cleanup {
@@ -1306,7 +1305,7 @@ test chan-io-11.3 {ReadBytes: allocate more space} -body {
     chan puts -nonewline $f abcdefghijklmnopqrstuvwxyz
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -buffersize 16 -encoding binary
+    chan configure $f -buffersize 16 -encoding {}
     # here
     chan read $f
 } -cleanup {
@@ -1318,7 +1317,7 @@ test chan-io-11.4 {ReadBytes: EOF char found} -body {
     chan puts $f abcdefghijklmnopqrstuvwxyz
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -eofchar m -encoding binary
+    chan configure $f -eofchar m -encoding {}
     # here
     list [chan read $f] [chan eof $f] [chan read $f] [chan eof $f]
 } -cleanup {
@@ -1364,7 +1363,7 @@ test chan-io-12.4 {ReadChars: split-up char} -setup {
 } -constraints {stdio testchannel fileevent} -body {
     # (srcRead == 0)
     set f [openpipe w+ $path(cat)]
-    chan configure $f -encoding binary -buffering none -buffersize 16
+    chan configure $f -encoding {} -buffering none -buffersize 16
     chan puts -nonewline $f "123456789012345\x96"
     chan configure $f -encoding shiftjis -blocking 0
     chan event $f read [namespace code {
@@ -1372,7 +1371,7 @@ test chan-io-12.4 {ReadChars: split-up char} -setup {
     }]
     chan configure $f -encoding shiftjis
     vwait [namespace which -variable x]
-    chan configure $f -encoding binary -blocking 1
+    chan configure $f -encoding {} -blocking 1
     chan puts -nonewline $f \x7B
     after 500			;# Give the cat process time to catch up
     chan configure $f -encoding shiftjis -blocking 0
@@ -1385,7 +1384,7 @@ test chan-io-12.5 {ReadChars: chan events on partial characters} -setup {
     variable x {}
 } -constraints {stdio fileevent} -body {
     set path(test1) [makeFile {
-	chan configure stdout -encoding binary -buffering none
+	chan configure stdout -encoding {} -buffering none
 	chan gets stdin; chan puts -nonewline \xE7
 	chan gets stdin; chan puts -nonewline \x89
 	chan gets stdin; chan puts -nonewline \xA6
@@ -4527,7 +4526,7 @@ test chan-io-34.21 {Tcl_Seek and Tcl_Tell on large files} -setup {
     set l ""
 } -constraints {largefileSupport extensive} -body {
     set f [open $path(test3) w]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     lappend l [chan tell $f]
     chan puts -nonewline $f abcdef
     lappend l [chan tell $f]
@@ -5164,7 +5163,7 @@ test chan-io-39.13 {Tcl_SetChannelOption, Tcl_GetChannelOption, buffer size} -se
 } -cleanup {
     chan close $f
 } -result 40000
-test chan-io-39.14 {Tcl_SetChannelOption: -encoding, binary & utf-8} -setup {
+test chan-io-39.14 {Tcl_SetChannelOption: -encoding {} & utf-8} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
@@ -5177,11 +5176,11 @@ test chan-io-39.14 {Tcl_SetChannelOption: -encoding, binary & utf-8} -setup {
 } -cleanup {
     chan close $f
 } -result 牦
-test chan-io-39.15 {Tcl_SetChannelOption: -encoding, binary & utf-8} -setup {
+test chan-io-39.15 {Tcl_SetChannelOption: -encoding {} & utf-8} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     chan puts -nonewline $f \xE7\x89\xA6
     chan close $f
     set f [open $path(test1) r]
@@ -5202,7 +5201,7 @@ test chan-io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_
     variable x {}
 } -constraints {stdio fileevent} -body {
     set f [openpipe r+ $path(cat)]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     chan puts -nonewline $f \xE7
     chan flush $f
     chan configure $f -encoding utf-8 -blocking 0
@@ -5214,7 +5213,7 @@ test chan-io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_
     vwait [namespace which -variable x]
     after 300 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
-    chan configure $f -encoding binary
+    chan configure $f -encoding {}
     vwait [namespace which -variable x]
     after 300 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
@@ -6860,7 +6859,7 @@ test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy} -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
     chan configure $in  -encoding koi8-r -translation lf
-    # -translation binary is also -encoding binary
+    # -translation binary is also -encoding iso8859-1
     chan configure $out -translation binary
     chan copy $in $out
     file size $path(utf8-fcopy.txt)
@@ -6878,7 +6877,7 @@ test chan-io-52.11 {TclCopyChannel & encodings} -setup {
 } -constraints {fcopy} -body {
     set in  [open $path(utf8-fcopy.txt) r]
     set out [open $path(kyrillic.txt) w]
-    # -translation binary is also -encoding binary
+    # -translation binary is also -encoding iso8859-1
     chan configure $in  -translation binary
     chan configure $out -encoding koi8-r -translation lf -profile strict
     catch {chan copy $in $out} cres copts
