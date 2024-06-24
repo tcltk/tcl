@@ -8225,7 +8225,11 @@ Tcl_SetChannelOption(
 	Tcl_Encoding encoding;
 	int profile;
 
-	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
+	if (!strcmp(newValue, "binary")) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("\"-encoding binary\" is no longer supported.\n"
+		    "please use either \"-translation binary\" or \"-encoding {}\"", TCL_INDEX_NONE));
+	    return TCL_ERROR;
+	} else if (newValue[0] == '\0') {
 	    encoding = Tcl_GetEncoding(NULL, "iso8859-1");
 	} else {
 	    encoding = Tcl_GetEncoding(interp, newValue);
