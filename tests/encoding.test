@@ -681,7 +681,7 @@ casino_japanese@___.com ）までご住所変更済の連絡をいただけな�
 
 cd [temporaryDirectory]
 set fid [open iso2022.txt w]
-fconfigure $fid -encoding binary
+fconfigure $fid -translation binary
 puts -nonewline $fid $iso2022encData
 close $fid
 
