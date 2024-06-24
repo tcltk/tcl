@@ -7537,6 +7537,34 @@ CheckChannelErrors(
 /*
  *----------------------------------------------------------------------
  *
+ * TclChanIsBinary --
+ *
+ *	Returns 1 if the channel is a binary channel, 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChanIsBinary(
+    Tcl_Channel chan)		/* Does this channel have EOF? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return ((statePtr->encoding == GetBinaryEncoding()) && !statePtr->inEofChar
+	    && (!GotFlag(statePtr, TCL_READABLE) || (statePtr->inputTranslation == TCL_TRANSLATE_LF))
+	    && (!GotFlag(statePtr, TCL_WRITABLE) || (statePtr->outputTranslation == TCL_TRANSLATE_LF)));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Eof --
  *
  *	Returns 1 if the channel is at EOF, 0 otherwise.
