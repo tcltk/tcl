@@ -48,21 +48,21 @@ set path(test1) [makeFile {} test1]
 
 test iocmd-1.6 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts -nonewline $f foobar
     close $f
     file size $path(test1)
 } 6
 test iocmd-1.7 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f foobar
     close $f
     file size $path(test1)
 } 7
 test iocmd-1.8 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {} -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f [binary format a4a5 foo bar]
     close $f
     file size $path(test1)
@@ -241,7 +241,7 @@ test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
+    fconfigure $f1 -translation lf -encoding utf-16
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
@@ -252,7 +252,7 @@ test iocmd-8.8 {fconfigure command} -setup {
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding utf-16 -profile tcl8
+		-encoding utf-16 -profile tcl8
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
 } -cleanup {
@@ -262,8 +262,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary
+    fconfigure $f1 -translation binary -buffering none -buffersize 4040
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
@@ -447,17 +446,17 @@ test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
 test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts $f xyzzy
     close $f
     set f [open $path(test3) WRONLY]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
     close $f
     set f [open $path(test3) r]
-    fconfigure $f -eofchar {}
+    fconfigure $f
     lappend x [gets $f]
     close $f
     set y [list 1 [format "channel \"%s\" wasn't opened for reading" $f] abzzy]
@@ -1393,7 +1392,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo args {oninit cget cgetall; onfinal; track; return ""}
@@ -1402,7 +1401,7 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo args {
@@ -1414,7 +1413,7 @@ test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *} -bar foo -snarf x}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *} -bar foo -snarf x}}
 test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
@@ -2978,7 +2977,7 @@ test iocmd.tf-25.1 {chan configure, cgetall, standard options} -match glob -body
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *}}}
 test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
@@ -2991,7 +2990,7 @@ test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *}}}
 test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo {args} {
@@ -3007,7 +3006,7 @@ test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *} -bar foo -snarf x}}
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *} -bar foo -snarf x}}
 test iocmd.tf-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
