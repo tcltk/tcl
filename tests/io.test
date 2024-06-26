@@ -466,7 +466,6 @@ test io-4.5 {TranslateOutputEOL: crlf} {
 
 test io-5.1 {CheckFlush: not full} {
     set f [open $path(test1) w]
-    fconfigure $f
     puts -nonewline $f "12345678901234567890"
     set x [list [contents $path(test1)]]
     close $f
@@ -2407,13 +2406,6 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
     set f [open $path(pipe) w]
     puts $f {
 
-	# Need to not have eof char appended on close, because the other
-	# side of the pipe already closed, so that writing would cause an
-	# error "invalid file".
-
-	fconfigure stdout
-	fconfigure stderr
-
 	set f [open $path(output) w]
 	fconfigure $f -translation lf -buffering none
 	for {set x 0} {$x < 20} {incr x} {
@@ -2563,7 +2555,6 @@ test io-29.1 {Tcl_WriteChars, channel not writable} {
 test io-29.2 {Tcl_WriteChars, empty string} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f
     puts -nonewline $f ""
     close $f
     file size $path(test1)
@@ -2571,7 +2562,6 @@ test io-29.2 {Tcl_WriteChars, empty string} {
 test io-29.3 {Tcl_WriteChars, nonempty string} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f
     puts -nonewline $f hello
     close $f
     file size $path(test1)
@@ -2673,7 +2663,6 @@ test io-29.10 {Tcl_WriteChars, looping and buffering} {
 test io-29.11 {Tcl_WriteChars, no newline, implicit flush} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1
     set f2 [open $path(longfile) r]
     for {set x 0} {$x < 10} {incr x} {
 	puts -nonewline $f1 [gets $f2]
@@ -4853,7 +4842,6 @@ test io-34.8 {Tcl_Seek on pipes: not supported} stdio {
 test io-34.9 {Tcl_Seek, testing buffered input flushing} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f
     puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     close $f
     set f [open $path(test3) RDWR]
@@ -5940,11 +5928,9 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask notWsl} {
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f
     puts $f xyzzy
     close $f
     set f [open $path(test3) {WRONLY CREAT}]
-    fconfigure $f
     puts -nonewline $f "ab"
     close $f
     set f [open $path(test3) r]
@@ -5983,7 +5969,6 @@ test io-40.6 {POSIX open access modes: EXCL} -match regexp -body {
 test io-40.7 {POSIX open access modes: EXCL} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT EXCL}]
-    fconfigure $f
     puts $f "A test line"
     close $f
     viewFile test3
@@ -6034,7 +6019,6 @@ test io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
 test io-40.13 {POSIX open access modes: WRONLY} {
     makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
-    fconfigure $f
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
