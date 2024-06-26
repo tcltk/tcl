@@ -871,8 +871,8 @@ typedef struct VarInHash {
 
 #define TclGetVarNsPtr(varPtr) \
     (TclIsVarInHash(varPtr) \
-	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
-	: NULL)
+	    ? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
+	    : NULL)
 
 #define VarHashRefCount(varPtr) \
     ((VarInHash *) (varPtr))->refCount
@@ -889,7 +889,7 @@ typedef struct VarInHash {
 
 #define TclIsVarDirectReadable(varPtr)					\
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
-          && (varPtr)->value.objPtr)
+	    && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
     (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
@@ -899,19 +899,19 @@ typedef struct VarInHash {
 
 #define TclIsVarDirectModifyable(varPtr) \
     (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
-          &&  (varPtr)->value.objPtr)
+	    &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
-    (TclIsVarDirectReadable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_READ)))
+    (TclIsVarDirectReadable(varPtr) && \
+	    (!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_READ)))
 
 #define TclIsVarDirectWritable2(varPtr, arrayPtr) \
-    (TclIsVarDirectWritable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_WRITE)))
+    (TclIsVarDirectWritable(varPtr) && \
+	    (!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_WRITE)))
 
 #define TclIsVarDirectModifyable2(varPtr, arrayPtr) \
-    (TclIsVarDirectModifyable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
+    (TclIsVarDirectModifyable(varPtr) && \
+	    (!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
 
 /*
  *----------------------------------------------------------------
@@ -2249,7 +2249,7 @@ typedef struct Interp {
 #define TclSetCancelFlags(iPtr, cancelFlags)   \
     (iPtr)->flags |= CANCELED;                 \
     if ((cancelFlags) & TCL_CANCEL_UNWIND) {   \
-        (iPtr)->flags |= TCL_CANCEL_UNWIND;    \
+	(iPtr)->flags |= TCL_CANCEL_UNWIND;    \
     }
 
 #define TclUnsetCancelFlags(iPtr) \
