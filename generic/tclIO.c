@@ -343,9 +343,6 @@ static const Tcl_ObjType chanObjType = {
     TCL_OBJTYPE_V0
 };
 
-#define GetIso88591() \
-    (binaryEncoding ? Tcl_GetEncoding(NULL, "iso8859-1") : binaryEncoding)
-
 #define ChanSetInternalRep(objPtr, resPtr)					\
     do {								\
 	Tcl_ObjInternalRep ir;						\
@@ -1666,12 +1663,6 @@ Tcl_CreateChannel(
 
     /*
      * Set the channel to system default encoding.
-     *
-     * Note the strange bit of protection taking place here. If the system
-     * encoding name is reported back as "binary", something weird is
-     * happening. Tcl provides no "binary" encoding, so someone else has
-     * provided one. We ignore it so as not to interfere with the "magic"
-     * interpretation that Tcl_Channels give to the "-encoding binary" option.
      */
 
     name = Tcl_GetEncodingName(NULL);
