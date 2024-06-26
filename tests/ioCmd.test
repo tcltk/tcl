@@ -446,17 +446,14 @@ test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
 test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f
     puts $f xyzzy
     close $f
     set f [open $path(test3) WRONLY]
-    fconfigure $f
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
     close $f
     set f [open $path(test3) r]
-    fconfigure $f
     lappend x [gets $f]
     close $f
     set y [list 1 [format "channel \"%s\" wasn't opened for reading" $f] abzzy]
