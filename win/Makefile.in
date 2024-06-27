@@ -313,6 +313,7 @@ GENERIC_OBJS = \
 	tclGet.$(OBJEXT) \
 	tclHash.$(OBJEXT) \
 	tclHistory.$(OBJEXT) \
+	tclIcu.$(OBJEXT) \
 	tclIndexObj.$(OBJEXT) \
 	tclInterp.$(OBJEXT) \
 	tclIO.$(OBJEXT) \
