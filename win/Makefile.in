@@ -314,6 +314,7 @@ GENERIC_OBJS = \
 	tclGet.$(OBJEXT) \
 	tclHash.$(OBJEXT) \
 	tclHistory.$(OBJEXT) \
+	tclIcu.$(OBJEXT) \
 	tclIndexObj.$(OBJEXT) \
 	tclInterp.$(OBJEXT) \
 	tclIO.$(OBJEXT) \
@@ -607,7 +608,7 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 ${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-		tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
 
 # use prebuilt zlib1.dll

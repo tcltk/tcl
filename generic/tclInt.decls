@@ -203,7 +203,7 @@ declare 93 {
 }
 declare 96 {
     int TclRenameCommand(Tcl_Interp *interp, const char *oldName,
-            const char *newName)
+	    const char *newName)
 }
 declare 97 {
     void TclResetShadowedCmdRefs(Tcl_Interp *interp, Command *newCmdPtr)
@@ -467,7 +467,7 @@ declare 216 {
 }
 declare 217 {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
-            Tcl_Namespace *namespacePtr, int isProcCallFrame)
+	    Tcl_Namespace *namespacePtr, int isProcCallFrame)
 }
 declare 218 {
     void TclPopStackFrame(Tcl_Interp *interp)
@@ -504,7 +504,7 @@ declare 226 {
 }
 declare 227 {
     void TclSetNsPath(Namespace *nsPtr, Tcl_Size pathLength,
-            Tcl_Namespace *pathAry[])
+	    Tcl_Namespace *pathAry[])
 }
 declare 229 {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
@@ -532,7 +532,7 @@ declare 233 {
 # Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 {
     Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
-             int *newPtr)
+	    int *newPtr)
 }
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)

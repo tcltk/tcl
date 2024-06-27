@@ -703,7 +703,7 @@ TclContinuationsCopy(
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
+	    Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
 
     if (hPtr) {
 	ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_GetHashValue(hPtr);
@@ -737,10 +737,10 @@ TclContinuationsGet(
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
-            Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+	    Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 
     if (!hPtr) {
-        return NULL;
+	return NULL;
     }
     return (ContLineLoc *)Tcl_GetHashValue(hPtr);
 }
@@ -1379,10 +1379,10 @@ TclFreeObj(
 
     {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-        Tcl_HashEntry *hPtr;
+	Tcl_HashEntry *hPtr;
 
 	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+	    hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
 		Tcl_Free(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
@@ -1470,10 +1470,10 @@ TclFreeObj(
 
     {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-        Tcl_HashEntry *hPtr;
+	Tcl_HashEntry *hPtr;
 
 	if (tsdPtr->lineCLPtr) {
-            hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+	    hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
 		Tcl_Free(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
@@ -2427,8 +2427,8 @@ Tcl_GetDoubleFromObj(
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
-                    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-                            (char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2678,9 +2678,9 @@ Tcl_GetLongFromObj(
 #endif
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                        "expected integer but got \"%s\"",
-                        TclGetString(objPtr)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected integer but got \"%s\"",
+			TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -2986,9 +2986,9 @@ Tcl_GetWideIntFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                        "expected integer but got \"%s\"",
-                        TclGetString(objPtr)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected integer but got \"%s\"",
+			TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3155,9 +3155,9 @@ TclGetWideBitsFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                        "expected integer but got \"%s\"",
-                        TclGetString(objPtr)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected integer but got \"%s\"",
+			TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3479,9 +3479,9 @@ GetBignumFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                        "expected integer but got \"%s\"",
-                        TclGetString(objPtr)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected integer but got \"%s\"",
+			TclGetString(objPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3887,7 +3887,7 @@ Tcl_DbIncrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-                    "incr ref count");
+		    "incr ref count");
 	}
     }
 # endif /* TCL_THREADS */
@@ -3960,7 +3960,7 @@ Tcl_DbDecrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-                    "decr ref count");
+		    "decr ref count");
 	}
     }
 # endif /* TCL_THREADS */
@@ -4042,7 +4042,7 @@ Tcl_DbIsShared(
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-                    "check shared status");
+		    "check shared status");
 	}
     }
 # endif /* TCL_THREADS */
@@ -4154,7 +4154,7 @@ TclCompareObjKeys(
      * OPT: this comparison was moved to the caller
 
        if (objPtr1 == objPtr2) {
-           return 1;
+	   return 1;
        }
     */
 
@@ -4335,21 +4335,21 @@ Tcl_GetCommandFromObj(
 
     resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
     if (TclHasInternalRep(objPtr, &tclCmdNameType)) {
-        Command *cmdPtr = resPtr->cmdPtr;
+	Command *cmdPtr = resPtr->cmdPtr;
 
-        if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
-                && (interp == cmdPtr->nsPtr->interp)
-                && !(cmdPtr->nsPtr->flags & NS_DYING)) {
-            Namespace *refNsPtr = (Namespace *)
-                    TclGetCurrentNamespace(interp);
+	if ((cmdPtr->cmdEpoch == resPtr->cmdEpoch)
+		&& (interp == cmdPtr->nsPtr->interp)
+		&& !(cmdPtr->nsPtr->flags & NS_DYING)) {
+	    Namespace *refNsPtr = (Namespace *)
+		    TclGetCurrentNamespace(interp);
 
-            if ((resPtr->refNsPtr == NULL)
+	    if ((resPtr->refNsPtr == NULL)
 		    || ((refNsPtr == resPtr->refNsPtr)
-                    && (resPtr->refNsId == refNsPtr->nsId)
-                    && (resPtr->refNsCmdEpoch == refNsPtr->cmdRefEpoch))) {
-                return (Tcl_Command) cmdPtr;
-            }
-        }
+		    && (resPtr->refNsId == refNsPtr->nsId)
+		    && (resPtr->refNsCmdEpoch == refNsPtr->cmdRefEpoch))) {
+		return (Tcl_Command) cmdPtr;
+	    }
+	}
     }
 
     /*
@@ -4359,7 +4359,7 @@ Tcl_GetCommandFromObj(
 
     /* See [07d13d99b0a9] why we cannot call SetCmdNameFromAny() directly here. */
     if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
-        return NULL;
+	return NULL;
     }
     resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
     return (Tcl_Command) (resPtr ? resPtr->cmdPtr : NULL);
@@ -4668,9 +4668,9 @@ Tcl_RepresentationCmd(
     }
 
     if (objv[1]->bytes) {
-        Tcl_AppendToObj(descObj, ", string representation \"", -1);
+	Tcl_AppendToObj(descObj, ", string representation \"", -1);
 	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
-                16, "...");
+		16, "...");
 	Tcl_AppendToObj(descObj, "\"", -1);
     } else {
 	Tcl_AppendToObj(descObj, ", no string representation", -1);
