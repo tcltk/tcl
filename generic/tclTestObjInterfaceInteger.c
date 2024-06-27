@@ -40,7 +40,6 @@ static int ListIntegerStringListIndexFromStringIndex(
 static Tcl_Obj* ListIntegerListStringRange(tclObjTypeInterfaceArgsStringRange);
 static Tcl_Obj* ListIntegerListStringRangeEnd(tclObjTypeInterfaceArgsStringRangeEnd);
 
-static int ListIntegerListObjGetElements(tclObjTypeInterfaceArgsListAll);
 static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend);
 static int ListIntegerListObjAppendList(tclObjTypeInterfaceArgsListAppendList);
 static int ListIntegerListObjIndex(tclObjTypeInterfaceArgsListIndex);
@@ -143,9 +142,9 @@ int TestListInteger(
 
 int TestListIntegerGetElements(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,
-    Tcl_Size argc,
-    Tcl_Obj *const objv[])
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(Tcl_Obj * const *))
 {
     return 0;
 }

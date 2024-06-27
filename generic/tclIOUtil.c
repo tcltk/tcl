@@ -1959,7 +1959,7 @@ EvalFileCallback(
 
 	Tcl_Size length;
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	const unsigned int limit = 150;
+	const int limit = 150;
 	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
