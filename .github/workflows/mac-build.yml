@@ -18,6 +18,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
@@ -26,11 +27,13 @@ jobs:
         run: make all
         env:
           CFLAGS: -arch x86_64 -arch arm64
+        timeout-minutes: 15
       - name: Run Tests
         run: make test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15
   clang:
     runs-on: macos-11
     strategy:
@@ -48,6 +51,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
@@ -59,14 +63,17 @@ jobs:
         env:
           CFLAGS: -arch x86_64 -arch arm64
           CFGOPT: ${{ matrix.cfgopt }}
+        timeout-minutes: 5
       - name: Build
         run: |
           make all tcltest
         env:
           CFLAGS: -arch x86_64 -arch arm64
+        timeout-minutes: 15
       - name: Run Tests
         run: |
           make test
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15
