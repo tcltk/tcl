@@ -1,6 +1,6 @@
 /*
  * tclTestObjInterfce.c --
- *
+*
  *	This file contains C command functions for the additional Tcl commands
  *	that are used for testing implementations of the Tcl object types.
  *	These commands are not normally included in Tcl applications; they're
@@ -26,6 +26,9 @@ static void	DupTestListIntegerInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeTestListIntegerInternalRep(Tcl_Obj *objPtr);
 static int	SetTestListIntegerFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfTestListInteger(Tcl_Obj *listPtr);
+
+int TestListIntegerGetElements(TCL_UNUSED(void *), Tcl_Interp *interp,
+    Tcl_Size argc, Tcl_Obj *const objv[]);
 
 static int ListIntegerListStringIndex (tclObjTypeInterfaceArgsStringIndex);
 static int ListIntegerListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd);
@@ -64,7 +67,12 @@ ObjInterface ListIntegerInterface = {
 	&ListIntegerListStringRangeEnd
     },
     {
+	/*
+	 * This type does not support converting all elements to objv values
+	 * The caller should instead ask for individual items.
 	&ListIntegerListObjGetElements,
+	*/
+	NULL,
 	&ListIntegerListObjAppendElement,
 	&ListIntegerListObjAppendList,
 	&ListIntegerListObjIndex,
@@ -111,6 +119,7 @@ const Tcl_ObjType *testListIntegerTypePtr = (Tcl_ObjType *)&testListIntegerType;
 
 int TcltestObjectInterfaceListIntegerInit(Tcl_Interp *interp) {
     Tcl_CreateObjCommand2(interp, "testlistinteger", TestListInteger, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testlistintegergetelements", TestListIntegerGetElements, NULL, NULL);
     return TCL_OK;
 }
 
@@ -130,6 +139,15 @@ int TestListInteger(
     status = Tcl_ConvertToType(interp, objv[1], testListIntegerTypePtr);
     Tcl_SetObjResult(interp, objv[1]);
     return status;
+}
+
+int TestListIntegerGetElements(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size argc,
+    Tcl_Obj *const objv[])
+{
+    return 0;
 }
 
 
@@ -198,6 +216,7 @@ static int SetTestListIntegerFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 		return status;
 	    }
 	    status = ListIntegerListObjReplace(interp, listPtr, i, 0, 1, &itemPtr);
+	    status = TCL_OK;
 	    if (status != TCL_OK) {
 		Tcl_DecrRefCount(listPtr);
 		return status;
@@ -301,21 +320,6 @@ static Tcl_Obj* ListIntegerListStringRangeEnd(
     return NULL;
 }
 
-static int ListIntegerListObjGetElements(
-    TCL_UNUSEDVAR(Tcl_Interp *interp),	/* Used to report errors if not NULL. */
-    TCL_UNUSEDVAR(Tcl_Obj *listPtr),	/* List object for which an element array
-					 * is to be returned. */
-    TCL_UNUSEDVAR(Tcl_Size *objcPtr),	/* Where to store the count of objects
-					 * referenced by objv. */
-    TCL_UNUSEDVAR(Tcl_Obj ***objvPtr)	/* Where to store the pointer to an
-					 * array of */
-) {
-    ListInteger *listRepPtr;
-    listRepPtr = ListGetInternalRep(listPtr);
-    *objcPtr = listRepPtr->used;
-    *objvPtr = listRepPtr->values;
-    return TCL_OK;
-}
 
 static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {
     int status;
@@ -464,8 +468,8 @@ static int ListIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 	return TCL_ERROR;
     }
 
-    /* Currently this duplicates checks found in of Tcl_ListObjReplace, but
-     * maybe in the future Tcl remove those checks
+    /* Currently this duplicates checks found in Tcl_ListObjReplace, but
+     * could be removed in that function in the future.
     */
 
     if (first >= used) {

@@ -232,8 +232,9 @@ Tcl_UniCharToUtf(
 	}
 	if (ch <= 0xFFFF) {
 	    if (
-		    (flags & TCL_COMBINE) &&
-		    ((ch & 0xF800) == 0xD800)) {
+		(flags & TCL_COMBINE) &&
+		((ch & 0xF800) == 0xD800)) {
+
 		if (ch & 0x0400) {
 		    /* Low surrogate */
 		    if (   (0x80 == (0xC0 & buf[0]))
@@ -1196,7 +1197,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-    Tcl_UtfToUniChar(src, &i);
+    TclUtfToUniChar(src, &i);
     return i;
 }
 

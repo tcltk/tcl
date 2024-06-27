@@ -1265,7 +1265,7 @@ test if-10.6 {double invocation of variable traces} -body {
            set var "$counter + [concat $extraargs]"
        }
     }
-    trace variable iftracevar r [list iftraceproc 10]
+    trace add variable iftracevar read [list iftraceproc 10]
     list [catch {if "$iftracevar + 20" {}} a] $a \
         [catch {if "$iftracevar + 20" {}} b] $b
 } -cleanup {

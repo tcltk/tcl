@@ -1843,7 +1843,6 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-
 char *
 Tcl_GetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should

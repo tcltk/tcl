@@ -1,13 +1,7 @@
 #ifndef BN_TCL_H_
 #define BN_TCL_H_
 
-#ifdef MP_NO_STDINT
-#   ifdef HAVE_STDINT_H
-#	include <stdint.h>
-#   else
-#	include "../compat/stdint.h"
-#   endif
-#endif
+#include <stdint.h>
 #if defined(TCL_NO_TOMMATH_H)
     typedef size_t mp_digit;
     typedef int mp_sign;

@@ -290,21 +290,23 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    Tcl_Size numSrcBytes;		/* Number of bytes in source. */
+    Tcl_Size numSrcBytes;	/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
 				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
-    Tcl_Size numCommands;		/* Number of commands compiled. */
-    Tcl_Size exceptDepth;		/* Current exception range nesting level; TCL_INDEX_NONE
-				 * if not in any range currently. */
-    Tcl_Size maxExceptDepth;		/* Max nesting level of exception ranges; TCL_INDEX_NONE
-				 * if no ranges have been compiled. */
-    Tcl_Size maxStackDepth;		/* Maximum number of stack elements needed to
+    Tcl_Size numCommands;	/* Number of commands compiled. */
+    Tcl_Size exceptDepth;	/* Current exception range nesting level;
+				 * TCL_INDEX_NONE if not in any range
+				 * currently. */
+    Tcl_Size maxExceptDepth;	/* Max nesting level of exception ranges;
+				 * TCL_INDEX_NONE if no ranges have been
+				 * compiled. */
+    Tcl_Size maxStackDepth;	/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
-    Tcl_Size currStackDepth;		/* Current stack depth. */
+    Tcl_Size currStackDepth;	/* Current stack depth. */
     LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects referenced by this compiled code.
 				 * Indexed by the string representations of
@@ -331,7 +333,7 @@ typedef struct CompileEnv {
 				 * exceptArrayNext is the number of ranges and
 				 * (exceptArrayNext-1) is the index of the
 				 * current range's array entry. */
-    Tcl_Size exceptArrayEnd;		/* Index after the last ExceptionRange array
+    Tcl_Size exceptArrayEnd;	/* Index after the last ExceptionRange array
 				 * entry. */
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
@@ -369,7 +371,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    Tcl_Size line;			/* First line of the script, based on the
+    Tcl_Size line;		/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -378,7 +380,7 @@ typedef struct CompileEnv {
 				 * inefficient. If set to 2, that instruction
 				 * should not be issued at all (by the generic
 				 * part of the command compiler). */
-    Tcl_Size expandCount;		/* Number of INST_EXPAND_START instructions
+    Tcl_Size expandCount;	/* Number of INST_EXPAND_START instructions
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
@@ -1127,7 +1129,7 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
-			    size_t before, size_t after, int *indexPtr);
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
@@ -1192,8 +1194,6 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int isLambda);
-
-
 /*
  *----------------------------------------------------------------
  * Macros and flag values used by Tcl bytecode compilation and execution

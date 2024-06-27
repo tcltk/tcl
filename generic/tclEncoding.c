@@ -2759,14 +2759,12 @@ Utf32ToUtfProc(
 	src += 4;
     }
 
-    /*
-     * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is not "strict", stick FFFD in its place.
-     */
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a code fragment left-over at the end */
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
+	    /* destination is not full, so we really are at the end now */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {

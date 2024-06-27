@@ -126,7 +126,6 @@ variable tests {
 	    } "a b c"
 	    test linsert-3.2-@mode@ {linsert won't modify shared argument objects} {
 		catch {unset lis}
-		puts boom
 		set lis [format "a \"%s\" c" "b"]
 		@linsert@ [newlist $lis] 0 [string length $lis]
 	    } "7 a b c"

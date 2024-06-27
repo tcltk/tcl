@@ -464,9 +464,12 @@ test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
 test encoding-15.25 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \x00
 } \x00
-test {encoding-15.26 cesu-8 tclnull strict} {UtfToUtfProc CESU-8} {
-    encoding convertfrom -profile tcl8 cesu-8 \xC0\x80
-} \x00
+test {encoding-15.26 cesu-8 tclnull default} {UtfToUtfProc CESU-8} -body {
+    encoding convertfrom cesu-8 \xC0\x80
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
+test {encoding-15.26 cesu-8 tclnull strict} {UtfToUtfProc CESU-8} -body {
+    encoding convertfrom -profile strict cesu-8 \xC0\x80
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test {encoding-15.26 cesu-8 tclnull tcl8} {UtfToUtfProc CESU-8} {
     encoding convertfrom -profile tcl8 cesu-8 \xC0\x80
 } \x00
@@ -593,13 +596,23 @@ test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
-test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
+
+test {encoding-16.4 utf-8 invalid default} {Parse invalid utf-8, strict} -body {
+    string length [encoding convertfrom utf-8 "\xC0\x80"]
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
+test {encoding-16.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
     string length [encoding convertfrom -profile strict utf-8 "\xC0\x80"]
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
+test {encoding-16.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
     encoding convertfrom -profile tcl8 utf-8 \xC0\x80
 } \x00
-test encoding-16.25 {Utf32ToUtfProc} -body {
+test {encoding-16.25 default} {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\x01\x00\x00\x01"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x01'}
+test {encoding-16.25 strict} {Utf32ToUtfProc} -body {
+    encoding convertfrom -profile strict utf-32 "\x01\x00\x00\x01"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x01'}
+test {encoding-16.25 tcl8} {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x01\x00\x00\x01"
 } -result \uFFFD
 
@@ -785,7 +798,7 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
 } [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
 test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
-    string length [encoding convertfrom -profile strict utf-8 "\xC0\x80"]
+    encoding convertfrom -profile strict utf-8 "\xC0\x80"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
     encoding convertfrom -profile tcl8 utf-8 \xC0\x80

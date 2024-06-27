@@ -4,13 +4,7 @@
 #ifndef TOMMATH_PRIV_H_
 #define TOMMATH_PRIV_H_
 
-#ifdef MP_NO_STDINT
-#ifdef HAVE_STDINT_H
-#  include <stdint.h>
-#else
-#  include "../compat/stdint.h"
-#endif
-#endif
+#include <stdint.h>
 #include "tclTomMath.h"
 #include "tommath_class.h"
 

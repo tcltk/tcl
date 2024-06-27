@@ -105,8 +105,6 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-
 #ifdef MAC_OSX_TCL /* MACOSX */
 #undef Tcl_MacOSXOpenBundleResources
 #define Tcl_MacOSXOpenBundleResources(a,b,c,d,e) Tcl_MacOSXOpenVersionedBundleResources(a,b,NULL,c,d,e)
@@ -114,6 +112,16 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#ifdef _WIN32
+#   undef Tcl_CreateFileHandler
+#   undef Tcl_DeleteFileHandler
+#   undef Tcl_GetOpenFile
+#endif
+#ifndef MAC_OSX_TCL
+#   undef Tcl_MacOSXOpenVersionedBundleResources
+#   undef Tcl_MacOSXNotifierAddRunLoopMode
+#endif
 
 #ifdef _WIN32
 #   undef Tcl_CreateFileHandler

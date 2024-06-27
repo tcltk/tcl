@@ -5920,7 +5920,7 @@ test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
     set l
 } {{} auto}
 test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
-	writable so we can't change -eofchar or -translation } {
+    writable so we can't change -eofchar or -translation } {
     set l [list]
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     fconfigure $sock -eofchar D -translation lf
@@ -8289,22 +8289,23 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	puts stderr SRV
 	set l {}
-	set srv [socket -server new 9999]
+	set srv [socket -server new -myaddr 127.0.0.1 0]
+        set port [lindex [fconfigure $srv -sockname] 2]
 	puts stderr WAITING
 	fileevent stdin readable bye
-	puts OK
+	puts "OK $port"
 	vwait forever
     }
     # wait for OK from server.
-    gets $pipe
+    lassign [gets $pipe] ok port
     # Now the two clients.
     proc ::done {sock} {
 	if {[eof $sock]} { close $sock ; return }
 	lappend ::forever [gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 9999]
-    set b [socket 127.0.0.1 9999]
+    set a [socket 127.0.0.1 $port]
+    set b [socket 127.0.0.1 $port]
     fconfigure $a -translation binary -buffering none
     fconfigure $b -translation binary -buffering none
     fileevent  $a readable [list ::done $a]

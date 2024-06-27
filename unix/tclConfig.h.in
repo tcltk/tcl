@@ -178,9 +178,6 @@
 /* Define to 1 if you have the `open64' function. */
 #undef HAVE_OPEN64
 
-/* Define to 1 if you have the `opendir' function. */
-#undef HAVE_OPENDIR
-
 /* Define to 1 if you have the `OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
@@ -217,9 +214,6 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strtol' function. */
-#undef HAVE_STRTOL
-
 /* Define to 1 if the system has the type `struct addrinfo'. */
 #undef HAVE_STRUCT_ADDRINFO
 
@@ -243,6 +237,9 @@
 
 /* Define to 1 if `st_blocks' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
+
+/* Define to 1 if `st_rdev' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_RDEV
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
@@ -331,9 +328,6 @@
 /* Is Darwin CoreFoundation unavailable for 64-bit? */
 #undef NO_COREFOUNDATION_64
 
-/* Do we have <dirent.h>? */
-#undef NO_DIRENT_H
-
 /* Do we have <dlfcn.h>? */
 #undef NO_DLFCN_H
 
@@ -360,9 +354,6 @@
 
 /* Do we have realpath() */
 #undef NO_REALPATH
-
-/* Do we have <stdlib.h>? */
-#undef NO_STDLIB_H
 
 /* Do we have strerror() */
 #undef NO_STRERROR
@@ -452,9 +443,6 @@
 
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD
-
-/* May we include <dirent2.h>? */
-#undef USE_DIRENT2_H
 
 /* Are we building with DTrace support? */
 #undef USE_DTRACE

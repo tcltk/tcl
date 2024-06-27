@@ -380,7 +380,6 @@ Tcl_GetBytesFromObj(
     }
     return baPtr->bytes;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -480,7 +479,7 @@ MakeByteArray(
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
-	int count = Tcl_UtfToUniChar(src, &ch);
+	int count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;

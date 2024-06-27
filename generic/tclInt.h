@@ -70,11 +70,8 @@
 
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef NO_STDLIB_H
-#   include "../compat/stdlib.h"
-#else
-#   include <stdlib.h>
-#endif
+#include <stdlib.h>
+#include <stdint.h>
 #ifdef NO_STRING_H
 #include "../compat/string.h"
 #else
@@ -1173,9 +1170,9 @@ typedef struct CompiledLocal {
 				/* Next compiler-recognized local variable for
 				 * this procedure, or NULL if this is the last
 				 * local. */
-    Tcl_Size nameLength;		/* The number of bytes in local variable's name.
+    Tcl_Size nameLength;	/* The number of bytes in local variable's name.
 				 * Among others used to speed up var lookups. */
-    Tcl_Size frameIndex;		/* Index in the array of compiler-assigned
+    Tcl_Size frameIndex;	/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
@@ -1191,7 +1188,7 @@ typedef struct CompiledLocal {
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
 				 * and VAR_RESOLVED make sense. */
-    char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
+    char name[TCLFLEXARRAY];	/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
 				 * enough to hold the name. MUST BE THE LAST
@@ -2187,7 +2184,7 @@ typedef struct Interp {
     Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj). */
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable. */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj). */
-    Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable. */
+    Tcl_Obj *ecVar;		/* cached ref to ::errorCode variable. */
     int returnLevel;		/* [return -level] parameter. */
 
     /*
@@ -4395,6 +4392,7 @@ MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
 MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
+
 /*
  * TIP #508: [array default]
  */
@@ -4417,7 +4415,6 @@ MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
  * Error message utility functions
  */
 MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
-
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
@@ -4999,7 +4996,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #if defined(WORDS_BIGENDIAN)
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #endif /* WORDS_BIGENDIAN */
-
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to increment a namespace's export epoch
@@ -5093,7 +5089,7 @@ MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceListIntegerInit;
  *
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, size_t len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, * Tcl_Size len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
@@ -5402,7 +5398,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = (Tcl_Alloc(sizeof(NRE_callback))))
+    ((ptr) = (Tcl_Alloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  Tcl_Free(ptr)
 #endif
 

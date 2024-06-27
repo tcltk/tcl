@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0 -DMP_NO_STDINT
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
 
 # To enable compilation debugging reverse the comment characters on one of the
 # following lines.
@@ -1109,7 +1109,7 @@ genstubs:
 #
 # This target creates the HTML folder for Tcl & Tk and places it in
 # DISTDIR/html. It uses the tcltk-man2html.tcl tool from the Tcl group's tool
-# workspace. It depends on the Tcl & Tk being in directories called tcl9.* &
+# workspace. It depends on the Tcl & Tk being in directories called tcl9.*
 # tk8.* up two directories from the TOOL_DIR.
 #
 

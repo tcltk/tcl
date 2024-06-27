@@ -420,33 +420,33 @@ apply [list {} {
 
     }
 
-	set suites {linsert lset}  
+    set suites {linsert lset}  
 
-	foreach suite {linsert lset} {
-		set namespace [list $suite tests]
-		namespace eval $namespace [list source [
-			file join [file dirname [file dirname [
-				file normalize [file join [info script] ...]]]] $suite.test]]
-		namespace eval $namespace {
-			proc newlist list {
-				if {[string is list $list]} {
-					set integer 1
-					foreach item $list {
-						if {![string is integer $item]} {
-							set integer 0
-							break
-						}
-					}
-					if {$integer} {
-						testlistinteger $list
-					}
-				}
-				return $list
-			}
-			try $tests
-		}
-		namespace delete $namespace
-	}
+    foreach suite {linsert lset} {
+	    set namespace [list $suite tests]
+	    namespace eval $namespace [list source [
+		    file join [file dirname [file dirname [
+			    file normalize [file join [info script] ...]]]] $suite.test]]
+	    namespace eval $namespace {
+		    proc newlist list {
+			    if {[string is list $list]} {
+				    set integer 1
+				    foreach item $list {
+					    if {![string is integer $item]} {
+						    set integer 0
+						    break
+					    }
+				    }
+				    if {$integer} {
+					    testlistinteger $list
+				    }
+			    }
+			    return $list
+		    }
+		    try $tests
+	    }
+	    namespace delete $namespace
+    }
 
 
     # cleanup

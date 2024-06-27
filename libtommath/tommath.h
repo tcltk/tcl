@@ -4,10 +4,7 @@
 #ifndef BN_H_
 #define BN_H_
 
-#if !defined(MP_NO_STDINT) && !defined(_STDINT_H) && !defined(_STDINT_H_) \
-	&& !defined(__CLANG_STDINT_H) && !defined(_STDINT)
-#  include <stdint.h>
-#endif
+#include <stdint.h>
 #include <stddef.h>
 #include <limits.h>
 

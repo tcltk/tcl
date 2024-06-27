@@ -94,7 +94,7 @@ proc \fIsetByUpvar\fR { name value } {
     set localVar $value
 }
 set originalVar 1
-trace variable originalVar w \fItraceproc\fR
+trace add variable originalVar write \fItraceproc\fR
 \fIsetByUpvar\fR originalVar 2
 .CE
 .PP
