@@ -529,16 +529,16 @@ MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
 MODULE_SCOPE int    TclMethodIsType(Tcl_Method method,
-                        const Tcl_MethodType *typePtr,
-                        void **clientDataPtr);
+			    const Tcl_MethodType *typePtr,
+			    void **clientDataPtr);
 MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
-                        Tcl_Object object, Tcl_Obj *nameObj,
-                        int flags, const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Object object, Tcl_Obj *nameObj,
+			    int flags, const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
-                        Tcl_Obj *nameObj, int flags,
-                        const Tcl_MethodType *typePtr,
-                        void *clientData);
+			    Tcl_Obj *nameObj, int flags,
+			    const Tcl_MethodType *typePtr,
+			    void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, Tcl_Size objc,
