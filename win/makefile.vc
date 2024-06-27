@@ -278,6 +278,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclGet.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIcu.obj \
 	$(TMP_DIR)\tclIndexObj.obj \
 	$(TMP_DIR)\tclInterp.obj \
 	$(TMP_DIR)\tclIO.obj \
