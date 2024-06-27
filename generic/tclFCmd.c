@@ -921,8 +921,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-        /*
-         * Return the last component, unless it is the only component, and it
+	/*
+	 * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 

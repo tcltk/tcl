@@ -390,50 +390,50 @@ TclpGetNativePathType(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX: {
-        const char *origPath = path;
+	const char *origPath = path;
 
-        /*
-         * Paths that begin with / are absolute.
-         */
+	/*
+	 * Paths that begin with / are absolute.
+	 */
 
-        if (path[0] == '/') {
-            ++path;
-            /*
-             * Check for "//" network path prefix
-             */
-            if ((*path == '/') && path[1] && (path[1] != '/')) {
-                path += 2;
-                while (*path && *path != '/') {
-                    ++path;
-                }
-            }
-            if (driveNameLengthPtr != NULL) {
-                /*
-                 * We need this addition in case the "//" code was used.
-                 */
+	if (path[0] == '/') {
+	    ++path;
+	    /*
+	     * Check for "//" network path prefix
+	     */
+	    if ((*path == '/') && path[1] && (path[1] != '/')) {
+		path += 2;
+		while (*path && *path != '/') {
+		    ++path;
+		}
+	    }
+	    if (driveNameLengthPtr != NULL) {
+		/*
+		 * We need this addition in case the "//" code was used.
+		 */
 
-                *driveNameLengthPtr = (path - origPath);
-            }
-        } else {
-            type = TCL_PATH_RELATIVE;
-        }
-        break;
+		*driveNameLengthPtr = (path - origPath);
+	    }
+	} else {
+	    type = TCL_PATH_RELATIVE;
+	}
+	break;
     }
     case TCL_PLATFORM_WINDOWS: {
-        Tcl_DString ds;
-        const char *rootEnd;
+	Tcl_DString ds;
+	const char *rootEnd;
 
-        Tcl_DStringInit(&ds);
-        rootEnd = ExtractWinRoot(path, &ds, 0, &type);
-        if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
-            *driveNameLengthPtr = rootEnd - path;
-            if (driveNameRef != NULL) {
-                *driveNameRef = Tcl_DStringToObj(&ds);
-                Tcl_IncrRefCount(*driveNameRef);
-            }
-        }
-        Tcl_DStringFree(&ds);
-        break;
+	Tcl_DStringInit(&ds);
+	rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+	if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
+	    *driveNameLengthPtr = rootEnd - path;
+	    if (driveNameRef != NULL) {
+		*driveNameRef = Tcl_DStringToObj(&ds);
+		Tcl_IncrRefCount(*driveNameRef);
+	    }
+	}
+	Tcl_DStringFree(&ds);
+	break;
     }
     }
     return type;
@@ -655,8 +655,8 @@ SplitUnixPath(
 	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-            nextElt = Tcl_NewStringObj(elementStart, length);
-            Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    nextElt = Tcl_NewStringObj(elementStart, length);
+	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {
 	    break;

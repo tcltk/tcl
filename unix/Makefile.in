@@ -306,7 +306,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
-	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
+	tclHash.o tclHistory.o \
+	tclIcu.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
 	tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
@@ -434,6 +435,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclGet.c \
 	$(GENERIC_DIR)/tclHash.c \
 	$(GENERIC_DIR)/tclHistory.c \
+	$(GENERIC_DIR)/tclIcu.c \
 	$(GENERIC_DIR)/tclIndexObj.c \
 	$(GENERIC_DIR)/tclInterp.c \
 	$(GENERIC_DIR)/tclIO.c \
@@ -1101,7 +1103,7 @@ install-libraries: libraries
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots [list $(TCL_MODULE_PATH)] }" >> \
-		    "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
+	        "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
 install-tzdata:
@@ -1376,6 +1378,9 @@ tclHash.o: $(GENERIC_DIR)/tclHash.c
 
 tclHistory.o: $(GENERIC_DIR)/tclHistory.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHistory.c
+
+tclIcu.o: $(GENERIC_DIR)/tclIcu.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIcu.c
 
 tclIndexObj.o: $(GENERIC_DIR)/tclIndexObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIndexObj.c

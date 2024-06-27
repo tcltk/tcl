@@ -1800,7 +1800,7 @@ test cmdAH-27.1 {Tcl_FileObjCmd: size} -returnCodes error -body {
 test cmdAH-27.2 {Tcl_FileObjCmd: size} {
     set oldsize [file size $gorpfile]
     set f [open $gorpfile a]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f "More text"
     close $f
     expr {[file size $gorpfile] - $oldsize}

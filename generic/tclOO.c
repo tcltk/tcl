@@ -751,7 +751,7 @@ AllocObject(
 	    TclOOPrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
-            MyClassDeleted);
+	    MyClassDeleted);
     return oPtr;
 }
 

@@ -1,0 +1,51 @@
+# Tests for tcl::unsupported::icu
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# Force late loading of ICU if present
+catch {::tcl::unsupported::icu}
+testConstraint icu [expr {[info commands ::tcl::unsupported::icu::detect] ne ""}]
+
+namespace eval icu {
+    test icu-detect-0 {Return list of ICU encodings} -constraints icu -body {
+	set encoders [::tcl::unsupported::icu detect]
+	list [::tcl::mathop::in UTF-8 $encoders] [::tcl::mathop::in ISO-8859-1 $encoders]
+    } -result {1 1}
+
+    test icu-detect-1 {Guess encoding} -constraints icu -body {
+	::tcl::unsupported::icu detect [readFile [info script]]
+    } -result ISO-8859-1
+
+    test icu-detect-2 {Get all possible encodings} -constraints icu -body {
+	set encodings [::tcl::unsupported::icu detect [readFile [info script]] -all]
+	list [::tcl::mathop::in UTF-8 $encodings] [::tcl::mathop::in ISO-8859-1 $encodings]
+    } -result {1 1}
+
+    test icu-tclToIcu-0 {Map Tcl encoding} -constraints icu -body {
+	# tis-620 because it is ambiguous in ICU on some platforms
+	# but should return the preferred encoding
+	list [::tcl::unsupported::icu tclToIcu utf-8] [::tcl::unsupported::icu tclToIcu tis-620] [::tcl::unsupported::icu tclToIcu shiftjis]
+    } -result {UTF-8 TIS-620 ibm-943_P15A-2003}
+
+    test icu-tclToIcu-1 {Map Tcl encoding - no map} -constraints icu -body {
+	# Should not raise an error
+	::tcl::unsupported::icu tclToIcu dummy
+    } -result {}
+
+    test icu-icuToTcl-0 {Map ICU encoding} -constraints icu -body {
+       list [::tcl::unsupported::icu icuToTcl UTF-8] [::tcl::unsupported::icu icuToTcl TIS-620] [::tcl::unsupported::icu icuToTcl ibm-943_P15A-2003]
+    } -result {utf-8 tis-620 cp932}
+
+    test icu-icuToTcl-1 {Map ICU encoding - no map} -constraints icu -body {
+	# Should not raise an error
+	::tcl::unsupported::icu icuToTcl dummy
+    } -result {}
+
+}
+
+
+namespace delete icu
+::tcltest::cleanupTests

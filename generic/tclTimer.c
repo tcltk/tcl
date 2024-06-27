@@ -823,10 +823,10 @@ Tcl_AfterObjCmd(
 	    const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "bad argument \"%s\": must be"
-                    " cancel, idle, info, or an integer", arg));
-            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
-                    arg, (void *)NULL);
+		    "bad argument \"%s\": must be"
+		    " cancel, idle, info, or an integer", arg));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
+		    arg, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -952,7 +952,7 @@ Tcl_AfterObjCmd(
 			    "after#%d", afterPtr->id));
 		}
 	    }
-            Tcl_SetObjResult(interp, resultObj);
+	    Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
 	}
 	if (objc != 3) {
@@ -961,11 +961,11 @@ Tcl_AfterObjCmd(
 	}
 	afterPtr = GetAfterEvent(assocPtr, objv[2]);
 	if (afterPtr == NULL) {
-            const char *eventStr = TclGetString(objv[2]);
+	    const char *eventStr = TclGetString(objv[2]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "event \"%s\" doesn't exist", eventStr));
-            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (void *)NULL);
+		    "event \"%s\" doesn't exist", eventStr));
+	    Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (void *)NULL);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultListPtr;
@@ -975,7 +975,7 @@ Tcl_AfterObjCmd(
 		    afterPtr->commandPtr);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
-            Tcl_SetObjResult(interp, resultListPtr);
+	    Tcl_SetObjResult(interp, resultListPtr);
 	}
 	break;
     default:
@@ -1043,17 +1043,17 @@ AfterDelay(
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
-            if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
-                diff = 1;
-            }
+	    if (diff == 0 && TCL_TIME_BEFORE(now, endTime)) {
+		diff = 1;
+	    }
 	    if (diff > 0) {
 		Tcl_Sleep((int) diff);
-                if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
-                    break;
-                }
+		if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
+		    break;
+		}
 	    } else {
-                break;
-            }
+		break;
+	    }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {

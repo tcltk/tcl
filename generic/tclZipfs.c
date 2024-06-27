@@ -1659,7 +1659,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-        /* What's the magic about 64 * 1024 * 1024 ? */
+	/* What's the magic about 64 * 1024 * 1024 ? */
 	if ((zf->length <= ZIP_CENTRAL_END_LEN) ||
 		(zf->length - ZIP_CENTRAL_END_LEN) >
 			(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {

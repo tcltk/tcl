@@ -3673,6 +3673,7 @@ MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclLoadIcuObjCmd;
 
 /* Assemble command function */
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;

@@ -189,11 +189,11 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f "ab\x8C\xC1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -217,11 +217,11 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     puts -nonewline $f ab乎g
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -679,7 +679,7 @@ casino_japanese@___.com ）までご住所変更済の連絡をいただけな�
 
 cd [temporaryDirectory]
 set fid [open iso2022.txt w]
-fconfigure $fid -encoding binary
+fconfigure $fid -translation binary
 puts -nonewline $fid $iso2022encData
 close $fid
 
@@ -994,7 +994,7 @@ proc channel-diff {fa fb} {
 cd [temporaryDirectory]
 foreach enc {cp932 euc-jp iso2022-jp} {
     set f [open $enc.chars w]
-    fconfigure $f -encoding binary
+    fconfigure $f -encoding iso8859-1
     foreach-jisx0208 code {
 	puts $f [format "%04X %s" $code [gen-jisx0208-$enc $code]]
     }
