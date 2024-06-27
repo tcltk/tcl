@@ -28,7 +28,7 @@
  * - ArithSeriesGetInternalRep -- Return the internal rep from a Tcl_Obj
  * - Precision -- determine the number of factional digits for the given
  *   double value
- * - maxPrecision -- Using the values provide, determine the longest percision
+ * - maxPrecision -- Using the values provided, determine the longest precision
  *   in the arithSeries
  */
 static inline double
@@ -73,6 +73,9 @@ ArithSeriesGetInternalRep(Tcl_Obj *objPtr)
     return irPtr ? (ArithSeries *)irPtr->twoPtrValue.ptr1 : NULL;
 }
 
+/*
+ * Compute number of significant factional digits
+ */
 static inline int
 Precision(double d)
 {
@@ -82,10 +85,13 @@ Precision(double d)
     off = strchr(tmp, '.');
     return (off ? strlen(off+1) : 0);
 }
+
+/*
+ * Find longest number of digits after the decimal point.
+ */
 static inline int
 maxPrecision(double start, double end, double step)
 {
-    // Find longest number of digits after the decimal point.
     int dp = Precision(step);
     int i  = Precision(start);
     dp = i>dp ? i : dp;
@@ -206,15 +212,17 @@ ArithSeriesLenInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
 }
 
 static Tcl_WideInt
-ArithSeriesLenDbl(double start, double end, double step)
+ArithSeriesLenDbl(double start, double end, double step, int precision)
 {
-    Tcl_WideInt len;
-
+    double istart, iend, istep, ilen;
     if (step == 0) {
 	return 0;
     }
-    len = ((end-start+step)/step);
-    return (len < 0) ? -1 : len;
+    istart = start * pow(10,precision);
+    iend = end * pow(10,precision);
+    istep = step * pow(10,precision);
+    ilen = ((iend-istart+istep)/istep);
+    return floor(ilen);
 }
 
 /*
@@ -448,7 +456,8 @@ TclNewArithSeriesObj(
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
-		len = ArithSeriesLenDbl(dstart, dend, dstep);
+		int precision = maxPrecision(dstart,dend,dstep);
+		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
 	    } else {
 		len = ArithSeriesLenInt(start, end, step);
 	    }
@@ -649,6 +658,7 @@ DupArithSeriesInternalRep(
 {
     ArithSeries *srcArithSeriesRepPtr =
 	(ArithSeries *) srcPtr->internalRep.twoPtrValue.ptr1;
+
     /*
      * Allocate a new ArithSeries structure. */
 
@@ -889,7 +899,8 @@ ArithSeriesObjRange(
 	arithSeriesDblRepPtr->end = end;
 	arithSeriesDblRepPtr->step = step;
 	arithSeriesDblRepPtr->precision = maxPrecision(start, end, step);
-	arithSeriesDblRepPtr->len = ArithSeriesLenDbl(start, end, step);
+	arithSeriesDblRepPtr->len =
+	    ArithSeriesLenDbl(start, end, step, arithSeriesDblRepPtr->precision);
 	arithSeriesDblRepPtr->elements = NULL;
 
     } else {
