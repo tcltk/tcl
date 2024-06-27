@@ -2505,7 +2505,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-              ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+	      ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", (char *)NULL);
 	}
     }
@@ -2614,22 +2614,22 @@ UnsetVarStruct(
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
 
-            /*
-             * Pass the array element name to TclObjCallVarTraces(), because
-             * it cannot be determined from dummyVar. Alternatively, indicate
-             * via flags whether the variable involved in the code that caused
-             * the trace to be triggered was an array element, for the correct
-             * formatting of error messages.
-             */
-            if (part2Ptr) {
-                flags |= VAR_ARRAY_ELEMENT;
-            } else if (TclIsVarArrayElement(varPtr)) {
-                part2Ptr = VarHashGetKey(varPtr);
-            }
+	    /*
+	     * Pass the array element name to TclObjCallVarTraces(), because
+	     * it cannot be determined from dummyVar. Alternatively, indicate
+	     * via flags whether the variable involved in the code that caused
+	     * the trace to be triggered was an array element, for the correct
+	     * formatting of error messages.
+	     */
+	    if (part2Ptr) {
+		flags |= VAR_ARRAY_ELEMENT;
+	    } else if (TclIsVarArrayElement(varPtr)) {
+		part2Ptr = VarHashGetKey(varPtr);
+	    }
 
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-              (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
+	      (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -7086,13 +7086,13 @@ SetArrayDefault(
      */
 
     if (tablePtr->defaultObj) {
-        Tcl_DecrRefCount(tablePtr->defaultObj);
-        Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
     }
     tablePtr->defaultObj = defaultObj;
     if (tablePtr->defaultObj) {
-        Tcl_IncrRefCount(tablePtr->defaultObj);
-        Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
     }
 }
 

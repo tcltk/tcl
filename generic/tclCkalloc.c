@@ -171,7 +171,7 @@ TclDumpMemoryInfo(
     char buf[1024];
 
     if (clientData == NULL) {
-        return 0;
+	return 0;
     }
     snprintf(buf, sizeof(buf),
 	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
@@ -826,7 +826,7 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("error accessing %s: %s",
-                    TclGetString(objv[2]), Tcl_PosixError(interp)));
+		    TclGetString(objv[2]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -871,8 +871,8 @@ MemoryCmd(
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "cannot open output file: %s",
-                    Tcl_PosixError(interp)));
+		    "cannot open output file: %s",
+		    Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	TclDbDumpActiveObjects(fileP);
@@ -936,9 +936,9 @@ MemoryCmd(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-            "bad option \"%s\": should be active, break_on_malloc, info, "
-            "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-            TclGetString(objv[1])));
+	    "bad option \"%s\": should be active, break_on_malloc, info, "
+	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
+	    TclGetString(objv[1])));
     return TCL_ERROR;
 
   argError:
