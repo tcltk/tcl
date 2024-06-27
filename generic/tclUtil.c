@@ -123,24 +123,15 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static const TclObjTypeWithAbstractList endOffsetType = {
-    {"end-offset",			/* name */
+static const Tcl_ObjType endOffsetType = {
+    "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1(
-    TclLengthOne
-    )}
+	0
 };
 
-Tcl_Size
-TclLengthOne(
-    TCL_UNUSED(Tcl_Obj *))
-{
-    return 1;
-}
-
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *
@@ -2009,7 +2000,7 @@ Tcl_ConcatObj(
 		}
 	    } else {
 		resPtr = TclDuplicatePureObj(
-		    NULL, objPtr, &tclListType.objType);
+		    NULL, objPtr, tclListType);
 		if (!resPtr) {
 		    return NULL;
 		}
@@ -3503,7 +3494,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     void *cd;
 
-    while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType)) == NULL) {
+    while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
 	Tcl_Size length;
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
@@ -3515,13 +3506,10 @@ GetEndOffsetFromObj(
 
 	    /* Value doesn't start with "e" */
 
-	    /* If we reach here, the string rep of objPtr exists. */
-
 	    /*
-	     * The valid index syntax does not include any value that is
-	     * a list of more than one element. This is necessary so that
-	     * lists of index values can be reliably distinguished from any
-	     * single index value.
+	     * So that lists of index values can be reliably distinguished from
+	     * any single index value, the valid index syntax does not include
+	     * any value that is a list of more than one element.
 	     */
 
 	    /*
@@ -3639,6 +3627,7 @@ GetEndOffsetFromObj(
 	    /* Doesn't start with "end" */
 	    goto parseError;
 	}
+
 	if (length > 4) {
 	    int t;
 
@@ -3689,7 +3678,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreInternalRep(objPtr, &endOffsetType.objType, &ir);
+	Tcl_StoreInternalRep(objPtr, &endOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -3733,7 +3722,7 @@ GetEndOffsetFromObj(
  *
  *      Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
- *	index value in the C signed int range.  Note that this includes
+ *	index value in the Tcl_Size range.  This includes
  *	index values that are integers as presented and it includes index
  *      arithmetic expressions. The absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
@@ -3791,45 +3780,132 @@ TclIndexEncode(
 {
     Tcl_WideInt wide;
     int idx;
+    const Tcl_WideInt ENDVALUE = 2 * (Tcl_WideInt) INT_MAX;
 
-    if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType);
-	if (irPtr && irPtr->wideValue >= 0) {
-	    /* "int[+-]int" syntax, works the same here as "int" */
-	    irPtr = NULL;
-	}
+    assert(ENDVALUE < WIDE_MAX);
+    if (TCL_OK != GetWideForIndex(interp, objPtr, ENDVALUE, &wide)) {
+	return TCL_ERROR;
+    }
+    /*
+     * We passed 2*INT_MAX as the "end value" to GetWideForIndex. The computed
+     * index will be in one of the following ranges that need to be
+     * distinguished for encoding purposes in the following code.
+     * (1) 0:INT_MAX when
+     *     (a) objPtr was a pure non-negative numeric value in that range
+     *     (b) objPtr was a numeric computation M+/-N with a result in that range
+     *     (c) objPtr was of the form end-N where N was in range INT_MAX:2*INT_MAX
+     * (2) INT_MAX+1:2*INT_MAX when
+     *     (a,b) as above
+     *     (c) objPtr was of the form end-N where N was in range 0:INT_MAX-1
+     * (3) 2*INT_MAX:WIDE_MAX when
+     *     (a,b) as above
+     *     (c) objPtr was of the form end+N
+     * (4) (2*INT_MAX)-TCL_SIZE_MAX : -1 when
+     *     (a,b) as above
+     *     (c) objPtr was of the form end-N where N was in the range 0:TCL_SIZE_MAX
+     * (5) WIDE_MIN:(2*INT_MAX)-TCL_SIZE_MAX
+     *     (a,b) as above
+     *     (c) objPtr was of the form end-N where N was > TCL_SIZE_MAX
+     *
+     * For all cases (b) and (c), the internal representation of objPtr
+     * will be shimmered to endOffsetType. That allows us to distinguish between
+     * (for example) 1a (encodable) and 1c (not encodable) though the computed
+     * index value is the same.
+     *
+     * Further note, the values TCL_SIZE_MAX < N < WIDE_MAX come into play
+     * only in the 32-bit builds as TCL_SIZE_MAX == WIDE_MAX for 64-bits.
+     */
+
+    const Tcl_ObjInternalRep *irPtr =
+	TclFetchInternalRep(objPtr, &endOffsetType);
+
+    if (irPtr && irPtr->wideValue >= 0) {
 	/*
-	 * We parsed an end+offset index value.
-	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
+	 * "int[+-]int" syntax, works the same here as "int".
+	 * Note same does not hold for negative integers.
+	 * Distinguishes 1b and 1c where wide will be in 0:INT_MAX for
+	 * both but irPtr->wideValue will be negative for 1c.
 	 */
-	if ((irPtr ? ((wide < INT_MIN) && ((Tcl_Size)-wide <= LIST_MAX))
-		: ((wide > INT_MAX) && ((Tcl_Size)wide <= LIST_MAX))) && (sizeof(int) != sizeof(Tcl_Size))) {
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%s\" out of range",
-			TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-			"OUTOFRANGE", NULL);
-	    }
-	    return TCL_ERROR;
-	} else if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
+	irPtr = NULL;
+    }
+
+    if (irPtr == NULL) {
+	/* objPtr can be treated as a purely numeric value. */
+
+	/*
+	 * On 64-bit systems, indices in the range INT_MAX:TCL_SIZE_MAX are
+	 * valid indices but are not in the encodable range. Thus an
+	 * error is raised. On 32-bit systems, indices in that range indicate
+	 * the position after the end and so do not raise an error.
+	 */
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
+	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
+	    /* 2(a,b) on 64-bit systems*/
+	    goto rangeerror;
+	}
+	if (wide > INT_MAX) {
 	    /*
-	     * All end+postive or end-negative expressions
-	     * always indicate "after the end".
+	     * 3(a,b) on 64-bit systems and 2(a,b), 3(a,b) on 32-bit systems
+	     * Because of the check above, this case holds for indices
+	     * greater than INT_MAX on 32-bit systems and > TCL_SIZE_MAX
+	     * on 64-bit systems. Always maps to the element after the end.
 	     */
 	    idx = after;
-	} else if (wide <= (irPtr ? INT_MAX : -1)) {
-	    /* These indices always indicate "before the beginning" */
+	} else if (wide < 0) {
+	    /* 4(a,b) (32-bit systems), 5(a,b) - before the beginning */
 	    idx = before;
 	} else {
-	    /* Encoded end-positive (or end+negative) are offset */
+	    /* 1(a,b) Encodable range */
 	    idx = (int)wide;
 	}
     } else {
-	return TCL_ERROR;
+	/* objPtr is not purely numeric (end etc.)  */
+
+	/*
+	 * On 64-bit systems, indices in the range end-LIST_MAX:end-INT_MAX
+	 * are valid indices (with max size strings/lists) but are not in
+	 * the encodable range. Thus an error is raised. On 32-bit systems,
+	 * indices in that range indicate the position before the beginning
+	 * and so do not raise an error.
+	 */
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
+	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
+	    /* 1(c), 4(a,b) on 64-bit systems */
+	    goto rangeerror;
+	}
+	if (wide > ENDVALUE) {
+	    /*
+	     * 2(c) (32-bit systems), 3(c)
+	     * All end+positive or end-negative expressions
+	     * always indicate "after the end".
+	     * Note we will not reach here for a pure numeric value in this
+	     * range because irPtr will be NULL in that case.
+	     */
+	    idx = after;
+	} else if (wide <= INT_MAX) {
+	    /* 1(c) (32-bit systems), 4(c) (32-bit systems), 5(c) */
+	    idx = before;
+	} else {
+	    /* 2(c) Encodable end-positive (or end+negative) */
+	    idx = (int)wide;
+	}
     }
     *indexPtr = idx;
     return TCL_OK;
+
+rangeerror:
+    if (interp) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp,
+			 "TCL",
+			 "VALUE",
+			 "INDEX"
+			 "OUTOFRANGE",
+			 NULL);
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -3859,6 +3935,39 @@ TclIndexDecode(
 	return endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
+}
+
+int TclIndexIsFromEnd(Tcl_Size index) {
+    return index <= 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIndexLast --
+ *
+ *	Determine the last index for an array of length "length", where -1 means N is
+ *	not bounded.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Size
+TclIndexLast (Tcl_Size length) {
+    return Tcl_LengthIsFinite(length) ? length - 1 : TCL_INDEX_NONE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LengthIsFinite --
+ *
+ *	True if length is Finite.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_LengthIsFinite(Tcl_Size length) {
+    return length != TCL_LENGTH_NONE;
 }
 
 /*

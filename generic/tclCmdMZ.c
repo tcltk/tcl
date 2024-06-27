@@ -24,6 +24,7 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+
 static Tcl_NRPostProc	SwitchPostProc;
 static Tcl_NRPostProc	TryPostBody;
 static Tcl_NRPostProc	TryPostFinal;
@@ -1311,7 +1312,7 @@ StringFirstCmd(
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"needleString haystackString ?startIndex?");
+	    "needleString haystackString ?startIndex?");
 	return TCL_ERROR;
     }
 
@@ -1402,39 +1403,51 @@ StringIndexCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Get the char length to calculate what 'end' means.
-     */
-
-    end = Tcl_GetCharLength(objv[1]) - 1;
-    if (TclGetIntForIndexM(interp, objv[2], end, &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if ((index >= 0) && (index <= end)) {
-	int ch = Tcl_GetUniChar(objv[1], index);
-
-	if (ch == -1) {
+    if (TclObjectHasInterface(objv[1], string, index)) {
+	int status;
+	Tcl_Obj *charPtr;
+	status = TclStringIndexInterface(interp, objv[1], objv[2], &charPtr) ;
+	if (status != TCL_OK) {
+	    return status;
+	} else {
+	    Tcl_SetObjResult(interp, charPtr);
 	    return TCL_OK;
 	}
-
+    } else {
 	/*
-	 * If we have a ByteArray object, we're careful to generate a new
-	 * bytearray for a result.
+	 * Get the char length to calculate what 'end' means.
 	 */
 
-	if (TclIsPureByteArray(objv[1])) {
-	    unsigned char uch = UCHAR(ch);
-
-	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
-	} else {
-	    char buf[4] = "";
-
-	    end = Tcl_UniCharToUtf(ch, buf);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
+	end = Tcl_GetCharLength(objv[1]) - 1;
+	if (TclGetIntForIndexM(interp, objv[2], end, &index) != TCL_OK) {
+	    return TCL_ERROR;
 	}
+
+	if ((index >= 0) && (index <= end)) {
+	    int ch = Tcl_GetUniChar(objv[1], index);
+
+	    if (ch == -1) {
+		return TCL_OK;
+	    }
+
+	    /*
+	     * If we have a ByteArray object, we're careful to generate a new
+	     * bytearray for a result.
+	     */
+
+	    if (TclIsPureByteArray(objv[1])) {
+		unsigned char uch = UCHAR(ch);
+
+		Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
+	    } else {
+		char buf[4] = "";
+
+		end = Tcl_UniCharToUtf(ch, buf);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
+	    }
+	}
+	return TCL_OK;
     }
-    return TCL_OK;
 }
 
 /*
@@ -1607,7 +1620,7 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (!TclHasInternalRep(objPtr, &tclBooleanType.objType)
+	if (!TclHasInternalRep(objPtr, tclBooleanType)
 		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
@@ -1676,9 +1689,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (TclHasInternalRep(objPtr, &tclDoubleType.objType) ||
-		TclHasInternalRep(objPtr, &tclIntType.objType) ||
-		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
+	if (TclHasInternalRep(objPtr, tclDoubleType) ||
+		TclHasInternalRep(objPtr, tclIntType) ||
+		TclHasInternalRep(objPtr, tclBignumType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -1707,8 +1720,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (TclHasInternalRep(objPtr, &tclIntType.objType) ||
-		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
+	if (TclHasInternalRep(objPtr, tclIntType) ||
+		TclHasInternalRep(objPtr, tclBignumType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);

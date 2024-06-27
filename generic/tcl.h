@@ -9,6 +9,7 @@
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2021 by Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -104,6 +105,9 @@ extern "C" {
 
 #include <stdio.h>
 #include <stddef.h>
+
+
+#define TCL_COMMENT(x)
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
@@ -590,6 +594,10 @@ typedef void (Tcl_MainLoopProc) (void);
  * standard operations on objects of that type.
  */
 
+/* forward declaration */
+typedef struct Tcl_Obj Tcl_Obj;
+typedef struct Tcl_ObjInterface Tcl_ObjInterface;
+
 typedef struct Tcl_ObjType {
     const char *name;		/* Name of the type, e.g. "int". */
     Tcl_FreeInternalRepProc *freeIntRepProc;
@@ -642,7 +650,7 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * or both.
  */
 
-typedef struct Tcl_Obj {
+struct Tcl_Obj {
     Tcl_Size refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
@@ -662,7 +670,7 @@ typedef struct Tcl_Obj {
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
-} Tcl_Obj;
+};
 
 
 /*
@@ -2144,6 +2152,7 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 #define TCL_IO_FAILURE	((Tcl_Size)-1)
 #define TCL_AUTO_LENGTH	((Tcl_Size)-1)
 #define TCL_INDEX_NONE  ((Tcl_Size)-1)
+#define TCL_LENGTH_NONE  ((Tcl_Size)-1)
 
 /*
  *----------------------------------------------------------------------------

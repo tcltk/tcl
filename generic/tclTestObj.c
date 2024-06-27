@@ -974,12 +974,16 @@ TestlistobjCmd(
 		!= TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (objP->refCount <= 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"Tcl_ListObjIndex returned object with ref count <= 0",
-			TCL_INDEX_NONE));
-		/* Keep looping since we are also looping for leaks */
-	    }
+	    Tcl_IncrRefCount(objP);
+	    Tcl_DecrRefCount(objP);
+	    TCL_COMMENT(
+		if (objP->refCount <= 0) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Tcl_ListObjIndex returned object with ref count <= 0",
+			    TCL_INDEX_NONE));
+		    /* Keep looping since we are also looping for leaks */
+		}
+	    )
 	}
 	break;
 

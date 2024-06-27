@@ -318,6 +318,7 @@ test lseq-3.14 {array for shimmer} -constraints arithSeriesShimmerOk -body {
     array set testarray {a Test for This great Function}
     set vars [lseq 2]
     set vars-rep [lindex [tcl::unsupported::representation $vars] 3]
+    after 1
     array for $vars testarray {
 	lappend keys $0
 	lappend vals $1

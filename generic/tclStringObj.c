@@ -59,6 +59,8 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    Tcl_Size numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
+static Tcl_Size		GetCharLength(Tcl_Obj *objPtr);
+static Tcl_Obj*		GetRange(tclObjTypeInterfaceArgsStringRange);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, Tcl_Size needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, Tcl_Size needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -369,11 +371,18 @@ Tcl_NewUnicodeObj(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Size
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
+{
+    return TclObjectDispatch(objPtr, GetCharLength,
+	string, length, objPtr);
+}
+
+Tcl_Size
+GetCharLength(
+    Tcl_Obj *objPtr)
 {
     String *stringPtr;
     Tcl_Size numChars = 0;
@@ -685,11 +694,15 @@ Tcl_GetUnicodeFromObj(
  */
 
 Tcl_Obj *
-Tcl_GetRange(
-    Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    Tcl_Size first,			/* First index of the range. */
-    Tcl_Size last)			/* Last index of the range. */
+Tcl_GetRange(tclObjTypeInterfaceArgsStringRange)
 {
+    return TclObjectDispatch(objPtr, GetRange,
+	string, range, objPtr, first, last);
+}
+
+
+Tcl_Obj *
+GetRange(tclObjTypeInterfaceArgsStringRange) {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
     Tcl_Size length = 0;
@@ -3699,6 +3712,32 @@ TclStringFirst(
   firstEnd:
     TclNewIndexObj(obj, value);
     return obj;
+}
+
+int
+TclStringIndexInterface(
+    Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *indexPtr, Tcl_Obj **charPtrPtr)
+{
+    Tcl_Size index, status;
+
+    status = TclGetIntForIndexM(interp, indexPtr, /*endValue*/ TCL_SIZE_MAX - 1,
+	&index);
+    if (status != TCL_OK) {
+	return status;
+    }
+
+    if (TclIndexIsFromEnd(index)) {
+	if (TclObjectInterfaceCall(objPtr, string, indexEnd,
+	    interp, objPtr, index, charPtrPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	if (TclObjectInterfaceCall(objPtr, string, index, interp, objPtr,
+	    index, charPtrPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
 }
 
 /*

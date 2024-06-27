@@ -41,7 +41,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
  *
  * Side effects:
  *	When TCL_OK is returned, the encoded index value is written
- *	to *index.
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -1410,6 +1410,13 @@ TclCompileLreplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i;
+
+    /* 
+     * For now, disable compilation of lreplace.  Figure out later if any
+     * compilation can be done given that any Tcl_ObjType may implement
+     * lreplace, and should return an object of the same type. 
+     */
+    return TCL_ERROR;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;

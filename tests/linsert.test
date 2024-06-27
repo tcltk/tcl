@@ -16,104 +16,132 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-catch {unset lis}
-catch {rename p ""}
+proc newlist list {
+    return $list
+}
 
-test linsert-1.1 {linsert command} {
-    linsert {1 2 3 4 5} 0 a
-} {a 1 2 3 4 5}
-test linsert-1.2 {linsert command} {
-    linsert {1 2 3 4 5} 1 a
-} {1 a 2 3 4 5}
-test linsert-1.3 {linsert command} {
-    linsert {1 2 3 4 5} 2 a
-} {1 2 a 3 4 5}
-test linsert-1.4 {linsert command} {
-    linsert {1 2 3 4 5} 3 a
-} {1 2 3 a 4 5}
-test linsert-1.5 {linsert command} {
-    linsert {1 2 3 4 5} 4 a
-} {1 2 3 4 a 5}
-test linsert-1.6 {linsert command} {
-    linsert {1 2 3 4 5} 5 a
-} {1 2 3 4 5 a}
-test linsert-1.7 {linsert command} {
-    linsert {1 2 3 4 5} 2 one two \{three \$four
-} {1 2 one two \{three {$four} 3 4 5}
-test linsert-1.8 {linsert command} {
-    linsert {\{one \$two \{three \ four \ five} 2 a b c
-} {\{one {$two} a b c \{three { four} { five}}
-test linsert-1.9 {linsert command} {
-    linsert {{1 2} {3 4} {5 6} {7 8}} 2 {x y} {a b}
-} {{1 2} {3 4} {x y} {a b} {5 6} {7 8}}
-test linsert-1.10 {linsert command} {
-    linsert {} 2 a b c
-} {a b c}
-test linsert-1.11 {linsert command} {
-    linsert {} 2 {}
-} {{}}
-test linsert-1.12 {linsert command} {
-    linsert {a b "c c" d e} 3 1
-} {a b {c c} 1 d e}
-test linsert-1.13 {linsert command} {
-    linsert { a b c d} 0 1 2
-} {1 2 a b c d}
-test linsert-1.14 {linsert command} {
-    linsert {a b c {d e f}} 4 1 2
-} {a b c {d e f} 1 2}
-test linsert-1.15 {linsert command} {
-    linsert {a b c \{\  abc} 4 q r
-} {a b c \{\  q r abc}
-test linsert-1.16 {linsert command} {
-    linsert {a b c \{ abc} 4 q r
-} {a b c \{ q r abc}
-test linsert-1.17 {linsert command} {
-    linsert {a b c} end q r
-} {a b c q r}
-test linsert-1.18 {linsert command} {
-    linsert {a} end q r
-} {a q r}
-test linsert-1.19 {linsert command} {
-    linsert {} end q r
-} {q r}
-test linsert-1.20 {linsert command, use of end-int index} {
-    linsert {a b c d} end-2 e f
-} {a b e f c d}
+variable tests {
 
-test linsert-2.1 {linsert errors} {
-    list [catch linsert msg] $msg
-} {1 {wrong # args: should be "linsert list index ?element ...?"}}
-test linsert-2.2 {linsert errors} {
-    list [catch {linsert a b} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
-test linsert-2.3 {linsert errors} {
-    list [catch {linsert a 12x 2} msg] $msg
-} {1 {bad index "12x": must be integer?[+-]integer? or end?[+-]integer?}}
-test linsert-2.4 {linsert errors} {
-    list [catch {linsert \{ 12 2} msg] $msg
-} {1 {unmatched open brace in list}}
-test linsert-2.5 {syntax (TIP 323)} {
-    linsert {a b c} 0
-} [list a b c]
-test linsert-2.6 {syntax (TIP 323)} {
-    linsert "a\nb\nc" 0
-} [list a b c]
+    foreach map {
+	{
+	    @mode@ compiled
+	    @linsert@ linsert
+	}
+	{
+	    @mode@ uncompiled
+	    @linsert@ {[lindex linsert]}
+	}
+    } {
+	set script [string map $map {
+	    catch {unset lis}
+	    catch {rename p ""}
 
-test linsert-3.1 {linsert won't modify shared argument objects} {
-    proc p {} {
-        linsert "a b c" 1 "x y"
-        return "a b c"
+	    test linsert-1.1-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 0 a
+	    } {a 1 2 3 4 5}
+	    test linsert-1.2-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 1 a
+	    } {1 a 2 3 4 5}
+	    test linsert-1.3-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 2 a
+	    } {1 2 a 3 4 5}
+	    test linsert-1.4-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 3 a
+	    } {1 2 3 a 4 5}
+	    test linsert-1.5-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 4 a
+	    } {1 2 3 4 a 5}
+	    test linsert-1.6-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 5 a
+	    } {1 2 3 4 5 a}
+	    test linsert-1.7-@mode@ {linsert command} {
+		@linsert@ [newlist {1 2 3 4 5}] 2 one two \{three \$four
+	    } {1 2 one two \{three {$four} 3 4 5}
+	    test linsert-1.8-@mode@ {linsert command} {
+		@linsert@ [newlist {\{one \$two \{three \ four \ five}] 2 a b c
+	    } {\{one {$two} a b c \{three { four} { five}}
+	    test linsert-1.9-@mode@ {linsert command} {
+		@linsert@ [newlist {{1 2} {3 4} {5 6} {7 8}}] 2 {x y} {a b}
+	    } {{1 2} {3 4} {x y} {a b} {5 6} {7 8}}
+	    test linsert-1.10-@mode@ {linsert command} {
+		@linsert@ [newlist {}] 2 a b c
+	    } {a b c}
+	    test linsert-1.11-@mode@ {linsert command} {
+		@linsert@ [newlist {}] 2 {}
+	    } {{}}
+	    test linsert-1.12-@mode@ {linsert command} {
+		@linsert@ [newlist {a b "c c" d e}] 3 1
+	    } {a b {c c} 1 d e}
+	    test linsert-1.13-@mode@ {linsert command} {
+		@linsert@ [newlist { a b c d}] 0 1 2
+	    } {1 2 a b c d}
+	    test linsert-1.14-@mode@ {linsert command} {
+		@linsert@ [newlist {a b c {d e f}}] 4 1 2
+	    } {a b c {d e f} 1 2}
+	    test linsert-1.15-@mode@ {linsert command} {
+		@linsert@ [newlist {a b c \{\  abc}] 4 q r
+	    } {a b c \{\  q r abc}
+	    test linsert-1.16-@mode@ {linsert command} {
+		@linsert@ [newlist {a b c \{ abc}] 4 q r
+	    } {a b c \{ q r abc}
+	    test linsert-1.17-@mode@ {linsert command} {
+		@linsert@ [newlist {a b c}] end q r
+	    } {a b c q r}
+	    test linsert-1.18-@mode@ {linsert command} {
+		@linsert@ [newlist {a}] end q r
+	    } {a q r}
+	    test linsert-1.19-@mode@ {linsert command} {
+		@linsert@ [newlist {}] end q r
+	    } {q r}
+	    test linsert-1.20-@mode@ {linsert command, use of end-int index} {
+		@linsert@ [newlist {a b c d}] end-2 e f
+	    } {a b e f c d}
+
+	    test linsert-2.1-@mode@ {linsert errors} {
+		list [catch @linsert@ [newlist msg]] $msg
+	    } {1 {wrong # args: should be "linsert list index ?element ...?"}}
+	    test linsert-2.2-@mode@ {linsert errors} {
+		list [catch {@linsert@ [newlist a] b} msg] $msg
+	    } {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+	    test linsert-2.3-@mode@ {linsert errors} {
+		list [catch {@linsert@ [newlist a] 12x 2} msg] $msg
+	    } {1 {bad index "12x": must be integer?[+-]integer? or end?[+-]integer?}}
+	    test linsert-2.4-@mode@ {linsert errors} {
+		list [catch {@linsert@ [newlist \{] 12 2} msg] $msg
+	    } {1 {unmatched open brace in list}}
+	    test linsert-2.5-@mode@ {syntax (TIP 323)} {
+		@linsert@ [newlist {a b c}] 0
+	    } [list a b c]
+	    test linsert-2.6-@mode@ {syntax (TIP 323)} {
+		@linsert@ [newlist "a\nb\nc"] 0
+	    } [list a b c]
+
+	    test linsert-3.1-@mode@ {linsert won't modify shared argument objects} {
+		proc p {} {
+		    set list "a b c"
+		    @linsert@ [newlist $list] 1 "x y"
+		    return "a b c"
+		}
+		p
+	    } "a b c"
+	    test linsert-3.2-@mode@ {linsert won't modify shared argument objects} {
+		catch {unset lis}
+		set lis [format "a \"%s\" c" "b"]
+		@linsert@ [newlist $lis] 0 [string length $lis]
+	    } "7 a b c"
+
+	    # cleanup
+	    catch {unset lis}
+	    catch {rename p ""}
+	}]
+	try $script
     }
-    p
-} "a b c"
-test linsert-3.2 {linsert won't modify shared argument objects} {
-    catch {unset lis}
-    set lis [format "a \"%s\" c" "b"]
-    linsert $lis 0 [string length $lis]
-} "7 a b c"
+}
 
-# cleanup
-catch {unset lis}
-catch {rename p ""}
-::tcltest::cleanupTests
-return
+
+if {[info exists ::argv0] && [info script] eq $::argv0} {
+    try $tests
+
+    ::tcltest::cleanupTests
+    return
+}

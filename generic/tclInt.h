@@ -11,6 +11,7 @@
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 by Miguel Sofer. All rights reserved.
+ * Copyright (c) 2021 by Nathan Coulter. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -46,10 +47,13 @@
 
 #if defined(__cplusplus)
 #   define TCL_UNUSED(T) T
+#   define TCL_UNUSEDVAR(T) T
 #elif defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_UNUSED(T) T JOIN(dummy, __LINE__) __attribute__((unused))
+#   define TCL_UNUSEDVAR(T) T __attribute__((unused))
 #else
 #   define TCL_UNUSED(T) T JOIN(dummy, __LINE__)
+#   define TCL_UNUSEDVAR(T) T
 #endif
 
 /*
@@ -202,6 +206,223 @@ typedef struct Tcl_ResolverInfo {
  */
 
 #define TCL_AVOID_RESOLVERS 0x40000
+
+/*
+ *----------------------------------------------------------------
+ * Object type
+ *----------------------------------------------------------------
+ */
+
+/* version is a pointer so that it can be overridden if ever needed */
+typedef struct TclObjectTypeType {
+    int *version;
+} TclObjectTypeType;
+
+
+/* keep this structure in sync with Tcl_ObjType */
+typedef struct ObjectType {
+    const char *name;		/* Name of the type, e.g. "int". */
+    Tcl_FreeInternalRepProc *freeIntRepProc;
+				/* Called to free any storage for the type's
+				 * internal rep. NULL if the internal rep does
+				 * not need freeing. */
+    Tcl_DupInternalRepProc *dupIntRepProc;
+				/* Called to create a new object as a copy of
+				 * an existing object. */
+    Tcl_UpdateStringProc *updateStringProc;
+				/* Called to update the string rep from the
+				 * type's internal representation. */
+    Tcl_SetFromAnyProc *setFromAnyProc;
+				/* Called to convert the object's internal rep
+				 * to this type. Frees the internal rep of the
+				 * old type. Returns TCL_ERROR on failure. */
+    int version;
+    Tcl_ObjInterface *interface;
+} ObjectType;
+
+#define TclObjectInterfaceCall(objPtr, iface, proc, ...)		    \
+    ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+	->iface.proc(__VA_ARGS__)
+
+#define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
+    TclObjectHasInterface((objPtr), iface, proc)			    \
+    ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
+    : default(__VA_ARGS__)
+
+
+#define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
+    (TclObjectHasInterface((objPtr), iface, proc)			    \
+    ? (res = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__),    \
+	TCL_OK)   \
+    : (Tcl_SetObjResult((interp),					    \
+	    Tcl_ObjPrintf("interface not provided interface %s proc %s"	    \
+		, #iface, #proc )), TCL_ERROR))
+
+
+#define TclObjectHasInterface(objPtr, iface, proc)			    \
+    ((objPtr)->typePtr != NULL						    \
+    && (objPtr)->typePtr->version == 2				    \
+    && ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+	->iface.proc != NULL)
+
+/*
+ *----------------------------------------------------------------
+ * Object interface data structures and macros
+ *----------------------------------------------------------------
+ */
+
+#define tclObjTypeInterfaceArgsListAll \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object for which an element array \
+			 *  is to be returned. */ \
+    Tcl_Size *objcPtr,	/* Where to store the count of objects \
+			 * referenced by objv. */ \
+    Tcl_Obj ***objvPtr	/* Where to store the pointer to an \
+			 * array of */
+
+#define tclObjTypeInterfaceArgsListAppend \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to append objPtr to. */ \
+    Tcl_Obj *objPtr	/* Object to append to listPtr's list. */
+
+#define tclObjTypeInterfaceArgsListAppendList \
+    Tcl_Interp *interp,	    /* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	    /* List object to append elements to. */ \
+    Tcl_Obj *elemListPtr    /* List obj with elements to append. */
+
+#define tclObjTypeInterfaceArgsListIndex \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    Tcl_Size index,	/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsListIndexEnd \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    Tcl_Size index,	/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsListIsSorted \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* The list in question */ \
+    size_t flags	/* flags */
+
+#define tclObjTypeInterfaceArgsListLength \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object whose #elements to return. */ \
+    Tcl_Size *lenPtr	/* The resulting length is stored here. */
+
+#define tclObjTypeInterfaceArgsListRange \
+    Tcl_Interp * interp,    /* Used to report errors */ \
+    Tcl_Obj *listObj,	    /* List object to take a range from. */ \
+    Tcl_Size rangeStart,    /* Index of first element to */ \
+			    /* include. */ \
+    Tcl_Size rangeEnd	/* Index of last element to include. */
+
+#define tclObjTypeInterfaceArgsListRangeEnd \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* List object to take a range from. */ \
+    Tcl_Size fromAnchor,/* 0 for start and 1 for end */ \
+    Tcl_Size fromIdx,	/* Index of first element to include. */ \
+    Tcl_Size toAnchor,	/* 0 for start and 1 for end */  \
+    Tcl_Size toIdx	/* Index of last element to include. */
+
+#define tclObjTypeInterfaceArgsListReplace \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listObj,   /* List object whose elements to replace. */ \
+    Tcl_Size first,     /* Index of first element to replace. */ \
+    Tcl_Size numToDelete,	/* Number of elements to replace. */ \
+    Tcl_Size numToInsert,	/* Number of objects to insert. */ \
+			/* An array of objc pointers to Tcl \
+			 * objects to insert. */ \
+    Tcl_Obj *const insertObjs[]
+
+#define tclObjTypeInterfaceArgsListReplaceList \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr,   /* List object whose elements to replace. */ \
+    Tcl_Size first,     /* Index of first element to replace. */ \
+    Tcl_Size count,	/* Number of elements to replace. */ \
+    Tcl_Obj *newItemsPtr /* a list of new items to insert */
+
+#define tclObjTypeInterfaceArgsListReverse \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr   /* List object whose elements to replace. */ \
+
+
+#define tclObjTypeInterfaceArgsListSet \
+    Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting \
+				 * if not NULL. */ \
+    Tcl_Obj *listObj,		/* List object in which element should be \
+				 * stored. */ \
+    Tcl_Size index,		/* Index of element to store. */ \
+    Tcl_Obj *valueObj		/* Tcl object to store in the designated list \
+				 * element. */
+
+#define tclObjTypeInterfaceArgsListSetList \
+    Tcl_Interp *interp,	    /* Tcl interpreter. */ \
+    Tcl_Obj *listObj,	    /* Pointer to the list being modified. */ \
+    Tcl_Size indexCount,    /* Number of index args. */ \
+    Tcl_Obj *const indexArray[],    /* Index args. */ \
+    Tcl_Obj *valueObj	    /* Value arg to 'lset' or NULL to 'lpop'. */
+
+
+#define tclObjTypeInterfaceArgsStringIndex \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    Tcl_Size index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+
+#define tclObjTypeInterfaceArgsStringIndexEnd \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    Tcl_Size index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+
+#define tclObjTypeInterfaceArgsStringLength \
+    Tcl_Obj *objPtr
+
+
+#define tclObjTypeInterfaceArgsStringRange \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    Tcl_Size first,	/* First index of the range. */ \
+    Tcl_Size last	/* Last index of the range. */
+
+
+#define tclObjTypeInterfaceArgsStringRangeEnd \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    Tcl_Size first,	/* First index of the range. */ \
+    Tcl_Size last	/* Last index of the range. */
+
+
+typedef struct ObjInterface {
+    int version;
+    struct string {
+	int (*index)(tclObjTypeInterfaceArgsStringIndex);
+	int (*indexEnd)(tclObjTypeInterfaceArgsStringIndexEnd);
+	Tcl_Size (*length)(tclObjTypeInterfaceArgsStringLength);
+	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsStringRange);
+	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsStringRangeEnd);
+    } string;
+    struct list {
+	int (*all)(tclObjTypeInterfaceArgsListAll);
+	int (*append)(tclObjTypeInterfaceArgsListAppend);
+	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
+	int (*index)(tclObjTypeInterfaceArgsListIndex);
+	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexEnd);
+	int (*isSorted)(tclObjTypeInterfaceArgsListIsSorted);
+	int (*length)(tclObjTypeInterfaceArgsListLength);
+	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
+	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
+	int (*replace)(tclObjTypeInterfaceArgsListReplace);
+	int (*replaceList)(tclObjTypeInterfaceArgsListReplaceList);
+	Tcl_Obj* (*reverse)(tclObjTypeInterfaceArgsListReverse);
+	int (*set)(tclObjTypeInterfaceArgsListSet);
+	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
+    } list;
+} ObjInterface;
+
 
 /*
  *----------------------------------------------------------------
@@ -1067,20 +1288,6 @@ typedef struct ActiveInterpTrace {
 
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
-
-typedef struct {  /* For internal core use only */
-    Tcl_ObjType objType;
-    struct {
-	Tcl_Size (*lengthProc)(Tcl_Obj *obj);
-    } abstractList;
-} TclObjTypeWithAbstractList;
-#define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
-	}, {lengthProc /* For internal core use only */
-#define ABSTRACTLIST_PROC(objPtr, proc) (((objPtr)->typePtr \
-	&& ((objPtr)->typePtr->version > offsetof(TclObjTypeWithAbstractList, abstractList.proc))) ? \
-	((const TclObjTypeWithAbstractList *)(objPtr)->typePtr)->abstractList.proc : NULL)
-
-MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 
 /*
  * The structure below defines an entry in the assocData hash table which is
@@ -2404,6 +2611,7 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_UNKNOWN	(1<<1)
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
+
 /*
  * ListStore --
  *
@@ -2572,10 +2780,10 @@ typedef struct ListRep {
  * converted to a list.
  */
 #define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
-    (((listObj_)->typePtr == &tclListType.objType)                              \
-	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
-	    TCL_OK)                                                     \
-	 : Tcl_ListObjGetElements(                                      \
+    (((listObj_)->typePtr == tclListType)                               \
+	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))),  \
+	    TCL_OK)                                                      \
+	 : Tcl_ListObjGetElements(                                       \
 	     (interp_), (listObj_), (objcPtr_), (objvPtr_)))
 
 /*
@@ -2583,13 +2791,14 @@ typedef struct ListRep {
  * count in lenPtr_.  Returns TCL_OK on success or TCL_ERROR if the
  * Tcl_Obj cannot be converted to a list.
  */
-#define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
-    (((listObj_)->typePtr == &tclListType.objType)                   \
-	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
+#define TclListObjLengthM(interp_, listObj_, lenPtr_)                \
+    (((listObj_)->typePtr == tclListType)                           \
+	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK)         \
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
 
-#define TclListObjIsCanonical(listObj_) \
-    (((listObj_)->typePtr == &tclListType.objType) ? ListObjIsCanonical((listObj_)) : 0)
+#define TclListObjIsCanonical(listObj_)       \
+    (((listObj_)->typePtr == tclListType)    \
+	? ListObjIsCanonical((listObj_)) : 0)
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -2608,19 +2817,19 @@ typedef struct ListRep {
  */
 
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType.objType \
-	    || (objPtr)->typePtr == &tclBooleanType.objType) \
+    (((objPtr)->typePtr == tclIntType \
+	    || (objPtr)->typePtr == tclBooleanType) \
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
-    (((objPtr)->typePtr == &tclIntType.objType)	\
+    (((objPtr)->typePtr == tclIntType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 #else
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
-    (((objPtr)->typePtr == &tclIntType.objType \
+    (((objPtr)->typePtr == tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(LONG_MIN) \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX)) \
 	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
@@ -2628,13 +2837,13 @@ typedef struct ListRep {
 #endif
 
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType.objType \
+    (((objPtr)->typePtr == tclIntType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(INT_MIN) \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
-    ((((objPtr)->typePtr == &tclIntType.objType) && ((objPtr)->internalRep.wideValue >= 0) \
+    ((((objPtr)->typePtr == tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
 	    && ((objPtr)->internalRep.wideValue <= endValue)) \
 	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
@@ -2648,7 +2857,7 @@ typedef struct ListRep {
  */
 
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
-    (((objPtr)->typePtr == &tclIntType.objType)					\
+    (((objPtr)->typePtr == tclIntType)					\
 	? (*(wideIntPtr) =						\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
@@ -2923,13 +3132,13 @@ MODULE_SCOPE void *tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
-MODULE_SCOPE const TclObjTypeWithAbstractList tclBignumType;
-MODULE_SCOPE const TclObjTypeWithAbstractList tclBooleanType;
+MODULE_SCOPE const Tcl_ObjType *tclBignumType;
+MODULE_SCOPE const Tcl_ObjType *tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
-MODULE_SCOPE const TclObjTypeWithAbstractList tclDoubleType;
-MODULE_SCOPE const TclObjTypeWithAbstractList tclIntType;
-MODULE_SCOPE const TclObjTypeWithAbstractList tclListType;
-MODULE_SCOPE const TclObjTypeWithAbstractList tclArithSeriesType;
+MODULE_SCOPE const Tcl_ObjType *tclDoubleType;
+MODULE_SCOPE const Tcl_ObjType *tclIntType;
+MODULE_SCOPE const Tcl_ObjType *tclListType;
+MODULE_SCOPE const Tcl_ObjType *tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
@@ -3095,6 +3304,7 @@ MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    void *clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
+MODULE_SCOPE void	TclBounceRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    Tcl_Size strLen, const unsigned char *pattern,
 			    Tcl_Size ptnLen, int flags);
@@ -3128,7 +3338,6 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
-MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
 MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
 			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
@@ -3219,6 +3428,8 @@ MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *packageName);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
+MODULE_SCOPE int	TclIndexIsFromEnd(Tcl_Size encoded);
+MODULE_SCOPE Tcl_Size	TclIndexLast (Tcl_Size N);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3258,9 +3469,12 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
 MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
+MODULE_SCOPE int	Tcl_LengthIsFinite(Tcl_Size length);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
 			    int *lines, Tcl_Obj *const *elems);
+MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
+			    (tclObjTypeInterfaceArgsListIndex);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
@@ -3268,9 +3482,9 @@ MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
-MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    Tcl_Size indexCount, Tcl_Obj *const indexArray[],
-			    Tcl_Obj *valuePtr);
+MODULE_SCOPE Tcl_Obj *	TclLsetFlat(tclObjTypeInterfaceArgsListSetList);
+MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
 MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
@@ -3284,6 +3498,8 @@ MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclObjGetScalar(Tcl_Obj *objPtr);
+MODULE_SCOPE const char *   TclObjTypeName(const Tcl_ObjType *typePtr);
+MODULE_SCOPE int	 TclObjTypeVersion (const Tcl_ObjType *typePtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
@@ -3365,6 +3581,7 @@ MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
 MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
+MODULE_SCOPE void Tcl_ObjTypeVersion(Tcl_Obj *objPtr, int *version);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
@@ -3412,6 +3629,8 @@ MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    Tcl_Size *reqlength);
+MODULE_SCOPE int	TclStringIndexInterface(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    Tcl_Obj *indexPtr, Tcl_Obj **charPtr);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
@@ -3437,6 +3656,7 @@ MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
+MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
@@ -4818,8 +5038,8 @@ MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
-
-
+MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceInit;
+MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceListIntegerInit;
 
 /*
  *----------------------------------------------------------------
@@ -4850,7 +5070,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_ObjInternalRep ir;				\
 	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclIntType.objType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, tclIntType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
@@ -4858,7 +5078,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_ObjInternalRep ir;				\
 	ir.doubleValue = (double) d;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclDoubleType.objType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, tclDoubleType, &ir);	\
     } while (0)
 
 /*
@@ -4883,7 +5103,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
 	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
-	(objPtr)->typePtr = &tclIntType.objType;		\
+	(objPtr)->typePtr = tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
@@ -4902,7 +5122,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
 	} else {	\
 	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
-	    (objPtr)->typePtr = &tclIntType.objType;		\
+	    (objPtr)->typePtr = tclIntType;		\
 	}	\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
@@ -4917,7 +5137,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	(objPtr)->refCount = 0;					\
 	(objPtr)->bytes = NULL;					\
 	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType.objType;			\
+	(objPtr)->typePtr = tclDoubleType;			\
 	TCL_DTRACE_OBJ_CREATE(objPtr);				\
     } while (0)
 

@@ -4,6 +4,7 @@
  *	This file contains functions that implement the Tcl list object type.
  *
  * Copyright © 2022 Ashok P. Nadkarni.  All rights reserved.
+ * Copyright © 2021 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -12,7 +13,6 @@
 #include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -69,7 +69,7 @@
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
-    LIST_ASSERT(TclHasInternalRep((listObj_), &tclListType.objType))
+    LIST_ASSERT(TclHasInternalRep((listObj_), tclListType))
 
 /*
  * If ENABLE_LIST_INVARIANTS is enabled (-DENABLE_LIST_INVARIANTS from the
@@ -142,7 +142,17 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static Tcl_Size ListLength(Tcl_Obj *listPtr);
+static int		ListObjAppendElement(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
+static int		ListObjAppendList(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *elemListPtr);
+static int		ListObjIndex(tclObjTypeInterfaceArgsListIndex);
+static int		ListObjInterfaceGetElements(tclObjTypeInterfaceArgsListAll);
+static int		ListObjInterfaceLength(tclObjTypeInterfaceArgsListLength);
+static int		ListObjSetElement(tclObjTypeInterfaceArgsListSet);
+static Tcl_Obj *	LsetFlat(tclObjTypeInterfaceArgsListSetList);
+static Tcl_Obj *	ListObjRange(tclObjTypeInterfaceArgsListRange);
+static int		ListObjReplace(tclObjTypeInterfaceArgsListReplace);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -151,18 +161,65 @@ static Tcl_Size ListLength(Tcl_Obj *listPtr);
  * The internal representation of a list object is ListRep defined in tcl.h.
  */
 
-const TclObjTypeWithAbstractList tclListType = {
-    {"list",			/* name */
+ObjInterface tclListInterface = {
+    1,
+    {},
+    {
+	&ListObjInterfaceGetElements,
+	&ListObjAppendElement,
+	&ListObjAppendList,
+	&ListObjIndex,
+	NULL,
+	NULL,
+	&ListObjInterfaceLength,
+	&ListObjRange,
+	NULL,
+	&ListObjReplace,
+	NULL, /* replaceList */
+	NULL, /* reverse */
+	&ListObjSetElement,
+	&LsetFlat
+    },
+};
+
+
+const ObjectType tclListObjType = {
+    "list",
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1(
-    ListLength
-    )}
+    SetListFromAny,	/* setFromAnyProc */
+    2,
+    (Tcl_ObjInterface *)&tclListInterface
 };
 
+MODULE_SCOPE const Tcl_ObjType *tclListType = (Tcl_ObjType *)&tclListObjType;
+
 /* Macros to manipulate the List internal rep */
+
+#define ListSetIntRep(objPtr, listRepPtr)				\
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	ir.twoPtrValue.ptr1 = (listRepPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	(listRepPtr)->refCount++;					\
+	Tcl_StoreInternalRep((objPtr), tclListType, &ir);			\
+    } while (0)
+
+#define ListGetIntRep(objPtr, listRepPtr)				\
+    do {								\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), tclListType);		\
+	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
+#define ListResetIntRep(objPtr, listRepPtr) \
+    TclFetchInternalRep((objPtr), tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+
+#ifndef TCL_MIN_ELEMENT_GROWTH
+#define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
+#endif
+
 #define ListRepIncrRefs(repPtr_)            \
     do {                                    \
 	(repPtr_)->storePtr->refCount++;    \
@@ -205,7 +262,7 @@ const TclObjTypeWithAbstractList tclListType = {
     do {                                                               \
 	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
 	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
-	(objPtr_)->typePtr = &tclListType.objType;                             \
+	(objPtr_)->typePtr = tclListType;                             \
     } while (0)
 
 #define ListObjOverwriteRep(objPtr_, repPtr_) \
@@ -1251,7 +1308,7 @@ TclListObjGetRep(
 			 * to be returned. */
     ListRep *repPtr) /* Location to store descriptor */
 {
-    if (!TclHasInternalRep(listObj, &tclListType.objType)) {
+    if (!TclHasInternalRep(listObj, tclListType)) {
 	int result;
 	result = SetListFromAny(interp, listObj);
 	if (result != TCL_OK) {
@@ -1529,13 +1586,39 @@ ListRepRange(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclListObjRange(
-    Tcl_Interp *interp,		/* May be NULL. Used for error messages */
-    Tcl_Obj *listObj,		/* List object to take a range from. */
-    Tcl_Size rangeStart,	/* Index of first element to include. */
-    Tcl_Size rangeEnd)		/* Index of last element to include. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,		/* List object to take a range from. */
+    Tcl_Size fromIdx,		/* Index of first element to include. */
+    Tcl_Size toIdx)			/* Index of last element to include. */
+{
+    int status;
+    Tcl_Size length;
+    status = TclListObjLengthM(interp, listPtr, &length);
+    if (status != TCL_OK) {
+	return NULL;
+    }
+    if (fromIdx == TCL_INDEX_NONE) {
+	fromIdx = 0;
+    }
+    if (Tcl_LengthIsFinite(length) && toIdx + 1 >= length + 1) {
+	toIdx = length-1;
+    }
+
+    if (fromIdx + 1 > toIdx + 1) {
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
+    }
+    return TclObjectDispatch(listPtr, ListObjRange, list
+	, range, interp, listPtr, fromIdx, toIdx);
+}
+
+
+Tcl_Obj *
+ListObjRange(
+    tclObjTypeInterfaceArgsListRange)
 {
     ListRep listRep;
     ListRep resultRep;
@@ -1608,25 +1691,49 @@ TclListObjGetElement(
  *
  *----------------------------------------------------------------------
  */
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ListObjGetElements --
+ *
+ *	Returns an (objc,objv) array of the elements in a list
+ *	object.
+ *
+ * Results:
+ *	The return value is normally TCL_OK; in this case *objcPtr is set to
+ *	the count of list elements and *objvPtr is set to a pointer to an
+ *	array of (*objcPtr) pointers to each list element. If listPtr does not
+ *	refer to a list object and the object can not be converted to one,
+ *	TCL_ERROR is returned and an error message will be left in the
+ *	interpreter's result if interp is not NULL.
+ *
+ *	The objects referenced by the returned array should be treated as
+ *	readonly and their ref counts are _not_ incremented; the caller must
+ *	do that if it holds on to a reference. Furthermore, the pointer and
+ *	length returned by this function may change as soon as any function is
+ *	called on the list object; be careful about retaining the pointer in a
+ *	local data structure.
+ *
+ * Side effects:
+ *	The possible conversion of the object referenced by listPtr
+ *	to a list object.
+ *
+ *----------------------------------------------------------------------
+ */
 #undef Tcl_ListObjGetElements
 int
-Tcl_ListObjGetElements(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *objPtr,		/* List object for which an element array is
-				 * to be returned. */
-    Tcl_Size *objcPtr,		/* Where to store the count of objects
-				 * referenced by objv. */
-    Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
-				 * pointers to the list's objects. */
+Tcl_ListObjGetElements(tclObjTypeInterfaceArgsListAll)
+{
+    return TclObjectDispatch(listPtr, ListObjInterfaceGetElements,
+	list, all, interp, listPtr, objcPtr, objvPtr);
+}
+
+int
+ListObjInterfaceGetElements(tclObjTypeInterfaceArgsListAll)
 {
     ListRep listRep;
 
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
-	return TclArithSeriesGetElements(interp, objPtr, objcPtr, objvPtr);
-    }
-
-    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
+    if (TclListObjGetRep(interp, listPtr, &listRep) != TCL_OK)
 	return TCL_ERROR;
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
@@ -1655,28 +1762,47 @@ Tcl_ListObjGetElements(
  *----------------------------------------------------------------------
  */
 int
-Tcl_ListObjAppendList(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *toObj,		/* List object to append elements to. */
-    Tcl_Obj *fromObj)		/* List obj with elements to append. */
+Tcl_ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
-    Tcl_Size objc;
-    Tcl_Obj **objv;
+    return TclObjectDispatch(listPtr, ListObjAppendList,
+	list, appendlist, interp, listPtr, elemListPtr);
+}
 
-    if (Tcl_IsShared(toObj)) {
+int
+ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
+{
+    int status;
+    if (Tcl_IsShared(listPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
-    if (TclListObjGetElementsM(interp, fromObj, &objc, &objv) != TCL_OK) {
-	return TCL_ERROR;
+    if (TclObjectHasInterface(listPtr, list, replaceList)) {
+	TclObjectDispatchNoDefault(interp, status, listPtr, list,
+	    replaceList, interp, listPtr, LIST_MAX, 0, elemListPtr);
+	return status;
+    } else {
+	Tcl_Size objc;
+	Tcl_ListObjLength(interp, elemListPtr, &objc);
+	if (objc == 1) {
+	    Tcl_Obj *itemObj;
+	    status = Tcl_ListObjIndex(interp, elemListPtr, 0, &itemObj);
+	    if (status != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    status = Tcl_ListObjAppendElement(interp, listPtr, itemObj);
+	    return status;
+	} else {
+	    Tcl_Obj **objv;
+	    /*
+	     * Pull the elements to append from elemListPtr.
+	     */
+
+	    if (TCL_OK != TclListObjGetElementsM(interp, elemListPtr, &objc, &objv)) {
+		return TCL_ERROR;
+	    }
+	    return TclListObjAppendElements(interp, listPtr, objc, objv);
+	}
     }
-
-    /*
-     * Insert the new elements starting after the lists's last element.
-     * Delete zero existing elements.
-     */
-
-    return TclListObjAppendElements(interp, toObj, objc, objv);
 }
 
 /*
@@ -1858,6 +1984,20 @@ Tcl_ListObjAppendList(
  */
 int
 Tcl_ListObjAppendElement(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    Tcl_Obj *objPtr)
+{
+    if (Tcl_IsShared(listPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
+    }
+
+    return TclObjectDispatch(listPtr, ListObjAppendElement,
+	list, append, interp, listPtr, objPtr);
+}
+
+int
+ListObjAppendElement(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *toObj,		/* List object to append elemObj to. */
     Tcl_Obj *elemObj)		/* Object to append to toObj's list. */
@@ -1900,21 +2040,25 @@ Tcl_ListObjAppendElement(
  */
 int
 Tcl_ListObjIndex(
-    Tcl_Interp *interp,  /* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,    /* List object to index into. */
-    Tcl_Size index,      /* Index of element to return. */
-    Tcl_Obj **objPtrPtr) /* The resulting Tcl_Obj* is stored here. */
+    tclObjTypeInterfaceArgsListIndex
+)
 {
+    return TclObjectDispatch(listPtr, ListObjIndex,
+	list, index, interp, listPtr, index, objPtrPtr);
+}
+
+int
+ListObjIndex(tclObjTypeInterfaceArgsListIndex) {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
-    if (listObj->bytes == &tclEmptyString) {
+    if (listPtr->bytes == &tclEmptyString) {
 	*objPtrPtr = NULL;
 	return TCL_OK;
     }
 
-    if (TclListObjGetElementsM(interp, listObj, &numElems, &elemObjs)
+    if (TclListObjGetElementsM(interp, listPtr, &numElems, &elemObjs)
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1948,43 +2092,23 @@ Tcl_ListObjIndex(
  *
  *----------------------------------------------------------------------
  */
-
 #undef Tcl_ListObjLength
 int
-Tcl_ListObjLength(
-    Tcl_Interp *interp,	/* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
+Tcl_ListObjLength(tclObjTypeInterfaceArgsListLength)
 {
+    return TclObjectDispatch(listPtr, ListObjInterfaceLength,
+	list, length, interp, listPtr, lenPtr);
+}
+
+int
+ListObjInterfaceLength(tclObjTypeInterfaceArgsListLength) {
     ListRep listRep;
 
-    /* Empty string => empty list. Avoid unnecessary shimmering */
-    if (listObj->bytes == &tclEmptyString) {
-	*lenPtr = 0;
-	return TCL_OK;
-    }
-
-    Tcl_Size (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
-    if (lengthProc) {
-	*lenPtr = lengthProc(listObj);
-	return TCL_OK;
-    }
-
-
-    if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
+    if (TclListObjGetRep(interp, listPtr, &listRep) != TCL_OK) {
 	return TCL_ERROR;
     }
     *lenPtr = ListRepLength(&listRep);
     return TCL_OK;
-}
-
-Tcl_Size
-ListLength(Tcl_Obj *listPtr)
-{
-    ListRep listRep;
-    ListObjGetRep(listPtr, &listRep);
-
-    return ListRepLength(&listRep);
 }
 
 /*
@@ -2025,13 +2149,57 @@ ListLength(Tcl_Obj *listPtr)
  *----------------------------------------------------------------------
  */
 int
-Tcl_ListObjReplace(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *listObj,		/* List object whose elements to replace. */
-    Tcl_Size first,		/* Index of first element to replace. */
-    Tcl_Size numToDelete,	/* Number of elements to replace. */
-    Tcl_Size numToInsert,	/* Number of objects to insert. */
-    Tcl_Obj *const insertObjs[])/* Tcl objects to insert */
+Tcl_ListObjReplace(tclObjTypeInterfaceArgsListReplace)
+{
+    Tcl_Size length, status;
+    if (Tcl_IsShared(listObj)) {
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
+    }
+
+    if (first < 0) {
+	first = 0;
+    }
+
+    status = Tcl_ListObjLength(interp, listObj, &length);
+    if (status != TCL_OK) {
+	return status;
+    }
+
+    /* go through the process even in this case to ensure that the result is a
+     * cononical list 
+    *if (length == 0 && numToInsert == 0) {
+    *    return TCL_OK;
+    *}
+    */
+
+    if (first >= length) {
+	first = length;	/* So we'll insert after last element. */
+    }
+
+    if (numToDelete < 0) {
+	numToDelete = 0;
+    } else if (first > INT_MAX - numToDelete /* Handle integer overflow */
+	    || length < first+numToDelete) {
+	numToDelete = length - first;
+    }
+
+    if (numToDelete > LIST_MAX - (length - numToDelete)) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max length of a Tcl list (%" TCL_Z_MODIFIER
+			"u elements) exceeded", LIST_MAX));
+	}
+	return TCL_ERROR;
+    }
+
+
+    return TclObjectDispatch(listObj, ListObjReplace,
+	list, replace, interp, listObj, first, numToDelete, numToInsert, insertObjs);
+}
+
+
+int
+ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 {
     ListRep listRep;
     Tcl_Size origListLen;
@@ -2490,7 +2658,7 @@ Tcl_ListObjReplace(
  *
  * TclLindexList --
  *
- *	This procedure handles the 'lindex' command when objc==3.
+ *	Handles the 'lindex' command when objc==3.
  *
  * Results:
  *	Returns a pointer to the object extracted, or NULL if an error
@@ -2527,7 +2695,7 @@ TclLindexList(
      * shimmering; if internal rep is already a list do not shimmer it.
      * see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, &tclListType.objType)
+    if (!TclHasInternalRep(argObj, tclListType)
 	&& TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/*
@@ -2548,7 +2716,7 @@ TclLindexList(
      * does not.
      */
 
-    indexListCopy = TclDuplicatePureObj(interp, argObj, &tclListType.objType);
+    indexListCopy = TclDuplicatePureObj(interp, argObj, tclListType);
     if (!indexListCopy) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
@@ -2609,28 +2777,6 @@ TclLindexFlat(
     int status;
     Tcl_Size i;
 
-    /* Handle ArithSeries as special case */
-    if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	Tcl_Size listLen = ABSTRACTLIST_PROC(listObj, lengthProc)(listObj);
-	Tcl_Size index;
-	Tcl_Obj *elemObj = NULL;
-	for (i=0 ; i<indexCount && listObj ; i++) {
-	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-				   &index) == TCL_OK) {
-	    }
-	    if (i==0) {
-		elemObj = TclArithSeriesObjIndex(NULL, listObj, index);
-	    } else if (index > 0) {
-		/* ArithSeries cannot be a list of lists */
-		Tcl_DecrRefCount(elemObj);
-		TclNewObj(elemObj);
-		break;
-	    }
-	}
-	Tcl_IncrRefCount(elemObj);
-	return elemObj;
-    }
-
     Tcl_IncrRefCount(listObj);
 
     for (i=0 ; i<indexCount && listObj ; i++) {
@@ -2663,29 +2809,56 @@ TclLindexFlat(
 		TclNewObj(listObj);
 		Tcl_IncrRefCount(listObj);
 	    } else {
-		Tcl_Obj *itemObj;
-		/*
-		 * Must set the internal rep again because it may have been
-		 * changed by TclGetIntForIndexM. See test lindex-8.4.
-		 */
-		if (!TclHasInternalRep(listObj, &tclListType.objType)) {
-		    status = SetListFromAny(interp, listObj);
-		    if (status != TCL_OK) {
-			/* The list is not a list at all => error.  */
+		Tcl_Obj* listItem;
+		if (TclIndexIsFromEnd(index)
+		    && TclObjectHasInterface(listObj, list, indexEnd)
+		    && Tcl_LengthIsFinite(listLen)
+		    ) {
+
+		    TclObjectDispatchNoDefault(interp, status, listObj,
+			list, indexEnd, interp, listObj, index, &listItem);
+		    if (status == TCL_OK) {
+			Tcl_IncrRefCount(listItem);
+			Tcl_DecrRefCount(listObj);
+			listObj = listItem;
+		    } else {
 			Tcl_DecrRefCount(listObj);
 			return NULL;
 		    }
-		}
+		} else if (TclObjectHasInterface(listObj, list, index)) {
+		    TclObjectDispatchNoDefault(interp, status, listObj,
+			list, index, interp, listObj, index, &listItem);
+		    if (status == TCL_OK) {
+			Tcl_IncrRefCount(listItem);
+			Tcl_DecrRefCount(listObj);
+			listObj = listItem;
+		    } else {
+			Tcl_DecrRefCount(listObj);
+			return NULL;
+		    }
+		} else {
+		    /*
+		     * Must set the internal rep again because it may have been
+		     * changed by TclGetIntForIndexM. See test lindex-8.4.
+		     */
+		    if (!TclHasInternalRep(listObj, tclListType)) {
+			status = SetListFromAny(interp, listObj);
+			if (status != TCL_OK) {
+			    /* The list is not a list at all => error.  */
+			    Tcl_DecrRefCount(listObj);
+			    return NULL;
+			}
+		    }
 
-		ListObjGetElements(listObj, listLen, elemPtrs);
-		/* increment this reference count first before decrementing
-		 * just in case they are the same Tcl_Obj
-		 */
-		itemObj = elemPtrs[index];
-		Tcl_IncrRefCount(itemObj);
-		Tcl_DecrRefCount(listObj);
-		/* Extract the pointer to the appropriate element. */
-		listObj = itemObj;
+		    ListObjGetElements(listObj, listLen, elemPtrs);
+		    /* increment this reference count first before decrementing
+		     * just in case they are the same Tcl_Obj
+		     */
+		    Tcl_IncrRefCount(elemPtrs[index]);
+		    Tcl_DecrRefCount(listObj);
+		    /* Extract the pointer to the appropriate element. */
+		    listObj = elemPtrs[index];
+		}
 	    }
 	} else {
 	    Tcl_DecrRefCount(listObj);
@@ -2740,7 +2913,7 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    if (!TclHasInternalRep(indexArgObj, &tclListType.objType)
+    if (!TclHasInternalRep(indexArgObj, tclListType)
 	&& TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
@@ -2749,7 +2922,7 @@ TclLsetList(
     }
 
     indexListCopy = TclDuplicatePureObj(
-	    interp, indexArgObj, &tclListType.objType);
+	    interp, indexArgObj, tclListType);
     if (!indexListCopy) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
@@ -2813,13 +2986,15 @@ TclLsetList(
  *----------------------------------------------------------------------
  */
 Tcl_Obj *
-TclLsetFlat(
-    Tcl_Interp *interp,		/* Tcl interpreter. */
-    Tcl_Obj *listObj,		/* Pointer to the list being modified. */
-    Tcl_Size indexCount,		/* Number of index args. */
-    Tcl_Obj *const indexArray[],
-				/* Index args. */
-    Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
+TclLsetFlat(tclObjTypeInterfaceArgsListSetList)
+{
+    return TclObjectDispatch(listObj, LsetFlat,
+	list, setlist, interp, listObj, indexCount, indexArray, valueObj);
+}
+
+
+Tcl_Obj *
+LsetFlat(tclObjTypeInterfaceArgsListSetList)
 {
     Tcl_Size index, len;
     int copied = 0, result;
@@ -2847,7 +3022,7 @@ TclLsetFlat(
      */
 
     subListObj = Tcl_IsShared(listObj)
-	? TclDuplicatePureObj(interp, listObj, &tclListType.objType) : listObj;
+	? TclDuplicatePureObj(interp, listObj, tclListType) : listObj;
     if (!subListObj) {
 	return NULL;
     }
@@ -2937,7 +3112,7 @@ TclLsetFlat(
 	    }
 	    if (Tcl_IsShared(subListObj)) {
 		subListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType.objType);
+		    interp, subListObj, tclListType);
 		if (!subListObj) {
 		    return NULL;
 		}
@@ -2961,7 +3136,7 @@ TclLsetFlat(
 	    if (Tcl_IsShared(subListObj)) {
 		Tcl_Obj * newSubListObj;
 		newSubListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType.objType);
+		    interp, subListObj, tclListType);
 		if (copied) {
 		    Tcl_DecrRefCount(subListObj);
 		}
@@ -3089,14 +3264,14 @@ TclLsetFlat(
  *----------------------------------------------------------------------
  */
 int
-TclListObjSetElement(
-    Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting
-				 * if not NULL. */
-    Tcl_Obj *listObj,		/* List object in which element should be
-				 * stored. */
-    Tcl_Size index,		/* Index of element to store. */
-    Tcl_Obj *valueObj)		/* Tcl object to store in the designated list
-				 * element. */
+TclListObjSetElement(tclObjTypeInterfaceArgsListSet)
+{
+    return TclObjectDispatch(listObj, ListObjSetElement,
+	list, set, interp, listObj, index, valueObj);
+}
+
+int
+ListObjSetElement(tclObjTypeInterfaceArgsListSet)
 {
     ListRep listRep;
     Tcl_Obj **elemPtrs;         /* Pointers to elements of the list. */
@@ -3252,7 +3427,61 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
+    if (TclObjectHasInterface(objPtr, list, index)) {
+	int status;
+	Tcl_Size index, length, storeSize, offset;
+	Tcl_Obj *itemPtr, **lastElemPtr;
+	status = Tcl_ListObjLength(interp, objPtr, &length);
+	if (status != TCL_OK) {
+	    return status;
+	}
+	storeSize = length;
+	if (ListRepInitAttempt(
+		interp, length > 8 ? storeSize : 8, NULL, &listRep)
+	    != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	elemPtrs = listRep.storePtr->slots;
+	lastElemPtr = elemPtrs + listRep.storePtr->numAllocated - 1;
+	index = 0;
+	Tcl_IncrRefCount(objPtr);
+	while (index < length || length < 0) {
+	    TclObjectDispatchNoDefault(interp, status, objPtr, list,
+		index, interp, objPtr, index, &itemPtr);
+	    if (status != TCL_OK) {
+		status = Tcl_ListObjLength(interp, objPtr, &length);
+		if (status != TCL_OK) {
+		    TclUndoRefCount(objPtr);
+		    return status;
+		}
+		continue;
+	    }
+	    if (elemPtrs == lastElemPtr) {
+		ListStore *newStorePtr;
+		storeSize += storeSize / 2;
+		offset = elemPtrs - listRep.storePtr->slots;
+		newStorePtr = ListStoreReallocate(listRep.storePtr, storeSize);
+		if (newStorePtr == NULL) {
+		    TclUndoRefCount(objPtr);
+		    return MemoryAllocationError(interp, LIST_SIZE(storeSize));
+		}
+		elemPtrs = newStorePtr->slots + offset;
+		listRep.storePtr = newStorePtr;
+		lastElemPtr = elemPtrs + listRep.storePtr->numAllocated - 1;
+	    }
+	    listRep.storePtr->numUsed++;
+	    if (itemPtr == objPtr) {
+		*elemPtrs = Tcl_DuplicateObj(itemPtr);
+		TclBounceRefCount(itemPtr);
+	    } else {
+		*elemPtrs = itemPtr;
+	    }
+	    Tcl_IncrRefCount(*elemPtrs);
+	    elemPtrs++;
+	    index++;
+	}
+	TclUndoRefCount(objPtr);
+    } else if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
@@ -3292,35 +3521,6 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
-    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
-	/*
-	 * Convertion from Arithmetic Series is a special case
-	 * because it can be done an order of magnitude faster
-	 * and may occur frequently.
-	 */
-	Tcl_Size j, size = ABSTRACTLIST_PROC(objPtr, lengthProc)(objPtr);
-
-	/* TODO - leave space in front and/or back? */
-	if (ListRepInitAttempt(
-		interp, size > 0 ? size : 1, NULL, &listRep)
-	    != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	LIST_ASSERT(listRep.spanPtr == NULL); /* Guard against future changes */
-	LIST_ASSERT(listRep.storePtr->firstUsed == 0);
-	LIST_ASSERT((listRep.storePtr->flags & LISTSTORE_CANONICAL) == 0);
-
-	listRep.storePtr->numUsed = size;
-	elemPtrs = listRep.storePtr->slots;
-	for (j = 0; j < size; j++) {
-	    elemPtrs[j] = TclArithSeriesObjIndex(interp, objPtr, j);
-	    if (elemPtrs[j] == NULL) {
-		return TCL_ERROR;
-	    }
-	    Tcl_IncrRefCount(elemPtrs[j]);
-	}
-
     } else {
 	Tcl_Size estCount, length;
 	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
@@ -3402,7 +3602,7 @@ fail:
     TclFreeInternalRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = listRep.storePtr;
     objPtr->internalRep.twoPtrValue.ptr2 = listRep.spanPtr;
-    objPtr->typePtr = &tclListType.objType;
+    objPtr->typePtr = tclListType;
 
     return TCL_OK;
 }

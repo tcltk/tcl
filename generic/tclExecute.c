@@ -10,6 +10,7 @@
  * Copyright © 2005-2007 Donal K. Fellows.
  * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
+ * Copyright © 2021 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,7 +20,6 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
 #include <math.h>
 #include <assert.h>
 
@@ -451,11 +451,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasInternalRep((objPtr), &tclIntType.objType))					\
+    ((TclHasInternalRep((objPtr), tclIntType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasInternalRep((objPtr), &tclDoubleType.objType)				\
+    TclHasInternalRep((objPtr), tclDoubleType)				\
 	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -1481,7 +1481,7 @@ CompileExprObj(
  * DupExprCodeInternalRep --
  *
  *	Part of the Tcl object type implementation for Tcl expression
- *	bytecode. We do not copy the bytecode internalrep. Instead, we return
+ *	bytecode. We do not copy the bytecode intrep. Instead, we return
  *	without setting copyPtr->typePtr, so the copy is a plain string copy
  *	of the expression value, and if it is to be used as a compiled
  *	expression, it will just need a recompile.
@@ -1490,7 +1490,7 @@ CompileExprObj(
  *	usual (only?) time Tcl_DuplicateObj() will be called is when the copy
  *	is about to be modified, which would invalidate any copied bytecode
  *	anyway. The only reason it might make sense to copy the bytecode is if
- *	we had some modifying routines that operated directly on the internalrep,
+ *	we had some modifying routines that operated directly on the intrep,
  *	like we do for lists and dicts.
  *
  * Results:
@@ -3375,7 +3375,7 @@ TEBCresume(
 	}
 	if (Tcl_IsShared(objResultPtr)) {
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, &tclListType.objType);
+		    interp, objResultPtr, tclListType);
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3439,7 +3439,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType.objType);
+			interp, objResultPtr, tclListType);
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
 		    }
@@ -4638,7 +4638,8 @@ TEBCresume(
      */
 
     {
-	int numIndices, nocase, match, cflags;
+	int dstatus, numIndices, nocase, match, cflags,
+	    toIdxAnchor, fromIdxAnchor;
 	Tcl_Size slength, length2, fromIdx, toIdx, index, s1len, s2len;
 	const char *s1, *s2;
 
@@ -4667,65 +4668,79 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
+	if (
+	    TclHasInternalRep(value2Ptr, tclListType)
+	    ||
+	    TclObjectHasInterface(value2Ptr, list, length)
+	) {
+	    Tcl_Size value2Length;
+	    if (Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+		value2Length == 1) {
+		if (TclHasInternalRep(value2Ptr, tclListType)) {
+		    value2Ptr = TclListObjGetElement(value2Ptr, 0);
+		} else {
+		    Tcl_ListObjIndex(interp, value2Ptr, 0, &value2Ptr);
+		}
+	    } else {
+		goto TclLindexList;
+	    }
+	}
 
+	if (TclObjectHasInterface(valuePtr, list, length)
+	    || TclHasInternalRep(valuePtr, tclListType)) {
+	    int code, haveElements = 0, status;
 
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
-	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
-		CACHE_STACK_INFO();
+	    if (TclHasInternalRep(valuePtr, tclListType)) {
+		/* since the type is tclListtype, this can't fail */
+		TclListObjGetElementsM(interp, valuePtr, &objc, &objv);
+		haveElements = 1;
+	    } else {
+		TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		    length, interp, valuePtr, &objc);
+		if (status != TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+
+		if (objc < 0) {
+		    objc = TCL_SIZE_MAX;
+		}
+	    } 
+
+	    Tcl_IncrRefCount(value2Ptr);
+	    DECACHE_STACK_INFO();
+	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
+	    CACHE_STACK_INFO();
+	    if (code != TCL_OK) {
+		goto TclLindexList;
+	    }
+	    Tcl_DecrRefCount(value2Ptr);
+
+	    if (haveElements && code == TCL_OK) {
+		tosPtr--;
+		pcAdjustment = 1;
+		goto lindexFastPath;
+	    }
+
+	    Tcl_ResetResult(interp);
+	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		index, interp, valuePtr, index, &objResultPtr);
+	    if (status != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
 	    if (objResultPtr == NULL) {
-		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
+		TclNewObj(objResultPtr);
 	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
-	}
 
+	}
+    TclLindexList:
 	/*
 	 * Extract the desired list element.
 	 */
-
-	{
-	    Tcl_Size value2Length;
-	    Tcl_Obj *indexListPtr = value2Ptr;
-	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (
-		    !TclHasInternalRep(value2Ptr, &tclListType.objType)
-		    ||
-		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
-			value2Length == 1
-			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
-			    : 0
-		    ))
-		)
-	    ) {
-		int code;
-
-		/* increment the refCount of value2Ptr because TclListObjGetElement may
-		 * have just extracted it from a list in the condition for this block.
-		 */
-		Tcl_IncrRefCount(indexListPtr);
-
-		DECACHE_STACK_INFO();
-		code = TclGetIntForIndexM(interp, indexListPtr, objc-1, &index);
-		TclDecrRefCount(indexListPtr);
-		CACHE_STACK_INFO();
-		if (code == TCL_OK) {
-		    Tcl_DecrRefCount(value2Ptr);
-		    tosPtr--;
-		    pcAdjustment = 1;
-		    goto lindexFastPath;
-		}
-		Tcl_ResetResult(interp);
-	    }
-	}
-	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
 	CACHE_STACK_INFO();
 
@@ -4753,9 +4768,10 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
+	if (TclObjectHasInterface(valuePtr, list, length)) {
+	    TCL_UNUSEDVAR(int status);
+	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		length, interp, valuePtr, &length);
 
 	    /* Decode end-offset index values. */
 
@@ -4763,7 +4779,8 @@ TEBCresume(
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
+		TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		    index, interp, valuePtr, index, &objResultPtr);
 		if (objResultPtr == NULL) {
 		    CACHE_STACK_INFO();
 		    TRACE_ERROR(interp);
@@ -4781,15 +4798,52 @@ TEBCresume(
 	 * in the process.
 	 */
 
-	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
+	if (!TclHasInternalRep(valuePtr, tclListType)
+	    && TclObjectHasInterface(valuePtr, list, index)) {
+	    if (Tcl_ListObjLength(interp, valuePtr, &objc) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    if (TclIndexIsFromEnd(opnd) && !Tcl_LengthIsFinite(objc)) {
+		/* end-relative index, and list end is indeterminate */
+		if (TclObjectDispatchNoDefault(interp, dstatus, valuePtr, list, indexEnd,
+		    interp, valuePtr, index, &objResultPtr) != TCL_OK
+		    || dstatus != TCL_OK) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    } else {
+		index = TclIndexDecode(opnd, TclIndexLast(objc));
+		if (Tcl_ListObjIndex(interp, valuePtr, index, &objResultPtr)
+		    != TCL_OK) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    }
+	    if (objResultPtr == NULL) {
+		TclNewObj(objResultPtr);
+	    }
+	    Tcl_IncrRefCount(objResultPtr);
+
+	    /*
+	     * Stash the list element on the stack.
+	     */
+
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    /* Already has the correct refCount */
+	    NEXT_INST_F(5, 1, -1);
+	} else {
+	    if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(opnd, TclIndexLast(objc));
+	    pcAdjustment = 5;
 	}
 
-	/* Decode end-offset index values. */
-
-	index = TclIndexDecode(opnd, objc - 1);
-	pcAdjustment = 5;
 
     lindexFastPath:
 	if (index >= 0 && index < objc) {
@@ -4956,33 +5010,42 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
-	toIdx = TclIndexDecode(toIdx, objc - 1);
-	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyList;
-	} else if (toIdx >= objc) {
-	    toIdx = objc - 1;
-	}
 
-	assert (toIdx >= 0 && toIdx < objc);
-	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
+	toIdxAnchor = TclIndexIsFromEnd(toIdx);
+	fromIdxAnchor = TclIndexIsFromEnd(fromIdx);
 
-	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	if (!Tcl_LengthIsFinite(objc)
+	    && (toIdxAnchor == 1 || fromIdxAnchor == 1)) {
 
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
+	    toIdx = TclIndexDecode(toIdx, SIZE_MAX);
+	    fromIdx = TclIndexDecode(fromIdx, SIZE_MAX);
+	    dstatus = TclObjectDispatchNoDefault(interp, objResultPtr,
+		valuePtr, list, rangeEnd, interp, valuePtr, toIdxAnchor,
+		toIdx, fromIdxAnchor, fromIdx);
+	    if (dstatus != TCL_OK || objResultPtr == NULL) {
+		goto gotError;
+	    }
 	} else {
+	    toIdx = TclIndexDecode(toIdx, TclIndexLast(objc));
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyList;
+	    } else if (Tcl_LengthIsFinite(objc) && toIdx + 1 >= objc + 1) {
+		toIdx = TclIndexLast(objc);
+	    }
+
+	    assert (toIdx < objc);
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    fromIdx = TclIndexDecode(fromIdx, objc - 1);
+
 	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
-	}
-	if (objResultPtr == NULL) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
 	}
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
@@ -5003,14 +5066,19 @@ TEBCresume(
 	if (length > 0) {
 	    Tcl_Size i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType.objType);
 	    /*
 	     * An empty list doesn't match anything.
 	     */
 
 	    do {
-		if (isArithSeries) {
-		    o = TclArithSeriesObjIndex(NULL, value2Ptr, i);
+		if (TclObjectHasInterface(valuePtr, list, index)) {
+		    TCL_UNUSEDVAR(int status);
+		    TclObjectDispatchNoDefault(interp, status, value2Ptr, list,
+			index, interp, value2Ptr, i, &o);
+		    if (!o) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
@@ -5023,9 +5091,7 @@ TEBCresume(
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
 		}
-		if (isArithSeries) {
-		    TclDecrRefCount(o);
-		}
+		TclBounceRefCount(o);
 		i++;
 	    } while (i < length && match == 0);
 	}
@@ -5292,39 +5358,46 @@ TEBCresume(
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
-	DECACHE_STACK_INFO();
-	if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
-	    CACHE_STACK_INFO();
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	CACHE_STACK_INFO();
-
-	if (index < 0 || index >= slength) {
-	    TclNewObj(objResultPtr);
-	} else if (TclIsPureByteArray(valuePtr)) {
-	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
-	} else if (valuePtr->bytes && slength == valuePtr->length) {
-	    objResultPtr = Tcl_NewStringObj((const char *)
-		    valuePtr->bytes+index, 1);
+	if (TclObjectHasInterface(valuePtr, string, index)) {
+	    int status;
+	    status = TclStringIndexInterface(interp, valuePtr, value2Ptr, &objResultPtr);
+	    if (status != TCL_OK) {
+		goto gotError;
+	    }
 	} else {
-	    char buf[4] = "";
-	    int ch = Tcl_GetUniChar(valuePtr, index);
+	    DECACHE_STACK_INFO();
+	    if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    CACHE_STACK_INFO();
 
-	    /*
-	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
-	     * but creating the object as a string seems to be faster in
-	     * practical use.
-	     */
-	    if (ch == -1) {
+	    if (index < 0 || index >= slength) {
 		TclNewObj(objResultPtr);
+	    } else if (TclIsPureByteArray(valuePtr)) {
+		objResultPtr = Tcl_NewByteArrayObj(
+			Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
+	    } else if (valuePtr->bytes && slength == valuePtr->length) {
+		objResultPtr = Tcl_NewStringObj((const char *)
+			valuePtr->bytes+index, 1);
 	    } else {
-		slength = Tcl_UniCharToUtf(ch, buf);
-		objResultPtr = Tcl_NewStringObj(buf, slength);
+		char buf[4] = "";
+		int ch = Tcl_GetUniChar(valuePtr, index);
+
+		/*
+		 * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
+		 * but creating the object as a string seems to be faster in
+		 * practical use.
+		 */
+		if (ch == -1) {
+		    TclNewObj(objResultPtr);
+		} else {
+		    slength = Tcl_UniCharToUtf(ch, buf);
+		    objResultPtr = Tcl_NewStringObj(buf, slength);
+		}
 	    }
 	}
-
 	TRACE_APPEND(("\"%s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
@@ -5369,14 +5442,73 @@ TEBCresume(
 	    NEXT_INST_F(9, 0, 0);
 	}
 
-	/* Decode index operands. */
+	if (TclObjectHasInterface(valuePtr, list, index)) {
+	    if ((TclIndexIsFromEnd(toIdx) || TclIndexIsFromEnd(fromIdx))
+		&& !Tcl_LengthIsFinite(slength)) {
 
-	toIdx = TclIndexDecode(toIdx, slength - 1);
-	fromIdx = TclIndexDecode(fromIdx, slength - 1);
-	if (toIdx == TCL_INDEX_NONE) {
-	    TclNewObj(objResultPtr);
+		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
+		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
+
+		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
+		    string, rangeEnd, valuePtr, fromIdx, toIdx) != TCL_OK
+		    || objResultPtr == NULL) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    } else {
+		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
+		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
+		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
+		    string, range, valuePtr, fromIdx, toIdx) != TCL_OK
+		    || objResultPtr == NULL) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    }
 	} else {
-	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	    /* Decode index operands. */
+
+	    /*
+	    assert ( toIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyRange;
+	    }
+
+	    toIdx = TclIndexDecode(toIdx, slength - 1);
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyRange;
+	    } else if (toIdx >= slength) {
+		toIdx = slength - 1;
+	    }
+
+	    assert ( toIdx != TCL_INDEX_NONE && toIdx < slength );
+
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    fromIdx = TclIndexDecode(fromIdx, slength - 1);
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    if (fromIdx + 1 <= toIdx + 1) {
+		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+		if (objResultPtr == NULL) {
+		    goto gotError;
+		}
+	    } else {
+	    emptyRange:
+		TclNewObj(objResultPtr);
+	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -6337,7 +6469,7 @@ TEBCresume(
 	if (Tcl_IsShared(valuePtr)) {
 	    /*
 	     * Here we do some surgery within the Tcl_Obj internals. We want
-	     * to copy the internalrep, but not the string, so we temporarily hide
+	     * to copy the intrep, but not the string, so we temporarily hide
 	     * the string so we do not copy it.
 	     */
 
@@ -6362,7 +6494,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasInternalRep(valuePtr,  &tclBooleanType.objType)) {
+	if (TclHasInternalRep(valuePtr, tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -6430,7 +6562,7 @@ TEBCresume(
 	    }
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType.objType);
+		    interp, listPtr, tclListType);
 		if (!objPtr) {
 		    goto gotError;
 		}
@@ -6514,7 +6646,6 @@ TEBCresume(
 		if (status != TCL_OK) {
 		    goto gotError;
 		}
-
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -7044,7 +7175,7 @@ TEBCresume(
 
 	    /*
 	     * dictPtr is no longer on the stack, and we're not
-	     * moving it into the internalrep of an iterator.  We need
+	     * moving it into the intrep of an iterator.  We need
 	     * to drop the refcount [Tcl Bug 9b352768e6].
 	     */
 
@@ -8392,7 +8523,7 @@ ExecuteExtendedBinaryMathOp(
     overflowExpon:
 
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
-		|| (value2Ptr->typePtr != &tclIntType.objType)
+		|| (value2Ptr->typePtr != tclIntType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
