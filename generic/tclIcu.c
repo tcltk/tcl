@@ -149,7 +149,8 @@ TCL_DECLARE_MUTEX(icu_mutex);
 
 static int FunctionNotAvailableError(Tcl_Interp *interp) {
     if (interp) {
-	Tcl_SetResult(interp, "ICU function not available", TCL_STATIC);
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("ICU function not available", TCL_INDEX_NONE));
     }
     return TCL_ERROR;
 }
@@ -267,7 +268,7 @@ static int DetectableEncodings(Tcl_Interp *interp)
 		const char *name;
 		int32_t len;
 		name = uenum_next(enumerator, &len, &status);
-                if (name == NULL || U_FAILURE(status)) {
+		if (name == NULL || U_FAILURE(status)) {
 		    name = "unknown";
 		    len = 7;
 		    status = U_ZERO_ERRORZ; /* Reset on error */
@@ -321,7 +322,7 @@ IcuDetectObjCmd(
 
     int all = 0;
     if (objc == 3) {
-        if (strcmp("-all", Tcl_GetString(objv[2]))) {
+	if (strcmp("-all", Tcl_GetString(objv[2]))) {
 	    Tcl_SetObjResult(
 		interp,
 		Tcl_ObjPrintf("Invalid option %s, must be \"-all\"",
@@ -374,7 +375,7 @@ IcuConverterNamesObjCmd (
     int32_t i;
     for (i = 0; i < count; ++i) {
 	const char *name = ucnv_getAvailableName(i);
-        if (name) {
+	if (name) {
 	    Tcl_ListObjAppendElement(
 		NULL, resultObj, Tcl_NewStringObj(name, -1));
 	}
@@ -426,9 +427,9 @@ IcuConverterAliasesObjCmd (
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
     uint16_t i;
     for (i = 0; i < count; ++i) {
-        status = U_ZERO_ERRORZ; /* Reset in case U_AMBIGUOUS_ALIAS_WARNING */
+	status = U_ZERO_ERRORZ; /* Reset in case U_AMBIGUOUS_ALIAS_WARNING */
 	const char *aliasName = ucnv_getAlias(name, i, &status);
-        if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
+	if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
 	    status = U_ZERO_ERRORZ; /* Reset error for next iteration */
 	    continue;
 	}
@@ -447,15 +448,15 @@ TclIcuCleanup(
 {
     Tcl_MutexLock(&icu_mutex);
     if (icu_fns.nopen-- <= 1) {
-        int i;
-        if (u_cleanup != NULL) {
+	int i;
+	if (u_cleanup != NULL) {
 	    u_cleanup();
 	}
 	for (i = 0; i < (int)(sizeof(icu_fns.libs) / sizeof(icu_fns.libs[0]));
 	     ++i) {
 	    if (icu_fns.libs[i] != NULL) {
-                Tcl_FSUnloadFile(NULL, icu_fns.libs[i]);
-            }
+		Tcl_FSUnloadFile(NULL, icu_fns.libs[i]);
+	    }
 	}
 	memset(&icu_fns, 0, sizeof(icu_fns));
     }
@@ -531,57 +532,57 @@ TclIcuInit(
 	    }
 	}
 	if (icu_fns.libs[0] != NULL) {
-            /* Loaded icuuc, load others with the same version */
-            nameobj = Tcl_ObjPrintf(DLLNAME, "i18n", icuversion+1);
-            Tcl_IncrRefCount(nameobj);
-            /* Ignore errors. Calls to contained functions will fail. */
-            (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
-            Tcl_DecrRefCount(nameobj);
-        }
+	    /* Loaded icuuc, load others with the same version */
+	    nameobj = Tcl_ObjPrintf(DLLNAME, "i18n", icuversion+1);
+	    Tcl_IncrRefCount(nameobj);
+	    /* Ignore errors. Calls to contained functions will fail. */
+	    (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
+	    Tcl_DecrRefCount(nameobj);
+	}
 #if defined(_WIN32)
-        /*
-         * On Windows, if no ICU install found, look for the system's
-         * (Win10 1703 or later). There are two cases. Newer systems
-         * have icu.dll containing all functions. Older systems have
-         * icucc.dll and icuin.dll
-         */
+	/*
+	 * On Windows, if no ICU install found, look for the system's
+	 * (Win10 1703 or later). There are two cases. Newer systems
+	 * have icu.dll containing all functions. Older systems have
+	 * icucc.dll and icuin.dll
+	 */
 	if (icu_fns.libs[0] == NULL) {
 	    Tcl_ResetResult(interp);
 		nameobj = Tcl_NewStringObj("icu.dll", TCL_INDEX_NONE);
 		Tcl_IncrRefCount(nameobj);
 		if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
 			== TCL_OK) {
-                    /* Reload same for second set of functions. */
-                    (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
-                    /* Functions do NOT have version suffixes */
+		    /* Reload same for second set of functions. */
+		    (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
+		    /* Functions do NOT have version suffixes */
 		    icuversion[0] = '\0';
 		}
 		Tcl_DecrRefCount(nameobj);
 	}
 	if (icu_fns.libs[0] == NULL) {
-            /* No icu.dll. Try last fallback */
-            Tcl_ResetResult(interp);
-            nameobj = Tcl_NewStringObj("icuuc.dll", TCL_INDEX_NONE);
-            Tcl_IncrRefCount(nameobj);
-            if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
-                == TCL_OK) {
-                Tcl_DecrRefCount(nameobj);
-                nameobj = Tcl_NewStringObj("icuin.dll", TCL_INDEX_NONE);
-                Tcl_IncrRefCount(nameobj);
-                (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
-                /* Functions do NOT have version suffixes */
-                icuversion[0] = '\0';
-            }
-            Tcl_DecrRefCount(nameobj);
+	    /* No icu.dll. Try last fallback */
+	    Tcl_ResetResult(interp);
+	    nameobj = Tcl_NewStringObj("icuuc.dll", TCL_INDEX_NONE);
+	    Tcl_IncrRefCount(nameobj);
+	    if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
+		== TCL_OK) {
+		Tcl_DecrRefCount(nameobj);
+		nameobj = Tcl_NewStringObj("icuin.dll", TCL_INDEX_NONE);
+		Tcl_IncrRefCount(nameobj);
+		(void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
+		/* Functions do NOT have version suffixes */
+		icuversion[0] = '\0';
+	    }
+	    Tcl_DecrRefCount(nameobj);
 	}
 #endif
 
 #define ICUUC_SYM(name)                                         \
-        strcpy(symbol, #name );                                 \
-        strcat(symbol, icuversion);                             \
-        icu_fns._##name = (fn_ ## name)                         \
-            Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol)
-        if (icu_fns.libs[0] != NULL) {
+	strcpy(symbol, #name );                                 \
+	strcat(symbol, icuversion);                             \
+	icu_fns._##name = (fn_ ## name)                         \
+	    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol)
+	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
 
@@ -589,7 +590,7 @@ TclIcuInit(
 	    ICUUC_SYM(ucnv_countAvailable);
 	    ICUUC_SYM(ucnv_getAlias);
 	    ICUUC_SYM(ucnv_getAvailableName);
- 
+
 	    ICUUC_SYM(ubrk_open);
 	    ICUUC_SYM(ubrk_close);
 	    ICUUC_SYM(ubrk_preceding);
@@ -606,20 +607,20 @@ TclIcuInit(
 	}
 
 #define ICUIN_SYM(name)                                         \
-        strcpy(symbol, #name );                                 \
-        strcat(symbol, icuversion);                             \
-        icu_fns._##name = (fn_ ## name)                         \
-            Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol)
-        if (icu_fns.libs[1] != NULL) {
-            ICUIN_SYM(ucsdet_close);
-            ICUIN_SYM(ucsdet_detect);
-            ICUIN_SYM(ucsdet_detectAll);
-            ICUIN_SYM(ucsdet_getName);
-            ICUIN_SYM(ucsdet_getAllDetectableCharsets);
-            ICUIN_SYM(ucsdet_open);
-            ICUIN_SYM(ucsdet_setText);
+	strcpy(symbol, #name );                                 \
+	strcat(symbol, icuversion);                             \
+	icu_fns._##name = (fn_ ## name)                         \
+	    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol)
+	if (icu_fns.libs[1] != NULL) {
+	    ICUIN_SYM(ucsdet_close);
+	    ICUIN_SYM(ucsdet_detect);
+	    ICUIN_SYM(ucsdet_detectAll);
+	    ICUIN_SYM(ucsdet_getName);
+	    ICUIN_SYM(ucsdet_getAllDetectableCharsets);
+	    ICUIN_SYM(ucsdet_open);
+	    ICUIN_SYM(ucsdet_setText);
 #undef ICUIN_SYM
-        }
+	}
 
     }
 #undef ICU_SYM
@@ -627,12 +628,12 @@ TclIcuInit(
     Tcl_MutexUnlock(&icu_mutex);
 
     if (icu_fns.libs[0] != NULL) {
-        /*
-         * Note refcounts updated BEFORE command definition to protect
-         * against self redefinition.
-         */
+	/*
+	 * Note refcounts updated BEFORE command definition to protect
+	 * against self redefinition.
+	 */
 	if (icu_fns.libs[1] != NULL) {
-            /* Commands needing both libraries */
+	    /* Commands needing both libraries */
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 1;
