@@ -352,7 +352,7 @@ static const CmdInfo builtInCmds[] = {
     {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
     {"lpop",		Tcl_LpopObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	CMD_IS_SAFE},
-    {"lremove", 	Tcl_LremoveObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lremove",		Tcl_LremoveObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -758,7 +758,7 @@ buildInfoObjCmd(
 		    p += len;
 		    q = strchr(++p, '.');
 		    if (!q) {
-		 	q = p + strlen(p);
+			q = p + strlen(p);
 		    }
 		    memcpy(buf, p, q - p);
 		    buf[q - p] = '\0';
@@ -1213,6 +1213,10 @@ Tcl_CreateInterp(void)
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
 	    CoroTypeObjCmd, NULL, NULL);
 
+    /* Load and intialize ICU */
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::loadIcu",
+	    TclLoadIcuObjCmd, NULL, NULL);
+
     /* Export unsupported commands */
     nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
     if (nsPtr) {
@@ -1488,9 +1492,11 @@ TclHideUnsafeCommands(
 	    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s",
 		    unsafePtr->ensembleNsName, unsafePtr->commandName);
 
+#define INTERIM_HACK_NAME "___tmp"
+
 	    if (TclRenameCommand(interp, TclGetString(cmdName),
-			"___tmp") != TCL_OK
-		    || Tcl_HideCommand(interp, "___tmp",
+			INTERIM_HACK_NAME) != TCL_OK
+		    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
 			    TclGetString(hideName)) != TCL_OK) {
 		Tcl_Panic("problem making '%s %s' safe: %s",
 			unsafePtr->ensembleNsName, unsafePtr->commandName,
@@ -2763,7 +2769,7 @@ Tcl_CreateObjCommand(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *)interp;
     Namespace *nsPtr;
     const char *tail;
 
@@ -2772,7 +2778,7 @@ Tcl_CreateObjCommand(
 	 * The interpreter is being deleted. Don't create any new commands;
 	 * it's not safe to muck with the interpreter anymore.
 	 */
-	return (Tcl_Command) NULL;
+	return NULL;
     }
 
     /*
@@ -3045,7 +3051,7 @@ TclInvokeObjectCommand(
     int argc,			/* Number of arguments. */
     const char **argv)	/* Argument strings. */
 {
-    Command *cmdPtr = ( Command *) clientData;
+    Command *cmdPtr = ( Command *)clientData;
     Tcl_Obj *objPtr;
     int i, length, result;
     Tcl_Obj **objv = (Tcl_Obj **)
@@ -9433,7 +9439,7 @@ TclNRTailcallObjCmd(
 
 	nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
 	listPtr = Tcl_NewListObj(objc, objv);
- 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }
