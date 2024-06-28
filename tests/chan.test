@@ -120,6 +120,16 @@ test chan-15.2 {chan command: truncate subcommand} -setup {
     catch {close $f}
     catch {removeFile $file}
 }
+test chan-15.3 {chan command: isbinary subcommand} -setup {
+    set file [makeFile {} testIsBinary]
+    set f [open $file w+]
+    fconfigure $f -translation binary
+} -body {
+    chan isbinary $f
+} -result 1 -cleanup {
+    catch {close $f}
+    catch {removeFile $file}
+}
 
 # TIP 287: chan pending
 test chan-16.1 {chan command: pending subcommand} -body {
