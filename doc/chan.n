@@ -546,8 +546,8 @@ changing the encoding in use. See \fBENCODING ERROR EXAMPLES\fR later.
 .
 Test whether the channel called \fIchannel\fR is a binary channel,
 returning 1 if it is and, and 0 otherwise. A binary channel is
-a channel with iso8859-1 encoding, -eofchar set to {} and
--translation set to cr.
+a channel with iso8859-1 or binary encoding, -eofchar set to {} and
+-translation set to lf.
 .\" METHOD: names
 .TP
 \fBchan names\fR ?\fIpattern\fR?
