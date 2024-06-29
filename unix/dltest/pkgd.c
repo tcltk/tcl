@@ -1,7 +1,7 @@
 /*
  * pkgd.c --
  *
- *	This file contains a simple Tcl package "PKGD" that is intended for
+ *	This file contains a simple Tcl package "pkgd" that is intended for
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *
