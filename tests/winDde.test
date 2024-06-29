@@ -130,104 +130,104 @@ test winDde-2.4 {Checking for existence, with only the topic specified} \
 # -------------------------------------------------------------------------
 
 test winDde-3.1 {DDE execute locally} -constraints dde -body {
-    set \xe1 ""
-    dde execute TclEval self [list set \xe1 foo]
-    set \xe1
+    set \xE1 ""
+    dde execute TclEval self [list set \xE1 foo]
+    set \xE1
 } -result foo
 test winDde-3.2 {DDE execute -async locally} -constraints dde -body {
-    set \xe1 ""
-    dde execute -async TclEval self [list set \xe1 foo]
+    set \xE1 ""
+    dde execute -async TclEval self [list set \xE1 foo]
     update
-    set \xe1
+    set \xE1
 } -result foo
 test winDde-3.3 {DDE request locally} -constraints dde -body {
-    set \xe1 ""
-    dde execute TclEval self [list set \xe1 foo]
-    dde request TclEval self \xe1
+    set \xE1 ""
+    dde execute TclEval self [list set \xE1 foo]
+    dde request TclEval self \xE1
 } -result foo
 test winDde-3.4 {DDE eval locally} -constraints dde -body {
-    set \xe1 ""
-    dde eval self set \xe1 foo
+    set \xE1 ""
+    dde eval self set \xE1 foo
 } -result foo
 test winDde-3.5 {DDE request locally} -constraints dde -body {
-    set \xe1 ""
-    dde execute TclEval self [list set \xe1 foo]
-    dde request -binary TclEval self \xe1
+    set \xE1 ""
+    dde execute TclEval self [list set \xE1 foo]
+    dde request -binary TclEval self \xE1
 } -result "foo\x00"
 # Set variable a to A with diaeresis (Unicode C4) by relying on the fact
 # that utf-8 is sent (e.g. "c3 84" on the wire)
 test winDde-3.6 {DDE request utf-8} -constraints dde -body {
-    set \xe1 "not set"
-    dde execute TclEval self "set \xe1 \xc4"
-    scan [set \xe1] %c
+    set \xE1 "not set"
+    dde execute TclEval self "set \xE1 \xC4"
+    scan [set \xE1] %c
 } -result 196
 # Set variable a to A with diaeresis (Unicode C4) using binary execute
 # and compose utf-8 (e.g. "c3 84" ) manually
 test winDde-3.7 {DDE request binary} -constraints {dde notWine} -body {
-    set \xe1 "not set"
-    dde execute -binary TclEval self [list set \xc3\xa1 \xc3\x84\x00]
-    scan [set \xe1] %c
+    set \xE1 "not set"
+    dde execute -binary TclEval self [list set \xC3\xA1 \xC3\x84\x00]
+    scan [set \xE1] %c
 } -result 196
 test winDde-3.8 {DDE poke locally} -constraints {dde debug} -body {
-    set \xe1 ""
-    dde poke TclEval self \xe1 \xc4
-    dde request TclEval self \xe1
-} -result \xc4
+    set \xE1 ""
+    dde poke TclEval self \xE1 \xC4
+    dde request TclEval self \xE1
+} -result \xC4
 test winDde-3.9 {DDE poke -binary locally} -constraints {dde debug} -body {
-    set \xe1 ""
-    dde poke -binary TclEval self \xe1 \xc3\x84\x00
-    dde request TclEval self \xe1
-} -result \xc4
+    set \xE1 ""
+    dde poke -binary TclEval self \xE1 \xC3\x84\x00
+    dde request TclEval self \xE1
+} -result \xC4
 
 # -------------------------------------------------------------------------
 
 test winDde-4.1 {DDE execute remotely} -constraints {dde stdio} -body {
-    set \xe1 ""
+    set \xE1 ""
     set name ch\xEDld-4.1
     set child [createChildProcess $name]
-    dde execute TclEval $name [list set \xe1 foo]
+    dde execute TclEval $name [list set \xE1 foo]
     dde execute TclEval $name {set done 1}
     update
-    set \xe1
+    set \xE1
 } -result ""
 test winDde-4.2 {DDE execute async remotely} -constraints {dde stdio} -body {
-    set \xe1 ""
+    set \xE1 ""
     set name ch\xEDld-4.2
     set child [createChildProcess $name]
-    dde execute -async TclEval $name [list set \xe1 foo]
+    dde execute -async TclEval $name [list set \xE1 foo]
     update
     dde execute TclEval $name {set done 1}
     update
-    set \xe1
+    set \xE1
 } -result ""
 test winDde-4.3 {DDE request remotely} -constraints {dde stdio} -body {
-    set \xe1 ""
+    set \xE1 ""
     set name ch\xEDld-4.3
     set child [createChildProcess $name]
-    dde execute TclEval $name [list set \xe1 foo]
-    set \xe1 [dde request TclEval $name \xe1]
+    dde execute TclEval $name [list set \xE1 foo]
+    set \xE1 [dde request TclEval $name \xE1]
     dde execute TclEval $name {set done 1}
     update
-    set \xe1
+    set \xE1
 } -result foo
 test winDde-4.4 {DDE eval remotely} -constraints {dde stdio} -body {
-    set \xe1 ""
+    set \xE1 ""
     set name ch\xEDld-4.4
     set child [createChildProcess $name]
-    set \xe1 [dde eval $name set \xe1 foo]
+    set \xE1 [dde eval $name set \xE1 foo]
     dde execute TclEval $name {set done 1}
     update
-    set \xe1
+    set \xE1
 }  -result foo
 test winDde-4.5 {DDE poke remotely} -constraints {dde debug stdio} -body {
-    set \xe1 ""
+    set \xE1 ""
     set name ch\xEDld-4.5
     set child [createChildProcess $name]
-    dde poke TclEval $name \xe1 foo
-    set \xe1 [dde request TclEval $name \xe1]
+    dde poke TclEval $name \xE1 foo
+    set \xE1 [dde request TclEval $name \xE1]
     dde execute TclEval $name {set done 1}
     update
-    set \xe1
+    set \xE1
 } -result foo
 
 # -------------------------------------------------------------------------
@@ -402,8 +402,8 @@ test winDde-8.9 {Safe DDE check command evaluation} -constraints dde -setup {
     child eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
     child invokehidden dde servername -handler DDEACCEPT child
 } -body {
-    dde eval child set \xe1 1
-    child eval set \xe1
+    dde eval child set \xE1 1
+    child eval set \xE1
 } -cleanup {interp delete child} -result 1
 test winDde-8.10 {Safe DDE check command evaluation (2)} -constraints dde -setup {
     interp create -safe child

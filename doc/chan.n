@@ -245,10 +245,10 @@ files to slow destinations like network sockets.
 .PP
 \fB\-size\fR limits the number of characters copied.
 .PP
-If \fB\-command\fR is gviven, \fBchan copy\fR returns immediately, works in the
+If \fB\-command\fR is given, \fBchan copy\fR returns immediately, works in the
 background, and calls \fIcallback\fR when the copy completes, providing as an
 additional argument the number of characters written to \fIoutputChan\fR.  If
-an error occurres during the background copy, another argument provides message
+an error occurs during the background copy, another argument provides message
 for the error.  \fIinputChan\fR and \fIoutputChan\fR are automatically
 configured for non-blocking mode if needed.  Background copying only works
 correctly if events are being processed, e.g. via \fBvwait\fR or Tk.
