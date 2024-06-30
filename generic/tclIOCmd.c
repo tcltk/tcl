@@ -838,6 +838,46 @@ Tcl_EofObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_Eof(chan)));
     return TCL_OK;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ChanIsBinaryCmd --
+ *
+ *	This function is invoked to process the Tcl "chan isbinary" command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interp's result to boolean true or false depending on whether the
+ *	specified channel is a binary channel.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+ChanIsBinaryCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
+	return TCL_ERROR;
+    }
+
+    if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TclChanIsBinary(chan)));
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2035,6 +2075,7 @@ TclInitChanCmd(
 	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
 	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"isbinary",	ChanIsBinaryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
 	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
 	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
