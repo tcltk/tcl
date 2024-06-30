@@ -7537,6 +7537,34 @@ CheckChannelErrors(
 /*
  *----------------------------------------------------------------------
  *
+ * TclChanIsBinary --
+ *
+ *	Returns 1 if the channel is a binary channel, 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChanIsBinary(
+    Tcl_Channel chan)		/* Does this channel have EOF? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return ((statePtr->encoding == GetBinaryEncoding()) && !statePtr->inEofChar
+	    && (!GotFlag(statePtr, TCL_READABLE) || (statePtr->inputTranslation == TCL_TRANSLATE_LF))
+	    && (!GotFlag(statePtr, TCL_WRITABLE) || (statePtr->outputTranslation == TCL_TRANSLATE_LF)));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Eof --
  *
  *	Returns 1 if the channel is at EOF, 0 otherwise.
@@ -8225,8 +8253,10 @@ Tcl_SetChannelOption(
 	Tcl_Encoding encoding;
 	int profile;
 
-	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
-	    encoding = Tcl_GetEncoding(NULL, "iso8859-1");
+	if ((newValue[0] == '\0') || !strcmp(newValue, "binary")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unknown encoding \"%s\": No longer supported.\n"
+		    "\tplease use either \"-translation binary\" or \"-encoding iso8859-1\"", newValue));
+	    return TCL_ERROR;
 	} else {
 	    encoding = Tcl_GetEncoding(interp, newValue);
 	    if (encoding == NULL) {
