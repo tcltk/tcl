@@ -23,7 +23,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint time64bit [expr {
-    ([llength [info command testsize]] ? 
+    ([llength [info command testsize]] ?
 	[testsize st_mtime] : $::tcl_platform(pointerSize)) >= 8
 }]
 testConstraint linkDirectory [expr {
