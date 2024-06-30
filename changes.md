@@ -28,6 +28,7 @@ writing Tcl scripts.
 
 ## New commands
  - `array default`, `array for`
+ - `chan isbinary`
  - `coroinject`, `coroprobe`
  - `clock add weekdays`
  - `dict getdefault`
