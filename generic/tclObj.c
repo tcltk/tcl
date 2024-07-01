@@ -376,14 +376,20 @@ TclInitObjSubsystem(void)
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
+    Tcl_RegisterObjType(&tclBignumType);
+    Tcl_RegisterObjType(&tclBooleanType);    
+    Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclDoubleType);
-    Tcl_RegisterObjType(&tclStringType);
+    Tcl_RegisterObjType(&tclExprCodeType);
+    Tcl_RegisterObjType(&tclIntType);
+    Tcl_RegisterObjType(&tclIndexType);
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
-    Tcl_RegisterObjType(&tclByteCodeType);
-    Tcl_RegisterObjType(&tclCmdNameType);
-    Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
+    Tcl_RegisterObjType(&tclStringType);
+    Tcl_RegisterObjType(&tclCmdNameType);
+    Tcl_RegisterObjType(&tclEnsembleCmdType);
+    Tcl_RegisterObjType(&tclRegexpType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
