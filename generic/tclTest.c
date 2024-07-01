@@ -277,6 +277,7 @@ static Tcl_CmdProc	Testset2Cmd;
 static Tcl_CmdProc	TestseterrorcodeCmd;
 static Tcl_ObjCmdProc	TestsetobjerrorcodeCmd;
 static Tcl_CmdProc	TestsetplatformCmd;
+static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
@@ -688,6 +689,7 @@ Tcltest_Init(
 	    TestGetIntForIndexCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testsize", TestSizeCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "teststaticlibrary", TeststaticlibraryCmd,
@@ -2068,7 +2070,7 @@ static void SpecialFree(
  *    these functions (i/o command cannot test all combinations)
  *    The arguments at the script level are roughly those of the above
  *    functions:
- *        encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
+ *	encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
  * Results:
  *    TCL_OK or TCL_ERROR. This any errors running the test, NOT the
@@ -3537,7 +3539,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	}
     } else if (strcmp(argv[1], "update") == 0) {
 	int v;
@@ -3654,7 +3656,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
@@ -3752,7 +3754,7 @@ TestlinkarrayCmd(
 	    i++;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i++], LinkType, "type", 0,
- 		&typeIndex) != TCL_OK) {
+		&typeIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntFromObj(interp, objv[i++], &size) == TCL_ERROR) {
@@ -3767,7 +3769,7 @@ TestlinkarrayCmd(
 
 	if (i < objc) {
 	    if (Tcl_GetWideIntFromObj(interp, objv[i], &addr) == TCL_ERROR) {
- 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong address value", -1));
 		return TCL_ERROR;
 	    }
@@ -4856,6 +4858,27 @@ TestsetplatformCmd(
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+static int
+TestSizeCmd(
+    TCL_UNUSED(void *),	/* Unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
+{
+    if (objc != 2) {
+	goto syntax;
+    }
+    if (strcmp(Tcl_GetString(objv[1]), "st_mtime") == 0) {
+	Tcl_StatBuf *statPtr;
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(statPtr->st_mtime)));
+	return TCL_OK;
+    }
+
+syntax:
+    Tcl_WrongNumArgs(interp, 1, objv, "st_mtime");
+    return TCL_ERROR;
 }
 
 /*
@@ -6289,7 +6312,7 @@ TestChannelCmd(
 	}
 
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
+		(Tcl_WideInt)(size_t)Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 
@@ -6421,7 +6444,7 @@ TestChannelCmd(
 
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " transform channelId -command cmd\"", (char *)NULL);
+		    " transform channel -command cmd\"", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (strcmp(argv[3], "-command") != 0) {
@@ -8508,15 +8531,15 @@ InterpCompiledVarResolver(
     Tcl_ResolvedVarInfo **rPtr)
 {
     if (*name == 'T') {
- 	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
+	MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *)Tcl_Alloc(sizeof(MyResolvedVarInfo));
 
- 	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
- 	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
- 	resVarInfo->var = NULL;
- 	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
- 	Tcl_IncrRefCount(resVarInfo->nameObj);
- 	*rPtr = &resVarInfo->vInfo;
- 	return TCL_OK;
+	resVarInfo->vInfo.fetchProc = MyCompiledVarFetch;
+	resVarInfo->vInfo.deleteProc = MyCompiledVarFree;
+	resVarInfo->var = NULL;
+	resVarInfo->nameObj = Tcl_NewStringObj(name, -1);
+	Tcl_IncrRefCount(resVarInfo->nameObj);
+	*rPtr = &resVarInfo->vInfo;
+	return TCL_OK;
     }
     return TCL_CONTINUE;
 }
@@ -8633,8 +8656,7 @@ int TestApplyLambdaObjCmd (
      *  - The body of the lambda (lambdaObjs[1]) ALREADY has internal
      *    representation of ByteCode and thus will not be compiled again
      */
-    evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so
-     				no need for IncrRef */
+    evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so no need for IncrRef */
     result = Tcl_EvalObjv(interp, 2, evalObjs, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(evalObjs[0]);
     Tcl_DecrRefCount(lambdaObj);

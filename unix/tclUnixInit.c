@@ -54,11 +54,11 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-        unsigned int  dwOemId;
-        struct {
-            int wProcessorArchitecture;
-            int wReserved;
-        };
+	unsigned int  dwOemId;
+	struct {
+	    int wProcessorArchitecture;
+	    int wReserved;
+	};
     };
     unsigned int     dwPageSize;
     void *lpMinimumApplicationAddress;
@@ -335,7 +335,6 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 MODULE_SCOPE long tclMacOSXDarwinRelease;
 long tclMacOSXDarwinRelease = 0;
 #endif
-
 
 /*
  *---------------------------------------------------------------------------
@@ -861,15 +860,15 @@ TclpSetVariables(
     }
     Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
-        /* Some platforms build configure scripts expect ~ expansion so do that */
-        Tcl_Obj *origPaths;
-        Tcl_Obj *resolvedPaths;
+	/* Some platforms build configure scripts expect ~ expansion so do that */
+	Tcl_Obj *origPaths;
+	Tcl_Obj *resolvedPaths;
 
-        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
-        resolvedPaths = TclResolveTildePathList(origPaths);
-        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
-            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
-        }
+	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+	resolvedPaths = TclResolveTildePathList(origPaths);
+	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+	}
     }
 
 #ifdef DJGPP

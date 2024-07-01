@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.0b2
+package require -exact tcl 9.0b3
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -43,15 +43,15 @@ package require -exact tcl 9.0b2
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-        set auto_path [apply {{} {
-            lmap path $::env(TCLLIBPATH) {
-                # Paths relative to unresolvable home dirs are ignored
-                if {[catch {file tildeexpand $path} expanded_path]} {
-                    continue
-                }
-                set expanded_path
-            }
-        }}]
+	set auto_path [apply {{} {
+	    lmap path $::env(TCLLIBPATH) {
+		# Paths relative to unresolvable home dirs are ignored
+		if {[catch {file tildeexpand $path} expanded_path]} {
+		    continue
+		}
+		set expanded_path
+	    }
+	}}]
     } else {
 	set auto_path ""
     }
@@ -109,17 +109,15 @@ if {[interp issafe]} {
 
     # Set up the 'clock' ensemble
 
-    proc clock args {
+    apply {{} {
 	set cmdmap [dict create]
 	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
 	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
 	namespace inscope ::tcl::clock [list namespace ensemble create -command \
-	    [uplevel 1 [list ::namespace origin [::lindex [info level 0] 0]]] \
-	    -map $cmdmap]
+	    ::clock -map $cmdmap]
 	::tcl::unsupported::clock::configure -init-complete
-	uplevel 1 [info level 0]
-    }
+    }}
 }
 
 # Conditionalize for presence of exec.
@@ -556,12 +554,12 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index $pattern] {
-            if {([namespace which -command $name] eq "")
+	foreach name [array names auto_index $pattern] {
+	    if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace inscope :: $auto_index($name)
-            }
-        }
+		namespace inscope :: $auto_index($name)
+	    }
+	}
     }
 }
 

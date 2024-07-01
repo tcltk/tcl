@@ -1479,7 +1479,7 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
-		    subErrCode, (void *)NULL);
+		    subErrCode, (char *)NULL);
 	}
     }
 
@@ -1924,7 +1924,7 @@ ParseLexeme(
     unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
 				 * storage. */
     Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
-				   storage, if non-NULL. */
+				 * storage, if non-NULL. */
 {
     const char *end;
     int ch;

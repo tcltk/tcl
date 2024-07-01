@@ -35,7 +35,7 @@ typedef struct {
     HANDLE readyEvent;		/* System event used to trigger the requesting
 				 * thread when the clock calibration procedure
 				 * is initialized for the first time. */
-    HANDLE exitEvent; 		/* Event to signal out of an exit handler to
+    HANDLE exitEvent;		/* Event to signal out of an exit handler to
 				 * tell the calibration loop to terminate. */
     LARGE_INTEGER nominalFreq;	/* Nominal frequency of the system performance
 				 * counter, that is, the value returned from
@@ -103,14 +103,13 @@ static struct {
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
 
-
 /*
  * Declarations for functions defined later in this file.
  */
 
 static void		StopCalibration(void *clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
-static void 		UpdateTimeEachSecond(void);
+static void		UpdateTimeEachSecond(void);
 static void		ResetCounterSamples(unsigned long long fileTime,
 			    long long perfCounter, long long perfFreq);
 static long long	AccumulateSample(long long perfCounter,
@@ -279,7 +278,7 @@ TclpGetWideClicks(void)
 	wideClick.microsecsScale = 1;
 	return TclpGetMicroseconds();
     } else {
-    	return TclpGetMicroseconds();
+	return TclpGetMicroseconds();
     }
 }
 
@@ -293,7 +292,7 @@ TclpGetWideClicks(void)
  *	and back.
  *
  * Results:
- * 	1 click in microseconds as double.
+ *	1 click in microseconds as double.
  *
  * Side effects:
  *	None.
@@ -305,7 +304,7 @@ double
 TclpWideClickInMicrosec(void)
 {
     if (!wideClick.initialized) {
-    	(void) TclpGetWideClicks();	/* initialize */
+	(void) TclpGetWideClicks();	/* initialize */
     }
     return wideClick.microsecsScale;
 }
@@ -871,7 +870,7 @@ UpdateTimeEachSecond(void)
 
     if (curFileTime.QuadPart > lastFileTime.QuadPart && curFileTime.QuadPart <
 	    lastFileTime.QuadPart + (timeInfo.calibrationInterv * 10000000)) {
-    	/*
+	/*
 	 * Look again in next one second.
 	 */
 
@@ -941,13 +940,13 @@ UpdateTimeEachSecond(void)
 
     tdiff = vt0 - curFileTime.QuadPart;
     if (tdiff > 10000000 || tdiff < -10000000) {
-    	/*
+	/*
 	 * Jump to current system time, use curent estimated frequency.
 	 */
 
-    	vt0 = curFileTime.QuadPart;
+	vt0 = curFileTime.QuadPart;
     } else {
-    	/*
+	/*
 	 * Calculate new frequency and estimate drift to the next second.
 	 */
 
@@ -1016,11 +1015,11 @@ UpdateTimeEachSecond(void)
 
 	    vt1 = vt0 - curFileTime.QuadPart;
 	    if (vt1 > 10000000 || vt1 < -10000000) {
-	    	/*
+		/*
 		 * Larger jump resp. shift relative new file-time.
 		 */
 
-	    	vt0 = curFileTime.QuadPart;
+		vt0 = curFileTime.QuadPart;
 	    }
 	}
     }

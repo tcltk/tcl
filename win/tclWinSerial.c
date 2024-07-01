@@ -202,23 +202,23 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
  */
 
 static const Tcl_ChannelType serialChannelType = {
-    "serial",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    SerialInputProc,		/* Input proc. */
-    SerialOutputProc,		/* Output proc. */
+    "serial",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    SerialInputProc,
+    SerialOutputProc,
+    NULL,			/* Deprecated. */
+    SerialSetOptionProc,
+    SerialGetOptionProc,
+    SerialWatchProc,
+    SerialGetHandleProc,
+    SerialCloseProc,
+    SerialBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
     NULL,			/* Seek proc. */
-    SerialSetOptionProc,	/* Set option proc. */
-    SerialGetOptionProc,	/* Get option proc. */
-    SerialWatchProc,		/* Set up notifier to watch the channel. */
-    SerialGetHandleProc,	/* Get an OS handle from channel. */
-    SerialCloseProc,		/* close2proc. */
-    SerialBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    SerialThreadActionProc,	/* thread action proc */
-    NULL                       /* truncate */
+    SerialThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -613,7 +613,6 @@ SerialCloseProc(
 	return EINVAL;
     }
 
-
     if (serialPtr->validMask & TCL_READABLE) {
 	PurgeComm(serialPtr->handle, PURGE_RXABORT | PURGE_RXCLEAR);
 	CloseHandle(serialPtr->osRead.hEvent);
@@ -621,7 +620,7 @@ SerialCloseProc(
     serialPtr->validMask &= ~TCL_READABLE;
 
     if (serialPtr->writeThread) {
-    	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
+	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
 
 	CloseHandle(serialPtr->osWrite.hEvent);
 	CloseHandle(serialPtr->evWritable);
@@ -1479,7 +1478,6 @@ TclWinOpenSerialChannel(
     TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
-
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
     PurgeComm(handle,

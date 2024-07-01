@@ -36,7 +36,6 @@
 #include <sys/types.h>
 #include <loader.h>
 
-
 /*
  * Static procedures defined within this file.
  */
@@ -129,7 +128,7 @@ TclpDlopen(
      */
 
     if ((pkg = strrchr(fileName, '/')) == NULL) {
-        pkg = fileName;
+	pkg = fileName;
     } else {
 	pkg++;
     }

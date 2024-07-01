@@ -495,8 +495,10 @@ However, if the name does not start with a \fB::\fR
 (i.e., is \fIrelative\fR),
 Tcl follows basic rules for looking it up:
 .IP \(bu
-\fBVariable names\fR are always resolved by looking first in the current
-namespace, and then in the global namespace.
+\fBVariable names\fR are always resolved starting in the current
+namespace. In the absence of special resolvers, foo::bar::baz refers to
+a variable named "baz" in a namespace named "bar" that is a child of a
+namespace named "foo" that is a child of the current namespace of the interpreter.
 .IP \(bu
 \fBCommand names\fR are always resolved by looking in the current namespace
 first. If not found there, they are searched for in every namespace on the
@@ -516,10 +518,9 @@ set traceLevel 0
 }
 .CE
 .PP
-Tcl looks for \fBtraceLevel\fR in the namespace \fBDebug\fR
-and then in the global namespace.
+Tcl looks for \fBtraceLevel\fR in the namespace \fBDebug\fR.
 It looks up the command \fBprintTrace\fR in the same way.
-If a variable or command name is not found in either context,
+If a variable or command name is not found,
 the name is undefined.
 To make this point absolutely clear, consider the following example:
 .PP
@@ -534,11 +535,9 @@ set traceLevel 0
 }
 .CE
 .PP
-Here Tcl looks for \fBtraceLevel\fR first in the namespace \fBFoo::Debug\fR.
-Since it is not found there, Tcl then looks for it
-in the global namespace.
-The variable \fBFoo::traceLevel\fR is completely ignored
-during the name resolution process.
+Here Tcl looks for \fBtraceLevel\fR in the namespace \fBFoo::Debug\fR.
+The variables \fBFoo::traceLevel\fR and \fBFoo::Debug::traceLevel\fR
+are completely ignored during the name resolution process.
 .PP
 You can use the \fBnamespace which\fR command to clear up any question
 about name resolution.
@@ -548,19 +547,19 @@ For example, the command:
 \fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR -variable traceLevel}
 .CE
 .PP
-returns \fB::traceLevel\fR.
-On the other hand, the command,
+returns the empty string.
+The command,
 .PP
 .CS
 \fBnamespace eval\fR Foo {\fBnamespace which\fR -variable traceLevel}
 .CE
 .PP
-returns \fB::Foo::traceLevel\fR.
+returns the empty string as well.
 .PP
 As mentioned above,
-namespace names are looked up differently
-than the names of variables and commands.
-Namespace names are always resolved in the current namespace.
+namespace names and variables are looked up differently
+than the names of commands.
+Namespace names and variables are always resolved in the current namespace.
 This means, for example,
 that a \fBnamespace eval\fR command that creates a new namespace
 always creates a child of the current namespace

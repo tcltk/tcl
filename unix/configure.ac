@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b2"
+TCL_PATCH_LEVEL="b3"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -165,6 +165,7 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
+  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
@@ -403,7 +404,7 @@ AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
 	#include <sys/types.h>
 	#include <sys/socket.h>
     ]], [[
-    	socklen_t foo;
+	socklen_t foo;
     ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])

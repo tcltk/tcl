@@ -30,10 +30,12 @@ return codes: 1 (\fBTCL_ERROR\fR), 2 (\fBTCL_RETURN\fR), 3 (\fBTCL_BREAK\fR),
 and 4 (\fBTCL_CONTINUE\fR).  Errors during evaluation of a script are indicated
 by a return code of \fBTCL_ERROR\fR.  The other exceptional return codes are
 returned by the \fBreturn\fR, \fBbreak\fR, and \fBcontinue\fR commands
-and in other special situations as documented.  Tcl packages can define
-new commands that return other integer values as return codes as well,
-and scripts that make use of the \fBreturn \-code\fR command can also
-have return codes other than the five defined by Tcl.
+and in other special situations as documented.
+New commands defined by Tcl packages as well as scripts that make
+use of the \fBreturn \-code\fR  command can return other integer
+values as the return code. These must however lie outside the range
+reserved for Tcl as documented for the \fBreturn\fR command.
+
 .PP
 If the \fIresultVarName\fR argument is given, then the variable it names is
 set to the result of the script evaluation.  When the return code from the

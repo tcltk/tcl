@@ -30,13 +30,13 @@ testConstraint testchannel	[llength [info commands testchannel]]
 
 test iocmd-1.1 {puts command} {
    list [catch {puts} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.2 {puts command} {
    list [catch {puts a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.3 {puts command} {
    list [catch {puts froboz -nonewline kablooie} msg] $msg
-} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+} {1 {wrong # args: should be "puts ?-nonewline? ?channel? string"}}
 test iocmd-1.4 {puts command} {
    list [catch {puts froboz hello} msg] $msg
 } {1 {can not find channel named "froboz"}}
@@ -48,21 +48,21 @@ set path(test1) [makeFile {} test1]
 
 test iocmd-1.6 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts -nonewline $f foobar
     close $f
     file size $path(test1)
 } 6
 test iocmd-1.7 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f foobar
     close $f
     file size $path(test1)
 } 7
 test iocmd-1.8 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {} -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f [binary format a4a5 foo bar]
     close $f
     file size $path(test1)
@@ -70,10 +70,10 @@ test iocmd-1.8 {puts command} {
 
 test iocmd-2.1 {flush command} {
    list [catch {flush} msg] $msg
-} {1 {wrong # args: should be "flush channelId"}}
+} {1 {wrong # args: should be "flush channel"}}
 test iocmd-2.2 {flush command} {
    list [catch {flush a b c d e} msg] $msg
-} {1 {wrong # args: should be "flush channelId"}}
+} {1 {wrong # args: should be "flush channel"}}
 test iocmd-2.3 {flush command} {
    list [catch {flush foo} msg] $msg
 } {1 {can not find channel named "foo"}}
@@ -83,10 +83,10 @@ test iocmd-2.4 {flush command} {
 
 test iocmd-3.1 {gets command} {
    list [catch {gets} msg] $msg
-} {1 {wrong # args: should be "gets channelId ?varName?"}}
+} {1 {wrong # args: should be "gets channel ?varName?"}}
 test iocmd-3.2 {gets command} {
    list [catch {gets a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "gets channelId ?varName?"}}
+} {1 {wrong # args: should be "gets channel ?varName?"}}
 test iocmd-3.3 {gets command} {
    list [catch {gets aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
@@ -107,16 +107,16 @@ test iocmd-3.5 {gets command} {
 
 test iocmd-4.1 {read command} {
    list [catch {read} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.2 {read command} {
    list [catch {read a b c d e f g h} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.3 {read command} {
    list [catch {read aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
 test iocmd-4.4 {read command} {
    list [catch {read -nonewline} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"}}
 test iocmd-4.5 {read command} {
    list [catch {read -nonew file4} msg] $msg $::errorCode
 } {1 {can not find channel named "-nonew"} {TCL LOOKUP CHANNEL -nonew}}
@@ -136,7 +136,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
     set x [list [catch {read -nonewline $f 20 z} msg] $msg $::errorCode]
     close $f
     set x
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "read channel ?numChars?" or "read ?-nonewline? channel"} {TCL WRONGARGS}}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $::errorCode
 } {1 {expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
@@ -161,10 +161,10 @@ test iocmd-4.12 {read command} -setup {
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
-} -result {wrong # args: should be "seek channelId offset ?origin?"}
+} -result {wrong # args: should be "seek channel offset ?origin?"}
 test iocmd-5.2 {seek command} -returnCodes error -body {
     seek a b c d e f g
-} -result {wrong # args: should be "seek channelId offset ?origin?"}
+} -result {wrong # args: should be "seek channel offset ?origin?"}
 test iocmd-5.3 {seek command} -returnCodes error -body {
     seek stdin gugu
 } -result {expected integer but got "gugu"}
@@ -174,20 +174,20 @@ test iocmd-5.4 {seek command} -returnCodes error -body {
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
-} {1 {wrong # args: should be "tell channelId"}}
+} {1 {wrong # args: should be "tell channel"}}
 test iocmd-6.2 {tell command} {
     list [catch {tell a b c d e} msg] $msg
-} {1 {wrong # args: should be "tell channelId"}}
+} {1 {wrong # args: should be "tell channel"}}
 test iocmd-6.3 {tell command} {
     list [catch {tell aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
 
 test iocmd-7.1 {close command} {
     list [catch {close} msg] $msg
-} {1 {wrong # args: should be "close channelId ?direction?"}}
+} {1 {wrong # args: should be "close channel ?direction?"}}
 test iocmd-7.2 {close command} {
     list [catch {close a b c d e} msg] $msg
-} {1 {wrong # args: should be "close channelId ?direction?"}}
+} {1 {wrong # args: should be "close channel ?direction?"}}
 test iocmd-7.3 {close command} {
     list [catch {close aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
@@ -216,10 +216,10 @@ proc expectedOpts {got extra} {
 }
 test iocmd-8.1 {fconfigure command} -returnCodes error -body {
     fconfigure
-} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+} -result {wrong # args: should be "fconfigure channel ?-option value ...?"}
 test iocmd-8.2 {fconfigure command} -returnCodes error -body {
     fconfigure a b c d e f
-} -result {wrong # args: should be "fconfigure channelId ?-option value ...?"}
+} -result {wrong # args: should be "fconfigure channel ?-option value ...?"}
 test iocmd-8.3 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -241,7 +241,7 @@ test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
+    fconfigure $f1 -translation lf -encoding utf-16
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
@@ -252,7 +252,7 @@ test iocmd-8.8 {fconfigure command} -setup {
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding utf-16 -profile tcl8
+		-encoding utf-16 -profile tcl8
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
 } -cleanup {
@@ -262,8 +262,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary
+    fconfigure $f1 -translation binary -buffering none -buffersize 4040
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
@@ -376,10 +375,10 @@ test iocmd-8.23 {fconfigure -profile badprofile} -body {
 
 test iocmd-9.1 {eof command} {
     list [catch {eof} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "eof channel"} {TCL WRONGARGS}}
 test iocmd-9.2 {eof command} {
     list [catch {eof a b} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+} {1 {wrong # args: should be "eof channel"} {TCL WRONGARGS}}
 test iocmd-9.3 {eof command} {
     catch {close file100}
     list [catch {eof file100} msg] $msg $::errorCode
@@ -389,10 +388,10 @@ test iocmd-9.3 {eof command} {
 
 test iocmd-10.1 {fblocked command} {
     list [catch {fblocked} msg] $msg
-} {1 {wrong # args: should be "fblocked channelId"}}
+} {1 {wrong # args: should be "fblocked channel"}}
 test iocmd-10.2 {fblocked command} {
     list [catch {fblocked a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "fblocked channelId"}}
+} {1 {wrong # args: should be "fblocked channel"}}
 test iocmd-10.3 {fblocked command} {
     list [catch {fblocked file1000} msg] $msg
 } {1 {can not find channel named "file1000"}}
@@ -447,17 +446,14 @@ test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
 test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
     file delete $path(test3)
     set f [open $path(test3) w]
-    fconfigure $f -eofchar {}
     puts $f xyzzy
     close $f
     set f [open $path(test3) WRONLY]
-    fconfigure $f -eofchar {}
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
     close $f
     set f [open $path(test3) r]
-    fconfigure $f -eofchar {}
     lappend x [gets $f]
     close $f
     set y [list 1 [format "channel \"%s\" wasn't opened for reading" $f] abzzy]
@@ -496,14 +492,14 @@ test iocmd-12.10 {POSIX open access modes: BINARY} {
     close $f
     set result
 } 5
-test iocmd-12.11 {POSIX open access modes: BINARY} -body {
+test iocmd-12.10.1 {POSIX open access modes: BINARY} -body {
     after 100
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f Ɉ		;# throws an exception
 } -cleanup {
     close $f
 } -returnCodes 1 -match glob -result {error writing "*": invalid or incomplete multibyte or wide character}
-test iocmd-12.12 {POSIX open access modes: BINARY} {
+test iocmd-12.11 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f H
     close $f
@@ -971,17 +967,6 @@ proc onfinal {} {
     if {[lindex $hargs 0] ne "finalize"} {return}
     return -code return ""
 }
-
-proc onwatch {} {
-    upvar args hargs
-    lassign $hargs watch chan eventspec
-    if {$watch ne "watch"} return
-    foreach spec $eventspec {
-	chan postevent $chan $spec
-    }
-    return
-}
-
 }
 
 # Set everything up in the main thread.
@@ -1404,7 +1389,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo args {oninit cget cgetall; onfinal; track; return ""}
@@ -1413,7 +1398,7 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo args {
@@ -1425,7 +1410,7 @@ test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *} -bar foo -snarf x}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -profile * -translation {auto *} -bar foo -snarf x}}
 test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
@@ -2063,7 +2048,7 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{watch rc* read} {} {} TOCK {watch rc* {}}}
+} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
 test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
@@ -2076,7 +2061,7 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{watch rc* write} {} {} TOCK {watch rc* {}}}
+} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
 test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     proc foo {args} {oninit; onfinal; track; return}
     proc dummy args { return }
@@ -2089,31 +2074,6 @@ test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     rename foo   {}
     rename dummy {}
 } -returnCodes error -result {can not find reflected channel named "rc*"}
-test iocmd-31.9 {
-    chan postevent
-
-    call to current coroutine
-
-    see 67a5eabbd3d1
-} -match glob -body {
-    set res {}
-    proc foo {args} {oninit; onwatch; onfinal; track; return}
-    set c [chan create {r w} foo]
-    after 0 [list ::apply [list c {
-	coroutine c1 ::apply [list c {
-	    chan event $c readable [list [info coroutine]]
-	    yield
-	    set ::done READING
-	} [namespace current]] $c
-    } [namespace current]] $c]
-    set stop [after 10000 {set done TIMEOUT}]
-    vwait ::done
-    catch {after cancel $stop}
-    lappend res $done
-    close $c
-    rename foo {}
-    set res
-} -result {{watch rc* read} READING {watch rc* {}}}
 
 # --- === *** ###########################
 # 'Pull the rug' tests. Create channel in a interpreter A, move to
@@ -2213,6 +2173,74 @@ test iocmd-32.2 {delete interp of reflected chan} {
     }
     interp delete child
 } {}
+
+# 1st attempt without error in write, another with error in write:
+foreach ::writeErr {0 1} {
+test iocmd-32.3.$::writeErr {prevent copy-state against segfault by finalize, bug [79474c58800cdf94]} -setup {
+    proc test_chan {args} {
+      set rest [lassign $args mode chan]
+      lappend ::ret $mode
+      switch -exact $mode {
+        read {puts $chan "Test" ; close $chan}
+        write {if {$::writeErr} {return "boom"}; set data [lindex $rest 0]; string length $data}
+        finalize {after 20 {set ::done done}}
+        initialize {return "initialize watch finalize read write"}
+      }
+    }
+    set clchlst {}
+    set toev [after 5000 {set ::done tout}]
+} -body {
+    set ::ret {}
+    set ch [chan create "read write" test_chan]
+    lappend clchlst $ch
+
+    lassign [chan pipe] in1 out1
+    lappend clchlst $in1 $out1
+    lassign [chan pipe] in2 out2
+    lappend clchlst $in2 $out2
+    lassign [chan pipe] in3 out3
+    lappend clchlst $in3 $out3
+
+    # simulate exec: echo test >@ $out2 2>@ $out3 <@ $in1 &:
+    fileevent $out2 writable [list apply {{cho che} {
+	puts $cho test; close $cho; close $che
+    }} $out2 $out3]
+    # recopy to given chans in handler
+    fileevent $in2 readable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $in readable {}
+	}
+    }} $in2 $ch]
+    fileevent $in3 readable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $in readable {}
+	}
+    }} $in3 $ch]
+    fileevent $out1 writable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $out writable {}
+	}
+    }} $ch $out1]
+
+    vwait ::done
+    lappend ::ret $::done
+} -cleanup {
+    foreach ch $clchlst {
+	catch {close $ch}
+    }
+    after cancel $toev
+    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev clchlst
+} -result {initialize read write finalize done}
+}; unset ::writeErr
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and
@@ -2946,7 +2974,7 @@ test iocmd.tf-25.1 {chan configure, cgetall, standard options} -match glob -body
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *}}}
 test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
@@ -2959,7 +2987,7 @@ test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *}}}
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *}}}
 test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo {args} {
@@ -2975,7 +3003,7 @@ test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} \
-    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} * -translation {auto *} -bar foo -snarf x}}
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * * -translation {auto *} -bar foo -snarf x}}
 test iocmd.tf-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
