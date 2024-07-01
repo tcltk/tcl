@@ -1140,7 +1140,18 @@ InfoFrameCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->cmdFramePtr == NULL) {
+    while (corPtr) {
+	while (*cmdFramePtrPtr) {
+	    topLevel++;
+	    cmdFramePtrPtr = &((*cmdFramePtrPtr)->nextPtr);
+	}
+	if (corPtr->caller.cmdFramePtr) {
+	    *cmdFramePtrPtr = corPtr->caller.cmdFramePtr;
+	}
+	corPtr = corPtr->callerEEPtr->corPtr;
+    }
+
+    if (iPtr->cmdFramePtr == NULL || *cmdFramePtrPtr == NULL) {
 	if (objc == 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 	} else {
@@ -1163,18 +1174,7 @@ InfoFrameCmd(
 	return code;
     }
 
-    while (corPtr) {
-	while (*cmdFramePtrPtr) {
-	    topLevel++;
-	    cmdFramePtrPtr = &((*cmdFramePtrPtr)->nextPtr);
-	}
-	if (corPtr->caller.cmdFramePtr) {
-	    *cmdFramePtrPtr = corPtr->caller.cmdFramePtr;
-	}
-	corPtr = corPtr->callerEEPtr->corPtr;
-    }
     topLevel += (*cmdFramePtrPtr)->level;
-
     if (topLevel != iPtr->cmdFramePtr->level) {
 	framePtr = iPtr->cmdFramePtr;
 	while (framePtr) {
