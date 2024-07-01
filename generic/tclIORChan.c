@@ -54,35 +54,33 @@ static int		ReflectSetOption(void *clientData,
 			    const char *newValue);
 static int		ReflectTruncate(void *clientData,
 			    long long length);
-static void		TimerRunRead(void *clientData);
-static void		TimerRunWrite(void *clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection.
  */
 
-static const Tcl_ChannelType tclRChannelType = {
-    "tclrchannel",	   /* Type name.				  */
-    TCL_CHANNEL_VERSION_5, /* v5 channel */
-    NULL,	   /* Close channel, clean instance data	  */
-    ReflectInput,	   /* Handle read request			  */
-    ReflectOutput,	   /* Handle write request			  */
-    NULL,
-    ReflectSetOption,	   /* Set options.			NULL'able */
-    ReflectGetOption,	   /* Get options.			NULL'able */
-    ReflectWatch,	   /* Initialize notifier			  */
-    NULL,		   /* Get OS handle from the channel.	NULL'able */
-    ReflectClose,	   /* No close2 support.		NULL'able */
-    ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
-    NULL,		   /* Flush channel. Not used by core.	NULL'able */
-    NULL,		   /* Handle events.			NULL'able */
-    ReflectSeekWide,	   /* Move access point (64 bit).	NULL'able */
+static const Tcl_ChannelType reflectedChannelType = {
+    "tclrchannel",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated */
+    ReflectInput,
+    ReflectOutput,
+    NULL,			/* Deprecated */
+    ReflectSetOption,
+    ReflectGetOption,
+    ReflectWatch,
+    NULL,			/* Get OS handle from the channel. */
+    ReflectClose,
+    ReflectBlock,
+    NULL,			/* Flush channel. */
+    NULL,			/* Handle bubbled events. */
+    ReflectSeekWide,
 #if TCL_THREADS
-    ReflectThread,	 /* thread action, tracking owner */
+    ReflectThread,
 #else
-	NULL,		   /* thread action */
+    NULL,			/* Thread action proc */
 #endif
-    ReflectTruncate	   /* Truncate.				NULL'able */
+    ReflectTruncate		/* Truncate proc. */
 };
 
 /*
@@ -96,11 +94,10 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
-    Tcl_ThreadId owner;	 /* Thread owning the structure.    == Channel thread */
+    Tcl_ThreadId owner;		/* Thread owning the structure.    == Channel thread */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
     Tcl_Obj *methods;		/* Methods to append to command prefix */
@@ -113,17 +110,6 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-				*/
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-				*/
-
     /*
      * Note regarding the usage of timers.
      *
@@ -133,9 +119,11 @@ typedef struct {
      *
      * See 'refchan', 'memchan', etc.
      *
-     * A timer is used here as well in order to ensure at least on pass through
-     * the event loop when a channel becomes ready. See issues 67a5eabbd3d1 and
-     * ef28eb1f1516.
+     * Here this is _not_ required. Interest in events is posted to the Tcl
+     * level via 'watch'. And posting of events is possible from the Tcl level
+     * as well, via 'chan postevent'. This means that the generation of all
+     * events, fake or not, timer based or not, is completely in the hands of
+     * the Tcl level. Therefore no timer here.
      */
 } ReflectedChannel;
 
@@ -266,7 +254,7 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    Tcl_Size toRead;			/* I: #bytes to read,
+    Tcl_Size toRead;		/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
@@ -513,7 +501,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    Tcl_Size listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;		/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -679,7 +667,7 @@ TclChanCreateObjCmd(
      * Everything is fine now.
      */
 
-    chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
+    chan = Tcl_CreateChannel(&reflectedChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
     TclChannelPreserve(chan);
@@ -694,7 +682,7 @@ TclChanCreateObjCmd(
 
 	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)Tcl_Alloc(sizeof(Tcl_ChannelType));
 
-	memcpy(clonePtr, &tclRChannelType, sizeof(Tcl_ChannelType));
+	memcpy(clonePtr, &reflectedChannelType, sizeof(Tcl_ChannelType));
 
 	if (!(methods & FLAG(METH_CONFIGURE))) {
 	    clonePtr->setOptionProc = NULL;
@@ -949,18 +937,7 @@ TclChanPostEventObjCmd(
 #if TCL_THREADS
     if (rcPtr->owner == rcPtr->thread) {
 #endif
-	if (events & TCL_READABLE) {
-	    if (rcPtr->readTimer == NULL) {
-		rcPtr->readTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			TimerRunRead, rcPtr);
-	    }
-	}
-	if (events & TCL_WRITABLE) {
-	    if (rcPtr->writeTimer == NULL) {
-		rcPtr->writeTimer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			TimerRunWrite, rcPtr);
-	    }
-	}
+	Tcl_NotifyChannel(chan, events);
 #if TCL_THREADS
     } else {
 	ReflectEvent *ev = (ReflectEvent *)Tcl_Alloc(sizeof(ReflectEvent));
@@ -1006,24 +983,6 @@ TclChanPostEventObjCmd(
 
 #undef CHAN
 #undef EVENT
-}
-
-static void
-TimerRunRead(
-    void *clientData)
-{
-    ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
-    rcPtr->readTimer = NULL;
-    Tcl_NotifyChannel(rcPtr->chan, TCL_READABLE);
-}
-
-static void
-TimerRunWrite(
-    void *clientData)
-{
-    ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
-    rcPtr->writeTimer = NULL;
-    Tcl_NotifyChannel(rcPtr->chan, TCL_WRITABLE);
 }
 
 /*
@@ -1220,15 +1179,9 @@ ReflectClose(
 #endif
 
 	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-	if (tctPtr && tctPtr != &tclRChannelType) {
+	if (tctPtr && tctPtr != &reflectedChannelType) {
 	    Tcl_Free((void *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
-	}
-	if (rcPtr->readTimer != NULL) {
-	    Tcl_DeleteTimerHandler(rcPtr->readTimer);
-	}
-	if (rcPtr->writeTimer != NULL) {
-	    Tcl_DeleteTimerHandler(rcPtr->writeTimer);
 	}
 	Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
 	return EOK;
@@ -1295,15 +1248,9 @@ ReflectClose(
     }
 #endif
     tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-    if (tctPtr && tctPtr != &tclRChannelType) {
+    if (tctPtr && tctPtr != &reflectedChannelType) {
 	Tcl_Free((void *)tctPtr);
 	((Channel *)rcPtr->chan)->typePtr = NULL;
-    }
-    if (rcPtr->readTimer != NULL) {
-	Tcl_DeleteTimerHandler(rcPtr->readTimer);
-    }
-    if (rcPtr->writeTimer != NULL) {
-	Tcl_DeleteTimerHandler(rcPtr->writeTimer);
     }
     Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
@@ -2253,8 +2200,6 @@ NewReflectedChannel(
     rcPtr->chan = NULL;
     rcPtr->interp = interp;
     rcPtr->dead = 0;
-    rcPtr->readTimer = 0;
-    rcPtr->writeTimer = 0;
 #if TCL_THREADS
     rcPtr->thread = Tcl_GetCurrentThread();
 #endif
@@ -2316,6 +2261,28 @@ NextHandle(void)
     return resObj;
 }
 
+static inline void
+CleanRefChannelInstance(
+    ReflectedChannel *rcPtr)
+{
+    if (rcPtr->name) {
+	/*
+	 * Reset obj-type (channel is deleted or dead anyway) to avoid leakage
+	 * by cyclic references (see bug [79474c58800cdf94]).
+	 */
+	TclFreeInternalRep(rcPtr->name);
+	Tcl_DecrRefCount(rcPtr->name);
+	rcPtr->name = NULL;
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+	rcPtr->methods = NULL;
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+	rcPtr->cmd = NULL;
+    }
+}
 static void
 FreeReflectedChannel(
     void *blockPtr)
@@ -2324,15 +2291,7 @@ FreeReflectedChannel(
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-    }
+    CleanRefChannelInstance(rcPtr);
     Tcl_Free(rcPtr);
 }
 
@@ -2602,18 +2561,7 @@ MarkDead(
     if (rcPtr->dead) {
 	return;
     }
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-	rcPtr->name = NULL;
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-	rcPtr->methods = NULL;
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-	rcPtr->cmd = NULL;
-    }
+    CleanRefChannelInstance(rcPtr);
     rcPtr->dead = 1;
 }
 

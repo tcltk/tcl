@@ -273,6 +273,8 @@ proc ::testClock::registry { cmd path key } {
 
 # Base test cases:
 
+# no lazy creation of clock-ensemble (interim, bug [9889f96f4da77e3b], [31fd84270644f67d]),
+# so ensemble created implicitely in init.tcl
 test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" -setup {
     set i [interp create]; # because clock can be used somewhere, test it in new interp:
 } -body {
@@ -286,7 +288,7 @@ test clock-0.1 "initial: auto-loading of ensemble and stubs on demand" -setup {
     }
 } -cleanup {
     interp delete $i
-} -result {ens:0 ens:1 stubs:0 stubs:1}
+} -result {ens:1 ens:1 stubs:0 stubs:1}
 test clock-0.1a "initial: safe interpreter shares clock command with parent" -setup {
     set i [interp create]
     $i eval {set sci [interp create -safe]}
@@ -301,7 +303,7 @@ test clock-0.1a "initial: safe interpreter shares clock command with parent" -se
     }
 } -cleanup {
     interp delete $i
-} -result {ens:0 ens:1 stubs:0 stubs:1}
+} -result {ens:1 ens:1 stubs:0 stubs:1}
 
 test clock-0.2 "initial: loading of format/locale does not overwrite interp state (errorInfo)" -setup {
     # be sure - we have no cached locale/msgcat, etc:
@@ -374,6 +376,10 @@ test clock-1.8 "clock format -now" {
 test clock-1.9 "clock arguments: option doubly present" {
     list [catch {clock format 0 -gmt 1 -gmt 0} result] $result
 } {1 {bad option "-gmt": doubly present}}
+
+test clock-1.10 {clock format: text with token (bug [a858d95f4bfddafb])} {
+    clock format 0 -format text(%d) -gmt 1
+} {text(01)}
 
 # BEGIN testcases2
 
@@ -18923,6 +18929,10 @@ test clock-6.22.19 {Greedy match (space wins as date-time separator)} {
 test clock-6.22.20 {Greedy match (second space wins as date-time separator)} {
     clock format [clock scan "111 2 13120" -format "%y%m%d %H%M%S" -gmt 1] -locale en -gmt 1
 } {Sun Jan 02 13:12:00 GMT 2011}
+
+test clock-6.23 {clock scan: text with token (bug [a858d95f4bfddafb])} {
+    clock scan {text(01)} -format text(%d) -gmt 1 -base 0
+} 0
 
 
 test clock-7.1 {Julian Day} {

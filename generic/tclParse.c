@@ -1039,7 +1039,7 @@ ParseComment(
 
 static int
 ParseTokens(
-    const char *src,	/* First character to parse. */
+    const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
@@ -1396,7 +1396,7 @@ Tcl_ParseVarName(
 	    case '}': braceCount--; break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
-		   just the \ and let it run into the end */
+		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
 		   src++; numBytes--;
 		}
@@ -1531,7 +1531,7 @@ Tcl_ParseVarName(
 const char *
 Tcl_ParseVar(
     Tcl_Interp *interp,		/* Context for looking up variable. */
-    const char *start,	/* Start of variable substitution. First
+    const char *start,		/* Start of variable substitution. First
 				 * character must be "$". */
     const char **termPtr)	/* If non-NULL, points to word to fill in with
 				 * character just after last one in the

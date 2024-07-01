@@ -53,7 +53,6 @@ enum {
 static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
 	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
 
-
 const char *const tclpFileAttrStrings[] = {
 	"-archive", "-hidden", "-longname", "-readonly",
 	"-shortname", "-system", NULL
@@ -927,7 +926,7 @@ TclpObjCopyDirectory(
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+	    *errorPtr = Tcl_DStringToObj(&ds);
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
@@ -1712,8 +1711,8 @@ ConvertFileNameFormat(
 	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-            tempPath = Tcl_DStringToObj(&dsTemp);
-            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+	    tempPath = Tcl_DStringToObj(&dsTemp);
+	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }

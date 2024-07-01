@@ -350,7 +350,6 @@ WaitProcessStatus(
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -539,7 +538,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
+		Tcl_DictObjPut(NULL, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -589,7 +588,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
+		Tcl_DictObjPut(NULL, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -891,8 +890,7 @@ TclProcessWait(
 				 *  - errno in case of error.
 				 *  - non-zero exit code for abormal exit.
 				 *  - signal number if killed or suspended.
-				 *  - Tcl_WaitPid status in all other cases.
-				 */
+				 *  - Tcl_WaitPid status in all other cases. */
     Tcl_Obj **msgObjPtr,	/* If non-NULL, will receive error message. */
     Tcl_Obj **errorObjPtr)	/* If non-NULL, will receive error code. */
 {

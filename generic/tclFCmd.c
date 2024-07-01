@@ -918,8 +918,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-        /*
-         * Return the last component, unless it is the only component, and it
+	/*
+	 * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 
@@ -1115,7 +1115,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1139,7 +1139,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1152,7 +1152,7 @@ TclFileAttrsCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"value for \"%s\" missing", TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
-			"NOVALUE", (void *)NULL);
+			"NOVALUE", (char *)NULL);
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,

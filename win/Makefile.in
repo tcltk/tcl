@@ -79,10 +79,10 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
-#CFLAGS = 		$(CFLAGS_DEBUG)
-#CFLAGS = 		$(CFLAGS_OPTIMIZE)
-#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
+#CFLAGS =		$(CFLAGS_DEBUG)
+#CFLAGS =		$(CFLAGS_OPTIMIZE)
+#CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -160,9 +160,9 @@ TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
-TOMMATH_DLL_FILE		= libtommath.dll
+TOMMATH_DLL_FILE	= libtommath.dll
 
-SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
+SHARED_LIBRARIES	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
@@ -210,6 +210,7 @@ SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
 LN		= ln
+GDB		= gdb
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -315,6 +316,7 @@ GENERIC_OBJS = \
 	tclGet.$(OBJEXT) \
 	tclHash.$(OBJEXT) \
 	tclHistory.$(OBJEXT) \
+	tclIcu.$(OBJEXT) \
 	tclIndexObj.$(OBJEXT) \
 	tclInterp.$(OBJEXT) \
 	tclIO.$(OBJEXT) \
@@ -929,8 +931,8 @@ install-libraries: libraries install-tzdata install-msgs
 	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
-	@echo "Installing package http 2.10b2 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10b2.tm";
+	@echo "Installing package http 2.10b3 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10b3.tm";
 	@echo "Installing package opt 0.4.7";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -1025,7 +1027,16 @@ shell: binaries
 # This target can be used to run tclsh inside either gdb or insight
 gdb: binaries
 	@echo "set env TCL_LIBRARY=$(LIBRARY_DIR)" > gdb.run
-	gdb ./$(TCLSH) --command=gdb.run
+	$(GDB) ./$(TCLSH) --command=gdb.run
+	rm gdb.run
+
+shquotequote = $(subst ',\",$(subst ",\",$(1)))
+gdb-test: tcltest
+	@printf '%s ' 'set env TCL_LIBRARY=$(LIBRARY_DIR)' > gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set args $(ROOT_DIR_NATIVE)/tests/all.tcl \
+		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
+	$(GDB) ${TEST_EXE_FILE} --command=gdb.run
 	rm gdb.run
 
 depend:

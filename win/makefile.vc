@@ -57,7 +57,7 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-# 		noembed   = Without this option, the Tcl core library scripts
+#		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
 #			    "noembed" is specified, the scripts are not embedded
@@ -277,6 +277,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclGet.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIcu.obj \
 	$(TMP_DIR)\tclIndexObj.obj \
 	$(TMP_DIR)\tclInterp.obj \
 	$(TMP_DIR)\tclIO.obj \
@@ -470,7 +471,11 @@ LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+
+!if $(STATIC_BUILD)
+PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
+!endif
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib

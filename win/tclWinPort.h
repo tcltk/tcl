@@ -114,7 +114,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef ENOTEMPTY
-#   define ENOTEMPTY 	41	/* Directory not empty */
+#   define ENOTEMPTY	41	/* Directory not empty */
 #endif
 #ifndef EREMOTE
 #   define EREMOTE	66	/* The object is remote */
@@ -245,7 +245,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef EWOULDBLOCK
 #   define EWOULDBLOCK	140	/* Operation would block */
 #endif
-
 
 /* Visual Studio doesn't have these, so just choose some high numbers */
 #ifndef ESOCKTNOSUPPORT
@@ -415,7 +414,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   endif
 #endif /* !S_ISLNK */
 
-
 /*
  * Define MAXPATHLEN in terms of MAXPATH if available
  */
@@ -523,7 +521,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
-
 
 /*
  * The following macros have trivial definitions, allowing generic code to

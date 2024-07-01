@@ -10,7 +10,7 @@
 .SH NAME
 fblocked \- Test whether the last input operation exhausted all available input
 .SH SYNOPSIS
-\fBfblocked \fIchannelId\fR
+\fBfblocked \fIchannel\fR
 .BE
 .SH DESCRIPTION
 .PP

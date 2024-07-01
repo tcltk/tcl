@@ -1016,7 +1016,6 @@ Tcl_TraceCommand(
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
 
-
     return TCL_OK;
 }
 
@@ -1120,7 +1119,7 @@ Tcl_UntraceCommand(
 
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
 
-        /*
+	/*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
 
@@ -2548,15 +2547,15 @@ TclCallVarTraces(
     /* Keep the original pointer for possible use in an error message */
     element = part2;
     if (part2 == NULL) {
-        if (TclIsVarArrayElement(varPtr)) {
-            Tcl_Obj *keyObj = VarHashGetKey(varPtr);
-            part2 = Tcl_GetString(keyObj);
-        }
+	if (TclIsVarArrayElement(varPtr)) {
+	    Tcl_Obj *keyObj = VarHashGetKey(varPtr);
+	    part2 = Tcl_GetString(keyObj);
+	}
     } else if ((flags & VAR_TRACED_UNSET) && !(flags & VAR_ARRAY_ELEMENT)) {
-        /* On unset traces, part2 has already been set by the caller, and
-         * the VAR_ARRAY_ELEMENT flag indicates whether the accessed
-         * variable actually has a second part, or is a scalar */
-        element = NULL;
+	/* On unset traces, part2 has already been set by the caller, and
+	 * the VAR_ARRAY_ELEMENT flag indicates whether the accessed
+	 * variable actually has a second part, or is a scalar */
+	element = NULL;
     }
 
     /*

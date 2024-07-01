@@ -1,8 +1,8 @@
 # tclOOScript.h --
 #
-# 	This file contains support scripts for TclOO. They are defined here so
-# 	that the code can be definitely run even in safe interpreters; TclOO's
-# 	core setup is safe.
+#	This file contains support scripts for TclOO. They are defined here so
+#	that the code can be definitely run even in safe interpreters; TclOO's
+#	core setup is safe.
 #
 # Copyright © 2012-2019 Donal K. Fellows
 # Copyright © 2013 Andreas Kupries
