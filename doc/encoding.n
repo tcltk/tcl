@@ -83,7 +83,8 @@ are guaranteed to be present in the list.
 .
 Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
 omitted then the command returns the current system encoding.  The
-system encoding is used whenever Tcl passes strings to system calls.
+system encoding is the default value for channels and files.
+It may also have other consequences in operation system communication in respect of file names, pipe data, environment variable interpretation.
 .SH EXAMPLE
 .PP
 The following example converts a byte sequence in Japanese euc-jp encoding to a TCL string:
