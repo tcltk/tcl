@@ -12,7 +12,7 @@
 transchan \- command handler API of channel transforms
 .SH SYNOPSIS
 .nf
-\fBchan push \fIchannelName cmdPrefix\fR
+\fBchan push \fIchannel cmdPrefix\fR
 
 \fIcmdPrefix \fBclear \fIhandle\fR
 \fIcmdPrefix \fBdrain \fIhandle\fR

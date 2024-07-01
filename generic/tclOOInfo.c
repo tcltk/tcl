@@ -125,10 +125,8 @@ TclOOInitInfo(
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
-		Tcl_NewStringObj("::oo::InfoObject", -1));
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
-		Tcl_NewStringObj("::oo::InfoClass", -1));
+	TclDictPutString(NULL, mapDict, "object", "::oo::InfoObject");
+	TclDictPutString(NULL, mapDict, "class", "::oo::InfoClass");
 	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
     }
 }
@@ -621,9 +619,22 @@ InfoObjectMethodsCmd(
 	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
-	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
+	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
+	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
+	    }
+	} else {
+	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
+		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
 	    }
 	}
     }
@@ -1378,9 +1389,22 @@ InfoClassMethodsCmd(
     } else {
 	FOREACH_HASH_DECLS;
 
-	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-	    if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
-		Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+	if (scope == -1) {
+	    /*
+	     * Handle legacy-mode matching. [Bug 36e5517a6850]
+	     */
+	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
+
+	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
+	    }
+	} else {
+	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
+		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
+		}
 	    }
 	}
     }
@@ -1885,7 +1909,7 @@ PropNameCompare(
     Tcl_Obj *first = *(Tcl_Obj **) a;
     Tcl_Obj *second = *(Tcl_Obj **) b;
 
-    return strcmp(Tcl_GetString(first), Tcl_GetString(second));
+    return strcmp(TclGetString(first), TclGetString(second));
 }
 
 static void

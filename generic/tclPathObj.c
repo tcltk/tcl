@@ -40,11 +40,11 @@ static int		MakeTildeRelativePath(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType fsPathType = {
-    "path",				/* name */
-    FreeFsPathInternalRep,		/* freeIntRepProc */
-    DupFsPathInternalRep,		/* dupIntRepProc */
-    UpdateStringOfFsPath,		/* updateStringProc */
-    SetFsPathFromAny,			/* setFromAnyProc */
+    "path",			/* name */
+    FreeFsPathInternalRep,	/* freeIntRepProc */
+    DupFsPathInternalRep,	/* dupIntRepProc */
+    UpdateStringOfFsPath,	/* updateStringProc */
+    SetFsPathFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 
@@ -1519,7 +1519,6 @@ Tcl_FSNewNativePath(
     Tcl_Obj *pathPtr = NULL;
     FsPath *fsPathPtr;
 
-
     if (fromFilesystem->internalToNormalizedProc != NULL) {
 	pathPtr = (*fromFilesystem->internalToNormalizedProc)(clientData);
     }
@@ -2348,7 +2347,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)		/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     Tcl_Size cwdLen;
@@ -2470,11 +2469,11 @@ TclNativePathInFilesystem(
  */
 int
 MakeTildeRelativePath(
-    Tcl_Interp *interp,  /* May be NULL. Only used for error messages */
-    const char *user,    /* User name. NULL -> current user */
-    const char *subPath, /* Rest of path. May be NULL */
-    Tcl_DString *dsPtr)  /* Output. Is initialized by the function. Must be
-                          * freed on success */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
+    const char *user,		/* User name. NULL -> current user */
+    const char *subPath,	/* Rest of path. May be NULL */
+    Tcl_DString *dsPtr)		/* Output. Is initialized by the function. Must
+				 * be freed on success */
 {
     const char *dir;
     Tcl_DString dirString;
@@ -2538,8 +2537,8 @@ MakeTildeRelativePath(
  */
 Tcl_Obj *
 TclGetHomeDirObj(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
-    const char *user)   /* User name. NULL -> current user */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
+    const char *user)		/* User name. NULL -> current user */
 {
     Tcl_DString dirString;
 
@@ -2570,7 +2569,7 @@ TclGetHomeDirObj(
  */
 Tcl_Obj *
 TclResolveTildePath(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     Tcl_Obj *pathObj)
 {
     const char *path;
@@ -2689,7 +2688,6 @@ TclResolveTildePathList(
 
     return resolvedPaths;
 }
-
 
 /*
  * Local Variables:

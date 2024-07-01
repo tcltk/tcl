@@ -26,7 +26,6 @@
 #   define PRIx64 TCL_LL_MODIFIER "x"
 #endif
 
-
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
@@ -125,7 +124,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  * Definitions of the parts of an IEEE754-format floating point number.
  */
 
-#define SIGN_BIT 	0x80000000
+#define SIGN_BIT	0x80000000
 				/* Mask for the sign bit in the first word of
 				 * a double. */
 #define EXP_MASK	0x7FF00000
@@ -309,7 +308,7 @@ static double		MakeNaN(int signum, Tcl_WideUInt tag);
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
 static mp_err		MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
-static int 		NormalizeRightward(Tcl_WideUInt *);
+static int		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
 static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
 			    int *);
@@ -1532,7 +1531,7 @@ TclParseNumber(
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    Tcl_SetObjResult(interp, msg);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	}
     }
 
@@ -1697,7 +1696,7 @@ MakeLowPrecisionDouble(
      * ulp, so we need to change rounding mode to 53-bits. We also make
      * 'retval' volatile, so that it doesn't get promoted to a register.
      */
-    volatile double retval;		/* Value of the number. */
+    volatile double retval;	/* Value of the number. */
 
     /*
      * Test for zero significand, which requires explicit construction
@@ -2210,7 +2209,7 @@ RefineApproximation(
 
 static inline mp_err
 MulPow5(
-    mp_int *base, 		/* Number to multiply. */
+    mp_int *base,		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
     mp_int *result)		/* Place to store the result. */
 {
@@ -2653,7 +2652,7 @@ ComputeScale(
 
 static inline void
 SetPrecisionLimits(
-    int flags,		/* Type of conversion: TCL_DD_SHORTEST,
+    int flags,			/* Type of conversion: TCL_DD_SHORTEST,
 				 * TCL_DD_E_FMT, TCL_DD_F_FMT. */
     int k,			/* Floor(log10(number to convert)) */
     int *ndigitsPtr,		/* IN/OUT: Number of digits requested (will be
@@ -2707,7 +2706,7 @@ SetPrecisionLimits(
 
 static inline char *
 BumpUp(
-    char *s,		    	/* Cursor pointing one past the end of the
+    char *s,			/* Cursor pointing one past the end of the
 				 * string. */
     char *retval,		/* Start of the string of digits. */
     int *kPtr)			/* Position of the decimal point. */
@@ -3434,7 +3433,8 @@ ShouldBankerRoundUpToNextPowD(
      * 2**(MP_DIGIT_BIT*sd)
      */
 
-    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {	/* Too few digits to be > s */
+    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {
+	/* Too few digits to be > s */
 	return 0;
     }
     if (temp->used > sd+1 || temp->dp[sd] > 1) {
@@ -4154,7 +4154,7 @@ StrictBignumConversion(
     }
     err = mp_mul_2d(&b, b2, &b);
     if (err == MP_OKAY) {
- 	err = mp_init_set(&S, 1);
+	err = mp_init_set(&S, 1);
     }
     if (err == MP_OKAY) {
 	err = MulPow5(&S, s5, &S);
@@ -4229,7 +4229,6 @@ StrictBignumConversion(
 	     *
 	     * Extract the next group of digits.
 	     */
-
 
 	    if ((err != MP_OKAY) || (mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
@@ -4795,7 +4794,7 @@ Tcl_InitBignumFromDouble(
 	    const char *s = "integer value too large to represent";
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -4810,7 +4809,7 @@ Tcl_InitBignumFromDouble(
 
 	err = mp_init_i64(b, w);
 	if (err != MP_OKAY) {
-		/* just skip */
+	    /* just skip */
 	} else if (shift < 0) {
 	    err = mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
@@ -4840,14 +4839,13 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    const void *big)			/* Integer to convert. */
+    const void *big)		/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i, lsb;
     double r;
     mp_err err;
     const mp_int *a = (const mp_int *)big;
-
 
     /*
      * We need a 'mantBits'-bit significand.  Determine what shift will
@@ -4962,7 +4960,7 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const void *big)			/* Integer to convert. */
+    const void *big)		/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
@@ -5028,7 +5026,7 @@ TclCeil(
 
 double
 TclFloor(
-    const void *big)			/* Integer to convert. */
+    const void *big)		/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;

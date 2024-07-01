@@ -39,7 +39,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static Tcl_ExitProc		FinalizeIOCmdTSD;
-static Tcl_TcpAcceptProc 	AcceptCallbackProc;
+static Tcl_TcpAcceptProc	AcceptCallbackProc;
 static Tcl_ObjCmdProc		ChanPendingObjCmd;
 static Tcl_ObjCmdProc		ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(
@@ -138,7 +138,7 @@ Tcl_PutsObjCmd(
 	/* Fall through */
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channelId? string");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");
 	return TCL_ERROR;
     }
 
@@ -222,7 +222,7 @@ Tcl_FlushObjCmd(
     int mode;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
     chanObjPtr = objv[1];
@@ -288,7 +288,7 @@ Tcl_GetsObjCmd(
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?varName?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?varName?");
 	return TCL_ERROR;
     }
     chanObjPtr = objv[1];
@@ -379,7 +379,7 @@ Tcl_ReadObjCmd(
 
     argerror:
 	iPtr = (Interp *) interp;
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numChars?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?numChars?");
 
 	/*
 	 * Do not append directly; that makes ensembles using this command as
@@ -387,7 +387,7 @@ Tcl_ReadObjCmd(
 	 */
 
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channel");
 	return TCL_ERROR;
     }
 
@@ -515,7 +515,7 @@ Tcl_SeekObjCmd(
     static const int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
     if ((objc != 3) && (objc != 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId offset ?origin?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel offset ?origin?");
 	return TCL_ERROR;
     }
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
@@ -584,7 +584,7 @@ Tcl_TellObjCmd(
     int code;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -605,7 +605,6 @@ Tcl_TellObjCmd(
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result.
      */
-
 
     code  = TclChanCaughtErrorBypass(interp, chan);
     TclChannelRelease(chan);
@@ -648,7 +647,7 @@ Tcl_CloseObjCmd(
     static const int dirArray[] = {TCL_CLOSE_READ, TCL_CLOSE_WRITE};
 
     if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?direction?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?direction?");
 	return TCL_ERROR;
     }
 
@@ -754,7 +753,7 @@ Tcl_FconfigureObjCmd(
     int i;			/* Iterate over arg-value pairs. */
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?-option value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?-option value ...?");
 	return TCL_ERROR;
     }
 
@@ -827,7 +826,7 @@ Tcl_EofObjCmd(
     Tcl_Channel chan;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -836,6 +835,46 @@ Tcl_EofObjCmd(
     }
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_Eof(chan)));
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ChanIsBinaryCmd --
+ *
+ *	This function is invoked to process the Tcl "chan isbinary" command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interp's result to boolean true or false depending on whether the
+ *	specified channel is a binary channel.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+ChanIsBinaryCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
+	return TCL_ERROR;
+    }
+
+    if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TclChanIsBinary(chan)));
     return TCL_OK;
 }
 
@@ -1039,7 +1078,7 @@ Tcl_FblockedObjCmd(
     int mode;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -1809,7 +1848,7 @@ ChanPendingObjCmd(
     int mode;
 
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "mode channel");
 	return TCL_ERROR;
     }
 
@@ -1869,7 +1908,7 @@ ChanTruncateObjCmd(
     Tcl_WideInt length;
 
     if ((objc < 2) || (objc > 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?length?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?length?");
 	return TCL_ERROR;
     }
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
@@ -2034,6 +2073,7 @@ TclInitChanCmd(
 	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
 	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"isbinary",	ChanIsBinaryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
 	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
 	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
@@ -2062,8 +2102,7 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;

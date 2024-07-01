@@ -83,8 +83,7 @@ static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
-static int		ClockConfigureObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	ClockConfigureObjCmd;
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
@@ -129,7 +128,7 @@ struct ClockCommand {
 				 * to it, but may well ignore this data. */
     CompileProc *compileProc;	/* The compiler for the command. */
     void *clientData;		/* Any clientData to give the command (if NULL
-    				 * a reference to ClockClientData will be sent) */
+				 * a reference to ClockClientData will be sent) */
 };
 
 static const struct ClockCommand clockCommands[] = {
@@ -258,7 +257,7 @@ TclClockInit(
 #define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
     memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
-    	void *clientData;
+	void *clientData;
 
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	if (!(clientData = clockCmdPtr->clientData)) {
@@ -439,7 +438,7 @@ NormTimezoneObj(
     }
     if (timezoneObj == dataPtr->prevSetupTimeZoneUnnorm
 	    && dataPtr->prevSetupTimeZone != NULL) {
-    	return dataPtr->prevSetupTimeZone;
+	return dataPtr->prevSetupTimeZone;
     }
     if (timezoneObj == dataPtr->gmtSetupTimeZoneUnnorm
 	    && dataPtr->gmtSetupTimeZone != NULL) {
@@ -649,7 +648,7 @@ NormLocaleObj(
     if ((localeObj->length == 1 /* C */
 	    && strcasecmp(loc, Literals[LIT_C]) == 0)
 	    || (dataPtr->defaultLocale && (loc2 = TclGetString(dataPtr->defaultLocale))
-      	    && localeObj->length == dataPtr->defaultLocale->length
+	    && localeObj->length == dataPtr->defaultLocale->length
 	    && strcasecmp(loc, loc2) == 0)) {
 	*mcDictObj = dataPtr->defaultLocaleDict;
 	return dataPtr->defaultLocale ?
@@ -941,7 +940,8 @@ TimezoneLoaded(
  *
  * ClockConfigureObjCmd --
  *
- *	This function is invoked to process the Tcl "::clock::configure" (internal) command.
+ *	This function is invoked to process the Tcl "::tcl::unsupported::clock::configure"
+ *	(internal, unsupported) command.
  *
  * Usage:
  *	::tcl::unsupported::clock::configure ?-option ?value??
@@ -964,19 +964,16 @@ ClockConfigureObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
-	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
-	"-clear",
+	"-default-locale",	"-clear",	  "-current-locale",
 	"-year-century",  "-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
-	"-init-complete",
-	NULL
+	"-init-complete",	  "-setup-tz", "-system-tz", NULL
     };
     enum optionInd {
-	CLOCK_SYSTEM_TZ,  CLOCK_SETUP_TZ, CLOCK_DEFAULT_LOCALE, CLOCK_CURRENT_LOCALE,
-	CLOCK_CLEAR_CACHE,
+	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
-	CLOCK_INIT_COMPLETE
+	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
     int optionIndex;		/* Index of an option. */
     Tcl_Size i;
@@ -1326,8 +1323,8 @@ ClockSetupTimeZone(
 
     /* before setup just take a look in TZData variable */
     if (Tcl_ObjGetVar2(interp, dataPtr->literals[LIT_TZDATA], timezoneObj, 0)) {
-    	/* put it to last slot and return normalized */
-    	TimezoneLoaded(dataPtr, callargs[1], timezoneObj);
+	/* put it to last slot and return normalized */
+	TimezoneLoaded(dataPtr, callargs[1], timezoneObj);
 	return callargs[1];
     }
     /* setup now */
@@ -1963,7 +1960,6 @@ ConvertLocalToUTC(
 	ltzoc->rangesVal[1] = rangesVal[1];
 	ltzoc->tzOffset = fields->tzOffset;
     }
-
 
     /* check DST-hole: if retrieved seconds is out of range */
     if (ltzoc->rangesVal[0] > seconds || seconds >= ltzoc->rangesVal[1]) {
@@ -2900,7 +2896,6 @@ GetJulianDayFromEraYearMonthDay(
  *----------------------------------------------------------------------
  */
 
-
 void
 GetJulianDayFromEraYearDay(
     TclDateFields *fields,	/* Date to convert */
@@ -3310,10 +3305,10 @@ ClockParseFmtScnArgs(
     Tcl_WideInt baseVal;	/* Base time, expressed in seconds from the Epoch */
 
     if (operation == CLC_OP_SCN) {
-    	/* default flags (from configure) */
-    	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
+	/* default flags (from configure) */
+	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
     } else {
-    	/* clock value (as current base) */
+	/* clock value (as current base) */
 	opts->baseObj = objv[(baseIdx = 1)];
 	saw |= 1 << CLC_ARGS_BASE;
     }
@@ -3440,7 +3435,7 @@ ClockParseFmtScnArgs(
 		goto baseOverflow;
 	    }
 
-	    Tcl_AppendResult(interp, " or integer", NULL);
+	    Tcl_AppendResult(interp, " or integer", (char *)NULL);
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -4250,7 +4245,6 @@ ClockCalcRelTime(
 
     return TCL_OK;
 }
-
 
 /*----------------------------------------------------------------------
  *
@@ -4309,8 +4303,6 @@ ClockWeekdaysOffs(
 
     return offs;
 }
-
-
 
 /*----------------------------------------------------------------------
  *
@@ -4571,16 +4563,16 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-        int status;			/* return code status */
-        int flags;			/* Each remaining field saves the */
-        int returnLevel;		/* corresponding field of the Interp */
-        int returnCode;			/* struct. These fields taken together are */
-        Tcl_Obj *errorInfo;		/* the "state" of the interp. */
-        Tcl_Obj *errorCode;
-        Tcl_Obj *returnOpts;
-        Tcl_Obj *objResult;
-        Tcl_Obj *errorStack;
-        int resetErrorStack;
+	int status;			/* return code status */
+	int flags;			/* Each remaining field saves the */
+	int returnLevel;		/* corresponding field of the Interp */
+	int returnCode;			/* struct. These fields taken together are */
+	Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+	Tcl_Obj *errorCode;
+	Tcl_Obj *returnOpts;
+	Tcl_Obj *objResult;
+	Tcl_Obj *errorStack;
+	int resetErrorStack;
     } InterpState;
 
     Interp *iPtr = (Interp *)interp;

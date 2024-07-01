@@ -259,7 +259,7 @@ The default is \fButf-8\fR, as specified by RFC 2718.
 The value of the User-Agent header in the HTTP request.  In an unsafe
 interpreter, the default value depends upon the operating system, and
 the version numbers of \fBhttp\fR and \fBTcl\fR, and is (for example)
-.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.9.0 Tcl/8.6.9\fR" .
+.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.10.0 Tcl/9.0.0\fR" .
 A safe interpreter cannot determine its operating system, and so the default
 in a safe interpreter is to use a Windows 10 value with the current version
 numbers of \fBhttp\fR and \fBTcl\fR.

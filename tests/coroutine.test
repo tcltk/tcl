@@ -825,28 +825,12 @@ test coroutine-7.14 {
 	return [list $done0 $done1]
 } -result {failure failure}
 
-
-test coroutine-8.0.0 {coro inject executed} -body {
-    coroutine demo apply {{} { foreach i {1 2} yield }}
-    demo
-    set ::result none
-    tcl::unsupported::inject demo set ::result inject-executed
-    demo
-    set ::result
-} -result {inject-executed}
-test coroutine-8.0.1 {coro inject after error} -body {
-    coroutine demo apply {{} { foreach i {1 2} yield; error test }}
-    demo
-    set ::result none
-    tcl::unsupported::inject demo set ::result inject-executed
-    lappend ::result [catch {demo} err] $err
-} -result {inject-executed 1 test}
 test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
     interp create child
     child eval {
 	coroutine demo apply {{} { while {1} yield }}
 	demo
-	tcl::unsupported::inject demo set ::result inject-executed
+	coroinject demo set ::result inject-executed
     }
     interp delete child
 } -result {}
@@ -855,14 +839,15 @@ test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
     child eval {
 	coroutine demo apply {{} { while {1} yield }}
 	demo
-	tcl::unsupported::inject demo set ::result inject-executed
+	coroinject demo lappend ::result inject-executed
     }
     child eval demo
     set result [child eval {set ::result}]
 
     interp delete child
     set result
-} -result {inject-executed}
+} -result {inject-executed yield {}}
+
 
 test coroutine-9.1 {coroprobe with yield} -body {
     coroutine demo apply {{} { foreach i {1 2} yield }}
@@ -1037,7 +1022,7 @@ test coroutine-12.1 {coroutine general introspection} -setup {
     $i eval {
 	# Make the introspection code
 	namespace path tcl::unsupported
-	proc probe {type var} {
+	proc probe {var type args} {
 	    upvar 1 $var v
 	    set f [info frame]
 	    incr f -1
@@ -1049,7 +1034,7 @@ test coroutine-12.1 {coroutine general introspection} -setup {
 	    }
 	}
 	proc pokecoro {c var} {
-	    inject $c probe [corotype $c] $var
+	    coroinject $c probe $var
 	    $c
 	}
 

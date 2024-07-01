@@ -106,23 +106,23 @@ static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
  */
 
 static const Tcl_ChannelType fileChannelType = {
-    "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
-	NULL,
+    "file",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    FileInputProc,
+    FileOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
-    FileGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Set up the notifier to watch the channel. */
-    FileGetHandleProc,		/* Get an OS handle from channel. */
-    FileCloseProc,		/* close2proc. */
-    FileBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    FileWideSeekProc,		/* Wide seek proc. */
-    FileThreadActionProc,	/* Thread action proc. */
-    FileTruncateProc		/* Truncate proc. */
+    FileGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    FileCloseProc,
+    FileBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    FileWideSeekProc,
+    FileThreadActionProc,
+    FileTruncateProc
 };
 
 /*
@@ -140,7 +140,6 @@ static const Tcl_ChannelType fileChannelType = {
 
 #define POSIX_EPOCH_AS_FILETIME	\
 	((long long) 116444736 * (long long) 1000000000)
-
 
 /*
  *----------------------------------------------------------------------
@@ -815,21 +814,6 @@ CombineDwords(
     return converter.QuadPart;
 }
 
-static inline void
-StoreElementInDict(
-    Tcl_Obj *dictObj,
-    const char *name,
-    Tcl_Obj *valueObj)
-{
-    /*
-     * We assume that the dict is being built fresh and that there's never any
-     * duplicate keys.
-     */
-
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
-    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
-}
-
 static inline time_t
 ToCTime(
     FILETIME fileTime)		/* UTC time */
@@ -892,7 +876,7 @@ StatOpenFile(
      */
 
     TclNewObj(dictObj);
-#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, name, value)
 
     STORE_ELEM("dev",      Tcl_NewWideIntObj((long) dev));
     STORE_ELEM("ino",      Tcl_NewWideIntObj((long long) inode));
