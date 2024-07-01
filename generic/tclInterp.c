@@ -186,7 +186,7 @@ struct LimitHandler {
     int flags;			/* The state of this particular handler. */
     Tcl_LimitHandlerProc *handlerProc;
 				/* The handler callback. */
-    void *clientData;	/* Opaque argument to the handler callback. */
+    void *clientData;		/* Opaque argument to the handler callback. */
     Tcl_LimitHandlerDeleteProc *deleteProc;
 				/* How to delete the clientData. */
     LimitHandler *prevPtr;	/* Previous item in linked list of
@@ -206,8 +206,6 @@ struct LimitHandler {
 
 #define LIMIT_HANDLER_ACTIVE    0x01
 #define LIMIT_HANDLER_DELETED   0x02
-
-
 
 /*
  * Prototypes for local static functions:
@@ -277,7 +275,6 @@ static void		TimeLimitCallback(void *clientData);
 static Tcl_NRPostProc	NRPostInvokeHidden;
 static Tcl_ObjCmdProc	NRInterpCmd;
 static Tcl_ObjCmdProc	NRChildCmd;
-
 
 /*
  *----------------------------------------------------------------------
@@ -1067,7 +1064,7 @@ NRInterpCmd(
 	Tcl_Channel chan;
 
 	if (objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "srcPath channelId destPath");
+	    Tcl_WrongNumArgs(interp, 2, objv, "srcPath channel destPath");
 	    return TCL_ERROR;
 	}
 	parentInterp = GetInterp(interp, objv[2]);
@@ -4463,8 +4460,7 @@ ChildCommandLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4473,22 +4469,19 @@ ChildCommandLimitCmd(
 
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_COMMANDS)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewWideIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_COMMANDS)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_COMMANDS)) {
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewWideIntObj(Tcl_LimitGetCommands(childInterp)));
+	    TclDictPut(NULL, dictPtr, options[2], Tcl_NewWideIntObj(
+		    Tcl_LimitGetCommands(childInterp)));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
@@ -4650,8 +4643,7 @@ ChildTimeLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4659,29 +4651,25 @@ ChildTimeLimitCmd(
 	    Tcl_Obj *empty;
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewWideIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_TIME)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewWideIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_TIME)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
 	    Tcl_Time limitMoment;
 
 	    Tcl_LimitGetTime(childInterp, &limitMoment);
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewWideIntObj(limitMoment.usec/1000));
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
+	    TclDictPut(NULL, dictPtr, options[2],
+		    Tcl_NewWideIntObj(limitMoment.usec / 1000));
+	    TclDictPut(NULL, dictPtr, options[3],
 		    Tcl_NewWideIntObj(limitMoment.sec));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[3], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
+	    TclDictPut(NULL, dictPtr, options[3], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;

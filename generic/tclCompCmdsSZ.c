@@ -101,7 +101,6 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
 #define INVOKE(name) \
     TclEmitInvoke(envPtr,INST_##name)
-
 
 /*
  *----------------------------------------------------------------------
@@ -2629,10 +2628,9 @@ DisassembleJumptableInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
-		Tcl_NewWideIntObj(offset));
+	TclDictPut(NULL, mapping, keyPtr, Tcl_NewWideIntObj(offset));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
+    TclDictPut(NULL, dictObj, "mapping", mapping);
 }
 
 /*
@@ -2740,11 +2738,10 @@ TclCompileThrowCmd(
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
-	Tcl_Obj *errPtr, *dictPtr;
+	Tcl_Obj *dictPtr;
 
-	TclNewLiteralStringObj(errPtr, "-errorcode");
 	TclNewObj(dictPtr);
-	Tcl_DictObjPut(NULL, dictPtr, errPtr, objPtr);
+	TclDictPut(NULL, dictPtr, "-errorcode", objPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, dictPtr, NULL), envPtr);
     }
     TclDecrRefCount(objPtr);

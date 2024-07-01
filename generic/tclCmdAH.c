@@ -30,7 +30,7 @@ struct ForeachState {
     Tcl_Size j, maxj;		/* Number of loop iterations. */
     Tcl_Size numLists;		/* Count of value lists. */
     Tcl_Size *index;		/* Array of value list indices. */
-    Tcl_Size *varcList; 	/* # loop variables per list. */
+    Tcl_Size *varcList;		/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
     Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
     Tcl_Size *argcList;		/* Array of value list sizes. */
@@ -425,14 +425,13 @@ TclInitEncodingCmd(
  */
 static int
 EncodingConvertParseOptions(
-    Tcl_Interp *interp,    /* For error messages. May be NULL */
-    int objc,		   /* Number of arguments */
-    Tcl_Obj *const objv[], /* Argument objects as passed to command. */
-    Tcl_Encoding *encPtr,  /* Where to store the encoding */
-    Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
-    int *profilePtr,         /* Bit mask of encoding option profile */
-    Tcl_Obj **failVarPtr   /* Where to store -failindex option value */
-)
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[],	/* Argument objects as passed to command. */
+    Tcl_Encoding *encPtr,	/* Where to store the encoding */
+    Tcl_Obj **dataObjPtr,	/* Where to store ptr to Tcl_Obj containing data */
+    int *profilePtr,		/* Bit mask of encoding option profile */
+    Tcl_Obj **failVarPtr)	/* Where to store -failindex option value */
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
@@ -730,7 +729,7 @@ EncodingDirsObjCmd(
 		"expected directory list but got \"%s\"",
 		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		(void *)NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1467,7 +1466,7 @@ FileAttrSizeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(buf.st_size));
     return TCL_OK;
 }
 
@@ -1923,7 +1922,7 @@ PathFilesystemCmd(
     if (fsInfo == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		TclGetString(objv[1]), (void *)NULL);
+		TclGetString(objv[1]), (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2073,7 +2072,7 @@ PathSplitCmd(
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		(void *)NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2175,7 +2174,7 @@ FilesystemSeparatorCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    TclGetString(objv[1]), (void *)NULL);
+		    TclGetString(objv[1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2348,9 +2347,9 @@ StoreStatData(
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
 #define DOBJPUT(key, objValue)                  \
-        Tcl_DictObjPut(NULL, result,            \
-            Tcl_NewStringObj((key), -1),        \
-            (objValue));
+	Tcl_DictObjPut(NULL, result,            \
+	    Tcl_NewStringObj((key), -1),        \
+	    (objValue));
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
 	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
@@ -2825,7 +2824,7 @@ EachloopCmd(
 		(statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", (void *)NULL);
+		"NEEDVARS", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}

@@ -392,9 +392,9 @@ the maximum size of the C stack.
 .RE
 .\" METHOD: share
 .TP
-\fBinterp share\fI srcPath channelId destPath\fR
+\fBinterp share\fI srcPath channel destPath\fR
 .
-Causes the IO channel identified by \fIchannelId\fR to become shared
+Causes the IO channel identified by \fIchannel\fR to become shared
 between the interpreter identified by \fIsrcPath\fR and the interpreter
 identified by \fIdestPath\fR. Both interpreters have the same permissions
 on the IO channel.
@@ -415,9 +415,9 @@ invoking interpreter or one of its descendants then an error is generated.
 The target command does not have to be defined at the time of this invocation.
 .\" METHOD: transfer
 .TP
-\fBinterp transfer\fI srcPath channelId destPath\fR
+\fBinterp transfer\fI srcPath channel destPath\fR
 .
-Causes the IO channel identified by \fIchannelId\fR to become available in
+Causes the IO channel identified by \fIchannel\fR to become available in
 the interpreter identified by \fIdestPath\fR and unavailable in the
 interpreter identified by \fIsrcPath\fR.
 .SH "CHILD COMMAND"
