@@ -26,6 +26,22 @@ testConstraint time64bit [expr {
     ([llength [info command testsize]] ?
 	[testsize st_mtime] : $::tcl_platform(pointerSize)) >= 8
 }]
+testConstraint filetime64bit [expr {
+    [testConstraint time64bit] && (
+	![testConstraint unix] || [apply {{} {
+	  # check whether disk may have 2038 problem, see [fd91b0ca09cb171f]:
+	  set fn [makeFile "" foo.text]
+	  if {[catch {
+	    exec sh -c "TZ=:UTC LC_TYME=en_US touch -ma -t '207006290000' '$fn' && TZ=:UTC LC_TYME=en_US ls -l '$fn'"
+	  } res]} {
+	    #puts "Check constraint failed:\t$res"
+	    set res {}
+	  }
+	  removeFile $fn
+	  regexp {\mJun\s+29\s+2070\M} $res
+	}}]
+    )
+}]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
     ($::tcl_platform(osVersion) >= 5.0
@@ -1711,7 +1727,7 @@ test cmdAH-24.14.1 {
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
 
 # 3155760000 is 64-bit Unix time, Wed Jan 01 00:00:00 GMT 2070:
-test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit filetime64bit} -setup {
     set filename [makeFile "" foo.text]
 } -body {
     # This test may fail if your system does not have a 64-bit time_t.
@@ -1720,7 +1736,7 @@ test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -cons
 } -cleanup {
     removeFile $filename
 } -result {3155760000 3155760000}
-test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit filetime64bit} -setup {
     set filename [makeFile "" foo.text]
 } -body {
     # This test may fail if your system does not have a 64-bit time_t.
