@@ -1160,32 +1160,9 @@ InfoFrameCmd(
 	}
 	corPtr = corPtr->callerEEPtr->corPtr;
     }
+    topLevel += *cmdFramePtrPtr ? (*cmdFramePtrPtr)->level : 1;
 
-    if (iPtr->cmdFramePtr == NULL || *cmdFramePtrPtr == NULL) {
-	if (objc == 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-	} else {
-	    if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
-		code = TCL_ERROR;
-	    } else {
-		Tcl_Obj *objs[2];
-		/*
-		 * TODO - "precompiled" is a lie. Chosen only because as documented
-		 * no other fields in the dictionary need be returned. Should
-		 * add a new type like "unknown" meaning no further information
-		 * available.
-		 * TODO - should we check that "level" is 1 ?
-		 */
-		TclNewLiteralStringObj(objs[0], "type");
-		TclNewLiteralStringObj(objs[1], "precompiled");
-		Tcl_SetObjResult(interp, Tcl_NewListObj(2, objs));
-	    }
-	}
-	return code;
-    }
-
-    topLevel += (*cmdFramePtrPtr)->level;
-    if (topLevel != iPtr->cmdFramePtr->level) {
+    if (iPtr->cmdFramePtr && topLevel != iPtr->cmdFramePtr->level) {
 	framePtr = iPtr->cmdFramePtr;
 	while (framePtr) {
 	    framePtr->level = topLevel--;
@@ -1234,6 +1211,9 @@ InfoFrameCmd(
     }
 
     framePtr = iPtr->cmdFramePtr;
+    if (!framePtr) {
+	goto levelError;
+    }
     while (++level <= 0) {
 	framePtr = framePtr->nextPtr;
 	if (!framePtr) {
