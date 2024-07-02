@@ -3679,6 +3679,7 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
+    Tcl_Size dummy;
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -3704,8 +3705,20 @@ Tcl_GetNumberFromObj(
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
 	}
+	if (TclHasInternalRep(objPtr, &tclBooleanType)) {
+	    *typePtr = TCL_NUMBER_BOOL;
+	    *clientDataPtr = &objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+	if (TclHasInternalRep(objPtr, &tclIndexType)) {
+	    *typePtr = TCL_NUMBER_INDEX;
+	    *clientDataPtr = &objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
     } while (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
+	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0)
+	    || TCL_OK == Tcl_GetBooleanFromObj(NULL, objPtr, (int *)&dummy)
+	    || TCL_OK == Tcl_GetIntForIndex(NULL, objPtr, TCL_INDEX_NONE, &dummy));
     return TCL_ERROR;
 }
 

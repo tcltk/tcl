@@ -908,12 +908,16 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_BIG		Representation is an mp_int
  *	TCL_NUMBER_DOUBLE	Representation is a double
  *	TCL_NUMBER_NAN		Value is NaN.
+ *	TCL_NUMBER_BOOL		Value is a boolean.
+ *	TCL_NUMBER_INDEX	Value is an index.
  */
 
 #define TCL_NUMBER_INT          2
 #define TCL_NUMBER_BIG          3
 #define TCL_NUMBER_DOUBLE       4
 #define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_BOOL         8
+#define TCL_NUMBER_INDEX        16
 
 /*
  * Flag values passed to Tcl_ConvertElement.
