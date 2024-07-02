@@ -2583,6 +2583,18 @@ test info-39.2 {Bug 4b61afd660} -setup {
     rename probe {}
 } -result 3
 
+test info-40.0 {Bug 0de6c1d79c crash} -setup {
+    interp create child
+    child hide info
+} -body {
+    list [child invokehidden info frame] \
+	[catch {child invokehidden info frame 0} msg] $msg \
+	[catch {child invokehidden info frame 1} msg] $msg
+} -cleanup {
+    interp delete child
+    unset -nocomplain msg
+} -result {1 1 {bad level "0"} 1 {bad level "1"}}
+
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
 ::tcltest::cleanupTests
