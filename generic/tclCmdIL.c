@@ -1147,9 +1147,9 @@ InfoFrameCmd(
 	}
 	corPtr = corPtr->callerEEPtr->corPtr;
     }
-    topLevel += (*cmdFramePtrPtr)->level;
+    topLevel += *cmdFramePtrPtr ? (*cmdFramePtrPtr)->level : 1;
 
-    if (topLevel != iPtr->cmdFramePtr->level) {
+    if (iPtr->cmdFramePtr && topLevel != iPtr->cmdFramePtr->level) {
 	framePtr = iPtr->cmdFramePtr;
 	while (framePtr) {
 	    framePtr->level = topLevel--;
@@ -1198,6 +1198,9 @@ InfoFrameCmd(
     }
 
     framePtr = iPtr->cmdFramePtr;
+    if (!framePtr) {
+	goto levelError;
+    }
     while (++level <= 0) {
 	framePtr = framePtr->nextPtr;
 	if (!framePtr) {
