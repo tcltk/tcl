@@ -2132,7 +2132,7 @@ TclSetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	Tcl_Size length;
-	const char *str = TclGetStringFromObj(objPtr, &length);
+	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -2151,7 +2151,7 @@ ParseBoolean(
     int newBool;
     char lowerCase[6];
     Tcl_Size i, length;
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length < 1) || (length > 5)) {
 	/*
@@ -4237,7 +4237,7 @@ TclHashObjKey(
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_Size length;
-    const char *string = TclGetStringFromObj(objPtr, &length);
+    const char *string = Tcl_GetStringFromObj(objPtr, &length);
     size_t result = 0;
 
     /*
