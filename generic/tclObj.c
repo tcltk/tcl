@@ -3679,6 +3679,13 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
+    Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+    if (lengthProc && lengthProc(objPtr) != 1) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
+	}
+	return TCL_ERROR;
+    }
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
