@@ -9121,6 +9121,13 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
+	if (lengthProc && lengthProc(opndPtr) > 1) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't use a list as operand of \"%s\"", op));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
+	    return;
+	}
 	description = "non-numeric string";
     } else if (type == TCL_NUMBER_NAN) {
 	description = "non-numeric floating-point value";
