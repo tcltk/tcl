@@ -293,9 +293,8 @@ static const Tcl_ChannelType tcpChannelType = {
  * The following variable holds the network name of this host.
  */
 
-static TclInitProcessGlobalValueProc InitializeHostName;
-static ProcessGlobalValue hostName =
-	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
+static char hostName[256] = "";
+
 
 /*
  *----------------------------------------------------------------------
@@ -349,63 +348,6 @@ printaddrinfolist(
 /*
  *----------------------------------------------------------------------
  *
- * InitializeHostName --
- *
- *	This routine sets the process global value of the name of the local
- *	host on which the process is running.
- *
- * Results:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-InitializeHostName(
-    char **valuePtr,
-    size_t *lengthPtr,
-    Tcl_Encoding *encodingPtr)
-{
-    WCHAR wbuf[256];
-    DWORD length = sizeof(wbuf) / sizeof(WCHAR);
-    Tcl_DString ds;
-
-    Tcl_DStringInit(&ds);
-    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
-	/*
-	 * Convert string from WCHAR to utf-8, then change to lowercase,
-	 * then to system encoding.
-	 */
-	Tcl_DString inDs;
-
-	Tcl_DStringInit(&inDs);
-	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, TCL_INDEX_NONE, &inDs));
-	Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&inDs),
-		TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
-	Tcl_DStringFree(&inDs);
-    } else {
-	TclInitSockets();
-	/*
-	 * The buffer size of 256 is recommended by the MSDN page that
-	 * documents gethostname() as being always adequate.
-	 */
-
-	Tcl_DStringInit(&ds);
-	Tcl_DStringSetLength(&ds, 256);
-	gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
-	Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
-    }
-
-    *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
-    Tcl_DStringFree(&ds);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetHostName --
  *
  *	Returns the name of the local host.
@@ -424,7 +366,22 @@ InitializeHostName(
 const char *
 Tcl_GetHostName(void)
 {
-    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+    if (!hostName[0]) {
+	WCHAR wbuf[256];
+	DWORD length = sizeof(wbuf)/sizeof(WCHAR);
+
+	if (!GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length)) {
+	    TclInitSockets();
+	    GetHostNameW(wbuf, sizeof(wbuf)/sizeof(WCHAR));
+	}
+	/*
+	 * Convert string from WCHAR to utf-8, then change to lowercase.
+	 */
+
+	WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, hostName, sizeof(hostName), NULL, NULL);
+	Tcl_UtfToLower(hostName);
+    }
+    return hostName;
 }
 
 /*
