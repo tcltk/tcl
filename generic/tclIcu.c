@@ -14,6 +14,9 @@
 
 #include "tclInt.h"
 
+typedef uint16_t UCharx;
+typedef uint32_t UChar32x;
+
 /*
  * Runtime linking of libicu.
  */
@@ -23,12 +26,20 @@ typedef enum UBreakIteratorTypex {
 } UBreakIteratorTypex;
 
 typedef enum UErrorCodex {
+    U_STRING_NOT_TERMINATED_WARNING = -124,
     U_AMBIGUOUS_ALIAS_WARNING = -122,
-    U_ZERO_ERRORZ              =  0,     /**< No error, no warning. */
+    U_ZERO_ERRORZ = 0, /**< No error, no warning. */
+    U_BUFFER_OVERFLOW_ERROR = 15,
 } UErrorCodex;
 
 #define U_SUCCESS(x) ((x)<=U_ZERO_ERRORZ)
 #define U_FAILURE(x) ((x)>U_ZERO_ERRORZ)
+
+typedef enum UNormalizationCheckResultx {
+  UNORM_NO,
+  UNORM_YES,
+  UNORM_MAYBE
+} UNormalizationCheckResultx;
 
 struct UEnumeration;
 typedef struct UEnumeration UEnumeration;
@@ -36,12 +47,42 @@ struct UCharsetDetector;
 typedef struct UCharsetDetector UCharsetDetector;
 struct UCharsetMatch;
 typedef struct UCharsetMatch UCharsetMatch;
+struct UNormalizer2;
+typedef struct UNormalizer2 UNormalizer2;
 
 /*
  * Prototypes for ICU functions sorted by category.
  */
 typedef void        (*fn_u_cleanup)(void);
 typedef const char *(*fn_u_errorName)(UErrorCodex);
+typedef UCharx *(*fn_u_strFromUTF32)(UCharx *dest,
+				     int32_t destCapacity,
+				     int32_t *pDestLength,
+				     const UChar32x *src,
+				     int32_t srcLength,
+				     UErrorCodex *pErrorCode);
+typedef UCharx *(*fn_u_strFromUTF32WithSub)(UCharx *dest,
+					    int32_t destCapacity,
+					    int32_t *pDestLength,
+					    const UChar32x *src,
+					    int32_t srcLength,
+					    UChar32x subchar,
+					    int32_t *pNumSubstitutions,
+					    UErrorCodex *pErrorCode);
+typedef UChar32x *(*fn_u_strToUTF32)(UChar32x *dest,
+				     int32_t destCapacity,
+				     int32_t *pDestLength,
+				     const UCharx *src,
+				     int32_t srcLength,
+				     UErrorCodex *pErrorCode);
+typedef UChar32x *(*fn_u_strToUTF32WithSub)(UChar32x *dest,
+					    int32_t destCapacity,
+					    int32_t *pDestLength,
+					    const UCharx *src,
+					    int32_t srcLength,
+					    UChar32x subchar,
+					    int32_t *pNumSubstitutions,
+					    UErrorCodex *pErrorCode);
 
 typedef uint16_t    (*fn_ucnv_countAliases)(const char *, UErrorCodex *);
 typedef int32_t     (*fn_ucnv_countAvailable)();
@@ -69,6 +110,17 @@ typedef void        (*fn_uenum_close)(UEnumeration *);
 typedef int32_t     (*fn_uenum_count)(UEnumeration *, UErrorCodex *);
 typedef const char *(*fn_uenum_next)(UEnumeration *, int32_t *, UErrorCodex *);
 
+typedef UNormalizer2 *(*fn_unorm2_getNFCInstance)(UErrorCodex *);
+typedef UNormalizer2 *(*fn_unorm2_getNFDInstance)(UErrorCodex *);
+typedef UNormalizer2 *(*fn_unorm2_getNFKCInstance)(UErrorCodex *);
+typedef UNormalizer2 *(*fn_unorm2_getNFKDInstance)(UErrorCodex *);
+typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *,
+				       const UCharx *,
+				       int32_t,
+				       UCharx *,
+				       int32_t,
+				       UErrorCodex *);
+
 #define FIELD(name) fn_ ## name _ ## name
 static struct {
     size_t              nopen; /* Total number of references to ALL libraries */
@@ -81,6 +133,10 @@ static struct {
 
     FIELD(u_cleanup);
     FIELD(u_errorName);
+    FIELD(u_strFromUTF32);
+    FIELD(u_strFromUTF32WithSub);
+    FIELD(u_strToUTF32);
+    FIELD(u_strToUTF32WithSub);
 
     FIELD(ubrk_open);
     FIELD(ubrk_close);
@@ -107,17 +163,27 @@ static struct {
     FIELD(uenum_count);
     FIELD(uenum_next);
 
+    FIELD(unorm2_getNFCInstance);
+    FIELD(unorm2_getNFDInstance);
+    FIELD(unorm2_getNFKCInstance);
+    FIELD(unorm2_getNFKDInstance);
+    FIELD(unorm2_normalize);
 } icu_fns = {
-    0, {NULL, NULL}, /* Reference count, library handles */
-    NULL, NULL, /* u_* */
+    0,    {NULL, NULL}, /* Reference count, library handles */
+    NULL, NULL, NULL, NULL, NULL, NULL,        /* u_* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ubrk* */
-    NULL, NULL, NULL, NULL, /* ucnv_* */
+    NULL, NULL, NULL, NULL,                   /* ucnv_* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ucsdet* */
-    NULL, NULL, NULL, /* uenum_* */
+    NULL, NULL, NULL,                         /* uenum_* */
+    NULL, NULL, NULL, NULL, NULL,             /* unorm2_* */
 };
 
 #define u_cleanup        icu_fns._u_cleanup
 #define u_errorName      icu_fns._u_errorName
+#define u_strFromUTF32   icu_fns._u_strFromUTF32
+#define u_strFromUTF32WithSub icu_fns._u_strFromUTF32WithSub
+#define u_strToUTF32          icu_fns._u_strToUTF32
+#define u_strToUTF32WithSub   icu_fns._u_strToUTF32WithSub
 
 #define ubrk_open        icu_fns._ubrk_open
 #define ubrk_close       icu_fns._ubrk_close
@@ -144,6 +210,11 @@ static struct {
 #define uenum_close      icu_fns._uenum_close
 #define uenum_count      icu_fns._uenum_count
 
+#define unorm2_getNFCInstance  icu_fns._unorm2_getNFCInstance
+#define unorm2_getNFDInstance  icu_fns._unorm2_getNFDInstance
+#define unorm2_getNFKCInstance icu_fns._unorm2_getNFKCInstance
+#define unorm2_getNFKDInstance icu_fns._unorm2_getNFKDInstance
+#define unorm2_normalize       icu_fns._unorm2_normalize
 
 TCL_DECLARE_MUTEX(icu_mutex);
 
@@ -285,6 +356,118 @@ static int DetectableEncodings(Tcl_Interp *interp)
     ucsdet_close(csd);
     return ret;
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuObjToUCharDString --
+ *
+ *    Encodes a Tcl_Obj value in ICU UChars and stores in dsPtr.
+ *
+ * Results:
+ *    Return TCL_OK / TCL_ERROR.
+ *
+ * Side effects:
+ *    *dsPtr should be cleared by caller only if return code is TCL_OK.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuObjToUCharDString(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int strict,
+    Tcl_DString *dsPtr)
+{
+    Tcl_Encoding encoding;
+
+    /*
+     * TODO - not the most efficient to get an encoding every time.
+     * However, we cannot use Tcl_UtfToChar16DString as that blithely
+     * ignores invalid or ill-formed UTF8 strings.
+     */
+    encoding = Tcl_GetEncoding(interp, "utf-16");
+    if (encoding == NULL) {
+	return TCL_ERROR;
+    }
+
+    int result;
+    char *s;
+    Tcl_Size len;
+    s = Tcl_GetStringFromObj(objPtr, &len);
+    result = Tcl_UtfToExternalDStringEx(interp,
+					encoding,
+					s,
+					len,
+					strict ? TCL_ENCODING_PROFILE_STRICT
+					       : TCL_ENCODING_PROFILE_REPLACE,
+					dsPtr,
+					NULL);
+    if (result != TCL_OK) {
+	Tcl_DStringFree(dsPtr); /* Must be done on error */
+	/* TCL_CONVER_* errors -> TCL_ERROR */
+	result = TCL_ERROR;
+    }
+
+    Tcl_FreeEncoding(encoding);
+    return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuObjFromUCharDString --
+ *
+ *    Stores a Tcl_Obj value by decoding ICU UChars in dsPtr.
+ *
+ * Results:
+ *    Return Tcl_Obj or NULL on error.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_Obj *
+IcuObjFromUCharDString(
+    Tcl_Interp *interp,
+    Tcl_DString *dsPtr,
+    int strict)
+{
+    Tcl_Encoding encoding;
+
+    /*
+     * TODO - not the most efficient to get an encoding every time.
+     * However, we cannot use Tcl_UtfToChar16DString as that blithely
+     * ignores invalid or ill-formed UTF8 strings.
+     */
+    encoding = Tcl_GetEncoding(interp, "utf-16");
+    if (encoding == NULL) {
+	return NULL;
+    }
+    Tcl_Obj *objPtr = NULL;
+    char *s = Tcl_DStringValue(dsPtr);
+    Tcl_Size len = Tcl_DStringLength(dsPtr);
+    Tcl_DString dsOut;
+    int result;
+    result  = Tcl_ExternalToUtfDStringEx(interp,
+					encoding,
+					s,
+					len,
+					strict ? TCL_ENCODING_PROFILE_STRICT
+					       : TCL_ENCODING_PROFILE_REPLACE,
+					&dsOut,
+					NULL);
+
+    if (result == TCL_OK) {
+	objPtr = Tcl_DStringToObj(&dsOut); /* Clears dsPtr! */
+    }
+
+    Tcl_FreeEncoding(encoding);
+    return objPtr;
+}
+
+
 
 /*
  *------------------------------------------------------------------------
@@ -442,6 +625,190 @@ IcuConverterAliasesObjCmd (
     return TCL_OK;
 }
 
+static const char *normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
+typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuNormalizeUCharDString --
+ *
+ *    Normalizes the UTF-16 encoded data
+ *
+ * Results:
+ *    TCL_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    Normalized data is stored in dsOutPtr which should only be
+ *    Tcl_DStringFree-ed if return code is TCL_OK.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuNormalizeUCharDString(
+    Tcl_Interp *interp,
+    Tcl_DString *dsInPtr, /* Input UTF16 */
+    NormalizationMode mode,
+    Tcl_DString *dsOutPtr) /* Output normalized UTF16. */
+{
+    typedef UNormalizer2 *(*normFn)(UErrorCodex *);
+    normFn fn;
+
+    switch (mode) {
+    case MODE_NFC:
+	fn = unorm2_getNFCInstance;
+	break;
+    case MODE_NFD:
+	fn = unorm2_getNFDInstance;
+	break;
+    case MODE_NFKC:
+	fn = unorm2_getNFKCInstance;
+	break;
+    case MODE_NFKD:
+	fn = unorm2_getNFKDInstance;
+	break;
+    }
+    if (fn == NULL || unorm2_normalize == NULL) {
+	return FunctionNotAvailableError(interp);
+    }
+
+    UErrorCodex status = U_ZERO_ERRORZ;
+    UNormalizer2 *normalizer = fn(&status);
+    if (U_FAILURE(status)) {
+	return IcuError(interp, "Could not get ICU normalizer.", status);
+    }
+
+    UCharx *utf16;
+    Tcl_Size utf16len;
+    UCharx *normPtr;
+    int32_t normLen;
+
+    utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
+    utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
+    if (utf16len > INT_MAX) {
+	Tcl_SetResult(
+	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    Tcl_DStringInit(dsOutPtr);
+    Tcl_DStringSetLength(dsOutPtr, utf16len * sizeof(UCharx));
+    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
+
+    normLen = unorm2_normalize(
+	normalizer, utf16, utf16len, normPtr, utf16len, &status);
+    if (U_FAILURE(status)) {
+	switch (status) {
+	case U_STRING_NOT_TERMINATED_WARNING:
+	    /* No problem, don't need it terminated */
+	    break;
+	case U_BUFFER_OVERFLOW_ERROR:
+	    /* Expand buffer */
+	    Tcl_DStringSetLength(dsOutPtr, normLen * sizeof(UCharx));
+	    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
+	    status = U_ZERO_ERRORZ; /* Need to clear error! */
+	    normLen = unorm2_normalize(
+		normalizer, utf16, utf16len, normPtr, normLen, &status);
+	    if (U_SUCCESS(status)) {
+		break;
+	    }
+	    /* FALLTHRU on error */
+	default:
+	    Tcl_DStringFree(dsOutPtr);
+	    return IcuError(interp, "String normalization failed.", status);
+	}
+    }
+
+    Tcl_DStringSetLength(dsOutPtr, normLen * sizeof(UCharx));
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuNormalizeObjCmd --
+ *
+ *    Implements the Tcl command "icu normalize"
+ *        icu normalize ?-profile replace|strict? ?-mode nfc|nfd|nfkc|nfkd? string
+ *
+ * Results:
+ *    TCL_OK    - Success.
+ *    TCL_ERROR - Error.
+ *
+ * Side effects:
+ *    Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuNormalizeObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    static const char *optNames[] = {"-profile", "-mode", NULL};
+    enum { OPT_PROFILE, OPT_MODE } opt;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ?-mode MODE? STRING");
+	return TCL_ERROR;
+    }
+
+    int i;
+    int strict = 1;
+    NormalizationMode mode = MODE_NFC;
+    for (i = 1; i < objc - 1; ++i) {
+	if (Tcl_GetIndexFromObj(
+		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++i;
+	if (i >= (objc-1)) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Missing value for option %s.",
+					   Tcl_GetString(objv[i - 1])));
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[i]);
+	switch (opt) {
+	case OPT_PROFILE:
+	    if (!strcmp(s, "replace")) {
+		strict = 0;
+	    } else if (strcmp(s, "strict")) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option \"-profile\". Must be "
+				  "\"strict\" or \"replace\".",
+				  s));
+		return TCL_ERROR;
+	    }
+	    break;
+	case OPT_MODE:
+	    if (Tcl_GetIndexFromObj(interp, objv[i], normalizationForms, "normalization mode", 0, &mode) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+
+    Tcl_DString dsIn;
+    Tcl_DString dsNorm;
+    if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
+	IcuNormalizeUCharDString(interp, &dsIn, mode, &dsNorm) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_DStringFree(&dsIn);
+    Tcl_Obj *objPtr = IcuObjFromUCharDString(interp, &dsNorm, strict);
+    Tcl_DStringFree(&dsNorm);
+    if (objPtr) {
+	Tcl_SetObjResult(interp, objPtr);
+	return TCL_OK;
+    }
+    else {
+	return TCL_ERROR;
+    }
+}
+
 static void
 TclIcuCleanup(
     TCL_UNUSED(void *))
@@ -472,8 +839,7 @@ TclIcuInit(
     char icuversion[4] = "_80"; /* Highest ICU version + 1 */
 
     /*
-     * The initialization below clones the existing one from Tk. May need
-     * revisiting.
+     * The initialization below clones the one from Tk. May need revisiting.
      * ICU shared library names as well as function names *may* be versioned.
      * See https://unicode-org.github.io/icu/userguide/icu4c/packaging.html
      * for the gory details.
@@ -585,6 +951,10 @@ TclIcuInit(
 	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
+	    ICUUC_SYM(u_strFromUTF32);
+	    ICUUC_SYM(u_strFromUTF32WithSub);
+	    ICUUC_SYM(u_strToUTF32);
+	    ICUUC_SYM(u_strToUTF32WithSub);
 
 	    ICUUC_SYM(ucnv_countAliases);
 	    ICUUC_SYM(ucnv_countAvailable);
@@ -603,6 +973,11 @@ TclIcuInit(
 	    ICUUC_SYM(uenum_count);
 	    ICUUC_SYM(uenum_next);
 
+	    ICUUC_SYM(unorm2_getNFCInstance);
+	    ICUUC_SYM(unorm2_getNFDInstance);
+	    ICUUC_SYM(unorm2_getNFKCInstance);
+	    ICUUC_SYM(unorm2_getNFKDInstance);
+	    ICUUC_SYM(unorm2_normalize);
 #undef ICUUC_SYM
 	}
 
@@ -646,7 +1021,7 @@ TclIcuInit(
 	/* Commands needing only libs[0] (icuuc) */
 
 	/* Ref count number of commands */
-	icu_fns.nopen += 2;
+	icu_fns.nopen += 3; /* UPDATE AS CMDS ADDED/DELETED BELOW */
 	Tcl_CreateObjCommand(interp,
 			     "::tcl::unsupported::icu::converters",
 			     IcuConverterNamesObjCmd,
@@ -655,6 +1030,11 @@ TclIcuInit(
 	Tcl_CreateObjCommand(interp,
 			     "::tcl::unsupported::icu::aliases",
 			     IcuConverterAliasesObjCmd,
+			     0,
+			     TclIcuCleanup);
+	Tcl_CreateObjCommand(interp,
+			     "::tcl::unsupported::icu::normalize",
+			     IcuNormalizeObjCmd,
 			     0,
 			     TclIcuCleanup);
     }
