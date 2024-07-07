@@ -9121,12 +9121,20 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
+	Tcl_Size length;
+	if (TclHasInternalRep(opndPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, opndPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"can't use a list as operand of \"%s\"", op));
+		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
+		return;
+	    }
+	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
 	if (lengthProc && lengthProc(opndPtr) > 1) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't use a list as operand of \"%s\"", op));
-	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
-	    return;
+	    goto listRep;
 	}
 	description = "non-numeric string";
     } else if (type == TCL_NUMBER_NAN) {
