@@ -322,7 +322,7 @@ TclFileMakeDirsCmd(
   done:
     if (errfile != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create directory \"%s\": %s",
+		"cannot create directory \"%s\": %s",
 		TclGetString(errfile), Tcl_PosixError(interp)));
 	result = TCL_ERROR;
     }
@@ -581,7 +581,7 @@ CopyRenameOneFile(
 		&& !S_ISDIR(targetStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't overwrite file \"%s\" with directory \"%s\"",
+		    "cannot overwrite file \"%s\" with directory \"%s\"",
 		    TclGetString(target), TclGetString(source)));
 	    goto done;
 	}
@@ -589,7 +589,7 @@ CopyRenameOneFile(
 		&& S_ISDIR(targetStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't overwrite directory \"%s\" with file \"%s\"",
+		    "cannot overwrite directory \"%s\" with file \"%s\"",
 		    TclGetString(target), TclGetString(source)));
 	    goto done;
 	}
@@ -802,7 +802,7 @@ CopyRenameOneFile(
 	    }
 	}
 	if (result != TCL_OK) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't unlink \"%s\": %s",
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot unlink \"%s\": %s",
 		    TclGetString(errfile), Tcl_PosixError(interp)));
 	    errfile = NULL;
 	}
@@ -1544,7 +1544,7 @@ TclFileTemporaryCmd(
 	    TclDecrRefCount(nameObj);
 	}
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create temporary file: %s", Tcl_PosixError(interp)));
+		"cannot create temporary file: %s", Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
@@ -1696,7 +1696,7 @@ TclFileTempDirCmd(
 
     if (dirNameObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create temporary directory: %s",
+		"cannot create temporary directory: %s",
 		Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }

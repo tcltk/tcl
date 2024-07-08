@@ -108,7 +108,7 @@ proc checkForwardRuleRefs {} {
     foreach {rule where} [array get forwardRuleRefs] {
 	if {![info exists rules($rule)]} {
 	    foreach {fileName lno} $where {
-		puts stderr "$fileName:$lno:can't locate rule \"$rule\""
+		puts stderr "$fileName:$lno:cannot locate rule \"$rule\""
 		incr errorCount
 	    }
 	}
@@ -357,7 +357,7 @@ proc parseON {on} {
 	  last([[:alpha:]]+)
 	)$
     } $on -> dom1 wday2 dir2 num2 wday3]} {
-	error "can't parse ON field \"$on\""
+	error "cannot parse ON field \"$on\""
     }
     if {$dom1 ne ""} {
 	return [list onDayOfMonth $dom1]
@@ -368,7 +368,7 @@ proc parseON {on} {
 	set wday3 [lookupDayOfWeek $wday3]
 	return [list onLastWeekdayInMonth $wday3]
     } else {
-	error "in parseOn \"$on\": can't happen"
+	error "in parseOn \"$on\": cannot happen"
     }
 }
 
@@ -508,7 +508,7 @@ proc parseTOD {tod} {
 	    ([wsugz])			# field 4 - type indicator
 	)?
     } $tod -> hour minute second ind]} {
-	puts stderr "$fileName:$lno:can't parse time field \"$tod\""
+	puts stderr "$fileName:$lno:cannot parse time field \"$tod\""
 	incr errorCount
     }
     scan $hour %d hour
@@ -557,7 +557,7 @@ proc parseOffsetTime {offset} {
 	    )?
 	)?
     } $offset -> signum hour minute second]} {
-	puts stderr "$fileName:$lno:can't parse offset time \"$offset\""
+	puts stderr "$fileName:$lno:cannot parse offset time \"$offset\""
 	incr errorCount
     }
     append signum 1
@@ -719,7 +719,7 @@ proc parseUntil {words} {
     if {[llength $words] >= 1} {
 	set year [lindex $words 0]
 	if {![string is integer $year]} {
-	    error "can't parse UNTIL field \"$words\""
+	    error "cannot parse UNTIL field \"$words\""
 	}
 	if {![info exists firstYear] || $year < $firstYear} {
 	    set firstYear $year

@@ -1866,7 +1866,7 @@ TclNewObjectInstanceCommon(
 	hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simpleName);
 	if (hPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't create object \"%s\": command already exists with"
+		    "cannot create object \"%s\": command already exists with"
 		    " that name", nameStr));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", (char *)NULL);
 	    return NULL;

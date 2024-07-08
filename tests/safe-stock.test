@@ -49,7 +49,7 @@ if {[string match *zipfs:/* [info library]]} {
 } else {
     # pkgIndex.tcl and file to be sourced are
     # both in [info library]/opt*
-    set pkgOptErrMsg {can't find package opt}
+    set pkgOptErrMsg {cannot find package opt}
 }
 
 # Directory of opt for tests 7.4, 9.10, 9.12 for "package require opt".
@@ -203,7 +203,7 @@ test safe-stock-7.5 {tests positive and negative module loading with conventiona
     if {$SyncExists} {
         safe::setSyncMode $SyncVal_TMP
     }
-} -result {1 {can't find package shell} 0}
+} -result {1 {cannot find package shell} 0}
 
 # The following test checks whether the definition of tcl_endOfWord can be
 # obtained from auto_loading.  It was previously test "safe-5.1".
@@ -429,7 +429,7 @@ test safe-stock-18.5 {cf. safe-stock-7.5 - tests positive and negative module lo
     if {$SyncExists} {
         safe::setSyncMode $SyncVal_TMP
     }
-} -result {1 {can't find package shell} 0}
+} -result {1 {cannot find package shell} 0}
 
 set ::auto_path $SaveAutoPath
 unset pkgOptErrMsg pkgOptDir pkgJarDir SaveAutoPath TestsDir PathMapp

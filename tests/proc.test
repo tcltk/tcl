@@ -44,7 +44,7 @@ test proc-1.2 {Tcl_ProcObjCmd, namespace specified in proc name must exist} -set
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -returnCodes error -body {
     proc test_ns_1::baz::p {} {}
-} -result {can't create procedure "test_ns_1::baz::p": unknown namespace}
+} -result {cannot create procedure "test_ns_1::baz::p": unknown namespace}
 test proc-1.3 {Tcl_ProcObjCmd, empty proc name} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {

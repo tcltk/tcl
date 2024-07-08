@@ -218,7 +218,7 @@ apply [list {} {
         if {$SyncExists} {
             safe::setSyncMode $SyncVal_TMP
         }
-    } -match glob -result {{$p(:0:)} {$p(:*:)} {$p(:*:)} -- 1 {can't find package SafeTestPackage1} -- {TCLLIB */dummy/unixlike/test/path ZIPDIR/auto0} -- {}}
+    } -match glob -result {{$p(:0:)} {$p(:*:)} {$p(:*:)} -- 1 {cannot find package SafeTestPackage1} -- {TCLLIB */dummy/unixlike/test/path ZIPDIR/auto0} -- {}}
     test safe-zipfs-7.4 {tests specific path and positive search with conventional AutoPathSync; zipfs} -setup {
         set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
         if {$SyncExists} {
@@ -781,7 +781,7 @@ apply [list {} {
         if {$SyncExists} {
             safe::setSyncMode $SyncVal_TMP
         }
-    } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} {\$p(:*:)} 1 {can't find package SafeTestPackage1} {-accessPath {[list $tcl_library  */dummy/unixlike/test/path  $ZipMountPoint/auto0]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
+    } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} {\$p(:*:)} 1 {cannot find package SafeTestPackage1} {-accessPath {[list $tcl_library  */dummy/unixlike/test/path  $ZipMountPoint/auto0]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
     test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync; zipfs} -constraints AutoSyncDefined -setup {
         set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
         if {$SyncExists} {

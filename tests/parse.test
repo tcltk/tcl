@@ -338,13 +338,13 @@ test parse-8.3 {Tcl_EvalObjv procedure, unknown commands} testevalobjv {
 test parse-8.4 {Tcl_EvalObjv procedure, unknown commands} testevalobjv {
     rename ::unknown unknown.old
     proc ::unknown args {
-	error "I don't like that command"
+	error "I do not like that command"
     }
     set x [catch {testevalobjv 0 asdf poiu} msg]
     rename ::unknown {}
     rename unknown.old ::unknown
     list $x $msg
-} {1 {I don't like that command}}
+} {1 {I do not like that command}}
 test parse-8.5 {Tcl_EvalObjv procedure, command traces} {testevalobjv testcmdtrace} {
     testevalobjv 0 set x 123
     testcmdtrace tracetest {testevalobjv 0 set x $x}
@@ -450,7 +450,7 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
 	# asdf
 	set x
     }}}] $::errorInfo
-} {1 {can't read "x": no such variable
+} {1 {cannot read "x": no such variable
     while executing
 "set x"
     ("for" body line 5)
@@ -486,7 +486,7 @@ test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
     list [catch {testevalex {concat xxx[expr {$a}]}} msg] $msg
-} {1 {can't read "a": no such variable}}
+} {1 {cannot read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
     set a hello
     testevalex {concat $a}
@@ -504,11 +504,11 @@ test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     list [catch {testevalex {concat $x($a)}} msg] $msg
-} {1 {can't read "a": no such variable}}
+} {1 {cannot read "a": no such variable}}
 test parse-10.9 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     list [catch {testevalex {concat xyz$a(1)}} msg] $msg
-} {1 {can't read "a(1)": no such variable}}
+} {1 {cannot read "a(1)": no such variable}}
 test parse-10.10 {Tcl_EvalTokens, object values} testevalex {
     set a 123
     testevalex {concat $a}
@@ -548,7 +548,7 @@ test parse-11.2 {Tcl_EvalEx, error while parsing} testevalex {
 test parse-11.3 {Tcl_EvalEx, error while collecting words} testevalex {
     unset -nocomplain a
     list [catch {testevalex {concat xyz $a}} msg] $msg
-} {1 {can't read "a": no such variable}}
+} {1 {cannot read "a": no such variable}}
 test parse-11.4 {Tcl_EvalEx, error in Tcl_EvalObjv call} testevalex {
     unset -nocomplain a
     list [catch {testevalex {_bogus_ a b c d}} msg] $msg
@@ -571,7 +571,7 @@ test parse-11.8 {Tcl_EvalEx, multiple commands in script} testevalex {
 test parse-11.9 {Tcl_EvalEx, freeing memory after error} testevalex {
     unset -nocomplain a
     list [catch {testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
-} {1 {can't read "a": no such variable}}
+} {1 {cannot read "a": no such variable}}
 test parse-11.10 {Tcl_EvalTokens, empty commands} testevalex {
     testevalex {concat xyz;   }
 } {xyz}
@@ -680,7 +680,7 @@ test parse-13.3 {Tcl_ParseVar procedure, no variable name} testparsevar {
 test parse-13.4 {Tcl_ParseVar procedure, error looking up variable} testparsevar {
     unset -nocomplain abc
     list [catch {testparsevar {$abc}} msg] $msg
-} {1 {can't read "abc": no such variable}}
+} {1 {cannot read "abc": no such variable}}
 test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar {
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg

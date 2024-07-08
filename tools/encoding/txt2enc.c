@@ -106,7 +106,7 @@ main(int argc, char **argv)
 	fputs("    -f\tfallback character (default: QUESTION MARK)\n", stderr);
 	fputs("    -t\toverride implicit type with single, double, or multi\n", stderr);
 	fputs("    -s\tsymbol+ascii encoding\n", stderr);
-	fputs("    -m\tdon't implicitly include 007F\n", stderr);
+	fputs("    -m\tdo not implicitly include 007F\n", stderr);
 	return 1;
     }
 

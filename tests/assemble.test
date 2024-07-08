@@ -2332,7 +2332,7 @@ test assemble-23.8 {unsetStk} {
 	x
     }
     -returnCodes error
-    -result {can't unset "a": no such variable}
+    -result {cannot unset "a": no such variable}
     -cleanup {rename x {}}
 }
 test assemble-23.9 {unsetArrayStk} {
@@ -2367,7 +2367,7 @@ test assemble-23.11 {unsetArrayStk} {
 	x
     }
     -returnCodes error
-    -result {can't unset "a(b)": no such variable}
+    -result {cannot unset "a(b)": no such variable}
     -cleanup {rename x {}}
 }
 
@@ -2454,7 +2454,7 @@ test assemble-24.9 {unset} {
 	x
     }
     -returnCodes error
-    -result {can't unset "a": no such variable}
+    -result {cannot unset "a": no such variable}
     -cleanup {rename x {}}
 }
 test assemble-24.10 {unsetArray} {
@@ -2489,7 +2489,7 @@ test assemble-24.12 {unsetArray} {
 	x
     }
     -returnCodes error
-    -result {can't unset "a(b)": no such variable}
+    -result {cannot unset "a(b)": no such variable}
     -cleanup {rename x {}}
 }
 

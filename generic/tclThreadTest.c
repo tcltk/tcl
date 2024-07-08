@@ -509,7 +509,7 @@ ThreadCreate(
     if (Tcl_CreateThread(&id, NewTestThread, &ctrl,
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
-	Tcl_AppendResult(interp, "can't create a new thread", (char *)NULL);
+	Tcl_AppendResult(interp, "cannot create a new thread", (char *)NULL);
 	return TCL_ERROR;
     }
 

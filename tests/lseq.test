@@ -820,7 +820,7 @@ test lseq-convertToList {does not result in a memory error} -body {
 		error {this is an error}
 	} [namespace current]]]
 	list [catch {set var1 [lindex [lreplace [lseq 1 2] 1 1 hello] 0]} cres] $cres
-} -cleanup {unset var1 cres} -result {1 {can't set "var1": this is an error}}
+} -cleanup {unset var1 cres} -result {1 {cannot set "var1": this is an error}}
 
 test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
     hasMemUsage

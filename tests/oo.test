@@ -1657,13 +1657,13 @@ test oo-11.1 {OO: cleanup} {
     oo::object create foo
     set result [list [catch {oo::object create foo} msg] $msg]
     lappend result [foo destroy] [oo::object create foo] [foo destroy]
-} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
+} {1 {cannot create object "foo": command already exists with that name} {} ::foo {}}
 test oo-11.2 {OO: cleanup} {
     oo::class create bar
     bar create foo
     set result [list [catch {bar create foo} msg] $msg]
     lappend result [bar destroy] [oo::object create foo] [foo destroy]
-} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
+} {1 {cannot create object "foo": command already exists with that name} {} ::foo {}}
 test oo-11.3 {OO: cleanup} {
     oo::class create bar0
     oo::class create bar
@@ -1671,7 +1671,7 @@ test oo-11.3 {OO: cleanup} {
     bar create foo
     set result [list [catch {bar create foo} msg] $msg]
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy]
-} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
+} {1 {cannot create object "foo": command already exists with that name} {} ::foo {}}
 test oo-11.4 {OO: cleanup} {
     oo::class create bar0
     oo::class create bar1
@@ -1687,7 +1687,7 @@ test oo-11.4 {OO: cleanup} {
     set result [list [catch {bar create foo} msg] $msg]
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
 	[oo::object create bar2] [bar2 destroy]
-} {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+} {1 {cannot create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
 test oo-11.5 {OO: cleanup} {
     oo::class create obj1
 
@@ -3114,7 +3114,7 @@ test oo-20.3 {OO: variable method} -body {
     foo bar
 } -returnCodes 1 -cleanup {
     catch {testClass destroy}
-} -result {can't define "a(b)": name refers to an element in an array}
+} -result {cannot define "a(b)": name refers to an element in an array}
 test oo-20.4 {OO: variable method} -body {
     oo::class create testClass {
 	export varname
@@ -3127,7 +3127,7 @@ test oo-20.4 {OO: variable method} -body {
     foo bar
 } -returnCodes 1 -cleanup {
     catch {testClass destroy}
-} -result {can't define "a(b)": name refers to an element in an array}
+} -result {cannot define "a(b)": name refers to an element in an array}
 test oo-20.5 {OO: variable method} -body {
     oo::class create testClass {
 	method bar {} {
@@ -3954,7 +3954,7 @@ test oo-27.13 {variables declaration: Bug 3185009: require refcount management} 
 	[foo exists] [catch {foo get} msg] $msg
 } -cleanup {
     foo destroy
-} -result {0 7 1 7 {} 0 1 {can't read "x": no such variable}}
+} -result {0 7 1 7 {} 0 1 {cannot read "x": no such variable}}
 test oo-27.14 {variables declaration - multiple use} -setup {
     oo::class create parent
 } -cleanup {

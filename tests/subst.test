@@ -75,7 +75,7 @@ set long {This is a very long string, intentionally made so long that it
 	such as Purify).}
 test subst-4.4 {variable substitutions} -returnCodes error -body {
     subst {$long $a}
-} -result {can't read "a": no such variable}
+} -result {cannot read "a": no such variable}
 
 test subst-5.1 {command substitutions} {
     subst {[concat {}]}
@@ -119,7 +119,7 @@ test subst-5.10 {command substitutions} {
 test subst-6.1 {clear the result after command substitution} -body {
     catch {unset a}
     subst {[concat foo] $a}
-} -returnCodes error -result {can't read "a": no such variable}
+} -returnCodes error -result {cannot read "a": no such variable}
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar

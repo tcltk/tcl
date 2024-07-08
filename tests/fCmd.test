@@ -457,7 +457,7 @@ test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\x00'} -se
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir ""
-} -result {can't create directory "": no such file or directory}
+} -result {cannot create directory "": no such file or directory}
 test fCmd-4.6 {TclFileMakeDirsCmd: one level deep} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -483,7 +483,7 @@ test fCmd-4.9 {TclFileMakeDirsCmd: exists, not dir} -setup {
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     file mkdir tf1
-} -result [subst {can't create directory "[file join tf1]": file exists}]
+} -result [subst {cannot create directory "[file join tf1]": file exists}]
 test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -501,7 +501,7 @@ test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} -setup {
 } -cleanup {
     testchmod 0o755 td1/td2
     cleanup
-} -result {can't create directory "td1/td2/td3": permission denied}
+} -result {cannot create directory "td1/td2/td3": permission denied}
 test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -518,7 +518,7 @@ test fCmd-4.14 {TclFileMakeDirsCmd: TclpCreateDirectory fails} -setup {
     file mkdir foo/tf1
 } -returnCodes error -cleanup {
     file delete -force foo
-} -result {can't create directory "foo/tf1": permission denied}
+} -result {cannot create directory "foo/tf1": permission denied}
 test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -682,14 +682,14 @@ test fCmd-6.13 {CopyRenameOneFile: source is dir, target is file} -setup {
     file mkdir td2
     createfile [file join td2 td1]
     file rename -force td1 td2
-} -result [subst {can't overwrite file "[file join td2 td1]" with directory "td1"}]
+} -result [subst {cannot overwrite file "[file join td2 td1]" with directory "td1"}]
 test fCmd-6.14 {CopyRenameOneFile: source is file, target is dir} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     file mkdir [file join td1 tf1]
     file rename -force tf1 td1
-} -result [subst {can't overwrite directory "[file join td1 tf1]" with file "tf1"}]
+} -result [subst {cannot overwrite directory "[file join td1 tf1]" with file "tf1"}]
 test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} -setup {
     cleanup
 } -constraints {notRoot notNetworkFilesystem} -body {
@@ -1116,14 +1116,14 @@ test fCmd-9.15 {file rename: comprehensive: source and target incompatible} -set
     file rename -force td1 tf1
 } -cleanup {
     cleanup
-} -result {can't overwrite file "tf1" with directory "td1"}
+} -result {cannot overwrite file "tf1" with directory "td1"}
 test fCmd-9.16 {file rename: comprehensive: source and target incompatible} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir td1/tf1
     createfile tf1
     file rename -force tf1 td1
-} -result [subst {can't overwrite directory "[file join td1 tf1]" with file "tf1"}]
+} -result [subst {cannot overwrite directory "[file join td1 tf1]" with file "tf1"}]
 
 test fCmd-10.1 {file copy: comprehensive: source doesn't exist} -setup {
     cleanup
@@ -1282,14 +1282,14 @@ test fCmd-10.9 {file copy: comprehensive: source and target incompatible} -setup
     file mkdir td1
     createfile tf1
     file copy -force td1 tf1
-} -result {can't overwrite file "tf1" with directory "td1"}
+} -result {cannot overwrite file "tf1" with directory "td1"}
 test fCmd-10.10 {file copy: comprehensive: source and target incompatible} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir [file join td1 tf1]
     createfile tf1
     file copy -force tf1 td1
-} -result [subst {can't overwrite directory "[file join td1 tf1]" with file "tf1"}]
+} -result [subst {cannot overwrite directory "[file join td1 tf1]" with file "tf1"}]
 test fCmd-10.11 {file copy: copy to empty file name} -setup {
     cleanup
 } -returnCodes error -body {

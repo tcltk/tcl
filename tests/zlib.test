@@ -997,7 +997,7 @@ test zlib-11.3 {Bug 3595576 variant} -setup {
     zlib gunzip $d -header noSuchNs::foo
 } -cleanup {
     removeFile $file
-} -returnCodes error -result {can't set "noSuchNs::foo": parent namespace doesn't exist}
+} -returnCodes error -result {cannot set "noSuchNs::foo": parent namespace doesn't exist}
 
 test zlib-12.1 {Tk Bug 9eb55debc5} -constraints zlib -setup {
     set stream [zlib stream compress]
