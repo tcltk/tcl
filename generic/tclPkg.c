@@ -591,7 +591,7 @@ PkgRequireCoreFinal(
 
     if (reqPtr->pkgPtr->version == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't find package %s", name));
+		"cannot find package %s", name));
 	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", (void *)NULL);
 	AddRequirementsToResult(interp, reqc, reqv);
 	return TCL_ERROR;

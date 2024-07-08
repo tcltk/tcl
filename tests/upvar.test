@@ -370,7 +370,7 @@ test upvar-7.3 {upvar to same level} {
 test upvar-7.4 {upvar to same level: tricky problems when deleting variable table} {
     proc tt {} {upvar #1 toto loc;  return $loc}
     list [catch tt msg] $msg
-} {1 {can't read "loc": no such variable}}
+} {1 {cannot read "loc": no such variable}}
 test upvar-7.5 {potential memory leak when deleting variable table} {
     proc leak {} {
 	array set foo {1 2 3 4}
@@ -406,11 +406,11 @@ test upvar-8.3.2 {bad level for upvar (upvar at top-level, bug [775ee88560])} -s
 test upvar-8.4 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar 0 b b}
     p1
-} -result {can't upvar from variable to itself}
+} -result {cannot upvar from variable to itself}
 test upvar-8.5 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar 0 a b; upvar 0 b a}
     p1
-} -result {can't upvar from variable to itself}
+} -result {cannot upvar from variable to itself}
 test upvar-8.6 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {set a 33; upvar b a}
     p1
@@ -418,14 +418,14 @@ test upvar-8.6 {errors in upvar command} -returnCodes error -body {
 test upvar-8.7 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {trace add variable a write foo; upvar b a}
     p1
-} -result {variable "a" has traces: can't use for upvar}
+} -result {variable "a" has traces: cannot use for upvar}
 test upvar-8.8 {create nested array with upvar} -body {
     proc p1 {} {upvar x(a) b; set b(2) 44}
     catch {unset x}
     p1
 } -returnCodes error -cleanup {
     unset x
-} -result {can't set "b(2)": variable isn't array}
+} -result {cannot set "b(2)": variable isn't array}
 test upvar-8.9 {upvar won't create namespace variable that refers to procedure variable} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     catch {rename MakeLink ""}
@@ -438,7 +438,7 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
 	unset ::test_ns_1::a
     }
     MakeLink 1
-} -result {bad variable name "a": can't create namespace variable that refers to procedure variable}
+} -result {bad variable name "a": cannot create namespace variable that refers to procedure variable}
 test upvar-8.10 {upvar will create element alias for new array element} -setup {
     catch {unset upvarArray}
 } -body {
@@ -464,7 +464,7 @@ test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
     catch {unset x}
     set a 44
     list [catch "testupvar #0 a 1 x global" msg] $msg
-} {1 {can't access "a(1)": variable isn't array}}
+} {1 {cannot access "a(1)": variable isn't array}}
 test upvar-9.3 {Tcl_UpVar2 procedure} testupvar {
     proc foo {} {
 	testupvar 1 a {} x local
@@ -484,7 +484,7 @@ test upvar-9.4 {Tcl_UpVar2 procedure} testupvar {
     catch {unset _up_}
     set a 44
     concat [foo] $_up_
-} {1 {can't read "x": no such variable} 44}
+} {1 {cannot read "x": no such variable} 44}
 test upvar-9.5 {Tcl_UpVar2 procedure} testupvar {
     proc foo {} {
 	testupvar 1 a b x local
@@ -589,7 +589,7 @@ test upvar-NS-1.5 {nsupvar links to correct variable} -body {
     }
 } -cleanup {
     namespace delete test_ns_1
-} -result {can't read "w": no such variable} -returnCodes error
+} -result {cannot read "w": no such variable} -returnCodes error
 test upvar-NS-1.6 {nsupvar links to correct variable} -body {
     namespace eval test_ns_1 {
 	namespace eval test_ns_0 {}
@@ -601,7 +601,7 @@ test upvar-NS-1.6 {nsupvar links to correct variable} -body {
     }
 } -cleanup {
     namespace delete test_ns_1
-} -result {can't read "w": no such variable} -returnCodes error
+} -result {cannot read "w": no such variable} -returnCodes error
 test upvar-NS-1.7 {nsupvar links to correct variable} -body {
     namespace eval test_ns_1 {
 	namespace eval test_ns_0 {

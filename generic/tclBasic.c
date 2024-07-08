@@ -988,7 +988,7 @@ Tcl_CreateInterp(void)
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
 	    NULL, NULL);
     if (iPtr->globalNsPtr == NULL) {
-	Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
+	Tcl_Panic("Tcl_CreateInterp: cannot create global namespace");
     }
 
     /*
@@ -1240,7 +1240,7 @@ Tcl_CreateInterp(void)
 
     nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
     if (nsPtr == NULL) {
-	Tcl_Panic("can't create math operator namespace");
+	Tcl_Panic("cannot create math operator namespace");
     }
     Tcl_Export(interp, nsPtr, "*", 1);
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
@@ -3081,7 +3081,7 @@ TclRenameCommand(
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't %s \"%s\": command doesn't exist",
+		"cannot %s \"%s\": command doesn't exist",
 		((newName == NULL) || (*newName == '\0')) ? "delete" : "rename",
 		oldName));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, (char *)NULL);
@@ -3114,14 +3114,14 @@ TclRenameCommand(
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't rename to \"%s\": bad command name", newName));
+		"cannot rename to \"%s\": bad command name", newName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't rename to \"%s\": command already exists", newName));
+		"cannot rename to \"%s\": command already exists", newName));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RENAME",
 		"TARGET_EXISTS", (char *)NULL);
 	result = TCL_ERROR;
@@ -9719,14 +9719,14 @@ TclNRCoroutineObjCmd(
 
     if (nsPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create procedure \"%s\": unknown namespace",
+		"cannot create procedure \"%s\": unknown namespace",
 		procName));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create procedure \"%s\": bad procedure name",
+		"cannot create procedure \"%s\": bad procedure name",
 		procName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, (char *)NULL);
 	return TCL_ERROR;

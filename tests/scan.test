@@ -425,7 +425,7 @@ test scan-4.60 {Tcl_ScanObjCmd, set errors} -setup {
     list [catch {scan {abc def ghi} {%s%s%s} x z y} msg] $msg $x $y
 } -cleanup {
     unset -nocomplain z
-} -result {1 {can't set "z": variable is array} abc ghi}
+} -result {1 {cannot set "z": variable is array} abc ghi}
 test scan-4.61 {Tcl_ScanObjCmd, set errors} -setup {
     set x {}
     unset -nocomplain y
@@ -437,7 +437,7 @@ test scan-4.61 {Tcl_ScanObjCmd, set errors} -setup {
 } -cleanup {
     unset -nocomplain y
     unset -nocomplain z
-} -result {1 {can't set "z": variable is array} abc}
+} -result {1 {cannot set "z": variable is array} abc}
 
 test scan-4.62 {scanning of large and negative octal integers} {
     lassign [int_range] MIN_INT MAX_INT
@@ -695,7 +695,7 @@ test scan-8.12 {error conditions} -setup {
     scan 44 %d a
 } -returnCodes error -cleanup {
     unset -nocomplain a
-} -result {can't set "a": variable is array}
+} -result {cannot set "a": variable is array}
 test scan-8.13 {error conditions} -setup {
     unset -nocomplain a
 } -body {
@@ -703,7 +703,7 @@ test scan-8.13 {error conditions} -setup {
     scan 44 %c a
 } -returnCodes error -cleanup {
     unset -nocomplain a
-} -result {can't set "a": variable is array}
+} -result {cannot set "a": variable is array}
 test scan-8.14 {error conditions} -setup {
     unset -nocomplain a
 } -body {
@@ -711,7 +711,7 @@ test scan-8.14 {error conditions} -setup {
     scan 44 %s a
 } -returnCodes error -cleanup {
     unset -nocomplain a
-} -result {can't set "a": variable is array}
+} -result {cannot set "a": variable is array}
 test scan-8.15 {error conditions} -setup {
     unset -nocomplain a
 } -body {
@@ -719,7 +719,7 @@ test scan-8.15 {error conditions} -setup {
     scan 44 %f a
 } -returnCodes error -cleanup {
     unset -nocomplain a
-} -result {can't set "a": variable is array}
+} -result {cannot set "a": variable is array}
 test scan-8.16 {error conditions} -setup {
     unset -nocomplain a
 } -body {
@@ -727,7 +727,7 @@ test scan-8.16 {error conditions} -setup {
     scan 44 %f a
 } -returnCodes error -cleanup {
     unset -nocomplain a
-} -result {can't set "a": variable is array}
+} -result {cannot set "a": variable is array}
 test scan-8.17 {error conditions} -returnCodes error -body {
     scan 44 %2c a
 } -result {field width may not be specified in %c conversion}

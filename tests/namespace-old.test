@@ -106,7 +106,7 @@ test namespace-old-1.19 {using absolute namespace qualifiers} {
 } {0 yes!}
 test namespace-old-1.20 {variables in a namespace are hidden} {
     list [catch "set test_ns_x" msg] $msg [catch "set test_ns_y" msg] $msg
-} {1 {can't read "test_ns_x": no such variable} 1 {can't read "test_ns_y": no such variable}}
+} {1 {cannot read "test_ns_x": no such variable} 1 {cannot read "test_ns_y": no such variable}}
 test namespace-old-1.21 {using namespace qualifiers} {
     list [catch "set test_ns_simple::test_ns_x" msg] $msg \
          [catch "set test_ns_simple::test_ns_y" msg] $msg
@@ -313,7 +313,7 @@ test namespace-old-5.7 {nested namespaces don't see variables in parent} {
         namespace eval test_ns_hier1::test_ns_hier2 {set test_ns_var_hier1}
     }
     list [catch $cmd msg] $msg
-} {1 {can't read "test_ns_var_hier1": no such variable}}
+} {1 {cannot read "test_ns_var_hier1": no such variable}}
 test namespace-old-5.8 {nested namespaces don't see commands in parent} {
     set cmd {
         namespace eval test_ns_hier1::test_ns_hier2 {test_ns_cmd_hier1}
@@ -474,7 +474,7 @@ test namespace-old-6.12 {define test variables} {
     variable test_ns_cache_var "global version"
     set trigger {set test_ns_cache_var}
     list [catch {namespace eval test_ns_cache1 $trigger} msg] $msg
-} {1 {can't read "test_ns_cache_var": no such variable}}
+} {1 {cannot read "test_ns_cache_var": no such variable}}
     set trigger {set test_ns_cache_var}
 test namespace-old-6.13 {one-level check for variable shadowing} {
     namespace eval test_ns_cache1 {
@@ -651,7 +651,7 @@ test namespace-old-9.1 {empty "namespace export" list} {
 } {0 {}}
 test namespace-old-9.2 {usage for "namespace export" command} {
     list [catch "namespace export test_ns_trace::zzz" msg] $msg
-} {1 {invalid export pattern "test_ns_trace::zzz": pattern can't specify a namespace}}
+} {1 {invalid export pattern "test_ns_trace::zzz": pattern cannot specify a namespace}}
 test namespace-old-9.3 {define test namespaces for import} {
     namespace eval test_ns_export {
         namespace export cmd1 cmd2 cmd3
@@ -751,13 +751,13 @@ test namespace-old-9.14 {imported commands can be removed} {
     list [lsort [info commands cmd?]] \
          [catch {cmd1 another test} msg] $msg
 } {{} 1 {invalid command name "cmd1"}}
-test namespace-old-9.15 {existing commands can't be overwritten} {
+test namespace-old-9.15 {existing commands cannot be overwritten} {
     proc cmd1 {x y} {
         return [expr {$x+$y}]
     }
     list [catch {namespace import test_ns_import::cmd?} msg] $msg \
          [cmd1 3 5]
-} {1 {can't import command "cmd1": already exists} 8}
+} {1 {cannot import command "cmd1": already exists} 8}
 test namespace-old-9.16 {use "-force" option to override existing commands} {
     proc cmd1 {x y} { return [expr {$x+$y}] }
     list [cmd1 3 5] \

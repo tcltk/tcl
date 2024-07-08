@@ -450,7 +450,7 @@ test coroutine-4.6 {compile context, bug #3282869} -setup {
     f 12
 } -cleanup {
     rename f {}
-} -returnCodes error -match glob -result {can't read *}
+} -returnCodes error -match glob -result {cannot read *}
 
 test coroutine-4.7 {compile context, bug #3282869} -setup {
     proc f x {

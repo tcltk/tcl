@@ -449,7 +449,7 @@ test expr-old-23.5 {double quotes} {expr {"\*bc"}} {*bc}
 test expr-old-23.6 {double quotes} {
     unset -nocomplain bogus__
     list [catch {expr {"$bogus__"}} msg] $msg
-} {1 {can't read "bogus__": no such variable}}
+} {1 {cannot read "bogus__": no such variable}}
 test expr-old-23.7 {double quotes} {
     list [catch {expr {"a[error Testing]bc"}} msg] $msg
 } {1 Testing}
@@ -499,7 +499,7 @@ test expr-old-26.3 {error conditions} -body {
 unset -nocomplain _non_existent_
 test expr-old-26.4 {error conditions} {
     list [catch {expr 2+$_non_existent_} msg] $msg
-} {1 {can't read "_non_existent_": no such variable}}
+} {1 {cannot read "_non_existent_": no such variable}}
 set a xx
 test expr-old-26.5 {error conditions} {
     list [catch {expr {2+$a}} msg] $msg

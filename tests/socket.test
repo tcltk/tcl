@@ -220,7 +220,7 @@ if {$doTestsWithRemoteServer} {
     }]} then {
 	fconfigure $commandSocket -translation crlf -buffering line
     } elseif {![testConstraint exec]} {
-	set noRemoteTestReason "can't exec"
+	set noRemoteTestReason "cannot exec"
 	set doTestsWithRemoteServer 0
     } else {
 	set remoteServerIP $localhost

@@ -4208,7 +4208,7 @@ test chan-io-33.7 {Tcl_Gets and bad variable} -setup {
     chan gets $f x(0)
 } -returnCodes error -cleanup {
     chan close $f
-} -result {can't set "x(0)": variable isn't array}
+} -result {cannot set "x(0)": variable isn't array}
 test chan-io-33.8 {Tcl_Gets, exercising double buffering} {
     set f [open $path(test3) w]
     chan configure $f -translation lf

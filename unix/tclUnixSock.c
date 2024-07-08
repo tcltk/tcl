@@ -978,7 +978,7 @@ TcpGetOptionProc(
 	    if (len) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "can't get peername: %s",
+			    "cannot get peername: %s",
 			    Tcl_PosixError(interp)));
 		}
 		return TCL_ERROR;
@@ -1021,7 +1021,7 @@ TcpGetOptionProc(
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"can't get sockname: %s", Tcl_PosixError(interp)));
+			"cannot get sockname: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}

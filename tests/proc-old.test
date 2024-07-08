@@ -87,7 +87,7 @@ test proc-old-2.5 {local and global variables} {
 	return $_undefined_
     }
     list [catch {tproc xxx} msg] $msg
-} {1 {can't read "_undefined_": no such variable}}
+} {1 {cannot read "_undefined_": no such variable}}
 test proc-old-2.6 {local and global variables} {
     set a 114
     set b 115

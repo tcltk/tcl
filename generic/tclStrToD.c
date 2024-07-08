@@ -1515,7 +1515,7 @@ TclParseNumber(
 #endif
 	case INITIAL:
 	    /* This case only to silence compiler warning. */
-	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
+	    Tcl_Panic("TclParseNumber: state INITIAL cannot happen here");
 	}
     }
 
