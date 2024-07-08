@@ -396,16 +396,16 @@ test ledit-2.7 {ledit errors} -body {
 test ledit-2.8 {ledit errors} -body {
     unset -nocomplain l
     ledit l 0 0 x
-} -returnCodes error -result {can't read "l": no such variable}
+} -returnCodes error -result {cannot read "l": no such variable}
 test ledit-2.9 {ledit errors} -body {
     unset -nocomplain arr
     ledit arr(x) 0 0 x
-} -returnCodes error -result {can't read "arr(x)": no such variable}
+} -returnCodes error -result {cannot read "arr(x)": no such variable}
 test ledit-2.10 {ledit errors} -body {
     unset -nocomplain arr
     set arr(y) y
     ledit arr(x) 0 0 x
-} -returnCodes error -result {can't read "arr(x)": no such element in array}
+} -returnCodes error -result {cannot read "arr(x)": no such element in array}
 
 test ledit-3.1 {ledit won't modify shared argument objects} {
     proc p {} {

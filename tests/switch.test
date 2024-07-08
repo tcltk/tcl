@@ -532,7 +532,7 @@ test switch-11.5 {-matchvar without -regexp} {
 test switch-11.6 {-matchvar unwritable} {
     set x {}
     list [catch {switch -regexp -matchvar x(x) -- abc . {set x}} msg] $x $msg
-} {1 {} {can't set "x(x)": variable isn't array}}
+} {1 {} {cannot set "x(x)": variable isn't array}}
 
 test switch-12.1 {regexp matching with -indexvar} {
     switch -regexp -indexvar x -- abc {.(.). {set x}}
@@ -559,7 +559,7 @@ test switch-12.5 {-indexvar without -regexp} {
 test switch-12.6 {-indexvar unwritable} {
     set x {}
     list [catch {switch -regexp -indexvar x(x) -- abc . {set x}} msg] $x $msg
-} {1 {} {can't set "x(x)": variable isn't array}}
+} {1 {} {cannot set "x(x)": variable isn't array}}
 test switch-12.7 {[Bug 3106532] -indexvar should be directly usable with [string range]} {
     set str abcdef
     switch -regexp -indexvar x -- $str ^... {string range $str {*}[lindex $x 0]}
@@ -600,14 +600,14 @@ test switch-13.5 {-indexvar -matchvar combinations} {
     list [catch {
 	switch -regexp -indexvar x(x) -matchvar y abc {. {list $x $y}}
     } msg] $x $y $msg
-} {1 - - {can't set "x(x)": variable isn't array}}
+} {1 - - {cannot set "x(x)": variable isn't array}}
 test switch-13.6 {-indexvar -matchvar combinations} {
     set x -
     set y -
     list [catch {
 	switch -regexp -indexvar x -matchvar y(y) abc {. {list $x $y}}
     } msg] $x $y $msg
-} {1 {{0 0}} - {can't set "y(y)": variable isn't array}}
+} {1 {{0 0}} - {cannot set "y(y)": variable isn't array}}
 
 test switch-14.1 {-regexp -- compilation [Bug 1854399]} {
     switch -regexp -- 0 {

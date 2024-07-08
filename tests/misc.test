@@ -38,7 +38,7 @@ test misc-1.1 {error in variable ref. in command in array reference} {
     }
     set msg {}
     list [catch tstProc msg] $msg
-} {1 {can't read "zz": no such variable}}
+} {1 {cannot read "zz": no such variable}}
 test misc-1.2 {error in variable ref. in command in array reference} {
     proc tstProc {} "
 	global a

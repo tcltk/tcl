@@ -1744,7 +1744,7 @@ AssembleOneLine(
 	break;
 
     default:
-	Tcl_Panic("Instruction \"%s\" could not be found, can't happen\n",
+	Tcl_Panic("Instruction \"%s\" could not be found, cannot happen\n",
 		TclGetString(instNameObj));
     }
 
@@ -1822,7 +1822,7 @@ CompileEmbeddedScript(
 	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, 1);
 	break;
     default:
-	Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
+	Tcl_Panic("no ASSEM_EVAL case for %s (%d), cannot happen",
 		instPtr->name, instPtr->tclInstCode);
     }
 
@@ -3960,7 +3960,7 @@ BuildExceptionRanges(
 
     if (catchDepth != 0) {
 	Tcl_Panic("unclosed catch at end of code in "
-		"tclAssembly.c:BuildExceptionRanges, can't happen");
+		"tclAssembly.c:BuildExceptionRanges, cannot happen");
     }
 
     /* Free temp storage */
@@ -4132,7 +4132,7 @@ StackFreshCatches(
 		    TclGetString(block->jumpTarget));
 	    if (entryPtr == NULL) {
 		Tcl_Panic("undefined label in tclAssembly.c:"
-			"BuildExceptionRanges, can't happen");
+			"BuildExceptionRanges, cannot happen");
 	    }
 
 	    errorExit = (BasicBlock*)Tcl_GetHashValue(entryPtr);

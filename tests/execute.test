@@ -81,7 +81,7 @@ test execute-1.3 {TclExecuteByteCode, INST_LOAD_SCALAR1, error} {
 	return $x
     }
     list [catch {foo} msg] $msg
-} {1 {can't read "x": no such variable}}
+} {1 {cannot read "x": no such variable}}
 
 # INST_LOAD_SCALAR4
 test execute-2.1 {TclExecuteByteCode, INST_LOAD_SCALAR4, simple case} {
@@ -108,7 +108,7 @@ test execute-2.2 {TclExecuteByteCode, INST_LOAD_SCALAR4, error} {
     }
     proc foo {} $body
     list [catch {foo} msg] $msg
-} {1 {can't read "y": no such variable}}
+} {1 {cannot read "y": no such variable}}
 
 # INST_LOAD_SCALAR_STK not tested
 # INST_LOAD_ARRAY4 not tested
@@ -1145,7 +1145,7 @@ test execute-12.1 {failing multi-lappend to unshared} -setup {
     lappend x 4 5
 } -cleanup {
     unset -nocomplain x y
-} -returnCodes error -result {can't set "x": boo}
+} -returnCodes error -result {cannot set "x": boo}
 test execute-12.2 {failing multi-lappend to shared} -setup {
     unset -nocomplain x y
 } -body {
@@ -1156,7 +1156,7 @@ test execute-12.2 {failing multi-lappend to shared} -setup {
     lappend x 4 5
 } -cleanup {
     unset -nocomplain x y
-} -returnCodes error -result {can't set "x": boo}
+} -returnCodes error -result {cannot set "x": boo}
 test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
     apply {{} {
 	set x 1
@@ -1164,7 +1164,7 @@ test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
 	trace add variable x write {apply {args {error boo}}}
 	lappend x 4 5
     }}
-} -returnCodes error -result {can't set "x": boo}
+} -returnCodes error -result {cannot set "x": boo}
 test execute-12.4 {failing multi-lappend to shared: LVT} -body {
     apply {{} {
 	set x 1
@@ -1173,7 +1173,7 @@ test execute-12.4 {failing multi-lappend to shared: LVT} -body {
 	trace add variable x write {apply {args {error boo}}}
 	lappend x 4 5
     }}
-} -returnCodes error -result {can't set "x": boo}
+} -returnCodes error -result {cannot set "x": boo}
 
 # cleanup
 if {[info commands testobj] != {}} {

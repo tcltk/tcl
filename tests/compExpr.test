@@ -79,7 +79,7 @@ test compExpr-2.10 {CompileSubExpr procedure, TCL_TOKEN_VARIABLE parse token} -s
 test compExpr-2.11 {CompileSubExpr procedure, error in TCL_TOKEN_VARIABLE parse token} -body {
     unset -nocomplain a
     expr {$a + 17}
-} -returnCodes error -result {can't read "a": no such variable}
+} -returnCodes error -result {cannot read "a": no such variable}
 test compExpr-2.12 {CompileSubExpr procedure, TCL_TOKEN_SUB_EXPR parse token} {
     expr {27||3? 3<<(1+4) : 4&&9}
 } 96
