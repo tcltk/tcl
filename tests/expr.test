@@ -504,6 +504,12 @@ test expr-11.13b {CompileAddExpr: runtime error} ieeeFloatingPoint {
 test expr-11.14 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+[lseq 2 4]}} msg] $msg
 } {1 {can't use a list as operand of "+"}}
+test expr-11.15 {CompileAddExpr: runtime error} {
+    list [catch {expr {24.0+{1 2 3}}} msg] $msg
+} {1 {can't use a list as operand of "+"}}
+test expr-11.16 {CompileAddExpr: runtime error} {
+    list [catch {expr {24.0+[dict create foo bar]}} msg] $msg
+} {1 {can't use a list as operand of "+"}}
 
 test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
@@ -7232,6 +7238,12 @@ test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
 } {}
 test expr-47.14 {isqrt() - lseq} {
     list [catch {expr {isqrt([lseq 1 3])}} result] $result
+} {1 {expected number but got a list}}
+test expr-47.15 {isqrt() - lseq} {
+    list [catch {expr {isqrt({1 2 3})}} result] $result
+} {1 {expected number but got a list}}
+test expr-47.16 {isqrt() - lseq} {
+    list [catch {expr {isqrt([dict create foo bar])}} result] $result
 } {1 {expected number but got a list}}
 
 test expr-48.1 {Bug 1770224} {
