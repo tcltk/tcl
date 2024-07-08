@@ -752,7 +752,7 @@ InitByteCodeExecution(
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
-	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
+	Tcl_Panic("InitByteCodeExecution: cannot create link for tcl_traceExec variable");
     }
 #endif
 #ifdef TCL_COMPILE_STATS
@@ -5874,7 +5874,7 @@ TEBCresume(
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, "first ", pc, valuePtr);
+	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -5885,7 +5885,7 @@ TEBCresume(
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, "second ", pc, value2Ptr);
+	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6095,7 +6095,7 @@ TEBCresume(
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, "first ", pc, valuePtr);
+	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6116,7 +6116,7 @@ TEBCresume(
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, "second ", pc, value2Ptr);
+	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -9104,7 +9104,7 @@ static void
 IllegalExprOperandType(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-	const char *ord,		/* "first ", "second " or "" */
+    const char *ord,		/* "first ", "second " or "" */
     const unsigned char *pc,	/* Points to the instruction being executed
 				 * when the illegal type was found. */
     Tcl_Obj *opndPtr)		/* Points to the operand holding the value
@@ -9128,7 +9128,7 @@ IllegalExprOperandType(
 	    if (length > 1) {
 	    listRep:
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"can't use a list as %soperand of \"%s\"", ord, op));
+			"cannot use a list as %soperand of \"%s\"", ord, op));
 		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
 		return;
 	    }
@@ -9148,8 +9148,8 @@ IllegalExprOperandType(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s \"%s\" as operand of \"%s\"", description,
-	    TclGetString(opndPtr), op));
+	    "cannot use %s \"%s\" as %soperand of \"%s\"", description,
+	    TclGetString(opndPtr), ord, op));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
 }
 
