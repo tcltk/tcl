@@ -503,13 +503,13 @@ test expr-11.13b {CompileAddExpr: runtime error} ieeeFloatingPoint {
 } {0 Inf}
 test expr-11.14 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+[lseq 2 4]}} msg] $msg
-} {1 {can't use a list as operand of "+"}}
+} {1 {can't use a list as second operand of "+"}}
 test expr-11.15 {CompileAddExpr: runtime error} {
-    list [catch {expr {24.0+{1 2 3}}} msg] $msg
-} {1 {can't use a list as operand of "+"}}
+    list [catch {expr {{1 2 3}+24.0}} msg] $msg
+} {1 {can't use a list as first operand of "+"}}
 test expr-11.16 {CompileAddExpr: runtime error} {
-    list [catch {expr {24.0+[dict create foo bar]}} msg] $msg
-} {1 {can't use a list as operand of "+"}}
+    list [catch {expr {~[dict create foo bar]}} msg] $msg
+} {1 {can't use a list as operand of "~"}}
 
 test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
