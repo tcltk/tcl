@@ -3679,6 +3679,7 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
+    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -3704,8 +3705,29 @@ Tcl_GetNumberFromObj(
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
 	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    goto listRep;
+	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
+    /* Don't try to convert index or boolean's to a list */
+    if (!TclHasInternalRep(objPtr, &tclIndexType)
+	    && !TclHasInternalRep(objPtr, &tclBooleanType)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	goto listRep;
+    }
     return TCL_ERROR;
 }
 
