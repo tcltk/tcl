@@ -154,7 +154,7 @@ FileForRedirect(
 
   badLastArg:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "cannot specify \"%s\" as last word in command", arg));
+	    "can't specify \"%s\" as last word in command", arg));
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "SYNTAX", (char *)NULL);
     return NULL;
 }
@@ -540,7 +540,7 @@ TclCreatePipeline(
 		    inputLiteral = ((i + 1) == argc) ? NULL : argv[i + 1];
 		    if (inputLiteral == NULL) {
 			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"cannot specify \"%s\" as last word in command",
+				"can't specify \"%s\" as last word in command",
 				argv[i]));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 				"PIPESYNTAX", (char *)NULL);
@@ -1053,7 +1053,7 @@ Tcl_OpenCommandChannel(
     if (flags & TCL_ENFORCE_MODE) {
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot read output from command:"
+		    "can't read output from command:"
 		    " standard output was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (char *)NULL);
@@ -1061,7 +1061,7 @@ Tcl_OpenCommandChannel(
 	}
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot write input to command:"
+		    "can't write input to command:"
 		    " standard input was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", (char *)NULL);

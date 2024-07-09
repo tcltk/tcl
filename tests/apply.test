@@ -38,11 +38,11 @@ test apply-1.1 {not enough arguments} -returnCodes error -body {
 test apply-2.0 {malformed lambda} -returnCodes error -body {
     set lambda a
     apply $lambda
-} -result {cannot interpret "a" as a lambda expression}
+} -result {can't interpret "a" as a lambda expression}
 test apply-2.1 {malformed lambda} -returnCodes error -body {
     set lambda [list a b c d]
     apply $lambda
-} -result {cannot interpret "a b c d" as a lambda expression}
+} -result {can't interpret "a b c d" as a lambda expression}
 test apply-2.2 {malformed lambda} {
     set lambda [list {{}} boo]
     list [catch {apply $lambda} msg] $msg $::errorInfo

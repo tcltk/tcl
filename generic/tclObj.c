@@ -948,7 +948,7 @@ Tcl_ConvertToType(
     if (typePtr->setFromAnyProc == NULL) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "cannot convert value to type %s", typePtr->name));
+		    "can't convert value to type %s", typePtr->name));
 	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
 	}
 	return TCL_ERROR;

@@ -4594,7 +4594,7 @@ test io-33.7 {Tcl_Gets and bad variable} {
     set result [list [catch {gets $f x(0)} msg] $msg]
     close $f
     set result
-} {1 {cannot set "x(0)": variable isn't array}}
+} {1 {can't set "x(0)": variable isn't array}}
 test io-33.8 {Tcl_Gets, exercising double buffering} {
     set f [open $path(test3) w]
     fconfigure $f -translation lf

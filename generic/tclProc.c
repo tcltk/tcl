@@ -182,14 +182,14 @@ Tcl_ProcObjCmd(
 
     if (nsPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot create procedure \"%s\": unknown namespace",
+		"can't create procedure \"%s\": unknown namespace",
 		procName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (void *)NULL);
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot create procedure \"%s\": bad procedure name",
+		"can't create procedure \"%s\": bad procedure name",
 		procName));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (void *)NULL);
 	return TCL_ERROR;
@@ -2456,7 +2456,7 @@ SetLambdaFromAny(
     result = TclListObjLength(NULL, objPtr, &objc);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot interpret \"%s\" as a lambda expression",
+		"can't interpret \"%s\" as a lambda expression",
 		Tcl_GetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
 	return TCL_ERROR;
@@ -2464,7 +2464,7 @@ SetLambdaFromAny(
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot interpret \"%s\" as a lambda expression",
+		"can't interpret \"%s\" as a lambda expression",
 		TclGetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
 	return TCL_ERROR;

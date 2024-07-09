@@ -709,7 +709,7 @@ test namespace-14.2 {TclGetNamespaceForQualName, invalid absolute names} -setup 
         list [catch {set ::test_ns_777::v} msg] $msg \
              [catch {namespace children test_ns_777} msg] $msg
     }
-} -result {1 {cannot read "::test_ns_777::v": no such variable} 1 {namespace "test_ns_777" not found in "::test_ns_1"}}
+} -result {1 {can't read "::test_ns_777::v": no such variable} 1 {namespace "test_ns_777" not found in "::test_ns_1"}}
 
 # TIP 278: secondary lookup disabled, results changed from {10 20}
 test namespace-14.3 {TclGetNamespaceForQualName, relative names} -setup {
@@ -726,7 +726,7 @@ test namespace-14.3 {TclGetNamespaceForQualName, relative names} -setup {
         # list $v $test_ns_2::v
         list [catch {set v} msg] $msg  [catch {set test_ns_2::v} msg] $msg
     }
-} -result {1 {cannot read "v": no such variable} 0 20}
+} -result {1 {can't read "v": no such variable} 0 20}
 
 test namespace-14.4 {TclGetNamespaceForQualName, relative ns names looked up only in current ns} {
     namespace eval test_ns_1::test_ns_2 {
@@ -769,7 +769,7 @@ test namespace-14.9 {TclGetNamespaceForQualName, extra ::s are significant for v
     lappend l [catch {set test_ns_1::test_ns_2::} msg] $msg
     namespace eval test_ns_1::test_ns_2 {variable {} 2525}
     lappend l [set test_ns_1::test_ns_2::]
-} {1 {cannot read "test_ns_1::test_ns_2::": no such variable} 2525}
+} {1 {can't read "test_ns_1::test_ns_2::": no such variable} 2525}
 test namespace-14.10 {TclGetNamespaceForQualName, extra ::s are significant for vars} -setup {
     namespace eval test_ns_1::test_ns_2::foo {}
     unset -nocomplain test_ns_1::test_ns_2::
@@ -778,7 +778,7 @@ test namespace-14.10 {TclGetNamespaceForQualName, extra ::s are significant for 
     lappend l [catch {set test_ns_1::test_ns_2::} msg] $msg
     set test_ns_1::test_ns_2:: 314159
     lappend l [set test_ns_1::test_ns_2::]
-} -result {1 {cannot read "test_ns_1::test_ns_2::": no such variable} 314159}
+} -result {1 {can't read "test_ns_1::test_ns_2::": no such variable} 314159}
 test namespace-14.11 {TclGetNamespaceForQualName, extra ::s are significant for commands} -setup {
     namespace eval test_ns_1::test_ns_2::foo {}
     catch {rename test_ns_1::test_ns_2:: {}}
@@ -798,8 +798,8 @@ test namespace-14.12 {TclGetNamespaceForQualName, extra ::s are significant for 
         catch {set test_ns_1::(x) y} ::msg
     }
     list $::msg [catch {set test_ns_1::(x)} msg] $msg
-} -result {{cannot set "test_ns_1::(x)": parent namespace doesn't exist} 1 {cannot read "test_ns_1::(x)": no such variable}}
-test namespace-14.13 {TclGetNamespaceForQualName, namespace other than global ns cannot have empty name} -setup {
+} -result {{can't set "test_ns_1::(x)": parent namespace doesn't exist} 1 {can't read "test_ns_1::(x)": no such variable}}
+test namespace-14.13 {TclGetNamespaceForQualName, namespace other than global ns can't have empty name} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -returnCodes error -body {
     namespace eval test_ns_1 {
@@ -807,7 +807,7 @@ test namespace-14.13 {TclGetNamespaceForQualName, namespace other than global ns
 	namespace eval {} {}
 	{}
     }
-} -result {cannot create namespace "": only global namespace can have empty name}
+} -result {can't create namespace "": only global namespace can have empty name}
 
 test namespace-15.1 {Tcl_FindNamespace, absolute name found} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -951,7 +951,7 @@ test namespace-17.4 {Tcl_FindNamespaceVar, absolute name not found} -body {
         }
         set ::test_ns_1::test_ns_2::y
     }
-} -returnCodes error -result {cannot read "::test_ns_1::test_ns_2::y": no such variable}
+} -returnCodes error -result {can't read "::test_ns_1::test_ns_2::y": no such variable}
 test namespace-17.5 {Tcl_FindNamespaceVar, absolute name and TCL_GLOBAL_ONLY} -setup {
     namespace eval ::test_ns_1::test_ns_2 {}
 } -body {
@@ -979,12 +979,12 @@ test namespace-17.7 {Tcl_FindNamespaceVar, relative name found} {
         unset x
         list [catch {set x} msg] $msg  ;# must not be global x now
     }
-} {1 {cannot read "x": no such variable}}
+} {1 {can't read "x": no such variable}}
 test namespace-17.8 {Tcl_FindNamespaceVar, relative name not found} -body {
     namespace eval test_ns_1 {
         set wuzzat
     }
-} -returnCodes error -result {cannot read "wuzzat": no such variable}
+} -returnCodes error -result {can't read "wuzzat": no such variable}
 test namespace-17.9 {Tcl_FindNamespaceVar, relative name and TCL_GLOBAL_ONLY} {
     namespace eval test_ns_1 {
         variable a hello
@@ -1290,11 +1290,11 @@ test namespace-26.1 {NamespaceExportCmd, no args and new ns} {
 test namespace-26.2 {NamespaceExportCmd, just -clear arg} {
     namespace export -clear
 } {}
-test namespace-26.3 {NamespaceExportCmd, pattern cannot specify a namespace} {
+test namespace-26.3 {NamespaceExportCmd, pattern can't specify a namespace} {
     namespace eval test_ns_1 {
         list [catch {namespace export ::zzz} msg] $msg
     }
-} {1 {invalid export pattern "::zzz": pattern cannot specify a namespace}}
+} {1 {invalid export pattern "::zzz": pattern can't specify a namespace}}
 test namespace-26.4 {NamespaceExportCmd, one pattern} {
     namespace eval test_ns_1 {
         namespace export cmd1

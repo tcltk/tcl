@@ -1436,7 +1436,7 @@ test interp-20.38 {invokehidden at global level} {
     set r [catch {interp eval a p1} msg]
     interp delete a
     list $r $msg
-} {1 {cannot read "z": no such variable}}
+} {1 {can't read "z": no such variable}}
 test interp-20.39 {invokehidden at global level} {
     catch {interp delete a}
     interp create a
@@ -1550,7 +1550,7 @@ test interp-20.43 {invokehidden at global level} {
     set r [catch {interp eval a p1} msg]
     interp delete a
     list $r $msg
-} {1 {cannot read "z": no such variable}}
+} {1 {can't read "z": no such variable}}
 test interp-20.44 {invokehidden at global level} {
     catch {interp delete a}
     interp create a

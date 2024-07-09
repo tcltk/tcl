@@ -90,7 +90,7 @@ test load-2.3 {loading with no _Init procedure} -constraints [list $dll $loaded]
 		 {TCL LOOKUP LOAD_SYMBOL *Foo_Init}]
 test load-2.4 {loading with no _SafeInit procedure} [list $dll $loaded] {
     list [catch {load [file join $testDir tcl9pkga$ext] {} child} msg] $msg
-} {1 {cannot use library in a safe interpreter: no Pkga_SafeInit procedure}}
+} {1 {can't use library in a safe interpreter: no Pkga_SafeInit procedure}}
 
 test load-3.1 {error in _Init procedure, same interpreter} \
 	[list $dll $loaded] {
@@ -164,7 +164,7 @@ test load-7.2 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     child eval {set x "not loaded"}
     list [catch {load {} Another child} msg] $msg \
 	[child eval set x] [set x]
-} {1 {cannot use library in a safe interpreter: no Another_SafeInit procedure} {not loaded} loaded}
+} {1 {can't use library in a safe interpreter: no Another_SafeInit procedure} {not loaded} loaded}
 test load-7.3 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     set x "not loaded"
     teststaticlibrary More 0 1

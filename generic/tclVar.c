@@ -4533,7 +4533,7 @@ ObjMakeUpvar(
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(TclGetString(myNamePtr), "::") != NULL))) {
 	    Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		    "bad variable name \"%s\": cannot create namespace "
+		    "bad variable name \"%s\": can't create namespace "
 		    "variable that refers to procedure variable",
 		    TclGetString(myNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", (char *)NULL);
@@ -4649,7 +4649,7 @@ TclPtrObjMakeUpvarIdx(
 		 */
 
 		Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-			"bad variable name \"%s\": cannot create a scalar "
+			"bad variable name \"%s\": can't create a scalar "
 			"variable that looks like an array element", myName));
 		Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT",
 			(char *)NULL);
@@ -4678,14 +4678,14 @@ TclPtrObjMakeUpvarIdx(
 
     if (varPtr == otherPtr) {
 	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_NewStringObj(
-		"cannot upvar from variable to itself", -1));
+		"can't upvar from variable to itself", -1));
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "SELF", (char *)NULL);
 	return TCL_ERROR;
     }
 
     if (TclIsVarTraced(varPtr)) {
 	Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		"variable \"%s\" has traces: cannot use for upvar", myName));
+		"variable \"%s\" has traces: can't use for upvar", myName));
 	Tcl_SetErrorCode(interp, "TCL", "UPVAR", "TRACED", (char *)NULL);
 	return TCL_ERROR;
     } else if (!TclIsVarUndefined(varPtr)) {
@@ -5704,7 +5704,7 @@ TclObjVarErrMsg(
 	}
 	part1Ptr = localName(((Interp *)interp)->varFramePtr, index);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot %s \"%s%s%s%s\": %s",
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't %s \"%s%s%s%s\": %s",
 	    operation, TclGetString(part1Ptr), (part2Ptr ? "(" : ""),
 	    (part2Ptr ? TclGetString(part2Ptr) : ""), (part2Ptr ? ")" : ""),
 	    reason));

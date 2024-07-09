@@ -63,14 +63,14 @@ test appendComp-3.2 {append errors} -returnCodes error -body {
 	append x(0) 44
     }
     foo
-} -result {cannot set "x(0)": variable isn't array}
+} -result {can't set "x(0)": variable isn't array}
 test appendComp-3.3 {append errors} -returnCodes error -body {
     proc foo {} {
 	unset -nocomplain x
 	append x
     }
     foo
-} -result {cannot read "x": no such variable}
+} -result {can't read "x": no such variable}
 
 test appendComp-4.1 {lappend command} {
     proc foo {} {
@@ -242,7 +242,7 @@ test appendComp-6.2 {lappend errors} -returnCodes error -body {
 	lappend x(0) 44
     }
     foo
-} -result {cannot set "x(0)": variable isn't array}
+} -result {can't set "x(0)": variable isn't array}
 
 test appendComp-7.1 {lappendComp-created var and error in trace on that var} -setup {
     catch {rename foo ""}
@@ -260,7 +260,7 @@ test appendComp-7.1 {lappendComp-created var and error in trace on that var} -se
 	list [info exists x] [catch {set x} msg] $msg
     }
     bar
-} -result {0 1 {cannot read "x": no such variable}}
+} -result {0 1 {can't read "x": no such variable}}
 test appendComp-7.2 {lappend var triggers read trace, index var} -setup {
     unset -nocomplain ::result
 } -body {

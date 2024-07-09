@@ -221,7 +221,7 @@ test incr-1.28 {TclCompileIncrCmd: runtime error, readonly variable} -body {
     list [catch {incr x 1} msg] $msg $::errorInfo
 } -match glob -cleanup {
     unset -nocomplain x
-} -result {1 {cannot set "x": variable is read-only} {*variable is read-only
+} -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *
 "incr x 1"}}
@@ -471,7 +471,7 @@ test incr-2.28 {incr command (not compiled): runtime error, readonly variable} -
     list [catch {$z x 1} msg] $msg $::errorInfo
 } -match glob -cleanup {
     unset -nocomplain x
-} -result {1 {cannot set "x": variable is read-only} {*variable is read-only
+} -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *
 "$z x 1"}}
