@@ -579,7 +579,7 @@ namespace eval ::tcl::test::main {
     } -cleanup {
 	close $f
 	file delete result
-    } -result "cannot set \"tcl_interactive\":\
+    } -result "can't set \"tcl_interactive\":\
 	     variable must have boolean value\n"
 
     test Tcl_Main-5.2 {
@@ -798,7 +798,7 @@ namespace eval ::tcl::test::main {
 		after 100 testexitmainloop
 		testsetmainloop
 		close stdin
-		puts "do not reach this"
+		puts "don't reach this"
 	} >& result
 	set f [open result]
 	read $f

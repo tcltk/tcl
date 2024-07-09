@@ -393,28 +393,28 @@ test exec-10.6 {errors in exec invocation} -constraints {exec} -body {
 } -returnCodes error -result {illegal use of | or |& in command}
 test exec-10.7 {errors in exec invocation} -constraints {exec} -body {
     exec cat <
-} -returnCodes error -result {cannot specify "<" as last word in command}
+} -returnCodes error -result {can't specify "<" as last word in command}
 test exec-10.8 {errors in exec invocation} -constraints {exec} -body {
     exec cat >
-} -returnCodes error -result {cannot specify ">" as last word in command}
+} -returnCodes error -result {can't specify ">" as last word in command}
 test exec-10.9 {errors in exec invocation} -constraints {exec} -body {
     exec cat <<
-} -returnCodes error -result {cannot specify "<<" as last word in command}
+} -returnCodes error -result {can't specify "<<" as last word in command}
 test exec-10.10 {errors in exec invocation} -constraints {exec} -body {
     exec cat >>
-} -returnCodes error -result {cannot specify ">>" as last word in command}
+} -returnCodes error -result {can't specify ">>" as last word in command}
 test exec-10.11 {errors in exec invocation} -constraints {exec} -body {
     exec cat >&
-} -returnCodes error -result {cannot specify ">&" as last word in command}
+} -returnCodes error -result {can't specify ">&" as last word in command}
 test exec-10.12 {errors in exec invocation} -constraints {exec} -body {
     exec cat >>&
-} -returnCodes error -result {cannot specify ">>&" as last word in command}
+} -returnCodes error -result {can't specify ">>&" as last word in command}
 test exec-10.13 {errors in exec invocation} -constraints {exec} -body {
     exec cat >@
-} -returnCodes error -result {cannot specify ">@" as last word in command}
+} -returnCodes error -result {can't specify ">@" as last word in command}
 test exec-10.14 {errors in exec invocation} -constraints {exec} -body {
     exec cat <@
-} -returnCodes error -result {cannot specify "<@" as last word in command}
+} -returnCodes error -result {can't specify "<@" as last word in command}
 test exec-10.15 {errors in exec invocation} -constraints {exec} -body {
     exec cat < a/b/c
 } -returnCodes error -result {couldn't read file "a/b/c": no such file or directory}

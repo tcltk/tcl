@@ -625,15 +625,15 @@ proc ::safe::InterpInit {
     if {[catch {::interp eval $child {
 	source [file join $tcl_library init.tcl]
     }} msg opt]} {
-	Log $child "cannot source init.tcl ($msg)"
-	return -options $opt "cannot source init.tcl into child $child ($msg)"
+	Log $child "can't source init.tcl ($msg)"
+	return -options $opt "can't source init.tcl into child $child ($msg)"
     }
 
     if {[catch {::interp eval $child {
 	source [file join $tcl_library tm.tcl]
     }} msg opt]} {
-	Log $child "cannot source tm.tcl ($msg)"
-	return -options $opt "cannot source tm.tcl into child $child ($msg)"
+	Log $child "can't source tm.tcl ($msg)"
+	return -options $opt "can't source tm.tcl into child $child ($msg)"
     }
 
     # Sync the paths used to search for Tcl modules. This can be done only

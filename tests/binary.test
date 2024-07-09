@@ -679,7 +679,7 @@ test binary-20.2 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan abc a arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-20.3 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -body {
@@ -725,7 +725,7 @@ test binary-21.2 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan abc A arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-21.3 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -body {
@@ -828,7 +828,7 @@ test binary-22.10 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 b1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-22.11 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1 arg2
 } -body {
@@ -878,7 +878,7 @@ test binary-23.10 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 B1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-23.11 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1 arg2
 } -body {
@@ -924,7 +924,7 @@ test binary-24.9 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 h1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-24.10 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1 arg2
 } -body {
@@ -970,7 +970,7 @@ test binary-25.9 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 H1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-25.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1015,7 +1015,7 @@ test binary-26.9 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 c1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-26.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1080,7 +1080,7 @@ test binary-27.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 s1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-27.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1137,7 +1137,7 @@ test binary-28.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 S1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-28.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1186,7 +1186,7 @@ test binary-29.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53\x53\x54 i1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-29.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1239,7 +1239,7 @@ test binary-30.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53\x53\x54 I1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-30.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1312,7 +1312,7 @@ test binary-31.13 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x3F\xCC\xCC\xCD f1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-31.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -1379,7 +1379,7 @@ test binary-32.13 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A d1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-32.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2083,7 +2083,7 @@ test binary-54.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 t1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-54.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2137,7 +2137,7 @@ test binary-55.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53 t1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-55.9 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2191,7 +2191,7 @@ test binary-56.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53\x53\x54 n1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-56.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2245,7 +2245,7 @@ test binary-57.8 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x52\x53\x53\x54 n1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2319,7 +2319,7 @@ test binary-58.13 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A q1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-58.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
@@ -2387,7 +2387,7 @@ test binary-59.13 {Tcl_BinaryObjCmd: scan} -setup {
 } -returnCodes error -body {
     set arg1 1
     binary scan \x3F\xCC\xCC\xCD r1 arg1(a)
-} -result {cannot set "arg1(a)": variable isn't array}
+} -result {can't set "arg1(a)": variable isn't array}
 test binary-59.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo

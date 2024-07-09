@@ -164,7 +164,7 @@ test parseOld-5.5 {variable substitution} {catch {$_non_existent_} msg} 1
 test parseOld-5.6 {variable substitution} {
     catch {$_non_existent_} msg
     set msg
-} {cannot read "_non_existent_": no such variable}
+} {can't read "_non_existent_": no such variable}
 test parseOld-5.7 {array variable substitution} {
     unset -nocomplain a
     set a(xyz) 123
@@ -186,14 +186,14 @@ test parseOld-5.9 {array variable substitution} {
 test parseOld-5.10 {array variable substitution} {
     unset -nocomplain a
     list [catch {set b $a(22)} msg] $msg
-} {1 {cannot read "a(22)": no such variable}}
+} {1 {can't read "a(22)": no such variable}}
 test parseOld-5.11 {array variable substitution} {
     set b a$!
     set b
 } {a$!}
 test parseOld-5.12 {empty array name support} {
     list [catch {set b a$()} msg] $msg
-} {1 {cannot read "()": no such variable}}
+} {1 {can't read "()": no such variable}}
 unset -nocomplain a
 test parseOld-5.13 {array variable substitution} {
     unset -nocomplain a

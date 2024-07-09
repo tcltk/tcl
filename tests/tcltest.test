@@ -959,7 +959,7 @@ test tcltest-14.1 {-singleproc - single process} {
 	child msg $allfile -singleproc 0 -tmpdir [temporaryDirectory]
 	return $msg
     }
-    -result {Test file error: cannot unset .foo.: no such variable}
+    -result {Test file error: can't unset .foo.: no such variable}
     -match regexp
 }
 
@@ -1242,7 +1242,7 @@ test tcltest-21.4 {test command with cleanup failure} {
     -result {^$}
     -match regexp
     -cleanup {verbose $v; set ::tcltest::currentFailure $fail}
-    -output "Test cleanup failed:.*cannot unset \"foo\": no such variable"
+    -output "Test cleanup failed:.*can't unset \"foo\": no such variable"
 }
 
 test tcltest-21.5 {test command with setup failure} {
@@ -1260,7 +1260,7 @@ test tcltest-21.5 {test command with setup failure} {
     -result {^$}
     -match regexp
     -cleanup {set ::tcltest::currentFailure $fail}
-    -output "Test setup failed:.*cannot unset \"foo\": no such variable"
+    -output "Test setup failed:.*can't unset \"foo\": no such variable"
 }
 
 test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
@@ -1345,7 +1345,7 @@ test tcltest-21.10 {test command with cleanup failure} -setup {
     verbose {}
     test tcltest-21.10.0 {foo-1} -cleanup {unset foo}
 } -result {^$} -match regexp \
-	-output {Test cleanup failed:.*cannot unset \"foo\": no such variable}
+	-output {Test cleanup failed:.*can't unset \"foo\": no such variable}
 
 test tcltest-21.11 {test command with setup failure} -setup {
     if {[info exists foo]} {
@@ -1354,7 +1354,7 @@ test tcltest-21.11 {test command with setup failure} -setup {
     set fail $::tcltest::currentFailure
 } -cleanup {set ::tcltest::currentFailure $fail} -body {
     test tcltest-21.11.0 {foo-2} -setup {unset foo}
-} -result {^$} -output {Test setup failed:.*cannot unset \"foo\": no such variable} -match regexp
+} -result {^$} -output {Test setup failed:.*can't unset \"foo\": no such variable} -match regexp
 
 test tcltest-21.12 {
 	test command - setup occurs before cleanup & before script
@@ -1546,7 +1546,7 @@ test tcltest-24.3 {
 	customMatch: argument checking
 } -body {
 	list [catch {customMatch bad "a \{ b"} result] $result
-} -result [list 1 "invalid customMatch script; cannot evaluate after completion"]
+} -result [list 1 "invalid customMatch script; can't evaluate after completion"]
 
 test tcltest-24.4 {
 	test: valid -match values

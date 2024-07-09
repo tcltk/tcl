@@ -73,7 +73,7 @@ test lmap-1.15 {lmap errors} -setup {
 } -body {
     set a(0) 44
     list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo
-} -result {1 {cannot set "a": variable is array} {cannot set "a": variable is array
+} -result {1 {can't set "a": variable is array} {can't set "a": variable is array
     (setting lmap loop variable "a")
     invoked from within
 "lmap a {1 2 3} {}"}}
@@ -224,7 +224,7 @@ test lmap-4.15 {lmap errors} {
 	set a(0) 44
 	list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo
     }}
-} {1 {cannot set "a": variable is array} {cannot set "a": variable is array
+} {1 {can't set "a": variable is array} {can't set "a": variable is array
     while executing
 "lmap a {1 2 3} {}"}}
 test lmap-4.16 {lmap errors} -returnCodes error -body {

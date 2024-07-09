@@ -714,7 +714,7 @@ Tcl_CreateNamespace(
      */
 
     if (*name == '\0') {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot create namespace"
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
 		" \"\": only global namespace can have empty name", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", (char *)NULL);
@@ -754,7 +754,7 @@ Tcl_CreateNamespace(
 #endif
     ) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot create namespace \"%s\": already exists", name));
+		"can't create namespace \"%s\": already exists", name));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEEXISTING", (char *)NULL);
 	Tcl_DStringFree(&tmpBuffer);
@@ -1434,7 +1434,7 @@ Tcl_Export(
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("invalid export pattern"
-		" \"%s\": pattern cannot specify a namespace", pattern));
+		" \"%s\": pattern can't specify a namespace", pattern));
 	Tcl_SetErrorCode(interp, "TCL", "EXPORT", "INVALID", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1827,7 +1827,7 @@ DoImport(
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot import command \"%s\": already exists", cmdName));
+		"can't import command \"%s\": already exists", cmdName));
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "OVERWRITE", (char *)NULL);
 	return TCL_ERROR;
     }

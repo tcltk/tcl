@@ -97,7 +97,7 @@ test info-2.5 {info body option, returning bytecompiled bodies} -body {
     }
     foo a
     eval [info body foo]
-} -returnCodes error -result {cannot read "args": no such variable}
+} -returnCodes error -result {can't read "args": no such variable}
 # Fix for problem tested for in info-2.5 caused problems when
 # procedure body had no string rep (i.e. was not yet bytecode)
 # causing an empty string to be returned [Bug #545644]
@@ -218,14 +218,14 @@ test info-6.9 {info default option} -returnCodes error -setup {
     set a(0) 88
     proc t1 {a b} {}
     info default t1 a a
-} -returnCodes error -result {cannot set "a": variable is array}
+} -returnCodes error -result {can't set "a": variable is array}
 test info-6.10 {info default option} -setup {
     catch {unset a}
 } -cleanup {unset a} -body {
     set a(0) 88
     proc t1 {{a 18} b} {}
     info default t1 a a
-} -returnCodes error -result {cannot set "a": variable is array}
+} -returnCodes error -result {can't set "a": variable is array}
 test info-6.11 {info default option} {
     catch {namespace delete test_ns_info2}
     namespace eval test_ns_info2 {
@@ -468,7 +468,7 @@ test info-14.3 {info patchlevel option} -setup {
     info patchlevel
 } -cleanup {
     set tcl_patchLevel $t; unset t
-} -returnCodes error -result {cannot read "tcl_patchLevel": no such variable}
+} -returnCodes error -result {can't read "tcl_patchLevel": no such variable}
 
 test info-15.1 {info procs option} -body {
     proc t1 {} {}
@@ -611,7 +611,7 @@ test info-18.3 {info tclversion option} -body {
     set t $tcl_version
 } -cleanup {
     set tcl_version $t; unset t
-} -result {cannot read "tcl_version": no such variable}
+} -result {can't read "tcl_version": no such variable}
 
 test info-19.1 {info vars option} -body {
     set a 1

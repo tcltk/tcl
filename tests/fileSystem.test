@@ -536,7 +536,7 @@ test filesystem-6.17 {empty file name} -returnCodes error -body {
 } -result {could not read "": no such file or directory}
 test filesystem-6.18 {empty file name} -returnCodes error -body {
     file mkdir ""
-} -result {cannot create directory "": no such file or directory}
+} -result {can't create directory "": no such file or directory}
 test filesystem-6.19 {empty file name} {file nativename ""} {}
 test filesystem-6.20 {empty file name} {file normalize ""} {}
 test filesystem-6.21 {empty file name} {file owned ""} 0

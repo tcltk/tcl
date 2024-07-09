@@ -290,7 +290,7 @@ test regexp-6.8 {regexp errors} -setup {
 } -body {
     set f1 44
     regexp abc abc f1(f2)
-} -returnCodes error -result {cannot set "f1(f2)": variable isn't array}
+} -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-6.9 {regexp errors, -start bad int check} {
     list [catch {regexp -start bogus {^$} {}} msg] $msg
 } {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
@@ -487,7 +487,7 @@ test regexp-11.7 {regsub errors} -setup {
 } -body {
     set f1 44
     regsub -nocase aaa aaa xxx f1(f2)
-} -returnCodes error -result {cannot set "f1(f2)": variable isn't array}
+} -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-11.8 {regsub errors, -start bad int check} {
     list [catch {regsub -start bogus pattern string rep var} msg] $msg
 } {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}

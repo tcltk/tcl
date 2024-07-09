@@ -65,18 +65,18 @@ test rename-3.3 {error conditions} -setup {
     proc r2 {} {}
 } -returnCodes error -body {
     rename r1 r2
-} -result {cannot rename to "r2": command already exists}
+} -result {can't rename to "r2": command already exists}
 test rename-3.4 {error conditions} -setup {
     catch {rename r1 {}}
     catch {rename r2 {}}
 } -returnCodes error -body {
     rename r1 r2
-} -result {cannot rename "r1": command doesn't exist}
+} -result {can't rename "r1": command doesn't exist}
 test rename-3.5 {error conditions} -setup {
     catch {rename _non_existent_command {}}
 } -returnCodes error -body {
     rename _non_existent_command {}
-} -result {cannot delete "_non_existent_command": command doesn't exist}
+} -result {can't delete "_non_existent_command": command doesn't exist}
 
 catch {rename unknown {}}
 catch {rename unknown.old unknown}

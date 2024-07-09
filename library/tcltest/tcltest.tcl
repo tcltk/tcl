@@ -1762,7 +1762,7 @@ proc tcltest::customMatch {mode script} {
     variable CustomMatch
     if {![info complete $script]} {
 	return -code error \
-		"invalid customMatch script; cannot evaluate after completion"
+		"invalid customMatch script; can't evaluate after completion"
     }
     set CustomMatch($mode) $script
 }
