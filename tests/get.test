@@ -41,7 +41,7 @@ test get-1.5 {Tcl_GetInt procedure} testgetint {
 } {0 60}
 test get-1.6 {Tcl_GetInt procedure} testgetint {
     list [catch {testgetint 44 {16	 x}} msg] $msg
-} {1 {expected integer but got "16	 x"}}
+} {1 {expected integer but got a list}}
 test get-1.7 {Tcl_GetInt procedure} testgetint {
     list [catch {testgetint 44 18446744073709551616} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
@@ -96,7 +96,7 @@ test get-3.2 {Tcl_GetDouble(FromObj), bad numbers} {
 	lappend result [catch {format %g $num} msg] $msg
     }
     set result
-} {0 1 0 1 1 {expected floating-point number but got "++1.0"} 1 {expected floating-point number but got "+-1.0"} 1 {expected floating-point number but got "-+1.0"} 0 -1 1 {expected floating-point number but got "--1.0"} 1 {expected floating-point number but got "- +1.0"}}
+} {0 1 0 1 1 {expected floating-point number but got "++1.0"} 1 {expected floating-point number but got "+-1.0"} 1 {expected floating-point number but got "-+1.0"} 0 -1 1 {expected floating-point number but got "--1.0"} 1 {expected floating-point number but got a list}}
 # Bug 7114ac6141
 test get-3.3 {tcl_GetInt with iffy numbers} testgetint {
     lmap x {0 " 0" "0 " " 0 " " 0xa " " 010 " " 0o10 " " 0b10 "} {
@@ -110,7 +110,7 @@ test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
-} {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0 20340000000000000.0 {expected floating-point number but got "_1.0e+2"} {expected floating-point number but got "1_.0e+2"} {expected floating-point number but got "1._0e+2"} {expected floating-point number but got "1.0_e+2"} {expected floating-point number but got "1.0e_+2"} {expected floating-point number but got "1.0e+_2"} {expected floating-point number but got "1.0e+2_"} 1100.0 2.2e+23 {expected floating-point number but got "54321________"}}
+} {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got a list} 0.0 10.0 2.0 20340000000000000.0 {expected floating-point number but got "_1.0e+2"} {expected floating-point number but got "1_.0e+2"} {expected floating-point number but got "1._0e+2"} {expected floating-point number but got "1.0_e+2"} {expected floating-point number but got "1.0e_+2"} {expected floating-point number but got "1.0e+_2"} {expected floating-point number but got "1.0e+2_"} 1100.0 2.2e+23 {expected floating-point number but got "54321________"}}
 
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
     lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x0_a " 0b1111_1111 " 0_07 " " 0o1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 0x_b 0o_2_0 0o2__3_4} {

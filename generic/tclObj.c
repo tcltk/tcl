@@ -2006,6 +2006,7 @@ Tcl_GetBoolFromObj(
     char *charPtr)	/* Place to store resulting boolean. */
 {
     int result;
+    Tcl_Size length;
 
     if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
 	result = -1;
@@ -2061,9 +2062,30 @@ Tcl_GetBoolFromObj(
 	    }
 	    return TCL_OK;
 	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("expected boolean value%s but got a list",
+			    (flags & TCL_NULL_OK) ? " or \"\"" : ""));
+		}
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    goto listRep;
+	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
 		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
+    /* Don't try to convert index to a list */
+    if (!TclHasInternalRep(objPtr, &tclIndexType)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	goto listRep;
+    }
     return TCL_ERROR;
 }
 
@@ -2421,6 +2443,7 @@ Tcl_GetDoubleFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a double. */
     double *dblPtr)	/* Place to store resulting double. */
 {
+    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -2446,7 +2469,29 @@ Tcl_GetDoubleFromObj(
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		if (interp) {
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj("expected floating-point number but got a list", TCL_INDEX_NONE));
+		}
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    goto listRep;
+	}
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
+    /* Don't try to convert index or boolean's to a list */
+    if (!TclHasInternalRep(objPtr, &tclIndexType)
+	    && !TclHasInternalRep(objPtr, &tclBooleanType)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	goto listRep;
+    }
     return TCL_ERROR;
 }
 
@@ -2650,6 +2695,7 @@ Tcl_GetLongFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a long. */
     long *longPtr)	/* Place to store resulting long. */
 {
+    Tcl_Size length;
     do {
 #ifdef TCL_WIDE_INT_IS_LONG
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
@@ -2729,8 +2775,29 @@ Tcl_GetLongFromObj(
 	    }
 	    return TCL_ERROR;
 	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    goto listRep;
+	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    /* Don't try to convert index or boolean's to a list */
+    if (!TclHasInternalRep(objPtr, &tclIndexType)
+	    && !TclHasInternalRep(objPtr, &tclBooleanType)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	goto listRep;
+    }
     return TCL_ERROR;
 }
 
@@ -2979,6 +3046,7 @@ Tcl_GetWideIntFromObj(
     Tcl_WideInt *wideIntPtr)
 				/* Place to store resulting long. */
 {
+    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
@@ -3031,8 +3099,29 @@ Tcl_GetWideIntFromObj(
 	    }
 	    return TCL_ERROR;
 	}
+	/* Handle dict separately, because it doesn't have a lengthProc */
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, objPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) != 1) {
+	    goto listRep;
+	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    /* Don't try to convert index or boolean's to a list */
+    if (!TclHasInternalRep(objPtr, &tclIndexType)
+	    && !TclHasInternalRep(objPtr, &tclBooleanType)
+	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	goto listRep;
+    }
     return TCL_ERROR;
 }
 

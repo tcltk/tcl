@@ -181,7 +181,7 @@ test if-1.17 {TclCompileIfCmd: if/elseif test in quotes} -setup {
     if {"0 < 3"} {set a 1}
 } -returnCodes error -cleanup {
     unset a
-} -result {expected boolean value but got "0 < 3"}
+} -result {expected boolean value but got a list}
 
 test if-2.1 {TclCompileIfCmd: "elseif" after if/elseif test} -setup {
     set a {}
@@ -753,7 +753,7 @@ test if-5.17 {if cmd with computed command names: if/elseif test in quotes} -set
     $z {"0 < 3"} {set a 1}
 } -returnCodes error -cleanup {
     unset a z
-} -result {expected boolean value but got "0 < 3"}
+} -result {expected boolean value but got a list}
 
 test if-6.1 {if cmd with computed command names: "elseif" after if/elseif test} -setup {
     set a {}

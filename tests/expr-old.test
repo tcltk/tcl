@@ -896,7 +896,7 @@ test expr-old-34.2 {errors in math functions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-34.3 {errors in math functions} {
     list [catch {expr {hypot("a b", 2.0)}} msg] $msg
-} {1 {expected floating-point number but got "a b"}}
+} {1 {expected floating-point number but got a list}}
 test expr-old-34.4 {errors in math functions} -body {
     expr hypot(1.0 2.0)
 } -returnCodes error -match glob -result *
