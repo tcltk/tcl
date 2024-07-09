@@ -72,7 +72,7 @@ test foreach-1.14 {foreach errors} {
     catch {unset a}
     set a(0) 44
     list [catch {foreach a {1 2 3} {}} msg o] $msg $::errorInfo
-} {1 {cannot set "a": variable is array} {cannot set "a": variable is array
+} {1 {can't set "a": variable is array} {can't set "a": variable is array
     (setting foreach loop variable "a")
     invoked from within
 "foreach a {1 2 3} {}"}}

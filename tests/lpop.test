@@ -19,10 +19,10 @@ if {"::tcltest" ni [namespace children]} {
 unset -nocomplain no; # following tests expecting var "no" does not exists
 test lpop-1.1 {error conditions} -returnCodes error -body {
     lpop no
-} -result {cannot read "no": no such variable}
+} -result {can't read "no": no such variable}
 test lpop-1.2 {error conditions} -returnCodes error -body {
     lpop no 0
-} -result {cannot read "no": no such variable}
+} -result {can't read "no": no such variable}
 test lpop-1.3 {error conditions} -returnCodes error -body {
     set l "x {}x"
     lpop l

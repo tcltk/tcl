@@ -78,7 +78,7 @@ test trace-0.0 {memory corruption in trace (Tcl Bug 484339)} {
     unset -nocomplain ::z
     trace add variable ::z write {unset ::z; error "memory corruption";#}
     list [catch {set ::z 1} msg] $msg
-} {1 {cannot set "::z": memory corruption}}
+} {1 {can't set "::z": memory corruption}}
 
 # Read-tracing on variables
 
@@ -87,7 +87,7 @@ test trace-1.1 {trace add variable reads} {
     set info {}
     trace add variable x read traceScalar
     list [catch {set x} msg] $msg $info
-} {1 {cannot read "x": no such variable} {x {} read 1 {cannot read "x": no such variable}}}
+} {1 {can't read "x": no such variable} {x {} read 1 {can't read "x": no such variable}}}
 test trace-1.2 {trace add variable reads} {
     unset -nocomplain x
     set x 123
@@ -107,7 +107,7 @@ test trace-1.4 {trace array element reads} {
     set info {}
     trace add variable x(2) read traceArray
     list [catch {set x(2)} msg] $msg $info
-} {1 {cannot read "x(2)": no such element in array} {x 2 read 1 {cannot read "x(2)": no such element in array}}}
+} {1 {can't read "x(2)": no such element in array} {x 2 read 1 {can't read "x(2)": no such element in array}}}
 test trace-1.5 {trace array element reads} {
     unset -nocomplain x
     set x(2) zzz
@@ -148,7 +148,7 @@ test trace-1.8 {trace reads on whole arrays} {
     set info {}
     trace add variable x read traceArray
     list [catch {set x(2)} msg] $msg $info
-} {1 {cannot read "x(2)": no such variable} {}}
+} {1 {can't read "x(2)": no such variable} {}}
 test trace-1.9 {trace reads on whole arrays} {
     unset -nocomplain x
     set x(2) zzz
@@ -184,14 +184,14 @@ test trace-1.13 {read traces that modify the array structure} {
     trace add variable x read {set x(foo) 1 ;#}
     trace add variable x read {unset -nocomplain x;#}
     list [catch {array get x} res] $res
-} {1 {cannot read "x(bar)": no such variable}}
+} {1 {can't read "x(bar)": no such variable}}
 test trace-1.14 {read traces that modify the array structure} {
     unset -nocomplain x
     set x(bar) 0
     trace add variable x read {unset -nocomplain x;#}
     trace add variable x read {set x(foo) 1 ;#}
     list [catch {array get x} res] $res
-} {1 {cannot read "x(bar)": no such variable}}
+} {1 {can't read "x(bar)": no such variable}}
 
 # Basic write-tracing on variables
 
@@ -292,7 +292,7 @@ test trace-4.1 {trace add variable unsets} {
     trace add variable x unset traceScalar
     unset -nocomplain x
     set info
-} {x {} unset 1 {cannot read "x": no such variable}}
+} {x {} unset 1 {can't read "x": no such variable}}
 test trace-4.2 {variable mustn't exist during unset trace} {
     unset -nocomplain x
     set x 1234
@@ -300,7 +300,7 @@ test trace-4.2 {variable mustn't exist during unset trace} {
     trace add variable x unset traceScalar
     unset x
     set info
-} {x {} unset 1 {cannot read "x": no such variable}}
+} {x {} unset 1 {can't read "x": no such variable}}
 test trace-4.3 {unset traces mustn't be called during reads and writes} {
     unset -nocomplain x
     set info {}
@@ -316,7 +316,7 @@ test trace-4.4 {trace unsets on array elements} {
     trace add variable x(1) unset traceArray
     unset -nocomplain x(1)
     set info
-} {x 1 unset 1 {cannot read "x(1)": no such element in array}}
+} {x 1 unset 1 {can't read "x(1)": no such element in array}}
 test trace-4.5 {trace unsets on array elements} {
     unset -nocomplain x
     set x(1) 18
@@ -324,7 +324,7 @@ test trace-4.5 {trace unsets on array elements} {
     trace add variable x(1) unset traceArray
     unset x(1)
     set info
-} {x 1 unset 1 {cannot read "x(1)": no such element in array}}
+} {x 1 unset 1 {can't read "x(1)": no such element in array}}
 test trace-4.6 {trace unsets on array elements} {
     unset -nocomplain x
     set x(1) 18
@@ -332,7 +332,7 @@ test trace-4.6 {trace unsets on array elements} {
     trace add variable x(1) unset traceArray
     unset x
     set info
-} {x 1 unset 1 {cannot read "x(1)": no such variable}}
+} {x 1 unset 1 {can't read "x(1)": no such variable}}
 test trace-4.7 {trace unsets on whole arrays} {
     unset -nocomplain x
     set x(1) 18
@@ -506,7 +506,7 @@ test trace-8.1 {error returns from traces} {
     trace add variable x read "traceTag 1"
     trace add variable x read traceError
     list [catch {set x} msg] $msg $info
-} {1 {cannot read "x": trace returned error} {}}
+} {1 {can't read "x": trace returned error} {}}
 test trace-8.2 {error returns from traces} {
     unset -nocomplain x
     set x 123
@@ -514,14 +514,14 @@ test trace-8.2 {error returns from traces} {
     trace add variable x write "traceTag 1"
     trace add variable x write traceError
     list [catch {set x 44} msg] $msg $info
-} {1 {cannot set "x": trace returned error} {}}
+} {1 {can't set "x": trace returned error} {}}
 test trace-8.3 {error returns from traces} {
     unset -nocomplain x
     set x 123
     set info {}
     trace add variable x write traceError
     list [catch {append x 44} msg] $msg $info
-} {1 {cannot set "x": trace returned error} {}}
+} {1 {can't set "x": trace returned error} {}}
 test trace-8.4 {error returns from traces} {
     unset -nocomplain x
     set x 123
@@ -539,7 +539,7 @@ test trace-8.5 {error returns from traces} {
     trace add variable x read traceError
     trace add variable x read "traceTag 3"
     list [catch {set x(0)} msg] $msg $info
-} {1 {cannot read "x(0)": trace returned error} 3}
+} {1 {can't read "x(0)": trace returned error} 3}
 test trace-8.6 {error returns from traces} {
     unset -nocomplain x
     set x 123
@@ -591,7 +591,7 @@ test trace-9.1 {be sure variable is unset before trace is called} {
     trace add variable x unset {traceCheck {uplevel 1 set x}}
     unset x
     set info
-} {1 {cannot read "x": no such variable}}
+} {1 {can't read "x": no such variable}}
 test trace-9.2 {be sure variable is unset before trace is called} {
     unset -nocomplain x
     set x 33
@@ -624,7 +624,7 @@ test trace-10.1 {make sure array elements are unset before traces are called} {
     trace add variable x(0) unset {traceCheck {uplevel 1 set x(0)}}
     unset x(0)
     set info
-} {1 {cannot read "x(0)": no such element in array}}
+} {1 {can't read "x(0)": no such element in array}}
 test trace-10.2 {make sure array elements are unset before traces are called} {
     unset -nocomplain x
     set x(0) 33
@@ -657,7 +657,7 @@ test trace-11.1 {make sure arrays are unset before traces are called} {
     trace add variable x unset {traceCheck {uplevel 1 set x(0)}}
     unset x
     set info
-} {1 {cannot read "x(0)": no such variable}}
+} {1 {can't read "x(0)": no such variable}}
 test trace-11.2 {make sure arrays are unset before traces are called} {
     unset -nocomplain x
     set x(y) 33
@@ -707,13 +707,13 @@ test trace-12.1 {creating array when setting variable traces} {
     set info {}
     trace add variable x(0) write traceProc
     list [catch {set x 22} msg] $msg
-} {1 {cannot set "x": variable is array}}
+} {1 {can't set "x": variable is array}}
 test trace-12.2 {creating array when setting variable traces} {
     unset -nocomplain x
     set info {}
     trace add variable x(0) write traceProc
     list [catch {set x(0)} msg] $msg
-} {1 {cannot read "x(0)": no such element in array}}
+} {1 {can't read "x(0)": no such element in array}}
 test trace-12.3 {creating array when setting variable traces} {
     unset -nocomplain x
     set info {}
@@ -726,7 +726,7 @@ test trace-12.4 {creating variable when setting variable traces} {
     set info {}
     trace add variable x write traceProc
     list [catch {set x} msg] $msg
-} {1 {cannot read "x": no such variable}}
+} {1 {can't read "x": no such variable}}
 test trace-12.5 {creating variable when setting variable traces} {
     unset -nocomplain x
     set info {}
@@ -751,7 +751,7 @@ test trace-12.8 {errors when setting variable traces} {
     unset -nocomplain x
     set x 44
     list [catch {trace add variable x(0) write traceProc} msg] $msg
-} {1 {cannot trace "x(0)": variable isn't array}}
+} {1 {can't trace "x(0)": variable isn't array}}
 
 # Check trace deletion
 
@@ -1028,21 +1028,21 @@ test trace-16.1 {unsets during read traces} {
     trace add variable y read {traceUnset y}
     trace add variable y unset {traceAppend unset}
     lappend info [catch {set y} msg] $msg
-} {unset 0 {} 1 {cannot read "x": no such variable} 1 {cannot read "y": no such variable}}
+} {unset 0 {} 1 {can't read "x": no such variable} 1 {can't read "y": no such variable}}
 test trace-16.2 {unsets during read traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) read {traceUnset y(0)}
     lappend info [catch {set y(0)} msg] $msg
-} {0 {} 1 {cannot read "x": no such variable} 1 {cannot read "y(0)": no such element in array}}
+} {0 {} 1 {can't read "x": no such variable} 1 {can't read "y(0)": no such element in array}}
 test trace-16.3 {unsets during read traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) read {traceUnset y}
     lappend info [catch {set y(0)} msg] $msg
-} {0 {} 1 {cannot read "x": no such variable} 1 {cannot read "y(0)": no such variable}}
+} {0 {} 1 {can't read "x": no such variable} 1 {can't read "y(0)": no such variable}}
 test trace-16.4 {unsets during read traces} {
     unset -nocomplain y
     set y 1234
@@ -1063,14 +1063,14 @@ test trace-16.6 {unsets during read traces} {
     set info {}
     trace add variable y(0) read {traceReset y y(0)}
     lappend info [catch {set y(0)} msg] $msg [catch {set y(0)} msg] $msg
-} {0 {} 1 {cannot set "y": upvar refers to element in deleted array} 1 {cannot read "y(0)": no such variable} 1 {cannot read "y(0)": no such variable}}
+} {0 {} 1 {can't set "y": upvar refers to element in deleted array} 1 {can't read "y(0)": no such variable} 1 {can't read "y(0)": no such variable}}
 test trace-16.7 {unsets during read traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) read {traceReset2 y y(0)}
     lappend info [catch {set y(0)} msg] $msg [catch {set y(0)} msg] $msg
-} {0 {} 0 xyzzy 1 {cannot read "y(0)": no such element in array} 0 xyzzy}
+} {0 {} 0 xyzzy 1 {can't read "y(0)": no such element in array} 0 xyzzy}
 test trace-16.8 {unsets during write traces} {
     unset -nocomplain y
     set y 1234
@@ -1078,21 +1078,21 @@ test trace-16.8 {unsets during write traces} {
     trace add variable y write {traceUnset y}
     trace add variable y unset {traceAppend unset}
     lappend info [catch {set y xxx} msg] $msg
-} {unset 0 {} 1 {cannot read "x": no such variable} 0 {}}
+} {unset 0 {} 1 {can't read "x": no such variable} 0 {}}
 test trace-16.9 {unsets during write traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) write {traceUnset y(0)}
     lappend info [catch {set y(0) xxx} msg] $msg
-} {0 {} 1 {cannot read "x": no such variable} 0 {}}
+} {0 {} 1 {can't read "x": no such variable} 0 {}}
 test trace-16.10 {unsets during write traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) write {traceUnset y}
     lappend info [catch {set y(0) xxx} msg] $msg
-} {0 {} 1 {cannot read "x": no such variable} 0 {}}
+} {0 {} 1 {can't read "x": no such variable} 0 {}}
 test trace-16.11 {unsets during write traces} {
     unset -nocomplain y
     set y 1234
@@ -1113,7 +1113,7 @@ test trace-16.13 {unsets during write traces} {
     set info {}
     trace add variable y(0) write {traceReset y y(0)}
     lappend info [catch {set y(0) xxx} msg] $msg [catch {set y(0)} msg] $msg
-} {0 {} 1 {cannot set "y": upvar refers to element in deleted array} 0 {} 1 {cannot read "y(0)": no such variable}}
+} {0 {} 1 {can't set "y": upvar refers to element in deleted array} 0 {} 1 {can't read "y(0)": no such variable}}
 test trace-16.14 {unsets during write traces} {
     unset -nocomplain y
     set y(0) 1234
@@ -1127,35 +1127,35 @@ test trace-16.15 {unsets during unset traces} {
     set info {}
     trace add variable y unset {traceUnset y}
     lappend info [catch {unset y} msg] $msg [catch {set y} msg] $msg
-} {1 {cannot unset "x": no such variable} 1 {cannot read "x": no such variable} 0 {} 1 {cannot read "y": no such variable}}
+} {1 {can't unset "x": no such variable} 1 {can't read "x": no such variable} 0 {} 1 {can't read "y": no such variable}}
 test trace-16.16 {unsets during unset traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) unset {traceUnset y(0)}
     lappend info [catch {unset y(0)} msg] $msg [catch {set y(0)} msg] $msg
-} {1 {cannot unset "x": no such variable} 1 {cannot read "x": no such variable} 0 {} 1 {cannot read "y(0)": no such element in array}}
+} {1 {can't unset "x": no such variable} 1 {can't read "x": no such variable} 0 {} 1 {can't read "y(0)": no such element in array}}
 test trace-16.17 {unsets during unset traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) unset {traceUnset y}
     lappend info [catch {unset y(0)} msg] $msg [catch {set y(0)} msg] $msg
-} {0 {} 1 {cannot read "x": no such variable} 0 {} 1 {cannot read "y(0)": no such variable}}
+} {0 {} 1 {can't read "x": no such variable} 0 {} 1 {can't read "y(0)": no such variable}}
 test trace-16.18 {unsets during unset traces} {
     unset -nocomplain y
     set y 1234
     set info {}
     trace add variable y unset {traceReset2 y y}
     lappend info [catch {unset y} msg] $msg [catch {set y} msg] $msg
-} {1 {cannot unset "y": no such variable} 0 xyzzy 0 {} 0 xyzzy}
+} {1 {can't unset "y": no such variable} 0 xyzzy 0 {} 0 xyzzy}
 test trace-16.19 {unsets during unset traces} {
     unset -nocomplain y
     set y(0) 1234
     set info {}
     trace add variable y(0) unset {traceReset2 y(0) y(0)}
     lappend info [catch {unset y(0)} msg] $msg [catch {set y(0)} msg] $msg
-} {1 {cannot unset "y(0)": no such element in array} 0 xyzzy 0 {} 0 xyzzy}
+} {1 {can't unset "y(0)": no such element in array} 0 xyzzy 0 {} 0 xyzzy}
 test trace-16.20 {unsets during unset traces} {
     unset -nocomplain y
     set y(0) 1234
@@ -1172,7 +1172,7 @@ test trace-16.21 {unsets cancelling traces} {
     trace add variable y read {traceAppend third}
     trace add variable y unset {traceAppend unset}
     lappend info [catch {set y} msg] $msg
-} {third unset 0 {} 1 {cannot read "x": no such variable} 1 {cannot read "y": no such variable}}
+} {third unset 0 {} 1 {can't read "x": no such variable} 1 {can't read "y": no such variable}}
 test trace-16.22 {unsets cancelling traces} {
     unset -nocomplain y
     set y(0) 1234
@@ -1182,7 +1182,7 @@ test trace-16.22 {unsets cancelling traces} {
     trace add variable y(0) read {traceAppend third}
     trace add variable y(0) unset {traceAppend unset}
     lappend info [catch {set y(0)} msg] $msg
-} {third unset 0 {} 1 {cannot read "x": no such variable} 1 {cannot read "y(0)": no such variable}}
+} {third unset 0 {} 1 {can't read "x": no such variable} 1 {can't read "y(0)": no such variable}}
 
 # Check various non-interference between traces and other things.
 
@@ -1191,7 +1191,7 @@ test trace-17.1 {trace doesn't prevent unset errors} {
     set info {}
     trace add variable x unset {traceProc}
     list [catch {unset x} msg] $msg $info
-} {1 {cannot unset "x": no such variable} {x {} unset}}
+} {1 {can't unset "x": no such variable} {x {} unset}}
 test trace-17.2 {traced variables must survive procedure exits} {
     unset -nocomplain x
     proc p1 {} {global x; trace add variable x write traceProc}
@@ -2510,7 +2510,7 @@ test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     list [catch {set y 1} msg opts] $msg [dict get $opts -errorinfo]
 } -cleanup {
     unset -nocomplain x y
-} -result {1 {cannot set "y": cannot set "x": foo} {foo
+} -result {1 {can't set "y": can't set "x": foo} {foo
     while executing
 "error foo"
     (write trace on "x")

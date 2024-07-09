@@ -611,14 +611,14 @@ test cmdIL-6.10 {lassign command - variable update error} -body {
 	set x(x) {}
 	lassign a x
     }}
-} -returnCodes error -result {cannot set "x": variable is array}
+} -returnCodes error -result {can't set "x": variable is array}
 test cmdIL-6.11 {lassign command - variable update error} -body {
     apply {{} {
 	set x(x) {}
 	set y FAIL
 	list [catch {lassign a y x} msg] $msg $y
     }}
-} -result {1 {cannot set "x": variable is array} a}
+} -result {1 {can't set "x": variable is array} a}
 test cmdIL-6.12 {lassign command - memory leak testing} -setup {
     unset -nocomplain x y
     set x(x) {}
@@ -718,7 +718,7 @@ test cmdIL-6.22 {lassign command - variable update error} -body {
 	set x(x) {}
 	$lassign a x
     }}
-} -returnCodes 1 -result {cannot set "x": variable is array}
+} -returnCodes 1 -result {can't set "x": variable is array}
 test cmdIL-6.23 {lassign command - variable update error} -body {
     apply {{} {
 	set lassign lassign
@@ -726,7 +726,7 @@ test cmdIL-6.23 {lassign command - variable update error} -body {
 	set y FAIL
 	list [catch {$lassign a y x} msg] $msg $y
     }}
-} -result {1 {cannot set "x": variable is array} a}
+} -result {1 {can't set "x": variable is array} a}
 test cmdIL-6.24 {lassign command - memory leak testing} -setup {
     set x(x) {}
     set y FAIL

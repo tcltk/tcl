@@ -517,7 +517,7 @@ test event-11.3 {Tcl_VwaitCmd procedure} -setup {
 } -body {
     set x 1
     vwait x(1)
-} -returnCodes error -result {cannot trace "x(1)": variable isn't array}
+} -returnCodes error -result {can't trace "x(1)": variable isn't array}
 test event-11.4 {Tcl_VwaitCmd procedure} -setup {
     foreach i [after info] {
 	after cancel $i

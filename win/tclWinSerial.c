@@ -1844,7 +1844,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"cannot set DTR signal", TCL_INDEX_NONE));
+				"can't set DTR signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
@@ -1856,7 +1856,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"cannot set RTS signal", TCL_INDEX_NONE));
+				"can't set RTS signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
@@ -1868,7 +1868,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"cannot set BREAK signal", TCL_INDEX_NONE));
+				"can't set BREAK signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
@@ -1930,7 +1930,7 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot setup comm buffers: %s",
+			"can't setup comm buffers: %s",
 			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
@@ -1981,7 +1981,7 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot set comm timeouts: %s",
+			"can't set comm timeouts: %s",
 			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
@@ -1998,7 +1998,7 @@ SerialSetOptionProc(
     if (interp != NULL) {
 	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot get comm state: %s", Tcl_PosixError(interp)));
+		"can't get comm state: %s", Tcl_PosixError(interp)));
     }
     return TCL_ERROR;
 
@@ -2006,7 +2006,7 @@ SerialSetOptionProc(
     if (interp != NULL) {
 	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot set comm state: %s", Tcl_PosixError(interp)));
+		"can't set comm state: %s", Tcl_PosixError(interp)));
     }
     return TCL_ERROR;
 }
@@ -2089,7 +2089,7 @@ SerialGetOptionProc(
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot get comm state: %s", Tcl_PosixError(interp)));
+			"can't get comm state: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2159,7 +2159,7 @@ SerialGetOptionProc(
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot get comm state: %s", Tcl_PosixError(interp)));
+			"can't get comm state: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2237,7 +2237,7 @@ SerialGetOptionProc(
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot get tty status: %s", Tcl_PosixError(interp)));
+			"can't get tty status: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}

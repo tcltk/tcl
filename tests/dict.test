@@ -426,7 +426,7 @@ test dict-11.15 {dict incr command: write failure} -setup {
     dict incr dictVar a
 } -returnCodes error -cleanup {
     unset dictVar
-} -result {cannot set "dictVar": variable is array}
+} -result {can't set "dictVar": variable is array}
 test dict-11.16 {dict incr command: compilation} {
     apply {{} {
 	set v {a 0 b 0 c 0}
@@ -506,7 +506,7 @@ test dict-12.10 {dict lappend command: write failure} -setup {
     dict lappend dictVar a x
 } -returnCodes error -cleanup {
     unset dictVar
-} -result {cannot set "dictVar": variable is array}
+} -result {can't set "dictVar": variable is array}
 test dict-12.11 {compiled dict append: invalidate string rep - Bug 3079830} {
     apply {{} {set d {a 1 b 2 c 3}; dict lappend d b 22}}
 } {a 1 b {2 22} c 3}
@@ -567,7 +567,7 @@ test dict-13.9 {dict append command: write failure} -setup {
     dict append dictVar a x
 } -returnCodes error -cleanup {
     unset dictVar
-} -result {cannot set "dictVar": variable is array}
+} -result {can't set "dictVar": variable is array}
 test dict-13.10 {compiled dict append: crash case} {
     apply {{} {dict append dictVar a o k}}
 } {a ok}
@@ -813,7 +813,7 @@ test dict-15.9 {dict set command: write failure} -setup {
     dict set dictVar a x
 } -returnCodes error -cleanup {
     unset dictVar
-} -result {cannot set "dictVar": variable is array}
+} -result {can't set "dictVar": variable is array}
 test dict-15.10 {dict set command: syntax} -returnCodes error -body {
     dict set
 } -result {wrong # args: should be "dict set dictVarName key ?key ...? value"}
@@ -883,7 +883,7 @@ test dict-16.9 {dict unset command: write failure} -setup {
     dict unset dictVar a
 } -returnCodes error -cleanup {
     unset dictVar
-} -result {cannot set "dictVar": variable is array}
+} -result {can't set "dictVar": variable is array}
 # Now test with an LVT present (i.e., the bytecoded version).
 test dict-16.10 {dict unset command} -body {
     apply {{} {
@@ -932,7 +932,7 @@ test dict-16.18 {dict unset command: write failure} -body {
 	set dictVar(block) {}
 	dict unset dictVar a
     }}
-} -returnCodes error -result {cannot set "dictVar": variable is array}
+} -returnCodes error -result {can't set "dictVar": variable is array}
 
 test dict-17.1 {dict filter command: key} -body {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}
@@ -1465,7 +1465,7 @@ test dict-22.2 {dict with command} -body {
 test dict-22.3 {dict with command} -body {
     unset -nocomplain v
     dict with v {error "in body"}
-} -returnCodes 1 -result {cannot read "v": no such variable}
+} -returnCodes 1 -result {can't read "v": no such variable}
 test dict-22.4 {dict with command} -body {
     set a {b c d e}
     unset -nocomplain b d

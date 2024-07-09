@@ -1654,7 +1654,7 @@ Tcl_VwaitObjCmd(
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
 	    TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot wait: would block forever", -1));
+		"can't wait: would block forever", -1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -1747,8 +1747,8 @@ Tcl_VwaitObjCmd(
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj((numItems == 0) ?
-		"cannot wait: would wait forever" :
-		"cannot wait for variable(s)/channel(s): would wait forever",
+		"can't wait: would wait forever" :
+		"can't wait for variable(s)/channel(s): would wait forever",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	result = TCL_ERROR;

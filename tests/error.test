@@ -141,7 +141,7 @@ test error-3.3 {errors in catch command} {
     catch {unset a}
     set a(0) 22
     list [catch {catch {format 44} a} msg] $msg
-} {1 {cannot set "a": variable is array}}
+} {1 {can't set "a": variable is array}}
 catch {unset a}
 
 # More tests related to errorInfo and errorCode
@@ -1082,7 +1082,7 @@ test error-19.11 {compiled try and errors on variable write} -setup {
     } ::tcl::test::error}
 } -cleanup {
     unset RES
-} -result {body finally,a {cannot set "foo": variable is array}}
+} -result {body finally,a {can't set "foo": variable is array}}
 test error-19.12 {interpreted try and errors on variable write} -setup {
     set RES {}
 } -body {
@@ -1104,7 +1104,7 @@ test error-19.12 {interpreted try and errors on variable write} -setup {
     } ::tcl::test::error} try
 } -cleanup {
     unset RES
-} -result {body finally,a {cannot set "foo": variable is array}}
+} -result {body finally,a {can't set "foo": variable is array}}
 test error-19.13 {compiled try and errors on variable write} -setup {
     set RES {}
 } -body {
@@ -1126,7 +1126,7 @@ test error-19.13 {compiled try and errors on variable write} -setup {
     } ::tcl::test::error}
 } -cleanup {
     unset RES
-} -result {body finally,a {cannot set "foo": variable is array}}
+} -result {body finally,a {can't set "foo": variable is array}}
 rename addmsg {}
 
 # FIXME test what vars get set on fallthough ... what is the correct behavior?

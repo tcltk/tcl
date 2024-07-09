@@ -52,11 +52,11 @@ test append-3.1 {append errors} -returnCodes error -body {
 test append-3.2 {append errors} -returnCodes error -body {
     set x ""
     append x(0) 44
-} -result {cannot set "x(0)": variable isn't array}
+} -result {can't set "x(0)": variable isn't array}
 test append-3.3 {append errors} -returnCodes error -body {
     unset -nocomplain x
     append x
-} -result {cannot read "x": no such variable}
+} -result {can't read "x": no such variable}
 test append-3.4 {append surrogates} -body {
     set x \uD83D
     append x \uDE02
@@ -215,7 +215,7 @@ test append-6.1 {lappend errors} -returnCodes error -body {
 test append-6.2 {lappend errors} -returnCodes error -body {
     set x ""
     lappend x(0) 44
-} -result {cannot set "x(0)": variable isn't array}
+} -result {can't set "x(0)": variable isn't array}
 
 test append-7.1 {lappend-created var and error in trace on that var} -setup {
     catch {rename foo ""}
@@ -229,7 +229,7 @@ test append-7.1 {lappend-created var and error in trace on that var} -setup {
     set x
     lappend x 1
     list [info exists x] [catch {set x} msg] $msg
-} -result {0 1 {cannot read "x": no such variable}}
+} -result {0 1 {can't read "x": no such variable}}
 test append-7.2 {lappend var triggers read trace} -setup {
     unset -nocomplain myvar
     unset -nocomplain ::result

@@ -607,7 +607,7 @@ test string-6.8.$noComp {string is, error in var} {
 test string-6.9.$noComp {string is, var shouldn't get set} {
     catch {unset var}
     list [catch {run {string is alpha -failindex var abc; set var}} msg] $msg
-} {1 {cannot read "var": no such variable}}
+} {1 {can't read "var": no such variable}}
 test string-6.10.$noComp {string is, ok on empty} {
     run {string is alpha {}}
 } 1

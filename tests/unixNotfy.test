@@ -29,7 +29,7 @@ test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
     vwait x
     close $f
     list [catch {vwait x} msg] $msg
-} -result {1 {cannot wait for variable "x": would wait forever}} -cleanup {
+} -result {1 {can't wait for variable "x": would wait forever}} -cleanup {
     catch { close $f }
     catch { removeFile foo }
 }
@@ -44,7 +44,7 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints nonPortable -body {
     vwait y
     close $f2
     list [catch {vwait x} msg] $msg
-} -result {1 {cannot wait for variable "x": would wait forever}} -cleanup {
+} -result {1 {can't wait for variable "x": would wait forever}} -cleanup {
     catch { close $f1 }
     catch { close $f2 }
     catch { removeFile foo }

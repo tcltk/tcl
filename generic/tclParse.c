@@ -228,7 +228,7 @@ Tcl_ParseCommand(
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot parse a NULL pointer", -1));
+		    "can't parse a NULL pointer", -1));
 	}
 	return TCL_ERROR;
     }

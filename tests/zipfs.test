@@ -1611,7 +1611,7 @@ namespace eval test_ns_zipfs {
         cleanup
     } -body {
         file copy [temporaryDirectory] [file join $defMountPt testdir]
-    } -result "cannot create directory *: operation not supported" \
+    } -result "can't create directory *: operation not supported" \
         -match glob -returnCodes error
     test zipfs-file-copy-fromzip-new {Copy archive file to native} -setup {
         mount [zippath test.zip]
@@ -1704,7 +1704,7 @@ namespace eval test_ns_zipfs {
         cleanup
     } -body {
         file mkdir [file join $defMountPt newdir]
-    } -result "cannot create directory \"[file join $defMountPt newdir]\": operation not supported" -returnCodes error
+    } -result "can't create directory \"[file join $defMountPt newdir]\": operation not supported" -returnCodes error
     test zipfs-file-mkdir-existing {Make a an existing directory in zip archive} -setup {
         mount [zippath test.zip]
     } -cleanup {

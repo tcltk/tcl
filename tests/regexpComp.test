@@ -353,7 +353,7 @@ test regexpComp-6.8 {regexp errors} {
 	set f1 44
 	list [catch {regexp abc abc f1(f2)} msg] $msg
     }
-} {1 {cannot set "f1(f2)": variable isn't array}}
+} {1 {can't set "f1(f2)": variable isn't array}}
 test regexpComp-6.9 {regexp errors, -start bad int check} {
     evalInProc {
 	list [catch {regexp -start bogus {^$} {}} msg] $msg
@@ -599,7 +599,7 @@ test regexpComp-11.7 {regsub errors} {
 	set f1 44
 	list [catch {regsub -nocase aaa aaa xxx f1(f2)} msg] $msg
     }
-} {1 {cannot set "f1(f2)": variable isn't array}}
+} {1 {can't set "f1(f2)": variable isn't array}}
 test regexpComp-11.8 {regsub errors, -start bad int check} {
     evalInProc {
 	list [catch {regsub -start bogus pattern string rep var} msg] $msg

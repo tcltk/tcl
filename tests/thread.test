@@ -199,7 +199,7 @@ test thread-4.3 {TclThreadSend preserve errorInfo} {thread} {
     set savedErrorInfo $::errorInfo
     thread::release $serverthread
     list $len $x $msg $savedErrorInfo
-} {1 1 {cannot read "undef": no such variable} {cannot read "undef": no such variable
+} {1 1 {can't read "undef": no such variable} {can't read "undef": no such variable
     while executing
 "set undef"
     invoked from within

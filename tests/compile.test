@@ -166,7 +166,7 @@ test compile-3.6 {TclCompileCatchCmd: error in storing result [Bug 3098302]} {*}
 	}
 	catchtest::x
     }
-    -result {10 {cannot set "result1": trace on result1 fails by request}}
+    -result {10 {can't set "result1": trace on result1 fails by request}}
     -cleanup {namespace delete catchtest}
 }
 
@@ -196,7 +196,7 @@ test compile-3.7 {TclCompileCatchCmd: error in storing options [Bug 3098302]} {*
 	}
 	catchtest::x
     }
-    -result {10 {cannot set "options1": trace on options1 fails by request}}
+    -result {10 {can't set "options1": trace on options1 fails by request}}
     -cleanup {namespace delete catchtest}
 }
 
@@ -535,7 +535,7 @@ test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
      catch {set bubba([join $abba $jubba]) $vol} msg2
      list $msg1 $msg2
-} {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {cannot read "abba": no such variable}}
+} {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
 
 test compile-14.2 {testing element name "$"} -body {
     unset -nocomplain a
@@ -756,7 +756,7 @@ test compile-18.3 {disassembler - basics} -returnCodes error -body {
 } -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
 test compile-18.4 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble lambda \{
-} -result "cannot interpret \"\{\" as a lambda expression"
+} -result "can't interpret \"\{\" as a lambda expression"
 test compile-18.5 {disassembler - basics} -body {
     # Allow any string: the result format is not defined anywhere!
     tcl::unsupported::disassemble lambda {{} {}}
@@ -838,7 +838,7 @@ test compile-18.23 {disassembler - basics} -returnCodes error -body {
 } -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
 test compile-18.24 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode lambda \{
-} -result "cannot interpret \"\{\" as a lambda expression"
+} -result "can't interpret \"\{\" as a lambda expression"
 test compile-18.25 {disassembler - basics} -body {
     dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
 } -result "$bytecodekeys initiallinenumber sourcefile"

@@ -54,12 +54,12 @@
 	    # Double up the list of variable names
 	    foreach v [list $name {*}$args] {
 		if {[string match *(*) $v]} {
-		    set reason "cannot create a scalar variable that looks like an array element"
+		    set reason "can't create a scalar variable that looks like an array element"
 		    return -code error -errorcode {TCL UPVAR LOCAL_ELEMENT} \
 			[format {bad variable name "%s": %s} $v $reason]
 		}
 		if {[string match *::* $v]} {
-		    set reason "cannot create a local variable with a namespace separator in it"
+		    set reason "can't create a local variable with a namespace separator in it"
 		    return -code error -errorcode {TCL UPVAR INVERTED} \
 			[format {bad variable name "%s": %s} $v $reason]
 		}
