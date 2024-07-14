@@ -6115,35 +6115,6 @@ TclInfoVarsCmd(
 		}
 		varPtr = VarHashNextVar(&search);
 	    }
-
-	    /*
-	     * If the effective namespace isn't the global :: namespace, and a
-	     * specific namespace wasn't requested in the pattern (i.e., the
-	     * pattern only specifies variable names), then add in all global
-	     * :: variables that match the simple pattern. Of course, add in
-	     * only those variables that aren't hidden by a variable in the
-	     * effective namespace.
-	     */
-
-	    if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		varPtr = VarHashFirstVar(&globalNsPtr->varTable, &search);
-		while (varPtr) {
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			varNamePtr = VarHashGetKey(varPtr);
-			varName = TclGetString(varNamePtr);
-			if ((simplePattern == NULL)
-				|| Tcl_StringMatch(varName, simplePattern)) {
-			    if (VarHashFindVar(&nsPtr->varTable,
-				    varNamePtr) == NULL) {
-				Tcl_ListObjAppendElement(interp, listPtr,
-					varNamePtr);
-			    }
-			}
-		    }
-		    varPtr = VarHashNextVar(&search);
-		}
-	    }
 	}
     } else if (iPtr->varFramePtr->procPtr != NULL) {
 	AppendLocals(interp, listPtr, simplePatternPtr, 1, 0);
