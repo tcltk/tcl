@@ -2396,6 +2396,29 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 2389 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+
+test info-19.7 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars}
+} -cleanup {
+    namespace delete x
+} -result {}
+test info-19.8 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {}
+test info-19.9 {info vars: global vars resolved by pattern} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars ::tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {::tcl_platform}
+
 namespace eval ::testinfocmdtype {
     apply {cmds {
 	foreach c $cmds {rename $c {}}
