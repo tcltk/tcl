@@ -2398,6 +2398,28 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
+test info-19.7 {info vars: before TIP #278 - global vars resolved in namespace} -setup {
+    catch {namespace delete x}
+} -body {
+    expr { [llength [namespace eval x {info vars}]] > 0 }
+} -cleanup {
+    namespace delete x
+} -result 1
+test info-19.8 {info vars: before TIP #278 - global vars resolved in namespace} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {tcl_platform}
+test info-19.9 {info vars: global vars resolved by pattern} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars ::tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {::tcl_platform}
+
 test info-39.2 {Bug 4b61afd660} -setup {
     proc probe {} {
 	return [dict get [info frame -1] line]
