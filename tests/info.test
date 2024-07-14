@@ -2396,6 +2396,7 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 2389 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+
 namespace eval ::testinfocmdtype {
     apply {cmds {
 	foreach c $cmds {rename $c {}}
@@ -2566,20 +2567,20 @@ namespace delete ::testinfocmdtype
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
-test info-19.7 {info vars: before TIP #278 - global vars resolved in namespace} -setup {
+test info-19.7 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
     catch {namespace delete x}
 } -body {
-    expr { [llength [namespace eval x {info vars}]] > 0 }
+    namespace eval x {info vars}
 } -cleanup {
     namespace delete x
-} -result 1
-test info-19.8 {info vars: before TIP #278 - global vars resolved in namespace} -setup {
+} -result {}
+test info-19.8 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
     catch {namespace delete x}
 } -body {
     namespace eval x {info vars tcl_platform}
 } -cleanup {
     namespace delete x
-} -result {tcl_platform}
+} -result {}
 test info-19.9 {info vars: global vars resolved by pattern} -setup {
     catch {namespace delete x}
 } -body {
