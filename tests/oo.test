@@ -2910,6 +2910,20 @@ test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
 } -cleanup {
     testClass destroy
 } -result 0
+test oo-19.4 {OO: varname ghosts [Bug 74b6110204]} -setup {
+    oo::class create testClass {
+	export varname
+	self export createWithNamespace
+    }
+    set obj [testClass createWithNamespace testoo19_4 testoo19_4]
+    set ns [info object namespace $obj]
+} -body {
+    set v [$obj varname foo]
+    list [namespace which -variable $v] \
+	[info exists $v] [namespace which -variable $v]
+} -cleanup {
+    testClass destroy
+} -result {::testoo19_4::foo 0 ::testoo19_4::foo}
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
