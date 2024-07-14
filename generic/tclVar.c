@@ -5998,7 +5998,6 @@ TclInfoVarsCmd(
     Tcl_HashSearch search;
     Var *varPtr;
     Namespace *nsPtr;
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr, *varNamePtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
@@ -6078,16 +6077,6 @@ TclInfoVarsCmd(
 			elemObjPtr = VarHashGetKey(varPtr);
 		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
-		}
-	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		varPtr = VarHashFindVar(&globalNsPtr->varTable,
-			simplePatternPtr);
-		if (varPtr) {
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				VarHashGetKey(varPtr));
-		    }
 		}
 	    }
 	} else {
