@@ -1227,17 +1227,28 @@ proc ::msgcat::PackageNamespaceGet {} {
 	return $ns
     }
 
-    # Check if we are within an object
-    if {[info object isa object $ns]} {
-	return [info object namespace $ns]
-    } elseif {[info object isa class $ns]} {
-	return [info object namespace $ns]
-    } elseif {[info object isa metaclass $ns]} {
-	return [info object namespace $ns]
-    } else {
-	# Not in an object or class environment
-	return $ns
-    } }
+    # Check self namespace to determine environment
+    switch -exact -- [uplevel 2 { namespace which -command self }] {
+	{::oo::define::self} {
+	    # We are within a class definition
+	    return [namespace qualifiers [uplevel 2 { self }]]
+	}
+	{::oo::Helpers::self} {
+	    # We are within an object
+	    set Class [info object class [uplevel 2 { self }]]
+	    # Check for classless defined object
+	    if {$Class eq {::oo::object}} {
+		return [namespace qualifiers [uplevel 2 { self }]]
+	    }
+	    # Class defined object
+	    return [namespace qualifiers $Class]
+	}
+	default {
+	    # Not in object environment
+	    return $ns
+	}
+    }
+}
 
 # Initialize the default locale
 proc msgcat::mcutil::getsystemlocale {} {
