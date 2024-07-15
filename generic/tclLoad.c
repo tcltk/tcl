@@ -783,13 +783,12 @@ Tcl_UnloadObjCmd(
  */
 static int
 UnloadLibrary(
-	Tcl_Interp *interp,
-	Tcl_Interp *target,
-	LoadedLibrary *libraryPtr,
-	int keepLibrary,
-	const char *fullFileName,
-	int interpExiting
-)
+    Tcl_Interp *interp,
+    Tcl_Interp *target,
+    LoadedLibrary *libraryPtr,
+    int keepLibrary,
+    const char *fullFileName,
+    int interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -877,24 +876,27 @@ UnloadLibrary(
      * Remove this library from the interpreter's library cache.
      */
 
-    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
-    ipPtr = ipFirstPtr;
-    if (ipPtr->libraryPtr == libraryPtr) {
-	ipFirstPtr = ipFirstPtr->nextPtr;
-    } else {
-	InterpLibrary *ipPrevPtr;
-
-	for (ipPrevPtr = ipPtr; ipPtr != NULL;
-		ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
+    if (!interpExiting) {
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	if (ipFirstPtr) {
+	    ipPtr = ipFirstPtr;
 	    if (ipPtr->libraryPtr == libraryPtr) {
-		ipPrevPtr->nextPtr = ipPtr->nextPtr;
-		break;
+		ipFirstPtr = ipFirstPtr->nextPtr;
+	    } else {
+		InterpLibrary *ipPrevPtr;
+
+		for (ipPrevPtr = ipPtr; ipPtr != NULL;
+			ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
+		    if (ipPtr->libraryPtr == libraryPtr) {
+			ipPrevPtr->nextPtr = ipPtr->nextPtr;
+			break;
+		    }
+		}
 	    }
+	    ckfree(ipPtr);
+	    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
 	}
     }
-    ckfree(ipPtr);
-    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
-
 
     if (IsStatic(libraryPtr)) {
 	goto done;
@@ -1206,21 +1208,22 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
+    ClientData clientData,	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
-    InterpLibrary *ipPtr;
+    InterpLibrary *ipPtr = (InterpLibrary *)clientData, *nextPtr;
     LoadedLibrary *libraryPtr;
 
-    while (1) {
-	ipPtr = (InterpLibrary *)Tcl_GetAssocData(interp, "tclLoad", NULL);
-	if (ipPtr == NULL) {
-	    break;
-	}
+    do {
 	libraryPtr = ipPtr->libraryPtr;
-	UnloadLibrary(interp, interp, libraryPtr, 0 ,"", 1);
-    }
+	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
+	/* UnloadLibrary doesn't free it by interp delete, so do it here and
+	 * repeat for next. */
+	nextPtr = ipPtr->nextPtr;
+	ckfree(ipPtr);
+	ipPtr = nextPtr;
+    } while (ipPtr);
 }
 
 /*
