@@ -1236,6 +1236,30 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	bar::ObjCur method1
     } -result con2baz
 
+    # HaO 2024-07-15 fix me
+    # Ticket 91b3a5bb: I have no idea what the following case should do.
+    # But currently, it raises an error and that should not happen.
+    # The background is the tklib tooltip package.
+    # This package captures the caller namespace to later invoke msgcat with current data.
+    # If the caller namespace is a method, it currently fails.
+    test msgcat-15.5 {ticket 91b3a5bb: method namespace recorded and evaluated gives error}\
+    -setup {
+	oo::class create App {}
+	oo::define App {
+	    constructor {} { my add_one }
+	    method add_one {} { recordMsgcat }
+	}
+	proc ::recordMsgcat {} { set ::nscaller [uplevel 1 {namespace current}] }
+	set application [App new]
+} -cleanup {
+	$application destroy
+	App destroy
+	unset -nocomplain ::nscaller
+	rename ::recordMsgcat ""
+    } -body {
+	namespace eval $::nscaller [list ::msgcat::mc "Test"]
+    } -returnCodes ok
+
     # Test msgcat-16.*: command mcpackagenamespaceget
 
     test msgcat-16.1 {mcpackagenamespaceget in namespace procedure} -body {
