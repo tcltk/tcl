@@ -1234,10 +1234,6 @@ proc ::msgcat::PackageNamespaceGet {} {
 	return [info object namespace $ns]
     } elseif {[info object isa metaclass $ns]} {
 	return [info object namespace $ns]
-    } elseif {[info object isa mixin $ns]} {
-	return [info object namespace $ns]
-    } elseif {[info object isa typeof $ns]} {
-	return [info object namespace $ns]
     } else {
 	# Not in an object or class environment
 	return $ns
