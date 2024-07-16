@@ -1215,7 +1215,7 @@ LoadCleanupProc(
     InterpLibrary *ipPtr = (InterpLibrary *)clientData, *nextPtr;
     LoadedLibrary *libraryPtr;
 
-    do {
+    while (ipPtr) {
 	libraryPtr = ipPtr->libraryPtr;
 	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
 	/* UnloadLibrary doesn't free it by interp delete, so do it here and
@@ -1223,7 +1223,7 @@ LoadCleanupProc(
 	nextPtr = ipPtr->nextPtr;
 	ckfree(ipPtr);
 	ipPtr = nextPtr;
-    } while (ipPtr);
+    }
 }
 
 /*
