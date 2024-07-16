@@ -3935,7 +3935,7 @@ ClockValidDate(
 	    tempCpyFlg = 1;
 	}
 	GetYearWeekDay(&temp, GREGORIAN_CHANGE_DATE);
-	if ((temp.dayOfWeek % 7) != (yyDayOfWeek % 7)) {
+	if (temp.dayOfWeek != yyDayOfWeek) {
 	    errMsg = "invalid day of week";
 	    errCode = "day of week";
 	    goto error;

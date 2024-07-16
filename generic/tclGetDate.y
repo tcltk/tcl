@@ -496,7 +496,7 @@ static const TABLE MonthDayTable[] = {
     { "october",	tMONTH, 10 },
     { "november",	tMONTH, 11 },
     { "december",	tMONTH, 12 },
-    { "sunday",		tDAY, 0 },
+    { "sunday",		tDAY, 7 },
     { "monday",		tDAY, 1 },
     { "tuesday",	tDAY, 2 },
     { "tues",		tDAY, 2 },
