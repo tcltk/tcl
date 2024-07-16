@@ -37154,7 +37154,29 @@ test clock-46.6 {freescan: regression test - bad time} -constraints valid_off \
 	# 13:00 am/pm are invalid input strings...
 	list [clock scan "13:00 am" -base 0 -gmt 1] \
 	     [clock scan "13:00 pm" -base 0 -gmt 1]
-    } -result {-1 -1}
+    } -result {3600 46800}
+
+if {!$valid_mode} {
+  test clock-46.7a {regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {valid_off} {
+    list [clock scan 23:59:59 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S]
+  } {86399 86400 172800}
+  test clock-46.7b {freescan: regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {valid_off} {
+    list [clock scan 23:59:59 -base 0 -gmt 1] \
+	 [clock scan 24:00:00 -base 0 -gmt 1] \
+	 [clock scan 48:00:00 -base 0 -gmt 1]
+  } {86399 86400 172800}
+} else {
+  test clock-46.8a {regression test - invalid time (hour)} {
+    list [catch {clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
+	 [catch {clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg
+  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  test clock-46.8b {freescan: regression test - invalid time (hour)} {
+    list [catch {clock scan 24:00:00 -base 0 -gmt 1} msg] $msg \
+	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
+  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+}
 
 proc _invalid_test {args} {
     global valid_mode
