@@ -3739,13 +3739,19 @@ ClockScanCommit(
 	}
     }
 
+    /* If seconds overflows the day (no validate case), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY) {
+	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
+	yySecondOfDay %= SECONDS_PER_DAY;
+    }
+
     /* Local seconds to UTC (stored in yydate.seconds) */
 
     if (info->flags & CLF_ASSEMBLE_SECONDS) {
 	yydate.localSeconds =
 		-210866803200LL
 		+ (SECONDS_PER_DAY * yydate.julianDay)
-		+ (yySecondOfDay % SECONDS_PER_DAY);
+		+ yySecondOfDay;
     }
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS | CLF_LOCALSEC)) {
