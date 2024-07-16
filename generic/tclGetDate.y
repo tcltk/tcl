@@ -714,24 +714,12 @@ ToSeconds(
     int Seconds,
     MERIDIAN Meridian)
 {
-    if (Minutes < 0 || Minutes > 59 || Seconds < 0 || Seconds > 59) {
-	return -1;
-    }
     switch (Meridian) {
     case MER24:
-	if (Hours < 0 || Hours > 23) {
-	    return -1;
-	}
 	return (Hours * 60 + Minutes) * 60 + Seconds;
     case MERam:
-	if (Hours < 1 || Hours > 12) {
-	    return -1;
-	}
 	return ((Hours % 12) * 60 + Minutes) * 60 + Seconds;
     case MERpm:
-	if (Hours < 1 || Hours > 12) {
-	    return -1;
-	}
 	return (((Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
     }
     return -1;			/* Should never be reached */
