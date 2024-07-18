@@ -858,7 +858,7 @@ TclOO_Object_VarName(
     /*
      * The variable reference must not disappear too soon. [Bug 74b6110204]
      */
-    TclSetVarNamespaceVar(varPtr);
+    TclSetVarNamespaceVar((Var *) varPtr);
 
     /*
      * Now that we've pinned down what variable we're really talking about
