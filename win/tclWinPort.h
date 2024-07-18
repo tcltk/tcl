@@ -114,7 +114,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef ENOTEMPTY
-#   define ENOTEMPTY 	41	/* Directory not empty */
+#   define ENOTEMPTY	41	/* Directory not empty */
 #endif
 #ifndef EREMOTE
 #   define EREMOTE	66	/* The object is remote */
@@ -246,7 +246,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   define EWOULDBLOCK	140	/* Operation would block */
 #endif
 
-
 /* Visual Studio doesn't have these, so just choose some high numbers */
 #ifndef ESOCKTNOSUPPORT
 #   define ESOCKTNOSUPPORT 240	/* Socket type not supported */
@@ -345,6 +344,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef R_OK
 #    define R_OK 04
 #endif
+#ifndef O_ACCMODE
+#    define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
+#endif
 
 /*
  * Define macros to query file type bits, if they're not already
@@ -411,7 +413,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #       define S_ISLNK(m) 0
 #   endif
 #endif /* !S_ISLNK */
-
 
 /*
  * Define MAXPATHLEN in terms of MAXPATH if available
@@ -521,7 +522,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 
-
 /*
  * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
@@ -533,8 +533,6 @@ typedef DWORD_PTR * PDWORD_PTR;
  * The following macros and declarations wrap the C runtime library
  * functions.
  */
-
-#define TclpExit		exit
 
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF

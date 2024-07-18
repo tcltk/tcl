@@ -78,23 +78,23 @@ static int		SetupStdFile(TclFile file, int type);
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    PipeInputProc,
+    PipeOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Initialize notifier. */
-    PipeGetHandleProc,		/* Get OS handles out of channel. */
-    PipeClose2Proc,		/* close2proc. */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    NULL,			/* thread action proc */
-    NULL			/* truncation */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncation proc. */
 };
 
 /*
@@ -524,12 +524,11 @@ TclpCreateProcess(
 	sigdelset(&sigs, SIGKILL);
 	sigdelset(&sigs, SIGSTOP);
 
-	posix_spawnattr_setflags(&attr,
-				 POSIX_SPAWN_SETSIGDEF
+	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF
 #ifdef POSIX_SPAWN_USEVFORK
-				 | POSIX_SPAWN_USEVFORK
+		| POSIX_SPAWN_USEVFORK
 #endif
-				 );
+		);
 	posix_spawnattr_setsigdefault(&attr, &sigs);
 
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
@@ -537,7 +536,7 @@ TclpCreateProcess(
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
-			      newArgv, environ);
+		newArgv, environ);
 	childErrno = errno;
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
@@ -845,7 +844,7 @@ TclpCreateCommandChannel(
 				 * background exec). */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
+    int fd;
     PipeState *statePtr = (PipeState *)Tcl_Alloc(sizeof(PipeState));
     int mode;
 
@@ -869,13 +868,13 @@ TclpCreateCommandChannel(
      */
 
     if (readFile) {
-	channelId = GetFd(readFile);
+	fd = GetFd(readFile);
     } else if (writeFile) {
-	channelId = GetFd(writeFile);
+	fd = GetFd(writeFile);
     } else if (errorFile) {
-	channelId = GetFd(errorFile);
+	fd = GetFd(errorFile);
     } else {
-	channelId = 0;
+	fd = 0;
     }
 
     /*
@@ -884,7 +883,7 @@ TclpCreateCommandChannel(
      * natural to use "pipe%d".
      */
 
-    snprintf(channelName, sizeof(channelName), "file%d", channelId);
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
     statePtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    statePtr, mode);
     return statePtr->channel;
@@ -1240,12 +1239,14 @@ PipeOutputProc(
  * so do not pass it to directly to Tcl_CreateFileHandler.
  * Instead, pass a wrapper which is a Tcl_FileProc.
  */
+
 static void
 PipeWatchNotifyChannelWrapper(
     void *clientData,
     int mask)
 {
     Tcl_Channel channel = (Tcl_Channel)clientData;
+
     Tcl_NotifyChannel(channel, mask);
 }
 
@@ -1379,7 +1380,7 @@ Tcl_PidObjCmd(
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?channel?");
 	return TCL_ERROR;
     }
 

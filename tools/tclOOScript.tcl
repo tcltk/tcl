@@ -1,8 +1,8 @@
 # tclOOScript.h --
 #
-# 	This file contains support scripts for TclOO. They are defined here so
-# 	that the code can be definitely run even in safe interpreters; TclOO's
-# 	core setup is safe.
+#	This file contains support scripts for TclOO. They are defined here so
+#	that the code can be definitely run even in safe interpreters; TclOO's
+#	core setup is safe.
 #
 # Copyright © 2012-2019 Donal K. Fellows
 # Copyright © 2013 Andreas Kupries
@@ -88,7 +88,7 @@
 		    lassign $link src
 		    set dst $src
 		} else {
-		    return -code error -errorcode {TCLOO CMDLINK FORMAT} \
+		    return -code error -errorcode {TCL OO CMDLINK_FORMAT} \
 			"bad link description; must only have one or two elements"
 		}
 		if {![string match ::* $src]} {
@@ -258,7 +258,7 @@
 	# ------------------------------------------------------------------
 
 	method Get -unexport {} {
-	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
+	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
 	}
 
 	# ------------------------------------------------------------------
@@ -271,7 +271,7 @@
 	# ------------------------------------------------------------------
 
 	method Set -unexport list {
-	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
+	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
 	}
 
 	# ------------------------------------------------------------------
@@ -431,11 +431,11 @@
 		set object [next {*}$args]
 		::oo::objdefine $object {
 		    method destroy {} {
-			::return -code error -errorcode {TCLOO SINGLETON} \
+			::return -code error -errorcode {TCL OO SINGLETON} \
 			    "may not destroy a singleton object"
 		    }
 		    method <cloned> -unexport {originObject} {
-			::return -code error -errorcode {TCLOO SINGLETON} \
+			::return -code error -errorcode {TCL OO SINGLETON} \
 			    "may not clone a singleton object"
 		    }
 		}

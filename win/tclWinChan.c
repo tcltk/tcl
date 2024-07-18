@@ -98,7 +98,7 @@ static int		FileTruncateProc(void *instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
-static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
 /*
@@ -106,23 +106,23 @@ static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
  */
 
 static const Tcl_ChannelType fileChannelType = {
-    "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
-	NULL,
+    "file",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    FileInputProc,
+    FileOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
-    FileGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Set up the notifier to watch the channel. */
-    FileGetHandleProc,		/* Get an OS handle from channel. */
-    FileCloseProc,		/* close2proc. */
-    FileBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    FileWideSeekProc,		/* Wide seek proc. */
-    FileThreadActionProc,	/* Thread action proc. */
-    FileTruncateProc		/* Truncate proc. */
+    FileGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    FileCloseProc,
+    FileBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    FileWideSeekProc,
+    FileThreadActionProc,
+    FileTruncateProc
 };
 
 /*
@@ -140,7 +140,33 @@ static const Tcl_ChannelType fileChannelType = {
 
 #define POSIX_EPOCH_AS_FILETIME	\
 	((long long) 116444736 * (long long) 1000000000)
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGenerateChannelName --
+ *
+ *	This function generates names for channels.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Creates a new window and creates an exit handler.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclWinGenerateChannelName(
+    char channelName[],		/* Buffer to accept the name. */
+    const char *channelTypeName,/* Name of type of channel. */
+    void *channelImpl)		/* Pointer to channel implementation
+				 * structure, used to generate a unique
+				 * ID. */
+{
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "%s%" TCL_Z_MODIFIER "x",
+	    channelTypeName, (size_t) channelImpl);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -754,7 +780,7 @@ FileGetHandleProc(
 	return TCL_ERROR;
     }
 
-    *handlePtr = (void *) infoPtr->handle;
+    *handlePtr = (void *)infoPtr->handle;
     return TCL_OK;
 }
 
@@ -786,21 +812,6 @@ CombineDwords(
     converter.LowPart = lo;
     converter.HighPart = hi;
     return converter.QuadPart;
-}
-
-static inline void
-StoreElementInDict(
-    Tcl_Obj *dictObj,
-    const char *name,
-    Tcl_Obj *valueObj)
-{
-    /*
-     * We assume that the dict is being built fresh and that there's never any
-     * duplicate keys.
-     */
-
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
-    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
 static inline time_t
@@ -865,7 +876,7 @@ StatOpenFile(
      */
 
     TclNewObj(dictObj);
-#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, name, value)
 
     STORE_ELEM("dev",      Tcl_NewWideIntObj((long) dev));
     STORE_ELEM("ino",      Tcl_NewWideIntObj((long long) inode));
@@ -883,9 +894,9 @@ StatOpenFile(
      * Anything else and we definitely couldn't have got here anyway.
      */
     if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	STORE_ELEM("type", Tcl_NewStringObj("directory", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("directory", TCL_INDEX_NONE));
     } else {
-	STORE_ELEM("type", Tcl_NewStringObj("file", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("file", TCL_INDEX_NONE));
     }
 #undef STORE_ELEM
 
@@ -934,7 +945,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	dictContents = TclGetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;
@@ -992,7 +1003,7 @@ TclpOpenFileChannel(
 	return NULL;
     }
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	accessMode = GENERIC_READ;
 	channelPermissions = TCL_READABLE;
@@ -1167,7 +1178,7 @@ TclpOpenFileChannel(
 		"couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		(void *)NULL);
+		(char *)NULL);
 	break;
     }
 
@@ -1488,7 +1499,8 @@ OpenFileChannel(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
-	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask)
+		    ? infoPtr->channel : NULL;
 	}
     }
 
@@ -1506,8 +1518,7 @@ OpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
-
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
 

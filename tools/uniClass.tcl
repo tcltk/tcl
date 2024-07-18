@@ -63,10 +63,14 @@ proc genTable {type} {
     set extchars 0
     set extranges 0
 
-    for {set i 0} {$i <= 0x10FFFF} {incr i} {
+    for {set i 0} {$i <= 0xEFFFF} {incr i} {
 	if {$i == 0xD800} {
 	    # Skip surrogates
 	    set i 0xE000
+	}
+	if {$i == 0xE000} {
+	    # Skip private
+	    set i 0xF900
 	}
 	if {[string is $type [format %c $i]]} {
 	    if {$i == ($last + 1)} {
@@ -92,13 +96,13 @@ proc genTable {type} {
     }
     if {$ranges ne ""} {
 	puts "static const crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
-	puts "#define NUM_[string toupper $type]_RANGE (sizeof(${type}RangeTable)/sizeof(crange))\n"
+	puts "#define NUM_[string toupper $type]_RANGE ((int)(sizeof(${type}RangeTable)/sizeof(crange)))\n"
     } else {
 	puts "/* no contiguous ranges of $type characters */\n"
     }
     if {$chars ne ""} {
 	puts "static const chr ${type}CharTable\[\] = {\n$chars\n};\n"
-	puts "#define NUM_[string toupper $type]_CHAR (sizeof(${type}CharTable)/sizeof(chr))\n"
+	puts "#define NUM_[string toupper $type]_CHAR ((int)(sizeof(${type}CharTable)/sizeof(chr)))\n"
     } else {
 	puts "/*\n * no singletons of $type characters.\n */\n"
     }

@@ -69,7 +69,7 @@ const Tcl_ObjType tclProcBodyType = {
     TCL_OBJTYPE_V0
 };
 
-#define ProcSetInternalRep(objPtr, procPtr)					\
+#define ProcSetInternalRep(objPtr, procPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(procPtr)->refCount++;						\
@@ -78,11 +78,11 @@ const Tcl_ObjType tclProcBodyType = {
 	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
     } while (0)
 
-#define ProcGetInternalRep(objPtr, procPtr)					\
+#define ProcGetInternalRep(objPtr, procPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);		\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);	\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -95,7 +95,11 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 /*
@@ -116,23 +120,22 @@ static const Tcl_ObjType lambdaType = {
     TCL_OBJTYPE_V0
 };
 
-#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
 	Tcl_IncrRefCount((nsObjPtr));					\
-	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);		\
     } while (0)
 
-#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &lambdaType);			\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
-	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &lambdaType);		\
+	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
     } while (0)
-
 
 /*
  *----------------------------------------------------------------------
@@ -156,7 +159,7 @@ int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -356,7 +359,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
+	procBody = TclGetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -451,7 +454,7 @@ TclCreateProc(
 	    Tcl_Size length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
-	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
+	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 
 	    /*
@@ -488,7 +491,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElementsM(interp, argsPtr, &numArgs, &argArray);
+    result = TclListObjGetElements(interp, argsPtr, &numArgs, &argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -518,7 +521,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = TclListObjGetElementsM(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -541,7 +544,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -559,9 +562,9 @@ TclCreateProc(
 			    "FORMALARGUMENTFORMAT", (void *)NULL);
 		    goto procError;
 		}
-	    } else if (*argnamei == ':' && *(argnamei+1) == ':') {
+	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
 		Tcl_Obj *errorObj = Tcl_NewStringObj(
-		    "formal parameter \"", -1);
+			"formal parameter \"", -1);
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
@@ -604,12 +607,11 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_Size tmpLength, valueLength;
-		const char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr, &tmpLength);
-		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
-		     || memcmp(value, tmpPtr, tmpLength) != 0
-		) {
+			|| memcmp(value, tmpPtr, tmpLength) != 0) {
 		    Tcl_Obj *errorObj = Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"", procName);
 		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
@@ -924,7 +926,7 @@ TclNRUplevelObjCmd(
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status;
 	Tcl_Size llength;
-	status = TclListObjLengthM(interp, objv[1], &llength);
+	status = TclListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -1096,7 +1098,8 @@ ProcWrongNumArgs(
 
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
-		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", (void *)NULL);
+		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?",
+			(void *)NULL);
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
 		numArgs--;
 		final = "?arg ...?";
@@ -1340,7 +1343,7 @@ InitLocalCache(
 
 static int
 InitArgsAndLocals(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
@@ -1504,9 +1507,9 @@ InitArgsAndLocals(
 
 int
 TclPushProcCallFrame(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
@@ -1546,8 +1549,7 @@ TclPushProcCallFrame(
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
-		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)
-	) {
+		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)) {
 	    goto doCompilation;
 	}
     } else {
@@ -1599,9 +1601,9 @@ TclPushProcCallFrame(
 
 int
 TclObjInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1616,11 +1618,11 @@ TclObjInterpProc(
 
 int
 TclNRInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1637,9 +1639,9 @@ static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp, 	/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,		/* Count of number of arguments to this
+    int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1668,7 +1670,6 @@ ObjInterpProc2(
 
     return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1690,10 +1691,10 @@ ObjInterpProc2(
 
 int
 TclNRInterpProcCore(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    Tcl_Size skip,			/* Number of initial arguments to be skipped,
+    Tcl_Size skip,		/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -1934,8 +1935,7 @@ TclProcCompileProc(
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)
-		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)
-	) {
+		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)) {
 	    return TCL_OK;
 	}
 
@@ -2081,7 +2081,7 @@ MakeProcError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2112,7 +2112,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)	/* Procedure to be deleted. */
+    void *clientData)		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 
@@ -2140,7 +2140,7 @@ TclProcDeleteProc(
 
 void
 TclProcCleanupProc(
-    Proc *procPtr)	/* Procedure to be deleted. */
+    Proc *procPtr)		/* Procedure to be deleted. */
 {
     CompiledLocal *localPtr;
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
@@ -2405,7 +2405,7 @@ ProcBodyFree(
 static void
 DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
@@ -2420,7 +2420,7 @@ DupLambdaInternalRep(
 
 static void
 FreeLambdaInternalRep(
-    Tcl_Obj *objPtr)	/* CmdName object with internal representation
+    Tcl_Obj *objPtr)		/* CmdName object with internal representation
 				 * to free. */
 {
     Proc *procPtr;
@@ -2438,7 +2438,7 @@ FreeLambdaInternalRep(
 static int
 SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
     const char *name;
@@ -2457,7 +2457,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjLengthM(NULL, objPtr, &objc);
+    result = TclListObjLength(NULL, objPtr, &objc);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
@@ -2465,7 +2465,7 @@ SetLambdaFromAny(
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
 	return TCL_ERROR;
     }
-    result = TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
@@ -2595,7 +2595,7 @@ SetLambdaFromAny(
     } else {
 	const char *nsName = TclGetString(objv[2]);
 
-	if ((*nsName != ':') || (*(nsName+1) != ':')) {
+	if ((nsName[0] != ':') || (nsName[1] != ':')) {
 	    TclNewLiteralStringObj(nsObjPtr, "::");
 	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
 	} else {
@@ -2775,7 +2775,7 @@ MakeLambdaError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

@@ -189,11 +189,11 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f "ab\x8C\xC1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -217,11 +217,11 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding shiftjis
+    fconfigure $f -translation lf -encoding shiftjis
     puts -nonewline $f ab乎g
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding iso8859-1
+    fconfigure $f -translation binary
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -679,7 +679,7 @@ casino_japanese@___.com ）までご住所変更済の連絡をいただけな�
 
 cd [temporaryDirectory]
 set fid [open iso2022.txt w]
-fconfigure $fid -encoding binary
+fconfigure $fid -translation binary
 puts -nonewline $fid $iso2022encData
 close $fid
 
@@ -881,8 +881,8 @@ test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
 test encoding-24.38.1 {Try to generate invalid utf-8} -body {
     encoding convertto -profile tcl8 utf-8 \uD800
 } -result \xED\xA0\x80
-test encoding-24.38.2 {Try to generate invalid utf-8} -body {
-    encoding convertto -profile strict utf-8 \uD800
+test encoding-24.38.2 {Try to generate invalid utf-8 - default profile} -body {
+    encoding convertto utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
     encoding convertto -profile strict utf-8 \uD800
@@ -994,7 +994,7 @@ proc channel-diff {fa fb} {
 cd [temporaryDirectory]
 foreach enc {cp932 euc-jp iso2022-jp} {
     set f [open $enc.chars w]
-    fconfigure $f -encoding binary
+    fconfigure $f -encoding iso8859-1
     foreach-jisx0208 code {
 	puts $f [format "%04X %s" $code [gen-jisx0208-$enc $code]]
     }
@@ -1067,7 +1067,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 91
+} -result 93
 
 runtests
 
@@ -1175,6 +1175,8 @@ test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     # Not truncated but invalid
     encoding convertfrom -profile replace jis0208 \x78\x79
 } -result \uFFFD\uFFFD
+
+
 
 # cleanup
 namespace delete ::tcl::test::encoding
