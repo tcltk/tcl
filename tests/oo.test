@@ -3026,6 +3026,16 @@ test oo-18.11 {OO: define/self command support} -setup {
     (in definition script for class "::foo" line 1)
     invoked from within
 "oo::define foo {rename ::foo {}; self {error foobar}}"}
+test oo-18.12 {OO: self callable via eval method} -setup {
+    oo::class create parent {
+	export eval
+    }
+    parent create ::foo
+} -body {
+    foo eval { self }
+} -cleanup {
+    parent destroy
+} -result ::foo
 
 test oo-19.1 {OO: varname method} -setup {
     oo::object create inst

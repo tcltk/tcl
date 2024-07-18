@@ -444,7 +444,8 @@ TclOO_Object_Eval(
      */
 
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    Tcl_GetObjectNamespace(object), 0);
+	    Tcl_GetObjectNamespace(object), FRAME_IS_METHOD);
+    framePtr->clientData = context;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
