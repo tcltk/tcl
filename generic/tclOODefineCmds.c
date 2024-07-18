@@ -3571,7 +3571,7 @@ TclOOInstallStdPropertyImpls(
   badProp:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad property name \"%s\": %s", name, reason));
-    Tcl_SetErrorCode(interp, "TCLOO", "PROPERTY_FORMAT", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "OO", "PROPERTY_FORMAT", NULL);
     return TCL_ERROR;    
 }
 
