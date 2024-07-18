@@ -480,9 +480,16 @@
 
 	# ------------------------------------------------------------------
 	#
-	# oo::configuresupport --
+	# oo::configuresupport::PropertyImpl --
 	#
-	#	A metaclass that is used to make classes that can be configured.
+	#	The implementation of the [property] configuration command.
+	#	This assumes there are two stack frames above it to care about,
+	#	first the hull [property] command (in the correct context for
+	#	what is being confgured) and then the context scope of
+	#	[oo::define] or [oo::objdefine].
+	#
+	# TODO:
+	#	Convert to C code.
 	#
 	# ------------------------------------------------------------------
 
