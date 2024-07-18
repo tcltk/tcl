@@ -430,7 +430,7 @@ newsub(
 /*
  - subrange - allocate new subcolors to this range of chrs, fill in arcs
  ^ static void subrange(struct vars *, pchr, pchr, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 subrange(
@@ -689,7 +689,7 @@ uncolorchain(
 /*
  - rainbow - add arcs of all full colors (but one) between specified states
  ^ static void rainbow(struct nfa *, struct colormap *, int, pcolor,
- ^ 	struct state *, struct state *);
+ ^	struct state *, struct state *);
  */
 static void
 rainbow(
@@ -716,7 +716,7 @@ rainbow(
  - colorcomplement - add arcs of complementary colors
  * The calling sequence ought to be reconciled with cloneouts().
  ^ static void colorcomplement(struct nfa *, struct colormap *, int,
- ^ 	struct state *, struct state *, struct state *);
+ ^	struct state *, struct state *, struct state *);
  */
 static void
 colorcomplement(

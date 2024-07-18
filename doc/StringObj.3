@@ -19,8 +19,10 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewUnicodeObj\fR(\fIunicode, numChars\fR)
 .sp
+void
 \fBTcl_SetStringObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
+void
 \fBTcl_SetUnicodeObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
 char *
@@ -44,14 +46,19 @@ Tcl_Size
 Tcl_Obj *
 \fBTcl_GetRange\fR(\fIobjPtr, first, last\fR)
 .sp
+void
 \fBTcl_AppendToObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
+void
 \fBTcl_AppendUnicodeToObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
+void
 \fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
 .sp
-\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fBNULL\fR)
+void
+\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *)NULL\fR)
 .sp
+void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
 .sp
 Tcl_Obj *
@@ -63,8 +70,10 @@ int
 Tcl_Obj *
 \fBTcl_ObjPrintf\fR(\fIformat, ...\fR)
 .sp
+void
 \fBTcl_AppendPrintfToObj\fR(\fIobjPtr, format, ...\fR)
 .sp
+void
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
 .sp
 int
@@ -242,7 +251,7 @@ except that it can be passed more than one value to append and
 each value must be a null-terminated string (i.e. none of the
 values may contain internal null characters).  Any number of
 \fIstring\fR arguments may be provided, but the last argument
-must be a NULL pointer to indicate the end of the list.
+must be (char *)NULL to indicate the end of the list.
 .PP
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.
@@ -305,8 +314,11 @@ sprintf(buf, format, ...);
 but with greater convenience and no need to
 determine \fBSOME_SUITABLE_LENGTH\fR. The formatting is done with the same
 core formatting engine used by \fBTcl_Format\fR.  This means the set of
-supported conversion specifiers is that of the \fBformat\fR command and
-not that of the \fBsprintf\fR routine where the two sets differ. When a
+supported conversion specifiers is that of the \fBformat\fR command but
+the behavior is as similar as possible to \fBsprintf\fR. The "hh" and
+(Microsoft-specific) "w" format specifiers are not supported. The "L"
+format specifier means that an "mp_int *" argument is expected (or a
+"long double" in combination with \fB[aAeEgGaA]\fR). When a
 conversion specifier passed to \fBTcl_ObjPrintf\fR includes a precision,
 the value is taken as a number of bytes, as \fBsprintf\fR does, and not
 as a number of characters, as \fBformat\fR does.  This is done on the

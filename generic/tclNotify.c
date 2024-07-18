@@ -1080,7 +1080,7 @@ Tcl_ServiceAll(void)
     }
 
     /*
-     * We need to turn off event servicing like we to in Tcl_DoOneEvent, to
+     * We need to turn off event servicing like we do in Tcl_DoOneEvent, to
      * avoid recursive calls.
      */
 

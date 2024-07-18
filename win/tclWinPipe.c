@@ -201,23 +201,23 @@ static void		PipeThreadActionProc(void *instanceData,
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    PipeInputProc,
+    PipeOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Set up notifier to watch the channel. */
-    PipeGetHandleProc,		/* Get an OS handle from channel. */
-    PipeClose2Proc,		/* close2proc */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    PipeThreadActionProc,	/* thread action proc */
-    NULL			/* truncate */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    PipeThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -538,7 +538,7 @@ TclpOpenFile(
      * Map the access bits to the NT access mode.
      */
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	accessMode = GENERIC_READ;
 	break;
@@ -1101,7 +1101,7 @@ TclpCreateProcess(
      */
 
     if (HasConsole()) {
-	    createFlags = 0;
+	createFlags = 0;
     } else if (applType == APPL_DOS) {
 	/*
 	 * Under NT, 16-bit DOS applications will not run unless they can
@@ -1187,7 +1187,6 @@ TclpCreateProcess(
     }
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1321,7 +1320,7 @@ ApplicationType(
 
 	ext = strrchr(fullName, '.');
 	if ((ext != NULL) &&
-            (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -1334,7 +1333,7 @@ ApplicationType(
 	}
 
 	header.e_magic = 0;
-	ReadFile(hFile, (void *) &header, sizeof(header), &read, NULL);
+	ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
 	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
 	    /*
 	     * Doesn't have the magic number for relocatable executables. If
@@ -1369,7 +1368,7 @@ ApplicationType(
 
 	buf[0] = '\0';
 	SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-	ReadFile(hFile, (void *) buf, 2, &read, NULL);
+	ReadFile(hFile, (void *)buf, 2, &read, NULL);
 	CloseHandle(hFile);
 
 	if ((buf[0] == 'N') && (buf[1] == 'E')) {
@@ -1463,7 +1462,7 @@ QuoteCmdLineBackslash(
 	    Tcl_DStringAppend(dsPtr, start, (int) (current - start));
 	}
     } else {
-    	if (bspos > start) {	/* part before first backslash */
+	if (bspos > start) {	/* part before first backslash */
 	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
 	}
 	while (bspos++ < current) { /* each backslash twice */
@@ -1506,7 +1505,7 @@ QuoteCmdLinePart(
 
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
     do {
-    	*bspos = NULL;
+	*bspos = NULL;
 	special++;
 	if (*special == '\\') {
 	    /*
@@ -1811,7 +1810,7 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
-    	infoPtr->readTI = NULL;
+	infoPtr->readTI = NULL;
 	infoPtr->readThread = 0;
     }
     if (writeFile != NULL) {
@@ -1826,8 +1825,8 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
-    	infoPtr->writeTI = NULL;
-    	infoPtr->writeThread = 0;
+	infoPtr->writeTI = NULL;
+	infoPtr->writeThread = 0;
     }
 
     /*
@@ -1837,7 +1836,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -1880,10 +1879,10 @@ Tcl_CreatePipe(
 	return TCL_ERROR;
     }
 
-    *rchan = Tcl_MakeFileChannel((void *) readHandle, TCL_READABLE);
+    *rchan = Tcl_MakeFileChannel((void *)readHandle, TCL_READABLE);
     Tcl_RegisterChannel(interp, *rchan);
 
-    *wchan = Tcl_MakeFileChannel((void *) writeHandle, TCL_WRITABLE);
+    *wchan = Tcl_MakeFileChannel((void *)writeHandle, TCL_WRITABLE);
     Tcl_RegisterChannel(interp, *wchan);
 
     return TCL_OK;
@@ -2120,12 +2119,11 @@ PipeClose2Proc(
 	if (pipePtr->errorFile) {
 	    WinFile *filePtr = (WinFile *) pipePtr->errorFile;
 
-	    errChan = Tcl_MakeFileChannel((void *) filePtr->handle,
+	    errChan = Tcl_MakeFileChannel((void *)filePtr->handle,
 		    TCL_READABLE);
 	    Tcl_Free(filePtr);
 	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
-	}
-	else {
+	} else {
 	    errChan = NULL;
 	}
 
@@ -2516,12 +2514,12 @@ PipeGetHandleProc(
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     if (direction == TCL_WRITABLE && infoPtr->writeFile) {
 	filePtr = (WinFile*) infoPtr->writeFile;
-	*handlePtr = (void *) filePtr->handle;
+	*handlePtr = (void *)filePtr->handle;
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -2764,7 +2762,7 @@ Tcl_PidObjCmd(
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?channel?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
@@ -3222,7 +3220,7 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(WCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = TclGetStringFromObj(basenameObj, &length);
 
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(string, length, &buf);
@@ -3267,7 +3265,7 @@ TclpOpenTemporaryFile(
 	TclDecrRefCount(tmpObj);
     }
 
-    return Tcl_MakeFileChannel((void *) handle,
+    return Tcl_MakeFileChannel((void *)handle,
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:
@@ -3399,10 +3397,10 @@ TclPipeThreadWaitForSignal(
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
     } else {
-    	pipeTI->evWakeUp = NULL;
+	pipeTI->evWakeUp = NULL;
     }
     if (wakeEvent) {
-    	SetEvent(wakeEvent);
+	SetEvent(wakeEvent);
     }
     return 0;
 }

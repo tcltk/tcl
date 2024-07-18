@@ -26,7 +26,7 @@
 #define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
 	| (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1<<OTHER_LETTER))
 
-#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT) | (1 << PRIVATE_USE))
+#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT))
 
 #define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
 
@@ -206,13 +206,11 @@ Invalid(
 
 Tcl_Size
 Tcl_UniCharToUtf(
-    int ch,	/* The Tcl_UniChar to be stored in the
-		 * buffer. Can be or'ed with flag TCL_COMBINE.
-		 */
-    char *buf)	/* Buffer in which the UTF-8 representation of
-		 * ch is stored. Must be large enough to hold the UTF-8
-		 * character (at most 4 bytes).
-		 */
+    int ch,			/* The Tcl_UniChar to be stored in the buffer.
+				 * Can be or'ed with flag TCL_COMBINE. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * ch is stored. Must be large enough to hold
+				 * the UTF-8 character (at most 4 bytes). */
 {
     int flags = ch;
 
@@ -234,8 +232,8 @@ Tcl_UniCharToUtf(
 		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
-		    if (   (0x80 == (0xC0 & buf[0]))
-			&& (0    == (0xCF & buf[1]))) {
+		    if (    (0x80 == (0xC0 & buf[0]))
+			    && (0 == (0xCF & buf[1]))) {
 			/* Previous Tcl_UniChar was a high surrogate, so combine */
 			buf[2]  = (char) (0x80 | (0x3F & ch));
 			buf[1] |= (char) (0x80 | (0x0F & (ch >> 6)));
@@ -246,12 +244,11 @@ Tcl_UniCharToUtf(
 		    /* High surrogate */
 
 		    /* Add 0x10000 to the raw number encoded in the surrogate
-		     * pair in order to get the code point.
-		    */
+		     * pair in order to get the code point. */
 		    ch += 0x40;
 
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
-		       so following low surrogate can recognize it and combine */
+		     * so following low surrogate can recognize it and combine */
 		    buf[2] = (char) ((ch << 4) & 0x30);
 		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
 		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
@@ -268,9 +265,9 @@ Tcl_UniCharToUtf(
 	    return 4;
 	}
     } else if (ch == -1) {
-	if (   (0x80 == (0xC0 & buf[0]))
-	    && (0    == (0xCF & buf[1]))
-	    && (0xF0 == (0xF8 & buf[-1]))) {
+	if (       (0x80 == (0xC0 & buf[0]))
+		&& (0    == (0xCF & buf[1]))
+		&& (0xF0 == (0xF8 & buf[-1]))) {
 	    ch = 0xD7C0
 		+ ((0x07 & buf[-1]) << 8)
 		+ ((0x3F & buf[0])  << 2)
@@ -310,9 +307,9 @@ three:
 
 char *
 Tcl_UniCharToUtfDString(
-    const int *uniStr,	/* Unicode string to convert to UTF-8. */
+    const int *uniStr,		/* Unicode string to convert to UTF-8. */
     Tcl_Size uniLength,		/* Length of Unicode string. Negative for nul
-    				 * terminated string */
+				 * terminated string */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -441,9 +438,9 @@ static const unsigned short cp1252[32] = {
 
 Tcl_Size
 Tcl_UtfToUniChar(
-    const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the Unicode character represented by
-				 * the UTF-8 string. */
+    const char *src,		/* The UTF-8 string. */
+    int *chPtr)			/* Filled with the Unicode character
+				 * represented by the UTF-8 string. */
 {
     int byte;
 
@@ -679,11 +676,11 @@ Tcl_UtfToUniCharDString(
     endPtr = src + length;
     optPtr = endPtr - 4;
     while (p <= optPtr) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while (p < endPtr) {
@@ -929,7 +926,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -968,7 +965,7 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1191,7 +1188,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-    Tcl_UtfToUniChar(src, &i);
+    TclUtfToUniChar(src, &i);
     return i;
 }
 
@@ -1220,7 +1217,7 @@ Tcl_UtfAtIndex(
     Tcl_UniChar ch = 0;
 
     while (index-- > 0) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }
@@ -1330,7 +1327,7 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -1383,7 +1380,7 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -1439,7 +1436,7 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if (len < TclUtfCount(titleChar)) {
@@ -1451,7 +1448,7 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
@@ -1718,7 +1715,6 @@ TclUtfCmp(
     }
     return UCHAR(*cs) - UCHAR(*ct);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1758,7 +1754,6 @@ TclUtfCasecmp(
     }
     return UCHAR(*cs) - UCHAR(*ct);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2280,36 +2275,6 @@ Tcl_UniCharIsUpper(
     return (GetCategory(ch) == UPPERCASE_LETTER);
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_UniCharIsUnicode --
- *
- *	Test if a character is a Unicode character.
- *
- * Results:
- *	Returns non-zero if character belongs to the Unicode set.
- *
- *	Excluded are:
- *	  1) All characters > U+10FFFF
- *	  2) Surrogates U+D800 - U+DFFF
- *	  3) Last 2 characters of each plane, so U+??FFFE  and U+??FFFF
- *	  4) The characters in the range U+FDD0 - U+FDEF
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_UniCharIsUnicode(
-    int ch)			/* Unicode character to test. */
-{
-    return ((unsigned int)ch <= 0x10FFFF) && ((ch & 0xFFF800) != 0xD800)
-	    && ((ch & 0xFFFE) != 0xFFFE) && ((unsigned int)(ch - 0xFDD0) >= 32);
-}
-
 /*
  *----------------------------------------------------------------------
  *

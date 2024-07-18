@@ -20,7 +20,7 @@ package provide msgcat 1.7.1
 namespace eval msgcat {
     namespace export mc mcn mcexists mcload mclocale mcmax\
 	    mcmset mcpreferences mcset\
-            mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
+	    mcunknown mcflset mcflmset mcloadedlocales mcforgetpackage\
 	    mcpackagenamespaceget mcpackageconfig mcpackagelocale mcutil
 
     # Records the list of locales to search
@@ -738,7 +738,7 @@ proc msgcat::mcpackageconfig {subcommand option {value ""}} {
 		    \"[lrange [info level 0] 0 2] value\""
 	}
     } elseif {$subcommand eq "set"} {
-        return -code error\
+	return -code error\
 		"wrong # args: should be \"[lrange [info level 0] 0 2]\""
     }
 
@@ -1220,29 +1220,35 @@ proc msgcat::mcutil::ConvertLocale {value} {
 # - called from an class defined oo object
 # - called from a classless oo object
 proc ::msgcat::PackageNamespaceGet {} {
-    uplevel 2 {
+    set ns [uplevel 2 { namespace current }]
+
+    if {![string match {::oo::*} $ns]} {
+	# Not in object environment
+	return $ns
+    }
+    # Ticket 91b3a5bb14: call to self may fail if namespace is stored
+    # so catch all this
+    try {
 	# Check self namespace to determine environment
-	switch -exact -- [namespace which self] {
+	switch -exact -- [uplevel 2 { namespace which -command self }] {
 	    {::oo::define::self} {
 		# We are within a class definition
-		return [namespace qualifiers [self]]
+		return [namespace qualifiers [uplevel 2 { self }]]
 	    }
 	    {::oo::Helpers::self} {
 		# We are within an object
-		set Class [info object class [self]]
+		set Class [info object class [uplevel 2 { self }]]
 		# Check for classless defined object
 		if {$Class eq {::oo::object}} {
-		    return [namespace qualifiers [self]]
+		    return [namespace qualifiers [uplevel 2 { self }]]
 		}
 		# Class defined object
 		return [namespace qualifiers $Class]
 	    }
-	    default {
-		# Not in object environment
-		return [namespace current]
-	    }
 	}
+    } on error {} {
     }
+    return $ns
 }
 
 # Initialize the default locale
