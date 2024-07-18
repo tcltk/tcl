@@ -57,7 +57,7 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-# 		noembed   = Without this option, the Tcl core library scripts
+#		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
 #			    "noembed" is specified, the scripts are not embedded
@@ -254,6 +254,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclBinary.obj \
 	$(TMP_DIR)\tclCkalloc.obj \
 	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclClockFmt.obj \
 	$(TMP_DIR)\tclCmdAH.obj \
 	$(TMP_DIR)\tclCmdIL.obj \
 	$(TMP_DIR)\tclCmdMZ.obj \
@@ -276,6 +277,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclGet.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIcu.obj \
 	$(TMP_DIR)\tclIndexObj.obj \
 	$(TMP_DIR)\tclInterp.obj \
 	$(TMP_DIR)\tclIO.obj \
@@ -317,6 +319,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclResult.obj \
 	$(TMP_DIR)\tclScan.obj \
 	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrIdxTree.obj \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
@@ -367,9 +370,9 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_d.obj \
 	$(TMP_DIR)\bn_mp_div_2.obj \
 	$(TMP_DIR)\bn_mp_div_2d.obj \
-	$(TMP_DIR)\bn_mp_div_3.obj \
+	$(TMP_DIR)\bn_s_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
-	$(TMP_DIR)\bn_mp_expt_u32.obj \
+	$(TMP_DIR)\bn_mp_expt_n.obj \
 	$(TMP_DIR)\bn_mp_get_mag_u64.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
@@ -462,12 +465,17 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+LIBTCLVFSSUBDIR = libtcl.vfs
+LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+
+!if $(STATIC_BUILD)
+PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
+!endif
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
@@ -662,9 +670,10 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
     @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
     @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
 !endif
-	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
+	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
+	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -732,7 +741,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) -encoding utf-8 $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
@@ -819,7 +828,7 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
 @TCL_SRC_DIR@        $(ROOT)
-@TCL_PACKAGE_PATH@
+@TCL_PACKAGE_PATH@   $(LIB_INSTALL_DIR)
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)

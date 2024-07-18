@@ -20,7 +20,6 @@ testConstraint testindexobj [llength [info commands testindexobj]]
 testConstraint testgetintforindex [llength [info commands testgetintforindex]]
 testConstraint testparseargs [llength [info commands testparseargs]]
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
-testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
 
 test indexObj-1.1 {exact match} testindexobj {
     testindexobj 1 1 xyz abc def xyz alm
@@ -149,29 +148,46 @@ test indexObj-6.7 {Tcl_GetIndexFromObjStruct} testindexobj {
 
 test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs
-} {0 1 testparseargs}
+} {0 1 testparseargs NULL NULL}
 test indexObj-7.2 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -bool
-} {1 1 testparseargs}
+} {1 1 testparseargs NULL NULL}
 test indexObj-7.3 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -bool bar
-} {1 2 {testparseargs bar}}
+} {1 2 {testparseargs bar} NULL NULL}
 test indexObj-7.4 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs bar
-} {0 2 {testparseargs bar}}
+} {0 2 {testparseargs bar} NULL NULL}
 test indexObj-7.5 {Tcl_ParseArgsObjv} -constraints testparseargs -body {
     testparseargs -help
 } -returnCodes error -result {Command-specific options:
- -bool: booltest
- --:    Marks the end of the options
- -help: Print summary of command-line options and abort}
+ -bool:      booltest
+ -colormode: color mode
+ -media:     media page size
+ --:         Marks the end of the options
+ -help:      Print summary of command-line options and abort}
 test indexObj-7.6 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs -- -bool -help
-} {0 3 {testparseargs -bool -help}}
+} {0 3 {testparseargs -bool -help} NULL NULL}
 test indexObj-7.7 {Tcl_ParseArgsObjv memory management} testparseargs {
     testparseargs 1 2 3 4 5 6 7 8 9 0 -bool 1 2 3 4 5 6 7 8 9 0
-} {1 21 {testparseargs 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0}}
-
+} {1 21 {testparseargs 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0} NULL NULL}
+test indexObj-7.8 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -color Nothing
+} {0 1 testparseargs Nothing NULL}
+test indexObj-7.9 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -media A4
+} {0 1 testparseargs NULL {Paper size is ISO A4}}
+test indexObj-7.10 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -media A4 -color Somecolor
+} {0 1 testparseargs Somecolor {Paper size is ISO A4}}
+test indexObj-7.11 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -color othercolor -media Letter
+} {0 1 testparseargs othercolor {Paper size is US Letter}}
+test indexObj-7.12 {Tcl_ParseArgsObjv} -constraints testparseargs -body {
+    testparseargs -color othercolor -media Nosuchmedia
+} -returnCodes error -result {bad media "Nosuchmedia": must be A4, Legal, or Letter}
+
 test indexObj-8.1 {Tcl_GetIntForIndex integer} testgetintforindex {
     testgetintforindex 0 0
 } 0
@@ -211,18 +227,23 @@ test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
 test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -2
 } -2
-test indexObj-8.14 {Tcl_GetIntForIndex end+1} -constraints {
-    testgetintforindex has64BitLengths
-} -body {
+test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -1
-} -result 9223372036854775807
-test indexObj-8.14.32bits {Tcl_GetIntForIndex end+1} -constraints {
-    testgetintforindex has32BitLengths
-} -body {
-    testgetintforindex end+1 -1
-} -result 2147483647
+} [expr {[testConstraint has64BitLengths] ? 9223372036854775807 : 2147483647}]
 test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -2
+} -1
+test indexObj-8.16 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.17 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.18 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.19 {Tcl_GetIntForIndex n-m} testgetintforindex {
+    testgetintforindex 2-3 0
 } -1
 
 # cleanup

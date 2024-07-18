@@ -537,11 +537,7 @@ PkgRequireCoreStep1(
 
     Tcl_NRAddCallback(interp,
 	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
-    Tcl_NREvalObj(interp,
-	    Tcl_NewStringObj(Tcl_DStringValue(&command),
-		    Tcl_DStringLength(&command)),
-	    TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&command);
+    Tcl_NREvalObj(interp, Tcl_DStringToObj(&command), TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
 
@@ -1183,7 +1179,7 @@ TclNRPackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = Tcl_GetStringFromObj(objv[3], &length);
+	argv3 = TclGetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -1230,10 +1226,10 @@ TclNRPackageObjCmd(
 	    }
 	}
 	if (iPtr->scriptFile) {
-	    argv4 = Tcl_GetStringFromObj(iPtr->scriptFile, &length);
+	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
 	    DupBlock(availPtr->pkgIndex, argv4, length + 1);
 	}
-	argv4 = Tcl_GetStringFromObj(objv[4], &length);
+	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, length + 1);
 	break;
     }
@@ -1362,7 +1358,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
@@ -1389,7 +1385,7 @@ TclNRPackageObjCmd(
 		Tcl_ListObjAppendElement(interp, objvListPtr,
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,
@@ -1410,7 +1406,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_Free(iPtr->packageUnknown);
 	    }
-	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
+	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -1674,7 +1670,7 @@ CheckVersionAndConvert(
     int hasunstable = 0;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
-     * 4+ to have spce for an additional -2 at the end
+     * 4+ to have space for an additional -2 at the end
      */
     char *ibuf = (char *)Tcl_Alloc(4 + 4*strlen(string));
     char *ip = ibuf;
@@ -2075,7 +2071,7 @@ AddRequirementsToResult(
     Tcl_Size length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
+	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {

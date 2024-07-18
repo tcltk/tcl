@@ -16,14 +16,15 @@
 /*
  * Flag values used by Tcl_ScanObjCmd.
  */
+enum ScanFlags {
+    SCAN_NOSKIP = 0x1,		/* Don't skip blanks. */
+    SCAN_SUPPRESS = 0x2,	/* Suppress assignment. */
+    SCAN_UNSIGNED = 0x4,	/* Read an unsigned value. */
+    SCAN_WIDTH = 0x8,		/* A width value was supplied. */
 
-#define SCAN_NOSKIP	0x1		/* Don't skip blanks. */
-#define SCAN_SUPPRESS	0x2		/* Suppress assignment. */
-#define SCAN_UNSIGNED	0x4		/* Read an unsigned value. */
-#define SCAN_WIDTH	0x8		/* A width value was supplied. */
-
-#define SCAN_LONGER	0x400		/* Asked for a wide value. */
-#define SCAN_BIG	0x800		/* Asked for a bignum value. */
+    SCAN_LONGER = 0x400,	/* Asked for a wide value. */
+    SCAN_BIG = 0x800		/* Asked for a bignum value. */
+};
 
 /*
  * The following structure contains the information associated with a
@@ -325,8 +326,7 @@ ValidateFormat(
 	    objIndex = (int) ull - 1;
 	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
-	    }
-	    else if (numVars == 0) {
+	    } else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special
@@ -345,7 +345,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (char *)NULL);
 	    goto error;
 	}
 
@@ -358,17 +358,15 @@ ValidateFormat(
 	    /* Note ull >= 0 because of isdigit check above */
 	    unsigned long long ull;
 	    ull = strtoull(
-		format - 1, (char **)&format, 10); /* INTL: "C" locale. */
+		    format - 1, (char **)&format, 10);	/* INTL: "C" locale. */
 	    /* Note >=, not >, to leave room for a nul */
 	    if (ull >= TCL_SIZE_MAX) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("specified field width %" TCL_LL_MODIFIER
-				  "u exceeds limit %" TCL_SIZE_MODIFIER "d.",
-				  ull,
-				  (Tcl_Size)TCL_SIZE_MAX-1));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"specified field width %" TCL_LL_MODIFIER
+			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
+			ull, (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
-		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (void *)NULL);
+			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;
@@ -380,6 +378,17 @@ ValidateFormat(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -388,7 +397,8 @@ ValidateFormat(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
@@ -409,7 +419,7 @@ ValidateFormat(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
 		goto error;
 	    }
 	    /* FALLTHRU */
@@ -423,7 +433,7 @@ ValidateFormat(
 		Tcl_AppendToObj(errorMsg, buf, -1);
 		Tcl_AppendToObj(errorMsg, " conversion", -1);
 		Tcl_SetObjResult(interp, errorMsg);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
 		goto error;
 	    }
 	    /*
@@ -475,7 +485,7 @@ ValidateFormat(
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched [ in format string", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (char *)NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -484,7 +494,7 @@ ValidateFormat(
 	    Tcl_AppendToObj(errorMsg, buf, -1);
 	    Tcl_AppendToObj(errorMsg, "\"", -1);
 	    Tcl_SetObjResult(interp, errorMsg);
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -531,7 +541,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (char *)NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
 	    /*
@@ -542,7 +552,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (char *)NULL);
 	    goto error;
 	}
     }
@@ -554,12 +564,12 @@ ValidateFormat(
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"%n$\" argument index out of range", -1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (char *)NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
 		-1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (char *)NULL);
     }
 
   error:
@@ -594,7 +604,7 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
-    long value;
+    int value;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -903,7 +913,7 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    offset = Tcl_UtfToUniChar(string, &i);
+	    offset = TclUtfToUniChar(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
 		TclNewIntObj(objPtr, i);
@@ -923,7 +933,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
+		    &end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -954,7 +964,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);
@@ -982,16 +992,16 @@ Tcl_ScanObjCmd(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
-				"BADUNSIGNED", (void *)NULL);
+				"BADUNSIGNED", (char *)NULL);
 			return TCL_ERROR;
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
-			value = LONG_MIN;
+			value = INT_MIN;
 		    } else {
-			value = LONG_MAX;
+			value = INT_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
@@ -1000,7 +1010,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);
@@ -1097,9 +1107,7 @@ Tcl_ScanObjCmd(
 	 * We create an empty Tcl_Obj to fill missing values rather than
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-	Tcl_Obj *emptyObj;
-	TclNewObj(emptyObj);
-	Tcl_IncrRefCount(emptyObj);
+	Tcl_Obj *emptyObj = NULL;
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
@@ -1110,11 +1118,12 @@ Tcl_ScanObjCmd(
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
-
+		if (!emptyObj) {
+		    TclNewObj(emptyObj);
+		}
 		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
 	}
-	Tcl_DecrRefCount(emptyObj);
 	if (code != TCL_OK) {
 	    /* If error'ed out, free up remaining. i contains last index freed */
 	    while (++i < totalVars) {

@@ -73,16 +73,18 @@ The size modifier field is used only when scanning a substring into
 one of Tcl's integer values.  The size modifier field dictates the
 integer range acceptable to be stored in a variable, or, for the inline
 case, in a position in the result list.
-The syntactically valid values for the size modifier are \fBh\fR, \fBL\fR,
-\fBl\fR, and \fBll\fR.  The \fBh\fR size modifier value is equivalent
-to the absence of a size modifier in the the conversion specifier.
-Either one indicates the integer range to be stored is limited to
-the same range produced by the \fBint()\fR function of the \fBexpr\fR
-command.  The \fBL\fR size modifier is equivalent to the \fBl\fR size
-modifier. Either one indicates the integer range to be stored is
-limited to the same range produced by the \fBwide()\fR function of
-the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
-the integer range to be stored is unlimited.
+The syntactically valid values for the size modifier are \fBh\fR,
+\fBl\fR, \fBz\fR, \fBt\fR, \fBq\fR, \fBj\fR, \fBll\fR, and \fBL\fR.
+The \fBh\fR size modifier value is equivalent to the absence of a size
+modifier in the the conversion specifier.  Either one indicates the
+integer range to be stored is limited to the 32-bit range.  The \fBL\fR
+size modifier is equivalent to the \fBll\fR size modifier.  Either one
+indicates the integer range to be stored is unlimited.  The \fBl\fR (or
+\fBq\fR or \fBj\fR) size modifier indicates that the integer range to be
+stored is limited to the same range produced by the \fBwide()\fR function
+of the \fBexpr\fR command. The \fBz\fR and \fBt\fR modifiers indicate the
+integer range to be the same as for either \fBh\fR or \fBl\fR, depending
+on the value of the \fBpointerSize\fR element of the \fBtcl_platform\fR array.
 .SS "MANDATORY CONVERSION CHARACTER"
 .PP
 The following conversion characters are supported:
@@ -107,9 +109,6 @@ The input substring must be a decimal integer.
 The integer value is truncated as required by the size modifier
 value, and the corresponding unsigned value for that truncated
 range is computed and stored in the variable as a decimal string.
-The conversion makes no sense without reference to a truncation range,
-so the size modifier \fBll\fR is not permitted in combination
-with conversion character \fBu\fR.
 .IP \fBi\fR
 The input substring must be an integer.  The base (i.e. decimal,
 octal, or hexadecimal) is determined by the C convention (leading
@@ -250,8 +249,6 @@ An interactive session demonstrating the truncation of integer
 values determined by size modifiers:
 .PP
 .CS
-\fI%\fR set tcl_platform(wordSize)
-4
 \fI%\fR scan 20000000000000000000 %d
 2147483647
 \fI%\fR scan 20000000000000000000 %ld

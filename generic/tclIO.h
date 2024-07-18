@@ -43,7 +43,7 @@ typedef struct ChannelBuffer {
 				 * the buffer. */
     Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
-    				/* Next buffer in chain. */
+				/* Next buffer in chain. */
     char buf[TCLFLEXARRAY];	/* Placeholder for real buffer. The real
 				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
@@ -160,7 +160,8 @@ typedef struct ChannelState {
 				 * input. */
 #if TCL_MAJOR_VERSION < 9
     int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. For Tcl 8.x only */
+				 * it is closed if it is open for writing.
+				 * For Tcl 8.x only */
 #endif
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
@@ -191,8 +192,8 @@ typedef struct ChannelState {
     Tcl_Size bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
-				   the right channel when the timer is
-				   deleted. */
+				 * the right channel when the timer is
+				 * deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
@@ -214,8 +215,8 @@ typedef struct ChannelState {
      * precedence over a Posix error code returned by a channel operation.
      */
 
-    Tcl_Obj* chanMsg;
-    Tcl_Obj* unreportedMsg;	/* Non-NULL if an error report was deferred
+    Tcl_Obj *chanMsg;
+    Tcl_Obj *unreportedMsg;	/* Non-NULL if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */

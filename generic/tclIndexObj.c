@@ -117,7 +117,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit inefficient but simpler.
      */
 
-    result = TclListObjGetElementsM(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -203,27 +203,27 @@ Tcl_GetIndexFromObjStruct(
 
     if (offset < (Tcl_Size)sizeof(char *)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-				"struct offset", offset));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid %s value %" TCL_SIZE_MODIFIER "d.",
+		    "struct offset", offset));
 	}
-    return TCL_ERROR;
+	return TCL_ERROR;
     }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
 
     if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-	if ((indexRep->tablePtr == tablePtr)
-		&& (indexRep->offset == offset)
-		&& (indexRep->index != TCL_INDEX_NONE)) {
-	    index = indexRep->index;
-	    goto uncachedDone;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	    if ((indexRep->tablePtr == tablePtr)
+		    && (indexRep->offset == offset)
+		    && (indexRep->index != TCL_INDEX_NONE)) {
+		index = indexRep->index;
+		goto uncachedDone;
+	    }
 	}
-    }
     }
 
     /*
@@ -552,7 +552,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = TclListObjLengthM(interp, objv[i], &errorLength);
+	    result = TclListObjLength(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -576,7 +576,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLengthM(interp, tablePtr, &i);
+    result = TclListObjLength(interp, tablePtr, &i);
     if (result != TCL_OK) {
 	return result;
     }
@@ -642,15 +642,15 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
     resultPtr = Tcl_NewListObj(0, NULL);
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * A prefix cannot match if it is longest.
@@ -700,17 +700,17 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
-    string = Tcl_GetStringFromObj(objv[2], &length);
+    string = TclGetStringFromObj(objv[2], &length);
 
     resultString = NULL;
     resultLength = 0;
 
     for (t = 0; t < tableObjc; t++) {
-	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
+	elemString = TclGetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
 	 * First check if the prefix string matches the element. A prefix
@@ -872,7 +872,7 @@ Tcl_WrongNumArgs(
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
 	    } else {
-		elementStr = Tcl_GetStringFromObj(origObjv[i], &elemLen);
+		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
@@ -922,7 +922,7 @@ Tcl_WrongNumArgs(
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
-	    elementStr = Tcl_GetStringFromObj(objv[i], &elemLen);
+	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
 	    flags = 0;
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
@@ -1020,6 +1020,7 @@ Tcl_ParseArgsObjv(
 				 * reporting. */
     Tcl_Size objc;		/* # arguments in objv still to process. */
     Tcl_Size length;		/* Number of characters in current argument */
+    Tcl_Size gf_ret;		/* Return value from Tcl_ArgvGenFuncProc*/
 
     if (remObjv != NULL) {
 	/*
@@ -1048,7 +1049,7 @@ Tcl_ParseArgsObjv(
 	curArg = objv[srcIndex];
 	srcIndex++;
 	objc--;
-	str = Tcl_GetStringFromObj(curArg, &length);
+	str = TclGetStringFromObj(curArg, &length);
 	if (length > 0) {
 	    c = str[1];
 	} else {
@@ -1181,10 +1182,13 @@ Tcl_ParseArgsObjv(
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 
-	    objc = handlerProc(infoPtr->clientData, interp, (int)objc,
+	    gf_ret = handlerProc(infoPtr->clientData, interp, objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
-	    if (objc < 0) {
+	    if (gf_ret < 0) {
 		goto error;
+	    } else {
+		srcIndex += gf_ret;
+		objc -= gf_ret;
 	    }
 	    break;
 	}

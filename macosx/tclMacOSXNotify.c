@@ -846,7 +846,6 @@ StartNotifierThread(void)
     }
     UNLOCK_NOTIFIER_INIT;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1322,7 +1321,7 @@ FileHandlerEventProc(
  *
  * TclpNotifierData --
  *
- *	This function returns a ClientData pointer to be associated
+ *	This function returns a void pointer to be associated
  *	with a Tcl_AsyncHandler.
  *
  * Results:
@@ -1684,7 +1683,7 @@ Tcl_Sleep(
 	SInt32 runLoopStatus;
 
 	waitTime = vdelay.sec + 1.0e-6 * vdelay.usec;
- 	now = CFAbsoluteTimeGetCurrent();
+	now = CFAbsoluteTimeGetCurrent();
 	waitEnd = now + waitTime;
 
 	if (runLoopTimer) {
@@ -1714,7 +1713,7 @@ Tcl_Sleep(
 	    }
 	} while (waitTime > 0);
 	tsdPtr->sleeping = 0;
- 	if (runLoopTimer) {
+	if (runLoopTimer) {
 	    CFRunLoopTimerSetNextFireDate(runLoopTimer, nextTimerFire);
 	}
     } else {

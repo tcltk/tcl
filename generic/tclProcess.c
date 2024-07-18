@@ -30,10 +30,11 @@ typedef struct ProcessInfo {
     int purge;			/* Purge eventualy. */
     TclProcessWaitStatus status;/* Process status. */
     int code;			/* Error code, exit status or signal
-				   number. */
+				 * number. */
     Tcl_Obj *msg;		/* Error message. */
     Tcl_Obj *error;		/* Error code. */
 } ProcessInfo;
+
 static Tcl_HashTable infoTablePerPid;
 static Tcl_HashTable infoTablePerResolvedPid;
 static int infoTablesInitialized = 0;	/* 0 means not yet initialized. */
@@ -76,7 +77,7 @@ void
 InitProcessInfo(
     ProcessInfo *info,		/* Structure to initialize. */
     Tcl_Pid pid,		/* Process id. */
-    Tcl_Size resolvedPid)		/* Resolved process id. */
+    Tcl_Size resolvedPid)	/* Resolved process id. */
 {
     info->pid = pid;
     info->resolvedPid = resolvedPid;
@@ -144,8 +145,7 @@ FreeProcessInfo(
 int
 RefreshProcessInfo(
     ProcessInfo *info,		/* Structure to refresh. */
-    int options			/* Options passed to WaitProcessStatus. */
-)
+    int options)		/* Options passed to WaitProcessStatus. */
 {
     if (info->status == TCL_PROCESS_UNCHANGED) {
 	/*
@@ -154,8 +154,12 @@ RefreshProcessInfo(
 
 	info->status = WaitProcessStatus(info->pid, info->resolvedPid,
 		options, &info->code, &info->msg, &info->error);
-	if (info->msg) Tcl_IncrRefCount(info->msg);
-	if (info->error) Tcl_IncrRefCount(info->error);
+	if (info->msg) {
+	    Tcl_IncrRefCount(info->msg);
+	}
+	if (info->error) {
+	    Tcl_IncrRefCount(info->error);
+	}
 	return (info->status != TCL_PROCESS_UNCHANGED);
     } else {
 	/*
@@ -228,9 +232,13 @@ WaitProcessStatus(
 
 	    msg = "child process lost (is SIGCHLD ignored or trapped?)";
 	}
-	if (codePtr) *codePtr = errno;
-	if (msgObjPtr) *msgObjPtr = Tcl_ObjPrintf(
-		"error waiting for process to exit: %s", msg);
+	if (codePtr) {
+	    *codePtr = errno;
+	}
+	if (msgObjPtr) {
+	    *msgObjPtr = Tcl_ObjPrintf(
+		    "error waiting for process to exit: %s", msg);
+	}
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("POSIX", -1);
 	    errorStrings[1] = Tcl_NewStringObj(Tcl_ErrnoId(), -1);
@@ -239,14 +247,20 @@ WaitProcessStatus(
 	}
 	return TCL_PROCESS_ERROR;
     } else if (WIFEXITED(waitStatus)) {
-	if (codePtr) *codePtr = WEXITSTATUS(waitStatus);
+	if (codePtr) {
+	    *codePtr = WEXITSTATUS(waitStatus);
+	}
 	if (!WEXITSTATUS(waitStatus)) {
 	    /*
 	     * Normal exit.
 	     */
 
-	    if (msgObjPtr) *msgObjPtr = NULL;
-	    if (errorObjPtr) *errorObjPtr = NULL;
+	    if (msgObjPtr) {
+		*msgObjPtr = NULL;
+	    }
+	    if (errorObjPtr) {
+		*errorObjPtr = NULL;
+	    }
 	} else {
 	    /*
 	     * CHILDSTATUS pid code
@@ -254,8 +268,10 @@ WaitProcessStatus(
 	     * Child exited with a non-zero exit status.
 	     */
 
-	    if (msgObjPtr) *msgObjPtr = Tcl_NewStringObj(
-		    "child process exited abnormally", -1);
+	    if (msgObjPtr) {
+		*msgObjPtr = Tcl_NewStringObj(
+			"child process exited abnormally", -1);
+	    }
 	    if (errorObjPtr) {
 		errorStrings[0] = Tcl_NewStringObj("CHILDSTATUS", -1);
 		TclNewIntObj(errorStrings[1], resolvedPid);
@@ -272,9 +288,12 @@ WaitProcessStatus(
 	 */
 
 	msg = Tcl_SignalMsg(WTERMSIG(waitStatus));
-	if (codePtr) *codePtr = WTERMSIG(waitStatus);
-	if (msgObjPtr) *msgObjPtr = Tcl_ObjPrintf(
-		"child killed: %s", msg);
+	if (codePtr) {
+	    *codePtr = WTERMSIG(waitStatus);
+	}
+	if (msgObjPtr) {
+	    *msgObjPtr = Tcl_ObjPrintf("child killed: %s", msg);
+	}
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("CHILDKILLED", -1);
 	    TclNewIntObj(errorStrings[1], resolvedPid);
@@ -291,9 +310,12 @@ WaitProcessStatus(
 	 */
 
 	msg = Tcl_SignalMsg(WSTOPSIG(waitStatus));
-	if (codePtr) *codePtr = WSTOPSIG(waitStatus);
-	if (msgObjPtr) *msgObjPtr = Tcl_ObjPrintf(
-		"child suspended: %s", msg);
+	if (codePtr) {
+	    *codePtr = WSTOPSIG(waitStatus);
+	}
+	if (msgObjPtr) {
+	    *msgObjPtr = Tcl_ObjPrintf("child suspended: %s", msg);
+	}
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("CHILDSUSP", -1);
 	    TclNewIntObj(errorStrings[1], resolvedPid);
@@ -309,9 +331,13 @@ WaitProcessStatus(
 	 * Child wait status didn't make sense.
 	 */
 
-	if (codePtr) *codePtr = waitStatus;
-	if (msgObjPtr) *msgObjPtr = Tcl_NewStringObj(
-		"child wait status didn't make sense\n", -1);
+	if (codePtr) {
+	    *codePtr = waitStatus;
+	}
+	if (msgObjPtr) {
+	    *msgObjPtr = Tcl_NewStringObj(
+		    "child wait status didn't make sense\n", -1);
+	}
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("TCL", -1);
 	    errorStrings[1] = Tcl_NewStringObj("OPERATION", -1);
@@ -323,7 +349,6 @@ WaitProcessStatus(
 	return TCL_PROCESS_UNKNOWN_STATUS;
     }
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -513,7 +538,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
+		Tcl_DictObjPut(NULL, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -523,7 +548,7 @@ ProcessStatusObjCmd(
 	 * Only return statuses of provided processes.
 	 */
 
-	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -563,7 +588,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
+		Tcl_DictObjPut(NULL, dict, Tcl_NewIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -636,7 +661,7 @@ ProcessPurgeObjCmd(
 	 * Purge only provided processes.
 	 */
 
-	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -814,7 +839,9 @@ TclProcessCreated(
 	info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	entry2 = Tcl_FindHashEntry(&infoTablePerResolvedPid,
 		INT2PTR(resolvedPid));
-	if (entry2) Tcl_DeleteHashEntry(entry2);
+	if (entry2) {
+	    Tcl_DeleteHashEntry(entry2);
+	}
 	FreeProcessInfo(info);
     }
 
@@ -884,9 +911,13 @@ TclProcessWait(
 
 	result = WaitProcessStatus(pid, TclpGetPid(pid), options, codePtr,
 		msgObjPtr, errorObjPtr);
-	if (msgObjPtr && *msgObjPtr) Tcl_IncrRefCount(*msgObjPtr);
-	if (errorObjPtr && *errorObjPtr) Tcl_IncrRefCount(*errorObjPtr);
-    Tcl_MutexUnlock(&infoTablesMutex);
+	if (msgObjPtr && *msgObjPtr) {
+	    Tcl_IncrRefCount(*msgObjPtr);
+	}
+	if (errorObjPtr && *errorObjPtr) {
+	    Tcl_IncrRefCount(*errorObjPtr);
+	}
+	Tcl_MutexUnlock(&infoTablesMutex);
 	return result;
     }
 
@@ -896,8 +927,8 @@ TclProcessWait(
 	 * Process has completed but TclProcessWait has already been called,
 	 * so report no change.
 	 */
-    Tcl_MutexUnlock(&infoTablesMutex);
 
+	Tcl_MutexUnlock(&infoTablesMutex);
 	return TCL_PROCESS_UNCHANGED;
     }
 
@@ -906,8 +937,8 @@ TclProcessWait(
 	/*
 	 * No change, stop there.
 	 */
-    Tcl_MutexUnlock(&infoTablesMutex);
 
+	Tcl_MutexUnlock(&infoTablesMutex);
 	return TCL_PROCESS_UNCHANGED;
     }
 
@@ -916,11 +947,21 @@ TclProcessWait(
      */
 
     result = info->status;
-    if (codePtr) *codePtr = info->code;
-    if (msgObjPtr) *msgObjPtr = info->msg;
-    if (errorObjPtr) *errorObjPtr = info->error;
-    if (msgObjPtr && *msgObjPtr) Tcl_IncrRefCount(*msgObjPtr);
-    if (errorObjPtr && *errorObjPtr) Tcl_IncrRefCount(*errorObjPtr);
+    if (codePtr) {
+	*codePtr = info->code;
+    }
+    if (msgObjPtr) {
+	*msgObjPtr = info->msg;
+    }
+    if (errorObjPtr) {
+	*errorObjPtr = info->error;
+    }
+    if (msgObjPtr && *msgObjPtr) {
+	Tcl_IncrRefCount(*msgObjPtr);
+    }
+    if (errorObjPtr && *errorObjPtr) {
+	Tcl_IncrRefCount(*errorObjPtr);
+    }
 
     if (autopurge) {
 	/*
@@ -943,3 +984,11 @@ TclProcessWait(
     Tcl_MutexUnlock(&infoTablesMutex);
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

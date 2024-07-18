@@ -204,7 +204,7 @@ TclMacOSXGetFileAttribute(
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
 }
@@ -336,7 +336,7 @@ TclMacOSXSetFileAttribute(
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
 		return TCL_ERROR;
 	    }
 
@@ -377,7 +377,7 @@ TclMacOSXSetFileAttribute(
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
     return TCL_ERROR;
 #endif
 }
@@ -642,14 +642,14 @@ SetOSTypeFromAny(
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
     Tcl_Size length;
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    string = TclGetStringFromObj(objPtr, &length);
     Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected Macintosh OS type but got \"%s\": ", string));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", (char *)NULL);
 	}
 	result = TCL_ERROR;
     } else {

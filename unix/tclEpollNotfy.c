@@ -207,10 +207,10 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = (struct PlatformEventData *)
+	newPedPtr = (struct PlatformEventData *)
 		Tcl_Alloc(sizeof(struct PlatformEventData));
-        newPedPtr->filePtr = filePtr;
-        newPedPtr->tsdPtr = tsdPtr;
+	newPedPtr->filePtr = filePtr;
+	newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
     }
     newEvent.data.ptr = filePtr->pedPtr;
@@ -263,7 +263,7 @@ PlatformEventsControl(
  *	None.
  *
  * Side effects:
- * 	While tsdPtr->notifierMutex is held:
+ *	While tsdPtr->notifierMutex is held:
  *	- The per-thread eventfd(2) is closed, if non-zero, and set to -1.
  *	- The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
  *	- The per-thread epoll_event structs are freed, if any, and set to 0.
@@ -367,7 +367,7 @@ PlatformEventsInit(void)
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
-        tsdPtr->maxReadyEvents = 512;
+	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
@@ -731,7 +731,7 @@ TclpWaitForEvent(
 	    i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
 	    if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
 		Tcl_Panic("%s: read from %p->triggerEventFd: %s",
-			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+			"Tcl_WaitForEvent", tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}
@@ -743,7 +743,7 @@ TclpWaitForEvent(
 		    sizeof(triggerPipeVal));
 	    if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
 		Tcl_Panic("%s: read from %p->triggerPipe[0]: %s",
-			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+			"Tcl_WaitForEvent", tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}
