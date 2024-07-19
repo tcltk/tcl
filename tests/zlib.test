@@ -1153,6 +1153,16 @@ test zlib-14.1 {Bug 9ee9f4d7be: compression header added to source channel} -set
     chan close $dst
 } -result {5 5 ->5 5 5 ->5 5 5 ->5}
 
+test zlib-15.1 {Bug cfdf80a2efc6 - negative checksums} -setup {
+    set compressor [zlib stream gzip -header {comment "A zlib demo"}]
+    $compressor put abcd
+    $compressor finalize
+} -body {
+    $compressor checksum
+} -cleanup {
+    $compressor close
+} -result 3984772369
+
 
 ::tcltest::cleanupTests
 return

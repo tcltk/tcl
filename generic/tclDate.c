@@ -69,6 +69,7 @@
 #define yylex           TclDatelex
 #define yyerror         TclDateerror
 #define yydebug         TclDatedebug
+#define yynerrs         TclDatenerrs
 
 /* First part of user prologue.  */
 
@@ -1212,6 +1213,9 @@ static YYLTYPE yyloc_default
 ;
 YYLTYPE yylloc = yyloc_default;
 
+    /* Number of syntax errors so far.  */
+    int yynerrs = 0;
+
     yy_state_fast_t yystate = 0;
     /* Number of tokens to shift before error messages enabled.  */
     int yyerrstatus = 0;
@@ -1952,6 +1956,7 @@ yyerrlab:
   /* If not already recovering from an error, report this error.  */
   if (!yyerrstatus)
     {
+      ++yynerrs;
       yyerror (&yylloc, info, YY_("syntax error"));
     }
 
@@ -1988,6 +1993,7 @@ yyerrorlab:
      label yyerrorlab therefore never appears in user code.  */
   if (0)
     YYERROR;
+  ++yynerrs;
 
   /* Do not reclaim the symbols of the rule whose action triggered
      this YYERROR.  */
@@ -2120,7 +2126,7 @@ static const TABLE MonthDayTable[] = {
     { "october",	tMONTH, 10 },
     { "november",	tMONTH, 11 },
     { "december",	tMONTH, 12 },
-    { "sunday",		tDAY, 0 },
+    { "sunday",		tDAY, 7 },
     { "monday",		tDAY, 1 },
     { "tuesday",	tDAY, 2 },
     { "tues",		tDAY, 2 },
@@ -2338,24 +2344,12 @@ ToSeconds(
     int Seconds,
     MERIDIAN Meridian)
 {
-    if (Minutes < 0 || Minutes > 59 || Seconds < 0 || Seconds > 59) {
-	return -1;
-    }
     switch (Meridian) {
     case MER24:
-	if (Hours < 0 || Hours > 23) {
-	    return -1;
-	}
 	return (Hours * 60 + Minutes) * 60 + Seconds;
     case MERam:
-	if (Hours < 1 || Hours > 12) {
-	    return -1;
-	}
 	return ((Hours % 12) * 60 + Minutes) * 60 + Seconds;
     case MERpm:
-	if (Hours < 1 || Hours > 12) {
-	    return -1;
-	}
 	return (((Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
     }
     return -1;			/* Should never be reached */

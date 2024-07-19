@@ -37154,20 +37154,44 @@ test clock-46.6 {freescan: regression test - bad time} -constraints valid_off \
 	# 13:00 am/pm are invalid input strings...
 	list [clock scan "13:00 am" -base 0 -gmt 1] \
 	     [clock scan "13:00 pm" -base 0 -gmt 1]
-    } -result {-1 -1}
+    } -result {3600 46800}
 
-proc _invalid_test {args} {
+if {!$valid_mode} {
+  test clock-46.7a {regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {valid_off} {
+    list [clock scan 23:59:59 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S]
+  } {86399 86400 172800}
+  test clock-46.7b {freescan: regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {valid_off} {
+    list [clock scan 23:59:59 -base 0 -gmt 1] \
+	 [clock scan 24:00:00 -base 0 -gmt 1] \
+	 [clock scan 48:00:00 -base 0 -gmt 1]
+  } {86399 86400 172800}
+} else {
+  test clock-46.8a {regression test - invalid time (hour)} {
+    list [catch {clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
+	 [catch {clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg
+  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  test clock-46.8b {freescan: regression test - invalid time (hour)} {
+    list [catch {clock scan 24:00:00 -base 0 -gmt 1} msg] $msg \
+	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
+  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+}
+
+proc _invalid_test {testtz scnargs args} {
     global valid_mode
     # ensure validation works TZ independently, since the conversion
     # of local time to UTC may adjust date/time tokens, depending on TZ:
     set res {}
-    foreach tz {:GMT :CET {} :Europe/Berlin :localtime} {
+    if {$testtz eq ""} {
+	set testtz {:GMT :CET {} :Europe/Berlin :localtime}
+    }
+    if {!$valid_mode} { # globally -valid 0, so add it explicitely
+	lappend scnargs -valid 1
+    }
+    foreach tz $testtz {
 	foreach {v} $args {
-	    if {$valid_mode} { # globally -valid 1
-		lappend res [catch {clock scan $v -timezone $tz} msg] $msg
-	    } else {
-		lappend res [catch {clock scan $v -valid 1 -timezone $tz} msg] $msg
-	    }
+	    lappend res [catch {clock scan $v {*}$scnargs -timezone $tz} msg] $msg
 	}
     }
     set res
@@ -37177,46 +37201,78 @@ foreach {idx relstr} {"" "" "+rel" "+ 15 month + 40 days + 30 hours + 80 minutes
 test clock-46.10$idx {freescan: validation rules: invalid time} \
     -body {
 	# 13:00 am/pm are invalid input strings...
-	_invalid_test "13:00 am$relstr" "13:00 pm$relstr"
+	_invalid_test {} {} "13:00 am$relstr" "13:00 pm$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid time (hour)}]
 test clock-46.11$idx {freescan: validation rules: invalid time} \
     -body {
 	# invalid minutes in input strings...
-	_invalid_test "23:70$relstr" "11:80 pm$relstr"
+	_invalid_test {} {} "23:70$relstr" "11:80 pm$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid time (minutes)}]
 test clock-46.12$idx {freescan: validation rules: invalid time} \
     -body {
 	# invalid seconds in input strings...
-	_invalid_test "23:00:70$relstr" "11:00:80 pm$relstr"
+	_invalid_test {} {} "23:00:70$relstr" "11:00:80 pm$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid time}]
 test clock-46.13$idx {freescan: validation rules: invalid day} \
     -body {
-	_invalid_test "29 Feb 2017$relstr" "30 Feb 2016$relstr"
+	_invalid_test {} {} "29 Feb 2017$relstr" "30 Feb 2016$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.14$idx {freescan: validation rules: invalid day} \
     -body {
-	_invalid_test "0 Feb 2017$relstr" "00 Feb 2017$relstr"
+	_invalid_test {} {} "0 Feb 2017$relstr" "00 Feb 2017$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid day}]
 test clock-46.15$idx {freescan: validation rules: invalid month} \
     -body {
-	_invalid_test "13/13/2017$relstr" "00/00/2017$relstr"
+	_invalid_test {} {} "13/13/2017$relstr" "00/00/2017$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid month}]
 test clock-46.16$idx {freescan: validation rules: invalid day of week} \
     -body {
-	_invalid_test "Sat Jan 02 00:00:00 1970$relstr" "Thu Jan 04 00:00:00 1970$relstr"
+	_invalid_test {} {} "Sat Jan 02 00:00:00 1970$relstr" "Thu Jan 04 00:00:00 1970$relstr"
     } -result [lrepeat 10 1 {unable to convert input string: invalid day of week}]
 test clock-46.17$idx {scan: validation rules: invalid year} -setup {
 	set orgcfg [list -min-year [::tcl::unsupported::clock::configure -min-year] -max-year [::tcl::unsupported::clock::configure -max-year] \
 	     -year-century [::tcl::unsupported::clock::configure -year-century] -century-switch [::tcl::unsupported::clock::configure -century-switch]]
 	::tcl::unsupported::clock::configure -min-year 2000 -max-year 2100 -year-century 2000 -century-switch 38
     } -body {
-	_invalid_test "70-01-01$relstr" "1870-01-01$relstr" "9570-01-01$relstr"
+	_invalid_test {} {} "70-01-01$relstr" "1870-01-01$relstr" "9570-01-01$relstr"
     } -result [lrepeat 15 1 {unable to convert input string: invalid year}] -cleanup {
 	::tcl::unsupported::clock::configure {*}$orgcfg
 	unset -nocomplain orgcfg
     }
 
 }; # foreach
+test clock-46.16-pos-fs {freescan: validation rules: valid day of week (must work for all weekdays)} \
+    -body {
+	_invalid_test {:GMT -12:00 +12:00} {} {Sat, 01 Jan 2000 00:00:00} {Sun, 02 Jan 2000 00:00:00} {Mon, 03 Jan 2000 00:00:00} {Tue, 04 Jan 2000 00:00:00} {Wed, 05 Jan 2000 00:00:00} {Thu, 06 Jan 2000 00:00:00} {Fri, 07 Jan 2000 00:00:00}
+    } -result [list \
+	0 946684800 0 946771200 0 946857600 0 946944000 0 947030400 0 947116800 0 947203200 \
+	0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 0 947246400 \
+	0 946641600 0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 \
+    ]
+test clock-46.16-pos-fmt1 {scan with format: validation rules: valid day of week (must work for all weekdays)} \
+    -body {
+	_invalid_test {:GMT -12:00 +12:00} {-format "%a, %d %b %Y %H:%M:%S"} {Sat, 01 Jan 2000 00:00:00} {Sun, 02 Jan 2000 00:00:00} {Mon, 03 Jan 2000 00:00:00} {Tue, 04 Jan 2000 00:00:00} {Wed, 05 Jan 2000 00:00:00} {Thu, 06 Jan 2000 00:00:00} {Fri, 07 Jan 2000 00:00:00}
+    } -result [list \
+	0 946684800 0 946771200 0 946857600 0 946944000 0 947030400 0 947116800 0 947203200 \
+	0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 0 947246400 \
+	0 946641600 0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 \
+    ]
+test clock-46.16-pos-fmt2 {scan with format: validation rules: valid day of week (must work for all weekdays)} \
+    -body {
+	_invalid_test {:GMT -12:00 +12:00} {-format "%u, %d %b %Y %H:%M:%S"} {6, 01 Jan 2000 00:00:00} {7, 02 Jan 2000 00:00:00} {1, 03 Jan 2000 00:00:00} {2, 04 Jan 2000 00:00:00} {3, 05 Jan 2000 00:00:00} {4, 06 Jan 2000 00:00:00} {5, 07 Jan 2000 00:00:00}
+    } -result [list \
+	0 946684800 0 946771200 0 946857600 0 946944000 0 947030400 0 947116800 0 947203200 \
+	0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 0 947246400 \
+	0 946641600 0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 \
+    ]
+test clock-46.16-pos-fmt2 {scan with format: validation rules: valid day of week (must work for all weekdays)} \
+    -body {
+	_invalid_test {:GMT -12:00 +12:00} {-format "%w, %d %b %Y %H:%M:%S"} {6, 01 Jan 2000 00:00:00} {0, 02 Jan 2000 00:00:00} {1, 03 Jan 2000 00:00:00} {2, 04 Jan 2000 00:00:00} {3, 05 Jan 2000 00:00:00} {4, 06 Jan 2000 00:00:00} {5, 07 Jan 2000 00:00:00}
+    } -result [list \
+	0 946684800 0 946771200 0 946857600 0 946944000 0 947030400 0 947116800 0 947203200 \
+	0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 0 947246400 \
+	0 946641600 0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 \
+    ]
 rename _invalid_test {}
 unset -nocomplain idx relstr
 

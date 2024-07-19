@@ -2701,7 +2701,7 @@ ZlibStreamCmd(
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-		Tcl_ZlibStreamChecksum(zstream)));
+		(uint32_t) Tcl_ZlibStreamChecksum(zstream)));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {

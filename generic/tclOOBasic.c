@@ -444,7 +444,8 @@ TclOO_Object_Eval(
      */
 
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    Tcl_GetObjectNamespace(object), 0);
+	    Tcl_GetObjectNamespace(object), FRAME_IS_METHOD);
+    framePtr->clientData = context;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
@@ -828,6 +829,11 @@ TclOO_Object_VarName(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (char *)NULL);
 	return TCL_ERROR;
     }
+
+    /*
+     * The variable reference must not disappear too soon. [Bug 74b6110204]
+     */
+    TclSetVarNamespaceVar(varPtr);
 
     /*
      * Now that we've pinned down what variable we're really talking about
