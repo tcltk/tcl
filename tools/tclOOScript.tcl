@@ -483,13 +483,39 @@
 	# oo::configuresupport::PropertyImpl --
 	#
 	#	The implementation of the [property] configuration command.
-	#	This assumes there are two stack frames above it to care about,
-	#	first the hull [property] command (in the correct context for
-	#	what is being confgured) and then the context scope of
-	#	[oo::define] or [oo::objdefine].
+	#	This assumes there is a context scope of [oo::define] or
+	#	[oo::objdefine] as the stack frame that is up one level.
 	#
 	# TODO:
 	#	Convert to C code.
+	#
+	# Arguments:
+	#   stdInstaller
+	#	How to install a property implementation of the right type.
+	#	Must be evaluated in the definition scope.
+	#   readslot
+	#	Slot of readable properties.
+	#	Must be evaluated in the definition scope.
+	#   writeslot
+	#	Slot of writable properties.
+	#	Must be evaluated in the definition scope.
+	#   args
+	#	Arguments supplied by user. See user documentation.
+	#
+	# Results:
+	#	None
+	#
+	# Errors:
+	#   TCL WRONGARGS
+	#	if an argument is missing.
+	#   TCL LOOKUP INDEX
+	#	if an option or property kind can't be parsed.
+	#   TCL OO PROPERTY_FORMAT
+	#	if an property name is illegal.
+	#
+	# Side effects:
+	#	Adjusts properties. Declares non-exported methods with special
+	#	names.
 	#
 	# ------------------------------------------------------------------
 
