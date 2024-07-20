@@ -417,7 +417,7 @@ static inline void
 ListRepFreeUnreferenced(const ListRep *repPtr)
 {
     if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
-        /* T:listrep-1.5.1 */
+	/* T:listrep-1.5.1 */
 	ListRepUnsharedFreeUnreferenced(repPtr);
     }
 }
@@ -443,7 +443,7 @@ ObjArrayIncrRefs(
     Tcl_Size startIdx,     /* Starting index of subarray within objv */
     Tcl_Size count)        /* Number of elements in the subarray */
 {
-    Tcl_Obj * const *end;
+    Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
     LIST_COUNT_ASSERT(count);
     objv += startIdx;
@@ -1082,7 +1082,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
     count = spanPtr->spanStart - storePtr->firstUsed;
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
-        /* T:listrep-1.5.1,6.{1:8} */
+	/* T:listrep-1.5.1,6.{1:8} */
 	ObjArrayDecrRefs(storePtr->slots, storePtr->firstUsed, count);
 	storePtr->firstUsed = spanPtr->spanStart;
 	LIST_ASSERT(storePtr->numUsed >= count);
@@ -1094,7 +1094,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
 	  - (spanPtr->spanStart + spanPtr->spanLength);
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
-        /* T:listrep-6.{1:8} */
+	/* T:listrep-6.{1:8} */
 	ObjArrayDecrRefs(
 	    storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
 	LIST_ASSERT(storePtr->numUsed >= count);
@@ -1432,7 +1432,7 @@ ListRepRange(
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
-        /* T:listrep-1.{4,5,8,9},2.{4:7},3.{15:18},4.{7,8} */
+	/* T:listrep-1.{4,5,8,9},2.{4:7},3.{15:18},4.{7,8} */
 	ListRepFreeUnreferenced(srcRepPtr);
     } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
@@ -1469,7 +1469,7 @@ ListRepRange(
      */
     if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
-        /* T:listrep-1.10.1,2.8.1 */
+	/* T:listrep-1.10.1,2.8.1 */
 	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	       && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
@@ -1479,7 +1479,7 @@ ListRepRange(
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
 	/* Assert: Because numSrcElems > rangeEnd earlier */
 	if (numAfterRangeEnd != 0) {
-            /* T:listrep-1.{8,9} */
+	    /* T:listrep-1.{8,9} */
 	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
 	}
 	/* srcRepPtr->storePtr->firstUsed,numAllocated unchanged */
@@ -1495,29 +1495,29 @@ ListRepRange(
 	if (!preserveSrcRep && srcRepPtr->spanPtr
 	    && srcRepPtr->spanPtr->refCount <= 1) {
 	    /* If span is not shared reuse it */
-            /* T:listrep-2.7.3,3.{16,18} */
+	    /* T:listrep-2.7.3,3.{16,18} */
 	    srcRepPtr->spanPtr->spanStart = spanStart;
 	    srcRepPtr->spanPtr->spanLength = rangeLen;
 	    *rangeRepPtr = *srcRepPtr;
 	} else {
 	    /* Span not present or is shared. */
-            /* T:listrep-1.5,2.{5,7},4.{7,8} */
+	    /* T:listrep-1.5,2.{5,7},4.{7,8} */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
 	}
-        /*
-         * We have potentially created a new internal representation that
-         * references the same storage as srcRep but not yet incremented its
-         * reference count. So do NOT call freezombies if preserveSrcRep
-         * is mandated.
-         */
+	/*
+	 * We have potentially created a new internal representation that
+	 * references the same storage as srcRep but not yet incremented its
+	 * reference count. So do NOT call freezombies if preserveSrcRep
+	 * is mandated.
+	 */
 	if (!preserveSrcRep) {
-            /* T:listrep-1.{5.1,5.2,5.4},2.{5,7},3.{16,18},4.{7,8} */
+	    /* T:listrep-1.{5.1,5.2,5.4},2.{5,7},3.{16,18},4.{7,8} */
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
 	/* Option 3 - span or modification in place not allowed/desired */
-        /* T:listrep-2.{4,6} */
+	/* T:listrep-2.{4,6} */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	/* TODO - allocate extra space? */
 	ListRepInit(rangeLen,
@@ -1544,14 +1544,14 @@ ListRepRange(
 
 	/* Free leading elements outside range */
 	if (rangeStart != 0) {
-            /* T:listrep-1.4,3.15 */
+	    /* T:listrep-1.4,3.15 */
 	    ObjArrayDecrRefs(srcElems, 0, rangeStart);
 	}
 	/* Ditto for trailing */
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
 	/* Assert: Because numSrcElems > rangeEnd earlier */
 	if (numAfterRangeEnd != 0) {
-            /* T:listrep-3.17 */
+	    /* T:listrep-3.17 */
 	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
 	}
 	memmove(&srcRepPtr->storePtr->slots[0],
@@ -1563,7 +1563,7 @@ ListRepRange(
 	srcRepPtr->storePtr->flags = 0;
 	if (srcRepPtr->spanPtr) {
 	    /* In case the source has a span, update it for consistency */
-            /* T:listrep-3.{15,17} */
+	    /* T:listrep-3.{15,17} */
 	    srcRepPtr->spanPtr->spanStart = srcRepPtr->storePtr->firstUsed;
 	    srcRepPtr->spanPtr->spanLength = srcRepPtr->storePtr->numUsed;
 	}
@@ -1644,7 +1644,7 @@ ListObjRange(
     ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
 
     if (isShared) {
-        /* T:listrep-1.10.1,2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
+	/* T:listrep-1.10.1,2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 	TclNewObj(listObj);
     } /* T:listrep-1.{4.3,5.1,5.2} */
     ListObjReplaceRepAndInvalidate(listObj, &resultRep);
@@ -1904,15 +1904,15 @@ ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 		    >= elemCount); /* Total free */
 	if (numTailFree < elemCount) {
 	    /* Not enough room at back. Move some to front */
-            /* T:listrep-3.5 */
+	    /* T:listrep-3.5 */
 	    Tcl_Size shiftCount = elemCount - numTailFree;
 	    /* Divide remaining space between front and back */
 	    shiftCount += (listRep.storePtr->numAllocated - finalLen) / 2;
 	    LIST_ASSERT(shiftCount <= listRep.storePtr->firstUsed);
 	    if (shiftCount) {
-                /* T:listrep-3.5 */
+		/* T:listrep-3.5 */
 		ListRepUnsharedShiftDown(&listRep, shiftCount);
-            }
+	    }
 	} /* else T:listrep-3.{4,6} */
 	ObjArrayCopy(&listRep.storePtr->slots[ListRepStart(&listRep)
 					      + ListRepLength(&listRep)],
@@ -1920,7 +1920,7 @@ ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 		     elemObjv);
 	listRep.storePtr->numUsed = finalLen;
 	if (listRep.spanPtr) {
-            /* T:listrep-3.{4,5,6} */
+	    /* T:listrep-3.{4,5,6} */
 	    LIST_ASSERT(listRep.spanPtr->spanStart
 			== listRep.storePtr->firstUsed);
 	    listRep.spanPtr->spanLength = finalLen;
@@ -1950,13 +1950,13 @@ ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
     if (toLen) {
-        /* T:listrep-2.{2,9},4.5 */
+	/* T:listrep-2.{2,9},4.5 */
 	ObjArrayCopy(ListRepSlotPtr(&listRep, 0), toLen, toObjv);
     }
     ObjArrayCopy(ListRepSlotPtr(&listRep, toLen), elemCount, elemObjv);
     listRep.storePtr->numUsed = finalLen;
     if (listRep.spanPtr) {
-        /* T:listrep-4.5 */
+	/* T:listrep-4.5 */
 	LIST_ASSERT(listRep.spanPtr->spanStart == listRep.storePtr->firstUsed);
 	listRep.spanPtr->spanLength = finalLen;
     }
@@ -2242,7 +2242,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
-             || origListLen < first + numToDelete) {
+	     || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 
@@ -2284,23 +2284,23 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     if (numToInsert == 0) {
 	if (numToDelete == 0) {
 	    /*
-             * Should force canonical even for no-op. Remember Tcl_Obj unshared
-             * so OK to invalidate string rep
-             */
-            /* T:listrep-1.10,2.8 */
+	     * Should force canonical even for no-op. Remember Tcl_Obj unshared
+	     * so OK to invalidate string rep
+	     */
+	    /* T:listrep-1.10,2.8 */
 	    TclInvalidateStringRep(listObj);
 	    return TCL_OK;
 	}
 	if (first == 0) {
 	    /* Delete from front, so return tail. */
-            /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
+	    /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
 	    ListRep tailRep;
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
-            /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
+	    /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
@@ -2318,7 +2318,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     if (numToDelete == 0) {
 	/* Case (2a) - Append to list. */
 	if (first == origListLen) {
-            /* T:listrep-1.11,2.9,3.{5,6},2.2.1 */
+	    /* T:listrep-1.11,2.9,3.{5,6},2.2.1 */
 	    return TclListObjAppendElements(
 		interp, listObj, numToInsert, insertObjs);
 	}
@@ -2345,7 +2345,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	    newLen = listRep.spanPtr->spanLength + numToInsert;
 	    if (listRep.spanPtr && listRep.spanPtr->refCount <= 1) {
 		/* An unshared span record, re-use it */
-                /* T:listrep-3.1 */
+		/* T:listrep-3.1 */
 		listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
 		listRep.spanPtr->spanLength = newLen;
 	    } else {
@@ -2353,7 +2353,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 		if (listRep.storePtr->firstUsed == 0) {
 		    listRep.spanPtr = NULL;
 		} else {
-                    /* T:listrep-4.3 */
+		    /* T:listrep-4.3 */
 		    listRep.spanPtr =
 			ListSpanNew(listRep.storePtr->firstUsed, newLen);
 		}
@@ -2418,24 +2418,24 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
-            /* T:listrep-2.{2,3,13:18},4.{6,9,13:18} */
+	    /* T:listrep-2.{2,3,13:18},4.{6,9,13:18} */
 	    ObjArrayCopy(toObjs, leadSegmentLen, listObjs);
 	}
 	if (numToInsert > 0) {
-            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,10:18} */
+	    /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,10:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen],
 			 numToInsert,
 			 insertObjs);
 	}
 	if (tailSegmentLen > 0) {
-            /* T:listrep-2.{1,2,3,10:15},4.{1,2,4,6,9:12,16:18} */
+	    /* T:listrep-2.{1,2,3,10:15},4.{1,2,4,6,9:12,16:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen + numToInsert],
 			 tailSegmentLen,
 			 &listObjs[leadSegmentLen+numToDelete]);
 	}
 	newRep.storePtr->numUsed = origListLen + lenChange;
 	if (newRep.spanPtr) {
-            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,9:18} */
+	    /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,9:18} */
 	    newRep.spanPtr->spanLength = newRep.storePtr->numUsed;
 	}
 	LISTREP_CHECK(&newRep);
@@ -2472,7 +2472,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	ObjArrayIncrRefs(insertObjs, 0, numToInsert);
     }
     if (numToDelete) {
-        /* T:listrep-1.{6,7,12:21},3.{19:41} */
+	/* T:listrep-1.{6,7,12:21},3.{19:41} */
 	ObjArrayDecrRefs(listObjs, first, numToDelete);
     }
 
@@ -2503,12 +2503,12 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	 */
 	if (leadSegmentLen > tailSegmentLen) {
 	    /* Tail segment smaller. Insert after lead, move tail down */
-            /* T:listrep-1.{7,17,20},3.{21,2229,35} */
+	    /* T:listrep-1.{7,17,20},3.{21,2229,35} */
 	    leadShift = 0;
 	    tailShift = lenChange;
 	} else {
 	    /* Lead segment smaller. Insert before tail, move lead up */
-            /* T:listrep-1.{6,13,16},3.{19,20,24,34} */
+	    /* T:listrep-1.{6,13,16},3.{19,20,24,34} */
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	}
@@ -2529,7 +2529,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	if (leadSpace >= lenChange
 	    && (leadSegmentLen < tailSegmentLen || tailSpace < lenChange)) {
 	    /* Move only lead to the front to make more room */
-            /* T:listrep-3.25,36,38, */
+	    /* T:listrep-3.25,36,38, */
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	    /*
@@ -2550,7 +2550,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	    LIST_ASSERT(leadShift >= 0 || leadSpace >= -leadShift);
 	} else if (tailSpace >= lenChange) {
 	    /* Move only tail segment to the back to make more room. */
-            /* T:listrep-3.{8,10,11,14,26,27,30,32,37,39,41} */
+	    /* T:listrep-3.{8,10,11,14,26,27,30,32,37,39,41} */
 	    leadShift = 0;
 	    tailShift = lenChange;
 	    /*
@@ -2571,7 +2571,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 	     * Both lead and tail need to be shifted to make room.
 	     * Divide remaining free space equally between front and back.
 	     */
-            /* T:listrep-3.{9,13,31,40} */
+	    /* T:listrep-3.{9,13,31,40} */
 	    LIST_ASSERT(leadSpace < lenChange);
 	    LIST_ASSERT(tailSpace < lenChange);
 
@@ -2604,27 +2604,27 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     if (leadShift > 0) {
 	/* Will happen when we have to make room at bottom */
 	if (tailShift != 0 && tailSegmentLen != 0) {
-            /* T:listrep-1.{1,3,14,18},3.{2,3,26,27} */
+	    /* T:listrep-1.{1,3,14,18},3.{2,3,26,27} */
 	    Tcl_Size tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
 		    tailSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (leadSegmentLen != 0) {
-            /* T:listrep-1.{3,6,16,18,21},3.{19,20,34} */
+	    /* T:listrep-1.{3,6,16,18,21},3.{19,20,34} */
 	    memmove(&listObjs[leadShift],
 		    &listObjs[0],
 		    leadSegmentLen * sizeof(Tcl_Obj *));
 	}
     } else {
 	if (leadShift != 0 && leadSegmentLen != 0) {
-            /* T:listrep-3.{7,9,12,13,31,36,38,40} */
+	    /* T:listrep-3.{7,9,12,13,31,36,38,40} */
 	    memmove(&listObjs[leadShift],
 		    &listObjs[0],
 		    leadSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (tailShift != 0 && tailSegmentLen != 0) {
-            /* T:listrep-1.{7,17},3.{8:11,13,14,21,22,35,37,39:41} */
+	    /* T:listrep-1.{7,17},3.{8:11,13,14,21,22,35,37,39:41} */
 	    Tcl_Size tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
@@ -2633,7 +2633,7 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     }
     if (numToInsert) {
 	/* Do NOT use ObjArrayCopy here since we have already incr'ed ref counts */
-        /* T:listrep-1.{1,3,12:21},3.{2,3,7:14,23:41} */
+	/* T:listrep-1.{1,3,12:21},3.{2,3,7:14,23:41} */
 	memmove(&listObjs[leadSegmentLen + leadShift],
 		insertObjs,
 		numToInsert * sizeof(Tcl_Obj *));
@@ -2645,16 +2645,16 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 
     if (listRep.spanPtr && listRep.spanPtr->refCount <= 1) {
 	/* An unshared span record, re-use it, even if not required */
-        /* T:listrep-3.{2,3,7:14},3.{19:41} */
+	/* T:listrep-3.{2,3,7:14},3.{19:41} */
 	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
 	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
     } else {
 	/* Need a new span record */
 	if (listRep.storePtr->firstUsed == 0) {
-            /* T:listrep-1.{7,12,15,17,19,20} */
+	    /* T:listrep-1.{7,12,15,17,19,20} */
 	    listRep.spanPtr = NULL;
 	} else {
-            /* T:listrep-1.{1,3,6.1,13,14,16,18,21} */
+	    /* T:listrep-1.{1,3,6.1,13,14,16,18,21} */
 	    listRep.spanPtr = ListSpanNew(listRep.storePtr->firstUsed,
 					  listRep.storePtr->numUsed);
 	}
@@ -3029,7 +3029,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 
     /* Allocate if static array for pending invalidations is too small */
     if (indexCount
-        > (int) (sizeof(pendingInvalidates) / sizeof(pendingInvalidates[0]))) {
+	> (int) (sizeof(pendingInvalidates) / sizeof(pendingInvalidates[0]))) {
 	pendingInvalidatesPtr =
 	    (Tcl_Obj **) Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
     }
@@ -3216,13 +3216,13 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
     len = -1;
     TclListObjLengthM(NULL, subListObj, &len);
     if (valueObj == NULL) {
-        /* T:listrep-1.{4.2,5.4,6.1,7.1,8.3},2.{4,5}.4 */
+	/* T:listrep-1.{4.2,5.4,6.1,7.1,8.3},2.{4,5}.4 */
 	Tcl_ListObjReplace(NULL, subListObj, index, 1, 0, NULL);
     } else if (index == len) {
-        /* T:listrep-1.2.1,2.{2.3,9.3},3.{4,5,6}.3 */
+	/* T:listrep-1.2.1,2.{2.3,9.3},3.{4,5,6}.3 */
 	Tcl_ListObjAppendElement(NULL, subListObj, valueObj);
     } else {
-        /* T:listrep-1.{12.1,15.1,19.1},2.{10,13,16}.1 */
+	/* T:listrep-1.{12.1,15.1,19.1},2.{10,13,16}.1 */
 	TclListObjSetElement(NULL, subListObj, index, valueObj);
 	TclInvalidateStringRep(subListObj);
     }
@@ -3300,7 +3300,7 @@ ListObjSetElement(tclObjTypeInterfaceArgsListSet)
     /* Replace a shared internal rep with an unshared copy */
     if (listRep.storePtr->refCount > 1) {
 	ListRep newInternalRep;
-        /* T:listrep-2.{10,13,16}.1 */
+	/* T:listrep-2.{10,13,16}.1 */
 	/* TODO - leave extra space? */
 	ListRepClone(&listRep, &newInternalRep, LISTREP_PANIC_ON_FAIL);
 	listRep = newInternalRep;

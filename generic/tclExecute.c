@@ -4860,7 +4860,6 @@ TEBCresume(
 	    pcAdjustment = 5;
 	}
 
-
     lindexFastPath:
 	if (index >= 0 && index < objc) {
 	    objResultPtr = objv[index];
