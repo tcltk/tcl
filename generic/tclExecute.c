@@ -6661,8 +6661,13 @@ TEBCresume(
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
 		DECACHE_STACK_INFO();
-		status = TclListObjGetElementsM(
-		    interp, listPtr, &listLen, &elements);
+		if (TclObjectHasInterface(listPtr, list, index)) {
+		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		    elements = NULL;
+		} else {
+		    status = TclListObjGetElementsM(
+			interp, listPtr, &listLen, &elements);
+		}
 		if (status != TCL_OK) {
 		    CACHE_STACK_INFO();
 		    goto gotError;
@@ -6672,7 +6677,23 @@ TEBCresume(
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
-			valuePtr = elements[valIndex];
+			DECACHE_STACK_INFO();
+			if (elements) {
+			    valuePtr = elements[valIndex];
+			} else {
+			    status = Tcl_ListObjIndex(
+				interp, listPtr, valIndex, &valuePtr);
+			    if (status != TCL_OK) {
+				/* Could happen for abstract lists */
+				CACHE_STACK_INFO();
+				goto gotError;
+			    }
+			    if (valuePtr == NULL) {
+				/* Permitted for Tcl_LOI to return NULL */
+				TclNewObj(valuePtr);
+			    }
+			}
+			CACHE_STACK_INFO();
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
