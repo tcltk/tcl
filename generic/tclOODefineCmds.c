@@ -75,6 +75,9 @@ static inline Tcl_Namespace *GetNamespaceInOuterContext(Tcl_Interp *interp,
 static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
 			    int objc, Tcl_Obj *const objv[]);
+static int		InstallStdPropertyImpls(void *useInstance,
+			    Tcl_Interp *interp, Tcl_Obj *propName,
+			    int readable, int writable);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
@@ -3487,7 +3490,286 @@ ObjWPropsSet(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOInstallStdPropertyImpls --
+ * TclOORegisterProperty, TclOORegisterInstanceProperty --
+ *
+ *	Helpers to add or remove a name from the property slots of a class or
+ *	instance.
+ *
+ * BuildPropertyList --
+ * 
+ *	Helper for the helpers. Scans a property list and does the filtering
+ *	or adding of the property to add or remove
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+BuildPropertyList(
+    PropertyList *propsList,	/* Property list to scan. */
+    Tcl_Obj *propName,		/* Property to add/remove. */
+    int addingProp,		/* True if we're adding, false if removing. */
+    Tcl_Obj *listObj)		/* The list of property names we're building */
+{
+    int present = 0, changed = 0, i;
+    Tcl_Obj *other;
+
+    Tcl_SetListObj(listObj, 0, NULL);
+    FOREACH(other, *propsList) {
+	if (strcmp(TclGetString(propName), TclGetString(other)) == 0) {
+	    present = 1;
+	    if (!addingProp) {
+		changed = 1;
+		continue;
+	    }
+	}
+	Tcl_ListObjAppendElement(NULL, listObj, other);
+    }
+    if (!present && addingProp) {
+	Tcl_ListObjAppendElement(NULL, listObj, propName);
+	changed = 1;
+    }
+    return changed;
+}
+
+void
+TclOORegisterInstanceProperty(
+    Object *oPtr,		/* Object that owns the property slots. */
+    Tcl_Obj *propName,		/* Property to add/remove. Must include the
+				 * hyphen if one is desired; this is the value
+				 * that is actually placed in the slot. */
+    int registerReader,		/* True if we're adding the property name to
+				 * the readable property slot. False if we're
+				 * removing the property name from the slot. */
+    int registerWriter)		/* True if we're adding the property name to
+				 * the writable property slot. False if we're
+				 * removing the property name from the slot. */
+{
+    Tcl_Obj *listObj = Tcl_NewObj();	/* Working buffer. */
+    Tcl_Obj **objv;
+    Tcl_Size count;
+
+    if (BuildPropertyList(&oPtr->properties.readable, propName, registerReader,
+	    listObj)) {
+	TclListObjGetElements(NULL, listObj, &count, &objv);
+	InstallReadableProps(&oPtr->properties, count, objv);
+    }
+
+    if (BuildPropertyList(&oPtr->properties.writable, propName, registerWriter,
+	    listObj)) {
+	TclListObjGetElements(NULL, listObj, &count, &objv);
+	InstallWritableProps(&oPtr->properties, count, objv);
+    }
+    Tcl_DecrRefCount(listObj);
+}
+
+void
+TclOORegisterProperty(
+    Class *clsPtr,		/* Class that owns the property slots. */
+    Tcl_Obj *propName,		/* Property to add/remove. Must include the
+				 * hyphen if one is desired; this is the value
+				 * that is actually placed in the slot. */
+    int registerReader,		/* True if we're adding the property name to
+				 * the readable property slot. False if we're
+				 * removing the property name from the slot. */
+    int registerWriter)		/* True if we're adding the property name to
+				 * the writable property slot. False if we're
+				 * removing the property name from the slot. */
+{
+    Tcl_Obj *listObj = Tcl_NewObj();	/* Working buffer. */
+    Tcl_Obj **objv;
+    Tcl_Size count;
+    int changed = 0;
+
+    if (BuildPropertyList(&clsPtr->properties.readable, propName,
+	    registerReader, listObj)) {
+	TclListObjGetElements(NULL, listObj, &count, &objv);
+	InstallReadableProps(&clsPtr->properties, count, objv);
+	changed = 1;
+    }
+
+    if (BuildPropertyList(&clsPtr->properties.writable, propName,
+	    registerWriter, listObj)) {
+	TclListObjGetElements(NULL, listObj, &count, &objv);
+	InstallWritableProps(&clsPtr->properties, count, objv);
+	changed = 1;
+    }
+    Tcl_DecrRefCount(listObj);
+    if (changed) {
+	BumpGlobalEpoch(clsPtr->thisPtr->fPtr->interp, clsPtr);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOPropertyDefinitionCmd --
+ *
+ *	Implementation of the "property" definition for classes and instances
+ *	governed by the [oo::configurable] metaclass.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOOPropertyDefinitionCmd(
+    void *useInstance,		/* NULL for class, non-NULL for object. */
+    Tcl_Interp *interp,		/* For error reporting and lookup. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
+{
+    int i;
+    const char *const options[] = {
+	"-get", "-kind", "-set", NULL
+    };
+    enum Options {
+	OPT_GET, OPT_KIND, OPT_SET
+    };
+    const char *const kinds[] = {
+	"readable", "readwrite", "writable", NULL
+    };
+    enum Kinds {
+	KIND_RO, KIND_RW, KIND_WO
+    };
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (!useInstance && !oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
+	return TCL_ERROR;
+    }
+
+    for (i = 1; i < objc; i++) {
+	Tcl_Obj *propObj = objv[i], *nextObj, *argObj, *hyphenated;
+	Tcl_Obj *getterScript = NULL, *setterScript = NULL;
+
+	/*
+	 * Parse the extra options for the property.
+	 */
+
+	int kind = KIND_RW;
+	while (i + 1 < objc) {
+	    int option;
+
+	    nextObj = objv[i + 1];
+	    if (TclGetString(nextObj)[0] != '-') {
+		break;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, nextObj, options, "option", 0,
+		    &option) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (i + 2 >= objc) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"missing %s to go with %s option",
+			(option == OPT_KIND ? "kind value" : "body"),
+			options[option]));
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+		return TCL_ERROR;
+	    }
+	    argObj = objv[i + 2];
+	    i += 2;
+	    switch (option) {
+	    case OPT_GET:
+		getterScript = argObj;
+		break;
+	    case OPT_SET:
+		setterScript = argObj;
+		break;
+	    case OPT_KIND:
+		if (Tcl_GetIndexFromObj(interp, argObj, kinds, "kind", 0,
+			&kind) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
+	    }
+	}
+
+	/*
+	 * Install the property. Note that InstallStdPropertyImpls
+	 * validates the property name as well.
+	 */
+
+	if (InstallStdPropertyImpls(useInstance, interp, propObj,
+		kind != KIND_WO && getterScript == NULL,
+		kind != KIND_RO && setterScript == NULL) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	hyphenated = Tcl_ObjPrintf("-%s", TclGetString(propObj));
+	Tcl_IncrRefCount(hyphenated);
+	if (useInstance) {
+	    TclOORegisterInstanceProperty(oPtr, hyphenated,
+		    kind != KIND_WO, kind != KIND_RO);
+	} else {
+	    TclOORegisterProperty(oPtr->classPtr, hyphenated,
+		    kind != KIND_WO, kind != KIND_RO);
+	}
+	Tcl_DecrRefCount(hyphenated);
+
+	/*
+	 * Create property implementation methods by using the right
+	 * back-end API, but only if the user has given us the bodies of the
+	 * methods we'll make.
+	 */
+
+	if (getterScript != NULL) {
+	    Tcl_Obj *getterName = Tcl_ObjPrintf("<ReadProp-%s>",
+		    TclGetString(propObj));
+	    Tcl_Obj *argsPtr = Tcl_NewObj();
+	    Method *mPtr;
+
+	    Tcl_IncrRefCount(getterName);
+	    Tcl_IncrRefCount(argsPtr);
+	    Tcl_IncrRefCount(getterScript);
+	    if (useInstance) {
+		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
+			getterName, argsPtr, getterScript, NULL);
+	    } else {
+		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
+			getterName, argsPtr, getterScript, NULL);
+	    }
+	    Tcl_DecrRefCount(getterName);
+	    Tcl_DecrRefCount(argsPtr);
+	    Tcl_DecrRefCount(getterScript);
+	    if (mPtr == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+	if (setterScript != NULL) {
+	    Tcl_Obj *setterName = Tcl_ObjPrintf("<WriteProp-%s>",
+		    TclGetString(propObj));
+	    Tcl_Obj *argsPtr = Tcl_NewStringObj("value", -1);
+	    Method *mPtr;
+
+	    Tcl_IncrRefCount(setterName);
+	    Tcl_IncrRefCount(argsPtr);
+	    Tcl_IncrRefCount(setterScript);
+	    if (useInstance) {
+		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
+			setterName, argsPtr, setterScript, NULL);
+	    } else {
+		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
+			setterName, argsPtr, setterScript, NULL);
+	    }
+	    Tcl_DecrRefCount(setterName);
+	    Tcl_DecrRefCount(argsPtr);
+	    Tcl_DecrRefCount(setterScript);
+	    if (mPtr == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InstallStdPropertyImpls, TclOOInstallStdPropertyImplsCmd --
  *
  *	Implementations of the "StdClassProperties" hidden definition for
  *	classes and the "StdObjectProperties" hidden definition for
@@ -3499,32 +3781,26 @@ ObjWPropsSet(
  * ----------------------------------------------------------------------
  */
 
-int
-TclOOInstallStdPropertyImpls(
+static int
+InstallStdPropertyImpls(
     void *useInstance,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
+    Tcl_Obj *propName,
+    int readable,
+    int writable)
 {
-    int readable, writable;
-    Tcl_Obj *propName;
     const char *name, *reason;
     Tcl_Size len;
     char flag = TCL_DONT_QUOTE_HASH;
 
     /*
-     * Parse the arguments and validate the property name. Note that just
-     * calling TclScanElement() is cheaper than actually formatting a list
-     * and comparing the string version of that with the original, as
-     * TclScanElement() is one of the core parts of doing that; this skips
-     * a whole load of irrelevant memory allocations!
+     * Validate the property name. Note that just calling TclScanElement() is
+     * cheaper than actually formatting a list and comparing the string
+     * version of that with the original, as TclScanElement() is one of the
+     * core parts of doing that; this skips a whole load of irrelevant memory
+     * allocations!
      */
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "propName readable writable");
-	return TCL_ERROR;
-    }
-    propName = objv[1];
     name = Tcl_GetStringFromObj(propName, &len);
     if (Tcl_StringMatch(name, "-*")) {
 	reason = "must not begin with -";
@@ -3541,12 +3817,6 @@ TclOOInstallStdPropertyImpls(
     if (Tcl_StringMatch(name, "*[()]*")) {
 	reason = "must not contain parentheses";
 	goto badProp;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[2], &readable) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &writable) != TCL_OK) {
-	return TCL_ERROR;
     }
 
     /*
@@ -3572,7 +3842,43 @@ TclOOInstallStdPropertyImpls(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad property name \"%s\": %s", name, reason));
     Tcl_SetErrorCode(interp, "TCL", "OO", "PROPERTY_FORMAT", NULL);
-    return TCL_ERROR;    
+    return TCL_ERROR;
+}
+
+int
+TclOOInstallStdPropertyImplsCmd(
+    void *useInstance,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int readable, writable;
+    Tcl_Obj *propName;
+
+    /*
+     * Parse the arguments.
+     */
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "propName readable writable");
+	return TCL_ERROR;
+    }
+    propName = objv[1];
+    if (Tcl_GetBooleanFromObj(interp, objv[2], &readable) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &writable) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+
+    /*
+     * Validate the property name and install the implementations... if asked
+     * to do so.
+     */
+
+    return InstallStdPropertyImpls(useInstance, interp, propName, readable,
+	    writable);
 }
 
 /*

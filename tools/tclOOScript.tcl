@@ -470,134 +470,20 @@
     #	 * objreadableproperties
     #	 * objwritableproperties
     #
-    #	Those are all slot implementations that provide access to the C layer
+    #	These are all slot implementations that provide access to the C layer
     #	of property support (i.e., very fast cached lookup of property names).
+    #
+    #	 * StdClassProperties
+    #	 * StdObjectPropertes
+    #
+    #	These cause very fast basic implementation methods for a property
+    #	following the standard model of property implementation naming.
+    #	Property schemes that use other models (such as to be more Tk-like)
+    #	should not use these (or the oo::cconfigurable metaclass).
     #
     # ----------------------------------------------------------------------
 
-    ::namespace eval configuresupport {
-	namespace path ::tcl
-
-	# ------------------------------------------------------------------
-	#
-	# oo::configuresupport::PropertyImpl --
-	#
-	#	The implementation of the [property] configuration command.
-	#	This assumes there is a context scope of [oo::define] or
-	#	[oo::objdefine] as the stack frame that is up one level.
-	#
-	# TODO:
-	#	Convert to C code.
-	#
-	# Arguments:
-	#   stdInstaller
-	#	How to install a property implementation of the right type.
-	#	Must be evaluated in the definition scope.
-	#   readslot
-	#	Slot of readable properties.
-	#	Must be evaluated in the definition scope.
-	#   writeslot
-	#	Slot of writable properties.
-	#	Must be evaluated in the definition scope.
-	#   args
-	#	Arguments supplied by user. See user documentation.
-	#
-	# Results:
-	#	None
-	#
-	# Errors:
-	#   TCL WRONGARGS
-	#	if an argument is missing.
-	#   TCL LOOKUP INDEX
-	#	if an option or property kind can't be parsed.
-	#   TCL OO PROPERTY_FORMAT
-	#	if an property name is illegal.
-	#
-	# Side effects:
-	#	Adjusts properties. Declares non-exported methods with special
-	#	names.
-	#
-	# ------------------------------------------------------------------
-
-	proc PropertyImpl {stdInstaller readslot writeslot args} {
-	    for {set i 0} {$i < [llength $args]} {incr i} {
-		# Parse the property name
-		set prop [lindex $args $i]
-		set realprop [string cat "-" $prop]
-		unset -nocomplain getter setter
-		set kind readwrite
-
-		# Parse the extra options for the property
-		while {[set next [lindex $args [expr {$i + 1}]]
-			string match "-*" $next]} {
-		    set arg [lindex $args [incr i 2]]
-		    switch [prefix match -error [list -level 1 -errorcode \
-			    [list TCL LOOKUP INDEX option $next]] {-get -kind -set} $next] {
-			-get {
-			    if {$i >= [llength $args]} {
-				return -code error -level 1 \
-				    -errorcode {TCL WRONGARGS} \
-				    "missing body to go with -get option"
-			    }
-			    set getter $arg
-			}
-			-set {
-			    if {$i >= [llength $args]} {
-				return -code error -level 1 \
-				    -errorcode {TCL WRONGARGS} \
-				    "missing body to go with -set option"
-			    }
-			    set setter $arg
-			}
-			-kind {
-			    if {$i >= [llength $args]} {
-				return -code error -level 1 \
-				    -errorcode {TCL WRONGARGS} \
-				    "missing kind value to go with -kind option"
-			    }
-			    set kind [prefix match -message "kind" -error [list \
-				    -level 2 \
-				    -errorcode [list TCL LOOKUP INDEX kind $arg]] {
-				readable readwrite writable
-			    } $arg]
-			}
-		    }
-		}
-
-		# Install the property
-		set reader <ReadProp$realprop>
-		set writer <WriteProp$realprop>
-		set addReader [expr {$kind ne "writable" && ![info exist getter]}]
-		set addWriter [expr {$kind ne "readable" && ![info exist setter]}]
-		try {
-		    uplevel 1 [list $stdInstaller $prop $addReader $addWriter]
-		} on error {msg opt} {
-		    return -code error -level 1 \
-			    -errorcode [dict get $opt -errorcode] $msg
-		}
-		switch $kind {
-		    readable {
-			uplevel 1 [list $readslot -append $realprop]
-			uplevel 1 [list $writeslot -remove $realprop]
-		    }
-		    writable {
-			uplevel 1 [list $readslot -remove $realprop]
-			uplevel 1 [list $writeslot -append $realprop]
-		    }
-		    readwrite {
-			uplevel 1 [list $readslot -append $realprop]
-			uplevel 1 [list $writeslot -append $realprop]
-		    }
-		}
-		if {[info exist getter]} {
-		    uplevel 1 [list method $reader -unexport {} $getter]
-		}
-		if {[info exist setter]} {
-		    uplevel 1 [list method $writer -unexport {value} $setter]
-		}
-	    }
-	}
-
+    namespace eval configuresupport {
 	# ------------------------------------------------------------------
 	#
 	# oo::configuresupport::configurableclass,
@@ -605,29 +491,19 @@
 	#
 	#	Namespaces used as implementation vectors for oo::define and
 	#	oo::objdefine when the class/instance is configurable.
+	#	Note that these also contain commands implemented in C,
+	#	especially the [property] definition command.
 	#
 	# ------------------------------------------------------------------
 
-	namespace eval configurableclass {
-	    ::interp alias \
-		    {} ::oo::configuresupport::configurableclass::property {} \
-		    ::oo::configuresupport::PropertyImpl \
-		    ::oo::configuresupport::StdClassProperties \
-		    ::oo::configuresupport::readableproperties \
-		    ::oo::configuresupport::writableproperties
+	::namespace eval configurableclass {
 	    # Plural alias just in case; deliberately NOT documented!
 	    ::proc properties args {::tailcall property {*}$args}
 	    ::namespace path ::oo::define
 	    ::namespace export property
 	}
 
-	namespace eval configurableobject {
-	    ::interp alias \
-		    {} ::oo::configuresupport::configurableobject::property {} \
-		    ::oo::configuresupport::PropertyImpl \
-		    ::oo::configuresupport::StdObjectProperties \
-		    ::oo::configuresupport::objreadableproperties \
-		    ::oo::configuresupport::objwritableproperties
+	::namespace eval configurableobject {
 	    # Plural alias just in case; deliberately NOT documented!
 	    ::proc properties args {::tailcall property {*}$args}
 	    ::namespace path ::oo::objdefine

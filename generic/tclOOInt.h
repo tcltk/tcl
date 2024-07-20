@@ -169,16 +169,15 @@ typedef struct {
 
 typedef LIST_STATIC(Tcl_Obj *) VariableNameList;
 typedef LIST_STATIC(PrivateVariableMapping) PrivateVariableList;
+typedef LIST_STATIC(Tcl_Obj *) PropertyList;
 
 /*
  * This type is used in various places.
  */
 
 typedef struct {
-    LIST_STATIC(Tcl_Obj *) readable;
-				/* The readable properties slot. */
-    LIST_STATIC(Tcl_Obj *) writable;
-				/* The writable properties slot. */
+    PropertyList readable;	/* The readable properties slot. */
+    PropertyList writable;	/* The writable properties slot. */
     Tcl_Obj *allReadableCache;	/* The cache of all readable properties
 				 * exposed by this object or class (in its
 				 * stereotypical instancs). Contains a sorted
@@ -498,7 +497,8 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclOOInstallStdPropertyImpls;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOInstallStdPropertyImplsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOPropertyDefinitionCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
@@ -611,6 +611,10 @@ MODULE_SCOPE void	TclOOSortPropList(Tcl_Obj *listPtr);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
+MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
+			    Tcl_Obj *propName, int mayRead, int mayWrite);
+MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
+			    Tcl_Obj *propName, int mayRead, int mayWrite);
 
 /*
  * Include all the private API, generated from tclOO.decls.
