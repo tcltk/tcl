@@ -1,3 +1,13 @@
+# Copyright © 1997 Sun Microsystems, Inc.  All rights reserved.
+# Copyright © 1998-1999 Scriptics Corporation.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # registry.test --
 #
 # This file contains a collection of tests for the registry command.
@@ -6,9 +16,6 @@
 #
 # In order for these tests to run, the registry package must be on the
 # auto_path or the registry package must have been loaded already.
-#
-# Copyright © 1997 Sun Microsystems, Inc.  All rights reserved.
-# Copyright © 1998-1999 Scriptics Corporation.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

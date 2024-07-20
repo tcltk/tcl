@@ -1,13 +1,24 @@
 /*
- * tclOO.h --
- *
- *	This file contains the public API definitions and some of the function
- *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
- *
  * Copyright (c) 2006-2010 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclOO.h --
+ *
+ *	This file contains the public API definitions and some of the function
+ *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  */
 
 #ifndef TCLOO_H_INCLUDED

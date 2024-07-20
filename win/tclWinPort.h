@@ -1,14 +1,25 @@
 /*
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
  * tclWinPort.h --
  *
  *	This header file handles porting issues that occur because of
  *	differences between Windows and Unix. It should be the only
  *	file that contains #ifdefs to handle different flavors of OS.
- *
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifndef _TCLWINPORT

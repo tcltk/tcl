@@ -1,13 +1,24 @@
 /*
- * tclDictObj.c --
- *
- *	This file contains functions that implement the Tcl dict object type
- *	and its accessor command.
- *
  * Copyright © 2002-2010 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclDictObj.c --
+ *
+ *	This file contains functions that implement the Tcl dict object type
+ *	and its accessor command.
  */
 
 #include "tclInt.h"
@@ -61,6 +72,9 @@ static Tcl_ObjCmdProc		DictForNRCmd;
 static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
+
+static int			DictAsListLength(Tcl_Interp *interp,
+				    Tcl_Obj *objPtr, Tcl_Size *lenPtr);
 
 /*
  * Table of dict subcommand names and implementations.
@@ -141,13 +155,48 @@ typedef struct Dict {
  * functions that can be invoked by generic object code.
  */
 
-const Tcl_ObjType tclDictType = {
+
+ObjInterface dictObjInterface = {
+    0,
+    {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+    },
+    {
+	NULL,	/* GetElements */
+	NULL,
+	NULL,
+	NULL,	/* return key or value at "list" index
+				 * location.  (keysare at even indicies,
+				 * values at odd indicies) */
+	NULL,			/* Index End*/
+	NULL,
+	DictAsListLength,	/* return "list" length of dict value w/o
+				* shimmering */
+	NULL,	/* Slice */
+	NULL,
+	NULL,	/* Replace */
+	NULL,
+	NULL,	/* Reverse */
+	NULL,	/* SetElement */
+	NULL
+    }
+};
+
+
+
+
+const ObjectType tclDictType = {
     "dict",
-    FreeDictInternalRep,		/* freeIntRepProc */
-    DupDictInternalRep,			/* dupIntRepProc */
-    UpdateStringOfDict,			/* updateStringProc */
-    SetDictFromAny,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    FreeDictInternalRep,	/* freeIntRepProc */
+    DupDictInternalRep,		/* dupIntRepProc */
+    UpdateStringOfDict,		/* updateStringProc */
+    SetDictFromAny,		/* setFromAnyProc */
+    2,
+    (Tcl_ObjInterface *)&dictObjInterface
 };
 
 #define DictSetIntRep(objPtr, dictRepPtr)				\
@@ -155,13 +204,13 @@ const Tcl_ObjType tclDictType = {
         Tcl_ObjInternalRep ir;                                               \
         ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
         ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);                   \
+        Tcl_StoreInternalRep((objPtr), (Tcl_ObjType *)&tclDictType, &ir);                   \
     } while (0)
 
 #define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
         const Tcl_ObjInternalRep *irPtr;                                     \
-        irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
+        irPtr = TclFetchInternalRep((objPtr), (Tcl_ObjType *)&tclDictType);                \
         (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
 
@@ -3788,6 +3837,85 @@ TclInitDictCmd(
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAsListLength --
+ *
+ *   Compute the length of a list as if the dict value were converted to a
+ *   list.
+ *
+ *   Note: the list length may not match the dict size * 2.  This occurs when
+ *   there are duplicate keys in the original string representation.
+ *
+ * Side Effects --
+ *
+ *   The intent is to have no side effects.
+ *
+ *   Reviewer note:  Currently, however there is the side effect that the
+ *   string representation of the dictionary is generated if there isn't one
+ *   already.
+ */
+
+static int
+DictAsListLength(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size *lenPtr)
+{
+    Tcl_Size estCount, length, llen;
+    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_Obj *elemPtr;
+    int status = TCL_OK;
+
+    /*
+     * Allocate enough space to hold a (Tcl_Obj *) for each
+     * (possible) list element.
+     */
+
+    estCount = TclMaxListLength(nextElem, length, &limit);
+    estCount += (estCount == 0); /* Smallest list struct holds 1
+				  * element. */
+    elemPtr = Tcl_NewObj();
+
+    llen = 0;
+
+    while (nextElem < limit) {
+	const char *elemStart;
+	char *check;
+	Tcl_Size elemSize;
+	int literal;
+
+	status = TclFindElement(NULL, nextElem, limit - nextElem,
+	    &elemStart, &nextElem, &elemSize, &literal);
+	if (status != TCL_OK) {
+	    Tcl_DecrRefCount(elemPtr);
+	    *lenPtr = 0;
+	    return TCL_OK;
+	}
+	if (elemStart == limit) {
+	    break;
+	}
+
+	TclInvalidateStringRep(elemPtr);
+	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
+				  elemSize);
+	if (elemSize && check == NULL) {
+	    Tcl_DecrRefCount(elemPtr);
+	    *lenPtr = 0;
+	    return TCL_OK ;
+	}
+	if (!literal) {
+	    Tcl_InitStringRep(elemPtr, NULL,
+			      TclCopyAndCollapse(elemSize, elemStart, check));
+	}
+	llen++;
+    }
+    Tcl_DecrRefCount(elemPtr);
+    *lenPtr = llen;
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

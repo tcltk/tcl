@@ -1,11 +1,4 @@
 /*
- * tclTest.c --
- *
- *	This file contains C command functions for a bunch of additional Tcl
- *	commands that are used for testing out Tcl's C interfaces. These
- *	commands are not normally included in Tcl applications; they're only
- *	used for testing.
- *
  * Copyright © 1993-1994 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 1998-2000 Ajuba Solutions.
@@ -13,6 +6,24 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclTest.c --
+ *
+ *	This file contains C command functions for a bunch of additional Tcl
+ *	commands that are used for testing out Tcl's C interfaces. These
+ *	commands are not normally included in Tcl applications; they're only
+ *	used for testing.
  */
 
 #undef STATIC_BUILD
@@ -741,6 +752,10 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
 #endif
+
+    if (Tcl_ABSListTest_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
     /*
      * Check for special options used in ../tests/main.test
@@ -8791,4 +8806,3 @@ vamoose:
  * indent-tabs-mode: nil
  * End:
  */
-

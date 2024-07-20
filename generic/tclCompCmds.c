@@ -1,9 +1,4 @@
 /*
- * tclCompCmds.c --
- *
- *	This file contains compilation procedures that compile various Tcl
- *	commands into a sequence of instructions ("bytecodes").
- *
  * Copyright © 1997-1998 Sun Microsystems, Inc.
  * Copyright © 2001 Kevin B. Kenny.  All rights reserved.
  * Copyright © 2002 ActiveState Corporation.
@@ -11,6 +6,22 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCompCmds.c --
+ *
+ *	This file contains compilation procedures that compile various Tcl
+ *	commands into a sequence of instructions ("bytecodes").
  */
 
 #include "tclInt.h"

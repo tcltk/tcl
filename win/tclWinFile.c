@@ -1,15 +1,26 @@
 /*
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
  * tclWinFile.c --
  *
  *	This file contains temporary wrappers around UNIX file handling
  *	functions. These wrappers map the UNIX functions to Win32 HANDLE-style
  *	files, which can be manipulated through the Win32 console redirection
  *	interfaces.
- *
- * Copyright © 1995-1998 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclWinInt.h"

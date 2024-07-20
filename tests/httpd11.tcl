@@ -1,12 +1,19 @@
-# httpd11.tcl --                                                -*- tcl -*-
-#
-#	A simple httpd for testing HTTP/1.1 client features.
-#	Not suitable for use on a internet connected port.
-#
 # Copyright © 2009 Pat Thoyts <patthoyts@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# httpd11.tcl --                                                -*- tcl -*-
+#
+#	A simple httpd for testing HTTP/1.1 client features.
+#	Not suitable for use on a internet connected port.
 
 package require Tcl
 

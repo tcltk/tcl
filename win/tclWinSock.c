@@ -1,12 +1,24 @@
 /*
- * tclWinSock.c --
- *
- *	This file contains Windows-specific socket related code.
- *
  * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ *
+ * tclWinSock.c --
+ *
+ *	This file contains Windows-specific socket related code.
  *
  * -----------------------------------------------------------------------
  * The order and naming of functions in this file should minimize

@@ -1,15 +1,22 @@
-# msgcat.tcl --
-#
-#	This file defines various procedures which implement a
-#	message catalog facility for Tcl programs.  It should be
-#	loaded with the command "package require msgcat".
-#
 # Copyright © 2010-2018 Harald Oehlmann.
 # Copyright © 1998-2000 Ajuba Solutions.
 # Copyright © 1998 Mark Harrison.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# msgcat.tcl --
+#
+#	This file defines various procedures which implement a
+#	message catalog facility for Tcl programs.  It should be
+#	loaded with the command "package require msgcat".
 
 # We use oo::define::self, which is new in Tcl 8.7
 package require Tcl 8.7-

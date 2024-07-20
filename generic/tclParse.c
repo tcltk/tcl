@@ -1,16 +1,27 @@
 /*
- * tclParse.c --
- *
- *	This file contains functions that parse Tcl scripts. They do so in a
- *	general-purpose fashion that can be used for many different purposes,
- *	including compilation, direct execution, code analysis, etc.
- *
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 1998-2000 Ajuba Solutions.
  * Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclParse.c --
+ *
+ *	This file contains functions that parse Tcl scripts. They do so in a
+ *	general-purpose fashion that can be used for many different purposes,
+ *	including compilation, direct execution, code analysis, etc.
  */
 
 #include "tclInt.h"

@@ -1,15 +1,26 @@
 /*
- * tclUtil.c --
- *
- *	This file contains utility functions that are used by many Tcl
- *	commands.
- *
  * Copyright © 1987-1993 The Regents of the University of California.
  * Copyright © 1994-1998 Sun Microsystems, Inc.
  * Copyright © 2001 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclUtil.c --
+ *
+ *	This file contains utility functions that are used by many Tcl
+ *	commands.
  */
 
 #include <assert.h>
@@ -131,7 +142,7 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* setFromAnyProc */
 	0
 };
-
+
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *
@@ -1970,7 +1981,8 @@ Tcl_ConcatObj(
 	Tcl_Size length;
 
 	objPtr = objv[i];
-	if (TclListObjIsCanonical(objPtr)) {
+	if (TclListObjIsCanonical(objPtr) ||
+            TclObjectHasInterface(objPtr,list,index)) {
 	    continue;
 	}
 	(void)Tcl_GetStringFromObj(objPtr, &length);
@@ -1982,7 +1994,8 @@ Tcl_ConcatObj(
 	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
-	    if (!TclListObjIsCanonical(objPtr)) {
+	    if (!TclListObjIsCanonical(objPtr) &&
+		!TclObjectHasInterface(objPtr, list, index)) {
 		continue;
 	    }
 	    if (resPtr) {
@@ -3719,19 +3732,26 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
+ *      IMPORTANT: function only encodes indices in the range that fits within
+ *      an "int" type. Do NOT change this as the byte code compiler and engine
+ *      which call this function cannot handle wider index types. Indices
+ *      outside the range will result in the function returning an error.
  *
  *      Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
- *	index value in the Tcl_Size range.  This includes
+ *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions. The absolute index values that can be
+ *      arithmetic expressions.
+ *
+ *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *      This means the largest supported character length is also TCL_SIZE_MAX,
+ *      and the index of the last character in a string of length TCL_SIZE_MAX
+ *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
- *	those integer values >= TCL_INDEX_START (0)
- *	and < INT_MAX.
- *      The largest string supported in Tcl 8 has bytelength INT_MAX.
- *      This means the largest supported character length is also INT_MAX,
- *      and the index of the last character in a string of length INT_MAX
- *      is INT_MAX-1.
+ *	integer values in the range 0 to TCL_SIZE_MAX - 1.
+ *
+ *      This function however can only handle integer indices in the range
+ *      0 : INT_MAX-1.
  *
  *      Any absolute index value parsed outside that range is encoded
  *      using the before and after values passed in by the
@@ -3756,12 +3776,9 @@ GetEndOffsetFromObj(
  *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
  *      they can be encoded with the before value.
  *
- *      These details will require re-examination whenever string and
- *      list length limits are increased, but that will likely also
- *      mean a revised routine capable of returning Tcl_WideInt values.
- *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *      index does not fit in an int type.
  *
  * Side effects:
  *      When TCL_OK is returned, the encoded index value is written
@@ -3774,7 +3791,7 @@ int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
     Tcl_Obj *objPtr,	/* Index value to parse */
-    int before,	/* Value to return for index before beginning */
+    int before,		/* Value to return for index before beginning */
     int after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
@@ -3839,7 +3856,7 @@ TclIndexEncode(
 	 * the position after the end and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
+		(wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
 	}
@@ -3869,7 +3886,7 @@ TclIndexEncode(
 	 * and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
+		(wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
 	}
@@ -3895,15 +3912,8 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp,
-			 "TCL",
-			 "VALUE",
-			 "INDEX"
-			 "OUTOFRANGE",
-			 NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -3931,8 +3941,9 @@ TclIndexDecode(
     if (encoded > TCL_INDEX_END) {
 	return encoded;
     }
-    if ((size_t)endValue >= (size_t)TCL_INDEX_END - encoded) {
-	return endValue + encoded - TCL_INDEX_END;
+    endValue += encoded - TCL_INDEX_END;
+    if (endValue >= 0) {
+	return endValue;
     }
     return TCL_INDEX_NONE;
 }

@@ -1,16 +1,27 @@
 /*
- * tclIndexObj.c --
- *
- *	This file implements objects of type "index". This object type is used
- *	to lookup a keyword in a table of valid values and cache the index of
- *	the matching entry. Also provides table-based argv/argc processing.
- *
  * Copyright © 1990-1994 The Regents of the University of California.
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 2006 Sam Bromley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclIndexObj.c --
+ *
+ *	This file implements objects of type "index". This object type is used
+ *	to lookup a keyword in a table of valid values and cache the index of
+ *	the matching entry. Also provides table-based argv/argc processing.
  */
 
 #include "tclInt.h"
@@ -43,7 +54,7 @@ static const Tcl_ObjType indexType = {
     DupIndex,			/* dupIntRepProc */
     UpdateStringOfIndex,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 /*

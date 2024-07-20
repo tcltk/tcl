@@ -1,3 +1,15 @@
+# Copyright © 2005 Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # tclTomMath.decls --
 #
 #	This file contains the declarations for the functions in 'libtommath'
@@ -7,10 +19,6 @@
 # If you edit this file, advance the revision number (and the epoch
 # if the new stubs are not backward compatible) in tclTomMathDecls.h
 #
-# Copyright © 2005 Kevin B. Kenny.  All rights reserved.
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 library tcl
 

@@ -1,6 +1,16 @@
-#!/bin/sh
-#\
-exec tclsh "$0" ${1+"$@"}
+#! /usr/bin/env tclsh
+
+# Copyright © 2004 Kevin B. Kenny.  All rights reserved.
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#----------------------------------------------------------------------
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #----------------------------------------------------------------------
 #
@@ -10,11 +20,6 @@ exec tclsh "$0" ${1+"$@"}
 #	specified by its first argument into the directory specified
 #	by its second.
 #
-#----------------------------------------------------------------------
-#
-# Copyright © 2004 Kevin B. Kenny.  All rights reserved.
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
 
 proc copyDir {d1 d2} {

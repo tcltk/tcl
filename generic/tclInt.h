@@ -1,8 +1,4 @@
 /*
- * tclInt.h --
- *
- *	Declarations of things used internally by the Tcl interpreter.
- *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -15,6 +11,21 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclInt.h --
+ *
+ *	Declarations of things used internally by the Tcl interpreter.
  */
 
 #ifndef _TCLINT
@@ -252,7 +263,7 @@ typedef struct ObjectType {
 
 #define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
     (TclObjectHasInterface((objPtr), iface, proc)			    \
-    ? (res = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__),    \
+    ? ((res) = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__),    \
 	TCL_OK)   \
     : (Tcl_SetObjResult((interp),					    \
 	    Tcl_ObjPrintf("interface not provided interface %s proc %s"	    \
@@ -417,7 +428,7 @@ typedef struct ObjInterface {
 	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
 	int (*replaceList)(tclObjTypeInterfaceArgsListReplaceList);
-	Tcl_Obj* (*reverse)(tclObjTypeInterfaceArgsListReverse);
+	int (*reverse)(tclObjTypeInterfaceArgsListReverse);
 	int (*set)(tclObjTypeInterfaceArgsListSet);
 	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
     } list;
@@ -3138,8 +3149,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType *tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType *tclIntType;
 MODULE_SCOPE const Tcl_ObjType *tclListType;
-MODULE_SCOPE const Tcl_ObjType *tclArithSeriesType;
-MODULE_SCOPE const Tcl_ObjType tclDictType;
+MODULE_SCOPE const ObjectType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
@@ -3525,6 +3535,9 @@ MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 			    Tcl_Obj* pathPtr);
+MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(Tcl_Interp *interp,
+                            int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
+                            Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
@@ -5040,6 +5053,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceInit;
 MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceListIntegerInit;
+MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 /*
  *----------------------------------------------------------------

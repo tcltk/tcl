@@ -1,12 +1,4 @@
 /*
- * tclVar.c --
- *
- *	This file contains routines that implement Tcl variables (both scalars
- *	and arrays).
- *
- *	The implementation of arrays is modelled after an initial
- *	implementation by Mark Diekhans and Karl Lehenbauer.
- *
  * Copyright © 1987-1994 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -15,6 +7,25 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclVar.c --
+ *
+ *	This file contains routines that implement Tcl variables (both scalars
+ *	and arrays).
+ *
+ *	The implementation of arrays is modelled after an initial
+ *	implementation by Mark Diekhans and Karl Lehenbauer.
  */
 
 #include "tclInt.h"
@@ -245,7 +256,8 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
 
 static const Tcl_ObjType localVarNameType = {
     "localVarName",
-    FreeLocalVarName, DupLocalVarName, NULL, NULL, TCL_OBJTYPE_V0
+    FreeLocalVarName, DupLocalVarName, NULL, NULL,
+    0
 };
 
 #define LocalSetInternalRep(objPtr, index, namePtr)				\
@@ -268,7 +280,8 @@ static const Tcl_ObjType localVarNameType = {
 
 static const Tcl_ObjType parsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, NULL, NULL, TCL_OBJTYPE_V0
+    FreeParsedVarName, DupParsedVarName, NULL, NULL,
+    0
 };
 
 #define ParsedSetInternalRep(objPtr, arrayPtr, elem)				\

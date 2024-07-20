@@ -1,5 +1,15 @@
 #!/usr/bin/env tclsh
 
+# Copyright © 1995-1997 Roger E. Critchlow Jr
+# Copyright © 2004-2010 Donal K. Fellows
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
@@ -18,9 +28,6 @@ if {[catch {package require Tcl 8.6-} msg]} {
 # an example of how someone might convert a specific set of man pages
 # into hypertext, not as a general solution to the problem.  If you
 # try to use this, you'll be very much on your own.
-#
-# Copyright © 1995-1997 Roger E. Critchlow Jr
-# Copyright © 2004-2010 Donal K. Fellows
 
 set ::Version "50/9.0"
 set ::CSSFILE "docs.css"

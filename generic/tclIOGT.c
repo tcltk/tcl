@@ -1,14 +1,25 @@
 /*
- * tclIOGT.c --
- *
- *	Implements a generic transformation exposing the underlying API at the
- *	script level. Contributed by Andreas Kupries.
- *
  * Copyright © 2000 Ajuba Solutions
  * Copyright © 1999-2000 Andreas Kupries (a.kupries@westend.com)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclIOGT.c --
+ *
+ *	Implements a generic transformation exposing the underlying API at the
+ *	script level. Contributed by Andreas Kupries.
  */
 
 #include "tclInt.h"

@@ -1,16 +1,27 @@
 /*
- * tclClock.c --
- *
- *	Contains the time and date related commands. This code is derived from
- *	the time and date facilities of TclX, by Mark Diekhans and Karl
- *	Lehenbauer.
- *
  * Copyright © 1991-1995 Karl Lehenbauer & Mark Diekhans.
  * Copyright © 1995 Sun Microsystems, Inc.
  * Copyright © 2004 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclClock.c --
+ *
+ *	Contains the time and date related commands. This code is derived from
+ *	the time and date facilities of TclX, by Mark Diekhans and Karl
+ *	Lehenbauer.
  */
 
 #include "tclInt.h"

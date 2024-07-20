@@ -1,14 +1,25 @@
 /*
+ * Contributions from Don Porter, NIST, 2006-2007. (not subject to US copyright)
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclCompExpr.c --
  *
  *	This file contains the code to parse and compile Tcl expressions and
  *	implementations of the Tcl commands corresponding to expression
  *	operators, such as the command ::tcl::mathop::+ .
- *
- * Contributions from Don Porter, NIST, 2006-2007. (not subject to US copyright)
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

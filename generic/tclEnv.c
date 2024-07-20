@@ -1,16 +1,27 @@
 /*
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclEnv.c --
  *
  *	Tcl support for environment variables, including a setenv function.
  *	This file contains the generic portion of the environment module. It
  *	is primarily responsible for keeping the "env" arrays in sync with the
  *	system environment variables.
- *
- * Copyright © 1991-1994 The Regents of the University of California.
- * Copyright © 1994-1998 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

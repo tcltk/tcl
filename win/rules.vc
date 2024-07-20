@@ -1,3 +1,17 @@
+# Copyright (c) 2001-2003 David Gravereaux.
+# Copyright (c) 2003-2008 Patrick Thoyts
+# Copyright (c) 2017      Ashok P. Nadkarni
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 #------------------------------------------------------------- -*- makefile -*-
 # rules.vc --
 #
@@ -9,13 +23,8 @@
 # See TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md) for
 # detailed documentation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# Copyright (c) 2001-2003 David Gravereaux.
-# Copyright (c) 2003-2008 Patrick Thoyts
-# Copyright (c) 2017      Ashok P. Nadkarni
 #------------------------------------------------------------------------------
+
 
 !ifndef _RULES_VC
 _RULES_VC = 1

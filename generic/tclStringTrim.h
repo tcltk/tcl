@@ -1,10 +1,4 @@
 /*
- * tclStringTrim.h --
- *
- *	This file contains the definition of what characters are to be trimmed
- *	from a string by [string trim] by default. It's only needed by Tcl's
- *	implementation; it does not form a public or private API at all.
- *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Scriptics Corporation.
@@ -13,6 +7,23 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclStringTrim.h --
+ *
+ *	This file contains the definition of what characters are to be trimmed
+ *	from a string by [string trim] by default. It's only needed by Tcl's
+ *	implementation; it does not form a public or private API at all.
  */
 
 #ifndef TCL_STRING_TRIM_H

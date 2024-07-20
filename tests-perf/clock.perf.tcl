@@ -1,4 +1,17 @@
 #!/usr/bin/tclsh
+
+# Copyright © 2014 Serg G. Brester (aka sebres)
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # ------------------------------------------------------------------------
 #
 # test-performance.tcl --
@@ -8,12 +21,6 @@
 #  (currently for clock ensemble only)
 #
 # ------------------------------------------------------------------------
-#
-# Copyright © 2014 Serg G. Brester (aka sebres)
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file.
-#
 
 array set in {-time 500}
 if {[info exists ::argv0] && [file tail $::argv0] eq [file tail [info script]]} {

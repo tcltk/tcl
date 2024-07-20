@@ -1,13 +1,20 @@
+# Copyright © 2020 Sergey G. Brester (sebres).
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # This file contains internal facilities for Tcl tests.
 #
 # Source this file in the related tests to include from tcl-tests:
 #
 #   source [file join [file dirname [info script]] internals.tcl]
-#
-# Copyright © 2020 Sergey G. Brester (sebres).
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[namespace which -command ::tcltest::internals::scriptpath] eq ""} {namespace eval ::tcltest::internals {
 

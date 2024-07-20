@@ -1,4 +1,19 @@
 /*
+ * @(#)dlfcn.c	1.7 revision of 95/08/14  19:08:38
+ * This is an unpublished work copyright © 1992 HELIOS Software GmbH
+ * 30159 Hannover, Germany
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
  * tclLoadAix.c --
  *
  *	This file implements the dlopen and dlsym APIs under the AIX operating
@@ -19,12 +34,6 @@
  *
  * Note: this file has been altered from the original in a few ways in order
  * to work properly with Tcl.
- */
-
-/*
- * @(#)dlfcn.c	1.7 revision of 95/08/14  19:08:38
- * This is an unpublished work copyright © 1992 HELIOS Software GmbH
- * 30159 Hannover, Germany
  */
 
 #include <stdio.h>

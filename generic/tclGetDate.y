@@ -1,4 +1,21 @@
 /*
+ * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
+ * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclGetDate.y --
  *
  *	Contains yacc grammar for parsing date and time strings. The output of
@@ -6,12 +23,6 @@
  *	Tcl sources. Note that this file is largely obsolete in Tcl 8.5; it is
  *	only used when doing free-form date parsing, an ill-defined process
  *	anyway.
- *
- * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 %parse-param {DateInfo* info}
@@ -34,6 +45,16 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
 #include "tclInt.h"
 
 /*

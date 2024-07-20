@@ -1,3 +1,15 @@
+# Copyright © 1996-1997 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # safe.tcl --
 #
 # This file provide a safe loading/sourcing mechanism for safe interpreters.
@@ -6,18 +18,11 @@
 # aliases that will be invoked when used from a child interpreter.
 #
 # See the safe.n man page for details.
-#
-# Copyright © 1996-1997 Sun Microsystems, Inc.
-#
-# See the file "license.terms" for information on usage and redistribution of
-# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-#
 # The implementation is based on namespaces. These naming conventions are
 # followed:
 # Private procs starts with uppercase.
 # Public  procs are exported and starts with lowercase
-#
 
 # Needed utilities package
 package require opt 0.4.8

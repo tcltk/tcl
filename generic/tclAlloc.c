@@ -1,11 +1,4 @@
 /*
- * tclAlloc.c --
- *
- *	This is a very fast storage allocator. It allocates blocks of a small
- *	number of different sizes, and keeps free lists of each size. Blocks
- *	that don't exactly fit are passed up to the next larger size. Blocks
- *	over a certain size are directly allocated from the system.
- *
  * Copyright © 1983 Regents of the University of California.
  * Copyright © 1996-1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -15,6 +8,25 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclAlloc.c --
+ *
+ *	This is a very fast storage allocator. It allocates blocks of a small
+ *	number of different sizes, and keeps free lists of each size. Blocks
+ *	that don't exactly fit are passed up to the next larger size. Blocks
+ *	over a certain size are directly allocated from the system.
+ *
+*/
 
 /*
  * Windows and Unix use an alternative allocator when building with threads

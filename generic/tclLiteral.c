@@ -1,4 +1,21 @@
 /*
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2004 Kevin B. Kenny.  All rights reserved.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclLiteral.c --
  *
  *	Implementation of the global and ByteCode-local literal tables used to
@@ -6,12 +23,6 @@
  *	of Tcl scripts. This implementation borrows heavily from the more
  *	general hashtable implementation of Tcl hash tables that appears in
  *	tclHash.c.
- *
- * Copyright © 1997-1998 Sun Microsystems, Inc.
- * Copyright © 2004 Kevin B. Kenny.  All rights reserved.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

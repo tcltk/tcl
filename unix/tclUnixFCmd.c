@@ -1,18 +1,4 @@
 /*
- * tclUnixFCmd.c
- *
- *	This file implements the Unix specific portion of file manipulation
- *	subcommands of the "file" command. All filename arguments should
- *	already be translated to native format.
- *
- * Copyright © 1996-1998 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * Portions of this code were derived from NetBSD source code which has the
- * following copyright notice:
- *
  * Copyright © 1988, 1993, 1994
  *      The Regents of the University of California. All rights reserved.
  *
@@ -38,6 +24,33 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
+ */
+
+/*
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Portions of this code were derived from NetBSD source code which has the
+ * following copyright notice:
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclUnixFCmd.c
+ *
+ *	This file implements the Unix specific portion of file manipulation
+ *	subcommands of the "file" command. All filename arguments should
+ *	already be translated to native format.
  */
 
 #include "tclInt.h"

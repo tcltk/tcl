@@ -1,13 +1,20 @@
+# Copyright © 1996 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # index.tcl --
 #
 # This file defines procedures that are used during the first pass of
 # the man page conversion.  It is used to extract information used to
 # generate a table of contents and a keyword list.
-#
-# Copyright © 1996 Sun Microsystems, Inc.
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # Global variables used by these scripts:
 #

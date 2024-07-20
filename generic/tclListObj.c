@@ -1,13 +1,25 @@
 /*
+ * Copyright © 2022 Ashok P. Nadkarni.  All rights reserved.
+ * Copyright © 2021, 2024 Nathan Coulter.  All rights reserved.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclListObj.c --
  *
  *	This file contains functions that implement the Tcl list object type.
  *
- * Copyright © 2022 Ashok P. Nadkarni.  All rights reserved.
- * Copyright © 2021 Nathan Coulter.  All rights reserved.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include <assert.h>
@@ -2958,30 +2970,13 @@ TclLsetList(
  *      It also handles 'lpop' when given a NULL value.
  *
  * Results:
- *	Returns the new value of the list variable, or NULL if an error
- *	occurred. The returned object includes one reference count for the
- *	pointer returned.
+ *	Returns the new value of the list, or NULL if an error
+ *	occurred. 
  *
  * Side effects:
- *	On entry, the reference count of the variable value does not reflect
- *	any references held on the stack. The first action of this function is
- *	to determine whether the object is shared, and to duplicate it if it
- *	is. The reference count of the duplicate is incremented. At this
- *	point, the reference count will be 1 for either case, so that the
- *	object will appear to be unshared.
- *
- *	If an error occurs, and the object has been duplicated, the reference
- *	count on the duplicate is decremented so that it is now 0: this
- *	dismisses any memory that was allocated by this function.
- *
- *	If no error occurs, the reference count of the original object is
- *	incremented if the object has not been duplicated, and nothing is done
- *	to a reference count of the duplicate. Now the reference count of an
- *	unduplicated object is 2 (the returned pointer, plus the one stored in
- *	the variable). The reference count of a duplicate object is 1,
- *	reflecting that the returned pointer is the only active reference. The
- *	caller is expected to store the returned value back in the variable
- *	and decrement its reference count. (INST_STORE_* does exactly this.)
+ *	If the initial value of the list was shared, and this function must
+ *	modify the value, the result is a new object having a reference count
+ *	of 0.
  *
  *----------------------------------------------------------------------
  */
@@ -3010,9 +3005,6 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
      */
 
     if (indexCount == 0) {
-	if (valueObj != NULL) {
-	    Tcl_IncrRefCount(valueObj);
-	}
 	return valueObj;
     }
 
@@ -3234,7 +3226,6 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	TclListObjSetElement(NULL, subListObj, index, valueObj);
 	TclInvalidateStringRep(subListObj);
     }
-    Tcl_IncrRefCount(retValueObj);
     return retValueObj;
 }
 

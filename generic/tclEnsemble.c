@@ -1,13 +1,24 @@
 /*
- * tclEnsemble.c --
- *
- *	Contains support for ensembles (see TIP#112), which provide simple
- *	mechanism for creating composite commands on top of namespaces.
- *
  * Copyright © 2005-2013 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclEnsemble.c --
+ *
+ *	Contains support for ensembles (see TIP#112), which provide simple
+ *	mechanism for creating composite commands on top of namespaces.
  */
 
 #include "tclInt.h"
@@ -82,7 +93,7 @@ static const Tcl_ObjType ensembleCmdType = {
     DupEnsembleCmdRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 #define ECRSetInternalRep(objPtr, ecRepPtr)					\
@@ -313,7 +324,7 @@ TclNamespaceEnsembleCmd(
 			Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
 			if (patchedDict == NULL) {
 			    patchedDict = TclDuplicatePureObj(
-				interp, objv[1], &tclDictType);
+				interp, objv[1], (Tcl_ObjType *)&tclDictType);
 			    if (!patchedDict) {
 				if (allocatedMapFlag) {
 				    Tcl_DecrRefCount(mapObj);

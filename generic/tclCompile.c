@@ -1,15 +1,26 @@
 /*
- * tclCompile.c --
- *
- *	This file contains procedures that compile Tcl commands or parts of
- *	commands (like quoted strings or nested sub-commands) into a sequence
- *	of instructions ("bytecodes").
- *
  * Copyright © 1996-1998 Sun Microsystems, Inc.
  * Copyright © 2001 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCompile.c --
+ *
+ *	This file contains procedures that compile Tcl commands or parts of
+ *	commands (like quoted strings or nested sub-commands) into a sequence
+ *	of instructions ("bytecodes").
  */
 
 #include "tclInt.h"
@@ -716,7 +727,7 @@ const Tcl_ObjType tclByteCodeType = {
     DupByteCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetByteCodeFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 /*
@@ -730,7 +741,7 @@ static const Tcl_ObjType substCodeType = {
     DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 #define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
 

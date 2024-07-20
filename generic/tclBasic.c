@@ -1,10 +1,4 @@
 /*
- * tclBasic.c --
- *
- *	Contains the basic facilities for TCL command interpretation,
- *	including interpreter creation and deletion, command creation and
- *	deletion, and command/script execution.
- *
  * Copyright © 1987-1994 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -16,6 +10,24 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclBasic.c --
+ *
+ *	Contains the basic facilities for TCL command interpretation,
+ *	including interpreter creation and deletion, command creation and
+ *	deletion, and command/script execution.
+ *
+*/
 
 #include "tclInt.h"
 #include "tclOOInt.h"

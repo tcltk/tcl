@@ -1,13 +1,3 @@
-#
-# This file is a Makefile to compile all the encoding files.
-#
-# Run "make" to compile all the encoding files (*.txt,*.esc) into the
-# format that Tcl can use (*.enc).  It is your responsibility to move the
-# encoding files to the appropriate place ($TCL_ROOT/library/encoding
-#
-# The .txt files in this directory come from the Unicode CD and are covered
-# by the following copyright notice:
-#
 #---------------------------------------------------------------------------
 #
 # Copyright (c) 1996 Unicode, Inc.  All Rights reserved.
@@ -30,8 +20,30 @@
 # get it over the Internet should do so directly from ftp://unicode.org.  They
 # can therefore be assured of getting the most recent and accurate version.
 #
-#----------------------------------------------------------------------------
+
+# Copyright (c) 1998 Sun Microsystems, Inc.
 #
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# SCCS: @(#) Makefile 1.1 98/01/28 11:41:36
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This file is a Makefile to compile all the encoding files.
+#
+# Run "make" to compile all the encoding files (*.txt,*.esc) into the
+# format that Tcl can use (*.enc).  It is your responsibility to move the
+# encoding files to the appropriate place ($TCL_ROOT/library/encoding
+#
+# The .txt files in this directory come from the Unicode CD and are covered
+# by the following copyright notice:
+
 # The txt2enc program built by this makefile is used to compile individual
 # .txt files into .enc files, the format that Tcl understands for encoding
 # files.  This compilation to a different format is allowed by the above
@@ -44,14 +56,7 @@
 # changed to map 0x815F to Unicode FF3C (FULLWIDTH REVERSE SOLIDUS) and let
 # the regular backslash character map to itself.  This follows how cp932
 # behaves.
-#
-# Copyright (c) 1998 Sun Microsystems, Inc.
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# SCCS: @(#) Makefile 1.1 98/01/28 11:41:36
-#
+
 
 EUC_ENCODINGS = euc-cn.txt euc-kr.txt euc-jp.txt
 

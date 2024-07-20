@@ -1,10 +1,4 @@
 /*
- * dlfcn.h --
- *
- *	This file provides a replacement for the header file "dlfcn.h"
- *	on systems where dlfcn.h is missing.  It's primary use is for
- *	AIX, where Tcl emulates the dl library.
- *
  *	This file is subject to the following copyright notice, which is
  *	different from the notice used elsewhere in Tcl but rougly
  *	equivalent in meaning.
@@ -19,6 +13,21 @@
  */
 
 /*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * dlfcn.h --
+ *
+ *	This file provides a replacement for the header file "dlfcn.h"
+ *	on systems where dlfcn.h is missing.  It's primary use is for
+ *	AIX, where Tcl emulates the dl library.
+ *
  * This is an unpublished work copyright (c) 1992 HELIOS Software GmbH
  * 30159 Hannover, Germany
  */

@@ -1,15 +1,26 @@
 /*
- * tclThreadAlloc.c --
- *
- *	This is a very fast storage allocator for used with threads (designed
- *	avoid lock contention). The basic strategy is to allocate memory in
- *	fixed size blocks from block caches.
- *
  * The Initial Developer of the Original Code is America Online, Inc.
  * Portions created by AOL are Copyright © 1999 America Online, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclThreadAlloc.c --
+ *
+ *	This is a very fast storage allocator for used with threads (designed
+ *	avoid lock contention). The basic strategy is to allocate memory in
+ *	fixed size blocks from block caches.
  */
 
 #include "tclInt.h"

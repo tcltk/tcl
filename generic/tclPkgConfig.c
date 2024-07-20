@@ -1,13 +1,24 @@
 /*
- * tclPkgConfig.c --
- *
- *	This file contains the configuration information to embed into the tcl
- *	library.
- *
  * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclPkgConfig.c --
+ *
+ *	This file contains the configuration information to embed into the tcl
+ *	library.
  */
 
 /* Note, the definitions in this module are influenced by the following C

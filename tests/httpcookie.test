@@ -1,13 +1,20 @@
+# Copyright © 2014 Donal K. Fellows.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # Commands covered:  http::cookiejar
 #
 # This file contains a collection of tests for the cookiejar package.
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
-#
-# Copyright © 2014 Donal K. Fellows.
-#
-# See the file "license.terms" for information on usage and redistribution of
-# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

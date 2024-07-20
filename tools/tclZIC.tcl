@@ -1,3 +1,14 @@
+# Copyright © 2004 Kevin B. Kenny.	 All rights reserved.
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 #----------------------------------------------------------------------
 #
 # tclZIC.tcl --
@@ -23,11 +34,6 @@
 # 'zic' command, and produces Tcl time zone information files suitable
 # for loading into the 'clock' namespace.
 #
-#----------------------------------------------------------------------
-#
-# Copyright © 2004 Kevin B. Kenny.	 All rights reserved.
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
 
 # Define the names of the Olson files that we need to load.

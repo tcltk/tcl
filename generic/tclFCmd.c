@@ -1,13 +1,24 @@
 /*
- * tclFCmd.c
- *
- *	This file implements the generic portion of file manipulation
- *	subcommands of the "file" command.
- *
  * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclFCmd.c
+ *
+ *	This file implements the generic portion of file manipulation
+ *	subcommands of the "file" command.
  */
 
 #include "tclInt.h"

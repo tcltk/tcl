@@ -1,15 +1,26 @@
 /*
+ * Copyright © 2000 Scriptics Corporation
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclThreadJoin.c --
  *
  *	This file implements a platform independent emulation layer for the
  *	handling of joinable threads. The Windows platform uses this code to
  *	provide the functionality of joining threads.  This code is currently
  *	not necessary on Unix.
- *
- * Copyright © 2000 Scriptics Corporation
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

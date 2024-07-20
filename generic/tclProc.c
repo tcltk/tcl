@@ -1,9 +1,4 @@
 /*
- * tclProc.c --
- *
- *	This file contains routines that implement Tcl procedures, including
- *	the "proc" and "uplevel" commands.
- *
  * Copyright © 1987-1993 The Regents of the University of California.
  * Copyright © 1994-1998 Sun Microsystems, Inc.
  * Copyright © 2004-2006 Miguel Sofer
@@ -11,6 +6,22 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclProc.c --
+ *
+ *	This file contains routines that implement Tcl procedures, including
+ *	the "proc" and "uplevel" commands.
  */
 
 #include "tclInt.h"
@@ -65,7 +76,7 @@ const Tcl_ObjType tclProcBodyType = {
 				 * instead. */
     NULL,			/* SetFromAny function; Tcl_ConvertToType
 				 * should panic instead. */
-    TCL_OBJTYPE_V0
+    0
 };
 
 #define ProcSetInternalRep(objPtr, procPtr)					\
@@ -94,7 +105,7 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL, NULL, NULL, NULL, 0
 };
 
 /*
@@ -112,7 +123,7 @@ static const Tcl_ObjType lambdaType = {
     DupLambdaInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetLambdaFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 #define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\

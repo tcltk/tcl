@@ -1,15 +1,26 @@
 /*
- * tclTestObjInterfce.c --
-*
- *	This file contains C command functions for the additional Tcl commands
- *	that are used for testing implementations of the Tcl object types.
- *	These commands are not normally included in Tcl applications; they're
- *	only used for testing.
- *
  * Copyright © 2021 Nathan Coulter
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclTestObjInterfce.c --
+ *
+ *	This file contains C command functions for the additional Tcl commands
+ *	that are used for testing implementations of the Tcl object types.
+ *	These commands are not normally included in Tcl applications; they're
+ *	only used for testing.
  */
 
 #include "tcl.h"

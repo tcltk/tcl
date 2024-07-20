@@ -1,14 +1,25 @@
 /*
- * tclThread.c --
- *
- *	This file implements Platform independent thread operations. Most of
- *	the real work is done in the platform dependent files.
- *
  * Copyright © 1998 Sun Microsystems, Inc.
  * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclThread.c --
+ *
+ *	This file implements Platform independent thread operations. Most of
+ *	the real work is done in the platform dependent files.
  */
 
 #include "tclInt.h"

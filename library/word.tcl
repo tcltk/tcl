@@ -1,14 +1,21 @@
-# word.tcl --
-#
-# This file defines various procedures for computing word boundaries in
-# strings. This file is primarily needed so Tk text and entry widgets behave
-# properly for different platforms.
-#
 # Copyright © 1996 Sun Microsystems, Inc.
 # Copyright © 1998 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# word.tcl --
+#
+# This file defines various procedures for computing word boundaries in
+# strings. This file is primarily needed so Tk text and entry widgets behave
+# properly for different platforms.
 
 # The following variables are used to determine which characters are
 # interpreted as word characters. See bug [f1253530cdd8]. Will

@@ -1,13 +1,24 @@
 /*
- * tclOO.c --
- *
- *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
- *
  * Copyright © 2005-2019 Donal K. Fellows
  * Copyright © 2017 Nathan Coulter
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclOO.c --
+ *
+ *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  */
 
 #ifdef HAVE_CONFIG_H

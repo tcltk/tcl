@@ -1,13 +1,20 @@
+# Copyright © 2008 Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # Commands covered:  proc, apply, [interp alias], [namespce import]
 #
 # This file contains a collection of tests for the non-recursive executor that
 # avoids recursive calls to TEBC. Only the NRE behaviour is tested here, the
 # actual command functionality is tested in the specific test file.
-#
-# Copyright © 2008 Miguel Sofer.
-#
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

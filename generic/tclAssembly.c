@@ -1,4 +1,21 @@
 /*
+ * Copyright © 2010 Ozgur Dogan Ugurlu.
+ * Copyright © 2010 Kevin B. Kenny.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclAssembly.c --
  *
  *	Assembler for Tcl bytecodes.
@@ -6,12 +23,7 @@
  * This file contains the procedures that convert Tcl Assembly Language (TAL)
  * to a sequence of bytecode instructions for the Tcl execution engine.
  *
- * Copyright © 2010 Ozgur Dogan Ugurlu.
- * Copyright © 2010 Kevin B. Kenny.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- */
+*/
 
 /*-
  *- THINGS TO DO:
@@ -326,7 +338,7 @@ static const Tcl_ObjType assembleCodeType = {
     DupAssembleCodeInternalRep,	 /* dupIntRepProc */
     NULL,			 /* updateStringProc */
     NULL,			 /* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 /*

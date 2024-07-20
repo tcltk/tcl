@@ -1,10 +1,21 @@
 /*
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * All rights reserved.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclPlatDecls.h --
  *
  *	Declarations of platform specific Tcl APIs.
- *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * All rights reserved.
  */
 
 #ifndef _TCLPLATDECLS

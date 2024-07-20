@@ -1,7 +1,4 @@
 /*
- * colorings of characters
- * This file is #included by regcomp.c.
- *
  * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
@@ -30,6 +27,21 @@
  *
  * Note that there are some incestuous relationships between this code and NFA
  * arc maintenance, which perhaps ought to be cleaned up sometime.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * colorings of characters
+ * This file is #included by regcomp.c.
+ *
  */
 
 #define	CISERR()	VISERR(cm->v)

@@ -1,10 +1,17 @@
+# Copyright © 1996 Sun Microsystems, Inc.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # regexpTestLib.tcl --
 #
 # This file contains tcl procedures used by spencer2testregexp.tcl and
 # spencer2regexp.tcl, which are programs written to convert Henry
 # Spencer's test suite to tcl test files.
-#
-# Copyright © 1996 Sun Microsystems, Inc.
 
 proc readInputFile {} {
     global inFileName

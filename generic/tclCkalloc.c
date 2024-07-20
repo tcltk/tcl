@@ -1,10 +1,4 @@
 /*
- * tclCkalloc.c --
- *
- *    Interface to malloc and free that provides support for debugging
- *    problems involving overwritten, double freeing memory and loss of
- *    memory.
- *
  * Copyright © 1991-1994 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -14,6 +8,24 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCkalloc.c --
+ *
+ *    Interface to malloc and free that provides support for debugging
+ *    problems involving overwritten, double freeing memory and loss of
+ *    memory.
+ *
+*/
 
 #include "tclInt.h"
 #include <assert.h>

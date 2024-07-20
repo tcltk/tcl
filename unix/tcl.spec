@@ -2,13 +2,13 @@
 
 %{!?directory:%define directory /usr/local}
 
-Name:          tcl
-Summary:       Tcl scripting language development environment
+Name:          tclunchained
+Summary:       TclUnchained scripting language development environment
 Version:       9.0a4
 Release:       2
-License:       BSD
+License:       GNU Affero General Public License
 Group:         Development/Languages
-Source:        http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
+Source:        http://prdownloads.sourceforge.net/tcl/tclunchained%{version}-src.tar.gz
 URL:           https://www.tcl-lang.org/
 Buildroot:     /var/tmp/%{name}%{version}
 

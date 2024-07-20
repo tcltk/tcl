@@ -1,13 +1,24 @@
 /*
- * tclWinDde.c --
- *
- *	This file provides functions that implement the "send" command,
- *	allowing commands to be passed from interpreter to interpreter.
- *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclWinDde.c --
+ *
+ *	This file provides functions that implement the "send" command,
+ *	allowing commands to be passed from interpreter to interpreter.
  */
 
 #undef STATIC_BUILD

@@ -1,4 +1,21 @@
 /*
+ * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1999 by Scriptics Corporation.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclStringRep.h --
  *
  *  This file contains the definition of internal representations of a string
@@ -7,12 +24,6 @@
  *  Conceptually, a string is a sequence of Unicode code points. Internally
  *  it may be stored in an encoding form such as a modified version of UTF-8
  *  or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
- *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifndef _TCLSTRINGREP

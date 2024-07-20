@@ -1,3 +1,16 @@
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2000 Ajuba Solutions
+# Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
+# All rights reserved.
+#
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # tcltest.tcl --
 #
 #	This file contains support code for the Tcl test suite.  It
@@ -9,12 +22,6 @@
 #       This design was based on the Tcl testing approach designed and
 #       initially implemented by Mary Ann May-Pumphrey of Sun
 #	Microsystems.
-#
-# Copyright © 1994-1997 Sun Microsystems, Inc.
-# Copyright © 1998-1999 Scriptics Corporation.
-# Copyright © 2000 Ajuba Solutions
-# Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
-# All rights reserved.
 
 package require Tcl 8.5-		;# -verbose line uses [info frame]
 namespace eval tcltest {

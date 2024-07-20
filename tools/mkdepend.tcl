@@ -1,7 +1,4 @@
 #==============================================================================
-#
-# mkdepend : generate dependency information from C/C++ files
-#
 # Copyright © 1998, Nat Pryce
 #
 # Permission is hereby granted, without written agreement and without
@@ -20,12 +17,22 @@
 # PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS"
 # BASIS, AND THE AUTHOR HAS NO OBLIGATION TO PROVIDE  MAINTENANCE, SUPPORT,
 # UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
 #==============================================================================
 #
 # Modified heavily by David Gravereaux <davygrvy@pobox.com> about 9/17/2006.
 # Original can be found @
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #==============================================================================
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# mkdepend : generate dependency information from C/C++ files
 
 array set mode_data {}
 set mode_data(vc32) {cl -nologo -E}

@@ -1,8 +1,4 @@
 /*
- * tclExecute.c --
- *
- *	This file contains procedures that execute byte-compiled Tcl commands.
- *
  * Copyright © 1996-1997 Sun Microsystems, Inc.
  * Copyright © 1998-2000 Scriptics Corporation.
  * Copyright © 2001 Kevin B. Kenny. All rights reserved.
@@ -14,6 +10,21 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclExecute.c --
+ *
+ *	This file contains procedures that execute byte-compiled Tcl commands.
  */
 
 #include "tclInt.h"
@@ -663,7 +674,7 @@ static const Tcl_ObjType exprCodeType = {
     DupExprCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    0
 };
 
 /*
@@ -674,7 +685,8 @@ static const Tcl_ObjType exprCodeType = {
 static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
-    NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL, NULL, NULL,
+    0
 };
 
 /*
@@ -2598,13 +2610,16 @@ TEBCresume(
     case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
+	DECACHE_STACK_INFO();
 	objResultPtr = TclStringCat(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
 		TCL_STRING_IN_PLACE);
 	if (objResultPtr == NULL) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
     break;
@@ -4768,7 +4783,8 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	if (TclObjectHasInterface(valuePtr, list, length)) {
+	if (TclObjectHasInterface(valuePtr, list, length)
+		&& TclObjectHasInterface(valuePtr ,list ,index)) {
 	    TCL_UNUSEDVAR(int status);
 	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
 		length, interp, valuePtr, &length);
@@ -4908,8 +4924,9 @@ TEBCresume(
 	 */
 
 	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
-		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+ 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	if (!objResultPtr) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4917,9 +4934,9 @@ TEBCresume(
 	/*
 	 * Set result.
 	 */
-
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	NEXT_INST_V(5, numIndices+1, -1);
+	NEXT_INST_V(5, numIndices+1, 1);
 
     case INST_LSET_LIST:	/* 'lset' with 4 args */
 	/*
@@ -4956,7 +4973,7 @@ TEBCresume(
 	 */
 
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-	NEXT_INST_F(1, 2, -1);
+	NEXT_INST_F(1, 2, 1);
 
     case INST_LIST_RANGE_IMM:	/* lrange with objc==4 and both indices in
 				 * bytecode stream */
@@ -5048,6 +5065,7 @@ TEBCresume(
 	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
 
@@ -6555,7 +6573,9 @@ TEBCresume(
 	    varListPtr = infoPtr->varLists[i];
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
+	    DECACHE_STACK_INFO();
 	    if (TclListObjLengthM(interp, listPtr, &listLen) != TCL_OK) {
+		CACHE_STACK_INFO();
 		TRACE_APPEND(("ERROR converting list %" TCL_Z_MODIFIER "d, \"%s\": %s",
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
@@ -6606,7 +6626,7 @@ TEBCresume(
 
 	pc += 5 - infoPtr->loopCtTemp;
 
-    case INST_FOREACH_STEP:
+    case INST_FOREACH_STEP: /* TODO: address abstract list indexing here! */
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
@@ -6641,12 +6661,13 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
+		DECACHE_STACK_INFO();
 		status = TclListObjGetElementsM(
 		    interp, listPtr, &listLen, &elements);
 		if (status != TCL_OK) {
+		    CACHE_STACK_INFO();
 		    goto gotError;
 		}
-
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
 		    if (valIndex >= listLen) {
@@ -9623,7 +9644,9 @@ EvalStatsCmd(
     double numInstructions, currentHeaderBytes;
     size_t numCurrentByteCodes, numByteCodeLits;
     size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
-    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade, i;
+    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
+    Tcl_Size i;
+    size_t ui;
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
@@ -9759,7 +9782,7 @@ EvalStatsCmd(
     strBytesIfUnshared = 0.0;
     strBytesSharedMultX = 0.0;
     strBytesSharedOnce = 0.0;
-    for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
+    for (ui = 0;  ui < globalTablePtr->numBuckets;  ui++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
 	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {
@@ -9877,9 +9900,9 @@ EvalStatsCmd(
 	}
     }
     sum = 0;
-    for (i = 0;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->literalCount[i];
+    for (ui = 0;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->literalCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
@@ -9910,9 +9933,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->srcCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->srcCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
@@ -9934,9 +9957,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->byteCodeCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  i++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->byteCodeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
@@ -9958,9 +9981,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->lifetimeCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->lifetimeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%12.3f\t\t%8.0f%%\n",
 		decadeHigh/1000.0, Percent(sum, statsPtr->numByteCodesFreed));
     }

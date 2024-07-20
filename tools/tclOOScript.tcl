@@ -1,15 +1,22 @@
-# tclOOScript.h --
-#
-# 	This file contains support scripts for TclOO. They are defined here so
-# 	that the code can be definitely run even in safe interpreters; TclOO's
-# 	core setup is safe.
-#
 # Copyright © 2012-2019 Donal K. Fellows
 # Copyright © 2013 Andreas Kupries
 # Copyright © 2017 Gerald Lester
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# tclOOScript.h --
+#
+# 	This file contains support scripts for TclOO. They are defined here so
+# 	that the code can be definitely run even in safe interpreters; TclOO's
+# 	core setup is safe.
 
 ::namespace eval ::oo {
     ::namespace path {}

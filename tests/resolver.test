@@ -1,14 +1,21 @@
-# This test collection covers some unwanted interactions between command
-# literal sharing and the use of command resolvers (per-interp) which cause
-# command literals to be re-used with their command references being invalid
-# in the reusing context.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
-#
 # Copyright © 2011 Gustaf Neumann <gustaf.neumann@wu.ac.at>
 # Copyright © 2011 Stefan Sobernig <stefan.sobernig@wu.ac.at>
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This test collection covers some unwanted interactions between command
+# literal sharing and the use of command resolvers (per-interp) which cause
+# command literals to be re-used with their command references being invalid
+# in the reusing context.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

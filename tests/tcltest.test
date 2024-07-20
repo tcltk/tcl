@@ -1,10 +1,17 @@
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
-#
 # Copyright © 1998-1999 Scriptics Corporation.
 # Copyright © 2000 Ajuba Solutions
 # All rights reserved.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
 
 # Note that there are several places where the value of
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -15,7 +22,6 @@
 # It would be better to have the -body of the tests run the tcltest
 # commands in a child interp so the [test] being tested would not
 # interfere with the [test] doing the testing.
-#
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

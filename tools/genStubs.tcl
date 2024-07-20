@@ -1,14 +1,20 @@
-# genStubs.tcl --
-#
-#	This script generates a set of stub files for a given
-#	interface.
-#
-#
 # Copyright © 1998-1999 Scriptics Corporation.
 # Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# genStubs.tcl --
+#
+#	This script generates a set of stub files for a given
+#	interface.
 
 namespace eval genStubs {
     # libraryName --

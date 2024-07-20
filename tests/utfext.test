@@ -1,11 +1,19 @@
-# This file contains a collection of tests for Tcl_UtfToExternal and
-# Tcl_UtfToExternal. Sourcing this file into Tcl runs the tests and generates
-# errors. No output means no errors found.
-#
 # Copyright (c) 2023 Ashok P. Nadkarni
+# Copyright (c) 2024 Nathan Coulter
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This file contains a collection of tests for Tcl_UtfToExternal and
+# Tcl_UtfToExternal. Sourcing this file into Tcl runs the tests and generates
+# errors. No output means no errors found.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -78,7 +86,7 @@ test TableToUtf-bug-5be203d6ca {Bug 5be203d6ca - truncated prefix in table encod
     set src \x82\x4f\x82\x50\x82 
     lassign [testencoding Tcl_ExternalToUtf shiftjis $src {start} 0 16 srcRead dstWritten charsWritten] buf 
     set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
-    lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+    lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end profiletcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
 } -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1]
 
 

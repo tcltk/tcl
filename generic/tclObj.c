@@ -1,9 +1,4 @@
 /*
- * tclObj.c --
- *
- *	This file contains Tcl object-related functions that are used by many
- *	Tcl commands.
- *
  * Copyright © 1995-1997 Sun Microsystems, Inc.
  * Copyright © 1999 Scriptics Corporation.
  * Copyright © 2001 ActiveState Corporation.
@@ -13,6 +8,22 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclObj.c --
+ *
+ *	This file contains Tcl object-related functions that are used by many
+ *	Tcl commands.
  */
 
 #include "tclInt.h"
@@ -431,11 +442,20 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(tclDoubleType);
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(tclListType);
-    Tcl_RegisterObjType(&tclDictType);
+    Tcl_RegisterObjType((Tcl_ObjType *)&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
+
+    /* For backward compatibility only ... */
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+    Tcl_RegisterObjType(&tclIntType);
+#if !defined(TCL_WIDE_INT_IS_LONG)
+    Tcl_RegisterObjType(&oldIntType);
+#endif
+    Tcl_RegisterObjType(&oldBooleanType);
+#endif
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -1675,6 +1695,8 @@ int SetDuplicatePureObj(
 {
     char *bytes = objPtr->bytes;
     int status = TCL_OK;
+    const Tcl_ObjType *useTypePtr =
+        objPtr->typePtr ? objPtr->typePtr : typePtr;
 
     TclInvalidateStringRep(dupPtr);
     assert(dupPtr->typePtr == NULL);
@@ -1686,13 +1708,13 @@ int SetDuplicatePureObj(
 	dupPtr->typePtr = objPtr->typePtr;
     }
 
-    if (typePtr != NULL && dupPtr->typePtr != typePtr) {
+    if (typePtr != NULL && dupPtr->typePtr != useTypePtr) {
 	if (bytes) {
 	    dupPtr->bytes = bytes;
 	    dupPtr->length = objPtr->length;
 	}
 	/* borrow bytes from original object */
-	status = Tcl_ConvertToType(interp, dupPtr, typePtr);
+	status = Tcl_ConvertToType(interp, dupPtr, useTypePtr);
 	if (bytes) {
 	    dupPtr->bytes = NULL;
 	    dupPtr->length = 0;
@@ -1715,7 +1737,7 @@ int SetDuplicatePureObj(
 
     if (bytes && (dupPtr->typePtr == NULL
 	|| dupPtr->typePtr->updateStringProc == NULL
-	|| typePtr == &tclStringType
+	|| useTypePtr == &tclStringType
 	)
     ) {
 	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {

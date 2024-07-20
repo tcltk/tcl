@@ -1,11 +1,4 @@
 /*
- * tclCmdMZ.c --
- *
- *	This file contains the top-level command routines for most of the Tcl
- *	built-in commands whose names begin with the letters M to Z. It
- *	contains only commands in the generic core (i.e. those that don't
- *	depend much upon UNIX facilities).
- *
  * Copyright © 1987-1993 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 1998-2000 Scriptics Corporation.
@@ -14,6 +7,24 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCmdMZ.c --
+ *
+ *	This file contains the top-level command routines for most of the Tcl
+ *	built-in commands whose names begin with the letters M to Z. It
+ *	contains only commands in the generic core (i.e. those that don't
+ *	depend much upon UNIX facilities).
  */
 
 #include "tclInt.h"
@@ -1999,7 +2010,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
+	    && TclHasInternalRep(objv[objc-2], (Tcl_ObjType *)&tclDictType)) {
 	Tcl_Size i;
 	int done;
 	Tcl_DictSearch search;

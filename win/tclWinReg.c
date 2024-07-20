@@ -1,15 +1,26 @@
 /*
- * tclWinReg.c --
- *
- *	This file contains the implementation of the "registry" Tcl built-in
- *	command. This command is built as a dynamically loadable extension in
- *	a separate DLL.
- *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclWinReg.c --
+ *
+ *	This file contains the implementation of the "registry" Tcl built-in
+ *	command. This command is built as a dynamically loadable extension in
+ *	a separate DLL.
  */
 
 #undef STATIC_BUILD

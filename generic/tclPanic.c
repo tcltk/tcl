@@ -1,16 +1,27 @@
 /*
- * tclPanic.c --
- *
- *	Source code for the "Tcl_Panic" library procedure for Tcl; individual
- *	applications will probably call Tcl_SetPanicProc() to set an
- *	application-specific panic procedure.
- *
  * Copyright © 1988-1993 The Regents of the University of California.
  * Copyright © 1994 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclPanic.c --
+ *
+ *	Source code for the "Tcl_Panic" library procedure for Tcl; individual
+ *	applications will probably call Tcl_SetPanicProc() to set an
+ *	application-specific panic procedure.
  */
 
 #include "tclInt.h"

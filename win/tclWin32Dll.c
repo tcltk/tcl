@@ -1,14 +1,25 @@
 /*
- * tclWin32Dll.c --
- *
- *	This file contains the DLL entry point and other low-level bit bashing
- *	code that needs inline assembly.
- *
  * Copyright © 1995-1996 Sun Microsystems, Inc.
  * Copyright © 1998-2000 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclWin32Dll.c --
+ *
+ *	This file contains the DLL entry point and other low-level bit bashing
+ *	code that needs inline assembly.
  */
 
 #include "tclWinInt.h"

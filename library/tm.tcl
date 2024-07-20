@@ -1,9 +1,13 @@
-# -*- tcl -*-
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
 #
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # Searching for Tcl Modules. Defines a procedure, declares it as the primary
 # command for finding packages, however also uses the former 'package unknown'
 # command as a fallback.
-#
+
 # Locates all possible packages in a directory via a less restricted glob. The
 # targeted directory is derived from the name of the requested package, i.e.
 # the TM scan will look only at directories which can contain the requested

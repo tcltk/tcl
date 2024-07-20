@@ -1,17 +1,28 @@
 /*
- * tclTestObj.c --
- *
- *	This file contains C command functions for the additional Tcl commands
- *	that are used for testing implementations of the Tcl object types.
- *	These commands are not normally included in Tcl applications; they're
- *	only used for testing.
- *
  * Copyright © 1995-1998 Sun Microsystems, Inc.
  * Copyright © 1999 Scriptics Corporation.
  * Copyright © 2005 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclTestObj.c --
+ *
+ *	This file contains C command functions for the additional Tcl commands
+ *	that are used for testing implementations of the Tcl object types.
+ *	These commands are not normally included in Tcl applications; they're
+ *	only used for testing.
  */
 
 #ifndef USE_TCL_STUBS
@@ -976,14 +987,13 @@ TestlistobjCmd(
 	    }
 	    Tcl_IncrRefCount(objP);
 	    Tcl_DecrRefCount(objP);
-	    TCL_COMMENT(
-		if (objP->refCount <= 0) {
+		if (objP->refCount < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "Tcl_ListObjIndex returned object with ref count <= 0",
+			    "Tcl_ListObjIndex returned object with ref count < 0",
 			    TCL_INDEX_NONE));
 		    /* Keep looping since we are also looping for leaks */
 		}
-	    )
+	    Tcl_BumpObj(objP);
 	}
 	break;
 

@@ -1,15 +1,26 @@
 /*
- * tclPreserve.c --
- *
- *	This file contains a collection of functions that are used to make
- *	sure that widget records and other data structures aren't reallocated
- *	when there are nested functions that depend on their existence.
- *
  * Copyright © 1991-1994 The Regents of the University of California.
  * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclPreserve.c --
+ *
+ *	This file contains a collection of functions that are used to make
+ *	sure that widget records and other data structures aren't reallocated
+ *	when there are nested functions that depend on their existence.
  */
 
 #include "tclInt.h"

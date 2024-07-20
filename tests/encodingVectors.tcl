@@ -1,3 +1,10 @@
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # This file contains test vectors for verifying various encodings. They are
 # stored in a common file so that they can be sourced into the various test
 # modules that are dependent on encodings. This file contains statically defined
@@ -6,7 +13,6 @@
 #
 # Note that sourcing the file will reinitialize any existing encoding test
 # vectors.
-#
 
 # List of defined encoding profiles
 set encProfiles {tcl8 strict replace}

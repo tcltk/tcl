@@ -1,16 +1,23 @@
-# This file contains tests for the package and ::pkg::* commands.
-# Note that the tests are limited to Tcl scripts only, there are no shared
-# libraries against which to test.
-#
-# Sourcing this file into Tcl runs the tests and generates output for errors.
-# No output means no errors were found.
-#
 # Copyright © 1995-1996 Sun Microsystems, Inc.
 # Copyright © 1998-1999 Scriptics Corporation.
 # Copyright © 2011 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This file contains tests for the package and ::pkg::* commands.
+# Note that the tests are limited to Tcl scripts only, there are no shared
+# libraries against which to test.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

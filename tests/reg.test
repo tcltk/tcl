@@ -1,3 +1,12 @@
+# Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # reg.test --
 #
 # This file contains a collection of tests for one or more of the Tcl
@@ -6,8 +15,6 @@
 # (Don't panic if you are seeing this as part of the reg distribution
 # and aren't using Tcl -- reg's own regression tester also knows how
 # to read this file, ignoring the Tcl-isms.)
-#
-# Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

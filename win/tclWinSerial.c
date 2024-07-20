@@ -1,15 +1,26 @@
 /*
- * tclWinSerial.c --
- *
- *	This file implements the Windows-specific serial port functions, and
- *	the "serial" channel driver.
- *
  * Copyright © 1999 Scriptics Corp.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclWinSerial.c --
+ *
+ *	This file implements the Windows-specific serial port functions, and
+ *	the "serial" channel driver.
  */
 
 #include "tclWinInt.h"

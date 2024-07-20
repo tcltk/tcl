@@ -1,14 +1,25 @@
 /*
+ * Copyright © 2005-2019 Donal K. Fellows
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclOOCall.c --
  *
  *	This file contains the method call chain management code for the
  *	object-system core. It also contains everything else that does
  *	inheritance hierarchy traversal.
- *
- * Copyright © 2005-2019 Donal K. Fellows
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -153,7 +164,7 @@ static const Tcl_ObjType methodNameType = {
     DupMethodNameRep,
     NULL,
     NULL,
-    TCL_OBJTYPE_V0
+	0
 };
 
 

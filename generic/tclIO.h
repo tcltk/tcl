@@ -1,14 +1,25 @@
 /*
- * tclIO.h --
- *
- *	This file provides the generic portions (those that are the same on
- *	all platforms and for all channel types) of Tcl's IO facilities.
- *
  * Copyright (c) 1998-2000 Ajuba Solutions
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclIO.h --
+ *
+ *	This file provides the generic portions (those that are the same on
+ *	all platforms and for all channel types) of Tcl's IO facilities.
  */
 
 /*

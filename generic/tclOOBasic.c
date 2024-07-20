@@ -1,13 +1,24 @@
 /*
- * tclOOBasic.c --
- *
- *	This file contains implementations of the "simple" commands and
- *	methods from the object-system core.
- *
  * Copyright © 2005-2013 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclOOBasic.c --
+ *
+ *	This file contains implementations of the "simple" commands and
+ *	methods from the object-system core.
  */
 
 #ifdef HAVE_CONFIG_H

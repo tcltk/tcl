@@ -1,17 +1,23 @@
-# -*- tcl -*-
-# Functionality covered: operation of all IO commands, and all procedures
-# defined in generic/tclIO.c.
-#
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
-#
 # Copyright © 1991-1994 The Regents of the University of California.
 # Copyright © 1994-1997 Sun Microsystems, Inc.
 # Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# Functionality covered: operation of all IO commands, and all procedures
+# defined in generic/tclIO.c.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -7370,8 +7376,8 @@ test io-52.3 {TclCopyChannel} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -encoding iso8859-1 -blocking 0
-    fconfigure $f2 -translation cr -encoding iso8859-1 -blocking 0
+    fconfigure $f1 -encoding utf-8 -translation lf -encoding iso8859-1 -blocking 0
+    fconfigure $f2 -encoding utf-8 -translation cr -encoding iso8859-1 -blocking 0
     set s0 [fcopy $f1 $f2]
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
@@ -7387,26 +7393,28 @@ test io-52.4 {TclCopyChannel} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0
-    fconfigure $f2 -translation cr -blocking 0
+    fconfigure $f1 -encoding utf-8 -translation lf -blocking 0
+    fconfigure $f2 -encoding utf-8 -translation cr -blocking 0
     fcopy $f1 $f2 -size 40
     set result [list [fblocked $f1] [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
+    # the file size is 41 because "©" is encoded in two bytes
     lappend result [file size $path(test1)]
-} {0 0 0 40}
+} {0 0 0 41}
 test io-52.4.1 {TclCopyChannel} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0 -buffersize 10000000
-    fconfigure $f2 -translation cr -blocking 0
+    fconfigure $f1 -encoding utf-8 -translation lf -blocking 0 -buffersize 10000000
+    fconfigure $f2 -encoding utf-8 -translation cr -blocking 0
     fcopy $f1 $f2 -size 40
     set result [list [fblocked $f1] [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
+    # the file size is 41 because "©" is encoded in two bytes
     lappend result [file size $path(test1)]
-} {0 0 0 40}
+} {0 0 0 41}
 test io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
@@ -7501,7 +7509,7 @@ test io-52.8 {TclCopyChannel} {stdio fcopy} {
 	puts ready
 	gets stdin
 	set f1 \[open [list $thisScript] r\]
-	fconfigure \$f1 -translation lf
+	fconfigure \$f1 -encoding utf-8 -translation lf
 	puts \[read \$f1 100\]
 	close \$f1
     "
@@ -7512,12 +7520,13 @@ test io-52.8 {TclCopyChannel} {stdio fcopy} {
     puts $f1 ready
     flush $f1
     set f2 [open $path(test1) w]
-    fconfigure $f2 -translation lf
+    fconfigure $f2 -encoding utf-8 -translation lf
     set s0 [fcopy $f1 $f2 -size 40]
     catch {close $f1}
     close $f2
+    # the file size is 41 because "©" is encoded in two bytes
     list $s0 [file size $path(test1)]
-} {40 40}
+} {40 41}
 # Empty files, to register them with the test facility
 set path(kyrillic.txt)   [makeFile {} kyrillic.txt]
 set path(utf8-fcopy.txt) [makeFile {} utf8-fcopy.txt]

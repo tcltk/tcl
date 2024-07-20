@@ -1,16 +1,27 @@
 /*
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclThreadTest.c --
  *
  *	This file implements the testthread command. Eventually this should be
  *	tclThreadCmd.c
  *	Some of this code is based on work done by Richard Hipp on behalf of
  *	Conservation Through Innovation, Limited, with their permission.
- *
- * Copyright © 1998 Sun Microsystems, Inc.
- * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifndef USE_TCL_STUBS

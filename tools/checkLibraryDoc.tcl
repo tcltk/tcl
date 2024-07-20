@@ -1,3 +1,13 @@
+# Copyright © 1998-1999 Scriptics Corporation.
+# All rights reserved.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # checkLibraryDoc.tcl --
 #
 # This script attempts to determine what APIs exist in the source base that
@@ -15,9 +25,7 @@
 # Note: Each list is "a best guess" approximation.  If developers write
 # non-standard code, this script will produce erroneous results.  Each
 # list should be carefully checked for accuracy.
-#
-# Copyright © 1998-1999 Scriptics Corporation.
-# All rights reserved.
+
 
 
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"

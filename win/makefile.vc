@@ -1,3 +1,17 @@
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Ajuba Solutions.
+# Copyright (c) 2001-2005 ActiveState Corporation.
+# Copyright (c) 2001-2004 David Gravereaux.
+# Copyright (c) 2003-2008 Pat Thoyts.
+# Copyright (c) 2017 Ashok P. Nadkarni
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 #------------------------------------------------------------- -*- makefile -*-
 #
 #	Microsoft Visual C++ makefile for building Tcl with nmake
@@ -5,13 +19,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 Ajuba Solutions.
-# Copyright (c) 2001-2005 ActiveState Corporation.
-# Copyright (c) 2001-2004 David Gravereaux.
-# Copyright (c) 2003-2008 Pat Thoyts.
-# Copyright (c) 2017 Ashok P. Nadkarni
 #------------------------------------------------------------------------------
+
 
 # General usage:
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
@@ -226,6 +235,7 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
+	$(TMP_DIR)\tclTestABSList.obj \
 !if !$(STATIC_BUILD)
 	$(OUT_DIR)\tommath.lib \
 !endif
@@ -236,8 +246,8 @@ COREOBJS = \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
-	$(TMP_DIR)\tclAlloc.obj \
 	$(TMP_DIR)\tclArithSeries.obj \
+	$(TMP_DIR)\tclAlloc.obj \
 	$(TMP_DIR)\tclAssembly.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
@@ -828,6 +838,9 @@ $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
 	    -Fo$@ $(GENERICDIR)\tclTest.c
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
+	$(cc32) $(appcflags) -Fo$@ $?
+
+$(TMP_DIR)\tclTestABSList.obj: $(GENERICDIR)\tclTestABSList.c
 	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c

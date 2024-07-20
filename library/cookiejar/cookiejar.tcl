@@ -1,11 +1,18 @@
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # cookiejar.tcl --
 #
 #	Implementation of an HTTP cookie storage engine using SQLite. The
 #	implementation is done as a TclOO class, and includes a punycode
 #	encoder and decoder (though only the encoder is currently used).
-#
-# See the file "license.terms" for information on usage and redistribution of
-# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # Dependencies
 package require Tcl 8.6-

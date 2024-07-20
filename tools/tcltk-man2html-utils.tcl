@@ -1,10 +1,16 @@
-##
-## Utility functions for Man->HTML converter. Note that these
-## functions are specifically intended to work with the format as used
-## by Tcl and Tk; they do not cope with arbitrary nroff markup.
-##
-## Copyright © 1995-1997 Roger E. Critchlow Jr
-## Copyright © 2004-2011 Donal K. Fellows
+# Copyright © 1995-1997 Roger E. Critchlow Jr
+# Copyright © 2004-2011 Donal K. Fellows
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# Utility functions for Man->HTML converter. Note that these
+# functions are specifically intended to work with the format as used
+# by Tcl and Tk; they do not cope with arbitrary nroff markup.
 
 set ::manual(report-level) 1
 

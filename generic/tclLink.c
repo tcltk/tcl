@@ -1,11 +1,4 @@
 /*
- * tclLink.c --
- *
- *	This file implements linked variables (a C variable that is tied to a
- *	Tcl variable). The idea of linked variables was first suggested by
- *	Andreas Stolcke and this implementation is based heavily on a
- *	prototype implementation provided by him.
- *
  * Copyright © 1993 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  * Copyright © 2008 Rene Zaumseil
@@ -13,6 +6,15 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclLink.c --
+ *
+ *	This file implements linked variables (a C variable that is tied to a
+ *	Tcl variable). The idea of linked variables was first suggested by
+ *	Andreas Stolcke and this implementation is based heavily on a
+ *	prototype implementation provided by him.
  */
 
 #include "tclInt.h"
@@ -115,7 +117,7 @@ static Tcl_ObjType invalidRealType = {
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 /*

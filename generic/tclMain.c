@@ -1,4 +1,22 @@
 /*
+ * Copyright © 1988-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2000 Ajuba Solutions.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclMain.c --
  *
  *	Main program for Tcl shells and other Tcl-based applications.
@@ -7,13 +25,6 @@
  *	just by supplying a different appInitProc function for each specific
  *	application. Or, it can be used as a template for creating new main
  *	programs for Tcl applications.
- *
- * Copyright © 1988-1994 The Regents of the University of California.
- * Copyright © 1994-1997 Sun Microsystems, Inc.
- * Copyright © 2000 Ajuba Solutions.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 /*

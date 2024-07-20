@@ -1,16 +1,27 @@
 /*
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclHistory.c --
  *
  *	This module and the Tcl library file history.tcl together implement
  *	Tcl command history. Tcl_RecordAndEval(Obj) can be called to record
  *	commands ("events") before they are executed. Commands defined in
  *	history.tcl may be used to perform history substitutions.
- *
- * Copyright © 1990-1993 The Regents of the University of California.
- * Copyright © 1994-1997 Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

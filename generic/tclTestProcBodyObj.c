@@ -1,14 +1,25 @@
 /*
+ * Copyright © 1998 Scriptics Corporation.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclTestProcBodyObj.c --
  *
  *	Implements the "procbodytest" package, which contains commands to test
  *	creation of Tcl procedures whose body argument is a Tcl_Obj of type
  *	"procbody" rather than a string.
- *
- * Copyright © 1998 Scriptics Corporation.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #ifndef USE_TCL_STUBS

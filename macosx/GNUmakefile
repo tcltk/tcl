@@ -1,14 +1,19 @@
-########################################################################################################
-#
-# Makefile wrapper to build tcl on Mac OS X in a way compatible with the tk/macosx Xcode buildsystem
-#	uses the standard Unix build system in tcl/unix (which can be used directly instead of this
-#	if you are not using the tk/macosx projects).
-#
 # Copyright (c) 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-########################################################################################################
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# Makefile wrapper to build tcl on Mac OS X in a way compatible with the tk/macosx Xcode buildsystem
+#	uses the standard Unix build system in tcl/unix (which can be used directly instead of this
+#	if you are not using the tk/macosx projects).
+#
 
 #-------------------------------------------------------------------------------------------------------
 # customizable settings

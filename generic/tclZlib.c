@@ -1,8 +1,4 @@
 /*
- * tclZlib.c --
- *
- *	This file provides the interface to the Zlib library.
- *
  * Copyright © 2004-2005 Pascal Scheffers <pascal@scheffers.net>
  * Copyright © 2005 Unitas Software B.V.
  * Copyright © 2008-2012 Donal K. Fellows
@@ -12,6 +8,21 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclZlib.c --
+ *
+ *	This file provides the interface to the Zlib library.
  */
 
 #include "tclInt.h"

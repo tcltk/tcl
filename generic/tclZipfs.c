@@ -1,14 +1,25 @@
 /*
- * tclZipfs.c --
- *
- *	Implementation of the ZIP filesystem used in TIP 430
- *	Adapted from the implementation for AndroWish.
- *
  * Copyright © 2016-2017 Sean Woods <yoda@etoyoc.com>
  * Copyright © 2013-2015 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclZipfs.c --
+ *
+ *	Implementation of the ZIP filesystem used in TIP 430
+ *	Adapted from the implementation for AndroWish.
  *
  * This file is distributed in two ways:
  *   generic/tclZipfs.c file in the TIP430-enabled Tcl cores.

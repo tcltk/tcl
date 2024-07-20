@@ -1,16 +1,23 @@
+# Copyright © 2014 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # idna.tcl --
 #
 #	Implementation of IDNA (Internationalized Domain Names for
 #	Applications) encoding/decoding system, built on a punycode engine
 #	developed directly from the code in RFC 3492, Appendix C (with
 #	substantial modifications).
-#
-# This implementation includes code from that RFC, translated to Tcl; the
-# other parts are:
-# Copyright © 2014 Donal K. Fellows
-#
-# See the file "license.terms" for information on usage and redistribution of
-# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# This implementation includes code from that RFC, translated to Tcl.
 
 namespace eval ::tcl::idna {
     namespace ensemble create -command puny -map {

@@ -1,14 +1,25 @@
 /*
- * tclUnixPipe.c --
- *
- *	This file implements the UNIX-specific exec pipeline functions, the
- *	"pipe" channel driver, and the "pid" Tcl command.
- *
  * Copyright © 1991-1994 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclUnixPipe.c --
+ *
+ *	This file implements the UNIX-specific exec pipeline functions, the
+ *	"pipe" channel driver, and the "pid" Tcl command.
  */
 
 #include "tclInt.h"

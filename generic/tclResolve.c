@@ -1,15 +1,26 @@
 /*
+ * Copyright © 1998 Lucent Technologies, Inc.
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclResolve.c --
  *
  *	Contains hooks for customized command/variable name resolution
  *	schemes. These hooks allow extensions like [incr Tcl] to add their own
  *	name resolution rules to the Tcl language. Rules can be applied to a
  *	particular namespace, to the interpreter as a whole, or both.
- *
- * Copyright © 1998 Lucent Technologies, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution of
- * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"

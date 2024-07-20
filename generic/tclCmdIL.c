@@ -1,11 +1,4 @@
 /*
- * tclCmdIL.c --
- *
- *	This file contains the top-level command routines for most of the Tcl
- *	built-in commands whose names begin with the letters I through L. It
- *	contains only commands in the generic core (i.e., those that don't
- *	depend much upon UNIX facilities).
- *
  * Copyright © 1987-1993 The Regents of the University of California.
  * Copyright © 1993-1997 Lucent Technologies.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
@@ -17,9 +10,26 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCmdIL.c --
+ *
+ *	This file contains the top-level command routines for most of the Tcl
+ *	built-in commands whose names begin with the letters I through L. It
+ *	contains only commands in the generic core (i.e., those that don't
+ *	depend much upon UNIX facilities).
+ */
+
 #include "tclInt.h"
 #include "tclRegexp.h"
-#include "tclArithSeries.h"
 #include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
@@ -2722,7 +2732,6 @@ Tcl_LpopObjCmd(
 
     /*
      * Second, remove the element.
-     * TclLsetFlat adds a ref count which is handled.
      */
 
     if (objc == 2) {
@@ -2743,13 +2752,9 @@ Tcl_LpopObjCmd(
     } else {
 	Tcl_Obj *newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
 	if (newListPtr == NULL) {
-	    if (copied) {
-		Tcl_DecrRefCount(listPtr);
-	    }
 	    return TCL_ERROR;
 	} else {
 	    listPtr = newListPtr;
-	    TclUndoRefCount(listPtr);
 	}
     }
 
@@ -3251,19 +3256,21 @@ Tcl_LreverseObjCmd(
     }
 
     if (TclObjectHasInterface(objv[1], list, reverse)) {
-	TCL_UNUSEDVAR(int status);
+	int status;
 	Tcl_Obj *resObj;
-	TclObjectDispatchNoDefault(interp, resObj, objv[1], list,
-	    reverse, interp, objv[1]);
-	if (resObj) {
-	    Tcl_SetObjResult(interp, resObj);
-	    return TCL_OK;
+	if (Tcl_IsShared(objv[1])) {
+	    resObj = Tcl_DuplicateObj(objv[1]);
 	} else {
-	    return TCL_ERROR;
+	    resObj = objv[1];
 	}
+	TclObjectDispatchNoDefault(interp, status, resObj, list,
+	    reverse, interp, resObj);
+	    if (status == TCL_OK) {
+		Tcl_SetObjResult(interp, resObj);
+	    }
+	    return status;
     }
 
-    /* True List */
     if (TclListObjLengthM(interp, objv[1], &elemc) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -4210,7 +4217,7 @@ Tcl_LsearchObjCmd(
 
 int
 Tcl_LsetObjCmd(
-    TCL_UNUSED(void *),
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -4263,7 +4270,6 @@ Tcl_LsetObjCmd(
 
     listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, finalValuePtr,
 	    TCL_LEAVE_ERR_MSG);
-    Tcl_DecrRefCount(finalValuePtr);
     if (listPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -4416,7 +4422,7 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status, keyword, useDoubles = 0;
+    int status = TCL_ERROR, keyword, useDoubles = 0;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
     SequenceDecoded decoded;
@@ -4486,11 +4492,10 @@ Tcl_LseqObjCmd(
     case 0:
 	 Tcl_WrongNumArgs(interp, 1, objv,
 	     "n ??op? n ??by? n??");
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
 
-/*    range n */
+/*    lseq n */
     case 1:
 	start = zero;
 	elementCount = numValues[0];
@@ -4498,22 +4503,22 @@ Tcl_LseqObjCmd(
 	step = one;
 	break;
 
-/*    range n n */
+/*    lseq n n */
     case 11:
 	start = numValues[0];
 	end = numValues[1];
 	break;
 
-/*    range n n n */
+/*    lseq n n n */
     case 111:
 	start = numValues[0];
 	end = numValues[1];
 	step = numValues[2];
 	break;
 
-/*    range n 'to' n    */
-/*    range n 'count' n */
-/*    range n 'by' n    */
+/*    lseq n 'to' n    */
+/*    lseq n 'count' n */
+/*    lseq n 'by' n    */
     case 121:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4533,13 +4538,12 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	}
 	break;
 
-/*    range n 'to' n n    */
-/*    range n 'count' n n */
+/*    lseq n 'to' n n    */
+/*    lseq n 'count' n n */
     case 1211:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4556,17 +4560,15 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
 	break;
 
-/*    range n n 'by' n */
+/*    lseq n n 'by' n */
     case 1121:
 	start = numValues[0];
 	end = numValues[1];
@@ -4579,14 +4581,13 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
 	break;
 
-/*    range n 'to' n 'by' n    */
-/*    range n 'count' n 'by' n */
+/*    lseq n 'to' n 'by' n    */
+/*    lseq n 'count' n 'by' n */
     case 12121:
 	start = numValues[0];
 	opmode = (SequenceOperators)values[3];
@@ -4595,7 +4596,6 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4611,7 +4611,6 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4625,7 +4624,6 @@ Tcl_LseqObjCmd(
     case 1212:
 	 opmode = (SequenceOperators)values[3]; goto KeywordError; break;
     KeywordError:
-	 status = TCL_ERROR;
 	 switch (opmode) {
 	 case LSEQ_DOTS:
 	 case LSEQ_TO:
@@ -4641,14 +4639,12 @@ Tcl_LseqObjCmd(
 		  "missing \"by\" value."));
 	      break;
 	 }
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
 
 /*    All other argument errors */
     default:
 	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
     }
@@ -4656,12 +4652,16 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
-		  useDoubles, start, end, step, elementCount);
+    arithSeriesPtr = TclNewArithSeriesObj(interp,
+	useDoubles, start, end, step, elementCount);
 
-    if (status == TCL_OK) {
+    if (arithSeriesPtr) {
+	status = TCL_OK;
 	Tcl_SetObjResult(interp, arithSeriesPtr);
+    } else {
+	status = TCL_ERROR;
     }
+
 
  done:
     // Free number arguments.
@@ -5697,7 +5697,7 @@ SelectObjFromSublist(
     for (i=0 ; i<infoPtr->indexc ; i++) {
 	Tcl_Size listLen;
 	int index;
-	Tcl_Obj *currentObj;
+	Tcl_Obj *currentObj, *lastObj=NULL;
 
 	if (TclListObjLengthM(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
@@ -5728,6 +5728,8 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	objPtr = currentObj;
+	Tcl_BumpObj(lastObj);
+	lastObj = currentObj;
     }
     return objPtr;
 }

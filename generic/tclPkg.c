@@ -1,14 +1,30 @@
 /*
- * tclPkg.c --
- *
- *	This file implements package and version control for Tcl via the
- *	"package" command and a few C APIs.
- *
  * Copyright © 1996 Sun Microsystems, Inc.
  * Copyright © 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * Copyright © 2017 Nathan Coulter
+ *
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclPkg.c --
+ *
+ *	This file implements package and version control for Tcl via the
+ *	"package" command and a few C APIs.
+ */
+
+/*
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended

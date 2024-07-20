@@ -1,13 +1,24 @@
 /*
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * All rights reserved.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
  * tclIntPlatDecls.h --
  *
  *	This file contains the declarations for all platform dependent
  *	unsupported functions that are exported by the Tcl library.  These
  *	interfaces are not guaranteed to remain the same between
  *	versions.  Use at your own risk.
- *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * All rights reserved.
  */
 
 #ifndef _TCLINTPLATDECLS

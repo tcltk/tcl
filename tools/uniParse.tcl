@@ -1,3 +1,15 @@
+#! /usr/bin/env tclsh
+
+# Copyright © 1998-1999 Scriptics Corporation.
+# All rights reserved.
+
+# You may distribute and/or modify this program under the terms of the GNU
+# Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# See the file "COPYING" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 # uniParse.tcl --
 #
 #	This program parses the UnicodeData file and generates the
@@ -5,9 +17,6 @@
 #	data tables.  The input to this program should be the latest
 #	UnicodeData file from:
 #	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
-#
-# Copyright © 1998-1999 Scriptics Corporation.
-# All rights reserved.
 
 
 namespace eval uni {

@@ -1,9 +1,4 @@
 /*
- * tcl.h --
- *
- *	This header file describes the externally-visible facilities of the
- *	Tcl interpreter.
- *
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1993-1996 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -14,6 +9,25 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
+
+/*
+ * Copyright © 2024 Nathan Coulter
+ *
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tcl.h --
+ *
+ *	This header file describes the externally-visible facilities of the
+ *	Tcl interpreter.
+ *
+*/
 
 #ifndef _TCL
 #define _TCL
@@ -616,10 +630,7 @@ typedef struct Tcl_ObjType {
 				 * old type. Returns TCL_ERROR on failure. */
     size_t version;
 } Tcl_ObjType;
-#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init
-			  * when existing code that does not init this
-			  * field is compiled with Tcl9 headers */
-#define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V0
+
 
 /*
  * The following structure stores an internal representation (internalrep) for
@@ -672,7 +683,6 @@ struct Tcl_Obj {
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 };
 
-
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
@@ -2345,6 +2355,25 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
+/*
+ * Free the Obj by effectively doing:
+ *
+ *   Tcl_IncrRefCount(objPtr);
+ *   Tcl_DecrRefCount(objPtr);
+ *
+ * This will free the obj if there are no references to the obj.
+ */
+#   define Tcl_BumpObj(objPtr) \
+    TclBumpObj(objPtr, __FILE__, __LINE__)
+
+static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
+{
+    if (objPtr) {
+        if ((objPtr)->refCount == 0) {
+            Tcl_DbDecrRefCount(objPtr, fn, line);
+	}
+    }
+}
 #else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
@@ -2364,6 +2393,24 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
+
+/*
+ * Declare that obj will no longer be used or referenced.
+ * This will release the obj if there is no referece count,
+ * otherwise let it be.
+ */
+#   define Tcl_BumpObj(objPtr)     \
+    TclBumpObj(objPtr);
+
+static inline void TclBumpObj(Tcl_Obj* objPtr)
+{
+    if (objPtr) {
+        if ((objPtr)->refCount == 0) {
+            Tcl_DecrRefCount(objPtr);
+	}
+    }
+}
+
 #endif
 
 /*

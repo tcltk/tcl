@@ -1,11 +1,22 @@
 /*
- * tclUnixInit.c --
- *
- *	Contains the Unix-specific interpreter initialization functions.
- *
  * Copyright © 1995-1997 Sun Microsystems, Inc.
  * Copyright © 1999 Scriptics Corporation.
  * All rights reserved.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * tclUnixInit.c --
+ *
+ *	Contains the Unix-specific interpreter initialization functions.
  */
 
 #include "tclInt.h"

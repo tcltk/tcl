@@ -1,14 +1,25 @@
 /*
- * tclCmdAH.c --
- *
- *	This file contains the top-level command routines for most of the Tcl
- *	built-in commands whose names begin with the letters A to H.
- *
  * Copyright © 1987-1993 The Regents of the University of California.
  * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclCmdAH.c --
+ *
+ *	This file contains the top-level command routines for most of the Tcl
+ *	built-in commands whose names begin with the letters A to H.
  */
 
 #include "tclInt.h"
@@ -2829,7 +2840,6 @@ EachloopCmd(
 		goto done;
 	    }
 	} else {
-	    /* List values */
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
 		interp, objv[2+i*2], tclListType);
 	    if (!statePtr->aCopyList[i]) {
@@ -2980,9 +2990,9 @@ ForeachAssignments(
 			index, interp, statePtr->aCopyList[i], k, &valuePtr);
 		    if (valuePtr == NULL) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
-			TclGetString(statePtr->varvList[i][v])));
+				"\n    (setting %s loop variable \"%s\")",
+				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
 		} else {

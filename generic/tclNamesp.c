@@ -1,12 +1,4 @@
 /*
- * tclNamesp.c --
- *
- *	Contains support for namespaces, which provide a separate context of
- *	commands and global variables. The global :: namespace is the
- *	traditional Tcl "global" scope. Other namespaces are created as
- *	children of the global namespace. These other namespaces contain
- *	special-purpose commands and variables for packages.
- *
  * Copyright © 1993-1997 Lucent Technologies.
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -21,6 +13,25 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclNamesp.c --
+ *
+ *	Contains support for namespaces, which provide a separate context of
+ *	commands and global variables. The global :: namespace is the
+ *	traditional Tcl "global" scope. Other namespaces are created as
+ *	children of the global namespace. These other namespaces contain
+ *	special-purpose commands and variables for packages.
  */
 
 #include "tclInt.h"
@@ -131,7 +142,7 @@ static const Tcl_ObjType nsNameType = {
     DupNsNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetNsNameFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+	0
 };
 
 #define NsNameSetInternalRep(objPtr, nnPtr)					\

@@ -1,12 +1,23 @@
 /*
- * tclDTrace.d --
- *
- *	Tcl DTrace provider.
- *
  * Copyright (c) 2007-2008 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+/*
+ * You may distribute and/or modify this program under the terms of the GNU
+ * Affero General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+
+ * See the file "COPYING" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/*
+ * tclDTrace.d --
+ *
+ *	Tcl DTrace provider.
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
