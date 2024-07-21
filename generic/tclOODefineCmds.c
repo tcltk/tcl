@@ -82,52 +82,72 @@ static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
-static int		ClassFilterGet(void *clientData,
+static int		ClassFilter_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassFilterSet(void *clientData,
+static int		ClassFilter_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassMixinGet(void *clientData,
+static int		ClassMixin_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassMixinSet(void *clientData,
+static int		ClassMixin_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassSuperGet(void *clientData,
+static int		ClassSuper_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassSuperSet(void *clientData,
+static int		ClassSuper_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassVarsGet(void *clientData,
+static int		ClassVars_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ClassVarsSet(void *clientData,
+static int		ClassVars_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static Tcl_MethodCallProc ClassRPropsGet, ClassRPropsSet;
-static Tcl_MethodCallProc ClassWPropsGet, ClassWPropsSet;
-static int		ObjFilterGet(void *clientData,
+static int		ObjFilter_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ObjFilterSet(void *clientData,
+static int		ObjFilter_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ObjMixinGet(void *clientData,
+static int		ObjMixin_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ObjMixinSet(void *clientData,
+static int		ObjMixin_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ObjVarsGet(void *clientData,
+static int		ObjVars_Get(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		ObjVarsSet(void *clientData,
+static int		ObjVars_Set(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static Tcl_MethodCallProc ObjRPropsGet, ObjRPropsSet;
-static Tcl_MethodCallProc ObjWPropsGet, ObjWPropsSet;
+static int		Configurable_ClassReadableProps_Get(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ClassReadableProps_Set(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ClassWritableProps_Get(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ClassWritableProps_Set(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ObjectReadableProps_Get(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ObjectReadableProps_Set(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ObjectWritableProps_Get(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		Configurable_ObjectWritableProps_Set(void *clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 static int		ResolveClass(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -137,21 +157,25 @@ static int		ResolveClass(void *clientData,
  */
 
 static const struct DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilterGet, ClassFilterSet, NULL),
-    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet, ResolveClass),
-    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet, ResolveClass),
-    SLOT("define::variable",    ClassVarsGet,   ClassVarsSet, NULL),
-    SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet, NULL),
-    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet, ResolveClass),
-    SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet, NULL),
+    SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL),
+    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, ResolveClass),
+    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, ResolveClass),
+    SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL),
+    SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL),
+    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, ResolveClass),
+    SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL),
     SLOT("configuresupport::readableproperties",
-	    ClassRPropsGet, ClassRPropsSet, NULL),
+	    Configurable_ClassReadableProps_Get,
+	    Configurable_ClassReadableProps_Set, NULL),
     SLOT("configuresupport::writableproperties",
-	    ClassWPropsGet, ClassWPropsSet, NULL),
+	    Configurable_ClassWritableProps_Get,
+	    Configurable_ClassWritableProps_Set, NULL),
     SLOT("configuresupport::objreadableproperties",
-	    ObjRPropsGet, ObjRPropsSet, NULL),
+	    Configurable_ObjectReadableProps_Get,
+	    Configurable_ObjectReadableProps_Set, NULL),
     SLOT("configuresupport::objwritableproperties",
-	    ObjWPropsGet, ObjWPropsSet, NULL),
+	    Configurable_ObjectWritableProps_Get,
+	    Configurable_ObjectWritableProps_Set, NULL),
     {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
 };
 
@@ -612,10 +636,12 @@ InstallPrivateVariableMapping(
 	if (varc == 0) {
 	    Tcl_Free(pvlPtr->list);
 	} else if (i) {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Realloc(pvlPtr->list,
-		    sizeof(PrivateVariableMapping) * varc);
+	    pvlPtr->list = (PrivateVariableMapping *)
+		    Tcl_Realloc(pvlPtr->list,
+			    sizeof(PrivateVariableMapping) * varc);
 	} else {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Alloc(sizeof(PrivateVariableMapping) * varc);
+	    pvlPtr->list = (PrivateVariableMapping *)
+		    Tcl_Alloc(sizeof(PrivateVariableMapping) * varc);
 	}
     }
 
@@ -780,7 +806,8 @@ TclOOUnknownDefinition(
     }
     hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
     while (hPtr != NULL) {
-	const char *nameStr = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+	const char *nameStr = (const char *)
+		Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 
 	if (strncmp(soughtStr, nameStr, soughtLen) == 0) {
 	    if (matchedStr != NULL) {
@@ -2208,7 +2235,8 @@ TclOODefineUnexportObjCmd(
 
 	if (isInstanceUnexport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)
+			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -2330,9 +2358,6 @@ TclOODefineSlots(
     if (slotCls == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_IncrRefCount(getName);
-    Tcl_IncrRefCount(setName);
-    Tcl_IncrRefCount(resolveName);
     for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
 	Tcl_Object slotObject = Tcl_NewObjectInstance(fPtr->interp,
 		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
@@ -2349,16 +2374,16 @@ TclOODefineSlots(
 		    &slotInfoPtr->resolverType, NULL);
 	}
     }
-    Tcl_DecrRefCount(getName);
-    Tcl_DecrRefCount(setName);
-    Tcl_DecrRefCount(resolveName);
+    Tcl_BounceRefCount(getName);
+    Tcl_BounceRefCount(setName);
+    Tcl_BounceRefCount(resolveName);
     return TCL_OK;
 }
 
 /*
  * ----------------------------------------------------------------------
  *
- * ClassFilterGet, ClassFilterSet --
+ * ClassFilter_Get, ClassFilter_Set --
  *
  *	Implementation of the "filter" slot accessors of the "oo::define"
  *	command.
@@ -2367,7 +2392,7 @@ TclOODefineSlots(
  */
 
 static int
-ClassFilterGet(
+ClassFilter_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2395,7 +2420,7 @@ ClassFilterGet(
 }
 
 static int
-ClassFilterSet(
+ClassFilter_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2427,7 +2452,7 @@ ClassFilterSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ClassMixinGet, ClassMixinSet --
+ * ClassMixin_Get, ClassMixin_Set --
  *
  *	Implementation of the "mixin" slot accessors of the "oo::define"
  *	command.
@@ -2436,7 +2461,7 @@ ClassFilterSet(
  */
 
 static int
-ClassMixinGet(
+ClassMixin_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2467,7 +2492,7 @@ ClassMixinGet(
 }
 
 static int
-ClassMixinSet(
+ClassMixin_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2536,7 +2561,7 @@ ClassMixinSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ClassSuperGet, ClassSuperSet --
+ * ClassSuper_Get, ClassSuper_Set --
  *
  *	Implementation of the "superclass" slot accessors of the "oo::define"
  *	command.
@@ -2545,7 +2570,7 @@ ClassMixinSet(
  */
 
 static int
-ClassSuperGet(
+ClassSuper_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2575,7 +2600,7 @@ ClassSuperGet(
 }
 
 static int
-ClassSuperSet(
+ClassSuper_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2694,7 +2719,7 @@ ClassSuperSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ClassVarsGet, ClassVarsSet --
+ * ClassVars_Get, ClassVars_Set --
  *
  *	Implementation of the "variable" slot accessors of the "oo::define"
  *	command.
@@ -2703,7 +2728,7 @@ ClassSuperSet(
  */
 
 static int
-ClassVarsGet(
+ClassVars_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2741,7 +2766,7 @@ ClassVarsGet(
 }
 
 static int
-ClassVarsSet(
+ClassVars_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2797,7 +2822,7 @@ ClassVarsSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectFilterGet, ObjectFilterSet --
+ * ObjFilter_Get, ObjFilter_Set --
  *
  *	Implementation of the "filter" slot accessors of the "oo::objdefine"
  *	command.
@@ -2806,7 +2831,7 @@ ClassVarsSet(
  */
 
 static int
-ObjFilterGet(
+ObjFilter_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2834,7 +2859,7 @@ ObjFilterGet(
 }
 
 static int
-ObjFilterSet(
+ObjFilter_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2864,7 +2889,7 @@ ObjFilterSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectMixinGet, ObjectMixinSet --
+ * ObjMixin_Get, ObjMixin_Set --
  *
  *	Implementation of the "mixin" slot accessors of the "oo::objdefine"
  *	command.
@@ -2873,7 +2898,7 @@ ObjFilterSet(
  */
 
 static int
-ObjMixinGet(
+ObjMixin_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2905,7 +2930,7 @@ ObjMixinGet(
 }
 
 static int
-ObjMixinSet(
+ObjMixin_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -2966,7 +2991,7 @@ ObjMixinSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectVarsGet, ObjectVarsSet --
+ * ObjVars_Get, ObjVars_Set --
  *
  *	Implementation of the "variable" slot accessors of the "oo::objdefine"
  *	command.
@@ -2975,7 +3000,7 @@ ObjMixinSet(
  */
 
 static int
-ObjVarsGet(
+ObjVars_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3013,7 +3038,7 @@ ObjVarsGet(
 }
 
 static int
-ObjVarsSet(
+ObjVars_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3120,7 +3145,142 @@ ResolveClass(
 /*
  * ----------------------------------------------------------------------
  *
- * ClassRPropsGet, ClassRPropsSet, ObjRPropsGet, ObjRPropsSet --
+ * SetPropertyList --
+ *
+ *	Helper for writing a property list (which is actually a set).
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+SetPropertyList(
+    PropertyList *propList,	/* The property list to write. Replaces the
+				 * property list's contents. */
+    Tcl_Size objc,		/* Number of property names. */
+    Tcl_Obj *const objv[])	/* Property names. */
+{
+    Tcl_Size i, n;
+    Tcl_Obj *propObj;
+    int created;
+    Tcl_HashTable uniqueTable;
+
+    for (i=0 ; i<objc ; i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+    FOREACH(propObj, *propList) {
+	Tcl_DecrRefCount(propObj);
+    }
+    if (i != objc) {
+	if (objc == 0) {
+	    Tcl_Free(propList->list);
+	} else if (i) {
+	    propList->list = (Tcl_Obj **)
+		    Tcl_Realloc(propList->list, sizeof(Tcl_Obj *) * objc);
+	} else {
+	    propList->list = (Tcl_Obj **)
+		    Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
+	}
+    }
+    propList->num = 0;
+    if (objc > 0) {
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<objc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
+	    if (created) {
+		propList->list[n++] = objv[i];
+	    } else {
+		Tcl_DecrRefCount(objv[i]);
+	    }
+	}
+	propList->num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	if (n != objc) {
+	    propList->list = (Tcl_Obj **)
+		    Tcl_Realloc(propList->list, sizeof(Tcl_Obj *) * n);
+	}
+	Tcl_DeleteHashTable(&uniqueTable);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InstallReadableProps --
+ *
+ *	Helper for writing the readable property list (which is actually a set)
+ *	that includes flushing the name cache.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+InstallReadableProps(
+    PropertyStorage *props,	/* Which property list to install into. */
+    Tcl_Size objc,		/* Number of property names. */
+    Tcl_Obj *const objv[])	/* Property names. */
+{
+    if (props->allReadableCache) {
+	Tcl_DecrRefCount(props->allReadableCache);
+	props->allReadableCache = NULL;
+    }
+
+    SetPropertyList(&props->readable, objc, objv);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InstallWritableProps --
+ *
+ *	Helper for writing the writable property list (which is actually a set)
+ *	that includes flushing the name cache.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+InstallWritableProps(
+    PropertyStorage *props,	/* Which property list to install into. */
+    Tcl_Size objc,		/* Number of property names. */
+    Tcl_Obj *const objv[])	/* Property names. */
+{
+    if (props->allWritableCache) {
+	Tcl_DecrRefCount(props->allWritableCache);
+	props->allWritableCache = NULL;
+    }
+
+    SetPropertyList(&props->writable, objc, objv);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetPropertyList --
+ *
+ *	Helper for reading a property list.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+GetPropertyList(
+    PropertyList *propList)	/* The property list to read. */
+{
+    Tcl_Obj *resultObj, *propNameObj;
+    Tcl_Size i;
+
+    TclNewObj(resultObj);
+    FOREACH(propNameObj, *propList) {
+	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
+    }
+    return resultObj;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Configurable_ClassReadableProps_Get, Configurable_ClassReadableProps_Set,
+ * Configurable_ObjectReadableProps_Get, Configurable_ObjectReadableProps_Set --
  *
  *	Implementations of the "readableproperties" slot accessors for classes
  *	and instances.
@@ -3128,65 +3288,8 @@ ResolveClass(
  * ----------------------------------------------------------------------
  */
 
-static void
-InstallReadableProps(
-    PropertyStorage *props,
-    Tcl_Size objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_Obj *propObj;
-    Tcl_Size i, n;
-    int created;
-    Tcl_HashTable uniqueTable;
-
-    if (props->allReadableCache) {
-	Tcl_DecrRefCount(props->allReadableCache);
-	props->allReadableCache = NULL;
-    }
-
-    for (i=0 ; i<objc ; i++) {
-	Tcl_IncrRefCount(objv[i]);
-    }
-    FOREACH(propObj, props->readable) {
-	Tcl_DecrRefCount(propObj);
-    }
-    if (i != objc) {
-	if (objc == 0) {
-	    Tcl_Free(props->readable.list);
-	} else if (i) {
-	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
-		    sizeof(Tcl_Obj *) * objc);
-	} else {
-	    props->readable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
-	}
-    }
-    props->readable.num = 0;
-    if (objc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
-	for (i=n=0 ; i<objc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
-	    if (created) {
-		props->readable.list[n++] = objv[i];
-	    } else {
-		Tcl_DecrRefCount(objv[i]);
-	    }
-	}
-	props->readable.num = n;
-
-	/*
-	 * Shouldn't be necessary, but maintain num/list invariant.
-	 */
-
-	if (n != objc) {
-	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
-		    sizeof(Tcl_Obj *) * n);
-	}
-	Tcl_DeleteHashTable(&uniqueTable);
-    }
-}
-
 static int
-ClassRPropsGet(
+Configurable_ClassReadableProps_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3194,8 +3297,6 @@ ClassRPropsGet(
     Tcl_Obj *const *objv)
 {
     Class *clsPtr = GetClassDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *propNameObj;
-    int i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3205,16 +3306,12 @@ ClassRPropsGet(
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultObj);
-    FOREACH(propNameObj, clsPtr->properties.readable) {
-	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
-    }
-    Tcl_SetObjResult(interp, resultObj);
+    Tcl_SetObjResult(interp, GetPropertyList(&clsPtr->properties.readable));
     return TCL_OK;
 }
 
 static int
-ClassRPropsSet(
+Configurable_ClassReadableProps_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3244,7 +3341,7 @@ ClassRPropsSet(
 }
 
 static int
-ObjRPropsGet(
+Configurable_ObjectReadableProps_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3252,28 +3349,21 @@ ObjRPropsGet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *propNameObj;
-    int i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
 
-    TclNewObj(resultObj);
-    FOREACH(propNameObj, oPtr->properties.readable) {
-	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
-    }
-    Tcl_SetObjResult(interp, resultObj);
+    Tcl_SetObjResult(interp, GetPropertyList(&oPtr->properties.readable));
     return TCL_OK;
 }
 
 static int
-ObjRPropsSet(
+Configurable_ObjectReadableProps_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3305,7 +3395,8 @@ ObjRPropsSet(
 /*
  * ----------------------------------------------------------------------
  *
- * ClassWPropsGet, ClassWPropsSet, ObjWPropsGet, ObjWPropsSet --
+ * Configurable_ClassWritableProps_Get, Configurable_ClassWritableProps_Set,
+ * Configurable_ObjectWritableProps_Get, Configurable_ObjectWritableProps_Set --
  *
  *	Implementations of the "writableproperties" slot accessors for classes
  *	and instances.
@@ -3313,65 +3404,8 @@ ObjRPropsSet(
  * ----------------------------------------------------------------------
  */
 
-static void
-InstallWritableProps(
-    PropertyStorage *props,
-    Tcl_Size objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_Obj *propObj;
-    Tcl_Size i, n;
-    int created;
-    Tcl_HashTable uniqueTable;
-
-    if (props->allWritableCache) {
-	Tcl_DecrRefCount(props->allWritableCache);
-	props->allWritableCache = NULL;
-    }
-
-    for (i=0 ; i<objc ; i++) {
-	Tcl_IncrRefCount(objv[i]);
-    }
-    FOREACH(propObj, props->writable) {
-	Tcl_DecrRefCount(propObj);
-    }
-    if (i != objc) {
-	if (objc == 0) {
-	    Tcl_Free(props->writable.list);
-	} else if (i) {
-	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
-		    sizeof(Tcl_Obj *) * objc);
-	} else {
-	    props->writable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
-	}
-    }
-    props->writable.num = 0;
-    if (objc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
-	for (i=n=0 ; i<objc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
-	    if (created) {
-		props->writable.list[n++] = objv[i];
-	    } else {
-		Tcl_DecrRefCount(objv[i]);
-	    }
-	}
-	props->writable.num = n;
-
-	/*
-	 * Shouldn't be necessary, but maintain num/list invariant.
-	 */
-
-	if (n != objc) {
-	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
-		    sizeof(Tcl_Obj *) * n);
-	}
-	Tcl_DeleteHashTable(&uniqueTable);
-    }
-}
-
 static int
-ClassWPropsGet(
+Configurable_ClassWritableProps_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3379,8 +3413,6 @@ ClassWPropsGet(
     Tcl_Obj *const *objv)
 {
     Class *clsPtr = GetClassDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *propNameObj;
-    int i;
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3390,16 +3422,12 @@ ClassWPropsGet(
 	return TCL_ERROR;
     }
 
-    TclNewObj(resultObj);
-    FOREACH(propNameObj, clsPtr->properties.writable) {
-	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
-    }
-    Tcl_SetObjResult(interp, resultObj);
+    Tcl_SetObjResult(interp, GetPropertyList(&clsPtr->properties.writable));
     return TCL_OK;
 }
 
 static int
-ClassWPropsSet(
+Configurable_ClassWritableProps_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3429,7 +3457,7 @@ ClassWPropsSet(
 }
 
 static int
-ObjWPropsGet(
+Configurable_ObjectWritableProps_Get(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3437,28 +3465,21 @@ ObjWPropsGet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Obj *resultObj, *propNameObj;
-    int i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
 
-    TclNewObj(resultObj);
-    FOREACH(propNameObj, oPtr->properties.writable) {
-	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
-    }
-    Tcl_SetObjResult(interp, resultObj);
+    Tcl_SetObjResult(interp, GetPropertyList(&oPtr->properties.writable));
     return TCL_OK;
 }
 
 static int
-ObjWPropsSet(
+Configurable_ObjectWritableProps_Set(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
@@ -3559,7 +3580,7 @@ TclOORegisterInstanceProperty(
 	TclListObjGetElements(NULL, listObj, &count, &objv);
 	InstallWritableProps(&oPtr->properties, count, objv);
     }
-    Tcl_DecrRefCount(listObj);
+    Tcl_BounceRefCount(listObj);
 }
 
 void
@@ -3593,7 +3614,7 @@ TclOORegisterProperty(
 	InstallWritableProps(&clsPtr->properties, count, objv);
 	changed = 1;
     }
-    Tcl_DecrRefCount(listObj);
+    Tcl_BounceRefCount(listObj);
     if (changed) {
 	BumpGlobalEpoch(clsPtr->thisPtr->fPtr->interp, clsPtr);
     }
@@ -3700,7 +3721,6 @@ TclOOPropertyDefinitionCmd(
 	}
 
 	hyphenated = Tcl_ObjPrintf("-%s", TclGetString(propObj));
-	Tcl_IncrRefCount(hyphenated);
 	if (useInstance) {
 	    TclOORegisterInstanceProperty(oPtr, hyphenated,
 		    kind != KIND_WO, kind != KIND_RO);
@@ -3708,7 +3728,7 @@ TclOOPropertyDefinitionCmd(
 	    TclOORegisterProperty(oPtr->classPtr, hyphenated,
 		    kind != KIND_WO, kind != KIND_RO);
 	}
-	Tcl_DecrRefCount(hyphenated);
+	Tcl_BounceRefCount(hyphenated);
 
 	/*
 	 * Create property implementation methods by using the right
@@ -3722,8 +3742,6 @@ TclOOPropertyDefinitionCmd(
 	    Tcl_Obj *argsPtr = Tcl_NewObj();
 	    Method *mPtr;
 
-	    Tcl_IncrRefCount(getterName);
-	    Tcl_IncrRefCount(argsPtr);
 	    Tcl_IncrRefCount(getterScript);
 	    if (useInstance) {
 		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
@@ -3732,8 +3750,8 @@ TclOOPropertyDefinitionCmd(
 		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
 			getterName, argsPtr, getterScript, NULL);
 	    }
-	    Tcl_DecrRefCount(getterName);
-	    Tcl_DecrRefCount(argsPtr);
+	    Tcl_BounceRefCount(getterName);
+	    Tcl_BounceRefCount(argsPtr);
 	    Tcl_DecrRefCount(getterScript);
 	    if (mPtr == NULL) {
 		return TCL_ERROR;
@@ -3745,8 +3763,6 @@ TclOOPropertyDefinitionCmd(
 	    Tcl_Obj *argsPtr = Tcl_NewStringObj("value", -1);
 	    Method *mPtr;
 
-	    Tcl_IncrRefCount(setterName);
-	    Tcl_IncrRefCount(argsPtr);
 	    Tcl_IncrRefCount(setterScript);
 	    if (useInstance) {
 		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
@@ -3755,8 +3771,8 @@ TclOOPropertyDefinitionCmd(
 		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
 			setterName, argsPtr, setterScript, NULL);
 	    }
-	    Tcl_DecrRefCount(setterName);
-	    Tcl_DecrRefCount(argsPtr);
+	    Tcl_BounceRefCount(setterName);
+	    Tcl_BounceRefCount(argsPtr);
 	    Tcl_DecrRefCount(setterScript);
 	    if (mPtr == NULL) {
 		return TCL_ERROR;
