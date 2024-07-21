@@ -23,6 +23,18 @@ static Tcl_NRPostProc	DecrRefsPostClassConstructor;
 static Tcl_NRPostProc	FinalizeConstruction;
 static Tcl_NRPostProc	FinalizeEval;
 static Tcl_NRPostProc	NextRestoreFrame;
+
+/* Short-term cache for GetPropertyName(). */
+typedef struct GPNCache {
+    Tcl_Obj *listPtr;		/* Holds references to names. */
+    char *names[TCLFLEXARRAY];	/* NULL-terminated table of names. */
+} GPNCache;
+
+enum GPNFlags {
+    GPN_WRITABLE = 1,		/* Are we looking for a writable property? */
+    GPN_FALLING_BACK = 2	/* Are we doing a recursive call to determine
+				 * if the property is of the other type? */
+};
 
 /*
  * ----------------------------------------------------------------------
@@ -1382,16 +1394,17 @@ TclOOCopyObjectCmd(
 
 /*
  * Ugly thunks to read and write a property by calling the right method in
- * the right way.
+ * the right way. Note that we MUST be correct in holding references to Tcl_Obj
+ * values, as this is potentially a call into user code.
  */
-static int
+static inline int
 ReadProperty(
     Tcl_Interp *interp,
     Object *oPtr,
     Tcl_Obj *propObj)
 {
     Tcl_Obj *args[] = {
-	Tcl_NewStringObj("my", 2),
+	oPtr->fPtr->myName,
 	Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propObj))
     };
     int code;
@@ -1415,7 +1428,7 @@ ReadProperty(
     }
 }
 
-static int
+static inline int
 WriteProperty(
     Tcl_Interp *interp,
     Object *oPtr,
@@ -1423,7 +1436,7 @@ WriteProperty(
     Tcl_Obj *valueObj)
 {
     Tcl_Obj *args[] = {
-	Tcl_NewStringObj("my", 2),
+	oPtr->fPtr->myName,
 	Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propObj)),
 	valueObj
     };
@@ -1450,18 +1463,6 @@ WriteProperty(
     }
 }
 
-/* Short-term cache for GetPropertyName(). */
-struct Cache {
-    Tcl_Obj *listPtr;		/* Holds references to names. */
-    char *names[TCLFLEXARRAY];	/* NULL-terminated table of names. */
-};
-
-enum GPNFlags {
-    GPN_WRITABLE = 1,		/* Are we looking for a writable property? */
-    GPN_FALLING_BACK = 2	/* Are we doing a recursive call to determine
-				 * if the property is of the other type? */
-};
-
 /* Look up a property full name. */
 static Tcl_Obj *
 GetPropertyName(
@@ -1471,7 +1472,7 @@ GetPropertyName(
 				 * Can we do a fallback message?
 				 * See GPNFlags for possible values */
     Tcl_Obj *namePtr,		/* The name supplied by the user. */
-    struct Cache **cachePtr)	/* Where to cache the table, if the caller
+    GPNCache **cachePtr)	/* Where to cache the table, if the caller
 				 * wants that. The contents are to be freed
 				 * with Tcl_Free if the cache is used. */
 {
@@ -1479,14 +1480,14 @@ GetPropertyName(
     Tcl_Obj *listPtr = TclOOGetAllObjectProperties(
 	    oPtr, flags & GPN_WRITABLE);
     Tcl_Obj **objv;
-    struct Cache *tablePtr;
+    GPNCache *tablePtr;
 
     (void) Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
     if (cachePtr && *cachePtr) {
 	tablePtr = *cachePtr;
     } else {
-	tablePtr = (struct Cache *) TclStackAlloc(interp,
-		offsetof(struct Cache, names) + sizeof(char *) * (objc + 1));
+	tablePtr = (GPNCache *) TclStackAlloc(interp,
+		offsetof(GPNCache, names) + sizeof(char *) * (objc + 1));
 
 	for (i = 0; i < objc; i++) {
 	    tablePtr->names[i] = TclGetString(objv[i]);
@@ -1538,13 +1539,13 @@ GetPropertyName(
 }
 
 /* Release the cache made by GetPropertyName(). */
-static void
+static inline void
 ReleasePropertyNameCache(
     Tcl_Interp *interp,
-    struct Cache **cachePtr)
+    GPNCache **cachePtr)
 {
     if (*cachePtr) {
-	struct Cache *tablePtr = *cachePtr;
+	GPNCache *tablePtr = *cachePtr;
 	if (tablePtr->listPtr) {
 	    Tcl_DecrRefCount(tablePtr->listPtr);
 	}
@@ -1636,7 +1637,7 @@ TclOO_Configurable_Configure(
 	 * Write properties. Slightly tricky because we want to cache the
 	 * table of property names.
 	 */
-	struct Cache *cache = NULL;
+	GPNCache *cache = NULL;
 
 	code = TCL_OK;
 	for (i = 0; i < objc; i += 2) {
