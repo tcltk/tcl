@@ -338,11 +338,13 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->destructorName, "<destructor>");
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
+    TclNewLiteralStringObj(fPtr->myName, "my");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
+    Tcl_IncrRefCount(fPtr->myName);
     Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
@@ -611,6 +613,7 @@ KillFoundation(
     TclDecrRefCount(fPtr->destructorName);
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
+    TclDecrRefCount(fPtr->myName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 

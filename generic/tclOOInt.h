@@ -402,6 +402,7 @@ typedef struct Foundation {
     Tcl_Obj *clonedName;	/* Shared object containing the name of a
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
+    Tcl_Obj *myName;		/* The "my" shared object. */
 } Foundation;
 
 /*
