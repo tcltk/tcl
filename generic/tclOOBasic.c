@@ -1678,8 +1678,9 @@ TclOO_Configurable_Configure(
 
 static int
 Configurable_Getter(
-    void *clientData,		/* Which property to read.
-				 * Actually a Tcl_Obj* reference. */
+    void *clientData,		/* Which property to read. Actually a Tcl_Obj*
+				 * reference that is the name of the variable
+				 * in the cpntext object. */
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -1713,8 +1714,9 @@ Configurable_Getter(
 
 static int
 Configurable_Setter(
-    void *clientData,		/* Which property to write.
-				 * Actually a Tcl_Obj* reference. */
+    void *clientData,		/* Which property to write. Actually a Tcl_Obj*
+				 * reference that is the name of the variable
+				 * in the cpntext object. */
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -1791,22 +1793,18 @@ TclOOImplementObjectProperty(
     if (installGetter) {
 	Tcl_Obj *methodName = Tcl_ObjPrintf(
 		"<ReadProp-%s>", TclGetString(propNamePtr));
-	// Don't know if TclNewInstanceMethod will retain a ref to the method name
-	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr); // Paired with DetailsDeleter
 	TclNewInstanceMethod(
 		NULL, targetObject, methodName, 0, &GetterType, propNamePtr);
-	Tcl_DecrRefCount(methodName);
+	Tcl_BounceRefCount(methodName);
     }
     if (installSetter) {
 	Tcl_Obj *methodName = Tcl_ObjPrintf(
 		"<WriteProp-%s>", TclGetString(propNamePtr));
-	// Don't know if TclNewInstanceMethod will retain a ref to the method name
-	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr); // Paired with DetailsDeleter
 	TclNewInstanceMethod(
 		NULL, targetObject, methodName, 0, &SetterType, propNamePtr);
-	Tcl_DecrRefCount(methodName);
+	Tcl_BounceRefCount(methodName);
     }
 }
 
@@ -1820,22 +1818,18 @@ TclOOImplementClassProperty(
     if (installGetter) {
 	Tcl_Obj *methodName = Tcl_ObjPrintf(
 		"<ReadProp-%s>", TclGetString(propNamePtr));
-	// Don't know if TclNewMethod will retain a ref to the method name
-	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr); // Paired with DetailsDeleter
 	TclNewMethod(
 		NULL, targetClass, methodName, 0, &GetterType, propNamePtr);
-	Tcl_DecrRefCount(methodName);
+	Tcl_BounceRefCount(methodName);
     }
     if (installSetter) {
 	Tcl_Obj *methodName = Tcl_ObjPrintf(
 		"<WriteProp-%s>", TclGetString(propNamePtr));
-	// Don't know if TclNewMethod will retain a ref to the method name
-	Tcl_IncrRefCount(methodName);
 	Tcl_IncrRefCount(propNamePtr); // Paired with DetailsDeleter
 	TclNewMethod(
 		NULL, targetClass, methodName, 0, &SetterType, propNamePtr);
-	Tcl_DecrRefCount(methodName);
+	Tcl_BounceRefCount(methodName);
     }
 }
 
