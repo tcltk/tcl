@@ -183,12 +183,14 @@ stripped prefix) determines the later root name of the archive's content.
 .
 Creates an image (potentially a new executable file) similar to \fBzipfs
 mkzip\fR; see that command for a description of most parameters to this
-command, as they behave identically here.
+command, as they behave identically here. If \fIoutfile\fR exists, it will
+be silently overwritten.
 .RS
 .PP
 If the \fIinfile\fR parameter is specified, this file is prepended in front of
 the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
-(i.e., the executable file of the running process) is used. If the
+(i.e., the executable file of the running process,
+typically \fBwish\fR or \fBtclsh\fR) is used. If the
 \fIpassword\fR parameter is not empty, an obfuscated version of that password
 (see \fBzipfs mkkey\fR) is placed between the image and ZIP chunks of the
 output file and the contents of the ZIP chunk are protected with that
@@ -285,6 +287,10 @@ set base [file join [\fBzipfs root\fR] myApp]
 \fBzipfs mount\fR $zip $base $password
 .CE
 .PP
+The following example creates an executable application by appending a ZIP archive
+to the tclsh file it was called from and storing the resulting executable in
+the file
+.QW myApp.bin .
 When creating an executable image with a password, the password is placed
 within the executable in a shrouded form so that the application can read
 files inside the embedded ZIP archive yet casual inspection cannot read it.
@@ -302,8 +308,11 @@ puts $f {
 }
 close $f
 
-# Create the executable
+# Create the executable application
 \fBzipfs mkimg\fR $img $appDir $appDir $password
+
+# remove the now obsolete temporary appDir folder
+file delete -force $appDir
 
 # Launch the executable, printing its output to stdout
 exec $img >@stdout
