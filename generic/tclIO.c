@@ -8254,8 +8254,12 @@ Tcl_SetChannelOption(
 	int profile;
 
 	if ((newValue[0] == '\0') || !strcmp(newValue, "binary")) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unknown encoding \"%s\": No longer supported.\n"
-		    "\tplease use either \"-translation binary\" or \"-encoding iso8859-1\"", newValue));
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown encoding \"%s\": No longer supported.\n"
+			"\tplease use either \"-translation binary\" "
+			"or \"-encoding iso8859-1\"", newValue));
+	    }
 	    return TCL_ERROR;
 	} else {
 	    encoding = Tcl_GetEncoding(interp, newValue);
