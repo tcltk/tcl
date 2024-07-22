@@ -296,7 +296,7 @@ set password "hunter2"
 
 # Create some simple content to define a basic application
 file mkdir $appDir
-set f [open $appDir/main.tcl]
+set f [open $appDir/main.tcl w]
 puts $f {
     puts "Hi. This is [info script]"
 }
