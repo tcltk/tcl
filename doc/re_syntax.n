@@ -6,8 +6,6 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
 .so man.macros
-.ie '\w'o''\w'\C'^o''' .ds qo \C'^o'
-.el .ds qo u
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
 .BS
 .SH NAME
