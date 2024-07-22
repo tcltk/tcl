@@ -28,7 +28,7 @@ msgcat \- Tcl message catalog
 \fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
 .VE "TIP 499"
 .VS "TIP 412"
-\fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
+\fB::msgcat::mcloadedlocales subcommand\fR
 .VE "TIP 412"
 \fB::msgcat::mcload \fIdirname\fR
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
@@ -222,7 +222,7 @@ configured by:
 .PP
 .\" COMMAND: mcloadedlocales
 .TP
-\fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
+\fB::msgcat::mcloadedlocales subcommand\fR
 .VS "TIP 499"
 This group of commands manage the list of loaded locales for packages not
 setting a package locale.
