@@ -807,7 +807,7 @@ typedef struct Tcl_Namespace {
  */
 
 typedef struct Tcl_CallFrame {
-    Tcl_Namespace *nsPtr;
+    Tcl_Namespace *nsPtr;	/* Current namespace for the call frame. */
     int dummy1;
     Tcl_Size dummy2;
     void *dummy3;
@@ -1292,7 +1292,7 @@ struct Tcl_Event {
 
 typedef enum {
     TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
-	    TCL_QUEUE_ALERT_IF_EMPTY=4
+    TCL_QUEUE_ALERT_IF_EMPTY=4
 } Tcl_QueuePosition;
 
 /*
