@@ -220,10 +220,11 @@ typedef struct NamespacePathEntry NamespacePathEntry;
  */
 
 typedef struct TclVarHashTable {
-    Tcl_HashTable table;
-    struct Namespace *nsPtr;
+    Tcl_HashTable table;	/* "Inherit" from Tcl_HashTable. */
+    struct Namespace *nsPtr;	/* The namespace containing the variables. */
 #if TCL_MAJOR_VERSION > 8
-    struct Var *arrayPtr;
+    struct Var *arrayPtr;	/* The array containing the variables, if they
+				 * are variables in an array at all. */
 #endif /* TCL_MAJOR_VERSION > 8 */
 } TclVarHashTable;
 
@@ -632,7 +633,7 @@ typedef struct Var {
 } Var;
 
 typedef struct VarInHash {
-    Var var;
+    Var var;			/* "Inherit" from Var. */
     Tcl_Size refCount;		/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
@@ -1123,6 +1124,7 @@ TclObjTypeLength(
     Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
     return proc(objPtr);
 }
+
 static inline int
 TclObjTypeIndex(
     Tcl_Interp *interp,
@@ -1133,6 +1135,7 @@ TclObjTypeIndex(
     Tcl_ObjTypeIndexProc *proc = TclObjTypeHasProc(objPtr, indexProc);
     return proc(interp, objPtr, index, elemObjPtr);
 }
+
 static inline int
 TclObjTypeSlice(
     Tcl_Interp *interp,
@@ -1144,6 +1147,7 @@ TclObjTypeSlice(
     Tcl_ObjTypeSliceProc *proc = TclObjTypeHasProc(objPtr, sliceProc);
     return proc(interp, objPtr, fromIdx, toIdx, newObjPtr);
 }
+
 static inline int
 TclObjTypeReverse(
     Tcl_Interp *interp,
@@ -1153,6 +1157,7 @@ TclObjTypeReverse(
     Tcl_ObjTypeReverseProc *proc = TclObjTypeHasProc(objPtr, reverseProc);
     return proc(interp, objPtr, newObjPtr);
 }
+
 static inline int
 TclObjTypeGetElements(
     Tcl_Interp *interp,
@@ -1163,6 +1168,7 @@ TclObjTypeGetElements(
     Tcl_ObjTypeGetElements *proc = TclObjTypeHasProc(objPtr, getElementsProc);
     return proc(interp, objPtr, objCPtr, objVPtr);
 }
+
 static inline Tcl_Obj*
 TclObjTypeSetElement(
     Tcl_Interp *interp,
@@ -1174,6 +1180,7 @@ TclObjTypeSetElement(
     Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(objPtr, setElementProc);
     return proc(interp, objPtr, indexCount, indexArray, valueObj);
 }
+
 static inline int
 TclObjTypeReplace(
     Tcl_Interp *interp,
@@ -1186,6 +1193,7 @@ TclObjTypeReplace(
     Tcl_ObjTypeReplaceProc *proc = TclObjTypeHasProc(objPtr, replaceProc);
     return proc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
 }
+
 static inline int
 TclObjTypeInOperator(
     Tcl_Interp *interp,
@@ -1230,9 +1238,9 @@ typedef struct AssocData {
  */
 
 typedef struct LocalCache {
-    Tcl_Size refCount;
-    Tcl_Size numVars;
-    Tcl_Obj *varName0;
+    Tcl_Size refCount;		/* Reference count. */
+    Tcl_Size numVars;		/* Number of variables. */
+    Tcl_Obj *varName0;		/* First variable name. */
 } LocalCache;
 
 #define localName(framePtr, i) \
@@ -1293,12 +1301,14 @@ typedef struct CallFrame {
 				 * have some means of discovering what the
 				 * meaning of the value is, which we do not
 				 * specify. */
-    LocalCache *localCachePtr;
+    LocalCache *localCachePtr;	/* Pointer to the start of the cached variable
+				 * names and initialisation data for local
+				 * variables. */
     Tcl_Obj *tailcallPtr;	/* NULL if no tailcall is scheduled */
 } CallFrame;
 
-#define FRAME_IS_PROC	0x1
-#define FRAME_IS_LAMBDA 0x2
+#define FRAME_IS_PROC	0x1	/* Frame is a procedure body. */
+#define FRAME_IS_LAMBDA 0x2	/* Frame is a lambda term body. */
 #define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
 				 * clientData field contains a CallContext
 				 * reference. Part of TIP#257. */
@@ -1339,7 +1349,7 @@ typedef struct CmdFrame {
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
     Tcl_Size *line;		/* Lines the words of the command start on. */
-    Tcl_Size nline;
+    Tcl_Size nline;		/* Number of lines in CmdFrame.line. */
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
@@ -1569,19 +1579,33 @@ typedef int (CompileHookProc)(Tcl_Interp *interp,
 	struct CompileEnv *compEnvPtr, void *clientData);
 
 /*
- * The data structure for a (linked list of) execution stacks.
+ * The data structure for a (linked list of) execution stacks. Note that the
+ * first word on a particular execution stack is NULL, which is used as a
+ * marker to say "go to the previous stack in the list" when unwinding the
+ * stack.
  */
 
 typedef struct ExecStack {
     struct ExecStack *prevPtr;	/* Previous stack in list. */
     struct ExecStack *nextPtr;	/* Next stack in list. */
-    Tcl_Obj **markerPtr;
-    Tcl_Obj **endPtr;		/* Where the end is. */
-    Tcl_Obj **tosPtr;		/* Where the top of stack is. */
+    Tcl_Obj **markerPtr;	/* The location of the NULL marker. */
+    Tcl_Obj **endPtr;		/* Where the stack end is. */
+    Tcl_Obj **tosPtr;		/* Where the stack top is. */
     Tcl_Obj *stackWords[TCLFLEXARRAY];
 				/* The actual stack space, following this
 				 * structure in memory. */
 } ExecStack;
+
+/*
+ * Saved copies of the stack frame references from the interpreter. Have to be
+ * restored into the interpreter to be used.
+ */
+typedef struct CorContext {
+    struct CallFrame *framePtr;	   /* See Interp.framePtr */
+    struct CallFrame *varFramePtr; /* See Interp.varFramePtr */
+    struct CmdFrame *cmdFramePtr;  /* See Interp.cmdFramePtr */
+    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
+} CorContext;
 
 /*
  * The data structure defining the execution environment for ByteCode's.
@@ -1590,13 +1614,6 @@ typedef struct ExecStack {
  * increasing addresses. The member stackPtr points to the stackItems of the
  * currently active execution stack.
  */
-
-typedef struct CorContext {
-    struct CallFrame *framePtr;
-    struct CallFrame *varFramePtr;
-    struct CmdFrame *cmdFramePtr;  /* See Interp.cmdFramePtr */
-    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
-} CorContext;
 
 typedef struct CoroutineData {
     struct Command *cmdPtr;	/* The command handle for the coroutine. */
@@ -1609,7 +1626,8 @@ typedef struct CoroutineData {
     CorContext caller;		/* Caller's saved execution context. */
     CorContext running;		/* This coroutine's saved execution context. */
     Tcl_HashTable *lineLABCPtr;	/* See Interp.lineLABCPtr */
-    void *stackLevel;
+    void *stackLevel;		/* C stack frame reference. Used to try to
+				 * ensure we don't overflow that stack. */
     Tcl_Size auxNumLevels;	/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
@@ -1628,11 +1646,14 @@ typedef struct ExecEnv {
     ExecStack *execStackPtr;	/* Points to the first item in the evaluation
 				 * stack on the heap. */
     Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
-    struct Tcl_Interp *interp;
+    struct Tcl_Interp *interp;	/* Owning interpreter. */
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
     struct CoroutineData *corPtr;
-    int rewind;
+				/* Current coroutine. */
+    int rewind;			/* Set when exception trapping is disabled
+				 * because a context is being deleted (e.g.,
+				 * the current coroutine has been deleted). */
 } ExecEnv;
 
 #define COR_IS_SUSPENDED(corPtr) \
@@ -1980,6 +2001,8 @@ typedef struct Interp {
 				 * per-interp basis. */
 #if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
+				/* Reference to the bytecode optimizer, if one
+				 * is set. */
 #else
     union {
 	void (*optimizer)(void *envPtr);
@@ -2258,7 +2281,7 @@ typedef struct Interp {
      * They are used by the macros defined below.
      */
 
-    AllocCache *allocCache;
+    AllocCache *allocCache;	/* Allocator cache for stack frames. */
     void *pendingObjDataPtr;	/* Pointer to the Cache and PendingObjData
 				 * structs for this interp's thread; see
 				 * tclObj.c and tclThreadAlloc.c */
@@ -2293,9 +2316,9 @@ typedef struct Interp {
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
 
-	/*
-	 * TIP #348 IMPLEMENTATION  -  Substituted error stack
-	 */
+    /*
+     * TIP #348 IMPLEMENTATION  -  Substituted error stack
+     */
     Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
     Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
     Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
@@ -3005,6 +3028,7 @@ TclUpsizeAlloc(
 	return limit;
     }
 }
+
 static inline Tcl_Size
 TclUpsizeRetry(
     Tcl_Size needed,
@@ -3018,6 +3042,7 @@ TclUpsizeRetry(
 	return needed;
     }
 }
+
 MODULE_SCOPE void *	TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
 			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
 MODULE_SCOPE void *	TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
@@ -3026,6 +3051,7 @@ MODULE_SCOPE void *	TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
 MODULE_SCOPE void *	TclAttemptReallocElemsEx(void *oldPtr,
 			    Tcl_Size elemCount, Tcl_Size elemSize,
 			    Tcl_Size leadSize, Tcl_Size *capacityPtr);
+
 /* Alloc elemCount elements of size elemSize with leadSize header
  * returning actual capacity (in elements) in *capacityPtr. */
 static inline void *
