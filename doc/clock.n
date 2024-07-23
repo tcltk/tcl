@@ -132,7 +132,7 @@ Specifies the desired output format for \fBclock format\fR or the
 expected input format for \fBclock scan\fR.  The \fIformat\fR string consists
 of any number of characters other than the per-cent sign
 .PQ \fB%\fR
-interspersed with any number of \fIformat groups\fR, which are two-character
+interspersed with any number of \fIformat groups\fR, which are two- or three-character
 sequences beginning with the per-cent sign.  The permissible format groups,
 and their interpretation, are described under \fBFORMAT GROUPS\fR.
 .RS
@@ -194,6 +194,15 @@ the environment variable \fBTZ\fR.
 .IP [3]
 on Windows systems, the time zone settings from the Control Panel.
 .RE
+.\" OPTION: -validate
+.TP
+\fB\-validate\fR boolean
+.
+If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error
+if the input contains invalid values, e.g. day of month greater than
+number of days in the month. If specified as false, the command makes
+an adjustment to bring values within acceptable range. See
+\fBSCANNING TIMES\fT for details.
 .PP
 If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR
 functions are used to attempt to convert times between local and
@@ -492,7 +501,9 @@ time zone when converting local times.  This caveat does not apply to
 UTC times.)
 .PP
 If the interpretation of the groups yields an impossible time because
-a field is out of range, enough of that field's unit will be added to
+a field is out of range, an exception is raised if the \fB-validate\fR
+option is not present or passed as true. If passed as false,
+enough of that field's unit will be added to
 or subtracted from the time to bring it in range. Thus, if attempting to
 scan or format day 0 of the month, one day will be subtracted from day
 1 of the month, yielding the last day of the previous month.
