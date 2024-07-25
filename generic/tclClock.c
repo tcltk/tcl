@@ -3417,12 +3417,12 @@ ClockParseFmtScnArgs(
     if (opts->baseObj != NULL) {
 	Tcl_Obj *baseObj = opts->baseObj;
 
-	/* bypass integer recognition if looks like option "-now" */
-	if ((baseObj->bytes && baseObj->length == 4 && baseObj->bytes[1] == 'n')
+	/* bypass integer recognition if looks like option "now" */
+	if ((baseObj->bytes && baseObj->length == 3 && baseObj->bytes[0] == 'n')
 		|| TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK) {
-	    /* we accept "-now" as current date-time */
+	    /* we accept "now" as current date-time */
 	    static const char *const nowOpts[] = {
-		"-now", NULL
+		"now", NULL
 	    };
 	    int idx;
 
@@ -3527,7 +3527,7 @@ ClockFormatObjCmd(
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
-    static const char *syntax = "clock format clockval|-now "
+    static const char *syntax = "clock format clockval|now "
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
@@ -4358,7 +4358,7 @@ ClockAddObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock add clockval|-now ?number units?..."
+    static const char *syntax = "clock add clockval|now ?number units?..."
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;
