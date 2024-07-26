@@ -202,7 +202,7 @@ If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error
 if the input contains invalid values, e.g. day of month greater than
 number of days in the month. If specified as false, the command makes
 an adjustment to bring values within acceptable range. See
-\fBSCANNING TIMES\fT for details.
+\fBSCANNING TIMES\fR for details.
 .PP
 If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR
 functions are used to attempt to convert times between local and
