@@ -1940,6 +1940,21 @@ namespace eval test_ns_zipfs {
         after 100; # Needed to allow the spawned thread to exit to trigger bug
         string equal $before [lsort [zipfs mount]]
     } -result 1
+
+    test bug-7d5f1c1308 "zipfs error on dotfiles" -setup {
+        set basename bug-7d5f1c1308
+        set mt //zipfs:/$basename-mt
+        set zipfile $basename.zip
+        set dir [tcltest::makeDirectory $basename]
+        close [open [file join $dir .ext] w]
+    } -cleanup {
+        zipfs unmount $mt
+        file delete $zipfile
+    } -body {
+        zipfs mkzip $zipfile $dir [file dirname $dir]
+        zipfs mount $zipfile $mt
+        lsort [zipfs list $mt/*]
+    } -result {//zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308 //zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308/.ext}
 }
 
 
