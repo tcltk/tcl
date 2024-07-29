@@ -87,8 +87,8 @@ slowing its clock by a tiny fraction for some minutes until it is
 back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
-\fI\now\fR
-Instead of \fItimeVal\fR a non-integer option \fI\now\fR can be used as
+\fInow\fR
+Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as
 replacement for today, which is simply interpolated to the runt-time as value
 of \fBclock seconds\fR. For example:
 .sp
