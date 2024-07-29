@@ -3620,6 +3620,76 @@ test oo-22.6 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
     catch {B destroy}
 } -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
 WorkerBase destroy
+test oo-22.7 {oo::define and info frame: correct argument line} -setup {
+    oo::class create C {
+	variable base
+	constructor {info} {set base [dict get $info line]}
+	method Relative {} {
+	    set info [next]
+	    if {![dict exists $info file]} {
+		error "no file-relative line info: $info"
+	    }
+	    expr {[dict get $info line] - $base}
+	}
+	filter Relative
+    }
+} -body {
+    C create o [info frame 0]
+    oo::define C {
+	method line1 {} {info frame 0}
+	method line2 {
+	} {info frame 0}
+	method line3 {
+	} {
+	    info frame 0
+	}
+    }
+    oo::define C method line4 {} {info frame 0}
+    oo::define C method line5 {
+    } {info frame 0}
+    oo::define C method line6 {
+    } {
+	info frame 0
+    }
+    list [o line1] [o line2] [o line3] [o line4] [o line5] [o line6]
+} -cleanup {
+    C destroy
+} -result {2 4 7 10 12 15}
+test oo-22.8 {oo::objdefine and info frame: correct argument line} -setup {
+    oo::class create C {
+	variable base
+	constructor {info} {set base [dict get $info line]}
+	method Relative {} {
+	    set info [next]
+	    if {![dict exists $info file]} {
+		error "no file-relative line info: $info"
+	    }
+	    expr {[dict get $info line] - $base}
+	}
+	filter Relative
+    }
+} -body {
+    C create o [info frame 0]
+    oo::objdefine o {
+	method line1 {} {info frame 0}
+	method line2 {
+	} {info frame 0}
+	method line3 {
+	} {
+	    info frame 0
+	}
+    }
+    oo::objdefine o method line4 {} {info frame 0}
+    oo::objdefine o method line5 {
+    } {info frame 0}
+    oo::objdefine o method line6 {
+    } {
+	info frame 0
+    }
+    list [o line1] [o line2] [o line3] [o line4] [o line5] [o line6]
+} -cleanup {
+    C destroy
+} -result {2 4 7 10 12 15}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

@@ -502,6 +502,89 @@ TclOONewProcMethod(
 /*
  * ----------------------------------------------------------------------
  *
+ * InitCmdFrame --
+ *
+ *	Set up a CmdFrame to record the source location for a procedure
+ *	method. Assumes that the body is the last argument to the command
+ *	creating the method, a good assumption because putting the body
+ *	elsewhere is ugly.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline void
+InitCmdFrame(
+    Interp *iPtr,		/* Where source locations are recorded. */
+    Proc *procPtr)		/* Guts of the method being made. */
+{
+    if (iPtr->cmdFramePtr) {
+	CmdFrame context = *iPtr->cmdFramePtr;
+
+	if (context.type == TCL_LOCATION_BC) {
+	    /*
+	     * Retrieve source information from the bytecode, if possible. If
+	     * the information is retrieved successfully, context.type will be
+	     * TCL_LOCATION_SOURCE and the reference held by
+	     * context.data.eval.path will be counted.
+	     */
+
+	    TclGetSrcInfoForPc(&context);
+	} else if (context.type == TCL_LOCATION_SOURCE) {
+	    /*
+	     * The copy into 'context' up above has created another reference
+	     * to 'context.data.eval.path'; account for it.
+	     */
+
+	    Tcl_IncrRefCount(context.data.eval.path);
+	}
+
+	if (context.type == TCL_LOCATION_SOURCE) {
+	    /*
+	     * We can account for source location within a proc only if the
+	     * proc body was not created by substitution. This is where we
+	     * assume that the body is the last argument; the index of the body
+	     * is NOT a fixed count of arguments in because of the alternate
+	     * form of [oo::define]/[oo::objdefine].
+	     * (FIXME: check that this is sane and correct!)
+	     */
+
+	    if (context.line && context.nline > 1
+		    && (context.line[context.nline - 1] >= 0)) {
+		int isNew;
+		CmdFrame *cfPtr = (CmdFrame *)Tcl_Alloc(sizeof(CmdFrame));
+		Tcl_HashEntry *hPtr;
+
+		cfPtr->level = -1;
+		cfPtr->type = context.type;
+		cfPtr->line = (Tcl_Size *) Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line[0] = context.line[context.nline - 1];
+		cfPtr->nline = 1;
+		cfPtr->framePtr = NULL;
+		cfPtr->nextPtr = NULL;
+
+		cfPtr->data.eval.path = context.data.eval.path;
+		Tcl_IncrRefCount(cfPtr->data.eval.path);
+
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
+
+		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
+			procPtr, &isNew);
+		Tcl_SetHashValue(hPtr, cfPtr);
+	    }
+
+	    /*
+	     * 'context' is going out of scope; account for the reference that
+	     * it's holding to the path name.
+	     */
+
+	    Tcl_DecrRefCount(context.data.eval.path);
+	    context.data.eval.path = NULL;
+	}
+    }}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOMakeProcInstanceMethod --
  *
  *	The guts of the code to make a procedure-like method for an object.
@@ -541,68 +624,7 @@ TclOOMakeProcInstanceMethod(
     procPtr = *procPtrPtr;
     procPtr->cmdPtr = NULL;
 
-    if (iPtr->cmdFramePtr) {
-	CmdFrame context = *iPtr->cmdFramePtr;
-
-	if (context.type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(&context);
-	} else if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(context.data.eval.path);
-	}
-
-	if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     * (FIXME: check that this is sane and correct!)
-	     */
-
-	    if (context.line
-		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
-		CmdFrame *cfPtr = (CmdFrame *)Tcl_Alloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
-
-		cfPtr->level = -1;
-		cfPtr->type = context.type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
-		cfPtr->line[0] = context.line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
-	    }
-
-	    /*
-	     * 'context' is going out of scope; account for the reference that
-	     * it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
-	}
-    }
+    InitCmdFrame(iPtr, procPtr);
 
     return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
 	    typePtr, clientData);
@@ -654,68 +676,7 @@ TclOOMakeProcMethod(
     procPtr = *procPtrPtr;
     procPtr->cmdPtr = NULL;
 
-    if (iPtr->cmdFramePtr) {
-	CmdFrame context = *iPtr->cmdFramePtr;
-
-	if (context.type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(&context);
-	} else if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(context.data.eval.path);
-	}
-
-	if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     * (FIXME: check that this is sane and correct!)
-	     */
-
-	    if (context.line
-		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
-		CmdFrame *cfPtr = (CmdFrame *)Tcl_Alloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
-
-		cfPtr->level = -1;
-		cfPtr->type = context.type;
-		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
-		cfPtr->line[0] = context.line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
-	    }
-
-	    /*
-	     * 'context' is going out of scope; account for the reference that
-	     * it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
-	}
-    }
+    InitCmdFrame(iPtr, procPtr);
 
     return TclNewMethod(interp, (Tcl_Class) clsPtr, nameObj, flags, typePtr,
 	    clientData);
