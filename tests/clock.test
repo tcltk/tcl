@@ -37265,7 +37265,7 @@ test clock-46.16-pos-fmt2 {scan with format: validation rules: valid day of week
 	0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 0 947246400 \
 	0 946641600 0 946728000 0 946814400 0 946900800 0 946987200 0 947073600 0 947160000 \
     ]
-test clock-46.16-pos-fmt2 {scan with format: validation rules: valid day of week (must work for all weekdays)} \
+test clock-46.16-pos-fmt3 {scan with format: validation rules: valid day of week (must work for all weekdays)} \
     -body {
 	_invalid_test {:GMT -12:00 +12:00} {-format "%w, %d %b %Y %H:%M:%S"} {6, 01 Jan 2000 00:00:00} {0, 02 Jan 2000 00:00:00} {1, 03 Jan 2000 00:00:00} {2, 04 Jan 2000 00:00:00} {3, 05 Jan 2000 00:00:00} {4, 06 Jan 2000 00:00:00} {5, 07 Jan 2000 00:00:00}
     } -result [list \
