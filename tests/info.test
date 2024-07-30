@@ -1841,7 +1841,7 @@ test info-30.48 {Bug 2850901} testevalex {
 # -------------------------------------------------------------------------
 # literal sharing 2, bug 2933089
 
-test info-40.1 {location information not confused by literal sharing, bug 2933089} -setup {
+test info-39.1 {location information not confused by literal sharing, bug 2933089} -setup {
     set result {}
 
     proc print_one {} {}
@@ -2437,7 +2437,7 @@ test info-39.2 {Bug 4b61afd660} -setup {
     rename probe {}
 } -result 3
 
-test info-40.0 {Bug 0de6c1d79c crash} -setup {
+test info-41.0 {Bug 0de6c1d79c crash} -setup {
     interp create child
     child hide info
 } -body {
