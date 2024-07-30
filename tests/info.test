@@ -2615,7 +2615,7 @@ test info-40.0 {Bug 0de6c1d79c crash} -setup {
     child invokehidden info frame
 } -result 1
 
-test info-40.0 {Bug 0de6c1d79c crash} -setup {
+test info-41.0 {Bug 0de6c1d79c crash} -setup {
     interp create child
     child hide info
 } -body {
