@@ -18,7 +18,7 @@ int
 \fBTcl_ZlibDeflate\fR(\fIinterp, format, dataObj, level, dictObj\fR)
 .sp
 int
-\fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, dictObj\fR)
+\fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, bufferSize, dictObj\fR)
 .sp
 unsigned int
 \fBTcl_ZlibCRC32\fR(\fIinitValue, bytes, length\fR)
@@ -85,6 +85,9 @@ section \fBGZIP OPTIONS DICTIONARY\fR for details about the contents of this
 dictionary.
 .AP "unsigned int" initValue in
 The initial value for the checksum algorithm.
+.AP "int" bufferSize in
+A hint as to what size of buffer is to be used to receive the data.
+Use 0 to use a geric guess based on the input data.
 .AP "unsigned char" *bytes in
 An array of bytes to run the checksum algorithm over, or NULL to get the
 recommended initial value for the checksum algorithm.
