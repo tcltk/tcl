@@ -79,20 +79,26 @@ language syntax.  To print any of the man pages on Unix, cd to the
 "doc" directory and invoke your favorite variant of troff using the
 normal -man macros, for example
 
-		groff -man -Tpdf Tcl.n >output.pdf
+```bash
+groff -man -Tpdf Tcl.n > output.pdf
+```
 
 to print Tcl.n to PDF.  If Tcl has been installed correctly and your "man" program
 supports it, you should be able to access the Tcl manual entries using the
 normal "man" mechanisms, such as
 
-		man Tcl
+```bash
+man Tcl
+```
 
 ### <a id="doc.win">2b.</a> Windows Documentation
 The "doc" subdirectory in this release contains a complete set of Windows
 help files for Tcl.  Once you install this Tcl release, a shortcut to the
 Windows help Tcl documentation will appear in the "Start" menu:
 
-		Start | Programs | Tcl | Tcl Help
+```bash
+Start | Programs | Tcl | Tcl Help
+```
 
 ## <a id="build">3.</a> Compiling and installing Tcl
 There are brief notes in the `unix/README`, `win/README`, and `macosx/README`
