@@ -3800,11 +3800,7 @@ TclOOPropertyDefinitionCmd(
 /*
  * ----------------------------------------------------------------------
  *
- * InstallStdPropertyImpls, TclOOInstallStdPropertyImplsCmd --
- *
- *	Implementations of the "StdClassProperties" hidden definition for
- *	classes and the "StdObjectProperties" hidden definition for
- *	instances. Both are located in the ::oo::configuresupport namespace.
+ * InstallStdPropertyImpls --
  *
  *	Validates a (dashless) property name, and installs implementation
  *	methods if asked to do so (readable and writable flags).
@@ -3874,42 +3870,6 @@ InstallStdPropertyImpls(
 	    "bad property name \"%s\": %s", name, reason));
     Tcl_SetErrorCode(interp, "TCL", "OO", "PROPERTY_FORMAT", NULL);
     return TCL_ERROR;
-}
-
-int
-TclOOInstallStdPropertyImplsCmd(
-    void *useInstance,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    int readable, writable;
-    Tcl_Obj *propName;
-
-    /*
-     * Parse the arguments.
-     */
-
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "propName readable writable");
-	return TCL_ERROR;
-    }
-    propName = objv[1];
-    if (Tcl_GetBooleanFromObj(interp, objv[2], &readable) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &writable) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-
-    /*
-     * Validate the property name and install the implementations... if asked
-     * to do so.
-     */
-
-    return InstallStdPropertyImpls(useInstance, interp, propName, readable,
-	    writable);
 }
 
 /*
