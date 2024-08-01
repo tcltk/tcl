@@ -95,6 +95,23 @@ static const EnsembleImplMap infoClassCmds[] = {
 /*
  * ----------------------------------------------------------------------
  *
+ * LocalVarName --
+ *
+ *	Get the name of a local variable (especially a method argument) as a
+ *	Tcl value.
+ *
+ * ----------------------------------------------------------------------
+ */
+static inline Tcl_Obj *
+LocalVarName(
+    CompiledLocal *localPtr)
+{
+    return Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOInitInfo --
  *
  *	Adjusts the Tcl core [info] command to contain subcommands ("object"
@@ -256,21 +273,16 @@ InfoObjectDefnCmd(
     }
     hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
-    unknownMethod:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto unknownMethod;
     }
-    procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
+    procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto wrongType;
     }
+
+    /*
+     * We now have the method to describe the definition of.
+     */
 
     TclNewObj(resultObjs[0]);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
@@ -279,17 +291,34 @@ InfoObjectDefnCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
 	}
     }
-    resultObjs[1] = TclOOGetMethodBody((Method *)Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
+
+    /*
+     * Errors...
+     */
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(objv[2])));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
+
+  wrongType:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "definition not available for this kind of method", -1));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -367,25 +396,38 @@ InfoObjectForwardCmd(
     }
     hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
-    unknownMethod:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto unknownMethod;
     }
-    prefixObj = TclOOGetFwdFromMethod((Method *)Tcl_GetHashValue(hPtr));
+    prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (prefixObj == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"prefix argument list not available for this kind of method",
-		-1));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto wrongType;
     }
+
+    /*
+     * Describe the valid forward method.
+     */
 
     Tcl_SetObjResult(interp, prefixObj);
     return TCL_OK;
+
+    /*
+     * Errors...
+     */
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(objv[2])));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
+
+  wrongType:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "prefix argument list not available for this kind of method",
+	    -1));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -544,6 +586,10 @@ InfoObjectMethodsCmd(
 	SCOPE_LOCALPRIVATE
     };
 
+    /*
+     * Parse arguments.
+     */
+
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
 	return TCL_ERROR;
@@ -604,6 +650,10 @@ InfoObjectMethodsCmd(
 	}
     }
 
+    /*
+     * List matching methods.
+     */
+
     TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
@@ -615,7 +665,7 @@ InfoObjectMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free((void *)names);
+	    Tcl_Free((void *) names);
 	}
     } else if (oPtr->methodsPtr) {
 	if (scope == -1) {
@@ -684,7 +734,7 @@ InfoObjectMethodTypeCmd(
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
-    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+    mPtr = (Method *) Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
@@ -970,8 +1020,7 @@ InfoClassConstrCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1022,7 +1071,7 @@ InfoClassDefnCmd(
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
-    procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
+    procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method", -1));
@@ -1038,15 +1087,14 @@ InfoClassDefnCmd(
 	    Tcl_Obj *argObj;
 
 	    TclNewObj(argObj);
-	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
 	}
     }
-    resultObjs[1] = TclOOGetMethodBody((Method *)Tcl_GetHashValue(hPtr));
+    resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
     return TCL_OK;
 }
@@ -1220,7 +1268,7 @@ InfoClassForwardCmd(
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
-    prefixObj = TclOOGetFwdFromMethod((Method *)Tcl_GetHashValue(hPtr));
+    prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
     if (prefixObj == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
@@ -1383,7 +1431,7 @@ InfoClassMethodsCmd(
 		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
-	    Tcl_Free((void *)names);
+	    Tcl_Free((void *) names);
 	}
     } else {
 	FOREACH_HASH_DECLS;
@@ -1450,7 +1498,7 @@ InfoClassMethodTypeCmd(
 		TclGetString(objv[2]), (char *)NULL);
 	return TCL_ERROR;
     }
-    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+    mPtr = (Method *) Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
