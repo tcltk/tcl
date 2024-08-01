@@ -32,13 +32,12 @@
 /*
  * Some things that make it easier to declare a slot.
  */
-
-struct DeclaredSlot {
+typedef struct DeclaredSlot {
     const char *name;
     const Tcl_MethodType getterType;
     const Tcl_MethodType setterType;
     const Tcl_MethodType resolverType;
-};
+} DeclaredSlot;
 
 #define SLOT(name,getter,setter,resolver)				\
     {"::oo::" name,							\
@@ -156,7 +155,7 @@ static int		ResolveClass(void *clientData,
  * Now define the slots used in declarations.
  */
 
-static const struct DeclaredSlot slots[] = {
+static const DeclaredSlot slots[] = {
     SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL),
     SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, ResolveClass),
     SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, ResolveClass),
@@ -360,9 +359,9 @@ TclOOObjectSetFilters(
 	size_t size = sizeof(Tcl_Obj *) * numFilters;
 
 	if (oPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
+	    filtersList = (Tcl_Obj **) Tcl_Alloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)Tcl_Realloc(oPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **) Tcl_Realloc(oPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -419,9 +418,10 @@ TclOOClassSetFilters(
 	size_t size = sizeof(Tcl_Obj *) * numFilters;
 
 	if (classPtr->filters.num == 0) {
-	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
+	    filtersList = (Tcl_Obj **) Tcl_Alloc(size);
 	} else {
-	    filtersList = (Tcl_Obj **)Tcl_Realloc(classPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **)
+		    Tcl_Realloc(classPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -475,10 +475,11 @@ TclOOObjectSetMixins(
 		}
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    oPtr->mixins.list = (Class **)Tcl_Realloc(oPtr->mixins.list,
+	    oPtr->mixins.list = (Class **) Tcl_Realloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
 	} else {
-	    oPtr->mixins.list = (Class **)Tcl_Alloc(sizeof(Class *) * numMixins);
+	    oPtr->mixins.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * numMixins);
 	    oPtr->flags &= ~USE_CLASS_CACHE;
 	}
 	oPtr->mixins.num = numMixins;
@@ -533,10 +534,12 @@ TclOOClassSetMixins(
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    classPtr->mixins.list = (Class **)Tcl_Realloc(classPtr->mixins.list,
-		    sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = (Class **)
+		    Tcl_Realloc(classPtr->mixins.list,
+			    sizeof(Class *) * numMixins);
 	} else {
-	    classPtr->mixins.list = (Class **)Tcl_Alloc(sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = (Class **)
+		    Tcl_Alloc(sizeof(Class *) * numMixins);
 	}
 	classPtr->mixins.num = numMixins;
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
@@ -584,9 +587,10 @@ InstallStandardVariableMapping(
 	if (varc == 0) {
 	    Tcl_Free(vnlPtr->list);
 	} else if (i) {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **)
+		    Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
 	} else {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * varc);
 	}
     }
     vnlPtr->num = 0;
@@ -607,7 +611,8 @@ InstallStandardVariableMapping(
 	 */
 
 	if (n != varc) {
-	    vnlPtr->list = (Tcl_Obj **)Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
+	    vnlPtr->list = (Tcl_Obj **)
+		    Tcl_Realloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -668,7 +673,7 @@ InstallPrivateVariableMapping(
 	 */
 
 	if (n != varc) {
-	    pvlPtr->list = (PrivateVariableMapping *)Tcl_Realloc(pvlPtr->list,
+	    pvlPtr->list = (PrivateVariableMapping *) Tcl_Realloc(pvlPtr->list,
 		    sizeof(PrivateVariableMapping) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
@@ -748,7 +753,7 @@ RenameDeleteMethod(
      * Complete the splicing by changing the method's name.
      */
 
-    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+    mPtr = (Method *) Tcl_GetHashValue(hPtr);
     if (toPtr) {
 	Tcl_IncrRefCount(toPtr);
 	Tcl_DecrRefCount(mPtr->namePtr);
@@ -975,7 +980,7 @@ TclOOGetDefineCmdContext(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return NULL;
     }
-    object = (Tcl_Object)iPtr->varFramePtr->clientData;
+    object = (Tcl_Object) iPtr->varFramePtr->clientData;
     if (Tcl_ObjectDeleted(object)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"this command cannot be called when the object has been"
@@ -1107,7 +1112,7 @@ GenerateErrorInfo(
 
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
-	    typeOfSubject, (overflow ? limit : (int)length), objName,
+	    typeOfSubject, (overflow ? limit : (int) length), objName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -1237,7 +1242,7 @@ TclOODefineObjCmd(
 
 	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+		((Interp *) interp)->cmdFramePtr, 2);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "class");
 	}
@@ -1306,7 +1311,7 @@ TclOOObjDefObjCmd(
 
 	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+		((Interp *) interp)->cmdFramePtr, 2);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "object");
 	}
@@ -1380,7 +1385,7 @@ TclOODefineSelfObjCmd(
 
 	Tcl_IncrRefCount(objNameObj);
 	result = TclEvalObjEx(interp, objv[1], 0,
-		((Interp *)interp)->cmdFramePtr, 1);
+		((Interp *) interp)->cmdFramePtr, 1);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "class object");
 	}
@@ -1643,7 +1648,7 @@ TclOODefineConstructorObjCmd(
 	return TCL_ERROR;
     }
 
-    (void)TclGetStringFromObj(objv[2], &bodyLength);
+    (void) TclGetStringFromObj(objv[2], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1837,7 +1842,7 @@ TclOODefineDestructorObjCmd(
     }
 
 
-    (void)TclGetStringFromObj(objv[1], &bodyLength);
+    (void) TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1922,7 +1927,8 @@ TclOODefineExportObjCmd(
 
 	if (isInstanceExport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)
+			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -1934,14 +1940,14 @@ TclOODefineExportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *)Tcl_Alloc(sizeof(Method));
+	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
 	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
-	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	}
 	if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	    mPtr->flags |= PUBLIC_METHOD;
@@ -2248,14 +2254,14 @@ TclOODefineUnexportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = (Method *)Tcl_Alloc(sizeof(Method));
+	    mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
 	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
-	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	}
 	if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
 	    mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
@@ -2347,30 +2353,38 @@ int
 TclOODefineSlots(
     Foundation *fPtr)
 {
-    const struct DeclaredSlot *slotInfoPtr;
-    Tcl_Obj *getName = Tcl_NewStringObj("Get", -1);
-    Tcl_Obj *setName = Tcl_NewStringObj("Set", -1);
-    Tcl_Obj *resolveName = Tcl_NewStringObj("Resolve", -1);
+    const DeclaredSlot *slotInfoPtr;
+    Tcl_Interp *interp = fPtr->interp;
+    Tcl_Obj *getName, *setName, *resolveName;
+    Tcl_Object object = Tcl_NewObjectInstance(interp, (Tcl_Class)
+	    fPtr->classCls, "::oo::Slot", NULL, TCL_INDEX_NONE, NULL, 0);
     Class *slotCls;
 
-    slotCls = ((Object *) Tcl_NewObjectInstance(fPtr->interp, (Tcl_Class)
-	    fPtr->classCls, "::oo::Slot", NULL, TCL_INDEX_NONE, NULL, 0))->classPtr;
+    if (object == NULL) {
+	return TCL_ERROR;
+    }
+    slotCls = ((Object *) object)->classPtr;
     if (slotCls == NULL) {
 	return TCL_ERROR;
     }
+
+    TclNewLiteralStringObj(getName, "Get");
+    TclNewLiteralStringObj(setName, "Set");
+    TclNewLiteralStringObj(resolveName, "Resolve");
     for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
-	Tcl_Object slotObject = Tcl_NewObjectInstance(fPtr->interp,
-		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE, NULL, 0);
+	Tcl_Object slotObject = Tcl_NewObjectInstance(interp,
+		(Tcl_Class) slotCls, slotInfoPtr->name, NULL, TCL_INDEX_NONE,
+		NULL, 0);
 
 	if (slotObject == NULL) {
 	    continue;
 	}
-	TclNewInstanceMethod(fPtr->interp, slotObject, getName, 0,
+	TclNewInstanceMethod(interp, slotObject, getName, 0,
 		&slotInfoPtr->getterType, NULL);
-	TclNewInstanceMethod(fPtr->interp, slotObject, setName, 0,
+	TclNewInstanceMethod(interp, slotObject, setName, 0,
 		&slotInfoPtr->setterType, NULL);
 	if (slotInfoPtr->resolverType.callProc) {
-	    TclNewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
+	    TclNewInstanceMethod(interp, slotObject, resolveName, 0,
 		    &slotInfoPtr->resolverType, NULL);
 	}
     }
@@ -2522,7 +2536,7 @@ ClassMixin_Set(
 	return TCL_ERROR;
     }
 
-    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -2647,7 +2661,7 @@ ClassSuper_Set(
      */
 
     if (superc == 0) {
-	superclasses = (Class **)Tcl_Realloc(superclasses, sizeof(Class *));
+	superclasses = (Class **) Tcl_Realloc(superclasses, sizeof(Class *));
 	if (TclOOIsReachable(fPtr->classCls, clsPtr)) {
 	    superclasses[0] = fPtr->classCls;
 	} else {
@@ -2959,7 +2973,7 @@ ObjMixin_Set(
 	return TCL_ERROR;
     }
 
-    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **) TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -3760,9 +3774,10 @@ TclOOPropertyDefinitionCmd(
 	if (setterScript != NULL) {
 	    Tcl_Obj *setterName = Tcl_ObjPrintf("<WriteProp-%s>",
 		    TclGetString(propObj));
-	    Tcl_Obj *argsPtr = Tcl_NewStringObj("value", -1);
+	    Tcl_Obj *argsPtr;
 	    Method *mPtr;
 
+	    TclNewLiteralStringObj(argsPtr, "value");
 	    Tcl_IncrRefCount(setterScript);
 	    if (useInstance) {
 		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
