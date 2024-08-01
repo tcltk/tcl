@@ -17,7 +17,7 @@
 #include "tclOOInt.h"
 
 /*
- * Commands in oo::define.
+ * Commands in oo::define and oo::objdefine.
  */
 
 static const struct {
@@ -337,7 +337,7 @@ InitFoundation(
     ThreadLocalData *tsdPtr = (ThreadLocalData *)
 	    Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
     Foundation *fPtr = (Foundation *) Tcl_Alloc(sizeof(Foundation));
-    Tcl_Namespace *define, *objdef, *cfg;
+    Tcl_Namespace *define, *objdef;
     Tcl_Obj *namePtr;
     size_t i;
 
@@ -356,7 +356,7 @@ InitFoundation(
     objdef = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
-    cfg = Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
+    Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
     fPtr->epoch = 1;
     fPtr->tsdPtr = tsdPtr;
 
@@ -461,10 +461,6 @@ InitFoundation(
     for (i = 0 ; cfgMethods[i].name ; i++) {
 	TclOONewBasicMethod(((Object *) cfgCls)->classPtr, &cfgMethods[i]);
     }
-    TclCreateObjCommandInNs(interp, "StdObjectProperties", cfg,
-	    TclOOInstallStdPropertyImplsCmd, (void *) 1, NULL);
-    TclCreateObjCommandInNs(interp, "StdClassProperties", cfg,
-	    TclOOInstallStdPropertyImplsCmd, (void *) 0, NULL);
 
     /*
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
