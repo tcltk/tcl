@@ -74,9 +74,6 @@ static inline Tcl_Namespace *GetNamespaceInOuterContext(Tcl_Interp *interp,
 static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InstallStdPropertyImpls(void *useInstance,
-			    Tcl_Interp *interp, Tcl_Obj *propName,
-			    int readable, int writable);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
@@ -956,7 +953,7 @@ InitDefineContext(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOGetDefineCmdContext --
+ * TclOOGetDefineCmdContext, TclOOGetClassDefineCmdContext --
  *
  *	Extracts the magic token from the current stack frame, or returns NULL
  *	(and leaves an error message) otherwise.
@@ -991,8 +988,8 @@ TclOOGetDefineCmdContext(
     return object;
 }
 
-static Class *
-GetClassDefineCmdContext(
+Class *
+TclOOGetClassDefineCmdContext(
     Tcl_Interp *interp)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -1637,7 +1634,7 @@ TclOODefineConstructorObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Method method;
     Tcl_Size bodyLength;
 
@@ -1702,7 +1699,7 @@ TclOODefineDefnNsObjCmd(
 	NULL
     };
     int kind = 0;
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Namespace *nsPtr;
     Tcl_Obj *nsNamePtr, **storagePtr;
 
@@ -1832,7 +1829,7 @@ TclOODefineDestructorObjCmd(
 {
     Tcl_Method method;
     Tcl_Size bodyLength;
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -2413,7 +2410,7 @@ ClassFilter_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
     Tcl_Size i;
 
@@ -2441,7 +2438,7 @@ ClassFilter_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size filterc;
     Tcl_Obj **filterv;
 
@@ -2482,7 +2479,7 @@ ClassMixin_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *mixinPtr;
     Tcl_Size i;
@@ -2513,7 +2510,7 @@ ClassMixin_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size mixinc, i;
     Tcl_Obj **mixinv;
     Class **mixins;		/* The references to the classes to actually
@@ -2591,7 +2588,7 @@ ClassSuper_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *superPtr;
     Tcl_Size i;
@@ -2621,7 +2618,7 @@ ClassSuper_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size superc, j;
     Tcl_Size i;
     Tcl_Obj **superv;
@@ -2749,7 +2746,7 @@ ClassVars_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Tcl_Size i;
 
@@ -2787,7 +2784,7 @@ ClassVars_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size i;
     Tcl_Size varc;
     Tcl_Obj **varv;
@@ -3159,140 +3156,6 @@ ResolveClass(
 /*
  * ----------------------------------------------------------------------
  *
- * SetPropertyList --
- *
- *	Helper for writing a property list (which is actually a set).
- *
- * ----------------------------------------------------------------------
- */
-static inline void
-SetPropertyList(
-    PropertyList *propList,	/* The property list to write. Replaces the
-				 * property list's contents. */
-    Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
-{
-    Tcl_Size i, n;
-    Tcl_Obj *propObj;
-    int created;
-    Tcl_HashTable uniqueTable;
-
-    for (i=0 ; i<objc ; i++) {
-	Tcl_IncrRefCount(objv[i]);
-    }
-    FOREACH(propObj, *propList) {
-	Tcl_DecrRefCount(propObj);
-    }
-    if (i != objc) {
-	if (objc == 0) {
-	    Tcl_Free(propList->list);
-	} else if (i) {
-	    propList->list = (Tcl_Obj **)
-		    Tcl_Realloc(propList->list, sizeof(Tcl_Obj *) * objc);
-	} else {
-	    propList->list = (Tcl_Obj **)
-		    Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
-	}
-    }
-    propList->num = 0;
-    if (objc > 0) {
-	Tcl_InitObjHashTable(&uniqueTable);
-	for (i=n=0 ; i<objc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, objv[i], &created);
-	    if (created) {
-		propList->list[n++] = objv[i];
-	    } else {
-		Tcl_DecrRefCount(objv[i]);
-	    }
-	}
-	propList->num = n;
-
-	/*
-	 * Shouldn't be necessary, but maintain num/list invariant.
-	 */
-
-	if (n != objc) {
-	    propList->list = (Tcl_Obj **)
-		    Tcl_Realloc(propList->list, sizeof(Tcl_Obj *) * n);
-	}
-	Tcl_DeleteHashTable(&uniqueTable);
-    }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * InstallReadableProps --
- *
- *	Helper for writing the readable property list (which is actually a set)
- *	that includes flushing the name cache.
- *
- * ----------------------------------------------------------------------
- */
-static inline void
-InstallReadableProps(
-    PropertyStorage *props,	/* Which property list to install into. */
-    Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
-{
-    if (props->allReadableCache) {
-	Tcl_DecrRefCount(props->allReadableCache);
-	props->allReadableCache = NULL;
-    }
-
-    SetPropertyList(&props->readable, objc, objv);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * InstallWritableProps --
- *
- *	Helper for writing the writable property list (which is actually a set)
- *	that includes flushing the name cache.
- *
- * ----------------------------------------------------------------------
- */
-static inline void
-InstallWritableProps(
-    PropertyStorage *props,	/* Which property list to install into. */
-    Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
-{
-    if (props->allWritableCache) {
-	Tcl_DecrRefCount(props->allWritableCache);
-	props->allWritableCache = NULL;
-    }
-
-    SetPropertyList(&props->writable, objc, objv);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * GetPropertyList --
- *
- *	Helper for reading a property list.
- *
- * ----------------------------------------------------------------------
- */
-static inline Tcl_Obj *
-GetPropertyList(
-    PropertyList *propList)	/* The property list to read. */
-{
-    Tcl_Obj *resultObj, *propNameObj;
-    Tcl_Size i;
-
-    TclNewObj(resultObj);
-    FOREACH(propNameObj, *propList) {
-	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
-    }
-    return resultObj;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * Configurable_ClassReadableProps_Get, Configurable_ClassReadableProps_Set,
  * Configurable_ObjectReadableProps_Get, Configurable_ObjectReadableProps_Set --
  *
@@ -3310,7 +3173,7 @@ Configurable_ClassReadableProps_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3320,7 +3183,7 @@ Configurable_ClassReadableProps_Get(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, GetPropertyList(&clsPtr->properties.readable));
+    Tcl_SetObjResult(interp, TclOOGetPropertyList(&clsPtr->properties.readable));
     return TCL_OK;
 }
 
@@ -3332,7 +3195,7 @@ Configurable_ClassReadableProps_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size varc;
     Tcl_Obj **varv;
 
@@ -3349,7 +3212,7 @@ Configurable_ClassReadableProps_Set(
 	return TCL_ERROR;
     }
 
-    InstallReadableProps(&clsPtr->properties, varc, varv);
+    TclOOInstallReadableProps(&clsPtr->properties, varc, varv);
     BumpGlobalEpoch(interp, clsPtr);
     return TCL_OK;
 }
@@ -3372,7 +3235,7 @@ Configurable_ObjectReadableProps_Get(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, GetPropertyList(&oPtr->properties.readable));
+    Tcl_SetObjResult(interp, TclOOGetPropertyList(&oPtr->properties.readable));
     return TCL_OK;
 }
 
@@ -3402,7 +3265,7 @@ Configurable_ObjectReadableProps_Set(
 	return TCL_ERROR;
     }
 
-    InstallReadableProps(&oPtr->properties, varc, varv);
+    TclOOInstallReadableProps(&oPtr->properties, varc, varv);
     return TCL_OK;
 }
 
@@ -3426,7 +3289,7 @@ Configurable_ClassWritableProps_Get(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
 
     if (clsPtr == NULL) {
 	return TCL_ERROR;
@@ -3436,7 +3299,7 @@ Configurable_ClassWritableProps_Get(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, GetPropertyList(&clsPtr->properties.writable));
+    Tcl_SetObjResult(interp, TclOOGetPropertyList(&clsPtr->properties.writable));
     return TCL_OK;
 }
 
@@ -3448,7 +3311,7 @@ Configurable_ClassWritableProps_Set(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Class *clsPtr = GetClassDefineCmdContext(interp);
+    Class *clsPtr = TclOOGetClassDefineCmdContext(interp);
     Tcl_Size varc;
     Tcl_Obj **varv;
 
@@ -3465,7 +3328,7 @@ Configurable_ClassWritableProps_Set(
 	return TCL_ERROR;
     }
 
-    InstallWritableProps(&clsPtr->properties, varc, varv);
+    TclOOInstallWritableProps(&clsPtr->properties, varc, varv);
     BumpGlobalEpoch(interp, clsPtr);
     return TCL_OK;
 }
@@ -3488,7 +3351,7 @@ Configurable_ObjectWritableProps_Get(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, GetPropertyList(&oPtr->properties.writable));
+    Tcl_SetObjResult(interp, TclOOGetPropertyList(&oPtr->properties.writable));
     return TCL_OK;
 }
 
@@ -3518,7 +3381,7 @@ Configurable_ObjectWritableProps_Set(
 	return TCL_ERROR;
     }
 
-    InstallWritableProps(&oPtr->properties, varc, varv);
+    TclOOInstallWritableProps(&oPtr->properties, varc, varv);
     return TCL_OK;
 }
 
@@ -3586,13 +3449,13 @@ TclOORegisterInstanceProperty(
     if (BuildPropertyList(&oPtr->properties.readable, propName, registerReader,
 	    listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	InstallReadableProps(&oPtr->properties, count, objv);
+	TclOOInstallReadableProps(&oPtr->properties, count, objv);
     }
 
     if (BuildPropertyList(&oPtr->properties.writable, propName, registerWriter,
 	    listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	InstallWritableProps(&oPtr->properties, count, objv);
+	TclOOInstallWritableProps(&oPtr->properties, count, objv);
     }
     Tcl_BounceRefCount(listObj);
 }
@@ -3618,14 +3481,14 @@ TclOORegisterProperty(
     if (BuildPropertyList(&clsPtr->properties.readable, propName,
 	    registerReader, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	InstallReadableProps(&clsPtr->properties, count, objv);
+	TclOOInstallReadableProps(&clsPtr->properties, count, objv);
 	changed = 1;
     }
 
     if (BuildPropertyList(&clsPtr->properties.writable, propName,
 	    registerWriter, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	InstallWritableProps(&clsPtr->properties, count, objv);
+	TclOOInstallWritableProps(&clsPtr->properties, count, objv);
 	changed = 1;
     }
     Tcl_BounceRefCount(listObj);
@@ -3724,11 +3587,11 @@ TclOOPropertyDefinitionCmd(
 	}
 
 	/*
-	 * Install the property. Note that InstallStdPropertyImpls
+	 * Install the property. Note that TclOOInstallStdPropertyImpls
 	 * validates the property name as well.
 	 */
 
-	if (InstallStdPropertyImpls(useInstance, interp, propObj,
+	if (TclOOInstallStdPropertyImpls(useInstance, interp, propObj,
 		kind != KIND_WO && getterScript == NULL,
 		kind != KIND_RO && setterScript == NULL) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3795,81 +3658,6 @@ TclOOPropertyDefinitionCmd(
 	}
     }
     return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * InstallStdPropertyImpls --
- *
- *	Validates a (dashless) property name, and installs implementation
- *	methods if asked to do so (readable and writable flags).
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-InstallStdPropertyImpls(
-    void *useInstance,
-    Tcl_Interp *interp,
-    Tcl_Obj *propName,
-    int readable,
-    int writable)
-{
-    const char *name, *reason;
-    Tcl_Size len;
-    char flag = TCL_DONT_QUOTE_HASH;
-
-    /*
-     * Validate the property name. Note that just calling TclScanElement() is
-     * cheaper than actually formatting a list and comparing the string
-     * version of that with the original, as TclScanElement() is one of the
-     * core parts of doing that; this skips a whole load of irrelevant memory
-     * allocations!
-     */
-
-    name = Tcl_GetStringFromObj(propName, &len);
-    if (Tcl_StringMatch(name, "-*")) {
-	reason = "must not begin with -";
-	goto badProp;
-    }
-    if (TclScanElement(name, len, &flag) != len) {
-	reason = "must be a simple word";
-	goto badProp;
-    }
-    if (Tcl_StringMatch(name, "*::*")) {
-	reason = "must not contain namespace separators";
-	goto badProp;
-    }
-    if (Tcl_StringMatch(name, "*[()]*")) {
-	reason = "must not contain parentheses";
-	goto badProp;
-    }
-
-    /*
-     * Install the implementations... if asked to do so.
-     */
-
-    if (useInstance) {
-	Tcl_Object object = TclOOGetDefineCmdContext(interp);
-	if (!object) {
-	    return TCL_ERROR;
-	}
-	TclOOImplementObjectProperty(object, propName, readable, writable);
-    } else {
-	Tcl_Class cls = (Tcl_Class) GetClassDefineCmdContext(interp);
-	if (!cls) {
-	    return TCL_ERROR;
-	}
-	TclOOImplementClassProperty(cls, propName, readable, writable);
-    }
-    return TCL_OK;
-
-  badProp:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad property name \"%s\": %s", name, reason));
-    Tcl_SetErrorCode(interp, "TCL", "OO", "PROPERTY_FORMAT", NULL);
-    return TCL_ERROR;
 }
 
 /*
