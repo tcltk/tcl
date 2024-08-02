@@ -342,6 +342,7 @@ GENERIC_OBJS = \
 	tclOODefineCmds.$(OBJEXT) \
 	tclOOInfo.$(OBJEXT) \
 	tclOOMethod.$(OBJEXT) \
+	tclOOProp.$(OBJEXT) \
 	tclOOStubInit.$(OBJEXT) \
 	tclObj.$(OBJEXT) \
 	tclOptimize.$(OBJEXT) \

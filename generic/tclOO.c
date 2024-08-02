@@ -1004,7 +1004,7 @@ TclOOReleaseClassContents(
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
-    Tcl_Obj *variableObj, *propertyObj;
+    Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVariable;
 
     /*
@@ -1061,24 +1061,7 @@ TclOOReleaseClassContents(
      * Squelch the property lists.
      */
 
-    if (clsPtr->properties.allReadableCache) {
-	Tcl_DecrRefCount(clsPtr->properties.allReadableCache);
-    }
-    if (clsPtr->properties.allWritableCache) {
-	Tcl_DecrRefCount(clsPtr->properties.allWritableCache);
-    }
-    if (clsPtr->properties.readable.num) {
-	FOREACH(propertyObj, clsPtr->properties.readable) {
-	    Tcl_DecrRefCount(propertyObj);
-	}
-	Tcl_Free(clsPtr->properties.readable.list);
-    }
-    if (clsPtr->properties.writable.num) {
-	FOREACH(propertyObj, clsPtr->properties.writable) {
-	    Tcl_DecrRefCount(propertyObj);
-	}
-	Tcl_Free(clsPtr->properties.writable.list);
-    }
+    TclOOReleasePropertyStorage(&clsPtr->properties);
 
     /*
      * Squelch our filter list.
@@ -1181,7 +1164,7 @@ ObjectNamespaceDeleted(
     FOREACH_HASH_DECLS;
     Class *mixinPtr;
     Method *mPtr;
-    Tcl_Obj *filterObj, *variableObj, *propertyObj;
+    Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
     Tcl_Size i;
@@ -1338,24 +1321,7 @@ ObjectNamespaceDeleted(
      * Squelch the property lists.
      */
 
-    if (oPtr->properties.allReadableCache) {
-	Tcl_DecrRefCount(oPtr->properties.allReadableCache);
-    }
-    if (oPtr->properties.allWritableCache) {
-	Tcl_DecrRefCount(oPtr->properties.allWritableCache);
-    }
-    if (oPtr->properties.readable.num) {
-	FOREACH(propertyObj, oPtr->properties.readable) {
-	    Tcl_DecrRefCount(propertyObj);
-	}
-	Tcl_Free(oPtr->properties.readable.list);
-    }
-    if (oPtr->properties.writable.num) {
-	FOREACH(propertyObj, oPtr->properties.writable) {
-	    Tcl_DecrRefCount(propertyObj);
-	}
-	Tcl_Free(oPtr->properties.writable.list);
-    }
+    TclOOReleasePropertyStorage(&oPtr->properties);
 
     /*
      * Because an object can be a class that is an instance of itself, the
