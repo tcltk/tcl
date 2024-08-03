@@ -6202,11 +6202,11 @@ TclZipfs_Init(
 	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
-	/* The 4 entries above are not available in safe interpreters */
 	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
 	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
+	/* The 8 entries above are not available in safe interpreters */
 	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
 	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
 	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
@@ -6267,7 +6267,6 @@ TclZipfs_Init(
 	TclDictPutString(NULL, mapObj, "find", "::tcl::zipfs::find");
 	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
-	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");
     }
     return TCL_OK;
 #else /* !HAVE_ZLIB */
