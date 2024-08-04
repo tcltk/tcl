@@ -6202,16 +6202,15 @@ TclZipfs_Init(
 	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
-	/* The 4 entries above are not available in safe interpreters */
 	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
 	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 0},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
+	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
+	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char findproc[] =
