@@ -463,7 +463,15 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* [zipfs] has MANY unsafe commands! */
+    /* 
+     * [zipfs] perhaps has some safe commands. But like file make it inaccessible
+     * until they are analyzed to be safe.
+     */
+    {"zipfs", NULL},
+    {"zipfs", "canonical"},
+    {"zipfs", "exists"},
+    {"zipfs", "info"},
+    {"zipfs", "list"},
     {"zipfs", "lmkimg"},
     {"zipfs", "lmkzip"},
     {"zipfs", "mkimg"},
@@ -471,6 +479,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"zipfs", "mkzip"},
     {"zipfs", "mount"},
     {"zipfs", "mount_data"},
+    {"zipfs", "root"},
     {"zipfs", "unmount"},
     {NULL, NULL}
 };
