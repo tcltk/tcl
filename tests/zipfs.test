@@ -152,7 +152,7 @@ test zipfs-2.8 {zipfs mkzip} -constraints zipfs -body {
     fconfigure $fin -translation binary
     set dat [read $fin]
     close $fin
-    zipfs mount_data $dat def
+    zipfs mountdata $dat def
     zipfs list -glob ${ziproot}def/cp850.*
 } -cleanup {
     cd $CWD
@@ -208,7 +208,7 @@ test zipfs-3.1 {zipfs in child interpreters} -constraints zipfs -setup {
     }
 } -returnCodes error -cleanup {
     interp delete $interp
-} -result {unknown or ambiguous subcommand "?": must be canonical, exists, find, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mount_data, root, or unmount}
+} -result {unknown or ambiguous subcommand "?": must be canonical, exists, find, info, list, lmkimg, lmkzip, mkimg, mkkey, mkzip, mount, mountdata, root, or unmount}
 test zipfs-3.2 {zipfs in child interpreters} -constraints zipfs -setup {
     set interp [interp create]
 } -body {
@@ -348,17 +348,17 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
     removeFile $addFile
 } -result [list ${ziproot}/ziptest/test/add.tcl ${ziproot}/ziptest/test/ok.tcl]
 
-test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
-    zipfs mount_data {} gorp
+test zipfs-5.1 {zipfs mountdata: short data} -constraints zipfs -body {
+    zipfs mountdata {} gorp
 } -returnCodes error -result {illegal file size}
-test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
-    zipfs mount_data gorpGORPgorp gorp
+test zipfs-5.2 {zipfs mountdata: short data} -constraints zipfs -body {
+    zipfs mountdata gorpGORPgorp gorp
 } -returnCodes error -result {illegal file size}
-test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
+test zipfs-5.3 {zipfs mountdata: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
     append data PK\x05\x06.....................................
-    zipfs mount_data $data gorp
+    zipfs mountdata $data gorp
 } -returnCodes error -result {archive directory truncated}
 
 test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
@@ -446,8 +446,8 @@ namespace eval test_ns_zipfs {
             return
         }
         set data [readbin $zippath]
-        test zipfs-mount_data-$id $id -body {
-            list [catch {zipfs mount_data $data $defMountPt} message] \
+        test zipfs-mountdata-$id $id -body {
+            list [catch {zipfs mountdata $data $defMountPt} message] \
                 [string match $messagePattern $message] \
                 [mounttarget $defMountPt]
         } -cleanup {
@@ -468,8 +468,8 @@ namespace eval test_ns_zipfs {
         } -result [list 1 $zippath $zippath] {*}$args
 
         # Mount memory buffer
-        test zipfs-mount_data-$id "zipfs mount_data $id" -body {
-            set canon [zipfs mount_data [readbin $zippath] $mountpoint]
+        test zipfs-mountdata-$id "zipfs mountdata $id" -body {
+            set canon [zipfs mountdata [readbin $zippath] $mountpoint]
             list [file exists [file join $canon $checkPath]] \
                 [zipfs mount $canon] [zipfs mount $mountpoint]
         } -cleanup {
@@ -479,7 +479,7 @@ namespace eval test_ns_zipfs {
     }
 
     testnumargs "zipfs mount" "" "?zipfile? ?mountpoint? ?password?"
-    testnumargs "zipfs mount_data" "data mountpoint" ""
+    testnumargs "zipfs mountdata" "data mountpoint" ""
 
     # Not supported zip files
     testbadmount non-existent-file    nosuchfile.zip "couldn't open*nosuchfile.zip*no such file or directory"
@@ -496,14 +496,14 @@ namespace eval test_ns_zipfs {
     test zipfs-mount-on-drive "Mount point include drive" -body {
         zipfs mount [zippath test.zip] C:/foo
     } -result {Invalid mount path "C:/foo"} -returnCodes error -constraints win
-    test zipfs-mount_data-on-drive "Mount point include drive" -body {
-        zipfs mount_data [readbin [zippath test.zip]] C:/foo
+    test zipfs-mountdata-on-drive "Mount point include drive" -body {
+        zipfs mountdata [readbin [zippath test.zip]] C:/foo
     } -result {Invalid mount path "C:/foo"} -returnCodes error -constraints win
     test zipfs-mount-on-unc "Mount point is unc" -body {
         zipfs mount [zippath test.zip] //unc/share/foo
     } -result {Invalid mount path "//unc/share/foo"} -returnCodes error
-    test zipfs-mount_data-on-unc "Mount point include unc" -body {
-        zipfs mount_data [readbin [zippath test.zip]] //unc/share/foo
+    test zipfs-mountdata-on-unc "Mount point include unc" -body {
+        zipfs mountdata [readbin [zippath test.zip]] //unc/share/foo
     } -result {Invalid mount path "//unc/share/foo"} -returnCodes error
 
     # Good mounts
@@ -719,7 +719,7 @@ namespace eval test_ns_zipfs {
             lsort [zipfs list {*}$cmdargs]
         } -setup {
             foreach {zippath mountpoint} $mounts {
-                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+                zipfs mountdata [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
             }
         } -cleanup {
             cleanup
@@ -785,7 +785,7 @@ namespace eval test_ns_zipfs {
         }
         set memory_setup {
             foreach {zippath mountpoint} $mounts {
-                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+                zipfs mountdata [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
             }
         }
         if {[dict exists $args -setup]} {
@@ -980,7 +980,7 @@ namespace eval test_ns_zipfs {
         set data [readbin $zippath]
         test zipfs-read-memory-$id "zipfs read in-memory $id" -setup {
             unset -nocomplain fd
-            zipfs mount_data $data $defMountPt
+            zipfs mountdata $data $defMountPt
         } -cleanup {
             # In case open succeeded when it should not
             if {[info exists fd]} {
@@ -1053,7 +1053,7 @@ namespace eval test_ns_zipfs {
         set data [readbin $zippath]
         test zipfs-write-memory-$id "zipfs write in-memory $id" -setup {
             unset -nocomplain fd
-            zipfs mount_data $data $defMountPt
+            zipfs mountdata $data $defMountPt
         } -cleanup {
             # In case open succeeded when it should not
             if {[info exists fd]} {
@@ -1211,7 +1211,7 @@ namespace eval test_ns_zipfs {
         set data [readbin $zippath]
         test zipfs-rw-memory-$id "zipfs read/seek/write in-memory $id" -setup {
             unset -nocomplain fd
-            zipfs mount_data $data $defMountPt
+            zipfs mountdata $data $defMountPt
         } -cleanup {
             # In case open succeeded when it should not
             if {[info exists fd]} {
@@ -1349,7 +1349,7 @@ namespace eval test_ns_zipfs {
 
         # Mount memory buffer
         test zipfs-crc-memory-$id "zipfs crc memory $id" -setup {
-            zipfs mount_data [readbin [zippath $zippath]] $defMountPt
+            zipfs mountdata [readbin [zippath $zippath]] $defMountPt
         } -cleanup {
             cleanup
         } -body {

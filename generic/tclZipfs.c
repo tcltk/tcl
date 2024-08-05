@@ -2628,7 +2628,7 @@ ZipFSMountObjCmd(
  *
  * ZipFSMountBufferObjCmd --
  *
- *	This procedure is invoked to process the [zipfs mount_data] command.
+ *	This procedure is invoked to process the [zipfs mountdata] command.
  *
  * Results:
  *	A standard Tcl result.
@@ -6203,7 +6203,7 @@ TclZipfs_Init(
 	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
 	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
-	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
+	{"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
 	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
