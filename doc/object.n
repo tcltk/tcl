@@ -69,6 +69,7 @@ associated with \fIobj\fR, returning the result of the evaluation.
 Note that object-internal commands such as \fBmy\fR and \fBself\fR can be
 invoked in this context.
 .RE
+.\" METHOD: unknown
 .TP
 \fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
 .

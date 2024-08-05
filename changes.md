@@ -31,7 +31,7 @@ writing Tcl scripts.
  - `chan isbinary`
  - `coroinject`, `coroprobe`
  - `clock add weekdays`
- - `dict getdefault`
+ - `dict getwithdefault`
  - `file tempdir`, `file home`, `file tildeexpand`
  - `info commandtype`
  - `ledit`
@@ -42,6 +42,7 @@ writing Tcl scripts.
  - `string insert`, `string is dict`
  - `tcl::process`
  - `*::build-info`
+ - `readFile`, `writeFile`, `foreachLine`
 
 ## New command options
  - `regsub ... -command ...`

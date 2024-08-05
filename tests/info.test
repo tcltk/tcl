@@ -2619,6 +2619,15 @@ test info-41.0 {Bug 0de6c1d79c crash} -setup {
     unset -nocomplain msg
 } -result {1 {type precompiled} {type precompiled} 1 {bad level "-1"} 1 {bad level "2"}}
 
+test info-41.1 {Bug 0de6c1d79c crash} -setup {
+    interp create child
+    child hide info
+} -cleanup {
+    interp delete child
+} -body {
+    child invokehidden info frame
+} -result 1
+
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
 ::tcltest::cleanupTests
