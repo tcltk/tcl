@@ -130,9 +130,11 @@ specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
 The command returns the normalized mount point path.
 .PP
 If not under the zipfs file system root, \fImountpoint\fR is normalized with
-respect to it. For example, a mount point passed as either \fBmt\fR \fB/mt\fR
-would be normalized to \fB//zipfs:/mt\fR. An error is raised if the mount point
-includes a drive or UNC volume.
+respect to it. For example, a mount point passed as either \fBmt\fR or \fB/mt\fR
+would be normalized to \fB//zipfs:/mt\fR (given that \fBzipfs root\fR
+returns 
+.QW //zipfs:/ ).
+An error is raised if the mount point includes a drive or UNC volume.
 .PP
 \fBNB:\fR because the current working directory is a concept maintained by the
 operating system, using \fBcd\fR into a mounted archive will only work in the
@@ -146,10 +148,8 @@ to access the files inside the mount).
 \fBzipfs root\fR
 .
 Returns a constant string which indicates the mount point for zipfs volumes
-for the current platform.
-This value is
-.QW \fB//zipfs:/\fR
-on most platforms.
+for the current platform. User should not rely on the mount point being
+the same constant string for all platforms.
 .\" METHOD: unmount
 .TP
 \fBzipfs unmount \fImountpoint\fR
@@ -168,7 +168,7 @@ Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
 directory \fIindir\fR (contained regular files only) with optional ZIP
 password \fIpassword\fR. While processing the files below \fIindir\fR the
 optional file name prefix given in \fIstrip\fR is stripped off the beginning
-of the respective file name.  When stripping, it is common to remove either
+of the respective file name if non-empty.  When stripping, it is common to remove either
 the whole source directory name or the name of its parent directory.
 .RS
 .PP
@@ -187,7 +187,7 @@ command, as they behave identically here.
 If the \fIinfile\fR parameter is specified, this file is prepended in front of
 the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
 (i.e., the executable file of the running process) is used. If the
-\fIpassword\fR parameter is not empty, an obfuscated version of that password
+\fIpassword\fR parameter is not the empty string, an obfuscated version of that password
 (see \fBzipfs mkkey\fR) is placed between the image and ZIP chunks of the
 output file and the contents of the ZIP chunk are protected with that
 password.
@@ -212,9 +212,6 @@ the user's responsibility to preserve the attached archive by first
 extracting it to a temporary location, and then add whatever
 additional files desired, before creating and attaching the new
 archive to the new application.
-.PP
-\fBCaution:\fR highly experimental, not usable on Android, only partially
-tested on Linux and Windows.
 .RE
 .\" METHOD: mkkey
 .TP
@@ -238,6 +235,11 @@ This command is like \fBzipfs mkzip\fR, but instead of an input directory,
 \fIinlist\fR must be a Tcl list where the odd elements are the names of files
 to be copied into the archive, and the even elements are their respective
 names within that archive.
+.SH "NOTE"
+.PP
+The current syntax for certain subcommands using multiple optional parameters might
+change in the future to support an \fI?-option value?\fR pattern instead.
+Therfore, the current syntax should not be considered stable.
 .SH "EXAMPLES"
 .PP
 Mounting an ZIP archive as an application directory and running code out of it
@@ -305,7 +307,8 @@ close $f
 
 # Launch the executable, printing its output to stdout
 exec $img >@stdout
-#    prints: \fIHi. This is //zipfs:/app/main.tcl\fR
+# prints the following line assuming [zipfs root] returns "//zipfs:/":
+# \fIHi. This is //zipfs:/app/main.tcl\fR
 .CE
 .SH "SEE ALSO"
 tclsh(1), file(n), zipfs(3), zlib(n)

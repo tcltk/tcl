@@ -159,8 +159,9 @@ See \fBTcl_StandardChannels\fR for more explanations.
 .SH ZIPVFS
 .PP
 When a zipfile is concatenated to the end of a \fBtclsh\fR, on startup
-the contents of the zip archive will be mounted under the virtual file
-system \fB//zipfs:/\fR. If a top level directory \fBtcl_library\fR is
+the contents of the zip archive will be mounted under a virtual file
+system (VFS). The root of that VFS can be retrieved using the \fBzipfs root\fR
+command. If a top level directory \fBtcl_library\fR is
 present in the zip archive, it will become the directory loaded as
 env(TCL_LIBRARY). If a file named \fBmain.tcl\fR is present in the top
 level directory of the zip archive, it will be sourced instead of the
