@@ -578,10 +578,16 @@ TclIcuInit(
 #endif
 
 #define ICUUC_SYM(name)                                         \
+	do { \
 	strcpy(symbol, #name );                                 \
-	strcat(symbol, icuversion);                             \
 	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol)
+	    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);	\
+        if (icu_fns._##name == NULL) {                          \
+	    strcat(symbol, icuversion);                         \
+	    icu_fns._##name = (fn_ ## name)                     \
+		Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);	\
+        } \
+    } while (0)
 	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
@@ -607,10 +613,17 @@ TclIcuInit(
 	}
 
 #define ICUIN_SYM(name)                                         \
+	do { \
 	strcpy(symbol, #name );                                 \
-	strcat(symbol, icuversion);                             \
 	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol)
+	    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);      \
+        if (icu_fns._##name == NULL) {                          \
+	    strcat(symbol, icuversion);                         \
+	    icu_fns._##name = (fn_ ## name)                     \
+		Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);	\
+        } \
+    } while (0)
+
 	if (icu_fns.libs[1] != NULL) {
 	    ICUIN_SYM(ucsdet_close);
 	    ICUIN_SYM(ucsdet_detect);
