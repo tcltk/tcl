@@ -2933,11 +2933,11 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-        /*
-         * Special case 0-length lists. The Tcl indexing function treat
-         * will return any value beyond length as TCL_SIZE_MAX for this
-         * case.
-         */
+	/*
+	 * Special case 0-length lists. The Tcl indexing function treat
+	 * will return any value beyond length as TCL_SIZE_MAX for this
+	 * case.
+	 */
 	if ((index == TCL_SIZE_MAX) && (elemCount == 0)) {
 	    index = 0;
 	}
@@ -2946,14 +2946,14 @@ TclLsetFlat(
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp,
-		                 Tcl_ObjPrintf("index \"%s\" out of range",
-		                               TclGetString(indexArray[-1])));
+				 Tcl_ObjPrintf("index \"%s\" out of range",
+					       TclGetString(indexArray[-1])));
 		Tcl_SetErrorCode(interp,
-		                 "TCL",
-		                 "VALUE",
-		                 "INDEX"
-		                 "OUTOFRANGE",
-		                 (char *)NULL);
+				 "TCL",
+				 "VALUE",
+				 "INDEX"
+				 "OUTOFRANGE",
+				 (char *)NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;

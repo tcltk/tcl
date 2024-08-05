@@ -1945,11 +1945,12 @@ namespace eval test_ns_zipfs {
         set basename bug-7d5f1c1308
         set mt //zipfs:/$basename-mt
         set zipfile $basename.zip
-        set dir [tcltest::makeDirectory $basename]
+        set dir [makeDirectory $basename]
         close [open [file join $dir .ext] w]
     } -cleanup {
         zipfs unmount $mt
         file delete $zipfile
+	removeDirectory $basename
     } -body {
         zipfs mkzip $zipfile $dir [file dirname $dir]
         zipfs mount $zipfile $mt

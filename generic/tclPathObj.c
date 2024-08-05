@@ -2377,10 +2377,10 @@ SetFsPathFromAny(
     if (transPtr == pathPtr) {
 	(void)TclGetString(pathPtr);
 	TclFreeInternalRep(pathPtr);
-        transPtr = Tcl_DuplicateObj(pathPtr);
-        fsPathPtr->filesystemEpoch = 0;
+	transPtr = Tcl_DuplicateObj(pathPtr);
+	fsPathPtr->filesystemEpoch = 0;
     } else {
-        fsPathPtr->filesystemEpoch = TclFSEpoch();
+	fsPathPtr->filesystemEpoch = TclFSEpoch();
     }
     Tcl_IncrRefCount(transPtr);
     fsPathPtr->translatedPathPtr = transPtr;
@@ -2612,7 +2612,7 @@ MakeTildeRelativePath(
     const char *user,    /* User name. NULL -> current user */
     const char *subPath, /* Rest of path. May be NULL */
     Tcl_DString *dsPtr)  /* Output. Is initialized by the function. Must be
-                           freed on success */
+			   freed on success */
 {
     const char *dir;
     Tcl_DString dirString;
@@ -2621,30 +2621,30 @@ MakeTildeRelativePath(
     Tcl_DStringInit(&dirString);
 
     if (user == NULL || user[0] == 0) {
-        /* No user name specified -> current user */
+	/* No user name specified -> current user */
 
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
-            if (interp) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                                     "couldn't find HOME environment variable to"
-                                     " expand path", -1));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-                                 "HOMELESS", (char *)NULL);
-            }
-            return TCL_ERROR;
-        }
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				     "couldn't find HOME environment variable to"
+				     " expand path", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
+				 "HOMELESS", (char *)NULL);
+	    }
+	    return TCL_ERROR;
+	}
     } else {
-        /* User name specified - ~user */
+	/* User name specified - ~user */
 	dir = TclpGetUserHome(user, &dirString);
 	if (dir == NULL) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                                     "user \"%s\" doesn't exist", user));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-                                 (char *)NULL);
-            }
-            return TCL_ERROR;
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				     "user \"%s\" doesn't exist", user));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
+				 (char *)NULL);
+	    }
+	    return TCL_ERROR;
 	}
     }
     if (subPath) {
@@ -2730,20 +2730,20 @@ TclResolveTildePath(
     split = FindSplitPos(path, '/');
 
     if (split == 1) {
-        /* No user name specified -> current user */
+	/* No user name specified -> current user */
 	if (MakeTildeRelativePath(
 		interp, NULL, path[1] ? 2 + path : NULL, &resolvedPath)
 	    != TCL_OK) {
 	    return NULL;
 	}
     } else {
-        /* User name specified - ~user */
-        const char *expandedUser;
-        Tcl_DString userName;
+	/* User name specified - ~user */
+	const char *expandedUser;
+	Tcl_DString userName;
 
-        Tcl_DStringInit(&userName);
-        Tcl_DStringAppend(&userName, path+1, split-1);
-        expandedUser = Tcl_DStringValue(&userName);
+	Tcl_DStringInit(&userName);
+	Tcl_DStringAppend(&userName, path+1, split-1);
+	expandedUser = Tcl_DStringValue(&userName);
 
 	/* path[split] is / or \0 */
 	if (MakeTildeRelativePath(interp,
@@ -2795,29 +2795,29 @@ TclResolveTildePathList(
     const char *path;
 
     if (pathsObj == NULL) {
-        return NULL;
+	return NULL;
     }
     if (Tcl_ListObjGetElements(NULL, pathsObj, &objc, &objv) != TCL_OK) {
-        return NULL; /* Not a list */
+	return NULL; /* Not a list */
     }
 
     /*
      * Figure out if any paths need resolving to avoid unnecessary allocations.
      */
     for (i = 0; i < objc; ++i) {
-        path = TclGetString(objv[i]);
-        if (path[0] == '~') {
-            break; /* At least one path needs resolution */
-        }
+	path = TclGetString(objv[i]);
+	if (path[0] == '~') {
+	    break; /* At least one path needs resolution */
+	}
     }
     if (i == objc) {
-        return pathsObj; /* No paths needed to be resolved */
+	return pathsObj; /* No paths needed to be resolved */
     }
 
     resolvedPaths = Tcl_NewListObj(objc, NULL);
     for (i = 0; i < objc; ++i) {
 	Tcl_Obj *resolvedPath;
-        path = TclGetString(objv[i]);
+	path = TclGetString(objv[i]);
 	if (path[0] == 0) {
 	    continue; /* Skip empty strings */
 	}

@@ -6869,13 +6869,13 @@ SetArrayDefault(
      */
 
     if (tablePtr->defaultObj) {
-        Tcl_DecrRefCount(tablePtr->defaultObj);
-        Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
     }
     tablePtr->defaultObj = defaultObj;
     if (tablePtr->defaultObj) {
-        Tcl_IncrRefCount(tablePtr->defaultObj);
-        Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
     }
 }
 

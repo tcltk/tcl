@@ -29,7 +29,7 @@ static Tcl_NRPostProc	TryPostFinal;
 static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
-static int	StringCmpOpts(Tcl_Interp *interp, int objc,
+static int		StringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    Tcl_Size *reqlength);
 
@@ -1529,7 +1529,8 @@ StringIsCmd(
 {
     const char *string1, *end, *stop;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, failat = 0, result = 1, strict = 0, index, length1, length2;
+    int i, result = 1, strict = 0;
+    Tcl_Size failat = 0, length1, length2, index;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
@@ -1994,7 +1995,8 @@ StringMapCmd(
 
     if (!TclHasStringRep(objv[objc-2])
 	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
-	int i, done;
+	Tcl_Size i;
+	int done;
 	Tcl_DictSearch search;
 
 	/*
@@ -2245,8 +2247,7 @@ StringMatchCmd(
 	Tcl_Size length;
 	const char *string = TclGetStringFromObj(objv[1], &length);
 
-	if ((length > 1) &&
-	    strncmp(string, "-nocase", length) == 0) {
+	if ((length > 1) && strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2412,7 +2413,7 @@ StringRplcCmd(
      * result is the original string.
      */
 
-    if ((last < 0) ||		/* Range ends before start of string */
+    if ((last < 0) ||	/* Range ends before start of string */
 	    (first > end) ||	/* Range begins after end of string */
 	    (last < first)) {	/* Range begins after it starts */
 	/*
@@ -2663,7 +2664,7 @@ StringEqualCmd(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (Tcl_GetWideIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)reqlength > TCL_SIZE_MAX) {
@@ -2766,13 +2767,13 @@ StringCmpOpts(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (Tcl_GetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)wreqlength > TCL_SIZE_MAX) {
-	    	*reqlength = -1;
+		*reqlength = -1;
 	    } else {
-	    	*reqlength = wreqlength;
+		*reqlength = wreqlength;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3184,7 +3185,7 @@ StringTrimCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *string2;
-    int triml, trimr, length1, length2;
+    Tcl_Size triml, trimr, length1, length2;
 
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
@@ -4243,14 +4244,14 @@ Tcl_TimeRateObjCmd(
     }
     objPtr = objv[i++];
     if (i < objc) {	/* max-time */
-	result = Tcl_GetWideIntFromObj(interp, objv[i++], &maxms);
+	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
 	if (result != TCL_OK) {
 	    return result;
 	}
-	if (i < objc) {	/* max-count*/
+	if (++i < objc) {	/* max-count*/
 	    Tcl_WideInt v;
 
-	    result = Tcl_GetWideIntFromObj(interp, objv[i], &v);
+	    result = TclGetWideIntFromObj(interp, objv[i], &v);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -5005,8 +5006,8 @@ TryPostBody(
 			continue;
 		    }
 		    for (j=0 ; j<len1 ; j++) {
-			if (strcmp(TclGetString(bits1[j]),
-				TclGetString(bits2[j])) != 0) {
+			if (TclStringCmp(bits1[j], bits2[j], 1, 0,
+				TCL_INDEX_NONE) != 0) {
 			    /*
 			     * Really want 'continue outerloop;', but C does
 			     * not give us that.

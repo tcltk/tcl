@@ -1272,7 +1272,7 @@ Tcl_ExternalToUtfDStringEx(
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
     Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                   (or TCL_INDEX_NONE if no error). May
+				   (or TCL_INDEX_NONE if no error). May
 				   be NULL. */
 {
     char *dst;
@@ -1562,7 +1562,7 @@ Tcl_UtfToExternalDStringEx(
     Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
     Tcl_Size *errorLocPtr)      /* Where to store the error location
-                                   (or TCL_INDEX_NONE if no error). May
+				   (or TCL_INDEX_NONE if no error). May
 				   be NULL. */
 {
     char *dst;

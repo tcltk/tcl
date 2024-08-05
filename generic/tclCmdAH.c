@@ -685,7 +685,7 @@ EncodingConvertfromObjCmd(
 	return TCL_ERROR;
     }
     result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length, flags,
-                                        &ds, failVarObj ? &errorLocation : NULL);
+					&ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
     switch (result) {
     case TCL_OK:
@@ -782,7 +782,7 @@ EncodingConverttoObjCmd(
 
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
-                                        &ds, failVarObj ? &errorLocation : NULL);
+					&ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
 
     switch (result) {
@@ -2480,9 +2480,9 @@ StoreStatData(
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
 #define DOBJPUT(key, objValue)                  \
-        Tcl_DictObjPut(NULL, result,            \
-            Tcl_NewStringObj((key), -1),        \
-            (objValue));
+	Tcl_DictObjPut(NULL, result,            \
+	    Tcl_NewStringObj((key), -1),        \
+	    (objValue));
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
 	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));

@@ -3420,7 +3420,7 @@ ClockParseFmtScnArgs(
 	Tcl_Obj *baseObj = opts->baseObj;
 
 	/* bypass integer recognition if looks like "now" or "-now" */
-	if ((baseObj->bytes && 
+	if ((baseObj->bytes &&
 		((baseObj->length == 3 && baseObj->bytes[0] == 'n') ||
 		 (baseObj->length == 4 && baseObj->bytes[1] == 'n')))
 		|| TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK) {

@@ -3367,7 +3367,7 @@ TclLocalScalar(
     CompileEnv *envPtr)
 {
     Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-                                 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+				 {TCL_TOKEN_TEXT, NULL, 0, 0}};
 
     token[1].start = bytes;
     token[1].size = numBytes;
