@@ -577,17 +577,19 @@ TclIcuInit(
 	}
 #endif
 
-#define ICUUC_SYM(name)                                         \
-	do { \
-	strcpy(symbol, #name );                                 \
-	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);	\
-        if (icu_fns._##name == NULL) {                          \
-	    strcat(symbol, icuversion);                         \
-	    icu_fns._##name = (fn_ ## name)                     \
-		Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);	\
-        } \
+    /* Try for symbol without version (Windows, FreeBSD), then with version */
+#define ICUUC_SYM(name)                                                   \
+    do {                                                                  \
+	strcpy(symbol, #name);                                            \
+	icu_fns._##name =                                                 \
+	    (fn_##name)Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);     \
+	if (icu_fns._##name == NULL) {                                    \
+	    strcat(symbol, icuversion);                                   \
+	    icu_fns._##name =                                             \
+		(fn_##name)Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol); \
+	}                                                                 \
     } while (0)
+
 	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
@@ -612,16 +614,16 @@ TclIcuInit(
 #undef ICUUC_SYM
 	}
 
-#define ICUIN_SYM(name)                                         \
-	do { \
-	strcpy(symbol, #name );                                 \
-	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);      \
-        if (icu_fns._##name == NULL) {                          \
-	    strcat(symbol, icuversion);                         \
-	    icu_fns._##name = (fn_ ## name)                     \
-		Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);	\
-        } \
+#define ICUIN_SYM(name)                                                   \
+    do {                                                                  \
+	strcpy(symbol, #name);                                            \
+	icu_fns._##name =                                                 \
+	    (fn_##name)Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);     \
+	if (icu_fns._##name == NULL) {                                    \
+	    strcat(symbol, icuversion);                                   \
+	    icu_fns._##name =                                             \
+		(fn_##name)Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol); \
+	}                                                                 \
     } while (0)
 
 	if (icu_fns.libs[1] != NULL) {
