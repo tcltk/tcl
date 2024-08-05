@@ -772,8 +772,8 @@ TclOOLookupObjectVar(
 
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
-		    if (!strcmp(TclGetString(pvPtr->variableObj),
-			    TclGetString(varName))) {
+		    if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
+			    TCL_INDEX_NONE)) {
 			varName = pvPtr->fullNameObj;
 			break;
 		    }
@@ -794,8 +794,8 @@ TclOOLookupObjectVar(
 		}
 		if (isInstance) {
 		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
-			if (!strcmp(TclGetString(pvPtr->variableObj),
-				TclGetString(varName))) {
+			if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
+				TCL_INDEX_NONE)) {
 			    varName = pvPtr->fullNameObj;
 			    break;
 			}

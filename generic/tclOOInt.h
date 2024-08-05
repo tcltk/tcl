@@ -509,7 +509,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclOOPropertyDefinitionCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePropertyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
@@ -572,8 +572,6 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
-MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
-			    int writable);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
@@ -594,12 +592,6 @@ MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
-MODULE_SCOPE void	TclOOImplementObjectProperty(Tcl_Object targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
-MODULE_SCOPE void	TclOOImplementClassProperty(Tcl_Class targetObject,
-			    Tcl_Obj *propNamePtr, int installGetter,
-			    int installSetter);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
@@ -624,18 +616,20 @@ MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 			    CallChain *callPtr);
+MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
+			    CallContext *contextPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
+			    int writable);
+MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
-MODULE_SCOPE void	TclOOInstallReadableProps(PropertyStorage *props,
+MODULE_SCOPE void	TclOOInstallReadableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclOOInstallWritableProps(PropertyStorage *props,
+MODULE_SCOPE void	TclOOInstallWritableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclOOInstallStdPropertyImpls(void *useInstance,
 			    Tcl_Interp *interp, Tcl_Obj *propName,
 			    int readable, int writable);
-MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
-			    CallContext *contextPtr);
-MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
 			    Tcl_Obj *propName, int mayRead, int mayWrite);
 MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
