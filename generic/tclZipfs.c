@@ -6206,12 +6206,11 @@ TclZipfs_Init(
 	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
-	/* The 8 entries above are not available in safe interpreters */
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 0},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
+	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
+	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char findproc[] =
