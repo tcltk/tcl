@@ -3212,7 +3212,7 @@ Configurable_ClassReadableProps_Set(
 	return TCL_ERROR;
     }
 
-    TclOOInstallReadableProps(&clsPtr->properties, varc, varv);
+    TclOOInstallReadableProperties(&clsPtr->properties, varc, varv);
     BumpGlobalEpoch(interp, clsPtr);
     return TCL_OK;
 }
@@ -3265,7 +3265,7 @@ Configurable_ObjectReadableProps_Set(
 	return TCL_ERROR;
     }
 
-    TclOOInstallReadableProps(&oPtr->properties, varc, varv);
+    TclOOInstallReadableProperties(&oPtr->properties, varc, varv);
     return TCL_OK;
 }
 
@@ -3328,7 +3328,7 @@ Configurable_ClassWritableProps_Set(
 	return TCL_ERROR;
     }
 
-    TclOOInstallWritableProps(&clsPtr->properties, varc, varv);
+    TclOOInstallWritableProperties(&clsPtr->properties, varc, varv);
     BumpGlobalEpoch(interp, clsPtr);
     return TCL_OK;
 }
@@ -3381,7 +3381,7 @@ Configurable_ObjectWritableProps_Set(
 	return TCL_ERROR;
     }
 
-    TclOOInstallWritableProps(&oPtr->properties, varc, varv);
+    TclOOInstallWritableProperties(&oPtr->properties, varc, varv);
     return TCL_OK;
 }
 
@@ -3413,7 +3413,7 @@ BuildPropertyList(
 
     Tcl_SetListObj(listObj, 0, NULL);
     FOREACH(other, *propsList) {
-	if (strcmp(TclGetString(propName), TclGetString(other)) == 0) {
+	if (!TclStringCmp(propName, other, 1, 0, TCL_INDEX_NONE)) {
 	    present = 1;
 	    if (!addingProp) {
 		changed = 1;
@@ -3449,13 +3449,13 @@ TclOORegisterInstanceProperty(
     if (BuildPropertyList(&oPtr->properties.readable, propName, registerReader,
 	    listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	TclOOInstallReadableProps(&oPtr->properties, count, objv);
+	TclOOInstallReadableProperties(&oPtr->properties, count, objv);
     }
 
     if (BuildPropertyList(&oPtr->properties.writable, propName, registerWriter,
 	    listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	TclOOInstallWritableProps(&oPtr->properties, count, objv);
+	TclOOInstallWritableProperties(&oPtr->properties, count, objv);
     }
     Tcl_BounceRefCount(listObj);
 }
@@ -3481,183 +3481,20 @@ TclOORegisterProperty(
     if (BuildPropertyList(&clsPtr->properties.readable, propName,
 	    registerReader, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	TclOOInstallReadableProps(&clsPtr->properties, count, objv);
+	TclOOInstallReadableProperties(&clsPtr->properties, count, objv);
 	changed = 1;
     }
 
     if (BuildPropertyList(&clsPtr->properties.writable, propName,
 	    registerWriter, listObj)) {
 	TclListObjGetElements(NULL, listObj, &count, &objv);
-	TclOOInstallWritableProps(&clsPtr->properties, count, objv);
+	TclOOInstallWritableProperties(&clsPtr->properties, count, objv);
 	changed = 1;
     }
     Tcl_BounceRefCount(listObj);
     if (changed) {
 	BumpGlobalEpoch(clsPtr->thisPtr->fPtr->interp, clsPtr);
     }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * TclOOPropertyDefinitionCmd --
- *
- *	Implementation of the "property" definition for classes and instances
- *	governed by the [oo::configurable] metaclass.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOOPropertyDefinitionCmd(
-    void *useInstance,		/* NULL for class, non-NULL for object. */
-    Tcl_Interp *interp,		/* For error reporting and lookup. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Arguments. */
-{
-    int i;
-    const char *const options[] = {
-	"-get", "-kind", "-set", NULL
-    };
-    enum Options {
-	OPT_GET, OPT_KIND, OPT_SET
-    };
-    const char *const kinds[] = {
-	"readable", "readwrite", "writable", NULL
-    };
-    enum Kinds {
-	KIND_RO, KIND_RW, KIND_WO
-    };
-    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (!useInstance && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
-	return TCL_ERROR;
-    }
-
-    for (i = 1; i < objc; i++) {
-	Tcl_Obj *propObj = objv[i], *nextObj, *argObj, *hyphenated;
-	Tcl_Obj *getterScript = NULL, *setterScript = NULL;
-
-	/*
-	 * Parse the extra options for the property.
-	 */
-
-	int kind = KIND_RW;
-	while (i + 1 < objc) {
-	    int option;
-
-	    nextObj = objv[i + 1];
-	    if (TclGetString(nextObj)[0] != '-') {
-		break;
-	    }
-	    if (Tcl_GetIndexFromObj(interp, nextObj, options, "option", 0,
-		    &option) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (i + 2 >= objc) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"missing %s to go with %s option",
-			(option == OPT_KIND ? "kind value" : "body"),
-			options[option]));
-		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
-		return TCL_ERROR;
-	    }
-	    argObj = objv[i + 2];
-	    i += 2;
-	    switch (option) {
-	    case OPT_GET:
-		getterScript = argObj;
-		break;
-	    case OPT_SET:
-		setterScript = argObj;
-		break;
-	    case OPT_KIND:
-		if (Tcl_GetIndexFromObj(interp, argObj, kinds, "kind", 0,
-			&kind) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	}
-
-	/*
-	 * Install the property. Note that TclOOInstallStdPropertyImpls
-	 * validates the property name as well.
-	 */
-
-	if (TclOOInstallStdPropertyImpls(useInstance, interp, propObj,
-		kind != KIND_WO && getterScript == NULL,
-		kind != KIND_RO && setterScript == NULL) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	hyphenated = Tcl_ObjPrintf("-%s", TclGetString(propObj));
-	if (useInstance) {
-	    TclOORegisterInstanceProperty(oPtr, hyphenated,
-		    kind != KIND_WO, kind != KIND_RO);
-	} else {
-	    TclOORegisterProperty(oPtr->classPtr, hyphenated,
-		    kind != KIND_WO, kind != KIND_RO);
-	}
-	Tcl_BounceRefCount(hyphenated);
-
-	/*
-	 * Create property implementation methods by using the right
-	 * back-end API, but only if the user has given us the bodies of the
-	 * methods we'll make.
-	 */
-
-	if (getterScript != NULL) {
-	    Tcl_Obj *getterName = Tcl_ObjPrintf("<ReadProp-%s>",
-		    TclGetString(propObj));
-	    Tcl_Obj *argsPtr = Tcl_NewObj();
-	    Method *mPtr;
-
-	    Tcl_IncrRefCount(getterScript);
-	    if (useInstance) {
-		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
-			getterName, argsPtr, getterScript, NULL);
-	    } else {
-		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
-			getterName, argsPtr, getterScript, NULL);
-	    }
-	    Tcl_BounceRefCount(getterName);
-	    Tcl_BounceRefCount(argsPtr);
-	    Tcl_DecrRefCount(getterScript);
-	    if (mPtr == NULL) {
-		return TCL_ERROR;
-	    }
-	}
-	if (setterScript != NULL) {
-	    Tcl_Obj *setterName = Tcl_ObjPrintf("<WriteProp-%s>",
-		    TclGetString(propObj));
-	    Tcl_Obj *argsPtr;
-	    Method *mPtr;
-
-	    TclNewLiteralStringObj(argsPtr, "value");
-	    Tcl_IncrRefCount(setterScript);
-	    if (useInstance) {
-		mPtr = TclOONewProcInstanceMethod(interp, oPtr, 0,
-			setterName, argsPtr, setterScript, NULL);
-	    } else {
-		mPtr = TclOONewProcMethod(interp, oPtr->classPtr, 0,
-			setterName, argsPtr, setterScript, NULL);
-	    }
-	    Tcl_BounceRefCount(setterName);
-	    Tcl_BounceRefCount(argsPtr);
-	    Tcl_DecrRefCount(setterScript);
-	    if (mPtr == NULL) {
-		return TCL_ERROR;
-	    }
-	}
-    }
-    return TCL_OK;
 }
 
 /*

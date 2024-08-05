@@ -468,10 +468,10 @@ InitFoundation(
 
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableobject::property",
-	    TclOOPropertyDefinitionCmd, (void *) 1, NULL);
+	    TclOODefinePropertyCmd, (void *) 1, NULL);
     Tcl_CreateObjCommand(interp,
 	    "::oo::configuresupport::configurableclass::property",
-	    TclOOPropertyDefinitionCmd, (void *) 0, NULL);
+	    TclOODefinePropertyCmd, (void *) 0, NULL);
 
     /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.

@@ -724,12 +724,7 @@ InfoObjectMethodTypeCmd(
     }
     hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
-    unknownMethod:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto unknownMethod;
     }
     mPtr = (Method *) Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
@@ -743,6 +738,13 @@ InfoObjectMethodTypeCmd(
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(objv[2])));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -881,6 +883,10 @@ InfoObjectVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "option \"%s\" is not exactly \"-private\"",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_ARG");
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1488,12 +1494,7 @@ InfoClassMethodTypeCmd(
 
     hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
-    unknownMethod:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
-	return TCL_ERROR;
+	goto unknownMethod;
     }
     mPtr = (Method *) Tcl_GetHashValue(hPtr);
     if (mPtr->typePtr == NULL) {
@@ -1506,6 +1507,13 @@ InfoClassMethodTypeCmd(
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
+
+  unknownMethod:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "unknown method \"%s\"", TclGetString(objv[2])));
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+	    TclGetString(objv[2]), (char *)NULL);
+    return TCL_ERROR;
 }
 
 /*
@@ -1672,6 +1680,10 @@ InfoClassVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "option \"%s\" is not exactly \"-private\"",
+		    TclGetString(objv[2])));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_ARG");
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1737,6 +1749,7 @@ InfoObjectCallCmd(
     if (contextPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot construct any call chain", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_CALL_CHAIN");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
@@ -1782,6 +1795,7 @@ InfoClassCallCmd(
     if (callPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot construct any call chain", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_CALL_CHAIN");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
