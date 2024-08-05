@@ -1276,7 +1276,7 @@ Tcl_UntraceCommand(
 
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
 
-        /*
+	/*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
 
