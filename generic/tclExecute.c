@@ -1582,12 +1582,7 @@ CompileExprObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile == 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -1912,8 +1907,8 @@ TclIncrObj(
 	}
 #ifndef TCL_WIDE_INT_IS_LONG
 	{
-	    Tcl_WideInt w1 = (Tcl_WideInt) augend;
-	    Tcl_WideInt w2 = (Tcl_WideInt) addend;
+	    Tcl_WideInt w1 = (Tcl_WideInt)augend;
+	    Tcl_WideInt w2 = (Tcl_WideInt)addend;
 
 	    /*
 	     * We know the sum value is outside the long range, so we use the
@@ -2519,7 +2514,7 @@ TEBCresume(
 		    "yield can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2531,7 +2526,7 @@ TEBCresume(
 	    } else {
 		fprintf(stdout, "%d: (%u) yielding value \"%.30s\"\n",
 			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
-			Tcl_GetString(OBJ_AT_TOS));
+			TclGetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
 	}
@@ -2550,7 +2545,7 @@ TEBCresume(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2561,7 +2556,7 @@ TEBCresume(
 		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		    NULL);
+		    (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2574,7 +2569,7 @@ TEBCresume(
 		/* FIXME: What is the right thing to trace? */
 		fprintf(stdout, "%d: (%u) yielding to [%.30s]\n",
 			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
-			Tcl_GetString(valuePtr));
+			TclGetString(valuePtr));
 	    }
 	    fflush(stdout);
 	}
@@ -2622,7 +2617,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4039,7 +4034,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
+	TRACE(("%u %s => ", opnd, TclGetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -4408,7 +4403,7 @@ TEBCresume(
 		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
 			"variable isn't array", opnd);
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", (char *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4757,7 +4752,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4785,7 +4780,7 @@ TEBCresume(
 		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (char *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_APPEND(("ERROR: not command\n"));
 	    goto gotError;
@@ -4820,7 +4815,7 @@ TEBCresume(
 		    "self may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4848,7 +4843,7 @@ TEBCresume(
 		    "nextto may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4869,7 +4864,7 @@ TEBCresume(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not a class", TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", (char *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4921,7 +4916,7 @@ TEBCresume(
 			methodType, TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-			NULL);
+			(char *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4929,7 +4924,7 @@ TEBCresume(
 		    "%s has no non-filter implementation by \"%s\"",
 		    methodType, TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4947,7 +4942,7 @@ TEBCresume(
 		    "next may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4976,7 +4971,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no next %s implementation", methodType));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG
@@ -6300,7 +6295,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6349,7 +6344,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6371,7 +6366,7 @@ TEBCresume(
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			    "integer value too large to represent", NULL);
+			    "integer value too large to represent", (char *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6505,8 +6500,8 @@ TEBCresume(
 
 	    switch (*pc) {
 	    case INST_ADD:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
+		w1 = (Tcl_WideInt)l1;
+		w2 = (Tcl_WideInt)l2;
 		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 #ifdef TCL_WIDE_INT_IS_LONG
 		/*
@@ -6520,8 +6515,8 @@ TEBCresume(
 		goto wideResultOfArithmetic;
 
 	    case INST_SUB:
-		w1 = (Tcl_WideInt) l1;
-		w2 = (Tcl_WideInt) l2;
+		w1 = (Tcl_WideInt)l1;
+		w2 = (Tcl_WideInt)l2;
 		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
 #ifdef TCL_WIDE_INT_IS_LONG
 		/*
@@ -7325,7 +7320,7 @@ TEBCresume(
 			TclGetString(OBJ_AT_TOS)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-			TclGetString(OBJ_AT_TOS), NULL);
+			TclGetString(OBJ_AT_TOS), (char *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -7886,20 +7881,20 @@ TEBCresume(
 #ifdef TCL_WIDE_CLICKS
 		wval = TclpGetWideClicks();
 #else
-		wval = (Tcl_WideInt) TclpGetClicks();
+		wval = TclpGetClicks();
 #endif
 		break;
 	    case 1:		/* microseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
 		break;
 	    case 2:		/* milliseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
 		break;
 	    case 3:		/* seconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec;
+		wval = now.sec;
 		break;
 	    default:
 		Tcl_Panic("clockRead instruction with unknown clock#");
@@ -8012,7 +8007,7 @@ TEBCresume(
     divideByZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
@@ -8026,7 +8021,7 @@ TEBCresume(
 		"exponentiation of zero by negative power", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"exponentiation of zero by negative power", NULL);
+		"exponentiation of zero by negative power", (char *)NULL);
 	CACHE_STACK_INFO();
 
 	/*
@@ -8538,12 +8533,12 @@ ExecuteExtendedBinaryMathOp(
 		 * TODO: examine for logic simplification
 		 */
 
-		if (((wQuotient < (Tcl_WideInt) 0)
-			|| ((wQuotient == (Tcl_WideInt) 0)
-			&& ((w1 < (Tcl_WideInt)0 && w2 > (Tcl_WideInt)0)
-			|| (w1 > (Tcl_WideInt)0 && w2 < (Tcl_WideInt)0))))
+		if (((wQuotient < 0)
+			|| ((wQuotient == 0)
+			&& ((w1 < 0 && w2 > 0)
+			|| (w1 > 0 && w2 < 0))))
 			&& (wQuotient * w2 != w1)) {
-		    wQuotient -= (Tcl_WideInt) 1;
+		    wQuotient--;
 		}
 		wRemainder = (Tcl_WideInt)((Tcl_WideUInt)w1 -
 			(Tcl_WideUInt)w2*(Tcl_WideUInt)wQuotient);
@@ -8552,8 +8547,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
-	    /* TODO: internals intrusion */
-	    if ((w1 > ((Tcl_WideInt) 0)) ^ !mp_isneg(&big2)) {
+	    if ((w1 > 0) ^ !mp_isneg(&big2)) {
 		/*
 		 * Arguments are opposite sign; remainder is sum.
 		 */
@@ -8577,7 +8571,7 @@ ExecuteExtendedBinaryMathOp(
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
 	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	if (!mp_iszero(&bigRemainder) && (mp_isneg(&bigRemainder) != mp_isneg(&big2))) {
 	    /*
 	     * Convert to Tcl's integer division rules.
 	     */
@@ -8603,12 +8597,12 @@ ExecuteExtendedBinaryMathOp(
 	    break;
 #ifndef TCL_WIDE_INT_IS_LONG
 	case TCL_NUMBER_WIDE:
-	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
+	    invalid = (*((const Tcl_WideInt *)ptr2) < 0);
 	    break;
 #endif
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    invalid = (mp_cmp_d(&big2, 0) == MP_LT);
+	    invalid = mp_isneg(&big2);
 	    mp_clear(&big2);
 	    break;
 	default:
@@ -8687,7 +8681,7 @@ ExecuteExtendedBinaryMathOp(
 		    break;
 #ifndef TCL_WIDE_INT_IS_LONG
 		case TCL_NUMBER_WIDE:
-		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
+		    zero = (*(const Tcl_WideInt *)ptr1 > 0);
 		    break;
 #endif
 		case TCL_NUMBER_BIG:
@@ -8714,7 +8708,7 @@ ExecuteExtendedBinaryMathOp(
 	    if (type1 == TCL_NUMBER_WIDE) {
 		w1 = *(const Tcl_WideInt *)ptr1;
 		if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
-		    if (w1 >= (Tcl_WideInt)0) {
+		    if (w1 >= 0) {
 			return constants[0];
 		    }
 		    LONG_RESULT(-1);
@@ -8858,7 +8852,7 @@ ExecuteExtendedBinaryMathOp(
 #endif
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+	    negativeExponent = mp_isneg(&big2);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
 	    mp_clear(&big2);
@@ -8952,7 +8946,7 @@ ExecuteExtendedBinaryMathOp(
 		}
 #if !defined(TCL_WIDE_INT_IS_LONG)
 		if ((unsigned long)l2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
-		    WIDE_RESULT(((Tcl_WideInt) 1) << l2);
+		    WIDE_RESULT(((Tcl_WideInt)1) << l2);
 		}
 #endif
 		goto overflowExpon;
@@ -8969,7 +8963,7 @@ ExecuteExtendedBinaryMathOp(
 		}
 #if !defined(TCL_WIDE_INT_IS_LONG)
 		if ((unsigned long)l2 < CHAR_BIT*sizeof(Tcl_WideInt) - 1){
-		    WIDE_RESULT(signum * (((Tcl_WideInt) 1) << l2));
+		    WIDE_RESULT(signum * (((Tcl_WideInt)1) << l2));
 		}
 #endif
 		goto overflowExpon;
@@ -9255,9 +9249,8 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	    mp_init(&bigRemainder);
 	    mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	    /* TODO: internals intrusion */
 	    if (!mp_iszero(&bigRemainder)
-		    && (bigRemainder.sign != big2.sign)) {
+		    && (mp_isneg(&bigRemainder) != mp_isneg(&big2))) {
 		/*
 		 * Convert to Tcl's integer division rules.
 		 */
@@ -9308,7 +9301,7 @@ ExecuteExtendedUnaryMathOp(
 	case TCL_NUMBER_DOUBLE:
 	    DOUBLE_RESULT(-(*((const double *) ptr)));
 	case TCL_NUMBER_LONG:
-	    w = (Tcl_WideInt) (*((const long *) ptr));
+	    w = (Tcl_WideInt)(*((const long *) ptr));
 	    if (w != LLONG_MIN) {
 		WIDE_RESULT(-w);
 	    }
@@ -9424,7 +9417,7 @@ TclCompareTwoNumbers(
 	    goto longCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
+	    if (mp_isneg(&big2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
@@ -9450,7 +9443,7 @@ TclCompareTwoNumbers(
 	    d2 = *((const double *)ptr2);
 	    d1 = (double) w1;
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
-		    || w1 == (Tcl_WideInt) d1 || modf(d2, &tmp) != 0.0) {
+		    || w1 == (Tcl_WideInt)d1 || modf(d2, &tmp) != 0.0) {
 		goto doubleCompare;
 	    }
 	    if (d2 < (double)LLONG_MIN) {
@@ -9459,7 +9452,7 @@ TclCompareTwoNumbers(
 	    if (d2 > (double)LLONG_MAX) {
 		return MP_LT;
 	    }
-	    w2 = (Tcl_WideInt) d2;
+	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
@@ -9501,7 +9494,7 @@ TclCompareTwoNumbers(
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    d2 = (double) w2;
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
-		    || w2 == (Tcl_WideInt) d2 || modf(d1, &tmp) != 0.0) {
+		    || w2 == (Tcl_WideInt)d2 || modf(d1, &tmp) != 0.0) {
 		goto doubleCompare;
 	    }
 	    if (d1 < (double)LLONG_MIN) {
@@ -9510,7 +9503,7 @@ TclCompareTwoNumbers(
 	    if (d1 > (double)LLONG_MAX) {
 		return MP_GT;
 	    }
-	    w1 = (Tcl_WideInt) d1;
+	    w1 = (Tcl_WideInt)d1;
 	    goto wideCompare;
 #endif
 	case TCL_NUMBER_BIG:
@@ -9709,7 +9702,7 @@ ValidatePcAndStackTop(
 	    TclNewLiteralStringObj(message, "\n executing ");
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendLimitedToObj(message, cmd, numChars, 100, NULL);
-	    fprintf(stderr,"%s\n", Tcl_GetString(message));
+	    fprintf(stderr,"%s\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
 	} else {
 	    fprintf(stderr, "\n");
@@ -9759,7 +9752,7 @@ IllegalExprOperandType(
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
 	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
+	const char *bytes = TclGetStringFromObj(opndPtr, &numBytes);
 
 	if (numBytes == 0) {
 	    description = "empty string";
@@ -9779,7 +9772,7 @@ IllegalExprOperandType(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s as operand of \"%s\"", description, op));
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
 }
 
 /*
@@ -10156,23 +10149,23 @@ TclExprFloatError(
     if ((errno == EDOM) || TclIsNaN(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *)NULL);
     } else if ((errno == ERANGE) || TclIsInfinite(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *)NULL);
 	} else {
 	    s = "floating-point value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *)NULL);
 	}
     } else {
 	Tcl_Obj *objPtr = Tcl_ObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
-		Tcl_GetString(objPtr), NULL);
+		TclGetString(objPtr), (char *)NULL);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }
@@ -10388,7 +10381,7 @@ EvalStatsCmd(
 	    if (entryPtr->objPtr->typePtr == &tclByteCodeType) {
 		numByteCodeLits++;
 	    }
-	    (void) Tcl_GetStringFromObj(entryPtr->objPtr, &length);
+	    (void)TclGetStringFromObj(entryPtr->objPtr, &length);
 	    refCountSum += entryPtr->refCount;
 	    objBytesIfUnshared += (entryPtr->refCount * sizeof(Tcl_Obj));
 	    strBytesIfUnshared += (entryPtr->refCount * (length+1));
@@ -10610,7 +10603,7 @@ EvalStatsCmd(
 	Tcl_SetObjResult(interp, objPtr);
     } else {
 	Tcl_Channel outChan;
-	char *str = Tcl_GetStringFromObj(objv[1], &length);
+	char *str = TclGetStringFromObj(objv[1], &length);
 
 	if (length) {
 	    if (strcmp(str, "stdout") == 0) {

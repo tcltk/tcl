@@ -78,23 +78,23 @@ static int		SetupStdFile(TclFile file, int type);
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
     TCL_CLOSE2PROC,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
+    PipeInputProc,
+    PipeOutputProc,
     NULL,			/* Seek proc. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Initialize notifier. */
-    PipeGetHandleProc,		/* Get OS handles out of channel. */
-    PipeClose2Proc,		/* close2proc. */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    NULL,			/* thread action proc */
-    NULL			/* truncation */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncation proc. */
 };
 
 /*
@@ -283,6 +283,7 @@ TclpTempFileNameForLibrary(
     Tcl_Obj *path)		/* Path name of the library in the VFS. */
 {
     Tcl_Obj *retval = TclpTempFileName();
+    (void)path;
 
     if (retval == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -827,7 +828,7 @@ TclpCreateCommandChannel(
 				 * background exec). */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    int channelId;
+    int fd;
     PipeState *statePtr = (PipeState *)ckalloc(sizeof(PipeState));
     int mode;
 
@@ -851,13 +852,13 @@ TclpCreateCommandChannel(
      */
 
     if (readFile) {
-	channelId = GetFd(readFile);
+	fd = GetFd(readFile);
     } else if (writeFile) {
-	channelId = GetFd(writeFile);
+	fd = GetFd(writeFile);
     } else if (errorFile) {
-	channelId = GetFd(errorFile);
+	fd = GetFd(errorFile);
     } else {
-	channelId = 0;
+	fd = 0;
     }
 
     /*
@@ -866,7 +867,7 @@ TclpCreateCommandChannel(
      * natural to use "pipe%d".
      */
 
-    snprintf(channelName, sizeof(channelName), "file%d", channelId);
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
     statePtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    statePtr, mode);
     return statePtr->channel;
@@ -897,6 +898,7 @@ Tcl_CreatePipe(
     int flags)			/* Reserved for future use. */
 {
     int fileNums[2];
+    (void)flags;
 
     if (pipe(fileNums) < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("pipe creation failed: %s",
@@ -1359,6 +1361,7 @@ Tcl_PidObjCmd(
     PipeState *pipePtr;
     int i;
     Tcl_Obj *resultPtr;
+    (void)dummy;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");

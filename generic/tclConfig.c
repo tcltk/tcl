@@ -128,7 +128,7 @@ Tcl_RegisterConfig(
      */
 
     for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+	TclDictPut(interp, pkgDict, cfg->key,
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
 
@@ -230,7 +230,7 @@ QueryConfigObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
-		Tcl_GetString(pkgName), NULL);
+		Tcl_GetString(pkgName), (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -245,7 +245,7 @@ QueryConfigObjCmd(
 		|| val == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
-		    Tcl_GetString(objv[2]), NULL);
+		    Tcl_GetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -278,7 +278,7 @@ QueryConfigObjCmd(
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "insufficient memory to create list", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	    return TCL_ERROR;
 	}
 

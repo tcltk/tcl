@@ -3118,7 +3118,7 @@ ChildMarkTrusted(
 		"permission denied: safe interpreter cannot mark trusted",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     ((Interp *) childInterp)->flags &= ~SAFE_INTERP;
@@ -4428,8 +4428,7 @@ ChildCommandLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4438,22 +4437,19 @@ ChildCommandLimitCmd(
 
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_COMMANDS)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_COMMANDS)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_COMMANDS)) {
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewIntObj(Tcl_LimitGetCommands(childInterp)));
+	    TclDictPut(NULL, dictPtr, options[2], Tcl_NewIntObj(
+		    Tcl_LimitGetCommands(childInterp)));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
@@ -4616,8 +4612,7 @@ ChildTimeLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4625,29 +4620,25 @@ ChildTimeLimitCmd(
 	    Tcl_Obj *empty;
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_TIME)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_TIME)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
 	    Tcl_Time limitMoment;
 
 	    Tcl_LimitGetTime(childInterp, &limitMoment);
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewLongObj(limitMoment.usec/1000));
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
+	    TclDictPut(NULL, dictPtr, options[2],
+		    Tcl_NewLongObj(limitMoment.usec / 1000));
+	    TclDictPut(NULL, dictPtr, options[3],
 		    Tcl_NewLongObj(limitMoment.sec));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[3], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
+	    TclDictPut(NULL, dictPtr, options[3], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;

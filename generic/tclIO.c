@@ -477,7 +477,7 @@ ChanSeek(
 
     if ((offset >= LONG_MIN) && (offset <= LONG_MAX)) {
 	return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-		offset, mode, errnoPtr);
+		(long)offset, mode, errnoPtr);
     }
     *errnoPtr = EOVERFLOW;
     return -1;
@@ -2965,7 +2965,7 @@ FreeChannelState(
 	ReleaseChannelBuffer(statePtr->curOutPtr);
     }
     DiscardOutputQueued(statePtr);
-    
+
     DeleteTimerHandler(statePtr);
 
     if (statePtr->chanMsg) {
@@ -6143,7 +6143,7 @@ ReadChars(
     if (dstLimit <= 0) {
 	dstLimit = INT_MAX; /* avoid overflow */
     }
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	unsigned int size;
@@ -8140,8 +8140,7 @@ Tcl_SetChannelOption(
     } else if (HaveOpt(2, "-eofchar")) {
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
-	}
-	if (argc == 0) {
+	} else if (argc == 0) {
 	    statePtr->inEofChar = 0;
 	    statePtr->outEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
@@ -9194,7 +9193,7 @@ TclCopyChannelOld(
     int toRead,			/* Amount of data to copy, or -1 for all. */
     Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
 {
-    return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
+    return TclCopyChannel(interp, inChan, outChan, toRead,
 	    cmdPtr);
 }
 
@@ -9288,7 +9287,7 @@ TclCopyChannel(
     csPtr->readFlags = readFlags;
     csPtr->writeFlags = writeFlags;
     csPtr->toRead = toRead;
-    csPtr->total = (Tcl_WideInt) 0;
+    csPtr->total = 0;
     csPtr->interp = interp;
     if (cmdPtr) {
 	Tcl_IncrRefCount(cmdPtr);
@@ -9613,7 +9612,7 @@ CopyData(
 	Tcl_IncrRefCount(bufObj);
     }
 
-    while (csPtr->toRead != (Tcl_WideInt) 0) {
+    while (csPtr->toRead != 0) {
 	/*
 	 * Check for unreported background errors.
 	 */
@@ -9644,8 +9643,8 @@ CopyData(
 	     * Read up to bufSize bytes.
 	     */
 
-	    if ((csPtr->toRead == (Tcl_WideInt) -1)
-		    || (csPtr->toRead > (Tcl_WideInt) csPtr->bufSize)) {
+	    if ((csPtr->toRead == -1)
+		    || (csPtr->toRead > (Tcl_WideInt)csPtr->bufSize)) {
 		sizeb = csPtr->bufSize;
 	    } else {
 		sizeb = (int) csPtr->toRead;
@@ -9832,8 +9831,8 @@ CopyData(
     }
 
     /*
-     * Make the callback or return the number of bytes transferred. The
-     * local total is used because StopCopy frees csPtr.
+     * Make the callback or return the number of bytes transferred. The local
+     * total is used because StopCopy frees csPtr.
      */
 
     total = csPtr->total;
@@ -10662,8 +10661,7 @@ Tcl_ChannelVersion(
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
- */
+ *---------------------------------------------------------------------- */
 
 Tcl_DriverBlockModeProc *
 Tcl_ChannelBlockModeProc(
@@ -11063,7 +11061,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
 
     if (statePtr->chanMsg != NULL) {
 	TclDecrRefCount(statePtr->chanMsg);

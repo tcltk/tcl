@@ -1311,10 +1311,10 @@ TclParseNumber(
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) (-octalSignificandWide);
+				    (Tcl_WideInt)(-octalSignificandWide);
 			} else {
 			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) octalSignificandWide;
+				    (Tcl_WideInt)octalSignificandWide;
 			}
 			break;
 		    }
@@ -1358,10 +1358,10 @@ TclParseNumber(
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) (-significandWide);
+				    (Tcl_WideInt)(-significandWide);
 			} else {
 			    objPtr->internalRep.wideValue =
-				    (Tcl_WideInt) significandWide;
+				    (Tcl_WideInt)significandWide;
 			}
 			break;
 		    }
@@ -1481,7 +1481,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	}
     }
 
@@ -2067,7 +2067,7 @@ RefineApproximation(
      */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
-	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	rteSigWide = ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
 	    mp_clear(&twoMd);
 	    mp_clear(&twoMv);
@@ -4693,7 +4693,7 @@ Tcl_InitBignumFromDouble(
 	    const char *s = "integer value too large to represent";
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -4703,7 +4703,7 @@ Tcl_InitBignumFromDouble(
 	mp_init(b);
 	mp_zero(b);
     } else {
-	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	Tcl_WideInt w = ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
 	TclBNInitBignumFromWideInt(b, w);
@@ -4852,7 +4852,7 @@ TclCeil(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -4909,7 +4909,7 @@ TclFloor(
     mp_int b;
 
     mp_init(&b);
-    if (mp_cmp_d(a, 0) == MP_LT) {
+    if (mp_isneg(a)) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {

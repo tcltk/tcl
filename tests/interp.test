@@ -22,6 +22,12 @@ testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
 set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source tcl:encoding:dirs tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable unload}
 
+proc _ms_limit_args {ms {t0 {}}} {
+    if {$t0 eq {}} { set t0 [clock milliseconds] }
+    incr t0 $ms
+    list -seconds [expr {$t0 / 1000}] -milliseconds [expr {$t0 % 1000}]
+}
+
 foreach i [interp children] {
   interp delete $i
 }
@@ -3155,7 +3161,7 @@ test interp-34.3 {basic test of limits - pure bytecode loop} -body {
 	}
     }
     # We use a time limit here; command limits don't trap this case
-    $i limit time -seconds [expr {[clock seconds]+2}]
+    $i limit time {*}[_ms_limit_args 50]
     $i eval foobar
 } -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
@@ -3171,7 +3177,7 @@ test interp-34.3.1 {basic test of limits - pure inside-command loop} -body {
 	}
     }
     # We use a time limit here; command limits don't trap this case
-    $i limit time -seconds [expr {[clock seconds] + 2}]
+    $i limit time {*}[_ms_limit_args 50]
     $i eval foobar
 } -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
@@ -3304,7 +3310,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 # Bug 1085023
 test interp-34.8 {time limits trigger in vwaits} -body {
     set i [interp create]
-    interp limit $i time -seconds [expr {[clock seconds] + 1}] -granularity 1
+    interp limit $i time {*}[_ms_limit_args 50] -granularity 1
     $i eval {
 	set x {}
 	vwait x
@@ -3314,21 +3320,20 @@ test interp-34.8 {time limits trigger in vwaits} -body {
 } -returnCodes error -result {limit exceeded}
 test interp-34.9 {time limits trigger in blocking after} {
     set i [interp create]
-    set t0 [clock seconds]
-    interp limit $i time -seconds [expr {$t0 + 1}] -granularity 1
+    set t0 [clock milliseconds]
+    interp limit $i time {*}[_ms_limit_args 50 $t0] -granularity 1
     set code [catch {
 	$i eval {after 10000}
     } msg]
-    set t1 [clock seconds]
+    set t1 [clock milliseconds]
     interp delete $i
-    list $code $msg [expr {($t1-$t0) < 3 ? "OK" : $t1-$t0}]
+    list $code $msg [expr {($t1-$t0) < 1000 ? "OK" : $t1-$t0}]
 } {1 {time limit exceeded} OK}
 test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     set i [interp create]
-    # Assume someone hasn't set the clock to early 1970!
-    $i limit time -seconds 1 -granularity 4
     interp alias $i log {} lappend result
     set result {}
+    $i limit time {*}[_ms_limit_args 50] -granularity 4
     catch {
 	$i eval {
 	    log 1
@@ -3340,10 +3345,10 @@ test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     lappend result $msg
 } -result {1 {time limit exceeded}}
 test interp-34.11 {time limit extension in callbacks} -setup {
-    proc cb1 {i t} {
+    proc cb1 {i args} {
 	global result
 	lappend result cb1
-	$i limit time -seconds $t -command cb2
+	$i limit time {*}[_ms_limit_args {*}$args] -command cb2
     }
     proc cb2 {} {
 	global result
@@ -3351,9 +3356,9 @@ test interp-34.11 {time limit extension in callbacks} -setup {
     }
 } -body {
     set i [interp create]
-    set t0 [clock seconds]
-    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 \
-	-command "cb1 $i [expr {$t0 + 2}]"
+    set t0 [clock milliseconds]
+    $i limit time {*}[_ms_limit_args 50 $t0] \
+	-command "cb1 $i 100 $t0"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
@@ -3362,8 +3367,8 @@ test interp-34.11 {time limit extension in callbacks} -setup {
 	    }
 	}
     } msg] $msg
-    set t1 [clock seconds]
-    lappend ::result [expr {$t1-$t0>=2 ? "ok" : "$t0,$t1"}]
+    set t1 [clock milliseconds]
+    lappend ::result [expr {$t1-$t0>=100 ? "ok" : "$t0,$t1"}]
     interp delete $i
     return $::result
 } -result {cb1 cb2 1 {time limit exceeded} ok} -cleanup {
@@ -3371,27 +3376,27 @@ test interp-34.11 {time limit extension in callbacks} -setup {
     rename cb2 {}
 }
 test interp-34.12 {time limit extension in callbacks} -setup {
-    proc cb1 {i} {
+    proc cb1 {i t0} {
 	global result times
 	lappend result cb1
 	set times [lassign $times t]
-	$i limit time -seconds $t
+	$i limit time {*}[_ms_limit_args $t $t0]
     }
 } -body {
     set i [interp create]
-    set t0 [clock seconds]
-    set ::times "[expr {$t0 + 2}] [expr {$t0 + 100}]"
-    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 -command "cb1 $i"
+    set t0 [clock milliseconds]
+    set ::times {100 10000}
+    $i limit time {*}[_ms_limit_args 50] -granularity 1 -command "cb1 $i $t0"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
-	    for {set i 0} {$i<30} {incr i} {
-		after 100
+	    for {set i 0} {$i<5} {incr i} {
+		after 50
 	    }
 	}
     } msg] $msg
-    set t1 [clock seconds]
-    lappend ::result [expr {$t1-$t0>=2 ? "ok" : "$t0,$t1"}]
+    set t1 [clock milliseconds]
+    lappend ::result [expr {$t1-$t0>=100 ? "ok" : "$t0,$t1"}]
     interp delete $i
     return $::result
 } -result {cb1 cb1 0 {} ok} -cleanup {
@@ -3400,7 +3405,7 @@ test interp-34.12 {time limit extension in callbacks} -setup {
 test interp-34.13 {time limit granularity and vwait: Bug 2891362} -setup {
     set i [interp create -safe]
 } -body {
-    $i limit time -seconds [clock add [clock seconds] 1 second]
+    $i limit time {*}[_ms_limit_args 50]
     $i eval {
 	after 2000 set x timeout
 	vwait x
@@ -3409,6 +3414,20 @@ test interp-34.13 {time limit granularity and vwait: Bug 2891362} -setup {
 } -cleanup {
     interp delete $i
 } -returnCodes error -result {limit exceeded}
+test interp-34.14 {[Bug e3f4a8b78d]: interp limit and interp eval} -setup {
+    set i [interp create]
+    set result {}
+} -body {
+    $i limit command -value [$i eval {info cmdcount}] -granularity 1
+    lappend result [catch {$i eval [list expr 1+3]} msg] $msg
+    lappend result [catch {$i eval [list expr 1+3]} msg] $msg
+    lappend result [catch {$i eval {set cmd expr; $cmd 1+3}} msg] $msg
+    lappend result [catch {$i eval {expr 1+3}} msg] $msg
+    lappend result [catch {$i eval expr 1+3} msg] $msg
+    lappend result [catch {interp eval $i [list expr 1+3]} msg] $msg
+} -cleanup {
+    interp delete $i
+} -result [lrepeat 6 1 {command count limit exceeded}]
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit
@@ -3670,6 +3689,7 @@ unset -nocomplain hidden_cmds
 foreach i [interp children] {
     interp delete $i
 }
+rename _ms_limit_args {}
 ::tcltest::cleanupTests
 return
 

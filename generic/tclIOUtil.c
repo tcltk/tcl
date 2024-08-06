@@ -290,10 +290,10 @@ Tcl_Stat(
 	 * Tcl_WideInt.
 	 */
 
-	tmp1 = (Tcl_WideInt) buf.st_ino;
-	tmp2 = (Tcl_WideInt) buf.st_size;
+	tmp1 = buf.st_ino;
+	tmp2 = buf.st_size;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	tmp3 = (Tcl_WideInt) buf.st_blocks;
+	tmp3 = buf.st_blocks;
 #endif
 
 	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2) || OUT_OF_RANGE(tmp3)) {
@@ -2267,8 +2267,7 @@ Tcl_FSOpenFileChannel(
 	 * Apply appropriate flags parsed out above.
 	 */
 
-	if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt) 0, SEEK_END)
-		< (Tcl_WideInt) 0) {
+	if (seekFlag && (Tcl_Seek(retVal, 0, SEEK_END) < 0)) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"could not seek to end of file while opening \"%s\": %s",
@@ -3304,7 +3303,7 @@ Tcl_LoadFile(
 	 * Tcl_Read takes an int: check that file size isn't wide.
 	 */
 
-	if (size != (Tcl_WideInt) statBuf.st_size) {
+	if (size != (Tcl_WideInt)statBuf.st_size) {
 	    goto mustCopyToTempAnyway;
 	}
 	data = Tcl_FSOpenFileChannel(interp, pathPtr, "rb", 0666);

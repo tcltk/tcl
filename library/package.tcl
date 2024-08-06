@@ -31,16 +31,16 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
     global tcl_platform
     if {$ext eq ""} {set ext [info sharedlibextension]}
     if {$tcl_platform(platform) eq "windows"} {
-        return [string equal -nocase [file extension $fileName] $ext]
+	return [string equal -nocase [file extension $fileName] $ext]
     } else {
-        # Some unices add trailing numbers after the .so, so
-        # we could have something like '.so.1.2'.
-        set root $fileName
-        while {1} {
-            set currExt [file extension $root]
-            if {$currExt eq $ext} {
-                return 1
-            }
+	# Some unices add trailing numbers after the .so, so
+	# we could have something like '.so.1.2'.
+	set root $fileName
+	while {1} {
+	    set currExt [file extension $root]
+	    if {$currExt eq $ext} {
+		return 1
+	    }
 
 	    # The current extension does not match; if it is not a numeric
 	    # value, quit, as we are only looking to ignore version number
@@ -51,7 +51,7 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
 	    if {![string is integer -strict [string range $currExt 1 end]]} {
 		return 0
 	    }
-            set root [file rootname $root]
+	    set root [file rootname $root]
 	}
     }
 }
