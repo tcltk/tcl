@@ -691,7 +691,7 @@ AllocObject(
 	     * Couldn't make the specific namespace. Report as an error.
 	     * [Bug 154f0982f2]
 	     */
-	    ckfree(oPtr);
+	    Tcl_Free(oPtr);
 	    return NULL;
 	}
 	creationEpoch = ++fPtr->tsdPtr->nsCount;
