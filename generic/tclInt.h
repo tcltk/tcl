@@ -3004,7 +3004,6 @@ typedef struct ProcessGlobalValue {
 
 /*
  *----------------------------------------------------------------------
- *
  * Common functions for calculating overallocation. Trivial but allows for
  * experimenting with growth factors without having to change code in
  * multiple places. See TclAttemptAllocElemsEx and similar for usage
