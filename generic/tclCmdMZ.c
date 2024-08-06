@@ -1863,7 +1863,7 @@ StringMapCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase", string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
+		    string, (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -5115,12 +5115,10 @@ TryPostBody(
 		 */
 
 		if (code == TCL_ERROR) {
-		    Tcl_Obj *errorCodeName, *errcode, **bits1, **bits2;
+		    Tcl_Obj *errcode, **bits1, **bits2;
 		    int len1, len2, j;
 
-		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
-		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
-		    Tcl_DecrRefCount(errorCodeName);
+		    TclDictGet(NULL, options, "-errorcode", &errcode);
 		    TclListObjGetElements(NULL, info[2], &len1, &bits1);
 		    if (TclListObjGetElements(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
