@@ -610,6 +610,10 @@ KillFoundation(
  *	call TclOOAddToSubclasses() to add it to the right class's list of
  *	subclasses.
  *
+ * Returns:
+ *	Pointer to the object structure created, or NULL if a specific
+ *	namespace was asked for but couldn't be created.
+ *
  * ----------------------------------------------------------------------
  */
 
@@ -652,11 +656,16 @@ AllocObject(
 
     if (nsNameStr != NULL) {
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr, NULL);
-	if (oPtr->namespacePtr != NULL) {
-	    creationEpoch = ++fPtr->tsdPtr->nsCount;
-	    goto configNamespace;
+	if (oPtr->namespacePtr == NULL) {
+	    /*
+	     * Couldn't make the specific namespace. Report as an error.
+	     * [Bug 154f0982f2]
+	     */
+	    ckfree(oPtr);
+	    return NULL;
 	}
-	Tcl_ResetResult(interp);
+	creationEpoch = ++fPtr->tsdPtr->nsCount;
+	goto configNamespace;
     }
 
     while (1) {
@@ -1783,6 +1792,9 @@ TclNewObjectInstanceCommon(
      */
 
     oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
+    if (oPtr == NULL) {
+	return NULL;
+    }
     oPtr->selfCls = classPtr;
     AddRef(classPtr->thisPtr);
     TclOOAddToInstances(oPtr, classPtr);
