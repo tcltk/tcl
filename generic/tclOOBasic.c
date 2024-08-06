@@ -856,7 +856,19 @@ TclOO_Object_VarName(
     /*
      * The variable reference must not disappear too soon. [Bug 74b6110204]
      */
-    TclSetVarNamespaceVar((Var *) varPtr);
+    if (!TclIsVarArrayElement((Var *) varPtr)) {
+	TclSetVarNamespaceVar((Var *) varPtr);
+    }
+
+    /*
+     * If the varPtr points to an element of an array but we don't already
+     * have the array, find it now. Note that this can't be easily backported;
+     * the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
+     */
+
+    if (aryVar == NULL && TclIsVarArrayElement((Var *) varPtr)) {
+	aryVar = (Tcl_Var) TclVarParentArray(varPtr);
+    }
 
     /*
      * Now that we've pinned down what variable we're really talking about
@@ -864,15 +876,11 @@ TclOO_Object_VarName(
      */
 
     TclNewObj(varNamePtr);
+
     if (aryVar != NULL) {
 	Tcl_GetVariableFullName(interp, aryVar, varNamePtr);
-
-	/*
-	 * WARNING! This code pokes inside the implementation of hash tables!
-	 */
-
 	Tcl_AppendPrintfToObj(varNamePtr, "(%s)", Tcl_GetString(
-		((VarInHash *) varPtr)->entry.key.objPtr));
+		VarHashGetKey(varPtr)));
     } else {
 	Tcl_GetVariableFullName(interp, varPtr, varNamePtr);
     }
