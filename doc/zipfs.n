@@ -19,17 +19,16 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs find\fI directoryName\fR
 \fBzipfs info\fI filename\fR
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
-\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword infile\fR?
+\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword\fR? ?\fIinfile\fR?
 \fBzipfs lmkzip\fI outfile inlist\fR ?\fIpassword\fR?
 \fBzipfs mkimg\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 \fBzipfs mkkey\fI password\fR
 \fBzipfs mkzip\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
 \fBzipfs mount\fR ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
+\fBzipfs mountdata\fR \fIdata\fR \fImountpoint\fR
 \fBzipfs root\fR
 \fBzipfs unmount\fI mountpoint\fR
 .fi
-'\" The following subcommand is *UNDOCUMENTED*
-'\" \fBzipfs mountdata\fR ?\fIdata\fR ?\fImountpoint\fR??
 .BE
 .SH DESCRIPTION
 .PP
@@ -143,6 +142,11 @@ uses direct access to the OS rather than through Tcl's filesystem API, it will
 not see the current directory as being inside the mount and will not be able
 to access the files inside the mount).
 .RE
+.TP
+.\" METHOD: mountdata
+\fBzipfs mountdata\fR \fIdata\fR \fImountpoint\fR
+Mounts the ZIP archive content \fIdata\fR as a Tcl virtual filesystem at
+\fImountpoint\fR.
 .\" METHOD: root
 .TP
 \fBzipfs root\fR
@@ -221,7 +225,7 @@ Given the clear text \fIpassword\fR argument, an obfuscated string version is
 returned with the same format used in the \fBzipfs mkimg\fR command.
 .\" METHOD: lmkimg
 .TP
-\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword infile\fR?
+\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword\fR? ?\fIinfile\fR?
 .
 This command is like \fBzipfs mkimg\fR, but instead of an input directory,
 \fIinlist\fR must be a Tcl list where the odd elements are the names of files
