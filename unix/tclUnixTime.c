@@ -187,7 +187,7 @@ TclpGetWideClicks(void)
 	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
-	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+	now = (Tcl_WideInt)(mach_absolute_time() & INT64_MAX);
 #else
 #error Wide high-resolution clicks not implemented on this platform
 #endif

@@ -13,6 +13,20 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+# A helper for intercepting background errors
+proc ::bgerrorIntercept {varName body} {
+    set old [interp bgerror {}]
+    interp bgerror {} [list apply {{var msg args} {
+	upvar #0 $var v
+	lappend v $msg
+    }} $varName]
+    try {
+	uplevel 1 $body
+    } finally {
+	interp bgerror {} $old
+    }
+}
+
 
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
@@ -668,28 +682,30 @@ test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
 } -result {1 foo {}}
 test oo-3.7 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [rename [cls create obj] {}] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [rename obj {}]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [namespace delete [info object namespace [cls create obj]]] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [namespace delete [info object namespace obj]]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
     oo::class create cls
     set result {}
@@ -2854,6 +2870,16 @@ test oo-18.11 {OO: define/self command support} -setup {
     (in definition script for class "::foo" line 1)
     invoked from within
 "oo::define foo {rename ::foo {}; self {error foobar}}"}
+test oo-18.12 {OO: self callable via eval method} -setup {
+    oo::class create parent {
+	export eval
+    }
+    parent create ::foo
+} -body {
+    foo eval { self }
+} -cleanup {
+    parent destroy
+} -result ::foo
 
 test oo-19.1 {OO: varname method} -setup {
     oo::object create inst
@@ -2907,6 +2933,20 @@ test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
 } -cleanup {
     testClass destroy
 } -result 0
+test oo-19.4 {OO: varname ghosts [Bug 74b6110204]} -setup {
+    oo::class create testClass {
+	export varname
+	self export createWithNamespace
+    }
+    set obj [testClass createWithNamespace testoo19_4 testoo19_4]
+    set ns [info object namespace $obj]
+} -body {
+    set v [$obj varname foo]
+    list [namespace which -variable $v] \
+	[info exists $v] [namespace which -variable $v]
+} -cleanup {
+    testClass destroy
+} -result {::testoo19_4::foo 0 ::testoo19_4::foo}
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
@@ -3324,7 +3364,7 @@ oo::class create WorkerSupport {
 	    return [uplevel 1 $script]
 	} finally {
 	    foreach worker $workers {$worker destroy}
-	} 
+	}
     }
     method run {nworkers} {
 	set result {}
@@ -4332,13 +4372,20 @@ test oo-35.7.1 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted during major object NS cleanup and
+    # are trying to call back into the major object (which is mostky gone at
+    # this point). Things are messy; error is reported via bgerror as the
+    # avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
-} -result {}
+} -result {impossible to invoke method "write": no defined method or unknown method}
 test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     oo::class create base
     oo::class create RpcClient {
@@ -4366,13 +4413,21 @@ test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted during major object NS cleanup, and
+    # we've a destructor on the major class to monitor when it happens. Things
+    # are still messy, but the order is clear; error is reported via bgerror as
+    # the avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
-} -result {Destroyed}
+} -result {Destroyed
+impossible to invoke method "write": no defined method or unknown method}
 test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     oo::class create base
     oo::class create RpcClient {
@@ -4407,14 +4462,20 @@ test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
     }
     set ::result {}
 } -body {
-    set FH [RpcClient new]
-    $FH create_bug
-    $FH destroy
+    # In this case, sub-objects are deleted while the destructor is running and
+    # the destroy is neat, so things work sanely. Error follows standard Tcl
+    # error flow route; bgerror is not used.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
     join $result \n
 } -cleanup {
     base destroy
 } -result "Destroyed\nRpcClient -> otto-111"
-
+rename bgerrorIntercept {}
 
 cleanupTests
 return

@@ -15,7 +15,7 @@ tm \- Facilities for locating and loading of Tcl Modules
 \fB::tcl::tm::path add \fR?\fIpath\fR...?
 \fB::tcl::tm::path remove \fR?\fIpath\fR...?
 \fB::tcl::tm::path list\fR
-\fB::tcl::tm::roots \fR?\fIpath\fR...?
+\fB::tcl::tm::roots \fR\fIpaths\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -56,10 +56,10 @@ ignores all paths which are not on the list.
 Returns a list containing all registered module paths, in the order
 that they are searched for modules.
 .TP
-\fB::tcl::tm::roots \fR?\fIpath\fR...?
+\fB::tcl::tm::roots \fR\fIpaths\fR
 .
 Similar to \fBpath add\fR, and layered on top of it. This command
-takes a list of paths, extends each with
+takes a single argument containing a list of paths, extends each with
 .QW "\fBtcl\fIX\fB/site-tcl\fR" ,
 and
 .QW "\fBtcl\fIX\fB/\fIX\fB.\fIy\fR" ,

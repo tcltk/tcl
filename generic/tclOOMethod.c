@@ -845,7 +845,7 @@ PushMethodCallFrame(
 
     pmPtr->procPtr->cmdPtr = &pmPtr->cmd;
     if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
+	ByteCode *codePtr = (ByteCode *)
 		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
 	codePtr->nsPtr = nsPtr;
@@ -1356,7 +1356,7 @@ TclOONewForwardInstanceMethod(
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"method forward prefix must be non-empty", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
 	return NULL;
     }
 
@@ -1395,7 +1395,7 @@ TclOONewForwardMethod(
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"method forward prefix must be non-empty", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
 	return NULL;
     }
 

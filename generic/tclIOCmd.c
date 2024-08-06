@@ -450,7 +450,7 @@ Tcl_ReadObjCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    newline = 1;
@@ -1386,7 +1386,7 @@ AcceptCallbackProc(
 	Tcl_RegisterChannel(NULL, chan);
 
 	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
-		" ", address, " ", portBuf, NULL);
+		" ", address, " ", portBuf, (char *)NULL);
 	if (result != TCL_OK) {
 	    Tcl_BackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
@@ -2005,8 +2005,7 @@ TclInitChanCmd(
 	 * Can assume that reference counts are all incremented.
 	 */
 
-	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
-		Tcl_NewStringObj(extras[i+1], -1));
+	TclDictPutString(NULL, mapObj, extras[i], extras[i + 1]);
     }
     Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
     return ensemble;
