@@ -3116,6 +3116,17 @@ test oo-19.4 {OO: varname ghosts [Bug 74b6110204]} -setup {
 } -cleanup {
     testClass destroy
 } -result {::testoo19_4::foo 0 ::testoo19_4::foo}
+test oo-19.5 {OO: varname array elements [Bug 2da1cb0c80]} -setup {
+    set obj [oo::object new]
+    oo::objdefine $obj export eval varname
+} -body {
+    $obj eval {
+	namespace upvar :: tcl_platform(platform) foo
+    }
+    $obj varname foo
+} -cleanup {
+    $obj destroy
+} -result ::tcl_platform(platform)
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
