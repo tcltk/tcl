@@ -301,6 +301,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclOODefineCmds.obj \
 	$(TMP_DIR)\tclOOInfo.obj \
 	$(TMP_DIR)\tclOOMethod.obj \
+	$(TMP_DIR)\tclOOProp.obj \
 	$(TMP_DIR)\tclOOStubInit.obj \
 	$(TMP_DIR)\tclObj.obj \
 	$(TMP_DIR)\tclOptimize.obj \
