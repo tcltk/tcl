@@ -2530,12 +2530,18 @@ Tcl_AppendFormatToObj(
 	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
+		if (allocSegment) {
+		    Tcl_DecrRefCount(segment);
+		}
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
 	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
+		if (allocSegment) {
+		    Tcl_DecrRefCount(segment);
+		}
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;

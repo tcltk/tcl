@@ -101,14 +101,14 @@ slowing its clock by a tiny fraction for some minutes until it is
 back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
-\fI\-now\fR
-Instead of \fItimeVal\fR a non-integer option \fI\-now\fR can be used as
+\fInow\fR
+Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as
 replacement for today, which is simply interpolated to the runt-time as value
 of \fBclock seconds\fR. For example:
 .sp
-\fBclock format -now -f %a; # current day of the week\fR
+\fBclock format now -f %a; # current day of the week\fR
 .sp
-\fBclock add -now 1 month; # next month\fR
+\fBclock add now 1 month; # next month\fR
 .TP
 \fIunit\fR
 .
@@ -202,7 +202,7 @@ If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error
 if the input contains invalid values, e.g. day of month greater than
 number of days in the month. If specified as false, the command makes
 an adjustment to bring values within acceptable range. See
-\fBSCANNING TIMES\fT for details.
+\fBSCANNING TIMES\fR for details.
 .PP
 If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR
 functions are used to attempt to convert times between local and

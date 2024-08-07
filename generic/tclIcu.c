@@ -21,8 +21,8 @@ typedef uint32_t UChar32x;
  * Runtime linking of libicu.
  */
 typedef enum UBreakIteratorTypex {
-	  UBRK_CHARACTERX = 0,
-	  UBRK_WORDX = 1
+    UBRK_CHARACTERX = 0,
+    UBRK_WORDX = 1
 } UBreakIteratorTypex;
 
 typedef enum UErrorCodex {
@@ -47,6 +47,7 @@ struct UCharsetDetector;
 typedef struct UCharsetDetector UCharsetDetector;
 struct UCharsetMatch;
 typedef struct UCharsetMatch UCharsetMatch;
+typedef struct UBreakIterator UBreakIterator;
 struct UNormalizer2;
 typedef struct UNormalizer2 UNormalizer2;
 
@@ -85,26 +86,33 @@ typedef UChar32x *(*fn_u_strToUTF32WithSub)(UChar32x *dest,
 					    UErrorCodex *pErrorCode);
 
 typedef uint16_t    (*fn_ucnv_countAliases)(const char *, UErrorCodex *);
-typedef int32_t     (*fn_ucnv_countAvailable)();
+typedef int32_t     (*fn_ucnv_countAvailable)(void);
 typedef const char *(*fn_ucnv_getAlias)(const char *, uint16_t, UErrorCodex *);
 typedef const char *(*fn_ucnv_getAvailableName)(int32_t);
 
-typedef void *(*fn_ubrk_open)(UBreakIteratorTypex, const char *,
-	const uint16_t *, int32_t, UErrorCodex *);
-typedef void	(*fn_ubrk_close)(void *);
-typedef int32_t	(*fn_ubrk_preceding)(void *, int32_t);
-typedef int32_t	(*fn_ubrk_following)(void *, int32_t);
-typedef int32_t	(*fn_ubrk_previous)(void *);
-typedef int32_t	(*fn_ubrk_next)(void *);
-typedef void	(*fn_ubrk_setText)(void *, const void *, int32_t, UErrorCodex *);
+typedef UBreakIterator *(*fn_ubrk_open)(
+	UBreakIteratorTypex, const char *, const uint16_t *, int32_t,
+	UErrorCodex *);
+typedef void	(*fn_ubrk_close)(UBreakIterator *);
+typedef int32_t	(*fn_ubrk_preceding)(UBreakIterator *, int32_t);
+typedef int32_t	(*fn_ubrk_following)(UBreakIterator *, int32_t);
+typedef int32_t	(*fn_ubrk_previous)(UBreakIterator *);
+typedef int32_t	(*fn_ubrk_next)(UBreakIterator *);
+typedef void	(*fn_ubrk_setText)(
+	UBreakIterator *, const void *, int32_t, UErrorCodex *);
 
-typedef UCharsetDetector * (*fn_ucsdet_open)(UErrorCodex   *status);
+typedef UCharsetDetector * (*fn_ucsdet_open)(UErrorCodex *status);
 typedef void               (*fn_ucsdet_close)(UCharsetDetector *ucsd);
-typedef void               (*fn_ucsdet_setText)(UCharsetDetector *ucsd, const char *textIn, int32_t len, UErrorCodex *status);
-typedef const char *       (*fn_ucsdet_getName)(const UCharsetMatch *ucsm, UErrorCodex *status);
-typedef UEnumeration *     (*fn_ucsdet_getAllDetectableCharsets)(UCharsetDetector *ucsd, UErrorCodex *status);
-typedef const UCharsetMatch *  (*fn_ucsdet_detect)(UCharsetDetector *ucsd, UErrorCodex *status);
-typedef const UCharsetMatch ** (*fn_ucsdet_detectAll)(UCharsetDetector *ucsd, int32_t *matchesFound, UErrorCodex *status);
+typedef void               (*fn_ucsdet_setText)(UCharsetDetector *ucsd,
+	const char *textIn, int32_t len, UErrorCodex *status);
+typedef const char *       (*fn_ucsdet_getName)(
+	const UCharsetMatch *ucsm, UErrorCodex *status);
+typedef UEnumeration *     (*fn_ucsdet_getAllDetectableCharsets)(
+	UCharsetDetector *ucsd, UErrorCodex *status);
+typedef const UCharsetMatch *  (*fn_ucsdet_detect)(
+	UCharsetDetector *ucsd, UErrorCodex *status);
+typedef const UCharsetMatch ** (*fn_ucsdet_detectAll)(
+	UCharsetDetector *ucsd, int32_t *matchesFound, UErrorCodex *status);
 
 typedef void        (*fn_uenum_close)(UEnumeration *);
 typedef int32_t     (*fn_uenum_count)(UEnumeration *, UErrorCodex *);
@@ -122,8 +130,9 @@ typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *,
 				       UErrorCodex *);
 
 #define FIELD(name) fn_ ## name _ ## name
+
 static struct {
-    size_t              nopen; /* Total number of references to ALL libraries */
+    size_t nopen;		/* Total number of references to ALL libraries */
     /*
      * Depending on platform, ICU symbols may be distributed amongst
      * multiple libraries. For current functionality at most 2 needed.
@@ -162,7 +171,6 @@ static struct {
     FIELD(uenum_close);
     FIELD(uenum_count);
     FIELD(uenum_next);
-
     FIELD(unorm2_getNFCInstance);
     FIELD(unorm2_getNFDInstance);
     FIELD(unorm2_getNFKCInstance);
@@ -218,31 +226,52 @@ static struct {
 
 TCL_DECLARE_MUTEX(icu_mutex);
 
-static int FunctionNotAvailableError(Tcl_Interp *interp) {
+/* Options used by multiple normalization functions */
+static const char *normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
+typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
+
+
+/* Error handlers. */
+
+static int
+FunctionNotAvailableError(
+    Tcl_Interp *interp)
+{
     if (interp) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("ICU function not available", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"ICU function not available", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP", NULL);
     }
     return TCL_ERROR;
 }
 
-static int IcuError(Tcl_Interp *interp, const char *message, UErrorCodex code)
+static int
+IcuError(
+    Tcl_Interp *interp,
+    const char *message,
+    UErrorCodex code)
 {
     if (interp) {
 	const char *codeMessage = NULL;
 	if (u_errorName) {
 	    codeMessage = u_errorName(code);
 	}
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("%s. ICU error (%d): %s",
-				       message,
-				       code,
-				       codeMessage ? codeMessage : ""));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s. ICU error (%d): %s",
+		message, code, codeMessage ? codeMessage : ""));
+	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, NULL);
     }
     return TCL_ERROR;
 }
-
-static int DetectEncoding(Tcl_Interp *interp, Tcl_Obj *objPtr, int all)
+
+/*
+ * Detect the likely encoding of the string encoded in the given byte array.
+ */
+static int
+DetectEncoding(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int all)
 {
     Tcl_Size len;
     const char *bytes;
@@ -251,9 +280,13 @@ static int DetectEncoding(Tcl_Interp *interp, Tcl_Obj *objPtr, int all)
     int nmatches;
     int ret;
 
-    if (ucsdet_open == NULL || ucsdet_setText == NULL ||
-	ucsdet_detect == NULL || ucsdet_detectAll == NULL ||
-	ucsdet_getName == NULL || ucsdet_close == NULL) {
+    // Confirm we have the profile of functions we need.
+    if (ucsdet_open == NULL ||
+	    ucsdet_setText == NULL ||
+	    ucsdet_detect == NULL ||
+	    ucsdet_detectAll == NULL ||
+	    ucsdet_getName == NULL ||
+	    ucsdet_close == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -265,31 +298,30 @@ static int DetectEncoding(Tcl_Interp *interp, Tcl_Obj *objPtr, int all)
 
     UCharsetDetector* csd = ucsdet_open(&status);
     if (U_FAILURE(status)) {
-	return IcuError(interp, "Could not open charset detector.", status);
+	return IcuError(interp, "Could not open charset detector", status);
     }
 
     ucsdet_setText(csd, bytes, len, &status);
     if (U_FAILURE(status)) {
-	IcuError(interp, "Could not set detection text.", status);
+	IcuError(interp, "Could not set detection text", status);
 	ucsdet_close(csd);
 	return TCL_ERROR;
     }
 
     if (all) {
 	matches = ucsdet_detectAll(csd, &nmatches, &status);
-    }
-    else {
+    } else {
 	match = ucsdet_detect(csd, &status);
 	matches = &match;
 	nmatches = match ? 1 : 0;
     }
 
     if (U_FAILURE(status) || nmatches == 0) {
-	ret = IcuError(interp, "Could not detect character set.", status);
-    }
-    else {
+	ret = IcuError(interp, "Could not detect character set", status);
+    } else {
 	int i;
 	Tcl_Obj *resultObj = Tcl_NewListObj(nmatches, NULL);
+
 	for (i = 0; i < nmatches; ++i) {
 	    const char *name = ucsdet_getName(matches[i], &status);
 	    if (U_FAILURE(status) || name == NULL) {
@@ -297,7 +329,7 @@ static int DetectEncoding(Tcl_Interp *interp, Tcl_Obj *objPtr, int all)
 		status = U_ZERO_ERRORZ; /* Reset on failure */
 	    }
 	    Tcl_ListObjAppendElement(
-		NULL, resultObj, Tcl_NewStringObj(name, -1));
+		    NULL, resultObj, Tcl_NewStringObj(name, TCL_AUTO_LENGTH));
 	}
 	Tcl_SetObjResult(interp, resultObj);
 	ret = TCL_OK;
@@ -307,37 +339,45 @@ static int DetectEncoding(Tcl_Interp *interp, Tcl_Obj *objPtr, int all)
     return ret;
 }
 
-static int DetectableEncodings(Tcl_Interp *interp)
+static int
+DetectableEncodings(
+    Tcl_Interp *interp)
 {
-    if (ucsdet_open == NULL || ucsdet_getAllDetectableCharsets == NULL ||
-	ucsdet_close == NULL || uenum_next == NULL || uenum_count == NULL ||
-	uenum_close == NULL) {
+    // Confirm we have the profile of functions we need.
+    if (ucsdet_open == NULL ||
+	    ucsdet_getAllDetectableCharsets == NULL ||
+	    ucsdet_close == NULL ||
+	    uenum_next == NULL ||
+	    uenum_count == NULL ||
+	    uenum_close == NULL) {
 	return FunctionNotAvailableError(interp);
     }
     UErrorCodex status = U_ZERO_ERRORZ;
+    UCharsetDetector *csd = ucsdet_open(&status);
 
-    UCharsetDetector* csd = ucsdet_open(&status);
     if (U_FAILURE(status)) {
-	return IcuError(interp, "Could not open charset detector.", status);
+	return IcuError(interp, "Could not open charset detector", status);
     }
 
     int ret;
     UEnumeration *enumerator = ucsdet_getAllDetectableCharsets(csd, &status);
     if (U_FAILURE(status) || enumerator == NULL) {
-	IcuError(interp, "Could not get list of detectable encodings.", status);
+	IcuError(interp, "Could not get list of detectable encodings", status);
 	ret = TCL_ERROR;
     } else {
-	int32_t count;
-	count = uenum_count(enumerator, &status);
+	int32_t count = uenum_count(enumerator, &status);
+
 	if (U_FAILURE(status)) {
-	    IcuError(interp, "Could not get charset enumerator count.", status);
+	    IcuError(interp, "Could not get charset enumerator count", status);
 	    ret = TCL_ERROR;
 	} else {
 	    int i;
 	    Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+
 	    for (i = 0; i < count; ++i) {
 		const char *name;
 		int32_t len;
+
 		name = uenum_next(enumerator, &len, &status);
 		if (name == NULL || U_FAILURE(status)) {
 		    name = "unknown";
@@ -345,7 +385,7 @@ static int DetectableEncodings(Tcl_Interp *interp)
 		    status = U_ZERO_ERRORZ; /* Reset on error */
 		}
 		Tcl_ListObjAppendElement(
-		    interp, resultObj, Tcl_NewStringObj(name, len));
+			NULL, resultObj, Tcl_NewStringObj(name, len));
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
 	    ret = TCL_OK;
@@ -356,7 +396,7 @@ static int DetectableEncodings(Tcl_Interp *interp)
     ucsdet_close(csd);
     return ret;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -466,24 +506,22 @@ IcuObjFromUCharDString(
     Tcl_FreeEncoding(encoding);
     return objPtr;
 }
-
-
-
+
 /*
  *------------------------------------------------------------------------
  *
  * EncodingDetectObjCmd --
  *
- *    Implements the Tcl command EncodingDetect.
- *       encdetect - returns names of all detectable encodings
- *       encdetect BYTES ?-all? - return detected encoding(s)
+ *	Implements the Tcl command EncodingDetect.
+ *	  encdetect - returns names of all detectable encodings
+ *	  encdetect BYTES ?-all? - return detected encoding(s)
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
@@ -506,10 +544,9 @@ IcuDetectObjCmd(
     int all = 0;
     if (objc == 3) {
 	if (strcmp("-all", Tcl_GetString(objv[2]))) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Invalid option %s, must be \"-all\"",
-			      Tcl_GetString(objv[2])));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid option %s, must be \"-all\"",
+		    Tcl_GetString(objv[2])));
 	    return TCL_ERROR;
 	}
 	all = 1;
@@ -517,29 +554,29 @@ IcuDetectObjCmd(
 
     return DetectEncoding(interp, objv[1], all);
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
  * IcuConverterNamesObjCmd --
  *
- *    Sets interp result to list of available ICU converters.
+ *	Sets interp result to list of available ICU converters.
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds list of converter names.
+ *	Interpreter result holds list of converter names.
  *
  *------------------------------------------------------------------------
  */
 static int
-IcuConverterNamesObjCmd (
+IcuConverterNamesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
     if (objc != 1) {
@@ -556,39 +593,40 @@ IcuConverterNamesObjCmd (
     }
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
     int32_t i;
+
     for (i = 0; i < count; ++i) {
 	const char *name = ucnv_getAvailableName(i);
 	if (name) {
-	    Tcl_ListObjAppendElement(
-		NULL, resultObj, Tcl_NewStringObj(name, -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewStringObj(name, TCL_AUTO_LENGTH));
 	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
  * IcuConverterAliasesObjCmd --
  *
- *    Sets interp result to list of available ICU converters.
+ *	Sets interp result to list of available ICU converters.
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds list of converter names.
+ *	Interpreter result holds list of converter names.
  *
  *------------------------------------------------------------------------
  */
 static int
-IcuConverterAliasesObjCmd (
+IcuConverterAliasesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1 , objv, "convertername");
@@ -602,32 +640,32 @@ IcuConverterAliasesObjCmd (
     UErrorCodex status = U_ZERO_ERRORZ;
     uint16_t count = ucnv_countAliases(name, &status);
     if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
-	return IcuError(interp, "Could not get aliases.", status);
+	return IcuError(interp, "Could not get aliases", status);
     }
     if (count <= 0) {
 	return TCL_OK;
     }
+
     Tcl_Obj *resultObj = Tcl_NewListObj(count, NULL);
     uint16_t i;
+
     for (i = 0; i < count; ++i) {
 	status = U_ZERO_ERRORZ; /* Reset in case U_AMBIGUOUS_ALIAS_WARNING */
 	const char *aliasName = ucnv_getAlias(name, i, &status);
+
 	if (status != U_AMBIGUOUS_ALIAS_WARNING && U_FAILURE(status)) {
 	    status = U_ZERO_ERRORZ; /* Reset error for next iteration */
 	    continue;
 	}
 	if (aliasName) {
-	    Tcl_ListObjAppendElement(
-		NULL, resultObj, Tcl_NewStringObj(aliasName, -1));
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewStringObj(aliasName, TCL_AUTO_LENGTH));
 	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
-
-static const char *normalizationForms[] = {"nfc", "nfd", "nfkc", "nfkd", NULL};
-typedef enum { MODE_NFC, MODE_NFD, MODE_NFKC, MODE_NFKD } NormalizationMode;
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -721,7 +759,7 @@ IcuNormalizeUCharDString(
     Tcl_DStringSetLength(dsOutPtr, normLen * sizeof(UCharx));
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -808,7 +846,18 @@ IcuNormalizeObjCmd(
 	return TCL_ERROR;
     }
 }
-
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclIcuCleanup --
+ *
+ *	Called whenever a command referencing the ICU function table is
+ *	deleted. When the reference count drops to zero, the table is released
+ *	and the ICU shared libraries are unloaded.
+ *
+ *------------------------------------------------------------------------
+ */
 static void
 TclIcuCleanup(
     TCL_UNUSED(void *))
@@ -820,7 +869,7 @@ TclIcuCleanup(
 	    u_cleanup();
 	}
 	for (i = 0; i < (int)(sizeof(icu_fns.libs) / sizeof(icu_fns.libs[0]));
-	     ++i) {
+		++i) {
 	    if (icu_fns.libs[i] != NULL) {
 		Tcl_FSUnloadFile(NULL, icu_fns.libs[i]);
 	    }
@@ -829,13 +878,76 @@ TclIcuCleanup(
     }
     Tcl_MutexUnlock(&icu_mutex);
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuFindSymbol --
+ *
+ *	Finds an ICU symbol in a shared library and returns its value.
+ *
+ *      Caller must be holding icu_mutex lock.
+ *
+ * Results:
+ *	Returns the symbol value or NULL if not found.
+ *
+ *------------------------------------------------------------------------
+ */
+static void *
+IcuFindSymbol(
+    Tcl_LoadHandle loadH, /* Handle to shared library containing symbol */
+    const char *name,     /* Name of function */
+    const char *suffix    /* Suffix that may be present */
+)
+{
+    /*
+     * ICU symbols may have a version suffix depending on how it was built.
+     * Rather than try both forms every time, suffixConvention remembers if a
+     * suffix is needed (all functions will have it, or none will)
+     * 0 - don't know, 1 - have suffix, -1 - no suffix
+     */
+    static int suffixConvention = 0;
+    char symbol[256];
+    void *value = NULL;
 
+    /* Note we only update suffixConvention on a positive result */
+
+    strcpy(symbol, name);
+    if (suffixConvention <= 0) {
+	/* Either don't need suffix or don't know if we do */
+	value = Tcl_FindSymbol(NULL, loadH, symbol);
+	if (value) {
+	    suffixConvention = -1; /* Remember that no suffixes present */
+	    return value;
+	}
+    }
+    if (suffixConvention >= 0) {
+	/* Either need suffix or don't know if we do */
+	strcat(symbol, suffix);
+	value = Tcl_FindSymbol(NULL, loadH, symbol);
+	if (value) {
+	    suffixConvention = 1;
+	}
+    }
+    return value;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclIcuInit --
+ *
+ *	Load the ICU commands into the given interpreter. If the ICU
+ *	commands have never previously been loaded, the ICU libraries are
+ *	loaded first.
+ *
+ *------------------------------------------------------------------------
+ */
 static void
 TclIcuInit(
     Tcl_Interp *interp)
 {
     Tcl_MutexLock(&icu_mutex);
-    char symbol[256];
     char icuversion[4] = "_80"; /* Highest ICU version + 1 */
 
     /*
@@ -878,15 +990,16 @@ TclIcuInit(
 #endif
 	    while (iculibs[i] != NULL) {
 		Tcl_ResetResult(interp);
-		nameobj = Tcl_NewStringObj(iculibs[i], TCL_INDEX_NONE);
+		nameobj = Tcl_NewStringObj(iculibs[i], TCL_AUTO_LENGTH);
 		char *nameStr = Tcl_GetString(nameobj);
 		char *p = strchr(nameStr, '?');
+
 		if (p != NULL) {
 		    memcpy(p, icuversion+1, 2);
 		}
 		Tcl_IncrRefCount(nameobj);
-		if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
-			== TCL_OK) {
+		if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL,
+			&icu_fns.libs[0]) == TCL_OK) {
 		    if (p == NULL) {
 			icuversion[0] = '\0';
 		    }
@@ -905,7 +1018,7 @@ TclIcuInit(
 	    (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
 	    Tcl_DecrRefCount(nameobj);
 	}
-#if defined(_WIN32)
+#ifdef _WIN32
 	/*
 	 * On Windows, if no ICU install found, look for the system's
 	 * (Win10 1703 or later). There are two cases. Newer systems
@@ -914,40 +1027,45 @@ TclIcuInit(
 	 */
 	if (icu_fns.libs[0] == NULL) {
 	    Tcl_ResetResult(interp);
-		nameobj = Tcl_NewStringObj("icu.dll", TCL_INDEX_NONE);
-		Tcl_IncrRefCount(nameobj);
-		if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
-			== TCL_OK) {
-		    /* Reload same for second set of functions. */
-		    (void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
-		    /* Functions do NOT have version suffixes */
-		    icuversion[0] = '\0';
-		}
-		Tcl_DecrRefCount(nameobj);
-	}
-	if (icu_fns.libs[0] == NULL) {
-	    /* No icu.dll. Try last fallback */
-	    Tcl_ResetResult(interp);
-	    nameobj = Tcl_NewStringObj("icuuc.dll", TCL_INDEX_NONE);
+	    nameobj = Tcl_NewStringObj("icu.dll", TCL_AUTO_LENGTH);
 	    Tcl_IncrRefCount(nameobj);
 	    if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
-		== TCL_OK) {
-		Tcl_DecrRefCount(nameobj);
-		nameobj = Tcl_NewStringObj("icuin.dll", TCL_INDEX_NONE);
-		Tcl_IncrRefCount(nameobj);
-		(void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[1]);
+		    == TCL_OK) {
+		/* Reload same for second set of functions. */
+		(void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL,
+			&icu_fns.libs[1]);
 		/* Functions do NOT have version suffixes */
 		icuversion[0] = '\0';
 	    }
 	    Tcl_DecrRefCount(nameobj);
 	}
-#endif
+	if (icu_fns.libs[0] == NULL) {
+	    /* No icu.dll. Try last fallback */
+	    Tcl_ResetResult(interp);
+	    nameobj = Tcl_NewStringObj("icuuc.dll", TCL_AUTO_LENGTH);
+	    Tcl_IncrRefCount(nameobj);
+	    if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
+		    == TCL_OK) {
+		Tcl_DecrRefCount(nameobj);
+		nameobj = Tcl_NewStringObj("icuin.dll", TCL_AUTO_LENGTH);
+		Tcl_IncrRefCount(nameobj);
+		(void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL,
+			&icu_fns.libs[1]);
+		/* Functions do NOT have version suffixes */
+		icuversion[0] = '\0';
+	    }
+	    Tcl_DecrRefCount(nameobj);
+	}
+#endif // _WIN32
 
-#define ICUUC_SYM(name)                                         \
-	strcpy(symbol, #name );                                 \
-	strcat(symbol, icuversion);                             \
-	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol)
+	/* Symbol may have version (Windows, FreeBSD), or not (Linux) */
+
+#define ICUUC_SYM(name)                                                   \
+    do {                                                                  \
+	icu_fns._##name =                                                 \
+	    (fn_##name)IcuFindSymbol(icu_fns.libs[0], #name, icuversion); \
+    } while (0)
+
 	if (icu_fns.libs[0] != NULL) {
 	    ICUUC_SYM(u_cleanup);
 	    ICUUC_SYM(u_errorName);
@@ -981,11 +1099,12 @@ TclIcuInit(
 #undef ICUUC_SYM
 	}
 
-#define ICUIN_SYM(name)                                         \
-	strcpy(symbol, #name );                                 \
-	strcat(symbol, icuversion);                             \
-	icu_fns._##name = (fn_ ## name)                         \
-	    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol)
+#define ICUIN_SYM(name)                                                   \
+    do {                                                                  \
+	icu_fns._##name =                                                 \
+	    (fn_##name)IcuFindSymbol(icu_fns.libs[1], #name, icuversion); \
+    } while (0)
+
 	if (icu_fns.libs[1] != NULL) {
 	    ICUIN_SYM(ucsdet_close);
 	    ICUIN_SYM(ucsdet_detect);
@@ -996,11 +1115,7 @@ TclIcuInit(
 	    ICUIN_SYM(ucsdet_setText);
 #undef ICUIN_SYM
 	}
-
     }
-#undef ICU_SYM
-
-    Tcl_MutexUnlock(&icu_mutex);
 
     if (icu_fns.libs[0] != NULL) {
 	/*
@@ -1012,56 +1127,46 @@ TclIcuInit(
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 1;
-	    Tcl_CreateObjCommand(interp,
-				 "::tcl::unsupported::icu::detect",
-				 IcuDetectObjCmd,
-				 0,
-				 TclIcuCleanup);
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
+		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
 	/* Commands needing only libs[0] (icuuc) */
 
 	/* Ref count number of commands */
 	icu_fns.nopen += 3; /* UPDATE AS CMDS ADDED/DELETED BELOW */
-	Tcl_CreateObjCommand(interp,
-			     "::tcl::unsupported::icu::converters",
-			     IcuConverterNamesObjCmd,
-			     0,
-			     TclIcuCleanup);
-	Tcl_CreateObjCommand(interp,
-			     "::tcl::unsupported::icu::aliases",
-			     IcuConverterAliasesObjCmd,
-			     0,
-			     TclIcuCleanup);
-	Tcl_CreateObjCommand(interp,
-			     "::tcl::unsupported::icu::normalize",
-			     IcuNormalizeObjCmd,
-			     0,
-			     TclIcuCleanup);
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::converters",
+		IcuConverterNamesObjCmd, 0, TclIcuCleanup);
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::aliases",
+		IcuConverterAliasesObjCmd, 0, TclIcuCleanup);
+	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::normalize",
+		IcuNormalizeObjCmd, 0, TclIcuCleanup);
     }
-}
 
+    Tcl_MutexUnlock(&icu_mutex);
+}
+
 /*
  *------------------------------------------------------------------------
  *
  * TclLoadIcuObjCmd --
  *
- *    Loads and initializes ICU
+ *	Loads and initializes ICU
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
 int
-TclLoadIcuObjCmd (
+TclLoadIcuObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1 , objv, "");
@@ -1070,7 +1175,7 @@ TclLoadIcuObjCmd (
     TclIcuInit(interp);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

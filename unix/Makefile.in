@@ -321,7 +321,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclTomMathInterface.o tclZipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
-	tclOOMethod.o tclOOStubInit.o
+	tclOOMethod.o tclOOProp.o tclOOStubInit.o
 
 TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_s_mp_sqr_fast.o bn_mp_add.o bn_mp_and.o \
@@ -494,6 +494,7 @@ OO_SRCS = \
 	$(GENERIC_DIR)/tclOODefineCmds.c \
 	$(GENERIC_DIR)/tclOOInfo.c \
 	$(GENERIC_DIR)/tclOOMethod.c \
+	$(GENERIC_DIR)/tclOOProp.c \
 	$(GENERIC_DIR)/tclOOStubInit.c
 
 STUB_SRCS = \
@@ -1477,6 +1478,9 @@ tclOOInfo.o: $(GENERIC_DIR)/tclOOInfo.c
 
 tclOOMethod.o: $(GENERIC_DIR)/tclOOMethod.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOMethod.c
+
+tclOOProp.o: $(GENERIC_DIR)/tclOOProp.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOProp.c
 
 tclOOStubInit.o: $(GENERIC_DIR)/tclOOStubInit.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOStubInit.c
