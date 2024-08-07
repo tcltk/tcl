@@ -738,12 +738,14 @@ TclOO_Object_VarName(
     Tcl_Obj *varNamePtr, *argPtr;
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     const char *arg;
+    Tcl_Namespace *namespacePtr;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;
     }
+    namespacePtr = Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
     argPtr = objv[objc-1];
     arg = TclGetString(argPtr);
 
@@ -759,9 +761,6 @@ TclOO_Object_VarName(
     if (arg[0] == ':' && arg[1] == ':') {
 	varNamePtr = argPtr;
     } else {
-	Tcl_Namespace *namespacePtr =
-		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
-
 	/*
 	 * Private method handling. [TIP 500]
 	 *
@@ -830,7 +829,9 @@ TclOO_Object_VarName(
     /*
      * The variable reference must not disappear too soon. [Bug 74b6110204]
      */
-    TclSetVarNamespaceVar(varPtr);
+    if (!TclIsVarArrayElement(varPtr)) {
+	TclSetVarNamespaceVar(varPtr);
+    }
 
     /*
      * Now that we've pinned down what variable we're really talking about
@@ -840,17 +841,23 @@ TclOO_Object_VarName(
     TclNewObj(varNamePtr);
     if (aryVar != NULL) {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
-
-	/*
-	 * WARNING! This code pokes inside the implementation of hash tables!
-	 */
-
-	Tcl_AppendToObj(varNamePtr, "(", -1);
-	Tcl_AppendObjToObj(varNamePtr, ((VarInHash *)
-		varPtr)->entry.key.objPtr);
-	Tcl_AppendToObj(varNamePtr, ")", -1);
-    } else {
+	Tcl_AppendPrintfToObj(varNamePtr, "(%s)",
+		Tcl_GetString(VarHashGetKey(varPtr)));
+    } else if (!TclIsVarArrayElement(varPtr)) {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+    } else {
+	/*
+	 * Target is an element of an array but we don't know which one.
+	 * The name in the object's namespace is the best we can do.
+	 * [Bug 2da1cb0c80]
+	 */
+	if (arg[0] == ':' && arg[1] == ':') {
+	    Tcl_DecrRefCount(varNamePtr);
+	    varNamePtr = argPtr;
+	} else {
+	    Tcl_AppendPrintfToObj(varNamePtr, "%s::%s",
+		    namespacePtr->fullName, TclGetString(argPtr));
+	}
     }
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
