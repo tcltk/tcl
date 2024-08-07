@@ -708,6 +708,14 @@ clean-pkgs:
 	    popd \
 	  )
 
+hose-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) hose &\
+	    popd \
+	  )
+
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
 #---------------------------------------------------------------------
@@ -1188,7 +1196,7 @@ tidy:
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
-hose: default-hose
+hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
 
