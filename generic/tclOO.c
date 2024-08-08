@@ -3038,19 +3038,31 @@ Tcl_GetObjectFromObj(
 				 * exactly the name of its public command. */
 {
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
+    int i;
 
-    if (cmdPtr == NULL) {
-	goto notAnObject;
-    }
-    if (cmdPtr->objProc != TclOOPublicObjectCmd) {
-	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-	if (cmdPtr == NULL || cmdPtr->objProc != TclOOPublicObjectCmd) {
-	    goto notAnObject;
+    for (i = 0; cmdPtr != NULL && i < 2; i++) {
+	/*
+	 * Extract the handle from the clientData registred with the command.
+	 */
+
+	if (cmdPtr->objProc == TclOOPublicObjectCmd) {
+	    return (Tcl_Object) cmdPtr->objClientData;
+	} else if (cmdPtr->objProc == TclOOPrivateObjectCmd) {
+	    return (Tcl_Object) cmdPtr->objClientData;
+	} else if (cmdPtr->objProc == TclOOMyClassObjCmd) {
+	    return (Tcl_Object)
+		    ((Object *) cmdPtr->objClientData)->selfCls->thisPtr;
+	}
+
+	/*
+	 * No ball. Try following the chain of imports to see if that helps.
+	 */
+
+	if (!i) {
+	    cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
 	}
     }
-    return (Tcl_Object) cmdPtr->objClientData;
 
-  notAnObject:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "%s does not refer to an object", TclGetString(objPtr)));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
