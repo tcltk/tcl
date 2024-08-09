@@ -114,13 +114,12 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
 	# reports that newer HP-UX systems report euc-jp like everybody else.
 	lappend validEncodings shiftjis
     }
-    #expr {$enc ni $validEncodings}
-    set enc
+    expr {$enc ni $validEncodings}
 } -cleanup {
     unset -nocomplain env(LANG) env(LC_ALL)
     catch {set env(LC_ALL) $oldlc_all}
     catch {set env(TCL_LIBRARY) $oldtcl_library}
-} -result euc-jp
+} -result 0
 
 test unixInit-4.1 {TclpSetVariables} {unix} {
     # just make sure they exist
