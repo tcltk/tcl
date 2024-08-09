@@ -81,7 +81,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
-typedef struct {
+typedef struct Tcl_MethodType {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
 				 * declarations. */
@@ -99,7 +99,7 @@ typedef struct {
 } Tcl_MethodType;
 
 #if TCL_MAJOR_VERSION > 8
-typedef struct {
+typedef struct Tcl_MethodType2 {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_2 in
 				 * declarations. */
@@ -124,19 +124,21 @@ typedef struct {
  * This allows new versions of the structure to be introduced without breaking
  * binary compatibility.
  */
-
-#define TCL_OO_METHOD_VERSION_1 1
-#define TCL_OO_METHOD_VERSION_2 2
-#define TCL_OO_METHOD_VERSION_CURRENT 1
+enum TclOOMethodVersion {
+    TCL_OO_METHOD_VERSION_1 = 1,
+    TCL_OO_METHOD_VERSION_2 = 2
+};
+#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
  * Tcl_NewInstanceMethod.
  */
-
-#define TCL_OO_METHOD_PUBLIC		1
-#define TCL_OO_METHOD_UNEXPORTED	0
-#define TCL_OO_METHOD_PRIVATE		0x20
+enum TclOOMethodVisibilityFlags {
+    TCL_OO_METHOD_PUBLIC = 1,
+    TCL_OO_METHOD_UNEXPORTED = 0,
+    TCL_OO_METHOD_PRIVATE = 0x20
+};
 
 /*
  * The type of some object (or class) metadata. This describes how to delete
@@ -144,7 +146,7 @@ typedef struct {
  * clone of it (when the object or class is copied).
  */
 
-typedef struct {
+typedef struct Tcl_ObjectMetadataType {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METADATA_VERSION_CURRENT in
 				 * declarations. */
@@ -163,7 +165,10 @@ typedef struct {
  * without breaking binary compatibility.
  */
 
-#define TCL_OO_METADATA_VERSION_CURRENT 1
+enum TclOOMetadataVersion {
+    TCL_OO_METADATA_VERSION_1 = 1
+};
+#define TCL_OO_METADATA_VERSION_CURRENT TCL_OO_METADATA_VERSION_1
 
 /*
  * Include all the public API, generated from tclOO.decls.
