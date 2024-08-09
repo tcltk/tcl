@@ -35,22 +35,41 @@ typedef enum UErrorCodex {
 #define U_SUCCESS(x) ((x)<=U_ZERO_ERRORZ)
 #define U_FAILURE(x) ((x)>U_ZERO_ERRORZ)
 
+typedef enum {
+    UCNV_UNASSIGNED = 0,
+    UCNV_ILLEGAL = 1,
+    UCNV_IRREGULAR = 2,
+    UCNV_RESET = 3,
+    UCNV_CLOSE = 4,
+    UCNV_CLONE = 5
+} UConverterCallbackReasonx;
+
 typedef enum UNormalizationCheckResultx {
   UNORM_NO,
   UNORM_YES,
   UNORM_MAYBE
 } UNormalizationCheckResultx;
 
-struct UEnumeration;
 typedef struct UEnumeration UEnumeration;
-struct UCharsetDetector;
 typedef struct UCharsetDetector UCharsetDetector;
-struct UCharsetMatch;
 typedef struct UCharsetMatch UCharsetMatch;
 typedef struct UBreakIterator UBreakIterator;
-struct UNormalizer2;
 typedef struct UNormalizer2 UNormalizer2;
-
+typedef struct UConverter UConverter;
+typedef struct UConverterFromUnicodeArgs UConverterFromUnicodeArgs;
+typedef struct UConverterToUnicodeArgs UConverterToUnicodeArgs;
+typedef void   (*UConverterFromUCallback)(const void *context,
+                                          UConverterFromUnicodeArgs *args,
+                                          const UCharx *codeUnits,
+                                          int32_t length, UChar32x codePoint,
+                                          UConverterCallbackReasonx reason,
+                                          UErrorCodex *pErrorCode);
+typedef void   (*UConverterToUCallback)(const void *context,
+                                        UConverterToUnicodeArgs *args,
+                                        const char *codeUnits,
+                                        int32_t length,
+                                        UConverterCallbackReasonx reason,
+                                        UErrorCodex *pErrorCode);
 /*
  * Prototypes for ICU functions sorted by category.
  */
@@ -85,10 +104,30 @@ typedef UChar32x *(*fn_u_strToUTF32WithSub)(UChar32x *dest,
 					    int32_t *pNumSubstitutions,
 					    UErrorCodex *pErrorCode);
 
+typedef void        (*fn_ucnv_close)(UConverter *);
 typedef uint16_t    (*fn_ucnv_countAliases)(const char *, UErrorCodex *);
 typedef int32_t     (*fn_ucnv_countAvailable)(void);
+typedef int32_t     (*fn_ucnv_fromUChars)(UConverter *, char *dest,
+	int32_t destCapacity, const UCharx *src, int32_t srcLen, UErrorCodex *);
 typedef const char *(*fn_ucnv_getAlias)(const char *, uint16_t, UErrorCodex *);
 typedef const char *(*fn_ucnv_getAvailableName)(int32_t);
+typedef UConverter *(*fn_ucnv_open)(const char *converterName, UErrorCodex *);
+typedef void        (*fn_ucnv_setFromUCallBack)(UConverter *,
+                                                UConverterFromUCallback newAction,
+                                                const void *newContext,
+                                                UConverterFromUCallback *oldAction,
+                                                const void **oldContext,
+                                                UErrorCodex *err);
+typedef void        (*fn_ucnv_setToUCallBack)(UConverter *,
+                                                UConverterToUCallback newAction,
+                                                const void *newContext,
+                                                UConverterToUCallback *oldAction,
+                                                const void **oldContext,
+                                                UErrorCodex *err);
+typedef int32_t     (*fn_ucnv_toUChars)(UConverter *, UCharx *dest,
+                                        int32_t destCapacity, const char *src, int32_t srcLen, UErrorCodex *);
+typedef UConverterFromUCallback fn_UCNV_FROM_U_CALLBACK_STOP;
+typedef UConverterToUCallback   fn_UCNV_TO_U_CALLBACK_STOP;
 
 typedef UBreakIterator *(*fn_ubrk_open)(
 	UBreakIteratorTypex, const char *, const uint16_t *, int32_t,
@@ -155,10 +194,18 @@ static struct {
     FIELD(ubrk_next);
     FIELD(ubrk_setText);
 
+    FIELD(ucnv_close);
     FIELD(ucnv_countAliases);
     FIELD(ucnv_countAvailable);
+    FIELD(ucnv_fromUChars);
     FIELD(ucnv_getAlias);
     FIELD(ucnv_getAvailableName);
+    FIELD(ucnv_open);
+    FIELD(ucnv_setFromUCallBack);
+    FIELD(ucnv_setToUCallBack);
+    FIELD(ucnv_toUChars);
+    FIELD(UCNV_FROM_U_CALLBACK_STOP);
+    FIELD(UCNV_TO_U_CALLBACK_STOP);
 
     FIELD(ucsdet_close);
     FIELD(ucsdet_detect);
@@ -178,12 +225,13 @@ static struct {
     FIELD(unorm2_normalize);
 } icu_fns = {
     0,    {NULL, NULL}, /* Reference count, library handles */
-    NULL, NULL, NULL, NULL, NULL, NULL,        /* u_* */
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ubrk* */
-    NULL, NULL, NULL, NULL,                   /* ucnv_* */
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* ucsdet* */
-    NULL, NULL, NULL,                         /* uenum_* */
-    NULL, NULL, NULL, NULL, NULL,             /* unorm2_* */
+    NULL, NULL, NULL, NULL, NULL, NULL,                     /* u_* */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,               /* ubrk* */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,   /* ucnv_* .. */
+    NULL, NULL, NULL,                                       /* .. ucnv_ */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,               /* ucsdet* */
+    NULL, NULL, NULL,                                       /* uenum_* */
+    NULL, NULL, NULL, NULL, NULL,                           /* unorm2_* */
 };
 
 #define u_cleanup        icu_fns._u_cleanup
@@ -201,10 +249,18 @@ static struct {
 #define ubrk_next        icu_fns._ubrk_next
 #define ubrk_setText     icu_fns._ubrk_setText
 
+#define ucnv_close            icu_fns._ucnv_close
 #define ucnv_countAliases     icu_fns._ucnv_countAliases
 #define ucnv_countAvailable   icu_fns._ucnv_countAvailable
+#define ucnv_fromUChars       icu_fns._ucnv_fromUChars
 #define ucnv_getAlias         icu_fns._ucnv_getAlias
 #define ucnv_getAvailableName icu_fns._ucnv_getAvailableName
+#define ucnv_open             icu_fns._ucnv_open
+#define ucnv_setFromUCallBack icu_fns._ucnv_setFromUCallBack
+#define ucnv_setToUCallBack   icu_fns._ucnv_setToUCallBack
+#define ucnv_toUChars         icu_fns._ucnv_toUChars
+#define UCNV_FROM_U_CALLBACK_STOP icu_fns._UCNV_FROM_U_CALLBACK_STOP
+#define UCNV_TO_U_CALLBACK_STOP   icu_fns._UCNV_TO_U_CALLBACK_STOP
 
 #define ucsdet_close     icu_fns._ucsdet_close
 #define ucsdet_detect    icu_fns._ucsdet_detect
@@ -669,6 +725,167 @@ IcuConverterAliasesObjCmd(
 /*
  *------------------------------------------------------------------------
  *
+ * IcuConverttoDString --
+ *
+ *    Converts a string in ICU default encoding to the specified encoding.
+ *
+ * Results:
+ *    TCL_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success, encoded string is stored in output dsOutPtr
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuConverttoDString(
+    Tcl_Interp *interp,
+    Tcl_DString *dsInPtr,  /* Input UTF16 */
+    const char *icuEncName,
+    int strict,
+    Tcl_DString *dsOutPtr) /* Output encoded string. */
+{
+    if (ucnv_open == NULL || ucnv_close == NULL ||
+        ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
+	return FunctionNotAvailableError(interp);
+    }
+
+    UErrorCodex status = U_ZERO_ERRORZ;
+    UConverter *ucnvPtr = ucnv_open(icuEncName, &status);
+    if (ucnvPtr == NULL) {
+	return IcuError(interp, "Could not get encoding converter.", status);
+    }
+    if (strict) {
+        ucnv_setFromUCallBack(ucnvPtr, UCNV_FROM_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
+        if (U_FAILURE(status)) {
+            /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
+            ucnv_close(ucnvPtr);
+            return IcuError(interp, "Could not set conversion callback.", status);
+        }
+    }
+
+    UCharx *utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
+    Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
+    Tcl_Size dstLen, dstCapacity;
+    if (utf16len > INT_MAX) {
+	Tcl_SetResult(
+	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    dstCapacity = utf16len;
+    Tcl_DStringInit(dsOutPtr);
+    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
+    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstCapacity,
+                             utf16, utf16len, &status);
+    if (U_FAILURE(status)) {
+        switch (status) {
+        case U_STRING_NOT_TERMINATED_WARNING:
+            break; /* We don't care */
+        case U_BUFFER_OVERFLOW_ERROR:
+            Tcl_DStringSetLength(dsOutPtr, dstLen);
+            status = U_ZERO_ERRORZ; /* Reset before call */
+            dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
+                                     utf16, utf16len, &status);
+            if (U_SUCCESS(status)) {
+                break;
+            }
+            /* FALLTHRU */
+        default:
+            Tcl_DStringFree(dsOutPtr);
+            ucnv_close(ucnvPtr);
+            return IcuError(interp, "ICU error while encoding", status);
+        }
+    }
+    Tcl_DStringSetLength(dsOutPtr, dstLen);
+    ucnv_close(ucnvPtr);
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuBytesToUCharDString --
+ *
+ *    Converts encoded bytes to ICU UChars in a Tcl_DString
+ *
+ * Results:
+ *    TCL_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success, encoded string is stored in output dsOutPtr
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuBytesToUCharDString(
+    Tcl_Interp *interp,
+    const unsigned char *bytes,
+    Tcl_Size nbytes,
+    const char *icuEncName,
+    int strict,
+    Tcl_DString *dsOutPtr) /* Output UChar string. */
+{
+    if (ucnv_open == NULL || ucnv_close == NULL ||
+        ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
+	return FunctionNotAvailableError(interp);
+    }
+
+    if (nbytes > INT_MAX) {
+	Tcl_SetResult(
+	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    UErrorCodex status = U_ZERO_ERRORZ;
+    UConverter *ucnvPtr = ucnv_open(icuEncName, &status);
+    if (ucnvPtr == NULL) {
+	return IcuError(interp, "Could not get encoding converter.", status);
+    }
+    if (strict) {
+        ucnv_setToUCallBack(ucnvPtr, UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
+        if (U_FAILURE(status)) {
+            /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
+            ucnv_close(ucnvPtr);
+            return IcuError(interp, "Could not set conversion callback.", status);
+        }
+    }
+
+    int dstLen;
+    int dstCapacity = (int) nbytes; /* In UChar's  */
+    Tcl_DStringInit(dsOutPtr);
+    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
+    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
+                           (const char *)bytes, nbytes, &status);
+    if (U_FAILURE(status)) {
+        switch (status) {
+        case U_STRING_NOT_TERMINATED_WARNING:
+            break; /* We don't care */
+        case U_BUFFER_OVERFLOW_ERROR:
+            dstCapacity = sizeof(UCharx) * dstLen;
+            Tcl_DStringSetLength(dsOutPtr, dstCapacity);
+            status = U_ZERO_ERRORZ; /* Reset before call */
+            dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
+                                   (const char *)bytes, nbytes, &status);
+            if (U_SUCCESS(status)) {
+                break;
+            }
+            /* FALLTHRU */
+        default:
+            Tcl_DStringFree(dsOutPtr);
+            ucnv_close(ucnvPtr);
+            return IcuError(interp, "ICU error while decoding", status);
+        }
+    }
+    Tcl_DStringSetLength(dsOutPtr, sizeof(UCharx)*dstLen);
+    ucnv_close(ucnvPtr);
+    return TCL_OK;
+}
+
+
+/*
+ *------------------------------------------------------------------------
+ *
  * IcuNormalizeUCharDString --
  *
  *    Normalizes the UTF-16 encoded data
@@ -690,7 +907,7 @@ IcuNormalizeUCharDString(
     Tcl_DString *dsOutPtr) /* Output normalized UTF16. */
 {
     typedef UNormalizer2 *(*normFn)(UErrorCodex *);
-    normFn fn;
+    normFn fn = NULL;
 
     switch (mode) {
     case MODE_NFC:
@@ -749,7 +966,7 @@ IcuNormalizeUCharDString(
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
-	    /* FALLTHRU on error */
+	    /* FALLTHRU */
 	default:
 	    Tcl_DStringFree(dsOutPtr);
 	    return IcuError(interp, "String normalization failed.", status);
@@ -757,6 +974,195 @@ IcuNormalizeUCharDString(
     }
 
     Tcl_DStringSetLength(dsOutPtr, normLen * sizeof(UCharx));
+    return TCL_OK;
+}
+
+/*
+ * Common function for parsing convert options.
+ */
+static int IcuParseConvertOptions(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[],
+    int *strictPtr,
+    Tcl_Obj **failindexVarPtr)
+{
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ICUENCNAME STRING");
+	return TCL_ERROR;
+    }
+
+    /* Use GetIndexFromObj for option parsing so -failindex can be added later */
+
+    static const char *optNames[] = {"-profile", "-failindex", NULL};
+    enum { OPT_PROFILE, OPT_FAILINDEX } opt;
+    int i;
+    int strict = 1;
+    for (i = 1; i < objc - 3; ++i) {
+	if (Tcl_GetIndexFromObj(
+		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++i;
+	if (i >= (objc-1)) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Missing value for option %s.",
+					   Tcl_GetString(objv[i - 1])));
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[i]);
+	switch (opt) {
+	case OPT_PROFILE:
+	    if (!strcmp(s, "replace")) {
+		strict = 0;
+	    } else if (strcmp(s, "strict")) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
+                         " \"-profile\". Must be \"strict\" or \"replace\".",
+                         s));
+		return TCL_ERROR;
+	    }
+	    break;
+        case OPT_FAILINDEX:
+            /* TBD */
+            Tcl_SetResult(interp,
+                "Option -failindex not implemented.", TCL_STATIC);
+            return TCL_ERROR;
+	}
+    }
+    *strictPtr = strict;
+    *failindexVarPtr = NULL;
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuConvertfromObjCmd --
+ *
+ *    Implements the Tcl command "icu convertfrom"
+ *        icu convertfrom ?-profile replace|strict? encoding string
+ *
+ * Results:
+ *    TCL_OK    - Success.
+ *    TCL_ERROR - Error.
+ *
+ * Side effects:
+ *    Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuConvertfromObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    int strict;
+    Tcl_Obj *failindexVar;
+
+    if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    Tcl_Size nbytes;
+    const unsigned char *bytes = Tcl_GetBytesFromObj(interp, objv[objc-1], &nbytes);
+    if (bytes == NULL) {
+        return TCL_ERROR;
+    }
+
+    Tcl_DString ds;
+    if (IcuBytesToUCharDString(interp, bytes, nbytes,
+            Tcl_GetString(objv[objc-2]), strict, &ds) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    Tcl_Obj *resultObj = IcuObjFromUCharDString(interp, &ds, strict);
+    if (resultObj) {
+        Tcl_SetObjResult(interp, resultObj);
+        return TCL_OK;
+    } else {
+        return TCL_ERROR;
+    }
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * IcuConverttoObjCmd --
+ *
+ *    Implements the Tcl command "icu convertto"
+ *        icu convertto ?-profile replace|strict? encoding string
+ *
+ * Results:
+ *    TCL_OK    - Success.
+ *    TCL_ERROR - Error.
+ *
+ * Side effects:
+ *    Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+IcuConverttoObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ICUENCNAME STRING");
+	return TCL_ERROR;
+    }
+
+    /* Use GetIndexFromObj for option parsing so -failindex can be added later */
+
+    static const char *optNames[] = {"-profile", "-failindex", NULL};
+    enum { OPT_PROFILE, OPT_FAILINDEX } opt;
+    int i;
+    int strict = 1;
+    for (i = 1; i < objc - 3; ++i) {
+	if (Tcl_GetIndexFromObj(
+		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++i;
+	if (i >= (objc-1)) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Missing value for option %s.",
+					   Tcl_GetString(objv[i - 1])));
+	    return TCL_ERROR;
+	}
+	const char *s = Tcl_GetString(objv[i]);
+	switch (opt) {
+	case OPT_PROFILE:
+	    if (!strcmp(s, "replace")) {
+		strict = 0;
+	    } else if (strcmp(s, "strict")) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
+                         " \"-profile\". Must be \"strict\" or \"replace\".",
+                         s));
+		return TCL_ERROR;
+	    }
+	    break;
+        case OPT_FAILINDEX:
+            /* TBD */
+            Tcl_SetResult(interp,
+                "Option -failindex not implemented.", TCL_STATIC);
+            return TCL_ERROR;
+	}
+    }
+
+    Tcl_DString dsIn;
+    Tcl_DString dsOut;
+    if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
+        IcuConverttoDString(interp, &dsIn, Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_DStringResult(interp, &dsOut);
     return TCL_OK;
 }
 
@@ -1074,10 +1480,18 @@ TclIcuInit(
 	    ICUUC_SYM(u_strToUTF32);
 	    ICUUC_SYM(u_strToUTF32WithSub);
 
+	    ICUUC_SYM(ucnv_close);
 	    ICUUC_SYM(ucnv_countAliases);
 	    ICUUC_SYM(ucnv_countAvailable);
+	    ICUUC_SYM(ucnv_fromUChars);
 	    ICUUC_SYM(ucnv_getAlias);
 	    ICUUC_SYM(ucnv_getAvailableName);
+	    ICUUC_SYM(ucnv_open);
+            ICUUC_SYM(ucnv_setFromUCallBack);
+            ICUUC_SYM(ucnv_setToUCallBack);
+	    ICUUC_SYM(ucnv_toUChars);
+            ICUUC_SYM(UCNV_FROM_U_CALLBACK_STOP);
+            ICUUC_SYM(UCNV_TO_U_CALLBACK_STOP);
 
 	    ICUUC_SYM(ubrk_open);
 	    ICUUC_SYM(ubrk_close);
@@ -1126,10 +1540,15 @@ TclIcuInit(
 	    /* Commands needing both libraries */
 
 	    /* Ref count number of commands */
-	    icu_fns.nopen += 1;
+	    icu_fns.nopen += 3;
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
+                                 IcuConverttoObjCmd, 0, TclIcuCleanup);
+	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
+                                 IcuConvertfromObjCmd, 0, TclIcuCleanup);
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
+
 	/* Commands needing only libs[0] (icuuc) */
 
 	/* Ref count number of commands */
