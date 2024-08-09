@@ -3983,6 +3983,15 @@ EscapeFromUtfProc(
 	    break;
 	}
 	len = TclUtfToUniChar(src, &ch);
+	if (ch > 0xFFFF) {
+	    /* Bug 201c7a3aa6 crash - tables are 256x256 (64K) */
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
+	    /* Will be encoded as encoding specific replacement below */
+	    ch = UNICODE_REPLACE_CHAR;
+	}
 	word = tableFromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
