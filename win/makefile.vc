@@ -52,12 +52,12 @@
 # 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,time64bit,unchecked,none
+#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,time64bit,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-# 		noembed   = Without this option, the Tcl core library scripts
+#		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
 #			    "noembed" is specified, the scripts are not embedded
@@ -456,8 +456,8 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj \
-	$(TMP_DIR)\tclWinPanic.obj
+	$(TMP_DIR)\tclWinPanic.obj \
+	$(TMP_DIR)\tclOOStubLib.obj
 
 ### The following paths CANNOT have spaces in them as they appear on
 ### the left side of implicit rules.
@@ -703,6 +703,14 @@ clean-pkgs:
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
 	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    popd \
+	  )
+
+hose-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) hose &\
 	    popd \
 	  )
 
@@ -1183,7 +1191,7 @@ tidy:
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
-hose: default-hose
+hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
 
