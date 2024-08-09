@@ -725,14 +725,20 @@ TclOO_Object_LinkVar(
  *
  *	Look up a variable in an object. Tricky because of private variables.
  *
+ * Returns:
+ *	Handle to the variable if it can be found, or NULL if there's an error.
+ *
  * ----------------------------------------------------------------------
  */
 Tcl_Var
 TclOOLookupObjectVar(
     Tcl_Interp *interp,
-    Tcl_Object object,
-    Tcl_Obj *varName,
-    Tcl_Var *aryPtr)
+    Tcl_Object object,		/* Object we're looking up within. */
+    Tcl_Obj *varName,		/* User-visible name we're looking up. */
+    Tcl_Var *aryPtr)		/* Where to write the handle to the array
+				 * containing the element; if not an element,
+				 * then the variable this points to is set to
+				 * NULL. */
 {
     const char *arg = TclGetString(varName);
     Tcl_Obj *varNamePtr;
@@ -815,7 +821,15 @@ TclOOLookupObjectVar(
     Tcl_DecrRefCount(varNamePtr);
     if (var == NULL) {
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *) NULL);
+    } else if (*aryPtr == NULL && TclIsVarArrayElement((Var *) var)) {
+	/*
+	 * If the varPtr points to an element of an array but we don't already
+	 * have the array, find it now. Note that this can't be easily
+	 * backported; the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
+	 */
+	*aryPtr = (Tcl_Var) TclVarParentArray(var);
     }
+
     return var;
 }
 
@@ -858,16 +872,6 @@ TclOO_Object_VarName(
      */
     if (!TclIsVarArrayElement((Var *) varPtr)) {
 	TclSetVarNamespaceVar((Var *) varPtr);
-    }
-
-    /*
-     * If the varPtr points to an element of an array but we don't already
-     * have the array, find it now. Note that this can't be easily backported;
-     * the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
-     */
-
-    if (aryVar == NULL && TclIsVarArrayElement((Var *) varPtr)) {
-	aryVar = (Tcl_Var) TclVarParentArray(varPtr);
     }
 
     /*

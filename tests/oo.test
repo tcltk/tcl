@@ -3127,6 +3127,7 @@ test oo-19.5 {OO: varname array elements [Bug 2da1cb0c80]} -setup {
 } -cleanup {
     $obj destroy
 } -result ::tcl_platform(platform)
+# Test oo-19.5.1 is no longer relevant
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
