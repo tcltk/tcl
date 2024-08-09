@@ -20,10 +20,10 @@
 # or examine Sections 7-9 in rules.vc.
 #
 # Possible values for TARGET are:
-#	release  -- Builds the core, the shell and the dlls. (default)
+#	release  -- Builds everything that ships with a release. (default)
+#	core     -- Builds the core [tclXX.(dll|lib)]
+#	shell    -- Builds tclsh and the core.
 #	dlls     -- Just builds the windows extensions.
-#	shell    -- Just builds the shell and the core.
-#	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
@@ -440,13 +440,37 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 
 #---------------------------------------------------------------------
 # Project specific targets
+# There are 4 primary build configurations to consider from the combination
+# of static/shared and embed/noembed of the library zip. The targets are
+# done in the following order.
+# $(TCLLIB) - this is either the core static .lib or the .dll. The target
+#             build does not embed the library zip in the DLL irrespective
+#             of the noembed setting. A copy is made as $(TCLLIBRAW)
+#             as the $(TCLLIB) binary is potentially modified later.
+# dlls      - these are the registry and dde DLL's or static libraries
+# $(TCLSH)  - the Tcl shell. This needs $(TCLLIB) to be built first as
+#             it links against it.
+# $(TCLSCRIPTZIP) - the zip file that is to be embedded. Note this also
+#             ships separately and needs to be built irrespective of the
+#             whether it is embedded or not. All above targets need to
+#             be built prior as they are used to build the zip (unlike
+#             Unix where the external zip program is used.)
+# core      - this virtual target builds the final release ready Tcl
+#             library. For shared, embedded builds it appends $(TCLSCRIPTZIP)
+#             to the $(TCLLIB). For other build configurations, this
+#             is a no-op.
+# shell     - this virtual target builds the final release ready tclsh shell.
+#             For static, embedded builds it appends $(TCLSCRIPTZIP)
+#             to the $(TCLSH). For other build configurations, this
+#             is a no-op.
+# release   - Everything that builds as part of a release
 #---------------------------------------------------------------------
 
 release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 install:    install-binaries install-libraries install-docs install-pkgs
 !if $(SYMBOLS)
@@ -566,6 +590,14 @@ clean-pkgs:
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
 	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    popd \
+	  )
+
+hose-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) hose &\
 	    popd \
 	  )
 
@@ -1035,7 +1067,7 @@ tidy:
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
-hose: default-hose
+hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
 
