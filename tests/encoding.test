@@ -1176,7 +1176,17 @@ test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     encoding convertfrom -profile replace jis0208 \x78\x79
 } -result \uFFFD\uFFFD
 
+test encoding-bug-201c7a3aa6-strict {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile strict iso2022 \U1f600
+} -result {unexpected character at index 0: 'U+01F600'} -returnCodes error
 
+test encoding-bug-201c7a3aa6-replace {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile replace iso2022 \U1f600
+} -result ?
+
+test encoding-bug-201c7a3aa6-tcl8 {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile tcl8 iso2022 \U1f600
+} -result ?
 
 # cleanup
 namespace delete ::tcl::test::encoding

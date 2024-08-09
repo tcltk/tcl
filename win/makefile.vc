@@ -301,6 +301,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclOODefineCmds.obj \
 	$(TMP_DIR)\tclOOInfo.obj \
 	$(TMP_DIR)\tclOOMethod.obj \
+	$(TMP_DIR)\tclOOProp.obj \
 	$(TMP_DIR)\tclOOStubInit.obj \
 	$(TMP_DIR)\tclObj.obj \
 	$(TMP_DIR)\tclOptimize.obj \
@@ -704,6 +705,14 @@ clean-pkgs:
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
 	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    popd \
+	  )
+
+hose-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) hose &\
 	    popd \
 	  )
 
@@ -1187,7 +1196,7 @@ tidy:
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
-hose: default-hose
+hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
 
