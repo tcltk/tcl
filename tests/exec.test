@@ -377,7 +377,7 @@ test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
 } -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
-    exec | cat
+    exec |& cat
 } -returnCodes error -result {illegal use of | or |& in command}
 test exec-10.3 {errors in exec invocation} -constraints {exec} -body {
     exec cat |
@@ -740,6 +740,12 @@ test exec-21.2 {exec encoding mismatch on stderr} -setup {
 } -body {
     list [catch {exec [info nameofexecutable] $path(script)} r] $r
 } -result [list 1 a\uFFFDb]
+
+
+# New Syntax
+test exec-20.1 {New exec syntax with sublists} {exec} {
+    exec | {echo >}
+} >
 
 
 # ----------------------------------------------------------------------

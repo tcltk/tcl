@@ -466,6 +466,9 @@ TclCreatePipeline(
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
     Tcl_Channel channel;
+    int newSyntax = 0;
+    Tcl_Size subArgc;
+    const char **subArgv = NULL;
 
     if (inPipePtr != NULL) {
 	*inPipePtr = NULL;
@@ -501,11 +504,20 @@ TclCreatePipeline(
     cmdCount = 1;
     needCmd = 1;
     for (i = 0; i < argc; i++) {
+	if (newSyntax && needCmd) {
+	    needCmd = 0;
+	    continue;
+	}
 	errorToOutput = 0;
 	skip = 0;
 	p = argv[i];
 	switch (*p++) {
 	case '|':
+	    if ((i == 0) && (*p == '\0')) {
+		newSyntax = 1;
+		lastBar = 0;
+		continue;
+	    }
 	    if (*p == '&') {
 		p++;
 	    }
@@ -677,11 +689,23 @@ TclCreatePipeline(
 	    break;
 
 	default:
-	    /*
-	     * Got a command word, not a redirection.
-	     */
 
-	    needCmd = 0;
+	    if (newSyntax) {
+		Tcl_SetObjResult(interp,
+				 Tcl_ObjPrintf(
+					       "Unsupported redirection \"%s\"",
+					       argv[i]));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
+				 "PIPESYNTAX", NULL);
+		goto error;
+	    } else {
+
+		/*
+		 * Got a command word, not a redirection.
+		 */
+		
+		needCmd = 0;
+	    }
 	    break;
 	}
 
@@ -829,17 +853,32 @@ TclCreatePipeline(
 
     curInFile = inputFile;
 
+    lastArg = argc; /* compiler warning */
+
     for (i = 0; i < argc; i = lastArg + 1) {
 	int result, joinThisError;
 	Tcl_Pid pid;
 	const char *oldName;
 
-	/*
-	 * Convert the program name into native form.
-	 */
-
-	if (Tcl_TranslateFileName(interp, argv[i], &execBuffer) == NULL) {
-	    goto error;
+	if (newSyntax) {
+	    if (i == 0) {
+		lastArg = i;
+		continue;
+	    }
+	    if (Tcl_SplitList(interp, argv[i], &subArgc, &subArgv) != TCL_OK) {
+		goto error;
+	    }
+	    if (Tcl_TranslateFileName(interp, subArgv[0], &execBuffer) == NULL) {
+		goto error;
+	    }
+	} else {
+	    /*
+	     * Convert the program name into native form.
+	     */
+	    
+	    if (Tcl_TranslateFileName(interp, argv[i], &execBuffer) == NULL) {
+		goto error;
+	    }
 	}
 
 	/*
@@ -883,16 +922,24 @@ TclCreatePipeline(
 	    curErrFile = errorFile;
 	}
 
-	/*
-	 * Restore argv[i], since a caller wouldn't expect the contents of
-	 * argv to be modified.
-	 */
-
-	oldName = argv[i];
-	argv[i] = Tcl_DStringValue(&execBuffer);
-	result = TclpCreateProcess(interp, lastArg - i, argv + i,
-		curInFile, curOutFile, curErrFile, &pid);
-	argv[i] = oldName;
+	if (newSyntax) {
+	    subArgv[0] = Tcl_DStringValue(&execBuffer);
+	    result = TclpCreateProcess(interp, subArgc, subArgv,
+				       curInFile, curOutFile, curErrFile, &pid);
+	    Tcl_Free(subArgv);
+	    subArgv = NULL;
+	} else {
+	    /*
+	     * Restore argv[i], since a caller wouldn't expect the contents of
+	     * argv to be modified.
+	     */
+	    
+	    oldName = argv[i];
+	    argv[i] = Tcl_DStringValue(&execBuffer);
+	    result = TclpCreateProcess(interp, lastArg - i, argv + i,
+				       curInFile, curOutFile, curErrFile, &pid);
+	    argv[i] = oldName;
+	}
 	if (result != TCL_OK) {
 	    goto error;
 	}
@@ -980,6 +1027,10 @@ TclCreatePipeline(
 	    }
 	}
 	Tcl_Free(pidPtr);
+    }
+    if (subArgv != NULL) {
+	Tcl_Free(subArgv);
+	subArgv = NULL;
     }
     numPids = -1;
     goto cleanup;
