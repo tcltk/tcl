@@ -1299,7 +1299,7 @@ typedef struct ActiveInterpTrace {
 
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
-
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -4987,9 +4987,9 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
-	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==(void *)&tclDictType))
 #define TclHasInternalRep(objPtr, type) \
-	((objPtr)->typePtr == (type))
+	((objPtr)->typePtr == ((void *)type))
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 

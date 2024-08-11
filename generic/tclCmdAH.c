@@ -2974,12 +2974,12 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i, status;
+    int i;
     Tcl_Size v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	TCL_UNUSEDVAR(int status);
+	int status;
 	int hasindexinterface = TclObjectHasInterface(
 	    statePtr->aCopyList[i], list, index);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {

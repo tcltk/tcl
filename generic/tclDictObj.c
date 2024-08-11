@@ -3859,7 +3859,7 @@ TclInitDictCmd(
 
 static int
 DictAsListLength(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr,
     Tcl_Size *lenPtr)
 {
