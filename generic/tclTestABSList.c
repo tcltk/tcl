@@ -1241,15 +1241,18 @@ ObjInterface lgenInterface = {
 };
 
 
-static Tcl_ObjType lgenType = {
+static const ObjectType lgenObjectType = {
     "lgenseries",
     FreeLgenInternalRep,
     DupLgenSeriesRep,
     UpdateStringOfLgen,
     NULL, /* SetFromAnyProc */
     0,
-    &lgenInterface
+    (Tcl_ObjInterface *)&lgenInterface
 };
+
+
+static Tcl_ObjType *lgenTypePtr = (Tcl_ObjType *)&lgenObjectType;
 
 /*
  *  ObjType Duplicate Internal Rep Function
@@ -1268,7 +1271,7 @@ DupLgenSeriesRep(
     copyLgenSeries->len = srcLgenSeries->len;
     copyLgenSeries->genFnObj = Tcl_DuplicateObj(srcLgenSeries->genFnObj);
     Tcl_IncrRefCount(copyLgenSeries->genFnObj);
-    copyPtr->typePtr = &lgenType;
+    copyPtr->typePtr = lgenTypePtr;
     copyPtr->internalRep.twoPtrValue.ptr1 = copyLgenSeries;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     return;
@@ -1314,7 +1317,7 @@ newLgenObj(
     Tcl_IncrRefCount(lGenSeriesRepPtr->genFnObj);
     lGenSeriesObj->internalRep.twoPtrValue.ptr1 = lGenSeriesRepPtr;
     lGenSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    lGenSeriesObj->typePtr = &lgenType;
+    lGenSeriesObj->typePtr = lgenTypePtr;
 
     if (length > 0) {
 	Tcl_InvalidateStringRep(lGenSeriesObj);
