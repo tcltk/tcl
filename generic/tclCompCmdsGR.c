@@ -510,10 +510,12 @@ TclCompileIncrCmd(
 	    if ( (code == TCL_OK)
 	      && (-127 <= immValue) && (immValue <= 127)
 	      /* avoid overflow during string to int conversion (wide 0xFFFFFFFF to signed int -1): */
+#ifndef TCL_WIDE_INT_IS_LONG
 	      && ( (immValue >= 0)
 	        || (intObj->typePtr != &tclWideIntType)
 	        || ((-127 <= intObj->internalRep.wideValue) && (intObj->internalRep.wideValue <= 127))
 	      )
+#endif
 	    ) {
 		haveImmValue = 1;
 	    }
