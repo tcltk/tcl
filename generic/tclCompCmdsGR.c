@@ -507,10 +507,17 @@ TclCompileIncrCmd(
 
 	    Tcl_IncrRefCount(intObj);
 	    code = TclGetIntFromObj(NULL, intObj, &immValue);
-	    TclDecrRefCount(intObj);
-	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
+	    if ( (code == TCL_OK)
+	      && (-127 <= immValue) && (immValue <= 127)
+	      /* avoid overflow during string to int conversion (wide 0xFFFFFFFF to signed int -1): */
+	      && ( (immValue >= 0)
+	        || (intObj->typePtr != &tclWideIntType)
+	        || ((-127 <= intObj->internalRep.wideValue) && (intObj->internalRep.wideValue <= 127))
+	      )
+	    ) {
 		haveImmValue = 1;
 	    }
+	    TclDecrRefCount(intObj);
 	    if (!haveImmValue) {
 		PushLiteral(envPtr, word, numBytes);
 	    }
