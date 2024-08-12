@@ -4240,6 +4240,8 @@ ScriptLibrarySetup(
     Tcl_IncrRefCount(searchPathObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
+    /* Bug [fccb9f322f]. Reinit system encoding after setting search path */
+    TclpSetInitialEncodings();
     return libDirObj;
 }
 
