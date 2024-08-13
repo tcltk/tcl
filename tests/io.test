@@ -6368,6 +6368,114 @@ test io-44.7 {refchan + coroutine yield error } -setup {
     set ::io-44.7-result
 } -result success
 
+
+test io-44.8 {write-only refchan should not hang} -setup {
+    catch {namespace delete rc}
+    namespace eval rc {
+	namespace export *
+	namespace ensemble create
+
+	proc buffer chan {
+	    namespace upvar chan_$chan buffer buffer
+	    return $buffer
+	}
+
+	proc initialize {chan mode} {
+	    namespace eval chan_$chan {
+		variable buffer {}
+		variable watch {}
+		variable writetask {}
+	    }
+	    return {initialize finalize watch write}
+	}
+
+
+	proc finalize chan {
+	    namespace upvar chan_$chan writetask writetask
+	    after cancel $writetask
+	    set writetask {}
+	    namespace delete chan_$chan
+	}
+
+
+	proc watch {chan spec} {
+	    set channs [namespace current]::chan_$chan
+	    namespace upvar $channs watch watch writetask writetask
+	    set watch $spec
+	    after cancel $writetask
+	    if {{write} in $spec} {
+		set writetask [after 0 [list after idle [
+		    list ::apply {{channs chan} {
+			if {[namespace exists $channs]} {
+			    chan postevent $chan write
+			}
+		    }} $channs $chan]]]
+	    } else {
+		set writetask {}
+	    }
+	    return
+	}
+
+
+	proc write {chan data} {
+	    set channs [namespace current]::chan_$chan
+	    namespace upvar $channs buffer buffer watch watch \
+		writetask writetask
+	    append buffer $data
+	    after cancel writetask
+	    if {{write} in $watch} {
+		set writetask [after 0 [list after idle [
+		    list ::apply {{channs chan} {
+			if {[namespace exists $channs]} {
+			    chan postevent $chan write
+			}
+		}} $channs $chan]]]
+	    } else {
+		set writetask {}
+	    }
+	    return [string length $data]
+	}
+
+
+	proc post {chan side} {
+	    set ns chan_$chan
+	    if [namespace exists $ns] {
+		chan postevent $chan $side
+	    }
+	    return
+	}
+    }
+} -cleanup {
+    namespace delete rc
+} -body {
+    variable done
+    set chan [chan create write [namespace which rc]]
+    try {
+	chan configure $chan -blocking 0
+	coroutine c1 apply [list chan {
+	    variable done
+	    after 0 [list [info coroutine]] 
+	    set written 0
+	    yield
+	    chan event $chan writable [list [info coroutine]]
+	    # Perform enough to exercise more than one buffer.
+	    while {[incr i] < 500000}  {
+		yield
+		puts $chan $i
+		set written [expr {$written + [string length $i] + 1}]
+	    }
+	    chan configure $chan -blocking 1
+	    flush $chan
+	    set buffersize [string length [rc buffer $chan]]
+	    set done [list $written $buffersize]
+	} [namespace current]] $chan
+	vwait [namespace current]::done
+    } finally {
+	close $chan
+    }
+    return $done
+} -result {3388888 3388888}
+
 makeFile "foo bar" foo
 
 test io-45.1 {DeleteFileEvent, cleanup on close} {fileevent} {
