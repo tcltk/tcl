@@ -287,10 +287,10 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of ${TCL_BIN_DIR}/tclConfig.sh])
 
     if test -f "${TCL_BIN_DIR}/tclConfig.sh" ; then
-        AC_MSG_RESULT([loading])
+	AC_MSG_RESULT([loading])
 	. "${TCL_BIN_DIR}/tclConfig.sh"
     else
-        AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
+	AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
 
     # If the TCL_BIN_DIR is the build directory (not the install directory),
@@ -300,9 +300,9 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     # instead of TCL_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
     if test -f "${TCL_BIN_DIR}/Makefile" ; then
-        TCL_LIB_SPEC="${TCL_BUILD_LIB_SPEC}"
-        TCL_STUB_LIB_SPEC="${TCL_BUILD_STUB_LIB_SPEC}"
-        TCL_STUB_LIB_PATH="${TCL_BUILD_STUB_LIB_PATH}"
+	TCL_LIB_SPEC="${TCL_BUILD_LIB_SPEC}"
+	TCL_STUB_LIB_SPEC="${TCL_BUILD_STUB_LIB_SPEC}"
+	TCL_STUB_LIB_PATH="${TCL_BUILD_STUB_LIB_PATH}"
     elif test "`uname -s`" = "Darwin"; then
 	# If Tcl was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
@@ -360,10 +360,10 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of ${TK_BIN_DIR}/tkConfig.sh])
 
     if test -f "${TK_BIN_DIR}/tkConfig.sh" ; then
-        AC_MSG_RESULT([loading])
+	AC_MSG_RESULT([loading])
 	. "${TK_BIN_DIR}/tkConfig.sh"
     else
-        AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
+	AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
 
     # If the TK_BIN_DIR is the build directory (not the install directory),
@@ -373,9 +373,9 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
     # instead of TK_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
     if test -f "${TK_BIN_DIR}/Makefile" ; then
-        TK_LIB_SPEC="${TK_BUILD_LIB_SPEC}"
-        TK_STUB_LIB_SPEC="${TK_BUILD_STUB_LIB_SPEC}"
-        TK_STUB_LIB_PATH="${TK_BUILD_STUB_LIB_PATH}"
+	TK_LIB_SPEC="${TK_BUILD_LIB_SPEC}"
+	TK_STUB_LIB_SPEC="${TK_BUILD_STUB_LIB_SPEC}"
+	TK_STUB_LIB_PATH="${TK_BUILD_STUB_LIB_PATH}"
     elif test "`uname -s`" = "Darwin"; then
 	# If Tk was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
@@ -1096,7 +1096,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			;;
 		    *)
 			# Make sure only first arg gets _r
-		    	CC=`echo "$CC" | sed -e 's/^\([[^ ]]*\)/\1_r/'`
+			CC=`echo "$CC" | sed -e 's/^\([[^ ]]*\)/\1_r/'`
 			;;
 		esac
 		AC_MSG_RESULT([Using $CC for compiling with threads])
@@ -1358,14 +1358,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # Check to enable 64-bit flags for compiler/linker
 
 	    AS_IF([test "$do64bit" = yes], [
-	        AS_IF([test "$GCC" = yes], [
-	            AC_MSG_WARN([64bit mode not supported by gcc])
-	        ], [
-	            do64bit_ok=yes
-	            SHLIB_LD="ld -64 -shared -rdata_shared"
-	            CFLAGS="$CFLAGS -64"
-	            LDFLAGS_ARCH="-64"
-	        ])
+		AS_IF([test "$GCC" = yes], [
+		    AC_MSG_WARN([64bit mode not supported by gcc])
+		], [
+		    do64bit_ok=yes
+		    SHLIB_LD="ld -64 -shared -rdata_shared"
+		    CFLAGS="$CFLAGS -64"
+		    LDFLAGS_ARCH="-64"
+		])
 	    ])
 	    ;;
 	Linux*|GNU*|NetBSD-Debian|DragonFly-*|FreeBSD-*)
@@ -1391,7 +1391,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
 	    ;;
-            esac
+	    esac
 
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'])
@@ -1620,7 +1620,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    AS_IF([test "$fat_32_64" = yes], [
 			for v in CFLAGS CPPFLAGS LDFLAGS; do
 			    eval $v'="$hold_'$v'"'
-		        done])
+			done])
 		    LIBS=$hold_libs])
 		AS_IF([test $tcl_cv_lib_corefoundation = yes], [
 		    LIBS="$LIBS -framework CoreFoundation"
@@ -1643,7 +1643,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    AS_IF([test $tcl_cv_lib_corefoundation_64 = no], [
 			AC_DEFINE(NO_COREFOUNDATION_64, 1,
 			    [Is Darwin CoreFoundation unavailable for 64-bit?])
-                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
+			LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
 		    ])
 		])
 	    ])
@@ -1680,7 +1680,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # OSF/1 1.3 from OSF using ELF, and derivatives, including AD2
 	    SHLIB_CFLAGS="-fPIC"
 	    AS_IF([test "$SHARED_BUILD" = 1], [SHLIB_LD="ld -shared"], [
-	        SHLIB_LD="ld -non_shared"
+		SHLIB_LD="ld -non_shared"
 	    ])
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
@@ -1693,9 +1693,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # Digital OSF/1
 	    SHLIB_CFLAGS=""
 	    AS_IF([test "$SHARED_BUILD" = 1], [
-	        SHLIB_LD='${CC} -shared'
+		SHLIB_LD='${CC} -shared'
 	    ], [
-	        SHLIB_LD='${CC} -non_shared'
+		SHLIB_LD='${CC} -non_shared'
 	    ])
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1924,7 +1924,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		hold_ldflags=$LDFLAGS
 		LDFLAGS="$LDFLAGS -Wl,-Bexport"
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_Bexport=yes],[tcl_cv_ld_Bexport=no])
-	        LDFLAGS=$hold_ldflags])
+		LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_Bexport = yes], [
 		LDFLAGS="$LDFLAGS -Wl,-Bexport"
 	    ])
@@ -1999,30 +1999,30 @@ dnl # preprocessing tests use only CPPFLAGS.
     DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
-        LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
-        AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
-            DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
-        ], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
-        ])
+	LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+	MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+	AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+	    DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
+	], [
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	])
     ], [
-        LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
+	LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
-        AS_IF([test "$RANLIB" = ""], [
-            MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-        ], [
-            MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-        ])
-        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	AS_IF([test "$RANLIB" = ""], [
+	    MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
+	], [
+	    MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
+	])
+	INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
     ])
 
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
-        MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
+	MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
     ], [
-        MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
+	MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
     ])
     INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
 
@@ -2030,7 +2030,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     # The trick here is that we don't want to change the value of TCL_LIBS if
     # it is already set when tclConfig.sh had been loaded by Tk.
     AS_IF([test "x${TCL_LIBS}" = x], [
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
+	TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
 
     # See if the compiler supports casting to a union type.
@@ -2530,9 +2530,9 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	# See if we should use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[switch (0) {
-            case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
-        }]])],[tcl_cv_type_64bit=${tcl_type_64bit}],[])])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[switch (0) {
+	    case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
+	}]])],[tcl_cv_type_64bit=${tcl_type_64bit}],[])])
     if test "${tcl_cv_type_64bit}" = none ; then
 	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Are wide integers to be implemented with C 'long's?])
 	AC_MSG_RESULT([using long])
@@ -2553,7 +2553,7 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	AC_CACHE_CHECK([for DIR64], tcl_cv_DIR64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <dirent.h>]], [[struct dirent64 *p; DIR64 d = opendir64(".");
-            p = readdir64(d); rewinddir64(d); closedir64(d);]])],
+	    p = readdir64(d); rewinddir64(d); closedir64(d);]])],
 		[tcl_cv_DIR64=yes], [tcl_cv_DIR64=no])])
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
@@ -2576,8 +2576,8 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
 	dnl functions lseek64 and open64 are defined.
 	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-	        test "x${ac_cv_func_lseek64}" = "xyes" && \
-	        test "x${ac_cv_func_open64}" = "xyes" ; then
+		test "x${ac_cv_func_lseek64}" = "xyes" && \
+		test "x${ac_cv_func_open64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
 	    AC_MSG_RESULT([yes])
 	else
@@ -3079,7 +3079,7 @@ AC_DEFUN([SC_TCL_IPV6],[
 ]])
 if test "x$NEED_FAKE_RFC2553" = "x1"; then
    AC_DEFINE([NEED_FAKE_RFC2553], 1,
-        [Use compat implementation of getaddrinfo() and friends])
+	[Use compat implementation of getaddrinfo() and friends])
    AC_LIBOBJ([fake-rfc2553])
    AC_CHECK_FUNC(strlcpy)
 fi
