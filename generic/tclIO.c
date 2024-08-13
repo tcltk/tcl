@@ -8760,6 +8760,25 @@ UpdateInterest(
 	    }
 	}
     }
+
+    if (!statePtr->timer
+	    && mask & TCL_WRITABLE
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && (
+		statePtr->curOutPtr
+		&&
+		!IsBufferEmpty(statePtr->curOutPtr)
+		&&
+		!IsBufferFull(statePtr->curOutPtr)
+	   )
+    ) {
+	TclChannelPreserve((Tcl_Channel)chanPtr);
+	statePtr->timerChanPtr = chanPtr;
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+		ChannelTimerProc,chanPtr);
+    }
+
+
     ChanWatch(chanPtr, mask);
 }
 
@@ -8787,6 +8806,7 @@ ChannelTimerProc(
     Channel *chanPtr = (Channel *)clientData;
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
+    int notified = 0;
 
     if (chanPtr->typePtr == NULL) {
 	statePtr->timer = NULL;
@@ -8803,12 +8823,28 @@ ChannelTimerProc(
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		ChannelTimerProc,chanPtr);
-	    Tcl_Preserve(statePtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-	    Tcl_Release(statePtr);
-	} else {
+	    notified = 1;
+	} 
+
+	if (chanPtr->typePtr != NULL
+	    && statePtr->interestMask & TCL_WRITABLE
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && !GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	    /*
+	     * Restart the timer in case a channel handler reenters the event loop
+	     * before UpdateInterest gets called by Tcl_NotifyChannel.
+	     */
+	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+		ChannelTimerProc,chanPtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
+	    notified = 1;
+	}
+
+	if (!notified) {
 	    statePtr->timer = NULL;
 	    UpdateInterest(chanPtr);
+	    /* Was set in UpdateInterest. */
 	    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
 	    statePtr->timerChanPtr = NULL;
 	}
