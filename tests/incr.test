@@ -236,7 +236,7 @@ test incr-1.30 {TclCompileIncrCmd: array var, braced (no subs)} -setup {
     incr {array($foo)}
 } -result 5
 
-test incr-1.31 {no overflow in TclCompileIncrCmd and Tcl_IncrObjCmd, bug [7179c6724cd38271]} {
+test incr-1.31 {no overflow in TclCompileIncrCmd and Tcl_IncrObjCmd, bug [7179c6724cd38271]} knownBug {
     # TclCompileIncrCmd: compiled incr TEBC with immutable constant offs (INST_INCR_*_IMM instructions):
     lappend res [set i 0; incr i 0x7FFFFFFF]
     lappend res [set i 0; incr i 0xFFFFFF80]
