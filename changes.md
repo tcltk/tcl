@@ -4,7 +4,7 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.0b3 arises from the check-in with tag core-9-0-b3.
+Release Tcl 9.0b4 arises from the check-in with tag core-9-0-b4.
 
 Highlighted differences between Tcl 9.0 and Tcl 8.6 are summarized below,
 with focus on changes important to programmers using the Tcl library and
