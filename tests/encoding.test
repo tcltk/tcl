@@ -466,6 +466,9 @@ test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
 test encoding-15.31 {UtfToUtfProc -profile strict CESU-8 (bytes F0-F4 are invalid)} -body {
     encoding convertfrom -profile strict cesu-8 \xF1\x86\x83\x9C
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
+test encoding-15.32 {UtfToUtfProc CESU-8 [2f22a7364d]} -body {
+    encoding convertto cesu-8 \U1f600
+} -result \xED\xA0\xBD\xED\xB8\x80
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
