@@ -39,74 +39,70 @@ static void		FreeTestIndexHexInternalRep(Tcl_Obj *objPtr);
 static int		SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfTestIndexHex(Tcl_Obj *listPtr);
 
-static int indexHexListStringIndex (tclObjTypeInterfaceArgsStringIndex);
-static int indexHexListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd);
-static Tcl_Size indexHexListStringLength(tclObjTypeInterfaceArgsStringLength);
+static Tcl_ObjInterfaceStringIndexProc indexHexListStringIndex;
+static Tcl_ObjInterfaceStringIndexEndProc indexHexListStringIndexEnd;
+static Tcl_ObjInterfaceStringLengthProc indexHexListStringLength;
 static int indexHexStringListIndexFromStringIndex(
     Tcl_Size *index, Tcl_Size *itemchars, Tcl_Size *totalitems);
-static Tcl_Obj* indexHexListStringRange(tclObjTypeInterfaceArgsStringRange);
-static Tcl_Obj* indexHexListStringRangeEnd(tclObjTypeInterfaceArgsStringRangeEnd);
- 
-static int indexHexListObjGetElements (tclObjTypeInterfaceArgsListAll);
-static int indexHexListObjAppendElement (tclObjTypeInterfaceArgsListAppend);
-static int indexHexListObjAppendList (tclObjTypeInterfaceArgsListAppendList);
-static int indexHexListObjIndex (tclObjTypeInterfaceArgsListIndex);
-static int indexHexListObjIndexEnd (tclObjTypeInterfaceArgsListIndexEnd);
-static int indexHexListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted);
-static int indexHexListObjLength (tclObjTypeInterfaceArgsListLength);
-static Tcl_Obj* indexHexListObjRange (tclObjTypeInterfaceArgsListRange);
-static Tcl_Obj* indexHexListObjRangeEnd (tclObjTypeInterfaceArgsListRangeEnd);
-static int indexHexListObjReplace (tclObjTypeInterfaceArgsListReplace);
-static int indexHexListObjSetElement (tclObjTypeInterfaceArgsListSet);
-static Tcl_Obj * indexHexLsetFlat (tclObjTypeInterfaceArgsListSetList);
+static Tcl_ObjInterfaceStringRangeProc indexHexListStringRange;
+static Tcl_ObjInterfaceStringRangeEndProc indexHexListStringRangeEnd;
+static Tcl_ObjInterfaceListAllProc indexHexListObjGetElements;
+static Tcl_ObjInterfaceListAppendProc indexHexListObjAppendElement;
+static Tcl_ObjInterfaceListAppendlistProc indexHexListObjAppendList;
+static Tcl_ObjInterfaceListIndexProc indexHexListObjIndex;
+static Tcl_ObjInterfaceListIndexEndProc indexHexListObjIndexEnd;
+static Tcl_ObjInterfaceListIsSortedProc indexHexListObjIsSorted;
+static Tcl_ObjInterfaceListlengthProc indexHexListObjLength;
+static Tcl_ObjInterfaceListRangeProc indexHexListObjRange;
+static Tcl_ObjInterfaceListRangeEndProc indexHexListObjRangeEnd;
+static Tcl_ObjInterfaceListReplaceProc indexHexListObjReplace;
+static Tcl_ObjInterfaceListSetListProc indexHexListObjSetElement;
+static Tcl_ObjInterfaceListSetProc indexHexListObjSetFlat;
 
 static int indexHexListErrorIndeterminate (Tcl_Interp *interp);
 static int indexHexListErrorReadOnly (Tcl_Interp *interp);
 
 
-
-ObjInterface IndexHexInterface = {
-    1,
-    {
-	&indexHexListStringIndex,
-	&indexHexListStringIndexEnd,
-	&indexHexListStringLength,
-	&indexHexListStringRange,
-	&indexHexListStringRangeEnd
-    },
-    {
-	&indexHexListObjGetElements,
-	&indexHexListObjAppendElement,
-	&indexHexListObjAppendList,
-	&indexHexListObjIndex,
-	&indexHexListObjIndexEnd,
-	&indexHexListObjIsSorted,
-	&indexHexListObjLength,
-	&indexHexListObjRange,
-	&indexHexListObjRangeEnd,
-	&indexHexListObjReplace,
-	NULL,
-	NULL,
-	&indexHexListObjSetElement,
-	&indexHexLsetFlat
-    }
-};
-
-
-static const ObjectType testIndexHexType = {
-    "testindexHex",
-    FreeTestIndexHexInternalRep,	/* freeIntRepProc */
-    DupTestIndexHexInternalRep,		/* dupIntRepProc */
-    UpdateStringOfTestIndexHex,		/* updateStringProc */
-    SetTestIndexHexFromAny,		/* setFromAnyProc */
-    2,
-    (Tcl_ObjInterface *)&IndexHexInterface
-};
-
-const Tcl_ObjType *testIndexHexTypePtr = (Tcl_ObjType *)&testIndexHexType;
+Tcl_ObjType *testIndexHexTypePtr;
 
 
 int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
+    /* use cast to silence compiler warning "initialization from incompatible
+     * pointer type"
+    */
+    const char *namefieldPtr = (char *)&(testIndexHexTypePtr->name);
+    testIndexHexTypePtr = Tcl_NewObjType();
+    namefieldPtr = "testindexHex";
+    Tcl_ObjTypeSetFreeProc(testIndexHexTypePtr , FreeTestIndexHexInternalRep);
+    Tcl_ObjTypeSetDupInternalRepProc(testIndexHexTypePtr, DupTestIndexHexInternalRep);
+    Tcl_ObjTypeSetUpdateStringProc(testIndexHexTypePtr, UpdateStringOfTestIndexHex);
+    Tcl_ObjTypeSetSetFromAnyProc(testIndexHexTypePtr ,SetTestIndexHexFromAny);
+    Tcl_ObjTypeSetVersion(testIndexHexTypePtr ,2);
+
+    Tcl_ObjInterface * oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(oiPtr ,1);
+
+    Tcl_ObjInterfaceSetFnStringIndex(oiPtr ,indexHexListStringIndex);
+    Tcl_ObjInterfaceSetFnStringIndexEnd(oiPtr ,indexHexListStringIndexEnd);
+    Tcl_ObjInterfaceSetFnStringLength(oiPtr ,indexHexListStringLength);
+    Tcl_ObjInterfaceSetFnStringRange(oiPtr ,indexHexListStringRange);
+    Tcl_ObjInterfaceSetFnStringRangeEnd(oiPtr ,indexHexListStringRangeEnd);
+
+    Tcl_ObjInterfaceSetFnListAll(oiPtr ,indexHexListObjGetElements);
+    Tcl_ObjInterfaceSetFnListAppend(oiPtr ,indexHexListObjAppendElement);
+    Tcl_ObjInterfaceSetFnListAppendList(oiPtr ,indexHexListObjAppendList);
+    Tcl_ObjInterfaceSetFnListIndex(oiPtr ,indexHexListObjIndex);
+    Tcl_ObjInterfaceSetFnListIndexEnd(oiPtr ,indexHexListObjIndexEnd);
+    Tcl_ObjInterfaceSetFnListIsSorted(oiPtr ,indexHexListObjIsSorted);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,indexHexListObjLength);
+    Tcl_ObjInterfaceSetFnListRange(oiPtr ,indexHexListObjRange);
+    Tcl_ObjInterfaceSetFnListRangeEnd(oiPtr ,indexHexListObjRangeEnd);
+    Tcl_ObjInterfaceSetFnListReplace(oiPtr ,indexHexListObjReplace);
+    Tcl_ObjInterfaceSetFnListSet(oiPtr ,indexHexListObjSetElement);
+    Tcl_ObjInterfaceSetFnListSetFlat(oiPtr ,indexHexListObjSetFlat);
+    
+    Tcl_ObjTypeSetInterface(testIndexHexTypePtr ,oiPtr);
+
     Tcl_CreateObjCommand2(interp, "testindexhex", NewTestIndexHex, NULL, NULL);
     return TCL_OK;
 }
@@ -194,6 +190,7 @@ UpdateStringOfTestIndexHex(
 }
 
 
+
 static int indexHexListStringIndex(tclObjTypeInterfaceArgsStringIndex) {
     Tcl_Obj *hexPtr;
     int status;
@@ -508,7 +505,7 @@ indexHexListObjReplace(
 
 
 static int
-indexHexListObjSetElement(
+indexHexListObjSetFlat(
     Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting
 				 * if not NULL. */
     TCL_UNUSED(Tcl_Obj *),	/* List object in which element should be
@@ -523,7 +520,7 @@ indexHexListObjSetElement(
 }
 
 
-static Tcl_Obj * indexHexLsetFlat (
+static Tcl_Obj * indexHexListObjSetElement (
     Tcl_Interp *interp,		/* Tcl interpreter. */ \
     TCL_UNUSED(Tcl_Obj *),	/* Pointer to the list being modified. */ \
     TCL_UNUSED(Tcl_Size),	/* Number of index args. */ \

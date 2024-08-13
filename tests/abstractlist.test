@@ -199,14 +199,14 @@ test abstractlist-2.13 {no shimmer join llength==1} {
     list ${l-isa} $l ${j-isa} $j
 } {lstring G none G}
 
-test abstractlist-2.14 {error case lset multiple indicies} -body {
+test abstractlist-2.14 {error case lset multiple indices} -body {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lset l 2 0 1 k]
     set m-isa [testobj objtype $m]
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } -returnCodes 1 \
-    -result {Multiple indicies not supported by lstring.}
+    -result {Multiple indices not supported by lstring.}
 
 # lsort
 
@@ -498,7 +498,7 @@ test abstractlist-$not-4.11x {lset not compiled} {SetelementShimmer testevalex} 
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
 
-test abstractlist-$not-4.11e {error case lset multiple indicies} \
+test abstractlist-$not-4.11e {error case lset multiple indices} \
     -constraints {SetelementShimmer testevalex} -body {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
@@ -506,7 +506,7 @@ test abstractlist-$not-4.11e {error case lset multiple indicies} \
     set m-isa [testobj objtype $m]
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } -returnCodes 1 \
-    -result {Multiple indicies not supported by lstring.}
+    -result {Multiple indices not supported by lstring.}
 
 # lrepeat
 test abstractlist-$not-4.12 {shimmer lrepeat} {

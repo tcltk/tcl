@@ -601,6 +601,9 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 
+
+
+
 /*
  *----------------------------------------------------------------------------
  * The following structure represents a type of object, which is a particular
@@ -2286,6 +2289,162 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 	((const char *(*)(const char *))TclStubCall((void *)9))(string)
 #endif
 
+
+
+
+/*
+ *----------------------------------------------------------------
+ * Object interface data structures and macros
+ *----------------------------------------------------------------
+ */
+
+
+#define tclObjTypeInterfaceArgsListAll \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object for which an element array \
+			 *  is to be returned. */ \
+    Tcl_Size *objcPtr,	/* Where to store the count of objects \
+			 * referenced by objv. */ \
+    Tcl_Obj ***objvPtr	/* Where to store the pointer to an \
+			 * array of */
+
+#define tclObjTypeInterfaceArgsListAppend \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to append objPtr to. */ \
+    Tcl_Obj *objPtr	/* Object to append to listPtr's list. */
+
+#define tclObjTypeInterfaceArgsListAppendList \
+    Tcl_Interp *interp,	    /* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	    /* List object to append elements to. */ \
+    Tcl_Obj *elemListPtr    /* List obj with elements to append. */
+
+#define tclObjTypeInterfaceArgsListIndex \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    Tcl_Size index,	/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsListIndexEnd \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    Tcl_Size index,	/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsListIsSorted \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* The list in question */ \
+    size_t flags	/* flags */
+
+#define tclObjTypeInterfaceArgsListLength \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object whose #elements to return. */ \
+    Tcl_Size *lenPtr	/* The resulting length is stored here. */
+
+#define tclObjTypeInterfaceArgsListRange \
+    Tcl_Interp * interp,    /* Used to report errors */ \
+    Tcl_Obj *listObj,	    /* List object to take a range from. */ \
+    Tcl_Size rangeStart,    /* Index of first element to */ \
+			    /* include. */ \
+    Tcl_Size rangeEnd	/* Index of last element to include. */
+
+#define tclObjTypeInterfaceArgsListRangeEnd \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* List object to take a range from. */ \
+    Tcl_Size fromAnchor,/* 0 for start and 1 for end */ \
+    Tcl_Size fromIdx,	/* Index of first element to include. */ \
+    Tcl_Size toAnchor,	/* 0 for start and 1 for end */  \
+    Tcl_Size toIdx	/* Index of last element to include. */
+
+#define tclObjTypeInterfaceArgsListReplace \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listObj,   /* List object whose elements to replace. */ \
+    Tcl_Size first,     /* Index of first element to replace. */ \
+    Tcl_Size numToDelete,	/* Number of elements to replace. */ \
+    Tcl_Size numToInsert,	/* Number of objects to insert. */ \
+			/* An array of objc pointers to Tcl \
+			 * objects to insert. */ \
+    Tcl_Obj *const insertObjs[]
+
+#define tclObjTypeInterfaceArgsListReplaceList \
+   Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr,   /* List object whose elements to replace. */ \
+    Tcl_Size first,     /* Index of first element to replace. */ \
+    Tcl_Size count,	/* Number of elements to replace. */ \
+    Tcl_Obj *newItemsPtr /* a list of new items to insert */
+
+#define tclObjTypeInterfaceArgsListReverse \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr   /* List object whose elements to replace. */ \
+
+
+#define tclObjTypeInterfaceArgsListSet \
+    Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting \
+				 * if not NULL. */ \
+    Tcl_Obj *listObj,		/* List object in which element should be \
+				 * stored. */ \
+    Tcl_Size index,		/* Index of element to store. */ \
+    Tcl_Obj *valueObj		/* Tcl object to store in the designated list \
+				 * element. */
+
+#define tclObjTypeInterfaceArgsListSetList \
+    Tcl_Interp *interp,	    /* Tcl interpreter. */ \
+    Tcl_Obj *listObj,	    /* Pointer to the list being modified. */ \
+    Tcl_Size indexCount,    /* Number of index args. */ \
+    Tcl_Obj *const indexArray[],    /* Index args. */ \
+    Tcl_Obj *valueObj	    /* Value arg to 'lset' or NULL to 'lpop'. */
+
+
+#define tclObjTypeInterfaceArgsStringIndex \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    Tcl_Size index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+
+#define tclObjTypeInterfaceArgsStringIndexEnd \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    Tcl_Size index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+
+#define tclObjTypeInterfaceArgsStringLength \
+    Tcl_Obj *objPtr
+
+
+#define tclObjTypeInterfaceArgsStringRange \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    Tcl_Size first,	/* First index of the range. */ \
+    Tcl_Size last	/* Last index of the range. */
+
+
+#define tclObjTypeInterfaceArgsStringRangeEnd \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    Tcl_Size first,	/* First index of the range. */ \
+    Tcl_Size last	/* Last index of the range. */
+
+typedef int (Tcl_ObjInterfaceListAllProc)(tclObjTypeInterfaceArgsListAll);
+typedef int (Tcl_ObjInterfaceListAppendProc)(tclObjTypeInterfaceArgsListAppend);
+typedef int (Tcl_ObjInterfaceListAppendlistProc)(tclObjTypeInterfaceArgsListAppendList);
+typedef int (Tcl_ObjInterfaceListIndexProc)(tclObjTypeInterfaceArgsListIndex);
+typedef int (Tcl_ObjInterfaceListIndexEndProc)(tclObjTypeInterfaceArgsListIndexEnd);
+typedef int (Tcl_ObjInterfaceListIsSortedProc)(tclObjTypeInterfaceArgsListIsSorted);
+typedef int (Tcl_ObjInterfaceListlengthProc)(tclObjTypeInterfaceArgsListLength);
+typedef Tcl_Obj* (Tcl_ObjInterfaceListRangeProc)(tclObjTypeInterfaceArgsListRange);
+typedef Tcl_Obj* (Tcl_ObjInterfaceListRangeEndProc)(tclObjTypeInterfaceArgsListRangeEnd);
+typedef int (Tcl_ObjInterfaceListReplaceProc)(tclObjTypeInterfaceArgsListReplace);
+typedef int (Tcl_ObjInterfaceListReplaceListProc)(tclObjTypeInterfaceArgsListReplaceList);
+typedef int (Tcl_ObjInterfaceListReverseProc)(tclObjTypeInterfaceArgsListReverse);
+typedef int (Tcl_ObjInterfaceListSetProc)(tclObjTypeInterfaceArgsListSet);
+typedef Tcl_Obj * (Tcl_ObjInterfaceListSetListProc)(tclObjTypeInterfaceArgsListSetList);
+
+typedef int (Tcl_ObjInterfaceStringIndexProc)(tclObjTypeInterfaceArgsStringIndex);
+typedef int (Tcl_ObjInterfaceStringIndexEndProc)(tclObjTypeInterfaceArgsStringIndexEnd);
+typedef Tcl_Size (Tcl_ObjInterfaceStringLengthProc)(tclObjTypeInterfaceArgsStringLength);
+typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeProc)(tclObjTypeInterfaceArgsStringRange);
+typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRangeEnd);
+
+
 /*
  *----------------------------------------------------------------------------
  * Include the public function declarations that are accessible via the stubs
@@ -2473,6 +2632,7 @@ static inline void TclBumpObj(Tcl_Obj* objPtr)
 
 #endif /* RC_INVOKED */
 
+
 /*
  * end block for C++
  */
@@ -2480,6 +2640,8 @@ static inline void TclBumpObj(Tcl_Obj* objPtr)
 #ifdef __cplusplus
 }
 #endif
+
+
 
 #endif /* _TCL */
 

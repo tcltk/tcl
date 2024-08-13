@@ -30,9 +30,9 @@ interface tcl
 hooks {tclPlat tclInt tclIntPlat}
 scspec EXTERN
 
-# Declare each of the functions in the public Tcl interface.  Note that
-# the an index should never be reused for a different function in order
-# to preserve backwards compatibility.
+# Declare each of the functions in the public Tcl interface. In order to
+# preserve backwards compatibility, an index should never be reused for a
+# different function.
 
 declare 0 {
     int Tcl_PkgProvideEx(Tcl_Interp *interp, const char *name,
@@ -2644,6 +2644,149 @@ declare 686 {
 declare 688 {
     void TclUnusedStubEntry(void)
 }
+
+
+declare 689 {
+    Tcl_ObjInterface *Tcl_NewObjInterface(void)
+}
+
+declare 690 {
+    Tcl_ObjType *Tcl_NewObjType(void)
+}
+
+declare 691 {
+    int Tcl_ObjInterfaceSetVersion(Tcl_ObjInterface *oiPtr ,int version)
+}
+
+declare 692 {
+    int Tcl_ObjTypeSetFreeProc(Tcl_ObjType *otPtr
+	    , Tcl_FreeInternalRepProc *freeIntRepProc)
+}
+
+declare 693 {
+    int Tcl_ObjTypeSetDupInternalRepProc(Tcl_ObjType *otPtr
+	,Tcl_DupInternalRepProc *dupIntRepProc)
+}
+
+declare 694 {
+    int Tcl_ObjTypeSetUpdateStringProc(Tcl_ObjType *otPtr
+	,Tcl_UpdateStringProc *updateStringProc)
+}
+
+declare 695 {
+    int Tcl_ObjTypeSetSetFromAnyProc(Tcl_ObjType *otPtr
+	,Tcl_SetFromAnyProc *setFromAnyProc)
+}
+
+declare 696 {
+    int Tcl_ObjTypeSetVersion(Tcl_ObjType *otPtr ,int version)
+}
+
+declare 697 {
+    int Tcl_ObjInterfaceSetFnListAll(Tcl_ObjInterface *oiPtr
+	, Tcl_ObjInterfaceListAllProc *fnPtr)
+}
+
+declare 698 {
+    int Tcl_ObjInterfaceSetFnListAppend(Tcl_ObjInterface *oiPtr
+	, Tcl_ObjInterfaceListAppendProc *fnPtr)
+}
+
+declare 699 {
+    int Tcl_ObjInterfaceSetFnListAppendList(Tcl_ObjInterface *oiPtr
+	, Tcl_ObjInterfaceListAppendlistProc fnPtr)
+}
+
+
+declare 700 {
+    int Tcl_ObjInterfaceSetFnListIndex(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListIndexProc fnPtr)
+}
+
+
+declare 701 {
+    int Tcl_ObjInterfaceSetFnListIndexEnd(Tcl_ObjInterface *oiPtr
+	, Tcl_ObjInterfaceListIndexEndProc fnPtr)
+}
+
+declare 702 {
+    int Tcl_ObjInterfaceSetFnListIsSorted(Tcl_ObjInterface *oiPtr
+	, Tcl_ObjInterfaceListIsSortedProc fnPtr)
+}
+
+declare 703 {
+    int Tcl_ObjInterfaceSetFnListLength(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListlengthProc fnPtr)
+}
+
+declare 704 {
+    int Tcl_ObjInterfaceSetFnListRange(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListRangeProc fnPtr)
+}
+
+declare 705 {
+    int Tcl_ObjInterfaceSetFnListRangeEnd(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListRangeEndProc fnPtr)
+}
+
+declare 706 {
+    int Tcl_ObjInterfaceSetFnListReplace(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListReplaceProc fnPtr)
+}
+
+
+declare 707 {
+    int Tcl_ObjInterfaceSetFnListReplaceList(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListReplaceListProc fnPtr)
+}
+
+declare 708 {
+    int Tcl_ObjInterfaceSetFnListReverse(Tcl_ObjInterface *objInterfacePtr
+	,Tcl_ObjInterfaceListReverseProc fnPtr)
+}
+
+declare 709 {
+    int Tcl_ObjInterfaceSetFnListSet(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListSetListProc fnPtr)
+}
+
+declare 710 {
+    int Tcl_ObjInterfaceSetFnListSetFlat(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListSetProc fnPtr)
+}
+
+declare 711 {
+    int Tcl_ObjInterfaceSetFnStringIndex(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringIndexProc fnPtr)
+}
+
+declare 712 {
+    int Tcl_ObjInterfaceSetFnStringIndexEnd(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringIndexEndProc fnPtr)
+}
+
+declare 713 {
+    int Tcl_ObjInterfaceSetFnStringLength(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringLengthProc fnPtr)
+}
+
+declare 714 {
+    int Tcl_ObjInterfaceSetFnStringRange(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringRangeProc fnPtr)
+}
+
+declare 715 {
+    int Tcl_ObjInterfaceSetFnStringRangeEnd(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringRangeEndProc fnPtr)
+}
+
+declare 716 {
+    int Tcl_ObjTypeSetInterface(Tcl_ObjType *objTypePtr
+	,Tcl_ObjInterface * objInterfacePtr)
+}
+
+
+
 
 ##############################################################################
 

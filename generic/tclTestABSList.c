@@ -29,34 +29,16 @@
 Tcl_Obj *myNewLStringObj(Tcl_WideInt start,
 			 Tcl_WideInt length);
 static void freeRep(Tcl_Obj* alObj);
-static Tcl_Obj* my_LStringObjSetElemR(Tcl_Interp *interp,
-				     Tcl_Obj *listPtr,
-				     Tcl_Size numIndcies,
-				     Tcl_Obj *const indicies[],
-				     Tcl_Obj *valueObj);
-static void DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static int my_LStringObjLength(Tcl_Interp *interp,
-				Tcl_Obj *lstringObjPtr,
-				Tcl_Size *lenPtr);
-static int my_LStringObjIndex(Tcl_Interp *interp,
-			      Tcl_Obj *lstringObj,
-			      Tcl_Size index,
-			      Tcl_Obj **charObjPtr);
-Tcl_Obj * my_LStringObjRange(Tcl_Interp *interp, Tcl_Obj *lstringObj,
-			      Tcl_Size fromIdx, Tcl_Size toIdx);
-static int my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj);
-static int my_LStringReplace(Tcl_Interp *interp,
-		      Tcl_Obj *listObj,
-		      Tcl_Size first,
-		      Tcl_Size numToDelete,
-		      Tcl_Size numToInsert,
-		      Tcl_Obj *const insertObjs[]);
-static int my_LStringGetElements(Tcl_Interp *interp,
-				 Tcl_Obj *listPtr,
-				 Tcl_Size *objcptr,
-				 Tcl_Obj ***objvptr);
+static Tcl_ObjInterfaceListSetListProc my_LStringObjSetElemR;
+static Tcl_DupInternalRepProc DupLStringRep;
+static Tcl_ObjInterfaceListlengthProc my_LStringObjLength;
+static Tcl_ObjInterfaceListIndexProc my_LStringObjIndex;
+static Tcl_ObjInterfaceListRangeProc my_LStringObjRange;
+static Tcl_ObjInterfaceListReverseProc my_LStringObjReverse;
+static Tcl_ObjInterfaceListReplaceProc my_LStringReplace;
+static Tcl_ObjInterfaceListAllProc my_LStringGetElements;
 static void lstringFreeElements(Tcl_Obj* lstringObj);
-static void UpdateStringOfLString(Tcl_Obj *objPtr);
+static Tcl_UpdateStringProc UpdateStringOfLString;
 
 /*
  * Internal Representation of an lstring type value
@@ -75,202 +57,8 @@ typedef struct LString {
  * AbstractList definition of an lstring type
  */
 
-ObjInterface lstringfull = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
 
-
-ObjInterface lstringNoLength = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	NULL,			/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
-
-
-ObjInterface lstringNoIndex = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	NULL,			/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
-
-
-ObjInterface lstringNoRange = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	NULL,			/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
-
-
-ObjInterface lstringNoGetElements = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	NULL,			/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
-
-
-ObjInterface lstringNoSetElementR = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	&my_LStringReplace,	/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	NULL/* SetElement */
-    }
-};
-
-
-ObjInterface lstringNoReplace = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	&my_LStringGetElements,	/* GetElements */
-	NULL,
-	NULL,
-	&my_LStringObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&my_LStringObjLength,	/* Length */
-	&my_LStringObjRange,	/* Slice */
-	NULL,
-	NULL,			/* Replace */
-	NULL,
-	&my_LStringObjReverse,	/* Reverse */
-	NULL,
-	&my_LStringObjSetElemR	/* SetElement */
-    }
-};
-
-static const ObjectType lstringTypes[11] = {
+static ObjectType lstringTypes[11] = {
     {/*0*/
 	"lstring",
 	freeRep,
@@ -278,7 +66,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringfull
+	NULL
     },
     {/*1*/
 	"lstring",
@@ -287,7 +75,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoLength
+	NULL
     },
     {/*2*/
 	"lstring",
@@ -296,7 +84,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoIndex
+	NULL
     },
     {/*3*/
 	"lstring",
@@ -305,7 +93,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoRange
+	NULL
     },
     {/*4*/
 	"lstring",
@@ -314,7 +102,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringfull
+	NULL
     },
     {/*5*/
 	"lstring",
@@ -323,7 +111,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoGetElements
+	NULL
     },
     {/*6*/
 	"lstring",
@@ -332,7 +120,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoSetElementR
+	NULL
     },
     {/*7*/
 	"lstring",
@@ -341,7 +129,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringNoReplace
+	NULL
     },
     {/*8*/
 	"lstring",
@@ -350,7 +138,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringfull
+	NULL
     },
     {/*9*/
 	"lstring",
@@ -359,7 +147,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringfull
+	NULL
     },
     {/*10*/
 	"lstring",
@@ -368,7 +156,7 @@ static const ObjectType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	2,
-	(Tcl_ObjInterface *)&lstringfull
+	NULL
     }
 };
 
@@ -503,7 +291,7 @@ my_LStringObjSetElemR(
     Tcl_Interp *interp,
     Tcl_Obj *lstringObj,
     Tcl_Size numIndicies,
-    Tcl_Obj *const indicies[],
+    Tcl_Obj *const indices[],
     Tcl_Obj *valueObj)
 {
     LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
@@ -513,11 +301,11 @@ my_LStringObjSetElemR(
 
     if (numIndicies > 1) {
 	Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("Multiple indicies not supported by lstring."));
+	    Tcl_ObjPrintf("Multiple indices not supported by lstring."));
 	return NULL;
     }
 
-    status = Tcl_GetIntForIndex(interp, indicies[0], lstringRepPtr->strlen, &index);
+    status = Tcl_GetIntForIndex(interp, indices[0], lstringRepPtr->strlen, &index);
     if (status != TCL_OK) {
 	return NULL;
     }
@@ -1396,6 +1184,85 @@ int Tcl_ABSListTest_Init(Tcl_Interp *interp) {
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
+    Tcl_ObjInterface *lstringfullPtr ,*lstringNoLengthPtr ,*lstringNoIndexPtr
+	,*lstringNoRangePtr ,*lstringNoGetElementsPtr
+	,*lstringNoSetElementRPtr ,*lstringNoReplacePtr
+	;
+    
+    lstringfullPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(lstringfullPtr ,1);
+    Tcl_ObjInterfaceSetFnListAll(lstringfullPtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(lstringfullPtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lstringfullPtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListRange(lstringfullPtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(lstringfullPtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringfullPtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringfullPtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[0], lstringfullPtr);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[4], lstringfullPtr);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[8], lstringfullPtr);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[9], lstringfullPtr);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[10], lstringfullPtr);
+
+    lstringNoLengthPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListAll(lstringNoLengthPtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(lstringNoLengthPtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListRange(lstringNoLengthPtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(lstringNoLengthPtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoLengthPtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringNoLengthPtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[1], lstringNoLengthPtr);
+
+    lstringNoIndexPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListAll(lstringNoIndexPtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListLength(lstringNoIndexPtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListRange(lstringNoIndexPtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(lstringNoIndexPtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoIndexPtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringNoIndexPtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[2], lstringNoIndexPtr);
+
+    lstringNoRangePtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListAll(lstringNoRangePtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(lstringNoRangePtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lstringNoRangePtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListReplace(lstringNoRangePtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoRangePtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringNoRangePtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[3], lstringNoRangePtr);
+
+    lstringNoGetElementsPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(lstringNoGetElementsPtr ,1);
+    Tcl_ObjInterfaceSetFnListIndex(lstringNoGetElementsPtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lstringNoGetElementsPtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListRange(lstringNoGetElementsPtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(lstringNoGetElementsPtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoGetElementsPtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringNoGetElementsPtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[5], lstringNoGetElementsPtr);
+
+    lstringNoSetElementRPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(lstringNoSetElementRPtr ,1);
+    Tcl_ObjInterfaceSetFnListAll(lstringNoSetElementRPtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(lstringNoSetElementRPtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lstringNoSetElementRPtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListRange(lstringNoSetElementRPtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(lstringNoSetElementRPtr ,my_LStringReplace);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoSetElementRPtr ,my_LStringObjReverse);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[6], lstringfullPtr);
+
+
+    lstringNoReplacePtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(lstringNoReplacePtr ,1);
+    Tcl_ObjInterfaceSetFnListAll(lstringNoReplacePtr , my_LStringGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(lstringNoReplacePtr ,my_LStringObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lstringNoReplacePtr ,my_LStringObjLength);
+    Tcl_ObjInterfaceSetFnListRange(lstringNoReplacePtr ,my_LStringObjRange);
+    Tcl_ObjInterfaceSetFnListReverse(lstringNoReplacePtr ,my_LStringObjReverse);
+    Tcl_ObjInterfaceSetFnListSet(lstringNoReplacePtr ,my_LStringObjSetElemR);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[7], lstringNoReplacePtr);
+
+
     Tcl_CreateObjCommand(interp, "lstring", lLStringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "lgen", lGenObjCmd, NULL, NULL);
     Tcl_PkgProvide(interp, "abstractlisttest", "1.0.0");

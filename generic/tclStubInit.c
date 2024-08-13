@@ -1414,6 +1414,34 @@ const TclStubs tclStubs = {
     Tcl_GetSizeIntFromObj, /* 686 */
     0, /* 687 */
     TclUnusedStubEntry, /* 688 */
+    Tcl_NewObjInterface, /* 689 */
+    Tcl_NewObjType, /* 690 */
+    Tcl_ObjInterfaceSetVersion, /* 691 */
+    Tcl_ObjTypeSetFreeProc, /* 692 */
+    Tcl_ObjTypeSetDupInternalRepProc, /* 693 */
+    Tcl_ObjTypeSetUpdateStringProc, /* 694 */
+    Tcl_ObjTypeSetSetFromAnyProc, /* 695 */
+    Tcl_ObjTypeSetVersion, /* 696 */
+    Tcl_ObjInterfaceSetFnListAll, /* 697 */
+    Tcl_ObjInterfaceSetFnListAppend, /* 698 */
+    Tcl_ObjInterfaceSetFnListAppendList, /* 699 */
+    Tcl_ObjInterfaceSetFnListIndex, /* 700 */
+    Tcl_ObjInterfaceSetFnListIndexEnd, /* 701 */
+    Tcl_ObjInterfaceSetFnListIsSorted, /* 702 */
+    Tcl_ObjInterfaceSetFnListLength, /* 703 */
+    Tcl_ObjInterfaceSetFnListRange, /* 704 */
+    Tcl_ObjInterfaceSetFnListRangeEnd, /* 705 */
+    Tcl_ObjInterfaceSetFnListReplace, /* 706 */
+    Tcl_ObjInterfaceSetFnListReplaceList, /* 707 */
+    Tcl_ObjInterfaceSetFnListReverse, /* 708 */
+    Tcl_ObjInterfaceSetFnListSet, /* 709 */
+    Tcl_ObjInterfaceSetFnListSetFlat, /* 710 */
+    Tcl_ObjInterfaceSetFnStringIndex, /* 711 */
+    Tcl_ObjInterfaceSetFnStringIndexEnd, /* 712 */
+    Tcl_ObjInterfaceSetFnStringLength, /* 713 */
+    Tcl_ObjInterfaceSetFnStringRange, /* 714 */
+    Tcl_ObjInterfaceSetFnStringRangeEnd, /* 715 */
+    Tcl_ObjTypeSetInterface, /* 716 */
 };
 
 /* !END!: Do not edit above this line. */
