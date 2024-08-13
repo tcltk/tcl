@@ -243,21 +243,21 @@ endif
 
 # Minizip
 MINIZIP_OBJS = \
-        adler32.$(HOST_OBJEXT) \
-        compress.$(HOST_OBJEXT) \
-        crc32.$(HOST_OBJEXT) \
-        deflate.$(HOST_OBJEXT) \
-        infback.$(HOST_OBJEXT) \
-        inffast.$(HOST_OBJEXT) \
-        inflate.$(HOST_OBJEXT) \
-        inftrees.$(HOST_OBJEXT) \
-        ioapi.$(HOST_OBJEXT) \
-        iowin32.$(HOST_OBJEXT)  \
-        trees.$(HOST_OBJEXT) \
-        uncompr.$(HOST_OBJEXT) \
-        zip.$(HOST_OBJEXT) \
-        zutil.$(HOST_OBJEXT) \
-        minizip.$(HOST_OBJEXT)
+	adler32.$(HOST_OBJEXT) \
+	compress.$(HOST_OBJEXT) \
+	crc32.$(HOST_OBJEXT) \
+	deflate.$(HOST_OBJEXT) \
+	infback.$(HOST_OBJEXT) \
+	inffast.$(HOST_OBJEXT) \
+	inflate.$(HOST_OBJEXT) \
+	inftrees.$(HOST_OBJEXT) \
+	ioapi.$(HOST_OBJEXT) \
+	iowin32.$(HOST_OBJEXT)  \
+	trees.$(HOST_OBJEXT) \
+	uncompr.$(HOST_OBJEXT) \
+	zip.$(HOST_OBJEXT) \
+	zutil.$(HOST_OBJEXT) \
+	minizip.$(HOST_OBJEXT)
 
 ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
@@ -621,7 +621,7 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 ${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
 
 # use prebuilt zlib1.dll
@@ -931,7 +931,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package cookiejar 0.2"
 	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
-	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
+		  $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
 	@echo "Installing package http 2.10b3 as a Tcl Module";
@@ -1076,9 +1076,9 @@ packages:
 	      pkg=`basename $$i`; \
 	      mkdir -p $(PKG_DIR)/$$pkg; \
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; \
-	          echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
-	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
+		( cd $(PKG_DIR)/$$pkg; \
+		  echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
+		  $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
@@ -1093,8 +1093,8 @@ install-packages: packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Installing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
+		echo "Installing package '$$pkg'"; \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1106,8 +1106,8 @@ test-packages: tcltest packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Testing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
+		echo "Testing package '$$pkg'"; \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1119,7 +1119,7 @@ clean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1131,7 +1131,7 @@ distclean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
 	    cd $$builddir; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
