@@ -2786,6 +2786,11 @@ declare 716 {
 }
 
 
+declare 717 {
+    int Tcl_ObjTypeSetName(Tcl_ObjType *objTypePtr ,char *name)
+}
+
+
 
 
 ##############################################################################

@@ -67,12 +67,8 @@ Tcl_ObjType *testIndexHexTypePtr;
 
 
 int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
-    /* use cast to silence compiler warning "initialization from incompatible
-     * pointer type"
-    */
-    const char *namefieldPtr = (char *)&(testIndexHexTypePtr->name);
     testIndexHexTypePtr = Tcl_NewObjType();
-    namefieldPtr = "testindexHex";
+    Tcl_ObjTypeSetName(testIndexHexTypePtr ,(char *)"testindexHex");
     Tcl_ObjTypeSetFreeProc(testIndexHexTypePtr , FreeTestIndexHexInternalRep);
     Tcl_ObjTypeSetDupInternalRepProc(testIndexHexTypePtr, DupTestIndexHexInternalRep);
     Tcl_ObjTypeSetUpdateStringProc(testIndexHexTypePtr, UpdateStringOfTestIndexHex);

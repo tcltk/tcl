@@ -309,6 +309,20 @@ Tcl_ObjTypeSetSetFromAnyProc(
 
 
 int
+Tcl_ObjTypeSetName(
+	Tcl_ObjType *otPtr
+	,char *name
+) {
+    /* use cast to silence compiler warning "initialization from incompatible
+     * pointer type"
+    */
+    const char *namefieldPtr = (char *)&(otPtr->name);
+	namefieldPtr = name;
+	return TCL_OK;
+}
+
+
+int
 Tcl_ObjTypeSetVersion(
 	Tcl_ObjType *otPtr
     ,int version
