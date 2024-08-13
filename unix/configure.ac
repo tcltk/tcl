@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[8.7])
-AC_PREREQ([2.72])
+AC_PREREQ([2.69])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -404,7 +404,7 @@ AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
 	#include <sys/types.h>
 	#include <sys/socket.h>
     ]], [[
-    	socklen_t foo;
+	socklen_t foo;
     ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])

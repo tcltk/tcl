@@ -803,7 +803,7 @@ tclConfig: $(OUT_DIR)\tclConfig.sh
 # TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 	@echo Creating tclConfig.sh
-        @nmakehlp -s << $** >$@
+	@nmakehlp -s << $** >$@
 @TCL_DLL_FILE@       $(TCLLIBNAME)
 @TCL_VERSION@        $(DOTVERSION)
 @TCL_MAJOR_VERSION@  $(TCL_MAJOR_VERSION)
