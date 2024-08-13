@@ -53,10 +53,10 @@ extern "C" {
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION	0
 #   define TCL_RELEASE_LEVEL	TCL_BETA_RELEASE
-#   define TCL_RELEASE_SERIAL	3
+#   define TCL_RELEASE_SERIAL	4
 
 #   define TCL_VERSION		"9.0"
-#   define TCL_PATCH_LEVEL	"9.0b3"
+#   define TCL_PATCH_LEVEL	"9.0b4"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
@@ -2341,7 +2341,7 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b2"), \
+	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b3"), \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
