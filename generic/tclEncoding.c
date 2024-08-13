@@ -2602,7 +2602,7 @@ UtfToUtfProc(
 		    *dst++ = 0xED;
 		    *dst++ = (char) (((ch >> 16) & 0x0F) | 0xA0);
 		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
-		    ch = (ch & 0x0CFF) | 0xDC00;
+		    ch = (ch & 0x03FF) | 0xDC00;
 		}
 		goto cesu8;
 	    } else if ((ch | 0x7FF) == 0xDFFF) {
