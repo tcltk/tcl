@@ -2424,7 +2424,11 @@ UtfToUtfProc(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* TCL_ENCODING_* conversion control flags. */
-    TCL_UNUSED(Tcl_EncodingState *),
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
     int dstLen,			/* The maximum length of output buffer in
@@ -2447,6 +2451,9 @@ UtfToUtfProc(
     int ch;
     int profile;
 
+    if (flags & TCL_ENCODING_START) {
+    	*statePtr = 0;
+    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2486,10 +2493,12 @@ UtfToUtfProc(
 	     * mode, so that they get converted to \xC0\x80.
 	     */
 	    *dst++ = *src++;
+            *statePtr = 0; /* Reset surrogate handling */
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
 		 (UCHAR(src[1]) == 0x80) &&
 		 (!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
 	    /* Special sequence \xC0\x80 */
+	    *statePtr = 0; /* reset surrogate handling */
 	    if (!PROFILE_TCL8(profile) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_REPLACE(profile)) {
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
@@ -2510,13 +2519,11 @@ UtfToUtfProc(
 
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
-	     * Incomplete byte sequence.
-	     * Always check before using Tcl_UtfToUniChar. Not doing so can cause
-	     * it to run beyond the end of the buffer! If we happen on such an
-	     * incomplete char its bytes are made to represent themselves unless
-	     * the user has explicitly asked to be told.
+	     * Incomplete byte sequence. Always check before using
+	     * Tcl_UtfToUniChar. Not doing so can cause it to run beyond the
+	     * end of the buffer!
 	     */
-
+	    *statePtr = 0; /* reset surrogate handling */
 	    if (flags & ENCODING_INPUT) {
 		/* Incomplete bytes for modified UTF-8 target */
 		if (PROFILE_STRICT(profile)) {
@@ -2538,6 +2545,8 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    size_t len = TclUtfToUniChar(src, &ch);
+            Tcl_UniChar savedSurrogate = (Tcl_UniChar) (ptrdiff_t)*statePtr;
+            *statePtr = 0; /* Reset surrogate */
 	    if (flags & ENCODING_INPUT) {
 		if (((len < 2) && (ch != 0))
 			|| ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
@@ -2574,7 +2583,30 @@ UtfToUtfProc(
 		    break;
 		} else if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
-		}
+		} else {
+                    /*
+                     * PROFILE_TCL8. For compatibility with Tcl 8, combine surrogates.
+                     * 1. If this is a low surrogate AND *statePtr contains high surrogate,
+                     *    combine and output.
+                     * 2. If this is high surrogate, stash it in *statePtr.
+                     * All other combinations, just write out as isolated surrogate.
+                     */
+                    if (LOW_SURROGATE(ch)) {
+                        if (HIGH_SURROGATE(savedSurrogate)) {
+                            ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) + (ch - 0xdc00);
+                        }
+                        /* else just output the low surrogate */
+                    } else {
+                        assert(HIGH_SURROGATE(ch));
+                        *statePtr = (Tcl_EncodingState) (ptrdiff_t) ch; /* Save the high surrogate */
+                        if (savedSurrogate) {
+                            assert(HIGH_SURROGATE(savedSurrogate));
+                            ch = savedSurrogate; /* Output the surrogate that was saved */
+                        } else {
+                            continue; /* Do not output the high surrogate just yet */
+                        }
+                    }
+                }
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
