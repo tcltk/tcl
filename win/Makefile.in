@@ -79,10 +79,10 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
-#CFLAGS = 		$(CFLAGS_DEBUG)
-#CFLAGS = 		$(CFLAGS_OPTIMIZE)
-#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
+#CFLAGS =		$(CFLAGS_DEBUG)
+#CFLAGS =		$(CFLAGS_OPTIMIZE)
+#CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -160,7 +160,7 @@ TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [l
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE	= libtommath.dll
 
-SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
+SHARED_LIBRARIES	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
@@ -239,21 +239,21 @@ endif
 
 # Minizip
 MINIZIP_OBJS = \
-        adler32.$(HOST_OBJEXT) \
-        compress.$(HOST_OBJEXT) \
-        crc32.$(HOST_OBJEXT) \
-        deflate.$(HOST_OBJEXT) \
-        infback.$(HOST_OBJEXT) \
-        inffast.$(HOST_OBJEXT) \
-        inflate.$(HOST_OBJEXT) \
-        inftrees.$(HOST_OBJEXT) \
-        ioapi.$(HOST_OBJEXT) \
-        iowin32.$(HOST_OBJEXT)  \
-        trees.$(HOST_OBJEXT) \
-        uncompr.$(HOST_OBJEXT) \
-        zip.$(HOST_OBJEXT) \
-        zutil.$(HOST_OBJEXT) \
-        minizip.$(HOST_OBJEXT)
+	adler32.$(HOST_OBJEXT) \
+	compress.$(HOST_OBJEXT) \
+	crc32.$(HOST_OBJEXT) \
+	deflate.$(HOST_OBJEXT) \
+	infback.$(HOST_OBJEXT) \
+	inffast.$(HOST_OBJEXT) \
+	inflate.$(HOST_OBJEXT) \
+	inftrees.$(HOST_OBJEXT) \
+	ioapi.$(HOST_OBJEXT) \
+	iowin32.$(HOST_OBJEXT)  \
+	trees.$(HOST_OBJEXT) \
+	uncompr.$(HOST_OBJEXT) \
+	zip.$(HOST_OBJEXT) \
+	zutil.$(HOST_OBJEXT) \
+	minizip.$(HOST_OBJEXT)
 
 ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
@@ -892,7 +892,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package cookiejar 0.2"
 	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
-	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
+		  $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
 	@echo "Installing package http 2.10b2 as a Tcl Module";
@@ -1037,9 +1037,9 @@ packages:
 	      pkg=`basename $$i`; \
 	      mkdir -p $(PKG_DIR)/$$pkg; \
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; \
-	          echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
-	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
+		( cd $(PKG_DIR)/$$pkg; \
+		  echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
+		  $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
@@ -1054,8 +1054,8 @@ install-packages: packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Installing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
+		echo "Installing package '$$pkg'"; \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1067,8 +1067,8 @@ test-packages: tcltest packages
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        echo "Testing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
+		echo "Testing package '$$pkg'"; \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1080,7 +1080,7 @@ clean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 	    fi; \
 	  fi; \
 	done; \
@@ -1092,7 +1092,7 @@ distclean-packages:
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+		( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 	    fi; \
 	    cd $$builddir; \
 	    rm -rf $(PKG_DIR)/$$pkg; \
