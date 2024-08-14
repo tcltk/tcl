@@ -333,7 +333,7 @@ test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom -profile tcl8 utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
-} -result "6 \uD83D\uDE02"
+} -result "6 \U0001F602"
 test encoding-15.5 {UtfToUtfProc emoji character input} {
     set x \xF0\x9F\x98\x82
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
@@ -344,7 +344,7 @@ test encoding-15.6 {UtfToUtfProc emoji character output} {
     set y [encoding convertto -profile tcl8 utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
     list [string length $y] $z
-} {12 edb882eda0bdedb882eda0bd}
+} {10 edb882f09f9882eda0bd}
 test encoding-15.7 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uD83D
     set y [encoding convertto -profile tcl8 utf-8 \uDE02\uD83D\uD83D]
