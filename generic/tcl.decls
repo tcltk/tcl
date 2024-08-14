@@ -2659,7 +2659,7 @@ declare 691 {
 }
 
 declare 692 {
-    int Tcl_ObjTypeSetFreeProc(Tcl_ObjType *otPtr
+    int Tcl_ObjTypeSetFreeInternalRepProc(Tcl_ObjType *otPtr
 	    , Tcl_FreeInternalRepProc *freeIntRepProc)
 }
 

@@ -257,7 +257,7 @@ Tcl_ObjInterfaceSetVersion(
 
 
 int
-Tcl_ObjTypeSetFreeProc(
+Tcl_ObjTypeSetFreeInternalRepProc(
 	Tcl_ObjType *otPtr
     ,Tcl_FreeInternalRepProc *freeIntRepProc
 ) {

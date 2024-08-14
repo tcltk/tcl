@@ -1883,7 +1883,7 @@ EXTERN Tcl_ObjType *	Tcl_NewObjType(void);
 EXTERN int		Tcl_ObjInterfaceSetVersion(Tcl_ObjInterface *oiPtr,
 				int version);
 /* 692 */
-EXTERN int		Tcl_ObjTypeSetFreeProc(Tcl_ObjType *otPtr,
+EXTERN int		Tcl_ObjTypeSetFreeInternalRepProc(Tcl_ObjType *otPtr,
 				Tcl_FreeInternalRepProc *freeIntRepProc);
 /* 693 */
 EXTERN int		Tcl_ObjTypeSetDupInternalRepProc(Tcl_ObjType *otPtr,
@@ -2680,7 +2680,7 @@ typedef struct TclStubs {
     Tcl_ObjInterface * (*tcl_NewObjInterface) (void); /* 689 */
     Tcl_ObjType * (*tcl_NewObjType) (void); /* 690 */
     int (*tcl_ObjInterfaceSetVersion) (Tcl_ObjInterface *oiPtr, int version); /* 691 */
-    int (*tcl_ObjTypeSetFreeProc) (Tcl_ObjType *otPtr, Tcl_FreeInternalRepProc *freeIntRepProc); /* 692 */
+    int (*tcl_ObjTypeSetFreeInternalRepProc) (Tcl_ObjType *otPtr, Tcl_FreeInternalRepProc *freeIntRepProc); /* 692 */
     int (*tcl_ObjTypeSetDupInternalRepProc) (Tcl_ObjType *otPtr, Tcl_DupInternalRepProc *dupIntRepProc); /* 693 */
     int (*tcl_ObjTypeSetUpdateStringProc) (Tcl_ObjType *otPtr, Tcl_UpdateStringProc *updateStringProc); /* 694 */
     int (*tcl_ObjTypeSetSetFromAnyProc) (Tcl_ObjType *otPtr, Tcl_SetFromAnyProc *setFromAnyProc); /* 695 */
@@ -4041,8 +4041,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NewObjType) /* 690 */
 #define Tcl_ObjInterfaceSetVersion \
 	(tclStubsPtr->tcl_ObjInterfaceSetVersion) /* 691 */
-#define Tcl_ObjTypeSetFreeProc \
-	(tclStubsPtr->tcl_ObjTypeSetFreeProc) /* 692 */
+#define Tcl_ObjTypeSetFreeInternalRepProc \
+	(tclStubsPtr->tcl_ObjTypeSetFreeInternalRepProc) /* 692 */
 #define Tcl_ObjTypeSetDupInternalRepProc \
 	(tclStubsPtr->tcl_ObjTypeSetDupInternalRepProc) /* 693 */
 #define Tcl_ObjTypeSetUpdateStringProc \

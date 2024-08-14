@@ -1417,7 +1417,7 @@ const TclStubs tclStubs = {
     Tcl_NewObjInterface, /* 689 */
     Tcl_NewObjType, /* 690 */
     Tcl_ObjInterfaceSetVersion, /* 691 */
-    Tcl_ObjTypeSetFreeProc, /* 692 */
+    Tcl_ObjTypeSetFreeInternalRepProc, /* 692 */
     Tcl_ObjTypeSetDupInternalRepProc, /* 693 */
     Tcl_ObjTypeSetUpdateStringProc, /* 694 */
     Tcl_ObjTypeSetSetFromAnyProc, /* 695 */

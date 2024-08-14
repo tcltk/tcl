@@ -69,7 +69,7 @@ Tcl_ObjType *testIndexHexTypePtr;
 int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
     testIndexHexTypePtr = Tcl_NewObjType();
     Tcl_ObjTypeSetName(testIndexHexTypePtr ,(char *)"testindexHex");
-    Tcl_ObjTypeSetFreeProc(testIndexHexTypePtr , FreeTestIndexHexInternalRep);
+    Tcl_ObjTypeSetFreeInternalRepProc(testIndexHexTypePtr , FreeTestIndexHexInternalRep);
     Tcl_ObjTypeSetDupInternalRepProc(testIndexHexTypePtr, DupTestIndexHexInternalRep);
     Tcl_ObjTypeSetUpdateStringProc(testIndexHexTypePtr, UpdateStringOfTestIndexHex);
     Tcl_ObjTypeSetSetFromAnyProc(testIndexHexTypePtr ,SetTestIndexHexFromAny);
