@@ -704,6 +704,8 @@ typedef struct Tcl_ObjType {
 	   a,b,c,d,e,f,g,h	/* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
+#   define TCL_OBJTYPE_V1(a) /* just empty */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) /* just empty */
 #endif
 
 /*
