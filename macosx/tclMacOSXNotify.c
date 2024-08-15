@@ -1777,7 +1777,7 @@ TclUnixWaitForFile(
      */
 
     if (fd >= FD_SETSIZE) {
-	Tcl_Panic("TclUnixWaitForFile can't handle file id %d", fd);
+	Tcl_Panic("TclUnixWaitForFile cannot handle file id %d", fd);
 	/* must never get here, or select masks overrun will occur below */
     }
 #endif
