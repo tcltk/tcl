@@ -1255,7 +1255,7 @@ Tcl_CreateInterp(void)
 
     nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
     if (nsPtr == NULL) {
-	Tcl_Panic("can't create math operator namespace");
+	Tcl_Panic("cannot create math operator namespace");
     }
     Tcl_Export(interp, nsPtr, "*", 1);
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */

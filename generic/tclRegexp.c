@@ -946,7 +946,7 @@ CompileRegexp(
 	ckfree(regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
-		    "couldn't compile regular expression pattern: ", status);
+		    "cannot compile regular expression pattern: ", status);
 	}
 	return NULL;
     }
