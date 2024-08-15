@@ -2560,7 +2560,7 @@ UtfToUtfProc(
 		    *dst++ = 0xED;
 		    *dst++ = (char) (((ch >> 16) & 0x0F) | 0xA0);
 		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
-		    ch = (ch & 0x0CFF) | 0xDC00;
+		    ch = (ch & 0x03FF) | 0xDC00;
 		}
 		*dst++ = (char)(((ch >> 12) | 0xE0) & 0xEF);
 		*dst++ = (char)(((ch >> 6) | 0x80) & 0xBF);
