@@ -2349,7 +2349,9 @@ void *			TclStubCall(void *arg);
 #endif
 #else
 #if TCL_MAJOR_VERSION < 9
-#   error "Please define -DUSE_TCL_STUBS"
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_Panic(((void)interp, (void)version, \
+		(void)exact, "Please define -DUSE_TCL_STUBS"))
 #elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \
