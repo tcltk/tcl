@@ -653,7 +653,7 @@ creates a safe interpreter:
 \fBcd\fR	\fBencoding\fR	\fBexec\fR	\fBexit\fR
 \fBfconfigure\fR	\fBfile\fR	\fBglob\fR	\fBload\fR
 \fBopen\fR	\fBpwd\fR	\fBsocket\fR	\fBsource\fR
-\fBunload\fR
+\fBunload\fR	\fBzipfs\fR
 .DE
 These commands can be recreated later as Tcl procedures or aliases, or
 re-exposed by \fBinterp expose\fR.
