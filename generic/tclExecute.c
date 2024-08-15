@@ -4748,6 +4748,7 @@ TEBCresume(
 	    if (objResultPtr == NULL) {
 		TclNewObj(objResultPtr);
 	    }
+	    CACHE_STACK_INFO();
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 
@@ -4922,6 +4923,7 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
  		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	if (!objResultPtr) {
@@ -5030,6 +5032,7 @@ TEBCresume(
 	toIdxAnchor = TclIndexIsFromEnd(toIdx);
 	fromIdxAnchor = TclIndexIsFromEnd(fromIdx);
 
+	DECACHE_STACK_INFO();
 	if (!Tcl_LengthIsFinite(objc)
 	    && (toIdxAnchor == 1 || fromIdxAnchor == 1)) {
 
@@ -5039,6 +5042,8 @@ TEBCresume(
 		valuePtr, list, rangeEnd, interp, valuePtr, toIdxAnchor,
 		toIdx, fromIdxAnchor, fromIdx);
 	    if (dstatus != TCL_OK || objResultPtr == NULL) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
 		goto gotError;
 	    }
 	} else {
@@ -5379,6 +5384,7 @@ TEBCresume(
 	    int status;
 	    status = TclStringIndexInterface(interp, valuePtr, value2Ptr, &objResultPtr);
 	    if (status != TCL_OK) {
+		TRACE_ERROR(interp);
 		goto gotError;
 	    }
 	} else {
@@ -5520,6 +5526,7 @@ TEBCresume(
 	    if (fromIdx + 1 <= toIdx + 1) {
 		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 		if (objResultPtr == NULL) {
+		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
 	    } else {
@@ -6579,6 +6586,7 @@ TEBCresume(
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
 		    interp, listPtr, tclListType);
