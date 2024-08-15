@@ -791,7 +791,7 @@ pickNextSS(
      * Nobody's old enough?!? -- something's really wrong.
      */
 
-    FDEBUG(("can't find victim to replace!\n"));
+    FDEBUG(("cannot find victim to replace!\n"));
     assert(NOTREACHED);
     ERR(REG_ASSERT);
     return d->ssets;
