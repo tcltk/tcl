@@ -2332,7 +2332,7 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 # else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, "8.7.0", \
+	(Tcl_InitStubs)(interp, "8.7b1", \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
 # endif
