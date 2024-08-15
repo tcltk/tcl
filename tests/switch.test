@@ -192,7 +192,7 @@ test switch-5.1 {errors in -regexp matching} -returnCodes error -body {
 	aaaab	{subst exact}
 	default	{subst none}
     }
-} -result {couldn't compile regular expression pattern: quantifier operand invalid}
+} -result {cannot compile regular expression pattern: invalid quantifier operand}
 
 test switch-6.1 {backslashes in patterns} {
     switch -exact {\a\$\.\[} {
