@@ -118,7 +118,7 @@ DyldOFIErrorMsg(
     case NSObjectFileImageFormat:
 	return "bad object file format";
     case NSObjectFileImageAccess:
-	return "can't read object file";
+	return "cannot read object file";
     default:
 	return "unknown error";
     }
