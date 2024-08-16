@@ -142,8 +142,8 @@ uses direct access to the OS rather than through Tcl's filesystem API, it will
 not see the current directory as being inside the mount and will not be able
 to access the files inside the mount).
 .RE
-.TP
 .\" METHOD: mountdata
+.TP
 \fBzipfs mountdata\fR \fIdata\fR \fImountpoint\fR
 Mounts the ZIP archive content \fIdata\fR as a Tcl virtual filesystem at
 \fImountpoint\fR.
