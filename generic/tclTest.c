@@ -2073,7 +2073,7 @@ static void SpecialFree(
  *	encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
  * Results:
- *    TCL_OK or TCL_ERROR. This any errors running the test, NOT the
+ *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
  *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
  *
  * Side effects:
@@ -2084,10 +2084,9 @@ static void SpecialFree(
  *    entire output buffer, not just the part containing the decoded
  *    portion. This allows for additional checks at test script level.
  *
- *    If any of the srcreadvar, dstwrotevar and
- *    dstcharsvar are specified and not empty, they are treated as names
- *    of variables where the *srcRead, *dstWrote and *dstChars output
- *    from the functions are stored.
+ *    If any of the srcreadvar, dstwrotevar and dstcharsvar are specified and
+ *    not empty, they are treated as names of variables where the *srcRead,
+ *    *dstWrote and *dstChars output from the functions are stored.
  *
  *    The function also checks internally whether nuls are correctly
  *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
@@ -2121,9 +2120,9 @@ static int UtfExtWrapper(
 	{"end", TCL_ENCODING_END},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
-	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
-	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
-	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
+	{"tcl8", TCL_ENCODING_PROFILE_TCL8},
+	{"strict", TCL_ENCODING_PROFILE_STRICT},
+	{"replace", TCL_ENCODING_PROFILE_REPLACE},
 	{NULL, 0}
     };
     Tcl_Size i;
@@ -2220,9 +2219,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetResult(interp,
-		"Tcl_ExternalToUtf wrote past output buffer",
-		TCL_STATIC);
+        Tcl_SetObjResult(interp,
+                         Tcl_ObjPrintf("%s wrote past output buffer",
+                                       transformer == Tcl_ExternalToUtf ?
+                                       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];

@@ -1,6 +1,8 @@
 # This file contains a collection of tests for Tcl_UtfToExternal and
-# Tcl_UtfToExternal. Sourcing this file into Tcl runs the tests and generates
-# errors. No output means no errors found.
+# Tcl_UtfToExternal that exercise various combinations of flags,
+# buffer lengths and fragmentation that cannot be tested by
+# normal script level commands. There tests are NOT intended to check
+# correct encodings; those are elsewhere.
 #
 # Copyright (c) 2023 Ashok P. Nadkarni
 #
@@ -18,69 +20,121 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
 
-# Maps encoded bytes string to utf-8 equivalents, both in hex
-# encoding utf-8 encdata
-lappend utfExtMap {*}{
-    ascii 414243 414243
-}
+namespace eval utftest {
+    # Format of table
+    # 0 comment (no spaces, might be used to generate id's as well)
+    # 1 encoding
+    # 2 hex representation of internal *modified* utf-8 encoding. This is the
+    #   source string for Tcl_UtfToExternal and expected result for
+    #   Tcl_ExternalToUtf.
+    # 3 hex representation in specified encoding. This is the source string for
+    #   Tcl_ExternalToUtf and expected result for Tcl_UtfToExternal.
+    # 4 internal fragmentation index - where to split field 2 for fragmentation
+    #   tests. -1 to skip
+    # 5 external fragmentation index - where to split field 3 for fragmentation
+    #   tests. -1 to skip
+    lappend utfExtMap {*}{
+        basic ascii 414243 414243 -1 -1
 
-# Simple test with basic flags
-proc testbasic {direction enc hexin hexout {flags {start end}}} {
-    if {$direction eq "toutf"} {
-        set cmd Tcl_ExternalToUtf
-    } else {
-        set cmd Tcl_UtfToExternal
+        bmp    utf-8 c3a9     c3a9      1  1
+        nonbmp utf-8 f09f9880 f09f9880  2  3
+        null   utf-8 41c08042 410042    2 -1
+
+        basic iso8859-1 41c3a942 41e942 2 -1
+        null  iso8859-1 41c08042 410042 2 -1
+
+        basic shiftjis 41e4b98e42 418cc142 3 2
+
+        basic jis0208  e4b98ee590be 38433863 -1 -1
+
+
     }
-    set in [binary decode hex $hexin]
-    set out [binary decode hex $hexout]
-    set dstlen 40 ;# Should be enough for all encoding tests
+
+    # Return a binary string containing nul terminator for encoding
+    proc hexnuls {enc} {
+        return [binary encode hex [encoding convertto $enc \x00]]
+    }
 
     # The C wrapper fills entire destination buffer with FF.
     # Anything beyond expected output should have FF's
-    set filler [string repeat \xFF $dstlen]
-    set result [string range "$out$filler" 0 $dstlen-1]
-    test $cmd-$enc-$hexin-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
-        [list testencoding $cmd $enc $in $flags {} $dstlen] \
-        -result [list ok {} $result] -constraints testencoding
-    foreach profile [encoding profiles] {
-        set flags2 [linsert $flags end profile$profile]
-        test $cmd-$enc-$hexin-[join $flags2 -] "$cmd - $enc - $hexin - $flags" -body \
-            [list testencoding $cmd $enc $in $flags2 {} $dstlen] \
-            -result [list ok {} $result] -constraints testencoding
+    proc fill {bin buflen} {
+        return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
     }
+
+    proc testutf {direction enc hexin hexout args} {
+        if {$direction eq "toutf"} {
+            set cmd Tcl_ExternalToUtf
+        } else {
+            set cmd Tcl_UtfToExternal
+        }
+        set in [binary decode hex $hexin]
+        set out [binary decode hex $hexout]
+        set dstlen 40 ;# Should be enough for all encoding tests
+
+        set status ok
+        set flags [list start end]
+        set constraints [list testencoding]
+        set profiles [encoding profiles]
+        while {[llength $args] > 1} {
+            set opt [lpop args 0]
+            switch $opt {
+                -flags       { set flags [lpop args 0] }
+                -constraints { lappend constraints {*}[lpop args 0] }
+                -profiles    { set profiles [lpop args 0] }
+                -status      { set status [lpop args 0]}
+                default {
+                    error "Unknown option \"$opt\""
+         A       }
+            }
+        }
+        if {[llength $args]} {
+            error "No value supplied for option [lindex $args 0]."
+        }
+
+        set result [list $status {} [fill $out $dstlen]]
+
+        test $cmd-$enc-$hexin-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
+            [list testencoding $cmd $enc $in $flags {} $dstlen] \
+            -result $result -constraints $constraints
+        foreach profile $profiles {
+            set flags2 [linsert $flags end $profile]
+            test $cmd-$enc-$hexin-[join $flags2 -] "$cmd - $enc - $hexin - $flags" -body \
+                [list testencoding $cmd $enc $in $flags2 {} $dstlen] \
+                -result $result -constraints $constraints
+        }
+    }
+
+    #
+    # Basic tests
+    foreach {comment enc utfhex hex internalfragindex externalfragindex} $utfExtMap {
+        # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
+        # Note by default output should be terminated with \0
+        set encnuls [hexnuls $enc]
+        testutf toutf $enc $hex ${utfhex}00
+        testutf fromutf $enc $utfhex $hex$encnuls
+
+        # Test TCL_ENCODING_NO_TERMINATE
+        testutf toutf $enc $hex $utfhex -flags {start end noterminate}
+        # noterminate is specific to ExternalToUtf,
+        # should have no effect in other direction
+        testutf fromutf $enc $utfhex $hex$encnuls -flags {start end noterminate}
+    }
+
+    # Bug regression tests
+    test Tcl_UtfToExternal-bug-183a1adcc0 {buffer overflow} -body {
+        testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1
+    } -result [list nospace {} \xFF] -constraints testencoding
+
+    test Tcl_ExternalToUtf-bug-5be203d6ca {
+        truncated prefix in table encoding
+    } -body {
+        set src \x82\x4F\x82\x50\x82
+        set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start tcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+        lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end tcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+    } -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1] -constraints testencoding
 }
 
-#
-# Basic tests
-foreach {enc utfhex hex} $utfExtMap {
-    # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
-    # Note by default output should be terminated with \0
-    testbasic toutf $enc $hex ${utfhex}00 {start end}
-    testbasic fromutf $enc $utfhex ${hex}00 {start end}
-
-    # Test TCL_ENCODING_NO_TERMINATE
-    testbasic toutf $enc $hex $utfhex {start end noterminate}
-    # knownBug - noterminate not obeyed by fromutf
-    # testbasic fromutf $enc $utfhex $hex {start end noterminate}
-}
-
-# Test for insufficient space
-test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
-    testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1
-} -result [list nospace {} \xFF] -constraints testencoding
-
-# Another bug - char limit not obeyed
-# % set cv 2
-# % testencoding Tcl_ExternalToUtf utf-8 abcdefgh {start end noterminate charlimit} {} 20 rv wv cv
-# nospace {} abcÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ
-
-test TableToUtf-bug-5be203d6ca {Bug 5be203d6ca - truncated prefix in table encoding} -body {
-    set src \x82\x4F\x82\x50\x82
-    lassign [testencoding Tcl_ExternalToUtf shiftjis $src {start profiletcl8} 0 16 srcRead dstWritten charsWritten] buf
-    set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start profiletcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
-    lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end profiletcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
-} -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1] -constraints testencoding
-
+namespace delete utftest
 
 ::tcltest::cleanupTests
 return
