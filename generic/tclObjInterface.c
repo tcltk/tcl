@@ -313,11 +313,7 @@ Tcl_ObjTypeSetName(
 	Tcl_ObjType *otPtr
 	,char *name
 ) {
-    /* use cast to silence compiler warning "initialization from incompatible
-     * pointer type"
-    */
-    const char *namefieldPtr = (char *)&(otPtr->name);
-	namefieldPtr = name;
+    otPtr->name = name;
 	return TCL_OK;
 }
 
