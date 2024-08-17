@@ -28,7 +28,7 @@ msgcat \- Tcl message catalog
 \fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
 .VE "TIP 499"
 .VS "TIP 412"
-\fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
+\fB::msgcat::mcloadedlocales subcommand\fR
 .VE "TIP 412"
 \fB::msgcat::mcload \fIdirname\fR
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
@@ -222,7 +222,7 @@ configured by:
 .PP
 .\" COMMAND: mcloadedlocales
 .TP
-\fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
+\fB::msgcat::mcloadedlocales subcommand\fR
 .VS "TIP 499"
 This group of commands manage the list of loaded locales for packages not
 setting a package locale.
@@ -382,10 +382,9 @@ language[_country][_modifier]
 .PP
 On Windows and Cygwin, if none of those environment variables is set,
 msgcat will attempt to extract locale information from the registry.
-From Windows Vista on, the RFC4747 locale name "lang-script-country-options"
+The RFC4747 locale name "lang-script-country-options"
 is transformed to the locale as "lang_country_script" (Example:
-sr-Latn-CS -> sr_cs_latin). For Windows XP, the language id is
-transformed analogously (Example: 0c1a -> sr_yu_cyrillic).
+sr-Latn-CS -> sr_cs_latin).
 If all these attempts to discover an initial locale from the user's
 environment fail, msgcat defaults to an initial locale of
 .QW C .
@@ -598,7 +597,7 @@ If a set of locale preferences is given, it is set as package locale preference
 list. The package locale is set to the first element of the preference list.
 A package locale is activated, if it was not set so far.
 .PP
-Locale preferences are loaded now for the package, if not jet loaded.
+Locale preferences are loaded now for the package, if not yet loaded.
 .VE "TIP 499"
 .RE
 .PP

@@ -3417,16 +3417,18 @@ ClockParseFmtScnArgs(
     if (opts->baseObj != NULL) {
 	Tcl_Obj *baseObj = opts->baseObj;
 
-	/* bypass integer recognition if looks like option "-now" */
-	if ((baseObj->bytes && baseObj->length == 4 && baseObj->bytes[1] == 'n')
+	/* bypass integer recognition if looks like "now" or "-now" */
+	if ((baseObj->bytes && 
+		((baseObj->length == 3 && baseObj->bytes[0] == 'n') ||
+		 (baseObj->length == 4 && baseObj->bytes[1] == 'n')))
 		|| TclGetWideIntFromObj(NULL, baseObj, &baseVal) != TCL_OK) {
-	    /* we accept "-now" as current date-time */
+	    /* we accept "now" and "-now" as current date-time */
 	    static const char *const nowOpts[] = {
-		"-now", NULL
+		"now", "-now", NULL
 	    };
 	    int idx;
 
-	    if (Tcl_GetIndexFromObj(interp, baseObj, nowOpts, "seconds",
+	    if (Tcl_GetIndexFromObj(NULL, baseObj, nowOpts, "seconds",
 		    TCL_EXACT, &idx) == TCL_OK) {
 		goto baseNow;
 	    }
@@ -3435,7 +3437,9 @@ ClockParseFmtScnArgs(
 		goto baseOverflow;
 	    }
 
-	    Tcl_AppendResult(interp, " or integer", (char *)NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad seconds \"%s\": must be now or integer",
+		TclGetString(baseObj)));
 	    i = baseIdx;
 	    goto badOption;
 	}
@@ -3527,7 +3531,7 @@ ClockFormatObjCmd(
     Tcl_Obj *const objv[])	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
-    static const char *syntax = "clock format clockval|-now "
+    static const char *syntax = "clock format clockval|now "
 	    "?-format string? "
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
@@ -3737,13 +3741,19 @@ ClockScanCommit(
 	}
     }
 
+    /* If seconds overflows the day (no validate case), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY) {
+	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
+	yySecondOfDay %= SECONDS_PER_DAY;
+    }
+
     /* Local seconds to UTC (stored in yydate.seconds) */
 
     if (info->flags & CLF_ASSEMBLE_SECONDS) {
 	yydate.localSeconds =
 		-210866803200LL
 		+ (SECONDS_PER_DAY * yydate.julianDay)
-		+ (yySecondOfDay % SECONDS_PER_DAY);
+		+ yySecondOfDay;
     }
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS | CLF_LOCALSEC)) {
@@ -4352,7 +4362,7 @@ ClockAddObjCmd(
     Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock add clockval|-now ?number units?..."
+    static const char *syntax = "clock add clockval|now ?number units?..."
 	    "?-gmt boolean? "
 	    "?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;

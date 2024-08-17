@@ -1186,11 +1186,6 @@ TestobjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	    } else {
 		typeName = objv[2]->typePtr->name;
-		if (!strcmp(typeName, "utf32string"))
-		    typeName = "string";
-#ifndef TCL_WIDE_INT_IS_LONG
-	    else if (!strcmp(typeName, "wideInt")) typeName = "int";
-#endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	    }
 	}
@@ -1286,11 +1281,6 @@ TestobjCmd(
 	}
 	if (varPtr[varIndex]->typePtr == NULL) { /* a string! */
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), "string", -1);
-#ifndef TCL_WIDE_INT_IS_LONG
-	} else if (!strcmp(varPtr[varIndex]->typePtr->name, "wideInt")) {
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "int", -1);
-#endif
 	} else {
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		    varPtr[varIndex]->typePtr->name, -1);

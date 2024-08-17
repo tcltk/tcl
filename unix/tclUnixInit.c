@@ -597,17 +597,21 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
+    /* Here, search for i in the interval left <= i < right. */
     while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
+	    /* Found it at i == test.  */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
+	    /* Restrict the search to the interval test < i < right. */
 	    left = test+1;
 	} else {
-	    right = test-1;
+	    /* Restrict the search to the interval left <= i < test. */
+	    right = test;
 	}
     }
     return NULL;

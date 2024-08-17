@@ -2396,6 +2396,7 @@ test info-33.35 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 2389 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+
 namespace eval ::testinfocmdtype {
     apply {cmds {
 	foreach c $cmds {rename $c {}}
@@ -2566,6 +2567,28 @@ namespace delete ::testinfocmdtype
 # -------------------------------------------------------------------------
 unset -nocomplain res
 
+test info-19.7 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars}
+} -cleanup {
+    namespace delete x
+} -result {}
+test info-19.8 {info vars: bug [0e4b7fce57], TIP #278 - no global vars resolve} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {}
+test info-19.9 {info vars: global vars resolved by pattern} -setup {
+    catch {namespace delete x}
+} -body {
+    namespace eval x {info vars ::tcl_platform}
+} -cleanup {
+    namespace delete x
+} -result {::tcl_platform}
+
 test info-39.2 {Bug 4b61afd660} -setup {
     proc probe {} {
 	return [dict get [info frame -1] line]
@@ -2582,6 +2605,29 @@ test info-39.2 {Bug 4b61afd660} -setup {
     rename demo {}
     rename probe {}
 } -result 3
+
+test info-40.0 {Bug 0de6c1d79c crash} -setup {
+    interp create child
+    child hide info
+} -cleanup {
+    interp delete child
+} -body {
+    child invokehidden info frame
+} -result 1
+
+test info-41.0 {Bug 0de6c1d79c crash} -setup {
+    interp create child
+    child hide info
+} -body {
+    list [child invokehidden info frame] \
+	[child invokehidden info frame 0] \
+	[child invokehidden info frame 1] \
+	[catch {child invokehidden info frame -1} msg] $msg \
+	[catch {child invokehidden info frame 2} msg] $msg
+} -cleanup {
+    interp delete child
+    unset -nocomplain msg
+} -result {1 {type precompiled} {type precompiled} 1 {bad level "-1"} 1 {bad level "2"}}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
