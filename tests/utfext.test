@@ -21,33 +21,50 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
 
 namespace eval utftest {
-    # Format of table
+    # Format of table, indexed by encoding.
+    # Each element is list of lists. Nested lists have following fields
     # 0 comment (no spaces, might be used to generate id's as well)
-    # 1 encoding
-    # 2 hex representation of internal *modified* utf-8 encoding. This is the
+    #   The combination of comment and internal hex (2) should be unique.
+    # 1 hex representation of internal *modified* utf-8 encoding. This is the
     #   source string for Tcl_UtfToExternal and expected result for
     #   Tcl_ExternalToUtf.
-    # 3 hex representation in specified encoding. This is the source string for
+    # 2 hex representation in specified encoding. This is the source string for
     #   Tcl_ExternalToUtf and expected result for Tcl_UtfToExternal.
-    # 4 internal fragmentation index - where to split field 2 for fragmentation
+    # 3 internal fragmentation index - where to split field 1 for fragmentation
     #   tests. -1 to skip
-    # 5 external fragmentation index - where to split field 3 for fragmentation
+    # 4 external fragmentation index - where to split field 2 for fragmentation
     #   tests. -1 to skip
     lappend utfExtMap {*}{
-        basic ascii 414243 414243 -1 -1
-
-        bmp    utf-8 c3a9     c3a9      1  1
-        nonbmp utf-8 f09f9880 f09f9880  2  3
-        null   utf-8 41c08042 410042    2 -1
-
-        basic iso8859-1 41c3a942 41e942 2 -1
-        null  iso8859-1 41c08042 410042 2 -1
-
-        basic shiftjis 41e4b98e42 418cc142 3 2
-
-        basic jis0208  e4b98ee590be 38433863 -1 -1
-
-
+        ascii {
+            {basic 414243 414243 -1 -1}
+        }
+        utf-8 {
+            {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
+            {nonbmp {41 f09f9880 42} {41 f09f9880 42}  2  3}
+            {null   {41 c080 42} {41 00 42}    2 -1}
+        }
+        utf-16le {
+            {bmp    {41 c3a9 42}     {4100 e900 4200}     2  3}
+            {nonbmp {41 f09f9880 42} {4100 3dd8 00de 4200} 4  3}
+            {split-surrogate {41 f09f9080 42} {4100 3dd8 00dc 4200} 3  4}
+            {null   {41 c080 42} {4100 0000 4200}  2 3}
+        }
+        utf-16be {
+            {bmp    {41 c3a9 42}     {0041 00e9 0042}     2  3}
+            {nonbmp {41 f09f9880 42} {0041 d83d de00 0042} 4  3}
+            {split-surrogate {41 f09f9080 42} {0041 d83d dc00 0042} 3  4}
+            {null   {41 c080 42} {0041 0000 0042}  2 3}
+        }
+        iso8859-1 {
+            {basic {41 c3a9 42} 41e942 2 -1}
+            {null  {41 c080 42} 410042 2 -1}
+        }
+        shiftjis {
+            {basic {41 e4b98e 42} {41 8cc1 42} 3 2}
+        }
+        jis0208 {
+            {basic {e4b98e e590be} {3843 3863} 1 1}
+        }
     }
 
     # Return a binary string containing nul terminator for encoding
@@ -61,7 +78,8 @@ namespace eval utftest {
         return [string range "$bin[string repeat \xFF $buflen]" 0 $buflen-1]
     }
 
-    proc testutf {direction enc hexin hexout args} {
+    proc testutf {direction enc comment hexin hexout args} {
+        set id $comment-[join $hexin ""]
         if {$direction eq "toutf"} {
             set cmd Tcl_ExternalToUtf
         } else {
@@ -84,7 +102,7 @@ namespace eval utftest {
                 -status      { set status [lpop args 0]}
                 default {
                     error "Unknown option \"$opt\""
-         A       }
+                }
             }
         }
         if {[llength $args]} {
@@ -93,31 +111,72 @@ namespace eval utftest {
 
         set result [list $status {} [fill $out $dstlen]]
 
-        test $cmd-$enc-$hexin-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
+        test $cmd-$enc-$id-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
             [list testencoding $cmd $enc $in $flags {} $dstlen] \
             -result $result -constraints $constraints
         foreach profile $profiles {
             set flags2 [linsert $flags end $profile]
-            test $cmd-$enc-$hexin-[join $flags2 -] "$cmd - $enc - $hexin - $flags" -body \
+            test $cmd-$enc-$id-[join $flags2 -] "$cmd - $enc - $hexin - $flags2" -body \
                 [list testencoding $cmd $enc $in $flags2 {} $dstlen] \
                 -result $result -constraints $constraints
         }
     }
 
+    proc testfragment {direction enc comment hexin hexout fragindex} {
+
+        if {$fragindex < 0} {
+            # Single byte encodings so no question of fragmentation
+            return
+        }
+        set id $comment-[join $hexin ""]-fragment
+
+        if {$direction eq "toutf"} {
+            set cmd Tcl_ExternalToUtf
+        } else {
+            set cmd Tcl_UtfToExternal
+        }
+
+        set in [binary decode hex $hexin]
+        set infrag [string range $in 0 $fragindex-1]
+        set out [binary decode hex $hexout]
+        set dstlen 40 ;# Should be enough for all encoding tests
+
+        set expected_result {}
+        append expected_result multibyte $fragindex
+
+        test $cmd-$enc-$id "$cmd - $enc - $hexin - frag" -constraints testencoding -body {
+            set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen frag1Read frag1Written]
+            lassign $frag1Result frag1Status frag1State frag1Decoded
+            set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen frag2Read frag2Written]
+            lassign $frag2Result frag2Status frag2State frag2Decoded
+            set decoded [string cat [string range $frag1Decoded 0 $frag1Written-1] [string range $frag2Decoded 0 $frag2Written-1]]
+            list $frag1Status [expr {$frag1Read < $fragindex}] \
+                $frag2Status [expr {$frag1Read+$frag2Read}] \
+                [expr {$frag1Written+$frag2Written}] $decoded
+        } -result [list multibyte 1 ok [string length $in] [string length $out] $out]
+    }
+
     #
     # Basic tests
-    foreach {comment enc utfhex hex internalfragindex externalfragindex} $utfExtMap {
-        # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
-        # Note by default output should be terminated with \0
-        set encnuls [hexnuls $enc]
-        testutf toutf $enc $hex ${utfhex}00
-        testutf fromutf $enc $utfhex $hex$encnuls
+    foreach {enc testcases} $utfExtMap {
+        foreach testcase $testcases {
+            lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex} 
 
-        # Test TCL_ENCODING_NO_TERMINATE
-        testutf toutf $enc $hex $utfhex -flags {start end noterminate}
-        # noterminate is specific to ExternalToUtf,
-        # should have no effect in other direction
-        testutf fromutf $enc $utfhex $hex$encnuls -flags {start end noterminate}
+            # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
+            # Note by default output should be terminated with \0
+            set encnuls [hexnuls $enc]
+            testutf toutf $enc $comment $hex ${utfhex}00
+            testutf fromutf $enc $comment $utfhex $hex$encnuls
+
+            # Test TCL_ENCODING_NO_TERMINATE
+            testutf toutf $enc $comment $hex $utfhex -flags {start end noterminate}
+            # noterminate is specific to ExternalToUtf,
+            # should have no effect in other direction
+            testutf fromutf $enc $comment $utfhex $hex$encnuls -flags {start end noterminate}
+
+            testfragment toutf $enc $comment $hex $utfhex $externalfragindex
+            testfragment fromutf $enc $comment $utfhex $hex $internalfragindex
+        }
     }
 
     # Bug regression tests
