@@ -3390,7 +3390,7 @@ TEBCresume(
 	}
 	if (Tcl_IsShared(objResultPtr)) {
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, tclListType);
+		    interp, objResultPtr, tclListTypePtr);
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3454,7 +3454,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, tclListType);
+			interp, objResultPtr, tclListTypePtr);
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
 		    }
@@ -4684,14 +4684,14 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 	if (
-	    TclHasInternalRep(value2Ptr, tclListType)
+	    TclHasInternalRep(value2Ptr, tclListTypePtr)
 	    ||
 	    TclObjectHasInterface(value2Ptr, list, length)
 	) {
 	    Tcl_Size value2Length;
 	    if (Tcl_ListObjLength(interp,value2Ptr,&value2Length),
 		value2Length == 1) {
-		if (TclHasInternalRep(value2Ptr, tclListType)) {
+		if (TclHasInternalRep(value2Ptr, tclListTypePtr)) {
 		    value2Ptr = TclListObjGetElement(value2Ptr, 0);
 		} else {
 		    Tcl_ListObjIndex(interp, value2Ptr, 0, &value2Ptr);
@@ -4702,11 +4702,11 @@ TEBCresume(
 	}
 
 	if (TclObjectHasInterface(valuePtr, list, length)
-	    || TclHasInternalRep(valuePtr, tclListType)) {
+	    || TclHasInternalRep(valuePtr, tclListTypePtr)) {
 	    int code, haveElements = 0, status;
 
-	    if (TclHasInternalRep(valuePtr, tclListType)) {
-		/* since the type is tclListtype, this can't fail */
+	    if (TclHasInternalRep(valuePtr, tclListTypePtr)) {
+		/* since the type is tclListTypePtr, this can't fail */
 		TclListObjGetElementsM(interp, valuePtr, &objc, &objv);
 		haveElements = 1;
 	    } else {
@@ -4815,7 +4815,7 @@ TEBCresume(
 	 * in the process.
 	 */
 
-	if (!TclHasInternalRep(valuePtr, tclListType)
+	if (!TclHasInternalRep(valuePtr, tclListTypePtr)
 	    && TclObjectHasInterface(valuePtr, list, index)) {
 	    if (Tcl_ListObjLength(interp, valuePtr, &objc) != TCL_OK) {
 		TRACE_ERROR(interp);
@@ -6589,7 +6589,7 @@ TEBCresume(
 	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, tclListType);
+		    interp, listPtr, tclListTypePtr);
 		if (!objPtr) {
 		    goto gotError;
 		}

@@ -2799,7 +2799,7 @@ EachloopCmd(
 	/* List */
 	/* Variables */
 	statePtr->vCopyList[i] = TclDuplicatePureObj(
-	    interp, objv[1+i*2], tclListType);
+	    interp, objv[1+i*2], tclListTypePtr);
 	if (!statePtr->vCopyList[i]) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2841,7 +2841,7 @@ EachloopCmd(
 	    }
 	} else {
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		interp, objv[2+i*2], tclListType);
+		interp, objv[2+i*2], tclListTypePtr);
 	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;

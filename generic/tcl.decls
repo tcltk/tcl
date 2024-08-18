@@ -2782,12 +2782,18 @@ declare 715 {
 
 declare 716 {
     int Tcl_ObjTypeSetInterface(Tcl_ObjType *objTypePtr
-	,Tcl_ObjInterface * objInterfacePtr)
+	,Tcl_ObjInterface *objInterfacePtr)
 }
 
 
 declare 717 {
     int Tcl_ObjTypeSetName(Tcl_ObjType *objTypePtr ,char *name)
+}
+
+
+declare 718 {
+    int Tcl_ObjInterfaceSetFnStringIsEmpty(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceStringIsEmptyProc fnPtr)
 }
 
 

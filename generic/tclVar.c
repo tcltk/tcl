@@ -3110,7 +3110,7 @@ ArrayForNRCmd(
      * loop) don't vanish.
      */
 
-    varListObj = TclDuplicatePureObj(interp, objv[1], tclListType);
+    varListObj = TclDuplicatePureObj(interp, objv[1], tclListTypePtr);
     if (!varListObj) {
 	return TCL_ERROR;
     }
@@ -4009,7 +4009,7 @@ ArraySetCmd(
      */
 
     arrayElemObj = objv[2];
-    if (TclHasInternalRep(arrayElemObj, &tclDictType) && arrayElemObj->bytes == NULL) {
+    if (TclHasInternalRep(arrayElemObj, tclDictTypePtr) && arrayElemObj->bytes == NULL) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
@@ -4087,7 +4087,7 @@ ArraySetCmd(
 	 */
 
 	copyListObj =
-	    TclDuplicatePureObj(interp, arrayElemObj, tclListType);
+	    TclDuplicatePureObj(interp, arrayElemObj, tclListTypePtr);
 	if (!copyListObj) {
 	    return TCL_ERROR;
 	}

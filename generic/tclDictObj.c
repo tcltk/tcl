@@ -156,62 +156,35 @@ typedef struct Dict {
  */
 
 
-ObjInterface dictObjInterface = {
-    0,
-    {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL
-    },
-    {
-	NULL,	/* GetElements */
-	NULL,
-	NULL,
-	NULL,	/* return key or value at "list" index
-				 * location.  (keysare at even indicies,
-				 * values at odd indicies) */
-	NULL,			/* Index End*/
-	NULL,
-	DictAsListLength,	/* return "list" length of dict value w/o
-				* shimmering */
-	NULL,	/* Slice */
-	NULL,
-	NULL,	/* Replace */
-	NULL,
-	NULL,	/* Reverse */
-	NULL,	/* SetElement */
-	NULL
-    }
-};
+ObjInterface dictObjInterface;
 
 
 
-
-const ObjectType tclDictType = {
+static ObjectType tclDictObjectType = {
     "dict",
     FreeDictInternalRep,	/* freeIntRepProc */
     DupDictInternalRep,		/* dupIntRepProc */
     UpdateStringOfDict,		/* updateStringProc */
     SetDictFromAny,		/* setFromAnyProc */
     2,
-    (Tcl_ObjInterface *)&dictObjInterface
+    NULL
 };
+
+Tcl_ObjType *tclDictTypePtr = (Tcl_ObjType *)&tclDictObjectType;
 
 #define DictSetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        Tcl_ObjInternalRep ir;                                               \
+        Tcl_ObjInternalRep ir;                                          \
         ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
         ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreInternalRep((objPtr), (Tcl_ObjType *)&tclDictType, &ir);                   \
+        Tcl_StoreInternalRep((objPtr), tclDictTypePtr, &ir);            \
     } while (0)
 
 #define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        const Tcl_ObjInternalRep *irPtr;                                     \
-        irPtr = TclFetchInternalRep((objPtr), (Tcl_ObjType *)&tclDictType);                \
-        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
+        const Tcl_ObjInternalRep *irPtr;                                \
+        irPtr = TclFetchInternalRep((objPtr), tclDictTypePtr);          \
+        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;  \
     } while (0)
 
 /*
@@ -249,6 +222,15 @@ typedef struct {
     Tcl_Obj *accumulatorObj;	/* The dictionary used to accumulate the
 				 * results. */
 } DictMapStorage;
+
+
+void TclDictInit(void) {
+    Tcl_ObjInterface *oiPtr;
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,DictAsListLength);
+    Tcl_ObjTypeSetInterface(tclDictTypePtr ,oiPtr);
+    return;
+}
 
 /***** START OF FUNCTIONS IMPLEMENTING DICT CORE API *****/
 
@@ -652,7 +634,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (TclHasInternalRep(objPtr, tclListType)) {
+    if (TclHasInternalRep(objPtr, tclListTypePtr)) {
 	Tcl_Size objc, i;
 	Tcl_Obj **objv;
 

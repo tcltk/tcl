@@ -81,7 +81,7 @@
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
-    LIST_ASSERT(TclHasInternalRep((listObj_), tclListType))
+    LIST_ASSERT(TclHasInternalRep((listObj_), tclListTypePtr))
 
 /*
  * If ENABLE_LIST_INVARIANTS is enabled (-DENABLE_LIST_INVARIANTS from the
@@ -165,6 +165,7 @@ static int		ListObjSetElement(tclObjTypeInterfaceArgsListSet);
 static Tcl_Obj *	LsetFlat(tclObjTypeInterfaceArgsListSetList);
 static Tcl_Obj *	ListObjRange(tclObjTypeInterfaceArgsListRange);
 static int		ListObjReplace(tclObjTypeInterfaceArgsListReplace);
+static int		ListObjStringIsEmpty(tclObjTypeInterfaceArgsStringIsEmpty);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -173,39 +174,35 @@ static int		ListObjReplace(tclObjTypeInterfaceArgsListReplace);
  * The internal representation of a list object is ListRep defined in tcl.h.
  */
 
-ObjInterface tclListInterface = {
-    1,
-    {},
-    {
-	&ListObjInterfaceGetElements,
-	&ListObjAppendElement,
-	&ListObjAppendList,
-	&ListObjIndex,
-	NULL,
-	NULL,
-	&ListObjInterfaceLength,
-	&ListObjRange,
-	NULL,
-	&ListObjReplace,
-	NULL, /* replaceList */
-	NULL, /* reverse */
-	&ListObjSetElement,
-	&LsetFlat
-    },
-};
-
-
-const ObjectType tclListObjType = {
+static ObjectType tclListObjectType = {
     "list",
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,	/* setFromAnyProc */
     2,
-    (Tcl_ObjInterface *)&tclListInterface
+    NULL
 };
 
-MODULE_SCOPE const Tcl_ObjType *tclListType = (Tcl_ObjType *)&tclListObjType;
+Tcl_ObjType * tclListTypePtr = (Tcl_ObjType *)&tclListObjectType;
+
+
+void TclListInit(void) {
+    Tcl_ObjInterface *oiPtr;
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnStringIsEmpty(oiPtr ,ListObjStringIsEmpty);
+    Tcl_ObjInterfaceSetFnListAll(oiPtr ,ListObjInterfaceGetElements);
+    Tcl_ObjInterfaceSetFnListAppend(oiPtr ,ListObjAppendElement);
+    Tcl_ObjInterfaceSetFnListAppendList(oiPtr ,ListObjAppendList);
+    Tcl_ObjInterfaceSetFnListIndex(oiPtr ,ListObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,ListObjInterfaceLength);
+    Tcl_ObjInterfaceSetFnListRange(oiPtr ,ListObjRange);
+    Tcl_ObjInterfaceSetFnListReplace(oiPtr ,ListObjReplace);
+    Tcl_ObjInterfaceSetFnListSet(oiPtr ,LsetFlat);
+    Tcl_ObjInterfaceSetFnListSetFlat(oiPtr ,ListObjSetElement);
+    Tcl_ObjTypeSetInterface(tclListTypePtr ,oiPtr);
+    return;
+}
 
 /* Macros to manipulate the List internal rep */
 
@@ -215,18 +212,18 @@ MODULE_SCOPE const Tcl_ObjType *tclListType = (Tcl_ObjType *)&tclListObjType;
 	ir.twoPtrValue.ptr1 = (listRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	(listRepPtr)->refCount++;					\
-	Tcl_StoreInternalRep((objPtr), tclListType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), tclListTypePtr, &ir);			\
     } while (0)
 
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), tclListType);		\
+	irPtr = TclFetchInternalRep((objPtr), tclListTypePtr);		\
 	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    TclFetchInternalRep((objPtr), tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchInternalRep((objPtr), tclListTypePtr)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -274,7 +271,7 @@ MODULE_SCOPE const Tcl_ObjType *tclListType = (Tcl_ObjType *)&tclListObjType;
     do {                                                               \
 	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
 	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
-	(objPtr_)->typePtr = tclListType;                             \
+	(objPtr_)->typePtr = tclListTypePtr;                           \
     } while (0)
 
 #define ListObjOverwriteRep(objPtr_, repPtr_) \
@@ -1319,13 +1316,13 @@ TclNewListObj2(
 static int
 TclListObjGetRep(
     Tcl_Interp *interp, /* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,   /* List object for which an element array is
+    Tcl_Obj *listPtr,   /* List object for which an element array is
 			 * to be returned. */
     ListRep *repPtr) /* Location to store descriptor */
 {
-    if (!TclHasInternalRep(listObj, tclListType)) {
+    if (!TclHasInternalRep(listPtr, tclListTypePtr)) {
 	int result;
-	result = SetListFromAny(interp, listObj);
+	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    /* Init to keep gcc happy wrt uninitialized fields at call site */
 	    repPtr->storePtr = NULL;
@@ -1333,7 +1330,7 @@ TclListObjGetRep(
 	    return result;
 	}
     }
-    ListObjGetRep(listObj, repPtr);
+    ListObjGetRep(listPtr, repPtr);
     LISTREP_CHECK(repPtr);
     return TCL_OK;
 }
@@ -1661,7 +1658,7 @@ ListObjRange(
  *
  *	Returns a single element from the array of the elements in a list
  *	object, without doing doing any bounds checking.  Caller must ensure
- *	that ObjPtr of of type 'tclListType' and that  index is valid for the
+ *	that ObjPtr of of type 'tclListTypePtr' and that  index is valid for the
  *	list.
  *
  *----------------------------------------------------------------------
@@ -2667,6 +2664,15 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
     return TCL_OK;
 }
+
+
+int
+ListObjStringIsEmpty(tclObjTypeInterfaceArgsStringIsEmpty) {
+    if (!TclHasInternalRep(listPtr, tclListTypePtr)) {
+	Tcl_Panic("%s called Tcl_Obj whose type is not tclListType", "listObjStringIsEmpty");
+    }
+    return TclCheckEmptyString(listPtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2710,7 +2716,7 @@ TclLindexList(
      * shimmering; if internal rep is already a list do not shimmer it.
      * see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, tclListType)
+    if (!TclHasInternalRep(argObj, tclListTypePtr)
 	&& TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/*
@@ -2731,7 +2737,7 @@ TclLindexList(
      * does not.
      */
 
-    indexListCopy = TclDuplicatePureObj(interp, argObj, tclListType);
+    indexListCopy = TclDuplicatePureObj(interp, argObj, tclListTypePtr);
     if (!indexListCopy) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
@@ -2856,7 +2862,7 @@ TclLindexFlat(
 		     * Must set the internal rep again because it may have been
 		     * changed by TclGetIntForIndexM. See test lindex-8.4.
 		     */
-		    if (!TclHasInternalRep(listObj, tclListType)) {
+		    if (!TclHasInternalRep(listObj, tclListTypePtr)) {
 			status = SetListFromAny(interp, listObj);
 			if (status != TCL_OK) {
 			    /* The list is not a list at all => error.  */
@@ -2928,7 +2934,7 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    if (!TclHasInternalRep(indexArgObj, tclListType)
+    if (!TclHasInternalRep(indexArgObj, tclListTypePtr)
 	&& TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
@@ -2937,7 +2943,7 @@ TclLsetList(
     }
 
     indexListCopy = TclDuplicatePureObj(
-	    interp, indexArgObj, tclListType);
+	    interp, indexArgObj, tclListTypePtr);
     if (!indexListCopy) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
@@ -3017,7 +3023,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
      */
 
     subListObj = Tcl_IsShared(listObj)
-	? TclDuplicatePureObj(interp, listObj, tclListType) : listObj;
+	? TclDuplicatePureObj(interp, listObj, tclListTypePtr) : listObj;
     if (!subListObj) {
 	return NULL;
     }
@@ -3107,7 +3113,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	    }
 	    if (Tcl_IsShared(subListObj)) {
 		subListObj = TclDuplicatePureObj(
-		    interp, subListObj, tclListType);
+		    interp, subListObj, tclListTypePtr);
 		if (!subListObj) {
 		    return NULL;
 		}
@@ -3131,7 +3137,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	    if (Tcl_IsShared(subListObj)) {
 		Tcl_Obj * newSubListObj;
 		newSubListObj = TclDuplicatePureObj(
-		    interp, subListObj, tclListType);
+		    interp, subListObj, tclListTypePtr);
 		if (copied) {
 		    Tcl_DecrRefCount(subListObj);
 		}
@@ -3475,7 +3481,7 @@ SetListFromAny(
 	    index++;
 	}
 	TclUndoRefCount(objPtr);
-    } else if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
+    } else if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, tclDictTypePtr)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
@@ -3596,7 +3602,7 @@ fail:
     TclFreeInternalRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = listRep.storePtr;
     objPtr->internalRep.twoPtrValue.ptr2 = listRep.spanPtr;
-    objPtr->typePtr = tclListType;
+    objPtr->typePtr = tclListTypePtr;
 
     return TCL_OK;
 }

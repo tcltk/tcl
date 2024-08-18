@@ -213,6 +213,17 @@ Tcl_ObjInterfaceSetFnStringIndexEnd(
 
 
 int
+Tcl_ObjInterfaceSetFnStringIsEmpty(
+    Tcl_ObjInterface *objInterfacePtr
+    ,int (fnPtr) (tclObjTypeInterfaceArgsStringIsEmpty)
+) {
+    ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
+    oiPtr->string.isEmpty = fnPtr;
+    return TCL_OK;
+}
+
+
+int
 Tcl_ObjInterfaceSetFnStringLength(
 	Tcl_ObjInterface *objInterfacePtr
 	,Tcl_Size (fnPtr) (tclObjTypeInterfaceArgsStringLength)

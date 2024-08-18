@@ -2010,7 +2010,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && TclHasInternalRep(objv[objc-2], (Tcl_ObjType *)&tclDictType)) {
+	    && TclHasInternalRep(objv[objc-2], tclDictTypePtr)) {
 	Tcl_Size i;
 	int done;
 	Tcl_DictSearch search;

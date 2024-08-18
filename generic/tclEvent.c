@@ -244,7 +244,7 @@ HandleBgErrors(
 	 */
 
 	Tcl_Obj *copyObj = TclDuplicatePureObj(
-	    interp, assocPtr->cmdPrefix, tclListType);
+	    interp, assocPtr->cmdPrefix, tclListTypePtr);
 	if (!copyObj) {
 	    return;
 	}
@@ -1164,6 +1164,10 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+
+	    TclArithSeriesInit();
+	    TclListInit();
+	    TclDictInit();
 	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();

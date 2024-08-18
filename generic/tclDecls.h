@@ -1977,6 +1977,10 @@ EXTERN int		Tcl_ObjTypeSetInterface(Tcl_ObjType *objTypePtr,
 /* 717 */
 EXTERN int		Tcl_ObjTypeSetName(Tcl_ObjType *objTypePtr,
 				char *name);
+/* 718 */
+EXTERN int		Tcl_ObjInterfaceSetFnStringIsEmpty(
+				Tcl_ObjInterface *oiPtr,
+				Tcl_ObjInterfaceStringIsEmptyProc fnPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2706,6 +2710,7 @@ typedef struct TclStubs {
     int (*tcl_ObjInterfaceSetFnStringRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringRangeEndProc fnPtr); /* 715 */
     int (*tcl_ObjTypeSetInterface) (Tcl_ObjType *objTypePtr, Tcl_ObjInterface *objInterfacePtr); /* 716 */
     int (*tcl_ObjTypeSetName) (Tcl_ObjType *objTypePtr, char *name); /* 717 */
+    int (*tcl_ObjInterfaceSetFnStringIsEmpty) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIsEmptyProc fnPtr); /* 718 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4093,6 +4098,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ObjTypeSetInterface) /* 716 */
 #define Tcl_ObjTypeSetName \
 	(tclStubsPtr->tcl_ObjTypeSetName) /* 717 */
+#define Tcl_ObjInterfaceSetFnStringIsEmpty \
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIsEmpty) /* 718 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

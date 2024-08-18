@@ -287,6 +287,7 @@ typedef struct ObjInterface {
     struct string {
 	int (*index)(tclObjTypeInterfaceArgsStringIndex);
 	int (*indexEnd)(tclObjTypeInterfaceArgsStringIndexEnd);
+	int (*isEmpty)(tclObjTypeInterfaceArgsStringIsEmpty);
 	Tcl_Size (*length)(tclObjTypeInterfaceArgsStringLength);
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsStringRange);
 	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsStringRangeEnd);
@@ -2666,7 +2667,7 @@ typedef struct ListRep {
  * converted to a list.
  */
 #define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
-    (((listObj_)->typePtr == tclListType)                               \
+    (((listObj_)->typePtr == tclListTypePtr)                             \
 	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))),  \
 	    TCL_OK)                                                      \
 	 : Tcl_ListObjGetElements(                                       \
@@ -2678,12 +2679,12 @@ typedef struct ListRep {
  * Tcl_Obj cannot be converted to a list.
  */
 #define TclListObjLengthM(interp_, listObj_, lenPtr_)                \
-    (((listObj_)->typePtr == tclListType)                           \
+    (((listObj_)->typePtr == tclListTypePtr)                         \
 	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK)         \
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
 
 #define TclListObjIsCanonical(listObj_)       \
-    (((listObj_)->typePtr == tclListType)    \
+    (((listObj_)->typePtr == tclListTypePtr)    \
 	? ListObjIsCanonical((listObj_)) : 0)
 
 /*
@@ -3023,8 +3024,8 @@ MODULE_SCOPE const Tcl_ObjType *tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType *tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType *tclIntType;
-MODULE_SCOPE const Tcl_ObjType *tclListType;
-MODULE_SCOPE const ObjectType tclDictType;
+MODULE_SCOPE Tcl_ObjType * tclListTypePtr;
+MODULE_SCOPE Tcl_ObjType * tclDictTypePtr;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
@@ -3185,6 +3186,7 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
+MODULE_SCOPE void	TclArithSeriesInit(void);
 MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    void *clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
@@ -3223,6 +3225,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
+MODULE_SCOPE void	TclDictInit(void);
 MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
 			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
@@ -3355,6 +3358,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
 MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 MODULE_SCOPE int	Tcl_LengthIsFinite(Tcl_Size length);
+MODULE_SCOPE void	TclListInit(void);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
 			    int *lines, Tcl_Obj *const *elems);
@@ -4862,7 +4866,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
-	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==(void *)&tclDictType))
+	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==(void *)tclDictTypePtr))
 #define TclHasInternalRep(objPtr, type) \
 	((objPtr)->typePtr == ((void *)type))
 #define TclFetchInternalRep(objPtr, type) \

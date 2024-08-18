@@ -615,6 +615,7 @@ my_NewLStringObj(
 	i++;
     }
     if (i != objc-1) {
+	Tcl_Free((char*)lstringRepPtr);
 	Tcl_WrongNumArgs(interp, 0, objv, "lstring string");
 	return NULL;
     }
@@ -1001,42 +1002,15 @@ static void DupLgenSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
  *  Abstract List ObjType definition
  */
 
-ObjInterface lgenInterface = {
-    1
-    , {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-    }
-    , {
-	NULL,		 	/* GetElements */
-	NULL,
-	NULL,
-	&lgenSeriesObjIndex,	/* Index */
-	NULL,
-	NULL,
-	&lgenSeriesObjLength,	/* Length */
-	NULL,			/* Slice */
-	NULL,
-	NULL,			/* Replace */
-	NULL,
-	NULL,			/* Reverse */
-	NULL,
-	NULL			/* SetElement */
-    }
-};
 
-
-static const ObjectType lgenObjectType = {
+static ObjectType lgenObjectType = {
     "lgenseries",
     FreeLgenInternalRep,
     DupLgenSeriesRep,
     UpdateStringOfLgen,
     NULL, /* SetFromAnyProc */
     0,
-    (Tcl_ObjInterface *)&lgenInterface
+    NULL
 };
 
 
@@ -1184,7 +1158,7 @@ int Tcl_ABSListTest_Init(Tcl_Interp *interp) {
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_ObjInterface *lstringfullPtr ,*lstringNoLengthPtr ,*lstringNoIndexPtr
+    Tcl_ObjInterface *lgenIfPtr ,*lstringfullPtr ,*lstringNoLengthPtr ,*lstringNoIndexPtr
 	,*lstringNoRangePtr ,*lstringNoGetElementsPtr
 	,*lstringNoSetElementRPtr ,*lstringNoReplacePtr
 	;
@@ -1251,7 +1225,6 @@ int Tcl_ABSListTest_Init(Tcl_Interp *interp) {
     Tcl_ObjInterfaceSetFnListReverse(lstringNoSetElementRPtr ,my_LStringObjReverse);
     Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[6], lstringfullPtr);
 
-
     lstringNoReplacePtr = Tcl_NewObjInterface();
     Tcl_ObjInterfaceSetVersion(lstringNoReplacePtr ,1);
     Tcl_ObjInterfaceSetFnListAll(lstringNoReplacePtr , my_LStringGetElements);
@@ -1262,9 +1235,15 @@ int Tcl_ABSListTest_Init(Tcl_Interp *interp) {
     Tcl_ObjInterfaceSetFnListSet(lstringNoReplacePtr ,my_LStringObjSetElemR);
     Tcl_ObjTypeSetInterface((Tcl_ObjType *)&lstringTypes[7], lstringNoReplacePtr);
 
+    lgenIfPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(lgenIfPtr ,1);
+    Tcl_ObjInterfaceSetFnListIndex(lgenIfPtr ,lgenSeriesObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(lgenIfPtr ,lgenSeriesObjLength);
+    Tcl_ObjTypeSetInterface(lgenTypePtr, lgenIfPtr);
 
     Tcl_CreateObjCommand(interp, "lstring", lLStringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "lgen", lGenObjCmd, NULL, NULL);
     Tcl_PkgProvide(interp, "abstractlisttest", "1.0.0");
+
     return TCL_OK;
 }

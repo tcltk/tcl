@@ -67,39 +67,6 @@ static Tcl_Obj * ListIntegerLsetFlat(tclObjTypeInterfaceArgsListSetList);
 static int ErrorMaxElementsExceeded(Tcl_Interp *interp);
 
 
-ObjInterface ListIntegerInterface = {
-    1,
-    {
-	&ListIntegerListStringIndex,
-	&ListIntegerListStringIndexEnd,
-	&ListIntegerListStringLength,
-	&ListIntegerListStringRange,
-	&ListIntegerListStringRangeEnd
-    },
-    {
-	/*
-	 * This type does not support converting all elements to objv values
-	 * The caller should instead ask for individual items.
-	&ListIntegerListObjGetElements,
-	*/
-	NULL,
-	&ListIntegerListObjAppendElement,
-	&ListIntegerListObjAppendList,
-	&ListIntegerListObjIndex,
-	&ListIntegerListObjIndexEnd,
-	&ListIntegerListObjIsSorted,
-	&ListIntegerListObjLength,
-	&ListIntegerListObjRange,
-	&ListIntegerListObjRangeEnd,
-	&ListIntegerListObjReplace,
-	&ListIntegerListObjReplaceList,
-	NULL,
-	&ListIntegerListObjSetElement,
-	&ListIntegerLsetFlat
-    }
-};
-
-
 typedef struct ListInteger {
     int refCount;
     int ownstring;
@@ -113,21 +80,43 @@ static ListInteger* NewTestListIntegerIntrep();
 static ListInteger* ListGetInternalRep(Tcl_Obj *listPtr);
 static void ListIntegerDecrRefCount(ListInteger *listIntegerPtr);
 
-const ObjectType testListIntegerType = {
+static ObjectType testListIntegerType = {
     "testListInteger",
     FreeTestListIntegerInternalRep,	/* freeIntRepProc */
     DupTestListIntegerInternalRep,		/* dupIntRepProc */
     UpdateStringOfTestListInteger,		/* updateStringProc */
     SetTestListIntegerFromAny,		/* setFromAnyProc */
     2,
-    (Tcl_ObjInterface *)&ListIntegerInterface
+    NULL
 };
 
-const Tcl_ObjType *testListIntegerTypePtr = (Tcl_ObjType *)&testListIntegerType;
+Tcl_ObjType *testListIntegerTypePtr = (Tcl_ObjType *)&testListIntegerType;
 
 
 
 int TcltestObjectInterfaceListIntegerInit(Tcl_Interp *interp) {
+    Tcl_ObjInterface *oiPtr;
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnStringIndex(oiPtr ,ListIntegerListStringIndex);
+    Tcl_ObjInterfaceSetFnStringIndexEnd(oiPtr ,ListIntegerListStringIndexEnd);
+    Tcl_ObjInterfaceSetFnStringLength(oiPtr ,ListIntegerListStringLength);
+    Tcl_ObjInterfaceSetFnStringRange(oiPtr ,ListIntegerListStringRange);
+    Tcl_ObjInterfaceSetFnStringRangeEnd(oiPtr ,ListIntegerListStringRangeEnd);
+    Tcl_ObjInterfaceSetFnListAppend(oiPtr ,ListIntegerListObjAppendElement);
+    Tcl_ObjInterfaceSetFnListAppendList(oiPtr ,ListIntegerListObjAppendList);
+    Tcl_ObjInterfaceSetFnListIndex(oiPtr ,ListIntegerListObjIndex);
+    Tcl_ObjInterfaceSetFnListIndexEnd(oiPtr ,ListIntegerListObjIndexEnd);
+    Tcl_ObjInterfaceSetFnListIsSorted(oiPtr ,ListIntegerListObjIsSorted);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,ListIntegerListObjLength);
+    Tcl_ObjInterfaceSetFnListRange(oiPtr ,ListIntegerListObjRange);
+    Tcl_ObjInterfaceSetFnListRangeEnd(oiPtr ,ListIntegerListObjRangeEnd);
+    Tcl_ObjInterfaceSetFnListReplace(oiPtr ,ListIntegerListObjReplace);
+    Tcl_ObjInterfaceSetFnListReplaceList(oiPtr ,ListIntegerListObjReplaceList);
+    Tcl_ObjInterfaceSetFnListSetFlat(oiPtr ,ListIntegerListObjSetElement);
+    Tcl_ObjInterfaceSetFnListSet(oiPtr ,ListIntegerLsetFlat);
+    Tcl_ObjTypeSetInterface(testListIntegerTypePtr,oiPtr);
+
+
     Tcl_CreateObjCommand2(interp, "testlistinteger", TestListInteger, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testlistintegergetelements", TestListIntegerGetElements, NULL, NULL);
     return TCL_OK;

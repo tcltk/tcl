@@ -2272,7 +2272,7 @@ NewReflectedChannel(
     rcPtr->mode = mode;
     rcPtr->interest = 0;		/* Initially no interest registered */
 
-    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, tclListType);
+    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, tclListTypePtr);
     if (!rcPtr->cmd) {
 	return NULL;
     }
@@ -2412,7 +2412,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, tclListType);
+    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, tclListTypePtr);
     if (!cmd) {
 	return TCL_ERROR;
     }

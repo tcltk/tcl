@@ -441,8 +441,8 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(tclDoubleType);
     Tcl_RegisterObjType(&tclStringType);
-    Tcl_RegisterObjType(tclListType);
-    Tcl_RegisterObjType((Tcl_ObjType *)&tclDictType);
+    Tcl_RegisterObjType(tclListTypePtr);
+    Tcl_RegisterObjType(tclDictTypePtr);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclRegexpType);

@@ -97,41 +97,30 @@ static int ArithSeriesGetElements(Tcl_Interp *interp,
 static int ArithSeriesObjStep(Tcl_Obj *arithSeriesObj, Tcl_Obj **stepObj);
 
 
-ObjInterface tclArithSeriesInterface = {
-    1,
-    {},
-    {
-		ArithSeriesGetElements,
-		NULL,
-		NULL,
-		ArithSeriesObjIndex,
-		NULL,
-		NULL,
-		ArithSeriesObjLength,
-		ArithSeriesObjRange,
-		NULL,
-		NULL,
-		NULL,
-		ArithSeriesObjReverse,
-	  	NULL,
-		NULL,
-    },
-};
-const ObjectType tclArithSeriesType = {
+static ObjectType tclArithSeriesType = {
     "arithseries",
     FreeArithSeriesInternalRep,		/* freeIntRepProc */
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
     2,
-    (Tcl_ObjInterface *)&tclArithSeriesInterface
+	NULL
 };
 
+
+void TclArithSeriesInit(void) {
+    Tcl_ObjInterface *oiPtr;
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListAll(oiPtr ,ArithSeriesGetElements);
+    Tcl_ObjInterfaceSetFnListIndex(oiPtr ,ArithSeriesObjIndex);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,ArithSeriesObjLength);
+    Tcl_ObjInterfaceSetFnListRange(oiPtr ,ArithSeriesObjRange);
+    Tcl_ObjInterfaceSetFnListReverse(oiPtr ,ArithSeriesObjReverse);
+    Tcl_ObjTypeSetInterface((Tcl_ObjType *)&tclArithSeriesType ,oiPtr);
+	return;
+}
 
-
-
-
-
+
 /*
  * Helper functions
  *
@@ -543,6 +532,7 @@ TclNewArithSeriesObj(
  * Side Effects:
  *
  * 	On success, the integer pointed by *element is modified.
+ * 	An empty string ("") is assigned if index is out-of-bounds.
  *
  *----------------------------------------------------------------------
  */
