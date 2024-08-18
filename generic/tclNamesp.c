@@ -3076,7 +3076,8 @@ TclNewNamespaceObj(
 
 	resNamePtr->nsPtr = nsPtr;
 	resNamePtr->refNsPtr = NULL;
-	resNamePtr->refCount = 1;
+	resNamePtr->refCount = 0;
+	nsPtr->refCount++;
 	NsNameSetInternalRep(objPtr, resNamePtr);
     }
     return objPtr;
