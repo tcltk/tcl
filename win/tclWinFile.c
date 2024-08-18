@@ -3158,7 +3158,7 @@ TclNativeCreateNativeRep(
      */
 
     while (*wp != '\0') {
-	if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
+	if ((*wp < ' ') || wcschr(L"\"*<>?|", *wp)) {
 	    *wp |= 0xF000;
 	} else if (*wp == '/') {
 	    *wp = '\\';
