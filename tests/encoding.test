@@ -592,13 +592,13 @@ test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xdc
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
 
-test {encoding-16.4 utf-8 invalid default} {Parse invalid utf-8, strict} -body {
+test {encoding-16.24 utf-8 invalid default} {Parse invalid utf-8, strict} -body {
     string length [encoding convertfrom utf-8 "\xC0\x80"]
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test {encoding-16.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
+test {encoding-16.24 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
     string length [encoding convertfrom -profile strict utf-8 "\xc0\x80"]
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test {encoding-16.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
+test {encoding-16.24 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
     encoding convertfrom -profile tcl8 utf-8 \xc0\x80
 } \x00
 test {encoding-16.25 default} {Utf32ToUtfProc} -body {
