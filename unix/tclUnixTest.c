@@ -209,7 +209,7 @@ TestfilehandlerCmd(
 	    fcntl(GetFd(pipePtr->readFile), F_SETFL, O_NONBLOCK);
 	    fcntl(GetFd(pipePtr->writeFile), F_SETFL, O_NONBLOCK);
 #else
-	    Tcl_AppendResult(interp, "can't make pipes non-blocking",
+	    Tcl_AppendResult(interp, "cannot make pipes non-blocking",
 		    (char *)NULL);
 	    return TCL_ERROR;
 #endif
