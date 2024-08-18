@@ -357,8 +357,6 @@ typedef struct __stat64 Tcl_StatBuf;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-    typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
 #endif
