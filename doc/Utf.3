@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_WCharLen, Tcl_Char16Len, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_WCharToUtfDString, Tcl_WCharLen, Tcl_Char16Len, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -28,28 +28,28 @@ Tcl_Size
 \fBTcl_UtfToWChar\fR(\fIsrc, wPtr\fR)
 .sp
 char *
-\fBTcl_UniCharToUtfDString\fR(\fIuniStr, uniLength, dsPtr\fR)
+\fBTcl_UniCharToUtfDString\fR(\fIuniStr, numUniChars, dsPtr\fR)
 .sp
 char *
-\fBTcl_Char16ToUtfDString\fR(\fIuStr, uniLength, dsPtr\fR)
+\fBTcl_Char16ToUtfDString\fR(\fIutf16, numUtf16, dsPtr\fR)
 .sp
 char *
-\fBTcl_WCharToUtfDString\fR(\fIwStr, uniLength, dsPtr\fR)
+\fBTcl_WCharToUtfDString\fR(\fIwcharStr, numWChars, dsPtr\fR)
 .sp
 Tcl_UniChar *
-\fBTcl_UtfToUniCharDString\fR(\fIsrc, length, dsPtr\fR)
+\fBTcl_UtfToUniCharDString\fR(\fIsrc, numBytes, dsPtr\fR)
 .sp
 unsigned short *
-\fBTcl_UtfToChar16DString\fR(\fIsrc, length, dsPtr\fR)
+\fBTcl_UtfToChar16DString\fR(\fIsrc, numBytes, dsPtr\fR)
 .sp
 wchar_t *
-\fBTcl_UtfToWCharDString\fR(\fIsrc, length, dsPtr\fR)
+\fBTcl_UtfToWCharDString\fR(\fIsrc, numBytes, dsPtr\fR)
 .sp
 int
-\fBTcl_Char16Len\fR(\fIuniStr\fR)
+\fBTcl_Char16Len\fR(\fIutf16\fR)
 .sp
 int
-\fBTcl_WCharLen\fR(\fIuniStr\fR)
+\fBTcl_WCharLen\fR(\fIwcharStr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
@@ -70,10 +70,10 @@ int
 \fBTcl_UtfNcasecmp\fR(\fIcs, ct, length\fR)
 .sp
 int
-\fBTcl_UtfCharComplete\fR(\fIsrc, length\fR)
+\fBTcl_UtfCharComplete\fR(\fIsrc, numBytes\fR)
 .sp
 int
-\fBTcl_NumUtfChars\fR(\fIsrc, length\fR)
+\fBTcl_NumUtfChars\fR(\fIsrc, numBytes\fR)
 .sp
 const char *
 \fBTcl_UtfFindFirst\fR(\fIsrc, ch\fR)
@@ -115,28 +115,32 @@ Pointer to a UTF-8 string.
 .AP "const char" *ct in
 Pointer to a UTF-8 string.
 .AP "const Tcl_UniChar" *uniStr in
-A null-terminated Unicode string.
+A sequence of \fBTcl_UniChar\fR units with null-termination optional
+depending on function.
 .AP "const Tcl_UniChar" *ucs in
-A null-terminated Unicode string.
+A null-terminated sequence of \fBTcl_UniChar\fR.
 .AP "const Tcl_UniChar" *uct in
-A null-terminated Unicode string.
+A null-terminated sequence of \fBTcl_UniChar\fR.
 .AP "const Tcl_UniChar" *uniPattern in
-A null-terminated Unicode string.
-.AP "const unsigned short" *uStr in
-A null-terminated UTF-16 string.
-.AP "const wchar_t" *wStr in
-A null-terminated wchar_t string.
-.AP "const unsigned short" *utf16s in
-A null-terminated utf-16 string.
-.AP "const unsigned short" *utf16t in
-A null-terminated utf-16 string.
-.AP "const unsigned short" *utf16Pattern in
-A null-terminated utf-16 string.
-.AP Tcl_Size length in
-The length of the UTF-8 string in bytes (not UTF-8 characters).  If
-negative, all bytes up to the first null byte are used.
-.AP Tcl_Size uniLength in
-The length of the Unicode string in characters.
+A null-terminated sequence of \fBTcl_UniChar\fR.
+.AP "const unsigned short" *utf16 in
+A sequence of UTF-16 units with null-termination optional
+depending on function.
+.AP "const wchar_t" *wcharStr in
+A sequence of \fBwchar_t\fR units with null-termination optional
+depending on function.
+.AP int numBytes in
+The length of the UTF-8 input in bytes.  If
+negative, the length includes all bytes until the first null byte.
+.AP int numUtf16 in
+The length of the input in UTF-16 units.
+If negative, the length includes all bytes until the first null.
+.AP int numUniChars in
+The length of the input in Tcl_UniChar units.
+If negative, the length includes all bytes until the first null.
+.AP int numWChars in
+The length of the input in wchar_t units.
+If negative, the length includes all bytes until the first null.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "const char" *start in
@@ -186,30 +190,32 @@ not in proper UTF-8 format, \fBTcl_UtfToUniChar\fR will store the first
 byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x00A0 and
 0x00FF and return 1.
 .PP
-\fBTcl_UniCharToUtfDString\fR converts the given Unicode string
-to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
-The return value is a pointer to the UTF-8 representation of the
-Unicode string.  Storage for the return value is appended to the
-end of the \fBTcl_DString\fR.
+\fBTcl_UniCharToUtfDString\fR converts the input in the form of a
+sequence of \fBTcl_UniChar\fR code points to UTF-8, appending the result to the
+previously initialized output \fBTcl_DString\fR. The return value is a pointer
+to the UTF-8 representation of the \fBappended\fR string.
 .PP
-\fBTcl_UtfToUniCharDString\fR converts the given UTF-8 string to Unicode,
-storing the result in the previously initialized \fBTcl_DString\fR.
-In the argument \fIlength\fR, you may either specify the length of
-the given UTF-8 string in bytes or
-.QW \-1 ,
-in which case \fBTcl_UtfToUniCharDString\fR uses \fBstrlen\fR to
-calculate the length.  The return value is a pointer to the Unicode
-representation of the UTF-8 string.  Storage for the return value
-is appended to the end of the \fBTcl_DString\fR.  The Unicode string
-is terminated with a Unicode null character.
+\fBTcl_UtfToUniCharDString\fR converts the input in the form of
+a UTF-8 encoded string to a \fBTcl_UniChar\fR sequence
+appending the result in the previously initialized \fBTcl_DString\fR.
+The return value is a pointer to the appended result which is also
+terminated with a \fBTcl_UniChar\fR null character.
+.PP
+\fBTcl_WCharToUtfDString\fR and \fBTcl_UtfToWCharDString\fR are similar to
+\fBTcl_UniCharToUtfDString\fR and \fBTcl_UtfToUniCharDString\fR except they
+operate on sequences of \fBwchar_t\fR instead of \fBTcl_UniChar\fR.
+.PP
+\fBTcl_Char16ToUtfDString\fR and \fBTcl_UtfToChar16DString\fR are similar to
+\fBTcl_UniCharToUtfDString\fR and \fBTcl_UtfToUniCharDString\fR except they
+operate on sequences of \fBUTF-16\fR units instead of \fBTcl_UniChar\fR.
 .PP
 \fBTcl_Char16Len\fR corresponds to \fBstrlen\fR for UTF-16
-characters.  It accepts a null-terminated Unicode string and returns
-the number of Unicode characters (not bytes) in that string.
+characters.  It accepts a null-terminated UTF-16 sequence and returns
+the number of UTF-16 units until the null.
 .PP
 \fBTcl_WCharLen\fR corresponds to \fBstrlen\fR for wchar_t
-characters.  It accepts a null-terminated Unicode string and returns
-the number of Unicode characters (not bytes) in that string.
+characters.  It accepts a null-terminated \fBwchar_t\fR sequence and returns
+the number of \fBwchar_t\fR units until the null.
 .PP
 \fBTcl_UniCharLen\fR corresponds to \fBstrlen\fR for Unicode
 characters.  It accepts a null-terminated Unicode string and returns
@@ -245,7 +251,7 @@ differences in case when comparing upper, lower or title case
 characters.
 .PP
 \fBTcl_UtfCharComplete\fR returns 1 if the source UTF-8 string \fIsrc\fR
-of \fIlength\fR bytes is long enough to be decoded by
+of \fInumBytes\fR bytes is long enough to be decoded by
 \fBTcl_UtfToUniChar\fR/\fBTcl_UtfNext\fR, or 0 otherwise.  This function
 does not guarantee that the UTF-8 string is properly formed.  This routine
 is used by procedures that are operating on a byte at a time and need to
