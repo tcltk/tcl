@@ -21,7 +21,9 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testencoding [llength [info commands testencoding]]
 
 namespace eval utftest {
-    # Format of table, indexed by encoding.
+    # Format of table, indexed by encoding. The encodings are not exhaustive
+    # but one of each kind of encoding transform (algorithmic, table-driven,
+    # stateful, DBCS, MBCS).
     # Each element is list of lists. Nested lists have following fields
     # 0 comment (no spaces, might be used to generate id's as well)
     #   The combination of comment and internal hex (2) should be unique.
@@ -40,7 +42,14 @@ namespace eval utftest {
         }
         utf-8 {
             {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
-            {nonbmp {41 f09f9880 42} {41 f09f9880 42}  2  3}
+            {nonbmp-frag-1 {41 f09f9880 42} {41 f09f9880 42}  2  2}
+            {nonbmp-frag-2 {41 f09f9880 42} {41 f09f9880 42}  3  3}
+            {nonbmp-frag-3 {41 f09f9880 42} {41 f09f9880 42}  4  4}
+            {null   {41 c080 42} {41 00 42}    2 -1}
+        }
+        cesu-8 {
+            {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
+            {nonbmp {41 f09f9880 42} {41 eda0bd edb080 42} 3 3}
             {null   {41 c080 42} {41 00 42}    2 -1}
         }
         utf-16le {
@@ -55,8 +64,22 @@ namespace eval utftest {
             {split-surrogate {41 f09f9080 42} {0041 d83d dc00 0042} 3  4}
             {null   {41 c080 42} {0041 0000 0042}  2 3}
         }
+        utf-32le {
+            {bmp    {41 c3a9 42}     {41000000 e9000000 42000000}     2  3}
+            {nonbmp {41 f09f9880 42} {41000000 00f60100 42000000} 4  6}
+            {null   {41 c080 42} {41000000 00000000 42000000}  2 3}
+        }
+        utf-32be {
+            {bmp    {41 c3a9 42}     {00000041 000000e9 00000042}     2  3}
+            {nonbmp {41 f09f9880 42} {00000041 0001f600 00000042} 4  3}
+            {null   {41 c080 42} {00000041 00000000 00000042}  2 3}
+        }
         iso8859-1 {
             {basic {41 c3a9 42} 41e942 2 -1}
+            {null  {41 c080 42} 410042 2 -1}
+        }
+        iso8859-3 {
+            {basic {41 c4a0 42} 41d542 2 -1}
             {null  {41 c080 42} 410042 2 -1}
         }
         shiftjis {
@@ -64,6 +87,11 @@ namespace eval utftest {
         }
         jis0208 {
             {basic {e4b98e e590be} {3843 3863} 1 1}
+        }
+        iso2022-jp {
+            {frag-in-leadescape {58 e4b98e 5a} {58 1b2442 3843 1b2842 5a} 2 2}
+            {frag-in-char {58 e4b98e 5a} {58 1b2442 3843 1b2842 5a} 2 5}
+            {frag-in-trailescape {58 e4b98e 5a} {58 1b2442 3843 1b2842 5a} 2 8}
         }
     }
 
