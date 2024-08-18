@@ -2424,7 +2424,11 @@ UtfToUtfProc(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* TCL_ENCODING_* conversion control flags. */
-    TCL_UNUSED(Tcl_EncodingState *),
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
     int dstLen,			/* The maximum length of output buffer in
@@ -2447,6 +2451,10 @@ UtfToUtfProc(
     int ch;
     int profile;
 
+    if (flags & TCL_ENCODING_START) {
+        /* *statePtr will hold high surrogate in a split surrogate pair */
+    	*statePtr = 0;
+    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2462,6 +2470,42 @@ UtfToUtfProc(
     dstStart = dst;
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
+
+    /*
+     * Macro to output an isolated high surrogate when it is not followed
+     * by a low surrogate. NOT to be called for strict profile since
+     * that should raise an error.
+     */
+#define OUTPUT_ISOLATEDSURROGATE                                \
+    do {                                                        \
+        Tcl_UniChar high;                                       \
+        if (PROFILE_REPLACE(profile)) {                         \
+            high = UNICODE_REPLACE_CHAR;                        \
+        } else {                                                \
+            high = (Tcl_UniChar)(ptrdiff_t) *statePtr;          \
+        }                                                       \
+        assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */   \
+        assert(HIGH_SURROGATE(high));                           \
+        assert(!PROFILE_STRICT(profile));                       \
+        dst += Tcl_UniCharToUtf(high, dst);                     \
+        *statePtr = 0; /* Reset state */                        \
+    } while (0) 
+
+    /*
+     * Macro to check for isolated surrogate and either break with
+     * an error if profile is strict, or output an appropriate
+     * character for replace and tcl8 profiles and continue.
+     */
+#define CHECK_ISOLATEDSURROGATE                                         \
+    if (*statePtr) {                                                    \
+        if (PROFILE_STRICT(profile)) {                                  \
+            result = TCL_CONVERT_SYNTAX;                                \
+            break;                                                      \
+        }                                                               \
+        OUTPUT_ISOLATEDSURROGATE;                                       \
+        continue; /* Rerun loop so length checks etc. repeated */       \
+    } else                                                              \
+        (void) 0
 
     profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -2481,6 +2525,8 @@ UtfToUtfProc(
 	}
 	if (UCHAR(*src) < 0x80
 		&& !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
+
+            CHECK_ISOLATEDSURROGATE;
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to \xC0\x80.
@@ -2490,6 +2536,8 @@ UtfToUtfProc(
 		 (UCHAR(src[1]) == 0x80) &&
 		 (!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
 	    /* Special sequence \xC0\x80 */
+
+            CHECK_ISOLATEDSURROGATE;
 	    if (!PROFILE_TCL8(profile) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_REPLACE(profile)) {
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
@@ -2509,13 +2557,9 @@ UtfToUtfProc(
 	    }
 
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
-	    /*
-	     * Incomplete byte sequence.
-	     * Always check before using Tcl_UtfToUniChar. Not doing so can cause
-	     * it to run beyond the end of the buffer! If we happen on such an
-	     * incomplete char its bytes are made to represent themselves unless
-	     * the user has explicitly asked to be told.
-	     */
+	    /* Incomplete byte sequence. */
+
+            CHECK_ISOLATEDSURROGATE;
 
 	    if (flags & ENCODING_INPUT) {
 		/* Incomplete bytes for modified UTF-8 target */
@@ -2537,7 +2581,12 @@ UtfToUtfProc(
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
+            /* Have a complete character */
 	    size_t len = TclUtfToUniChar(src, &ch);
+
+            Tcl_UniChar savedSurrogate = (Tcl_UniChar) (ptrdiff_t)*statePtr;
+            *statePtr = 0; /* Reset surrogate */
+
 	    if (flags & ENCODING_INPUT) {
 		if (((len < 2) && (ch != 0))
 			|| ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
@@ -2554,6 +2603,8 @@ UtfToUtfProc(
 	    src += len;
 	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT)
 		    && (ch > 0x3FF)) {
+                assert(savedSurrogate == 0); /* Since this flag combo
+                                                will never set *statePtr */
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
@@ -2567,17 +2618,98 @@ UtfToUtfProc(
 		*dst++ = (char)((ch | 0x80) & 0xBF);
 		continue;
 	    } else if (SURROGATE(ch)) {
-		if (PROFILE_STRICT(profile)) {
-		    result = (flags & ENCODING_INPUT)
+                if ((flags & ENCODING_UTF)) {
+                    /* UTF-8, not CESU-8, so surrogates should not appear */
+                    if (PROFILE_STRICT(profile)) {
+                        result = (flags & ENCODING_INPUT)
 			    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-		    src = saveSrc;
-		    break;
-		} else if (PROFILE_REPLACE(profile)) {
-		    ch = UNICODE_REPLACE_CHAR;
-		}
-	    }
+                        src = saveSrc;
+                        break;
+                    } else if (PROFILE_REPLACE(profile)) {
+                        ch = UNICODE_REPLACE_CHAR;
+                    } else {
+                        /* PROFILE_TCL8 - output as is */
+                    }
+                } else {
+                    /* CESU-8 */
+                    if (LOW_SURROGATE(ch)) {
+                        if (savedSurrogate) {
+                            assert(HIGH_SURROGATE(savedSurrogate));
+                            ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) + (ch - 0xdc00);
+                        } else {
+                            /* Isolated low surrogate */
+                            if (PROFILE_STRICT(profile)) {
+                                result = (flags & ENCODING_INPUT)
+                                    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+                                src = saveSrc;
+                                break;
+                            } else if (PROFILE_REPLACE(profile)) {
+                                ch = UNICODE_REPLACE_CHAR;
+                            } else {
+                                /* Tcl8 profile. Output low surrogate as is */
+                            }
+                        }
+                    } else {
+                        assert(HIGH_SURROGATE(ch));
+                        /* Save the high surrogate */
+                        *statePtr = (Tcl_EncodingState) (ptrdiff_t) ch;
+                        if (savedSurrogate) {
+                            assert(HIGH_SURROGATE(savedSurrogate));
+                            if (PROFILE_STRICT(profile)) {
+                                result = (flags & ENCODING_INPUT)
+                                    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+                                src = saveSrc;
+                                break;
+                            } else if (PROFILE_REPLACE(profile)) {
+                                ch = UNICODE_REPLACE_CHAR;
+                            } else {
+                                /* Output the isolated high surrogate */
+                                ch = savedSurrogate;
+                            }
+                        } else {
+                            /* High surrogate saved in *statePtr. Do not output anything just yet. */
+                            --numChars; /* XXX - TODO */
+                            continue;
+                        }
+                    }
+                }
+	    } else {
+                /* Normal character */
+                CHECK_ISOLATEDSURROGATE;
+            }
+
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
+    }
+
+    /* Check if an high surrogate left over */
+    if (*statePtr) {
+        assert(!(flags & ENCODING_UTF)); /* CESU-8, Not UTF-8 */
+        if (!(flags & TCL_ENCODING_END)) {
+            /* More data coming */
+            --numChars; /* XXX - TODO */
+        } else {
+            /* No more data coming */
+            if (PROFILE_STRICT(profile)) {
+                result = (flags & ENCODING_INPUT)
+                    ? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
+            } else {
+                if (PROFILE_REPLACE(profile)) {
+                    ch = UNICODE_REPLACE_CHAR;
+                } else {
+                    ch = (Tcl_UniChar) (ptrdiff_t) *statePtr;
+                }
+                if (dst < dstEnd) {
+                    dst += Tcl_UniCharToUtf(ch, dst);
+                } else {
+                    /* No room in destination */
+                    assert(numChars > 0);
+                    --numChars; /* XXX - TODO - Since it was incremented in loop above */
+                    result = TCL_CONVERT_NOSPACE;
+                }
+            }
+        }
+
     }
 
     *srcReadPtr = src - srcStart;
