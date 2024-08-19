@@ -2407,11 +2407,13 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 
 #define tclObjTypeInterfaceArgsStringLength \
-    Tcl_Obj *isEmpty
+    Tcl_Obj *listPtr
 
 
 #define tclObjTypeInterfaceArgsStringIsEmpty \
-    Tcl_Obj *listPtr
+	Tcl_Interp *interp,	\
+    Tcl_Obj *listPtr,	\
+	int *res
 
 
 #define tclObjTypeInterfaceArgsStringRange \
@@ -2443,7 +2445,6 @@ typedef Tcl_Obj * (Tcl_ObjInterfaceListSetListProc)(tclObjTypeInterfaceArgsListS
 typedef int (Tcl_ObjInterfaceStringIndexProc)(tclObjTypeInterfaceArgsStringIndex);
 typedef int (Tcl_ObjInterfaceStringIndexEndProc)(tclObjTypeInterfaceArgsStringIndexEnd);
 typedef int (Tcl_ObjInterfaceStringIsEmptyProc)(tclObjTypeInterfaceArgsStringIsEmpty);
-typedef Tcl_Size (Tcl_ObjInterfaceStringLengthProc)(tclObjTypeInterfaceArgsStringIsEmpty);
 typedef Tcl_Size (Tcl_ObjInterfaceStringLengthProc)(tclObjTypeInterfaceArgsStringLength);
 typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeProc)(tclObjTypeInterfaceArgsStringRange);
 typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRangeEnd);

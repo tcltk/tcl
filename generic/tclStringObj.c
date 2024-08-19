@@ -498,33 +498,57 @@ TclGetCharLength(
  */
 int
 TclCheckEmptyString(
-    Tcl_Obj *objPtr)
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int *res
+)
 {
-    Tcl_Size length = TCL_INDEX_NONE;
+    int status;
+    Tcl_Size length = 0;
 
     if (objPtr->bytes == &tclEmptyString) {
-	return TCL_EMPTYSTRING_YES;
+	*res = TCL_EMPTYSTRING_YES;
+	return TCL_OK;
     }
 
     if (TclIsPureByteArray(objPtr)
 	&& Tcl_GetCharLength(objPtr) == 0) {
-	return TCL_EMPTYSTRING_YES;
+	*res = TCL_EMPTYSTRING_YES;
+	return TCL_OK;
     }
 
     if (TclListObjIsCanonical(objPtr)) {
-	TclListObjLengthM(NULL, objPtr, &length);
-	return length == 0;
+	status = TclListObjLengthM(interp, objPtr, &length);
+	if (status) {
+	    return status;
+	} else {
+	    *res = length == 0;
+	    return TCL_OK;
+	}
     }
 
     if (TclIsPureDict(objPtr)) {
-	Tcl_DictObjSize(NULL, objPtr, &length);
-	return length == 0;
+	status = Tcl_DictObjSize(interp, objPtr, &length);
+	if (status) {
+	    return status;
+	} else {
+	    *res = length == 0;
+	    return TCL_OK;
+	}
     }
 
     if (objPtr->bytes == NULL) {
-	return TCL_EMPTYSTRING_UNKNOWN;
+	if (TclObjectHasInterface(objPtr, string, isEmpty)) {
+	    TclObjectDispatchNoDefault(interp ,status ,objPtr ,string
+		,isEmpty ,interp ,objPtr ,res);
+	    return status;
+	} else {
+	    *res = TCL_EMPTYSTRING_UNKNOWN;
+	    return TCL_OK;
+	}
     }
-    return objPtr->length == 0;
+    *res = objPtr->length == 0;
+    return TCL_OK;
 }
 
 /*
@@ -1366,12 +1390,23 @@ Tcl_AppendObjToObj(
     Tcl_Size length = 0, numChars;
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
+    int isEmpty, status;
 
-    if (TclCheckEmptyString(appendObjPtr) == TCL_EMPTYSTRING_YES) {
+    status = TclCheckEmptyString(NULL, appendObjPtr, &isEmpty); 
+    /* No way to return an error.  Panic. */
+    if (status) {
+	Tcl_Panic("%s: TclCheckEmptyString failed, %s", "Tcl_AppendObjToObj", "appendObjPtr");
+    }
+
+    if (isEmpty == TCL_EMPTYSTRING_YES) {
 	return;
     }
 
-    if (TclCheckEmptyString(objPtr) == TCL_EMPTYSTRING_YES) {
+    status = TclCheckEmptyString(NULL, objPtr, &isEmpty);
+    if (status) {
+	Tcl_Panic("%s: TclCheckEmptyString failed, %s", "Tcl_AppendObjToObj", "objPtr");
+    }
+    if (isEmpty == TCL_EMPTYSTRING_YES) {
 	TclSetDuplicateObj(objPtr, appendObjPtr);
 	return;
     }
@@ -3191,13 +3226,18 @@ TclStringCat(
 	     */
 
 	    do {
+		int isEmpty, status;
 		/* assert ( pendingPtr == NULL ) */
 		/* assert ( length == 0 ) */
 
 		Tcl_Obj *objPtr = *ov++;
 
+		status = TclCheckEmptyString(NULL, objPtr, &isEmpty);
+		if (status) {
+		    return NULL;
+		}
 		if (objPtr->bytes == NULL
-		    && TclCheckEmptyString(objPtr) != TCL_EMPTYSTRING_YES) {
+		    && isEmpty != TCL_EMPTYSTRING_YES) {
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
@@ -3449,7 +3489,7 @@ TclStringCmp(
 						 * TCL_INDEX_NONE to compare whole strings */
 {
     const char *s1, *s2;
-    int empty, match;
+    int empty, empty2, match, status;
     Tcl_Size length, s1len = 0, s2len = 0;
     memCmpFn_t memCmpFn;
 
@@ -3520,9 +3560,18 @@ TclStringCmp(
 		}
 	    }
 	} else {
-	    empty = TclCheckEmptyString(value1Ptr);
+	    status = TclCheckEmptyString(NULL, value1Ptr, &empty);
+	    if (status) {
+		/* No way to report an error */
+		Tcl_Panic("TclStringCmp  TclCheckEmptyString value1Ptr");
+	    }
+	    status = TclCheckEmptyString(NULL, value2Ptr, &empty2);
+	    if (status) {
+		/* No way to report an error */
+		Tcl_Panic("TclStringCmp  TclCheckEmptyString value2Ptr");
+	    }
 	    if (empty > 0) {
-		switch (TclCheckEmptyString(value2Ptr)) {
+		switch (empty2) {
 		case -1:
 		    s1 = 0;
 		    s1len = 0;
@@ -3536,7 +3585,7 @@ TclStringCmp(
 		    match = 0;
 		    goto matchdone;
 		}
-	    } else if (TclCheckEmptyString(value2Ptr) > 0) {
+	    } else if (empty2 > 0) {
 		switch (empty) {
 		case -1:
 		    s2 = 0;

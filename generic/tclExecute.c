@@ -4354,17 +4354,21 @@ TEBCresume(
 
 	TclNewObj(objResultPtr);
 	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
-	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES ) {
-	    Tcl_DecrRefCount(objResultPtr);
-	    instOriginError:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
-	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		    TclGetString(OBJ_AT_TOS), NULL);
-	    CACHE_STACK_INFO();
-	    TRACE_APPEND(("ERROR: not command\n"));
-	    goto gotError;
+	{
+	    int isEmpty = TCL_EMPTYSTRING_YES, status;
+	    status = TclCheckEmptyString(interp, objResultPtr, &isEmpty);
+	    if (status || isEmpty == TCL_EMPTYSTRING_YES) {
+		Tcl_DecrRefCount(objResultPtr);
+		instOriginError:
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
+		DECACHE_STACK_INFO();
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
+			TclGetString(OBJ_AT_TOS), NULL);
+		CACHE_STACK_INFO();
+		TRACE_APPEND(("ERROR: not command\n"));
+		goto gotError;
+	    }
 	}
 	TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_TOS)));
 	NEXT_INST_F(1, 1, 1);
@@ -5861,7 +5865,7 @@ TEBCresume(
     case INST_GT:
     case INST_LE:
     case INST_GE: {
-	int iResult = 0, compare = 0;
+	int isEmpty, iResult = 0, compare = 0, status;
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
@@ -5870,8 +5874,20 @@ TEBCresume(
 	    Try to determine, without triggering generation of a string
 	    representation, whether one value is not a number.
 	*/
-	if (TclCheckEmptyString(valuePtr) > 0 || TclCheckEmptyString(value2Ptr) > 0) {
+	status = TclCheckEmptyString(interp, valuePtr, &isEmpty);
+	if (status) {
+	    goto gotError;
+	}
+	if (isEmpty > 0) {
 	    goto stringCompare;
+	} else {
+	    status = TclCheckEmptyString(interp, value2Ptr ,&isEmpty);
+	    if (status) {
+		goto gotError;
+	    }
+	    if (isEmpty > 0) {
+		goto stringCompare;
+	    }
 	}
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK

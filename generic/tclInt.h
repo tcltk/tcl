@@ -248,11 +248,11 @@ typedef struct ObjectType {
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
     int version;
-    Tcl_ObjInterface *interface;
+    Tcl_ObjInterface *ifPtr;	/* pointer to a functional interface */
 } ObjectType;
 
 #define TclObjectInterfaceCall(objPtr, iface, proc, ...)		    \
-    ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+    ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->ifPtr)		    \
 	->iface.proc(__VA_ARGS__)
 
 #define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
@@ -263,18 +263,21 @@ typedef struct ObjectType {
 
 #define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
     (TclObjectHasInterface((objPtr), iface, proc)			    \
-    ? ((res) = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__),    \
+    ? ((res) = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__),  \
 	TCL_OK)   \
     : (Tcl_SetObjResult((interp),					    \
-	    Tcl_ObjPrintf("interface not provided interface %s proc %s"	    \
-		, #iface, #proc )), TCL_ERROR))
+	    Tcl_ObjPrintf("interface error interface %s proc %s\n%s"	    \
+		, #iface, #proc,					    \
+		    Tcl_GetStringFromObj(				    \
+			Tcl_GetObjResult(interp) ,NULL))), TCL_ERROR))
 
 
-#define TclObjectHasInterface(objPtr, iface, proc)			    \
-    ((objPtr)->typePtr != NULL						    \
-    && (objPtr)->typePtr->version == 2				    \
-    && ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
-	->iface.proc != NULL)
+#define TclObjectHasInterface(objPtr, iface, proc)  \
+    ( \
+	(objPtr)->typePtr != NULL			    \
+	&&TclObjInterface(objPtr) != NULL	    \
+	&& TclObjInterface(objPtr)->iface.proc != NULL \
+    )
 
 /*
  *----------------------------------------------------------------
@@ -3201,7 +3204,7 @@ MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, int index);
-MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclCheckEmptyString(Tcl_Interp *interp, Tcl_Obj *objPtr, int *res);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -3388,6 +3391,7 @@ MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclObjGetScalar(Tcl_Obj *objPtr);
+MODULE_SCOPE ObjInterface * TclObjInterface(Tcl_Obj *objPtr);
 MODULE_SCOPE const char *   TclObjTypeName(const Tcl_ObjType *typePtr);
 MODULE_SCOPE int	 TclObjTypeVersion (const Tcl_ObjType *typePtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,

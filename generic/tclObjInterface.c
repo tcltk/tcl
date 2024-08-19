@@ -294,7 +294,7 @@ Tcl_ObjTypeSetInterface(
 ) {
 
 	ObjectType *otPtr = (ObjectType *)objTypePtr;
-	otPtr->interface = objInterfacePtr;
+	otPtr->ifPtr = objInterfacePtr;
 	return TCL_OK;
 }
 

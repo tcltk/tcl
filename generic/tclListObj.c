@@ -2088,9 +2088,8 @@ ListObjIndex(tclObjTypeInterfaceArgsListIndex) {
  *
  * Tcl_ListObjLength --
  *
- *	This function returns the number of elements in a list object. If the
- *	object is not already a list object, an attempt will be made to
- *	convert it to one.
+ *	Returns the number of elements in a list object. If the object is not
+ *	already a list object, attempts to convert it to one.
  *
  * Results:
  *	The return value is normally TCL_OK; in this case *lenPtr will be set
@@ -2668,10 +2667,12 @@ ListObjReplace(tclObjTypeInterfaceArgsListReplace)
 
 int
 ListObjStringIsEmpty(tclObjTypeInterfaceArgsStringIsEmpty) {
+    int status;
     if (!TclHasInternalRep(listPtr, tclListTypePtr)) {
 	Tcl_Panic("%s called Tcl_Obj whose type is not tclListType", "listObjStringIsEmpty");
     }
-    return TclCheckEmptyString(listPtr);
+    status = TclCheckEmptyString(interp, listPtr, res);
+    return status;
 }
 
 /*

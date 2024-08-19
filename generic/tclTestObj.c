@@ -19,10 +19,10 @@
 /*
  * tclTestObj.c --
  *
- *	This file contains C command functions for the additional Tcl commands
- *	that are used for testing implementations of the Tcl object types.
- *	These commands are not normally included in Tcl applications; they're
- *	only used for testing.
+ *	This file contains procedures for the additional Tcl commands
+ *	that are used for testing implementations of the Tcl_ObjType structs.
+ *	These commands are built into a separate Tcl executable used to run the
+ *	tests.
  */
 
 #ifndef USE_TCL_STUBS
@@ -55,6 +55,36 @@ static Tcl_ObjCmdProc	TestlistobjCmd;
 static Tcl_ObjCmdProc	TestobjCmd;
 static Tcl_ObjCmdProc	TeststringobjCmd;
 static Tcl_ObjCmdProc	TestbigdataCmd;
+
+static int TestStringObjIsEmpty(tclObjTypeInterfaceArgsStringIsEmpty);
+static int TestListObjLength(tclObjTypeInterfaceArgsListLength);
+static void v2UpdateString(Tcl_Obj *objPtr);
+
+static ObjectType v2TestListObjectType = {
+    "testlist",		/* name */
+    NULL,		/* freeIntRepProc */
+    NULL,		/* dupIntRepProc */
+    v2UpdateString,	/* updateStringProc */
+    NULL,		/* setFromAnyProc */
+    2,			/* This is a version  objType, which doesn't have an StringIsEmpty proc */
+    NULL
+};
+
+Tcl_ObjType *v2TestListTypePtr = (Tcl_ObjType *)&v2TestListObjectType;
+
+static ObjectType v3TestListObjectType = {
+    "testlist2",	/* name */
+    NULL,		/* freeIntRepProc */
+    NULL,		/* dupIntRepProc */
+    NULL,		/* updateStringProc */
+    NULL,		/* setFromAnyProc */
+    3,			/* This is a version  objType, which doesn't have an StringIsEmpty proc */
+    NULL
+};
+Tcl_ObjType *v3TestListTypePtr = (Tcl_ObjType *)&v3TestListObjectType;
+
+
+
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -81,15 +111,15 @@ static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
  *
  * TclObjTest_Init --
  *
- *	This function creates additional commands that are used to test the
- *	Tcl object support.
+ *	Creates additional commands that are used to test
+ *	Tcl_Obj support.
  *
  * Results:
- *	Returns a standard Tcl completion code, and leaves an error
- *	message in the interp's result if an error occurs.
+ *	Returns a standard Tcl completion code, and if an error occurs, leaves an
+ *	error message in the interp result.
  *
  * Side effects:
- *	Creates and registers several new testing commands.
+ *	Creates new commands used by tests.
  *
  *----------------------------------------------------------------------
  */
@@ -114,6 +144,19 @@ TclObjTest_Init(
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	varPtr[i] = NULL;
     }
+
+
+    Tcl_ObjInterface * oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(oiPtr ,2);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr , TestListObjLength);
+    Tcl_ObjTypeSetInterface(v2TestListTypePtr ,oiPtr);
+
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetVersion(oiPtr ,3);
+    Tcl_ObjInterfaceSetFnListLength(oiPtr , TestListObjLength);
+    Tcl_ObjInterfaceSetFnStringIsEmpty(oiPtr , TestStringObjIsEmpty);
+    Tcl_ObjTypeSetInterface(v3TestListTypePtr ,oiPtr);
+
 
     Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
 	    NULL, NULL);
@@ -1063,6 +1106,37 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
+void v2UpdateString(Tcl_Obj *objPtr) {
+    char *val, *newval;
+    Tcl_Size size;
+    val = (char *)"hello";
+    size = strlen(val) + 1;
+    newval = (char *)Tcl_Alloc(size);
+    strcpy(newval, val);
+    newval[size] = 0;
+    objPtr->bytes = newval;
+    objPtr->length = size;
+    return;
+}
+
+static int TestListObjLength(
+	TCL_UNUSED(Tcl_Interp *)
+	,TCL_UNUSED(Tcl_Obj *)
+	,Tcl_Size *size 
+) {
+    *size = 100;
+    return TCL_OK;
+}
+
+static int TestStringObjIsEmpty(
+    TCL_UNUSED(Tcl_Interp *)
+    ,TCL_UNUSED(Tcl_Obj*)
+    ,int *res)
+{
+    *res = 1;
+    return TCL_OK;
+}
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
@@ -1075,15 +1149,15 @@ TestobjCmd(
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
     const char *subcommands[] = {
-	"freeallvars", "bug3598580", "types",
-	"objtype", "newobj", "set",
+	"freeallvars", "bug3598580", "buge58d7e19e9",
+	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
     enum testobjCmdIndex {
-	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_TYPES,
-	TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
+	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1122,6 +1196,27 @@ TestobjCmd(
 	    /* Replace the single list element through itself, nonsense but
 	     * legal. */
 	    Tcl_ListObjReplace(interp, listObjPtr, 0, 1, 1, &elemObjPtr);
+	    Tcl_SetObjResult(interp, listObjPtr);
+	}
+	return TCL_OK;
+    case TESTOBJ_BUGE58D7E19E9:
+	if (objc != 3) {
+	    goto wrongNumArgs;
+	} else {
+	    int v;
+	    Tcl_GetIntFromObj(NULL, objv[2],&v);
+	    Tcl_Obj *listObjPtr = Tcl_NewObj();
+	    switch (v) {
+		case 2:
+		    listObjPtr->typePtr = v2TestListTypePtr;
+		    break;
+		case 3:
+		    listObjPtr->typePtr = v3TestListTypePtr;
+		    break;
+		default:
+		    return TCL_ERROR;
+	    }
+	    Tcl_InvalidateStringRep(listObjPtr);
 	    Tcl_SetObjResult(interp, listObjPtr);
 	}
 	return TCL_OK;

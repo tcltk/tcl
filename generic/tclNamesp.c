@@ -3933,6 +3933,7 @@ NamespaceOriginCmd(
 {
     Tcl_Command cmd, origCmd;
     Tcl_Obj *resultPtr;
+    int isEmpty, status;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -3949,7 +3950,11 @@ NamespaceOriginCmd(
     }
     TclNewObj(resultPtr);
     Tcl_GetCommandFullName(interp, origCmd, resultPtr);
-    if (TclCheckEmptyString(resultPtr) == TCL_EMPTYSTRING_YES ) {
+    status = TclCheckEmptyString(interp ,resultPtr, &isEmpty);
+    if (status) {
+	return TCL_ERROR;
+    }
+    if (isEmpty == TCL_EMPTYSTRING_YES ) {
 	Tcl_DecrRefCount(resultPtr);
 	namespaceOriginError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

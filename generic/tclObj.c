@@ -857,6 +857,19 @@ TclThreadFinalizeContLines(
     tsdPtr->lineCLPtr = NULL;
 }
 
+ObjInterface *
+TclObjInterface(Tcl_Obj *objPtr) {
+    ObjectType *otPtr = (ObjectType *)objPtr->typePtr;
+    if (!otPtr) {
+	return NULL;
+    }
+    if (otPtr->version < 2) {
+	return NULL;
+    }
+    ObjInterface *ifPtr = (ObjInterface *)otPtr->ifPtr;
+    return ifPtr;
+}
+
 /*
  *--------------------------------------------------------------
  *
@@ -4846,9 +4859,9 @@ TclObjectTypeType * TclGetObjectTypeType () {
 int (*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 (tclObjTypeInterfaceArgsListIndex)
 {
-	ObjInterface *interface = (ObjInterface *)((ObjectType *)objPtr->typePtr)->interface;
-	if (interface->version >= 1) {
-		return interface->list.index;
+	ObjInterface *ifPtr = TclObjInterface(objPtr);
+	if (ifPtr->version >= 1) {
+		return ifPtr->list.index;
 	}
 	return NULL;
 }
