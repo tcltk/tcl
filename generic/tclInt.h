@@ -1584,10 +1584,10 @@ typedef struct ExecStack {
  * restored into the interpreter to be used.
  */
 typedef struct CorContext {
-    struct CallFrame *framePtr;	   /* See Interp.framePtr */
-    struct CallFrame *varFramePtr; /* See Interp.varFramePtr */
-    struct CmdFrame *cmdFramePtr;  /* See Interp.cmdFramePtr */
-    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
+    CallFrame *framePtr;	/* See Interp.framePtr */
+    CallFrame *varFramePtr;	/* See Interp.varFramePtr */
+    CmdFrame *cmdFramePtr;	/* See Interp.cmdFramePtr */
+    Tcl_HashTable *lineLABCPtr;	/* See Interp.lineLABCPtr */
 } CorContext;
 
 /*
@@ -2879,9 +2879,11 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
 	Tcl_Encoding *encodingPtr);
 
 #ifdef _WIN32
-#   define TCLFSENCODING tclUtf8Encoding /* On Windows, all Unicode (except surrogates) are valid */
+/* On Windows, all Unicode (except surrogates) are valid. */
+#   define TCLFSENCODING tclUtf8Encoding
 #else
-#   define TCLFSENCODING NULL	/* On Non-Windows, use the system encoding for validation checks */
+/* On Non-Windows, use the system encoding for validation checks. */
+#   define TCLFSENCODING NULL
 #endif
 
 /*
@@ -2958,7 +2960,6 @@ typedef struct ProcessGlobalValue {
  * examples. Best to use those functions. Direct use of TclUpsizeAlloc /
  * TclResizeAlloc is needed in special cases such as when total size of
  * memory block is limited to less than TCL_SIZE_MAX.
- *
  *----------------------------------------------------------------------
  */
 
@@ -3273,7 +3274,7 @@ MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclChannelNamesCmd;
-MODULE_SCOPE int TclChanIsBinary(Tcl_Channel chan);
+MODULE_SCOPE int	TclChanIsBinary(Tcl_Channel chan);
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
@@ -4080,7 +4081,7 @@ MODULE_SCOPE void	TclProcessCreated(Tcl_Pid pid);
 MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
-MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
+MODULE_SCOPE int	TclClose(Tcl_Interp *, Tcl_Channel chan);
 
 /*
  * TIP #508: [array default]
