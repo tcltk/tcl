@@ -2557,7 +2557,11 @@ UtfToUtfProc(
 	    }
 
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
-	    /* Incomplete byte sequence. */
+	    /*
+             * Incomplete byte sequence not because there are insufficient
+             * bytes in source buffer (have already checked that above) but
+             * because the UTF-8 sequence is truncated.
+             */
 
             CHECK_ISOLATEDSURROGATE;
 
@@ -2668,7 +2672,7 @@ UtfToUtfProc(
                             }
                         } else {
                             /* High surrogate saved in *statePtr. Do not output anything just yet. */
-                            --numChars; /* XXX - TODO */
+                            --numChars; /* Cancel the increment at end of loop */
                             continue;
                         }
                     }
@@ -2687,7 +2691,6 @@ UtfToUtfProc(
         assert(!(flags & ENCODING_UTF)); /* CESU-8, Not UTF-8 */
         if (!(flags & TCL_ENCODING_END)) {
             /* More data coming */
-            --numChars; /* XXX - TODO */
         } else {
             /* No more data coming */
             if (PROFILE_STRICT(profile)) {
@@ -2701,10 +2704,9 @@ UtfToUtfProc(
                 }
                 if (dst < dstEnd) {
                     dst += Tcl_UniCharToUtf(ch, dst);
+                    ++numChars;
                 } else {
                     /* No room in destination */
-                    assert(numChars > 0);
-                    --numChars; /* XXX - TODO - Since it was incremented in loop above */
                     result = TCL_CONVERT_NOSPACE;
                 }
             }
