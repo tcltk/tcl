@@ -1151,7 +1151,7 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 
 $(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
 	@echo "Warning: tclOOScript.h may be out of date."
-	@echo "Developers may want to run \"make genscript\" to regenerate." 
+	@echo "Developers may want to run \"make genscript\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:

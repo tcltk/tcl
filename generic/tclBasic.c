@@ -463,7 +463,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* 
+    /*
      * [zipfs] perhaps has some safe commands. But like file make it inaccessible
      * until they are analyzed to be safe.
      */
