@@ -608,11 +608,13 @@ TclCompileCatchCmd(
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
+	/* DGP */
 	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
 
+	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
 	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
