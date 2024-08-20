@@ -4759,6 +4759,10 @@ TEBCresume(
 		TclNewObj(objResultPtr);
 	    }
 	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		/* Index is out of range, return empty result. */
+		TclNewObj(objResultPtr);
+	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 

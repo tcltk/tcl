@@ -549,7 +549,7 @@ ArithSeriesObjIndex(
     ArithSeries *arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
     if (index < 0 || arithSeriesRepPtr->len <= index) {
-	*elemObj = Tcl_NewObj();
+	*elemObj = NULL;
     } else {
 	/* List[i] = Start + (Step * index) */
 	if (arithSeriesRepPtr->isDouble) {
@@ -1161,8 +1161,8 @@ ArithSeriesInOperation(
             Tcl_Obj *elemObj;
             index = (y - intRepPtr->start) / intRepPtr->step;
             ArithSeriesObjIndex(interp, arithSeriesObjPtr, index, &elemObj);
-            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
-            char *estr = Tcl_GetStringFromObj(elemObj, &elen);
+            char const *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            char const *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
             if (boolResult) {
                 *boolResult = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
             }
