@@ -491,7 +491,7 @@ MakeByteArray(
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
-	int count = TclUtfToUniChar(src, &ch);
+	int count = Tcl_UtfToUniChar(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;

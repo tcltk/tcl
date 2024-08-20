@@ -25,7 +25,7 @@
  *
  * 	Conceptually, a string is a sequence of Unicode code points. Internally
  * 	it may be stored in an encoding form such as a modified version of
- * 	UTF-8 or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
+ * 	UTF-8 or UTF-32.
  *
  *	The String object is optimized for the case where each UTF char
  *	in a string is only one byte. In this case, we store the value of

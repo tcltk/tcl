@@ -101,7 +101,6 @@
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
-
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev

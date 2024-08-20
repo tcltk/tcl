@@ -1208,7 +1208,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-    TclUtfToUniChar(src, &i);
+    Tcl_UtfToUniChar(src, &i);
     return i;
 }
 

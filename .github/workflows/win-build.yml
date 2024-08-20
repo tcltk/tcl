@@ -22,7 +22,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=utf16"
           - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
