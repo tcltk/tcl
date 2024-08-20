@@ -110,7 +110,6 @@ Options:
   -m MODE       $chmodprog installed files to MODE.
   -o USER       $chownprog installed files to USER.
   -p            pass -p to $cpprog.
-  -R OPTION     $stripprog installed files using OPTION.
   -s            $stripprog installed files.
   -S SUFFIX     attempt to back up existing files, with suffix SUFFIX.
   -t DIRECTORY  install into DIRECTORY.
@@ -154,9 +153,6 @@ while test $# -ne 0; do
         shift;;
 
     -p) cpprog="$cpprog -p";;
-
-    -R) stripcmd="$stripprog $2"
-        shift;;
 
     -s) stripcmd=$stripprog;;
 
