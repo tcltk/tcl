@@ -142,7 +142,7 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* setFromAnyProc */
 	0
 };
-
+
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *
@@ -3386,7 +3386,7 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
-	    if ((*widePtr < 0)) {
+            if ((*widePtr < 0)) {
 		*widePtr = (endValue == -1) ? WIDE_MIN : -1;
 	    }
 	    return TCL_OK;
@@ -3394,7 +3394,7 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
-	    *widePtr = ((mp_isneg((mp_int *)cd)) ? ((endValue == -1) ? WIDE_MIN : -1) : WIDE_MAX);
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
@@ -3416,12 +3416,14 @@ GetWideForIndex(
  *	(0..TCL_SIZE_MAX) it is returned. Higher values are returned as
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
+ *	Callers should pass reasonable values for endValue - one in the
+ *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	list.
  *
  * Results:
  * 	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'. If
- * 	    'objPtr' has the value "end", the value stored is 'endValue'.
+ * 	    The index is stored at the address given by by 'indexPtr'.
  *
  * 	TCL_ERROR
  *
@@ -3429,10 +3431,9 @@ GetWideForIndex(
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
  *
- * Effect
+ * Side effects:
  *
- * 	The object referenced by 'objPtr' is converted, as needed, to an
- * 	integer, wide integer, or end-based-index object.
+ * 	The internal representation contained within objPtr may shimmer.
  *
  *----------------------------------------------------------------------
  */
@@ -3454,13 +3455,16 @@ Tcl_GetIntForIndex(
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && (endValue >= 0)) {
-	    *indexPtr = TCL_INDEX_NONE;
+	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
+	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
+	    *indexPtr = (Tcl_Size)wide; /* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;
+	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
-	    *indexPtr = -1-TCL_SIZE_MAX;
-	} else {
+            *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
+        } else if ((wide < 0) && (endValue >= 0)) {
+            *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
+        } else {
 	    *indexPtr = (Tcl_Size) wide;
 	}
     }
@@ -3699,17 +3703,27 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
+	/*
+	 * Encodes end+1. This is distinguished from end+n as noted
+         * in function header.
+	 * NOTE: this may wrap around if the caller passes (as lset does)
+	 * listLen-1 as endValue and and listLen is 0. The -1 will be
+	 * interpreted as FF...FF and adding 1 will result in 0 which
+	 * is what we want. Callers like lset which pass in listLen-1 == -1
+         * as endValue will have to adjust accordingly.
+	 */
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
+	/* -1 - position before first */
 	*widePtr = -1;
-    } else if (endValue == -1) {
-	*widePtr = offset;
     } else if (offset < 0) {
-	/* Different signs, sum cannot overflow */
-	*widePtr = (size_t)endValue + offset + 1;
+	/* end-(n-1) - Different signs, sum cannot overflow */
+	*widePtr = endValue + offset + 1;
     } else if (offset < WIDE_MAX) {
+	/* 0:WIDE_MAX-1 - plain old index. */
 	*widePtr = offset;
     } else {
+	/* Huh, what case remains here? */
 	*widePtr = WIDE_MAX;
     }
     return TCL_OK;
@@ -3914,8 +3928,10 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
+	Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp,
+	    "TCL", "VALUE", "INDEX", "OUTOFRANGE", NULL);
     }
     return TCL_ERROR;
 }
