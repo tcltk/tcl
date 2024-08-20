@@ -798,6 +798,7 @@ namespace eval test_ns_zipfs {
         test.zip testmountA test.zip testmountB/subdir
     } {}
 
+    variable path
     testzipfsfind absolute-path    [file join [zipfs root] testmountA] {
         test.zip testmountA test.zip testmountB/subdir
     } [lmap path {
@@ -921,7 +922,7 @@ namespace eval test_ns_zipfs {
     testzipfscanonical drivepath X:/foo/bar [file join [zipfs root] foo bar] -constraints win
     # (backslashes need additional escaping passed to testzipfscanonical)
     testzipfscanonical backslashes X:\\\\foo\\\\bar [file join [zipfs root] foo bar] -constraints win
-    testzipfscanonical backslashes X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical backslashes-1 X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
 
 
 
