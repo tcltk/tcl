@@ -1223,11 +1223,7 @@ typedef enum {
  */
 
 typedef struct Tcl_Time {
-#if TCL_MAJOR_VERSION > 8
     long long sec;		/* Seconds. */
-#else
-    long sec;			/* Seconds. */
-#endif
 #if defined(_WIN32) && defined(_WIN64)
     int usec;		/* Microseconds. */
 #else
