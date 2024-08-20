@@ -3856,29 +3856,6 @@ Tcl_GetNumber(
 /*
  *----------------------------------------------------------------------
  *
- * TclBounceRefCount --
- *
- *	Performs the equivante of incrementing and then decrementing the
- *	reference count.
- *
- * Results:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBounceRefCount(
-    Tcl_Obj *objPtr)	/* The object we are registering a reference to. */
-{
-    if (objPtr->refCount < 1) {
-	TclFreeObj(objPtr);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_IncrRefCount --
  *
  *	Increments the reference count of the object.

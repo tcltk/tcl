@@ -5734,7 +5734,7 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	objPtr = currentObj;
-	Tcl_BumpObj(lastObj);
+	Tcl_BounceRefCount(lastObj);
 	lastObj = currentObj;
     }
     return objPtr;

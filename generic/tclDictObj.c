@@ -73,8 +73,8 @@ static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 
-static int			DictAsListLength(Tcl_Interp *interp,
-				    Tcl_Obj *objPtr, Tcl_Size *lenPtr);
+static Tcl_ObjInterfaceListlengthProc	DictAsListLength;
+/* static Tcl_ObjInterfaceListIndexProc     DictAsListIndex; */
 
 /*
  * Table of dict subcommand names and implementations.
