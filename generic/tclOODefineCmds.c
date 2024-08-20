@@ -3394,7 +3394,7 @@ Configurable_ObjectWritableProps_Set(
  *	instance.
  *
  * BuildPropertyList --
- * 
+ *
  *	Helper for the helpers. Scans a property list and does the filtering
  *	or adding of the property to add or remove
  *
