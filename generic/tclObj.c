@@ -249,6 +249,7 @@ ObjInterface tclScalarInterface = {
 	NULL,
 	NULL,				/* append */
 	NULL,				/* appendList */
+	NULL,				/* contains */
 	&ScalarObjIndex,		/* index */
 	NULL,				/* indexEnd */  
 	NULL,				/* isSorted */

@@ -598,10 +598,6 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
-
-
-
-
 /*
  *----------------------------------------------------------------------------
  * The following structure represents a type of object, which is a particular
@@ -2316,6 +2312,12 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Obj *listPtr,	    /* List object to append elements to. */ \
     Tcl_Obj *elemListPtr    /* List obj with elements to append. */
 
+#define tclObjTypeInterfaceArgsListContains \
+    Tcl_Interp *interp,	    /* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	    /* List object to append elements to. */ \
+    Tcl_Obj *givenPtr,	    /* Value to search for. */ \
+    int *resPtr				/* Location to store the result in. */ \
+
 #define tclObjTypeInterfaceArgsListIndex \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object to index into. */ \
@@ -2429,6 +2431,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 typedef int (Tcl_ObjInterfaceListAllProc)(tclObjTypeInterfaceArgsListAll);
 typedef int (Tcl_ObjInterfaceListAppendProc)(tclObjTypeInterfaceArgsListAppend);
+typedef int (Tcl_ObjInterfaceListContainsProc)(tclObjTypeInterfaceArgsListContains);
 typedef int (Tcl_ObjInterfaceListAppendlistProc)(tclObjTypeInterfaceArgsListAppendList);
 typedef int (Tcl_ObjInterfaceListIndexProc)(tclObjTypeInterfaceArgsListIndex);
 typedef int (Tcl_ObjInterfaceListIndexEndProc)(tclObjTypeInterfaceArgsListIndexEnd);

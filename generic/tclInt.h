@@ -299,6 +299,7 @@ typedef struct ObjInterface {
 	int (*all)(tclObjTypeInterfaceArgsListAll);
 	int (*append)(tclObjTypeInterfaceArgsListAppend);
 	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
+	int (*contains)(tclObjTypeInterfaceArgsListContains);
 	int (*index)(tclObjTypeInterfaceArgsListIndex);
 	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexEnd);
 	int (*isSorted)(tclObjTypeInterfaceArgsListIsSorted);

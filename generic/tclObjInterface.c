@@ -73,6 +73,17 @@ Tcl_ObjInterfaceSetFnListAppendList(
 
 
 int
+Tcl_ObjInterfaceSetFnListContains(
+	Tcl_ObjInterface *objInterfacePtr
+	,int (fnPtr)(tclObjTypeInterfaceArgsListContains)
+) {
+	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
+	oiPtr->list.contains = fnPtr;
+	return TCL_OK;
+}
+
+
+int
 Tcl_ObjInterfaceSetFnListIndex(
 	Tcl_ObjInterface *objInterfacePtr
 	,int (fnPtr)(tclObjTypeInterfaceArgsListIndex)

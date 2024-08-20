@@ -1444,6 +1444,7 @@ const TclStubs tclStubs = {
     Tcl_ObjTypeSetInterface, /* 716 */
     Tcl_ObjTypeSetName, /* 717 */
     Tcl_ObjInterfaceSetFnStringIsEmpty, /* 718 */
+    Tcl_ObjInterfaceSetFnListContains, /* 719 */
 };
 
 /* !END!: Do not edit above this line. */

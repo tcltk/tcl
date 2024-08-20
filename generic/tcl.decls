@@ -2797,6 +2797,12 @@ declare 718 {
 }
 
 
+declare 719 {
+    int Tcl_ObjInterfaceSetFnListContains(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListContainsProc fnPtr)
+}
+
+
 
 
 ##############################################################################

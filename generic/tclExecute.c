@@ -5089,43 +5089,54 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 
 	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	match = 0;
-	if (length > 0) {
-	    Tcl_Size i = 0;
-	    Tcl_Obj *o;
-	    /*
-	     * An empty list doesn't match anything.
-	     */
 
-	    do {
-		if (TclObjectHasInterface(valuePtr, list, index)) {
-		    TCL_UNUSEDVAR(int status);
-		    TclObjectDispatchNoDefault(interp, status, value2Ptr, list,
-			index, interp, value2Ptr, i, &o);
-		    if (!o) {
-			TRACE_ERROR(interp);
-			goto gotError;
+	if (TclObjectHasInterface(value2Ptr, list, contains)) {
+	    int status;
+            TclObjectDispatchNoDefault(interp, status, value2Ptr, list,
+		contains, interp, value2Ptr, valuePtr, &match);
+            if (status != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+	} else {
+	    TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    match = 0;
+	    if (length > 0) {
+		Tcl_Size i = 0;
+		Tcl_Obj *o;
+		/*
+		 * An empty list doesn't match anything.
+		 */
+
+		do {
+		    if (TclObjectHasInterface(valuePtr, list, index)) {
+			TCL_UNUSEDVAR(int status);
+			TclObjectDispatchNoDefault(interp, status, value2Ptr, list,
+			    index, interp, value2Ptr, i, &o);
+			if (!o) {
+			    TRACE_ERROR(interp);
+			    goto gotError;
+			}
+		    } else {
+			Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		    }
-		} else {
-		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		}
-		if (o != NULL) {
-		    s2 = Tcl_GetStringFromObj(o, &s2len);
-		} else {
-		    s2 = "";
-		    s2len = 0;
-		}
-		if (s1len == s2len) {
-		    match = (memcmp(s1, s2, s1len) == 0);
-		}
-		TclBounceRefCount(o);
-		i++;
-	    } while (i < length && match == 0);
+		    if (o != NULL) {
+			s2 = Tcl_GetStringFromObj(o, &s2len);
+		    } else {
+			s2 = "";
+			s2len = 0;
+		    }
+		    if (s1len == s2len) {
+			match = (memcmp(s1, s2, s1len) == 0);
+		    }
+		    TclBounceRefCount(o);
+		    i++;
+		} while (i < length && match == 0);
+	    }
 	}
 
 	if (*pc == INST_LIST_NOT_IN) {

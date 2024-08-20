@@ -82,7 +82,8 @@ static void DupArithSeriesInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr);
 static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
 static int  SetArithSeriesFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-
+static int  ArithSeriesInOperation(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *arithSeriesObj,
+				   int *boolResult);
 static int ArithSeriesObjIndex(TCL_UNUSED(Tcl_Interp *), Tcl_Obj *arithSeriesObj,
 				  Tcl_Size index, Tcl_Obj **elemObj);
 static int ArithSeriesObjLength(TCL_UNUSED(Tcl_Interp *),
@@ -111,6 +112,7 @@ static ObjectType tclArithSeriesType = {
 void TclArithSeriesInit(void) {
     Tcl_ObjInterface *oiPtr;
     oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListContains(oiPtr ,ArithSeriesInOperation);
     Tcl_ObjInterfaceSetFnListAll(oiPtr ,ArithSeriesGetElements);
     Tcl_ObjInterfaceSetFnListIndex(oiPtr ,ArithSeriesObjIndex);
     Tcl_ObjInterfaceSetFnListLength(oiPtr ,ArithSeriesObjLength);
@@ -741,15 +743,21 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
 	Tcl_Panic("Unable to allocate string size %" TCL_Z_MODIFIER "u", length);
     }
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	ArithSeriesObjIndex(NULL, arithSeriesObj, i, &elemObj);
-	elem = Tcl_GetStringFromObj(elemObj, &slen);
-	if (((p - arithSeriesObj->bytes)+slen) > length) {
-	    break;
+	if (ArithSeriesObjIndex(NULL, arithSeriesObj, i, &elemObj) == TCL_OK)
+	{
+	    elem = Tcl_GetStringFromObj(elemObj, &slen);
+	    if (((p - arithSeriesObj->bytes)+slen) > length) {
+		break;
+	    }
+	    strncpy(p, elem, slen);
+	    p[slen] = ' ';
+	    p += slen+1;
+	    Tcl_DecrRefCount(elemObj);
+	} else {
+	    Tcl_Panic("UpdateStringOfArithSeries"
+		" {could not get value at index} index %"
+		TCL_Z_MODIFIER "u", i);
 	}
-	strncpy(p, elem, slen);
-	p[slen] = ' ';
-	p += slen+1;
-	Tcl_DecrRefCount(elemObj);
     }
     if (length > 0) arithSeriesObj->bytes[length-1] = '\0';
     arithSeriesObj->length = length-1;
@@ -1079,6 +1087,91 @@ ArithSeriesObjReverse(
 
     return TCL_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArithSeriesInOperator --
+ *
+ *	Evaluate the "in" operation for expr
+ *
+ *      This can be done more efficiently in the Arith Series relative to
+ *      doing a linear search as implemented in expr.
+ *
+ * Results:
+ *	Boolean true or false (1/0)
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ArithSeriesInOperation(
+    Tcl_Interp *interp,
+    Tcl_Obj *arithSeriesObjPtr,
+    Tcl_Obj *valueObj,
+    int *boolResult)
+{
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl*)arithSeriesRepPtr;
+    int status;
+    Tcl_Size index, incr, elen, vlen;
+
+    if (arithSeriesRepPtr->isDouble) {
+        double y;
+	int test = 0;
+
+	incr = 0; // Check index+incr where incr is 0 and 1
+        status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
+        if (status != TCL_OK) {
+	    test = 0;
+        } else {
+            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            index = (y - dblRepPtr->start) / dblRepPtr->step;
+	    while (incr<2) {
+		Tcl_Obj *elemObj;
+		ArithSeriesObjIndex(interp, arithSeriesObjPtr, (index+incr), &elemObj);
+		char *estr = Tcl_GetStringFromObj(elemObj, &elen);
+		/* "in" operation defined as a string compare */
+		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+		Tcl_BumpObj(elemObj);
+		/* Stop if we have a match */
+		if (test) {
+		    break;
+		}
+		incr++;
+	    }
+        }
+	if (boolResult) {
+	    *boolResult = test;
+	}
+    } else {
+        ArithSeries *intRepPtr = arithSeriesRepPtr;
+        Tcl_WideInt y;
+
+        status = Tcl_GetWideIntFromObj(NULL, valueObj, &y);
+        if (status != TCL_OK) {
+            if (boolResult) {
+                *boolResult = 0;
+            }
+        } else {
+            Tcl_Obj *elemObj;
+            index = (y - intRepPtr->start) / intRepPtr->step;
+            ArithSeriesObjIndex(interp, arithSeriesObjPtr, index, &elemObj);
+            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            char *estr = Tcl_GetStringFromObj(elemObj, &elen);
+            if (boolResult) {
+                *boolResult = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+            }
+            Tcl_BumpObj(elemObj);
+        }
+    }
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c
