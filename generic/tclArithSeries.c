@@ -1135,7 +1135,7 @@ ArithSeriesInOperation(
 		Tcl_Obj *elemObj;
 		ArithSeriesObjIndex(interp, arithSeriesObjPtr, (index+incr), &elemObj);
 		elen = 0;
-		char *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
+		const char *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
 		/* "in" operation defined as a string compare */
 		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
 		Tcl_BumpObj(elemObj);
