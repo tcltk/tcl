@@ -7651,7 +7651,7 @@ TestGetUniCharCmd(
     int index;
     int c ;
     if (objc != 3) {
-       	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
+	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
 	return TCL_ERROR;
     }
     Tcl_GetIntFromObj(interp, objv[2], &index);
