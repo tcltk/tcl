@@ -84,25 +84,8 @@ static TclOOStubs stubsCopy = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL
-#ifdef Tcl_MethodIsPrivate
-    ,NULL
-#endif
-#ifdef Tcl_GetClassOfObject
-    ,NULL
-#endif
-#ifdef Tcl_GetObjectClassName
-    ,NULL
-#endif
-#ifdef Tcl_MethodIsType2
-    ,NULL
-#endif
-#ifdef Tcl_NewInstanceMethod2
-    ,NULL
-#endif
-#ifdef Tcl_NewMethod2
-    ,NULL
-#endif
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 DLLEXPORT int
