@@ -1231,7 +1231,7 @@ DisassembleByteCodeAsDicts(
     TclDictPut(NULL, description, "script",
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
     TclDictPut(NULL, description, "namespace",
-	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
+	    TclNewNamespaceObj((Tcl_Namespace *) codePtr->nsPtr));
     TclDictPut(NULL, description, "stackdepth",
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
     TclDictPut(NULL, description, "exceptdepth",
