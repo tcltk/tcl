@@ -1,3 +1,8 @@
+Sep 04th, 2023
+v1.2.1
+       -- Bugfix release because of potential integer overflow
+          c.f. PR #546 resp. CVE-2023-36328
+
 Oct 22nd, 2019
 v1.2.0
        -- A huge refactoring of the library happened - renaming,
