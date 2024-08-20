@@ -189,7 +189,7 @@ TclpGetSeconds(void)
 	Tcl_Time t;
 
 	GetTime(&t);
-	return (unsigned long long)(unsigned long) t.sec;
+	return (unsigned long long)t.sec;
     }
 }
 
@@ -358,7 +358,7 @@ TclpGetMicroseconds(void)
 	Tcl_Time now;
 
 	GetTime(&now);
-	return (((long long) now.sec) * 1000000) + now.usec;
+	return now.sec * 1000000 + now.usec;
     }
 }
 
@@ -395,8 +395,8 @@ Tcl_GetTime(
      */
 
     if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+	timePtr->sec = usecSincePosixEpoch / 1000000;
+	timePtr->usec = usecSincePosixEpoch % 1000000;
     } else {
 	GetTime(timePtr);
     }
@@ -698,8 +698,8 @@ NativeGetTime(
 
     usecSincePosixEpoch = NativeGetMicroseconds();
     if (usecSincePosixEpoch) {
-	timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
-	timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
+	timePtr->sec = usecSincePosixEpoch / 1000000;
+	timePtr->usec = usecSincePosixEpoch % 1000000;
     } else {
 	/*
 	 * High resolution timer is not available. Just use ftime.
@@ -708,7 +708,7 @@ NativeGetTime(
 	struct _timeb t;
 
 	_ftime(&t);
-	timePtr->sec = (long) t.time;
+	timePtr->sec = t.time;
 	timePtr->usec = t.millitm * 1000;
     }
 }
