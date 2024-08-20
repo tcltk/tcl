@@ -120,6 +120,9 @@ extern "C" {
 #include <stdio.h>
 #include <stddef.h>
 
+/* Needed for PTRDIFF_MAX */
+#include <stdint.h>
+
 
 #define TCL_COMMENT(x)
 
