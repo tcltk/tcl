@@ -252,7 +252,9 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc NRInjectObjCmd;
+#endif /* TCL_NO_DEPRECATED */
 static Tcl_NRPostProc NRPostInvoke;
 static Tcl_ObjCmdProc CoroTypeObjCmd;
 static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
@@ -471,7 +473,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* 
+    /*
      * [zipfs] perhaps has some safe commands. But like file make it inaccessible
      * until they are analyzed to be safe.
      */
@@ -1217,8 +1219,10 @@ Tcl_CreateInterp(void)
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     /* Coroutine monkeybusiness */
+#ifndef TCL_NO_DEPRECATED
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRInjectObjCmd, NULL, NULL);
+#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
 	    CoroTypeObjCmd, NULL, NULL);
 
@@ -9892,6 +9896,7 @@ TclNRCoroutineActivateCallback(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 TclNREvalList(
     void *data[],
@@ -9909,6 +9914,7 @@ TclNREvalList(
     TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -10246,6 +10252,7 @@ InjectHandlerPostCall(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 NRInjectObjCmd(
     TCL_UNUSED(void *),
@@ -10290,6 +10297,7 @@ NRInjectObjCmd(
 
     return TCL_OK;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 int
 TclNRInterpCoroutine(
