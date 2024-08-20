@@ -416,7 +416,7 @@ TclCompileIfCmd(
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
 	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup+jumpIndex, 127)) {
+		jumpEndFixupArray.fixup + jumpIndex, 127)) {
 	    /*
 	     * Adjust the immediately preceding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
@@ -479,7 +479,8 @@ TclCompileIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int isScalar, localIndex, haveImmValue, immValue;
+    int isScalar, localIndex, haveImmValue;
+    Tcl_WideInt immValue;
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	return TCL_ERROR;
@@ -506,17 +507,12 @@ TclCompileIncrCmd(
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 
 	    Tcl_IncrRefCount(intObj);
-	    code = TclGetIntFromObj(NULL, intObj, &immValue);
-	    if ( (code == TCL_OK)
-	      && (-127 <= immValue) && (immValue <= 127)
-	      /* avoid overflow during string to int conversion (wide 0xFFFFFFFF to signed int -1): */
+	    code = Tcl_GetWideIntFromObj(NULL, intObj, &immValue);
+	    if ((code == TCL_OK) && (
 #ifndef TCL_WIDE_INT_IS_LONG
-	      && ( (immValue >= 0)
-	        || (intObj->typePtr != &tclWideIntType)
-	        || ((-127 <= intObj->internalRep.wideValue) && (intObj->internalRep.wideValue <= 127))
-	      )
+		    intObj->typePtr == &tclWideIntType ||
 #endif
-	    ) {
+		    intObj->typePtr == &tclIntType) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
 	    }
 	    TclDecrRefCount(intObj);
@@ -2436,11 +2432,11 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, status = TCL_OK;
+    int level, code, status = TCL_OK;
     int size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
-    int numOptionWords = numWords - 1 - explicitResult;
+    int objc, numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
