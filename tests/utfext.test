@@ -199,7 +199,7 @@ namespace eval utftest {
     # Basic tests
     foreach {enc testcases} $utfExtMap {
         foreach testcase $testcases {
-            lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex} 
+            lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
 
             # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
             # Note by default output should be terminated with \0
