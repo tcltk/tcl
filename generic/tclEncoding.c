@@ -2943,6 +2943,9 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
+            if (HIGH_SURROGATE(prev) && LOW_SURROGATE(ch)) {
+                --numChars; /* Character has been combined, so compensage count */
+            }
 	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
