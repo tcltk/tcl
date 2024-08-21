@@ -20,7 +20,7 @@ jobs:
           install: git base-devel msys2-devel zlib
           update: true
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build
         run: |
           ./configure -C --prefix=/usr --enable-64bit || { cat config.log; cat config.cache; exit 1; }

@@ -2486,7 +2486,7 @@ interpreter. (JL)
 installing and requesting security policies, purely in Tcl code. Overloads
 the package command to also allow an interpreter to "require" a policy. The
 following new library commands are provided:
-	tcl_safeCreateInterp	-- creates a slave an initializes the
+	tcl_safeCreateInterp	-- creates a slave and initializes the
 				   policy mechanism.
 	tcl_safeInitInterp	-- initializes an existing slave with the
 				   policy mechanism.
@@ -4976,7 +4976,7 @@ msgcat package (duperval, krone, nelson)
 	trace {add|remove|list} {variable|command} name ops command
 (darley, melski)
 
-2000-09-06 (cross-platform feature) Set ^Z (\32) as default EOF char. (hobbs)
+2000-09-06 (cross-platform feature) Set ^Z (\x1A) as default EOF char. (hobbs)
 
 2000-09-07 partial fix for bug 2460 to prevent exec mem leak on Windows for the
 common case (gravereaux)
@@ -6070,7 +6070,7 @@ each command/interp validity before executing. (sofer)
 
 2004-04-06 (clean up) refactored Tcl header file #include order.  Might
 create need for changes in extensions that #include private headers.
-Changed source code files should work with older Tcl as well.  See ChangeLog.
+Changed source code files should work with older Tcl as well.
      *** POTENTIAL INCOMPATIBILITY ***
 
 2004-04-07 (bug fix)[920667] install into any Unicode path on Win (hobbs)
@@ -8251,7 +8251,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-06-05 (bug fix)[2835313] [while 1 {foo [continue]}] crash (fellows)
 
-2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1f (nijtmans)
+2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1F (nijtmans)
 
 2013-06-27 (bug fix)[983509] missing encodings for config values (nijtmans)
 
@@ -9051,7 +9051,7 @@ See RFC 2045
 2020-09-17 (bug)[835c93] Support TIP 525 exit code for -singleproc 1 (nijtmans)
 => tcltest 2.5.3
 
-2020-09-25 (new) force -eofchar \032 when evaluating library scripts (nijtmans)
+2020-09-25 (new) force -eofchar \x1A when evaluating library scripts (nijtmans)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2020-09-29 (bug)[0063cb] http::geturl -headers must be dict (oehlmann,nijtmans)
