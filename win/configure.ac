@@ -144,7 +144,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AS_IF([test "$do64bit" != "no"], [
     AC_DEFINE(MP_64BIT, 1, [Using libtommath.dll in 64-bit mode])
     AS_IF([test "$do64bit" = "arm64"], [
-      AS_IF([test "$GCC" == "yes"],[
+      AS_IF([test "$GCC" = "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
         zlib_lib_name=libz.dll.a
@@ -154,7 +154,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
       ])
     ], [
-      AS_IF([test "$GCC" == "yes"],[
+      AS_IF([test "$GCC" = "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
         zlib_lib_name=libz.dll.a
