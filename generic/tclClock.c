@@ -1706,7 +1706,7 @@ ThreadSafeLocalTime(
 
     struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
-    localtime_r(timePtr, tmPtr);
+    tmPtr = localtime_r(timePtr, tmPtr);
 #else
     struct tm *sysTmPtr;
 
@@ -1716,7 +1716,7 @@ ThreadSafeLocalTime(
 	Tcl_MutexUnlock(&clockMutex);
 	return NULL;
     }
-    memcpy(tmPtr, localtime(timePtr), sizeof(struct tm));
+    memcpy(tmPtr, sysTmPtr, sizeof(struct tm));
     Tcl_MutexUnlock(&clockMutex);
 #endif
     return tmPtr;
