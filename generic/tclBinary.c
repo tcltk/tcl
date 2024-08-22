@@ -392,6 +392,7 @@ Tcl_GetBytesFromObj(
     }
     return baPtr->bytes;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -501,7 +502,7 @@ MakeByteArray(
 			    "expected byte sequence but character %"
 			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
 			    dst - byteArrayPtr->bytes, src, ch));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (void *)NULL);
 		}
 		Tcl_Free(byteArrayPtr);
 		*byteArrayPtrPtr = NULL;
