@@ -2019,7 +2019,7 @@ typedef struct Tcl_Config {
  */
 
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
-typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
+#define Tcl_LimitHandlerDeleteProc Tcl_FreeProc
 
 #if 0
 /*

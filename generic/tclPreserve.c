@@ -303,7 +303,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	Tcl_Free(clientData);
     } else {
-	freeProc((char *)clientData);
+	freeProc(clientData);
     }
 }
 
