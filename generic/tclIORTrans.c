@@ -529,9 +529,10 @@ TclChanPushObjCmd(
      * Actually: rPush CHANNEL CMDPREFIX
      *           [0]   [1]     [2]
      */
-
-#define CHAN	(1)
-#define CMD	(2)
+    enum ArgIndices {
+	CHAN = 1,
+	CMD = 2
+    };
 
     /*
      * Number of arguments...
@@ -714,9 +715,6 @@ TclChanPushObjCmd(
 
     Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
-
-#undef CHAN
-#undef CMD
 }
 
 /*
@@ -751,8 +749,9 @@ TclChanPopObjCmd(
      * Actually: rPop CHANNEL
      *           [0]  [1]
      */
-
-#define CHAN	(1)
+    enum ArgIndices {
+	CHAN = 1
+    };
 
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
@@ -786,8 +785,6 @@ TclChanPopObjCmd(
 
     Tcl_UnstackChannel(interp, chan);
     return TCL_OK;
-
-#undef CHAN
 }
 
 /*
