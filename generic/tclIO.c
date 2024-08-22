@@ -710,7 +710,7 @@ TclFinalizeIOSubsystem(void)
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
