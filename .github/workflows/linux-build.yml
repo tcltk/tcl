@@ -17,6 +17,7 @@ jobs:
         cfgopt:
           - ""
           - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"

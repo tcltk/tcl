@@ -24,6 +24,7 @@ jobs:
           - ""
           - "CHECKS=nodep"
           - "OPTS=static"
+          - "OPTS=noembed"
           - "OPTS=symbols"
           - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
@@ -66,6 +67,7 @@ jobs:
         cfgopt:
           - ""
           - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"
