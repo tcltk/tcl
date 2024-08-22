@@ -709,7 +709,6 @@ TclFinalizeIOSubsystem(void)
     FreeBinaryEncoding();
     TclpFinalizeSockets();
     TclpFinalizePipes();
-    TclZipfsFinalize();
 }
 
 /*

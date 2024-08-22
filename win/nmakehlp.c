@@ -31,7 +31,6 @@
 #pragma comment (lib, "kernel32.lib")
 #endif
 #include <stdio.h>
-#include <math.h>
 
 /*
  * This library is required for x64 builds with _some_ versions of MSVC
@@ -284,7 +283,7 @@ CheckForCompilerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
@@ -418,7 +417,7 @@ CheckForLinkerFeature(
     if (!ok) {
 	DWORD err = GetLastError();
 	int chars = snprintf(msg, sizeof(msg) - 1,
-		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
+		"Tried to launch: \"%s\", but got error [%lu]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPSTR)&msg[chars],
