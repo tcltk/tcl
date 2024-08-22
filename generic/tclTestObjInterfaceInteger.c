@@ -678,7 +678,11 @@ static int ListIntegerListObjSetDeep(
 }
 
 
-static int ListIntegerLset(tclObjTypeInterfaceArgsListSet)
+static int ListIntegerLset(
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(Tcl_Obj *))
 {
     return TCL_ERROR;
 }
