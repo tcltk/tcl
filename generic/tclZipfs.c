@@ -1182,11 +1182,11 @@ ZipFSCloseArchive(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL. 
+ *	into the given interp if it is not NULL.
  *
  * Side effects:
  *      The given ZipFile struct is filled with information about the ZIP
- *      archive file.  On error, ZipFSCloseArchive is called on zf but 
+ *      archive file.  On error, ZipFSCloseArchive is called on zf but
  *      it is not freed.
  *
  *-------------------------------------------------------------------------
@@ -1265,7 +1265,7 @@ ZipFSFindTOC(
     unsigned int cdirSize = ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
 
     /*
-     * As computed above, 
+     * As computed above,
      *    eocdDataOffset < zf->length.
      * In addition, the following consistency checks must be met
      * (1) cdirZipOffset <= eocdDataOffset (to prevent under flow in computation of (2))
@@ -1389,7 +1389,7 @@ ZipFSFindTOC(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL. On error, ZipFSCloseArchive
+ *	into the given interp if it is not NULL. On error, ZipFSCloseArchive
  *      is called on zf but it is not freed.
  *
  * Side effects:
@@ -1613,7 +1613,7 @@ IsPasswordValid(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL. On error, frees zf!!
+ *	into the given interp if it is not NULL. On error, frees zf!!
  *
  * Side effects:
  *	Will acquire and release the write lock.

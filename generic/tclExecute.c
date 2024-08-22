@@ -5219,7 +5219,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (fromIdx == TCL_INDEX_NONE) {
+	if (fromIdx < 0) {
 	    fromIdx = 0;
 	} else if (fromIdx > length) {
 	    fromIdx = length;

@@ -5299,7 +5299,6 @@ Tcl_LeditObjCmd(
 	first = listLen;
     }
 
-    /* The +1 in comparisons are necessitated by indices being unsigned */
     if (last >= listLen) {
 	last = listLen - 1;
     }
