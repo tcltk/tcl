@@ -179,10 +179,7 @@ EXTERN int		TclNeedSpace(const char *start, const char *end);
 EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 /* 62 */
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
-/* 63 */
-EXTERN int		TclObjInterpProc(void *clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 63 is reserved */
 /* 64 */
 EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
 				Tcl_Obj *const objv[], int flags);
@@ -664,7 +661,7 @@ typedef struct TclIntStubs {
     int (*tclNeedSpace) (const char *start, const char *end); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
-    int (*tclObjInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 63 */
+    void (*reserved63)(void);
     int (*tclObjInvoke) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 64 */
     void (*reserved65)(void);
     void (*reserved66)(void);
@@ -973,8 +970,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclNewProcBodyObj) /* 61 */
 #define TclObjCommandComplete \
 	(tclIntStubsPtr->tclObjCommandComplete) /* 62 */
-#define TclObjInterpProc \
-	(tclIntStubsPtr->tclObjInterpProc) /* 63 */
+/* Slot 63 is reserved */
 #define TclObjInvoke \
 	(tclIntStubsPtr->tclObjInvoke) /* 64 */
 /* Slot 65 is reserved */
@@ -1295,7 +1291,6 @@ extern const TclIntStubs *tclIntStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 #undef TclUnusedStubEntry
-#undef TclObjInterpProc
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
 
