@@ -748,7 +748,7 @@ EncodingDirsObjCmd(
 		"expected directory list but got \"%s\"",
 		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1941,7 +1941,7 @@ PathFilesystemCmd(
     if (fsInfo == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		TclGetString(objv[1]), NULL);
+		TclGetString(objv[1]), (void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2091,7 +2091,7 @@ PathSplitCmd(
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2193,7 +2193,7 @@ FilesystemSeparatorCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    TclGetString(objv[1]), NULL);
+		    TclGetString(objv[1]), (void *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2831,7 +2831,7 @@ EachloopCmd(
 		(statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", NULL);
+		"NEEDVARS", (void *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}

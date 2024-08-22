@@ -507,7 +507,7 @@ TclNewArithSeriesObj(
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
 	return arithSeriesObjPtr;
     }
 
@@ -970,7 +970,7 @@ ArithSeriesGetElements(
 			Tcl_SetObjResult(
 			    interp,
 			    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
 		    }
 		    return TCL_ERROR;
 		}
@@ -993,7 +993,7 @@ ArithSeriesGetElements(
 	    Tcl_SetObjResult(
 		interp,
 		Tcl_ObjPrintf("value is not an arithseries"));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (void *)NULL);
 	}
 	return TCL_ERROR;
     }

@@ -244,7 +244,7 @@ Tcl_RegexpObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"regexp match variables not allowed when using -inline", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGEXP",
-		"MIX_VAR_INLINE", NULL);
+		"MIX_VAR_INLINE", (void *)NULL);
 	goto optionError;
     }
 
@@ -697,7 +697,7 @@ Tcl_RegsubObjCmd(
 		    "command prefix must be a list of at least one element",
 		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGSUB",
-		    "CMDEMPTY", NULL);
+		    "CMDEMPTY", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
@@ -2002,7 +2002,7 @@ StringMapCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase", string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
+		    string, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2070,7 +2070,7 @@ StringMapCmd(
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("char map list unbalanced", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
-		    "UNBALANCED", NULL);
+		    "UNBALANCED", (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2275,7 +2275,7 @@ StringMatchCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\": must be -nocase", string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
+		    string, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2693,7 +2693,7 @@ StringEqualCmd(
 		    "bad option \"%s\": must be -nocase or -length",
 		    string2));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string2, NULL);
+		    string2, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2793,7 +2793,7 @@ StringCmpOpts(
 		    "bad option \"%s\": must be -nocase or -length",
 		    string));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
+		    string, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -3523,7 +3523,7 @@ TclNRSwitchObjCmd(
 			"bad option \"%s\": %s option already found",
 			TclGetString(objv[i]), options[mode]));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-			"DOUBLEOPT", NULL);
+			"DOUBLEOPT", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    foundmode = 1;
@@ -3542,7 +3542,7 @@ TclNRSwitchObjCmd(
 			"missing variable name argument to %s option",
 			"-indexvar"));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-			"NOVAR", NULL);
+			"NOVAR", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    indexVarObj = objv[i];
@@ -3555,7 +3555,7 @@ TclNRSwitchObjCmd(
 			"missing variable name argument to %s option",
 			"-matchvar"));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-			"NOVAR", NULL);
+			"NOVAR", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    matchVarObj = objv[i];
@@ -3574,14 +3574,14 @@ TclNRSwitchObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s option requires -regexp option", "-indexvar"));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-		"MODERESTRICTION", NULL);
+		"MODERESTRICTION", (void *)NULL);
 	return TCL_ERROR;
     }
     if (matchVarObj != NULL && mode != OPT_REGEXP) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s option requires -regexp option", "-matchvar"));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-		"MODERESTRICTION", NULL);
+		"MODERESTRICTION", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3636,7 +3636,7 @@ TclNRSwitchObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"extra switch pattern with no body", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
-		NULL);
+		(void *)NULL);
 
 	/*
 	 * Check if this can be due to a badly placed comment in the switch
@@ -3654,7 +3654,7 @@ TclNRSwitchObjCmd(
 			    " placed outside of a switch body - see the"
 			    " \"switch\" documentation", -1);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
-			    "BADARM", "COMMENT?", NULL);
+			    "BADARM", "COMMENT?", (void *)NULL);
 		    break;
 		}
 	    }
@@ -3673,7 +3673,7 @@ TclNRSwitchObjCmd(
 		"no body specified for pattern \"%s\"",
 		TclGetString(objv[objc-2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH", "BADARM",
-		"FALLTHROUGH", NULL);
+		"FALLTHROUGH", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4004,7 +4004,7 @@ Tcl_ThrowObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"type must be non-empty list", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "THROW", "BADEXCEPTION",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4743,7 +4743,7 @@ TclNRTryObjCmd(
 			"finally clause must be last", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
-			"NONTERMINAL", NULL);
+			"NONTERMINAL", (void *)NULL);
 		return TCL_ERROR;
 	    } else if (i == objc-1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4751,7 +4751,7 @@ TclNRTryObjCmd(
 			" \"... finally script\"", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
-			"ARGUMENT", NULL);
+			"ARGUMENT", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    finallyObj = objv[++i];
@@ -4764,7 +4764,7 @@ TclNRTryObjCmd(
 			" variableList script\"", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "ON",
-			"ARGUMENT", NULL);
+			"ARGUMENT", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    if (TclGetCompletionCodeFromObj(interp, objv[i+1],
@@ -4783,7 +4783,7 @@ TclNRTryObjCmd(
 			-1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
-			"ARGUMENT", NULL);
+			"ARGUMENT", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    code = 1;
@@ -4793,7 +4793,7 @@ TclNRTryObjCmd(
 			TclGetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
-			"EXNFORMAT", NULL);
+			"EXNFORMAT", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    info[2] = objv[i+1];
@@ -4825,7 +4825,7 @@ TclNRTryObjCmd(
 		"last non-finally clause must not have a body of \"-\"", -1));
 	Tcl_DecrRefCount(handlersObj);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "BADFALLTHROUGH",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     if (!haveHandlers) {
