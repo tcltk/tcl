@@ -42,6 +42,9 @@ static Tcl_NRPostProc	TryPostFinal;
 static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
+static int	StringCmpOpts(Tcl_Interp *interp, int objc,
+		    Tcl_Obj *const objv[], int *nocase,
+		    Tcl_Size *reqlength);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -2738,9 +2741,9 @@ StringCmpCmd(
      */
 
     int match, nocase, status;
-    Tcl_Size reqlength;
+    Tcl_Size reqlength = -1;
 
-    status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength);
+    status = StringCmpOpts(interp, objc, objv, &nocase, &reqlength);
     if (status != TCL_OK) {
 	return status;
     }
@@ -2752,7 +2755,7 @@ StringCmpCmd(
 }
 
 int
-TclStringCmpOpts(
+StringCmpOpts(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */

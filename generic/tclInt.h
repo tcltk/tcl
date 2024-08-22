@@ -3513,9 +3513,6 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
-MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], int *nocase,
-			    Tcl_Size *reqlength);
 MODULE_SCOPE int	TclStringIndexInterface(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj **charPtr);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
