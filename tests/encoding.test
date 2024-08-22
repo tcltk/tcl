@@ -47,9 +47,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetencpath [llength [info commands testgetencpath]]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\ufffd"}]
-testConstraint utf32 [expr {[testConstraint fullutf]
-		&& [string length [format %c 0x10000]] == 1}]
+
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -350,7 +348,7 @@ test encoding-15.5 {UtfToUtfProc emoji character input} {
     set y [encoding convertfrom utf-8 \xf0\x9f\x98\x82]
     list [string length $x] $y
 } "4 😂"
-test encoding-15.6 {UtfToUtfProc emoji character output} utf32 {
+test encoding-15.6 {UtfToUtfProc emoji character output} {
     set x \ude02\ud83d\ude02\ud83d
     set y [encoding convertto -profile tcl8 utf-8 \ude02\ud83d\ude02\ud83d]
     binary scan $y H* z
@@ -516,7 +514,7 @@ test encoding-16.8 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom -profile tcl8 utf-32 \x41\x00\x00\x41]
     list $val [format %x [scan $val %c]]
 } -result "\ufffd fffd"
-test encoding-16.9 {Utf32ToUtfProc} -constraints utf32 -body {
+test encoding-16.9 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xd8\x00\x00
 } -result \ud800
 test encoding-16.10 {Utf32ToUtfProc} -body {
@@ -525,7 +523,7 @@ test encoding-16.10 {Utf32ToUtfProc} -body {
 test encoding-16.11 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xd8\x00\x00\x00\xdc\x00\x00
 } -result \ud800\udc00
-test encoding-16.12 {Utf32ToUtfProc} -constraints utf32 -body {
+test encoding-16.12 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xdc\x00\x00\x00\xd8\x00\x00
 } -result \udc00\ud800
 test encoding-16.13 {Utf16ToUtfProc} -body {
@@ -577,6 +575,12 @@ test encoding-16.19.strict {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
 } -returnCodes 1 -result {unexpected byte sequence starting at index 2: '\x41'}
 test encoding-16.20 {utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom utf-16 "\xd8\xd8"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xD8'}
+test encoding-16.20-tcl8 {utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile tcl8 utf-16 "\xD8\xD8"
+} -result \uD8D8
+test encoding-16.20-strict {utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile strict utf-16 "\xd8\xd8"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xD8'}
 test encoding-16.21.tcl8 {Utf32ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x00\x00\x00\x00\x41\x41"
@@ -900,7 +904,7 @@ test encoding-24.33 {Try to generate invalid utf-8} -body {
 test encoding-24.34 {Try to generate invalid utf-8 with -profile tcl8} -body {
     encoding convertto -profile tcl8 utf-8 \uffff
 } -result \xef\xbf\xbf
-test encoding-24.35 {Parse invalid utf-8} -constraints utf32 -body {
+test encoding-24.35 {Parse invalid utf-8} -body {
     encoding convertfrom -profile tcl8 utf-8 \xed\xa0\x80
 } -result \ud800
 test encoding-24.36 {Parse invalid utf-8 with -profile strict} -body {
