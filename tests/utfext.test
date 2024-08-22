@@ -37,13 +37,6 @@ namespace eval utftest {
     # 4 external fragmentation index - where to split field 2 for fragmentation
     #   tests. -1 to skip
     #
-    # cesu-8 tests disabled because of bug [304d30677a] - TODO
-    # cesu-8 {
-        # {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
-        # {nonbmp {41 f09f9880 42} {41 eda0bd edb080 42} 3 3}
-        # {null   {41 c080 42} {41 00 42}    2 -1}
-    # }
-
     lappend utfExtMap {*}{
         ascii {
             {basic 414243 414243 -1 -1}
@@ -53,6 +46,13 @@ namespace eval utftest {
             {nonbmp-frag-1 {41 f09f9880 42} {41 f09f9880 42}  2  2}
             {nonbmp-frag-2 {41 f09f9880 42} {41 f09f9880 42}  3  3}
             {nonbmp-frag-3 {41 f09f9880 42} {41 f09f9880 42}  4  4}
+            {null   {41 c080 42} {41 00 42}    2 -1}
+        }
+        cesu-8 {
+            {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
+            {nonbmp-frag-surr-low {41 f09f9880 42} {41 eda0bd edb880 42} 2 2}
+            {nonbmp-split-surr {41 f09f9880 42} {41 eda0bd edb880 42} 3 -1}
+            {nonbmp-frag-surr-high {41 f09f9880 42} {41 eda0bd edb880 42} 4 6}
             {null   {41 c080 42} {41 00 42}    2 -1}
         }
         utf-16le {
@@ -153,7 +153,7 @@ namespace eval utftest {
         }
     }
 
-    proc testfragment {direction enc comment hexin hexout fragindex} {
+    proc testfragment {direction enc comment hexin hexout fragindex args} {
 
         if {$fragindex < 0} {
             # Single byte encodings so no question of fragmentation
@@ -167,13 +167,21 @@ namespace eval utftest {
             set cmd Tcl_UtfToExternal
         }
 
+        set status1 multibyte; # Return status to expect after first call
+        while {[llength $args] > 1} {
+            set opt [lpop args 0]
+            switch $opt {
+                -status1  { set status1 [lpop args 0]}
+                default {
+                    error "Unknown option \"$opt\""
+                }
+            }
+        }
+
         set in [binary decode hex $hexin]
         set infrag [string range $in 0 $fragindex-1]
         set out [binary decode hex $hexout]
         set dstlen 40 ;# Should be enough for all encoding tests
-
-        set expected_result {}
-        append expected_result multibyte $fragindex
 
         test $cmd-$enc-$id "$cmd - $enc - $hexin - frag" -constraints testencoding -body {
             set frag1Result [testencoding $cmd $enc [string range $in 0 $fragindex-1] {start} 0 $dstlen frag1Read frag1Written]
@@ -181,10 +189,10 @@ namespace eval utftest {
             set frag2Result [testencoding $cmd $enc [string range $in $frag1Read end] {end} $frag1State $dstlen frag2Read frag2Written]
             lassign $frag2Result frag2Status frag2State frag2Decoded
             set decoded [string cat [string range $frag1Decoded 0 $frag1Written-1] [string range $frag2Decoded 0 $frag2Written-1]]
-            list $frag1Status [expr {$frag1Read < $fragindex}] \
+            list $frag1Status [expr {$frag1Read <= $fragindex}] \
                 $frag2Status [expr {$frag1Read+$frag2Read}] \
                 [expr {$frag1Written+$frag2Written}] $decoded
-        } -result [list multibyte 1 ok [string length $in] [string length $out] $out]
+        } -result [list $status1 1 ok [string length $in] [string length $out] $out]
     }
 
     #
@@ -209,6 +217,11 @@ namespace eval utftest {
             testfragment fromutf $enc $comment $utfhex $hex $internalfragindex
         }
     }
+
+    # Special cases - cesu2 high and low surrogates in separate fragments
+    # This will (correctly) return "ok", not "multibyte" after first frag
+    testfragment toutf cesu-8 nonbmp-split-surr \
+        {41 eda0bd edb880 42} {41 f09f9880 42} 4 -status1 ok
 
     # Bug regression tests
     test Tcl_UtfToExternal-bug-183a1adcc0 {buffer overflow} -body {
