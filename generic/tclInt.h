@@ -1445,7 +1445,7 @@ struct CompileEnv;
  *			because by then changes in the interp state may allow
  *			the command to be successfully evaluated.
  * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept for the
- * 			sake of old code only.
+ *			sake of old code only.
  */
 
 #ifndef TCL_NO_DEPRECATED

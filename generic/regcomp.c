@@ -645,7 +645,7 @@ makesearch(
  * together with '|'. They appear in the tree as the left children of a chain
  * of '|' subres.
  ^ static struct subre *parse(struct vars *, int, int, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static struct subre *
 parse(
@@ -727,7 +727,7 @@ parse(
  * Concatenated things are bundled up as much as possible, with separate
  * ',' nodes introduced only when necessary due to substructure.
  ^ static struct subre *parsebranch(struct vars *, int, int, struct state *,
- ^ 	struct state *, int);
+ ^	struct state *, int);
  */
 static struct subre *
 parsebranch(
@@ -776,7 +776,7 @@ parsebranch(
  * particular, it contains a recursion that can involve parsing the rest of
  * the branch, making this function's name somewhat inaccurate.
  ^ static void parseqatom(struct vars *, int, int, struct state *,
- ^ 	struct state *, struct subre *);
+ ^	struct state *, struct subre *);
  */
 static void
 parseqatom(
@@ -1650,7 +1650,7 @@ onechr(
 /*
  - dovec - fill in arcs for each element of a cvec
  ^ static void dovec(struct vars *, struct cvec *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 dovec(

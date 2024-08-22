@@ -2157,7 +2157,7 @@ typedef struct Tcl_EncodingType {
  *				one or more "close" characters in the
  *				destination buffer and then continues to
  *				convert the source. Only for Tcl 8.x.
- * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
+ * TCL_ENCODING_NO_TERMINATE -	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
  *				all dstLen bytes with encoded UTF-8 content if
