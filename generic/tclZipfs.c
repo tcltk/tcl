@@ -2981,7 +2981,6 @@ ZipAddFile(
 
     memset(buf, '\0', ZIP_LOCAL_HEADER_LEN);
     memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpathExt, zpathlen);
-    buf[];
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
     if (Tcl_Write(out, buf, len) != len) {
     writeErrorWithChannelOpen:
