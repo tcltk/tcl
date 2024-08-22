@@ -2328,13 +2328,13 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object to index into. */ \
     Tcl_Size index,	/* Index of element to return. */ \
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 #define tclObjTypeInterfaceArgsListIndexEnd \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object to index into. */ \
     Tcl_Size index,	/* Index of element to return. */ \
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 #define tclObjTypeInterfaceArgsListIsSorted \
     Tcl_Interp * interp, /* Used to report errors */ \
@@ -2347,11 +2347,12 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Size *lenPtr	/* The resulting length is stored here. */
 
 #define tclObjTypeInterfaceArgsListRange \
-    Tcl_Interp * interp,    /* Used to report errors */ \
-    Tcl_Obj *listObj,	    /* List object to take a range from. */ \
-    Tcl_Size rangeStart,    /* Index of first element to */ \
-			    /* include. */ \
-    Tcl_Size rangeEnd	/* Index of last element to include. */
+    Tcl_Interp *interp,    /* Used to report errors */ \
+    Tcl_Obj *listPtr,	    /* List object to take a range from. */ \
+    Tcl_Size fromIdx,		/* Index of first element to */ \
+							/* include. */ \
+    Tcl_Size toIdx,			/* Index of last element to include. */ \
+    Tcl_Obj **resPtrPtr		/* The resulting Tcl_Obj* is stored here. */
 
 #define tclObjTypeInterfaceArgsListRangeEnd \
     Tcl_Interp * interp, /* Used to report errors */ \
@@ -2359,7 +2360,8 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Size fromAnchor,/* 0 for start and 1 for end */ \
     Tcl_Size fromIdx,	/* Index of first element to include. */ \
     Tcl_Size toAnchor,	/* 0 for start and 1 for end */  \
-    Tcl_Size toIdx	/* Index of last element to include. */
+    Tcl_Size toIdx,	/* Index of last element to include. */ \
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 #define tclObjTypeInterfaceArgsListReplace \
     Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
@@ -2392,30 +2394,33 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Obj *valueObj		/* Tcl object to store in the designated list \
 				 * element. */
 
-#define tclObjTypeInterfaceArgsListSetList \
+
+#define tclObjTypeInterfaceArgsListSetDeep \
     Tcl_Interp *interp,	    /* Tcl interpreter. */ \
     Tcl_Obj *listObj,	    /* Pointer to the list being modified. */ \
     Tcl_Size indexCount,    /* Number of index args. */ \
     Tcl_Obj *const indexArray[],    /* Index args. */ \
-    Tcl_Obj *valueObj	    /* Value arg to 'lset' or NULL to 'lpop'. */
+    Tcl_Obj *valueObj,	    /* Value arg to 'lset' or NULL to 'lpop'. */ \
+	Tcl_Obj **resPtrPtr		/* An address at which to store the resulting list */
 
 
 #define tclObjTypeInterfaceArgsStringIndex \
     Tcl_Interp *interp,	    \
     Tcl_Obj *objPtr,	    \
     Tcl_Size index,	\
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 
 #define tclObjTypeInterfaceArgsStringIndexEnd \
     Tcl_Interp *interp,	    \
     Tcl_Obj *objPtr,	    \
     Tcl_Size index,	\
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 
 #define tclObjTypeInterfaceArgsStringLength \
-    Tcl_Obj *listPtr
+    Tcl_Obj *listPtr, \
+    Tcl_Size *lengthPtr	/* An address at which to store the length. */
 
 
 #define tclObjTypeInterfaceArgsStringIsEmpty \
@@ -2427,36 +2432,38 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define tclObjTypeInterfaceArgsStringRange \
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
     Tcl_Size first,	/* First index of the range. */ \
-    Tcl_Size last	/* Last index of the range. */
+    Tcl_Size last,	/* Last index of the range. */ \
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 
 #define tclObjTypeInterfaceArgsStringRangeEnd \
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
     Tcl_Size first,	/* First index of the range. */ \
-    Tcl_Size last	/* Last index of the range. */
+    Tcl_Size last,	/* Last index of the range. */ \
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 typedef int (Tcl_ObjInterfaceListAllProc)(tclObjTypeInterfaceArgsListAll);
 typedef int (Tcl_ObjInterfaceListAppendProc)(tclObjTypeInterfaceArgsListAppend);
-typedef int (Tcl_ObjInterfaceListContainsProc)(tclObjTypeInterfaceArgsListContains);
 typedef int (Tcl_ObjInterfaceListAppendlistProc)(tclObjTypeInterfaceArgsListAppendList);
+typedef int (Tcl_ObjInterfaceListContainsProc)(tclObjTypeInterfaceArgsListContains);
 typedef int (Tcl_ObjInterfaceListIndexProc)(tclObjTypeInterfaceArgsListIndex);
 typedef int (Tcl_ObjInterfaceListIndexEndProc)(tclObjTypeInterfaceArgsListIndexEnd);
 typedef int (Tcl_ObjInterfaceListIsSortedProc)(tclObjTypeInterfaceArgsListIsSorted);
 typedef int (Tcl_ObjInterfaceListlengthProc)(tclObjTypeInterfaceArgsListLength);
-typedef Tcl_Obj* (Tcl_ObjInterfaceListRangeProc)(tclObjTypeInterfaceArgsListRange);
-typedef Tcl_Obj* (Tcl_ObjInterfaceListRangeEndProc)(tclObjTypeInterfaceArgsListRangeEnd);
+typedef int (Tcl_ObjInterfaceListRangeProc)(tclObjTypeInterfaceArgsListRange);
+typedef int (Tcl_ObjInterfaceListRangeEndProc)(tclObjTypeInterfaceArgsListRangeEnd);
 typedef int (Tcl_ObjInterfaceListReplaceProc)(tclObjTypeInterfaceArgsListReplace);
 typedef int (Tcl_ObjInterfaceListReplaceListProc)(tclObjTypeInterfaceArgsListReplaceList);
 typedef int (Tcl_ObjInterfaceListReverseProc)(tclObjTypeInterfaceArgsListReverse);
 typedef int (Tcl_ObjInterfaceListSetProc)(tclObjTypeInterfaceArgsListSet);
-typedef Tcl_Obj * (Tcl_ObjInterfaceListSetListProc)(tclObjTypeInterfaceArgsListSetList);
+typedef int (Tcl_ObjInterfaceListSetDeepProc)(tclObjTypeInterfaceArgsListSetDeep);
 
 typedef int (Tcl_ObjInterfaceStringIndexProc)(tclObjTypeInterfaceArgsStringIndex);
 typedef int (Tcl_ObjInterfaceStringIndexEndProc)(tclObjTypeInterfaceArgsStringIndexEnd);
 typedef int (Tcl_ObjInterfaceStringIsEmptyProc)(tclObjTypeInterfaceArgsStringIsEmpty);
-typedef Tcl_Size (Tcl_ObjInterfaceStringLengthProc)(tclObjTypeInterfaceArgsStringLength);
-typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeProc)(tclObjTypeInterfaceArgsStringRange);
-typedef Tcl_Obj* (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRangeEnd);
+typedef int (Tcl_ObjInterfaceStringLengthProc)(tclObjTypeInterfaceArgsStringLength);
+typedef int (Tcl_ObjInterfaceStringRangeProc)(tclObjTypeInterfaceArgsStringRange);
+typedef int (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRangeEnd);
 
 
 /*

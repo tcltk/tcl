@@ -70,8 +70,8 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    Tcl_Size numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static Tcl_Size		GetCharLength(Tcl_Obj *objPtr);
-static Tcl_Obj*		GetRange(tclObjTypeInterfaceArgsStringRange);
+static int		GetCharLength(Tcl_Obj *objPtr, Tcl_Size *length);
+static int		GetRange(tclObjTypeInterfaceArgsStringRange);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, Tcl_Size needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, Tcl_Size needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -387,13 +387,24 @@ Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
-    return TclObjectDispatch(objPtr, GetCharLength,
-	string, length, objPtr);
+    int status;
+    Tcl_Size length;
+    status = TclObjectDispatch(objPtr, GetCharLength,
+	string, length, objPtr ,&length);
+    if (status) {
+	/* to do 
+	 *  have Tcl_GetCharLength return a standard result
+	 */
+	Tcl_Panic("%s failed", "Tcl_GetCharLength");
+    }
+    return length;
 }
 
-Tcl_Size
+int
 GetCharLength(
-    Tcl_Obj *objPtr)
+    Tcl_Obj *objPtr
+    ,Tcl_Size *length
+)
 {
     String *stringPtr;
     Tcl_Size numChars = 0;
@@ -404,7 +415,8 @@ GetCharLength(
 
     if ((objPtr->bytes) && (objPtr->length < 2)) {
 	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
-	return objPtr->length;
+	*length = objPtr->length;
+	return TCL_OK;
     }
 
     /*
@@ -420,7 +432,8 @@ GetCharLength(
 
     if (TclIsPureByteArray(objPtr)) {
 	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
-	return numChars;
+	*length = numChars;
+	return TCL_OK;
     }
 
     /*
@@ -439,7 +452,8 @@ GetCharLength(
 	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
-    return numChars;
+    *length = numChars;
+    return TCL_OK;
 }
 
 Tcl_Size
@@ -732,14 +746,19 @@ Tcl_GetUnicodeFromObj(
  */
 
 Tcl_Obj *
-Tcl_GetRange(tclObjTypeInterfaceArgsStringRange)
+Tcl_GetRange(
+    Tcl_Obj *objPtr,
+    Tcl_Size first,
+    Tcl_Size last)
 {
-    return TclObjectDispatch(objPtr, GetRange,
-	string, range, objPtr, first, last);
+    Tcl_Obj *resPtr;
+    TclObjectDispatch(objPtr, GetRange,
+    string, range, objPtr, first, last, &resPtr);
+    return resPtr;
 }
 
 
-Tcl_Obj *
+int
 GetRange(tclObjTypeInterfaceArgsStringRange) {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -762,9 +781,11 @@ GetRange(tclObjTypeInterfaceArgsStringRange) {
 	}
 	if (last < first) {
 	    TclNewObj(newObjPtr);
-	    return newObjPtr;
+		*resPtrPtr = newObjPtr;
+	    return TCL_OK;
 	}
-	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
+	*resPtrPtr = Tcl_NewByteArrayObj(bytes + first, last - first + 1);
+	return TCL_OK;
     }
 
     /*
@@ -780,7 +801,8 @@ GetRange(tclObjTypeInterfaceArgsStringRange) {
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(
+		stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last < 0 || last >= stringPtr->numChars) {
@@ -788,9 +810,11 @@ GetRange(tclObjTypeInterfaceArgsStringRange) {
 	    }
 	    if (last < first) {
 		TclNewObj(newObjPtr);
-		return newObjPtr;
+		*resPtrPtr = newObjPtr;
+		return TCL_OK;
 	    }
-	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last - first + 1);
+	    newObjPtr = Tcl_NewStringObj(
+		objPtr->bytes + first, last - first + 1);
 
 	    /*
 	     * Since we know the char length of the result, store it.
@@ -799,7 +823,8 @@ GetRange(tclObjTypeInterfaceArgsStringRange) {
 	    SetStringFromAny(NULL, newObjPtr);
 	    stringPtr = GET_STRING(newObjPtr);
 	    stringPtr->numChars = newObjPtr->length;
-	    return newObjPtr;
+	    *resPtrPtr = newObjPtr;
+	    return TCL_OK;
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
@@ -809,11 +834,15 @@ GetRange(tclObjTypeInterfaceArgsStringRange) {
     }
     if (last < first) {
 	TclNewObj(newObjPtr);
-	return newObjPtr;
+	*resPtrPtr = newObjPtr;
+	return TCL_OK;
     }
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+    *resPtrPtr = Tcl_NewUnicodeObj(
+		stringPtr->unicode + first, last - first + 1);
+    return TCL_OK;
 }
 
+
 Tcl_Obj *
 TclGetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */

@@ -2743,12 +2743,12 @@ declare 708 {
 
 declare 709 {
     int Tcl_ObjInterfaceSetFnListSet(Tcl_ObjInterface *oiPtr
-	,Tcl_ObjInterfaceListSetListProc fnPtr)
+	,Tcl_ObjInterfaceListSetProc fnPtr)
 }
 
 declare 710 {
-    int Tcl_ObjInterfaceSetFnListSetFlat(Tcl_ObjInterface *oiPtr
-	,Tcl_ObjInterfaceListSetProc fnPtr)
+    int Tcl_ObjInterfaceSetFnListSetDeep(Tcl_ObjInterface *oiPtr
+	,Tcl_ObjInterfaceListSetDeepProc fnPtr)
 }
 
 declare 711 {

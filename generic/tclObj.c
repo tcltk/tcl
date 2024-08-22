@@ -240,7 +240,7 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 static int		ScalarObjIndex(tclObjTypeInterfaceArgsListIndex);
 static int		ScalarObjInterfaceListLength(tclObjTypeInterfaceArgsListLength);
-static Tcl_Obj*		ScalarObjRange(tclObjTypeInterfaceArgsListRange);
+static int		ScalarObjRange(tclObjTypeInterfaceArgsListRange);
 
 ObjInterface tclScalarInterface = {
     1,
@@ -250,11 +250,11 @@ ObjInterface tclScalarInterface = {
 	NULL,				/* append */
 	NULL,				/* appendList */
 	NULL,				/* contains */
-	&ScalarObjIndex,		/* index */
+	ScalarObjIndex,			/* index */
 	NULL,				/* indexEnd */  
 	NULL,				/* isSorted */
-	&ScalarObjInterfaceListLength,	/* length */
-	&ScalarObjRange,		/* range */
+	ScalarObjInterfaceListLength,	/* length */
+	ScalarObjRange,			/* range */
 	NULL,				/* rangeEnd */
 	NULL,				/* replace */
 	NULL,				/* replaceList */
@@ -4643,29 +4643,31 @@ ScalarObjIndex(
     TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object to index into. */ \
     Tcl_Size index,	/* Index of element to return. */ \
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 ) {
     if (index == 0) {
-	*objPtrPtr = listPtr;
+	*resPtrPtr = listPtr;
     } else {
-	*objPtrPtr = NULL;
+	*resPtrPtr = NULL;
     }
     return TCL_OK;
 }
 
-static Tcl_Obj* ScalarObjRange(
+static int ScalarObjRange(
     TCL_UNUSED(Tcl_Interp *),/* Used to report errors */ \
-    Tcl_Obj *listObj,	    /* List object to take a range from. */ \
+    Tcl_Obj *listPtr,	    /* List object to take a range from. */ \
     Tcl_Size rangeStart,    /* Index of first element to */ \
 			    /* include. */ \
-    Tcl_Size rangeEnd	/* Index of last element to include. */
+    Tcl_Size rangeEnd,	    /* Index of last element to include. */
+    Tcl_Obj **resPtrPtr
 )
 {
     if (rangeEnd >= 0 && rangeEnd >= rangeStart) {
-	return listObj;
+	*resPtrPtr = listPtr;
     } else {
-	return NULL;
+	*resPtrPtr = NULL;
     }
+    return TCL_OK;
 }
 
 /*

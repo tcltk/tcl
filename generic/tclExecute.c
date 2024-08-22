@@ -6,7 +6,7 @@
  * Copyright © 2005-2007 Donal K. Fellows.
  * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
- * Copyright © 2021 Nathan Coulter.  All rights reserved.
+ * Copyright © 2021-2024 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -4938,12 +4938,16 @@ TEBCresume(
 	 */
 
 	DECACHE_STACK_INFO();
-	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
- 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
-	if (!objResultPtr) {
-	    CACHE_STACK_INFO();
-	    TRACE_ERROR(interp);
-	    goto gotError;
+	{
+	    int status;
+	    status = TclLsetFlat(interp, valuePtr, numIndices,
+		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS, &objResultPtr);
+
+	    if (status != TCL_OK || !objResultPtr) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	}
 
 	/*
@@ -5052,9 +5056,9 @@ TEBCresume(
 
 	    toIdx = TclIndexDecode(toIdx, SIZE_MAX);
 	    fromIdx = TclIndexDecode(fromIdx, SIZE_MAX);
-	    dstatus = TclObjectDispatchNoDefault(interp, objResultPtr,
-		valuePtr, list, rangeEnd, interp, valuePtr, toIdxAnchor,
-		toIdx, fromIdxAnchor, fromIdx);
+	    dstatus = TclObjectInterfaceCall(valuePtr, list, rangeEnd,
+		interp, valuePtr, toIdxAnchor, toIdx, fromIdxAnchor,
+		fromIdx, &objResultPtr);
 	    if (dstatus != TCL_OK || objResultPtr == NULL) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
@@ -5080,7 +5084,8 @@ TEBCresume(
 
 	    fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
+	    /* to do:  catch status? */
+	    TclListObjRange(interp, valuePtr, fromIdx, toIdx, &objResultPtr);
 	}
 
 	CACHE_STACK_INFO();
@@ -5497,18 +5502,18 @@ TEBCresume(
 		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
 		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
 
-		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
-		    string, rangeEnd, valuePtr, fromIdx, toIdx) != TCL_OK
-		    || objResultPtr == NULL) {
+		if (TclObjectInterfaceCall(valuePtr,
+		    string, rangeEnd, valuePtr, fromIdx, toIdx, &objResultPtr)
+		    != TCL_OK || objResultPtr == NULL) {
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
 	    } else {
 		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
 		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
-		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
-		    string, range, valuePtr, fromIdx, toIdx) != TCL_OK
-		    || objResultPtr == NULL) {
+		if (TclObjectInterfaceCall(valuePtr, string, range, valuePtr,
+		    fromIdx, toIdx, &objResultPtr)
+		    != TCL_OK || objResultPtr == NULL) {
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}

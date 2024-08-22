@@ -1944,11 +1944,11 @@ EXTERN int		Tcl_ObjInterfaceSetFnListReverse(
 				Tcl_ObjInterfaceListReverseProc fnPtr);
 /* 709 */
 EXTERN int		Tcl_ObjInterfaceSetFnListSet(Tcl_ObjInterface *oiPtr,
-				Tcl_ObjInterfaceListSetListProc fnPtr);
-/* 710 */
-EXTERN int		Tcl_ObjInterfaceSetFnListSetFlat(
-				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListSetProc fnPtr);
+/* 710 */
+EXTERN int		Tcl_ObjInterfaceSetFnListSetDeep(
+				Tcl_ObjInterface *oiPtr,
+				Tcl_ObjInterfaceListSetDeepProc fnPtr);
 /* 711 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringIndex(
 				Tcl_ObjInterface *oiPtr,
@@ -2703,8 +2703,8 @@ typedef struct TclStubs {
     int (*tcl_ObjInterfaceSetFnListReplace) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceProc fnPtr); /* 706 */
     int (*tcl_ObjInterfaceSetFnListReplaceList) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceListProc fnPtr); /* 707 */
     int (*tcl_ObjInterfaceSetFnListReverse) (Tcl_ObjInterface *objInterfacePtr, Tcl_ObjInterfaceListReverseProc fnPtr); /* 708 */
-    int (*tcl_ObjInterfaceSetFnListSet) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetListProc fnPtr); /* 709 */
-    int (*tcl_ObjInterfaceSetFnListSetFlat) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetProc fnPtr); /* 710 */
+    int (*tcl_ObjInterfaceSetFnListSet) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetProc fnPtr); /* 709 */
+    int (*tcl_ObjInterfaceSetFnListSetDeep) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetDeepProc fnPtr); /* 710 */
     int (*tcl_ObjInterfaceSetFnStringIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexProc fnPtr); /* 711 */
     int (*tcl_ObjInterfaceSetFnStringIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexEndProc fnPtr); /* 712 */
     int (*tcl_ObjInterfaceSetFnStringLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringLengthProc fnPtr); /* 713 */
@@ -4084,8 +4084,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ObjInterfaceSetFnListReverse) /* 708 */
 #define Tcl_ObjInterfaceSetFnListSet \
 	(tclStubsPtr->tcl_ObjInterfaceSetFnListSet) /* 709 */
-#define Tcl_ObjInterfaceSetFnListSetFlat \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListSetFlat) /* 710 */
+#define Tcl_ObjInterfaceSetFnListSetDeep \
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListSetDeep) /* 710 */
 #define Tcl_ObjInterfaceSetFnStringIndex \
 	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIndex) /* 711 */
 #define Tcl_ObjInterfaceSetFnStringIndexEnd \

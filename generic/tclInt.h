@@ -291,9 +291,9 @@ typedef struct ObjInterface {
 	int (*index)(tclObjTypeInterfaceArgsStringIndex);
 	int (*indexEnd)(tclObjTypeInterfaceArgsStringIndexEnd);
 	int (*isEmpty)(tclObjTypeInterfaceArgsStringIsEmpty);
-	Tcl_Size (*length)(tclObjTypeInterfaceArgsStringLength);
-	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsStringRange);
-	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsStringRangeEnd);
+	int (*length)(tclObjTypeInterfaceArgsStringLength);
+	int (*range)(tclObjTypeInterfaceArgsStringRange);
+	int (*rangeEnd)(tclObjTypeInterfaceArgsStringRangeEnd);
     } string;
     struct list {
 	int (*all)(tclObjTypeInterfaceArgsListAll);
@@ -304,13 +304,13 @@ typedef struct ObjInterface {
 	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexEnd);
 	int (*isSorted)(tclObjTypeInterfaceArgsListIsSorted);
 	int (*length)(tclObjTypeInterfaceArgsListLength);
-	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
-	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
+	int (*range)(tclObjTypeInterfaceArgsListRange);
+	int (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
 	int (*replaceList)(tclObjTypeInterfaceArgsListReplaceList);
 	int (*reverse)(tclObjTypeInterfaceArgsListReverse);
 	int (*set)(tclObjTypeInterfaceArgsListSet);
-	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
+	int (*setDeep)(tclObjTypeInterfaceArgsListSetDeep);
     } list;
 } ObjInterface;
 
@@ -3366,11 +3366,11 @@ MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    Tcl_Size fromIdx, Tcl_Size toIdx);
+MODULE_SCOPE int	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    Tcl_Size fromIdx, Tcl_Size toIdx, Tcl_Obj **resultPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
-MODULE_SCOPE Tcl_Obj *	TclLsetFlat(tclObjTypeInterfaceArgsListSetList);
+MODULE_SCOPE int	TclLsetFlat(tclObjTypeInterfaceArgsListSetDeep);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,

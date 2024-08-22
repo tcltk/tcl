@@ -88,8 +88,7 @@ static int ArithSeriesObjIndex(TCL_UNUSED(Tcl_Interp *), Tcl_Obj *arithSeriesObj
 				  Tcl_Size index, Tcl_Obj **elemObj);
 static int ArithSeriesObjLength(TCL_UNUSED(Tcl_Interp *),
 			    Tcl_Obj *arithSeriesObj, Tcl_Size *result);
-static Tcl_Obj *ArithSeriesObjRange(Tcl_Interp *interp, Tcl_Obj *arithSeriesObj,
-			    Tcl_Size fromIdx, Tcl_Size toIdx);
+static Tcl_ObjInterfaceListRangeProc ArithSeriesObjRange;
 static int ArithSeriesObjReverse(Tcl_Interp *interp, Tcl_Obj *arithSeriesObj);
 static int ArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
@@ -847,12 +846,13 @@ SetArithSeriesFromAny(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 ArithSeriesObjRange(
     Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to take a range from. */
     Tcl_Size fromIdx,		/* Index of first element to include. */
-    Tcl_Size toIdx		/* Index of last element to include. */
+    Tcl_Size toIdx,		/* Index of last element to include. */
+    Tcl_Obj **resPtr
     )        /* return value */
 {
     ArithSeries *arithSeriesRepPtr;
@@ -873,7 +873,8 @@ ArithSeriesObjRange(
     if (fromIdx > toIdx ||
 	fromIdx >= arithSeriesRepPtr->len) {
 	TclNewObj(newObjPtr);
-	return newObjPtr;
+	*resPtr = newObjPtr;
+	return TCL_OK;
     }
 
     if (fromIdx < 0) {
@@ -888,12 +889,12 @@ ArithSeriesObjRange(
 
     ArithSeriesObjIndex(interp, arithSeriesObj, fromIdx, &startObj);
     if (startObj == NULL) {
-	return NULL;
+	return TCL_ERROR;
     }
     Tcl_IncrRefCount(startObj);
     ArithSeriesObjIndex(interp, arithSeriesObj, toIdx, &endObj);
     if (endObj == NULL) {
-	return NULL;
+	return TCL_ERROR;
     }
     Tcl_IncrRefCount(endObj);
     ArithSeriesObjStep(arithSeriesObj, &stepObj);
@@ -906,7 +907,8 @@ ArithSeriesObjRange(
     Tcl_DecrRefCount(startObj);
     Tcl_DecrRefCount(endObj);
     Tcl_DecrRefCount(stepObj);
-    return newObjPtr;
+    *resPtr = newObjPtr;
+    return TCL_OK;
 }
 
 /*

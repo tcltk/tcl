@@ -2356,70 +2356,95 @@ Tcl_LassignObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *listCopyPtr;
-    Tcl_Obj **listObjv;		/* The contents of the list. */
+    Tcl_Obj *listPtr;
     Tcl_Size listObjc;		/* The length of the list. */
     Tcl_Size origListObjc;	/* Original length */
-    int code;
+    int i, status;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?varName ...?");
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclDuplicatePureObj(interp, objv[1], tclListTypePtr);
-    if (!listCopyPtr) {
-	return TCL_ERROR;
-    }
-    Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
+    /*
+     * Note: no need to Dup the list to avoid shimmering. That is only
+     * needed when Tcl_ListObjGetElements is used since that returns
+     * pointers to internal structures. Using Tcl_ListObjIndex does not
+     * have that problem. However, we now have to IncrRef each elemObj
+     * (see below). I see that as preferable as duping lists is potentially
+     * expensive for abstract lists when they have a string representation.
+     */
+    listPtr = objv[1];
 
-    code = TclListObjGetElementsM(
-	interp, listCopyPtr, &listObjc, &listObjv);
-    if (code != TCL_OK) {
-	Tcl_DecrRefCount(listCopyPtr);
-	return code;
+    if (TclListObjLengthM(interp, listPtr, &listObjc) != TCL_OK) {
+	return TCL_ERROR;
     }
     origListObjc = listObjc;
 
     objc -= 2;
     objv += 2;
-    while (code == TCL_OK && objc > 0 && listObjc > 0) {
-	if (Tcl_ObjSetVar2(interp, *objv++, NULL, *listObjv++,
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    code = TCL_ERROR;
+    for (i = 0; i < objc && i < listObjc; ++i) {
+	Tcl_Obj *elemObj;
+	if (Tcl_ListObjIndex(interp, listPtr, i, &elemObj) != TCL_OK) {
+	    return TCL_ERROR;
 	}
-	objc--;
-	listObjc--;
+	/*
+	 * Must incrref elemObj. If the var name being set is same as the
+	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
+	 * the elements in the list (in case list refCount was 1) BEFORE
+	 * the elemObj is stored in the var. See tests 6.{25,26}
+	 */
+	Tcl_IncrRefCount(elemObj);
+	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
+	    NULL) {
+	    Tcl_DecrRefCount(elemObj);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(elemObj);
     }
+    objc -= i;
+    listObjc -= i;
 
-    if (code == TCL_OK && objc > 0) {
+    if (objc > 0) {
+	/* Still some variables left to be assigned */
 	Tcl_Obj *emptyObj;
 
 	TclNewObj(emptyObj);
 	Tcl_IncrRefCount(emptyObj);
-	while (code == TCL_OK && objc-- > 0) {
+	while (objc-- > 0) {
 	    if (Tcl_ObjSetVar2(interp, *objv++, NULL, emptyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		code = TCL_ERROR;
+		Tcl_DecrRefCount(emptyObj);
+		return TCL_ERROR;
 	    }
 	}
 	Tcl_DecrRefCount(emptyObj);
     }
 
-    if (code == TCL_OK && listObjc > 0) {
-	Tcl_Obj *resultObjPtr = TclListObjRange(
-	    interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
-	if (resultObjPtr == NULL) {
-	    code = TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, resultObjPtr);
+    if (listObjc > 0) {
+	Tcl_Obj *resultPtr = NULL;
+	Tcl_Size fromIdx = origListObjc - listObjc;
+	Tcl_Size toIdx = origListObjc - 1;
+	if (TclObjectHasInterface(listPtr, list, range)) {
+		TclObjectDispatchNoDefault(interp, status, listPtr, list, range,
+			interp, listPtr, fromIdx, toIdx, &resultPtr);
+	    if (status != TCL_OK) {
+		return TCL_ERROR;
+	    }
 	}
+	else {
+	    status = TclListObjRange(interp, listPtr,
+		origListObjc - listObjc, origListObjc - 1, &resultPtr);
+	    if (status != TCL_OK || resultPtr == NULL) {
+		return status;
+	    }
+	}
+	Tcl_SetObjResult(interp, resultPtr);
     }
 
-    Tcl_DecrRefCount(listCopyPtr);
-    return code;
+    return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2685,7 +2710,7 @@ Tcl_LpopObjCmd(
 				/* Argument objects. */
 {
     Tcl_Size listLen;
-    int copied = 0, result;
+    int copied = 0, result, status;
     Tcl_Obj *elemPtr, *stored;
     Tcl_Obj *listPtr;
 
@@ -2756,9 +2781,9 @@ Tcl_LpopObjCmd(
 	}
     } else {
 	Tcl_Obj *newListPtr;
-	newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
-	if (newListPtr == NULL) {
-	    return TCL_ERROR;
+	status = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL, &newListPtr);
+	if (status != TCL_OK || newListPtr == NULL) {
+	    return status;
 	} else {
 	    listPtr = newListPtr;
 	}
@@ -2830,15 +2855,16 @@ Tcl_LrangeObjCmd(
     ) {
 	Tcl_Obj *objResultPtr;
 
-	status = TclObjectDispatchNoDefault(interp, objResultPtr,
-	    objv[1], list, rangeEnd, interp, objv[1], toAnchor,
-	    toIdx, fromAnchor, fromIdx);
+	status = TclObjectInterfaceCall(objv[1], list, rangeEnd,
+	    interp, objv[1], toAnchor, toIdx, fromAnchor, fromIdx,
+	    &objResultPtr);
 	if (status != TCL_OK || objResultPtr == NULL) {
 	    return TCL_ERROR;
 	} else {
 	    Tcl_SetObjResult(interp, objResultPtr);
 	}
     } else {
+	Tcl_Obj *resultPtr;
 	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
 		&first);
 	if (result != TCL_OK) {
@@ -2851,11 +2877,11 @@ Tcl_LrangeObjCmd(
 	    return result;
 	}
 
-	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
-	if (resultObj == NULL) {
-	    return TCL_ERROR;
+	status = TclListObjRange(interp, objv[1], first, last, &resultPtr);
+	if (status != TCL_OK || resultPtr == NULL) {
+	    return status;
 	}
-	Tcl_SetObjResult(interp, resultObj);
+	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;
 }
@@ -4230,6 +4256,7 @@ Tcl_LsetObjCmd(
 {
     Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
     Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
+    int status = TCL_OK;
 
     /*
      * Check parameter count.
@@ -4258,15 +4285,15 @@ Tcl_LsetObjCmd(
     if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
-	finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-		objv[objc-1]);
+	status = TclLsetFlat(interp, listPtr, objc-3, objv+2,
+		objv[objc-1], &finalValuePtr);
     }
 
     /*
      * If substitution has failed, bail out.
      */
 
-    if (finalValuePtr == NULL) {
+    if (status != TCL_OK || finalValuePtr == NULL) {
 	return TCL_ERROR;
     }
 

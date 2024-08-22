@@ -1432,7 +1432,7 @@ const TclStubs tclStubs = {
     Tcl_ObjInterfaceSetFnListReplaceList, /* 707 */
     Tcl_ObjInterfaceSetFnListReverse, /* 708 */
     Tcl_ObjInterfaceSetFnListSet, /* 709 */
-    Tcl_ObjInterfaceSetFnListSetFlat, /* 710 */
+    Tcl_ObjInterfaceSetFnListSetDeep, /* 710 */
     Tcl_ObjInterfaceSetFnStringIndex, /* 711 */
     Tcl_ObjInterfaceSetFnStringIndexEnd, /* 712 */
     Tcl_ObjInterfaceSetFnStringLength, /* 713 */

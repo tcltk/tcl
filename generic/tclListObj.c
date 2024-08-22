@@ -1,6 +1,6 @@
 /*
  * Copyright © 2022 Ashok P. Nadkarni.  All rights reserved.
- * Copyright © 2021, 2024 Nathan Coulter.  All rights reserved.
+ * Copyright © 2021 - 2024 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -143,8 +143,8 @@ static void	ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
 static void	ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
 static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
 static void	ListRepRange(ListRep *srcRepPtr,
-		    Tcl_Size rangeStart,
-		    Tcl_Size rangeEnd,
+		    Tcl_Size fromIdx,
+		    Tcl_Size toIdx,
 		    int preserveSrcRep,
 		    ListRep *rangeRepPtr);
 static ListStore *ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
@@ -162,8 +162,8 @@ static int		ListObjIndex(tclObjTypeInterfaceArgsListIndex);
 static int		ListObjInterfaceGetElements(tclObjTypeInterfaceArgsListAll);
 static int		ListObjInterfaceLength(tclObjTypeInterfaceArgsListLength);
 static int		ListObjSetElement(tclObjTypeInterfaceArgsListSet);
-static Tcl_Obj *	LsetFlat(tclObjTypeInterfaceArgsListSetList);
-static Tcl_Obj *	ListObjRange(tclObjTypeInterfaceArgsListRange);
+static int		LsetFlat(tclObjTypeInterfaceArgsListSetDeep);
+static int		ListObjRange(tclObjTypeInterfaceArgsListRange);
 static int		ListObjReplace(tclObjTypeInterfaceArgsListReplace);
 static int		ListObjStringIsEmpty(tclObjTypeInterfaceArgsStringIsEmpty);
 
@@ -198,8 +198,8 @@ void TclListInit(void) {
     Tcl_ObjInterfaceSetFnListLength(oiPtr ,ListObjInterfaceLength);
     Tcl_ObjInterfaceSetFnListRange(oiPtr ,ListObjRange);
     Tcl_ObjInterfaceSetFnListReplace(oiPtr ,ListObjReplace);
-    Tcl_ObjInterfaceSetFnListSet(oiPtr ,LsetFlat);
-    Tcl_ObjInterfaceSetFnListSetFlat(oiPtr ,ListObjSetElement);
+    Tcl_ObjInterfaceSetFnListSet(oiPtr ,ListObjSetElement);
+    Tcl_ObjInterfaceSetFnListSetDeep(oiPtr ,LsetFlat);
     Tcl_ObjTypeSetInterface(tclListTypePtr ,oiPtr);
     return;
 }
@@ -1415,8 +1415,8 @@ Tcl_SetListObj(
 static void
 ListRepRange(
     ListRep *srcRepPtr,    /* Contains source of the range */
-    Tcl_Size rangeStart,  /* Index of first element to include */
-    Tcl_Size rangeEnd,    /* Index of last element to include */
+    Tcl_Size fromIdx,  /* Index of first element to include */
+    Tcl_Size toIdx,    /* Index of last element to include */
     int preserveSrcRep,    /* If true, srcRepPtr contents must not be
 			      modified (generally because a shared Tcl_Obj
 			      references it) */
@@ -1436,19 +1436,19 @@ ListRepRange(
 	ListRepFreeUnreferenced(srcRepPtr);
     } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
-    if (rangeStart < 0) {
-	rangeStart = 0;
+    if (fromIdx < 0) {
+	fromIdx = 0;
     }
-    if (rangeEnd >= numSrcElems) {
-	rangeEnd = numSrcElems - 1;
+    if (toIdx >= numSrcElems) {
+	toIdx = numSrcElems - 1;
     }
-    if (rangeStart > rangeEnd) {
+    if (fromIdx > toIdx) {
 	/* Empty list of capacity 1. */
 	ListRepInit(1, NULL, LISTREP_PANIC_ON_FAIL, rangeRepPtr);
 	return;
     }
 
-    rangeLen = rangeEnd - rangeStart + 1;
+    rangeLen = toIdx - fromIdx + 1;
 
     /*
      * We can create a range one of four ways:
@@ -1467,20 +1467,20 @@ ListRepRange(
      * string-canonizing effect of [lrange 0 end] so the Tcl_Obj should not
      * be returned as is even if the range encompasses the whole list.
      */
-    if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
+    if (fromIdx == 0 && toIdx == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
 	/* T:listrep-1.10.1,2.8.1 */
 	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
-    } else if (rangeStart == 0 && (!preserveSrcRep)
+    } else if (fromIdx == 0 && (!preserveSrcRep)
 	       && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
 	/* Option 1 - Special case unshared, exclude end elements, no span  */
 	LIST_ASSERT(srcRepPtr->storePtr->firstUsed == 0); /* If no span */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
-	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
-	/* Assert: Because numSrcElems > rangeEnd earlier */
+	numAfterRangeEnd = numSrcElems - (toIdx + 1);
+	/* Assert: Because numSrcElems > toIdx earlier */
 	if (numAfterRangeEnd != 0) {
 	    /* T:listrep-1.{8,9} */
-	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
+	    ObjArrayDecrRefs(srcElems, toIdx + 1, numAfterRangeEnd);
 	}
 	/* srcRepPtr->storePtr->firstUsed,numAllocated unchanged */
 	srcRepPtr->storePtr->numUsed = rangeLen;
@@ -1491,7 +1491,7 @@ ListRepRange(
 			       srcRepPtr->storePtr->numUsed,
 			       srcRepPtr->storePtr->numAllocated)) {
 	/* Option 2 - because span would be most efficient */
-	Tcl_Size spanStart = ListRepStart(srcRepPtr) + rangeStart;
+	Tcl_Size spanStart = ListRepStart(srcRepPtr) + fromIdx;
 	if (!preserveSrcRep && srcRepPtr->spanPtr
 	    && srcRepPtr->spanPtr->refCount <= 1) {
 	    /* If span is not shared reuse it */
@@ -1521,7 +1521,7 @@ ListRepRange(
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	/* TODO - allocate extra space? */
 	ListRepInit(rangeLen,
-		    &srcElems[rangeStart],
+		    &srcElems[fromIdx],
 		    LISTREP_PANIC_ON_FAIL,
 		    rangeRepPtr);
     } else {
@@ -1543,20 +1543,20 @@ ListRepRange(
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 
 	/* Free leading elements outside range */
-	if (rangeStart != 0) {
+	if (fromIdx != 0) {
 	    /* T:listrep-1.4,3.15 */
-	    ObjArrayDecrRefs(srcElems, 0, rangeStart);
+	    ObjArrayDecrRefs(srcElems, 0, fromIdx);
 	}
 	/* Ditto for trailing */
-	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
-	/* Assert: Because numSrcElems > rangeEnd earlier */
+	numAfterRangeEnd = numSrcElems - (toIdx + 1);
+	/* Assert: Because numSrcElems > toIdx earlier */
 	if (numAfterRangeEnd != 0) {
 	    /* T:listrep-3.17 */
-	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
+	    ObjArrayDecrRefs(srcElems, toIdx + 1, numAfterRangeEnd);
 	}
 	memmove(&srcRepPtr->storePtr->slots[0],
 		&srcRepPtr->storePtr
-		     ->slots[srcRepPtr->storePtr->firstUsed + rangeStart],
+		     ->slots[srcRepPtr->storePtr->firstUsed + fromIdx],
 		rangeLen * sizeof(Tcl_Obj *));
 	srcRepPtr->storePtr->firstUsed = 0;
 	srcRepPtr->storePtr->numUsed = rangeLen;
@@ -1598,18 +1598,14 @@ ListRepRange(
  *
  *----------------------------------------------------------------------
  */
-Tcl_Obj *
-TclListObjRange(
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,		/* List object to take a range from. */
-    Tcl_Size fromIdx,		/* Index of first element to include. */
-    Tcl_Size toIdx)			/* Index of last element to include. */
+int
+TclListObjRange(tclObjTypeInterfaceArgsListRange)
 {
     int status;
     Tcl_Size length;
     status = TclListObjLengthM(interp, listPtr, &length);
     if (status != TCL_OK) {
-	return NULL;
+	return status;
     }
     if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
@@ -1621,34 +1617,36 @@ TclListObjRange(
     if (fromIdx + 1 > toIdx + 1) {
 	Tcl_Obj *obj;
 	TclNewObj(obj);
-	return obj;
+	*resPtrPtr = obj;
+	return TCL_OK;
     }
-    return TclObjectDispatch(listPtr, ListObjRange, list
-	, range, interp, listPtr, fromIdx, toIdx);
+    return TclObjectDispatch(listPtr, ListObjRange, list,
+	range, interp, listPtr, fromIdx, toIdx, resPtrPtr);
 }
 
 
-Tcl_Obj *
-ListObjRange(
-    tclObjTypeInterfaceArgsListRange)
+int
+ListObjRange(tclObjTypeInterfaceArgsListRange)
 {
     ListRep listRep;
     ListRep resultRep;
 
-    int isShared;
-    if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
-	return NULL;
+    int isShared, status;
+    status = TclListObjGetRep(interp, listPtr, &listRep);
+    if (status != TCL_OK)
+	return status;
 
-    isShared = Tcl_IsShared(listObj);
+    isShared = Tcl_IsShared(listPtr);
 
-    ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
+    ListRepRange(&listRep, fromIdx, toIdx, isShared, &resultRep);
 
     if (isShared) {
 	/* T:listrep-1.10.1,2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
-	TclNewObj(listObj);
+	TclNewObj(listPtr);
     } /* T:listrep-1.{4.3,5.1,5.2} */
-    ListObjReplaceRepAndInvalidate(listObj, &resultRep);
-    return listObj;
+    ListObjReplaceRepAndInvalidate(listPtr, &resultRep);
+    *resPtrPtr = listPtr;
+    return TCL_OK;
 }
 
 /*
@@ -2056,7 +2054,7 @@ Tcl_ListObjIndex(
 )
 {
     return TclObjectDispatch(listPtr, ListObjIndex,
-	list, index, interp, listPtr, index, objPtrPtr);
+	list, index, interp, listPtr, index, resPtrPtr);
 }
 
 int
@@ -2066,7 +2064,7 @@ ListObjIndex(tclObjTypeInterfaceArgsListIndex) {
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
     if (listPtr->bytes == &tclEmptyString) {
-	*objPtrPtr = NULL;
+	*resPtrPtr = NULL;
 	return TCL_OK;
     }
 
@@ -2075,9 +2073,9 @@ ListObjIndex(tclObjTypeInterfaceArgsListIndex) {
 	return TCL_ERROR;
     }
     if ((index < 0) || (index >= numElems)) {
-	*objPtrPtr = NULL;
+	*resPtrPtr = NULL;
     } else {
-	*objPtrPtr = elemObjs[index];
+	*resPtrPtr = elemObjs[index];
     }
 
     return TCL_OK;
@@ -2925,7 +2923,7 @@ TclLsetList(
 {
     Tcl_Size indexCount = 0;   /* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
-    Tcl_Obj *retValueObj;	/* Pointer to the list to be returned. */
+    Tcl_Obj *resPtr;		/* Pointer to the list to be returned. */
     Tcl_Size index;            /* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;
 
@@ -2940,7 +2938,10 @@ TclLsetList(
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
         /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+
+	/* to do: have TclLsetList return a standard return value instead */
+	TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj, &resPtr);
+	return resPtr;
     }
 
     indexListCopy = TclDuplicatePureObj(
@@ -2950,7 +2951,8 @@ TclLsetList(
 	 * indexArgPtr designates something that is neither an index nor a
 	 * well formed list. Report the error via TclLsetFlat.
 	 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj, &resPtr);
+	return resPtr;
     }
     if (TCL_OK != TclListObjGetElementsM(
 	interp, indexListCopy, &indexCount, &indices)) {
@@ -2959,16 +2961,17 @@ TclLsetList(
 	 * indexArgPtr designates something that is neither an index nor a
 	 * well formed list. Report the error via TclLsetFlat.
 	 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj, &resPtr);
+	return resPtr; 
     }
 
     /*
      * Let TclLsetFlat perform the actual lset operation.
      */
 
-    retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
+    TclLsetFlat(interp, listObj, indexCount, indices, valueObj, &resPtr);
     Tcl_DecrRefCount(indexListCopy);
-    return retValueObj;
+    return resPtr;
 }
 
 /*
@@ -2980,8 +2983,8 @@ TclLsetList(
  *      It also handles 'lpop' when given a NULL value.
  *
  * Results:
- *	Returns the new value of the list, or NULL if an error
- *	occurred. 
+ *	Returns a standard Tcl value and stores a pointer to the resulting list
+ *	value in the given address, or stores NULL if an error occurred. 
  *
  * Side effects:
  *	If the initial value of the list was shared, and this function must
@@ -2990,16 +2993,18 @@ TclLsetList(
  *
  *----------------------------------------------------------------------
  */
-Tcl_Obj *
-TclLsetFlat(tclObjTypeInterfaceArgsListSetList)
+int
+TclLsetFlat(tclObjTypeInterfaceArgsListSetDeep)
 {
-    return TclObjectDispatch(listObj, LsetFlat,
-	list, setlist, interp, listObj, indexCount, indexArray, valueObj);
+    int status;
+    status = TclObjectDispatch(listObj, LsetFlat,
+	list, setDeep, interp, listObj, indexCount, indexArray, valueObj, resPtrPtr);
+    return status;
 }
 
 
-Tcl_Obj *
-LsetFlat(tclObjTypeInterfaceArgsListSetList)
+int
+LsetFlat(tclObjTypeInterfaceArgsListSetDeep)
 {
     Tcl_Size index, len;
     int copied = 0, result;
@@ -3015,7 +3020,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
      */
 
     if (indexCount == 0) {
-	return valueObj;
+	*resPtrPtr = valueObj;
+	return TCL_OK;
     }
 
     /*
@@ -3026,7 +3032,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
     subListObj = Tcl_IsShared(listObj)
 	? TclDuplicatePureObj(interp, listObj, tclListTypePtr) : listObj;
     if (!subListObj) {
-	return NULL;
+	*resPtrPtr = NULL;
+	return TCL_ERROR;
     }
 
     /*
@@ -3121,7 +3128,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 		subListObj = TclDuplicatePureObj(
 		    interp, subListObj, tclListTypePtr);
 		if (!subListObj) {
-		    return NULL;
+		    *resPtrPtr = NULL;
+		    return TCL_ERROR;
 		}
 		copied = 1;
 	    }
@@ -3150,7 +3158,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 		if (newSubListObj) {
 		    subListObj = newSubListObj;
 		} else {
-		    return NULL;
+		    *resPtrPtr = NULL;
+		    return TCL_ERROR;
 		}
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
@@ -3219,7 +3228,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	if (retValueObj != listObj) {
 	    Tcl_DecrRefCount(retValueObj);
 	}
-	return NULL;
+	*resPtrPtr = NULL;
+	return result;
     }
 
     /*
@@ -3241,7 +3251,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	TclListObjSetElement(NULL, subListObj, index, valueObj);
 	TclInvalidateStringRep(subListObj);
     }
-    return retValueObj;
+    *resPtrPtr = retValueObj;
+    return TCL_OK;
 }
 
 /*
@@ -3334,7 +3345,6 @@ ListObjSetElement(tclObjTypeInterfaceArgsListSet)
 
     /* Internal rep may be cloned so replace */
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
-
     return TCL_OK;
 }
 

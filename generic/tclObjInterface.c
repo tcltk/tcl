@@ -42,7 +42,7 @@ Tcl_NewObjType(
 int
 Tcl_ObjInterfaceSetFnListAll(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListAll)
+	,Tcl_ObjInterfaceListAllProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.all = fnPtr;
@@ -53,8 +53,8 @@ Tcl_ObjInterfaceSetFnListAll(
 int
 Tcl_ObjInterfaceSetFnListAppend(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListAppend)
-) {
+	,Tcl_ObjInterfaceListAppendProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.append = fnPtr;
 	return TCL_OK;
@@ -64,7 +64,7 @@ Tcl_ObjInterfaceSetFnListAppend(
 int
 Tcl_ObjInterfaceSetFnListAppendList(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListAppendList)
+	,Tcl_ObjInterfaceListAppendlistProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.appendlist = fnPtr;
@@ -75,7 +75,7 @@ Tcl_ObjInterfaceSetFnListAppendList(
 int
 Tcl_ObjInterfaceSetFnListContains(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListContains)
+	,Tcl_ObjInterfaceListContainsProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.contains = fnPtr;
@@ -86,7 +86,7 @@ Tcl_ObjInterfaceSetFnListContains(
 int
 Tcl_ObjInterfaceSetFnListIndex(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListIndex)
+	,Tcl_ObjInterfaceListIndexProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.index = fnPtr;
@@ -97,7 +97,7 @@ Tcl_ObjInterfaceSetFnListIndex(
 int
 Tcl_ObjInterfaceSetFnListIndexEnd(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListIndexEnd)
+	,Tcl_ObjInterfaceListIndexEndProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.indexEnd = fnPtr;
@@ -108,7 +108,7 @@ Tcl_ObjInterfaceSetFnListIndexEnd(
 int
 Tcl_ObjInterfaceSetFnListIsSorted(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListIsSorted)
+	,Tcl_ObjInterfaceListIsSortedProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.isSorted = fnPtr;
@@ -119,8 +119,8 @@ Tcl_ObjInterfaceSetFnListIsSorted(
 int
 Tcl_ObjInterfaceSetFnListLength(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListLength)
-) {
+	,Tcl_ObjInterfaceListlengthProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.length = fnPtr;
 	return TCL_OK;
@@ -130,8 +130,8 @@ Tcl_ObjInterfaceSetFnListLength(
 int
 Tcl_ObjInterfaceSetFnListRange(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Obj *(fnPtr)(tclObjTypeInterfaceArgsListRange)
-) {
+	,Tcl_ObjInterfaceListRangeProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.range = fnPtr;
 	return TCL_OK;
@@ -141,7 +141,7 @@ Tcl_ObjInterfaceSetFnListRange(
 int
 Tcl_ObjInterfaceSetFnListRangeEnd(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Obj *(fnPtr)(tclObjTypeInterfaceArgsListRangeEnd)
+	,Tcl_ObjInterfaceListRangeEndProc fnPtr
 ) {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.rangeEnd = fnPtr;
@@ -152,8 +152,8 @@ Tcl_ObjInterfaceSetFnListRangeEnd(
 int
 Tcl_ObjInterfaceSetFnListReplace(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListReplace)
-) {
+	,Tcl_ObjInterfaceListReplaceProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.replace = fnPtr;
 	return TCL_OK;
@@ -161,8 +161,8 @@ Tcl_ObjInterfaceSetFnListReplace(
 
 int Tcl_ObjInterfaceSetFnListReplaceList(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListReplaceList)
-) {
+	,Tcl_ObjInterfaceListReplaceListProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.replaceList = fnPtr;
 	return TCL_OK;
@@ -172,8 +172,8 @@ int Tcl_ObjInterfaceSetFnListReplaceList(
 int
 Tcl_ObjInterfaceSetFnListReverse(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListReverse)
-) {
+	,Tcl_ObjInterfaceListReverseProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.reverse = fnPtr;
 	return TCL_OK;
@@ -182,19 +182,8 @@ Tcl_ObjInterfaceSetFnListReverse(
 int
 Tcl_ObjInterfaceSetFnListSet(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Obj *(fnPtr)(tclObjTypeInterfaceArgsListSetList)
-) {
-	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
-	oiPtr->list.setlist = fnPtr;
-	return TCL_OK;
-}
-
-
-int
-Tcl_ObjInterfaceSetFnListSetFlat(
-	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr)(tclObjTypeInterfaceArgsListSet)
-) {
+	,Tcl_ObjInterfaceListSetProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.set = fnPtr;
 	return TCL_OK;
@@ -202,10 +191,21 @@ Tcl_ObjInterfaceSetFnListSetFlat(
 
 
 int
+Tcl_ObjInterfaceSetFnListSetDeep(
+	Tcl_ObjInterface *objInterfacePtr
+	,Tcl_ObjInterfaceListSetDeepProc fnPtr)
+{
+	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
+	oiPtr->list.setDeep = fnPtr;
+	return TCL_OK;
+}
+
+
+int
 Tcl_ObjInterfaceSetFnStringIndex(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr) (tclObjTypeInterfaceArgsStringIndex)
-) {
+	,Tcl_ObjInterfaceStringIndexProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->string.index = fnPtr;
 	return TCL_OK;
@@ -215,8 +215,8 @@ Tcl_ObjInterfaceSetFnStringIndex(
 int
 Tcl_ObjInterfaceSetFnStringIndexEnd(
 	Tcl_ObjInterface *objInterfacePtr
-	,int (fnPtr) (tclObjTypeInterfaceArgsListIndexEnd)
-) {
+	,Tcl_ObjInterfaceStringIndexEndProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->string.indexEnd = fnPtr;
 	return TCL_OK;
@@ -225,20 +225,20 @@ Tcl_ObjInterfaceSetFnStringIndexEnd(
 
 int
 Tcl_ObjInterfaceSetFnStringIsEmpty(
-    Tcl_ObjInterface *objInterfacePtr
-    ,int (fnPtr) (tclObjTypeInterfaceArgsStringIsEmpty)
-) {
-    ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
-    oiPtr->string.isEmpty = fnPtr;
-    return TCL_OK;
+	Tcl_ObjInterface *objInterfacePtr
+	,Tcl_ObjInterfaceStringIsEmptyProc fnPtr)
+{
+	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
+	oiPtr->string.isEmpty = fnPtr;
+	return TCL_OK;
 }
 
 
 int
 Tcl_ObjInterfaceSetFnStringLength(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Size (fnPtr) (tclObjTypeInterfaceArgsStringLength)
-) {
+	,Tcl_ObjInterfaceStringLengthProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->string.length = fnPtr;
 	return TCL_OK;
@@ -248,8 +248,8 @@ Tcl_ObjInterfaceSetFnStringLength(
 int
 Tcl_ObjInterfaceSetFnStringRange(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Obj *(fnPtr) (tclObjTypeInterfaceArgsStringRange)
-) {
+	,Tcl_ObjInterfaceStringRangeProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->string.range = fnPtr;
 	return TCL_OK;
@@ -259,8 +259,8 @@ Tcl_ObjInterfaceSetFnStringRange(
 int
 Tcl_ObjInterfaceSetFnStringRangeEnd(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_Obj *(fnPtr) (tclObjTypeInterfaceArgsStringRangeEnd)
-) {
+	,Tcl_ObjInterfaceStringRangeEndProc fnPtr)
+{
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->string.rangeEnd = fnPtr;
 	return TCL_OK;
@@ -281,9 +281,9 @@ Tcl_ObjInterfaceSetVersion(
 int
 Tcl_ObjTypeSetFreeInternalRepProc(
 	Tcl_ObjType *otPtr
-    ,Tcl_FreeInternalRepProc *freeIntRepProc
+	,Tcl_FreeInternalRepProc *freeIntRepProc
 ) {
-    otPtr->freeIntRepProc = freeIntRepProc;
+	otPtr->freeIntRepProc = freeIntRepProc;
 	return TCL_OK;
 }
 
@@ -291,9 +291,9 @@ Tcl_ObjTypeSetFreeInternalRepProc(
 int
 Tcl_ObjTypeSetDupInternalRepProc(
 	Tcl_ObjType *otPtr
-    ,Tcl_DupInternalRepProc *dupIntRepProc
-) {
-    otPtr->dupIntRepProc = dupIntRepProc;
+	,Tcl_DupInternalRepProc *dupIntRepProc)
+{
+	otPtr->dupIntRepProc = dupIntRepProc;
 	return TCL_OK;
 }
 
@@ -301,9 +301,8 @@ Tcl_ObjTypeSetDupInternalRepProc(
 int
 Tcl_ObjTypeSetInterface(
 	Tcl_ObjType *objTypePtr
-	,Tcl_ObjInterface * objInterfacePtr
-) {
-
+	,Tcl_ObjInterface * objInterfacePtr)
+{
 	ObjectType *otPtr = (ObjectType *)objTypePtr;
 	otPtr->ifPtr = objInterfacePtr;
 	return TCL_OK;
@@ -313,9 +312,9 @@ Tcl_ObjTypeSetInterface(
 int
 Tcl_ObjTypeSetUpdateStringProc(
 	Tcl_ObjType *otPtr
-    ,Tcl_UpdateStringProc *updateStringProc
-) {
-    otPtr->updateStringProc = updateStringProc;
+	,Tcl_UpdateStringProc *updateStringProc)
+{
+	otPtr->updateStringProc = updateStringProc;
 	return TCL_OK;
 }
 
@@ -323,9 +322,9 @@ Tcl_ObjTypeSetUpdateStringProc(
 int
 Tcl_ObjTypeSetSetFromAnyProc(
 	Tcl_ObjType *otPtr
-    ,Tcl_SetFromAnyProc *setFromAnyProc
-) {
-    otPtr->setFromAnyProc = setFromAnyProc;
+	,Tcl_SetFromAnyProc *setFromAnyProc)
+{
+	otPtr->setFromAnyProc = setFromAnyProc;
 	return TCL_OK;
 }
 
@@ -333,9 +332,9 @@ Tcl_ObjTypeSetSetFromAnyProc(
 int
 Tcl_ObjTypeSetName(
 	Tcl_ObjType *otPtr
-	,char *name
-) {
-    otPtr->name = name;
+	,char *name)
+{
+	otPtr->name = name;
 	return TCL_OK;
 }
 
@@ -343,8 +342,8 @@ Tcl_ObjTypeSetName(
 int
 Tcl_ObjTypeSetVersion(
 	Tcl_ObjType *otPtr
-    ,int version
-) {
-    otPtr->version = version;
+	,int version)
+{
+	otPtr->version = version;
 	return TCL_OK;
 }

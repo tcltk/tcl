@@ -56,8 +56,8 @@ static Tcl_ObjInterfaceListlengthProc indexHexListObjLength;
 static Tcl_ObjInterfaceListRangeProc indexHexListObjRange;
 static Tcl_ObjInterfaceListRangeEndProc indexHexListObjRangeEnd;
 static Tcl_ObjInterfaceListReplaceProc indexHexListObjReplace;
-static Tcl_ObjInterfaceListSetListProc indexHexListObjSetElement;
-static Tcl_ObjInterfaceListSetProc indexHexListObjSetFlat;
+static Tcl_ObjInterfaceListSetProc indexHexListObjSet;
+static Tcl_ObjInterfaceListSetDeepProc indexHexListObjSetDeep;
 
 static int indexHexListErrorIndeterminate (Tcl_Interp *interp);
 static int indexHexListErrorReadOnly (Tcl_Interp *interp);
@@ -94,8 +94,8 @@ int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
     Tcl_ObjInterfaceSetFnListRange(oiPtr ,indexHexListObjRange);
     Tcl_ObjInterfaceSetFnListRangeEnd(oiPtr ,indexHexListObjRangeEnd);
     Tcl_ObjInterfaceSetFnListReplace(oiPtr ,indexHexListObjReplace);
-    Tcl_ObjInterfaceSetFnListSet(oiPtr ,indexHexListObjSetElement);
-    Tcl_ObjInterfaceSetFnListSetFlat(oiPtr ,indexHexListObjSetFlat);
+    Tcl_ObjInterfaceSetFnListSet(oiPtr ,indexHexListObjSet);
+    Tcl_ObjInterfaceSetFnListSetDeep(oiPtr ,indexHexListObjSetDeep);
     
     Tcl_ObjTypeSetInterface(testIndexHexTypePtr ,oiPtr);
 
@@ -205,9 +205,9 @@ static int indexHexListStringIndex(tclObjTypeInterfaceArgsStringIndex) {
 
     if (index == itemchars - 1) {
 	/* index refers to the space delimiter after the item. */
-	*objPtrPtr = Tcl_NewStringObj(" ", -1);
+	*resPtrPtr = Tcl_NewStringObj(" ", -1);
     } else {
-	*objPtrPtr = Tcl_GetRange(hexPtr, index, index);
+	*resPtrPtr = Tcl_GetRange(hexPtr, index, index);
     }
     Tcl_DecrRefCount(hexPtr);
     return status;
@@ -284,31 +284,34 @@ static int indexHexListStringIndexEnd(
     return indexHexListErrorIndeterminate(interp);
 }
 
-static Tcl_Size indexHexListStringLength(
-    TCL_UNUSED(Tcl_Obj *);
+static int indexHexListStringLength(
+    TCL_UNUSED(Tcl_Obj *)
+    ,Tcl_Size *length
 ) {
-    return TCL_INDEX_NONE;
+    *length = -1;
+    return TCL_ERROR;
 }
 
-static Tcl_Obj* indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
+static int indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
     Tcl_Obj *itemPtr, *item2Ptr, *resPtr;
     Tcl_Size index = first, status;
     Tcl_Size itemchars, needed, rangeLength, newStringLength,
        stringLength, totalitems;
 
     if (last < first) {
-	return Tcl_NewStringObj("", -1);
+	*resPtrPtr = Tcl_NewStringObj("", -1);
+	return TCL_OK;
     }
 
     status = indexHexStringListIndexFromStringIndex(
 	&index, &itemchars, &totalitems);
     if (status != TCL_OK) {
-	return NULL;
+	return status;
     }
 
     status = indexHexListObjIndex(NULL, objPtr, totalitems, &itemPtr);
     if (status != TCL_OK) {
-	return NULL;
+	return status;
     }
 
     rangeLength = last - first + 1;
@@ -323,7 +326,7 @@ static Tcl_Obj* indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
 	    totalitems++;
 	    status = indexHexListObjIndex(NULL, objPtr, totalitems, &itemPtr);
 	    if (status != TCL_OK) {
-		return NULL;
+		return status;
 	    }
 	    Tcl_AppendToObj(resPtr, " ", 1);
 	    stringLength += newStringLength;
@@ -344,15 +347,18 @@ static Tcl_Obj* indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
 	    Tcl_DecrRefCount(itemPtr);
 	}
     }
-    return resPtr;
+    *resPtrPtr = resPtr;
+    return TCL_OK;
 }
 
-static Tcl_Obj* indexHexListStringRangeEnd(
+static int indexHexListStringRangeEnd(
     TCL_UNUSED(Tcl_Obj *),/* The Tcl object to find the range of. */
     TCL_UNUSED(Tcl_Size),/* First index of the range. */
-    TCL_UNUSED(Tcl_Size) /* Last index of the range. */
+    TCL_UNUSED(Tcl_Size), /* Last index of the range. */
+    Tcl_Obj **resultPtr
 ) {
-    return NULL;
+    *resultPtr = NULL;
+    return TCL_OK;
 }
 
 
@@ -448,38 +454,42 @@ indexHexListObjLength(
 }
 
 
-static Tcl_Obj*
+static int 
 indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 {
     Tcl_Obj *itemPtr, *resPtr;
     Tcl_Size length;
     int status;
     resPtr = Tcl_NewListObj(0, NULL);
-    status = Tcl_ListObjLength(interp, listObj, &length);
+    status = Tcl_ListObjLength(interp, listPtr, &length);
     if (!status) {
-	return NULL;
+	*resPtrPtr = NULL;
+	return TCL_OK;
     }
-    while (rangeStart <= length && rangeStart <= rangeEnd) {
-	indexHexListObjIndex(interp, listObj, rangeStart, &itemPtr);
+    while (fromIdx <= length && fromIdx <= toIdx) {
+	indexHexListObjIndex(interp, listPtr, fromIdx, &itemPtr);
 	if (
 	    Tcl_ListObjAppendElement(interp, resPtr, itemPtr) != TCL_OK
 	) {
 	    Tcl_DecrRefCount(resPtr);
-	    return NULL;
+	    *resPtrPtr = NULL;
+	    return TCL_OK;
 	}
-	rangeStart++;
+	fromIdx++;
     }
-    return resPtr;
+    *resPtrPtr = resPtr;
+    return TCL_OK;
 }
 
 
-static Tcl_Obj*
+static int
 indexHexListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
     if (fromAnchor == 1 || toAnchor == 1) {
 	indexHexListErrorIndeterminate(interp);
-	return NULL;
+	*resPtrPtr = NULL;
+	return TCL_OK;
     }
-    return indexHexListObjRange(interp, listPtr, fromIdx, toIdx);
+    return indexHexListObjRange(interp, listPtr, fromIdx, toIdx, resPtrPtr);
 }
 
 
@@ -501,7 +511,7 @@ indexHexListObjReplace(
 
 
 static int
-indexHexListObjSetFlat(
+indexHexListObjSet(
     Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting
 				 * if not NULL. */
     TCL_UNUSED(Tcl_Obj *),	/* List object in which element should be
@@ -516,14 +526,15 @@ indexHexListObjSetFlat(
 }
 
 
-static Tcl_Obj * indexHexListObjSetElement (
+static int indexHexListObjSetDeep (
     Tcl_Interp *interp,		/* Tcl interpreter. */ \
     TCL_UNUSED(Tcl_Obj *),	/* Pointer to the list being modified. */ \
     TCL_UNUSED(Tcl_Size),	/* Number of index args. */ \
     TCL_UNUSEDVAR(Tcl_Obj *const indexArray[]),	/* Index args. */ \
-    TCL_UNUSED(Tcl_Obj *)   /* Value arg to 'lset' or NULL to 'lpop'. */
-)
+    TCL_UNUSED(Tcl_Obj *),   /* Value arg to 'lset' or NULL to 'lpop'. */
+    Tcl_Obj **resPtrPtr)
 {
     indexHexListErrorReadOnly(interp);
-    return NULL;
+    *resPtrPtr = NULL;
+    return TCL_ERROR;
 }
