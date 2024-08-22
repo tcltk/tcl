@@ -4341,7 +4341,7 @@ unilen4(
 static void
 InitializeEncodingSearchPath(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
