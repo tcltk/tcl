@@ -37,7 +37,7 @@ int
 \fBTcl_GlobalEvalObj\fR(\fIinterp, objPtr\fR)
 .sp
 int
-\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fB(char *) NULL\fR)
+\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fBNULL\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp **termPtr
 .AP Tcl_Interp *interp in
@@ -138,7 +138,7 @@ then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
 It returns the result of the command and also modifies
 the interpreter result in the same way as \fBTcl_Eval\fR.
 The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
-of arguments.  \fBTcl_VarEval\fR is now deprecated.
+of arguments.
 
 .SH "FLAG BITS"
 .PP
