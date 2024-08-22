@@ -455,8 +455,8 @@ InitFoundation(
      * Make the configurable class and install its standard defined method.
      */
 
-    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp, 
-	    (Tcl_Class) fPtr->classCls, 
+    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) fPtr->classCls,
 	    "::oo::configuresupport::configurable", NULL, -1, NULL, 0);
     for (i = 0 ; cfgMethods[i].name ; i++) {
 	TclOONewBasicMethod(((Object *) cfgCls)->classPtr, &cfgMethods[i]);
