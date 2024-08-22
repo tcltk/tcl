@@ -37,9 +37,11 @@ namespace eval utftest {
     # 4 external fragmentation index - where to split field 2 for fragmentation
     #   tests. -1 to skip
     #
+    # THE HEX DEFINITIONS SHOULD SEPARATE EACH CHARACTER BY WHITESPACE
+    # (assumed by the charlimit tests)
     lappend utfExtMap {*}{
         ascii {
-            {basic 414243 414243 -1 -1}
+            {basic {41 42 43} {41 42 43} -1 -1}
         }
         utf-8 {
             {bmp    {41 c3a9 42}     {41 c3a9 42}      2  2}
@@ -78,12 +80,12 @@ namespace eval utftest {
             {null   {41 c080 42} {00000041 00000000 00000042}  2 3}
         }
         iso8859-1 {
-            {basic {41 c3a9 42} 41e942 2 -1}
-            {null  {41 c080 42} 410042 2 -1}
+            {basic {41 c3a9 42} {41 e9 42} 2 -1}
+            {null  {41 c080 42} {41 00 42} 2 -1}
         }
         iso8859-3 {
-            {basic {41 c4a0 42} 41d542 2 -1}
-            {null  {41 c080 42} 410042 2 -1}
+            {basic {41 c4a0 42} {41 d5 42} 2 -1}
+            {null  {41 c080 42} {41 00 42} 2 -1}
         }
         shiftjis {
             {basic {41 e4b98e 42} {41 8cc1 42} 3 2}
@@ -195,6 +197,34 @@ namespace eval utftest {
         } -result [list $status1 1 ok [string length $in] [string length $out] $out]
     }
 
+    proc testcharlimit {direction enc comment hexin hexout} {
+        set id $comment-[join $hexin ""]-charlimit
+
+        if {$direction eq "toutf"} {
+            set cmd Tcl_ExternalToUtf
+        } else {
+            set cmd Tcl_UtfToExternal
+        }
+
+        set maxchars [llength $hexout]
+        set in [binary decode hex $hexin]
+        set out [binary decode hex $hexout]
+        set dstlen 40 ;# Should be enough for all encoding tests
+
+        for {set nchars 0} {$nchars <= $maxchars} {incr nchars} {
+            set expected_bytes [binary decode hex [lrange $hexout 0 $nchars-1]]
+            set expected_nwritten [string length $expected_bytes]
+            test $cmd-$enc-$id-$nchars "$cmd - $enc - $hexin - nchars $nchars" -constraints testencoding -body {
+                set charlimit $nchars
+                lassign [testencoding $cmd $enc $in \
+                             {start end charlimit} 0 $dstlen nread nwritten charlimit] \
+                    status state buf
+                list $status $nwritten [string range $buf 0 $nwritten-1]
+            } -result [list [expr {$nchars == $maxchars ? "ok" : "nospace"}] $expected_nwritten $expected_bytes]
+        }
+    }
+
+
     #
     # Basic tests
     foreach {enc testcases} $utfExtMap {
@@ -213,8 +243,15 @@ namespace eval utftest {
             # should have no effect in other direction
             testutf fromutf $enc $comment $utfhex $hex$encnuls -flags {start end noterminate}
 
+            # Fragments
             testfragment toutf $enc $comment $hex $utfhex $externalfragindex
             testfragment fromutf $enc $comment $utfhex $hex $internalfragindex
+
+            # Char limits - note no fromutf as Tcl_UtfToExternal does not support it
+            if {![string match utf-16* $enc] && $enc ne "cesu-8"} {
+                # TODO - utf16 hangs
+                testcharlimit toutf $enc $comment $hex $utfhex
+            }
         }
     }
 
