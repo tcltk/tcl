@@ -4332,7 +4332,7 @@ Tcl_FSDeleteFile(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     int err;
-    
+
     if (fsPtr == NULL) {
 	err = ENOENT;
     } else {
