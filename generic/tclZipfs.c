@@ -1114,7 +1114,7 @@ ContainsMountPoint (const char *path, int pathLen)
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
-	    /* 
+	    /*
 	     * Enumerate the contents of the ZIP; it's mounted on the root.
 	     * TODO - a holdover from androwish? Tcl does not allow mounting
 	     * outside of the //zipfs:/ area.
@@ -5513,7 +5513,7 @@ ZipFSPathInFilesystemProc(
     }
     path = Tcl_GetStringFromObj(pathPtr, &len);
     /*
-     * TODO - why not make ZIPFS_VOLUME both necessary AND sufficient? 
+     * TODO - why not make ZIPFS_VOLUME both necessary AND sufficient?
      * Currently we only claim ownership if there is a matching mount.
      */
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
@@ -5545,7 +5545,7 @@ ZipFSPathInFilesystemProc(
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
-	    /* 
+	    /*
 	     * Mounted on the root (/)
 	     * TODO - a holdover from androwish? Tcl does not allow mounting
 	     * outside of the //zipfs:/ area.
