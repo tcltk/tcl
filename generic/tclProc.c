@@ -62,6 +62,7 @@ static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
 static Tcl_NRPostProc Uplevel_Callback;
+static Tcl_ObjCmdProc NRInterpProc;
 
 /*
  * The ProcBodyObjType type
@@ -219,7 +220,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1621,7 +1622,7 @@ TclObjInterpProc(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
 }
 
 int
@@ -1630,7 +1631,7 @@ TclNRInterpProc(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,			/* Count of number of arguments to this
+    Tcl_Size objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1644,12 +1645,12 @@ TclNRInterpProc(
 }
 
 static int
-NRInterpProc2(
+NRInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp, 	/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,		/* Count of number of arguments to this
+    int objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1676,7 +1677,7 @@ ObjInterpProc2(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, NRInterpProc2, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
 }
 
 
