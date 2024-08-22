@@ -196,6 +196,7 @@ static Tcl_NRPostProc	DTraceCmdReturn;
 #else
 #   define DTraceCmdReturn	NULL
 #endif /* USE_DTRACE */
+static Tcl_ObjCmdProc	InvokeStringCommand;
 static Tcl_ObjCmdProc	ExprAbsFunc;
 static Tcl_ObjCmdProc	ExprBinaryFunc;
 static Tcl_ObjCmdProc	ExprBoolFunc;
@@ -224,6 +225,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
+static Tcl_CmdProc InvokeObjectCommand;
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
@@ -1080,10 +1082,10 @@ Tcl_CreateInterp(void)
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
      * preexisting command by the same name). If a command has a Tcl_CmdProc
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-     * TclInvokeStringCommand. This is an object-based wrapper function that
+     * InvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
      * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
+     * Tcl_CmdProc, set the Tcl_CmdProc to InvokeObjectCommand.
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -1102,7 +1104,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
-	    cmdPtr->proc = TclInvokeObjectCommand;
+	    cmdPtr->proc = InvokeObjectCommand;
 	    cmdPtr->clientData = cmdPtr;
 	    cmdPtr->objProc = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData = NULL;
@@ -2491,7 +2493,7 @@ Tcl_ExposeCommand(
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
- *	(TclInvokeStringCommand) that eventually calls proc. When the command
+ *	(InvokeStringCommand) that eventually calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
@@ -2633,7 +2635,7 @@ Tcl_CreateCommand(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = TclInvokeStringCommand;
+    cmdPtr->objProc = InvokeStringCommand;
     cmdPtr->objClientData = cmdPtr;
     cmdPtr->proc = proc;
     cmdPtr->clientData = clientData;
@@ -2922,7 +2924,7 @@ TclCreateObjCommandInNs(
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
     cmdPtr->objClientData = clientData;
-    cmdPtr->proc = TclInvokeObjectCommand;
+    cmdPtr->proc = InvokeObjectCommand;
     cmdPtr->clientData = cmdPtr;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
@@ -2963,7 +2965,7 @@ TclCreateObjCommandInNs(
 /*
  *----------------------------------------------------------------------
  *
- * TclInvokeStringCommand --
+ * InvokeStringCommand --
  *
  *	"Wrapper" Tcl_ObjCmdProc used to call an existing string-based
  *	Tcl_CmdProc if no object-based function exists for a command. A
@@ -2976,13 +2978,13 @@ TclCreateObjCommandInNs(
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_CmdProc,
- *	TclInvokeStringCommand allocates and frees storage.
+ *	InvokeStringCommand allocates and frees storage.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclInvokeStringCommand(
+InvokeStringCommand(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,		/* Number of arguments. */
@@ -3011,7 +3013,7 @@ TclInvokeStringCommand(
 /*
  *----------------------------------------------------------------------
  *
- * TclInvokeObjectCommand --
+ * InvokeObjectCommand --
  *
  *	"Wrapper" Tcl_CmdProc used to call an existing object-based
  *	Tcl_ObjCmdProc if no string-based function exists for a command. A
@@ -3024,13 +3026,13 @@ TclInvokeStringCommand(
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_ObjCmdProc,
- *	TclInvokeObjectCommand allocates and frees storage.
+ *	InvokeObjectCommand allocates and frees storage.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclInvokeObjectCommand(
+InvokeObjectCommand(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
@@ -3387,7 +3389,7 @@ Tcl_SetCommandInfoFromToken(
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
     if (infoPtr->objProc == NULL) {
-	cmdPtr->objProc = TclInvokeStringCommand;
+	cmdPtr->objProc = InvokeStringCommand;
 	cmdPtr->objClientData = cmdPtr;
 	cmdPtr->nreProc = NULL;
     } else {
@@ -3499,7 +3501,7 @@ Tcl_GetCommandInfoFromToken(
 
     cmdPtr = (Command *) cmd;
     infoPtr->isNativeObjectProc =
-	    (cmdPtr->objProc != TclInvokeStringCommand);
+	    (cmdPtr->objProc != InvokeStringCommand);
     infoPtr->objProc = cmdPtr->objProc;
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
@@ -8604,7 +8606,7 @@ Tcl_NRCallObjProc2(
  * Side effects:
  *	If no command named "cmdName" already exists for interp, one is
  *	created. Otherwise, if a command does exist, then if the object-based
- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
+ *	Tcl_ObjCmdProc is InvokeStringCommand, we assume Tcl_CreateCommand
  *	was called previously for the same command and just set its
  *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
  *	command.
