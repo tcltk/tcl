@@ -1756,6 +1756,7 @@ TestbigdataCmd (
 	}
 	if (split >= 0) {
 	    assert(split < len);
+	    p[split] = 'X';
 	}
 	Tcl_SetObjResult(interp, objPtr);
 	break;
