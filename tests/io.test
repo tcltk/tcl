@@ -9496,7 +9496,7 @@ test {io-75.8 {invalid input before eof}} {invalid utf-8 before eof (-profile st
 	invalid or incomplete multibyte or wide character} ¡}
 
 
-test {io-75.8 {incomplete input after eof]} {
+test {io-75.8 {incomplete input after eof}} {
     incomplete utf-8 char after eof char is not an error (-profile strict)
 } -setup {
     set hd {}
