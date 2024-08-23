@@ -1706,10 +1706,10 @@ InfoLoadedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *interpName, *packageName;
+    const char *interpName, *prefix;
 
     if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?packageName?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?prefix?");
 	return TCL_ERROR;
     }
 
@@ -1719,11 +1719,11 @@ InfoLoadedCmd(
 	interpName = TclGetString(objv[1]);
     }
     if (objc < 3) {		/* Get loaded files in all packages. */
-	packageName = NULL;
+	prefix = NULL;
     } else {			/* Get pkgs just in specified interp. */
-	packageName = TclGetString(objv[2]);
+	prefix = TclGetString(objv[2]);
     }
-    return TclGetLoadedLibraries(interp, interpName, packageName);
+    return TclGetLoadedLibraries(interp, interpName, prefix);
 }
 
 /*
