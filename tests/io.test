@@ -9347,6 +9347,84 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
 } -match glob -returnCodes 1 -result {error reading "file*":\
 	invalid or incomplete multibyte or wide character}
 
+test io-75.6.1 {invalid utf-8 encoding, blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict
+} -body {
+    gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.1
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+test io-75.6.2 {invalid utf-8 encoding, blocking gets is not ignored (-profile strict), recover functionality} -setup {
+    set fn [makeFile {} io-75.6.2]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict
+} -body {
+    set l {}
+    lappend l [catch {gets $f}]
+    lappend l [tell $f]
+    fconfigure $f -encoding binary
+    lappend l [expr {[gets $f] eq "A\xC3B"}]
+} -cleanup {
+    close $f
+    removeFile io-75.6.2
+} -match glob -returnCodes 0 -result {1 0 1}
+
+# TCL ticket c4eb46a196: non blocking case had endless loop, so test it
+test io-75.6.3 {invalid utf-8 encoding, non blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.3]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict -blocking 0
+} -body {
+    gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.3
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+test io-75.6.4 {incomplete utf-8 encoding, non blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.4]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is an incomplete byte sequence in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict -blocking 0
+} -body {
+    gets $f
+	# only the 2nd gets returns the error
+	gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.4
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
 test io-75.7.gets {
     invalid utf-8 encoding gets is not ignored (-profile strict)
 } -setup {
@@ -9390,7 +9468,7 @@ test io-75.7.read {
 } -match glob -result {1 {error reading "file*":\
     invalid or incomplete multibyte or wide character}}
 
-test {io-75.8 invalid before eof} {invalid utf-8 before eof (-profile strict)} -setup {
+test {io-75.8 {invalid input before eof}} {invalid utf-8 before eof (-profile strict)} -setup {
 	set hd {}
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
@@ -9418,7 +9496,7 @@ test {io-75.8 invalid before eof} {invalid utf-8 before eof (-profile strict)} -
 	invalid or incomplete multibyte or wide character} ¡}
 
 
-test {io-75.8 incomplete after eof} {
+test {io-75.8 {incomplete input after eof]} {
     incomplete utf-8 char after eof char is not an error (-profile strict)
 } -setup {
     set hd {}
@@ -9445,7 +9523,7 @@ test {io-75.8 incomplete after eof} {
 } -result {41 1 {}}
 
 
-test {io-75.8 {invalid after eof}} {
+test {io-75.8 {invalid input after eof}} {
 	invalid utf-8 after eof char is not an error (-profile strict)
 } -setup {
     set res {}
@@ -9474,7 +9552,7 @@ test {io-75.8 {invalid after eof}} {
 } -result {41 1 {}}
 
 
-test {io-75.8 {invalid before eof}} {
+test {io-75.8 {invalid input before eof}} {
 	invalid utf-8 encoding eof handling (-profile strict)
 } -setup {
     set fn [makeFile {} io-75.8]

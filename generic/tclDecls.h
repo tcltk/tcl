@@ -4237,6 +4237,12 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
+#ifdef __GNUC__
+	/* If this gives: "error: size of array ‘_bool_Var’ is negative", it means that sizeof(*boolPtr)>sizeof(int), which is not allowed */
+#   define TCLBOOLWARNING(boolPtr) ({__attribute__((unused)) char _bool_Var[sizeof(*(boolPtr)) > sizeof(int) ? -1 : 1];}),
+#else
+#   define TCLBOOLWARNING(boolPtr)
+#endif
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg,\
 	flags, indexPtr) \
