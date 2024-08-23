@@ -3259,7 +3259,7 @@ MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    TCL_HASH_TYPE *sizePtr);
 MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *targetName,
-				const char *packageName);
+				const char *prefix);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
 MODULE_SCOPE int	TclCompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
