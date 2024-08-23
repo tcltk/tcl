@@ -21,6 +21,8 @@
  */
 
 
+#undef BUILD_tcl
+#undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif

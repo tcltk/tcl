@@ -22,6 +22,8 @@
  */
 
 #ifndef USE_TCL_STUBS
+#	undef BUILD_tcl
+#	undef STATIC_BUILD
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
