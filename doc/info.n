@@ -282,11 +282,11 @@ Returns the value of \fBtcl_library\fR, which is the name of the library
 directory in which the scripts distributed with Tcl scripts are stored.
 .\" METHOD: loaded
 .TP
-\fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
+\fBinfo loaded \fR?\fIinterp\fR? ?\fIprefix\fR?
 .
-Returns the name of each file loaded in \fIinterp\fR va \fBload\fR as part of
-\fIpackage\fR .  If \fIpackage\fR is not given, returns a list where each item
-is the name of the loaded file and the name of the package for which the file
+Returns the name of each file loaded in \fIinterp\fR by the \fBload\fR
+with prefix \fIprefix\fR .  If \fIprefix\fR is not given, returns a list where each item
+is the name of the loaded file and the prefix for which the file
 was loaded.  For a statically-loaded package the name of the file is the empty
 string.  For \fIinterp\fR, the empty string is the current interpreter.
 .\" METHOD: locals
