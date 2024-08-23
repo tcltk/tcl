@@ -248,10 +248,7 @@ namespace eval utftest {
             testfragment fromutf $enc $comment $utfhex $hex $internalfragindex
 
             # Char limits - note no fromutf as Tcl_UtfToExternal does not support it
-            if {![string match utf-16* $enc] && $enc ne "cesu-8"} {
-                # TODO - utf16 hangs
-                testcharlimit toutf $enc $comment $hex $utfhex
-            }
+            testcharlimit toutf $enc $comment $hex $utfhex
         }
     }
 

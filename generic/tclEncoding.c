@@ -2469,7 +2469,12 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
+
+    /*
+     * If output is UTF-8 or encoding for Tcl's internal encoding,
+     * max space needed is TCL_UTF_MAX. Otherwise, need 6 bytes (CESU-8)
+     */
+    dstEnd = dst + dstLen - ((flags & (ENCODING_INPUT|ENCODING_UTF)) ? TCL_UTF_MAX : 6);
 
     /*
      * Macro to output an isolated high surrogate when it is not followed
@@ -3009,6 +3014,7 @@ Utf16ToUtfProc(
 	srcLen--;
     }
 
+#if 0
     /*
      * If last code point is a high surrogate, we cannot handle that yet,
      * unless we are at the end.
@@ -3019,6 +3025,7 @@ Utf16ToUtfProc(
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
+#endif
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -3028,7 +3035,7 @@ Utf16ToUtfProc(
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit;
 	    src += 2, numChars++) {
-	if (dst > dstEnd) {
+	if (dst > dstEnd && !HIGH_SURROGATE(ch)) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
@@ -3039,91 +3046,146 @@ Utf16ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
-	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {
-	    if (PROFILE_STRICT(flags)) {
-		result = TCL_CONVERT_SYNTAX;
-		src -= 2;	/* Go back to beginning of high surrogate */
-		dst--;		/* Also undo writing a single byte too much */
-		numChars--;
-		break;
-	    } else if (PROFILE_REPLACE(flags)) {
-		/*
-		 * Previous loop wrote a single byte to mark the high surrogate.
-		 * Replace it with the replacement character. Further, restart
-		 * current loop iteration since need to recheck destination
-		 * space and reset processing of current character.
-		 */
-		ch = UNICODE_REPLACE_CHAR;
-		dst--;
-		dst += Tcl_UniCharToUtf(ch, dst);
-		src -= 2;
-		numChars--;
-		continue;
-	    } else {
-		/*
-		 * Bug [10c2c17c32]. If Hi surrogate not followed by Lo
-		 * surrogate, finish 3-byte UTF-8
-		 */
-		dst += Tcl_UniCharToUtf(-1, dst);
-	    }
-	}
-
-	/*
-	 * Special case for 1-byte utf chars for speed. Make sure we work with
-	 * unsigned short-size data.
-	 */
-
-	if ((unsigned)ch - 1 < 0x7F) {
-	    *dst++ = (ch & 0xFF);
-	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
-	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
-	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
-	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
-	    if (PROFILE_STRICT(flags)) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    } else {
-		/* PROFILE_REPLACE */
-		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	    }
+	if (HIGH_SURROGATE(prev)) {
+            if (LOW_SURROGATE(ch)) {
+                /*
+                 * High surrogate was followed by a low surrogate.
+                 * Tcl_UniCharToUtf would have stashed away the state in dst.
+                 * Call it again to combine that state with the low surrogate.
+                 * We also have to compensate the numChars as two UTF-16 units
+                 * have been combined into one character.
+                 */
+                dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
+            } else {
+                /* High surrogate was not followed by a low surrogate */
+                if (PROFILE_STRICT(flags)) {
+                    result = TCL_CONVERT_SYNTAX;
+                    src -= 2;	/* Go back to beginning of high surrogate */
+                    dst--;		/* Also undo writing a single byte too much */
+                    break;
+                }
+                if (PROFILE_REPLACE(flags)) {
+                    /*
+                     * Previous loop wrote a single byte to mark the high surrogate.
+                     * Replace it with the replacement character.
+                     */
+                    ch = UNICODE_REPLACE_CHAR;
+                    dst--;
+                    numChars++;
+                    dst += Tcl_UniCharToUtf(ch, dst);
+                } else {
+                    /*
+                     * Bug [10c2c17c32]. If Hi surrogate not followed by Lo
+                     * surrogate, finish 3-byte UTF-8
+                     */
+                    dst += Tcl_UniCharToUtf(-1, dst);
+                }
+                /* Loop around again so destination space and other checks are done */
+                prev = 0; /* Reset high surrogate tracker */
+                src -= 2;
+            }
 	} else {
-	    dst += Tcl_UniCharToUtf(ch, dst);
-	}
-    }
+            /* Previous char was not a high surrogate */
 
-    if (HIGH_SURROGATE(ch)) {
-	if (PROFILE_STRICT(flags)) {
-	    result = TCL_CONVERT_SYNTAX;
-	    src -= 2;
-	    dst--;
-	    numChars--;
-	} else if (PROFILE_REPLACE(flags)) {
-	    dst--;
-	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	} else {
-	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	    dst += Tcl_UniCharToUtf(-1, dst);
-	}
+            /*
+             * Special case for 1-byte utf chars for speed. Make sure we work with
+             * unsigned short-size data. Order checks based on expected frequency.
+             */
+            if ((unsigned)ch - 1 < 0x7F) {
+                /* ASCII except nul */
+                *dst++ = (ch & 0xFF);
+            } else if (!SURROGATE(ch)) {
+                /* Not ASCII, not surrogate */
+                dst += Tcl_UniCharToUtf(ch, dst);
+            } else if (HIGH_SURROGATE(ch)) {
+                dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
+                /* Do not count this just yet. Compensate for numChars++ in loop counter */
+                numChars--;
+            } else {
+                assert(LOW_SURROGATE(ch));
+                if (PROFILE_STRICT(flags)) {
+                    result = TCL_CONVERT_SYNTAX;
+                    break;
+                }
+                if (PROFILE_REPLACE(flags)) {
+                    ch = UNICODE_REPLACE_CHAR;
+                }
+                dst += Tcl_UniCharToUtf(ch, dst);
+            }
+        }
     }
 
     /*
-     * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is not "strict", stick FFFD in its place.
+     * When the above loop ends, result may have the following values:
+     * 1. TCL_OK - full source buffer was completely processed.
+     *    src, dst, numChars will hold values up to that point BUT
+     *    there may be a leftover high surrogate we need to deal with.
+     * 2. TCL_CONVERT_NOSPACE - Ran out of room in the destination buffer.
+     *    Same considerations as (1)
+     * 3. TCL_CONVERT_SYNTAX - decoding error.
+     * 4. TCL_CONVERT_MULTIBYTE - the buffer passed in was not fully
+     *    processed, because there was a trailing single byte. However,
+     *    we *may* have processed the requested number of characters already
+     *    in which case the trailing byte does not matter. We still
+     *    *may* still be a leftover high surrogate as in (1) and (2).
      */
-    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
-	if (dst > dstEnd) {
-	    result = TCL_CONVERT_NOSPACE;
-	} else {
-	    if (PROFILE_STRICT(flags)) {
-		result = TCL_CONVERT_SYNTAX;
-	    } else {
-		/* PROFILE_REPLACE or PROFILE_TCL8 */
-		result = TCL_OK;
-		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-		numChars++;
-		src++; /* Go past truncated code unit */
-	    }
-	}
+    switch (result) {
+    case TCL_CONVERT_MULTIBYTE: /* FALLTHRU */
+    case TCL_OK: /* FALLTHRU */
+    case TCL_CONVERT_NOSPACE:
+        if (HIGH_SURROGATE(ch)) {
+            if (flags & TCL_ENCODING_END) {
+                /*
+                 * No more data expected. There will be space for output of
+                 * one character (essentially overwriting the dst area holding
+                 * high surrogate state)
+                 */
+                assert((dst-1) <= dstEnd);
+                if (PROFILE_STRICT(flags)) {
+                    result = TCL_CONVERT_SYNTAX;
+                    src -= 2;
+                    dst--;
+                } else if (PROFILE_REPLACE(flags)) {
+                    dst--;
+                    numChars++;
+                    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+                } else {
+                    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+                    numChars++;
+                    dst += Tcl_UniCharToUtf(-1, dst);
+                }
+            } else {
+                /* More data is expected. Revert the surrogate state */
+                src -= 2;
+                dst--;
+                /* Note: leave result of TCL_CONVERT_NOSPACE as is */
+                if (result == TCL_OK) {
+                    result = TCL_CONVERT_MULTIBYTE;
+                }
+            }
+        } else if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+            /*
+             * If we had a trailing byte at the end AND this is the last
+             * fragment AND profile is not "strict", stick FFFD in its place.
+             * Note in this case we DO need to check for room in dst.
+             */
+            if (dst > dstEnd) {
+                result = TCL_CONVERT_NOSPACE;
+            } else {
+                if (PROFILE_STRICT(flags)) {
+                    result = TCL_CONVERT_SYNTAX;
+                } else {
+                    /* PROFILE_REPLACE or PROFILE_TCL8 */
+                    result = TCL_OK;
+                    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+                    numChars++;
+                    src++;
+                }
+            }
+        }
+        break;
+    case TCL_CONVERT_SYNTAX:
+        break; /* Nothing to do */
     }
 
     *srcReadPtr = src - srcStart;
