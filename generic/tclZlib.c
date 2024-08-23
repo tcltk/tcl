@@ -636,7 +636,7 @@ SetInflateDictionary(
 {
     if (compDictObj != NULL) {
 	Tcl_Size length = 0;
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, compDictObj, &length);
 
 	if (bytes == NULL) {
 	    return Z_DATA_ERROR;
@@ -653,7 +653,7 @@ SetDeflateDictionary(
 {
     if (compDictObj != NULL) {
 	Tcl_Size length = 0;
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, compDictObj, &length);
 
 	if (bytes == NULL) {
 	    return Z_DATA_ERROR;
@@ -1201,7 +1201,7 @@ Tcl_ZlibStreamSetCompressionDictionary(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
-    if (compressionDictionaryObj && (NULL == Tcl_GetByteArrayFromObj(
+    if (compressionDictionaryObj && (NULL == Tcl_GetBytesFromObj(NULL,
 	    compressionDictionaryObj, (Tcl_Size *)NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
@@ -1434,7 +1434,7 @@ Tcl_ZlibStreamGet(
 		if (Tcl_IsShared(itemObj)) {
 		    itemObj = Tcl_DuplicateObj(itemObj);
 		}
-		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+		itemPtr = Tcl_GetBytesFromObj(NULL, itemObj, &itemLen);
 		Tcl_IncrRefCount(itemObj);
 		zshPtr->currentInput = itemObj;
 		zshPtr->stream.next_in = itemPtr;
@@ -1506,7 +1506,7 @@ Tcl_ZlibStreamGet(
 	    if (Tcl_IsShared(itemObj)) {
 		itemObj = Tcl_DuplicateObj(itemObj);
 	    }
-	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+	    itemPtr = Tcl_GetBytesFromObj(NULL, itemObj, &itemLen);
 	    Tcl_IncrRefCount(itemObj);
 	    zshPtr->currentInput = itemObj;
 	    zshPtr->stream.next_in = itemPtr;
@@ -1555,7 +1555,7 @@ Tcl_ZlibStreamGet(
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
 		Tcl_ListObjIndex(NULL, zshPtr->outData, i, &itemObj);
-		(void) Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+		(void) Tcl_GetBytesFromObj(NULL, itemObj, &itemLen);
 		if (i == 0) {
 		    count += itemLen - zshPtr->outPos;
 		} else {
@@ -1580,7 +1580,7 @@ Tcl_ZlibStreamGet(
 	     */
 
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
-	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+	    itemPtr = Tcl_GetBytesFromObj(NULL, itemObj, &itemLen);
 	    if ((itemLen-zshPtr->outPos) >= count-dataPos) {
 		Tcl_Size len = count - dataPos;
 
@@ -3772,7 +3772,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetByteArrayFromObj(cd->compDictObj, (Tcl_Size *)NULL);
+	Tcl_GetBytesFromObj(NULL, cd->compDictObj, (Tcl_Size *)NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {

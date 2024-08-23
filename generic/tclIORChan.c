@@ -1402,7 +1402,7 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
     if (bytev == NULL) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
@@ -3146,7 +3146,7 @@ ForwardProc(
 	    Tcl_Size bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    if (bytev == NULL) {
 		ForwardSetStaticError(paramPtr, msg_read_nonbyte);

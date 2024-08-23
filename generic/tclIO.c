@@ -4207,7 +4207,7 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
+    src = (char *) Tcl_GetBytesFromObj(NULL, objPtr, &len);
     if (src == NULL) {
 	Tcl_SetErrno(EILSEQ);
 	result = TCL_INDEX_NONE;
@@ -4266,7 +4266,7 @@ Tcl_WriteObj(
     if (statePtr->encoding == NULL) {
 	Tcl_Size result;
 
-	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
+	src = (char *) Tcl_GetBytesFromObj(NULL, objPtr, &srcLen);
 	if (src == NULL) {
 	    Tcl_SetErrno(EILSEQ);
 	    result = TCL_INDEX_NONE;
@@ -4653,7 +4653,7 @@ Tcl_GetsObj(
     if (statePtr->encoding == GetBinaryEncoding()
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
-	    && Tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)NULL) != NULL) {
+	    && Tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 
@@ -5067,7 +5067,7 @@ TclGetsObjBinary(
      * newline in the available input.
      */
 
-    byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
+    byteArray = Tcl_GetBytesFromObj(NULL, objPtr, &byteLen);
     if (byteArray == NULL) {
 	Tcl_SetErrno(EILSEQ);
 	return -1;
@@ -5993,7 +5993,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)NULL))) {
+	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)NULL))) {
 	    binaryMode = 0;
 	}
     } else {
