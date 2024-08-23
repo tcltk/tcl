@@ -86,7 +86,11 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, string, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	sp = getservbyname(native, proto);		/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 	if (sp != NULL) {
@@ -195,7 +199,11 @@ TclCreateSocketAddress(
     int result;
 
     if (host != NULL) {
-	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+	    return 0;
+	}
+	native = Tcl_DStringValue(&ds);
     }
 
     /*

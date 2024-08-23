@@ -1752,7 +1752,7 @@ proc http::OpenSocket {token DoLater} {
 		Log socket delay $delay - token $token
 	    }
 	    fconfigure $sock -translation {auto crlf} \
-			     -buffersize $state(-blocksize)
+		-buffersize $state(-blocksize) -profile strict
 	    ##Log socket opened, DONE fconfigure - token $token
         }
 
@@ -2170,7 +2170,7 @@ proc http::Connected {token proto phost srvurl} {
     # We are concerned here with the request (write) not the response (read).
     lassign [fconfigure $sock -translation] trRead trWrite
     fconfigure $sock -translation [list $trRead crlf] \
-		     -buffersize $state(-blocksize)
+	-buffersize $state(-blocksize) -profile strict
 
     # The following is disallowed in safe interpreters, but the socket is
     # already in non-blocking mode in that case.
@@ -2560,7 +2560,7 @@ proc http::ReceiveResponse {token} {
     #Log ---- $state(socketinfo) >> conn to $token for HTTP response
     lassign [fconfigure $sock -translation] trRead trWrite
     fconfigure $sock -translation [list auto $trWrite] \
-		     -buffersize $state(-blocksize)
+	-buffersize $state(-blocksize) -profile strict
     Log ^D$tk begin receiving response - token $token
 
     coroutine ${token}--EventCoroutine http::Event $sock $token
@@ -4552,7 +4552,8 @@ proc http::Eot {token {reason {}}} {
 
 	    set enc [CharsetToEncoding $state(charset)]
 	    if {$enc ne "binary"} {
-		set state(body) [encoding convertfrom $enc $state(body)]
+		set state(body) [
+		    encoding convertfrom -profile strict $enc $state(body)]
 	    }
 
 	    # Translate text line endings.
@@ -4635,7 +4636,7 @@ proc http::GuessType {token} {
     if {$enc eq "binary"} {
         return 0
     }
-    set state(body) [encoding convertfrom $enc $state(body)]
+    set state(body) [encoding convertfrom -profile strict $enc $state(body)]
     set state(body) [string map {\r\n \n \r \n} $state(body)]
     set state(type) application/xml
     set state(binary) 0
@@ -4716,7 +4717,7 @@ proc http::quoteString {string} {
     # a pre-computed map and [string map] to do the conversion (much faster
     # than [regsub]/[subst]). [Bug 1020491]
 
-    set string [encoding convertto $http(-urlencoding) $string]
+    set string [encoding convertto -profile strict $http(-urlencoding) $string]
     return [string map $formMap $string]
 }
 
