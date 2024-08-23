@@ -83,9 +83,9 @@ be specified.
 If \fIprefix\fR is omitted or specified as an empty string,
 Tcl tries to guess the prefix by taking the last element of
 \fIfileName\fR, strip off the first three characters if they
-are \fBlib\fR, then strip off the next three characters if
-they are \fBtcl9\fR, and use any following wordchars but not digits,
-converted to titlecase as the prefix.
+are \fBlib\fR, then strip off the next four characters if
+they are \fBtcl9\fR, and use any following wordchars
+but not digits, converted to titlecase as the prefix.
 For example, the command \fBload libxyz4.2.so\fR uses the prefix
 \fBXyz\fR and the command \fBload bin/last.so {}\fR uses the
 prefix \fBLast\fR.
