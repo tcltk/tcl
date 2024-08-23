@@ -4329,7 +4329,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclUtfNext
 #undef TclUtfPrev
 
-#ifdef TCL_USE_STUBS
+#ifdef USE_TCL_STUBS
     /* Protect those 10 functions, being usable through the stub table */
 #   undef TclGetStringFromObj
 #   undef TclGetBytesFromObj
