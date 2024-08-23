@@ -15,6 +15,9 @@
 
 #include "tclInt.h"
 #include "tclUuid.h"
+#if defined(HAVE_ZLIB) && defined(TCL_WITH_INTERNAL_ZLIB)
+#include "zlib.h"
+#endif /* HAVE_ZLIB */
 
 /*
  * The data structure below is used to report background errors. One such
@@ -143,7 +146,7 @@ static void		FinalizeThread(int quick);
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_BackgroundError --
+ * Tcl_BackgroundException --
  *
  *	This function is invoked to handle errors that occur in Tcl commands
  *	that are invoked in "background" (e.g. from event or timer bindings).
@@ -888,7 +891,6 @@ Tcl_SetExitProc(
 
     return prevExitProc;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -930,7 +932,6 @@ InvokeExitHandlers(void)
     firstExitPtr = NULL;
     Tcl_MutexUnlock(&exitMutex);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1115,7 +1116,7 @@ static const struct {
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
 #endif
-#ifdef TCL_WITH_INTERNAL_ZLIB
+#if defined(HAVE_ZLIB) && defined(TCL_WITH_INTERNAL_ZLIB)
 	    ".zlib-"
 #if ZLIB_VER_MAJOR < 10
 	    "0"
@@ -1536,7 +1537,7 @@ Tcl_VwaitObjCmd(
     }
 
     if ((unsigned) objc - 1 > sizeof(localItems) / sizeof(localItems[0])) {
-	vwaitItems = (VwaitItem *) ckalloc(sizeof(VwaitItem) * (objc - 1));
+	vwaitItems = (VwaitItem *)ckalloc(sizeof(VwaitItem) * (objc - 1));
     }
 
     for (i = 1; i < objc; i++) {
@@ -1601,8 +1602,8 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			    VwaitVarProc, &vwaitItems[numItems]);
+		    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		    VwaitVarProc, &vwaitItems[numItems]);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -1617,7 +1618,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1641,7 +1642,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1665,7 +1666,7 @@ Tcl_VwaitObjCmd(
 
   endOfOptionLoop:
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
-		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
+	    TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"can't wait: would block forever", -1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
@@ -1683,8 +1684,8 @@ Tcl_VwaitObjCmd(
 
     for (result = TCL_OK; i < objc; i++) {
 	result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			VwaitVarProc, &vwaitItems[numItems]);
+		TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		VwaitVarProc, &vwaitItems[numItems]);
 	if (result != TCL_OK) {
 	    break;
 	}
@@ -1717,7 +1718,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
-			&vwaitItems[numItems]);
+		&vwaitItems[numItems]);
 	Tcl_GetTime(&before);
     } else {
 	timeout = 0;
