@@ -2469,7 +2469,12 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
+
+    /*
+     * If output is UTF-8 or encoding for Tcl's internal encoding,
+     * max space needed is TCL_UTF_MAX. Otherwise, need 6 bytes (CESU-8)
+     */
+    dstEnd = dst + dstLen - ((flags & (ENCODING_INPUT|ENCODING_UTF)) ? TCL_UTF_MAX : 6);
 
     /*
      * Macro to output an isolated high surrogate when it is not followed
