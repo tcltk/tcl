@@ -2592,7 +2592,7 @@ BinaryEncode64(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
-    Tcl_Size maxlen = 0;
+    Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
     Tcl_Size wrapcharlen = 1;
     int index, purewrap = 1;
@@ -2612,7 +2612,7 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetSizeIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
