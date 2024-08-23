@@ -45,9 +45,10 @@ writing Tcl scripts.
  - `readFile`, `writeFile`, `foreachLine`
 
 ## New command options
- - `regsub ... -command ...`
- - `lsearch ... -stride ...`
  - `clock scan ... -validate ...`
+ - `info loaded ... ?prefix?`
+ - `lsearch ... -stride ...`
+ - `regsub ... -command ...`
  - `socket ... -nodelay ... -keepalive ...`
  - `vwait` controlled by several new options
 
