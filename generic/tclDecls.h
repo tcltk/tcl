@@ -4330,7 +4330,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclUtfPrev
 
 #ifdef USE_TCL_STUBS
-    /* Protect those 10 functions, being usable through the stub table */
+    /* Protect those 10 functions, make them useless through the stub table */
 #   undef TclGetStringFromObj
 #   undef TclGetBytesFromObj
 #   undef TclGetUnicodeFromObj
@@ -4342,7 +4342,5 @@ extern const TclStubs *tclStubsPtr;
 #   undef TclFSSplitPath
 #   undef TclParseArgsObjv
 #endif
-
-
 
 #endif /* _TCLDECLS */
