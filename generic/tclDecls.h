@@ -4254,6 +4254,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetBytesFromObj(\
 	    NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
 #else
+#undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
 #endif
