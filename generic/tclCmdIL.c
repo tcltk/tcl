@@ -3073,7 +3073,7 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetSizeIntFromObj(interp, objv[1], &elementCount)) {
+    if (TCL_OK != Tcl_GetSizeIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
     if (elementCount < 0) {
@@ -3549,7 +3549,7 @@ Tcl_LsearchObjCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -4889,7 +4889,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }

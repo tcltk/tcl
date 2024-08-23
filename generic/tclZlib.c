@@ -529,7 +529,7 @@ GenerateHeader(
 
     if (GetValue(interp, dictObj, "time", &value) != TCL_OK) {
 	goto error;
-    } else if (value != NULL && Tcl_GetWideIntFromObj(interp, value,
+    } else if (value != NULL && TclGetWideIntFromObj(interp, value,
 	    &wideValue) != TCL_OK) {
 	goto error;
     }
@@ -2157,7 +2157,7 @@ ZlibCmd(
 	    return TCL_ERROR;
 	}
 	if (objc > 3) {
-	    if (Tcl_GetWideIntFromObj(interp, objv[3],
+	    if (TclGetWideIntFromObj(interp, objv[3],
 		    &wideLen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2177,7 +2177,7 @@ ZlibCmd(
 	    return TCL_ERROR;
 	}
 	if (objc > 3) {
-	    if (Tcl_GetWideIntFromObj(interp, objv[3],
+	    if (TclGetWideIntFromObj(interp, objv[3],
 		    &wideLen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2209,7 +2209,7 @@ ZlibCmd(
 	    }
 	    switch (option) {
 	    case 0:
-		if (Tcl_GetWideIntFromObj(interp, objv[i+1],
+		if (TclGetWideIntFromObj(interp, objv[i+1],
 			&wideLen) != TCL_OK) {
 		    return TCL_ERROR;
 		}

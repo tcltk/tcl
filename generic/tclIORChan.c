@@ -1628,7 +1628,7 @@ ReflectSeekWide(
         goto invalid;
     }
 
-    if (Tcl_GetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
+    if (TclGetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
     }
@@ -3229,7 +3229,7 @@ ForwardProc(
 
 	    Tcl_WideInt newLoc;
 
-	    if (Tcl_GetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
 		if (newLoc < 0) {
 		    ForwardSetStaticError(paramPtr, msg_seek_beforestart);
 		    paramPtr->seek.offset = -1;

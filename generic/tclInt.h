@@ -4044,36 +4044,6 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
 #define TCL_INDEX_START         ((Tcl_Size)0)
 
 /*
- *------------------------------------------------------------------------
- *
- * TclGetSizeIntFromObj --
- *
- *    Extract a Tcl_Size from a Tcl_Obj
- *
- * Results:
- *    TCL_OK / TCL_ERROR
- *
- * Side effects:
- *    On success, the integer value is stored in *sizePtr. On error,
- *    an error message in interp it it is not NULL.
- *
- *------------------------------------------------------------------------
- */
-static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-#if TCL_SIZE_MAX == INT_MAX
-    return TclGetIntFromObj(interp, objPtr, sizePtr);
-#else
-    Tcl_WideInt wide;
-    if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    *sizePtr = (Tcl_Size)wide;
-    return TCL_OK;
-#endif
-}
-
-
-/*
  *----------------------------------------------------------------------
  *
  * TclScaleTime --
