@@ -228,10 +228,6 @@ namespace eval utftest {
     #
     # Basic tests
     foreach {enc testcases} $utfExtMap {
-        if {$enc eq "cesu-8"} {
-            # TODO - cesu fixes not in trunk yet
-            continue
-        }
         foreach testcase $testcases {
             lassign $testcase {*}{comment utfhex hex internalfragindex externalfragindex}
 
@@ -252,10 +248,7 @@ namespace eval utftest {
             testfragment fromutf $enc $comment $utfhex $hex $internalfragindex
 
             # Char limits - note no fromutf as Tcl_UtfToExternal does not support it
-            if {![string match utf-16* $enc] && $enc ne "cesu-8"} {
-                # TODO - utf16 hangs
-                testcharlimit toutf $enc $comment $hex $utfhex
-            }
+            testcharlimit toutf $enc $comment $hex $utfhex
         }
     }
 
