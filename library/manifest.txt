@@ -2,7 +2,6 @@
 # Package manifest for all Tcl packages included in the /library file system
 ###
 apply {{dir} {
-  set ::test [info script]
   set isafe [interp issafe]
   foreach {safe package version file} {
     0 http            2.10b1  {http http.tcl}
