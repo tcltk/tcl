@@ -26,11 +26,8 @@ jobs:
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
         working-directory: .
       - name: Configure
-        run: |
-          ./configure --disable-symbols --disable-shared --enable-zipfs
-          sed -n '/^PATCH_LEVEL/{s/.*= /patchlevel=/;p}' < Makefile >> $GITHUB_OUTPUT
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
         working-directory: unix
-        id: cfg
       - name: Build
         run: |
           make tclsh
@@ -43,12 +40,10 @@ jobs:
           chmod +x tclsh${TCL_PATCHLEVEL}_snapshot
           tar -cf tclsh${TCL_PATCHLEVEL}_snapshot.tar tclsh${TCL_PATCHLEVEL}_snapshot
         working-directory: 1dist
-        env:
-          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: Tclsh ${{ steps.cfg.outputs.patchlevel }} Linux single-file build (snapshot)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (snapshot)
           path: 1dist/*.tar
   macos:
     name: macOS
@@ -77,11 +72,8 @@ jobs:
           echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
           echo "CFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
       - name: Configure
-        run: |
-          ./configure --disable-symbols --disable-shared --enable-zipfs
-          sed -n '/^PATCH_LEVEL/{s/.*= /patchlevel=/;p}' < Makefile >> $GITHUB_OUTPUT
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
         working-directory: unix
-        id: cfg
       - name: Build
         run: |
           make tclsh
@@ -111,12 +103,10 @@ jobs:
               "Tcl-$TCL_PATCHLEVEL-(snapshot).dmg" \
               "contents/"
         working-directory: 1dist
-        env:
-          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: Tclsh ${{ steps.cfg.outputs.patchlevel }} macOS single-file build (snapshot)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (snapshot)
           path: 1dist/*.dmg
   win:
     name: Windows
@@ -143,11 +133,8 @@ jobs:
           mkdir 1dist
         working-directory: .
       - name: Configure
-        run: |
-          ./configure $CFGOPT
-          sed -n '/^PATCH_LEVEL/{s/.*= /patchlevel=/;p}' < Makefile >> $GITHUB_OUTPUT
+        run: ./configure $CFGOPT
         working-directory: win
-        id: cfg
       - name: Build
         run: |
           make binaries libraries
@@ -156,29 +143,13 @@ jobs:
       - name: Get Exact Version
         run: |
           ./tclsh*.exe $VER_PATH $GITHUB_ENV
-          echo "target=tclsh${TCL_PATCHLEVEL}_snapshot.exe" >> $GITHUB_OUTPUT
         working-directory: win
-        id: exe
-        env:
-          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
       - name: Set Executable Name
         run: |
-          cp ../win/tclsh*.exe "$TARGET_EXE"
+          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
         working-directory: 1dist
-        env:
-          TARGET_EXE: ${{ steps.exe.outputs.target }}
-      - name: Sign
-        if: ${{ env.HAVE_CAPABILITY }}
-        uses: dlemstra/code-sign-action@v1
-        with:
-          certificate: '${{ secrets.Windows_Certificate_base64 }}'
-          password: '${{ secrets.Windows_Certificate_password }}'
-          folder: 1dist
-          files: ${{ steps.exe.outputs.target }}
-        env:
-          HAVE_CAPABILITY: ${{ secrets.Windows_Certificate_base64 != '' && secrets.Windows_Certificate_password != '' }}
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: Tclsh ${{ steps.cfg.outputs.patchlevel }} Windows single-file build (snapshot)
-          path: 1dist/${{ steps.exe.outputs.target }}
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (snapshot)
+          path: '1dist/*_snapshot.exe'
