@@ -1881,7 +1881,7 @@ Tcl_GetStringFromObj(
     if (objPtr->bytes == NULL) {
 	/*
 	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
-	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * of a properly maintained Tcl_Obj is that at least one of
 	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
 	 * extensions fail to maintain that invariant, we can crash here.
 	 */

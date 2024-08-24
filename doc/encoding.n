@@ -23,7 +23,7 @@ encoding \- Work with encodings
 .PP
 In Tcl every string is composed of Unicode values.  Text may be encoded into an
 encoding such as cp1252, iso8859-1, Shitf\-JIS, utf-8, utf-16, etc. Not every
-Unicode vealue is encodable in every encoding, and some encodings can encode
+Unicode value is encodable in every encoding, and some encodings can encode
 values that are not available in Unicode.
 .PP
 Even though Unicode is for encoding the written texts of human languages, any

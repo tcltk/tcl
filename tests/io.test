@@ -1634,7 +1634,11 @@ apply [list {} {
 	    fconfigure $f -encoding utf-8 @strict@ -buffersize 10
 	    set status [catch {read $f} cres copts]
 	    if {$status} {
-		set in [dict get $copts -result]
+		if {[dict exists $copts -result read]} {
+		    set in [dict get $copts -result read]
+		} else {
+		    set in {}
+		}
 	    } else {
 		set in $cres 
 	    }
@@ -1645,7 +1649,11 @@ apply [list {} {
 
 	    set status [catch {read $f} cres copts]
 	    if {$status} {
-		set in [dict get $copts -result]
+		if {[dict exists $copts -result read]} {
+		    set in [dict get $copts -result read]
+		} else {
+		    set in {}
+		}
 	    } else {
 		set in $cres 
 	    }
@@ -1659,10 +1667,10 @@ apply [list {} {
 	} -match glob -result @result@
     }
 
-    set errorres {{read aaaaaaaaa} 1 {error reading "file*":\
+    set errorres {aaaaaaaaa 1 {error reading "file*":\
 	invalid or incomplete multibyte or wide character} 97\
-	{read {}} 1 {error reading "file*":\
-	invalid or incomplete multibyte or wide character} 125}
+	{} 1 {error reading "file*":\
+	invalid or incomplete multibyte or wide character} {}}
 
     # if default encoding is not currently to strict
     # foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} 
@@ -9491,13 +9499,13 @@ test io-75.7.read {
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
 	    -profile strict
 } -body {
-    list [catch {read $f} msg] $msg
+    list [catch {read $f} msg data] $msg [dict get $data -result read]
 } -cleanup {
     close $f
     removeFile io-75.7
-    unset msg f fn
+    unset msg data f fn
 } -match glob -result {1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} A}
 
 test {io-75.8 {invalid input before eof}} {invalid utf-8 before eof (-profile strict)} -setup {
 	set hd {}
@@ -9512,7 +9520,11 @@ test {io-75.8 {invalid input before eof}} {invalid utf-8 before eof (-profile st
 	-translation lf -profile strict
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result read]
+    if {[dict exists $copts -result read]} {
+	set d [dict get $copts -result read]
+    } else {
+	set d {}
+    }
     binary scan $d H* hd
     lappend hd [eof $f]
     lappend hd $status
@@ -9547,10 +9559,11 @@ test {io-75.8 {incomplete input after eof}} {
     lappend hd [eof $f]
     # there should be no error on additional reads
     lappend hd [read $f]
-    close $f
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.8
+    unset f d hd
 } -result {41 1 {}}
 
 
@@ -9597,17 +9610,28 @@ test {io-75.8 {invalid input before eof}} {
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
 	-translation lf -profile strict
 } -body {
-    set res [list [catch {read $f} msg] [eof $f]]
+    set res [list [catch {read $f} msg data] [eof $f]]
+    if {[dict exists $data -result read]} {
+	lappend res [dict get $data -result read]
+    } else {
+	lappend res {}
+    }
     chan configure $f -encoding iso8859-1
     lappend res [read $f 1]
     chan configure $f -encoding utf-8
-    lappend res [catch {read $f 1} msg] $msg
+    lappend res [catch {read $f 1} msg data] $msg
+    if {[dict exists $data -result read]} {
+	lappend res [dict get $data -result read]
+    } else {
+	lappend res {}
+    }
+    return $res
 } -cleanup {
     close $f
     removeFile io-75.8
-    unset res msg fn f
-} -match glob -result "1 0 \x81 1 {error reading \"*\":\
-    invalid or incomplete multibyte or wide character}"
+    unset res msg data fn f
+} -match glob -result "1 0 A \x81 1 {error reading \"*\":\
+    invalid or incomplete multibyte or wide character} {}"
 
 
 test io-strict-multibyte-eof {
@@ -9622,12 +9646,19 @@ test io-strict-multibyte-eof {
     seek $chan 0
     chan configure $chan -encoding utf-8 -profile strict
 } -body {
-    list [catch {read $chan 1} msg] $msg
+    list [catch {read $chan 1} msg data] $msg [if {
+	    [dict exists $data -result read]
+	} {
+	    dict get $data -result read
+	} else {
+	    lindex {}
+	}
+    ]
 } -cleanup {
     close $chan
-    unset msg chan
+    unset msg chan data
 } -match glob -result {1 {error reading "*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} {}}
 
 
 test io-75.9 {unrepresentable character write throws error in strict profile} -setup {
@@ -9728,18 +9759,21 @@ test io-75.11 {shiftjis encoding error read results in error (strict profile)} -
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg] $msg
+    lappend hd [catch {set d [read $f]} msg data] $msg [
+	dict exists $data -result read]
 } -cleanup {
     close $f
     removeFile io-75.11
-    unset d hd msg f
+    unset d hd msg data f
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} 0}
 
 
 apply [list {} {
     set template {
-	test {io-75.12 ${mode}} {invalid utf-8 encoding read returns an error} -setup {
+	test {io-75.12 ${mode}} {
+	    invalid utf-8 encoding read returns an error
+	} -setup {
 	    set res {}
 	    set fn [makeFile {} io-75.12]
 	    set f [open $fn w+]
@@ -9840,13 +9874,13 @@ test io-75.13.nonblocking {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg] $msg
+    lappend hd [catch {read $f} msg data] $msg [dict exists $data -result read]
 } -cleanup {
     close $f
     removeFile io-75.13
-    unset d hd msg f fn
+    unset d hd msg data f fn
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} 0}
 
 test io-75.14 {
 	[gets] succesfully returns lines prior to error
@@ -9864,16 +9898,22 @@ test io-75.14 {
 } -body {
     set res [gets $chan]
     lappend res [gets $chan]
-    lappend res [catch {gets $chan} msg] $msg
+    lappend res [catch {gets $chan} msg data] $msg [
+	if {[dict exists $data -result read]} {
+	    dict get $data -result read
+	} else {
+	    lindex {}
+	}
+    ]
     chan configure $chan -profile tcl8
     lappend res [gets $chan]
     lappend res [gets $chan]
     return $res
 } -cleanup {
     close $chan
-    unset chan res msg
+    unset chan res msg data
 } -match glob -result {a b 1 {error reading "*":\
-    invalid or incomplete multibyte or wide character} cÀ d}
+    invalid or incomplete multibyte or wide character} {} cÀ d}
 
 test io-75.15 {
     invalid utf-8 encoding strict
@@ -9891,8 +9931,8 @@ test io-75.15 {
     fconfigure $chan -encoding utf-8 -profile strict
     lappend res [gets $chan]
     lappend res [gets $chan]
-    lappend res [catch {gets $chan} msg] $msg
-    lappend res [catch {gets $chan} msg] $msg
+    lappend res [catch {gets $chan} msg data] $msg [dict exists $data -result read]
+    lappend res [catch {gets $chan} msg data] $msg [dict exists $data -result read]
 	chan configure $chan -translation binary
 	set data [read $chan 4]
 	foreach char [split $data {}] {
@@ -9907,9 +9947,9 @@ test io-75.15 {
     close $chan
     unset chan res msg data
 } -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
-    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
+    0 1 {error reading "*": invalid or incomplete multibyte or wide character} 0 43 44 c0 40 EF GHI}
 
-test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
+test io-75.14 {invalid utf-8 encoding [gets] continues in non-strict mode after error} -setup {
     set res {}
     set fn [makeFile {} io-75.14]
     set f [open $fn w+]
@@ -9951,18 +9991,25 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
     lappend res $status $cres
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
-	lappend res [dict get $copts -result]
-	chan configure $chan -encoding binary
-	foreach char [split [read $chan 2] {}] {
-	    lappend res [format %x [scan $char %c]]
+    lappend res [
+	if {[dict exists $copts -result read]} {
+	    dict get $copts -result read
+	} else {
+	    lindex {}
 	}
+    ]
+
+    chan configure $chan -encoding binary
+    foreach char [split [read $chan 2] {}] {
+	lappend res [format %x [scan $char %c]]
+    }
     return $res
 } -cleanup {
     close $chan
     removeFile io-75.15
 } -match glob -result {hello 1 {error reading "file*":\
 	invalid or incomplete multibyte or wide character} 1 {error reading "file*":\
-	invalid or incomplete multibyte or wide character} {read AB} 41 42}
+	invalid or incomplete multibyte or wide character} {} 41 42}
 
 # ### ### ### ######### ######### #########
 

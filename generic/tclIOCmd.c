@@ -294,7 +294,7 @@ Tcl_GetsObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     Tcl_Size lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *linePtr, *chanObjPtr, *resultDictPtr, *returnOptsPtr;
+    Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
@@ -330,14 +330,7 @@ Tcl_GetsObjCmd(
 			"error reading \"%s\": %s",
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
-	    resultDictPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
-	    , linePtr);
-	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
-	    , resultDictPtr);
 	    code = TCL_ERROR;
-	    Tcl_SetReturnOptions(interp, returnOptsPtr);
 	    goto done;
 	}
 	lineLen = TCL_IO_FAILURE;
@@ -389,6 +382,7 @@ Tcl_ReadObjCmd(
     Tcl_Size charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *resultDictPtr, *returnOptsPtr, *chanObjPtr;
+    int res, status;
 
     if ((objc != 2) && (objc != 3)) {
 	Interp *iPtr;
@@ -462,16 +456,19 @@ Tcl_ReadObjCmd(
 		    "error reading \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
-	resultDictPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
-	    , resultPtr);
-	returnOptsPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
-	    , resultDictPtr);
+	status = TclCheckEmptyString(interp, resultPtr, &res);
+	if (!status && !res) {
+	    resultDictPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
+		, resultPtr);
+	    returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
+		, resultDictPtr);
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	}
 	TclChannelRelease(chan);
-	Tcl_SetReturnOptions(interp, returnOptsPtr);
 	return TCL_ERROR;
-    }
+   }
 
     /*
      * If requested, remove the last newline in the channel if at EOF.
