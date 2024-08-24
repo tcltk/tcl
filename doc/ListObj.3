@@ -65,7 +65,7 @@ stores the number of element values in \fIlistPtr\fR.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will return
-NULL if the list size is larger than INT_MAX (which should
+NULL for lists with more than INT_MAX elements (which should
 trigger proper error-handling), otherwise expect it to crash.
 .AP Tcl_Obj ***objvPtr out
 A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
@@ -87,7 +87,7 @@ stores the length of the list.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will return
-NULL if the list size is larger than INT_MAX (which should
+TCL_ERROR for lists with more than INT_MAX elements (which should
 trigger proper error-handling), otherwise expect it to crash.
 .AP Tcl_Size index in
 Index of the list element that \fBTcl_ListObjIndex\fR
@@ -174,9 +174,6 @@ Otherwise it returns \fBTCL_OK\fR after storing the count and array pointer.
 .PP
 \fBTcl_ListObjLength\fR returns the number of elements in the list value
 referenced by \fIlistPtr\fR.
-It returns this count by storing a value in the address \fIlengthPtr\fR.
-If \fIlengthPtr\fR points to a variable of type \fBint\fR and the list
-contains more than 2**31 elements, the function returns \fBTCL_ERROR\fR.
 If the value is not already a list value,
 \fBTcl_ListObjLength\fR will attempt to convert it to one;
 if the conversion fails, it returns \fBTCL_ERROR\fR

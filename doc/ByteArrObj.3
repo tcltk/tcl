@@ -48,7 +48,7 @@ Points to space where the number of bytes in the array may be written.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will return
-NULL if the size of the byte array is larger than INT_MAX (which should
+NULL for byte arrays larger than INT_MAX (which should
 trigger proper error-handling), otherwise expect it to crash.
 .BE
 .SH DESCRIPTION

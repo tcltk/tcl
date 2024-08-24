@@ -274,7 +274,7 @@ Filled with the number of elements in the split path.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will return
-NULL if the number of elements is larger than INT_MAX (which should
+NULL for paths having more than INT_MAX elements (which should
 trigger proper error-handling), otherwise expect it to crash.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
