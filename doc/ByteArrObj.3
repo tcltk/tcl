@@ -46,10 +46,10 @@ Interpreter to use for error reporting.
 .AP "Tcl_Size \&| int" *numBytesPtr out
 Points to space where the number of bytes in the array may be written.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
-type is not \fBTcl_Size\fR, a compiler warning will be generated, in
-order to indicate that when size of the byte array is larger than INT_MAX
-this function will return NULL (which should trigger proper error-handling).
-Apart from that, it will function as expected.
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+NULL if the size of the byte array is larger than INT_MAX (which should
+trigger proper error-handling), otherwise expect it to crash.
 .BE
 .SH DESCRIPTION
 .PP

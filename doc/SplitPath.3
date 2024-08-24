@@ -26,11 +26,12 @@ Tcl_PathType
 File path in a form appropriate for the current platform (see the
 \fBfilename\fR manual entry for acceptable forms for path names).
 .AP "Tcl_Size \&| int" *argcPtr out
-Filled in with number of path elements in \fIpath\fR. May be (Tcl_Size *)NULL when not used. If it points to a variable which
-type is not \fBTcl_Size\fR, a compiler warning will be generated, in
-order to indicate that when the number of elements is larger than INT_MAX
-this function will return TCL_ERROR (which should trigger proper error-handling).
-Apart from that, it will function as expected.
+Filled in with number of path elements in \fIpath\fR.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+NULL if the number of elements is larger than INT_MAX (which should
+trigger proper error-handling), otherwise expect it to crash.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIpath\fR.
