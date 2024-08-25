@@ -162,7 +162,7 @@ test console-input-2.1 {Console file channel: non-blocking read} -constraints {
 } -result abc
 
 test console-input-3.0 {Console gets blocking - long lines bug-bda99f2393} -constraints {
-    win interactive bug-bda99f2393
+    win interactive
 } -body {
     prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     gets stdin line
@@ -171,7 +171,7 @@ test console-input-3.0 {Console gets blocking - long lines bug-bda99f2393} -cons
 } -result {1 1 1}
 
 test console-input-3.1 {Console gets blocking, small channel buffer size - long lines bug-bda99f2393} -constraints {
-    win interactive bug-bda99f2393
+    win interactive
 } -body {
     prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
@@ -183,7 +183,7 @@ test console-input-3.1 {Console gets blocking, small channel buffer size - long 
 } -result {1 1 1}
 
 test console-input-3.2 {Console gets nonblocking - long lines bug-bda99f2393} -constraints {
-    win interactive bug-bda99f2393
+    win interactive
 } -body {
     prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     fconfigure stdin -blocking 0
@@ -196,7 +196,7 @@ test console-input-3.2 {Console gets nonblocking - long lines bug-bda99f2393} -c
 } -result {1 1 1}
 
 test console-input-3.3 {Console gets nonblocking small channel buffer size - long lines bug-bda99f2393} -constraints {
-    win interactive bug-bda99f2393
+    win interactive
 } -body {
     prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
