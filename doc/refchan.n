@@ -20,16 +20,16 @@ refchan \- command handler API of reflected channels
 .nf
 \fBchan create \fImode cmdPrefix\fR
 
-\fIcmdPrefix \fBblocking\fR \fIchannelId mode\fR
-\fIcmdPrefix \fBcget\fR \fIchannelId option\fR
-\fIcmdPrefix \fBcgetall\fR \fIchannelId\fR
-\fIcmdPrefix \fBconfigure\fR \fIchannelId option value\fR
-\fIcmdPrefix \fBfinalize\fR \fIchannelId\fR
-\fIcmdPrefix \fBinitialize\fR \fIchannelId mode\fR
-\fIcmdPrefix \fBread\fR \fIchannelId count\fR
-\fIcmdPrefix \fBseek\fR \fIchannelId offset base\fR
-\fIcmdPrefix \fBwatch\fR \fIchannelId eventspec\fR
-\fIcmdPrefix \fBwrite\fR \fIchannelId data\fR
+\fIcmdPrefix \fBblocking\fI channelId mode\fR
+\fIcmdPrefix \fBcget\fI channelId option\fR
+\fIcmdPrefix \fBcgetall\fI channelId\fR
+\fIcmdPrefix \fBconfigure\fI channelId option value\fR
+\fIcmdPrefix \fBfinalize\fI channelId\fR
+\fIcmdPrefix \fBinitialize\fI channelId mode\fR
+\fIcmdPrefix \fBread\fI channelId count\fR
+\fIcmdPrefix \fBseek\fI channelId offset base\fR
+\fIcmdPrefix \fBwatch\fI channelId eventspec\fR
+\fIcmdPrefix \fBwrite\fI channelId data\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -48,6 +48,7 @@ Of all the possible subcommands, the handler \fImust\fR support
 \fBinitialize\fR, \fBfinalize\fR, and \fBwatch\fR. Support for the
 other subcommands is optional.
 .SS "MANDATORY SUBCOMMANDS"
+.\" METHOD: initialize
 .TP
 \fIcmdPrefix \fBinitialize \fIchannelId mode\fR
 .
@@ -78,6 +79,7 @@ will usually contain at least one element.
 The subcommand must throw an error if the chosen mode is not
 supported by the \fIcmdPrefix\fR.
 .RE
+.\" METHOD: finalize
 .TP
 \fIcmdPrefix \fBfinalize \fIchannelId\fR
 .
@@ -100,6 +102,7 @@ treated as (and converted to) an error.
 This subcommand is not invoked if the creation of the channel was
 aborted during \fBinitialize\fR (See above).
 .RE
+.\" METHOD: watch
 .TP
 \fIcmdPrefix \fBwatch \fIchannelId eventspec\fR
 .
@@ -120,6 +123,7 @@ event which was not listed in the last call to \fBwatch\fR will cause
 \fBchan postevent\fR to throw an error.
 .RE
 .SS "OPTIONAL SUBCOMMANDS"
+.\" METHOD: read
 .TP
 \fIcmdPrefix \fBread \fIchannelId count\fR
 .
@@ -176,6 +180,7 @@ invocation (usually \fBgets\fR, or \fBread\fR) will appear to have
 thrown this error. Any exception beyond \fBerror\fR, (e.g.,\ \fBbreak\fR,
 etc.) is treated as and converted to an error.
 .RE
+.\" METHOD: write
 .TP
 \fIcmdPrefix \fBwrite \fIchannelId data\fR
 .
@@ -233,6 +238,7 @@ invocation (usually \fBputs\fR) will appear to have thrown this error.
 Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated
 as and converted to an error.
 .RE
+.\" METHOD: seek
 .TP
 \fIcmdPrefix \fBseek \fIchannelId offset base\fR
 .
@@ -275,6 +281,7 @@ The offset/base combination of 0/\fBcurrent\fR signals a \fBchan tell\fR
 request, i.e.,\ seek nothing relative to the current location, making
 the new location identical to the current one, which is then returned.
 .RE
+.\" METHOD: configure
 .TP
 \fIcmdPrefix \fBconfigure \fIchannelId option value\fR
 .
@@ -294,6 +301,7 @@ If the subcommand throws an error the command which performed the
 beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated as and
 converted to an error.
 .RE
+.\" METHOD: cget
 .TP
 \fIcmdPrefix \fBcget \fIchannelId option\fR
 .
@@ -309,6 +317,7 @@ If the subcommand throws an error, the command which performed the
 will appear to have thrown this error. Any exception beyond \fIerror\fR
 (e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
 .RE
+.\" METHOD: cgetall
 .TP
 \fIcmdPrefix \fBcgetall \fIchannelId\fR
 .
@@ -325,6 +334,7 @@ If the subcommand throws an error the command which performed the
 will appear to have thrown this error. Any exception beyond \fBerror\fR
 (e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
 .RE
+.\" METHOD: blocking
 .TP
 \fIcmdPrefix \fBblocking \fIchannelId mode\fR
 .
@@ -341,8 +351,9 @@ invocation (usually \fBfconfigure\fR or \fBchan configure\fR) will appear to
 have thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
 etc.) is treated as and converted to an error.
 .RE
+.\" METHOD: truncate
 .TP
-\fIcmdPrefix \fBtruncate\fR \fIchannelId length\fR
+\fIcmdPrefix \fBtruncate\fI channelId length\fR
 .
 This \fIoptional\fR subcommand handles changing the length of the
 underlying data stream for the channel \fIchannelId\fR. Its length
