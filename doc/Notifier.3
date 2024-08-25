@@ -255,7 +255,7 @@ a structure that describes a time interval in seconds and
 microseconds:
 .PP
 .CS
-typedef struct Tcl_Time {
+typedef struct {
     long long \fIsec\fR;
     long \fIusec\fR;
 } \fBTcl_Time\fR;
@@ -317,7 +317,7 @@ structure is used when communicating between the event source and the
 rest of the notifier.  A \fBTcl_Event\fR has the following definition:
 .PP
 .CS
-typedef struct {
+typedef struct Tcl_Event {
     Tcl_EventProc *\fIproc\fR;
     struct Tcl_Event *\fInextPtr\fR;
 } \fBTcl_Event\fR;
@@ -533,7 +533,7 @@ passing a pointer to a \fBTcl_NotifierProcs\fR data structure.  The
 structure has the following layout:
 .PP
 .CS
-typedef struct Tcl_NotifierProcs {
+typedef struct {
     Tcl_SetTimerProc *\fIsetTimerProc\fR;
     Tcl_WaitForEventProc *\fIwaitForEventProc\fR;
     Tcl_CreateFileHandlerProc *\fIcreateFileHandlerProc\fR;
@@ -616,4 +616,5 @@ mode.
 Tcl_CreateFileHandler(3), Tcl_DeleteFileHandler(3), Tcl_Sleep(3),
 Tcl_DoOneEvent(3), Thread(3)
 .SH KEYWORDS
-event, notifier, event queue, event sources, file events, timer, idle, service mode, threads
+event, notifier, event queue, event sources, file events, timer, idle,
+service mode, threads

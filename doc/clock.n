@@ -81,6 +81,7 @@ See \fBSCANNING TIMES\fR for a full description.
 .\" METHOD: seconds
 .TP
 \fBclock seconds\fR
+.
 Returns the current time as an integer number of seconds.
 .SS "PARAMETERS"
 .TP
@@ -107,12 +108,14 @@ One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
 Used in conjunction with \fIcount\fR to identify an interval of time,
 for example, \fI3 seconds\fR or \fI1 year\fR.
 .SS "OPTIONS"
+.\" OPTION: -base
 .TP
 \fB\-base\fR time
 .
 Specifies that any relative times present in a \fBclock scan\fR command
 are to be given relative to \fItime\fR.  \fItime\fR must be expressed as
 a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
+.\" OPTION: -format
 .TP
 \fB\-format\fR format
 .
@@ -135,6 +138,7 @@ On \fBclock scan\fR, the lack of a \fB\-format\fR option indicates that a
 .QW "free format scan"
 is requested; see \fBFREE FORM SCAN\fR for a description of what happens.
 .RE
+.\" OPTION: -gmt
 .TP
 \fB\-gmt\fR boolean
 .
@@ -145,6 +149,7 @@ zone.  This usage is obsolete; the correct current usage is to
 specify the UTC time zone with
 .QW "\fB\-timezone\fI :UTC\fR"
 or any of the equivalent ways to specify it.
+.\" OPTION: -locale
 .TP
 \fB\-locale\fR localeName
 .
@@ -161,6 +166,7 @@ descriptions of the individual format groups under \fBFORMAT GROUPS\fR.
 The effect of locale on clock arithmetic is discussed under
 \fBCLOCK ARITHMETIC\fR.
 .RE
+.\" OPTION: -timezone
 .TP
 \fB\-timezone\fR zoneName
 .
@@ -488,81 +494,57 @@ if the clock had not changed.
 .PP
 The following format groups are recognized by the \fBclock scan\fR and
 \fBclock format\fR commands.
-.TP
-\fB%a\fR
-.
+.IP \fB%a\fR
 On output, produces an abbreviation (\fIe.g., \fBMon\fR) for the day
 of the week in the given locale.  On input, matches the name of the day
 of the week in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
-.TP
-\fB%A\fR
-.
+.IP \fB%A\fR
 On output, produces the full name (\fIe.g., \fBMonday\fR) of the day
 of the week in the given locale.  On input, matches the name of the day
 of the week in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
-.TP
-\fB%b\fR
-.
+.IP \fB%b\fR
 On output, produces an abbreviation (\fIe.g., \fBJan\fR) for the name
 of the month in the given locale.  On input, matches the name of the month
 in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
-.TP
-\fB%B\fR
-.
+.IP \fB%B\fR
 On output, produces the full name (\fIe.g., \fBJanuary\fR)
 of the month in the given locale.  On input, matches the name of the month
 in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
-.TP
-\fB%c\fR
-.
+.IP \fB%c\fR
 On output, produces a localized representation of date and time of day;
 the localized representation is expected to use the Gregorian calendar.
 On input, matches whatever \fB%c\fR produces.
-.TP
-\fB%C\fR
-.
+.IP \fB%C\fR
 On output, produces the number of the century in Indo-Arabic numerals.
 On input, matches one or two digits, possibly with leading whitespace,
 that are expected to be the number of the century.
-.TP
-\fB%d\fR
-.
+.IP \fB%d\fR
 On output, produces the number of the day of the month, as two decimal
 digits.  On input, matches one or two digits, possibly with leading
 whitespace, that are expected to be the number of the day of the month.
-.TP
-\fB%D\fR
-.
+.IP \fB%D\fR
 This format group is synonymous with \fB%m/%d/%Y\fR.  It should be
 used only in exchanging data within the \fBen_US\fR locale, since
 other locales typically do not use this order for the fields of the date.
-.TP
-\fB%e\fR
-.
+.IP \fB%e\fR
 On output, produces the number of the day of the month, as one or
 two decimal digits (with a leading blank for one-digit dates).
 On input, matches one or two digits, possibly with leading
 whitespace, that are expected to be the number of the day of the month.
-.TP
-\fB%Ec\fR
-.
+.IP \fB%Ec\fR
 On output, produces a locale-dependent representation of the date and
 time of day in the locale's alternative calendar.  On input, matches
 whatever \fB%Ec\fR produces.  The locale's alternative calendar need not
 be the Gregorian calendar.
-.TP
-\fB%EC\fR
-.
+.IP \fB%EC\fR
 On output, produces a locale-dependent name of an era in the locale's
 alternative calendar.  On input, matches the name of the era or any
 unique prefix.
-.TP
-\fB%EE\fR
-.
+.IP \fB%EE\fR
 On output, produces the string \fBB.C.E.\fR or \fBC.E.\fR, or a
 string of the same meaning in the locale, to indicate whether \fB%Y\fR refers
 to years before or after Year 1 of the Common Era.  On input, accepts
@@ -570,242 +552,168 @@ the string \fBB.C.E.\fR, \fBB.C.\fR, \fBC.E.\fR, \fBA.D.\fR, or the
 abbreviation appropriate to the current locale, and uses it to fix
 whether \fB%Y\fR refers to years before or after Year 1 of the
 Common Era.
-.TP
-\fB%Ex\fR
-.
+.IP \fB%Ex\fR
 On output, produces a locale-dependent representation of the date
 in the locale's alternative calendar.  On input, matches
 whatever \fB%Ex\fR produces.  The locale's alternative calendar need not
 be the Gregorian calendar.
-.TP
-\fB%EX\fR
-.
+.IP \fB%EX\fR
 On output, produces a locale-dependent representation of the
 time of day in the locale's alternative numerals.  On input, matches
 whatever \fB%EX\fR produces.
-.TP
-\fB%Ey\fR
-.
+.IP \fB%Ey\fR
 On output, produces a locale-dependent number of the year of the era
 in the locale's alternative calendar and numerals.  On input, matches
 such a number.
-.TP
-\fB%EY\fR
-.
+.IP \fB%EY\fR
 On output, produces a representation of the year in the locale's
 alternative calendar and numerals.  On input, matches what \fB%EY\fR
 produces.  Often synonymous with \fB%EC%Ey\fR.
-.TP
-\fB%g\fR
-.
+.IP \fB%g\fR
 On output, produces a two-digit year number suitable for use with
 the week-based ISO8601 calendar; that is, the year number corresponds
 to the week number produced by \fB%V\fR.  On input, accepts such
 a two-digit year number, possibly with leading whitespace.
-.TP
-\fB%G\fR
-.
+.IP \fB%G\fR
 On output, produces a four-digit year number suitable for use with
 the week-based ISO8601 calendar; that is, the year number corresponds
 to the week number produced by \fB%V\fR.  On input, accepts such
 a four-digit year number, possibly with leading whitespace.
-.TP
-\fB%h\fR
-.
+.IP \fB%h\fR
 This format group is synonymous with \fB%b\fR.
-.TP
-\fB%H\fR
-.
+.IP \fB%H\fR
 On output, produces a two-digit number giving the hour of the day
 (00-23) on a 24-hour clock.  On input, accepts such a number.
-.TP
-\fB%I\fR
-.
+.IP \fB%I\fR
 On output, produces a two-digit number giving the hour of the day
 (12-11) on a 12-hour clock.  On input, accepts such a number.
-.TP
-\fB%j\fR
-.
+.IP \fB%j\fR
 On output, produces a three-digit number giving the day of the year
 (001-366).  On input, accepts such a number.
-.TP
-\fB%J\fR
-.
+.IP \fB%J\fR
 On output, produces a string of digits giving the Julian Day Number.
 On input, accepts a string of digits and interprets it as a Julian Day Number.
 The Julian Day Number is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
 Julian calendar.  The epoch time of 1 January 1970 corresponds
 to Julian Day Number 2440588.
-.TP
-\fB%k\fR
-.
+.IP \fB%k\fR
 On output, produces a one- or two-digit number giving the hour of the day
 (0-23) on a 24-hour clock.  On input, accepts such a number.
-.TP
-\fB%l\fR
-.
+.IP \fB%l\fR
 On output, produces a one- or two-digit number giving the hour of the day
 (12-11) on a 12-hour clock.  On input, accepts such a number.
-.TP
-\fB%m\fR
-.
+.IP \fB%m\fR
 On output, produces the number of the month (01-12) with exactly two
 digits.  On input, accepts two digits and interprets them as the number
 of the month.
-.TP
-\fB%M\fR
-.
+.IP \fB%M\fR
 On output, produces the number of the minute of the hour (00-59)
 with exactly two digits.  On input, accepts two digits and interprets them
 as the number of the minute of the hour.
-.TP
-\fB%N\fR
-.
+.IP \fB%N\fR
 On output, produces the number of the month (1-12) with one or two digits,
 and a leading blank for one-digit dates.
 On input, accepts one or two digits, possibly with leading whitespace,
 and interprets them as the number of the month.
-.TP
-\fB%Od\fR, \fB%Oe\fR, \fB%OH\fR, \fB%OI\fR, \fB%Ok\fR, \fB%Ol\fR, \fB%Om\fR, \fB%OM\fR, \fB%OS\fR, \fB%Ou\fR, \fB%Ow\fR, \fB%Oy\fR
-.
+.IP "\fB%Od\fR, \fB%Oe\fR, \fB%OH\fR, \fB%OI\fR, \fB%Ok\fR, \fB%Ol\fR, \fB%Om\fR, \fB%OM\fR, \fB%OS\fR, \fB%Ou\fR, \fB%Ow\fR, \fB%Oy\fR"
 All of these format groups are synonymous with their counterparts
 without the
 .QW \fBO\fR ,
 except that the string is produced and parsed in the
 locale-dependent alternative numerals.
-.TP
-\fB%p\fR
-.
+.IP \fB%p\fR
 On output, produces an indicator for the part of the day, \fBAM\fR
 or \fBPM\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, lowercase is preferred.
 On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
-.TP
-\fB%P\fR
-.
+.IP \fB%P\fR
 On output, produces an indicator for the part of the day, \fBam\fR
 or \fBpm\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, uppercase is preferred.
 On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
-.TP
-\fB%Q\fR
-.
+.IP \fB%Q\fR
 This format group is reserved for internal use within the Tcl library.
 .\" It's the STARDATE! We're so Enterprise-ready...
-.TP
-\fB%r\fR
-.
+.IP \fB%r\fR
 On output, produces a locale-dependent time of day representation on a
 12-hour clock. On input, accepts whatever \fB%r\fR produces.
-.TP
-\fB%R\fR
-.
+.IP \fB%R\fR
 On output, the time in 24-hour notation (%H:%M). For a version
 including the seconds, see \fB%T\fR below. On input, accepts whatever
 \fB%R\fR produces.
-.TP
-\fB%s\fR
-.
+.IP \fB%s\fR
 On output, simply formats the \fItimeVal\fR argument as a decimal
 integer and inserts it into the output string.  On input, accepts
 a decimal integer and uses is as the time value without any further
 processing. Since \fB%s\fR uniquely determines a point in time, it
 overrides all other input formats.
-.TP
-\fB%S\fR
-.
+.IP \fB%S\fR
 On output, produces a two-digit number of the second of the minute
 (00-59). On input, accepts two digits and uses them as the second of the
 minute.
-.TP
-\fB%t\fR
-.
+.IP \fB%t\fR
 On output, produces a TAB character. On input, matches a TAB character.
-.TP
-\fB%T\fR
-.
+.IP \fB%T\fR
 Synonymous with \fB%H:%M:%S\fR.
-.TP
-\fB%u\fR
-.
+.IP \fB%u\fR
 On output, produces the number of the day of the week
 (\fB1\fR\(->Monday, \fB7\fR\(->Sunday). On input, accepts a single digit and
 interprets it as the day of the week. Sunday may be either \fB0\fR or
 \fB7\fR.
-.TP
-\fB%U\fR
-.
+.IP \fB%U\fR
 On output, produces the ordinal number of the week of the year
 (00-53). The first Sunday of the year is the first day of week 01. On
 input accepts two digits which are otherwise ignored. This format
 group is never used in determining an input date.  This interpretation
 of the week of the year was once common in US banking but is now
 largely obsolete.  See \fB%V\fR for the ISO8601 week number.
-.TP
-\fB%V\fR
-.
+.IP \fB%V\fR
 On output, produces the number of the ISO8601 week as a two digit
 number (01-53). Week 01 is the week containing January 4; or the first
 week of the year containing at least 4 days; or the week containing
 the first Thursday of the year (the three statements are
 equivalent). Each week begins on a Monday. On input, accepts the
 ISO8601 week number.
-.TP
-\fB%w\fR
-.
+.IP \fB%w\fR
 On output, produces the ordinal number of the day of the week
 (Sunday==0; Saturday==6).  On input, accepts a single digit and
 interprets it as the day of the week; Sunday may be represented as
 either 0 or 7.  Note that \fB%w\fR is not the ISO8601 weekday number,
 which is produced and accepted by \fB%u\fR.
-.TP
-\fB%W\fR
-.
+.IP \fB%W\fR
 On output, produces a week number (00-53) within the year; week 01
 begins on the first Monday of the year. On input, accepts two digits,
 which are otherwise ignored. This format group is never used in
 determining an input date.  It is not the ISO8601 week number; that
 week is produced and accepted by \fB%V\fR.
-.TP
-\fB%x\fR
-.
+.IP \fB%x\fR
 On output, produces the date in a locale-dependent representation. On
 input, accepts whatever \fB%x\fR produces and is used to determine
 calendar date.
-.TP
-\fB%X\fR
-.
+.IP \fB%X\fR
 On output, produces the time of day in a locale-dependent
 representation. On input, accepts whatever \fB%X\fR produces and is used
 to determine time of day.
-.TP
-\fB%y\fR
-.
+.IP \fB%y\fR
 On output, produces the two-digit year of the century. On input,
 accepts two digits, and is used to determine calendar date. The
 date is presumed to lie between 1938 and 2037 inclusive. Note
 that \fB%y\fR does not yield a year appropriate for use with the ISO8601
 week number \fB%V\fR; programs should use \fB%g\fR for that purpose.
-.TP
-\fB%Y\fR
-.
+.IP \fB%Y\fR
 On output, produces the four-digit calendar year. On input,
 accepts four digits and may be used to determine calendar date. Note
 that \fB%Y\fR does not yield a year appropriate for use with the ISO8601
 week number \fB%V\fR; programs should use \fB%G\fR for that purpose.
-.TP
-\fB%z\fR
-.
+.IP \fB%z\fR
 On output, produces the current time zone, expressed in hours and
 minutes east (+hhmm) or west (\-hhmm) of Greenwich. On input, accepts a
 time zone specifier (see \fBTIME ZONES\fR below) that will be used to
 determine the time zone.
-.TP
-\fB%Z\fR
-.
+.IP \fB%Z\fR
 On output, produces the current time zone's name, possibly
 translated to the given locale. On input, accepts a time zone
 specifier (see \fBTIME ZONES\fR below) that will be used to determine the
@@ -814,17 +722,13 @@ parsing RFC822 dates. Other uses are fraught with ambiguity; for
 instance, the string \fBBST\fR may represent British Summer Time or
 Brazilian Standard Time. It is recommended that date/time strings for
 use by computers use numeric time zones instead.
-.TP
-\fB%%\fR
-.
+.IP \fB%%\fR
 On output, produces a literal
 .QW \fB%\fR
 character. On input, matches a literal
 .QW \fB%\fR
 character.
-.TP
-\fB%+\fR
-.
+.IP \fB%+\fR
 Synonymous with
 .QW "\fB%a %b %e %H:%M:%S %Z %Y\fR" .
 .SH "TIME ZONES"
@@ -976,7 +880,7 @@ acceptable formats are
 .QW "\fIdd monthname yy\fR" ,
 .QW "?\fICC\fR?\fIyymmdd\fR" ,
 and
-.QW "\fIdd\fB-\fImonthname\fB-\fR?\fICC\fR?\fIyy\fR" .
+.QW "\fIdd\fB\-\fImonthname\fB\-\fR?\fICC\fR?\fIyy\fR" .
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so

@@ -112,21 +112,25 @@ the binary.
 \fBTclsh\fR sets the following global Tcl variables in addition to those
 created by the Tcl library itself (such as \fBenv\fR, which maps
 environment variables such as \fBPATH\fR into Tcl):
+.\" VARIABLE: argc
 .TP 15
 \fBargc\fR
 .
 Contains a count of the number of \fIarg\fR arguments (0 if none),
 not including the name of the script file.
+.\" VARIABLE: argv
 .TP 15
 \fBargv\fR
 .
 Contains a Tcl list whose elements are the \fIarg\fR arguments,
 in order, or an empty string if there are no \fIarg\fR arguments.
+.\" VARIABLE: argv0
 .TP 15
 \fBargv0\fR
 .
 Contains \fIfileName\fR if it was specified.
 Otherwise, contains the name by which \fBtclsh\fR was invoked.
+.\" VARIABLE: tcl_interactive
 .TP 15
 \fBtcl_interactive\fR
 .
@@ -134,6 +138,8 @@ Contains 1 if \fBtclsh\fR is running interactively (no
 \fIfileName\fR was specified and standard input is a terminal-like
 device), 0 otherwise.
 .SH PROMPTS
+.\" VARIABLE: tcl_prompt1
+.\" VARIABLE: tcl_prompt2
 .PP
 When \fBtclsh\fR is invoked interactively it normally prompts for each
 command with

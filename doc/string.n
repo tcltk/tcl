@@ -183,10 +183,11 @@ Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
 .IP \fBunicode\fR 12
 Any Unicode character, except surrogates and noncharacters.
-.
-Warning: this option is under discussion and may be renamed or replaced
-by another solution withhin the TCL 9.0 series.
-.
+.RS
+.PP
+\fIWarning: this option is under discussion and may be renamed or replaced
+by another solution within the Tcl 9.0 series.\fR
+.RE
 .IP \fBupper\fR 12
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
@@ -489,14 +490,14 @@ set length [\fBstring length\fR $string]
 if {$length == 0} {
     set isPrefix 0
 } else {
-    set isPrefix [\fBstring equal\fR \-length $length $string "foobar"]
+    set isPrefix [\fBstring equal\fR -length $length $string "foobar"]
 }
 .CE
 .SH "SEE ALSO"
 expr(n), list(n)
 .SH KEYWORDS
-case conversion, compare, index, integer value, match, pattern, string, word, equal,
-ctype, character, reverse
+case conversion, compare, index, integer value, match, pattern, string,
+word, equal, ctype, character, reverse
 .\" Local Variables:
 .\" mode: nroff
 .\" End:
