@@ -3998,6 +3998,7 @@ int
 Tcl_LengthIsFinite(Tcl_Size length) {
     return length != TCL_LENGTH_NONE;
 }
+
 
 /*
  *------------------------------------------------------------------------
@@ -4028,6 +4029,7 @@ TclIndexInvalidError (
     }
     return TCL_ERROR; /* Always */
 }
+
 
 /*
  *------------------------------------------------------------------------
