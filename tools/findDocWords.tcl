@@ -1,3 +1,17 @@
+# findDocWords.tcl --
+#
+# This script attempts to find all non-dictionary words in the Tcl or Tk
+# documentation tree. It handles the fairly common compoundWord trick our
+# docs use, and isn't confused by nroff formatting directives, so it isn't
+# just a standard spell check.
+#
+# Arguments:
+#    1: Directory to look for man source files in.
+#    2: Path to a plain text dictionary. Try /usr/share/dict/words on Linux.
+#
+# Copyright © 2024 Donal K Fellows.
+# See "license.terms" for the license.
+
 lassign $argv dir dictionary
 
 set f [open $dictionary]
