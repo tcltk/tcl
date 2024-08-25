@@ -4,7 +4,7 @@
 
 Name:          tclunchained
 Summary:       TclUnchained scripting language development environment
-Version:       9.0a4
+Version:       9.0b1
 Release:       2
 License:       GNU Affero General Public License
 Group:         Development/Languages
