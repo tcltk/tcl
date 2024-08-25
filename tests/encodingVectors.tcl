@@ -349,10 +349,10 @@ lappend encInvalidBytes {*}{
     utf-8 EDBFBF tcl8       \uDFFF          -1 {}  {Low surrogate}
     utf-8 EDBFBF replace    \uFFFD          -1 {}  {Low surrogate}
     utf-8 EDBFBF strict     {}               0 {}  {Low surrogate}
-    utf-8 EDA080EDB080 tcl8 \U00010000      -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDA080EDB080 tcl8 \uD800\uDC00    -1 {}  {High low surrogate pair}
     utf-8 EDA080EDB080 replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
     utf-8 EDA080EDB080 strict {}             0 {}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF      -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF tcl8 \uDBFF\uDFFF    -1 {}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF strict {}             0 {}  {High low surrogate pair}
 
