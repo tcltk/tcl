@@ -62,7 +62,7 @@ namespace eval ::tcl::clock {
 
     namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
-    namespace import ::msgcat::mc
+    proc mc {args} { tailcall ::msgcat::mcn [namespace current] {*}$args }
     namespace import ::msgcat::mcpackagelocale
 
 }
