@@ -230,7 +230,7 @@ TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 TCLDDELIBNAME	= $(PROJECT)9dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
-TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
 TCLSHOBJS = \
@@ -248,7 +248,8 @@ TCLTESTOBJS = \
 !if !$(STATIC_BUILD)
 	$(OUT_DIR)\tommath.lib \
 !endif
-	$(TMP_DIR)\testMain.obj
+	$(TMP_DIR)\testMain.obj \
+	$(TMP_DIR)\tcltest.res
 
 COREOBJS = \
 	$(TMP_DIR)\regcomp.obj \
@@ -592,6 +593,7 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLSHRAW)
@@ -600,6 +602,7 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLTESTRAW)
@@ -1028,6 +1031,7 @@ $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
 
+$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 #---------------------------------------------------------------------
 # Installation.
