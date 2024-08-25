@@ -932,7 +932,10 @@ test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
 test encoding-24.38.1 {Try to generate invalid utf-8} -body {
     encoding convertto -profile tcl8 utf-8 \ud800
 } -result \xed\xa0\x80
-test encoding-24.38.2 {Try to generate invalid utf-8} -body {
+test {encoding-24.38.2 default} {Try to generate invalid utf-8} -body {
+    encoding convertto -profile strict utf-8 \ud800
+} -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
+test {encoding-24.38.2 strict} {Try to generate invalid utf-8} -body {
     encoding convertto -profile strict utf-8 \ud800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
@@ -1226,6 +1229,8 @@ test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     # Not truncated but invalid
     encoding convertfrom -profile replace jis0208 \x78\x79
 } -result \ufffd\ufffd
+
+
 
 # cleanup
 namespace delete ::tcl::test::encoding
