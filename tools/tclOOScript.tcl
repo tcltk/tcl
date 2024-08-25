@@ -95,7 +95,7 @@
 		    lassign $link src
 		    set dst $src
 		} else {
-		    return -code error -errorcode {TCLOO CMDLINK FORMAT} \
+		    return -code error -errorcode {TCL OO CMDLINK_FORMAT} \
 			"bad link description; must only have one or two elements"
 		}
 		if {![string match ::* $src]} {
@@ -265,7 +265,7 @@
 	# ------------------------------------------------------------------
 
 	method Get -unexport {} {
-	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
+	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
 	}
 
 	# ------------------------------------------------------------------
@@ -278,7 +278,7 @@
 	# ------------------------------------------------------------------
 
 	method Set -unexport list {
-	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
+	    return -code error -errorcode {TCL OO ABSTRACT_SLOT} "unimplemented"
 	}
 
 	# ------------------------------------------------------------------
@@ -438,11 +438,11 @@
 		set object [next {*}$args]
 		::oo::objdefine $object {
 		    method destroy {} {
-			::return -code error -errorcode {TCLOO SINGLETON} \
+			::return -code error -errorcode {TCL OO SINGLETON} \
 			    "may not destroy a singleton object"
 		    }
 		    method <cloned> -unexport {originObject} {
-			::return -code error -errorcode {TCLOO SINGLETON} \
+			::return -code error -errorcode {TCL OO SINGLETON} \
 			    "may not clone a singleton object"
 		    }
 		}
@@ -499,22 +499,22 @@
 		set prop [lindex $args $i]
 		if {[string match "-*" $prop]} {
 		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
+			-errorcode {TCL OO PROPERTY_FORMAT} \
 			"bad property name \"$prop\": must not begin with -"
 		}
 		if {$prop ne [list $prop]} {
 		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
+			-errorcode {TCL OO PROPERTY_FORMAT} \
 			"bad property name \"$prop\": must be a simple word"
 		}
 		if {[string first "::" $prop] != -1} {
 		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
+			-errorcode {TCL OO PROPERTY_FORMAT} \
 			"bad property name \"$prop\": must not contain namespace separators"
 		}
 		if {[string match {*[()]*} $prop]} {
 		    return -code error -level 2 \
-			-errorcode {TCLOO PROPERTY_FORMAT} \
+			-errorcode {TCL OO PROPERTY_FORMAT} \
 			"bad property name \"$prop\": must not contain parentheses"
 		}
 		set realprop [string cat "-" $prop]
@@ -637,10 +637,10 @@
 		    dict incr opt -level 2
 		    return -options $opt $msg
 		} on break {} {
-		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 			"property getter for $prop did a break"
 		} on continue {} {
-		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 			"property getter for $prop did a continue"
 		}
 	    }
@@ -678,10 +678,10 @@
 		dict incr opt -level 2
 		return -options $opt $msg
 	    } on break {} {
-		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 		    "property getter for $prop did a break"
 	    } on continue {} {
-		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 		    "property getter for $prop did a continue"
 	    }
 	    return $value
@@ -718,10 +718,10 @@
 		    dict incr opt -level 2
 		    return -options $opt $msg
 		} on break {} {
-		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 			"property setter for $prop did a break"
 		} on continue {} {
-		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    return -code error -level 2 -errorcode {TCL OO SHENANIGANS} \
 			"property setter for $prop did a continue"
 		}
 	    }
