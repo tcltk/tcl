@@ -11,14 +11,12 @@ pkg::create \- Construct an appropriate 'package ifneeded' command for a given p
 .SH SYNOPSIS
 \fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...
 .BE
-
 .SH DESCRIPTION
 .PP
 \fB::pkg::create\fR is a utility procedure that is part of the standard Tcl
 library.  It is used to create an appropriate \fBpackage ifneeded\fR
 command for a given package specification.  It can be used to construct a
 \fBpkgIndex.tcl\fR file for use with the \fBpackage\fR mechanism.
-
 .SH OPTIONS
 The parameters supported are:
 .TP

@@ -24,13 +24,14 @@ Tcl_Obj *
 const char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
-\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *)NULL\fR)
+\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fBNULL\fR)
 .sp
 \fBTcl_ResetResult\fR(\fIinterp\fR)
 .sp
 \fBTcl_TransferResult\fR(\fIsourceInterp, code, targetInterp\fR)
 .sp
 \fBTcl_AppendElement\fR(\fIinterp, element\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_FreeProc sourceInterp out
 .AP Tcl_Interp *interp out
