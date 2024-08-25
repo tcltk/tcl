@@ -10,19 +10,19 @@
 /* Define to 1 if you have the <AvailabilityMacros.h> header file. */
 #undef HAVE_AVAILABILITYMACROS_H
 
-/* Define to 1 if the system has the type `blkcnt_t'. */
+/* Define to 1 if the system has the type 'blkcnt_t'. */
 #undef HAVE_BLKCNT_T
 
 /* Defined when compiler supports casting to union type. */
 #undef HAVE_CAST_TO_UNION
 
-/* Define to 1 if you have the `cfmakeraw' function. */
+/* Define to 1 if you have the 'cfmakeraw' function. */
 #undef HAVE_CFMAKERAW
 
-/* Define to 1 if you have the `chflags' function. */
+/* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
-/* Define to 1 if you have the `copyfile' function. */
+/* Define to 1 if you have the 'copyfile' function. */
 #undef HAVE_COPYFILE
 
 /* Define to 1 if you have the <copyfile.h> header file. */
@@ -34,15 +34,15 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
-/* Define to 1 if you have the declaration of `gethostbyaddr_r', and to 0 if
+/* Define to 1 if you have the declaration of 'gethostbyaddr_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETHOSTBYADDR_R
 
-/* Define to 1 if you have the declaration of `gethostbyname_r', and to 0 if
+/* Define to 1 if you have the declaration of 'gethostbyname_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETHOSTBYNAME_R
 
-/* Define to 1 if you have the declaration of `PTHREAD_MUTEX_RECURSIVE', and
+/* Define to 1 if you have the declaration of 'PTHREAD_MUTEX_RECURSIVE', and
    to 0 if you don't. */
 #undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
 
@@ -52,22 +52,22 @@
 /* Is eventfd(2) supported? */
 #undef HAVE_EVENTFD
 
-/* Define to 1 if you have the `freeaddrinfo' function. */
+/* Define to 1 if you have the 'freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
 
 /* Do we have fts functions? */
 #undef HAVE_FTS
 
-/* Define to 1 if you have the `gai_strerror' function. */
+/* Define to 1 if you have the 'gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
 
-/* Define to 1 if you have the `getaddrinfo' function. */
+/* Define to 1 if you have the 'getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
 
-/* Define to 1 if you have the `getattrlist' function. */
+/* Define to 1 if you have the 'getattrlist' function. */
 #undef HAVE_GETATTRLIST
 
-/* Define to 1 if you have the `getcwd' function. */
+/* Define to 1 if you have the 'getcwd' function. */
 #undef HAVE_GETCWD
 
 /* Define to 1 if getgrgid_r is available. */
@@ -109,7 +109,7 @@
 /* Define to 1 if gethostbyname_r takes 6 args. */
 #undef HAVE_GETHOSTBYNAME_R_6
 
-/* Define to 1 if you have the `getnameinfo' function. */
+/* Define to 1 if you have the 'getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
 /* Define to 1 if getpwnam_r is available. */
@@ -130,13 +130,13 @@
 /* Define to 1 if getpwuid_r takes 5 args. */
 #undef HAVE_GETPWUID_R_5
 
-/* Define to 1 if you have the `gmtime_r' function. */
+/* Define to 1 if you have the 'gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
 /* Compiler support for module scope symbols */
 #undef HAVE_HIDDEN
 
-/* Define to 1 if the system has the type `intptr_t'. */
+/* Define to 1 if the system has the type 'intptr_t'. */
 #undef HAVE_INTPTR_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -148,19 +148,19 @@
 /* Define to 1 if you have the <libkern/OSAtomic.h> header file. */
 #undef HAVE_LIBKERN_OSATOMIC_H
 
-/* Define to 1 if you have the `localtime_r' function. */
+/* Define to 1 if you have the 'localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
-/* Define to 1 if you have the `lseek64' function. */
+/* Define to 1 if you have the 'lseek64' function. */
 #undef HAVE_LSEEK64
 
-/* Define to 1 if you have the `mkstemp' function. */
+/* Define to 1 if you have the 'mkstemp' function. */
 #undef HAVE_MKSTEMP
 
-/* Define to 1 if you have the `mkstemps' function. */
+/* Define to 1 if you have the 'mkstemps' function. */
 #undef HAVE_MKSTEMPS
 
-/* Define to 1 if you have the `mktime' function. */
+/* Define to 1 if you have the 'mktime' function. */
 #undef HAVE_MKTIME
 
 /* Do we have MT-safe gethostbyaddr() ? */
@@ -172,28 +172,28 @@
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
 
-/* Define to 1 if you have the `open64' function. */
+/* Define to 1 if you have the 'open64' function. */
 #undef HAVE_OPEN64
 
-/* Define to 1 if you have the `OSSpinLockLock' function. */
+/* Define to 1 if you have the 'OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
-/* Define to 1 if you have the `posix_spawnattr_setflags' function. */
+/* Define to 1 if you have the 'posix_spawnattr_setflags' function. */
 #undef HAVE_POSIX_SPAWNATTR_SETFLAGS
 
-/* Define to 1 if you have the `posix_spawnp' function. */
+/* Define to 1 if you have the 'posix_spawnp' function. */
 #undef HAVE_POSIX_SPAWNP
 
-/* Define to 1 if you have the `posix_spawn_file_actions_adddup2' function. */
+/* Define to 1 if you have the 'posix_spawn_file_actions_adddup2' function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2
 
 /* Should we use pselect()? */
 #undef HAVE_PSELECT
 
-/* Define to 1 if you have the `pthread_atfork' function. */
+/* Define to 1 if you have the 'pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
-/* Define to 1 if you have the `pthread_attr_setstacksize' function. */
+/* Define to 1 if you have the 'pthread_attr_setstacksize' function. */
 #undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
 
 /* Does putenv() copy strings or incorporate them by reference? */
@@ -220,28 +220,28 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if the system has the type `struct addrinfo'. */
+/* Define to 1 if the system has the type 'struct addrinfo'. */
 #undef HAVE_STRUCT_ADDRINFO
 
 /* Is 'struct dirent64' in <sys/types.h>? */
 #undef HAVE_STRUCT_DIRENT64
 
-/* Define to 1 if the system has the type `struct in6_addr'. */
+/* Define to 1 if the system has the type 'struct in6_addr'. */
 #undef HAVE_STRUCT_IN6_ADDR
 
-/* Define to 1 if the system has the type `struct sockaddr_in6'. */
+/* Define to 1 if the system has the type 'struct sockaddr_in6'. */
 #undef HAVE_STRUCT_SOCKADDR_IN6
 
-/* Define to 1 if the system has the type `struct sockaddr_storage'. */
+/* Define to 1 if the system has the type 'struct sockaddr_storage'. */
 #undef HAVE_STRUCT_SOCKADDR_STORAGE
 
-/* Define to 1 if `st_blksize' is a member of `struct stat'. */
+/* Define to 1 if 'st_blksize' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `st_blocks' is a member of `struct stat'. */
+/* Define to 1 if 'st_blocks' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
-/* Define to 1 if `st_rdev' is a member of `struct stat'. */
+/* Define to 1 if 'st_rdev' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
@@ -292,16 +292,16 @@
 /* Is off64_t in <sys/types.h>? */
 #undef HAVE_TYPE_OFF64_T
 
-/* Define to 1 if the system has the type `uintptr_t'. */
+/* Define to 1 if the system has the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `vfork' function. */
+/* Define to 1 if you have the 'vfork' function. */
 #undef HAVE_VFORK
 
-/* Define to 1 if you have the `waitpid' function. */
+/* Define to 1 if you have the 'waitpid' function. */
 #undef HAVE_WAITPID
 
 /* Is weak import available? */
@@ -403,7 +403,7 @@
 /* Is this a static build? */
 #undef STATIC_BUILD
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
@@ -504,34 +504,34 @@
 /* Do we want to use the XOPEN network library? */
 #undef _XOPEN_SOURCE_EXTENDED
 
-/* Define to 1 if type `char' is unsigned and your compiler does not
+/* Define to 1 if type 'char' is unsigned and your compiler does not
    predefine this macro.  */
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
 #endif
 
-/* Define to `int' if <sys/types.h> doesn't define. */
+/* Define as 'int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
+/* Define to '__inline__' or '__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 #undef inline
 #endif
 
-/* Define to `int' if <sys/types.h> does not define. */
+/* Define to 'int' if <sys/types.h> does not define. */
 #undef mode_t
 
 /* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t
 
 /* Define as int if socklen_t is not available */
 #undef socklen_t
 
-/* Define to `int' if <sys/types.h> doesn't define. */
+/* Define as 'int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
 
