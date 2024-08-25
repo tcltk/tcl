@@ -172,17 +172,12 @@ EXTERN int		Tcl_ListObjAppendList(Tcl_Interp *interp,
 /* 44 */
 EXTERN int		Tcl_ListObjAppendElement(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, Tcl_Obj *objPtr);
-/* 45 */
-EXTERN int		TclListObjGetElements(Tcl_Interp *interp,
-				Tcl_Obj *listPtr, void *objcPtr,
-				Tcl_Obj ***objvPtr);
+/* Slot 45 is reserved */
 /* 46 */
 EXTERN int		Tcl_ListObjIndex(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, Tcl_Size index,
 				Tcl_Obj **objPtrPtr);
-/* 47 */
-EXTERN int		TclListObjLength(Tcl_Interp *interp,
-				Tcl_Obj *listPtr, void *lengthPtr);
+/* Slot 47 is reserved */
 /* 48 */
 EXTERN int		Tcl_ListObjReplace(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, Tcl_Size first,
@@ -2041,9 +2036,9 @@ typedef struct TclStubs {
     void (*tcl_InvalidateStringRep) (Tcl_Obj *objPtr); /* 42 */
     int (*tcl_ListObjAppendList) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *elemListPtr); /* 43 */
     int (*tcl_ListObjAppendElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *objPtr); /* 44 */
-    int (*tclListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, void *objcPtr, Tcl_Obj ***objvPtr); /* 45 */
+    void (*reserved45)(void);
     int (*tcl_ListObjIndex) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index, Tcl_Obj **objPtrPtr); /* 46 */
-    int (*tclListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, void *lengthPtr); /* 47 */
+    void (*reserved47)(void);
     int (*tcl_ListObjReplace) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first, Tcl_Size count, Tcl_Size objc, Tcl_Obj *const objv[]); /* 48 */
     void (*reserved49)(void);
     Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, Tcl_Size numBytes); /* 50 */
@@ -2817,12 +2812,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ListObjAppendList) /* 43 */
 #define Tcl_ListObjAppendElement \
 	(tclStubsPtr->tcl_ListObjAppendElement) /* 44 */
-#define TclListObjGetElements \
-	(tclStubsPtr->tclListObjGetElements) /* 45 */
+/* Slot 45 is reserved */
 #define Tcl_ListObjIndex \
 	(tclStubsPtr->tcl_ListObjIndex) /* 46 */
-#define TclListObjLength \
-	(tclStubsPtr->tclListObjLength) /* 47 */
+/* Slot 47 is reserved */
 #define Tcl_ListObjReplace \
 	(tclStubsPtr->tcl_ListObjReplace) /* 48 */
 /* Slot 49 is reserved */

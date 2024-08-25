@@ -253,7 +253,7 @@ HandleBgErrors(
 
 	errPtr = assocPtr->firstBgPtr;
 
-	TclListObjGetElementsM(NULL, copyObj, &prefixObjc, &prefixObjv);
+	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
 	tempObjv = (Tcl_Obj**)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;

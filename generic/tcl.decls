@@ -193,18 +193,20 @@ declare 44 {
     int Tcl_ListObjAppendElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    Tcl_Obj *objPtr)
 }
-declare 45 {
-    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    void *objcPtr, Tcl_Obj ***objvPtr)
-}
+#obsolete in 9.0
+#declare 45 {
+#    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+#	    void *objcPtr, Tcl_Obj ***objvPtr)
+#}
 declare 46 {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index,
 	    Tcl_Obj **objPtrPtr)
 }
-declare 47 {
-    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    void *lengthPtr)
-}
+#obsolete in 9.0
+#declare 47 {
+#    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+#	    void *lengthPtr)
+#}
 declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first,
 	    Tcl_Size count, Tcl_Size objc, Tcl_Obj *const objv[])

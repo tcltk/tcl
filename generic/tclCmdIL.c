@@ -2188,11 +2188,9 @@ Tcl_JoinObjCmd(
 	if (status != TCL_OK ) {
 	    return TCL_ERROR;
 	}
-    } else {
-	if (TclListObjGetElementsM(interp, objv[1], &listLen,
-	    &elemPtrs) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+    } else if (TclListObjGetElements(interp, objv[1], &listLen,
+	&elemPtrs) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     if (listLen == 0) {
@@ -2211,7 +2209,7 @@ Tcl_JoinObjCmd(
 	    Tcl_SetObjResult(interp, valueObj);
 	} else {
 	    if (elemPtrs == NULL) {
-		if (TclListObjGetElementsM(interp, objv[1], &listLen,
+		if (TclListObjGetElements(interp, objv[1], &listLen,
 		    &elemPtrs) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -2226,7 +2224,7 @@ Tcl_JoinObjCmd(
 
     (void) Tcl_GetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
-	if (TclListObjGetElementsM(interp, objv[1], &listLen,
+	if (TclListObjGetElements(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2259,7 +2257,7 @@ Tcl_JoinObjCmd(
 	    }
 	} else {
 	    if (elemPtrs == NULL) {
-		if (TclListObjGetElementsM(interp, objv[1], &listLen,
+		if (TclListObjGetElements(interp, objv[1], &listLen,
 		    &elemPtrs) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -2332,7 +2330,7 @@ Tcl_LassignObjCmd(
      */
     listPtr = objv[1];
 
-    if (TclListObjLengthM(interp, listPtr, &listObjc) != TCL_OK) {
+    if (TclListObjLength(interp, listPtr, &listObjc) != TCL_OK) {
 	return TCL_ERROR;
     }
     origListObjc = listObjc;
@@ -2492,7 +2490,7 @@ Tcl_LinsertObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLengthM(interp, objv[1], &len);
+    result = TclListObjLength(interp, objv[1], &len);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2625,7 +2623,7 @@ Tcl_LlengthObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLengthM(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2680,7 +2678,7 @@ Tcl_LpopObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLengthM(interp, listPtr, &listLen);
+    result = TclListObjLength(interp, listPtr, &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2785,7 +2783,7 @@ Tcl_LrangeObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLengthM(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2896,7 +2894,7 @@ Tcl_LremoveObjCmd(
     }
 
     listObj = objv[1];
-    if (TclListObjLengthM(interp, listObj, &listLen) != TCL_OK) {
+    if (TclListObjLength(interp, listObj, &listLen) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3140,7 +3138,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLengthM(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3259,7 +3257,7 @@ Tcl_LreverseObjCmd(
 	    return status;
     }
 
-    if (TclListObjLengthM(interp, objv[1], &elemc) != TCL_OK) {
+    if (TclListObjLength(interp, objv[1], &elemc) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3271,7 +3269,7 @@ Tcl_LreverseObjCmd(
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3544,7 +3542,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    i++;
-	    if (TclListObjGetElementsM(interp, objv[i],
+	    if (TclListObjGetElements(interp, objv[i],
 		    &sortInfo.indexc, &indices) != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
@@ -4783,7 +4781,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
-	    if (TclListObjGetElementsM(interp, objv[i+1], &sortindex,
+	    if (TclListObjGetElements(interp, objv[i+1], &sortindex,
 		    &indexv) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4876,7 +4874,7 @@ Tcl_LsortObjCmd(
     if (indexPtr) {
 	Tcl_Obj **indexv;
 
-	TclListObjGetElementsM(interp, indexPtr, &sortInfo.indexc, &indexv);
+	TclListObjGetElements(interp, indexPtr, &sortInfo.indexc, &indexv);
 	switch (sortInfo.indexc) {
 	case 0:
 	    sortInfo.indexv = NULL;
@@ -4939,7 +4937,7 @@ Tcl_LsortObjCmd(
 	sortInfo.resultCode = TclObjectDispatchNoDefault(interp, status,
 	    listObj, list, all, interp, listObj, &length, &listObjPtrs);
     } else {
-	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
+	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
 	    &length, &listObjPtrs);
     }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
@@ -5234,7 +5232,7 @@ Tcl_LeditObjCmd(
      * by Tcl_{Lrange,Lreplace,Ledit}ObjCmd
      */
 
-    result = TclListObjLengthM(interp, listPtr, &listLen);
+    result = TclListObjLength(interp, listPtr, &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -5473,10 +5471,10 @@ SortCompare(
 	 * Replace them and evaluate the result.
 	 */
 
-	TclListObjLengthM(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
+	TclListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
-	TclListObjGetElementsM(infoPtr->interp, infoPtr->compareCmdPtr,
+	TclListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
@@ -5687,7 +5685,7 @@ SelectObjFromSublist(
 	int index;
 	Tcl_Obj *currentObj, *lastObj=NULL;
 
-	if (TclListObjLengthM(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
+	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}

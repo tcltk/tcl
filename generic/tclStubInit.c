@@ -104,6 +104,8 @@
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
+#undef TclListObjGetElements
+#undef TclListObjLength
 
 # define TclListObjGetElements 0
 # define TclListObjLength 0
@@ -759,9 +761,9 @@ const TclStubs tclStubs = {
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
-    TclListObjGetElements, /* 45 */
+    0, /* 45 */
     Tcl_ListObjIndex, /* 46 */
-    TclListObjLength, /* 47 */
+    0, /* 47 */
     Tcl_ListObjReplace, /* 48 */
     0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */

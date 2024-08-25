@@ -1132,7 +1132,7 @@ MagicDefinitionInvoke(
     Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
     /* TODO: overflow? */
     Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc - offset, objv + offset);
-    TclListObjGetElementsM(NULL, objPtr, &dummy, &objs);
+    TclListObjGetElements(NULL, objPtr, &dummy, &objs);
 
     result = Tcl_EvalObjv(interp, objc - cmdIndex, objs, TCL_EVAL_INVOKE);
     if (isRoot) {
@@ -2439,7 +2439,7 @@ ClassFilterSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (void *)NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElementsM(interp, objv[0], &filterc,
+    } else if (TclListObjGetElements(interp, objv[0], &filterc,
 	    &filterv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2528,7 +2528,7 @@ ClassMixinSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (void *)NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElementsM(interp, objv[0], &mixinc,
+    } else if (TclListObjGetElements(interp, objv[0], &mixinc,
 	    &mixinv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2649,7 +2649,7 @@ ClassSuperSet(
 		"may not modify the superclass of the root object", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (void *)NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElementsM(interp, objv[0], &superc,
+    } else if (TclListObjGetElements(interp, objv[0], &superc,
 	    &superv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2819,7 +2819,7 @@ ClassVarsSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (void *)NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElementsM(interp, objv[0], &varc,
+    } else if (TclListObjGetElements(interp, objv[0], &varc,
 	    &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2911,7 +2911,7 @@ ObjFilterSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElementsM(interp, objv[0], &filterc,
+    if (TclListObjGetElements(interp, objv[0], &filterc,
 	    &filterv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2989,7 +2989,7 @@ ObjMixinSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElementsM(interp, objv[0], &mixinc,
+    if (TclListObjGetElements(interp, objv[0], &mixinc,
 	    &mixinv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -3092,7 +3092,7 @@ ObjVarsSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElementsM(interp, objv[0], &varc,
+    if (TclListObjGetElements(interp, objv[0], &varc,
 	    &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
