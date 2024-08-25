@@ -33,7 +33,7 @@
 
 static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
-			    const char *msg, int flags, int *indexPtr);
+			    const char *msg, int flags, Tcl_Size *indexPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
@@ -116,7 +116,7 @@ GetIndexFromObjList(
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0 or TCL_EXACT */
-    int *indexPtr)		/* Place to store resulting integer index. */
+    Tcl_Size *indexPtr)		/* Place to store resulting index. */
 {
 
     Tcl_Size objc, t;
@@ -134,9 +134,6 @@ GetIndexFromObjList(
 	return result;
     }
 
-    /* Return type is int* so caller should not be passing larger table */
-    assert(objc <= INT_MAX);
-
     /*
      * Build a string table from the list.
      */
@@ -149,7 +146,7 @@ GetIndexFromObjList(
 	     */
 
 	    Tcl_Free((void *)tablePtr);
-	    *indexPtr = (int) t;
+	    *indexPtr = t;
 	    return TCL_OK;
 	}
 
