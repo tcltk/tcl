@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType  \- manipulate Tcl value types
+Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType, Tcl_FreeInternalRep, Tcl_InitStringRep, Tcl_HasStringRep, Tcl_StoreInternalRep, Tcl_FetchInternalRep  \- manipulate Tcl value types
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,6 +23,21 @@ int
 .sp
 int
 \fBTcl_ConvertToType\fR(\fIinterp, objPtr, typePtr\fR)
+.sp
+void
+\fBTcl_FreeInternalRep\fR(\fIobjPtr\fR)
+.sp
+char *
+\fBTcl_InitStringRep\fR(\fIobjPtr, bytes, numBytes\fR)
+.sp
+int
+\fBTcl_HasStringRep\fR(\fIobjPtr\fR)
+.sp
+void
+\fBTcl_StoreInternalRep\fR(\fIobjPtr, typePtr, irPtr\fR)
+.sp
+Tcl_ObjInternalRep *
+\fBTcl_FetchInternalRep\fR(\fIobjPtr, typePtr\fR)
 .fi
 .SH ARGUMENTS
 .AS "const char" *typeName
@@ -39,6 +54,14 @@ For \fBTcl_AppendAllObjTypes\fR, this points to the value onto which
 it appends the name of each value type as a list element.
 For \fBTcl_ConvertToType\fR, this points to a value that
 must have been the result of a previous call to \fBTcl_NewObj\fR.
+.AP "const char*" bytes in
+String representation.
+.AP "unsigned int" numBytes in
+Length of the string representation in bytes.
+.AP "const Tcl_ObjInternalRep*" irPtr in
+Internal object representation.
+.AP "const Tcl_ObjType*" typePtr in
+Requested internal representation type.
 .BE
 
 .SH DESCRIPTION
@@ -92,6 +115,43 @@ set \fIobjPtr->typePtr\fR to the argument value \fItypePtr\fR,
 but that is no longer guaranteed.  The \fIsetFromAnyProc\fR is
 free to set the internal representation for \fIobjPtr\fR to make
 use of another related Tcl_ObjType, if it sees fit.
+.PP
+\fBTcl_FreeInternalRep\fR performs the function of the existing internal
+macro \fBTclInitStringRep\fR, but is extended to return a pointer to the
+string rep, and to accept \fINULL\fR as a value for bytes.
+When bytes is \fINULL\fR and \fIobjPtr\fR has no string rep, an uninitialzed
+buffer of \fInumBytes\fR bytes is created for filling by the caller.
+When \fIbytes\fR is \fINULL\fR and \fIobjPtr\fR has a string rep,
+the string rep will be truncated to a length of \fInumBytes\fR bytes.
+When \fInumBytes\fR is greater than zero, and the returned pointer is
+\fINULL\fR, that indicates a failure to allocate memory for the string
+representation.
+The caller may then choose whether to raise an error or panic.
+.PP
+\fBTcl_HasStringRep\fR returns a boolean indicating whether or not a string
+rep is currently stored in \fIobjPtr\fR.
+This is used when the caller wants to act on \fIobjPtr\fR differently
+depending on whether or not it is a pure value.
+Typically this only makes sense in an extension if it is already known that
+\fIobjPtr\fR possesses an internal type that is managed by the extension.
+.PP
+\fBTcl_StoreInternalRep\fR stores in \fIobjPtr\fR a copy of the internal
+representation pointed to by \fIirPtr\fR and sets its type to \fItypePtr\fR.
+When \fIirPtr\fR is \fINULL\fR, this leaves \fIobjPtr\fR without a
+representation for type \fItypePtr\fR.
+.PP
+\fBTcl_FetchInternalRep\fR returns a pointer to the internal representation
+stored in \fIobjPtr\fR that matches the requested type \fItypePtr\fR.
+If no such internal representation is in \fIobjPtr\fR, return \fINULL\fR.
+.PP
+This returns a public type
+.CS
+typedef union Tcl_ObjInternalRep {...} Tcl_ObjInternalRep
+.CE
+where the contents are exactly the existing contents of the union in the
+\fIinternalRep\fR field of the \fITcl_Obj\fR struct.
+This definition permits us to pass internal representations and pointers to
+them as arguments and results in public routines.
 .SH "THE TCL_OBJTYPE STRUCTURE"
 .PP
 Extension writers can define new value types by defining four to eight
