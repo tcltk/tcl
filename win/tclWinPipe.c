@@ -1848,7 +1848,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 

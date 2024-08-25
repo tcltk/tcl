@@ -2127,7 +2127,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) chanInfoPtr);
+    TclWinGenerateChannelName(channelName, "file", chanInfoPtr);
 
     if (permissions & TCL_READABLE) {
 	/*
