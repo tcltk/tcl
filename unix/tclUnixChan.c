@@ -1917,7 +1917,7 @@ Tcl_MakeFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
     const Tcl_ChannelType *channelTypePtr;
-    struct stat buf;
+    Tcl_StatBuf buf;
 
     if (mode == 0) {
 	return NULL;
@@ -1929,7 +1929,7 @@ Tcl_MakeFileChannel(
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if (fstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
+    if (TclOSfstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
 	struct sockaddr sockaddr;
 	socklen_t sockaddrLen = sizeof(sockaddr);
 
