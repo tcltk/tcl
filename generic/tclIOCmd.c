@@ -465,6 +465,8 @@ Tcl_ReadObjCmd(
 	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
 		, resultDictPtr);
 	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	} else {
+		Tcl_DecrRefCount(resultPtr);
 	}
 	TclChannelRelease(chan);
 	return TCL_ERROR;
