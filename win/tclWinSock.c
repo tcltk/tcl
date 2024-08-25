@@ -77,8 +77,7 @@
 #define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
-#define SOCK_TEMPLATE           "sock%p"
+#define SOCK_CHAN_LENGTH        (16 + TCL_INTEGER_SPACE)
 
 /*
  * The following variable is used to tell whether this module has been
@@ -2349,7 +2348,7 @@ TcpAccept(
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
     SendSelectMessage(tsdPtr, SELECT, newInfoPtr);
 
-    TclWinGenerateChannelName(channelName, "sock", statePtr);
+    TclWinGenerateChannelName(channelName, "sock", newInfoPtr);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
