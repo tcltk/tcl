@@ -2025,7 +2025,7 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %" TCL_SIZE_MODIFIER "u element%s instead", listc,
+		"elements, got %" TCL_SIZE_MODIFIER "d element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
@@ -3340,7 +3340,7 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		snprintf(buf, 200,
-			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "u %s instead}",
+			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);
