@@ -27,62 +27,79 @@ namespace path {::tclTestPerf}
 
 proc test-lsearch-regress {{reptime 1000}} {
   _test_run -no-result $reptime {
-    # list with 5000 strings with ca. 50 chars elements:
+    # found-first immediately, list with 5000 strings with ca. 50 chars elements:
     setup   { set str [join [lrepeat 13 "XXX"] /]; set l [lrepeat 5000 $str]; llength $l }
-    # lsearch with no option, found immediatelly :
-    { lsearch $l $str }
-    # lsearch with -glob, found immediatelly :
-    { lsearch -glob $l $str }
-    # lsearch with -exact, found immediatelly :
-    { lsearch -exact $l $str }
-    # lsearch with -dictionary, found immediatelly :
-    { lsearch -dictionary $l $str }
 
-    # lsearch with -nocase only, found immediatelly :
+    { lsearch $l $str }
+    { lsearch -glob $l $str }
+    { lsearch -exact $l $str }
+    { lsearch -dictionary $l $str }
+    { lsearch -exact -dictionary $l $str }
+
     { lsearch -nocase $l $str }
-    # lsearch with -nocase -glob, found immediatelly :
     { lsearch -nocase -glob $l $str }
-    # lsearch with -nocase -exact, found immediatelly :
     { lsearch -nocase -exact $l $str }
-    # lsearch with -nocase -dictionary, found immediatelly :
     { lsearch -nocase -dictionary $l $str }
+    { lsearch -nocase -exact -dictionary $l $str }
   }
 }
 
 proc test-lsearch-nf-regress {{reptime 1000}} {
   _test_run -no-result $reptime {
-    # list with 5000 strings with ca. 50 chars elements:
+    # not-found, list with 5000 strings with ca. 50 chars elements:
     setup   { set str [join [lrepeat 13 "XXX"] /]; set sNF $str/NF; set l [lrepeat 5000 $str]; llength $l }
-    # lsearch with no option, not found:
+
     { lsearch $l $sNF }
-    # lsearch with -glob, not found:
     { lsearch -glob $l $sNF }
-    # lsearch with -exact, not found:
     { lsearch -exact $l $sNF }
-    # lsearch with -dictionary, not found:
     { lsearch -dictionary $l $sNF }
+    { lsearch -exact -dictionary $l $sNF }
+    { lsearch -sorted $l $sNF }
+    { lsearch -bisect $l $sNF }
+
+    { lsearch -nocase $l $sNF }
+    { lsearch -nocase -glob $l $sNF }
+    { lsearch -nocase -exact $l $sNF }
+    { lsearch -nocase -dictionary $l $sNF }
+    { lsearch -nocase -exact -dictionary $l $sNF }
+    { lsearch -nocase -sorted $l $sNF }
+    { lsearch -nocase -bisect $l $sNF }
   }
 }
 
-proc test-lsearch-nc-nf-regress {{reptime 1000}} {
+proc test-lsearch-nf-non-opti-fast {{reptime 1000}} {
   _test_run -no-result $reptime {
-    # list with 5000 strings with ca. 50 chars elements:
-    setup   { set str [join [lrepeat 13 "XXX"] /]; set sNF $str/NF; set l [lrepeat 5000 $str]; llength $l }
-    # lsearch with -nocase only, not found:
+    # not-found, list with 5000 strings with ca. 50 chars elements:
+    setup   { set str [join [lrepeat 13 "XXX"] /]; set sNF "$str/*"; set l [lrepeat 5000 $str]; llength $l }
+
+    { lsearch -sorted -dictionary $l $sNF }
+    { lsearch -bisect -dictionary $l $sNF }
+
+    { lsearch -sorted -nocase -dictionary $l $sNF }
+    { lsearch -bisect -nocase -dictionary $l $sNF }
+
+  }
+}
+
+proc test-lsearch-nf-non-opti-slow {{reptime 1000}} {
+  _test_run -no-result $reptime {
+    # not-found, list with 5000 strings with ca. 50 chars elements:
+    setup   { set str [join [lrepeat 13 "XXX"] /]; set sNF "$str/*"; set l [lrepeat 5000 $str]; llength $l }
+
+    { lsearch $l $sNF }
+    { lsearch -glob $l $sNF }
+
     { lsearch -nocase $l $sNF }
-    # lsearch with -nocase -glob, not found:
     { lsearch -nocase -glob $l $sNF }
-    # lsearch with -nocase -exact, not found:
-    { lsearch -nocase -exact $l $sNF }
-    # lsearch with -nocase -dictionary, not found:
-    { lsearch -nocase -dictionary $l $sNF }
+
   }
 }
 
 proc test {{reptime 1000}} {
   test-lsearch-regress $reptime
   test-lsearch-nf-regress $reptime
-  test-lsearch-nc-nf-regress $reptime
+  test-lsearch-nf-non-opti-fast $reptime
+  test-lsearch-nf-non-opti-slow $reptime
 
   puts \n**OK**
 }
