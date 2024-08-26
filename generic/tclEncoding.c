@@ -1587,7 +1587,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 
-		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
+		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
@@ -2557,11 +2557,11 @@ UtfToUtfProc(
 		/* TCL_ENCODING_PROFILE_TCL8 */
 		char chbuf[2];
 		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    size_t len = Tcl_UtfToUniChar(src, &ch);
+	    size_t len = TclUtfToUniChar(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
 		    if (PROFILE_STRICT(profile)) {
@@ -2805,7 +2805,7 @@ UtfToUtf32Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3082,7 +3082,7 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3329,7 +3329,7 @@ TableToUtfProc(
 	    } else {
 		char chbuf[2];
 		chbuf[0] = byte; chbuf[1] = 0;
-		Tcl_UtfToUniChar(chbuf, &ch);
+		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}
 
