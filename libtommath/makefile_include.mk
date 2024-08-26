@@ -3,9 +3,9 @@
 #
 
 #version of library
-VERSION=1.2.1
-VERSION_PC=1.2.1
-VERSION_SO=3:1:2
+VERSION=1.3.0
+VERSION_PC=1.3.0
+VERSION_SO=4:0:3
 
 PLATFORM := $(shell uname | sed -e 's/_.*//')
 

@@ -26,7 +26,7 @@ mp_err mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y)
          return MP_VAL;
       }
 
-      if ((err = mp_init_multi(&tmpG, &tmpX, NULL)) != MP_OKAY) {
+      if ((err = mp_init_multi(&tmpG, &tmpX, (void *)NULL)) != MP_OKAY) {
          return err;
       }
 
@@ -43,7 +43,7 @@ mp_err mp_exptmod(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y)
       /* and now compute (1/G)**|X| instead of G**X [X < 0] */
       err = mp_exptmod(&tmpG, &tmpX, P, Y);
 LBL_ERR:
-      mp_clear_multi(&tmpG, &tmpX, NULL);
+      mp_clear_multi(&tmpG, &tmpX, (void *)NULL);
       return err;
    }
 

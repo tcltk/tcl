@@ -401,10 +401,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_div_3.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_div_d.c"
 			>
 		</File>
@@ -429,7 +425,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_expt_u32.c"
+			RelativePath="bn_mp_expt_n.c"
 			>
 		</File>
 		<File
@@ -477,10 +473,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_get_ll.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_get_mag_u32.c"
 			>
 		</File>
@@ -490,10 +482,6 @@
 		</File>
 		<File
 			RelativePath="bn_mp_get_mag_ul.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_get_mag_ull.c"
 			>
 		</File>
 		<File
@@ -525,10 +513,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_init_ll.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_init_multi.c"
 			>
 		</File>
@@ -550,10 +534,6 @@
 		</File>
 		<File
 			RelativePath="bn_mp_init_ul.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_init_ull.c"
 			>
 		</File>
 		<File
@@ -581,7 +561,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_log_u32.c"
+			RelativePath="bn_mp_log_n.c"
 			>
 		</File>
 		<File
@@ -729,7 +709,7 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_root_u32.c"
+			RelativePath="bn_mp_root_n.c"
 			>
 		</File>
 		<File
@@ -761,10 +741,6 @@
 			>
 		</File>
 		<File
-			RelativePath="bn_mp_set_ll.c"
-			>
-		</File>
-		<File
 			RelativePath="bn_mp_set_u32.c"
 			>
 		</File>
@@ -774,10 +750,6 @@
 		</File>
 		<File
 			RelativePath="bn_mp_set_ul.c"
-			>
-		</File>
-		<File
-			RelativePath="bn_mp_set_ull.c"
 			>
 		</File>
 		<File
@@ -857,6 +829,10 @@
 			>
 		</File>
 		<File
+			RelativePath="bn_s_mp_div_3.c"
+			>
+		</File>
+		<File
 			RelativePath="bn_s_mp_exptmod.c"
 			>
 		</File>
@@ -882,6 +858,18 @@
 		</File>
 		<File
 			RelativePath="bn_s_mp_karatsuba_sqr.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_log.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_log_2expt.c"
+			>
+		</File>
+		<File
+			RelativePath="bn_s_mp_log_d.c"
 			>
 		</File>
 		<File

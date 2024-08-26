@@ -74,6 +74,12 @@ mp_err mp_balance_mul(const mp_int *a, const mp_int *b, mp_int *c)
    return s_mp_balance_mul(a, b, c);
 }
 #endif
+#ifdef BN_MP_DIV_3_C
+mp_err mp_div_3(const mp_int *a, mp_int *c, mp_digit *d)
+{
+   return s_mp_div_3(a, c, d);
+}
+#endif
 #ifdef BN_MP_EXPTMOD_FAST_C
 mp_err mp_exptmod_fast(const mp_int *G, const mp_int *X, const mp_int *P, mp_int *Y, int redmode)
 {
@@ -184,8 +190,26 @@ unsigned long mp_get_long(const mp_int *a)
 #ifdef BN_MP_GET_LONG_LONG_C
 unsigned long long mp_get_long_long(const mp_int *a)
 {
-   return mp_get_mag_ull(a);
+   return (unsigned long long)mp_get_mag_u64(a);
 }
+#endif
+#ifdef BN_MP_GET_LL_C
+MP_GET_SIGNED(mp_get_ll, mp_get_mag_u64, long long, uint64_t)
+#endif
+#ifdef BN_MP_GET_MAG_ULL_C
+MP_GET_MAG(mp_get_mag_ull, unsigned long long)
+#endif
+#ifdef BN_MP_INIT_LL_C
+MP_INIT_INT(mp_init_ll, mp_set_i64, long long)
+#endif
+#ifdef BN_MP_SET_LL_C
+MP_SET_SIGNED(mp_set_ll, mp_set_i64, long long, long long)
+#endif
+#ifdef BN_MP_INIT_ULL_C
+MP_INIT_INT(mp_init_ull, mp_set_u64, unsigned long long)
+#endif
+#ifdef BN_MP_SET_ULL_C
+MP_SET_UNSIGNED(mp_set_ull, unsigned long long)
 #endif
 #ifdef BN_MP_PRIME_IS_DIVISIBLE_C
 mp_err mp_prime_is_divisible(const mp_int *a, mp_bool *result)
@@ -193,42 +217,61 @@ mp_err mp_prime_is_divisible(const mp_int *a, mp_bool *result)
    return s_mp_prime_is_divisible(a, result);
 }
 #endif
+#ifdef BN_MP_LOG_U32_C
+mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c)
+{
+   mp_err e;
+   int c_;
+   if (base > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+      return MP_VAL;
+   }
+   e = mp_log_n(a, (int)base, &c_);
+   *c = (uint32_t)c_;
+   return e;
+}
+#endif
 #ifdef BN_MP_EXPT_D_EX_C
 mp_err mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
    (void)fast;
-   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+   if (b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
-   return mp_expt_u32(a, (uint32_t)b, c);
+   return mp_expt_n(a, (int)b, c);
 }
 #endif
 #ifdef BN_MP_EXPT_D_C
 mp_err mp_expt_d(const mp_int *a, mp_digit b, mp_int *c)
 {
-   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+   if (b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
-   return mp_expt_u32(a, (uint32_t)b, c);
+   return mp_expt_n(a, (int)b, c);
 }
 #endif
 #ifdef BN_MP_N_ROOT_EX_C
 mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
    (void)fast;
-   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+   if (b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (uint32_t)b, c);
+   return mp_root_n(a, (int)b, c);
 }
 #endif
 #ifdef BN_MP_N_ROOT_C
 mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
 {
-   if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
+   if (b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (uint32_t)b, c);
+   return mp_root_n(a, (int)b, c);
+}
+#endif
+#ifdef BN_MP_ROOT_U32_C
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
+{
+   return mp_root_n(a, (int)b, c);
 }
 #endif
 #ifdef BN_MP_UNSIGNED_BIN_SIZE_C

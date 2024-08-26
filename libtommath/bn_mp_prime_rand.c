@@ -36,7 +36,10 @@ mp_err s_mp_prime_random_ex(mp_int *a, int t, int size, int flags, private_mp_pr
    }
 
    /* calc the byte size */
-   bsize = (size>>3) + ((size&7)?1:0);
+   bsize = (size>>3);
+   if (size&7) {
+      bsize++;
+   }
 
    /* we need a buffer of bsize bytes */
    tmp = (unsigned char *) MP_MALLOC((size_t)bsize);
