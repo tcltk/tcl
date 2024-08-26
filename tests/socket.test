@@ -2406,9 +2406,11 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
     -constraints {socket notWinCI} \
     -body {
         set sock [socket -async localhost [randport]]
+        fileevent $sock writable {incr x}
+        vwait x
         fconfigure $sock -blocking 0
         puts $sock ok
-        fileevent $sock writable {set x 1}
+        fileevent $sock writable {incr x}
         vwait x
         close $sock
     } -cleanup {
