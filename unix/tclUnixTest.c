@@ -115,7 +115,7 @@ TclplatformtestInit(
     Tcl_CreateObjCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfork", TestforkCmd,
-        NULL, NULL);
+	NULL, NULL);
     Tcl_CreateObjCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgotsig", TestgotsigCmd,
@@ -167,7 +167,7 @@ TestfilehandlerCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     pipePtr = NULL;
     if (objc >= 3) {
@@ -258,9 +258,9 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 
-        while (read(GetFd(pipePtr->readFile), buffer, 4000) > 0) {
+	while (read(GetFd(pipePtr->readFile), buffer, 4000) > 0) {
 	    /* Empty loop body. */
-        }
+	}
     } else if (strcmp(Tcl_GetString(objv[1]), "fill") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "index");
@@ -474,14 +474,14 @@ TestforkCmd(
     pid_t pid;
 
     if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
     }
     pid = fork();
     if (pid == -1) {
-        Tcl_AppendResult(interp,
-                "Cannot fork", (char *)NULL);
-        return TCL_ERROR;
+	Tcl_AppendResult(interp,
+		"Cannot fork", (char *)NULL);
+	return TCL_ERROR;
     }
     /* Only needed when pthread_atfork is not present,
      * should not hurt otherwise. */

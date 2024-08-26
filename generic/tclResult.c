@@ -731,7 +731,7 @@ TclProcessReturn(
 	if (valuePtr != NULL) {
 	    Tcl_Size length;
 
-	    (void) Tcl_GetStringFromObj(valuePtr, &length);
+	    (void)Tcl_GetStringFromObj(valuePtr, &length);
 	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);

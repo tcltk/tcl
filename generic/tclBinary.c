@@ -2496,7 +2496,7 @@ BinaryDecodeHex(
     data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
-	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
+	data = (unsigned char *)Tcl_GetStringFromObj(objv[objc - 1], &count);
     }
     datastart = data;
     dataend = data + count;
@@ -2755,7 +2755,7 @@ BinaryEncodeUu(
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const unsigned char *) Tcl_GetStringFromObj(
+	    wrapchar = (const unsigned char *)Tcl_GetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
 	    {
 		const unsigned char *p = wrapchar;

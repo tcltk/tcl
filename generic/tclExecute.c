@@ -5169,6 +5169,7 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 
 	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	if (TclObjectHasInterface(value2Ptr, list, contains)) {
 	    int status;
