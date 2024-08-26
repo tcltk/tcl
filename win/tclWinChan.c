@@ -792,7 +792,7 @@ FileGetHandleProc(
 	return TCL_ERROR;
     }
 
-    *handlePtr = (void *) infoPtr->handle;
+    *handlePtr = (void *)infoPtr->handle;
     return TCL_OK;
 }
 
@@ -837,7 +837,7 @@ StoreElementInDict(
      * duplicate keys.
      */
 
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
@@ -921,9 +921,9 @@ StatOpenFile(
      * Anything else and we definitely couldn't have got here anyway.
      */
     if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	STORE_ELEM("type", Tcl_NewStringObj("directory", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("directory", TCL_INDEX_NONE));
     } else {
-	STORE_ELEM("type", Tcl_NewStringObj("file", -1));
+	STORE_ELEM("type", Tcl_NewStringObj("file", TCL_INDEX_NONE));
     }
 #undef STORE_ELEM
 
@@ -1205,7 +1205,7 @@ TclpOpenFileChannel(
 		"couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		(void *)NULL);
+		(char *)NULL);
 	break;
     }
 

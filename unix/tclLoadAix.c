@@ -131,7 +131,7 @@ dlopen(
     for (mp = modList; mp; mp = mp->next) {
 	if (strcmp(mp->name, path) == 0) {
 	    mp->refCnt++;
-	    return (void *) mp;
+	    return (void *)mp;
 	}
     }
 
@@ -151,7 +151,7 @@ dlopen(
      * a normal char *. Ugly.
      */
 
-    mp->entry = (void *) load((char *)path, L_NOAUTODEFER, NULL);
+    mp->entry = (void *)load((char *)path, L_NOAUTODEFER, NULL);
     if (mp->entry == NULL) {
 	free(mp->name);
 	free(mp);
@@ -240,7 +240,7 @@ dlopen(
 	errvalid = 0;
     }
 
-    return (void *) mp;
+    return (void *)mp;
 }
 
 /*

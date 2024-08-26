@@ -455,7 +455,7 @@ DeleteKey(
     if (*keyName == '\0') {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
-	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
@@ -1135,7 +1135,7 @@ ParseKeyName(
     if (!rootName) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad key \"%s\": must start with a valid root", name));
-	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1527,7 +1527,7 @@ AppendSystemError(
     }
 
     snprintf(id, sizeof(id), "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (void *)NULL);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
 
