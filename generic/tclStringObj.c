@@ -673,6 +673,7 @@ TclGetUniChar(
 	return -1;
     }
     const char *begin = TclUtfAtIndex(objPtr->bytes, index);
+    TclUtfToUniChar(begin, &ch);
     return ch;
 }
 
