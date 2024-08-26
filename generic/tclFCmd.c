@@ -1258,12 +1258,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Create link from source to target.
@@ -1321,12 +1321,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Read link

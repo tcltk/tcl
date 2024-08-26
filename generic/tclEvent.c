@@ -1625,7 +1625,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1649,7 +1649,7 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1673,7 +1673,7 @@ Tcl_VwaitObjCmd(
 
   endOfOptionLoop:
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
-		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
+	    TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"can't wait: would block forever", -1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (void *)NULL);

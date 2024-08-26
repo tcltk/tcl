@@ -2339,6 +2339,7 @@ Tcl_LassignObjCmd(
     objv += 2;
     for (i = 0; i < objc && i < listObjc; ++i) {
 	Tcl_Obj *elemObj;
+
 	if (Tcl_ListObjIndex(interp, listPtr, i, &elemObj) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2349,8 +2350,8 @@ Tcl_LassignObjCmd(
 	 * the elemObj is stored in the var. See tests 6.{25,26}
 	 */
 	Tcl_IncrRefCount(elemObj);
-	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
-	    NULL) {
+	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj,
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    Tcl_DecrRefCount(elemObj);
 	    return TCL_ERROR;
 	}
@@ -2385,8 +2386,7 @@ Tcl_LassignObjCmd(
 	    if (status != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	}
-	else {
+	} else {
 	    status = TclListObjRange(interp, listPtr,
 		origListObjc - listObjc, origListObjc - 1, &resultPtr);
 	    if (status != TCL_OK || resultPtr == NULL) {
@@ -3274,7 +3274,7 @@ Tcl_LreverseObjCmd(
     }
 
     if (Tcl_IsShared(objv[1])
-	|| ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
+	    || ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
 	Tcl_Obj *resultObj, **dataArray;
 	ListRep listRep;
 
@@ -4653,7 +4653,9 @@ Tcl_LseqObjCmd(
  done:
     // Free number arguments.
     while (--value_i>=0) {
-	if (numValues[value_i]) Tcl_DecrRefCount(numValues[value_i]);
+	if (numValues[value_i]) {
+	    Tcl_DecrRefCount(numValues[value_i]);
+	}
     }
 
     // Free constants
@@ -5070,8 +5072,7 @@ Tcl_LsortObjCmd(
 	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
-	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
-		    &a) != TCL_OK) {
+	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
@@ -5537,7 +5538,7 @@ DictionaryCompare(
     int secondaryDiff = 0;
 
     while (1) {
-	if (isdigit(UCHAR(*right))		/* INTL: digit */
+		if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
 	     * There are decimal numbers embedded in the two strings. Compare

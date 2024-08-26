@@ -1332,7 +1332,7 @@ ApplicationType(
 
 	ext = strrchr(fullName, '.');
 	if ((ext != NULL) &&
-            (strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}

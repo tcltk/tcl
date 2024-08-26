@@ -997,7 +997,7 @@ TclLookupSimpleVar(
 		    localNameStr = Tcl_GetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
-			&& !memcmp(varName, localNameStr, varLen)) {
+			    && !memcmp(varName, localNameStr, varLen)) {
 			*indexPtr = i;
 			return (Var *) &varFramePtr->compiledLocals[i];
 		    }
@@ -5508,7 +5508,7 @@ TclDeleteVars(
     }
 
     for (varPtr = VarHashFirstVar(tablePtr, &search); varPtr != NULL;
-	 varPtr = VarHashFirstVar(tablePtr, &search)) {
+	    varPtr = VarHashFirstVar(tablePtr, &search)) {
 	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
 		-1);
 	VarHashDeleteEntry(varPtr);

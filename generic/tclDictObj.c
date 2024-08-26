@@ -3881,7 +3881,7 @@ DictAsListLength(
 
 	TclInvalidateStringRep(elemPtr);
 	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
+		elemSize);
 	if (elemSize && check == NULL) {
 	    Tcl_DecrRefCount(elemPtr);
 	    *lenPtr = 0;
@@ -3889,7 +3889,7 @@ DictAsListLength(
 	}
 	if (!literal) {
 	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
+		    TclCopyAndCollapse(elemSize, elemStart, check));
 	}
 	llen++;
     }

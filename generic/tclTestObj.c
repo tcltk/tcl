@@ -90,17 +90,24 @@ Tcl_ObjType *v3TestListTypePtr = (Tcl_ObjType *)&v3TestListObjectType;
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
 
-static void VarPtrDeleteProc(void *clientData, TCL_UNUSED(Tcl_Interp *))
+static void
+VarPtrDeleteProc(
+    void *clientData,
+    TCL_UNUSED(Tcl_Interp *))
 {
     int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
-	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
+	if (varPtr[i]) {
+	    Tcl_DecrRefCount(varPtr[i]);
+	}
     }
     Tcl_Free(varPtr);
 }
 
-static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
+static Tcl_Obj **
+GetVarPtr(
+    Tcl_Interp *interp)
 {
     Tcl_InterpDeleteProc *proc;
 
@@ -1725,12 +1732,9 @@ TestbigdataCmd (
     /* Need one byte for nul terminator */
     Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
-		Tcl_GetString(objv[2]),
-		limit));
+		Tcl_GetString(objv[2]), limit));
 	return TCL_ERROR;
     }
 

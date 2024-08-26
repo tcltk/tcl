@@ -281,7 +281,9 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     ArithSeries *arithSeriesRepPtr;
 
     length = len>=0 ? len : -1;
-    if (length < 0) length = -1;
+    if (length < 0) {
+	length = -1;
+    }
 
     TclNewObj(arithSeriesObj);
 
@@ -299,8 +301,9 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = (Tcl_ObjType *)&tclArithSeriesType;
-    if (length > 0)
+    if (length > 0) {
     	Tcl_InvalidateStringRep(arithSeriesObj);
+    }
 
     return arithSeriesObj;
 }
@@ -583,7 +586,8 @@ ArithSeriesObjIndex(
  *----------------------------------------------------------------------
  */
 int ArithSeriesObjLength(TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *arithSeriesObj, Tcl_Size *result)
+    Tcl_Obj *arithSeriesObj
+	,Tcl_Size *result)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesObj->internalRep.twoPtrValue.ptr1;
@@ -874,8 +878,7 @@ ArithSeriesObjRange(
 	toIdx = arithSeriesRepPtr->len-1;
     }
 
-    if (fromIdx > toIdx ||
-	fromIdx >= arithSeriesRepPtr->len) {
+    if (fromIdx > toIdx || fromIdx >= arithSeriesRepPtr->len) {
 	TclNewObj(newObjPtr);
 	*resPtr = newObjPtr;
 	return TCL_OK;
@@ -994,9 +997,7 @@ ArithSeriesGetElements(
 	*objcPtr = objc;
     } else {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("value is not an arithseries"));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value is not an arithseries"));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (void *)NULL);
 	}
 	return TCL_ERROR;
@@ -1093,7 +1094,6 @@ ArithSeriesObjReverse(
 
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------

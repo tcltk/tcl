@@ -73,7 +73,7 @@ static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
-static int	EachloopCmd(Tcl_Interp *interp, int collect,
+static int		EachloopCmd(Tcl_Interp *interp, int collect,
 			    int objc, Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ExprCallback;
@@ -435,7 +435,7 @@ TclInitEncodingCmd(
  *------------------------------------------------------------------------
  */
 static int
-EncodingConvertParseOptions (
+EncodingConvertParseOptions(
     Tcl_Interp *interp,    /* For error messages. May be NULL */
     int objc,		   /* Number of arguments */
     Tcl_Obj *const objv[], /* Argument objects as passed to command. */
@@ -463,11 +463,9 @@ EncodingConvertParseOptions (
      */
 
     if (objc == 1) {
-numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
-	Tcl_WrongNumArgs(interp,
-			 1,
-			 objv,
-			 "?-profile profile? ?-failindex var? encoding data");
+    numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-profile profile? ?-failindex var? encoding data");
 	((Interp *)interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv, "data");
 	return TCL_ERROR;
@@ -480,9 +478,8 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
     } else {
 	int argIndex;
 	for (argIndex = 1; argIndex < (objc-2); ++argIndex) {
-	    if (Tcl_GetIndexFromObj(
-		    interp, objv[argIndex], options, "option", 0, &optIndex)
-		!= TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[argIndex], options, "option",
+		    0, &optIndex) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (++argIndex == (objc - 2)) {
@@ -491,8 +488,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    switch (optIndex) {
 	    case PROFILE:
 		if (TclEncodingProfileNameToId(interp,
-					       Tcl_GetString(objv[argIndex]),
-					       &profile) != TCL_OK) {
+			Tcl_GetString(objv[argIndex]), &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		break;
@@ -502,8 +498,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    }
 	}
 	/* Get encoding after opts so no need to free it on option error */
-	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding)
-	    != TCL_OK) {
+	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	dataObj = objv[objc - 1];
@@ -548,9 +543,8 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *failVarObj;
     Tcl_Size errorLocation;
 
-    if (EncodingConvertParseOptions(
-	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
-	!= TCL_OK) {
+    if (EncodingConvertParseOptions(interp, objc, objv, &encoding, &data,
+	    &flags, &failVarObj) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -563,7 +557,7 @@ EncodingConvertfromObjCmd(
 	return TCL_ERROR;
     }
     result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length, flags,
-                                        &ds, failVarObj ? &errorLocation : NULL);
+	    &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
     switch (result) {
     case TCL_OK:
@@ -594,11 +588,8 @@ EncodingConvertfromObjCmd(
     if (failVarObj) {
 	Tcl_Obj *failIndex;
 	TclNewIndexObj(failIndex, errorLocation);
-	if (Tcl_ObjSetVar2(interp,
-			   failVarObj,
-			   NULL,
-			   failIndex,
-			   TCL_LEAVE_ERR_MSG) == NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, failIndex,
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -641,16 +632,15 @@ EncodingConverttoObjCmd(
     Tcl_Obj *data;		/* String to convert */
     Tcl_DString ds;		/* Buffer to hold the byte array */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length;			/* Length of the string being converted */
+    Tcl_Size length;		/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     int result;
     int flags;
     Tcl_Obj *failVarObj;
     Tcl_Size errorLocation;
 
-    if (EncodingConvertParseOptions(
-	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
-	!= TCL_OK) {
+    if (EncodingConvertParseOptions(interp, objc, objv, &encoding, &data,
+	    &flags, &failVarObj) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -660,7 +650,7 @@ EncodingConverttoObjCmd(
 
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
-                                        &ds, failVarObj ? &errorLocation : NULL);
+	    &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
 
     switch (result) {
@@ -690,20 +680,18 @@ EncodingConverttoObjCmd(
      */
     if (failVarObj) {
 	Tcl_Obj *failIndex;
+
 	TclNewIndexObj(failIndex, errorLocation);
-	if (Tcl_ObjSetVar2(interp,
-			   failVarObj,
-			   NULL,
-			   failIndex,
-			   TCL_LEAVE_ERR_MSG) == NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, failIndex,
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
     }
 
-    Tcl_SetObjResult(interp,
-		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
-					 Tcl_DStringLength(&ds)));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+	    (unsigned char*) Tcl_DStringValue(&ds),
+	    Tcl_DStringLength(&ds)));
     Tcl_DStringFree(&ds);
 
     /* We're done with the encoding */

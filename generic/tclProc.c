@@ -619,8 +619,7 @@ TclCreateProc(
 		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
-		     || memcmp(value, tmpPtr, tmpLength) != 0
-		) {
+			|| memcmp(value, tmpPtr, tmpLength) != 0) {
 		    Tcl_Obj *errorObj = Tcl_ObjPrintf(
 			    "procedure \"%s\": formal parameter \"", procName);
 		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
@@ -1557,8 +1556,7 @@ TclPushProcCallFrame(
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
-		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)
-	) {
+		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)) {
 	    goto doCompilation;
 	}
     } else {
@@ -1945,8 +1943,7 @@ TclProcCompileProc(
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)
-		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)
-	) {
+		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)) {
 	    return TCL_OK;
 	}
 

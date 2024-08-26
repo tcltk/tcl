@@ -1242,7 +1242,7 @@ Tcl_ExternalToUtfDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -1257,14 +1257,12 @@ Tcl_ExternalToUtfDStringEx(
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
-		    Tcl_SetObjResult(
-			interp,
-			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-				      TCL_SIZE_MODIFIER "d: '\\x%02X'",
-				      nBytesProcessed,
-				      UCHAR(srcStart[nBytesProcessed])));
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "unexpected byte sequence starting at index %"
+			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
+			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
-			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
+			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1569,7 +1567,7 @@ Tcl_UtfToExternalDStringEx(
 	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
-	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+		!(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
 	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
@@ -1588,17 +1586,15 @@ Tcl_UtfToExternalDStringEx(
 		    Tcl_Size pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
+
 		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
-		    Tcl_SetObjResult(
-			interp,
-			Tcl_ObjPrintf(
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
-			    pos,
-			    ucs4));
+			    pos, ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-				     buf, (void *)NULL);
+			    buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -4342,10 +4338,8 @@ TclEncodingProfileNameToId(
 	}
     }
     if (interp) {
-	Tcl_Obj *errorObj;
 	/* This code assumes at least two profiles :-) */
-	errorObj =
-	    Tcl_ObjPrintf("bad profile name \"%s\": must be",
+	Tcl_Obj *errorObj = Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendStringsToObj(
@@ -4389,9 +4383,7 @@ TclEncodingProfileIdToName(
 	}
     }
     if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Internal error. Bad profile id \"%d\".",
 		profileValue));
 	Tcl_SetErrorCode(

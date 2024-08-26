@@ -944,8 +944,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjLength(interp, objv[arg], &listc
-			) != TCL_OK) {
+		if (TclListObjLength(interp, objv[arg], &listc) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 
