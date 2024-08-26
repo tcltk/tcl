@@ -234,7 +234,7 @@ static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[], int flags);
 static inline Command *	TEOV_LookupCmdFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Namespace *lookupNsPtr);
-static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
+static int		TEOV_NotFound(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
@@ -4803,7 +4803,7 @@ TEOV_Error(
 static int
 TEOV_NotFound(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[],
     Namespace *lookupNsPtr)
 {
@@ -4821,7 +4821,7 @@ TEOV_NotFound(
     if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
 	currNsPtr = iPtr->globalNsPtr;
 	if (currNsPtr == NULL) {
-	    Tcl_Panic("Tcl_EvalObjv: NULL global namespace pointer");
+	    Tcl_Panic("TEOV_NotFound: NULL global namespace pointer");
 	}
     }
 
@@ -4856,7 +4856,7 @@ TEOV_NotFound(
 	newObjv[i] = handlerObjv[i];
 	Tcl_IncrRefCount(newObjv[i]);
     }
-    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * objc);
+    memcpy(newObjv + handlerObjc, objv, sizeof(Tcl_Obj *) * objc);
 
     /*
      * Look up and invoke the handler (by recursive call to this function). If
@@ -5360,7 +5360,7 @@ TclEvalEx(
 			 */
 
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %" TCL_Z_MODIFIER "u)", objectsUsed));
+				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
@@ -6617,7 +6617,7 @@ int
 TclObjInvokeNamespace(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    int objc,			/* Count of arguments. */
+    Tcl_Size objc,			/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     Tcl_Namespace *nsPtr,	/* The namespace to use. */
@@ -7610,7 +7610,8 @@ ExprMaxMinFunc(
 {
     Tcl_Obj *res;
     double d;
-    int type, i;
+    int type;
+    int i;
     void *ptr;
 
     if (objc < 2) {

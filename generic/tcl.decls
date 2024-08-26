@@ -179,9 +179,9 @@ declare 39 {
 declare 40 {
     const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
-declare 41 {
-    char *TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr)
-}
+#declare 41 {
+#    char *TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr)
+#}
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
 }

@@ -162,8 +162,7 @@ EXTERN int		Tcl_GetLongFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, long *longPtr);
 /* 40 */
 EXTERN const Tcl_ObjType * Tcl_GetObjType(const char *typeName);
-/* 41 */
-EXTERN char *		TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr);
+/* Slot 41 is reserved */
 /* 42 */
 EXTERN void		Tcl_InvalidateStringRep(Tcl_Obj *objPtr);
 /* 43 */
@@ -2032,7 +2031,7 @@ typedef struct TclStubs {
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
     const Tcl_ObjType * (*tcl_GetObjType) (const char *typeName); /* 40 */
-    char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, void *lengthPtr); /* 41 */
+    void (*reserved41)(void);
     void (*tcl_InvalidateStringRep) (Tcl_Obj *objPtr); /* 42 */
     int (*tcl_ListObjAppendList) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *elemListPtr); /* 43 */
     int (*tcl_ListObjAppendElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *objPtr); /* 44 */
@@ -2804,8 +2803,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetLongFromObj) /* 39 */
 #define Tcl_GetObjType \
 	(tclStubsPtr->tcl_GetObjType) /* 40 */
-#define TclGetStringFromObj \
-	(tclStubsPtr->tclGetStringFromObj) /* 41 */
+/* Slot 41 is reserved */
 #define Tcl_InvalidateStringRep \
 	(tclStubsPtr->tcl_InvalidateStringRep) /* 42 */
 #define Tcl_ListObjAppendList \

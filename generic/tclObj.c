@@ -1850,7 +1850,7 @@ Tcl_GetString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringFromObj/TclGetStringFromObj --
+ * Tcl_GetStringFromObj
  *
  *	Returns the string representation's byte array pointer and length for
  *	an object.

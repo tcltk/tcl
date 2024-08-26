@@ -90,10 +90,8 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
-# undef TclGetStringFromObj
 # undef TclGetBytesFromObj
 # undef TclGetUnicodeFromObj
-# define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
 #undef Tcl_Close
@@ -757,7 +755,7 @@ const TclStubs tclStubs = {
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
     Tcl_GetObjType, /* 40 */
-    TclGetStringFromObj, /* 41 */
+    0, /* 41 */
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
