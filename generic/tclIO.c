@@ -8649,7 +8649,6 @@ UpdateInterest(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    ChannelBuffer *bufPtr = statePtr->outQueueHead;
     int mask = statePtr->interestMask;
 
     if (chanPtr->typePtr == NULL) {
@@ -8732,11 +8731,11 @@ UpdateInterest(
 	    && mask & TCL_WRITABLE
 	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
 	    && (
-		bufPtr
+		statePtr->curOutPtr
 		&&
-		!IsBufferEmpty(bufPtr)
+		!IsBufferEmpty(statePtr->curOutPtr)
 		&&
-		!IsBufferFull(bufPtr)
+		!IsBufferFull(statePtr->curOutPtr)
 	   )
     ) {
 	TclChannelPreserve((Tcl_Channel)chanPtr);

@@ -2516,8 +2516,16 @@ test io-28.6 {
     variable res
     after 0 [list coroutine c1 apply [list {} {
 	variable done
-	set chan [chan create w {apply {args {
-	    list initialize finalize watch write configure blocking
+	# just enough of a refchan for the purpose of the test
+	set chan [chan create w {apply {{cmd chan args} {
+	    switch $cmd {
+		initialize {
+		    list initialize finalize watch write configure blocking
+		}
+		watch {
+		    chan postevent $chan write
+		}
+	    }
 	}}}]
 	chan configure $chan -blocking 0
 	while 1 {
