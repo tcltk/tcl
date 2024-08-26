@@ -468,7 +468,7 @@ TestbooleanobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetBooleanFromObj(interp, varPtr[varIndex],
-				  &boolValue) != TCL_OK) {
+		&boolValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -568,7 +568,7 @@ TestdoubleobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetDoubleFromObj(interp, varPtr[varIndex],
-				 &doubleValue) != TCL_OK) {
+		&doubleValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -1007,7 +1007,7 @@ TestlistobjCmd(
     case LISTOBJ_REPLACE:
 	if (objc < 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex start count ?element...?");
+		    "varIndex start count ?element...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK
@@ -1019,7 +1019,7 @@ TestlistobjCmd(
 	}
 	Tcl_ResetResult(interp);
 	return Tcl_ListObjReplace(interp, varPtr[varIndex], first, count,
-				  objc-5, objv+5);
+		objc-5, objv+5);
 
     case LISTOBJ_INDEXMEMCHECK:
 	if (objc != 3) {
@@ -1079,8 +1079,7 @@ TestlistobjCmd(
 	 * Hence this explicit test.
 	 */
 	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-			     "varIndex listIndex");
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex listIndex");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK) {

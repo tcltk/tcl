@@ -263,7 +263,7 @@ ValidateMemory(
 
     hiPtr = (unsigned char *)memHeaderP->body + memHeaderP->length;
     for (idx = 0; idx < HIGH_GUARD_SIZE; idx++) {
-	byte = *(hiPtr + idx);
+	byte = hiPtr[idx];
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);

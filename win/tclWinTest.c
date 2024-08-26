@@ -594,14 +594,9 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath,
-			      SE_FILE_OBJECT,
-			      DACL_SECURITY_INFORMATION |
-				  PROTECTED_DACL_SECURITY_INFORMATION,
-			      NULL,
-			      NULL,
-			      newAcl,
-			      NULL) == ERROR_SUCCESS) {
+    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
     }
 
@@ -625,8 +620,6 @@ TestplatformChmod(
 
     /* Run normal chmod command */
     return chmod(nativePath, pmode);
-
-
 }
 
 /*

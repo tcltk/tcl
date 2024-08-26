@@ -2480,16 +2480,14 @@ TclZipfs_MountBuffer(
 	}
 	memcpy(zf->data, data, datalen);
 	zf->ptrToFree = zf->data;
-    }
-    else {
+    } else {
 	zf->data = (unsigned char *)data;
 	zf->ptrToFree = NULL;
     }
     ret = ZipFSFindTOC(interp, 1, zf);
     if (ret != TCL_OK) {
 	Tcl_Free(zf);
-    }
-    else {
+    } else {
 	/* Note ZipFSCatalogFilesystem will free zf on error */
 	ret = ZipFSCatalogFilesystem(
 	    interp, zf, mountPoint, NULL, "Memory Buffer");
@@ -5057,8 +5055,7 @@ InitWritableChannel(
 		info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
 	    }
 	    info->numBytes = len;
-	}
-	else {
+	} else {
 	    /*
 	     * Simple stored data. Copy into our working buffer.
 	     */
@@ -5569,8 +5566,7 @@ ZipFSMatchInDirectoryProc(
 	}
 	wanted &=
 	    (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT);
-    }
-    else {
+    } else {
 	wanted = TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE;
     }
 

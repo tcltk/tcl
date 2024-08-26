@@ -1609,8 +1609,8 @@ Tcl_VwaitObjCmd(
 		goto needArg;
 	    }
 	    result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			    VwaitVarProc, &vwaitItems[numItems]);
+		    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		    VwaitVarProc, &vwaitItems[numItems]);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -1691,8 +1691,8 @@ Tcl_VwaitObjCmd(
 
     for (result = TCL_OK; i < objc; i++) {
 	result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
-			TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-			VwaitVarProc, &vwaitItems[numItems]);
+		TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		VwaitVarProc, &vwaitItems[numItems]);
 	if (result != TCL_OK) {
 	    break;
 	}
@@ -1725,7 +1725,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
-			&vwaitItems[numItems]);
+		&vwaitItems[numItems]);
 	Tcl_GetTime(&before);
     } else {
 	timeout = 0;
