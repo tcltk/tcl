@@ -411,7 +411,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = (char *) Tcl_Alloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
@@ -2580,7 +2580,7 @@ SocketCheckProc(
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
 		&& !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
-	    evPtr = (SocketEvent *) Tcl_Alloc(sizeof(SocketEvent));
+	    evPtr = (SocketEvent *)Tcl_Alloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = statePtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -2855,7 +2855,7 @@ AddSocketInfoFd(
 	 * Add the first FD.
 	 */
 
-	statePtr->sockets = (TcpFdList *) Tcl_Alloc(sizeof(TcpFdList));
+	statePtr->sockets = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
 	fds = statePtr->sockets;
     } else {
 	/*
@@ -2866,7 +2866,7 @@ AddSocketInfoFd(
 	    fds = fds->next;
 	}
 
-	fds->next = (TcpFdList *) Tcl_Alloc(sizeof(TcpFdList));
+	fds->next = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
 
@@ -2899,7 +2899,7 @@ static TcpState *
 NewSocketInfo(
     SOCKET socket)
 {
-    TcpState *statePtr = (TcpState *) Tcl_Alloc(sizeof(TcpState));
+    TcpState *statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
 
     memset(statePtr, 0, sizeof(TcpState));
 

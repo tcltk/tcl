@@ -352,7 +352,7 @@ RingBufferInit(
     if (capacity <= 0 || capacity > TCL_SIZE_MAX) {
 	Tcl_Panic("Internal error: invalid ring buffer capacity requested.");
     }
-    ringPtr->bufPtr = (char *) Tcl_Alloc(capacity);
+    ringPtr->bufPtr = (char *)Tcl_Alloc(capacity);
     ringPtr->capacity = capacity;
     ringPtr->start    = 0;
     ringPtr->length   = 0;
@@ -2017,7 +2017,7 @@ AllocateConsoleHandleInfo(
     ConsoleHandleInfo *handleInfoPtr;
     DWORD consoleMode;
 
-    handleInfoPtr = (ConsoleHandleInfo *) Tcl_Alloc(sizeof(*handleInfoPtr));
+    handleInfoPtr = (ConsoleHandleInfo *)Tcl_Alloc(sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
