@@ -2244,12 +2244,12 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_FindExecutable(const char *argv0);
 EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 EXTERN const char *	Tcl_SetPanicProc(
-			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
+			    Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
 			    Tcl_LibraryInitProc *safeInitProc);
-EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
