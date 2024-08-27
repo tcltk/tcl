@@ -327,7 +327,7 @@ MODULE_SCOPE const Tcl_ObjType *tclBignumType = (Tcl_ObjType *)&tclBignumObjType
 
 const Tcl_HashKeyType tclObjHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
-    0,				/* flags */
+    TCL_HASH_KEY_DIRECT_COMPARE,/* allows compare keys by pointers */
     TclHashObjKey,		/* hashKeyProc */
     TclCompareObjKeys,		/* compareKeysProc */
     AllocObjEntry,		/* allocEntryProc */
