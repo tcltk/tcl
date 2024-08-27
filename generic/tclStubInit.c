@@ -90,6 +90,7 @@
 # undef TclGetUnicodeFromObj
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
+# define Tcl_GetAlias 0
 #undef Tcl_Close
 #define Tcl_Close 0
 #undef Tcl_GetByteArrayFromObj

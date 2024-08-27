@@ -1293,7 +1293,7 @@ Tcl_CreateAliasObj(
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_GetAlias(
     Tcl_Interp *interp,		/* Interp to start search from. */
@@ -1339,6 +1339,7 @@ Tcl_GetAlias(
     }
     return TCL_OK;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

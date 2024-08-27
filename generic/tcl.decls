@@ -555,7 +555,7 @@ declare 146 {
 #declare 147 {
 #    void Tcl_FreeResult(Tcl_Interp *interp)
 #}
-declare 148 {
+declare 148 {deprecated {Use Tcl_GetAliasObj}} {
     int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    int *argcPtr, const char ***argvPtr)
