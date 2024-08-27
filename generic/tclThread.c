@@ -468,7 +468,7 @@ TclFinalizeSynchronization(void)
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_ExitThread(
     int status)
 {

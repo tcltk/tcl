@@ -302,7 +302,7 @@ Tcl_JoinThread(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 TclpThreadExit(
     int status)
 {
