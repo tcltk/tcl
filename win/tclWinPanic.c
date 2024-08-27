@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright © 2013 Jan Nijtmans.
  * All rights reserved.
  *
@@ -39,7 +39,7 @@
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN1 void
+TCL_NORETURN void
 Tcl_ConsolePanic(
     const char *format, ...)
 {
