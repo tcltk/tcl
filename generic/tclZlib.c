@@ -3551,7 +3551,7 @@ ZlibTransformGetOption(
 	} else {
 	    if (chanDataPtr->compDictObj) {
 		Tcl_Size length;
-		const char *str = Tcl_GetStringFromObj(cd->compDictObj,
+		const char *str = Tcl_GetStringFromObj(chanDataPtr->compDictObj,
 		    &length);
 
 		Tcl_DStringAppend(dsPtr, str, length);
