@@ -3233,7 +3233,9 @@ TclStringCat(
 		 */
 
 	 	binary = 0;
-	 	if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+	 	if ((objPtr->typePtr)
+			&& !TclHasInternalRep(
+			    objPtr, &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
