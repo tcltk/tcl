@@ -3167,8 +3167,8 @@ CloseChannel(
     /*
      * Cancel any outstanding timer.
      */
-    DeleteTimerHandler(statePtr);
 
+    DeleteTimerHandler(statePtr);
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -7564,7 +7564,6 @@ Tcl_Eof(
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -7590,7 +7589,7 @@ TclChannelGetBlockingMode(
 
     return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
