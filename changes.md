@@ -70,7 +70,7 @@ Tcl 9:
 
   * Internationalization of text
     - Full Unicode range of codepoints
-    - New encodings: utf-16(le|be), ucs-2(le|be), CESU-8, etc.
+    - New encodings: utf-16/utf-32/ucs-2(le|be), CESU-8, etc.
     - [encoding] options -profile, -failindex manage encoding of I/O.
     - [msgcat] supports custom locale search list
     - [source] defaults to -encoding utf-8
@@ -90,6 +90,8 @@ Tcl 9:
     - $::tcl_precision no longer controls string generation of doubles
     - Removed Tcl 7 legacies: [case], [puts] [read] variant syntaxes
     - Removed subcommands [trace variable|vdelete|vinfo]
+    - No -eofchar option for channels anymore for writing.
+    - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
 
   * Incompatibilities in C public interface
     - Many arguments expanded type from int to Tcl_Size
@@ -117,10 +119,12 @@ Tcl 9:
     - [package files]
     - [string insert], [string is dict]
     - [tcl::process]
+    - [*::build-info]
 
   * New command options
     - [regsub ... -command ...]
     - [lsearch ... -stride ...]
+    - [clock scan ... -validate ...]
     - [socket ... -nodelay ... -keepalive ...]
     - [vwait] controlled by several new options
 
@@ -153,6 +157,7 @@ Tk 9:
     - [$frame ... -backgroundimage $img -tile $bool]
     - [$menu id], [$menu add|insert ... ?$id? ...]
     - [$image get ... -withalpha ...]
+    - All indices now accept the forms "end", "end-int", "int+|-int"
 
   * Improved widget appearance
     - ttk::notebook with nondefault tab positions
