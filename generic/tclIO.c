@@ -8728,22 +8728,18 @@ UpdateInterest(
     }
 
     if (!statePtr->timer
-	    && mask & TCL_WRITABLE
-	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	    && (
-		statePtr->curOutPtr
-		&&
-		!IsBufferEmpty(statePtr->curOutPtr)
-		&&
-		!IsBufferFull(statePtr->curOutPtr)
-	   )
-    ) {
-	TclChannelPreserve((Tcl_Channel)chanPtr);
-	statePtr->timerChanPtr = chanPtr;
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
+		&& (mask & TCL_WRITABLE)
+		&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
+		&& ( statePtr->curOutPtr
+			&& !IsBufferEmpty(statePtr->curOutPtr)
+			&& !IsBufferFull(statePtr->curOutPtr)
+		)
+	) {
+		TclChannelPreserve((Tcl_Channel)chanPtr);
+		statePtr->timerChanPtr = chanPtr;
+		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+			ChannelTimerProc,chanPtr);
     }
-
 
     ChanWatch(chanPtr, mask);
 }
