@@ -90,7 +90,6 @@
 # undef TclGetUnicodeFromObj
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
-# define Tcl_GetAlias 0
 #undef Tcl_Close
 #define Tcl_Close 0
 #undef Tcl_GetByteArrayFromObj
@@ -109,6 +108,7 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
+# define TclGetAliasObj 0
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -870,8 +870,8 @@ const TclStubs tclStubs = {
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     0, /* 147 */
-    Tcl_GetAlias, /* 148 */
-    Tcl_GetAliasObj, /* 149 */
+    0, /* 148 */
+    TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */
@@ -1007,7 +1007,7 @@ const TclStubs tclStubs = {
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
     Tcl_SetMainLoop, /* 284 */
-    0, /* 285 */
+    Tcl_GetAliasObj, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
@@ -1411,8 +1411,6 @@ const TclStubs tclStubs = {
     Tcl_UtfNcmp, /* 686 */
     Tcl_UtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
-    Tcl_SetWideUIntObj, /* 689 */
-    TclUnusedStubEntry, /* 690 */
     Tcl_NewObjInterface, /* 689 */
     Tcl_NewObjType, /* 690 */
     Tcl_ObjInterfaceSetVersion, /* 691 */

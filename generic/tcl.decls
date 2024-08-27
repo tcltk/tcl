@@ -551,19 +551,11 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-# Removed in 9.0, TIP 559
-#declare 147 {
-#    void Tcl_FreeResult(Tcl_Interp *interp)
-#}
-declare 148 {deprecated {Use Tcl_GetAliasObj}} {
-    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
-	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    int *argcPtr, const char ***argvPtr)
-}
+
 declare 149 {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
+    int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    int *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 150 {
     void *Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
@@ -1077,9 +1069,11 @@ declare 284 {
     void Tcl_SetMainLoop(Tcl_MainLoopProc *proc)
 }
 
-# Reserved for future use (8.0.x vs. 8.1)
-#  declare 285 {
-#  }
+declare 285 {
+    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+}
 
 # Added in 8.1:
 

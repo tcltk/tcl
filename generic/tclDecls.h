@@ -428,19 +428,13 @@ EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 /* 146 */
 EXTERN int		Tcl_Flush(Tcl_Channel chan);
 /* Slot 147 is reserved */
-/* 148 */
-TCL_DEPRECATED("Use Tcl_GetAliasObj")
-int			Tcl_GetAlias(Tcl_Interp *interp,
-				const char *childCmd,
-				Tcl_Interp **targetInterpPtr,
-				const char **targetCmdPtr, int *argcPtr,
-				const char ***argvPtr);
+/* Slot 148 is reserved */
 /* 149 */
-EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
+EXTERN int		TclGetAliasObj(Tcl_Interp *interp,
 				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, int *objcPtr,
-				Tcl_Obj ***objv);
+				Tcl_Obj ***objvPtr);
 /* 150 */
 EXTERN void *		Tcl_GetAssocData(Tcl_Interp *interp,
 				const char *name,
@@ -763,7 +757,12 @@ EXTERN int		Tcl_UnstackChannel(Tcl_Interp *interp,
 EXTERN Tcl_Channel	Tcl_GetStackedChannel(Tcl_Channel chan);
 /* 284 */
 EXTERN void		Tcl_SetMainLoop(Tcl_MainLoopProc *proc);
-/* Slot 285 is reserved */
+/* 285 */
+EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
+				const char *childCmd,
+				Tcl_Interp **targetInterpPtr,
+				const char **targetCmdPtr, Tcl_Size *objcPtr,
+				Tcl_Obj ***objvPtr);
 /* 286 */
 EXTERN void		Tcl_AppendObjToObj(Tcl_Obj *objPtr,
 				Tcl_Obj *appendObjPtr);
@@ -1871,11 +1870,6 @@ EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
 /* 688 */
 EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
 /* 689 */
-EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
-				Tcl_WideUInt uwideValue);
-/* 690 */
-EXTERN void		TclUnusedStubEntry(void);
-/* 689 */
 EXTERN Tcl_ObjInterface * Tcl_NewObjInterface(void);
 /* 690 */
 EXTERN Tcl_ObjType *	Tcl_NewObjType(void);
@@ -2144,8 +2138,8 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     void (*reserved147)(void);
-    TCL_DEPRECATED_API("Use Tcl_GetAliasObj") int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
-    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
+    void (*reserved148)(void);
+    int (*tclGetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
     Tcl_Size (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
@@ -2281,7 +2275,7 @@ typedef struct TclStubs {
     int (*tcl_UnstackChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 282 */
     Tcl_Channel (*tcl_GetStackedChannel) (Tcl_Channel chan); /* 283 */
     void (*tcl_SetMainLoop) (Tcl_MainLoopProc *proc); /* 284 */
-    void (*reserved285)(void);
+    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr); /* 285 */
     void (*tcl_AppendObjToObj) (Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr); /* 286 */
     Tcl_Encoding (*tcl_CreateEncoding) (const Tcl_EncodingType *typePtr); /* 287 */
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 288 */
@@ -2685,8 +2679,6 @@ typedef struct TclStubs {
     int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
-    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
-    void (*tclUnusedStubEntry) (void); /* 690 */
     Tcl_ObjInterface * (*tcl_NewObjInterface) (void); /* 689 */
     Tcl_ObjType * (*tcl_NewObjType) (void); /* 690 */
     int (*tcl_ObjInterfaceSetVersion) (Tcl_ObjInterface *oiPtr, int version); /* 691 */
@@ -3007,10 +2999,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_Flush \
 	(tclStubsPtr->tcl_Flush) /* 146 */
 /* Slot 147 is reserved */
-#define Tcl_GetAlias \
-	(tclStubsPtr->tcl_GetAlias) /* 148 */
-#define Tcl_GetAliasObj \
-	(tclStubsPtr->tcl_GetAliasObj) /* 149 */
+/* Slot 148 is reserved */
+#define TclGetAliasObj \
+	(tclStubsPtr->tclGetAliasObj) /* 149 */
 #define Tcl_GetAssocData \
 	(tclStubsPtr->tcl_GetAssocData) /* 150 */
 #define Tcl_GetChannel \
@@ -3255,7 +3246,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetStackedChannel) /* 283 */
 #define Tcl_SetMainLoop \
 	(tclStubsPtr->tcl_SetMainLoop) /* 284 */
-/* Slot 285 is reserved */
+#define Tcl_GetAliasObj \
+	(tclStubsPtr->tcl_GetAliasObj) /* 285 */
 #define Tcl_AppendObjToObj \
 	(tclStubsPtr->tcl_AppendObjToObj) /* 286 */
 #define Tcl_CreateEncoding \
@@ -4044,10 +4036,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNcasecmp) /* 687 */
 #define Tcl_NewWideUIntObj \
 	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
-#define Tcl_SetWideUIntObj \
-	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
-#define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 #define Tcl_NewObjInterface \
 	(tclStubsPtr->tcl_NewObjInterface) /* 689 */
 #define Tcl_NewObjType \
