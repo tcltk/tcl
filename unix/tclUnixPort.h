@@ -669,8 +669,6 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpExit	exit
-
 #if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
 #endif /* TCL_THREADS */
