@@ -549,7 +549,7 @@ TclpOpenFile(
      * Map the access bits to the NT access mode.
      */
 
-    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+    switch (mode & O_ACCMODE) {
     case O_RDONLY:
 	accessMode = GENERIC_READ;
 	break;
