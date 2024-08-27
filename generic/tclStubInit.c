@@ -1411,37 +1411,39 @@ const TclStubs tclStubs = {
     Tcl_UtfNcmp, /* 686 */
     Tcl_UtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
-    Tcl_NewObjInterface, /* 689 */
-    Tcl_NewObjType, /* 690 */
-    Tcl_ObjInterfaceSetVersion, /* 691 */
-    Tcl_ObjTypeSetFreeInternalRepProc, /* 692 */
-    Tcl_ObjTypeSetDupInternalRepProc, /* 693 */
-    Tcl_ObjTypeSetUpdateStringProc, /* 694 */
-    Tcl_ObjTypeSetSetFromAnyProc, /* 695 */
-    Tcl_ObjTypeSetVersion, /* 696 */
-    Tcl_ObjInterfaceSetFnListAll, /* 697 */
-    Tcl_ObjInterfaceSetFnListAppend, /* 698 */
-    Tcl_ObjInterfaceSetFnListAppendList, /* 699 */
-    Tcl_ObjInterfaceSetFnListIndex, /* 700 */
-    Tcl_ObjInterfaceSetFnListIndexEnd, /* 701 */
-    Tcl_ObjInterfaceSetFnListIsSorted, /* 702 */
-    Tcl_ObjInterfaceSetFnListLength, /* 703 */
-    Tcl_ObjInterfaceSetFnListRange, /* 704 */
-    Tcl_ObjInterfaceSetFnListRangeEnd, /* 705 */
-    Tcl_ObjInterfaceSetFnListReplace, /* 706 */
-    Tcl_ObjInterfaceSetFnListReplaceList, /* 707 */
-    Tcl_ObjInterfaceSetFnListReverse, /* 708 */
-    Tcl_ObjInterfaceSetFnListSet, /* 709 */
-    Tcl_ObjInterfaceSetFnListSetDeep, /* 710 */
-    Tcl_ObjInterfaceSetFnStringIndex, /* 711 */
-    Tcl_ObjInterfaceSetFnStringIndexEnd, /* 712 */
-    Tcl_ObjInterfaceSetFnStringLength, /* 713 */
-    Tcl_ObjInterfaceSetFnStringRange, /* 714 */
-    Tcl_ObjInterfaceSetFnStringRangeEnd, /* 715 */
-    Tcl_ObjTypeSetInterface, /* 716 */
-    Tcl_ObjTypeSetName, /* 717 */
-    Tcl_ObjInterfaceSetFnStringIsEmpty, /* 718 */
-    Tcl_ObjInterfaceSetFnListContains, /* 719 */
+    Tcl_SetWideUIntObj, /* 689 */
+    TclUnusedStubEntry, /* 690 */
+    Tcl_NewObjInterface, /* 691 */
+    Tcl_NewObjType, /* 692 */
+    Tcl_ObjInterfaceSetVersion, /* 693 */
+    Tcl_ObjTypeSetFreeInternalRepProc, /* 694 */
+    Tcl_ObjTypeSetDupInternalRepProc, /* 695 */
+    Tcl_ObjTypeSetUpdateStringProc, /* 696 */
+    Tcl_ObjTypeSetSetFromAnyProc, /* 697 */
+    Tcl_ObjTypeSetVersion, /* 698 */
+    Tcl_ObjInterfaceSetFnListAll, /* 699 */
+    Tcl_ObjInterfaceSetFnListAppend, /* 700 */
+    Tcl_ObjInterfaceSetFnListAppendList, /* 701 */
+    Tcl_ObjInterfaceSetFnListIndex, /* 702 */
+    Tcl_ObjInterfaceSetFnListIndexEnd, /* 703 */
+    Tcl_ObjInterfaceSetFnListIsSorted, /* 704 */
+    Tcl_ObjInterfaceSetFnListLength, /* 705 */
+    Tcl_ObjInterfaceSetFnListRange, /* 706 */
+    Tcl_ObjInterfaceSetFnListRangeEnd, /* 707 */
+    Tcl_ObjInterfaceSetFnListReplace, /* 708 */
+    Tcl_ObjInterfaceSetFnListReplaceList, /* 709 */
+    Tcl_ObjInterfaceSetFnListReverse, /* 710 */
+    Tcl_ObjInterfaceSetFnListSet, /* 711 */
+    Tcl_ObjInterfaceSetFnListSetDeep, /* 712 */
+    Tcl_ObjInterfaceSetFnStringIndex, /* 713 */
+    Tcl_ObjInterfaceSetFnStringIndexEnd, /* 714 */
+    Tcl_ObjInterfaceSetFnStringLength, /* 715 */
+    Tcl_ObjInterfaceSetFnStringRange, /* 716 */
+    Tcl_ObjInterfaceSetFnStringRangeEnd, /* 717 */
+    Tcl_ObjTypeSetInterface, /* 718 */
+    Tcl_ObjTypeSetName, /* 719 */
+    Tcl_ObjInterfaceSetFnStringIsEmpty, /* 720 */
+    Tcl_ObjInterfaceSetFnListContains, /* 721 */
 };
 
 /* !END!: Do not edit above this line. */

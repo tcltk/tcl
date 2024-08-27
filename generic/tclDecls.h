@@ -1870,112 +1870,117 @@ EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
 /* 688 */
 EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
 /* 689 */
-EXTERN Tcl_ObjInterface * Tcl_NewObjInterface(void);
+EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
+				Tcl_WideUInt uwideValue);
 /* 690 */
-EXTERN Tcl_ObjType *	Tcl_NewObjType(void);
+EXTERN void		TclUnusedStubEntry(void);
 /* 691 */
+EXTERN Tcl_ObjInterface * Tcl_NewObjInterface(void);
+/* 692 */
+EXTERN Tcl_ObjType *	Tcl_NewObjType(void);
+/* 693 */
 EXTERN int		Tcl_ObjInterfaceSetVersion(Tcl_ObjInterface *oiPtr,
 				int version);
-/* 692 */
+/* 694 */
 EXTERN int		Tcl_ObjTypeSetFreeInternalRepProc(Tcl_ObjType *otPtr,
 				Tcl_FreeInternalRepProc *freeIntRepProc);
-/* 693 */
+/* 695 */
 EXTERN int		Tcl_ObjTypeSetDupInternalRepProc(Tcl_ObjType *otPtr,
 				Tcl_DupInternalRepProc *dupIntRepProc);
-/* 694 */
+/* 696 */
 EXTERN int		Tcl_ObjTypeSetUpdateStringProc(Tcl_ObjType *otPtr,
 				Tcl_UpdateStringProc *updateStringProc);
-/* 695 */
+/* 697 */
 EXTERN int		Tcl_ObjTypeSetSetFromAnyProc(Tcl_ObjType *otPtr,
 				Tcl_SetFromAnyProc *setFromAnyProc);
-/* 696 */
+/* 698 */
 EXTERN int		Tcl_ObjTypeSetVersion(Tcl_ObjType *otPtr,
 				int version);
-/* 697 */
+/* 699 */
 EXTERN int		Tcl_ObjInterfaceSetFnListAll(Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListAllProc *fnPtr);
-/* 698 */
+/* 700 */
 EXTERN int		Tcl_ObjInterfaceSetFnListAppend(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListAppendProc *fnPtr);
-/* 699 */
+/* 701 */
 EXTERN int		Tcl_ObjInterfaceSetFnListAppendList(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListAppendlistProc fnPtr);
-/* 700 */
+/* 702 */
 EXTERN int		Tcl_ObjInterfaceSetFnListIndex(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListIndexProc fnPtr);
-/* 701 */
+/* 703 */
 EXTERN int		Tcl_ObjInterfaceSetFnListIndexEnd(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListIndexEndProc fnPtr);
-/* 702 */
+/* 704 */
 EXTERN int		Tcl_ObjInterfaceSetFnListIsSorted(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListIsSortedProc fnPtr);
-/* 703 */
+/* 705 */
 EXTERN int		Tcl_ObjInterfaceSetFnListLength(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListLengthProc fnPtr);
-/* 704 */
+/* 706 */
 EXTERN int		Tcl_ObjInterfaceSetFnListRange(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListRangeProc fnPtr);
-/* 705 */
+/* 707 */
 EXTERN int		Tcl_ObjInterfaceSetFnListRangeEnd(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListRangeEndProc fnPtr);
-/* 706 */
+/* 708 */
 EXTERN int		Tcl_ObjInterfaceSetFnListReplace(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListReplaceProc fnPtr);
-/* 707 */
+/* 709 */
 EXTERN int		Tcl_ObjInterfaceSetFnListReplaceList(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListReplaceListProc fnPtr);
-/* 708 */
+/* 710 */
 EXTERN int		Tcl_ObjInterfaceSetFnListReverse(
 				Tcl_ObjInterface *objInterfacePtr,
 				Tcl_ObjInterfaceListReverseProc fnPtr);
-/* 709 */
+/* 711 */
 EXTERN int		Tcl_ObjInterfaceSetFnListSet(Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListSetProc fnPtr);
-/* 710 */
+/* 712 */
 EXTERN int		Tcl_ObjInterfaceSetFnListSetDeep(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListSetDeepProc fnPtr);
-/* 711 */
+/* 713 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringIndex(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringIndexProc fnPtr);
-/* 712 */
+/* 714 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringIndexEnd(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringIndexEndProc fnPtr);
-/* 713 */
+/* 715 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringLength(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringLengthProc fnPtr);
-/* 714 */
+/* 716 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringRange(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringRangeProc fnPtr);
-/* 715 */
+/* 717 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringRangeEnd(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringRangeEndProc fnPtr);
-/* 716 */
+/* 718 */
 EXTERN int		Tcl_ObjTypeSetInterface(Tcl_ObjType *objTypePtr,
 				Tcl_ObjInterface *objInterfacePtr);
-/* 717 */
+/* 719 */
 EXTERN int		Tcl_ObjTypeSetName(Tcl_ObjType *objTypePtr,
 				char *name);
-/* 718 */
+/* 720 */
 EXTERN int		Tcl_ObjInterfaceSetFnStringIsEmpty(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceStringIsEmptyProc fnPtr);
-/* 719 */
+/* 721 */
 EXTERN int		Tcl_ObjInterfaceSetFnListContains(
 				Tcl_ObjInterface *oiPtr,
 				Tcl_ObjInterfaceListContainsProc fnPtr);
@@ -2679,37 +2684,39 @@ typedef struct TclStubs {
     int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
-    Tcl_ObjInterface * (*tcl_NewObjInterface) (void); /* 689 */
-    Tcl_ObjType * (*tcl_NewObjType) (void); /* 690 */
-    int (*tcl_ObjInterfaceSetVersion) (Tcl_ObjInterface *oiPtr, int version); /* 691 */
-    int (*tcl_ObjTypeSetFreeInternalRepProc) (Tcl_ObjType *otPtr, Tcl_FreeInternalRepProc *freeIntRepProc); /* 692 */
-    int (*tcl_ObjTypeSetDupInternalRepProc) (Tcl_ObjType *otPtr, Tcl_DupInternalRepProc *dupIntRepProc); /* 693 */
-    int (*tcl_ObjTypeSetUpdateStringProc) (Tcl_ObjType *otPtr, Tcl_UpdateStringProc *updateStringProc); /* 694 */
-    int (*tcl_ObjTypeSetSetFromAnyProc) (Tcl_ObjType *otPtr, Tcl_SetFromAnyProc *setFromAnyProc); /* 695 */
-    int (*tcl_ObjTypeSetVersion) (Tcl_ObjType *otPtr, int version); /* 696 */
-    int (*tcl_ObjInterfaceSetFnListAll) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAllProc *fnPtr); /* 697 */
-    int (*tcl_ObjInterfaceSetFnListAppend) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAppendProc *fnPtr); /* 698 */
-    int (*tcl_ObjInterfaceSetFnListAppendList) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAppendlistProc fnPtr); /* 699 */
-    int (*tcl_ObjInterfaceSetFnListIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexProc fnPtr); /* 700 */
-    int (*tcl_ObjInterfaceSetFnListIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexEndProc fnPtr); /* 701 */
-    int (*tcl_ObjInterfaceSetFnListIsSorted) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIsSortedProc fnPtr); /* 702 */
-    int (*tcl_ObjInterfaceSetFnListLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListLengthProc fnPtr); /* 703 */
-    int (*tcl_ObjInterfaceSetFnListRange) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeProc fnPtr); /* 704 */
-    int (*tcl_ObjInterfaceSetFnListRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeEndProc fnPtr); /* 705 */
-    int (*tcl_ObjInterfaceSetFnListReplace) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceProc fnPtr); /* 706 */
-    int (*tcl_ObjInterfaceSetFnListReplaceList) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceListProc fnPtr); /* 707 */
-    int (*tcl_ObjInterfaceSetFnListReverse) (Tcl_ObjInterface *objInterfacePtr, Tcl_ObjInterfaceListReverseProc fnPtr); /* 708 */
-    int (*tcl_ObjInterfaceSetFnListSet) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetProc fnPtr); /* 709 */
-    int (*tcl_ObjInterfaceSetFnListSetDeep) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetDeepProc fnPtr); /* 710 */
-    int (*tcl_ObjInterfaceSetFnStringIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexProc fnPtr); /* 711 */
-    int (*tcl_ObjInterfaceSetFnStringIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexEndProc fnPtr); /* 712 */
-    int (*tcl_ObjInterfaceSetFnStringLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringLengthProc fnPtr); /* 713 */
-    int (*tcl_ObjInterfaceSetFnStringRange) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringRangeProc fnPtr); /* 714 */
-    int (*tcl_ObjInterfaceSetFnStringRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringRangeEndProc fnPtr); /* 715 */
-    int (*tcl_ObjTypeSetInterface) (Tcl_ObjType *objTypePtr, Tcl_ObjInterface *objInterfacePtr); /* 716 */
-    int (*tcl_ObjTypeSetName) (Tcl_ObjType *objTypePtr, char *name); /* 717 */
-    int (*tcl_ObjInterfaceSetFnStringIsEmpty) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIsEmptyProc fnPtr); /* 718 */
-    int (*tcl_ObjInterfaceSetFnListContains) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListContainsProc fnPtr); /* 719 */
+    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
+    void (*tclUnusedStubEntry) (void); /* 690 */
+    Tcl_ObjInterface * (*tcl_NewObjInterface) (void); /* 691 */
+    Tcl_ObjType * (*tcl_NewObjType) (void); /* 692 */
+    int (*tcl_ObjInterfaceSetVersion) (Tcl_ObjInterface *oiPtr, int version); /* 693 */
+    int (*tcl_ObjTypeSetFreeInternalRepProc) (Tcl_ObjType *otPtr, Tcl_FreeInternalRepProc *freeIntRepProc); /* 694 */
+    int (*tcl_ObjTypeSetDupInternalRepProc) (Tcl_ObjType *otPtr, Tcl_DupInternalRepProc *dupIntRepProc); /* 695 */
+    int (*tcl_ObjTypeSetUpdateStringProc) (Tcl_ObjType *otPtr, Tcl_UpdateStringProc *updateStringProc); /* 696 */
+    int (*tcl_ObjTypeSetSetFromAnyProc) (Tcl_ObjType *otPtr, Tcl_SetFromAnyProc *setFromAnyProc); /* 697 */
+    int (*tcl_ObjTypeSetVersion) (Tcl_ObjType *otPtr, int version); /* 698 */
+    int (*tcl_ObjInterfaceSetFnListAll) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAllProc *fnPtr); /* 699 */
+    int (*tcl_ObjInterfaceSetFnListAppend) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAppendProc *fnPtr); /* 700 */
+    int (*tcl_ObjInterfaceSetFnListAppendList) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListAppendlistProc fnPtr); /* 701 */
+    int (*tcl_ObjInterfaceSetFnListIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexProc fnPtr); /* 702 */
+    int (*tcl_ObjInterfaceSetFnListIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexEndProc fnPtr); /* 703 */
+    int (*tcl_ObjInterfaceSetFnListIsSorted) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIsSortedProc fnPtr); /* 704 */
+    int (*tcl_ObjInterfaceSetFnListLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListLengthProc fnPtr); /* 705 */
+    int (*tcl_ObjInterfaceSetFnListRange) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeProc fnPtr); /* 706 */
+    int (*tcl_ObjInterfaceSetFnListRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeEndProc fnPtr); /* 707 */
+    int (*tcl_ObjInterfaceSetFnListReplace) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceProc fnPtr); /* 708 */
+    int (*tcl_ObjInterfaceSetFnListReplaceList) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceListProc fnPtr); /* 709 */
+    int (*tcl_ObjInterfaceSetFnListReverse) (Tcl_ObjInterface *objInterfacePtr, Tcl_ObjInterfaceListReverseProc fnPtr); /* 710 */
+    int (*tcl_ObjInterfaceSetFnListSet) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetProc fnPtr); /* 711 */
+    int (*tcl_ObjInterfaceSetFnListSetDeep) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListSetDeepProc fnPtr); /* 712 */
+    int (*tcl_ObjInterfaceSetFnStringIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexProc fnPtr); /* 713 */
+    int (*tcl_ObjInterfaceSetFnStringIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIndexEndProc fnPtr); /* 714 */
+    int (*tcl_ObjInterfaceSetFnStringLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringLengthProc fnPtr); /* 715 */
+    int (*tcl_ObjInterfaceSetFnStringRange) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringRangeProc fnPtr); /* 716 */
+    int (*tcl_ObjInterfaceSetFnStringRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringRangeEndProc fnPtr); /* 717 */
+    int (*tcl_ObjTypeSetInterface) (Tcl_ObjType *objTypePtr, Tcl_ObjInterface *objInterfacePtr); /* 718 */
+    int (*tcl_ObjTypeSetName) (Tcl_ObjType *objTypePtr, char *name); /* 719 */
+    int (*tcl_ObjInterfaceSetFnStringIsEmpty) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceStringIsEmptyProc fnPtr); /* 720 */
+    int (*tcl_ObjInterfaceSetFnListContains) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListContainsProc fnPtr); /* 721 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4036,68 +4043,72 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNcasecmp) /* 687 */
 #define Tcl_NewWideUIntObj \
 	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
+#define Tcl_SetWideUIntObj \
+	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 #define Tcl_NewObjInterface \
-	(tclStubsPtr->tcl_NewObjInterface) /* 689 */
+	(tclStubsPtr->tcl_NewObjInterface) /* 691 */
 #define Tcl_NewObjType \
-	(tclStubsPtr->tcl_NewObjType) /* 690 */
+	(tclStubsPtr->tcl_NewObjType) /* 692 */
 #define Tcl_ObjInterfaceSetVersion \
-	(tclStubsPtr->tcl_ObjInterfaceSetVersion) /* 691 */
+	(tclStubsPtr->tcl_ObjInterfaceSetVersion) /* 693 */
 #define Tcl_ObjTypeSetFreeInternalRepProc \
-	(tclStubsPtr->tcl_ObjTypeSetFreeInternalRepProc) /* 692 */
+	(tclStubsPtr->tcl_ObjTypeSetFreeInternalRepProc) /* 694 */
 #define Tcl_ObjTypeSetDupInternalRepProc \
-	(tclStubsPtr->tcl_ObjTypeSetDupInternalRepProc) /* 693 */
+	(tclStubsPtr->tcl_ObjTypeSetDupInternalRepProc) /* 695 */
 #define Tcl_ObjTypeSetUpdateStringProc \
-	(tclStubsPtr->tcl_ObjTypeSetUpdateStringProc) /* 694 */
+	(tclStubsPtr->tcl_ObjTypeSetUpdateStringProc) /* 696 */
 #define Tcl_ObjTypeSetSetFromAnyProc \
-	(tclStubsPtr->tcl_ObjTypeSetSetFromAnyProc) /* 695 */
+	(tclStubsPtr->tcl_ObjTypeSetSetFromAnyProc) /* 697 */
 #define Tcl_ObjTypeSetVersion \
-	(tclStubsPtr->tcl_ObjTypeSetVersion) /* 696 */
+	(tclStubsPtr->tcl_ObjTypeSetVersion) /* 698 */
 #define Tcl_ObjInterfaceSetFnListAll \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListAll) /* 697 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListAll) /* 699 */
 #define Tcl_ObjInterfaceSetFnListAppend \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListAppend) /* 698 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListAppend) /* 700 */
 #define Tcl_ObjInterfaceSetFnListAppendList \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListAppendList) /* 699 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListAppendList) /* 701 */
 #define Tcl_ObjInterfaceSetFnListIndex \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListIndex) /* 700 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListIndex) /* 702 */
 #define Tcl_ObjInterfaceSetFnListIndexEnd \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListIndexEnd) /* 701 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListIndexEnd) /* 703 */
 #define Tcl_ObjInterfaceSetFnListIsSorted \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListIsSorted) /* 702 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListIsSorted) /* 704 */
 #define Tcl_ObjInterfaceSetFnListLength \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListLength) /* 703 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListLength) /* 705 */
 #define Tcl_ObjInterfaceSetFnListRange \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListRange) /* 704 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListRange) /* 706 */
 #define Tcl_ObjInterfaceSetFnListRangeEnd \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListRangeEnd) /* 705 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListRangeEnd) /* 707 */
 #define Tcl_ObjInterfaceSetFnListReplace \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListReplace) /* 706 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListReplace) /* 708 */
 #define Tcl_ObjInterfaceSetFnListReplaceList \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListReplaceList) /* 707 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListReplaceList) /* 709 */
 #define Tcl_ObjInterfaceSetFnListReverse \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListReverse) /* 708 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListReverse) /* 710 */
 #define Tcl_ObjInterfaceSetFnListSet \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListSet) /* 709 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListSet) /* 711 */
 #define Tcl_ObjInterfaceSetFnListSetDeep \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListSetDeep) /* 710 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListSetDeep) /* 712 */
 #define Tcl_ObjInterfaceSetFnStringIndex \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIndex) /* 711 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIndex) /* 713 */
 #define Tcl_ObjInterfaceSetFnStringIndexEnd \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIndexEnd) /* 712 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIndexEnd) /* 714 */
 #define Tcl_ObjInterfaceSetFnStringLength \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringLength) /* 713 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringLength) /* 715 */
 #define Tcl_ObjInterfaceSetFnStringRange \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringRange) /* 714 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringRange) /* 716 */
 #define Tcl_ObjInterfaceSetFnStringRangeEnd \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringRangeEnd) /* 715 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringRangeEnd) /* 717 */
 #define Tcl_ObjTypeSetInterface \
-	(tclStubsPtr->tcl_ObjTypeSetInterface) /* 716 */
+	(tclStubsPtr->tcl_ObjTypeSetInterface) /* 718 */
 #define Tcl_ObjTypeSetName \
-	(tclStubsPtr->tcl_ObjTypeSetName) /* 717 */
+	(tclStubsPtr->tcl_ObjTypeSetName) /* 719 */
 #define Tcl_ObjInterfaceSetFnStringIsEmpty \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIsEmpty) /* 718 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnStringIsEmpty) /* 720 */
 #define Tcl_ObjInterfaceSetFnListContains \
-	(tclStubsPtr->tcl_ObjInterfaceSetFnListContains) /* 719 */
+	(tclStubsPtr->tcl_ObjInterfaceSetFnListContains) /* 721 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
