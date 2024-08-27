@@ -23,7 +23,6 @@
 
 #include "tclInt.h"
 
-
 /*
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
@@ -107,7 +106,6 @@ static int	IsStatic(LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
 		    LoadedLibrary *library, int keepLibrary,
 		    const char *fullFileName, int interpExiting);
-
 
 static int
 IsStatic(
@@ -155,7 +153,7 @@ Tcl_LoadObjCmd(
     int flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
-	"-global",		"-lazy",		"--",	NULL
+	"-global",	"-lazy",	"--",	NULL
     };
     enum loadOptionsEnum {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
@@ -179,7 +177,8 @@ Tcl_LoadObjCmd(
 	}
     }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, savedobjv, "?-global? ?-lazy? ?--? fileName ?prefix? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv,
+		"?-global? ?-lazy? ?--? fileName ?prefix? ?interp?");
 	return TCL_ERROR;
     }
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
@@ -764,7 +763,6 @@ Tcl_UnloadObjCmd(
     }
     return code;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -784,13 +782,12 @@ Tcl_UnloadObjCmd(
  */
 static int
 UnloadLibrary(
-	Tcl_Interp *interp,
-	Tcl_Interp *target,
-	LoadedLibrary *libraryPtr,
-	int keepLibrary,
-	const char *fullFileName,
-	int interpExiting
-)
+    Tcl_Interp *interp,
+    Tcl_Interp *target,
+    LoadedLibrary *libraryPtr,
+    int keepLibrary,
+    const char *fullFileName,
+    int interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -832,8 +829,6 @@ UnloadLibrary(
 	unloadProc = libraryPtr->unloadProc;
     }
 
-
-
     /*
      * We are ready to unload the library. First, evaluate the unload
      * function. If this fails, we cannot proceed with unload. Also, we must
@@ -867,12 +862,10 @@ UnloadLibrary(
 	code = unloadProc(target, code);
     }
 
-
     if (code != TCL_OK) {
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
-
 
     /*
      * Remove this library from the interpreter's library cache.
@@ -895,7 +888,6 @@ UnloadLibrary(
     }
     Tcl_Free(ipPtr);
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
-
 
     if (IsStatic(libraryPtr)) {
 	goto done;
@@ -1118,9 +1110,8 @@ TclGetLoadedLibraries(
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */
-    const char *prefix)	/* Prefix or NULL. If NULL, return info
-				 * for all prefixes.
-				 */
+    const char *prefix)		/* Prefix or NULL. If NULL, return info
+				 * for all prefixes. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr;

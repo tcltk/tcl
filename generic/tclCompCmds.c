@@ -668,7 +668,6 @@ TclCompileCatchCmd(
     }
     ExceptionRangeEnds(envPtr, range);
 
-
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
@@ -689,7 +688,6 @@ TclCompileCatchCmd(
     if (dropScript) {
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-
 
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -802,7 +800,6 @@ TclCompileClockClicksCmd(
     }
     return TCL_OK;
 }
-
 
 /*----------------------------------------------------------------------
  *
@@ -2861,7 +2858,6 @@ CompileEachloopCmd(
 	    const char *bytes;
 	    int varIndex;
 	    Tcl_Size length;
-
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
 	    bytes = Tcl_GetStringFromObj(varNameObj, &length);

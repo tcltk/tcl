@@ -90,10 +90,10 @@ static CRITICAL_SECTION joinLock;
 #if TCL_THREADS
 
 typedef struct ThreadSpecificData {
-    HANDLE condEvent;			/* Per-thread condition event */
+    HANDLE condEvent;		/* Per-thread condition event */
     struct ThreadSpecificData *nextPtr;	/* Queue pointers */
     struct ThreadSpecificData *prevPtr;
-    int flags;				/* See flags below */
+    int flags;			/* See flags below */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -131,7 +131,7 @@ typedef struct {
 static DWORD tlsKey;
 
 typedef struct {
-    Tcl_Mutex	     tlock;
+    Tcl_Mutex tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
 #endif /* USE_THREAD_ALLOC */
@@ -142,12 +142,12 @@ typedef struct {
  */
 
 typedef struct {
-  LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
-  LPVOID lpParameter;		/* Original startup data */
-  unsigned int fpControl;	/* Floating point control word from the
+    LPTHREAD_START_ROUTINE lpStartAddress;
+				/* Original startup routine */
+    LPVOID lpParameter;		/* Original startup data */
+    unsigned int fpControl;	/* Floating point control word from the
 				 * main thread */
 } WinThread;
-
 
 /*
  *----------------------------------------------------------------------
@@ -578,9 +578,9 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *)Tcl_Alloc(sizeof(CRITICAL_SECTION));
+	    csPtr = (CRITICAL_SECTION *) Tcl_Alloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
-	    *mutexPtr = (Tcl_Mutex)csPtr;
+	    *mutexPtr = (Tcl_Mutex) csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
@@ -670,7 +670,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
@@ -937,9 +937,6 @@ TclpFinalizeCondition(
     }
 }
 
-
-
-
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
@@ -1040,7 +1037,6 @@ TclpFreeAllocCache(
     }
 }
 #endif /* USE_THREAD_ALLOC */
-
 
 void *
 TclpThreadCreateKey(void)

@@ -291,7 +291,6 @@ static Tcl_ThreadDataKey dataKey;
  */
 SRWLOCK gConsoleLock;
 
-
 /* Process-wide list of console handles. Access control through gConsoleLock */
 static ConsoleHandleInfo *gConsoleHandleInfoList;
 
@@ -916,7 +915,7 @@ ConsoleCheckProc(
 	    /* See note above loop why this can be accessed without locks */
 	    chanInfoPtr->flags |= CONSOLE_EVENT_QUEUED;
 	    chanInfoPtr->numRefs += 1; /* So it does not go away while event
-					  is in queue */
+					* is in queue */
 	    evPtr->header.proc = ConsoleEventProc;
 	    evPtr->chanInfoPtr = chanInfoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -984,7 +983,7 @@ ConsoleBlockModeProc(
 
 static int
 ConsoleCloseProc(
-    void *instanceData,	/* Pointer to ConsoleChannelInfo structure. */
+    void *instanceData,		/* Pointer to ConsoleChannelInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {

@@ -156,7 +156,6 @@ RememberSyncObject(
     void **newList;
     int i, j;
 
-
     /*
      * Reuse any free slot in the list.
      */

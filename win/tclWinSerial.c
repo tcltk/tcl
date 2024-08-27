@@ -624,7 +624,6 @@ SerialCloseProc(
 	return EINVAL;
     }
 
-
     if (serialPtr->validMask & TCL_READABLE) {
 	PurgeComm(serialPtr->handle, PURGE_RXABORT | PURGE_RXCLEAR);
 	CloseHandle(serialPtr->osRead.hEvent);
@@ -1490,7 +1489,6 @@ TclWinOpenSerialChannel(
     TclWinGenerateChannelName(channelName, "file", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
-
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
     PurgeComm(handle,

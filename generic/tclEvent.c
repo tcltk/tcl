@@ -908,7 +908,6 @@ Tcl_SetExitProc(
 
     return prevExitProc;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -950,7 +949,6 @@ InvokeExitHandlers(void)
     firstExitPtr = NULL;
     Tcl_MutexUnlock(&exitMutex);
 }
-
 
 /*
  *----------------------------------------------------------------------

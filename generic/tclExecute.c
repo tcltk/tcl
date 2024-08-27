@@ -1036,7 +1036,6 @@ GrowEvaluationStack(
     }
     needed = growth + moveWords + WALLOCALIGN;
 
-
     /*
      * Check if there is enough room in the next stack (if there is one, it
      * should be both empty and the last one!)

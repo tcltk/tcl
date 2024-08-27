@@ -37,7 +37,6 @@
 #   define PRIx64 TCL_LL_MODIFIER "x"
 #endif
 
-
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
@@ -4241,7 +4240,6 @@ StrictBignumConversion(
 	     * Extract the next group of digits.
 	     */
 
-
 	    if ((err != MP_OKAY) || (mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
 	    }
@@ -4858,7 +4856,6 @@ TclBignumToDouble(
     double r;
     mp_err err;
     const mp_int *a = (const mp_int *)big;
-
 
     /*
      * We need a 'mantBits'-bit significand.  Determine what shift will

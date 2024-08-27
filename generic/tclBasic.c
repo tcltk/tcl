@@ -2752,10 +2752,9 @@ Tcl_CreateObjCommand2(
 				 * name. */
     void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
-    Tcl_CmdDeleteProc *deleteProc
+    Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
-)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *) Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
@@ -2780,10 +2779,9 @@ Tcl_CreateObjCommand(
 				 * name. */
     void *clientData,		/* Arbitrary value to pass to object
 				 * function. */
-    Tcl_CmdDeleteProc *deleteProc
+    Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
-)
 {
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr;

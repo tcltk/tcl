@@ -1664,8 +1664,7 @@ Tcl_Obj *
 TclListObjGetElement(
     Tcl_Obj *objPtr,		/* List object for which an element array is
 				 * to be returned. */
-    Tcl_Size index
-)
+    Tcl_Size index)
 {
     return ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index];
 }
@@ -3716,7 +3715,6 @@ UpdateStringOfList(
 	Tcl_Free(flagPtr);
     }
 }
-
 
 /*
  *------------------------------------------------------------------------

@@ -412,7 +412,6 @@ typedef struct ResolvedCmdName {
 #define FREEDREFCOUNTFILLER \
     (Tcl_Size)(sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
 #endif
-
 
 /*
  *-------------------------------------------------------------------------
@@ -2730,6 +2729,7 @@ Tcl_GetIntFromObj(
     return TCL_OK;
 #endif
 }
+
 
 int
 ScalarObjInterfaceListLength(
