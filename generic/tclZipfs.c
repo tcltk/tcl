@@ -67,7 +67,7 @@
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(			\
 		    "out of memory", -1));				\
-	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (void *)NULL);		\
+	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);		\
 	}								\
     } while (0)
 #define ZIPFS_POSIX_ERROR(interp,errstr) \
@@ -80,7 +80,7 @@
 #define ZIPFS_ERROR_CODE(interp,errcode) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (void *)NULL);	\
+	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (char *)NULL);	\
 	}								\
     } while (0)
 
@@ -2366,7 +2366,7 @@ TclZipfs_Mount(
 	if (normZipPathObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not normalize zip filename \"%s\"", zipname));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (char *)NULL);
 	    ret = TCL_ERROR;
 	} else {
 	    Tcl_IncrRefCount(normZipPathObj);
