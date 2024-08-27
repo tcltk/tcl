@@ -119,7 +119,7 @@ Tcl_ObjInterfaceSetFnListIsSorted(
 int
 Tcl_ObjInterfaceSetFnListLength(
 	Tcl_ObjInterface *objInterfacePtr
-	,Tcl_ObjInterfaceListlengthProc fnPtr)
+	,Tcl_ObjInterfaceListLengthProc fnPtr)
 {
 	ObjInterface *oiPtr = (ObjInterface *)objInterfacePtr;
 	oiPtr->list.length = fnPtr;

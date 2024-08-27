@@ -1917,7 +1917,7 @@ EXTERN int		Tcl_ObjInterfaceSetFnListIsSorted(
 /* 703 */
 EXTERN int		Tcl_ObjInterfaceSetFnListLength(
 				Tcl_ObjInterface *oiPtr,
-				Tcl_ObjInterfaceListlengthProc fnPtr);
+				Tcl_ObjInterfaceListLengthProc fnPtr);
 /* 704 */
 EXTERN int		Tcl_ObjInterfaceSetFnListRange(
 				Tcl_ObjInterface *oiPtr,
@@ -2693,7 +2693,7 @@ typedef struct TclStubs {
     int (*tcl_ObjInterfaceSetFnListIndex) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexProc fnPtr); /* 700 */
     int (*tcl_ObjInterfaceSetFnListIndexEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIndexEndProc fnPtr); /* 701 */
     int (*tcl_ObjInterfaceSetFnListIsSorted) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListIsSortedProc fnPtr); /* 702 */
-    int (*tcl_ObjInterfaceSetFnListLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListlengthProc fnPtr); /* 703 */
+    int (*tcl_ObjInterfaceSetFnListLength) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListLengthProc fnPtr); /* 703 */
     int (*tcl_ObjInterfaceSetFnListRange) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeProc fnPtr); /* 704 */
     int (*tcl_ObjInterfaceSetFnListRangeEnd) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListRangeEndProc fnPtr); /* 705 */
     int (*tcl_ObjInterfaceSetFnListReplace) (Tcl_ObjInterface *oiPtr, Tcl_ObjInterfaceListReplaceProc fnPtr); /* 706 */

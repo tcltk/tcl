@@ -2723,7 +2723,7 @@ declare 702 {
 
 declare 703 {
     int Tcl_ObjInterfaceSetFnListLength(Tcl_ObjInterface *oiPtr
-	,Tcl_ObjInterfaceListlengthProc fnPtr)
+	,Tcl_ObjInterfaceListLengthProc fnPtr)
 }
 
 declare 704 {

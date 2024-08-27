@@ -73,7 +73,7 @@ static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 
-static Tcl_ObjInterfaceListlengthProc	DictAsListLength;
+static Tcl_ObjInterfaceListLengthProc	DictAsListLength;
 /* static Tcl_ObjInterfaceListIndexProc     DictAsListIndex; */
 
 /*

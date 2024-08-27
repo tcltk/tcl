@@ -33,7 +33,7 @@ Tcl_Obj *myNewLStringObj(Tcl_WideInt start,
 static void freeRep(Tcl_Obj* alObj);
 static Tcl_ObjInterfaceListSetDeepProc my_LStringObjSetElemR;
 static Tcl_DupInternalRepProc DupLStringRep;
-static Tcl_ObjInterfaceListlengthProc my_LStringObjLength;
+static Tcl_ObjInterfaceListLengthProc my_LStringObjLength;
 static Tcl_ObjInterfaceListIndexProc my_LStringObjIndex;
 static Tcl_ObjInterfaceListRangeProc my_LStringObjRange;
 static Tcl_ObjInterfaceListReverseProc my_LStringObjReverse;

@@ -2443,7 +2443,7 @@ typedef int (Tcl_ObjInterfaceListContainsProc)(tclObjTypeInterfaceArgsListContai
 typedef int (Tcl_ObjInterfaceListIndexProc)(tclObjTypeInterfaceArgsListIndex);
 typedef int (Tcl_ObjInterfaceListIndexEndProc)(tclObjTypeInterfaceArgsListIndexEnd);
 typedef int (Tcl_ObjInterfaceListIsSortedProc)(tclObjTypeInterfaceArgsListIsSorted);
-typedef int (Tcl_ObjInterfaceListlengthProc)(tclObjTypeInterfaceArgsListLength);
+typedef int (Tcl_ObjInterfaceListLengthProc)(tclObjTypeInterfaceArgsListLength);
 typedef int (Tcl_ObjInterfaceListRangeProc)(tclObjTypeInterfaceArgsListRange);
 typedef int (Tcl_ObjInterfaceListRangeEndProc)(tclObjTypeInterfaceArgsListRangeEnd);
 typedef int (Tcl_ObjInterfaceListReplaceProc)(tclObjTypeInterfaceArgsListReplace);
