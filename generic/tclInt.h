@@ -3437,6 +3437,8 @@ MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(Tcl_Interp *interp,
                             Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
+
+MODULE_SCOPE int	TclSetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);

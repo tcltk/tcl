@@ -145,6 +145,8 @@ typedef struct Dict {
 				 * created. */
     size_t epoch; 	/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
+    int dupedKeys;		/* Whether there are duplicate keys in the
+				 *  dictionary */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
@@ -626,6 +628,7 @@ SetDictFromAny(
     int isNew;
     Dict *dict = (Dict *)Tcl_Alloc(sizeof(Dict));
 
+    dict->dupedKeys = 0;
     InitChainTable(dict);
 
     /*
@@ -656,8 +659,8 @@ SetDictFromAny(
 		 * keys, so better get the string rep here so that we can
 		 * convert back.
 		 */
-
 		(void) TclGetString(objPtr);
+		dict->dupedKeys = 1;
 
 		TclDecrRefCount(discardedValue);
 	    }
@@ -725,6 +728,7 @@ SetDictFromAny(
 	    if (!isNew) {
 		Tcl_Obj *discardedValue = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
+		dict->dupedKeys = 1;
 		TclDecrRefCount(keyPtr);
 		TclDecrRefCount(discardedValue);
 	    }
@@ -3832,70 +3836,38 @@ TclInitDictCmd(
  *
  * Side Effects --
  *
- *   The intent is to have no side effects.
+ *   The internal representation of objPtr might be converted to list.
  *
- *   Reviewer note:  Currently, however there is the side effect that the
- *   string representation of the dictionary is generated if there isn't one
- *   already.
  */
 
 static int
 DictAsListLength(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Size *lenPtr)
 {
-    Tcl_Size estCount, length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_Obj *elemPtr;
-    int status = TCL_OK;
+    Tcl_Size length;
+    int status;
 
-    /*
-     * Allocate enough space to hold a (Tcl_Obj *) for each
-     * (possible) list element.
-     */
-
-    estCount = TclMaxListLength(nextElem, length, &limit);
-    estCount += (estCount == 0); /* Smallest list struct holds 1
-				  * element. */
-    elemPtr = Tcl_NewObj();
-
-    llen = 0;
-
-    while (nextElem < limit) {
-	const char *elemStart;
-	char *check;
-	Tcl_Size elemSize;
-	int literal;
-
-	status = TclFindElement(NULL, nextElem, limit - nextElem,
-	    &elemStart, &nextElem, &elemSize, &literal);
-	if (status != TCL_OK) {
-	    Tcl_DecrRefCount(elemPtr);
-	    *lenPtr = 0;
-	    return TCL_OK;
+    if (TclHasStringRep(objPtr)) {
+	status = TclSetListFromAny(interp ,objPtr);
+	if (status) {
+	    /* This shouldn't be possible because any dict can be converted to
+	     * a list*/
+	    Tcl_Panic("%s {could not convert dictionary to list}"
+		, "DictAsListLength");
 	}
-	if (elemStart == limit) {
-	    break;
+	status = Tcl_ListObjLength(interp ,objPtr ,lenPtr); 
+	return status;
+    } else {
+	status = Tcl_DictObjSize(interp ,objPtr ,&length);
+	if (status) {
+	    return status;
+	} else {
+	    *lenPtr = length * 2;
 	}
-
-	TclInvalidateStringRep(elemPtr);
-	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-		elemSize);
-	if (elemSize && check == NULL) {
-	    Tcl_DecrRefCount(elemPtr);
-	    *lenPtr = 0;
-	    return TCL_OK ;
-	}
-	if (!literal) {
-	    Tcl_InitStringRep(elemPtr, NULL,
-		    TclCopyAndCollapse(elemSize, elemStart, check));
-	}
-	llen++;
+	return TCL_OK;
     }
-    Tcl_DecrRefCount(elemPtr);
-    *lenPtr = llen;
-    return TCL_OK;
 }
 
 /*

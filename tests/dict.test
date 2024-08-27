@@ -159,10 +159,12 @@ test dict-3.16 {dict/list shimmering - Bug 3004007} testobj {
     list $l [testobj objtype $l]
 } {{p 1 p 2 q 3} dict}
 test dict-3.17 {dict/list shimmering - Bug 3004007} testobj {
+    # In Tcl unchained the internal representation is converted to a list
+    # because there are duplicate keys in the dictionary.
     set l [list p 1 p 2 q 3]
     dict get $l q
     list [llength $l] [testobj objtype $l]
-} {6 dict}
+} {6 list}
 
 test dict-4.1 {dict replace command} {
     dict replace {a b c d}

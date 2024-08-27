@@ -152,7 +152,7 @@ static void	ListRepValidate(const ListRep *repPtr, const char *file,
 		    int lineNum);
 static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
-static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+int		TclSetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
 static int		ListObjAppendElement(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
@@ -179,7 +179,7 @@ static ObjectType tclListObjectType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny,	/* setFromAnyProc */
+    TclSetListFromAny,	/* setFromAnyProc */
     2,
     NULL
 };
@@ -1322,7 +1322,7 @@ TclListObjGetRep(
 {
     if (!TclHasInternalRep(listPtr, tclListTypePtr)) {
 	int result;
-	result = SetListFromAny(interp, listPtr);
+	result = TclSetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
 	    /* Init to keep gcc happy wrt uninitialized fields at call site */
 	    repPtr->storePtr = NULL;
@@ -2856,7 +2856,7 @@ TclLindexFlat(
 		     * changed by TclGetIntForIndexM. See test lindex-8.4.
 		     */
 		    if (!TclHasInternalRep(listObj, tclListTypePtr)) {
-			status = SetListFromAny(interp, listObj);
+			status = TclSetListFromAny(interp, listObj);
 			if (status != TCL_OK) {
 			    /* The list is not a list at all => error.  */
 			    Tcl_DecrRefCount(listObj);
@@ -3403,7 +3403,7 @@ DupListInternalRep(
 /*
  *----------------------------------------------------------------------
  *
- * SetListFromAny --
+ * TclSetListFromAny --
  *
  *	Attempt to generate a list internal form for the Tcl object "objPtr".
  *
@@ -3418,8 +3418,8 @@ DupListInternalRep(
  *
  *----------------------------------------------------------------------
  */
-static int
-SetListFromAny(
+int
+TclSetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
