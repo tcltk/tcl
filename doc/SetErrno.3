@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_SetErrno, Tcl_GetErrno, Tcl_ErrnoId, Tcl_ErrnoMsg \- manipulate errno to store and retrieve error codes
+Tcl_SetErrno, Tcl_GetErrno, Tcl_ErrnoId, Tcl_ErrnoMsg, Tcl_WinConvertError \- manipulate errno to store and retrieve error codes
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,11 +23,17 @@ const char *
 .sp
 const char *
 \fBTcl_ErrnoMsg\fR(\fIerrorCode\fR)
+.sp
+void
+\fBTcl_WinConvertError\fR(\fIwinErrorCode\fR)
 .fi
 .SH ARGUMENTS
 .AS int errorCode
 .AP int errorCode in
 A POSIX error code such as \fBENOENT\fR.
+.AS unsigned int winErrorCode in
+.AP DWORD winErrorCode in
+A Windows or Winsock error code such as \fBERROR_FILE_NOT_FOUND\fR.
 .BE
 
 .SH DESCRIPTION
@@ -60,6 +66,9 @@ that corresponds to the value of its
 typically the value returned by \fBTcl_GetErrno\fR.
 The strings returned by these functions are
 statically allocated and the caller must not free or modify them.
+.PP
+\fBTcl_WinConvertError\fR (Windows only) maps the passed Windows or Winsock
+error code to a POSIX error and stores it in \fBerrno\fR.
 
 .SH KEYWORDS
 errno, error code, global variables
