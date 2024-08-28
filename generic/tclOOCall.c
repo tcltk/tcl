@@ -1792,6 +1792,9 @@ AddSimpleClassChainToCallContext(
      */
 
   tailRecurse:
+    if (classPtr == NULL) {
+	return privateDanger;
+    }
     FOREACH(superPtr, classPtr->mixins) {
 	privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		methodNameObj, cbPtr, doneFilters, flags | TRAVERSED_MIXIN,
