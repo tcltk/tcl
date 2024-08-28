@@ -170,9 +170,7 @@ TclpFindExecutable(
 	if (status != TCL_OK) {
 	    Tcl_Panic("%s {unable to encode value of path}" ,"TclpFindExecutable");
 	}
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
-	Tcl_DStringFree(&utfName);
+	TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 	goto done;
     }
 
@@ -214,9 +212,7 @@ TclpFindExecutable(
 	Tcl_Panic("%s {unable to encode value of executable name}"
 	    ,"TclpFindExecutable");
     }
-    TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
-    Tcl_DStringFree(&utfName);
+    TclSetObjNameOfExecutable(Tcl_DStringToObj(&utfName), NULL);
 
   done:
     Tcl_DStringFree(&buffer);
