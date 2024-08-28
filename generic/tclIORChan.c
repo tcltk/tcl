@@ -2325,6 +2325,28 @@ NextHandle(void)
     return resObj;
 }
 
+static inline void
+CleanRefChannelInstance(
+    ReflectedChannel *rcPtr)
+{
+    if (rcPtr->name) {
+	/* 
+	 * Reset obj-type (channel is deleted or dead anyway) to avoid leakage
+	 * by cyclic references (see bug [79474c58800cdf94]).
+	 */
+	TclFreeInternalRep(rcPtr->name);
+	Tcl_DecrRefCount(rcPtr->name);
+	rcPtr->name = NULL;
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+	rcPtr->methods = NULL;
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+	rcPtr->cmd = NULL;
+    }
+}
 static void
 FreeReflectedChannel(
     void *blockPtr)
@@ -2333,15 +2355,7 @@ FreeReflectedChannel(
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-    }
+    CleanRefChannelInstance(rcPtr);
     Tcl_Free(rcPtr);
 }
 
@@ -2614,18 +2628,7 @@ MarkDead(
     if (rcPtr->dead) {
 	return;
     }
-    if (rcPtr->name) {
-	Tcl_DecrRefCount(rcPtr->name);
-	rcPtr->name = NULL;
-    }
-    if (rcPtr->methods) {
-	Tcl_DecrRefCount(rcPtr->methods);
-	rcPtr->methods = NULL;
-    }
-    if (rcPtr->cmd) {
-	Tcl_DecrRefCount(rcPtr->cmd);
-	rcPtr->cmd = NULL;
-    }
+    CleanRefChannelInstance(rcPtr);
     rcPtr->dead = 1;
 }
 
