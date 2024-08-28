@@ -21,7 +21,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 
-package require -exact tcl 9.0b2
+package require -exact tcl 9.0b3
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:

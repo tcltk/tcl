@@ -4,7 +4,7 @@
 
 Name:          tclunchained
 Summary:       TclUnchained scripting language development environment
-Version:       9.0b2
+Version:       9.0b3
 Release:       2
 License:       GNU Affero General Public License
 Group:         Development/Languages
@@ -13,7 +13,7 @@ URL:           https://www.tcl-lang.org/
 Buildroot:     /var/tmp/%{name}%{version}
 
 %description
-The Tcl (Tool Command Language) provides a powerful platform for
+Tcl (Tool Command Language) Unchained provides a powerful platform for
 creating integration applications that tie together diverse
 applications, protocols, devices, and frameworks.  When paired with
 the Tk toolkit, Tcl provides the fastest and most powerful way to
