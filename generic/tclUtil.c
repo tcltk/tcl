@@ -3930,10 +3930,10 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp,
-	    "TCL", "VALUE", "INDEX", "OUTOFRANGE", (void *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range"
+	    , TclGetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE"
+	    , (char *)NULL);
     }
     return TCL_ERROR;
 }
