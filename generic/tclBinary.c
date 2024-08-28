@@ -195,14 +195,16 @@ typedef struct {
 				 * above. */
 } ByteArray;
 
-#define BYTEARRAY_MAX_LEN (TCL_SIZE_MAX - (Tcl_Size)offsetof(ByteArray, bytes))
+#define BYTEARRAY_MAX_LEN \
+    (TCL_SIZE_MAX - (Tcl_Size)offsetof(ByteArray, bytes))
 #define BYTEARRAY_SIZE(len) \
-        ( (len < 0 || BYTEARRAY_MAX_LEN < (len)) \
+    ( (len < 0 || BYTEARRAY_MAX_LEN < (len))				\
 	? (Tcl_Panic("negative length specified or max size of a Tcl value exceeded"), 0) \
 	: (offsetof(ByteArray, bytes) + (len)) )
-#define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
+#define GET_BYTEARRAY(irPtr) \
+    ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
 #define SET_BYTEARRAY(irPtr, baPtr) \
-		(irPtr)->twoPtrValue.ptr1 = (baPtr)
+    (irPtr)->twoPtrValue.ptr1 = (baPtr)
 
 int
 TclIsPureByteArray(
@@ -423,7 +425,7 @@ unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
     Tcl_Size numBytes)		/* Number of bytes in resized array
-                                 * Must be >= 0 */
+				 * Must be >= 0 */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep *irPtr;
@@ -719,7 +721,7 @@ TclAppendBytesToByteArray(
     Tcl_ObjInternalRep *irPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
+	Tcl_Panic("%s called with shared object", "TclAppendBytesToByteArray");
     }
     if (len < 0) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
@@ -2023,7 +2025,7 @@ FormatNumber(
 	    if (fabs(dvalue) > (FLT_MAX + pow(2, (FLT_MAX_EXP - FLT_MANT_DIG - 1)))) {
 		fvalue = (dvalue >= 0.0) ? INFINITY : -INFINITY;	// c99
 	    } else {
-	    fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
+		fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
 	    }
 	} else {
 	    fvalue = (float) dvalue;
@@ -2569,19 +2571,19 @@ BinaryDecodeHex(
  */
 
 #define OUTPUT(c) \
-    do {						\
-	*cursor++ = (c);				\
-	outindex++;					\
-	if (maxlen > 0 && cursor != limit) {		\
-	    if (outindex == maxlen) {			\
-		memcpy(cursor, wrapchar, wrapcharlen);	\
-		cursor += wrapcharlen;			\
-		outindex = 0;				\
-	    }						\
-	}						\
-	if (cursor > limit) {				\
-	    Tcl_Panic("limit hit");			\
-	}						\
+    do {								\
+	*cursor++ = (c);						\
+	outindex++;							\
+	if (maxlen > 0 && cursor != limit) {				\
+	    if (outindex == maxlen) {					\
+		memcpy(cursor, wrapchar, wrapcharlen);			\
+		cursor += wrapcharlen;					\
+		outindex = 0;						\
+	    }								\
+	}								\
+	if (cursor > limit) {						\
+	    Tcl_Panic("limit hit");					\
+	}								\
     } while (0)
 
 static int
@@ -2766,7 +2768,8 @@ BinaryEncodeUu(
 			case '\v':
 			case '\f':
 			case '\r':
-			    p++; numBytes--;
+			    p++;
+			    numBytes--;
 			    continue;
 			case '\n':
 			    numBytes--;

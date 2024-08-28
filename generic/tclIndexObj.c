@@ -66,7 +66,7 @@ static const Tcl_ObjType indexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    Tcl_Size offset;	/* Offset between table entries */
+    Tcl_Size offset;		/* Offset between table entries */
     Tcl_Size index;		/* Selected index into table. */
 } IndexRep;
 
@@ -293,20 +293,21 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &indexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-    } else {
-	Tcl_ObjInternalRep ir;
+    if (objPtr && (index != TCL_INDEX_NONE)
+	&& !(flags & TCL_INDEX_TEMP_TABLE)) {
+	irPtr = TclFetchInternalRep(objPtr, &indexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	} else {
+	    Tcl_ObjInternalRep ir;
 
-	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
-	ir.twoPtrValue.ptr1 = indexRep;
-	Tcl_StoreInternalRep(objPtr, &indexType, &ir);
-    }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
+	    indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
+	    ir.twoPtrValue.ptr1 = indexRep;
+	    Tcl_StoreInternalRep(objPtr, &indexType, &ir);
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
 
   uncachedDone:
@@ -817,7 +818,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments to print from objv. */
+    Tcl_Size objc,		/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -1013,20 +1014,19 @@ Tcl_ParseArgsObjv(
 				 * successful exit. Will include the name of
 				 * the command. */
     Tcl_Size nrem;		/* Size of leftovers.*/
-    const Tcl_ArgvInfo *infoPtr;
-				/* Pointer to the current entry in the table
+    const Tcl_ArgvInfo *infoPtr;/* Pointer to the current entry in the table
 				 * of argument descriptions. */
     const Tcl_ArgvInfo *matchPtr;
 				/* Descriptor that matches current argument */
     Tcl_Obj *curArg;		/* Current argument */
     const char *str = NULL;
-    char c;		/* Second character of current arg (used for
+    char c;			/* Second character of current arg (used for
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    Tcl_Size srcIndex;	/* Location from which to read next argument
+    Tcl_Size srcIndex;		/* Location from which to read next argument
 				 * from objv. */
-    Tcl_Size dstIndex;	/* Used to keep track of current arguments
+    Tcl_Size dstIndex;		/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
     Tcl_Size objc;		/* # arguments in objv still to process. */

@@ -42,7 +42,7 @@ typedef struct AsyncHandler {
 				 * for the process. */
     Tcl_AsyncProc *proc;	/* Procedure to call when handler is
 				 * invoked. */
-    void *clientData;	/* Value to pass to handler when it is
+    void *clientData;		/* Value to pass to handler when it is
 				 * invoked. */
     struct ThreadSpecificData *originTsd;
 				/* Used in Tcl_AsyncMark to modify thread-
@@ -50,7 +50,7 @@ typedef struct AsyncHandler {
 				 * associated to. */
     Tcl_ThreadId originThrdId;	/* Origin thread where this token was created
 				 * and where it will be yielded. */
-    void *notifierData;	/* Platform notifier data or NULL. */
+    void *notifierData;		/* Platform notifier data or NULL. */
 } AsyncHandler;
 
 typedef struct ThreadSpecificData {
@@ -154,7 +154,7 @@ Tcl_AsyncHandler
 Tcl_AsyncCreate(
     Tcl_AsyncProc *proc,	/* Procedure to call when handler is
 				 * invoked. */
-    void *clientData)	/* Argument to pass to handler. */
+    void *clientData)		/* Argument to pass to handler. */
 {
     AsyncHandler *asyncPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -202,7 +202,7 @@ Tcl_AsyncCreate(
 
 void
 Tcl_AsyncMark(
-    Tcl_AsyncHandler async)		/* Token for handler. */
+    Tcl_AsyncHandler async)	/* Token for handler. */
 {
     AsyncHandler *token = (AsyncHandler *) async;
 
@@ -236,8 +236,8 @@ Tcl_AsyncMark(
 
 int
 Tcl_AsyncMarkFromSignal(
-    Tcl_AsyncHandler async,		/* Token for handler. */
-    int sigNumber)			/* Signal number. */
+    Tcl_AsyncHandler async,	/* Token for handler. */
+    int sigNumber)		/* Signal number. */
 {
 #if TCL_THREADS
     AsyncHandler *token = (AsyncHandler *) async;
@@ -390,7 +390,7 @@ Tcl_AsyncInvoke(
 
 void
 Tcl_AsyncDelete(
-    Tcl_AsyncHandler async)		/* Token for handler to delete. */
+    Tcl_AsyncHandler async)	/* Token for handler to delete. */
 {
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
 

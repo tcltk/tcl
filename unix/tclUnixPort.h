@@ -247,7 +247,7 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #ifndef WIFSIGNALED
 #   define WIFSIGNALED(stat) \
-	(((*((int *) &(stat)))) && ((*((int *) &(stat))) \
+	(((*((int *) &(stat)))) && ((*((int *) &(stat)))		\
 		== ((*((int *) &(stat))) & 0x00FF)))
 #endif
 

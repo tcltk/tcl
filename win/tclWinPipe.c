@@ -214,7 +214,7 @@ static void		PipeThreadActionProc(void *instanceData,
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -927,7 +927,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc,			/* Number of arguments in following array. */
+    size_t argc,		/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1551,7 +1551,7 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    size_t argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
@@ -1968,7 +1968,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -2007,7 +2007,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,	/* Pointer to PipeInfo structure. */
+    void *instanceData,		/* Pointer to PipeInfo structure. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -2177,7 +2177,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -2271,7 +2271,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -2419,7 +2419,7 @@ PipeEventProc(
 	mask = TCL_WRITABLE;
     }
 
-    if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr,0) >= 0)) {
+    if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr, 0) >= 0)) {
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    mask = TCL_READABLE;
 	} else {
@@ -2453,7 +2453,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2515,9 +2515,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle.  */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;

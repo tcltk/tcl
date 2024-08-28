@@ -534,7 +534,7 @@ TclCompileIncrCmd(
      * Emit the instruction to increment the variable.
      */
 
-    if (isScalar) {	/* Simple scalar variable. */
+    if (isScalar) {		/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
 		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
@@ -2042,7 +2042,7 @@ TclCompileRegexpCmd(
 	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
-	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	    PushLiteral(envPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	    Tcl_DStringFree(&ds);
 	}
     }
@@ -2226,7 +2226,8 @@ TclCompileRegsubCmd(
   isSimpleGlob:
     for (bytes = TclGetString(replacementObj); *bytes; bytes++) {
 	switch (*bytes) {
-	case '\\': case '&':
+	case '\\':
+	case '&':
 	    goto done;
 	}
     }

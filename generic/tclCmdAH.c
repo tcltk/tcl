@@ -416,21 +416,21 @@ TclInitEncodingCmd(
  *
  * EncodingConvertParseOptions --
  *
- *    Common routine for parsing arguments passed to encoding convertfrom
- *    and encoding convertto.
+ *	Common routine for parsing arguments passed to encoding convertfrom
+ *	and encoding convertto.
  *
  * Results:
- *    TCL_OK or TCL_ERROR.
+ *	TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *    On success,
- *    - *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
- *      if non-NULL
- *    - *dataObjPtr is set to the Tcl_Obj containing the data to encode or
- *      decode
- *    - *profilePtr is set to encoding error handling profile
- *    - *failVarPtr is set to -failindex option value or NULL
- *    On error, all of the above are uninitialized.
+ *	On success,
+ *	- *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
+ *	  if non-NULL
+ *	- *dataObjPtr is set to the Tcl_Obj containing the data to encode or
+ *	  decode
+ *	- *profilePtr is set to encoding error handling profile
+ *	- *failVarPtr is set to -failindex option value or NULL
+ *	On error, all of the above are uninitialized.
  *
  *------------------------------------------------------------------------
  */
@@ -535,7 +535,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -2357,13 +2357,13 @@ StoreStatData(
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue)                  \
-        Tcl_DictObjPut(NULL, result,            \
-            Tcl_NewStringObj((key), -1),        \
-            (objValue));
+#define DOBJPUT(key, objValue) \
+	Tcl_DictObjPut(NULL, result,					\
+		Tcl_NewStringObj((key), TCL_AUTO_LENGTH),		\
+		(objValue));
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+	DOBJPUT("nlink",Tcl_NewWideIntObj((long)statPtr->st_nlink));
 	DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
 	DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
 	DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
@@ -2373,12 +2373,12 @@ StoreStatData(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-	DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-	DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
-	DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+	DOBJPUT("atime",Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+	DOBJPUT("mtime",Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+	DOBJPUT("ctime",Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
 	mode = (unsigned short) statPtr->st_mode;
 	DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
-	DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+	DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), TCL_AUTO_LENGTH));
 #undef DOBJPUT
 	Tcl_SetObjResult(interp, result);
 	Tcl_DecrRefCount(result);
@@ -2395,7 +2395,8 @@ StoreStatData(
     TclNewLiteralStringObj(field, fieldName);				\
     Tcl_IncrRefCount(field);						\
     value = (object);							\
-    if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
+    if (Tcl_ObjSetVar2(interp, varName, field, value,			\
+	    TCL_LEAVE_ERR_MSG) == NULL) {				\
 	TclDecrRefCount(field);						\
 	return TCL_ERROR;						\
     }									\

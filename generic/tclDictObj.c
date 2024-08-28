@@ -176,7 +176,7 @@ static ObjectType tclDictObjectType = {
 
 Tcl_ObjType *tclDictTypePtr = (Tcl_ObjType *)&tclDictObjectType;
 
-#define DictSetIntRep(objPtr, dictRepPtr)				\
+#define DictSetIntRep(objPtr, dictRepPtr)								\
     do {                                                                \
         Tcl_ObjInternalRep ir;                                          \
         ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
@@ -184,12 +184,14 @@ Tcl_ObjType *tclDictTypePtr = (Tcl_ObjType *)&tclDictObjectType;
         Tcl_StoreInternalRep((objPtr), tclDictTypePtr, &ir);            \
     } while (0)
 
-#define DictGetInternalRep(objPtr, dictRepPtr)				\
+
+#define DictGetInternalRep(objPtr, dictRepPtr)							\
     do {                                                                \
         const Tcl_ObjInternalRep *irPtr;                                \
         irPtr = TclFetchInternalRep((objPtr), tclDictTypePtr);          \
         (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;  \
     } while (0)
+
 
 /*
  * The type of the specially adapted version of the Tcl_Obj*-containing hash
@@ -203,7 +205,7 @@ Tcl_ObjType *tclDictTypePtr = (Tcl_ObjType *)&tclDictObjectType;
 
 static const Tcl_HashKeyType chainHashType = {
     TCL_HASH_KEY_TYPE_VERSION,
-    TCL_HASH_KEY_DIRECT_COMPARE,        /* allows compare keys by pointers */
+    TCL_HASH_KEY_DIRECT_COMPARE,	/* allows compare keys by pointers */
     TclHashObjKey,
     TclCompareObjKeys,
     AllocChainEntry,
@@ -1301,7 +1303,7 @@ Tcl_DictObjNext(
 
 void
 Tcl_DictObjDone(
-    Tcl_DictSearch *searchPtr)		/* Pointer to a hash search context. */
+    Tcl_DictSearch *searchPtr)	/* Pointer to a hash search context. */
 {
     Dict *dict;
 
@@ -1353,7 +1355,7 @@ Tcl_DictObjPutKeyList(
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
-    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_CREATE);
+    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_CREATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1411,7 +1413,7 @@ Tcl_DictObjRemoveKeyList(
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjRemoveKeyList");
     }
 
-    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_UPDATE);
+    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_UPDATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1649,7 +1651,7 @@ DictGetCmd(
      * Note that this loop always executes at least once.
      */
 
-    dictPtr = TclTraceDictPath(interp, objv[1], objc-3,objv+2, DICT_PATH_READ);
+    dictPtr = TclTraceDictPath(interp, objv[1], objc-3, objv+2, DICT_PATH_READ);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2042,7 +2044,7 @@ DictValuesCmd(
     }
     listPtr = Tcl_NewListObj(0, NULL);
     for (; !done ; Tcl_DictObjNext(&search, NULL, &valuePtr, &done)) {
-	if (pattern==NULL || Tcl_StringMatch(TclGetString(valuePtr),pattern)) {
+	if (pattern==NULL || Tcl_StringMatch(TclGetString(valuePtr), pattern)) {
 	    /*
 	     * Assume this operation always succeeds.
 	     */
@@ -2127,7 +2129,7 @@ DictExistsCmd(
 	return TCL_ERROR;
     }
 
-    dictPtr = TclTraceDictPath(NULL, objv[1], objc-3, objv+2,DICT_PATH_EXISTS);
+    dictPtr = TclTraceDictPath(NULL, objv[1], objc-3, objv+2, DICT_PATH_EXISTS);
     if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT ||
 	    Tcl_DictObjGet(NULL, dictPtr, objv[objc-1], &valuePtr) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
@@ -2792,7 +2794,7 @@ DictMapNRCmd(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
 	    iPtr->cmdFramePtr, 3);
 
@@ -2882,7 +2884,7 @@ DictMapLoopCallback(
      * Run the script.
      */
 
-    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
 	    iPtr->cmdFramePtr, 3);
 
@@ -3063,7 +3065,7 @@ DictFilterCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+	    0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3373,7 +3375,7 @@ DictUpdateCmd(
     objPtr = Tcl_NewListObj(objc-3, objv+2);
     Tcl_IncrRefCount(objPtr);
     Tcl_IncrRefCount(objv[1]);
-    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
+    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL, NULL);
 
     return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
 }

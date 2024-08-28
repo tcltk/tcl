@@ -215,7 +215,7 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
 static const Tcl_ChannelType serialChannelType = {
     "serial",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
+    NULL,			/* Close proc. */
     SerialInputProc,		/* Input proc. */
     SerialOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -229,7 +229,7 @@ static const Tcl_ChannelType serialChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     SerialThreadActionProc,	/* thread action proc */
-    NULL                       /* truncate */
+    NULL			/* truncate */
 };
 
 /*
@@ -865,7 +865,7 @@ SerialBlockingWrite(
 
 static int
 SerialInputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -972,7 +972,7 @@ SerialInputProc(
 
 static int
 SerialOutputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -1202,7 +1202,7 @@ SerialEventProc(
 
 static void
 SerialWatchProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1259,9 +1259,9 @@ SerialWatchProc(
 
 static int
 SerialGetHandleProc(
-    void *instanceData,	/* The serial state. */
+    void *instanceData,		/* The serial state. */
     TCL_UNUSED(int) /*direction*/,
-    void **handlePtr)	/* Where to store the handle. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
 
@@ -1621,7 +1621,7 @@ SerialModemStatusStr(
 
 static int
 SerialSetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -2045,7 +2045,7 @@ SerialSetOptionProc(
 
 static int
 SerialGetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */

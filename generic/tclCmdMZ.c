@@ -1258,7 +1258,7 @@ Tcl_SplitObjCmd(
 	 * byte in length.
 	 */
 
-	while (*stringPtr && (p=strchr(stringPtr,*splitChars)) != NULL) {
+	while (*stringPtr && (p=strchr(stringPtr, *splitChars)) != NULL) {
 	    objPtr = Tcl_NewStringObj(stringPtr, p - stringPtr);
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	    stringPtr = p + 1;
@@ -2431,7 +2431,7 @@ StringRplcCmd(
      * result is the original string.
      */
 
-    if ((last < 0) ||	/* Range ends before start of string */
+    if ((last < 0) ||		/* Range ends before start of string */
 	    (first > end) ||	/* Range begins after end of string */
 	    (last < first)) {	/* Range begins after it starts */
 	/*
@@ -2931,7 +2931,7 @@ StringLowerCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3016,7 +3016,7 @@ StringUpperCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3101,7 +3101,7 @@ StringTitleCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3726,7 +3726,7 @@ TclNRSwitchObjCmd(
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern, noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -5333,7 +5333,7 @@ TclListLines(
     Tcl_Size line,		/* Line the list as a whole starts on. */
     Tcl_Size n,			/* #elements in lines */
     Tcl_Size *lines,		/* Array of line numbers, to fill. */
-    Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
+    Tcl_Obj *const *elems)	/* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = TclGetString(listObj);

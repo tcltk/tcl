@@ -530,7 +530,7 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    void *instanceData,	/* State of transformation. */
+    void *instanceData,		/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -865,7 +865,7 @@ TransformOutputProc(
 
 static long long
 TransformWideSeekProc(
-    void *instanceData,	/* The channel to manipulate. */
+    void *instanceData,		/* The channel to manipulate. */
     long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
@@ -1028,7 +1028,7 @@ TransformGetOptionProc(
 
 static void
 TransformWatchProc(
-    void *instanceData,	/* Channel to watch. */
+    void *instanceData,		/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -1106,9 +1106,9 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    void *instanceData,	/* Channel to query. */
+    void *instanceData,		/* Channel to query. */
     int direction,		/* Direction of interest. */
-    void **handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)		/* Place to store the handle into. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
@@ -1140,7 +1140,7 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    void *clientData,	/* The state of the notified
+    void *clientData,		/* The state of the notified
 				 * transformation. */
     int mask)			/* The mask of occurring events. */
 {
@@ -1185,7 +1185,7 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    void *clientData)	/* Transformation to query. */
+    void *clientData)		/* Transformation to query. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 

@@ -139,7 +139,7 @@ TclpDlopen(
      */
 
     if ((pkg = strrchr(fileName, '/')) == NULL) {
-        pkg = fileName;
+	pkg = fileName;
     } else {
 	pkg++;
     }

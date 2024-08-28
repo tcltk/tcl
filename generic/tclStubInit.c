@@ -209,7 +209,8 @@ doNothing(void)
 
 #define TclWinNoBackslash winNoBackslash
 static char *
-TclWinNoBackslash(char *path)
+TclWinNoBackslash(
+    char *path)
 {
     char *p;
 
@@ -221,7 +222,8 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
-void *TclWinGetTclInstance(void)
+void *
+TclWinGetTclInstance(void)
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -230,7 +232,8 @@ void *TclWinGetTclInstance(void)
 }
 
 Tcl_Size
-TclpGetPid(Tcl_Pid pid)
+TclpGetPid(
+    Tcl_Pid pid)
 {
     return (Tcl_Size)PTR2INT(pid);
 }
@@ -241,8 +244,14 @@ TclpGetPid(Tcl_Pid pid)
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
-static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
+#define Tcl_GetLongFromObj \
+	(int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
+static int
+exprInt(
+    Tcl_Interp *interp,
+    const char *expr,
+    int *ptr)
+{
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
     if (result == TCL_OK) {
@@ -257,8 +266,14 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
-static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
+#define Tcl_ExprLong \
+	(int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
+static int
+exprIntObj(
+    Tcl_Interp *interp,
+    Tcl_Obj*expr,
+    int *ptr)
+{
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
@@ -305,10 +320,15 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 /* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
  * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
-mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
-   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
-      return MP_VAL;
-   }
+mp_err MP_WUR
+TclBN_mp_expt_n(
+    const mp_int *a,
+    int b,
+    mp_int *c)
+{
+    if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+	return MP_VAL;
+    }
     return mp_expt_u32(a, (uint32_t)b, c);;
 }
 #endif /* TCL_WITH_EXTERNAL_TOMMATH */

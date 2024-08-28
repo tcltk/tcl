@@ -167,7 +167,8 @@ Tcl_LoadObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	++objv; --objc;
+	++objv;
+	--objc;
 	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
 	} else if (LOAD_LAZY == index) {
@@ -1004,7 +1005,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix. */
+    const char *prefix,		/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
@@ -1196,7 +1197,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),		/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
@@ -1209,7 +1210,7 @@ LoadCleanupProc(
 	    break;
 	}
 	libraryPtr = ipPtr->libraryPtr;
-	UnloadLibrary(interp, interp, libraryPtr, 0 ,"", 1);
+	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
     }
 }
 

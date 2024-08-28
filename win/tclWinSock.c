@@ -1301,7 +1301,7 @@ TcpGetOptionProc(
     int reverseDNS = 0;
 #define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 #define HAVE_OPTION(option) \
-	((len > 1) && (optionName[1] == option[1]) && \
+	((len > 1) && (optionName[1] == option[1]) &&			\
 	    (strncmp(optionName, option, len) == 0))
 
     /*
@@ -2667,7 +2667,7 @@ SocketEventProc(
 	     */
 
 	    SetEvent(tsdPtr->socketListLock);
-	    WaitForConnect(statePtr,NULL);
+	    WaitForConnect(statePtr, NULL);
 	} else {
 	    /*
 	     * No async connect reenter pending. Just clear event.

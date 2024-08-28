@@ -72,7 +72,7 @@ TclpDlopen(
     const char *native;
     int result = 1;
 
-    NXStream *errorStream = NXOpenMemory(0,0,NX_READWRITE);
+    NXStream *errorStream = NXOpenMemory(0, 0, NX_READWRITE);
 
     fileName = TclGetString(pathPtr);
 
@@ -83,7 +83,7 @@ TclpDlopen(
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
-    files = {native,NULL};
+    files = {native, NULL};
 
     result = rld_load(errorStream, &header, files, NULL);
 
@@ -101,7 +101,7 @@ TclpDlopen(
 	    return TCL_ERROR;
 	}
 	native = Tcl_DStringValue(&ds);
-	files = {native,NULL};
+	files = {native, NULL};
 	result = rld_load(errorStream, &header, files, NULL);
 	Tcl_DStringFree(&ds);
     }

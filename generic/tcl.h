@@ -1873,8 +1873,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *fromUtfProc;
 				/* Function to convert from UTF-8 into
 				 * external encoding. */
-    Tcl_FreeProc *freeProc;
-				/* If non-NULL, function to call when this
+    Tcl_FreeProc *freeProc;	/* If non-NULL, function to call when this
 				 * encoding is deleted. */
     void *clientData;		/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
@@ -2502,9 +2501,9 @@ typedef int (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRa
 #   define attemptckalloc Tcl_AttemptAlloc
 #   ifdef _MSC_VER
 	/* Silence invalid C4090 warnings */
-#	define ckfree(a) Tcl_Free((void *)(a))
-#	define ckrealloc(a,b) Tcl_Realloc((void *)(a),(b))
-#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((void *)(a),(b))
+#	define ckfree(a)		Tcl_Free((void *)(a))
+#	define ckrealloc(a, b)		Tcl_Realloc((void *)(a), (b))
+#	define attemptckrealloc(a, b)	Tcl_AttemptRealloc((void *)(a), (b))
 #   else
 #	define ckfree Tcl_Free
 #	define ckrealloc Tcl_Realloc
@@ -2525,7 +2524,7 @@ typedef int (Tcl_ObjInterfaceStringRangeEndProc)(tclObjTypeInterfaceArgsStringRa
 #   undef  Tcl_DumpActiveMemory
 #   define Tcl_DumpActiveMemory(x)
 #   undef  Tcl_ValidateAllMemory
-#   define Tcl_ValidateAllMemory(x,y)
+#   define Tcl_ValidateAllMemory(x, y)
 
 #endif /* !TCL_MEM_DEBUG */
 

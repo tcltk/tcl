@@ -95,11 +95,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",				/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny,			/* setFromAnyProc */
+    "osType",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfOSType,	/* updateStringProc */
+    SetOSTypeFromAny,		/* setFromAnyProc */
     0
 };
 
@@ -702,7 +702,7 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)		/* OSType object whose string rep to
 				 * update. */
 {
     const size_t size = TCL_UTF_MAX * 4;

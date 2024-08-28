@@ -799,7 +799,7 @@ InfoCommandsCmd(
 		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
+		    if (Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr,
 				Tcl_NewStringObj(cmdName, -1));
 		    }
@@ -1274,7 +1274,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};	/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
@@ -1293,8 +1293,8 @@ TclInfoFrame(
      */
 
 #define ADD_PAIR(name, value) \
-	TclNewLiteralStringObj(tmpObj, name); \
-	lv[lc++] = tmpObj; \
+	TclNewLiteralStringObj(tmpObj, name);				\
+	lv[lc++] = tmpObj;						\
 	lv[lc++] = (value)
 
     switch (framePtr->type) {
@@ -2478,7 +2478,7 @@ int
 Tcl_LinsertObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
@@ -2574,9 +2574,8 @@ int
 Tcl_ListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     /*
      * If there are no list elements, the result is an empty object.
@@ -2611,8 +2610,7 @@ Tcl_LlengthObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int result;
@@ -2660,8 +2658,7 @@ Tcl_LpopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int copied = 0, result, status;
@@ -2773,8 +2770,7 @@ Tcl_LrangeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result, status;
     Tcl_Size fromAnchor, first, fromIdx, last, listLen, toAnchor, toIdx;
@@ -3011,9 +3007,8 @@ int
 Tcl_LrepeatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Size elementCount, i, totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
@@ -4003,7 +3998,7 @@ Tcl_LsearchObjCmd(
 		    break;
 
 		case REAL:
-		    result = Tcl_GetDoubleFromObj(interp,itemPtr, &objDouble);
+		    result = Tcl_GetDoubleFromObj(interp, itemPtr, &objDouble);
 		    if (result != TCL_OK) {
 			if (listPtr) {
 			    Tcl_DecrRefCount(listPtr);
@@ -4187,91 +4182,6 @@ Tcl_LsearchObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LsetObjCmd --
- *
- *	This procedure is invoked to process the "lset" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_LsetObjCmd(
-    TCL_UNUSED(ClientData),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
-{
-    Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
-    Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
-    int status = TCL_OK;
-
-    /*
-     * Check parameter count.
-     */
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"listVar ?index? ?index ...? value");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Look up the list variable's value.
-     */
-
-    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Substitute the value in the value. Return either the value or else an
-     * unshared copy of it.
-     */
-
-    if (objc == 4) {
-	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
-    } else {
-	status = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-		objv[objc-1], &finalValuePtr);
-    }
-
-    /*
-     * If substitution has failed, bail out.
-     */
-
-    if (status != TCL_OK || finalValuePtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Finally, update the variable so that traces fire.
-     */
-
-    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, finalValuePtr,
-	    TCL_LEAVE_ERR_MSG);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Return the new value of the variable as the interpreter result.
-     */
-
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * SequenceIdentifyArgument --
  *   (for [lseq] command)
  *
@@ -4289,10 +4199,10 @@ Tcl_LsetObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,        /* for error reporting  */
-     Tcl_Obj *argPtr,           /* Argument to decode   */
-     Tcl_Obj **numValuePtr,     /* Return numeric value */
-     int *keywordIndexPtr)      /* Return keyword enum  */
+     Tcl_Interp *interp,	/* for error reporting  */
+     Tcl_Obj *argPtr,		/* Argument to decode   */
+     Tcl_Obj **numValuePtr,	/* Return numeric value */
+     int *keywordIndexPtr)	/* Return keyword enum  */
 {
     int status;
     SequenceOperators opmode;
@@ -4424,49 +4334,48 @@ Tcl_LseqObjCmd(
      * digit.
      */
     if (objc > 6) {
-	 /* Too many arguments */
-	 arg_key=0;
+	/* Too many arguments */
+	arg_key=0;
     } else for (i=1; i<objc; i++) {
-	 arg_key = (arg_key * 10);
-	 numValues[value_i] = NULL;
-	 decoded = SequenceIdentifyArgument(interp, objv[i], &numberObj, &keyword);
-	 switch (decoded) {
+	arg_key = (arg_key * 10);
+	numValues[value_i] = NULL;
+	decoded = SequenceIdentifyArgument(interp, objv[i], &numberObj, &keyword);
+	switch (decoded) {
+	case NoneArg:
+	    /*
+	     * Unrecognizable argument
+	     * Reproduce operation error message
+	     */
+	    status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
+		    "operation", 0, &opmode);
+	    goto done;
 
-	 case NoneArg:
-	      /*
-	       * Unrecognizable argument
-	       * Reproduce operation error message
-	       */
-	      status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
-		           "operation", 0, &opmode);
-	      goto done;
+	case NumericArg:
+	    arg_key += NumericArg;
+	    numValues[value_i] = numberObj;
+	    Tcl_IncrRefCount(numValues[value_i]);
+	    values[value_i] = keyword;  // This is the TCL_NUMBER_* value
+	    useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
+	    value_i++;
+	    break;
 
-	 case NumericArg:
-	      arg_key += NumericArg;
-	      numValues[value_i] = numberObj;
-	      Tcl_IncrRefCount(numValues[value_i]);
-	      values[value_i] = keyword;  // This is the TCL_NUMBER_* value
-	      useDoubles = useDoubles ? useDoubles : keyword == TCL_NUMBER_DOUBLE;
-	      value_i++;
-	      break;
+	case RangeKeywordArg:
+	    arg_key += RangeKeywordArg;
+	    values[value_i] = keyword;
+	    value_i++;
+	    break;
 
-	 case RangeKeywordArg:
-	      arg_key += RangeKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
+	case ByKeywordArg:
+	    arg_key += ByKeywordArg;
+	    values[value_i] = keyword;
+	    value_i++;
+	    break;
 
-	 case ByKeywordArg:
-	      arg_key += ByKeywordArg;
-	      values[value_i] = keyword;
-	      value_i++;
-	      break;
-
-	 default:
-	      arg_key += 9; // Error state
-	      value_i++;
-	      break;
-	 }
+	default:
+	    arg_key += 9; // Error state
+	    value_i++;
+	    break;
+	}
     }
 
     /*
@@ -4475,38 +4384,32 @@ Tcl_LseqObjCmd(
      */
     switch (arg_key) {
 
-/*    No argument */
-    case 0:
-	 Tcl_WrongNumArgs(interp, 1, objv,
-	     "n ??op? n ??by? n??");
-	 goto done;
-	 break;
+    case 0:			/* No argument */
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"n ??op? n ??by? n??");
+	goto done;
 
-/*    lseq n */
-    case 1:
+    case 1:			/* lseq n */
 	start = zero;
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
 	break;
 
-/*    lseq n n */
-    case 11:
+    case 11:			/* lseq n n */
 	start = numValues[0];
 	end = numValues[1];
 	break;
 
-/*    lseq n n n */
-    case 111:
+    case 111:			/* lseq n n n */
 	start = numValues[0];
 	end = numValues[1];
 	step = numValues[2];
 	break;
 
-/*    lseq n 'to' n    */
-/*    lseq n 'count' n */
-/*    lseq n 'by' n    */
-    case 121:
+    case 121:			/* lseq n 'to' n
+				 * lseq n 'count' n
+				 * lseq n 'by' n */
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
 	case LSEQ_DOTS:
@@ -4529,9 +4432,8 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    lseq n 'to' n n    */
-/*    lseq n 'count' n n */
-    case 1211:
+    case 1211:			/* lseq n 'to' n n
+				 * lseq n 'count' n n */
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
 	case LSEQ_DOTS:
@@ -4555,8 +4457,7 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    lseq n n 'by' n */
-    case 1121:
+    case 1121:			/* lseq n n 'by' n */
 	start = numValues[0];
 	end = numValues[1];
 	opmode = (SequenceOperators)values[2];
@@ -4573,9 +4474,8 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    lseq n 'to' n 'by' n    */
-/*    lseq n 'count' n 'by' n */
-    case 12121:
+    case 12121:			/* lseq n 'to' n 'by' n
+				 * lseq n 'count' n 'by' n */
 	start = numValues[0];
 	opmode = (SequenceOperators)values[3];
 	switch (opmode) {
@@ -4603,44 +4503,42 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    Error cases: incomplete arguments */
-    case 12:
-	 opmode = (SequenceOperators)values[1]; goto KeywordError; break;
+    case 12:			/* Error cases: incomplete arguments */
+	opmode = (SequenceOperators)values[1];
+	goto KeywordError;
     case 112:
-	 opmode = (SequenceOperators)values[2]; goto KeywordError; break;
+	opmode = (SequenceOperators)values[2];
+	goto KeywordError;
     case 1212:
-	 opmode = (SequenceOperators)values[3]; goto KeywordError; break;
+	opmode = (SequenceOperators)values[3];
     KeywordError:
-	 switch (opmode) {
-	 case LSEQ_DOTS:
-	 case LSEQ_TO:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"to\" value."));
-	      break;
-	 case LSEQ_COUNT:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"count\" value."));
-	      break;
-	 case LSEQ_BY:
-	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		  "missing \"by\" value."));
-	      break;
-	 }
-	 goto done;
-	 break;
+	switch (opmode) {
+	case LSEQ_DOTS:
+	case LSEQ_TO:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "missing \"to\" value."));
+	    break;
+	case LSEQ_COUNT:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "missing \"count\" value."));
+	    break;
+	case LSEQ_BY:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "missing \"by\" value."));
+	    break;
+	}
+	goto done;
 
-/*    All other argument errors */
-    default:
-	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
-	 goto done;
-	 break;
+    default:			/* All other argument errors */
+	Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	goto done;
     }
 
     /*
      * Success!  Now lets create the series object.
      */
     arithSeriesPtr = TclNewArithSeriesObj(interp,
-	useDoubles, start, end, step, elementCount);
+		useDoubles, start, end, step, elementCount);
 
     if (arithSeriesPtr) {
 	status = TCL_OK;
@@ -4664,7 +4562,93 @@ Tcl_LseqObjCmd(
 
     return status;
 }
+
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LsetObjCmd --
+ *
+ *	This procedure is invoked to process the "lset" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LsetObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument values. */
+{
+    Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
+    Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
+    int status = TCL_OK;
+
+    /*
+     * Check parameter count.
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"listVar ?index? ?index ...? value");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Look up the list variable's value.
+     */
+
+    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Substitute the value in the value. Return either the value or else an
+     * unshared copy of it.
+     */
+
+    if (objc == 4) {
+	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
+    } else {
+	status = TclLsetFlat(interp, listPtr, objc-3, objv+2,
+		objv[objc-1], &finalValuePtr);
+    }
+
+    /*
+     * If substitution has failed, bail out.
+     */
+
+    if (status != TCL_OK || finalValuePtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Finally, update the variable so that traces fire.
+     */
+
+    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, finalValuePtr,
+	    TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Return the new value of the variable as the interpreter result.
+     */
+
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *

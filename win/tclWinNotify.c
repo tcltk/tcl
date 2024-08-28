@@ -159,7 +159,7 @@ TclpInitNotifier(void)
 
 void
 TclpFinalizeNotifier(
-    void *clientData)	/* Pointer to notifier data. */
+    void *clientData)		/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -229,7 +229,7 @@ TclpFinalizeNotifier(
 
 void
 TclpAlertNotifier(
-    void *clientData)	/* Pointer to thread data. */
+    void *clientData)		/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -275,7 +275,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     UINT timeout;
@@ -381,9 +381,9 @@ int
 TclAsyncNotifier(
     TCL_UNUSED(int),		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
+    TCL_UNUSED(void *),		/* Notifier data. */
     TCL_UNUSED(int *),		/* Flag to mark. */
-    TCL_UNUSED(int))			/* Value of mark. */
+    TCL_UNUSED(int))		/* Value of mark. */
 {
     return 0;
 }
@@ -475,7 +475,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
