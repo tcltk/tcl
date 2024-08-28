@@ -74,6 +74,7 @@ TclpFindExecutable(
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
     Tcl_Obj *obj;
+    int status;
 
     if (argv0 == NULL) {
 	return;
@@ -164,8 +165,11 @@ TclpFindExecutable(
     if (name[0] == '/')
 #endif
     {
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE
-		,TCL_ENCODING_PROFILE_TCL8 ,&utfName ,NULL);
+	status = Tcl_ExternalToUtfDStringEx(NULL, NULL, name, TCL_INDEX_NONE
+		,TCL_ENCODING_PROFILE_STRICT ,&utfName ,NULL);
+	if (status != TCL_OK) {
+	    Tcl_Panic("%s {unable to encode value of path}" ,"TclpFindExecutable");
+	}
 	TclSetObjNameOfExecutable(
 		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
 	Tcl_DStringFree(&utfName);
@@ -192,8 +196,11 @@ TclpFindExecutable(
     Tcl_DStringAppend(&nameString, name, TCL_INDEX_NONE);
 
     Tcl_DStringFree(&buffer);
-    Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
-	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
+    status = Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
+	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_STRICT, &buffer, NULL);
+    if (status != TCL_OK) {
+	Tcl_Panic("%s {unable to encode value of cwd}" ,"TclpFindExecutable");
+    }
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
 	TclDStringAppendLiteral(&buffer, "/");
     }
@@ -201,8 +208,12 @@ TclpFindExecutable(
     TclDStringAppendDString(&buffer, &nameString);
     Tcl_DStringFree(&nameString);
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
-	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+    status = Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&buffer)
+	, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_STRICT, &utfName, NULL);
+    if (status != TCL_OK) {
+	Tcl_Panic("%s {unable to encode value of executable name}"
+	    ,"TclpFindExecutable");
+    }
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), NULL);
     Tcl_DStringFree(&utfName);
@@ -1113,9 +1124,14 @@ TclpNativeToNormalized(
     void *clientData)
 {
     Tcl_DString ds;
+    int status;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData,
-	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    status = Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData,
+	    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_STRICT, &ds, NULL);
+    if (status != TCL_OK) {
+	Tcl_Panic("%s {unable to encode value}" ,"TclpNativeToNormalized");
+    }
+
     return Tcl_DStringToObj(&ds);
 }
 
