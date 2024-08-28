@@ -1744,8 +1744,7 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
-    Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
+    Tcl_Obj *fileNameObj = Tcl_ObjPrintf("%s.enc", name);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;
@@ -1753,10 +1752,8 @@ OpenEncodingFileChannel(
     Tcl_Size i, numDirs;
 
     TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
-    Tcl_IncrRefCount(nameObj);
-    Tcl_AppendToObj(fileNameObj, ".enc", TCL_INDEX_NONE);
     Tcl_IncrRefCount(fileNameObj);
-    Tcl_DictObjGet(NULL, map, nameObj, &directory);
+    TclDictGet(NULL, map, name, &directory);
 
     /*
      * Check that any cached directory is still on the encoding search path.
@@ -1785,7 +1782,7 @@ OpenEncodingFileChannel(
 	     */
 
 	    map = Tcl_DuplicateObj(map);
-	    Tcl_DictObjRemove(NULL, map, nameObj);
+	    TclDictRemove(NULL, map, name);
 	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	    directory = NULL;
 	}
@@ -1819,7 +1816,7 @@ OpenEncodingFileChannel(
 	     */
 
 	    map = Tcl_DuplicateObj(TclGetProcessGlobalValue(&encodingFileMap));
-	    Tcl_DictObjPut(NULL, map, nameObj, dir[i]);
+	    TclDictPut(NULL, map, name, dir[i]);
 	    TclSetProcessGlobalValue(&encodingFileMap, map);
 	}
     }
@@ -1830,7 +1827,6 @@ OpenEncodingFileChannel(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
-    Tcl_DecrRefCount(nameObj);
     Tcl_DecrRefCount(searchPath);
 
     return chan;
