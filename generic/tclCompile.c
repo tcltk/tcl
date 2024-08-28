@@ -911,12 +911,7 @@ TclSetByteCodeFromAny(
 
     if (result == TCL_OK) {
 	(void) TclInitByteCodeObj(objPtr, &tclByteCodeType, &compEnv);
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
 
     TclFreeCompileEnv(&compEnv);
@@ -1376,12 +1371,7 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	    fflush(stdout);
-	}
-#endif /* TCL_COMPILE_DEBUG */
+	TclDebugPrintByteCodeObj(objPtr);
     }
     return codePtr;
 }
@@ -2524,7 +2514,7 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (Tcl_Size *) Tcl_Realloc(clPosition,
+			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
 				maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;

@@ -126,7 +126,7 @@ GetLocationInformation(
 /*
  *----------------------------------------------------------------------
  *
- * TclPrintByteCodeObj --
+ * TclDebugPrintByteCodeObj --
  *
  *	This procedure prints ("disassembles") the instructions of a bytecode
  *	object to stdout.
@@ -141,14 +141,16 @@ GetLocationInformation(
  */
 
 void
-TclPrintByteCodeObj(
-    TCL_UNUSED(Tcl_Interp *),	/* Stuck with this in internal stubs */
+TclDebugPrintByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
+    if (tclTraceCompile >= 2) {
+	Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
 
-    fprintf(stdout, "\n%s", TclGetString(bufPtr));
-    Tcl_DecrRefCount(bufPtr);
+	fprintf(stdout, "\n%s", TclGetString(bufPtr));
+	Tcl_DecrRefCount(bufPtr);
+	fflush(stdout);
+    }
 }
 
 /*
@@ -1256,7 +1258,7 @@ DisassembleByteCodeAsDicts(
     TclDictPut(NULL, description, "commands", commands);
     TclDictPut(NULL, description, "script",
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
-    TclDictPut(NULL, description, "namespace", 
+    TclDictPut(NULL, description, "namespace",
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
     TclDictPut(NULL, description, "stackdepth",
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
