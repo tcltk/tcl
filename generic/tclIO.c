@@ -11204,7 +11204,7 @@ Tcl_SetChannelError(
     Tcl_Channel chan,		/* Channel to store the data into. */
     Tcl_Obj *msg)		/* Error message to store. */
 {
-    ChannelState *statePtr = ((Channel *) chan)->state;
+    ChannelState *statePtr = ((Channel *)chan)->state;
     Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {
