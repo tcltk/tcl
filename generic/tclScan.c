@@ -369,7 +369,7 @@ ValidateFormat(
 	    /* Note ull >= 0 because of isdigit check above */
 	    unsigned long long ull;
 	    ull = strtoull(
-		format - 1, (char **)&format, 10); /* INTL: "C" locale. */
+		    format - 1, (char **)&format, 10);	/* INTL: "C" locale. */
 	    /* Note >=, not >, to leave room for a nul */
 	    if (ull >= TCL_SIZE_MAX) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -377,7 +377,7 @@ ValidateFormat(
 			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
 			ull, (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
-		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
+			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;
