@@ -2071,7 +2071,7 @@ packages: configure-packages ${STUB_LIB_FILE}
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
 		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    echo "Building package '$$pkg' for Tcl 8"; \
+		    echo "Building package '$$pkg' for Tcl 9"; \
 		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
 		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
@@ -2086,7 +2086,7 @@ install-packages: packages
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
 		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
-		    echo "Installing package '$$pkg' for Tcl 8"; \
+		    echo "Installing package '$$pkg' for Tcl 9"; \
 		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) install \
 			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
 		fi; \
