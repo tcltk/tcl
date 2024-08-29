@@ -312,22 +312,22 @@ static ConsoleChannelInfo *gWatchingChannelList;
  */
 
 static const Tcl_ChannelType consoleChannelType = {
-    "console",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Old close proc. Deprecated */
-    ConsoleInputProc,		/* Input proc. */
-    ConsoleOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. Not seekable. Deprecated */
-    ConsoleSetOptionProc,	/* Set option proc. */
-    ConsoleGetOptionProc,	/* Get option proc. */
-    ConsoleWatchProc,		/* Set up notifier to watch the channel. */
-    ConsoleGetHandleProc,	/* Get an OS handle from channel. */
-    ConsoleCloseProc,		/* New close2 proc. */
-    ConsoleBlockModeProc,	/* Set blocking or non-blocking mode. */
+    "console",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    ConsoleInputProc,
+    ConsoleOutputProc,
+    NULL,			/* Deprecated. */
+    ConsoleSetOptionProc,
+    ConsoleGetOptionProc,
+    ConsoleWatchProc,
+    ConsoleGetHandleProc,
+    ConsoleCloseProc,
+    ConsoleBlockModeProc,
     NULL,			/* Flush proc. */
-    NULL,			/* Handler proc. */
-    NULL,			/* Wide seek proc. Not seekable */
-    ConsoleThreadActionProc,	/* Thread action proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    ConsoleThreadActionProc,
     NULL			/* Truncation proc. */
 };
 

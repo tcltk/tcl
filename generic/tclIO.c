@@ -10827,7 +10827,8 @@ Tcl_IsChannelExisting(
 
 const char *
 Tcl_ChannelName(
-    const Tcl_ChannelType *chanTypePtr) /* Pointer to channel type. */
+    const Tcl_ChannelType *chanTypePtr)
+				/* Pointer to channel type. */
 {
     return chanTypePtr->typeName;
 }

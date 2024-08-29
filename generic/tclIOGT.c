@@ -126,23 +126,23 @@ static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
  */
 
 static const Tcl_ChannelType transformChannelType = {
-    "transform",		/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    TransformInputProc,		/* Input proc. */
-    TransformOutputProc,	/* Output proc. */
-    NULL,			/* Seek proc. */
-    TransformSetOptionProc,	/* Set option proc. */
-    TransformGetOptionProc,	/* Get option proc. */
-    TransformWatchProc,		/* Initialize notifier. */
-    TransformGetFileHandleProc,	/* Get OS handles out of channel. */
-    TransformCloseProc,		/* close2proc */
-    TransformBlockModeProc,	/* Set blocking/nonblocking mode.*/
+    "transform",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    TransformInputProc,
+    TransformOutputProc,
+    NULL,			/* Deprecated. */
+    TransformSetOptionProc,
+    TransformGetOptionProc,
+    TransformWatchProc,
+    TransformGetFileHandleProc,
+    TransformCloseProc,
+    TransformBlockModeProc,
     NULL,			/* Flush proc. */
-    TransformNotifyProc,	/* Handling of events bubbling up. */
-    TransformWideSeekProc,	/* Wide seek proc. */
-    NULL,			/* Thread action. */
-    NULL			/* Truncate. */
+    TransformNotifyProc,
+    TransformWideSeekProc,
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -872,7 +872,7 @@ TransformWideSeekProc(
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
-    const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
+    const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
     void *parentData = Tcl_GetChannelInstanceData(parent);
@@ -920,7 +920,7 @@ TransformWideSeekProc(
 	*errorCodePtr = EINVAL;
 	return -1;
     }
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*
