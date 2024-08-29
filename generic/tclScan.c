@@ -377,7 +377,7 @@ ValidateFormat(
 			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
 			ull, (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
-		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (void *)NULL);
+		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;

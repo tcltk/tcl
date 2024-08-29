@@ -168,7 +168,7 @@ longest(
 /*
  - shortest - shortest-preferred matching engine
  ^ static chr *shortest(struct vars *, struct dfa *, chr *, chr *, chr *,
- ^ 	chr **, int *);
+ ^	chr **, int *);
  */
 static chr *			/* endpoint, or NULL */
 shortest(
@@ -317,7 +317,7 @@ lastCold(
 /*
  - newDFA - set up a fresh DFA
  ^ static struct dfa *newDFA(struct vars *, struct cnfa *,
- ^ 	struct colormap *, struct smalldfa *);
+ ^	struct colormap *, struct smalldfa *);
  */
 static struct dfa *
 newDFA(
@@ -486,7 +486,7 @@ initialize(
 /*
  - miss - handle a cache miss
  ^ static struct sset *miss(struct vars *, struct dfa *, struct sset *,
- ^ 	pcolor, chr *, chr *);
+ ^	pcolor, chr *, chr *);
  */
 static struct sset *		/* NULL if goes to empty set */
 miss(

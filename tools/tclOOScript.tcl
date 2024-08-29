@@ -14,9 +14,9 @@
 
 # tclOOScript.h --
 #
-# 	This file contains support scripts for TclOO. They are defined here so
-# 	that the code can be definitely run even in safe interpreters; TclOO's
-# 	core setup is safe.
+#   This file contains support scripts for TclOO. They are defined here so
+#   that the code can be definitely run even in safe interpreters; TclOO's
+#   core setup is safe.
 
 ::namespace eval ::oo {
     ::namespace path {}
