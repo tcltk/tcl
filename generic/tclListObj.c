@@ -3041,7 +3041,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetDeep)
     result = TCL_OK;
 
     /* Allocate if static array for pending invalidations is too small */
-    if (indexCount > (int) (sizeof(pendingInvalidates) /
+    if (indexCount > (Tcl_Size) (sizeof(pendingInvalidates) /
 	    sizeof(pendingInvalidates[0]))) {
 	pendingInvalidatesPtr =
 	    (Tcl_Obj **) Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
@@ -3165,9 +3165,8 @@ LsetFlat(tclObjTypeInterfaceArgsListSetDeep)
 	     * value of the lset variable.  Later on, when we set valueObj
 	     * in its proper place, then all containing lists will have
 	     * their values changed, and will need their string reps
-	     * spoiled.  We maintain a list of all those Tcl_Obj's (via a
-	     * little internalrep surgery) so we can spoil them at that
-	     * time.
+	     * spoiled.  We maintain a list of all those Tcl_Obj's
+	     * pendingInvalidatesPtr[] so we can spoil them at that time.
 	     */
 
 	    pendingInvalidatesPtr[numPendingInvalidates] = parentList;
