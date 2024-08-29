@@ -4230,12 +4230,12 @@ SequenceIdentifyArgument(
 	return RangeKeywordArg;
     } else {
 	Tcl_Obj *exprValueObj;
+	int keyword;
 	if (!(allowedArgs & NumericArg)) {
 	    return NoneArg;
 	}
     doExpr:
 	/* Check for an index expression */
-	int keyword;
 	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
 	    return ErrArg;
 	}
@@ -4491,7 +4491,7 @@ Tcl_LseqObjCmd(
     }
 
     /* Count needs to be integer, so try to convert if possible */
-    if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
+    if (elementCount && TclHasInternalRep(elementCount, tclDoubleType)) {
 	double d;
 	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
 	if (floor(d) == d) {
@@ -4517,7 +4517,6 @@ Tcl_LseqObjCmd(
     arithSeriesPtr = TclNewArithSeriesObj(interp,
 		  useDoubles, start, end, step, elementCount);
 
-    status = TCL_ERROR;
     if (arithSeriesPtr) {
 	status = TCL_OK;
 	Tcl_SetObjResult(interp, arithSeriesPtr);
