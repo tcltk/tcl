@@ -391,8 +391,8 @@ TclCompileArraySetCmd(
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
 	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
-	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
-	TclEmitOpcode(  INST_POP,				envPtr);
+	TclEmitInstInt4(INST_UPVAR, localIndex,			envPtr);
+	TclEmitOpcode(INST_POP,					envPtr);
     }
 
     /*
@@ -3428,10 +3428,10 @@ TclCompileFormatCmd(
  *	to a local scalar variable name.
  *
  * Results:
- * 	Returns the non-negative integer index value into the table of
- * 	compiled locals corresponding to a local scalar variable name.
- * 	If the arguments passed in do not identify a local scalar variable
- * 	then return TCL_INDEX_NONE.
+ *	Returns the non-negative integer index value into the table of
+ *	compiled locals corresponding to a local scalar variable name.
+ *	If the arguments passed in do not identify a local scalar variable
+ *	then return TCL_INDEX_NONE.
  *
  * Side effects:
  *	May add an entry into the table of compiled locals.

@@ -6585,7 +6585,7 @@ AppendLocals(
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		varName = TclGetString(*varNamePtr);
 		if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-	    	    if (!justConstants || TclIsVarConstant(varPtr)) {
+		    if (!justConstants || TclIsVarConstant(varPtr)) {
 			Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
 		    }
 		    if (includeLinks) {
@@ -6639,7 +6639,7 @@ AppendLocals(
 	    objNamePtr = VarHashGetKey(varPtr);
 	    varName = TclGetString(objNamePtr);
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-	    	if (!justConstants || TclIsVarConstant(varPtr)) {
+		if (!justConstants || TclIsVarConstant(varPtr)) {
 		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
 		}
 		if (includeLinks) {

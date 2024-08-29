@@ -1473,7 +1473,7 @@ QuoteCmdLineBackslash(
 	    Tcl_DStringAppend(dsPtr, start, (int) (current - start));
 	}
     } else {
-    	if (bspos > start) {	/* part before first backslash */
+	if (bspos > start) {	/* part before first backslash */
 	    Tcl_DStringAppend(dsPtr, start, (int) (bspos - start));
 	}
 	while (bspos++ < current) { /* each backslash twice */
@@ -1516,7 +1516,7 @@ QuoteCmdLinePart(
 
     TclDStringAppendLiteral(dsPtr, "\""); /* opening escape quote-char */
     do {
-    	*bspos = NULL;
+	*bspos = NULL;
 	special++;
 	if (*special == '\\') {
 	    /*
@@ -1821,7 +1821,7 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
-    	infoPtr->readTI = NULL;
+	infoPtr->readTI = NULL;
 	infoPtr->readThread = 0;
     }
     if (writeFile != NULL) {
@@ -1836,8 +1836,8 @@ TclpCreateCommandChannel(
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
-    	infoPtr->writeTI = NULL;
-    	infoPtr->writeThread = 0;
+	infoPtr->writeTI = NULL;
+	infoPtr->writeThread = 0;
     }
 
     /*
@@ -3407,10 +3407,10 @@ TclPipeThreadWaitForSignal(
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
     } else {
-    	pipeTI->evWakeUp = NULL;
+	pipeTI->evWakeUp = NULL;
     }
     if (wakeEvent) {
-    	SetEvent(wakeEvent);
+	SetEvent(wakeEvent);
     }
     return 0;
 }

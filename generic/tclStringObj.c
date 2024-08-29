@@ -30,7 +30,7 @@
  *	The String object is optimized for the case where each UTF char
  *	in a string is only one byte. In this case, we store the value of
  *	numChars, but we don't store the fixed form encoding (unless
- * 	Tcl_GetUnicode is explicitly called).
+ *	Tcl_GetUnicode is explicitly called).
  *
  *	The String object type stores one or both formats. The default
  *	behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
@@ -1360,7 +1360,7 @@ Tcl_AppendUnicodeToObj(
     const Tcl_UniChar *unicode,	/* The Unicode string to append to the
 				 * object. */
     Tcl_Size length)		/* Number of chars in Unicode. Negative
-    				 * lengths means nul terminated */
+				 * lengths means nul terminated */
 {
     String *stringPtr;
 
@@ -2203,7 +2203,7 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    if ((unsigned)code > 0x10FFFF) {
-	    	code = 0xFFFD;
+		code = 0xFFFD;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
 	    segment = Tcl_NewStringObj(buf, length);
@@ -3031,11 +3031,11 @@ TclGetStringStorage(
  *	Performs the [string repeat] function.
  *
  * Results:
- * 	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
- * 	error.
+ *	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
+ *	error.
  *
  * Side effects:
- * 	On error, when interp is not NULL, error information is left in it.
+ *	On error, when interp is not NULL, error information is left in it.
  *
  *---------------------------------------------------------------------------
  */
@@ -3058,8 +3058,8 @@ TclStringRepeat(
     /*
      * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
-     * 		Produce pure bytearray when possible.
-     * 		Error on overflow.
+     *		Produce pure bytearray when possible.
+     *		Error on overflow.
      */
 
     if (!binary) {
@@ -3186,11 +3186,11 @@ TclStringRepeat(
  *	Performs the [string cat] function.
  *
  * Results:
- * 	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
- * 	error.
+ *	A (Tcl_Obj *) pointing to the result value, or NULL in case of an
+ *	error.
  *
  * Side effects:
- * 	On error, when interp is not NULL, error information is left in it.
+ *	On error, when interp is not NULL, error information is left in it.
  *
  *---------------------------------------------------------------------------
  */
@@ -3224,8 +3224,8 @@ TclStringCat(
     /*
      * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
-     * 		Produce pure bytearray when possible.
-     * 		Error on overflow.
+     *		Produce pure bytearray when possible.
+     *		Error on overflow.
      */
 
     ov = objv, oc = objc;
@@ -3237,18 +3237,17 @@ TclStringCat(
 	} else if (objPtr->bytes) {
 	    /* Value has a string rep. */
 	    if (objPtr->length) {
-		/*
-		 * Non-empty string rep. Not a pure bytearray, so we won't
-		 * create a pure bytearray.
-		 */
+			/*
+			 * Non-empty string rep. Not a pure bytearray, so we won't
+			 * create a pure bytearray.
+			 */
 
-	 	binary = 0;
-	 	if ((objPtr->typePtr)
-			&& !TclHasInternalRep(
-			    objPtr, &tclStringType)) {
-		    /* Prevent shimmer of non-string types. */
-		    allowUniChar = 0;
-		}
+			binary = 0;
+			if ((objPtr->typePtr)
+				&& !TclHasInternalRep(objPtr, &tclStringType)) {
+				/* Prevent shimmer of non-string types. */
+				allowUniChar = 0;
+			}
 	    }
 	} else {
 	    binary = 0;
@@ -3349,11 +3348,11 @@ TclStringCat(
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
 	    /*
- 	     * Either we found a possibly non-empty value, and we remember
- 	     * this index as the first and last such value so far seen,
+	     * Either we found a possibly non-empty value, and we remember
+	     * this index as the first and last such value so far seen,
 	     * or (oc == 0) and all values are known empty,
- 	     * so first = last = objc - 1 signals the right quick return.
- 	     */
+	     * so first = last = objc - 1 signals the right quick return.
+	     */
 
 	    first = last = objc - oc - 1;
 
@@ -3467,7 +3466,7 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %"
+			"concatenation failed: unable to alloc %"
 			TCL_Z_MODIFIER "u bytes",
 			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -3484,7 +3483,7 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %"
+			"concatenation failed: unable to alloc %"
 			TCL_Z_MODIFIER "u bytes",
 			STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -3517,7 +3516,7 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
+			"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
@@ -3532,7 +3531,7 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
+			"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
@@ -4043,10 +4042,10 @@ TclStringLast(
 
     if (ln == 0) {
 	/*
-	 * 	We don't find empty substrings.  Bizarre!
+	 *	We don't find empty substrings.  Bizarre!
 	 *
-	 * 	TODO: When we one day make this a true substring
-	 * 	finder, change this to "return last", after limitation.
+	 *	TODO: When we one day make this a true substring
+	 *	finder, change this to "return last", after limitation.
 	 */
 	goto lastEnd;
     }

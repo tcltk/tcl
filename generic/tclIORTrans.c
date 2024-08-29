@@ -1385,8 +1385,8 @@ ReflectSeekWide(
 	*errorCodePtr = EINVAL;
 	curPos = -1;
     } else {
-    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-    		seekMode, errorCodePtr);
+	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
+		seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
