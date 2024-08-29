@@ -3078,6 +3078,7 @@ MODULE_SCOPE const Tcl_ObjType *tclBignumType;
 MODULE_SCOPE const Tcl_ObjType *tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType *tclDoubleType;
+MODULE_SCOPE const Tcl_ObjType tclExprCodeType;
 MODULE_SCOPE const Tcl_ObjType *tclIntType;
 MODULE_SCOPE Tcl_ObjType * tclListTypePtr;
 MODULE_SCOPE Tcl_ObjType * tclDictTypePtr;
