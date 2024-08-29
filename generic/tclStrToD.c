@@ -3459,7 +3459,8 @@ ShouldBankerRoundUpToNextPowD(
      * 2**(MP_DIGIT_BIT*sd)
      */
 
-    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {	/* Too few digits to be > s */
+    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {
+	/* Too few digits to be > s */
 	return 0;
     }
     if (temp->used > sd+1 || temp->dp[sd] > 1) {
@@ -4839,7 +4840,7 @@ Tcl_InitBignumFromDouble(
 
 	err = mp_init_i64(b, w);
 	if (err != MP_OKAY) {
-		/* just skip */
+	    /* just skip */
 	} else if (shift < 0) {
 	    err = mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {

@@ -399,7 +399,7 @@ Tcl_AppendElement(
 
 void
 Tcl_ResetResult(
-    Tcl_Interp *interp)/* Interpreter for which to clear result. */
+    Tcl_Interp *interp)		/* Interpreter for which to clear result. */
 {
     Interp *iPtr = (Interp *) interp;
 

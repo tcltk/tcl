@@ -3095,8 +3095,7 @@ TclStringRepeat(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER
-		    "d bytes) exceeded",
-		    TCL_SIZE_MAX));
+		    "d bytes) exceeded", TCL_SIZE_MAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return NULL;
@@ -3560,7 +3559,8 @@ TclStringCat(
   overflow:
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded", TCL_SIZE_MAX));
+		"max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		"d bytes) exceeded", TCL_SIZE_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     }
     return NULL;
@@ -3746,8 +3746,8 @@ TclStringCmp(
 			&& (value1Ptr->bytes != NULL)
 			&& (s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
-		    /* each byte represents one character so s1l3n, s2l3n, and
-		     * reqlength are in both bytes and characters */
+			/* each byte represents one character so s1l3n, s2l3n,
+			 * and reqlength are in both bytes and characters */
 		    s1 = value1Ptr->bytes;
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;
