@@ -2084,7 +2084,8 @@ AllocateConsoleHandleInfo(
  *------------------------------------------------------------------------
  */
 static ConsoleHandleInfo *
-FindConsoleInfo(const ConsoleChannelInfo *chanInfoPtr)
+FindConsoleInfo(
+    const ConsoleChannelInfo *chanInfoPtr)
 {
     ConsoleHandleInfo *handleInfoPtr;
     for (handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr; handleInfoPtr = handleInfoPtr->nextPtr) {

@@ -1097,7 +1097,8 @@ Tcl_DictObjRemove(
  */
 
 Tcl_Size
-TclDictGetSize(Tcl_Obj *dictPtr)
+TclDictGetSize(
+    Tcl_Obj *dictPtr)
 {
     Dict *dict;
     DictGetInternalRep(dictPtr, dict);
