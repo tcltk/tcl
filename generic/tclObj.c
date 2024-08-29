@@ -766,7 +766,8 @@ TclContinuationsCopy(
     Tcl_Obj *originObjPtr)
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
+    Tcl_HashEntry *hPtr =
+	    Tcl_FindHashEntry(tsdPtr->lineCLPtr, originObjPtr);
 
     if (hPtr) {
 	ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_GetHashValue(hPtr);
@@ -799,7 +800,8 @@ TclContinuationsGet(
     Tcl_Obj *objPtr)
 {
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
-    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
+    Tcl_HashEntry *hPtr =
+	    Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 
     if (!hPtr) {
 	return NULL;
@@ -4333,7 +4335,7 @@ TclCompareObjKeys(
      * OPT: this comparison was moved to the caller
 
        if (objPtr1 == objPtr2) {
-           return 1;
+	   return 1;
        }
     */
 

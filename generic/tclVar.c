@@ -2516,8 +2516,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-		    ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT),
-		    index);
+	      ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", (char *)NULL);
 	}
     }
@@ -2641,9 +2640,8 @@ UnsetVarStruct(
 
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
-			    | TCL_TRACE_UNSETS,
-		    /* leaveErrMsg */ 0, index);
+		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
+		    | TCL_TRACE_UNSETS, /* leaveErrMsg */ 0, index);
 
 	    /*
 	     * The traces that we just called may have triggered a change in

@@ -666,7 +666,8 @@ SplitUnixPath(
 	}
 	length = path - elementStart;
 	if (length > 0) {
-	    Tcl_Obj *nextElt = Tcl_NewStringObj(elementStart, length);
+	    Tcl_Obj *nextElt;
+	    nextElt = Tcl_NewStringObj(elementStart, length);
 	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {

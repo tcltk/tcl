@@ -775,16 +775,16 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
 	flagPtr = (int *) Tcl_Alloc(llen*sizeof(int));
     }
     for (bytesNeeded = 0, i = 0; i < llen; i++) {
-        Tcl_Obj *elemObj;
-        const char *elemStr;
-        Tcl_Size elemLen;
+	Tcl_Obj *elemObj;
+	const char *elemStr;
+	Tcl_Size elemLen;
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 
 	my_LStringObjIndex(NULL, objPtr, i, &elemObj);
 
 	Tcl_IncrRefCount(elemObj);
-        elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
-        /* Note TclScanElement updates flagPtr[i] */
+	elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
+	/* Note TclScanElement updates flagPtr[i] */
 	bytesNeeded += Tcl_ScanCountedElement(elemStr, elemLen, &flagPtr[i]);
 	if (bytesNeeded < 0) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
@@ -802,9 +802,9 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
     objPtr->bytes = (char *) Tcl_Alloc(bytesNeeded);
     p = objPtr->bytes;
     for (i = 0; i < llen; i++) {
-        Tcl_Obj *elemObj;
-        const char *elemStr;
-        Tcl_Size elemLen;
+	Tcl_Obj *elemObj;
+	const char *elemStr;
+	Tcl_Size elemLen;
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	my_LStringObjIndex(NULL, objPtr, i, &elemObj);
 	Tcl_IncrRefCount(elemObj);
@@ -905,7 +905,7 @@ lgen(
 	elemObj = Tcl_GetObjResult(intrp);
 	if (status != TCL_OK) {
 	    Tcl_SetObjResult(intrp, Tcl_ObjPrintf(
-	        "Error: %s\nwhile executing %s\n",
+		"Error: %s\nwhile executing %s\n",
 		elemObj ? Tcl_GetString(elemObj) : "NULL", Tcl_GetString(genCmd)));
 	    return NULL;
 	}

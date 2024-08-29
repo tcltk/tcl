@@ -178,20 +178,18 @@ Tcl_ObjType *tclDictTypePtr = (Tcl_ObjType *)&tclDictObjectType;
 
 #define DictSetIntRep(objPtr, dictRepPtr)								\
     do {                                                                \
-        Tcl_ObjInternalRep ir;                                          \
-        ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-        ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreInternalRep((objPtr), tclDictTypePtr, &ir);            \
+	Tcl_ObjInternalRep ir;						\
+	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
+	ir.twoPtrValue.ptr2 = NULL;                                     \
+	Tcl_StoreInternalRep((objPtr), tclDictTypePtr, &ir);		\
     } while (0)
 
-
-#define DictGetInternalRep(objPtr, dictRepPtr)							\
+#define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        const Tcl_ObjInternalRep *irPtr;                                \
-        irPtr = TclFetchInternalRep((objPtr), tclDictTypePtr);          \
-        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;  \
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), tclDictTypePtr);		\
+	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
-
 
 /*
  * The type of the specially adapted version of the Tcl_Obj*-containing hash

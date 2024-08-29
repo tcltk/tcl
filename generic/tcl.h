@@ -2560,8 +2560,8 @@ TclBounceRefCount(
     int line)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DbDecrRefCount(objPtr, fn, line);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DbDecrRefCount(objPtr, fn, line);
 	}
     }
 }
@@ -2598,8 +2598,8 @@ TclBounceRefCount(
     Tcl_Obj* objPtr)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DecrRefCount(objPtr);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
 }

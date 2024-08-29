@@ -3242,10 +3242,10 @@ TclNeedSpace(
 
     end = Tcl_UtfPrev(end, start);
     while (*end == '{') {
-        if (end == start) {
-            return 0;
-        }
-        end = Tcl_UtfPrev(end, start);
+	if (end == start) {
+	    return 0;
+	}
+	end = Tcl_UtfPrev(end, start);
     }
 
      *
@@ -3378,7 +3378,7 @@ GetWideForIndex(
     Tcl_WideInt endValue,	/* The value to be stored at *widePtr if
 				 * objPtr holds "end".
 				 * NOTE: this value may be TCL_INDEX_NONE. */
-    Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
+    Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
 				 * representing an index. */
 {
     int numType;
@@ -3506,10 +3506,10 @@ Tcl_GetIntForIndex(
 static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr,		/* Pointer to the object to parse */
-    Tcl_WideInt endValue,	/* The value to be stored at "widePtr" if
+    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
+    Tcl_WideInt endValue,       /* The value to be stored at "widePtr" if
 				 * "objPtr" holds "end". */
-    Tcl_WideInt *widePtr)	/* Location filled in with an integer
+    Tcl_WideInt *widePtr)       /* Location filled in with an integer
 				 * representing an index. */
 {
     Tcl_ObjInternalRep *irPtr;

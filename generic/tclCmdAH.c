@@ -2357,10 +2357,10 @@ StoreStatData(
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue) \
-	Tcl_DictObjPut(NULL, result,					\
-		Tcl_NewStringObj((key), TCL_AUTO_LENGTH),		\
-		(objValue));
+#define DOBJPUT(key, objValue)                  \
+	Tcl_DictObjPut(NULL, result,            \
+	    Tcl_NewStringObj((key), -1),        \
+	    (objValue));
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
 	DOBJPUT("nlink",Tcl_NewWideIntObj((long)statPtr->st_nlink));
