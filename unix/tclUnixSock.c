@@ -74,9 +74,8 @@ struct TcpState {
      * Only needed for server sockets
      */
 
-    Tcl_TcpAcceptProc *acceptProc;
-				/* Proc to call on accept. */
-    void *acceptProcData;	/* The data for the accept proc. */
+    Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
+    void *acceptProcData;  /* The data for the accept proc. */
 
     /*
      * Only needed for client sockets
@@ -1205,6 +1204,7 @@ TcpWatchProc(
 
 	statePtr->filehandlers = mask;
     } else if (mask) {
+
 	/*
 	 * Whether it is a bug or feature or otherwise, it is a fact of life
 	 * that on at least some Linux kernels select() fails to report that a
@@ -1403,7 +1403,7 @@ TcpConnect(
 	     */
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
-		    statePtr->addr->ai_addrlen);
+			statePtr->addr->ai_addrlen);
 	    if (ret < 0) {
 		error = errno;
 	    }
@@ -1847,8 +1847,7 @@ Tcl_OpenTcpServerEx(
 	    memset(statePtr, 0, sizeof(TcpState));
 	    statePtr->acceptProc = acceptProc;
 	    statePtr->acceptProcData = acceptProcData;
-	    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE,
-		    PTR2INT(statePtr));
+	    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
 	    newfds = &statePtr->fds;
 	} else {
 	    newfds = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));

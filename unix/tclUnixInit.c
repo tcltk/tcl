@@ -65,7 +65,7 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-	unsigned int dwOemId;
+	unsigned int  dwOemId;
 	struct {
 	    int wProcessorArchitecture;
 	    int wReserved;
@@ -869,8 +869,7 @@ TclpSetVariables(
     if (*p) {
 	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
     }
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL,
-	    pkgListObj, TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
 	/* Some platforms build configure scripts expect ~ expansion so do that */
 	Tcl_Obj *origPaths;
@@ -879,8 +878,7 @@ TclpSetVariables(
 	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
 	resolvedPaths = TclResolveTildePathList(origPaths);
 	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
-	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths,
-		    TCL_GLOBAL_ONLY);
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
 	}
     }
 
