@@ -173,7 +173,7 @@ static int		TtySetOptionProc(void *instanceData,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Close proc. */
+    NULL,			/* Deprecated close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,
@@ -181,7 +181,7 @@ static const Tcl_ChannelType fileChannelType = {
     FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    FileCloseProc,		/* close2proc. */
+    FileCloseProc,		/* Close proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -199,7 +199,7 @@ static const Tcl_ChannelType fileChannelType = {
 static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,
+    NULL,			/* Deprecated close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -207,7 +207,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    TtyCloseProc,		/* New-style close proc. */
+    TtyCloseProc,		/* Close proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -1648,22 +1648,18 @@ TtyParseMode(
      * not allow preprocessor directives in their arguments.
      */
 
-    if (
-#if defined(PAREXT)
-	strchr("noems", parity)
+#ifdef PAREXT
+#define PARITY_CHARS	"noems"
+#define PARITY_MSG	"n, o, e, m, or s"
 #else
-	strchr("noe", parity)
+#define PARITY_CHARS	"noe"
+#define PARITY_MSG	"n, o, or e"
 #endif /* PAREXT */
-				== NULL) {
+
+    if (strchr(PARITY_CHARS, parity) == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s parity: should be %s", bad,
-#if defined(PAREXT)
-		    "n, o, e, m, or s"
-#else
-		    "n, o, or e"
-#endif /* PAREXT */
-		    ));
+		    "%s parity: should be %s", bad, PARITY_MSG));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
