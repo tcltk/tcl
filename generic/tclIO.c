@@ -355,7 +355,7 @@ static const Tcl_ObjType chanObjType = {
 	0
 };
 
-#define ChanSetInternalRep(objPtr, resPtr) \
+#define ChanSetInternalRep(objPtr, resPtr)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(resPtr)->refCount++;						\
@@ -368,7 +368,8 @@ static const Tcl_ObjType chanObjType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL; \
+	(resPtr) = irPtr						\
+	    ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 #define BUSY_STATE(statePtr, flags) \
@@ -1680,12 +1681,6 @@ Tcl_CreateChannel(
 
     /*
      * Set the channel to system default encoding.
-     *
-     * Note the strange bit of protection taking place here. If the system
-     * encoding name is reported back as "binary", something weird is
-     * happening. Tcl provides no "binary" encoding, so someone else has
-     * provided one. We ignore it so as not to interfere with the "magic"
-     * interpretation that Tcl_Channels give to the "-encoding binary" option.
      */
 
     name = Tcl_GetEncodingName(NULL);
