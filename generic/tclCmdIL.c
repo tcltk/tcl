@@ -4239,6 +4239,7 @@ SequenceIdentifyArgument(
 	if (Tcl_ExprObj(interp, argPtr, &exprValueObj) != TCL_OK) {
 	    return ErrArg;
 	}
+	int keyword;
 	/* Determine if result of expression is double or int */
 	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
 		&keyword) != TCL_OK
