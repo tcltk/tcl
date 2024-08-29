@@ -36,6 +36,7 @@ writing Tcl scripts.
  - Removed subcommands [trace variable|vdelete|vinfo]
  - No -eofchar option for channels anymore for writing.
  - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
+ - Removed command ::tcl::unsupported::inject.
 
 ## Incompatibilities in C public interface
  - Many arguments expanded type from int to Tcl_Size
