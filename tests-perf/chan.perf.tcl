@@ -27,12 +27,12 @@ namespace path {::tclTestPerf}
 
 proc _get_test_chan {{bufSize 4096}} {
   lassign [chan pipe] ch wch;
-  fconfigure $ch -translation binary -encoding utf-8 -buffersize $bufSize -buffering full
-  fconfigure $wch -translation binary -encoding utf-8 -buffersize $bufSize -buffering full
+  fconfigure $ch -translation lf -encoding utf-8 -buffersize $bufSize -buffering full
+  fconfigure $wch -translation lf -encoding utf-8 -buffersize $bufSize -buffering full
 
   exec [info nameofexecutable] -- $bufSize >@$wch << {
     set bufSize [lindex $::argv end]
-    fconfigure stdout -translation binary -encoding utf-8 -buffersize $bufSize -buffering full
+    fconfigure stdout -translation lf -encoding utf-8 -buffersize $bufSize -buffering full
     set buf [string repeat test 1000]; # 4K
     # write ~ 10*1M + 10*2M + 10*10M + 1*20M:
     set i 0; while {$i < int((10*1e6 + 10*2e6 + 10*10e6 + 1*20e6)/4e3)} {
