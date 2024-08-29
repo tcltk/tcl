@@ -149,7 +149,7 @@ Tcl_PutsObjCmd(
 	/* Fall through */
     default:			/* [puts] or
 				 * [puts some bad number of arguments...] */
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channelId? string");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channel? string");
 	return TCL_ERROR;
     }
 
@@ -233,7 +233,7 @@ Tcl_FlushObjCmd(
     int mode;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
     chanObjPtr = objv[1];
@@ -299,7 +299,7 @@ Tcl_GetsObjCmd(
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?varName?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?varName?");
 	return TCL_ERROR;
     }
     chanObjPtr = objv[1];
@@ -390,7 +390,7 @@ Tcl_ReadObjCmd(
 
     argerror:
 	iPtr = (Interp *) interp;
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numChars?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?numChars?");
 
 	/*
 	 * Do not append directly; that makes ensembles using this command as
@@ -398,7 +398,7 @@ Tcl_ReadObjCmd(
 	 */
 
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channel");
 	return TCL_ERROR;
     }
 
@@ -527,7 +527,7 @@ Tcl_SeekObjCmd(
     static const int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
     if ((objc != 3) && (objc != 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId offset ?origin?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel offset ?origin?");
 	return TCL_ERROR;
     }
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
@@ -596,7 +596,7 @@ Tcl_TellObjCmd(
     int code;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -659,7 +659,7 @@ Tcl_CloseObjCmd(
     static const int dirArray[] = {TCL_CLOSE_READ, TCL_CLOSE_WRITE};
 
     if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?direction?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?direction?");
 	return TCL_ERROR;
     }
 
@@ -765,7 +765,7 @@ Tcl_FconfigureObjCmd(
     int i;			/* Iterate over arg-value pairs. */
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?-option value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?-option value ...?");
 	return TCL_ERROR;
     }
 
@@ -838,7 +838,7 @@ Tcl_EofObjCmd(
     Tcl_Channel chan;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -1045,7 +1045,7 @@ Tcl_FblockedObjCmd(
     int mode;
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel");
 	return TCL_ERROR;
     }
 
@@ -1815,7 +1815,7 @@ ChanPendingObjCmd(
     int mode;
 
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
+	Tcl_WrongNumArgs(interp, 1, objv, "mode channel");
 	return TCL_ERROR;
     }
 
@@ -1875,7 +1875,7 @@ ChanTruncateObjCmd(
     Tcl_WideInt length;
 
     if ((objc < 2) || (objc > 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?length?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel ?length?");
 	return TCL_ERROR;
     }
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
