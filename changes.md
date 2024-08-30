@@ -30,7 +30,7 @@ writing Tcl scripts.
  - I/O malencoding default response: raise error (-profile strict)
  - Windows platform needs Windows 7 or Windows Server 2008 R2 or later
  - Ended interpretation of ~ as home directory in pathnames
- - Removed the "identity" encoding
+ - Removed the "identity" and "binary" encodings.
  - $::tcl_precision no longer controls string generation of doubles
  - Removed Tcl 7 legacies: [case], [puts] [read] variant syntaxes
  - Removed subcommands [trace variable|vdelete|vinfo]
