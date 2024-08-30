@@ -1172,6 +1172,7 @@ Tcl_InitSubsystems(void)
 	    TclArithSeriesInit();
 	    TclListInit();
 	    TclDictInit();
+		TclProcInit();
 	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();

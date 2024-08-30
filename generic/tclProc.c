@@ -9,6 +9,8 @@
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter 
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -104,10 +106,17 @@ const Tcl_ObjType tclProcBodyType = {
  * rep; it's just a cache type.
  */
 
-static const Tcl_ObjType levelReferenceType = {
+static ObjectType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL, 0
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+	2,
+	NULL
 };
+
+Tcl_ObjType *levelReferenceTypePtr = (Tcl_ObjType *)&levelReferenceType;
 
 /*
  * The type of lambdas. Note that every lambda will *always* have a string
@@ -160,6 +169,14 @@ static const Tcl_ObjType lambdaType = {
  *
  *----------------------------------------------------------------------
  */
+
+void TclProcInit(void) {
+    Tcl_ObjInterface *oiPtr;
+    oiPtr = Tcl_NewObjInterface();
+    Tcl_ObjInterfaceSetFnListLength(oiPtr ,TclLengthOne);
+    Tcl_ObjTypeSetInterface(levelReferenceTypePtr ,oiPtr);
+	return;
+}
 
 #undef TclObjInterpProc
 int
@@ -800,7 +817,7 @@ TclObjGetFrame(
 	    level = curLevel - level;
 	    result = 1;
 	}
-    } else if ((irPtr = TclFetchInternalRep(objPtr, &levelReferenceType))) {
+    } else if ((irPtr = TclFetchInternalRep(objPtr, levelReferenceTypePtr))) {
 	level = irPtr->wideValue;
 	result = 1;
     } else {
@@ -813,7 +830,7 @@ TclObjGetFrame(
 		    Tcl_ObjInternalRep ir;
 
 		    ir.wideValue = level;
-		    Tcl_StoreInternalRep(objPtr, &levelReferenceType, &ir);
+		    Tcl_StoreInternalRep(objPtr, levelReferenceTypePtr, &ir);
 		    result = 1;
 		}
 	    } else {

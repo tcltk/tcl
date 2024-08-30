@@ -3078,11 +3078,12 @@ MODULE_SCOPE void *tclTimeClientData;
 MODULE_SCOPE const Tcl_ObjType *tclBignumType;
 MODULE_SCOPE const Tcl_ObjType *tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
+MODULE_SCOPE Tcl_ObjType *tclDictTypePtr;
 MODULE_SCOPE const Tcl_ObjType *tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclExprCodeType;
+MODULE_SCOPE const Tcl_ObjType tclIndexType;
 MODULE_SCOPE const Tcl_ObjType *tclIntType;
-MODULE_SCOPE Tcl_ObjType * tclListTypePtr;
-MODULE_SCOPE Tcl_ObjType * tclDictTypePtr;
+MODULE_SCOPE Tcl_ObjType *tclListTypePtr;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
@@ -3409,6 +3410,7 @@ MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
+MODULE_SCOPE Tcl_ObjInterfaceListLengthProc TclLengthOne; 
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathObj);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
@@ -3467,6 +3469,7 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
+MODULE_SCOPE void	TclProcInit(void);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);

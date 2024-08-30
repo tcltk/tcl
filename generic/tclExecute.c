@@ -9296,7 +9296,7 @@ IllegalExprOperandType(
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
 	Tcl_Size length;
-	if (TclHasInternalRep(opndPtr, &tclDictType)) {
+	if (TclHasInternalRep(opndPtr, tclDictTypePtr)) {
 	    Tcl_DictObjSize(NULL, opndPtr, &length);
 	    if (length > 1) {
 	    listRep:
@@ -9306,10 +9306,14 @@ IllegalExprOperandType(
 		return;
 	    }
 	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
-	if (lengthProc && lengthProc(opndPtr) > 1) {
-	    goto listRep;
+	if (TclObjectHasInterface(opndPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp,opndPtr,&length);
+	    if (!status && length > 1) {
+		goto listRep;
+	    }
 	}
+
 	description = "non-numeric string";
     } else if (type == TCL_NUMBER_NAN) {
 	description = "non-numeric floating-point value";

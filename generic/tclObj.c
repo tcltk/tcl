@@ -3884,7 +3884,7 @@ Tcl_GetNumberFromObj(
 	    return TCL_OK;
 	}
 	/* Handle dict separately, because it doesn't have a lengthProc */
-	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	if (TclHasInternalRep(objPtr, tclDictTypePtr)) {
 	    Tcl_DictObjSize(NULL, objPtr, &length);
 	    if (length > 1) {
 	    listRep:
@@ -3894,9 +3894,12 @@ Tcl_GetNumberFromObj(
 		return TCL_ERROR;
 	    }
 	}
-	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
-	if (lengthProc && lengthProc(objPtr) != 1) {
-	    goto listRep;
+	if (TclObjectHasInterface(objPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
+	    if (!status && length != 1) {
+		goto listRep;
+	    }
 	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));

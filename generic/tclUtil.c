@@ -828,6 +828,18 @@ TclCopyAndCollapse(
     *dst = 0;
     return newCount;
 }
+
+
+int
+TclLengthOne(
+    TCL_UNUSED(Tcl_Interp *)	/* Used to report errors if not NULL. */ 
+    ,TCL_UNUSED(Tcl_Obj *)	/* List object whose #elements to return. */
+    ,Tcl_Size *lenPtr)	/* The resulting length is stored here. */
+
+{
+	*lenPtr = 1;
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
