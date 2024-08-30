@@ -22,19 +22,18 @@ chan \- Reads, writes and manipulates channels.
 .SH DESCRIPTION
 .PP
 \fBchan\fR provides several operations for reading from, writing to, and
-otherwise manipulating channels, e.g. those created by \fBopen\fR and
+otherwise manipulating channels like those created by \fBopen\fR and
 \fBsocket\fR, or the default channels \fBstdin\fR, \fBstdout\fR or \fBstderr\fR
 which correspond respectively to the standard input, output, and error streams
-of the process.  Any unique abbreviation for \fIoperation\fR is acceptable.
+of the process.
 Available operations are:
 .\" METHOD: blocked
 .TP
 \fBchan blocked \fIchannel\fR
 .
-Returns 1 when the channel is in non-blocking mode and the last input operation
-on the channel failed because it would have otherwise caused the process to
-block, and 0 otherwise.  Each Tcl channel is in blocking mode unless configured
-otherwise.
+Returns 1 when \fIchannel\fR is non-blocking and the last input operation on
+the channel failed because it would have otherwise caused the process to block,
+and 0 otherwise.
 .\" METHOD: close
 .TP
 \fBchan close \fIchannel\fR ?\fIdirection\fR?
@@ -141,14 +140,10 @@ any input or output buffers subsequently allocated for this channel.
 \fB\-encoding\fR \fIname\fR
 .
 Sets the encoding of the channel to \fIname\fR which should be one of the names
-returned by \fBencoding names\fR, or
-.QW \fBbinary\fR
-\&. Input is converted from the encoding into Unicode, and output is converted
+returned by \fBencoding names\fR.
+Input is converted from the encoding into Unicode, and output is converted
 from Unicode to the encoding.
 .RS
-.PP
-\fBbinary\fR is an alias for \fBiso8859-1\fR.  This alone is not sufficient for
-working with binary data.  Use \fB\-translation binary\fR instead.
 .PP
 The encoding of a new channel is the value of \fBencoding system\fR,
 which returns the platform- and locale-dependent system encoding used to
@@ -183,59 +178,61 @@ profiles.
 .TP
 \fB\-translation\fR \fB{\fIinTranslation outTranslation\fB}\fR
 .
-In Tcl a single line feed (\en) represents the end of a line.  However,
-at the destination the end of a line may be represented differently on
-different platforms, or even for different devices on the same platform.  For
-example, under UNIX line feed is used in files and a
-carriage-return-linefeed sequence is normally used in network connections.
-Therefore, on input, e.g. with \fBchan gets\fR and \fBchan read\fR, each
-external end-of-line character is translated into a line feed.  On
-output, e.g. with \fBchan puts\fR, each line feed is translated to the external
-end-of-line character.  The default translation, \fBauto\fR, handles all the
-common cases, and \fB\-translation\fR provides explicit control over the
-end-of-line character.
+In Tcl a single line\-feed character (\en) represents the end of a line.
+However, the end of a line of a may be represented differently on different
+platforms, or even for different devices on the same platform.  For example, in
+UNIX the line\-feed character is normally used in files, and a carriage\-return
+character followed by a line\-feed character is normally used in network
+connections.  Therefore, when decoding, e.g. with \fBchan gets\fR and \fBchan
+read\fR, each particular end-of-line representation is translated into a
+standard line\-feed character for Tcl.  Before encoding, e.g. with \fBchan
+puts\fR, each line\-feed is translated to the approprate end\-of\-line
+representation for the target.  The default translation setting is \fBauto\fR,
+which handles all the common cases.  When needed, \fB\-translation\fR provides
+explicit control over the end\-of\-line representation.
 .RS
 .PP
-Returns the input translation for a read-only channel, the output translation
-for a write-only channel, and both the input translation and the output
-translation for a  read-write channel.  When two translations are given, they
-are the input and output translation, respectively.  When only one translation
-is given for a read-write channel, it is the translation for both input and
+Returns the input translation for a read\-only channel, the output translation
+for a write\-only channel, and both the input translation and the output
+translation for a  read\-write channel.  When two translations are given, they
+indicate the input and output translation, respectively.  When only one translation
+is given for a read\-write channel, it is the translation for both input and
 output.  The following values are currently supported:
 .IP \fBauto\fR
-The default.  For input each occurrence of a line feed (\fBlf\fR), carriage
-return (\fBcr\fR), or carriage return followed by a line feed (\fBcrlf\fR) is
-translated into a line feed.  For output, each line feed is translated into a
-platform-specific representation:  For all Unix variants it is \fBlf\fR, and
-for all Windows variants it is \fBcrlf\fR, except that for sockets on all
-platforms it is \fBcrlf\fR for both input and output.
+The default.  For input each occurrence of a line\-feed character (\fBlf\fR),
+carriage\-return character (\fBcr\fR), or carriage\-return character followed
+by a line\-feed character (\fBcrlf\fR) is translated into a line\-feed
+character for Tcl.  For output, each line\-feed character is translated into a
+the appropriate representation for the target:  For all Unix variants it is
+\fBlf\fR, and for all Windows variants it is \fBcrlf\fR, except that for
+sockets on all platforms it is \fBcrlf\fR for both input and output.
 .IP \fBbinary\fR
-Like \fBlf\fR, no end-of-line translation is performed, but in addition, sets
-\fB\-eofchar\fR to the empty string to disable it, and sets \fB\-encoding\fR
-to \fBiso8859-1\fR.  With this one setting, a channel is fully configured
-for binary input and output:  Each byte read from the channel
-becomes the Unicode character having the same value as that byte, and each
-character written to the channel becomes a single byte in the output.  This
-makes it possible to work seamlessly with binary data as long as each character
-in the data remains in the range of 0 to 255 so that there is no distinction
-between binary data and text.  For example, A JPEG image can be read from a
-such a channel, manipulated, and then written back to such a channel.
+Like \fBlf\fR, prevents end-of-line translation, but also sets \fB\-eofchar\fR
+to the empty string to disable it, and sets \fB\-encoding\fR to
+\fBiso8859-1\fR.  With this one setting, a channel is fully configured for
+bytewise input and output:  Each byte read from the channel as the Unicode
+character having the same value as that byte, and each character written to the
+channel is encoded a single byte having the value of the character.  This makes
+it possible to treat text as byte values as long as each character in remains
+in the range of 0 to 255 so that the correspondance between a character and a
+byte is maintained.  For example, A JPEG image can be read from a such a
+channel, manipulated, and then written back to such a channel.
 .IP \fBcr\fR
-The end of a line is represented in the external data by a single carriage
-return character.  For input, each carriage return is translated to a line
-feed, and for output each line feed character is translated to a carriage
-return.
+The end of a line is encoded as a carriage return character.  For input, each
+carriage return is translated to a line feed character, and for output each
+line feed character is translated to a carriage return.
 .IP \fBcrlf\fR
-The end of a line is represented in the external data by a carriage return
-character followed by a line feed.  For input, each carriage-return-linefeed
-sequence is translated to a line feed.  For output, each line feed is
-translated to a carriage-return-linefeed sequence.  This translation is
-typically used for network connections, and also on Windows systems.
+The end of a line is encoded as a carriage\-return character followed by a
+line\-feed character.  For input, each sequence comprised of a carriage\-return
+character followed by a line\-feed character is translated to a line\-feed
+character.  For output, each line\-feed character is translated to a
+carriage\-return character followed by a line\-feed character.  This
+translation is typically used for network connections, and is also used on
+Windows systems.
 .IP \fBlf\fR
-The end of a line in the external data is represented by a line feed so no
-translations occur during either input or output.  This translation is
-typically used on UNIX platforms,
-.RE
+The end of a line is encoded a line\-feed character so no translations occur
+during either input or output.  This translation is typically used on UNIX
+platforms,
 .RE
 .\" METHOD: copy
 .TP
@@ -435,6 +432,14 @@ will raise an exception with the POSIX error code \fBEILSEQ\fR if any encoding
 errors are encountered in the channel input data. The file pointer remains
 unchanged and it is possible to introspect, and in some cases recover, by
 changing the encoding in use. See \fBENCODING ERROR EXAMPLES\fR later.
+.RE
+.\" METHOD: isbinary
+.TP
+\fBchan isbinary \fIchannel\fR
+.
+Returns 1 if the channel is configured as described for \fB-translation
+binary\fR and 0 otherwise.
+
 .RE
 .\" METHOD: names
 .TP
@@ -718,14 +723,15 @@ chan close $chan
 .PP
 In this example illustrating event driven reads,
 \fBGetData\fR will be called with the channel as an
-argument whenever $chan becomes readable. The \fBread\fR call will
-read whatever binary data is currently available without blocking.
+argument whenever $chan becomes readable. The \fBread\fR call
+reads whatever characters are currently available without blocking. Each
+individual byte is interpreted as the corresponding Unicode character.
 Here the channel has the fileevent removed when an end of file
 occurs to avoid being continually called (see above). Alternatively
 the channel may be closed on this condition.
 .PP
 .CS
-proc GetData {chan} {
+proc GetData chan {
     set data [chan read $chan]
     chan puts "[string length $data] $data"
     if {[chan eof $chan]} {
@@ -817,8 +823,8 @@ while {[llength $words] < 3} {
 # overall depth per channel. Assign to variables.
 lassign $words xSize ySize depth
 
-# Now switch to binary mode to pull in the data,
-# one byte per channel (red,green,blue) per pixel.
+# Now switch to binary mode to read each byte as a character, where each
+# character corresponds to one pixel (red,green, or blue).
 \fBchan configure\fR $f -translation binary
 set numDataBytes [expr {3 * $xSize * $ySize}]
 set data [chan read $f $numDataBytes]
@@ -842,8 +848,9 @@ Read the last 10 bytes from a file:
 .PP
 .CS
 set f [open file.data]
-# This is guaranteed to work with binary data but
-# may fail with other encodings...
+# -translation binary guarantees no decoding errors since each possible value
+# of a byte corresponds to a character.  Most other encodings could report a
+# decoding error.
 chan configure $f -translation binary
 \fBchan seek\fR $f -10 end
 set data [chan read $f 10]
@@ -873,11 +880,11 @@ the invalid UTF-8 sequence (\fBA \\xC3 B\fR):
 % set f [open test_A_195_B.txt wb]; chan puts -nonewline $f A\\xC3B; chan close $f
 .CE
 .PP
-An attempt to read the file will result in an encoding error which is
-then introspected by switching the channel to binary mode. Note in the
-example that when the error is reported the file position remains
-unchanged so that the \fBchan gets\fR during recovery returns the
-full line.
+An attempt to read the file results in an encoding error which is
+then introspected by switching the channel to binary mode. In the
+example, when the error is reported the file position remains
+unchanged so that the \fBchan gets\fR would later return the
+full line if called.
 .PP
 .CS
 % set f [open test_A_195_B.txt r]
