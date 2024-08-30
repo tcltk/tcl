@@ -652,7 +652,7 @@ static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
-static void		IllegalExprOperandType(Tcl_Interp *interp,
+static void		IllegalExprOperandType(Tcl_Interp *interp, const char *ord,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	wordSkip(void *ptr);
@@ -6045,7 +6045,7 @@ TEBCresume(
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
+	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6056,7 +6056,7 @@ TEBCresume(
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6266,7 +6266,7 @@ TEBCresume(
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
+	    IllegalExprOperandType(interp, "left ", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6287,7 +6287,7 @@ TEBCresume(
 		    O2S(value2Ptr), O2S(valuePtr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    IllegalExprOperandType(interp, "right ", pc, value2Ptr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6429,7 +6429,7 @@ TEBCresume(
 	    TRACE(("\"%.20s\" => ERROR: illegal type %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
+	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6451,7 +6451,7 @@ TEBCresume(
 	    TRACE_APPEND(("ERROR: illegal type %s\n",
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
+	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6483,7 +6483,7 @@ TEBCresume(
 	    TRACE_APPEND(("ERROR: illegal type %s \n",
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
+	    IllegalExprOperandType(interp, "", pc, valuePtr);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -6536,7 +6536,7 @@ TEBCresume(
 		TRACE_APPEND(("ERROR: illegal type %s\n",
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
 		DECACHE_STACK_INFO();
-		IllegalExprOperandType(interp, pc, valuePtr);
+		IllegalExprOperandType(interp, "", pc, valuePtr);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -6554,7 +6554,7 @@ TEBCresume(
 		TRACE_APPEND(("ERROR: illegal type %s\n",
 			(valuePtr->typePtr? valuePtr->typePtr->name:"null")));
 		DECACHE_STACK_INFO();
-		IllegalExprOperandType(interp, pc, valuePtr);
+		IllegalExprOperandType(interp, "", pc, valuePtr);
 		CACHE_STACK_INFO();
 	    } else {
 		/*
@@ -9277,6 +9277,7 @@ static void
 IllegalExprOperandType(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
+    const char *ord,		/* "first ", "second " or "" */
     const unsigned char *pc,	/* Points to the instruction being executed
 				 * when the illegal type was found. */
     Tcl_Obj *opndPtr)		/* Points to the operand holding the value
@@ -9294,6 +9295,21 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
+	Tcl_Size length;
+	if (TclHasInternalRep(opndPtr, &tclDictType)) {
+	    Tcl_DictObjSize(NULL, opndPtr, &length);
+	    if (length > 1) {
+	    listRep:
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"cannot use a list as %soperand of \"%s\"", ord, op));
+		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", "list", (char *)NULL);
+		return;
+	    }
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
+	if (lengthProc && lengthProc(opndPtr) > 1) {
+	    goto listRep;
+	}
 	description = "non-numeric string";
     } else if (type == TCL_NUMBER_NAN) {
 	description = "non-numeric floating-point value";
@@ -9305,8 +9321,8 @@ IllegalExprOperandType(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s \"%s\" as operand of \"%s\"", description,
-	    TclGetString(opndPtr), op));
+	    "cannot use %s \"%s\" as %soperand of \"%s\"", description,
+	    TclGetString(opndPtr), ord, op));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
 }
 
