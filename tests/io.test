@@ -9389,7 +9389,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
 test io-75.6.read {invalid utf-8 encoding, read is not ignored (-encodingstrict 1)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \x81 is invalid in utf-8
     puts -nonewline $f A\x81
     flush $f
@@ -9509,7 +9509,7 @@ test io-75.7.gets {
 } -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \x81 is invalid in utf-8
     puts -nonewline $f A\x81
     flush $f
@@ -9551,7 +9551,7 @@ test {io-75.8 {invalid input before eof}} {invalid utf-8 before eof (-profile st
 	set hd {}
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \xA1 is invalid in utf-8. -eofchar is not detected, because it comes later.
     puts -nonewline $f A\xA1\x1A
     flush $f
@@ -9613,7 +9613,7 @@ test {io-75.8 {invalid input after eof}} {
     set res {}
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \xc0\x80 is invalid utf-8 data, but because the eof character \x1A
     # appears first, it's not an error.
     puts -nonewline $f A\x1a\xc0\x80
@@ -9725,7 +9725,7 @@ apply [list {} {
 	    set res {}
 	    set fn [makeFile {} io-75.10]
 	    set f [open $fn w+]
-	    fconfigure $f -encoding binary
+	    fconfigure $f -translation binary
 	    puts -nonewline $f A\xC0
 	    flush $f
 	    seek $f 0
@@ -9817,7 +9817,7 @@ apply [list {} {
 	    set res {}
 	    set fn [makeFile {} io-75.12]
 	    set f [open $fn w+]
-	    fconfigure $f -encoding binary
+	    fconfigure $f -translation binary
 	    puts -nonewline $f A\x81
 	    flush $f
 	    seek $f 0
@@ -9879,7 +9879,7 @@ test io-75.13 {
 } -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \x81 is invalid in utf-8
     puts -nonewline $f A\x81
     flush $f
@@ -9992,7 +9992,7 @@ test io-75.14 {invalid utf-8 encoding [gets] continues in non-strict mode after 
     set res {}
     set fn [makeFile {} io-75.14]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \xc0 is invalid in utf-8
     puts -nonewline $f a\nb\xc0\nc\n
     flush $f
@@ -10017,7 +10017,7 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
     set res {}
     set fn [makeFile {} io-75.15]
     set chan [open $fn w+]
-    fconfigure $chan -encoding binary
+    fconfigure $chan -translation binary
     # This is not valid UTF-8
     puts $chan hello\nAB\xc0\x40CD\nEFG
     close $chan
@@ -10038,7 +10038,7 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
 	}
     ]
 
-    chan configure $chan -encoding binary
+    chan configure $chan -translation binary
     foreach char [split [read $chan 2] {}] {
 	lappend res [format %x [scan $char %c]]
     }
