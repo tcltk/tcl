@@ -223,7 +223,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
  * TIP #508: [array default]
  */
 
-static Tcl_ObjCmdProc ArrayDefaultCmd;
+static Tcl_ObjCmdProc	ArrayDefaultCmd;
 static void		DeleteArrayVar(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
@@ -263,7 +263,7 @@ static const Tcl_ObjType localVarNameType = {
     0
 };
 
-#define LocalSetInternalRep(objPtr, index, namePtr) \
+#define LocalSetInternalRep(objPtr, index, namePtr)			\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr = (namePtr);					\
@@ -273,7 +273,7 @@ static const Tcl_ObjType localVarNameType = {
 	Tcl_StoreInternalRep((objPtr), &localVarNameType, &ir);		\
     } while (0)
 
-#define LocalGetInternalRep(objPtr, index, name) \
+#define LocalGetInternalRep(objPtr, index, name)			\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);	\
@@ -287,7 +287,7 @@ static const Tcl_ObjType parsedVarNameType = {
     0
 };
 
-#define ParsedSetInternalRep(objPtr, arrayPtr, elem) \
+#define ParsedSetInternalRep(objPtr, arrayPtr, elem)			\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr1 = (arrayPtr);					\
@@ -299,7 +299,7 @@ static const Tcl_ObjType parsedVarNameType = {
 	Tcl_StoreInternalRep((objPtr), &parsedVarNameType, &ir);	\
     } while (0)
 
-#define ParsedGetInternalRep(objPtr, parsed, array, elem) \
+#define ParsedGetInternalRep(objPtr, parsed, array, elem)		\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &parsedVarNameType);	\
