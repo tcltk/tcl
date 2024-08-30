@@ -63,12 +63,6 @@ elements, and if \fIcount\fR is not supplied, it is computed as:
 \fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
 .CE
 .RE
-.PP
-The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
-can also be a valid expression. the \fBlseq\fR command will evaluate the
-expression (as if with \fBexpr\fR)
-and use the numeric result, or return an error as with any invalid argument
-value; a non-numeric expression result will result in an error.
 .SH EXAMPLES
 .CS
 .\"
