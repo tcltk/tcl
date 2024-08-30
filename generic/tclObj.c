@@ -194,16 +194,15 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7FFF) {					\
-	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));		\
-	*temp = bignum;							\
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;			\
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);		\
-    } else if (((bignum).alloc <= 0x7FFF)				\
-	    || (mp_shrink(&(bignum))) == MP_OKAY) {			\
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;		\
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
-		| ((bignum).alloc << 15) | ((bignum).used));		\
+    if ((bignum).used > 0x7FFF) {                                   \
+	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));             \
+	*temp = bignum;                                                 \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
+    } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
+		| ((bignum).alloc << 15) | ((bignum).used));                \
     }
 
 /*
@@ -440,14 +439,14 @@ TclInitObjSubsystem(void)
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
-    Tcl_RegisterObjType(tclDoubleType);
-    Tcl_RegisterObjType(&tclStringType);
-    Tcl_RegisterObjType(tclListTypePtr);
-    Tcl_RegisterObjType(tclDictTypePtr);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclCmdNameType);
-    Tcl_RegisterObjType(&tclRegexpType);
+    Tcl_RegisterObjType(tclDictTypePtr);
+    Tcl_RegisterObjType(tclDoubleType);
+    Tcl_RegisterObjType(tclListTypePtr);
     Tcl_RegisterObjType(&tclProcBodyType);
+    Tcl_RegisterObjType(&tclRegexpType);
+    Tcl_RegisterObjType(&tclStringType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -2306,7 +2305,7 @@ TclSetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	Tcl_Size length;
-	const char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = TclGetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -2325,7 +2324,7 @@ ParseBoolean(
     int newBool;
     char lowerCase[6];
     Tcl_Size i, length;
-    const char *str = Tcl_GetStringFromObj(objPtr, &length);
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length < 1) || (length > 5)) {
 	/*
@@ -4418,7 +4417,7 @@ TclHashObjKey(
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_Size length;
-    const char *string = Tcl_GetStringFromObj(objPtr, &length);
+    const char *string = TclGetStringFromObj(objPtr, &length);
     size_t result = 0;
 
     /*
