@@ -487,7 +487,8 @@ TclCompileIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int isScalar, localIndex, haveImmValue, immValue;
+    int isScalar, localIndex, haveImmValue;
+    Tcl_WideInt immValue;
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	return TCL_ERROR;
@@ -514,11 +515,11 @@ TclCompileIncrCmd(
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 
 	    Tcl_IncrRefCount(intObj);
-	    code = TclGetIntFromObj(NULL, intObj, &immValue);
-	    TclDecrRefCount(intObj);
+	    code = TclGetWideIntFromObj(NULL, intObj, &immValue);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
 	    }
+	    TclDecrRefCount(intObj);
 	    if (!haveImmValue) {
 		PushLiteral(envPtr, word, numBytes);
 	    }
