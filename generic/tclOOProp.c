@@ -25,7 +25,7 @@ enum GPNFlags {
 };
 
 /*
- * Shared bits for [property] declarations. 
+ * Shared bits for [property] declarations.
  */
 enum PropOpt {
     PROP_ALL, PROP_READABLE, PROP_WRITABLE
@@ -212,7 +212,7 @@ GetPropertyName(
 	 */
 
 	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
-	Tcl_Obj *otherName = GetPropertyName(interp, oPtr, 
+	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
 	result = Tcl_RestoreInterpState(interp, foo);
 	if (otherName != NULL) {
@@ -334,7 +334,7 @@ TclOO_Configurable_Configure(
 
 	code = TCL_OK;
 	for (i = 0; i < objc; i += 2) {
-	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i], 
+	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i],
 		    &cache);
 	    if (namePtr == NULL) {
 		code = TCL_ERROR;
@@ -381,7 +381,7 @@ Configurable_Getter(
     Tcl_Obj *valuePtr;
 
     if ((int) Tcl_ObjectContextSkippedArgs(context) != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, NULL);
 	return TCL_ERROR;
     }
@@ -416,7 +416,7 @@ Configurable_Setter(
     Tcl_Var varPtr, aryVar;
 
     if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, "value");
 	return TCL_ERROR;
     }
@@ -465,7 +465,7 @@ DetailsCloner(
  *	Installs a basic property implementation for a property, either on
  *	an instance or on a class. It's up to the code that calls these
  *	to ensure that the property name is syntactically valid.
- * 
+ *
  * ----------------------------------------------------------------------
  */
 
@@ -1318,7 +1318,7 @@ ReleasePropertyList(
 {
     Tcl_Obj *propertyObj;
     Tcl_Size i;
-    
+
     FOREACH(propertyObj, *propList) {
 	Tcl_DecrRefCount(propertyObj);
     }
