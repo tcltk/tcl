@@ -1405,9 +1405,9 @@ OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 # so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
 PKGNAMEFLAGS = /DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-	       /DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-	       /DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-	       /DMODULE_SCOPE=extern
+	/DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+	/DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+	/DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
