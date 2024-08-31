@@ -19,6 +19,14 @@
 # generates output for errors.  No output means no errors were found.
 
 
+apply {{} {
+
+global env
+global errorCode
+
+set clockproc [namespace which clock]
+set clockns [namespace ensemble configure $clockproc -namespace]
+
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
@@ -29,11 +37,13 @@ if {[testConstraint win]} {
 	    ::tcltest::loadTestedCommands
 	    package require registry
 	}]} {
-	namespace eval ::tcl::clock {variable NoRegistry {}}
+	namespace eval $clockns {variable NoRegistry {}}
     }
 }
 
 package require msgcat 1.4
+
+
 
 testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
@@ -169,7 +179,7 @@ testConstraint y2038 \
 # strings with localized numerics and eras.  This locale will be used
 # in testing the 'clock' command.
 
-namespace eval ::tcl::clock {
+namespace eval $clockns {
     ::msgcat::mcmset en_US_roman {
 	LOCALE_ERAS {
 	    {-62164627200 {} 0}
@@ -223,7 +233,7 @@ namespace eval ::tcl::clock {
 #
 # The tests for the Windows platform are careful *not* to muck with
 # the system registry.  Instead, the 'registry' command is overridden
-# in the '::tcl::clock' namespace.
+# in the $clockns namespace.
 #
 #----------------------------------------------------------------------
 
@@ -35255,22 +35265,22 @@ test clock-30.25 {clock add seconds at DST conversion} {
 test clock-31.1 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval $clocns {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %x
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	if {$noreg} {set ${clockns}::NoRegistry {}}
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {%d-%b-%Y}]
@@ -35278,22 +35288,22 @@ test clock-31.1 {system locale} \
 test clock-31.2 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %Ex
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	if {$noreg} {set ${clockns}::NoRegistry {}}
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {the %d' day of %B %Y}]
@@ -35301,22 +35311,22 @@ test clock-31.2 {system locale} \
 test clock-31.3 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
-	::tcl::clock::ClearCaches
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -timezone :UTC -locale system -format %X
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	if {$noreg} {set ${clockns}::NoRegistry {}}
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
 		 -format {%l:%M:%S %p}]
@@ -35324,11 +35334,11 @@ test clock-31.3 {system locale} \
 test clock-31.4 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35337,13 +35347,13 @@ test clock-31.4 {system locale} \
 	    set oldTclTZ $env(TCL_TZ)
 	    unset env(TCL_TZ)
 	}
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -locale system -format %x
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
 	if { [info exists oldTclTZ] } {
@@ -35352,8 +35362,8 @@ test clock-31.4 {system locale} \
 	if { [info exists oldTZ] } {
 	    set env(TZ) $oldTZ
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
-	::tcl::clock::ClearCaches
+	if {$noreg} {set ${clockns}::NoRegistry {}}
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {%d-%b-%Y}]
@@ -35361,11 +35371,11 @@ test clock-31.4 {system locale} \
 test clock-31.5 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35374,23 +35384,23 @@ test clock-31.5 {system locale} \
 	    set oldTclTZ $env(TCL_TZ)
 	    unset env(TCL_TZ)
 	}
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -locale system -format %Ex
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
+	if {$noreg} {set ${clockns}::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
 	if { [info exists oldTZ] } {
 	    set env(TZ) $oldTZ
 	}
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {the %d' day of %B %Y}]
@@ -35398,11 +35408,11 @@ test clock-31.5 {system locale} \
 test clock-31.6 {system locale} \
     -constraints win \
     -setup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35411,23 +35421,23 @@ test clock-31.6 {system locale} \
 	    set oldTclTZ $env(TCL_TZ)
 	    unset env(TCL_TZ)
 	}
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -body {
 	clock format 0 -locale system -format "%X %Z"
     } \
     -cleanup {
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
+	if {$noreg} {set ${clockns}::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
 	if { [info exists oldTZ] } {
 	    set env(TZ) $oldTZ
 	}
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -result [clock format 0 -locale current -timezone EST5 \
 		 -format {%l:%M:%S %p %Z}]
@@ -35944,9 +35954,9 @@ test clock-35.1 {clock seconds tests} {
     expr {[clock seconds] + 1}
     concat {}
 } {}
-test clock-35.2 {clock seconds tests} {
+test clock-35.2 {clock seconds tests} -body {
     list [catch {clock seconds foo} msg] $msg
-} {1 {wrong # args: should be "clock seconds"}}
+} -match glob -result {1 {wrong # args: should be "* seconds"}}
 test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
     after 2000
@@ -36156,11 +36166,11 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
     -constraints win \
     -setup {
 	# override the registry so that the test takes place in New York time
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    namespace import -force ::testClock::registry
 	}
-	set noreg [info exists ::tcl::clock::NoRegistry]
-	if {$noreg} {unset ::tcl::clock::NoRegistry}
+	set noreg [info exists ${clockns}::NoRegistry]
+	if {$noreg} {unset ${clockns}::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -36170,22 +36180,22 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	    unset env(TCL_TZ)
 	}
 	# make it so New York time is a missing file
-	dict set ::tcl::clock::WinZoneInfo \
+	dict set ${clockns}::WinZoneInfo \
 	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
 	    :No/Such/File
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -body {
-	list [::tcl::clock::GuessWindowsTimeZone] \
+	list [${clockns}::GuessWindowsTimeZone] \
 	    [clock format 0 -locale system -format "%H:%M:%S %Z"] \
 	    [clock format -86400 -format "%Y"]
     } \
     -cleanup {
 	# restore the registry and environment
-	namespace eval ::tcl::clock {
+	namespace eval ${clockns} {
 	    rename registry {}
 	}
-	if {$noreg} {set ::tcl::clock::NoRegistry {}}
+	if {$noreg} {set ${clockns}::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
@@ -36193,10 +36203,10 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	    set env(TZ) $oldTZ
 	}
 	# put New York back on the map
-	dict set ::tcl::clock::WinZoneInfo \
+	dict set ${clockns}::WinZoneInfo \
 	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
 	    :America/New_York
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     } \
     -result {<-0500>+05:00:00<-0400>+04:00:00,M3.2.0/02:00:00,M11.1.0/02:00:00 {19:00:00 -0500} 1969}
 
@@ -36366,14 +36376,14 @@ test clock-56.1 {use of zoneinfo, version 1} {*}{
 	    0x4d 0x57 0x54 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 	}]
 	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [linsert $${clockns}::ZoneinfoPaths 0 $tzdir]
+	${clockns}::ClearCaches
     }
     -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [lrange $${clockns}::ZoneinfoPaths 1 end]
+	${clockns}::ClearCaches
 	removeFile PhoenixOne $tzdir2
 	removeDirectory Test $tzdir
 	removeDirectory zoneinfo
@@ -36423,14 +36433,14 @@ test clock-56.2 {use of zoneinfo, version 2} {*}{
 	    0x54 0x37 0x0a
 	}]
 	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [linsert [set ${clockns}::ZoneinfoPaths] 0 $tzdir]
+	${clockns}::ClearCaches
     }
     -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [lrange [set ${clockns}::ZoneinfoPaths] 1 end]
+	${clockns}::ClearCaches
 	removeFile PhoenixTwo $tzdir2
 	removeDirectory Test $tzdir
 	removeDirectory zoneinfo
@@ -36633,14 +36643,14 @@ test clock-56.3 {use of zoneinfo, version 2, Y2038 compliance} {*}{
             0x30 0x0a
 	}]
 	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [linsert [set ${clockns}::ZoneinfoPaths] 0 $tzdir]
+	${clockns}::ClearCaches
     }
     -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [lrange [set ${clockns}::ZoneinfoPaths] 1 end]
+	${clockns}::ClearCaches
 	removeFile TijuanaTwo $tzdir2
 	removeDirectory Test $tzdir
 	removeDirectory zoneinfo
@@ -36782,17 +36792,17 @@ test clock-56.4 {Bug 3470928} {*}{
             0x30 0x2c 0x4d 0x34 0x2e 0x31 0x2e 0x30 0x0a
 	}]
 	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [linsert [set ${clockns}::ZoneinfoPaths] 0 $tzdir]
+	${clockns}::ClearCaches
     }
     -body {
 	clock format 1326054606 -timezone :Test/Windhoek
     }
     -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
+	set ${clockns}::ZoneinfoPaths \
+	    [lrange [set ${clockns}::ZoneinfoPaths] 1 end]
+	${clockns}::ClearCaches
 	removeFile Windhoek $tzdir2
 	removeDirectory Test $tzdir
 	removeDirectory zoneinfo
@@ -36980,7 +36990,7 @@ test clock-61.4 {near-miss overflow of a wide integer on output} {
 } [expr {-0x8000000000000000}]
 
 test clock-62.1 {Bug 1902423} {*}{
-    -setup {::tcl::clock::ClearCaches}
+    -setup {${clockns}::ClearCaches}
     -body {
 	set s 1204049747
 	set f1 [clock format $s -format {%Y-%m-%d %T} -locale C]
@@ -36996,7 +37006,7 @@ test clock-62.1 {Bug 1902423} {*}{
 
 test clock-63.1 {Incorrect use of internal ConvertLocalToUTC command} {*}{
     -body {
-	::tcl::clock::ConvertLocalToUTC {immaterial stuff} {} 12345
+	${clockns}::ConvertLocalToUTC {immaterial stuff} {} 12345
     }
     -returnCodes error
     -result {key "localseconds" not found in dictionary}
@@ -37035,7 +37045,7 @@ test clock-65.2 {clock add with both -timezone and -gmt} {*}{
 
 test clock-66.1 {clock scan, no date, never-before-seen timezone} {*}{
     -setup {
-	::tcl::clock::ClearCaches
+	${clockns}::ClearCaches
     }
     -body {
 	clock scan 1200 \
@@ -37052,11 +37062,11 @@ test clock-67.1 {clock format, %% with a letter following [Bug 2819334]} {
 
 test clock-67.2 {Bug d19a30db57} -body {
     # error, not segfault
-    tcl::clock::GetJulianDayFromEraYearMonthDay {} 2361222
+    ${clockns}::GetJulianDayFromEraYearMonthDay {} 2361222
 } -returnCodes error -match glob -result *
 test clock-67.3 {Bug d19a30db57} -body {
     # error, not segfault
-    tcl::clock::GetJulianDayFromEraYearWeekDay {} 2361222
+    ${clockns}::GetJulianDayFromEraYearWeekDay {} 2361222
 } -returnCodes error -match glob -result *
 test clock-67.4 {Change format %x output on global locale change [Bug 4a0c163d24]} -setup {
     package require msgcat
@@ -37085,9 +37095,17 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 # cleanup
 
 namespace delete ::testClock
-::tcl::clock::ClearCaches
+${clockns}::ClearCaches
 ::tcltest::cleanupTests
 return
+
+
+
+
+
+#apply
+}}
+
 
 # Local Variables:
 # mode: tcl

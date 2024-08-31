@@ -361,7 +361,6 @@ proc handleLocaleFile { localeName fileName msgFileName } {
     # Write a header
 
     puts $f "\# created by $::argv0 -- do not edit"
-    puts $f "namespace eval ::tcl::clock \{"
 
     # Do ordinary sets of strings (weekday and month names)
 
@@ -542,7 +541,6 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 
     # Footer
 
-    puts $f "\}"
     close $f
 }
 

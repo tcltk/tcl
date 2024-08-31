@@ -1188,7 +1188,7 @@ Tcl_CreateInterp(void)
      * involve ensembles.
      */
 
-    TclClockInit(interp);
+    TclClockClassicInit(interp);
 
     /*
      * Register the built-in functions. This is empty now that they are

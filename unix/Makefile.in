@@ -304,7 +304,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestObjInterface.o \
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclArithSeries.o tclAssembly.o tclAsync.o tclBasic.o tclBinary.o \
-	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
+	tclCkalloc.o tclClockClassic.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
@@ -414,7 +414,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
-	$(GENERIC_DIR)/tclClock.c \
+	$(GENERIC_DIR)/tclClockClassic.c \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
@@ -1311,8 +1311,8 @@ tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
 
-tclClock.o: $(GENERIC_DIR)/tclClock.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
+tclClockClassic.o: $(GENERIC_DIR)/tclClockClassic.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClockClassic.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c

@@ -114,24 +114,27 @@ if {[interp issafe]} {
     }
 
     # Set up the 'clock' ensemble
+    namespace eval ::tcl::clockclassic [list variable TclLibDir $::tcl_library]
 
-    namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
-
-    proc ::tcl::initClock {} {
-	# Auto-loading stubs for 'clock.tcl'
-
+    apply [list {} {
+	# Auto-loading stubs for 'clockclassic.tcl'
 	foreach cmd {add format scan} {
-	    proc ::tcl::clock::$cmd args {
+	    proc $cmd args {
 		variable TclLibDir
-		source [file join $TclLibDir clock.tcl]
+		source [file join $TclLibDir clockclassic.tcl]
 		return [uplevel 1 [info level 0]]
 	    }
 	}
 
-	rename ::tcl::initClock {}
-    }
-    ::tcl::initClock
+	namespace eval [namespace parent] {
+	    namespace export clockclassic
+	}
+	namespace import [namespace parent]::clockclassic
+	rename [namespace current]::clockclassic ::clock
+
+    } ::tcl::clockclassic]
 }
+
 
 # Conditionalize for presence of exec.
 

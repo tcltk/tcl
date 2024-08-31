@@ -17,7 +17,7 @@
 */
 
 /*
- * tclClock.c --
+ * tclClockClassic.c --
  *
  *	Contains the time and date related commands. This code is derived from
  *	the time and date facilities of TclX, by Mark Diekhans and Karl
@@ -188,7 +188,7 @@ static void		ClockDeleteCmdProc(void *);
 
 struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
-				 * is "::tcl::clock::<name>". When NULL marks
+				 * is "<clockns>::<name>". When NULL marks
 				 * the end of the table. */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
@@ -211,7 +211,7 @@ static const struct ClockCommand clockCommands[] = {
 /*
  *----------------------------------------------------------------------
  *
- * TclClockInit --
+ * TclClockClassicInit --
  *
  *	Registers the 'clock' subcommands with the Tcl interpreter and
  *	initializes its client data (which consists mostly of constant
@@ -227,12 +227,12 @@ static const struct ClockCommand clockCommands[] = {
  */
 
 void
-TclClockInit(
+TclClockClassicInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
     const struct ClockCommand *clockCmdPtr;
-    char cmdName[50];		/* Buffer large enough to hold the string
-				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
+    char cmdName[57];		/* Buffer large enough to hold the string
+				 *::tcl::clockclassic::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NUL. */
     ClockClientData *data;
     int i;
@@ -276,8 +276,8 @@ TclClockInit(
      * TODO - Let Tcl_MakeEnsemble do this?
      */
 
-#define TCL_CLOCK_PREFIX_LEN 14 /* == strlen("::tcl::clock::") */
-    memcpy(cmdName, "::tcl::clock::", TCL_CLOCK_PREFIX_LEN);
+#define TCL_CLOCK_PREFIX_LEN 21 /* == strlen("::tcl::clockclassic::") */
+    memcpy(cmdName, "::tcl::clockclassic::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
@@ -287,7 +287,7 @@ TclClockInit(
 
     /* Make the clock ensemble */
 
-    TclMakeEnsemble(interp, "clock", clockImplMap);
+    TclMakeEnsemble(interp, "::tcl::clockclassic", clockImplMap);
 }
 
 /*
@@ -299,7 +299,7 @@ TclClockInit(
  *	is available.
  *
  * Usage:
- *	::tcl::clock::ConvertUTCToLocal dictionary tzdata changeover
+ *	ConvertUTCToLocal dictionary tzdata changeover
  *
  * Parameters:
  *	dict - Dictionary containing a 'localSeconds' entry.
@@ -387,7 +387,7 @@ ClockConvertlocaltoutcObjCmd(
  *	formatting a date, and populates a dictionary with them.
  *
  * Usage:
- *	::tcl::clock::GetDateFields seconds tzdata changeover
+ *	GetDateFields seconds tzdata changeover
  *
  * Parameters:
  *	seconds - Time expressed in seconds from the Posix epoch.
@@ -408,7 +408,7 @@ ClockConvertlocaltoutcObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockGetdatefieldsObjCmd(
     void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -1635,7 +1635,7 @@ WeekdayOnOrBefore(
  *	Tcl command that reads an environment variable from the system
  *
  * Usage:
- *	::tcl::clock::getEnv NAME
+ *	getEnv NAME
  *
  * Parameters:
  *	NAME - Name of the environment variable desired
@@ -1648,7 +1648,7 @@ WeekdayOnOrBefore(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockGetenvObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
@@ -1751,7 +1751,7 @@ ThreadSafeLocalTime(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockClicksObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -1821,7 +1821,7 @@ ClockClicksObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockMillisecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -1860,7 +1860,7 @@ ClockMillisecondsObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockMicrosecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2012,7 +2012,7 @@ ClockParseformatargsObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ClockSecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */

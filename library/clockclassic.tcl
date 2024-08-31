@@ -24,7 +24,7 @@ uplevel \#0 {
     package require msgcat 1.6
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
-	    namespace eval ::tcl::clock [list variable NoRegistry {}]
+	    variable NoRegistry {}
 	}
     }
 }
@@ -32,8 +32,7 @@ uplevel \#0 {
 # Put the library directory into the namespace for the ensemble so that the
 # library code can find message catalogs and time zone definition files.
 
-namespace eval ::tcl::clock \
-    [list variable LibDir [info library]]
+variable LibDir [info library]
 
 #----------------------------------------------------------------------
 #
@@ -46,30 +45,26 @@ namespace eval ::tcl::clock \
 #
 #----------------------------------------------------------------------
 
-namespace eval ::tcl::clock {
+# Export the subcommands
 
-    # Export the subcommands
+namespace export format
+namespace export clicks
+namespace export microseconds
+namespace export milliseconds
+namespace export scan
+namespace export seconds
+namespace export add
 
-    namespace export format
-    namespace export clicks
-    namespace export microseconds
-    namespace export milliseconds
-    namespace export scan
-    namespace export seconds
-    namespace export add
+# Import the message catalog commands that we use.
 
-    # Import the message catalog commands that we use.
-
-    namespace import ::msgcat::mcload
-    namespace import ::msgcat::mclocale
-    proc mc {args} { tailcall ::msgcat::mcn [namespace current] {*}$args }
-    namespace import ::msgcat::mcpackagelocale
-
-}
+namespace import ::msgcat::mcload
+namespace import ::msgcat::mclocale
+proc mc {args} { tailcall ::msgcat::mcn [namespace current] {*}$args }
+namespace import ::msgcat::mcpackagelocale
 
 #----------------------------------------------------------------------
 #
-# ::tcl::clock::Initialize --
+# Initialize --
 #
 #	Finish initializing the 'clock' subsystem
 #
@@ -79,7 +74,7 @@ namespace eval ::tcl::clock {
 # Side effects:
 #	Namespace variable in the 'clock' subsystem are initialized.
 #
-# The '::tcl::clock::Initialize' procedure initializes the namespace variables
+# The 'Initialize' procedure initializes the namespace variables
 # and root locale message catalog for the 'clock' subsystem.  It is broken
 # into a procedure rather than simply evaluated as a script so that it will be
 # able to use local variables, avoiding the dangers of 'creative writing' as
@@ -87,9 +82,9 @@ namespace eval ::tcl::clock {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::Initialize {} {
+proc Initialize {} {
 
-    rename ::tcl::clock::Initialize {}
+    rename [namespace current]::Initialize {}
 
     variable LibDir
 
@@ -650,7 +645,7 @@ proc ::tcl::clock::Initialize {} {
 					# and locale to the name of a procedure
 					# that renders the given format
 }
-::tcl::clock::Initialize
+Initialize
 
 #----------------------------------------------------------------------
 #
@@ -663,7 +658,7 @@ proc ::tcl::clock::Initialize {} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::format { args } {
+proc format { args } {
 
     variable FormatProc
     variable TZData
@@ -716,7 +711,7 @@ proc ::tcl::clock::format { args } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
+proc ParseClockFormatFormat {procName format locale} {
 
     if {[namespace which $procName] ne {}} {
 	return $procName
@@ -736,7 +731,7 @@ proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
     }
 }
 
-proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
+proc ParseClockFormatFormat2 {format locale procName} {
     set didLocaleEra 0
     set didLocaleNumerals 0
     set preFormatCode \
@@ -1182,7 +1177,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::scan { args } {
+proc scan { args } {
 
     set format {}
 
@@ -1302,7 +1297,7 @@ proc ::tcl::clock::scan { args } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::FreeScan { string base timezone locale } {
+proc FreeScan { string base timezone locale } {
 
     variable TZData
 
@@ -1476,7 +1471,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 #	to the caller of [clock scan]
 #
 # Side effects:
-#	The given procedure is defined in the ::tcl::clock namespace.  Scan
+#	The given procedure is defined in the current namespace.  Scan
 #	procedures are not deleted once installed.
 #
 # Why do we parse dates by defining a procedure to parse them?  The reason is
@@ -1488,7 +1483,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
+proc ParseClockScanFormat {formatString locale} {
     # Check whether the format has been parsed previously, and return the
     # existing recognizer if it has.
 
@@ -1938,7 +1933,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     # Build the procedure
 
     set procBody {}
-    append procBody "variable ::tcl::clock::TZData" \n
+    append procBody "variable TZData" \n
     append procBody "if \{ !\[ regexp -nocase [list $re] \$string ->"
     for { set i 1 } { $i <= $captureCount } { incr i } {
 	append procBody " " field $i
@@ -1965,7 +1960,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 	    }
 	}
 	append procBody {
-	    ::tcl::clock::SetupTimeZone $timeZone
+	    SetupTimeZone $timeZone
 	}
     }
 
@@ -1998,7 +1993,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 	# Finally, convert the date to local time
 
 	append procBody {
-	    set date [::tcl::clock::ConvertLocalToUTC $date[set date {}] \
+	    set date [ConvertLocalToUTC $date[set date {}] \
 			  $TZData($timeZone) $changeover]
 	}
     }
@@ -2032,7 +2027,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocaleNumeralMatcher {l} {
+proc LocaleNumeralMatcher {l} {
     variable LocaleNumeralCache
 
     if { ![dict exists $LocaleNumeralCache $l] } {
@@ -2078,7 +2073,7 @@ proc ::tcl::clock::LocaleNumeralMatcher {l} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::UniquePrefixRegexp { data } {
+proc UniquePrefixRegexp { data } {
     # The 'successors' dictionary will contain, for each string that is a
     # prefix of any key, all characters that may follow that prefix.  The
     # 'prefixMapping' dictionary will have keys that are prefixes of keys and
@@ -2153,7 +2148,7 @@ proc ::tcl::clock::UniquePrefixRegexp { data } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::MakeUniquePrefixRegexp { successors
+proc MakeUniquePrefixRegexp { successors
 					  uniquePrefixMapping
 					  prefixString } {
 
@@ -2225,12 +2220,12 @@ proc ::tcl::clock::MakeUniquePrefixRegexp { successors
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
+proc MakeParseCodeFromFields { dateFields parseActions } {
 
     set currPrio 999
     set currFieldPos [list]
     set currCodeBurst {
-	error "in ::tcl::clock::MakeParseCodeFromFields: can't happen"
+	error "in MakeParseCodeFromFields: can't happen"
     }
 
     foreach { fieldSet prio parseAction } $parseActions {
@@ -2309,7 +2304,7 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::EnterLocale { locale } {
+proc EnterLocale { locale } {
     if { $locale eq {system} } {
 	if { $::tcl_platform(platform) ne {windows} } {
 	    # On a non-windows platform, the 'system' locale is the same as
@@ -2362,7 +2357,7 @@ proc ::tcl::clock::EnterLocale { locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
+proc LoadWindowsDateTimeFormats { locale } {
     # Bail out if we can't find the Registry
 
     variable NoRegistry
@@ -2487,7 +2482,7 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocalizeFormat { locale format } {
+proc LocalizeFormat { locale format } {
 
     # message catalog key to cache this format
     set key FORMAT_$format
@@ -2538,7 +2533,7 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::FormatNumericTimeZone { z } {
+proc FormatNumericTimeZone { z } {
     if { $z < 0 } {
 	set z [expr { - $z }]
 	set retval -
@@ -2576,7 +2571,7 @@ proc ::tcl::clock::FormatNumericTimeZone { z } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::FormatStarDate { date } {
+proc FormatStarDate { date } {
     variable Roddenberry
 
     # Get day of year, zero based
@@ -2626,7 +2621,7 @@ proc ::tcl::clock::FormatStarDate { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ParseStarDate { year fractYear fractDay } {
+proc ParseStarDate { year fractYear fractDay } {
     variable Roddenberry
 
     # Build a tentative date from year and fraction.
@@ -2678,7 +2673,7 @@ proc ::tcl::clock::ParseStarDate { year fractYear fractDay } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ScanWide { str } {
+proc ScanWide { str } {
     set count [::scan $str {%ld %c} result junk]
     if { $count != 1 } {
 	return -code error -errorcode [list CLOCK notAnInteger $str] \
@@ -2721,7 +2716,7 @@ proc ::tcl::clock::ScanWide { str } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
+proc InterpretTwoDigitYear { date baseTime
 					   { twoDigitField yearOfCentury }
 					   { fourDigitField year } } {
     set yr [dict get $date $twoDigitField]
@@ -2755,7 +2750,7 @@ proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseYear { date baseTime timezone changeover } {
+proc AssignBaseYear { date baseTime timezone changeover } {
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time, and
@@ -2794,7 +2789,7 @@ proc ::tcl::clock::AssignBaseYear { date baseTime timezone changeover } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseIso8601Year {date baseTime timeZone changeover} {
+proc AssignBaseIso8601Year {date baseTime timeZone changeover} {
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
@@ -2830,7 +2825,7 @@ proc ::tcl::clock::AssignBaseIso8601Year {date baseTime timeZone changeover} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseMonth {date baseTime timezone changeover} {
+proc AssignBaseMonth {date baseTime timezone changeover} {
     variable TZData
 
     # Find the year and month corresponding to the base time
@@ -2864,7 +2859,7 @@ proc ::tcl::clock::AssignBaseMonth {date baseTime timezone changeover} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseWeek {date baseTime timeZone changeover} {
+proc AssignBaseWeek {date baseTime timeZone changeover} {
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
@@ -2900,7 +2895,7 @@ proc ::tcl::clock::AssignBaseWeek {date baseTime timeZone changeover} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseJulianDay { date baseTime timeZone changeover } {
+proc AssignBaseJulianDay { date baseTime timeZone changeover } {
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
@@ -2929,7 +2924,7 @@ proc ::tcl::clock::AssignBaseJulianDay { date baseTime timeZone changeover } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::InterpretHMSP { date } {
+proc InterpretHMSP { date } {
     set hr [dict get $date hourAMPM]
     if { $hr == 12 } {
 	set hr 0
@@ -2960,7 +2955,7 @@ proc ::tcl::clock::InterpretHMSP { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::InterpretHMS { date } {
+proc InterpretHMS { date } {
     return [expr {
 	( [dict get $date hour] * 60
 	  + [dict get $date minute] ) * 60
@@ -2987,7 +2982,7 @@ proc ::tcl::clock::InterpretHMS { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetSystemTimeZone {} {
+proc GetSystemTimeZone {} {
     variable CachedSystemTimeZone
     variable TimeZoneBad
 
@@ -3042,7 +3037,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ConvertLegacyTimeZone { tzname } {
+proc ConvertLegacyTimeZone { tzname } {
     variable LegacyTimeZone
 
     set tzname [string tolower $tzname]
@@ -3070,7 +3065,7 @@ proc ::tcl::clock::ConvertLegacyTimeZone { tzname } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::SetupTimeZone { timezone } {
+proc SetupTimeZone { timezone } {
     variable TZData
 
     if {! [info exists TZData($timezone)] } {
@@ -3168,7 +3163,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GuessWindowsTimeZone {} {
+proc GuessWindowsTimeZone {} {
     variable WinZoneInfo
     variable NoRegistry
     variable TimeZoneBad
@@ -3302,7 +3297,7 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LoadTimeZoneFile { fileName } {
+proc LoadTimeZoneFile { fileName } {
     variable DataDir
     variable TZData
 
@@ -3347,7 +3342,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LoadZoneinfoFile { fileName } {
+proc LoadZoneinfoFile { fileName } {
     variable ZoneinfoPaths
 
     # Since an unsafe interp uses the [clock] command in the parent, this code
@@ -3389,7 +3384,7 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
+proc ReadZoneinfoFile {fileName fname} {
     variable MINWIDE
     variable TZData
     if { ![file exists $fname] } {
@@ -3602,7 +3597,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ParsePosixTimeZone { tz } {
+proc ParsePosixTimeZone { tz } {
     if {[regexp -expanded -nocase -- {
 	^
 	# 1 - Standard time zone name
@@ -3721,7 +3716,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ProcessPosixTimeZone { z } {
+proc ProcessPosixTimeZone { z } {
     variable MINWIDE
     variable TZData
 
@@ -3881,7 +3876,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
+proc DeterminePosixDSTTime { z bound y } {
 
     variable FEB_28
 
@@ -3961,7 +3956,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetLocaleEra { date etable } {
+proc GetLocaleEra { date etable } {
     set index [BSearch $etable [dict get $date localSeconds]]
     if { $index < 0} {
 	dict set date localeEra \
@@ -4005,7 +4000,7 @@ proc ::tcl::clock::GetLocaleEra { date etable } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetJulianDayFromEraYearDay {date changeover} {
+proc GetJulianDayFromEraYearDay {date changeover} {
     # Get absolute year number from the civil year
 
     switch -exact -- [dict get $date era] {
@@ -4069,7 +4064,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay {date changeover} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay {date changeover} {
+proc GetJulianDayFromEraYearMonthWeekDay {date changeover} {
     # Come up with a reference day; either the zeroeth day of the given month
     # (dayOfWeekInMonth >= 0) or the seventh day of the following month
     # (dayOfWeekInMonth < 0)
@@ -4109,7 +4104,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay {date changeover} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::IsGregorianLeapYear { date } {
+proc IsGregorianLeapYear { date } {
     switch -exact -- [dict get $date era] {
 	BCE {
 	    set year [expr { 1 - [dict get $date year]}]
@@ -4150,7 +4145,7 @@ proc ::tcl::clock::IsGregorianLeapYear { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
+proc WeekdayOnOrBefore { weekday j } {
     set k [expr { ( $weekday + 6 )  % 7 }]
     return [expr { $j - ( $j - $k ) % 7 }]
 }
@@ -4176,7 +4171,7 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::BSearch { list key } {
+proc BSearch { list key } {
     if {[llength $list] == 0} {
 	return -1
     }
@@ -4244,7 +4239,7 @@ proc ::tcl::clock::BSearch { list key } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::add { clockval args } {
+proc add { clockval args } {
     if { [llength $args] % 2 != 0 } {
 	set cmdName "clock add"
 	return -code error \
@@ -4380,7 +4375,7 @@ proc ::tcl::clock::add { clockval args } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
+proc AddMonths { months clockval timezone changeover } {
     variable DaysInRomanMonthInCommonYear
     variable DaysInRomanMonthInLeapYear
     variable TZData
@@ -4453,7 +4448,7 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AddDays { days clockval timezone changeover } {
+proc AddDays { days clockval timezone changeover } {
     variable TZData
 
     # Convert the time to Julian Day
@@ -4500,7 +4495,7 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ChangeCurrentLocale {args} {
+proc ChangeCurrentLocale {args} {
     variable FormatProc
     variable LocaleNumeralCache
     variable CachedSystemTimeZone
@@ -4534,7 +4529,7 @@ proc ::tcl::clock::ChangeCurrentLocale {args} {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ClearCaches {} {
+proc ClearCaches {} {
     variable FormatProc
     variable LocaleNumeralCache
     variable CachedSystemTimeZone
