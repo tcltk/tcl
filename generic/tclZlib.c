@@ -27,7 +27,7 @@
 
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
-#include <zlib.h>
+#include "zlib.h"
 #include "tclIO.h"
 
 /*
