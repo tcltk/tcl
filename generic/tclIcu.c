@@ -515,6 +515,59 @@ TclIcuCleanup(
 /*
  *------------------------------------------------------------------------
  *
+ * IcuFindSymbol --
+ *
+ *	Finds an ICU symbol in a shared library and returns its value.
+ *
+ *      Caller must be holding icu_mutex lock.
+ *
+ * Results:
+ *	Returns the symbol value or NULL if not found.
+ *
+ *------------------------------------------------------------------------
+ */
+static void *
+IcuFindSymbol(
+    Tcl_LoadHandle loadH, /* Handle to shared library containing symbol */
+    const char *name,     /* Name of function */
+    const char *suffix    /* Suffix that may be present */
+)
+{
+    /*
+     * ICU symbols may have a version suffix depending on how it was built.
+     * Rather than try both forms every time, suffixConvention remembers if a
+     * suffix is needed (all functions will have it, or none will)
+     * 0 - don't know, 1 - have suffix, -1 - no suffix
+     */
+    static int suffixConvention = 0;
+    char symbol[256];
+    void *value = NULL;
+
+    /* Note we only update suffixConvention on a positive result */
+
+    strcpy(symbol, name);
+    if (suffixConvention <= 0) {
+	/* Either don't need suffix or don't know if we do */
+	value = Tcl_FindSymbol(NULL, loadH, symbol);
+	if (value) {
+	    suffixConvention = -1; /* Remember that no suffixes present */
+	    return value;
+	}
+    }
+    if (suffixConvention >= 0) {
+	/* Either need suffix or don't know if we do */
+	strcat(symbol, suffix);
+	value = Tcl_FindSymbol(NULL, loadH, symbol);
+	if (value) {
+	    suffixConvention = 1;
+	}
+    }
+    return value;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * TclIcuInit --
  *
  *	Load the ICU commands into the given interpreter. If the ICU
@@ -528,7 +581,6 @@ TclIcuInit(
     Tcl_Interp *interp)
 {
     Tcl_MutexLock(&icu_mutex);
-    char symbol[256];
     char icuversion[4] = "_80"; /* Highest ICU version + 1 */
 
     /*
@@ -640,17 +692,12 @@ TclIcuInit(
 	}
 #endif // _WIN32
 
-    /* Try for symbol without version (Windows, FreeBSD), then with version */
-#define ICUUC_SYM(name) \
-    do {								\
-	strcpy(symbol, #name);						\
-	icu_fns._##name = (fn_##name)					\
-		Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);		\
-	if (icu_fns._##name == NULL) {					\
-	    strcat(symbol, icuversion);					\
-	    icu_fns._##name = (fn_##name)				\
-		    Tcl_FindSymbol(NULL, icu_fns.libs[0], symbol);	\
-	}								\
+	/* Symbol may have version (Windows, FreeBSD), or not (Linux) */
+
+#define ICUUC_SYM(name)                                                   \
+    do {                                                                  \
+	icu_fns._##name =                                                 \
+	    (fn_##name)IcuFindSymbol(icu_fns.libs[0], #name, icuversion); \
     } while (0)
 
 	if (icu_fns.libs[0] != NULL) {
@@ -677,16 +724,10 @@ TclIcuInit(
 #undef ICUUC_SYM
 	}
 
-#define ICUIN_SYM(name) \
-    do {								\
-	strcpy(symbol, #name);						\
-	icu_fns._##name = (fn_##name)					\
-		Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);		\
-	if (icu_fns._##name == NULL) {					\
-	    strcat(symbol, icuversion);					\
-	    icu_fns._##name = (fn_##name)				\
-		    Tcl_FindSymbol(NULL, icu_fns.libs[1], symbol);	\
-	}								\
+#define ICUIN_SYM(name)                                                   \
+    do {                                                                  \
+	icu_fns._##name =                                                 \
+	    (fn_##name)IcuFindSymbol(icu_fns.libs[1], #name, icuversion); \
     } while (0)
 
 	if (icu_fns.libs[1] != NULL) {
