@@ -835,6 +835,7 @@ test compile-18.19 {disassembler - basics} -setup {
 # There never was a compile-18.20.
 # The keys of the dictionary produced by [getbytecode] are defined.
 set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth exceptdepth}
+set allbytecodekeys [list {*}$bytecodekeys initiallinenumber sourcefile]
 test compile-18.21 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode
 } -match glob -result {wrong # args: should be "*"}
@@ -849,7 +850,7 @@ test compile-18.24 {disassembler - basics} -returnCodes error -body {
 } -result "can't interpret \"\{\" as a lambda expression"
 test compile-18.25 {disassembler - basics} -body {
     dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.26 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode proc
 } -match glob -result {wrong # args: should be "* proc procName"}
@@ -862,7 +863,7 @@ test compile-18.28 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode proc chewonthis]
 } -cleanup {
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.28.1 {disassembler - tricky bit} -setup {
     eval [list proc chewonthis {} {}]
 } -body {
@@ -876,7 +877,7 @@ test compile-18.28.2 {disassembler - tricky bit} -setup {
     dict keys [tcl::unsupported::getbytecode proc chewonthis]
 } -cleanup {
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.28.3 {disassembler - tricky bit} -setup {
     proc Proc {n a b} {
 	proc $n $a $b
@@ -898,7 +899,7 @@ test compile-18.28.4 {disassembler - tricky bit} -setup {
 } -cleanup {
     rename Proc {}
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.29 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode script
 } -match glob -result {wrong # args: should be "* script script"}
@@ -927,7 +928,7 @@ test compile-18.35 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode method foo bar]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.36 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode objmethod
 } -match glob -result {wrong # args: should be "* objmethod objectName methodName"}
@@ -944,7 +945,7 @@ test compile-18.39 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode objmethod foo bar]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.40 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble constructor
 } -match glob -result {wrong # args: should be "* constructor className"}
@@ -992,7 +993,7 @@ test compile-18.48 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode constructor foo]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys"
+} -result $allbytecodekeys
 # There is no compile-18.49
 test compile-18.50 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble destructor
@@ -1041,7 +1042,7 @@ test compile-18.58 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode destructor foo]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys"
+} -result $allbytecodekeys
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.

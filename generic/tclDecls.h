@@ -4258,6 +4258,9 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetBytesFromObj(\
 	    NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
 #else
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
+		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
