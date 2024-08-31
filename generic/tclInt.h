@@ -3474,6 +3474,7 @@ MODULE_SCOPE Tcl_Obj *	TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
+MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE Tcl_Obj *	TclObjGetScalar(Tcl_Obj *objPtr);
 MODULE_SCOPE ObjInterface * TclObjInterface(Tcl_Obj *objPtr);
 MODULE_SCOPE const char *   TclObjTypeName(const Tcl_ObjType *typePtr);

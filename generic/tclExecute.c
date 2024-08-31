@@ -2482,7 +2482,7 @@ TEBCresume(
     }
 
     case INST_TAILCALL: {
-	Tcl_Obj *listPtr, *nsObjPtr;
+	Tcl_Obj *listPtr;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
@@ -2518,8 +2518,8 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
-	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
+		(Tcl_Namespace *) iPtr->varFramePtr->nsPtr));
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
@@ -4342,18 +4342,10 @@ TEBCresume(
      *	   Start of general introspector instructions.
      */
 
-    case INST_NS_CURRENT: {
-	Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-
-	if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
-	    TclNewLiteralStringObj(objResultPtr, "::");
-	} else {
-	    TclNewStringObj(objResultPtr, currNsPtr->fullName,
-		    strlen(currNsPtr->fullName));
-	}
+    case INST_NS_CURRENT:
+	objResultPtr = TclNewNamespaceObj(TclGetCurrentNamespace(interp));
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
-    }
     break;
     case INST_COROUTINE_NAME: {
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
@@ -4714,12 +4706,7 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	/*
-	 * TclOO objects *never* have the global namespace as their NS.
-	 */
-
-	TclNewStringObj(objResultPtr, oPtr->namespacePtr->fullName,
-		strlen(oPtr->namespacePtr->fullName));
+	objResultPtr = TclNewNamespaceObj(oPtr->namespacePtr);
 	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     }

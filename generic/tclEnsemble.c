@@ -28,7 +28,6 @@
  * Declarations for functions local to this file:
  */
 
-static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static Tcl_Command	InitEnsembleFromOptions(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		ReadOneEnsembleOption(Tcl_Interp *interp,
@@ -136,30 +135,6 @@ typedef struct {
     Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand hash
 				 * table. */
 } EnsembleCmdRep;
-
-/*
- *----------------------------------------------------------------------
- *
- * NewNsObj --
- *
- *	Make an object that contains a namespace's name.
- *
- * TODO:
- * 	This is a candidate for doing something better!
- *
- *----------------------------------------------------------------------
- */
-static inline Tcl_Obj *
-NewNsObj(
-    Tcl_Namespace *namespacePtr)
-{
-    Namespace *nsPtr = (Namespace *) namespacePtr;
-
-    if (namespacePtr == TclGetGlobalNamespace(nsPtr->interp)) {
-	return Tcl_NewStringObj("::", 2);
-    }
-    return Tcl_NewStringObj(nsPtr->fullName, TCL_AUTO_LENGTH);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -380,7 +355,8 @@ InitEnsembleFromOptions(
 		cmd = TclGetString(listv[0]);
 		if (!(cmd[0] == ':' && cmd[1] == ':')) {
 		    Tcl_Obj *newList = Tcl_NewListObj(len, listv);
-		    Tcl_Obj *newCmd = NewNsObj((Tcl_Namespace *) nsPtr);
+		    Tcl_Obj *newCmd = TclNewNamespaceObj(
+			    (Tcl_Namespace *) nsPtr);
 
 		    if (nsPtr->parentPtr) {
 			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
@@ -503,7 +479,7 @@ ReadOneEnsembleOption(
     case CONF_NAMESPACE: {
 	Tcl_Namespace *namespacePtr = NULL;	/* silence gcc 4 warning */
 	Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
-	Tcl_SetObjResult(interp, NewNsObj(namespacePtr));
+	Tcl_SetObjResult(interp, TclNewNamespaceObj(namespacePtr));
 	break;
     }
     case CONF_PREFIX: {
@@ -563,7 +539,7 @@ ReadAllEnsembleOptions(
 	    Tcl_NewStringObj(ensembleConfigOptions[CONF_NAMESPACE],
 		    TCL_AUTO_LENGTH));
     Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
-    Tcl_ListObjAppendElement(NULL, resultObj, NewNsObj(namespacePtr));
+    Tcl_ListObjAppendElement(NULL, resultObj, TclNewNamespaceObj(namespacePtr));
 
     /* -parameters option */
     Tcl_ListObjAppendElement(NULL, resultObj,
@@ -701,7 +677,8 @@ SetEnsembleConfigOptions(
 		cmd = TclGetString(listv[0]);
 		if (!(cmd[0] == ':' && cmd[1] == ':')) {
 		    Tcl_Obj *newList = Tcl_DuplicateObj(listObj);
-		    Tcl_Obj *newCmd = NewNsObj((Tcl_Namespace*) nsPtr);
+		    Tcl_Obj *newCmd = TclNewNamespaceObj(
+			    (Tcl_Namespace*) nsPtr);
 
 		    if (nsPtr->parentPtr) {
 			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
