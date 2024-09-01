@@ -9294,3 +9294,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
 
 - Released 8.6.14, Feb 28, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+2024-03-03 [d63061a1ac] remove private unicode 0xE000-0xF8FF from unicode
+	control group
+
