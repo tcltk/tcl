@@ -9306,7 +9306,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-03-26 Add encodings: koi8-ru, koi8-t
 2024-04-04 [7cb740] Fix Tcl_ParseArgsObjv with TCL_ARGV_GENFUNC option (gavilan)
 2024-04-05 [4b12cc] Allow format/scan %llu for positive numbers
-2024-04-08 [TIP691] Compatibility -profile option for tclsh and wish (nijtmans)
 2024-04-12 Hash speedup for pointer compare. Option TCL_HASH_KEY_DIRECT_COMPARE
 	for hash tables (sebres)
 2024-04-17 [TIP 692] Depreciate Tcl_GetAlias()
