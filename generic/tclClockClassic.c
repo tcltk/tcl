@@ -232,7 +232,7 @@ TclClockClassicInit(
 {
     const struct ClockCommand *clockCmdPtr;
     char cmdName[57];		/* Buffer large enough to hold the string
-				 *::tcl::clockclassic::GetJulianDayFromEraYearMonthDay
+				 *::tcl::clock::classic::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NUL. */
     ClockClientData *data;
     int i;
@@ -276,8 +276,8 @@ TclClockClassicInit(
      * TODO - Let Tcl_MakeEnsemble do this?
      */
 
-#define TCL_CLOCK_PREFIX_LEN 21 /* == strlen("::tcl::clockclassic::") */
-    memcpy(cmdName, "::tcl::clockclassic::", TCL_CLOCK_PREFIX_LEN);
+#define TCL_CLOCK_PREFIX_LEN 23 /* == strlen("::tcl::clock::classic::") */
+    memcpy(cmdName, "::tcl::clock::classic::", TCL_CLOCK_PREFIX_LEN);
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
@@ -287,7 +287,7 @@ TclClockClassicInit(
 
     /* Make the clock ensemble */
 
-    TclMakeEnsemble(interp, "::tcl::clockclassic", clockImplMap);
+    TclMakeEnsemble(interp, "::tcl::clock::classic", clockImplMap);
 }
 
 /*

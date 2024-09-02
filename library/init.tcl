@@ -9,6 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+# Copyright © 2004 Nathan Coulter
 # You may distribute and/or modify this program under the terms of the GNU
 # Affero General Public License as published by the Free Software Foundation,
 # either version 3 of the License, or (at your option) any later version.
@@ -113,8 +114,25 @@ if {[interp issafe]} {
 	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
     }
 
+
     # Set up the 'clock' ensemble
-    namespace eval ::tcl::clockclassic [list variable TclLibDir $::tcl_library]
+
+    apply {{} {
+	namespace export add classic clicks format microseconds \
+	    milliseconds scan seconds
+
+	namespace ensemble create -command ::clock -unknown [
+	    list ::apply [list args {
+		source [file join $::tcl_library clock.tcl]
+		return
+	    } ::tcl::clock]]
+
+	::tcl::unsupported::clock::configure -init-complete
+    } ::tcl::clock}
+
+
+    # Set up the 'clockclassic' ensemble
+    namespace eval ::tcl::clock::classic [list variable TclLibDir $::tcl_library]
 
     apply [list {} {
 	# Auto-loading stubs for 'clockclassic.tcl'
@@ -127,12 +145,9 @@ if {[interp issafe]} {
 	}
 
 	namespace eval [namespace parent] {
-	    namespace export clockclassic
+	    namespace export classic
 	}
-	namespace import [namespace parent]::clockclassic
-	rename [namespace current]::clockclassic ::clock
-
-    } ::tcl::clockclassic]
+    } ::tcl::clock::classic]
 }
 
 

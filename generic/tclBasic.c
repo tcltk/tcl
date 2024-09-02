@@ -1188,6 +1188,7 @@ Tcl_CreateInterp(void)
      * involve ensembles.
      */
 
+    TclClockInit(interp);
     TclClockClassicInit(interp);
 
     /*

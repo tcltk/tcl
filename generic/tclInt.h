@@ -3316,6 +3316,7 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    Tcl_Size *sizePtr, int *literalPtr);
 MODULE_SCOPE int	TclDictGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    const char *key, Tcl_Obj **valuePtrPtr);
+MODULE_SCOPE Tcl_Obj *	TclDictObjSmartRef(Tcl_Interp *interp, Tcl_Obj *);
 MODULE_SCOPE int	TclDictPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    const char *key, Tcl_Obj *valuePtr);
 MODULE_SCOPE int	TclDictPutString(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -3716,6 +3717,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclChanPushObjCmd;
 MODULE_SCOPE void	TclClockClassicInit(Tcl_Interp *interp);
+MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclClockOldscanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CloseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
