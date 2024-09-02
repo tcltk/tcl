@@ -9297,7 +9297,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2024-03-03 [d63061] remove private unicode 0xE000-0xF8FF from unicode
 	control group (nijtmans)
-2024-03-05 [1b8a89] TCL_PACKAGE_PATH in tclConfig.sh change fro TCL list to ";"
+2024-03-05 [1b8a89] TCL_PACKAGE_PATH in tclConfig.sh change from TCL list to ";"
 	separated items (nijtmans)
 2024-03-11 Time zones added: Alaska Standard/Daylight (nijtmans)
 2024-03-12 [1acd17] fix compiled mapped ensembles (sebres)
@@ -9310,7 +9310,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 	for hash tables (sebres)
 2024-04-17 [TIP 692] Depreciate Tcl_GetAlias()
 2024-05-04 [a5f4a7] Correct tcl::tm::path autoload (nadkarni)
-2024-05-05 [3c26de] Remove empty all items from tclCOnfig.sh path variables.
+2024-05-05 [3c26de] Remove empty all items from tclConfig.sh path variables.
 2024-05-17 [87271f] Fix crash in oo+coroutine (fellows)
 2024-05-20 [7842f3] fix crash in oo destructors in same namespace
 	(fellows,sebres)
@@ -9318,7 +9318,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-05-22 [c6897e] Fix crash due to unchecked file descriptor size
 2024-05-23 [3fc328] Fix report of non ASCII computer names on Windows (fasel)
 2024-05-27 [e3f4a8] Fix error message caused by interp limit
-2024-06-13 [1d26e5] Source files with BOM also in save interpreters
+2024-06-13 [1d26e5] Source files with BOM also in safe interpreters
 2024-07-01 [5fca83] Fix encoding system result for system locale ISO-8859-1
 2024-07-02 [0de6c1] Fix crash in [child invokehidden info frame] /nadkarni)
 2024-07-14 [74b611] Fix removal of oo variable by [info exists]
