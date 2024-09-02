@@ -32,14 +32,14 @@ Returns a list of all elements in \fItable\fR that begin with the prefix
 Returns the longest common prefix of all elements in \fItable\fR that
 begin with the prefix \fIstring\fR.
 .TP
-\fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable\fR \fIstring\fR
+\fB::tcl::prefix match\fR ?\fIoption ...\fR? \fItable string\fR
 .
 If \fIstring\fR equals one element in \fItable\fR or is a prefix to exactly
 one element, the matched element is returned. If not, the result depends
 on the \fB\-error\fR option. (It is recommended that the \fItable\fR be sorted
 before use with this subcommand, so that the list of matches presented in the
 error message also becomes sorted, though this is not strictly necessary for
-the operation of this subcommand itself.)
+the operation of this subcommand itself.) The following options are supported:
 .RS
 .TP
 \fB\-exact\fR\0
