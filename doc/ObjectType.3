@@ -8,7 +8,10 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType, Tcl_FreeInternalRep, Tcl_InitStringRep, Tcl_HasStringRep, Tcl_StoreInternalRep, Tcl_FetchInternalRep  \- manipulate Tcl value types
+Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType
+	,Tcl_FreeInternalRep, Tcl_InitStringRep, Tcl_HasStringRep
+	,Tcl_NewObjInterface, Tcl_NewObjType
+	, Tcl_StoreInternalRep, Tcl_FetchInternalRep  \- manipulate Tcl value types
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -32,6 +35,12 @@ char *
 .sp
 int
 \fBTcl_HasStringRep\fR(\fIobjPtr\fR)
+.sp
+Tcl_ObjInterface *
+Tcl_NewObjInterface()
+.sp
+Tcl_ObjType *
+\fBTcl_NewObjType\fR()
 .sp
 void
 \fBTcl_StoreInternalRep\fR(\fIobjPtr, typePtr, irPtr\fR)
@@ -70,6 +79,15 @@ The procedures in this man page manage Tcl value types (sometimes
 referred to as object types or \fBTcl_ObjType\fRs for historical reasons).
 They are used to register new value types, look up types,
 and force conversions from one type to another.
+.PP
+\fBTcl_NewObjType\fR allocates a new \fBTcl_ObjType\fR and returns a
+pointer to it.
+.PP
+\fBTcl_NewObjInterface\fR allocates a new \fBTcl_ObjInterface\fR and returns a
+pointer to it.
+.PP
+\fBTcl_ObjTypeSetInterface\fR sets the given \fBTcl_ObjInterface\fB for the
+given \fBTcl_ObjType\fR.
 .PP
 \fBTcl_RegisterObjType\fR registers a new Tcl value type
 in the table of all value types that \fBTcl_GetObjType\fR
@@ -154,13 +172,12 @@ This definition permits us to pass internal representations and pointers to
 them as arguments and results in public routines.
 .SH "THE TCL_OBJTYPE STRUCTURE"
 .PP
-Extension writers can define new value types by defining four to eight
-procedures and initializing a Tcl_ObjType structure to describe the
-type.  Extension writers may also pass a pointer to their Tcl_ObjType
-structure to \fBTcl_RegisterObjType\fR if they wish to permit other
-extensions to look up their Tcl_ObjType by name with the
-\fBTcl_GetObjType\fR routine.  The \fBTcl_ObjType\fR structure is
-defined as follows:
+Extension writers can define new value types by defining procedures for the
+funtion types described below.  An extension may also pass to
+\fBTcl_RegisterObjType\fR a pointer to a custom Tcl_ObjType structure in order
+to permit other extensions to look up the Tcl_ObjType by name with the
+\fBTcl_GetObjType\fR routine.  The \fBTcl_ObjType\fR structure is defined as
+follows:
 .PP
 .CS
 typedef struct {
@@ -170,16 +187,6 @@ typedef struct {
     Tcl_UpdateStringProc *\fIupdateStringProc\fR;
     Tcl_SetFromAnyProc *\fIsetFromAnyProc\fR;
     size_t \fIversion\fR;
-    /* List emulation functions - ObjType Version 1 & 2 */
-    Tcl_ObjTypeLengthProc *lengthProc;
-    /* List emulation functions - ObjType Version 2 */
-    Tcl_ObjTypeIndexProc *\fIindexProc\fR;
-    Tcl_ObjTypeSliceProc *\fIsliceProc\fR;
-    Tcl_ObjTypeReverseProc *\fIreverseProc\fR;
-    Tcl_ObjTypeGetElements *\fIgetElementsProc\fR;
-    Tcl_ObjTypeSetElement *\fIsetElementProc\fR;
-    Tcl_ObjTypeReplaceProc *\fIreplaceProc\fR;
-    Tcl_ObjTypeInOperatorProc *\fIinOperProc\fR;
 } \fBTcl_ObjType\fR;
 .CE
 .SS "THE NAME FIELD"
@@ -330,129 +337,60 @@ The \fIversion\fR member provides for future extensibility of the
 structure and should be set to 0 for compatibility
 of ObjType definitions prior to version 9.0. Specifics about versions
 will be described further in the sections below.
-.SH "INTERFACES"
+.SH "OTHER OPERATIONS"
 .PP
-Additional fields in Tcl_ObjType structure expose interfaces for data types
-that a value may represent.  For example, if the list interface functions are
-implemented for a Tcl_ObjType, then Tcl's list procedures use that interface to
-operate on the value as a list.  It is not necessary to implement all functions
-for an interface.  When a needed function is NULL, a procedure using the
-interface can attempt to convert the internal Tcl_ObjType to one that it can
-work with.  For example, a procedure like \fBlndex\fR might attempt to convert
-the internal type of a Tcl_Obj to \fBtclListType\fR.  
-.SS "SCALAR VALUE TYPES"
+A procedure for each of the type definitions below may be registered for
+applying an operation to the Tcl_Obj value.  For example, if a function of type
+\fITcl_ObjInterfaceStringLengthProc\fR is registered, then if provides the
+length of the string representation of the value.  If a function of type
+\fITcl_ObjInterfaceListLengthProc\fR is registered, then it provides the number
+of items in the list represented by the value.  It is not necessary to
+implement all procedures.  If a particular procedure is NULL, Tcl attempts
+to interpret the value as a type which supports the requested operation.  For
+example, to perform a list index operation, The Tcl_Obj may be interpreted as
+\fBtclListType\fR if possible.
 .PP
-For a custom value type that is scalar or atomic in nature, i.e., not
-a divisible collection, version 0 is
-recommended. In this case, List commands treat the scalar value
-as if it where a list of length 1, and do not convert the value to a List
-type.
-.SS "VERSION 2: ABSTRACT LISTS"
-.PP
-Version 2, \fBTCL_OBJTYPE_V2\fR, allows full List support when the
-functions described below are provided.  This allows for script level
-use of the List commands without causing the type of the Tcl_Obj value
-to be converted to a list.
-.SS "THE LENGTHPROC FIELD"
-.PP
-The \fBLengthProc\fR function correlates with the \fBTcl_ListObjLength\fR
-C API. The function returns the number of elements in the list. It
-is used in every List operation and is required for all Abstract List
-implementations.
+See the following typedef lines in
+.cs
+tcl.h
+.ce
+for the procedures that may registered.
+
+.RS
+list operations
+.RS
 .CS
-typedef Tcl_Size
-(Tcl_ObjTypeLengthProc) (Tcl_Obj *listPtr);
+Tcl_ObjInterfaceListAllProc
+Tcl_ObjInterfaceListAppendProc
+Tcl_ObjInterfaceListAppendlistProc
+Tcl_ObjInterfaceListContainsProc
+Tcl_ObjInterfaceListIndexProc
+Tcl_ObjInterfaceListIndexEndProc
+Tcl_ObjInterfaceListIsSortedProc
+Tcl_ObjInterfaceListLengthProc
+Tcl_ObjInterfaceListRangeProc
+Tcl_ObjInterfaceListRangeEndProc
+Tcl_ObjInterfaceListReplaceProc
+Tcl_ObjInterfaceListReplaceListProc
+Tcl_ObjInterfaceListReverseProc
+Tcl_ObjInterfaceListSetProc
+Tcl_ObjInterfaceListSetDeepProc
 .CE
-.PP
-.SS "THE INDEXPROC FIELD"
-.PP
-The \fBIndexProc\fR function correlates with with the
-\fBTcl_ListObjIndex\fR C API. The function returns a Tcl_Obj value for
-the element at the specified index.
+.RE
+
+string operations
+.RS
 .CS
-typedef int (\fBTcl_ObjTypeIndexProc\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    Tcl_Size index,
-    Tcl_Obj** elemObj);
+Tcl_ObjInterfaceStringIndexProc
+Tcl_ObjInterfaceStringIndexEndProc
+Tcl_ObjInterfaceStringIsEmptyProc
+Tcl_ObjInterfaceStringLengthProc
+Tcl_ObjInterfaceStringRangeProc
+Tcl_ObjInterfaceStringRangeEndProc
 .CE
-.SS "THE SLICEPROC FIELD"
-.PP
-The \fBSliceProc\fR correlates with the \fBlrange\fR command,
-returning a new List or Abstract List for the portion of the original
-list specified.
-.CS
-typedef int (\fBTcl_ObjTypeSliceProc\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    Tcl_Size fromIdx,
-    Tcl_Size toIdx,
-    Tcl_Obj **newObjPtr);
-.CE
-.SS "THE REVERSEPROC FIELD"
-.PP
-The \fBReverseProc\fR correlates with the \fBlreverse\fR command,
-returning a List or Abstract List that has the same elements as the
-input Abstract List, with the elements in the reverse order.
-.CS
-typedef int (\fBTcl_ObjTypeReverseProc\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    Tcl_Obj **newObjPtr);
-.CE
-.SS "THE GETELEMENTS FIELD"
-.PP
-The \fBGetElements\fR function returns a count and a pointer to an
-array of Tcl_Obj values for the entire Abstract List. This
-correlates to the \fBTcl_ListObjGetElements\fR C API call.
-.CS
-typedef int (\fBTcl_ObjTypeGetElements\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    Tcl_Size *objcptr,
-    Tcl_Obj ***objvptr);
-.CE
-.SS "THE SETELEMENT FIELD"
-.PP
-The \fBSetElement\fR function replaces the element within the
-specified list at the give index. This function correlates to the
-\fBlset\fR command.
-.CS
-typedef Tcl_Obj *(\fBTcl_ObjTypeSetElement\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listPtr,
-    Tcl_Size indexCount,
-    Tcl_Obj *const indexArray[],
-    Tcl_Obj *valueObj);
-.CE
-.SS "REPLACEPROC FIELD"
-.PP
-The \fBReplaceProc\fR returns a new list after modifying the list
-replacing the elements to be deleted, and adding the elements to be
-inserted. This function correlates to the \fBTcl_ListObjReplace\fR C API.
-.CS
-typedef int (\fBTcl_ObjTypeReplaceProc\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *listObj,
-    Tcl_Size first,
-    Tcl_Size numToDelete,
-    Tcl_Size numToInsert,
-    Tcl_Obj *const insertObjs[]);
-.CE
-.SS "THE INOPERPROC FIELD"
-.PP
-The \fBInOperProc\fR function determines whether the value is present in the
-given list, according to equivalent string comparison of elements. The
-\fBboolResult\fR is set to 1 (true) if the value is present, and 0
-(false) if it is not present. This function implements the "in" and
-"ni" math operators for an abstract list.
-.CS
-typedef int (\fBTcl_ObjTypeInOperatorProc\fR) (
-    Tcl_Interp *interp,
-    Tcl_Obj *valueObj,
-    Tcl_Obj *listObj,
-    int *boolResult);
-.CE
+.RE
+.RE
+
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 The \fIobjPtr\fR argument to \fBTcl_AppendAllObjTypes\fR should be an unshared
