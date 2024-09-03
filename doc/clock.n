@@ -1,6 +1,7 @@
 '\"
 '\" Generated from file './doc/clock.dt' by tcllib/doctools with format 'nroff'
 '\" Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+'\" Copyright (c) 2024 Nathan Coulter.
 '\"
 .TH "clock" n 8.5 Tcl "Tcl Built-In Commands"
 .so man.macros
@@ -12,6 +13,7 @@ clock \- Obtain and manipulate dates and times
 package require \fBTcl 8.5-\fR
 
 \fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+\fBclock classic\fR \fI...\fR
 \fBclock clicks\fR ?\fI\-option\fR?
 \fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
 \fBclock microseconds\fR
@@ -32,6 +34,10 @@ subcommands that determine what action is carried out by the command.
 Adds a (possibly negative) offset to a time that is expressed as an
 integer number of seconds.  See \fBCLOCK ARITHMETIC\fR for a full description.
 .\" METHOD: clicks
+.TP
+\fBclock classic\fR \fI...\fR
+.
+See the documentation for clock in Tcl version 8.6.
 .TP
 \fBclock clicks\fR ?\fI\-option\fR?
 .
