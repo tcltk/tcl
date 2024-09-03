@@ -4304,7 +4304,8 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status = TCL_ERROR, keyword, useDoubles = 0, allowedArgs = NumericArg;
+    int status = TCL_ERROR, keyword, allowedArgs = NumericArg;
+    int useDoubles = 0;
     int remNums = 3;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
@@ -4349,7 +4350,7 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles |= (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    useDoubles += (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
 	    value_i++;
 	    break;
 
@@ -4378,6 +4379,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
+        useDoubles = 0; // Can only have Integer value. If a fractional value
+                        // is given, this will fail later. In other words,
+                        // "3.0" is allowed and used as Integer, but "3.1"
+                        // will be flagged as an error. (bug f4a4bd7f1070)
 	break;
 
     case 11:			/* lseq n n */
@@ -4498,6 +4503,8 @@ Tcl_LseqObjCmd(
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, tclDoubleType)) {
 	double d;
+        // Don't consider Count type to indicate using double values in seqence
+        useDoubles -= (useDoubles > 0) ? 1 : 0;
 	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
 	if (floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {

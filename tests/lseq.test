@@ -151,10 +151,11 @@ test lseq-1.22 {n n by -n} {
     lseq 84 66 by -3
 } {84 81 78 75 72 69 66}
 
-test lseq-1.23 {consistence, accept double count representable as integer (but use double in series)} {
+test lseq-1.23 {consistence, accept double count representable as integer (but use double in series when arguments other than count value are of type double)} {
     list [lseq 0.0 2.0] [lseq 3.0] [lseq 0 count 3.0] \
 	 [lseq 0.0 count 3.0] [lseq 0 count 3.0 by 1.0]
-} [lrepeat 5 {0.0 1.0 2.0}]
+} {{0.0 1.0 2.0} {0 1 2} {0 1 2} {0.0 1.0 2.0} {0.0 1.0 2.0}}
+
 test lseq-1.24 {consistence, use double (even if representable as integer) in all variants, if contains a double somewhere} {
     list [lseq 0.0 2] [lseq 0 2.0] [lseq 0.0 count 3] \
 	 [lseq 0 count 3 by 1.0] [lseq 0 .. 2.0] [lseq 0 to 2 by 1.0]
@@ -272,7 +273,7 @@ test lseq-2.19 {expressions as indices} {
 test lseq-2.20 {expressions as indices, no duplicative eval of expr} {
     set i 1
     list [lseq {[incr i]}] $i [lseq {0 + [incr i]}] $i [lseq {0.0 + [incr i]}] $i
-} {{0 1} 2 {0 1 2} 3 {0.0 1.0 2.0 3.0} 4}
+} {{0 1} 2 {0 1 2} 3 {0 1 2 3} 4}
 
 test lseq-3.0 {expr error: don't swalow expr error (here: divide by zero)} -body {
     set i 0; lseq {3/$i}
@@ -859,7 +860,19 @@ test lseq-bug-578b7e273c03-2 {Arithmetic Series Objects get wrong precision when
     lappend ll [llength [lseq 0 count 200 by .011]]
 } -result {100 200 100 200 100 200}
 
-
+test lseq-bug-f4a4bd7f1070-1 {} -body {
+    set result {}
+    lappend result [catch {lseq 3.1} msg]
+    lappend result $msg
+    lappend result [catch {lseq 5 count 3.0} msg]
+    lappend result $msg
+    lappend result [lseq 3]
+    lappend result [lseq 3.0]
+    lappend result [lseq 5.1e1]
+    lappend result [string compare [lseq 3] [lseq 3.0]]
+    set result
+} -result {1 {expected integer but got "3.1"} 0 {5 6 7} {0 1 2} {0 1 2} {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50} 0}
+    
 # cleanup
 ::tcltest::cleanupTests
 
