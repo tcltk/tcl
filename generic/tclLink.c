@@ -525,7 +525,7 @@ GetDouble(
 	return 0;
     } else {
 #ifdef ACCEPT_NAN
-	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, tclDoubleType);
+	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, tclDoubleTypePtr);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;

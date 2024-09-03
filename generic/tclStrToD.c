@@ -1395,7 +1395,7 @@ TclParseNumber(
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
-		    objPtr->typePtr = tclIntType;
+		    objPtr->typePtr = tclIntTypePtr;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-octalSignificandWide);
@@ -1431,7 +1431,7 @@ TclParseNumber(
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
-		    objPtr->typePtr = tclIntType;
+		    objPtr->typePtr = tclIntTypePtr;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-significandWide);
@@ -1463,7 +1463,7 @@ TclParseNumber(
 	     * k = numTrailZeros+exponent-numDigitsAfterDp.
 	     */
 
-	    objPtr->typePtr = tclDoubleType;
+	    objPtr->typePtr = tclDoubleTypePtr;
 	    if (exponentSignum) {
 		/*
 		 * At this point exponent>=0, so the following calculation
@@ -1514,14 +1514,14 @@ TclParseNumber(
 	    } else {
 		objPtr->internalRep.doubleValue = HUGE_VAL;
 	    }
-	    objPtr->typePtr = tclDoubleType;
+	    objPtr->typePtr = tclDoubleTypePtr;
 	    break;
 
 #ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
 	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
-	    objPtr->typePtr = tclDoubleType;
+	    objPtr->typePtr = tclDoubleTypePtr;
 	    break;
 #endif
 	case INITIAL:

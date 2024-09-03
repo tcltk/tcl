@@ -4501,7 +4501,7 @@ Tcl_LseqObjCmd(
     }
 
     /* Count needs to be integer, so try to convert if possible */
-    if (elementCount && TclHasInternalRep(elementCount, tclDoubleType)) {
+    if (elementCount && TclHasInternalRep(elementCount, tclDoubleTypePtr)) {
 	double d;
         // Don't consider Count type to indicate using double values in seqence
         useDoubles -= (useDoubles > 0) ? 1 : 0;

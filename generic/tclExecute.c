@@ -464,11 +464,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasInternalRep((objPtr), tclIntType))					\
+    ((TclHasInternalRep((objPtr), tclIntTypePtr))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)					\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasInternalRep((objPtr), tclDoubleType)				\
+    TclHasInternalRep((objPtr), tclDoubleTypePtr)				\
 	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -6597,7 +6597,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasInternalRep(valuePtr, tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr, tclBooleanTypePtr)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -8652,7 +8652,7 @@ ExecuteExtendedBinaryMathOp(
     overflowExpon:
 
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
-		|| !TclHasInternalRep(value2Ptr, tclIntType)
+		|| !TclHasInternalRep(value2Ptr, tclIntTypePtr)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));

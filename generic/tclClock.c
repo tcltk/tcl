@@ -1538,7 +1538,7 @@ ClockGetdatefieldsObjCmd(
      * that it isn't.
      */
 
-    if (TclHasInternalRep(objv[1], tclBignumType)) {
+    if (TclHasInternalRep(objv[1], tclBignumTypePtr)) {
 	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
@@ -3443,7 +3443,7 @@ ClockParseFmtScnArgs(
 		goto baseNow;
 	    }
 
-	    if (TclHasInternalRep(baseObj, tclBignumType)) {
+	    if (TclHasInternalRep(baseObj, tclBignumTypePtr)) {
 		goto baseOverflow;
 	    }
 
@@ -3461,7 +3461,7 @@ ClockParseFmtScnArgs(
 	 * Note the year is currently an integer, thus avoid to overflow it also.
 	 */
 
-	if (TclHasInternalRep(baseObj, tclBignumType)
+	if (TclHasInternalRep(baseObj, tclBignumTypePtr)
 		|| baseVal < TCL_MIN_SECONDS || baseVal > TCL_MAX_SECONDS) {
 	baseOverflow:
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
@@ -4440,7 +4440,7 @@ ClockAddObjCmd(
 		&unitIndex) != TCL_OK) {
 	    goto done;
 	}
-	if (TclHasInternalRep(objv[i], tclBignumType)
+	if (TclHasInternalRep(objv[i], tclBignumTypePtr)
 		|| offs > (unitIndex < CLC_ADD_HOURS ? 0x7fffffff : TCL_MAX_SECONDS)
 		|| offs < (unitIndex < CLC_ADD_HOURS ? -0x7fffffff : TCL_MIN_SECONDS)) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
