@@ -9357,4 +9357,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-08-18 [6a8c58] Fix Windows NTFS alternate data streams (ADS) accessability
 	(nijtmans)
 
+2024-09-07 tzdata updated to Olson's tzdata2024b (nijtmans)
+
 - Released 8.6.15, Sep 13, 2024 - details at https://core.tcl-lang.org/tcl/ -
