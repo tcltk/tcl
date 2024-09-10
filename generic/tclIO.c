@@ -326,7 +326,7 @@ static int	      WillRead(Channel *chanPtr);
 typedef struct ResolvedChanName {
     ChannelState *statePtr;	/* The saved lookup result */
     Tcl_Interp *interp;		/* The interp in which the lookup was done. */
-    size_t epoch;		/* The epoch of the channel when the lookup
+    Tcl_Size epoch;		/* The epoch of the channel when the lookup
 				 * was done. Use to verify validity. */
     size_t refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
