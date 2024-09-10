@@ -671,13 +671,13 @@ proc ::tcl::clock::EnterLocale { locale } {
 proc ::tcl::clock::_hasRegistry {} {
     set res 0
     if { $::tcl_platform(platform) eq {windows} } {
-	if { [catch { package require registry 1.1 }] } {
+	if { [catch { package require registry 1.3 }] } {
 	    # try to load registry directly from root (if uninstalled / development env):
 	    if {[regexp {[/\\]library$} [info library]]} {catch {
 		load [lindex \
 			[glob -tails -directory [file dirname [info nameofexecutable]] \
-			    tclreg*[expr {[::tcl::pkgconfig get debug] ? {g} : {}}].dll] 0 \
-		] registry
+			    tcl9registry*[expr {[::tcl::pkgconfig get debug] ? {g} : {}}].dll] 0 \
+		] Registry
 	    }}
 	}
 	if { [namespace which -command ::registry] ne "" } {
