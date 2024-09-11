@@ -101,7 +101,7 @@ main(
 	case 'l':
 	    if (argc < 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-	       		"usage: %s -l <linker option> ?<mandatory option> ...?\n"
+			"usage: %s -l <linker option> ?<mandatory option> ...?\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -493,9 +493,9 @@ IsIn(
 
 /*
  * GetVersionFromFile --
- * 	Looks for a match string in a file and then returns the version
- * 	following the match where a version is anything acceptable to
- * 	package provide or package ifneeded.
+ *	Looks for a match string in a file and then returns the version
+ *	following the match where a version is anything acceptable to
+ *	package provide or package ifneeded.
  */
 
 static const char *

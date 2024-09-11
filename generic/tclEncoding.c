@@ -2453,7 +2453,7 @@ UtfToUtfProc(
 
     if (flags & TCL_ENCODING_START) {
         /* *statePtr will hold high surrogate in a split surrogate pair */
-    	*statePtr = 0;
+	*statePtr = 0;
     }
     result = TCL_OK;
 
