@@ -205,9 +205,9 @@ Tcl_ProcObjCmd(
 
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, objv[2],
 	    objv[3], &procPtr) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	Tcl_AddErrorInfo(interp, simpleName);
-	Tcl_AddErrorInfo(interp, "\")");
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (creating proc \"%s\")",
+		simpleName));
 	return TCL_ERROR;
     }
 

@@ -1524,10 +1524,9 @@ TclGetOpenMode(
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
     invAccessMode:
 	if (interp != NULL) {
-	    Tcl_AddErrorInfo(interp,
-		    "\n    while processing open access modes \"");
-	    Tcl_AddErrorInfo(interp, modeString);
-	    Tcl_AddErrorInfo(interp, "\"");
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    while processing open access modes \"%s\"",
+		    modeString));
 	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	if (modeArgv) {
@@ -1545,8 +1544,8 @@ TclGetOpenMode(
 	    invRW:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", flag));
+			    "invalid access mode \"%s\": modes RDONLY, "
+			    "RDWR, and WRONLY cannot be combined", flag));
 		}
 		goto invAccessMode;
 	    }

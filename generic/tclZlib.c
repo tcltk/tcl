@@ -2572,9 +2572,8 @@ ZlibPushSubcmd(
     return TCL_OK;
 
   genericOptionError:
-    Tcl_AddErrorInfo(interp, "\n    (in ");
-    Tcl_AddErrorInfo(interp, pushOptions[option]);
-    Tcl_AddErrorInfo(interp, " option)");
+    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    (in %s option)", pushOptions[option]));
     return TCL_ERROR;
 }
 

@@ -792,8 +792,6 @@ TclNRAssembleObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
-    Tcl_Obj* backtrace;		/* Object where extra error information is
-				 * constructed. */
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
@@ -811,12 +809,9 @@ TclNRAssembleObjCmd(
      */
 
     if (codePtr == NULL) {
-	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AppendObjToErrorInfo(interp, objv[0]);
-	Tcl_AddErrorInfo(interp, "\" body, line ");
-	TclNewIntObj(backtrace, Tcl_GetErrorLine(interp));
-	Tcl_AppendObjToErrorInfo(interp, backtrace);
-	Tcl_AddErrorInfo(interp, ")");
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%s\" body, line %d)",
+		TclGetString(objv[0]), Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
