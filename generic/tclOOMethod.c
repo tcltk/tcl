@@ -145,7 +145,7 @@ TclNewInstanceMethod(
     Tcl_HashEntry *hPtr;
     int isNew;
 
-    if (nameObj == NULL) {
+    if (!nameObj) {
 	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	mPtr->namePtr = NULL;
 	mPtr->refCount = 1;
@@ -165,7 +165,7 @@ TclNewInstanceMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
+	if (mPtr->typePtr && mPtr->typePtr->deleteProc) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
     }
@@ -262,7 +262,7 @@ TclNewMethod(
     Tcl_HashEntry *hPtr;
     int isNew;
 
-    if (nameObj == NULL) {
+    if (!nameObj) {
 	mPtr = (Method *) Tcl_Alloc(sizeof(Method));
 	mPtr->namePtr = NULL;
 	mPtr->refCount = 1;
@@ -277,7 +277,7 @@ TclNewMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = (Method *) Tcl_GetHashValue(hPtr);
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
+	if (mPtr->typePtr && mPtr->typePtr->deleteProc) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
     }
@@ -359,11 +359,11 @@ void
 TclOODelMethodRef(
     Method *mPtr)
 {
-    if ((mPtr != NULL) && (mPtr->refCount-- <= 1)) {
-	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
+    if (mPtr && (mPtr->refCount-- <= 1)) {
+	if (mPtr->typePtr && mPtr->typePtr->deleteProc) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
-	if (mPtr->namePtr != NULL) {
+	if (mPtr->namePtr) {
 	    Tcl_DecrRefCount(mPtr->namePtr);
 	}
 
@@ -389,7 +389,7 @@ TclOONewBasicMethod(
 				/* Name of the method, whether it is public,
 				 * and the function to implement it. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, -1);
+    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
 
     TclNewMethod((Tcl_Class) clsPtr, namePtr,
 	    (dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
@@ -432,9 +432,9 @@ TclOONewProcInstanceMethod(
     pmPtr = AllocProcedureMethodRecord(flags);
     method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
-    if (method == NULL) {
+    if (!method) {
 	Tcl_Free(pmPtr);
-    } else if (pmPtrPtr != NULL) {
+    } else if (pmPtrPtr) {
 	*pmPtrPtr = pmPtr;
     }
     return (Method *) method;
@@ -474,7 +474,7 @@ TclOONewProcMethod(
     const char *procName;
     Tcl_Method method;
 
-    if (argsObj == NULL) {
+    if (!argsObj) {
 	argsLen = TCL_INDEX_NONE;
 	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
@@ -492,9 +492,9 @@ TclOONewProcMethod(
     if (argsLen == TCL_INDEX_NONE) {
 	Tcl_DecrRefCount(argsObj);
     }
-    if (method == NULL) {
+    if (!method) {
 	Tcl_Free(pmPtr);
-    } else if (pmPtrPtr != NULL) {
+    } else if (pmPtrPtr) {
 	*pmPtrPtr = pmPtr;
     }
 
@@ -735,12 +735,12 @@ InvokeProcedureMethod(
 		context)->callPtr->flags & (CONSTRUCTOR | DESTRUCTOR);
 	pmPtr->interp = interp;
 	pmPtr->method = method;
-	if (pmPtr->gfivProc != NULL) {
+	if (pmPtr->gfivProc) {
 	    pmPtr->efi.fields[1].name = "";
 	    pmPtr->efi.fields[1].proc = pmPtr->gfivProc;
 	    pmPtr->efi.fields[1].clientData = pmPtr;
 	} else {
-	    if (Tcl_MethodDeclarerObject(method) != NULL) {
+	    if (Tcl_MethodDeclarerObject(method)) {
 		pmPtr->efi.fields[1].name = "object";
 	    } else {
 		pmPtr->efi.fields[1].name = "class";
@@ -773,7 +773,7 @@ InvokeProcedureMethod(
      * veto the call.
      */
 
-    if (pmPtr->preCallProc != NULL) {
+    if (pmPtr->preCallProc) {
 	int isFinished;
 
 	result = pmPtr->preCallProc(pmPtr->clientData, interp, context,
@@ -844,6 +844,7 @@ PushMethodCallFrame(
 				 * frame. */
 {
     Namespace *nsPtr = (Namespace *) contextPtr->oPtr->namespacePtr;
+    Foundation *fPtr = GetFoundation(interp);
     int result;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
     ByteCode *codePtr;
@@ -853,17 +854,17 @@ PushMethodCallFrame(
      */
 
     if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	fdPtr->nameObj = contextPtr->oPtr->fPtr->constructorName;
+	fdPtr->nameObj = fPtr->constructorName;
 	fdPtr->errProc = ConstructorErrorHandler;
     } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	fdPtr->nameObj = contextPtr->oPtr->fPtr->destructorName;
+	fdPtr->nameObj = fPtr->destructorName;
 	fdPtr->errProc = DestructorErrorHandler;
     } else {
 	fdPtr->nameObj = Tcl_MethodName(
 		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr));
 	fdPtr->errProc = MethodErrorHandler;
     }
-    if (pmPtr->errProc != NULL) {
+    if (pmPtr->errProc) {
 	fdPtr->errProc = pmPtr->errProc;
     }
 
@@ -875,7 +876,7 @@ PushMethodCallFrame(
     if (pmPtr->flags & USE_DECLARER_NS) {
 	Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
-	if (mPtr->declaringClassPtr != NULL) {
+	if (mPtr->declaringClassPtr) {
 	    nsPtr = (Namespace *)
 		    mPtr->declaringClassPtr->thisPtr->namespacePtr;
 	} else {
@@ -941,7 +942,7 @@ TclOOSetupVariableResolver(
     Tcl_ResolverInfo info;
 
     Tcl_GetNamespaceResolvers(nsPtr, &info);
-    if (info.compiledVarResProc == NULL) {
+    if (!info.compiledVarResProc) {
 	Tcl_SetNamespaceResolvers(nsPtr, NULL, ProcedureMethodVarResolver,
 		ProcedureMethodCompiledVarResolver);
     }
@@ -997,7 +998,7 @@ ProcedureMethodCompiledVarConnect(
      * in a procedure of that namespace) then we do nothing.
      */
 
-    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+    if (!framePtr || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	return NULL;
     }
     contextPtr = (CallContext *) framePtr->clientData;
@@ -1018,8 +1019,7 @@ ProcedureMethodCompiledVarConnect(
      */
 
     varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
-    if (contextPtr->callPtr->chain[contextPtr->index]
-	    .mPtr->declaringClassPtr != NULL) {
+    if (contextPtr->callPtr->chain[contextPtr->index].mPtr->declaringClassPtr) {
 	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->privateVariables) {
 	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
@@ -1114,7 +1114,7 @@ ProcedureMethodCompiledVarResolver(
      * which look like array accesses. Both will lead us astray.
      */
 
-    if (strstr(TclGetString(variableObj), "::") != NULL ||
+    if (strstr(TclGetString(variableObj), "::") ||
 	    Tcl_StringMatch(TclGetString(variableObj), "*(*)")) {
 	Tcl_DecrRefCount(variableObj);
 	return TCL_CONTINUE;
@@ -1176,7 +1176,7 @@ RenderDeclarerName(
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
     Tcl_Object object = Tcl_MethodDeclarerObject(pmPtr->method);
 
-    if (object == NULL) {
+    if (!object) {
 	object = Tcl_GetClassAsObject(Tcl_MethodDeclarerClass(pmPtr->method));
     }
     return TclOOObjectName(pmPtr->interp, (Object *) object);
@@ -1217,11 +1217,11 @@ MethodErrorHandler(
 	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
-    if (mPtr->declaringObjectPtr != NULL) {
+    if (mPtr->declaringObjectPtr) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
-	if (mPtr->declaringClassPtr == NULL) {
+	if (!mPtr->declaringClassPtr) {
 	    Tcl_Panic("method not declared in class or object");
 	}
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -1249,11 +1249,11 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     Tcl_Size objectNameLen;
 
-    if (mPtr->declaringObjectPtr != NULL) {
+    if (mPtr->declaringObjectPtr) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
-	if (mPtr->declaringClassPtr == NULL) {
+	if (!mPtr->declaringClassPtr) {
 	    Tcl_Panic("method not declared in class or object");
 	}
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -1280,11 +1280,11 @@ DestructorErrorHandler(
     const char *objectName, *kindName;
     Tcl_Size objectNameLen;
 
-    if (mPtr->declaringObjectPtr != NULL) {
+    if (mPtr->declaringObjectPtr) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
     } else {
-	if (mPtr->declaringClassPtr == NULL) {
+	if (!mPtr->declaringClassPtr) {
 	    Tcl_Panic("method not declared in class or object");
 	}
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -1353,8 +1353,8 @@ CloneProcedureMethod(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
-	    if (localPtr->defValuePtr != NULL) {
+		    Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH));
+	    if (localPtr->defValuePtr) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
@@ -1426,7 +1426,7 @@ TclOONewForwardInstanceMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
 	return NULL;
     }
@@ -1465,7 +1465,7 @@ TclOONewForwardMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
 	return NULL;
     }
@@ -1714,7 +1714,7 @@ TclMethodIsType(
     Method *mPtr = (Method *) method;
 
     if (mPtr->typePtr == typePtr) {
-	if (clientDataPtr != NULL) {
+	if (clientDataPtr) {
 	    *clientDataPtr = mPtr->clientData;
 	}
 	return 1;
@@ -1735,7 +1735,7 @@ Tcl_MethodIsType(
 		"Tcl_MethodIsType", "TCL_OO_METHOD_VERSION_1");
     }
     if (mPtr->typePtr == typePtr) {
-	if (clientDataPtr != NULL) {
+	if (clientDataPtr) {
 	    *clientDataPtr = mPtr->clientData;
 	}
 	return 1;
@@ -1756,7 +1756,7 @@ Tcl_MethodIsType2(
 		"Tcl_MethodIsType2", "TCL_OO_METHOD_VERSION_2");
     }
     if (mPtr->typePtr == (const Tcl_MethodType *) typePtr) {
-	if (clientDataPtr != NULL) {
+	if (clientDataPtr) {
 	    *clientDataPtr = mPtr->clientData;
 	}
 	return 1;
@@ -1805,7 +1805,7 @@ TclOONewProcInstanceMethodEx(
     Tcl_Method method = (Tcl_Method) TclOONewProcInstanceMethod(interp,
 	    (Object *) oPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
 
-    if (method == NULL) {
+    if (!method) {
 	return NULL;
     }
     pmPtr->flags = flags & USE_DECLARER_NS;
@@ -1813,7 +1813,7 @@ TclOONewProcInstanceMethodEx(
     pmPtr->postCallProc = postCallPtr;
     pmPtr->errProc = errProc;
     pmPtr->clientData = clientData;
-    if (internalTokenPtr != NULL) {
+    if (internalTokenPtr) {
 	*internalTokenPtr = pmPtr;
     }
     return method;
@@ -1845,7 +1845,7 @@ TclOONewProcMethodEx(
     Tcl_Method method = (Tcl_Method) TclOONewProcMethod(interp,
 	    (Class *) clsPtr, flags, nameObj, argsObj, bodyObj, &pmPtr);
 
-    if (method == NULL) {
+    if (!method) {
 	return NULL;
     }
     pmPtr->flags = flags & USE_DECLARER_NS;
@@ -1853,7 +1853,7 @@ TclOONewProcMethodEx(
     pmPtr->postCallProc = postCallPtr;
     pmPtr->errProc = errProc;
     pmPtr->clientData = clientData;
-    if (internalTokenPtr != NULL) {
+    if (internalTokenPtr) {
 	*internalTokenPtr = pmPtr;
     }
     return method;

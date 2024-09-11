@@ -182,7 +182,7 @@ TclOODeleteContext(
     Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
-    if (oPtr != NULL) {
+    if (oPtr) {
 	TclStackFree(oPtr->fPtr->interp, contextPtr);
 
 	/*
@@ -233,7 +233,7 @@ void
 TclOODeleteChain(
     CallChain *callPtr)
 {
-    if (callPtr == NULL || callPtr->refCount-- > 1) {
+    if (!callPtr || callPtr->refCount-- > 1) {
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
@@ -800,10 +800,10 @@ AddStandardMethodName(
 	    int isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
 		    ? IN_LIST : 0;
 
-	    isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+	    isWanted |= (mPtr->typePtr ? 0 : NO_IMPLEMENTATION);
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
-		&& mPtr->typePtr != NULL) {
+		&& mPtr->typePtr) {
 	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
@@ -839,7 +839,7 @@ AddInstancePrivateToCallContext(
 
     if (oPtr->methodsPtr) {
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodName);
-	if (hPtr != NULL) {
+	if (hPtr) {
 	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, NULL, NULL, flags);
@@ -889,7 +889,7 @@ AddSimpleChainToCallContext(
     if (!(flags & (KNOWN_STATE | SPECIAL)) && oPtr->methodsPtr) {
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodNameObj);
 
-	if (hPtr != NULL) {
+	if (hPtr) {
 	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	    if (!IS_PRIVATE(mPtr)) {
 		if (WANT_PUBLIC(flags)) {
@@ -919,7 +919,7 @@ AddSimpleChainToCallContext(
 	}
 	if (oPtr->methodsPtr && !blockedUnexported) {
 	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodNameObj);
-	    if (hPtr != NULL) {
+	    if (hPtr) {
 		mPtr = (Method *) Tcl_GetHashValue(hPtr);
 		if (!IS_PRIVATE(mPtr)) {
 		    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
@@ -986,7 +986,7 @@ AddMethodToCallChain(
      * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
+    if (!mPtr || !mPtr->typePtr || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 
@@ -1004,7 +1004,7 @@ AddMethodToCallChain(
 
     if (!WANT_UNEXPORTED(callPtr->flags)
 	    && IS_UNEXPORTED(mPtr)
-	    && (mPtr->declaringClassPtr != NULL)
+	    && mPtr->declaringClassPtr
 	    && (mPtr->declaringClassPtr != cbPtr->oPtr->selfCls)) {
 	return;
     }
@@ -1173,6 +1173,7 @@ TclOOGetCallContext(
 				 * to be in the same object as the
 				 * methodNameObj. */
 {
+    Foundation *fPtr = oPtr->fPtr;
     CallContext *contextPtr;
     CallChain *callPtr;
     ChainBuilder cb;
@@ -1181,10 +1182,11 @@ TclOOGetCallContext(
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
-    if (cacheInThisObj == NULL) {
+    if (!cacheInThisObj) {
 	cacheInThisObj = methodNameObj;
     }
-    if (flags&(SPECIAL|FILTER_HANDLING) || (oPtr->flags&FILTER_HANDLING)) {
+    if (flags & (SPECIAL | FILTER_HANDLING)
+	    || (oPtr->flags & FILTER_HANDLING)) {
 	hPtr = NULL;
 	doFilters = 0;
 
@@ -1194,17 +1196,18 @@ TclOOGetCallContext(
 
 	if (flags & CONSTRUCTOR) {
 	    callPtr = oPtr->selfCls->constructorChainPtr;
-	    if ((callPtr != NULL)
+	    if (callPtr
 		    && (callPtr->objectEpoch == oPtr->selfCls->thisPtr->epoch)
-		    && (callPtr->epoch == oPtr->fPtr->epoch)) {
+		    && (callPtr->epoch == fPtr->epoch)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
 	} else if (flags & DESTRUCTOR) {
 	    callPtr = oPtr->selfCls->destructorChainPtr;
-	    if ((oPtr->mixins.num == 0) && (callPtr != NULL)
+	    if ((oPtr->mixins.num == 0)
+		    && callPtr
 		    && (callPtr->objectEpoch == oPtr->selfCls->thisPtr->epoch)
-		    && (callPtr->epoch == oPtr->fPtr->epoch)) {
+		    && (callPtr->epoch == fPtr->epoch)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
@@ -1245,7 +1248,7 @@ TclOOGetCallContext(
 		hPtr = NULL;
 	    }
 	} else {
-	    if (oPtr->chainCache != NULL) {
+	    if (oPtr->chainCache) {
 		hPtr = Tcl_FindHashEntry(oPtr->chainCache,
 			methodNameObj);
 	    } else {
@@ -1253,7 +1256,7 @@ TclOOGetCallContext(
 	    }
 	}
 
-	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
+	if (hPtr && Tcl_GetHashValue(hPtr)) {
 	    callPtr = (CallChain *) Tcl_GetHashValue(hPtr);
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
@@ -1279,10 +1282,10 @@ TclOOGetCallContext(
 
     if (flags & FORCE_UNKNOWN) {
 	AddSimpleChainToCallContext(oPtr, NULL,
-		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
+		fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
 		NULL);
 	AddSimpleChainToCallContext(oPtr, NULL,
-		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
+		fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = 0;
 	if (callPtr->numChain == 0) {
@@ -1356,10 +1359,10 @@ TclOOGetCallContext(
 	    return NULL;
 	}
 	AddSimpleChainToCallContext(oPtr, NULL,
-		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
+		fPtr->unknownMethodNameObj, &cb, NULL, BUILDING_MIXINS,
 		NULL);
 	AddSimpleChainToCallContext(oPtr, NULL,
-		oPtr->fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
+		fPtr->unknownMethodNameObj, &cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = 0;
 	if (count == callPtr->numChain) {
@@ -1367,10 +1370,10 @@ TclOOGetCallContext(
 	    return NULL;
 	}
     } else if (doFilters && !donePrivate) {
-	if (hPtr == NULL) {
+	if (!hPtr) {
 	    int isNew;
 	    if (oPtr->flags & USE_CLASS_CACHE) {
-		if (oPtr->selfCls->classChainCache == NULL) {
+		if (!oPtr->selfCls->classChainCache) {
 		    oPtr->selfCls->classChainCache = (Tcl_HashTable *)
 			    Tcl_Alloc(sizeof(Tcl_HashTable));
 
@@ -1379,7 +1382,7 @@ TclOOGetCallContext(
 		hPtr = Tcl_CreateHashEntry(oPtr->selfCls->classChainCache,
 			methodNameObj, &isNew);
 	    } else {
-		if (oPtr->chainCache == NULL) {
+		if (!oPtr->chainCache) {
 		    oPtr->chainCache = (Tcl_HashTable *)
 			    Tcl_Alloc(sizeof(Tcl_HashTable));
 
@@ -1408,7 +1411,7 @@ TclOOGetCallContext(
 
   returnContext:
     contextPtr = (CallContext *)
-	    TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
+	    TclStackAlloc(fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
 
     /*
@@ -1460,7 +1463,7 @@ TclOOGetStereotypeCallChain(
      * can't get stereotypes. [Bug 7842f33a5c]
      */
 
-    if (clsPtr == NULL) {
+    if (!clsPtr) {
 	return NULL;
     }
 
@@ -1482,10 +1485,10 @@ TclOOGetStereotypeCallChain(
      * in the class).
      */
 
-    if (clsPtr->classChainCache != NULL) {
+    if (clsPtr->classChainCache) {
 	hPtr = Tcl_FindHashEntry(clsPtr->classChainCache,
 		methodNameObj);
-	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
+	if (hPtr && Tcl_GetHashValue(hPtr)) {
 	    const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
 	    callPtr = (CallChain *) Tcl_GetHashValue(hPtr);
@@ -1553,9 +1556,9 @@ TclOOGetStereotypeCallChain(
 	    return NULL;
 	}
     } else {
-	if (hPtr == NULL) {
+	if (!hPtr) {
 	    int isNew;
-	    if (clsPtr->classChainCache == NULL) {
+	    if (!clsPtr->classChainCache) {
 		clsPtr->classChainCache = (Tcl_HashTable *)
 			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
@@ -1600,7 +1603,7 @@ AddClassFiltersToCallContext(
     Tcl_Obj *filterObj;
 
   tailRecurse:
-    if (clsPtr == NULL) {
+    if (!clsPtr) {
 	return;
     }
 
@@ -1697,7 +1700,7 @@ AddPrivatesFromClassChainToCallContext(
      */
 
   tailRecurse:
-    if (classPtr == NULL) {
+    if (!classPtr) {
 	return 0;
     }
     FOREACH(superPtr, classPtr->mixins) {
@@ -1712,7 +1715,7 @@ AddPrivatesFromClassChainToCallContext(
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
 		methodName);
 
-	if (hPtr != NULL) {
+	if (hPtr) {
 	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
 
 	    if (IS_PRIVATE(mPtr)) {
@@ -1778,7 +1781,7 @@ AddSimpleClassChainToCallContext(
      */
 
   tailRecurse:
-    if (classPtr == NULL) {
+    if (!classPtr) {
 	return privateDanger;
     }
     FOREACH(superPtr, classPtr->mixins) {
@@ -1800,7 +1803,7 @@ AddSimpleClassChainToCallContext(
 	if (classPtr->flags & HAS_PRIVATE_METHODS) {
 	    privateDanger |= 1;
 	}
-	if (hPtr != NULL) {
+	if (hPtr) {
 	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
 
 	    if (!IS_PRIVATE(mPtr)) {
@@ -1895,7 +1898,8 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
+		TCL_AUTO_LENGTH);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
     }
@@ -2105,7 +2109,7 @@ AddDefinitionNamespaceToChain(
      * mixin-consistency.
      */
 
-    if (namespaceName == NULL || !MIXIN_CONSISTENT(flags)) {
+    if (!namespaceName || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 

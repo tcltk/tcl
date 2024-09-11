@@ -408,6 +408,13 @@ struct Foundation {
 };
 
 /*
+ * Convenience macro for getting the foundation from an interpreter.
+ */
+
+#define GetFoundation(interp) \
+	((Foundation *)((Interp *)(interp))->objectFoundation)
+
+/*
  * The number of MInvoke records in the CallChain before we allocate
  * separately.
  */

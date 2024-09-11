@@ -94,10 +94,12 @@ static inline int
 ReadProperty(
     Tcl_Interp *interp,
     Object *oPtr,
-    const char *propName)
+    Tcl_Obj *propNameObj)
 {
+    const char *propName = TclGetString(propNameObj);
+    Foundation *fPtr = GetFoundation(interp);
     Tcl_Obj *args[] = {
-	oPtr->fPtr->myName,
+	fPtr->myName,
 	Tcl_ObjPrintf("<ReadProp%s>", propName)
     };
     int code;
@@ -125,11 +127,13 @@ static inline int
 WriteProperty(
     Tcl_Interp *interp,
     Object *oPtr,
-    const char *propName,
+    Tcl_Obj *propNameObj,
     Tcl_Obj *valueObj)
 {
+    const char *propName = TclGetString(propNameObj);
+    Foundation *fPtr = GetFoundation(interp);
     Tcl_Obj *args[] = {
-	oPtr->fPtr->myName,
+	fPtr->myName,
 	Tcl_ObjPrintf("<WriteProp%s>", propName),
 	valueObj
     };
@@ -170,8 +174,7 @@ GetPropertyName(
 				 * with Tcl_Free if the cache is used. */
 {
     Tcl_Size objc, index, i;
-    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(
-	    oPtr, flags & GPN_WRITABLE);
+    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, flags & GPN_WRITABLE);
     Tcl_Obj **objv;
     GPNCache *tablePtr;
 
@@ -215,7 +218,7 @@ GetPropertyName(
 	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
 	result = Tcl_RestoreInterpState(interp, foo);
-	if (otherName != NULL) {
+	if (otherName) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "property \"%s\" is %s only",
 		    TclGetString(otherName),
@@ -285,7 +288,7 @@ TclOO_Configurable_Configure(
 	ListObjGetElements(listPtr, namec, namev);
 
 	for (i = 0; i < namec; ) {
-	    code = ReadProperty(interp, oPtr, TclGetString(namev[i]));
+	    code = ReadProperty(interp, oPtr, namev[i]);
 	    if (code != TCL_OK) {
 		Tcl_DecrRefCount(resultPtr);
 		break;
@@ -306,10 +309,10 @@ TclOO_Configurable_Configure(
 	 */
 
 	namePtr = GetPropertyName(interp, oPtr, 0, objv[0], NULL);
-	if (namePtr == NULL) {
+	if (!namePtr) {
 	    return TCL_ERROR;
 	}
-	return ReadProperty(interp, oPtr, TclGetString(namePtr));
+	return ReadProperty(interp, oPtr, namePtr);
     } else if (objc == 2) {
 	/*
 	 * Special case for writing to one property. Saves fiddling with the
@@ -317,12 +320,12 @@ TclOO_Configurable_Configure(
 	 */
 
 	namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[0], NULL);
-	if (namePtr == NULL) {
+	if (!namePtr) {
 	    return TCL_ERROR;
 	}
-	code = WriteProperty(interp, oPtr, TclGetString(namePtr), objv[1]);
+	code = WriteProperty(interp, oPtr, namePtr, objv[1]);
 	if (code == TCL_OK) {
-	    Tcl_ResetResult(interp);
+	    Tcl_SetObjResult(interp, ((Interp *) interp)->emptyObjPtr);
 	}
 	return code;
     } else {
@@ -336,18 +339,17 @@ TclOO_Configurable_Configure(
 	for (i = 0; i < objc; i += 2) {
 	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i],
 		    &cache);
-	    if (namePtr == NULL) {
+	    if (!namePtr) {
 		code = TCL_ERROR;
 		break;
 	    }
-	    code = WriteProperty(interp, oPtr, TclGetString(namePtr),
-		    objv[i + 1]);
+	    code = WriteProperty(interp, oPtr, namePtr, objv[i + 1]);
 	    if (code != TCL_OK) {
 		break;
 	    }
 	}
 	if (code == TCL_OK) {
-	    Tcl_ResetResult(interp);
+	    Tcl_SetObjResult(interp, ((Interp *) interp)->emptyObjPtr);
 	}
 	ReleasePropertyNameCache(interp, &cache);
 	return code;
@@ -388,13 +390,13 @@ Configurable_Getter(
 
     varPtr = TclOOLookupObjectVar(interp, Tcl_ObjectContextObject(context),
 	    propNamePtr, &aryVar);
-    if (varPtr == NULL) {
+    if (!varPtr) {
 	return TCL_ERROR;
     }
 
     valuePtr = TclPtrGetVar(interp, varPtr, aryVar, propNamePtr, NULL,
 	    TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG);
-    if (valuePtr == NULL) {
+    if (!valuePtr) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
@@ -423,12 +425,12 @@ Configurable_Setter(
 
     varPtr = TclOOLookupObjectVar(interp, Tcl_ObjectContextObject(context),
 	    propNamePtr, &aryVar);
-    if (varPtr == NULL) {
+    if (!varPtr) {
 	return TCL_ERROR;
     }
 
-    if (TclPtrSetVar(interp, varPtr, aryVar, propNamePtr, NULL,
-	    objv[objc - 1], TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+    if (!TclPtrSetVar(interp, varPtr, aryVar, propNamePtr, NULL,
+	    objv[objc - 1], TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG)) {
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -634,7 +636,10 @@ GetAllClassProperties(
 				 * Tcl_Obj was allocated and may be safely
 				 * modified by the caller. */
 {
-    Tcl_HashTable hashTable;
+    Tcl_HashTable hashTable;	/* Set of property names built by calling
+				 * FindClassProps(). Strictly, the keys are
+				 * the set and the values are ignored. */
+    Foundation *fPtr = clsPtr->thisPtr->fPtr;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
     void *dummy;
@@ -643,7 +648,7 @@ GetAllClassProperties(
      * Look in the cache.
      */
 
-    if (clsPtr->properties.epoch == clsPtr->thisPtr->fPtr->epoch) {
+    if (clsPtr->properties.epoch == fPtr->epoch) {
 	if (writable) {
 	    if (clsPtr->properties.allWritableCache) {
 		*allocated = 0;
@@ -674,7 +679,7 @@ GetAllClassProperties(
      * Cache the information. Also purges the cache.
      */
 
-    if (clsPtr->properties.epoch != clsPtr->thisPtr->fPtr->epoch) {
+    if (clsPtr->properties.epoch != fPtr->epoch) {
 	if (clsPtr->properties.allWritableCache) {
 	    Tcl_DecrRefCount(clsPtr->properties.allWritableCache);
 	    clsPtr->properties.allWritableCache = NULL;
@@ -684,7 +689,7 @@ GetAllClassProperties(
 	    clsPtr->properties.allReadableCache = NULL;
 	}
     }
-    clsPtr->properties.epoch = clsPtr->thisPtr->fPtr->epoch;
+    clsPtr->properties.epoch = fPtr->epoch;
     if (writable) {
 	clsPtr->properties.allWritableCache = result;
     } else {
@@ -736,7 +741,7 @@ SortPropList(
  *
  * TclOOGetAllObjectProperties --
  *
- *	Get the sorted list of all properties known to a object, including to its
+ *	Get the sorted list of all properties known to a object, including to
  *	its classes. Manages a cache so this operation is usually cheap.
  *
  * ----------------------------------------------------------------------
@@ -749,7 +754,10 @@ TclOOGetAllObjectProperties(
 				 * false, readable properties will be returned
 				 * instead. */
 {
-    Tcl_HashTable hashTable;
+    Tcl_HashTable hashTable;	/* Set of property names built by calling
+				 * FindObjectProps(). Strictly, the keys are
+				 * the set and the values are ignored. */
+    Foundation *fPtr = oPtr->fPtr;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
     void *dummy;
@@ -758,7 +766,7 @@ TclOOGetAllObjectProperties(
      * Look in the cache.
      */
 
-    if (oPtr->properties.epoch == oPtr->fPtr->epoch) {
+    if (oPtr->properties.epoch == fPtr->epoch) {
 	if (writable) {
 	    if (oPtr->properties.allWritableCache) {
 		return oPtr->properties.allWritableCache;
@@ -787,7 +795,7 @@ TclOOGetAllObjectProperties(
      * Cache the information.
      */
 
-    if (oPtr->properties.epoch != oPtr->fPtr->epoch) {
+    if (oPtr->properties.epoch != fPtr->epoch) {
 	if (oPtr->properties.allWritableCache) {
 	    Tcl_DecrRefCount(oPtr->properties.allWritableCache);
 	    oPtr->properties.allWritableCache = NULL;
@@ -797,7 +805,7 @@ TclOOGetAllObjectProperties(
 	    oPtr->properties.allReadableCache = NULL;
 	}
     }
-    oPtr->properties.epoch = oPtr->fPtr->epoch;
+    oPtr->properties.epoch = fPtr->epoch;
     if (writable) {
 	oPtr->properties.allWritableCache = result;
     } else {
@@ -1048,12 +1056,12 @@ TclOODefinePropertyCmd(
     };
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
 
-    if (oPtr == NULL) {
+    if (!oPtr) {
 	return TCL_ERROR;
     }
     if (!useInstance && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1110,8 +1118,8 @@ TclOODefinePropertyCmd(
 	 */
 
 	if (TclOOInstallStdPropertyImpls(useInstance, interp, propObj,
-		kind != KIND_WO && getterScript == NULL,
-		kind != KIND_RO && setterScript == NULL) != TCL_OK) {
+		kind != KIND_WO && !getterScript,
+		kind != KIND_RO && !setterScript) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -1131,7 +1139,7 @@ TclOODefinePropertyCmd(
 	 * methods we'll make.
 	 */
 
-	if (getterScript != NULL) {
+	if (getterScript) {
 	    Tcl_Obj *getterName = Tcl_ObjPrintf("<ReadProp-%s>",
 		    TclGetString(propObj));
 	    Tcl_Obj *argsPtr = Tcl_NewObj();
@@ -1148,11 +1156,11 @@ TclOODefinePropertyCmd(
 	    Tcl_BounceRefCount(getterName);
 	    Tcl_BounceRefCount(argsPtr);
 	    Tcl_DecrRefCount(getterScript);
-	    if (mPtr == NULL) {
+	    if (!mPtr) {
 		return TCL_ERROR;
 	    }
 	}
-	if (setterScript != NULL) {
+	if (setterScript) {
 	    Tcl_Obj *setterName = Tcl_ObjPrintf("<WriteProp-%s>",
 		    TclGetString(propObj));
 	    Tcl_Obj *argsPtr;
@@ -1170,7 +1178,7 @@ TclOODefinePropertyCmd(
 	    Tcl_BounceRefCount(setterName);
 	    Tcl_BounceRefCount(argsPtr);
 	    Tcl_DecrRefCount(setterScript);
-	    if (mPtr == NULL) {
+	    if (!mPtr) {
 		return TCL_ERROR;
 	    }
 	}
@@ -1205,7 +1213,7 @@ TclOOInfoClassPropCmd(
 	return TCL_ERROR;
     }
     clsPtr = TclOOGetClassFromObj(interp, objv[1]);
-    if (clsPtr == NULL) {
+    if (!clsPtr) {
 	return TCL_ERROR;
     }
     for (i = 2; i < objc; i++) {
@@ -1263,7 +1271,7 @@ TclOOInfoObjectPropCmd(
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
-    if (oPtr == NULL) {
+    if (!oPtr) {
 	return TCL_ERROR;
     }
     for (i = 2; i < objc; i++) {

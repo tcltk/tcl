@@ -13,6 +13,23 @@ package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
 
 test ooProp-1.1 {TIP 558: properties: core support} -setup {
     oo::class create parent
@@ -876,6 +893,109 @@ test ooProp-4.8 {TIP 558: properties: error details} -setup {
 } -result {1 {bad property "-gorp": must be -x
     while executing
 "pt configure -gorp blarg"} {TCL LOOKUP INDEX property -gorp}}
+
+test ooProp-5.1 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x
+	constructor {{v 123}} {set x $v}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+	property x
+    }
+    set obj [cls new]
+    leaktest {
+	$obj configure -x 123
+    }
+} -cleanup {
+    parent destroy
+} -result 0
+test ooProp-5.2 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x
+	constructor {{v 123}} {set x $v}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+	property x
+    }
+    set obj [cls new]
+    leaktest {
+	$obj configure -x
+    }
+} -cleanup {
+    parent destroy
+} -result 0
+test ooProp-5.3 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x
+	constructor {{v 123}} {set x $v}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+	property x
+    }
+    set obj [cls new]
+    leaktest {
+	$obj configure -x [expr {[$obj configure -x] + 1}]
+    }
+} -cleanup {
+    parent destroy
+} -result 0
+test ooProp-5.4 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x
+	constructor {{v 123}} {set x $v}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+    }
+    set obj [cls new]
+    oo::objdefine $obj property x
+    leaktest {
+	$obj configure -x [expr {[$obj configure -x] + 1}]
+    }
+} -cleanup {
+    parent destroy
+} -result 0
+test ooProp-5.5 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x
+	constructor {{v 123}} {set x $v}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+    }
+    set obj [cls new]
+    oo::objdefine $obj property x
+    leaktest {
+	$obj configure
+    }
+} -cleanup {
+    parent destroy
+} -result 0
+test ooProp-5.6 {properties: basic leak test} -constraints memory -setup {
+    oo::class create parent {
+	variable x y
+	constructor {{v 123} {w 234}} {set x $v; set y $w}
+    }
+} -body {
+    oo::configurable create cls {
+	superclass parent
+    }
+    set obj [cls new]
+    oo::objdefine $obj property x y
+    leaktest {
+	list [$obj configure -x 1 -y 2] [$obj configure]
+    }
+} -cleanup {
+    parent destroy
+} -result 0
 
 cleanupTests
 return
