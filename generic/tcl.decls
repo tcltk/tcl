@@ -2517,6 +2517,11 @@ declare 689 {
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 690 {
+    int Tcl_FSTildeExpand(Tcl_Interp *interp, const char *path,
+        Tcl_DString *dsPtr)
+}
+
+declare 691 {
     void TclUnusedStubEntry(void)
 }
 

@@ -1986,7 +1986,8 @@ const TclStubs tclStubs = {
     TclUtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
-    TclUnusedStubEntry, /* 690 */
+    Tcl_FSTildeExpand, /* 690 */
+    TclUnusedStubEntry, /* 691 */
 };
 
 /* !END!: Do not edit above this line. */
