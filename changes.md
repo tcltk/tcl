@@ -103,3 +103,5 @@ writing Tcl scripts.
  - [classmethod fails if no argument supplied to class create](https://core.tcl-lang.org/tcl/tktview/680503)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
+ - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
+ 
