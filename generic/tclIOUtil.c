@@ -2237,10 +2237,15 @@ Tcl_FSOpenFileChannel(
 
     /*
      * We need this just to ensure we return the correct error messages under
-     * some circumstances.
+     * some circumstances (relative paths only), so because the normalization 
+     * is very expensive, don't invoke it for native or absolute paths.
      */
 
-    if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
+    if (
+	!TclFSCwdIsNative() &&
+	Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE &&
+	Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
+    ) {
 	return NULL;
     }
 
