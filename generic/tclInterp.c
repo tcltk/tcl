@@ -207,7 +207,11 @@ struct LimitHandler {
 #define LIMIT_HANDLER_ACTIVE    0x01
 #define LIMIT_HANDLER_DELETED   0x02
 
-
+/*
+ * Macro to make looking up child and parent info more convenient.
+ */
+#define INTERP_INFO(interp) \
+	((InterpInfo *)((Interp *)(interp))->interpInfo)
 
 /*
  * Prototypes for local static functions:
@@ -222,12 +226,12 @@ static int		AliasDelete(Tcl_Interp *interp,
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *childInterp);
-static Tcl_ObjCmdProc		AliasNRCmd;
-static Tcl_CmdDeleteProc	AliasObjCmdDeleteProc;
+static Tcl_ObjCmdProc	AliasNRCmd;
+static Tcl_CmdDeleteProc AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
-static Tcl_InterpDeleteProc	InterpInfoDeleteProc;
+static Tcl_InterpDeleteProc InterpInfoDeleteProc;
 static int		ChildBgerror(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
@@ -276,7 +280,6 @@ static void		TimeLimitCallback(void *clientData);
 static Tcl_NRPostProc	NRPostInvokeHidden;
 static Tcl_ObjCmdProc	NRInterpCmd;
 static Tcl_ObjCmdProc	NRChildCmd;
-
 
 /*
  *----------------------------------------------------------------------
@@ -339,7 +342,8 @@ Tcl_Init(
     pkgName.nextPtr = *names;
     *names = &pkgName;
     if (tclPreInitScript != NULL) {
-	if (Tcl_EvalEx(interp, tclPreInitScript, TCL_INDEX_NONE, 0) == TCL_ERROR) {
+	if (Tcl_EvalEx(interp, tclPreInitScript, TCL_INDEX_NONE,
+		0 /*flags*/) == TCL_ERROR) {
 	    goto end;
 	}
     }
@@ -450,7 +454,7 @@ Tcl_Init(
 "  }\n"
 "}\n"
 "tclInit", TCL_INDEX_NONE, 0);
-
+    TclpSetInitialEncodings();
 end:
     *names = (*names)->nextPtr;
     return result;
@@ -526,12 +530,10 @@ InterpInfoDeleteProc(
     Tcl_Interp *interp)		/* Interp being deleted. All commands for
 				 * child interps should already be deleted. */
 {
-    InterpInfo *interpInfoPtr;
+    InterpInfo *interpInfoPtr = INTERP_INFO(interp);
     Child *childPtr;
     Parent *parentPtr;
     Target *targetPtr;
-
-    interpInfoPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
 
     /*
      * There shouldn't be any commands left.
@@ -551,6 +553,7 @@ InterpInfoDeleteProc(
 
     for (targetPtr = parentPtr->targetsPtr; targetPtr != NULL; ) {
 	Target *tmpPtr = targetPtr->nextPtr;
+
 	Tcl_DeleteCommandFromToken(targetPtr->childInterp,
 		targetPtr->childCmd);
 	targetPtr = tmpPtr;
@@ -873,7 +876,7 @@ NRInterpCmd(
 			"DELETESELF", (char *)NULL);
 		return TCL_ERROR;
 	    }
-	    iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
+	    iiPtr = INTERP_INFO(childInterp);
 	    Tcl_DeleteCommandFromToken(iiPtr->child.parentInterp,
 		    iiPtr->child.interpCmd);
 	}
@@ -1042,7 +1045,7 @@ NRInterpCmd(
 	if (childInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
+	iiPtr = INTERP_INFO(childInterp);
 	TclNewObj(resultPtr);
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
@@ -1107,7 +1110,7 @@ NRInterpCmd(
 
 	aliasName = TclGetString(objv[3]);
 
-	iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
+	iiPtr = INTERP_INFO(childInterp);
 	hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1356,7 +1359,7 @@ Tcl_GetAliasObj(
     Tcl_Size *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
-    InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
+    InterpInfo *iiPtr = INTERP_INFO(interp);
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
     Tcl_Size objc;
@@ -1366,7 +1369,8 @@ Tcl_GetAliasObj(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
+		(char *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1595,7 +1599,7 @@ AliasCreate(
      * Make an entry in the alias table. If it already exists, retry.
      */
 
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
     while (1) {
 	Tcl_Obj *newToken;
 	const char *string;
@@ -1641,7 +1645,7 @@ AliasCreate(
     targetPtr->childCmd = aliasPtr->childCmd;
     targetPtr->childInterp = childInterp;
 
-    parentPtr = &((InterpInfo*) ((Interp*) parentInterp)->interpInfo)->parent;
+    parentPtr = &INTERP_INFO(parentInterp)->parent;
     targetPtr->nextPtr = parentPtr->targetsPtr;
     targetPtr->prevPtr = NULL;
     if (parentPtr->targetsPtr != NULL) {
@@ -1689,7 +1693,7 @@ AliasDelete(
      * delete it.
      */
 
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
     hPtr = Tcl_FindHashEntry(&childPtr->aliasTable, TclGetString(namePtr));
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1738,7 +1742,7 @@ AliasDescribe(
      * describe it.
      */
 
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
     hPtr = Tcl_FindHashEntry(&childPtr->aliasTable, TclGetString(namePtr));
     if (hPtr == NULL) {
 	return TCL_OK;
@@ -1777,7 +1781,7 @@ AliasList(
     Child *childPtr;
 
     TclNewObj(resultPtr);
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
 
     entryPtr = Tcl_FirstHashEntry(&childPtr->aliasTable, &hashSearch);
     for ( ; entryPtr != NULL; entryPtr = Tcl_NextHashEntry(&hashSearch)) {
@@ -2070,8 +2074,7 @@ AliasObjCmdDeleteProc(
     if (targetPtr->prevPtr != NULL) {
 	targetPtr->prevPtr->nextPtr = targetPtr->nextPtr;
     } else {
-	Parent *parentPtr = &((InterpInfo *) ((Interp *)
-		aliasPtr->targetInterp)->interpInfo)->parent;
+	Parent *parentPtr = &INTERP_INFO(aliasPtr->targetInterp)->parent;
 
 	parentPtr->targetsPtr = targetPtr->nextPtr;
     }
@@ -2178,7 +2181,7 @@ Tcl_GetParent(
     if (interp == NULL) {
 	return NULL;
     }
-    childPtr = &((InterpInfo *) ((Interp *) interp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(interp)->child;
     return childPtr->parentInterp;
 }
 
@@ -2222,7 +2225,7 @@ TclSetChildCancelFlags(
 
     flags &= (CANCELED | TCL_CANCEL_UNWIND);
 
-    parentPtr = &((InterpInfo *) ((Interp *) interp)->interpInfo)->parent;
+    parentPtr = &INTERP_INFO(interp)->parent;
 
     hPtr = Tcl_FirstHashEntry(&parentPtr->childTable, &hashSearch);
     for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
@@ -2286,13 +2289,14 @@ Tcl_GetInterpPath(
     if (targetInterp == NULL) {
 	return TCL_ERROR;
     }
-    iiPtr = (InterpInfo *) ((Interp *) targetInterp)->interpInfo;
-    if (Tcl_GetInterpPath(interp, iiPtr->child.parentInterp) != TCL_OK){
+    iiPtr = INTERP_INFO(targetInterp);
+    if (Tcl_GetInterpPath(interp, iiPtr->child.parentInterp) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj((const char *)Tcl_GetHashKey(&iiPtr->parent.childTable,
-		    iiPtr->child.childEntryPtr), -1));
+	    Tcl_NewStringObj((const char *)
+		    Tcl_GetHashKey(&iiPtr->parent.childTable,
+			    iiPtr->child.childEntryPtr), -1));
     return TCL_OK;
 }
 
@@ -2332,7 +2336,7 @@ GetInterp(
 
     searchInterp = interp;
     for (i = 0; i < objc; i++) {
-	parentInfoPtr = (InterpInfo *) ((Interp *) searchInterp)->interpInfo;
+	parentInfoPtr = INTERP_INFO(searchInterp);
 	hPtr = Tcl_FindHashEntry(&parentInfoPtr->parent.childTable,
 		TclGetString(objv[i]));
 	if (hPtr == NULL) {
@@ -2451,7 +2455,7 @@ ChildCreate(
 	safe = Tcl_IsSafe(parentInterp);
     }
 
-    parentInfoPtr = (InterpInfo *) ((Interp *) parentInterp)->interpInfo;
+    parentInfoPtr = INTERP_INFO(parentInterp);
     hPtr = Tcl_CreateHashEntry(&parentInfoPtr->parent.childTable, path,
 	    &isNew);
     if (isNew == 0) {
@@ -2462,7 +2466,7 @@ ChildCreate(
     }
 
     childInterp = Tcl_CreateInterp();
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
     childPtr->parentInterp = parentInterp;
     childPtr->childEntryPtr = hPtr;
     childPtr->childInterp = childInterp;
@@ -2767,13 +2771,13 @@ NRChildCmd(
 
 static void
 ChildObjCmdDeleteProc(
-    void *clientData)	/* The ChildRecord for the command. */
+    void *clientData)		/* The ChildRecord for the command. */
 {
     Child *childPtr;		/* Interim storage for Child record. */
     Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
 				/* And for a child interp. */
 
-    childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
+    childPtr = &INTERP_INFO(childInterp)->child;
 
     /*
      * Unlink the child from its parent interpreter.
@@ -3287,7 +3291,7 @@ TclMakeSafe(
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */
     Interp *iPtr = (Interp *) interp;
-    Tcl_Interp *parent = ((InterpInfo*) iPtr->interpInfo)->child.parentInterp;
+    Tcl_Interp *parent = INTERP_INFO(iPtr)->child.parentInterp;
 
     TclHideUnsafeCommands(interp);
 

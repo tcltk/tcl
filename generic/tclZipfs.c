@@ -1300,7 +1300,7 @@ AllocateZipFile(
     size_t mountPointNameLength)
 {
     size_t size = sizeof(ZipFile) + mountPointNameLength + 1;
-    ZipFile *zf = (ZipFile *) attemptckalloc(size);
+    ZipFile *zf = (ZipFile *)attemptckalloc(size);
 
     if (!zf) {
 	ZIPFS_MEM_ERROR(interp);
@@ -1313,7 +1313,7 @@ AllocateZipFile(
 static inline ZipEntry *
 AllocateZipEntry(void)
 {
-    ZipEntry *z = (ZipEntry *) ckalloc(sizeof(ZipEntry));
+    ZipEntry *z = (ZipEntry *)ckalloc(sizeof(ZipEntry));
     memset(z, 0, sizeof(ZipEntry));
     return z;
 }
@@ -1322,7 +1322,7 @@ static inline ZipChannel *
 AllocateZipChannel(
     Tcl_Interp *interp)
 {
-    ZipChannel *zc = (ZipChannel *) attemptckalloc(sizeof(ZipChannel));
+    ZipChannel *zc = (ZipChannel *)attemptckalloc(sizeof(ZipChannel));
 
     if (!zc) {
 	ZIPFS_MEM_ERROR(interp);
@@ -1689,7 +1689,7 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-	zf->ptrToFree = zf->data = (unsigned char *) attemptckalloc(zf->length);
+	zf->ptrToFree = zf->data = (unsigned char *)attemptckalloc(zf->length);
 	if (!zf->ptrToFree) {
 	    ZIPFS_MEM_ERROR(interp);
 	    goto error;
@@ -1928,7 +1928,7 @@ ZipFSCatalogFilesystem(
     zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
-    zf->name = (char *) ckalloc(zf->nameLength + 1);
+    zf->name = (char *)ckalloc(zf->nameLength + 1);
     memcpy(zf->name, zipname, zf->nameLength + 1);
 
     Tcl_SetHashValue(hPtr, zf);
@@ -2993,7 +2993,7 @@ ZipAddFile(
     memset(buf, '\0', ZIP_LOCAL_HEADER_LEN);
     memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpathExt, zpathlen);
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
-    if ((size_t) Tcl_Write(out, buf, len) != len) {
+    if ((size_t)Tcl_Write(out, buf, len) != len) {
     writeErrorWithChannelOpen:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error on \"%s\": %s",
@@ -3017,7 +3017,7 @@ ZipAddFile(
 	ZipWriteShort(astart, aend, abuf, 0xffff);
 	ZipWriteShort(astart, aend, abuf + 2, align - 4);
 	ZipWriteInt(astart, aend, abuf + 4, 0x03020100);
-	if ((size_t) Tcl_Write(out, (const char *) abuf, align) != align) {
+	if ((size_t)Tcl_Write(out, (const char *) abuf, align) != align) {
 	    goto writeErrorWithChannelOpen;
 	}
     }
@@ -3093,7 +3093,7 @@ ZipAddFile(
 	    stream.avail_out = sizeof(obuf);
 	    stream.next_out = (unsigned char *) obuf;
 	    len = deflate(&stream, flush);
-	    if (len == (size_t) Z_STREAM_ERROR) {
+	    if (len == (size_t)Z_STREAM_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"deflate error on \"%s\"", TclGetString(pathObj)));
 		ZIPFS_ERROR_CODE(interp, "DEFLATE");
@@ -3159,7 +3159,7 @@ ZipAddFile(
 		    buf[i] = (char) zencode(keys0, crc32tab, buf[i], tmp);
 		}
 	    }
-	    if ((size_t) Tcl_Write(out, buf, len) != len) {
+	    if ((size_t)Tcl_Write(out, buf, len) != len) {
 		goto writeErrorWithChannelOpen;
 	    }
 	    nbytecompr += len;
@@ -3553,7 +3553,7 @@ ZipFSMkZipOrImg(
 	    strip = NULL;
 	}
     }
-    for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
+    for (i = 0; i < (size_t)lobjc; i += (mappingList ? 2 : 1)) {
 	Tcl_Obj *pathObj = lobjv[i];
 	const char *name = ComputeNameInArchive(pathObj,
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
@@ -3573,7 +3573,7 @@ ZipFSMkZipOrImg(
 
     directoryStartOffset = Tcl_Tell(out);
     count = 0;
-    for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
+    for (i = 0; i < (size_t)lobjc; i += (mappingList ? 2 : 1)) {
 	const char *name = ComputeNameInArchive(lobjv[i],
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 	Tcl_DString ds;
@@ -4250,6 +4250,8 @@ ScriptLibrarySetup(
     Tcl_IncrRefCount(searchPathObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
+    /* Bug [fccb9f322f]. Reinit system encoding after setting search path */
+    TclpSetInitialEncodings();
     return libDirObj;
 }
 
@@ -5023,7 +5025,7 @@ InitWritableChannel(
 		assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 
 		stream.avail_in -= ZIP_CRYPT_HDR_LEN;
-		cbuf = (unsigned char *) attemptckalloc(stream.avail_in ? stream.avail_in : 1);
+		cbuf = (unsigned char *)attemptckalloc(stream.avail_in ? stream.avail_in : 1);
 		if (!cbuf) {
 		    goto memoryError;
 		}
@@ -5176,7 +5178,7 @@ InitReadableChannel(
 	if (info->isEncrypted) {
 	    assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 	    stream.avail_in -= ZIP_CRYPT_HDR_LEN;
-	    ubuf = (unsigned char *) attemptckalloc(stream.avail_in ? stream.avail_in : 1);
+	    ubuf = (unsigned char *)attemptckalloc(stream.avail_in ? stream.avail_in : 1);
 	    if (!ubuf) {
 		goto memoryError;
 	    }
@@ -5214,8 +5216,9 @@ InitReadableChannel(
 	    goto corruptionError;
 	}
 	/* Even if decompression succeeded, counts should be as expected */
-	if ((int) stream.total_out != z->numBytes)
+	if ((int) stream.total_out != z->numBytes) {
 	    goto corruptionError;
+	}
 
 	if (ubuf) {
 	    info->isEncrypted = 0;
@@ -5234,7 +5237,7 @@ InitReadableChannel(
 	    goto corruptionError;
 	}
 	len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
-	ubuf = (unsigned char *) attemptckalloc(len);
+	ubuf = (unsigned char *)attemptckalloc(len);
 	if (ubuf == NULL) {
 	    goto memoryError;
 	}
@@ -5662,7 +5665,7 @@ ZipFSMatchInDirectoryProc(
      */
 
     l = strlen(pattern);
-    pat = (char *) ckalloc(len + l + 2);
+    pat = (char *)ckalloc(len + l + 2);
     memcpy(pat, path, len);
     while ((len > 1) && (pat[len - 1] == '/')) {
 	--len;
