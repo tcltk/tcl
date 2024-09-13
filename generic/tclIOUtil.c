@@ -2239,11 +2239,18 @@ Tcl_FSOpenFileChannel(
      * We need this just to ensure we return the correct error messages under
      * some circumstances (relative paths only), so because the normalization 
      * is very expensive, don't invoke it for native or absolute paths.
+     * Note: TODO - check one needs consider tilde expansion after TIP#602,
+     * (proper error message of tests *io-40.17 "tilde substitution in open")
      */
 
     if (
-	!TclFSCwdIsNative() &&
-	Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE &&
+	(
+	  (
+	    !TclFSCwdIsNative() &&
+	    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
+	  ) ||
+	  (*TclGetString(pathPtr) == '~')  /* possible tilde expansion */
+	) &&
 	Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
     ) {
 	return NULL;
