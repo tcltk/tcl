@@ -2595,7 +2595,7 @@ UtfToUtfProc(
 
 	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT) && (ch > 0x7FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
