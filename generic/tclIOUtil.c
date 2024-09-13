@@ -469,6 +469,11 @@ TclFSCwdIsNative(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
+    /* if not yet initialized - ensure we'll once obtain cwd */
+    if (!tsdPtr->cwdPathEpoch) {
+	Tcl_FSGetCwd(NULL);
+    }
+
     if (tsdPtr->cwdClientData != NULL) {
 	return 1;
     } else {
