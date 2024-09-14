@@ -71,6 +71,7 @@ writing Tcl scripts.
  - `tcl::process`
  - `*::build-info`
  - `readFile`, `writeFile`, `foreachLine`
+ - `tcl::idna::*`
 
 ## New command options
  - `clock scan ... -validate ...`
@@ -79,6 +80,7 @@ writing Tcl scripts.
  - `regsub ... -command ...`
  - `socket ... -nodelay ... -keepalive ...`
  - `vwait` controlled by several new options
+ - `expr` string comparators `lt`, `gt`, `le`, `ge`
 
 ## Numbers
  - 0NNN format is no longer octal interpretation. Use 0oNNN.
@@ -89,6 +91,9 @@ writing Tcl scripts.
  - Function int() no longer truncates to word size
 
 ## tcl::oo facilities
- - private variable and methods
+ - private variables and methods
+ - class variables and methods
+ - abstract and singleton classes
+ - configurable properties
  - `method -export`, `method -unexport`
 
