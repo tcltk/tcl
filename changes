@@ -9298,8 +9298,8 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-03-03 [d63061] remove private unicode 0xE000-0xF8FF from unicode
 	control group (nijtmans)
 
-2024-03-05 [1b8a89] TCL_PACKAGE_PATH in tclConfig.sh change from TCL list to ";"
-	separated items (nijtmans)
+2024-03-05 [1b8a89] TCL_PACKAGE_PATH in tclConfig.sh change from TCL list to ":"
+	(UNIX) or ";" (Windows) separated items (nijtmans)
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2024-03-11 Time zones added: Alaska Standard/Daylight (nijtmans)
