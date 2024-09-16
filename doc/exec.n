@@ -335,7 +335,7 @@ the caller must prepend the desired command with
 because built-in commands are not implemented using executables.
 .RE
 .TP
-\fBUnix\fR (including Mac OS X)
+\fBUnix\fR (including macOS)
 .
 The \fBexec\fR command is fully functional and works as described.
 .SH "UNIX EXAMPLES"

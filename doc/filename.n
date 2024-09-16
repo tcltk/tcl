@@ -42,7 +42,7 @@ The rules for native names depend on the value reported in the Tcl
 .TP 10
 \fBUnix\fR
 .
-On Unix and Apple MacOS X platforms, Tcl uses path names where the
+On Unix and Apple macOS platforms, Tcl uses path names where the
 components are separated by slashes.  Path names may be relative or
 absolute, and file names may contain any character other than slash.
 The file names \fB\&.\fR and \fB\&..\fR are special and refer to the
@@ -150,7 +150,7 @@ the tilde is followed immediately by a separator, then the \fB$HOME\fR
 environment variable is substituted.  Otherwise the characters between
 the tilde and the next separator are taken as a user name, which is used
 to retrieve the user's home directory for substitution.  This works on
-Unix, MacOS X and Windows (except very old releases).
+Unix, macOS and Windows (except very old releases).
 .PP
 Old Windows platforms do not support tilde substitution when a user name
 follows the tilde.  On these platforms, attempts to use a tilde followed

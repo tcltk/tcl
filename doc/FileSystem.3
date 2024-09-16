@@ -20,10 +20,9 @@ int
 int
 \fBTcl_FSUnregister\fR(\fIfsPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSData\fR(\fIfsPtr\fR)
 .sp
-void
 \fBTcl_FSMountsChanged\fR(\fIfsPtr\fR)
 .sp
 const Tcl_Filesystem *
@@ -123,7 +122,7 @@ Tcl_Obj *
 int
 \fBTcl_FSConvertToPathType\fR(\fIinterp, pathPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSGetInternalRep\fR(\fIpathPtr, fsPtr\fR)
 .sp
 Tcl_Obj *
@@ -210,7 +209,7 @@ this structure will be returned. This parameter may be NULL.
 .AP Tcl_Interp *interp in
 Interpreter to use either for results, evaluation, or reporting error
 messages.
-.AP ClientData clientData in
+.AP void *clientData in
 The native description of the path value to create.
 .AP Tcl_Obj *firstPtr in
 The first of two path values to compare. The value may be converted
@@ -221,7 +220,7 @@ to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
 .AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
+The number of elements in the \fIlistObj\fR which should
 be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
@@ -251,7 +250,7 @@ Name of a procedure to look up in the file's symbol table
 Filled with the init function for this code.
 .AP Tcl_LibraryInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
 .AP Tcl_LoadHandle *loadHandlePtr out
@@ -742,7 +741,7 @@ filesystems, so that they can easily retrieve the native (char* or
 TCHAR*) representation of a path. This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR. It may be desirable in the
 future to have non-string-based native representations (for example,
-on MacOSX, a representation using a fileSpec of FSRef structure would
+on macOS, a representation using a fileSpec of FSRef structure would
 probably be more efficient). On Windows a full Unicode representation
 would allow for paths of unlimited length. Currently the representation
 is simply a character string which may contain either the relative path
@@ -837,7 +836,7 @@ general that is not a good thing to do). \fBTCL_OK\fR will be returned.
 the list of known filesystems, if it is known, and returns \fBTCL_OK\fR. If
 the filesystem is not currently registered, \fBTCL_ERROR\fR is returned.
 .PP
-\fBTcl_FSData\fR will return the ClientData associated with the given
+\fBTcl_FSData\fR will return the clientData associated with the given
 filesystem, if that filesystem is registered. Otherwise it will
 return NULL.
 .PP
