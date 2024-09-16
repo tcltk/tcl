@@ -96,11 +96,11 @@ a directory will be returned if \fB\-types d\fR was specified.
 The second form specifies types where all the types given must match.
 These are \fIr\fR, \fIw\fR, \fIx\fR as file permissions, and
 \fIreadonly\fR, \fIhidden\fR as special permission cases. On the
-Macintosh, MacOS types and creators are also supported, where any item
-which is four characters long is assumed to be a MacOS type
+Macintosh, macOS types and creators are also supported, where any item
+which is four characters long is assumed to be a macOS type
 (e.g. \fBTEXT\fR). Items which are of the form \fI{macintosh type XXXX}\fR
 or \fI{macintosh creator XXXX}\fR will match types or creators
-respectively. Unrecognized types, or specifications of multiple MacOS
+respectively. Unrecognized types, or specifications of multiple macOS
 types/creators will signal an error.
 .PP
 The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
