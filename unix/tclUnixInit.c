@@ -804,10 +804,13 @@ TclpSetVariables(
     struct utsname name;
 #endif
     int unameOK;
-    const char *p, *q;
     Tcl_Obj *pkgListObj = Tcl_NewObj();
+    Tcl_Obj *itemPtr ,*pkgPathPtr;
+    Tcl_Size idx ,length;
+    int status;
 
 #ifdef HAVE_COREFOUNDATION
+    const char *p, *q;
     char tclLibPath[MAXPATHLEN + 1];
 
     /*
@@ -865,14 +868,22 @@ TclpSetVariables(
 	}
     }
 #endif /* HAVE_COREFOUNDATION */
-    p = pkgPath;
-    while ((q = strchr(p, ':')) != NULL) {
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q - p));
-	p = q + 1;
+    pkgPathPtr = Tcl_NewStringObj(pkgPath, -1);
+    status = Tcl_ListObjLength(interp ,pkgPathPtr ,&length);
+    if (status) {
+	Tcl_Panic("%s {error processing pkgPath (TCL_PACKAGE_PATH)"
+	    ,"TclpSetVariables");
     }
-    if (*p) {
-	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+
+    for (idx = 0; idx < length; idx++) {
+	status = Tcl_ListObjIndex(interp ,pkgPathPtr ,idx ,&itemPtr);
+	if (status) {
+	    Tcl_Panic("%s {error processing pkgPath (TCL_PACKAGE_PATH) item %"
+		TCL_SIZE_MODIFIER "d" ,"TclpSetVariables" ,idx);
+	}
+	Tcl_ListObjAppendElement(interp ,pkgListObj ,itemPtr);
     }
+
     Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
 	/* Some platforms build configure scripts expect ~ expansion so do that */

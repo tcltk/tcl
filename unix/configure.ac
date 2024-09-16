@@ -898,13 +898,13 @@ AC_SUBST(TCL_BUILDTIME_LIBRARY)
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl:/Library/Tcl:~/Library/Frameworks:/Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl ~/Library/Frameworks /Library/Frameworks"
 	# Allow tclsh to find Tk when multiple versions are installed. See Tk [1562e10c58].
-	TCL_PACKAGE_PATH="$TCL_PACKAGE_PATH:/Library/Frameworks/Tk.framework/Versions"
+	TCL_PACKAGE_PATH="$TCL_PACKAGE_PATH /Library/Frameworks/Tk.framework/Versions"
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}:${prefix}/lib"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib"
 fi

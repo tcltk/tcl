@@ -1802,35 +1802,35 @@ dnl # preprocessing tests use only CPPFLAGS.
 	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
     AS_IF([test "$UNSHARED_LIB_SUFFIX" = ""], [
 	UNSHARED_LIB_SUFFIX='${VERSION}.a'])
-    DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
+    DLL_INSTALL_DIR='$(LIB_INSTALL_DIR)'
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
 	LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 	MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
 	AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
-	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(SHQ_LIB_FILE) $(SHQ_BIN_INSTALL_DIR)/$(SHQ_LIB_FILE)'
 	    DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
 	], [
-	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(SHQ_LIB_FILE) $(SHQ_LIB_INSTALL_DIR)/$(SHQ_LIB_FILE)'
 	])
     ], [
 	LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
 	AS_IF([test "$RANLIB" = ""], [
-	    MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
+	    MAKE_LIB='$(STLIB_LD) ${SHQ_@} ${OBJS}'
 	], [
-	    MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
+	    MAKE_LIB='${STLIB_LD} ${SHQ_@} ${OBJS} ; ${RANLIB} ${SHQ_@}'
 	])
-	INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	INSTALL_LIB='$(INSTALL_LIBRARY) $(SHQ_LIB_FILE) $(SHQ_LIB_INSTALL_DIR)/$(SHQ_LIB_FILE)'
     ])
 
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
-	MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
+	MAKE_STUB_LIB='${STLIB_LD} ${SHQ_@} ${STUB_LIB_OBJS}'
     ], [
-	MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
+	MAKE_STUB_LIB='${STLIB_LD} ${SHQ_@} ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
     ])
-    INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
+    INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(SHQ_STUB_LIB_FILE) $(SHQ_LIB_INSTALL_DIR)/$(SHQ_STUB_LIB_FILE)'
 
     # Define TCL_LIBS now that we know what DL_LIBS is.
     # The trick here is that we don't want to change the value of TCL_LIBS if
