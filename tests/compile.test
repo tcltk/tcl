@@ -500,13 +500,21 @@ proc _ti_gencode {} {
     }}
 }
 test compile-13.2 {TclCompileScript: testing expected nested scripts compilation} -setup {
+    # dynamic constraint - ensure the stack is large enough on this box for this test:
+    if {
+      [testConstraint unix] &&
+      ![catch { exec sh -c {ulimit -s} } stsz] &&
+      $stsz ne "unlimited" && $stsz <= 2048
+    } {
+	tcltest::Skip "too small stack limit ($stsz <= 2048)"
+    }
     _ti_gencode
     interp recursionlimit ti [expr {10000+50}]
     ti eval {set result {}}
 } -body {
     # Test different compilation variants (instructions evalStk, invokeStk, etc),
     # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
-    # boxes or systems, please don't decrease it (either provide a constraint)
+    # boxes or systems, please don't decrease it (either provide new or extend a constraint above)
     ti eval {foreach cmd {eval "if 1" try catch} {
 	set c [gencode [expr {[tcl::build-info debug] ? 1500 : 1000}] $cmd]
 	if 1 $c
