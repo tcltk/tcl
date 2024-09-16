@@ -89,13 +89,14 @@ TclOO_Class_Constructor(
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"?definitionScript?");
 	return TCL_ERROR;
-    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
-	return TCL_OK;
     }
 
     /*
      * Make the class definition delegate. This is special; it doesn't reenter
      * here (and the class definition delegate doesn't run any constructors).
+     * 
+     * This needs to be done before consideration of whether to pass the script
+     * argument to [oo::define]. [Bug 680503]
      */
 
     nameObj = Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1);
@@ -103,6 +104,14 @@ TclOO_Class_Constructor(
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
 	    TclGetString(nameObj), NULL, -1, NULL, -1);
     Tcl_DecrRefCount(nameObj);
+
+    /*
+     * If there's nothing else to do, we're done.
+     */
+
+    if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+	return TCL_OK;
+    }
 
     /*
      * Delegate to [oo::define] to do the work.
