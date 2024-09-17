@@ -469,6 +469,11 @@ TclFSCwdIsNative(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
+    /* if not yet initialized - ensure we'll once obtain cwd */
+    if (!tsdPtr->cwdPathEpoch) {
+	Tcl_FSGetCwd(NULL);
+    }
+
     if (tsdPtr->cwdClientData != NULL) {
 	return 1;
     } else {
@@ -2229,15 +2234,6 @@ Tcl_FSOpenFileChannel(
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
-
-    /*
-     * We need this just to ensure we return the correct error messages under
-     * some circumstances.
-     */
-
-    if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
-	return NULL;
-    }
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {

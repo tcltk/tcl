@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
+#include "tclFileSystem.h"
 #include "tclIO.h"	/* To get Channel type declaration. */
 
 #undef SUPPORTS_TTY
@@ -1418,6 +1419,24 @@ TclpOpenFileChannel(
     native = (const char *)Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	if (interp != (Tcl_Interp *) NULL) {
+	    /*
+	     * We need this just to ensure we return the correct error messages under
+	     * some circumstances (relative paths only), so because the normalization 
+	     * is very expensive, don't invoke it for native or absolute paths.
+	     */
+	    if (
+		(
+		  (
+		    !TclFSCwdIsNative() &&
+		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
+		  ) ||
+		  (*TclGetString(pathPtr) == '~')  /* possible tilde expansion */
+		) &&
+		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
+	    ) {
+		return NULL;
+	    }
+
 	    Tcl_AppendResult(interp, "couldn't open \"",
 	    TclGetString(pathPtr), "\": filename is invalid on this platform",
 	    (char *)NULL);
