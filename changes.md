@@ -99,7 +99,6 @@ writing Tcl scripts.
 
 ## Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
- - [unset traces enable calling an object command mid-destruction](https://core.tcl-lang.org/tcl/tktview/708422)
  - [classmethod fails if no argument supplied to class create](https://core.tcl-lang.org/tcl/tktview/680503)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
