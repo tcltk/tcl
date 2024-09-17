@@ -5886,7 +5886,10 @@ ZipFSPathInFilesystemProc(
      * and sufficient condition as zipfs mounts at arbitrary paths are
      * not permitted (unlike Androwish).
      */
-    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? -1 : TCL_OK;
+    return (
+	(len < ZIPFS_VOLUME_LEN) ||
+	strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN)
+    ) ? -1 : TCL_OK;
 }
 
 /*
