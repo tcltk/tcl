@@ -2034,7 +2034,7 @@ typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
 #if 0
 /*
  *----------------------------------------------------------------------------
- * We would like to provide an anonymous structure "mp_int" here, which is
+ * We would like to provide an opaque structure "mp_int" here which is
  * compatible with libtommath's "mp_int", but without duplicating anything
  * from <tommath.h> or including <tommath.h> here. But the libtommath project
  * didn't honor our request. See: <https://github.com/libtom/libtommath/pull/473>
