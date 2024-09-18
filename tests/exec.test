@@ -384,7 +384,7 @@ test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
 } -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
-    exec | cat
+    exec |& cat
 } -returnCodes error -result {illegal use of | or |& in command}
 test exec-10.3 {errors in exec invocation} -constraints {exec} -body {
     exec cat |
@@ -719,6 +719,12 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
     exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
     viewFile $log
 } -result "\"Testing exec-20.1\""
+
+# New Syntax
+test exec-20.1 {New exec syntax with sublists} {exec} {
+    exec | {echo >}
+} >
+
 
 # ----------------------------------------------------------------------
 # cleanup
