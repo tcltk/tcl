@@ -255,7 +255,7 @@ the manual page for the \fBload\fR command for more details.
 \fBfile\fR ?\fIsubCmd args...\fR?
 The \fBfile\fR alias provides access to a safe subset of the subcommands of
 the \fBfile\fR command; it allows only \fBdirname\fR, \fBjoin\fR,
-\fBextension\fR, \fBroot\fR, \fBtail\fR, \fBpathname\fR and \fBsplit\fR
+\fBextension\fR, \fBroot\fR, \fBtail\fR, \fBpathtype\fR and \fBsplit\fR
 subcommands. For more details on what these subcommands do see the manual
 page for the \fBfile\fR command.
 .TP
