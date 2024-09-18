@@ -5837,6 +5837,7 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_Size len;
     char *path;
+    int ret, decrRef = 0;
 
     if (TclFSCwdIsNative() || Tcl_FSGetPathType(pathPtr) == TCL_PATH_ABSOLUTE) {
 	/*
@@ -5849,6 +5850,7 @@ ZipFSPathInFilesystemProc(
 	if (pathPtr == NULL) {
 	    return -1;
 	}
+	decrRef = 1; /* Tcl_FSGetTranslatedPath increases refCount */
     } else {
 	/*
 	 * Make sure the normalized path is set.
@@ -5858,6 +5860,7 @@ ZipFSPathInFilesystemProc(
 	if (!pathPtr) {
 	    return -1;
 	}
+	/* Tcl_FSGetNormalizedPath doesn't increase refCount */
     }
     path = TclGetStringFromObj(pathPtr, &len);
 
@@ -5866,10 +5869,15 @@ ZipFSPathInFilesystemProc(
      * and sufficient condition as zipfs mounts at arbitrary paths are
      * not permitted (unlike Androwish).
      */
-    return (
+    ret = (
 	(len < ZIPFS_VOLUME_LEN) ||
 	strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN)
     ) ? -1 : TCL_OK;
+
+    if (decrRef) {
+	Tcl_DecrRefCount(pathPtr);
+    }
+    return ret;
 }
 
 /*
