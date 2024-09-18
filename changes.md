@@ -136,6 +136,7 @@ In _most_ cases, rebuilding the code against Tcl 9.0 should work except when a r
  - `method -export`, `method -unexport`
 
 # Known bugs
+ - [Command line built with list not properly quoted](https://core.tcl-lang.org/tcl/tktview/e38dce)
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [classmethod fails if no argument supplied to class create](https://core.tcl-lang.org/tcl/tktview/680503)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
