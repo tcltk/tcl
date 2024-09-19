@@ -720,7 +720,7 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
     viewFile $log
 } -result "\"Testing exec-20.1\""
 
-# New Syntax
+# TIP 424 Syntax
 test exec-20.1 {New exec syntax with sublists} {exec} {
     exec | {echo >}
 } >
