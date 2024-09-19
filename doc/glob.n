@@ -30,7 +30,7 @@ they are treated as switches. The following switches are
 currently supported:
 .\" OPTION: -directory
 .TP
-\fB\-directory\fR \fIdirectory\fR
+\fB\-directory\fI directory\fR
 .
 Search for files which match the given patterns starting in the given
 \fIdirectory\fR. This allows searching of directories whose name
@@ -53,7 +53,7 @@ Allows an empty list to be returned without error; without this
 switch an error is returned if the result list would be empty.
 .\" OPTION: -path
 .TP
-\fB\-path\fR \fIpathPrefix\fR
+\fB\-path\fI pathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name
 matches the given patterns. This allows searching for files with names
@@ -81,7 +81,7 @@ path segment, so
 will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
 .\" OPTION: -types
 .TP
-\fB\-types\fR \fItypeList\fR
+\fB\-types\fI typeList\fR
 .
 Only list files or directories which match \fItypeList\fR, where the items
 in the list have two forms. The first form is like the \-type option of

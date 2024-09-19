@@ -14,25 +14,19 @@ Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_ConditionNotify\fR(\fIcondPtr\fR)
 .sp
-void
 \fBTcl_ConditionWait\fR(\fIcondPtr, mutexPtr, timePtr\fR)
 .sp
-void
 \fBTcl_ConditionFinalize\fR(\fIcondPtr\fR)
 .sp
-Void *
+void *
 \fBTcl_GetThreadData\fR(\fIkeyPtr, size\fR)
 .sp
-void
 \fBTcl_MutexLock\fR(\fImutexPtr\fR)
 .sp
-void
 \fBTcl_MutexUnlock\fR(\fImutexPtr\fR)
 .sp
-void
 \fBTcl_MutexFinalize\fR(\fImutexPtr\fR)
 .sp
 int
@@ -40,6 +34,7 @@ int
 .sp
 int
 \fBTcl_JoinThread\fR(\fIid, result\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_CreateThreadProc proc out
 .AP Tcl_Condition *condPtr in

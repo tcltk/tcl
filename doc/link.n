@@ -15,7 +15,7 @@ link \- create link from command to method of object
 .nf
 package require tcl::oo
 
-\fBlink\fR \fImethodName\fR ?\fI...\fR?
+\fBlink\fI methodName\fR ?\fI...\fR?
 \fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?\fI...\fR?
 .fi
 .BE

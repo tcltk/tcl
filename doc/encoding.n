@@ -123,7 +123,7 @@ this is signalled by raising an exception. If the \fB-failindex\fR option
 is specified, errors are reported through that mechanism.
 .VE "TCL8.7 TIP656"
 .IP \(bu
-.VS "TCL8.7 TIP656"
+.VE "TCL8.7 TIP656"
 Continue further processing of the source data using a fallback strategy such
 as replacing or discarding the offending bytes in a profile-defined manner.
 .VE "TCL8.7 TIP656"
@@ -131,9 +131,10 @@ as replacing or discarding the offending bytes in a profile-defined manner.
 The following profiles are currently implemented with \fBtcl8\fR being
 the default if the \fB-profile\fR is not specified.
 .VS "TCL8.7 TIP656"
+.VE "TCL8.7 TIP656"
 .TP
 \fBtcl8\fR
-.
+.VS "TCL8.7 TIP656"
 The \fBtcl8\fR profile always follows the first strategy above and corresponds
 to the behavior of encoding transforms in Tcl 8.6. When converting from an
 external encoding \fBother than utf-8\fR to Tcl strings with the \fBencoding
@@ -157,9 +158,11 @@ The \fBstrict\fR profile always stops processing when an conversion error is
 encountered. The error is signalled via an exception or the \fB-failindex\fR
 option mechanism. The \fBstrict\fR profile implements a Unicode standard
 conformant behavior.
+.RE
+.VE "TCL8.7 TIP656"
 .TP
 \fBreplace\fR
-.
+.VS "TCL8.7 TIP 656"
 Like the \fBtcl8\fR profile, the \fBreplace\fR profile always continues
 processing on conversion errors but follows a Unicode standard conformant
 method for substitution of invalid source data.
@@ -167,12 +170,14 @@ method for substitution of invalid source data.
 When converting an encoded byte sequence to a Tcl string using
 \fBencoding convertfrom\fR, invalid bytes
 are replaced by the U+FFFD REPLACEMENT CHARACTER code point.
-
+.RS
+.PP
 When encoding a Tcl string with \fBencoding convertto\fR,
 code points that cannot be represented in the
 target encoding are transformed to an encoding-specific fallback character,
 U+FFFD REPLACEMENT CHARACTER for UTF targets and generally `?` for other
 encodings.
+.RE
 .VE "TCL8.7 TIP656"
 .SH EXAMPLES
 .PP

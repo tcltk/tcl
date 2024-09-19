@@ -24,7 +24,6 @@ int
 int
 \fBTcl_ConvertToType\fR(\fIinterp, objPtr, typePtr\fR)
 .sp
-void
 \fBTcl_FreeInternalRep\fR(\fIobjPtr\fR)
 .sp
 char *
@@ -33,7 +32,6 @@ char *
 int
 \fBTcl_HasStringRep\fR(\fIobjPtr\fR)
 .sp
-void
 \fBTcl_StoreInternalRep\fR(\fIobjPtr, typePtr, irPtr\fR)
 .sp
 Tcl_ObjInternalRep *
@@ -331,7 +329,7 @@ modify the reference count of their arguments, but if the values contain
 subsidiary values (e.g., the elements of a list or the keys of a dictionary)
 then those subsidiary values may have their reference counts modified.
 .SH "SEE ALSO"
-Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3)
+Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_BounceRefCount(3)
 .SH KEYWORDS
 internal representation, value, value type, string representation,
 type conversion

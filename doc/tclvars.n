@@ -338,6 +338,7 @@ and the value from the GetUserName() system call on Windows.
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .RE
+.\" VARIABLE: tcl_precision
 .TP
 \fBtcl_precision\fR
 .

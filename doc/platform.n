@@ -13,7 +13,7 @@ platform \- System identification support code and utilities
 .SH SYNOPSIS
 .nf
 \fBpackage require platform\fR ?\fB1.0.10\fR?
-.sp
+
 \fBplatform::generic\fR
 \fBplatform::identify\fR
 \fBplatform::patterns \fIidentifier\fR

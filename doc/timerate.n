@@ -13,9 +13,7 @@ timerate \- Calibrated performance measurements of script execution time
 .SH SYNOPSIS
 .nf
 \fBtimerate \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
 \fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI estimate\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
 \fBtimerate \fR?\fB\-calibrate\fR? ?\fB\-direct\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
 .fi
 .BE

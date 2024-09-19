@@ -15,7 +15,7 @@ classvariable \- create link from local variable to variable in class
 .nf
 package require tcl::oo
 
-\fBclassvariable\fR \fIvariableName\fR ?\fI...\fR?
+\fBclassvariable\fI variableName\fR ?\fI...\fR?
 .fi
 .BE
 .SH DESCRIPTION
