@@ -5916,9 +5916,26 @@ ZipFSPathInFilesystemProc(
     Tcl_Size len;
     char *path;
 
-    pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    if (!pathPtr) {
-	return -1;
+    if (TclFSCwdIsNative() || Tcl_FSGetPathType(pathPtr) == TCL_PATH_ABSOLUTE) {
+	/*
+	 * The cwd is native (or path is absolute), use the translated path
+	 * without worrying about normalization (this will also usually be
+	 * shorter so the utf-to-external conversion will be somewhat faster).
+	 */
+
+	pathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (pathPtr == NULL) {
+	    return -1;
+	}
+    } else {
+	/*
+	 * Make sure the normalized path is set.
+	 */
+
+	pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (!pathPtr) {
+	    return -1;
+	}
     }
     path = Tcl_GetStringFromObj(pathPtr, &len);
 
@@ -5927,7 +5944,9 @@ ZipFSPathInFilesystemProc(
      * and sufficient condition as zipfs mounts at arbitrary paths are
      * not permitted (unlike Androwish).
      */
-    return HasVolumePrefix(path) ? TCL_OK : -1;
+    return (
+	(len < ZIPFS_VOLUME_LEN) || !HasVolumePrefix(path)
+    ) ? -1 : TCL_OK;
 }
 
 /*
