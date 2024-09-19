@@ -104,7 +104,7 @@ use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
 .RE
-.\" COMMAND: mcc
+.\" COMMAND: mcn
 .TP
 \fB::msgcat::mcn \fInamespace src-string\fR ?\fIarg arg ...\fR?
 .VS "TIP 490"
