@@ -122,7 +122,7 @@ Clock_str2wideInt_no(
 }
 
 /* int & Tcl_WideInt overflows may happens here (expected case) */
-#if defined(__GNUC__) || defined(__GNUG__)
+#if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
 # pragma GCC optimize("no-trapv")
 #endif
 
@@ -218,7 +218,7 @@ TclAtoWIe(
     return Clock_str2wideInt(out, p, e, sign);
 }
 
-#if defined(__GNUC__) || defined(__GNUG__)
+#if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
 # pragma GCC reset_options
 #endif
 
