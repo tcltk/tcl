@@ -66,9 +66,16 @@ test list-1.30 {basic null treatment} {
 } 1
 test list-1.31 {bug [e38dce74e2]} {
     set l #foo
+    set srep #foo; # same literal as above
     set e {}
-    list {*}$l {*}$e
-} {{#foo}}
+    list [list {*}$l] [list {*}$l {*}$e] \
+	 [linsert #foo end] [linsert #foo end {*}$e] \
+	 [lreplace #foo end+1 end+1] [lreplace #foo end+1 end+1 {*}$e] \
+	 [lreplace #foo end end-1] [lreplace #foo end end-1 {*}$e] \
+	 [lreplace #foo 0 -1] [lreplace #foo 0 -1 {*}$e] \
+	 [lappend l] [lappend l {*}$e] \
+	 [expr {" $srep " eq " #foo "}]; # this simply covers retaining of string rep of literal
+} [list {*}[lrepeat 12 [list #foo]] 1]
 
 # For the next round of tests create a list and then pick it apart
 # with "index" to make sure that we get back exactly what went in.

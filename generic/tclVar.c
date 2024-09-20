@@ -2895,6 +2895,18 @@ Tcl_LappendObjCmd(
 	    if (result != TCL_OK) {
 		return result;
 	    }
+	    /* 
+	     * Avoid non canonical string representation of result ([e38dce74e2]).
+	     * No needs to check ListObjIsCanonical, first byte check is enough
+	     */
+	    #if 1
+	    if (newValuePtr->bytes && *newValuePtr->bytes == '#') {
+		if (Tcl_IsShared(newValuePtr)) {
+		    goto performLappend;
+		}
+		TclInvalidateStringRep(newValuePtr);
+	    }
+	    #endif
 	}
     } else {
 	/*
@@ -2906,6 +2918,7 @@ Tcl_LappendObjCmd(
 	 * value is unshared we modify it directly, otherwise we create a new
 	 * copy to modify: this is "copy on write".
 	 */
+performLappend:
 
 	createdNewObj = 0;
 
@@ -2945,7 +2958,7 @@ Tcl_LappendObjCmd(
 	    TclNewObj(varValuePtr);
 	    createdNewObj = 1;
 	} else if (Tcl_IsShared(varValuePtr)) {
-	    varValuePtr = Tcl_DuplicateObj(varValuePtr);
+	    varValuePtr = TclListObjCopy(NULL, varValuePtr);
 	    createdNewObj = 1;
 	}
 
