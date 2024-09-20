@@ -6,6 +6,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
+'\" Copyright (c) 2024 Nathan Coulter.
+'\"
 '\" You may distribute and/or modify this program under the terms of the GNU
 '\" Affero General Public License as published by the Free Software Foundation,
 '\" either version 3 of the License, or (at your option) any later version.
@@ -17,21 +19,26 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-exec \- Invoke subprocesses
+exec \- Execute an external program
 .SH SYNOPSIS
 \fBexec \fR?\fIswitches\fR? \fIarg \fR?\fIarg ...\fR? ?\fB&\fR?
 .BE
 .SH DESCRIPTION
 .PP
-This command treats its arguments as the specification
-of one or more subprocesses to execute.
-The arguments take the form of a standard shell pipeline
-where each \fIarg\fR becomes one word of a command, and
-each distinct command becomes a subprocess.
-The result of the command is the standard output of the final subprocess in
-the pipeline, interpreted using the system \fBencoding\fR; to use any other
-encoding (especially including binary data), the pipeline must be
-\fBopen\fRed, configured and read explicitly.
+Executes a program pipeline, reads the result from the standard output of the
+final section of the pipeline using the system \fBencoding\fR, and returns it.
+To change the encoding, use \fBopen\fR instead to execute the pipeline.  The
+first \fIarg\fR of each section of a pipeline is the name of a program to
+execute.  Each subsequent \fIarg\fR up to the first redirection \fIarg\fR is an
+argument for the program.  The first \fIarg\fR that is not part of a
+redirection begins the next section. 
+.PP
+If the first \fIarg\fR of the first section is \fB|\fR (a vertical line
+character) , the next \fIarg\fR is a list whose items are the name of the
+program and the arguments to the program, and subsequent \fIarg\fR values are
+redirections as documented below. Each remaining section of the pipeline is
+processed in the same way.  With this form program arguments and pipeline
+redirections are unambiguously distinguished.
 .PP
 If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
