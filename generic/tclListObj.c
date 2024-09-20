@@ -1775,15 +1775,20 @@ Tcl_ListObjAppendList(
 	return TCL_ERROR;
     }
 
-    if (elemCount < 0) {
+    if (elemCount <= 0) {
 	/*
 	 * Note that when elemCount <= 0, this routine is logically a
 	 * no-op, removing and adding no elements to the list. However, by flowing
 	 * through this routine anyway, we get the important side effect that the
 	 * resulting listPtr is a list in canonical form. This is important.
-	 * Resist any temptation to optimize this case. See bug [e38dce74e2]
+	 * Resist any temptation to optimize this case. See bug [e38dce74e2].
+	 * No needs to check ListObjIsCanonical, first byte check is enough
 	 */
-	elemCount = 0;
+	if (toObj->bytes && *toObj->bytes == '#') {
+	    TclInvalidateStringRep(toObj);
+	}
+	/* Nothing to do. Note AFTER check for list above */
+	return TCL_OK;
     }
 
     ListRepElements(&listRep, toLen, toObjv);
