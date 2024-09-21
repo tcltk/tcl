@@ -69,6 +69,11 @@ test list-1.31 {bug [e38dce74e2]} {
     set e {}
     list {*}$l {*}$e
 } {{#foo}}
+test list-1.32 {bug [e38dce74e2]} {
+    set l " #foo"
+    set e {}
+    list {*}$l {*}$e
+} {{#foo}}
 
 # For the next round of tests create a list and then pick it apart
 # with "index" to make sure that we get back exactly what went in.
