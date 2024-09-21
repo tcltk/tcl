@@ -10563,7 +10563,7 @@ Tcl_GetChannelNames(
  *
  * Tcl_GetChannelNamesEx --
  *
- *	Return the names of open channels in the interp filtered filtered
+ *	Return the names of open channels in the interp filtered
  *	through a pattern. If pattern is NULL, it returns all the open
  *	channels.
  *

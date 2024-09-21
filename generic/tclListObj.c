@@ -1616,8 +1616,8 @@ TclListObjRange(
  * TclListObjGetElement --
  *
  *	Returns a single element from the array of the elements in a list
- *	object, without doing doing any bounds checking.  Caller must ensure
- *	that ObjPtr of of type 'tclListType' and that  index is valid for the
+ *	object, without doing any bounds checking.  Caller must ensure
+ *	that ObjPtr of type 'tclListType' and that index is valid for the
  *	list.
  *
  *----------------------------------------------------------------------

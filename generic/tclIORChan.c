@@ -706,7 +706,7 @@ TclChanCreateObjCmd(
     }
 
     /*
-     * Register the channel in the I/O system, and in our our map for 'chan
+     * Register the channel in the I/O system, and in our map for 'chan
      * postevent'.
      */
 
@@ -2983,7 +2983,7 @@ ForwardProc(
      * quiescent. Because of this we can treat the data as belonging to us,
      * without fear of race conditions. I.e. we can read and write as we like.
      *
-     * The only thing we cannot be sure of is the resultPtr. This can be be
+     * The only thing we cannot be sure of is the resultPtr. This can be
      * NULLed if the originating thread went away while the event is handled
      * here now.
      */

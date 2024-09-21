@@ -9756,7 +9756,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode. Note that
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.
