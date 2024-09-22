@@ -158,7 +158,7 @@ The \fBstrict\fR profile always stops processing when an conversion error is
 encountered. The error is signalled via an exception or the \fB-failindex\fR
 option mechanism. The \fBstrict\fR profile implements a Unicode standard
 conformant behavior.
-.RE
+
 .VE "TCL8.7 TIP656"
 .TP
 \fBreplace\fR
