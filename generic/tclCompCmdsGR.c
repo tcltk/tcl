@@ -849,7 +849,7 @@ TclCompileLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords < 3) {
+    if (numWords == 1) {
 	return TCL_ERROR;
     }
 
