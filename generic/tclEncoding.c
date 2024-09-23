@@ -1922,7 +1922,7 @@ LoadEncodingFile(
  *	little-endian systems.
  *
  * Results:
- *	Returns the new Tcl_Encoding,  or NULL if it could could
+ *	Returns the new Tcl_Encoding,  or NULL if it could
  *	not be created because the file contained invalid data.
  *
  * Side effects:

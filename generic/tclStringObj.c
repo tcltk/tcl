@@ -597,15 +597,15 @@ TclGetUniChar(
     }
 
     /*
-	 * Optimize the ByteArray case:  N need need to convert to a string to
-	 * perform the indexing operation.
+     * Optimize the ByteArray case: no need to convert to a string to
+     * perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size length = 0;
 	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
-		return -1;
+	    return -1;
 	}
 
 	return bytes[index];

@@ -736,7 +736,7 @@ SortPropList(
  *
  * TclOOGetAllObjectProperties --
  *
- *	Get the sorted list of all properties known to a object, including to its
+ *	Get the sorted list of all properties known to an object, including to
  *	its classes. Manages a cache so this operation is usually cheap.
  *
  * ----------------------------------------------------------------------

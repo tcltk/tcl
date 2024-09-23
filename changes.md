@@ -50,7 +50,7 @@ writing Tcl scripts.
    (If you need a particular precision, use `format`.)
  - Removed pre-Tcl 8 legacies: `case`, `puts` and `read` variant syntaxes.
  - Removed subcommands [`trace variable`|`vdelete`|`vinfo`]
- - No `-eofchar` option for channels anymore for writing.
+ - Removed `-eofchar` option for write channels.
  - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
  - `%b`/`%d`/`%o`/`%x` format modifiers (without size modifier) for `format`
    and `scan` always truncate to 32-bits on all platforms.
@@ -60,6 +60,9 @@ writing Tcl scripts.
    more comprehensible semantics.)
 
 ## Incompatibilities in C public interface
+ - Extensions built against Tcl 8.6 and before will not work with Tcl 9.0;
+   ABI compatibility was a non-goal for 9.0.  In _most_ cases, rebuilding
+   against Tcl 9.0 should work except when a removed API function is used.
  - Many arguments expanded type from `int` to `Tcl_Size`, a signed integer type
    large enough to support 64-bit sized memory objects.
    The constant `TCL_AUTO_LENGTH` is a value of that type that indicates that
@@ -68,7 +71,7 @@ writing Tcl scripts.
  - Introduced versioning of the `Tcl_ObjType` struct
  - Removed macros `CONST*`: Tcl 9 support means dropping Tcl 8.3 support.
    (Replaced with standard C `const` keyword going forward.)
- - Removed routines:
+ - Removed API functions:
 
      `Tcl_Backslash()`,
      `Tcl_*VA()`,
@@ -79,9 +82,6 @@ writing Tcl scripts.
      `Tcl_(Get|Set)DefaultEncodingDir()`,
      `Tcl_UniCharN(case)cmp()`,
      `Tcl_UniCharCaseMatch()`
-
-Note that builds of extensions against Tcl 8.6 and before are expected to not work with Tcl 9.0; ABI compatibility was a non-goal for 9.0.
-In _most_ cases, rebuilding the code against Tcl 9.0 should work except when a removed API function is used.
 
 # New Features
 
@@ -136,9 +136,7 @@ In _most_ cases, rebuilding the code against Tcl 9.0 should work except when a r
  - `method -export`, `method -unexport`
 
 # Known bugs
- - [Command line built with list not properly quoted](https://core.tcl-lang.org/tcl/tktview/e38dce)
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
- - [classmethod fails if no argument supplied to class create](https://core.tcl-lang.org/tcl/tktview/680503)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)

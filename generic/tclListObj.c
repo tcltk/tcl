@@ -1616,8 +1616,8 @@ TclListObjRange(
  * TclListObjGetElement --
  *
  *	Returns a single element from the array of the elements in a list
- *	object, without doing doing any bounds checking.  Caller must ensure
- *	that ObjPtr of of type 'tclListType' and that  index is valid for the
+ *	object, without doing any bounds checking.  Caller must ensure
+ *	that ObjPtr of type 'tclListType' and that index is valid for the
  *	list.
  *
  *----------------------------------------------------------------------
@@ -1776,6 +1776,16 @@ Tcl_ListObjAppendList(
     }
 
     if (elemCount <= 0) {
+	/*
+	 * Note that when elemCount <= 0, this routine is logically a
+	 * no-op, removing and adding no elements to the list. However, by removing
+	 * the string representation, we get the important side effect that the
+	 * resulting listPtr is a list in canonical form. This is important.
+	 * Resist any temptation to optimize this case further. See bug [e38dce74e2].
+	 */
+	if (!ListObjIsCanonical(toObj)) {
+	    TclInvalidateStringRep(toObj);
+	}
 	/* Nothing to do. Note AFTER check for list above */
 	return TCL_OK;
     }

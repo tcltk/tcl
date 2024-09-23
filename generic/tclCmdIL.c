@@ -2295,7 +2295,7 @@ Tcl_LassignObjCmd(
 	}
 	/*
 	 * Must incrref elemObj. If the var name being set is same as the
-	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
+	 * list value, ObjSetVar2 will shimmer the list to a VAR freeing
 	 * the elements in the list (in case list refCount was 1) BEFORE
 	 * the elemObj is stored in the var. See tests 6.{25,26}
 	 */
