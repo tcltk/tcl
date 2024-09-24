@@ -331,12 +331,12 @@ test regexpComp-6.4 {regexp errors} {
     evalInProc {
 	list [catch {regexp a( b} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} {1 {cannot compile regular expression pattern: parentheses () not balanced}}
 test regexpComp-6.5 {regexp errors} {
     evalInProc {
 	list [catch {regexp a( b} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} {1 {cannot compile regular expression pattern: parentheses () not balanced}}
 test regexpComp-6.6 {regexp errors} {
     evalInProc {
 	list [catch {regexp a a f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1} msg] $msg
@@ -592,7 +592,7 @@ test regexpComp-11.6 {regsub errors} {
     evalInProc {
 	list [catch {regsub -nocase a( b c d} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} {1 {cannot compile regular expression pattern: parentheses () not balanced}}
 test regexpComp-11.7 {regsub errors} {
     evalInProc {
 	unset -nocomplain f1
@@ -970,7 +970,7 @@ test regexpComp-24.9 {regexp command compiling tests} {
 	set re "("
 	list [catch {regexp -- $re dogfod} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} {1 {cannot compile regular expression pattern: parentheses () not balanced}}
 test regexpComp-24.10 {regexp command compiling tests} {
     # Bug 1902436 - last * escaped
     evalInProc {

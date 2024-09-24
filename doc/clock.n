@@ -101,14 +101,14 @@ slowing its clock by a tiny fraction for some minutes until it is
 back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
-\fI\-now\fR
-Instead of \fItimeVal\fR a non-integer option \fI\-now\fR can be used as
+\fInow\fR
+Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as
 replacement for today, which is simply interpolated to the runt-time as value
 of \fBclock seconds\fR. For example:
 .sp
-\fBclock format -now -f %a; # current day of the week\fR
+\fBclock format now -f %a; # current day of the week\fR
 .sp
-\fBclock add -now 1 month; # next month\fR
+\fBclock add now 1 month; # next month\fR
 .TP
 \fIunit\fR
 .
@@ -132,7 +132,7 @@ Specifies the desired output format for \fBclock format\fR or the
 expected input format for \fBclock scan\fR.  The \fIformat\fR string consists
 of any number of characters other than the per-cent sign
 .PQ \fB%\fR
-interspersed with any number of \fIformat groups\fR, which are two-character
+interspersed with any number of \fIformat groups\fR, which are two- or three-character
 sequences beginning with the per-cent sign.  The permissible format groups,
 and their interpretation, are described under \fBFORMAT GROUPS\fR.
 .RS
@@ -194,6 +194,15 @@ the environment variable \fBTZ\fR.
 .IP [3]
 on Windows systems, the time zone settings from the Control Panel.
 .RE
+.\" OPTION: -validate
+.TP
+\fB\-validate\fR boolean
+.
+If \fIboolean\fR is true (default), \fBclock scan\fR will raise an error
+if the input contains invalid values, e.g. day of month greater than
+number of days in the month. If specified as false, the command makes
+an adjustment to bring values within acceptable range. See
+\fBSCANNING TIMES\fR for details.
 .PP
 If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR
 functions are used to attempt to convert times between local and
@@ -492,7 +501,9 @@ time zone when converting local times.  This caveat does not apply to
 UTC times.)
 .PP
 If the interpretation of the groups yields an impossible time because
-a field is out of range, enough of that field's unit will be added to
+a field is out of range, an exception is raised if the \fB-validate\fR
+option is not present or passed as true. If passed as false,
+enough of that field's unit will be added to
 or subtracted from the time to bring it in range. Thus, if attempting to
 scan or format day 0 of the month, one day will be subtracted from day
 1 of the month, yielding the last day of the previous month.
@@ -573,7 +584,7 @@ On input, accepts a string of digits (or floating point with the time fraction)
 and interprets it as an Astronomical Julian Day Number (JDN/JD).
 The Astronomical Julian Date is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
-Julian calendar, which contains also the time fraktion (after floating point).
+Julian calendar, which contains also the time fraction (after floating point).
 The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440587.5.
 This value corresponds the julian day used in sqlite-database, and is the same
 as result of \fBselect julianday(:seconds, 'unixepoch')\fR.
@@ -585,7 +596,7 @@ On input, accepts a string of digits (or floating point with the time fraction)
 and interprets it as a Calendar Julian Day Number.
 The Calendar Julian Date is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
-Julian calendar, which contains also the time fraktion (after floating point).
+Julian calendar, which contains also the time fraction (after floating point).
 The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440588.
 .IP \fB%Es\fR
 This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses
@@ -631,7 +642,7 @@ On output, produces a two-digit number giving the hour of the day
 On output, produces a three-digit number giving the day of the year
 (001-366).  On input, accepts such a number.
 .IP \fB%J\fR
-On output, produces a string of digits giving the calendar Julian Day Number.
+On output, produces a string of digits giving the Julian Day Number.
 On input, accepts a string of digits and interprets it as a Julian Day Number.
 The Julian Day Number is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
@@ -922,7 +933,7 @@ acceptable formats are
 .QW "\fIdd monthname yy\fR" ,
 .QW "?\fICC\fR?\fIyymmdd\fR" ,
 and
-.QW "\fIdd\fB\-\fImonthname\fB\-\fR?\fICC\fR?\fIyy\fR" .
+.QW "\fIdd\fB-\fImonthname\fB-\fR?\fICC\fR?\fIyy\fR" .
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so

@@ -32,7 +32,7 @@ testConstraint filetime64bit [expr {
 	  # check whether disk may have 2038 problem, see [fd91b0ca09cb171f]:
 	  set fn [makeFile "" foo.text]
 	  if {[catch {
-	    exec sh -c "TZ=:UTC LC_TYME=en_US touch -ma -t '207006290000' '$fn' && TZ=:UTC LC_TYME=en_US ls -l '$fn'"
+	    exec sh -c "TZ=:UTC LC_TIME=en_US touch -ma -t '207006290000' '$fn' && TZ=:UTC LC_TIME=en_US ls -l '$fn'"
 	  } res]} {
 	    #puts "Check constraint failed:\t$res"
 	    set res {}

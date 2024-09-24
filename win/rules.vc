@@ -1135,8 +1135,8 @@ STUBPREFIX      = $(PROJECT)stub
 #
 
 # TIP 430. Unused for 8.6 but no harm defining it to allow a common rules.vc
-TCLSCRIPTZIPNAME = libtcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
-TKSCRIPTZIPNAME = libtk$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
+TCL_ZIP_FILE = libtcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+TK_ZIP_FILE = libtk$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
 
 !if $(DOING_TCL)
 TCLSHNAME       = $(PROJECT)sh$(VERSION)$(SUFX).exe
@@ -1144,7 +1144,7 @@ TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
-TCLSCRIPTZIP    = $(OUT_DIR)\$(TCLSCRIPTZIPNAME)
+TCLSCRIPTZIP    = $(OUT_DIR)\$(TCL_ZIP_FILE)
 
 !if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1180,7 +1180,7 @@ TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib
-TCLSCRIPTZIP	= $(_TCLDIR)\lib\$(TCLSCRIPTZIPNAME)
+TCLSCRIPTZIP	= $(_TCLDIR)\lib\$(TCL_ZIP_FILE)
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
@@ -1204,7 +1204,7 @@ TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib
-TCLSCRIPTZIP	= $(_TCLDIR)\win\$(BUILDDIRTOP)\$(TCLSCRIPTZIPNAME)
+TCLSCRIPTZIP	= $(_TCLDIR)\win\$(BUILDDIRTOP)\$(TCL_ZIP_FILE)
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -1253,7 +1253,7 @@ TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
 TK_INCLUDES     = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
-TKSCRIPTZIP     = $(OUT_DIR)\$(TKSCRIPTZIPNAME)
+TKSCRIPTZIP     = $(OUT_DIR)\$(TK_ZIP_FILE)
 
 !else # effectively NEED_TK
 
@@ -1268,7 +1268,7 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\lib\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\include"
-TKSCRIPTZIP     = $(_TKDIR)\lib\$(TKSCRIPTZIPNAME)
+TKSCRIPTZIP     = $(_TKDIR)\lib\$(TK_ZIP_FILE)
 
 !else # Building against Tk sources
 
@@ -1282,7 +1282,7 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
-TKSCRIPTZIP     = $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSCRIPTZIPNAME)
+TKSCRIPTZIP     = $(_TKDIR)\win\$(BUILDDIRTOP)\$(TK_ZIP_FILE)
 
 !endif # TKINSTALL
 
@@ -1446,9 +1446,6 @@ OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !if "$(_USE_64BIT_TIME_T)" == "1"
 OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
-
-# _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
@@ -1459,9 +1456,9 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 # so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
 PKGNAMEFLAGS = /DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               /DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               /DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               /DMODULE_SCOPE=extern
+	/DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+	/DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+	/DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1798,18 +1795,18 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "FileDescription",  "Tcl extension " PROJECT
-            VALUE "OriginalFilename", PRJLIBNAME
-            VALUE "FileVersion",      DOTVERSION
-            VALUE "ProductName",      "Package " PROJECT " for Tcl"
-            VALUE "ProductVersion",   DOTVERSION
-        END
+	BLOCK "040904b0"
+	BEGIN
+	    VALUE "FileDescription",  "Tcl extension " PROJECT
+	    VALUE "OriginalFilename", PRJLIBNAME
+	    VALUE "FileVersion",      DOTVERSION
+	    VALUE "ProductName",      "Package " PROJECT " for Tcl"
+	    VALUE "ProductVersion",   DOTVERSION
+	END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1200
+	VALUE "Translation", 0x409, 1200
     END
 END
 

@@ -2083,7 +2083,7 @@ Tcl_GetBoolFromObj(
 		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
     /* Don't try to convert index to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(Tcl_GetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;
@@ -2489,7 +2489,7 @@ Tcl_GetDoubleFromObj(
     /* Don't try to convert index or boolean's to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
 	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(Tcl_GetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;
@@ -2795,7 +2795,7 @@ Tcl_GetLongFromObj(
     /* Don't try to convert index or boolean's to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
 	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(Tcl_GetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;
@@ -3119,7 +3119,7 @@ Tcl_GetWideIntFromObj(
     /* Don't try to convert index or boolean's to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
 	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(Tcl_GetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;
@@ -3814,7 +3814,7 @@ Tcl_GetNumberFromObj(
     /* Don't try to convert index or boolean's to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
 	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(Tcl_GetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;

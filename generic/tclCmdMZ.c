@@ -4961,8 +4961,8 @@ TryPostBody(
 			continue;
 		    }
 		    for (j=0 ; j<len1 ; j++) {
-			if (strcmp(TclGetString(bits1[j]),
-				TclGetString(bits2[j])) != 0) {
+			if (TclStringCmp(bits1[j], bits2[j], 1, 0,
+				TCL_INDEX_NONE) != 0) {
 			    /*
 			     * Really want 'continue outerloop;', but C does
 			     * not give us that.

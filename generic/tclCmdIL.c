@@ -1706,10 +1706,10 @@ InfoLoadedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *interpName, *packageName;
+    const char *interpName, *prefix;
 
     if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?packageName?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp? ?prefix?");
 	return TCL_ERROR;
     }
 
@@ -1719,11 +1719,11 @@ InfoLoadedCmd(
 	interpName = TclGetString(objv[1]);
     }
     if (objc < 3) {		/* Get loaded files in all packages. */
-	packageName = NULL;
+	prefix = NULL;
     } else {			/* Get pkgs just in specified interp. */
-	packageName = TclGetString(objv[2]);
+	prefix = TclGetString(objv[2]);
     }
-    return TclGetLoadedLibraries(interp, interpName, packageName);
+    return TclGetLoadedLibraries(interp, interpName, prefix);
 }
 
 /*
@@ -2295,7 +2295,7 @@ Tcl_LassignObjCmd(
 	}
 	/*
 	 * Must incrref elemObj. If the var name being set is same as the
-	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
+	 * list value, ObjSetVar2 will shimmer the list to a VAR freeing
 	 * the elements in the list (in case list refCount was 1) BEFORE
 	 * the elemObj is stored in the var. See tests 6.{25,26}
 	 */
@@ -4139,7 +4139,8 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status = TCL_ERROR, keyword, useDoubles = 0, allowedArgs = NumericArg;
+    int status = TCL_ERROR, keyword, allowedArgs = NumericArg;
+    int useDoubles = 0;
     int remNums = 3;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
@@ -4184,7 +4185,7 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles |= (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    useDoubles += (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
 	    value_i++;
 	    break;
 
@@ -4213,6 +4214,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
+        useDoubles = 0; // Can only have Integer value. If a fractional value
+                        // is given, this will fail later. In other words,
+                        // "3.0" is allowed and used as Integer, but "3.1"
+                        // will be flagged as an error. (bug f4a4bd7f1070)
 	break;
 
 /*    lseq n n */
@@ -4339,6 +4344,8 @@ Tcl_LseqObjCmd(
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
 	double d;
+        // Don't consider Count type to indicate using double values in seqence
+        useDoubles -= (useDoubles > 0) ? 1 : 0;
 	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
 	if (floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {

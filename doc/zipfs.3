@@ -60,17 +60,18 @@ initialization procedures, taking into account available ZIP archives as
 follows:
 .IP [1]
 If the current application has a mountable ZIP archive, that archive is
-mounted under \fIZIPFS_VOLUME\fBapp\fR as a read-only Tcl virtual file
-system. \fIZIPFS_VOLUME\fR is \fB//zipfs:/\fR on all platforms.
+mounted under \fIZIPFS_VOLUME\fB/app\fR as a read-only Tcl virtual file
+system (VFS). The value of \fIZIPFS_VOLUME\fR can be retrieved using the
+Tcl command \fBzipfs root\fR.
 .IP [2]
 If a file named \fBmain.tcl\fR is located in the root directory of that file
-system (i.e., at \fIZIPROOT\fB/app/main.tcl\fR after the ZIP archive is
+system (i.e., at \fIZIPFS_VOLUME\fB/app/main.tcl\fR after the ZIP archive is
 mounted as described above) it is treated as the startup script for the
 process.
 .IP [3]
-If the file \fIZIPROOT\fB/app/tcl_library/init.tcl\fR is present, the
+If the file \fIZIPFS_VOLUME\fB/app/tcl_library/init.tcl\fR is present, the
 \fBtcl_library\fR global variable in the initial Tcl interpreter is set to
-\fIZIPROOT\fB/app/tcl_library\fR.
+\fIZIPFS_VOLUME\fB/app/tcl_library\fR.
 .IP [4]
 If the directory \fBtcl_library\fR was not found in the main application
 mount, the system will then search for it as either a VFS attached to the
@@ -81,7 +82,7 @@ example, the Tcl 8.7.2 release would be searched for in a file
 \fBlibtcl_8_7_2.zip\fR.) That archive, if located, is also mounted read-only.
 .PP
 On Windows, \fBTclZipfs_AppHook\fR has a slightly different signature, since
-it uses WCHAR instead of char. As a result, it requires your application to
+it uses WCHAR instead of char. As a result, it requires the application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
 \fB\-DUNICODE\fR compiler flag).
 .PP
@@ -97,8 +98,11 @@ specified (i.e. non-NULL), the function mounts the ZIP archive \fIzipname\fR on
 the mount point given in \fImountpoint\fR. If \fIpassword\fR is not NULL, it
 should point to the NUL terminated password protecting the archive. If not under
 the zipfs file system root, \fImountpoint\fR is normalized with respect to it.
-For example, a mount point passed as either \fBmt\fR \fB/mt\fR would be
-normalized to \fB//zipfs:/mt\fR. An error is raised if the mount point includes
+For example, a mount point passed as either \fBmt\fR or \fB/mt\fR would be
+normalized to \fB//zipfs:/mt\fR, given that \fIZIPFS_VOLUME\fR as returned
+by \fBzipfs root\fR is
+.QW //zipfs:/ .
+An error is raised if the mount point includes
 a drive or UNC volume. On success, \fIinterp\fR's result is set to the
 normalized mount point path.
 .PP

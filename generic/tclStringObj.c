@@ -597,15 +597,15 @@ TclGetUniChar(
     }
 
     /*
-	 * Optimize the ByteArray case:  N need need to convert to a string to
-	 * perform the indexing operation.
+     * Optimize the ByteArray case: no need to convert to a string to
+     * perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size length = 0;
 	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
-		return -1;
+	    return -1;
 	}
 
 	return bytes[index];
@@ -2530,12 +2530,18 @@ Tcl_AppendFormatToObj(
 	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
+		if (allocSegment) {
+		    Tcl_DecrRefCount(segment);
+		}
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
 	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
+		if (allocSegment) {
+		    Tcl_DecrRefCount(segment);
+		}
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
@@ -3185,7 +3191,7 @@ TclStringCat(
 		binary = 0;
 		if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
 		    forceUniChar = 1;
-		} else if ((objPtr->typePtr) && TclHasInternalRep(objPtr, &tclStringType)) {
+		} else if ((objPtr->typePtr) && !TclHasInternalRep(objPtr, &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}

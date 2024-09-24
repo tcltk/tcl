@@ -52,8 +52,9 @@
  * The following flag is used in OpenKeys to indicate that the specified key
  * should be created if it doesn't currently exist.
  */
-
-#define REG_CREATE 1
+enum OpenKeysFlags {
+    REG_CREATE = 1
+};
 
 /*
  * The following tables contain the mapping from registry root names to the
@@ -386,7 +387,7 @@ RegistryObjCmd(
 	     */
 
 	    mode |= KEY_ALL_ACCESS;
-	    if (OpenKey(interp, objv[n], mode, 1, &key) != TCL_OK) {
+	    if (OpenKey(interp, objv[n], mode, REG_CREATE, &key) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    RegCloseKey(key);
@@ -1310,7 +1311,7 @@ SetValue(
 	Tcl_ResetResult(interp);
     }
     mode |= KEY_ALL_ACCESS;
-    if (OpenKey(interp, keyNameObj, mode, 1, &key) != TCL_OK) {
+    if (OpenKey(interp, keyNameObj, mode, REG_CREATE, &key) != TCL_OK) {
 	return TCL_ERROR;
     }
 

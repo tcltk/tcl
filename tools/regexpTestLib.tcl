@@ -56,7 +56,7 @@ proc removeAts {ls} {
 
 proc convertErrCode {code} {
 
-    set errMsg "couldn't compile regular expression pattern:"
+    set errMsg "cannot compile regular expression pattern:"
 
     if {[string compare $code "INVARG"] == 0} {
 	return "$errMsg invalid argument to regex routine"

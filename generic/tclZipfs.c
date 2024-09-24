@@ -117,6 +117,8 @@ static const z_crc_t* crc32tab;
 #define ZIP_LOCAL_PATHLEN_OFFS		26
 #define ZIP_LOCAL_EXTRALEN_OFFS		28
 
+#define ZIP_LOCAL_FLAGS_UTF8		0x0800
+
 /*
  * Central header of ZIP archive member at end of ZIP file.
  */
@@ -2628,7 +2630,7 @@ ZipFSMountObjCmd(
  *
  * ZipFSMountBufferObjCmd --
  *
- *	This procedure is invoked to process the [zipfs mount_data] command.
+ *	This procedure is invoked to process the [zipfs mountdata] command.
  *
  * Results:
  *	A standard Tcl result.
@@ -3733,7 +3735,7 @@ SerializeLocalEntryHeader(
 {
     ZipWriteInt(start, end, buf + ZIP_LOCAL_SIG_OFFS, ZIP_LOCAL_HEADER_SIG);
     ZipWriteShort(start, end, buf + ZIP_LOCAL_VERSION_OFFS, ZIP_MIN_VERSION);
-    ZipWriteShort(start, end, buf + ZIP_LOCAL_FLAGS_OFFS, z->isEncrypted);
+    ZipWriteShort(start, end, buf + ZIP_LOCAL_FLAGS_OFFS, z->isEncrypted + ZIP_LOCAL_FLAGS_UTF8);
     ZipWriteShort(start, end, buf + ZIP_LOCAL_COMPMETH_OFFS,
 	    z->compressMethod);
     ZipWriteShort(start, end, buf + ZIP_LOCAL_MTIME_OFFS,
@@ -3761,7 +3763,7 @@ SerializeCentralDirectoryEntry(
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_VERSIONMADE_OFFS,
 	    ZIP_MIN_VERSION);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_VERSION_OFFS, ZIP_MIN_VERSION);
-    ZipWriteShort(start, end, buf + ZIP_CENTRAL_FLAGS_OFFS, z->isEncrypted);
+    ZipWriteShort(start, end, buf + ZIP_CENTRAL_FLAGS_OFFS, z->isEncrypted + ZIP_LOCAL_FLAGS_UTF8);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_COMPMETH_OFFS,
 	    z->compressMethod);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_MTIME_OFFS,
@@ -4240,6 +4242,8 @@ ScriptLibrarySetup(
     Tcl_IncrRefCount(searchPathObj);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
+    /* Bug [fccb9f322f]. Reinit system encoding after setting search path */
+    TclpSetInitialEncodings();
     return libDirObj;
 }
 
@@ -5833,10 +5837,30 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_Size len;
     char *path;
+    int ret, decrRef = 0;
 
-    pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    if (!pathPtr) {
-	return -1;
+    if (TclFSCwdIsNative() || Tcl_FSGetPathType(pathPtr) == TCL_PATH_ABSOLUTE) {
+	/*
+	 * The cwd is native (or path is absolute), use the translated path
+	 * without worrying about normalization (this will also usually be
+	 * shorter so the utf-to-external conversion will be somewhat faster).
+	 */
+
+	pathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (pathPtr == NULL) {
+	    return -1;
+	}
+	decrRef = 1; /* Tcl_FSGetTranslatedPath increases refCount */
+    } else {
+	/*
+	 * Make sure the normalized path is set.
+	 */
+
+	pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (!pathPtr) {
+	    return -1;
+	}
+	/* Tcl_FSGetNormalizedPath doesn't increase refCount */
     }
     path = TclGetStringFromObj(pathPtr, &len);
 
@@ -5845,7 +5869,15 @@ ZipFSPathInFilesystemProc(
      * and sufficient condition as zipfs mounts at arbitrary paths are
      * not permitted (unlike Androwish).
      */
-    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? -1 : TCL_OK;
+    ret = (
+	(len < ZIPFS_VOLUME_LEN) ||
+	strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN)
+    ) ? -1 : TCL_OK;
+
+    if (decrRef) {
+	Tcl_DecrRefCount(pathPtr);
+    }
+    return ret;
 }
 
 /*
@@ -6202,23 +6234,24 @@ TclZipfs_Init(
 	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 1},
-	/* The 4 entries above are not available in safe interpreters */
 	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 1},
-	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
+	{"mountdata",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
-	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
-	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
-	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
-	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 0},
-	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 1},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 1},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 1},
+	{"canonical",	ZipFSCanonicalObjCmd,	NULL, NULL, NULL, 1},
+	{"root",	ZipFSRootObjCmd,	NULL, NULL, NULL, 1},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char findproc[] =
 	"namespace eval ::tcl::zipfs {}\n"
 	"proc ::tcl::zipfs::Find dir {\n"
 	"    set result {}\n"
-	"    if {[catch {glob -directory $dir -nocomplain * .*} list]} {\n"
+	"    if {[catch {\n"
+        "        concat [glob -directory $dir -nocomplain *] [glob -directory $dir -types hidden -nocomplain *]\n"
+        "    } list]} {\n"
 	"        return $result\n"
 	"    }\n"
 	"    foreach file $list {\n"
@@ -6265,7 +6298,6 @@ TclZipfs_Init(
 	TclDictPutString(NULL, mapObj, "find", "::tcl::zipfs::find");
 	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
-	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");
     }
     return TCL_OK;
 #else /* !HAVE_ZLIB */

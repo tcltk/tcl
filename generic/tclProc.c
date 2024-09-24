@@ -95,7 +95,11 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 /*
@@ -2391,7 +2395,7 @@ ProcBodyFree(
  *
  *	How to manage the internal representations of lambda term objects.
  *	Syntactically they look like a two- or three-element list, where the
- *	first element is the formal arguments, the second is the the body, and
+ *	first element is the formal arguments, the second is the body, and
  *	the (optional) third is the namespace to execute the lambda term
  *	within (the global namespace is assumed if it is absent).
  *

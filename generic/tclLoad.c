@@ -355,7 +355,7 @@ Tcl_LoadObjCmd(
 	    if (p == pkgGuess) {
 		Tcl_DecrRefCount(splitPtr);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't figure out prefix for %s",
+			"cannot figure out prefix for %s",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
 			"WHATLIBRARY", (char *)NULL);
@@ -452,7 +452,7 @@ Tcl_LoadObjCmd(
     if (Tcl_IsSafe(target)) {
 	if (libraryPtr->safeInitProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't use library in a safe interpreter: no"
+		    "cannot use library in a safe interpreter: no"
 		    " %s_SafeInit procedure", libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
 		    (char *)NULL);
@@ -463,7 +463,7 @@ Tcl_LoadObjCmd(
     } else {
 	if (libraryPtr->initProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't attach library to interpreter: no %s_Init procedure",
+		    "cannot attach library to interpreter: no %s_Init procedure",
 		    libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
 		    (char *)NULL);
@@ -535,7 +535,7 @@ Tcl_LoadObjCmd(
  *
  * Tcl_UnloadObjCmd --
  *
- *	Implements the the "unload" Tcl command. See the
+ *	Implements the "unload" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -860,23 +860,27 @@ UnloadLibrary(
      * Remove this library from the interpreter's library cache.
      */
 
-    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
-    ipPtr = ipFirstPtr;
-    if (ipPtr->libraryPtr == libraryPtr) {
-	ipFirstPtr = ipFirstPtr->nextPtr;
-    } else {
-	InterpLibrary *ipPrevPtr;
-
-	for (ipPrevPtr = ipPtr; ipPtr != NULL;
-		ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
+    if (!interpExiting) {
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	if (ipFirstPtr) {
+	    ipPtr = ipFirstPtr;
 	    if (ipPtr->libraryPtr == libraryPtr) {
-		ipPrevPtr->nextPtr = ipPtr->nextPtr;
-		break;
+		ipFirstPtr = ipFirstPtr->nextPtr;
+	    } else {
+		InterpLibrary *ipPrevPtr;
+
+		for (ipPrevPtr = ipPtr; ipPtr != NULL;
+			ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
+		    if (ipPtr->libraryPtr == libraryPtr) {
+			ipPrevPtr->nextPtr = ipPtr->nextPtr;
+			break;
+		    }
+		}
 	    }
+	    Tcl_Free(ipPtr);
+	    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
 	}
     }
-    Tcl_Free(ipPtr);
-    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
 
     if (IsStatic(libraryPtr)) {
 	goto done;
@@ -1185,20 +1189,21 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
+    void *clientData,		/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
-    InterpLibrary *ipPtr;
+    InterpLibrary *ipPtr = (InterpLibrary *)clientData, *nextPtr;
     LoadedLibrary *libraryPtr;
 
-    while (1) {
-	ipPtr = (InterpLibrary *)Tcl_GetAssocData(interp, "tclLoad", NULL);
-	if (ipPtr == NULL) {
-	    break;
-	}
+    while (ipPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	UnloadLibrary(interp, interp, libraryPtr, 0 ,"", 1);
+	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
+	/* UnloadLibrary doesn't free it by interp delete, so do it here and
+	 * repeat for next. */
+	nextPtr = ipPtr->nextPtr;
+	Tcl_Free(ipPtr);
+	ipPtr = nextPtr;
     }
 }
 

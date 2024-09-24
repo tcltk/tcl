@@ -4,7 +4,7 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.0b3 arises from the check-in with tag core-9-0-b3.
+Release Tcl 9.0b4 arises from the check-in with tag core-9-0-b4.
 
 Highlighted differences between Tcl 9.0 and Tcl 8.6 are summarized below,
 with focus on changes important to programmers using the Tcl library and
@@ -37,6 +37,9 @@ writing Tcl scripts.
  - Removed subcommands [trace variable|vdelete|vinfo]
  - No -eofchar option for channels anymore for writing.
  - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
+ - %b/%d/%o/%x format modifiers (without size modifier) for "format"
+   and "scan" always truncate to 32-bits on all platforms.
+ - %L size modifier for "scan" no longer truncates to 64-bit.
  - Removed command ::tcl::unsupported::inject.
 
 ## Incompatibilities in C public interface
@@ -56,7 +59,7 @@ writing Tcl scripts.
  - `coroinject`, `coroprobe`
  - `clock add weekdays`
  - `const`, `info const*`
- - `dict getdefault`
+ - `dict getwithdefault`
  - `file tempdir`, `file home`, `file tildeexpand`
  - `info commandtype`
  - `ledit`
@@ -67,13 +70,17 @@ writing Tcl scripts.
  - `string insert`, `string is dict`
  - `tcl::process`
  - `*::build-info`
+ - `readFile`, `writeFile`, `foreachLine`
+ - `tcl::idna::*`
 
 ## New command options
- - `regsub ... -command ...`
- - `lsearch ... -stride ...`
  - `clock scan ... -validate ...`
+ - `info loaded ... ?prefix?`
+ - `lsearch ... -stride ...`
+ - `regsub ... -command ...`
  - `socket ... -nodelay ... -keepalive ...`
  - `vwait` controlled by several new options
+ - `expr` string comparators `lt`, `gt`, `le`, `ge`
 
 ## Numbers
  - 0NNN format is no longer octal interpretation. Use 0oNNN.
@@ -84,6 +91,9 @@ writing Tcl scripts.
  - Function int() no longer truncates to word size
 
 ## tcl::oo facilities
- - private variable and methods
+ - private variables and methods
+ - class variables and methods
+ - abstract and singleton classes
+ - configurable properties
  - `method -export`, `method -unexport`
 
