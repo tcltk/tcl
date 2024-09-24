@@ -86,35 +86,35 @@ writing Tcl scripts.
 # New Features
 
 ## New commands
- - `array default` &mdash; Specify default values for arrays (note that this alters the behaviour of `append`, `incr`, `lappend`).
- - `array for` &mdash; Cheap iteration over an array's contents.
- - `chan isbinary` &mdash; Test if a channel is configured to work with binary data.
- - `coroinject`, `coroprobe` &mdash; Interact with paused coroutines.
- - `clock add weekdays` &mdash; Clock arithmetic with week days.
- - `const`, `info const*` &mdash; Commands for defining constants (variables that can't be modified).
- - `dict getwithdefault` &mdash; Define a fallback value to use when `dict get` would otherwise fail.
- - `file home` &mdash; Get the user home directory.
- - `file tempdir` &mdash; Create a temporary directory.
- - `file tildeexpand` &mdash; Expand a file path containing a `~`.
- - `info commandtype` &mdash; Introspection for the kinds of commands.
- - `ledit` &mdash; Equivalent to `lreplace` but on a list in a variable.
- - `lpop` &mdash; Remove an item from a list in a variable.
- - `lremove` &mdash; Remove a sublist from a list in a variable.
- - `lseq` &mdash; Generate a list of numbers in a sequence.
- - `package files` &mdash; Describe the contents of a package.
- - `string insert` &mdash; Insert a string as a substring of another string.
- - `string is dict` &mdash; Test whether a string is a dictionary.
- - `tcl::process` &mdash; Commands for working with subprocesses.
- - `*::build-info` &mdash; Obtain information about the build of Tcl.
- - `readFile`, `writeFile`, `foreachLine` &mdash; Simple procedures for basic working with files.
- - `tcl::idna::*` &mdash; Commands for working with encoded DNS names.
+ - `array default` — Specify default values for arrays (note that this alters the behaviour of `append`, `incr`, `lappend`).
+ - `array for` — Cheap iteration over an array's contents.
+ - `chan isbinary` — Test if a channel is configured to work with binary data.
+ - `coroinject`, `coroprobe` — Interact with paused coroutines.
+ - `clock add weekdays` — Clock arithmetic with week days.
+ - `const`, `info const*` — Commands for defining constants (variables that can't be modified).
+ - `dict getwithdefault` — Define a fallback value to use when `dict get` would otherwise fail.
+ - `file home` — Get the user home directory.
+ - `file tempdir` — Create a temporary directory.
+ - `file tildeexpand` — Expand a file path containing a `~`.
+ - `info commandtype` — Introspection for the kinds of commands.
+ - `ledit` — Equivalent to `lreplace` but on a list in a variable.
+ - `lpop` — Remove an item from a list in a variable.
+ - `lremove` — Remove a sublist from a list in a variable.
+ - `lseq` — Generate a list of numbers in a sequence.
+ - `package files` — Describe the contents of a package.
+ - `string insert` — Insert a string as a substring of another string.
+ - `string is dict` — Test whether a string is a dictionary.
+ - `tcl::process` — Commands for working with subprocesses.
+ - `*::build-info` — Obtain information about the build of Tcl.
+ - `readFile`, `writeFile`, `foreachLine` — Simple procedures for basic working with files.
+ - `tcl::idna::*` — Commands for working with encoded DNS names.
 
 ## New command options
- - `chan configure ... -inputmode ...` &mdash; Support for raw terminal input and reading passwords.
+ - `chan configure ... -inputmode ...` — Support for raw terminal input and reading passwords.
  - `clock scan ... -validate ...`
  - `info loaded ... ?prefix?`
- - `lsearch ... -stride ...` &mdash; Search a list by groups of items.
- - `regsub ... -command ...` &mdash; Generate the replacement for a regular expression by calling a command.
+ - `lsearch ... -stride ...` — Search a list by groups of items.
+ - `regsub ... -command ...` — Generate the replacement for a regular expression by calling a command.
  - `socket ... -nodelay ... -keepalive ...`
  - `vwait` controlled by several new options
  - `expr` string comparators `lt`, `gt`, `le`, `ge`
