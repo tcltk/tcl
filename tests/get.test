@@ -88,7 +88,7 @@ test get-3.1 {Tcl_GetInt(FromObj), bad numbers} {
 	lappend result [catch {format %ld $num} msg] $msg
     }
     set result
-} {0 1 0 1 1 {expected integer but got "++1"} 1 {expected integer but got "+-1"} 1 {expected integer but got "-+1"} 0 -1 1 {expected integer but got "--1"} 1 {expected integer but got "- +1"} 0 12345678987654321 1 {expected integer but got "++12345678987654321"}}
+} {0 1 0 1 1 {expected integer but got "++1"} 1 {expected integer but got "+-1"} 1 {expected integer but got "-+1"} 0 -1 1 {expected integer but got "--1"} 1 {expected integer but got a list} 0 12345678987654321 1 {expected integer but got "++12345678987654321"}}
 test get-3.2 {Tcl_GetDouble(FromObj), bad numbers} {
     set result ""
     set numbers [list 1.0 +1.0 ++1.0 +-1.0 -+1.0 -1.0 --1.0 "- +1.0"]

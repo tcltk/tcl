@@ -2081,11 +2081,6 @@ Tcl_GetBoolFromObj(
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
 		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
-    /* Don't try to convert index to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
     return TCL_ERROR;
 }
 
@@ -2792,12 +2787,6 @@ Tcl_GetLongFromObj(
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
-    /* Don't try to convert index or boolean's to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
     return TCL_ERROR;
 }
 
@@ -3116,12 +3105,6 @@ Tcl_GetWideIntFromObj(
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
-    /* Don't try to convert index or boolean's to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
     return TCL_ERROR;
 }
 
@@ -3811,12 +3794,6 @@ Tcl_GetNumberFromObj(
 	}
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
-    /* Don't try to convert index or boolean's to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
     return TCL_ERROR;
 }
 
