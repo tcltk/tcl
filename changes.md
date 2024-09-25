@@ -71,6 +71,7 @@ writing Tcl scripts.
  - Introduced versioning of the `Tcl_ObjType` struct
  - Removed macros `CONST*`: Tcl 9 support means dropping Tcl 8.3 support.
    (Replaced with standard C `const` keyword going forward.)
+ - Removed registration of several `Tcl_ObjType`s.
  - Removed API functions:
 
      `Tcl_Backslash()`,
@@ -82,6 +83,8 @@ writing Tcl scripts.
      `Tcl_(Get|Set)DefaultEncodingDir()`,
      `Tcl_UniCharN(case)cmp()`,
      `Tcl_UniCharCaseMatch()`
+
+ - Revised many internals; beware reliance on undocumented behaviors.
 
 # New Features
 
