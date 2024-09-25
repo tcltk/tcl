@@ -2481,12 +2481,6 @@ Tcl_GetDoubleFromObj(
 	    goto listRep;
 	}
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
-    /* Don't try to convert index or boolean's to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
     return TCL_ERROR;
 }
 
