@@ -12,7 +12,7 @@
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
 .nf
-\fBpackage require tcl 8.7\fR
+\fBpackage require tcl 9.0\fR
 \fBpackage require msgcat 1.7\fR
 
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
