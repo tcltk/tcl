@@ -9121,7 +9121,8 @@ IllegalExprOperandType(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
-	if (lengthProc && lengthProc(opndPtr) > 1) {
+	if ((lengthProc && lengthProc(opndPtr) > 1)
+		|| TclMaxListLength(TclGetString(opndPtr), TCL_INDEX_NONE, NULL) > 1) {
 	    goto listRep;
 	}
 	description = "non-numeric string";

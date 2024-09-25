@@ -531,7 +531,7 @@ test binary-13.16 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-13.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     set a {1.6 3.4}
     binary format f $a
-} -result "expected floating-point number but got \"1.6 3.4\""
+} -result "expected floating-point number but got a list"
 test binary-13.18 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {1.6 3.4}
     binary format f1 $a
@@ -592,7 +592,7 @@ test binary-14.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-14.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     set a {1.6 3.4}
     binary format d $a
-} -result "expected floating-point number but got \"1.6 3.4\""
+} -result "expected floating-point number but got a list"
 test binary-14.16 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {1.6 3.4}
     binary format d1 $a
@@ -1944,7 +1944,7 @@ test binary-51.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-51.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     set a {1.6 3.4}
     binary format q $a
-} -result "expected floating-point number but got \"1.6 3.4\""
+} -result "expected floating-point number but got a list"
 test binary-51.16 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format Q1 $a
@@ -2006,7 +2006,7 @@ test binary-53.16 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-53.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     set a {1.6 3.4}
     binary format r $a
-} -result "expected floating-point number but got \"1.6 3.4\""
+} -result "expected floating-point number but got a list"
 test binary-53.18 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format R1 $a
