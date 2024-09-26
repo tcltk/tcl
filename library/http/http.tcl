@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.10b2
+package provide http 2.10.0
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1785,7 +1785,7 @@ proc http::OpenSocket {token DoLater} {
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
 	    if {[package vsatisfies [package provide Tcl] 9.0-]} {
-		fconfigure $sock -profile tcl8
+		fconfigure $sock -profile replace
 	    }
 	    ##Log socket opened, DONE fconfigure - token $token
 	}
@@ -2206,7 +2206,7 @@ proc http::Connected {token proto phost srvurl} {
     fconfigure $sock -translation [list $trRead crlf] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8
+	fconfigure $sock -profile replace
     }
 
     # The following is disallowed in safe interpreters, but the socket is
@@ -2448,7 +2448,7 @@ proc http::Connected {token proto phost srvurl} {
 	if {[info exists state(reusing)] && $state(reusing)} {
 	    # The socket was closed at the server end, and closed at
 	    # this end by http::CheckEof.
-    	    if {[TestForReplay $token write $err a]} {
+	    if {[TestForReplay $token write $err a]} {
 		return
 	    } else {
 		Finish $token {failed to re-use socket}
@@ -2599,7 +2599,7 @@ proc http::ReceiveResponse {token} {
     fconfigure $sock -translation [list auto $trWrite] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8
+	fconfigure $sock -profile replace
     }
     Log ^D$tk begin receiving response - token $token
 
@@ -3395,7 +3395,7 @@ proc http::cleanup {token} {
 #
 # Side Effects
 #	Sets the status of the connection, which unblocks
-# 	the waiting geturl call
+#	the waiting geturl call
 
 proc http::Connect {token proto phost srvurl} {
     variable $token
@@ -4593,7 +4593,7 @@ proc http::Eot {token {reason {}}} {
 	    set enc [CharsetToEncoding $state(charset)]
 	    if {$enc ne "binary"} {
 		if {[package vsatisfies [package provide Tcl] 9.0-]} {
-		    set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
+		    set state(body) [encoding convertfrom -profile replace $enc $state(body)]
 		} else {
 		    set state(body) [encoding convertfrom $enc $state(body)]
 		}
@@ -4680,7 +4680,7 @@ proc http::GuessType {token} {
 	return 0
     }
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
+	set state(body) [encoding convertfrom -profile replace $enc $state(body)]
     } else {
 	set state(body) [encoding convertfrom $enc $state(body)]
     }
@@ -4765,7 +4765,7 @@ proc http::quoteString {string} {
     # than [regsub]/[subst]). [Bug 1020491]
 
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	set string [encoding convertto -profile tcl8 $http(-urlencoding) $string]
+	set string [encoding convertto -profile replace $http(-urlencoding) $string]
     } else {
 	set string [encoding convertto $http(-urlencoding) $string]
     }
@@ -4924,7 +4924,7 @@ proc http::ReceiveChunked {chan command} {
 }
 
 # http::SplitCommaSeparatedFieldValue --
-# 	Return the individual values of a comma-separated field value.
+#	Return the individual values of a comma-separated field value.
 #
 # Arguments:
 #	fieldValue	Comma-separated header field value.
@@ -4941,7 +4941,7 @@ proc http::SplitCommaSeparatedFieldValue {fieldValue} {
 
 
 # http::GetFieldValue --
-# 	Return the value of a header field.
+#	Return the value of a header field.
 #
 # Arguments:
 #	headers	Headers key-value list
