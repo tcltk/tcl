@@ -94,7 +94,7 @@ TclOO_Class_Constructor(
     /*
      * Make the class definition delegate. This is special; it doesn't reenter
      * here (and the class definition delegate doesn't run any constructors).
-     * 
+     *
      * This needs to be done before consideration of whether to pass the script
      * argument to [oo::define]. [Bug 680503]
      */

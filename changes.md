@@ -24,7 +24,7 @@ writing Tcl scripts.
    core Tcl feature.
 
 ## Unix notifiers available using `epoll()` or `kqueue()`
- - This relieves limits on file descriptors imposed by legacy `select()` and fixes a performance bottleneck. 
+ - This relieves limits on file descriptors imposed by legacy `select()` and fixes a performance bottleneck.
 
 # Incompatibilities
 

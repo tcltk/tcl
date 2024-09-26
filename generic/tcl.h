@@ -2588,6 +2588,29 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
+/*
+ * Free the Obj by effectively doing:
+ *
+ *   Tcl_IncrRefCount(objPtr);
+ *   Tcl_DecrRefCount(objPtr);
+ *
+ * This will free the obj if there are no references to the obj.
+ */
+#   define Tcl_BounceRefCount(objPtr) \
+    TclBounceRefCount(objPtr, __FILE__, __LINE__)
+
+static inline void
+TclBounceRefCount(
+    Tcl_Obj* objPtr,
+    const char* fn,
+    int line)
+{
+    if (objPtr) {
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DbDecrRefCount(objPtr, fn, line);
+	}
+    }
+}
 #else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
@@ -2607,6 +2630,25 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
+
+/*
+ * Declare that obj will no longer be used or referenced.
+ * This will free the obj if there are no references to the obj.
+ */
+#   define Tcl_BounceRefCount(objPtr) \
+    TclBounceRefCount(objPtr);
+
+static inline void
+TclBounceRefCount(
+    Tcl_Obj* objPtr)
+{
+    if (objPtr) {
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DecrRefCount(objPtr);
+	}
+    }
+}
+
 #endif
 
 /*
