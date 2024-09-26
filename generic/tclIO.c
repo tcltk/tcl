@@ -9284,7 +9284,7 @@ Tcl_FileEventObjCmd(
     Tcl_Channel chan;		/* The opaque type for the channel. */
     const char *chanName;
     int modeIndex;		/* Index of mode argument. */
-    int mask;
+    int isemptystring, mask, status;
     static const char *const modeOptions[] = {"readable", "writable", NULL};
     static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
@@ -9332,7 +9332,16 @@ Tcl_FileEventObjCmd(
      * If we are supposed to delete a stored script, do so.
      */
 
-    if (*(TclGetString(objv[3])) == '\0') {
+    status = TclCheckEmptyString(interp , objv[3] ,&isemptystring);
+    if (status) {
+	return status;
+    }
+
+    if (isemptystring == -1) {
+	isemptystring = (*(TclGetString(objv[3])) == '\0');
+    }
+
+    if (isemptystring) {
 	DeleteScriptRecord(interp, chanPtr, mask);
 	return TCL_OK;
     }
