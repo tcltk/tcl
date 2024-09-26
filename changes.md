@@ -4,6 +4,12 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
+
+The changes since Tcl 9.0.0 include...
+
+
+
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
 Highlighted differences between Tcl 9.0 and Tcl 8.6 are summarized below,
