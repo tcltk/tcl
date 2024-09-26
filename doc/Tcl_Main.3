@@ -204,6 +204,9 @@ procedure (if any) returns, \fBTcl_Main\fR will also evaluate
 the \fBexit\fR command.
 .PP
 \fBTcl_Main\fR can not be used in stub-enabled extensions.
+.PP
+The difference between Tcl_MainEx and Tcl_MainExW is that the arguments
+are passed as characters or wide characters.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 \fBTcl_SetStartupScript\fR takes a value (or NULL) for its \fIpath\fR

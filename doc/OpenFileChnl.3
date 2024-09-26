@@ -133,7 +133,7 @@ input of the invoking process; likewise for \fBTCL_STDOUT\fR and
 redirect stdio handles to override the stdio handles for which
 \fBTCL_STDIN\fR, \fBTCL_STDOUT\fR and \fBTCL_STDERR\fR have been set.  If it
 is set, then such redirections cause an error.
-.AP ClientData handle in
+.AP void *handle in
 Operating system specific handle for I/O to a file. For Unix this is a
 file descriptor, for Windows it is a HANDLE.
 .AP int readOrWrite in
@@ -405,12 +405,12 @@ to UTF-8 based on the channel's encoding and storing the produced data in
 \fIreadObjPtr\fR's string representation.  The return value of
 \fBTcl_ReadChars\fR is the number of characters, up to \fIcharsToRead\fR,
 that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
-return value is TCL_INDEX_NONE and \fBTcl_ReadChars\fR records a POSIX error
+return value is -1 and \fBTcl_ReadChars\fR records a POSIX error
 code that can be retrieved with \fBTcl_GetErrno\fR. If an encoding error happens
 while the channel is in blocking mode with -profile strict, the characters
 retrieved until the encoding error happened will be stored in \fIreadObjPtr\fR.
 .PP
-Setting \fIcharsToRead\fR to TCL_INDEX_NONE will cause the command to read
+Setting \fIcharsToRead\fR to -1 will cause the command to read
 all characters currently available (non-blocking) or everything until
 eof (blocking mode).
 .PP
@@ -472,14 +472,14 @@ character(s) are read and discarded.
 .PP
 If a line was successfully read, the return value is greater than or equal
 to zero and indicates the number of bytes stored in \fIlineObjPtr\fR.  If an
-error occurs, \fBTcl_GetsObj\fR returns TCL_INDEX_NONE and records a POSIX error code
+error occurs, \fBTcl_GetsObj\fR returns -1 and records a POSIX error code
 that can be retrieved with \fBTcl_GetErrno\fR.  \fBTcl_GetsObj\fR also
-returns TCL_INDEX_NONE if the end of the file is reached; the \fBTcl_Eof\fR procedure
+returns -1 if the end of the file is reached; the \fBTcl_Eof\fR procedure
 can be used to distinguish an error from an end-of-file condition.
 .PP
-If the channel is in nonblocking mode, the return value can also be TCL_INDEX_NONE
+If the channel is in nonblocking mode, the return value can also be -1
 if no data was available or the data that was available did not contain an
-end-of-line character.  When TCL_INDEX_NONE is returned, the \fBTcl_InputBlocked\fR
+end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
@@ -497,7 +497,7 @@ head of the queue.  If \fIchannel\fR has a
 .QW sticky
 EOF set, no data will be
 added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
-TCL_INDEX_NONE if an error occurs.
+-1 if an error occurs.
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
 \fBTcl_WriteChars\fR accepts \fIbytesToWrite\fR bytes of character data at
@@ -514,7 +514,7 @@ to appear as soon as a complete line is accepted for output, set the
 \fB\-buffering\fR option on the channel to \fBline\fR mode.
 .PP
 The return value of \fBTcl_WriteChars\fR is a count of how many bytes were
-accepted for output to the channel.  This is either TCL_INDEX_NONE to
+accepted for output to the channel.  This is either -1 to
 indicate that an error occurred or another number greater than
 zero to indicate success.  If an error occurs, \fBTcl_WriteChars\fR records
 a POSIX error code that may be retrieved with \fBTcl_GetErrno\fR.

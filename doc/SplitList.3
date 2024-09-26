@@ -41,6 +41,7 @@ is left.
 Pointer to a string with proper list structure.
 .AP int *argcPtr out
 Filled in with number of elements in \fIlist\fR.
+May be (int *)NULL when not used.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIlist\fR.
@@ -82,7 +83,8 @@ For example, suppose that you have called \fBTcl_SplitList\fR with
 the following code:
 .PP
 .CS
-int argc, code;
+int argc;
+int code;
 char *string;
 char **argv;
 \&...
@@ -93,7 +95,7 @@ Then you should eventually free the storage with a call like the
 following:
 .PP
 .CS
-Tcl_Free((char *) argv);
+ckfree((char *)argv);
 .CE
 .PP
 \fBTcl_SplitList\fR normally returns \fBTCL_OK\fR, which means the list was
@@ -116,8 +118,8 @@ be the same as the \fIargv\fR strings passed to \fBTcl_Merge\fR.
 \fBTcl_Merge\fR will modify the list elements with braces and/or
 backslashes in order to produce proper Tcl list structure.
 The result string is dynamically allocated
-using \fBTcl_Alloc\fR;  the caller must eventually release the space
-using \fBTcl_Free\fR.
+using \fBckalloc\fR;  the caller must eventually release the space
+using \fBckfree\fR.
 .PP
 If the result of \fBTcl_Merge\fR is passed to \fBTcl_SplitList\fR,
 the elements returned by \fBTcl_SplitList\fR will be identical to

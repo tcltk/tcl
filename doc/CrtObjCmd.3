@@ -57,7 +57,7 @@ Implementation of the new command: \fIproc\fR will be called whenever
 .AP Tcl_ObjCmdProc2 *proc2 in
 Implementation of the new command: \fIproc2\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in
 Procedure to call before \fIcmdName\fR is deleted from the interpreter;
@@ -100,7 +100,7 @@ and it returns NULL.
 .PP
 .CS
 typedef int \fBTcl_ObjCmdProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
         Tcl_Obj *const \fIobjv\fR[]);
@@ -173,7 +173,7 @@ result that match the type \fBTcl_CmdDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
@@ -184,7 +184,7 @@ except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR.
 .PP
 .CS
 typedef int \fBTcl_ObjCmdProc2\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         Tcl_Size \fIobjc\fR,
         Tcl_Obj *const \fIobjv\fR[]);
@@ -226,11 +226,11 @@ A \fBTcl_CmdInfo\fR structure has the following fields:
 typedef struct Tcl_CmdInfo {
     int \fIisNativeObjectProc\fR;
     Tcl_ObjCmdProc *\fIobjProc\fR;
-    ClientData \fIobjClientData\fR;
+    void *\fIobjClientData\fR;
     Tcl_CmdProc *\fIproc\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
-    ClientData \fIdeleteData\fR;
+    void *\fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
 } \fBTcl_CmdInfo\fR;
 .CE

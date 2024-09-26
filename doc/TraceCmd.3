@@ -13,7 +13,7 @@ Tcl_CommandTraceInfo, Tcl_TraceCommand, Tcl_UntraceCommand \- monitor renames an
 .nf
 \fB#include <tcl.h>\fR
 .sp
-ClientData
+void *
 \fBTcl_CommandTraceInfo\fR(\fIinterp, cmdName, flags, proc, prevClientData\fR)
 .sp
 int
@@ -32,9 +32,9 @@ OR'ed collection of the values \fBTCL_TRACE_RENAME\fR and
 \fBTCL_TRACE_DELETE\fR.
 .AP Tcl_CommandTraceProc *proc in
 Procedure to call when specified operations occur to \fIcmdName\fR.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary argument to pass to \fIproc\fR.
-.AP ClientData prevClientData in
+.AP void *prevClientData in
 If non-NULL, gives last value returned by \fBTcl_CommandTraceInfo\fR,
 so this call will return information about next trace.  If NULL, this
 call will return information about first trace.
@@ -67,7 +67,7 @@ match the type \fBTcl_CommandTraceProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CommandTraceProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         const char *\fIoldName\fR,
         const char *\fInewName\fR,

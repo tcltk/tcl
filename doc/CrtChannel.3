@@ -17,7 +17,7 @@ Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChanne
 Tcl_Channel
 \fBTcl_CreateChannel\fR(\fItypePtr, channelName, instanceData, mask\fR)
 .sp
-ClientData
+void *
 \fBTcl_GetChannelInstanceData\fR(\fIchannel\fR)
 .sp
 const Tcl_ChannelType *
@@ -130,7 +130,7 @@ by any other channel. Can be NULL, in which case the channel is
 created without a name. If the created channel is assigned to one
 of the standard channels (\fBstdin\fR, \fBstdout\fR or \fBstderr\fR),
 the assigned channel name will be the name of the standard channel.
-.AP ClientData instanceData in
+.AP void *instanceData in
 Arbitrary one-word value to be associated with this channel.  This
 value is passed to procedures in \fItypePtr\fR when they are invoked.
 .AP int mask in
@@ -141,7 +141,7 @@ The channel to operate on.
 .AP int direction in
 \fBTCL_READABLE\fR means the input handle is wanted; \fBTCL_WRITABLE\fR
 means the output handle is wanted.
-.AP ClientData *handlePtr out
+.AP void **handlePtr out
 Points to the location where the desired OS-specific handle should be
 stored.
 .AP int size in
@@ -411,7 +411,7 @@ the generic layer to set blocking and nonblocking mode on the device.
 .PP
 .CS
 typedef int \fBTcl_DriverBlockModeProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         int \fImode\fR);
 .CE
 .PP
@@ -446,7 +446,7 @@ closed. \fICloseProc\fR must match the following prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverCloseProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
@@ -468,7 +468,7 @@ following prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverClose2Proc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIflags\fR);
 .CE
@@ -499,7 +499,7 @@ internal buffer. \fIInputProc\fR must match the following prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverInputProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         char *\fIbuf\fR,
         int \fIbufSize\fR,
         int *\fIerrorCodePtr\fR);
@@ -543,7 +543,7 @@ generic layer to transfer data from an internal buffer to the output device.
 .PP
 .CS
 typedef int \fBTcl_DriverOutputProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         const char *\fIbuf\fR,
         int \fItoWrite\fR,
         int *\fIerrorCodePtr\fR);
@@ -582,7 +582,7 @@ prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverSeekProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
@@ -612,7 +612,7 @@ following prototype:
 .PP
 .CS
 typedef long long \fBTcl_DriverWideSeekProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         long long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
@@ -634,7 +634,7 @@ the generic layer to set a channel type specific option on a channel.
 .PP
 .CS
 typedef int \fBTcl_DriverSetOptionProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR,
         const char *\fIoptionName\fR,
         const char *\fInewValue\fR);
@@ -675,7 +675,7 @@ channel. \fIgetOptionProc\fR must match the following prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverGetOptionProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR,
         const char *\fIoptionName\fR,
         Tcl_DString *\fIoptionValue\fR);
@@ -713,7 +713,7 @@ notice events of interest on this channel.
 .PP
 .CS
 typedef void \fBTcl_DriverWatchProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         int \fImask\fR);
 .CE
 .PP
@@ -744,9 +744,9 @@ the generic layer to retrieve a device-specific handle from the channel.
 .PP
 .CS
 typedef int \fBTcl_DriverGetHandleProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         int \fIdirection\fR,
-        ClientData *\fIhandlePtr\fR);
+        void **\fIhandlePtr\fR);
 .CE
 .PP
 \fIInstanceData\fR is the same as the value passed to
@@ -773,7 +773,7 @@ It should be set to NULL.
 .PP
 .CS
 typedef int \fBTcl_DriverFlushProc\fR(
-        ClientData \fIinstanceData\fR);
+        void *\fIinstanceData\fR);
 .CE
 .PP
 This value can be retrieved with \fBTcl_ChannelFlushProc\fR, which returns
@@ -788,7 +788,7 @@ that occur on the underlying (stacked) channel.
 .PP
 .CS
 typedef int \fBTcl_DriverHandlerProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         int \fIinterestMask\fR);
 .CE
 .PP
@@ -817,7 +817,7 @@ might be maintaining using the calling thread as the associate. See
 .PP
 .CS
 typedef void \fBTcl_DriverThreadActionProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         int \fIaction\fR);
 .CE
 .PP
@@ -834,7 +834,7 @@ length. It can be NULL.
 .PP
 .CS
 typedef int \fBTcl_DriverTruncateProc\fR(
-        ClientData \fIinstanceData\fR,
+        void *\fIinstanceData\fR,
         long long \fIlength\fR);
 .CE
 .PP

@@ -28,7 +28,7 @@ int
 .sp
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
-\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fBNULL\fR)
+\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *)NULL\fR)
 .sp
 \fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
 .sp
@@ -82,7 +82,8 @@ Pointer to first character in script containing command
 Pointer to first character in the command that generated the error; must
 point within the string given by \fIscript\fR.
 .AP int commandLength in
-Number of bytes in command; -1 means use all bytes up to first null byte
+Number of bytes in command; a negative value means use all bytes up to the
+first null byte.
 .BE
 .SH DESCRIPTION
 .PP
@@ -252,7 +253,6 @@ record instead of a value. Otherwise, it is similar to
 instead of taking a variable number of arguments it takes an argument list.
 Interfaces using argument lists have been found to be nonportable in practice.
 This function is deprecated and will be removed in Tcl 9.0.
-
 .PP
 The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
 of the \fB\-errorline\fR return option without the overhead of a full

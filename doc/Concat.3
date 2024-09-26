@@ -44,8 +44,8 @@ is ignored entirely.  This white-space removal was added to make
 the output of the \fBconcat\fR command cleaner-looking.
 .PP
 The result string is dynamically allocated
-using \fBTcl_Alloc\fR;  the caller must eventually release the space
-by calling \fBTcl_Free\fR.
+using \fBckalloc\fR;  the caller must eventually release the space
+by calling \fBckfree\fR.
 .SH "SEE ALSO"
 Tcl_ConcatObj
 .SH KEYWORDS

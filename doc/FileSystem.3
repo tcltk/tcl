@@ -270,7 +270,8 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
 .AP int *lenPtr out
-If non-NULL, filled with the number of elements in the split path.
+Filled with the number of elements in the split path.
+May be (int *)NULL when not used.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
 .AP int objc in
@@ -1014,7 +1015,7 @@ Tcl's internal list of known filesystems.
 .CS
 typedef int \fBTcl_FSPathInFilesystemProc\fR(
         Tcl_Obj *\fIpathPtr\fR,
-        ClientData *\fIclientDataPtr\fR);
+        void **\fIclientDataPtr\fR);
 .CE
 .SS DUPINTERNALREPPROC
 .PP
@@ -1024,8 +1025,8 @@ simply not copy the internal representation, which may then need to be
 regenerated later.
 .PP
 .CS
-typedef ClientData \fBTcl_FSDupInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+typedef void *\fBTcl_FSDupInternalRepProc\fR(
+        void *\fIclientData\fR);
 .CE
 .SS FREEINTERNALREPPROC
 Free the internal representation. This must be implemented if internal
@@ -1034,7 +1035,7 @@ internal representation is generated), but may otherwise be NULL.
 .PP
 .CS
 typedef void \fBTcl_FSFreeInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS INTERNALTONORMALIZEDPROC
 .PP
@@ -1045,7 +1046,7 @@ representation is the normalized path.
 .PP
 .CS
 typedef Tcl_Obj *\fBTcl_FSInternalToNormalizedProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS CREATEINTERNALREPPROC
 .PP
@@ -1056,7 +1057,7 @@ the \fITcl_FSPathInFilesystemProc\fR for this filesystem always
 immediately creates an internal representation for paths it accepts.
 .PP
 .CS
-typedef ClientData \fBTcl_FSCreateInternalRepProc\fR(
+typedef void *\fBTcl_FSCreateInternalRepProc\fR(
         Tcl_Obj *\fIpathPtr\fR);
 .CE
 .SS NORMALIZEPATHPROC

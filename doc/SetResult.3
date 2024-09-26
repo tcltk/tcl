@@ -24,7 +24,7 @@ Tcl_Obj *
 const char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
-\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fBNULL\fR)
+\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *)NULL\fR)
 .sp
 \fBTcl_AppendResultVA\fR(\fIinterp, argList\fR)
 .sp
@@ -215,9 +215,9 @@ refers to an area of static storage that is guaranteed not to be
 modified until at least the next call to \fBTcl_Eval\fR.
 If \fIfreeProc\fR
 is \fBTCL_DYNAMIC\fR it means that \fIresult\fR was allocated with a call
-to \fBTcl_Alloc\fR and is now the property of the Tcl system.
+to \fBckalloc\fR and is now the property of the Tcl system.
 \fBTcl_SetResult\fR will arrange for the string's storage to be
-released by calling \fBTcl_Free\fR when it is no longer needed.
+released by calling \fBckfree\fR when it is no longer needed.
 If \fIfreeProc\fR is \fBTCL_VOLATILE\fR it means that \fIresult\fR
 points to an area of memory that is likely to be overwritten when
 \fBTcl_SetResult\fR returns (e.g. it points to something in a stack frame).

@@ -42,7 +42,7 @@ Points to an array giving the permissible types for each argument to
 function.
 .AP Tcl_MathProc *proc in
 Procedure that implements the function.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR when it is invoked.
 .AP int *numArgsPtr out
 Points to a variable that will be set to contain the number of
@@ -50,12 +50,12 @@ arguments to the function.
 .AP Tcl_ValueType **argTypesPtr out
 Points to a variable that will be set to contain a pointer to an array
 giving the permissible types for each argument to the function which
-will need to be freed up using \fITcl_Free\fR.
+will need to be freed up using \fIckfree\fR.
 .AP Tcl_MathProc **procPtr out
 Points to a variable that will be set to contain a pointer to the
 implementation code for the function (or NULL if the function is
 implemented directly in bytecode).
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Points to a variable that will be set to contain the clientData
 argument passed to \fITcl_CreateMathFunc\fR when the function was
 created if the function is not implemented directly in bytecode.
@@ -93,7 +93,7 @@ the type \fBTcl_MathProc\fR:
 .PP
 .CS
 typedef int \fBTcl_MathProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         Tcl_Value *\fIargs\fR,
         Tcl_Value *\fIresultPtr\fR);
@@ -142,7 +142,7 @@ result.
 .PP
 If an error did not occur, the array reference placed in the variable
 pointed to by \fIargTypesPtr\fR is newly allocated, and should be
-released by passing it to \fBTcl_Free\fR.  Some functions (the
+released by passing it to \fBckfree\fR.  Some functions (the
 standard set implemented in the core, and those defined by placing
 commands in the \fBtcl::mathfunc\fR namespace) do not have
 argument type information; attempting to retrieve values for
@@ -160,6 +160,6 @@ the math functions defined in the interpreter whose name matches
 \fBTcl_ListMathFuncs\fR always returns a zero-reference object, much
 like \fBTcl_NewObj\fR.
 .SH "SEE ALSO"
-expr(n), info(n), Tcl_CreateObjCommand(3), Tcl_Free(3), Tcl_NewListObj(3)
+expr(n), info(n), Tcl_CreateObjCommand(3), ckfree(3), Tcl_NewListObj(3)
 .SH KEYWORDS
 expression, mathematical function

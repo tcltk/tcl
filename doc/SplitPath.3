@@ -28,6 +28,7 @@ File path in a form appropriate for the current platform (see the
 \fBfilename\fR manual entry for acceptable forms for path names).
 .AP int *argcPtr out
 Filled in with number of path elements in \fIpath\fR.
+May be (int *)NULL when not used.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIpath\fR.
@@ -73,7 +74,7 @@ Then you should eventually free the storage with a call like the
 following:
 .PP
 .CS
-Tcl_Free((char *) argv);
+ckfree((char *)argv);
 .CE
 .PP
 \fBTcl_JoinPath\fR is the inverse of \fBTcl_SplitPath\fR: it takes a

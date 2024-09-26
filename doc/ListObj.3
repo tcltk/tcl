@@ -63,6 +63,7 @@ containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
 .AP int *objcPtr in
 Points to location where \fBTcl_ListObjGetElements\fR
 stores the number of element values in \fIlistPtr\fR.
+May be (int *)NULL when not used.
 .AP Tcl_Obj ***objvPtr out
 A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
 of pointers to the element values of \fIlistPtr\fR.
@@ -80,6 +81,7 @@ Each value will become a separate list element.
 .AP int *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
+May be (int *)NULL when not used.
 .AP int index in
 Index of the list element that \fBTcl_ListObjIndex\fR
 is to return.
@@ -163,7 +165,6 @@ Otherwise it returns \fBTCL_OK\fR after storing the count and array pointer.
 .PP
 \fBTcl_ListObjLength\fR returns the number of elements in the list value
 referenced by \fIlistPtr\fR.
-It returns this count by storing an integer in the address \fIlengthPtr\fR.
 If the value is not already a list value,
 \fBTcl_ListObjLength\fR will attempt to convert it to one;
 if the conversion fails, it returns \fBTCL_ERROR\fR

@@ -26,6 +26,7 @@ Pointer to array of option descriptors.
 A pointer to variable holding number of arguments in \fIobjv\fR. Will be
 modified to hold number of arguments left in the unprocessed argument list
 stored in \fIremObjv\fR.
+May be (int *)NULL when not used.
 .AP "Tcl_Obj *const" *objv in
 The array of arguments to be parsed.
 .AP Tcl_Obj ***remObjv out
@@ -79,7 +80,7 @@ typedef struct {
     void *\fIsrcPtr\fR;
     void *\fIdstPtr\fR;
     const char *\fIhelpStr\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
 } \fBTcl_ArgvInfo\fR;
 .CE
 .PP
@@ -114,7 +115,7 @@ have the following signature:
 .PP
 .CS
 typedef int (\fBTcl_ArgvFuncProc\fR)(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Obj *\fIobjPtr\fR,
         void *\fIdstPtr\fR);
 .CE
@@ -134,7 +135,7 @@ function will have the following signature:
 .PP
 .CS
 typedef int (\fBTcl_ArgvGenFuncProc\fR)(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
         Tcl_Obj *const *\fIobjv\fR,
