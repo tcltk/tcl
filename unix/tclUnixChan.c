@@ -1774,7 +1774,7 @@ TclpOpenFileChannel(
 	if (interp != (Tcl_Interp *) NULL) {
 	    /*
 	     * We need this just to ensure we return the correct error messages under
-	     * some circumstances (relative paths only), so because the normalization 
+	     * some circumstances (relative paths only), so because the normalization
 	     * is very expensive, don't invoke it for native or absolute paths.
 	     * Note: since paths starting with ~ are absolute, it also considers tilde expansion,
 	     * (proper error message of tests *io-40.17 "tilde substitution in open")

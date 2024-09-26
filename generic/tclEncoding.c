@@ -2494,7 +2494,7 @@ UtfToUtfProc(
         assert(!PROFILE_STRICT(profile));                       \
         dst += Tcl_UniCharToUtf(high, dst);                     \
         *statePtr = 0; /* Reset state */                        \
-    } while (0) 
+    } while (0)
 
     /*
      * Macro to check for isolated surrogate and either break with
