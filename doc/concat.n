@@ -12,7 +12,7 @@
 .SH NAME
 concat \- Join lists together
 .SH SYNOPSIS
-\fBconcat\fI \fR?\fIarg arg ...\fR?
+\fBconcat\fR ?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
