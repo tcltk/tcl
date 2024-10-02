@@ -832,7 +832,7 @@ that give the rules for various locales.  A complete list
 of the location names is too lengthy to be listed here.
 On most Tcl installations, the definitions of the locations
 are to be found in named files in the directory
-.QW "\fI/no_backup/tools/lib/tcl8.5/clock/tzdata\fR" .
+.QW "\fI/no_backup/tools/lib/tcl9.0/clock/tzdata\fR" .
 On some Unix systems, these files are omitted, and the definitions are
 instead obtained from system files in
 .QW "\fI/usr/share/zoneinfo\fR" ,
