@@ -5,9 +5,15 @@ This is the **Tcl 8.7b1** source distribution.
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-[![Build Status](https://github.com/tcltk/tcl/workflows/Linux/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux%22+branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/Windows/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows%22+branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/macOS/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS%22+branch%3Acore-8-branch)
+9.0 (production release, daily build)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Amain)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Amain)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Amain)
+<br>
+8.7 (in development, daily build)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Acore-8-branch)
 
 ## Contents
  1. [Introduction](#intro)
