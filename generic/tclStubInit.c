@@ -1953,7 +1953,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
-    0, /* 657 */
+    Tcl_FSTildeExpand, /* 657 */
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
@@ -1986,8 +1986,7 @@ const TclStubs tclStubs = {
     TclUtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
-    Tcl_FSTildeExpand, /* 690 */
-    TclUnusedStubEntry, /* 691 */
+    TclUnusedStubEntry, /* 690 */
 };
 
 /* !END!: Do not edit above this line. */

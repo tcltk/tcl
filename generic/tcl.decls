@@ -2423,6 +2423,12 @@ declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
 
+# TIP 701
+declare 657 {
+    int Tcl_FSTildeExpand(Tcl_Interp *interp, const char *path,
+        Tcl_DString *dsPtr)
+}
+
 # TIP 656
 declare 658 {
     int Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -2517,11 +2523,6 @@ declare 689 {
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 690 {
-    int Tcl_FSTildeExpand(Tcl_Interp *interp, const char *path,
-        Tcl_DString *dsPtr)
-}
-
-declare 691 {
     void TclUnusedStubEntry(void)
 }
 

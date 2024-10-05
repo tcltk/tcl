@@ -1948,7 +1948,9 @@ EXTERN int		Tcl_UtfCharComplete(const char *src, Tcl_Size length);
 EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
-/* Slot 657 is reserved */
+/* 657 */
+EXTERN int		Tcl_FSTildeExpand(Tcl_Interp *interp,
+				const char *path, Tcl_DString *dsPtr);
 /* 658 */
 EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -2023,9 +2025,6 @@ EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
 EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
 				Tcl_WideUInt uwideValue);
 /* 690 */
-EXTERN int		Tcl_FSTildeExpand(Tcl_Interp *interp,
-				const char *path, Tcl_DString *dsPtr);
-/* 691 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2719,7 +2718,7 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, Tcl_Size length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
-    void (*reserved657)(void);
+    int (*tcl_FSTildeExpand) (Tcl_Interp *interp, const char *path, Tcl_DString *dsPtr); /* 657 */
     int (*tcl_ExternalToUtfDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 658 */
     int (*tcl_UtfToExternalDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 659 */
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
@@ -2752,8 +2751,7 @@ typedef struct TclStubs {
     int (*tclUtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
     void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
-    int (*tcl_FSTildeExpand) (Tcl_Interp *interp, const char *path, Tcl_DString *dsPtr); /* 690 */
-    void (*tclUnusedStubEntry) (void); /* 691 */
+    void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4094,7 +4092,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
-/* Slot 657 is reserved */
+#define Tcl_FSTildeExpand \
+	(tclStubsPtr->tcl_FSTildeExpand) /* 657 */
 #define Tcl_ExternalToUtfDStringEx \
 	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 658 */
 #define Tcl_UtfToExternalDStringEx \
@@ -4148,10 +4147,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
 #define Tcl_SetWideUIntObj \
 	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
-#define Tcl_FSTildeExpand \
-	(tclStubsPtr->tcl_FSTildeExpand) /* 690 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 691 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
