@@ -6,9 +6,10 @@ IF DEFINED VCINSTALLDIR goto setup
 echo "Not in a Visual Studio command prompt."
 exit /B 1
 
-
 :setup
 setlocal
+
+set "tool=%0"
 
 REM Get the current directory
 set "currentDir=%CD%"
@@ -53,11 +54,11 @@ if "%1" == "compile" goto compile
 if "%1" == "test" goto targets
 if "%1" == "install" goto targets
 if "%1" == "runshell" goto targets
-if "%1" == "pdbs" goto pdbs
+if "%1" == "debug" goto debug
 goto help
 
-:pdbs
-set pdbs=1
+:debug
+set debug=1
 shift
 goto options
 
@@ -130,7 +131,7 @@ exit /b 1
 
 :: call :runmake dir opts
 :runmake
-if "%pdbs%" == "" (
+if "%debug%" == "" (
     nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1 TMP_DIR=%currentDir%\vc-%ARCH%-%1\objs OPTS=pdbs,%2 INSTALLDIR=%INSTROOT%-%1 %TARGETS% && goto error
 ) else (
     nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1-debug TMP_DIR=%currentDir%\vc-%ARCH%-%1-debug\objs OPTS=pdbs,%2 cdebug="-Zi -Od" INSTALLDIR=%INSTROOT%-%1-debug %TARGETS% && goto error
@@ -161,13 +162,13 @@ echo X is the current drive.
 echo.
 echo For example, if the current directory C:\src\core-8-branch\tcl\win,
 echo install directories will be echo under c:\Tcl\core-8-branch\ as
-echo x64-shared, x64-static etc. or x64-shared-debug etc. if "pdbs" passed.
+echo x64-shared, x64-static etc. or x64-shared-debug etc. if "debug" passed.
 echo.
 echo Examples:
-echo    %0 shared                       (Builds default "shared" config)
-echo    %0 shared test                  (Tests shared build)
-echo    %0 static compile test          (Builds and tests static build)
-echo    %0 all debug                    (Build debug versions of all configs)
-echo    %0 all compile install debug    (Builds and installs all configs)
-echo    %0 shared static shared_noembed (Builds three configs)
+echo    %tool% shared                       (Builds default "shared" config)
+echo    %tool% shared test                  (Tests shared build)
+echo    %tool% static compile test          (Builds and tests static build)
+echo    %tool% all debug                    (Build debug versions of all configs)
+echo    %tool% all compile install debug    (Builds and installs all configs)
+echo    %tool% shared static shared_noembed (Builds three configs)
 goto done
