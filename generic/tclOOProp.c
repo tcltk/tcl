@@ -637,7 +637,6 @@ GetAllClassProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -665,7 +664,7 @@ GetAllClassProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
@@ -752,7 +751,6 @@ TclOOGetAllObjectProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -777,7 +775,7 @@ TclOOGetAllObjectProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
