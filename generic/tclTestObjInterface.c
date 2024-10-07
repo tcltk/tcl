@@ -43,7 +43,7 @@ static Tcl_ObjInterfaceStringIndexProc indexHexListStringIndex;
 static Tcl_ObjInterfaceStringIndexEndProc indexHexListStringIndexEnd;
 static Tcl_ObjInterfaceStringLengthProc indexHexListStringLength;
 static int indexHexStringListIndexFromStringIndex(
-    Tcl_Size *index, Tcl_Size *itemchars, Tcl_Size *totalitems);
+    Tcl_Size *indexPtr, Tcl_Size *itemchars, Tcl_Size *totalitems);
 static Tcl_ObjInterfaceStringRangeProc indexHexListStringRange;
 static Tcl_ObjInterfaceStringRangeEndProc indexHexListStringRangeEnd;
 static Tcl_ObjInterfaceListAllProc indexHexListObjGetElements;
@@ -59,6 +59,7 @@ static Tcl_ObjInterfaceListReplaceProc indexHexListObjReplace;
 static Tcl_ObjInterfaceListSetProc indexHexListObjSet;
 static Tcl_ObjInterfaceListSetDeepProc indexHexListObjSetDeep;
 
+static indexHex *GetTestIndexHexInternalRep(Tcl_Obj *objPtr);
 static int indexHexListErrorIndeterminate (Tcl_Interp *interp);
 static int indexHexListErrorReadOnly (Tcl_Interp *interp);
 
@@ -155,11 +156,19 @@ DupTestIndexHexInternalRep(
 static void
 FreeTestIndexHexInternalRep(Tcl_Obj *objPtr)
 {
-    indexHex *indexHexPtr = (indexHex *)objPtr->internalRep.twoPtrValue.ptr1;
+    indexHex *indexHexPtr = GetTestIndexHexInternalRep(objPtr);
     if (--indexHexPtr->refCount == 0) {
 	Tcl_Free(indexHexPtr);
     }
     return;
+}
+
+
+indexHex *
+GetTestIndexHexInternalRep(Tcl_Obj *objPtr)
+{
+    indexHex *indexHexPtr = (indexHex *)objPtr->internalRep.twoPtrValue.ptr1;
+    return indexHexPtr;
 }
 
 
@@ -289,10 +298,13 @@ static int indexHexListStringLength(
     ,Tcl_Size *length
 ) {
     *length = -1;
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 static int indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
+    /* suppress unused parameter warning */
+    (void) interp;
+
     Tcl_Obj *itemPtr, *item2Ptr, *resPtr;
     Tcl_Size index = first, status;
     Tcl_Size itemchars, needed, rangeLength, newStringLength,
@@ -352,11 +364,13 @@ static int indexHexListStringRange(tclObjTypeInterfaceArgsStringRange) {
 }
 
 static int indexHexListStringRangeEnd(
+    Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *),/* The Tcl object to find the range of. */
     TCL_UNUSED(Tcl_Size),/* First index of the range. */
     TCL_UNUSED(Tcl_Size), /* Last index of the range. */
     Tcl_Obj **resultPtr
 ) {
+    (void) interp;
     *resultPtr = NULL;
     return TCL_OK;
 }
@@ -414,21 +428,35 @@ indexHexListObjIndex(
 )
 {
     Tcl_Obj *resPtr;
-    resPtr = Tcl_ObjPrintf("%" TCL_T_MODIFIER "x", index);
-    *objPtrPtr = resPtr;
+    if (index > -1 && index < TCL_SIZE_MAX-2) {
+	resPtr = Tcl_ObjPrintf("%" TCL_T_MODIFIER "x", index);
+	*objPtrPtr = resPtr;
+    } else {
+	*objPtrPtr = NULL;
+    }
     return TCL_OK;
 }
 
 
 static int
 indexHexListObjIndexEnd(
-    Tcl_Interp * interp,/* Used to report errors if not NULL. */ \
+    TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
     TCL_UNUSED(Tcl_Obj *),/* List object to index into. */ \
-    TCL_UNUSED(Tcl_Size),/* Index of element to return. */ \
-    TCL_UNUSED(Tcl_Obj **)/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Size index,/* Index of element to return. */ \
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 )
 {
-    return indexHexListErrorIndeterminate(interp);
+
+    Tcl_Obj *resPtr;
+    Tcl_Size index2;
+    index2 = TCL_SIZE_MAX - 1 - index;
+    if (index2 < 0 || index >= TCL_SIZE_MAX) {
+	*resPtrPtr = NULL;
+    } else {
+	resPtr = Tcl_ObjPrintf("%" TCL_T_MODIFIER "x", index2);
+	*resPtrPtr = resPtr;
+    }
+    return TCL_OK;
 }
 
 
@@ -458,16 +486,29 @@ static int
 indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 {
     Tcl_Obj *itemPtr, *resPtr;
-    Tcl_Size length;
-    int status;
+    indexHex *indexHexPtr = GetTestIndexHexInternalRep(listPtr);
+    Tcl_Size fromIdxOffset ,toIdxOffset;
     resPtr = Tcl_NewListObj(0, NULL);
-    status = Tcl_ListObjLength(interp, listPtr, &length);
-    if (!status) {
-	*resPtrPtr = NULL;
+    *resPtrPtr = resPtr;
+    if (TCL_SIZE_MAX - fromIdx < indexHexPtr->offset) {
+	/* fromIdx is beyonde the last index */
 	return TCL_OK;
+    } else {
+	fromIdxOffset = fromIdx + indexHexPtr->offset;
     }
-    while (fromIdx <= length && fromIdx <= toIdx) {
-	indexHexListObjIndex(interp, listPtr, fromIdx, &itemPtr);
+    if (TCL_SIZE_MAX - toIdx < indexHexPtr->offset) {
+	toIdxOffset = TCL_SIZE_MAX - 1;
+    } else {
+	toIdxOffset = toIdx + indexHexPtr->offset;
+	if (toIdxOffset >= TCL_SIZE_MAX) {
+	    toIdxOffset = TCL_SIZE_MAX-1;
+	}
+    }
+    while (fromIdxOffset <= toIdxOffset) {
+	indexHexListObjIndex(interp, listPtr, fromIdxOffset, &itemPtr);
+	if (itemPtr == NULL) {
+	    break;
+	}
 	if (
 	    Tcl_ListObjAppendElement(interp, resPtr, itemPtr) != TCL_OK
 	) {
@@ -475,9 +516,8 @@ indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 	    *resPtrPtr = NULL;
 	    return TCL_OK;
 	}
-	fromIdx++;
+	fromIdxOffset++;
     }
-    *resPtrPtr = resPtr;
     return TCL_OK;
 }
 
@@ -487,7 +527,7 @@ indexHexListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
     if (fromAnchor == 1 || toAnchor == 1) {
 	indexHexListErrorIndeterminate(interp);
 	*resPtrPtr = NULL;
-	return TCL_OK;
+	return TCL_ERROR;
     }
     return indexHexListObjRange(interp, listPtr, fromIdx, toIdx, resPtrPtr);
 }

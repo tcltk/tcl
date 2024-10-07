@@ -3323,6 +3323,7 @@ MODULE_SCOPE int	TclDictPutString(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    const char *key, const char *value);
 MODULE_SCOPE int	TclDictRemove(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    const char *key);
+MODULE_SCOPE int	TclEncodedIndexIsFromEnd(Tcl_Size encoded);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
@@ -3404,7 +3405,6 @@ MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *prefix);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
-MODULE_SCOPE int	TclIndexIsFromEnd(Tcl_Size encoded);
 MODULE_SCOPE Tcl_Size	TclIndexLast (Tcl_Size N);
 MODULE_SCOPE int	TclCompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE size_t	TclHashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
@@ -4127,6 +4127,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
+MODULE_SCOPE Tcl_Size	TclIndexDecodeFromEnd(int encoded);
 
 /*
  * Error message utility functions

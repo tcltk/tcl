@@ -2793,6 +2793,7 @@ TclLindexFlat(
 {
     int status;
     Tcl_Size i;
+    Tcl_Obj* listItem;
 
     Tcl_IncrRefCount(listObj);
 
@@ -2806,79 +2807,113 @@ TclLindexFlat(
 	    return NULL;
 	}
 
-	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-		&index) == TCL_OK) {
-	    if (index < 0 || index >= listLen) {
-		/*
-		 * Index is out of range. Break out of loop with empty result.
-		 * First check remaining indices for validity
-		 */
-
-		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i],
-			    TCL_SIZE_MAX - 1, &index) != TCL_OK) {
-			Tcl_DecrRefCount(listObj);
-			return NULL;
-		    }
-		}
-		Tcl_DecrRefCount(listObj);
-		TclNewObj(listObj);
-		Tcl_IncrRefCount(listObj);
-	    } else {
-		Tcl_Obj* listItem;
-		if (TclIndexIsFromEnd(index)
-		    && TclObjectHasInterface(listObj, list, indexEnd)
-		    && Tcl_LengthIsFinite(listLen)
-		    ) {
-
-		    TclObjectDispatchNoDefault(interp, status, listObj,
-			list, indexEnd, interp, listObj, index, &listItem);
-		    if (status == TCL_OK) {
-			Tcl_IncrRefCount(listItem);
-			Tcl_DecrRefCount(listObj);
-			listObj = listItem;
-		    } else {
-			Tcl_DecrRefCount(listObj);
-			return NULL;
-		    }
-		} else if (TclObjectHasInterface(listObj, list, index)) {
-		    TclObjectDispatchNoDefault(interp, status, listObj,
-			list, index, interp, listObj, index, &listItem);
-		    if (status == TCL_OK) {
-			Tcl_IncrRefCount(listItem);
-			Tcl_DecrRefCount(listObj);
-			listObj = listItem;
-		    } else {
-			Tcl_DecrRefCount(listObj);
-			return NULL;
-		    }
-		} else {
+	if (Tcl_LengthIsFinite(listLen)) {
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+		    &index) == TCL_OK) {
+		if (index < 0 || index >= listLen) {
 		    /*
-		     * Must set the internal rep again because it may have been
-		     * changed by TclGetIntForIndexM. See test lindex-8.4.
+		     * Index is out of range. Break out of loop with empty result.
+		     * First check remaining indices for validity
 		     */
-		    if (!TclHasInternalRep(listObj, tclListTypePtr)) {
-			status = TclSetListFromAny(interp, listObj);
-			if (status != TCL_OK) {
-			    /* The list is not a list at all => error.  */
+
+		    while (++i < indexCount) {
+			if (TclGetIntForIndexM(interp, indexArray[i],
+				TCL_SIZE_MAX - 1, &index) != TCL_OK) {
 			    Tcl_DecrRefCount(listObj);
 			    return NULL;
 			}
 		    }
-
-		    ListObjGetElements(listObj, listLen, elemPtrs);
-		    /* increment this reference count first before decrementing
-		     * just in case they are the same Tcl_Obj
-		     */
-		    Tcl_IncrRefCount(elemPtrs[index]);
 		    Tcl_DecrRefCount(listObj);
-		    /* Extract the pointer to the appropriate element. */
-		    listObj = elemPtrs[index];
+		    TclNewObj(listObj);
+		    Tcl_IncrRefCount(listObj);
+		} else {
+		    if (TclObjectHasInterface(listObj, list, index)) {
+			TclObjectDispatchNoDefault(interp, status, listObj,
+			    list, index, interp, listObj, index, &listItem);
+			if (status == TCL_OK) {
+			    Tcl_IncrRefCount(listItem);
+			    Tcl_DecrRefCount(listObj);
+			    listObj = listItem;
+			} else {
+			    Tcl_DecrRefCount(listObj);
+			    return NULL;
+			}
+		    } else {
+			/*
+			 * Must set the internal rep again because it may have been
+			 * changed by TclGetIntForIndexM. See test lindex-8.4.
+			 */
+			if (!TclHasInternalRep(listObj, tclListTypePtr)) {
+			    status = TclSetListFromAny(interp, listObj);
+			    if (status != TCL_OK) {
+				/* The list is not a list at all => error.  */
+				Tcl_DecrRefCount(listObj);
+				return NULL;
+			    }
+			}
+
+			ListObjGetElements(listObj, listLen, elemPtrs);
+			/* increment this reference count first before decrementing
+			 * just in case they are the same Tcl_Obj
+			 */
+			Tcl_IncrRefCount(elemPtrs[index]);
+			Tcl_DecrRefCount(listObj);
+			/* Extract the pointer to the appropriate element. */
+			listObj = elemPtrs[index];
+		    }
 		}
+	    } else {
+		Tcl_DecrRefCount(listObj);
+		listObj = NULL;
 	    }
 	} else {
-	    Tcl_DecrRefCount(listObj);
-	    listObj = NULL;
+	    /* an end value of -1 produces a negative value if the offset is
+	     * relative to the end, and a positive index otherwise.  The value
+	     * is encoded as document for GetEndOffsetFromObj */
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ -1,
+		    &index) != TCL_OK) {
+		Tcl_DecrRefCount(listObj);
+		return NULL;
+	    }
+	    if (index < 0) {
+		if (TclObjectHasInterface(listObj, list, indexEnd)) {
+		    /* add one to index because in the GetEndOffsetFromObj
+		     * encoding -1 is end */
+		    TclObjectDispatchNoDefault(interp, status, listObj,
+			list, indexEnd, interp, listObj, -(index + 1), &listItem);
+		    if (status) {
+			Tcl_DecrRefCount(listObj);
+			return NULL;
+		    }
+		    Tcl_DecrRefCount(listObj);
+		    Tcl_IncrRefCount(listItem);
+		    listObj = listItem;
+		} else {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"infinite length list at nested index %" TCL_SIZE_MODIFIER
+			    "d with no handler", i));
+		    Tcl_DecrRefCount(listObj);
+		    return NULL;
+		}
+	    } else {
+		if (TclObjectHasInterface(listObj, list, index)) {
+		    TclObjectDispatchNoDefault(interp, status, listObj,
+			list, index, interp, listObj, index, &listItem);
+		    if (status) {
+			Tcl_DecrRefCount(listObj);
+			return NULL;
+		    }
+		    Tcl_DecrRefCount(listObj);
+		    Tcl_IncrRefCount(listItem);
+		    listObj = listItem;
+		} else {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"infinite length list at nested index %" TCL_SIZE_MODIFIER
+			    "d with no handler", i));
+		    Tcl_DecrRefCount(listObj);
+		    return NULL;
+		}
+	    }
 	}
     }
     return listObj;

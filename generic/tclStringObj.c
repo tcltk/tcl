@@ -748,13 +748,15 @@ Tcl_GetRange(
 {
     Tcl_Obj *resPtr;
     TclObjectDispatch(objPtr, GetRange,
-    string, range, objPtr, first, last, &resPtr);
+    string, range, NULL ,objPtr, first, last, &resPtr);
     return resPtr;
 }
 
 
 int
 GetRange(tclObjTypeInterfaceArgsStringRange) {
+    /* slience compiler warning */
+    (void) interp;
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
     Tcl_Size length = 0;
@@ -3981,7 +3983,7 @@ TclStringIndexInterface(
 	return status;
     }
 
-    if (TclIndexIsFromEnd(index)) {
+    if (TclEncodedIndexIsFromEnd(index)) {
 	if (TclObjectInterfaceCall(objPtr, string, indexEnd,
 	    interp, objPtr, index, charPtrPtr) != TCL_OK) {
 	    return TCL_ERROR;

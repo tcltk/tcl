@@ -1526,6 +1526,12 @@ test string-12.15.$noComp {string range} {
 test string-12.16.$noComp {string range} {
     run {string range abcdefghijklmnop end end-1}
 } {}
+
+test {string range 0 end-1 variable} {string range} {
+    set last end-1
+    run {string range abcdefghijklmnop 0 $last}
+} {abcdefghijklmno}
+
 test string-12.17.$noComp {string range, unicode} {
     run {string range ab牦cdefghijklmnop 5 5}
 } e

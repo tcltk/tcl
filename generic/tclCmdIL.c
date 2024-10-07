@@ -2784,55 +2784,73 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ TCL_SIZE_MAX - 1,
-	&toIdx);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ TCL_SIZE_MAX - 1,
-	&fromIdx);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    toAnchor = TclIndexIsFromEnd(toIdx);
-    fromAnchor = TclIndexIsFromEnd(fromIdx);
-
-    if (!Tcl_LengthIsFinite(listLen)
-	&& (toAnchor == 1 || fromAnchor == 1)
-	&& TclObjectHasInterface(objv[1], list, rangeEnd)
-    ) {
+    if (!Tcl_LengthIsFinite(listLen)) {
 	Tcl_Obj *objResultPtr;
+	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ -1
+	    ,&fromIdx);
+	if (result != TCL_OK) {
+	    return result;
+	}
 
-	status = TclObjectInterfaceCall(objv[1], list, rangeEnd,
-	    interp, objv[1], toAnchor, toIdx, fromAnchor, fromIdx,
-	    &objResultPtr);
-	if (status != TCL_OK || objResultPtr == NULL) {
-	    return TCL_ERROR;
+	result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ -1
+	    ,&toIdx);
+	if (result != TCL_OK) {
+	    return result;
+	}
+
+	toAnchor = toIdx < -1;
+	fromAnchor = fromIdx < -1;
+
+	if (toAnchor == 1 || fromAnchor == 1) {
+	    if (TclObjectHasInterface(objv[1], list, rangeEnd)) {
+		status = TclObjectInterfaceCall(objv[1], list, rangeEnd,
+		    interp, objv[1], fromAnchor, fromIdx, toAnchor, toIdx,
+		    &objResultPtr);
+		if (status != TCL_OK) {
+		    return TCL_ERROR;
+		} else {
+		    Tcl_SetObjResult(interp, objResultPtr);
+		}
+		return TCL_OK;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "List with no defined length does not implement range end"));
+		return TCL_ERROR;
+	    }
+	} else if (TclObjectHasInterface(objv[1], list, range)) {
+	    status = TclObjectInterfaceCall(objv[1], list, range,
+		interp, objv[1], fromIdx, toIdx, &objResultPtr);
+	    if (status != TCL_OK) {
+		return TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, objResultPtr);
+	    }
+	    return TCL_OK;
 	} else {
-	    Tcl_SetObjResult(interp, objResultPtr);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"List with no defined length does not implement range handler"));
+	    return TCL_ERROR;
 	}
-    } else {
-	Tcl_Obj *resultPtr;
-	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-		&first);
-	if (result != TCL_OK) {
-	    return result;
-	}
-
-	result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-		&last);
-	if (result != TCL_OK) {
-	    return result;
-	}
-
-	status = TclListObjRange(interp, objv[1], first, last, &resultPtr);
-	if (status != TCL_OK || resultPtr == NULL) {
-	    return status;
-	}
-	Tcl_SetObjResult(interp, resultPtr);
     }
+
+    Tcl_Obj *resultPtr;
+    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+	&first);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
+	&last);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    status = TclListObjRange(interp, objv[1], first, last, &resultPtr);
+    if (status != TCL_OK || resultPtr == NULL) {
+	return status;
+    }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 

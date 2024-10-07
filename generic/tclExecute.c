@@ -3313,11 +3313,6 @@ TEBCresume(
 	    varPtr = varPtr->value.linkPtr;
 	}
 	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
-		!= TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
 	if (TclIsVarDirectReadable(varPtr)
 		&& TclIsVarDirectWritable(varPtr)) {
 	    goto lappendListDirect;
@@ -3339,11 +3334,6 @@ TEBCresume(
 	}
 	TRACE(("%u \"%.30s\" \"%.30s\" => ",
 		opnd, O2S(part2Ptr), O2S(valuePtr)));
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
-		!= TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)
 		&& !WriteTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
@@ -3385,6 +3375,11 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	if (TclListObjLength(interp, valuePtr, &len) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+
 	if (Tcl_IsShared(objResultPtr)) {
 	    Tcl_Obj *newValue;
 
@@ -3401,21 +3396,34 @@ TEBCresume(
 	    varPtr->value.objPtr = objResultPtr = newValue;
 	    Tcl_IncrRefCount(newValue);
 	}
-	if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
-		!= TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
+
+
+	if (TclObjectHasInterface(valuePtr ,list ,appendlist)) {
+	    int status;
+	    status = TclObjectInterfaceCall(
+		valuePtr ,list ,appendlist, interp ,objResultPtr ,valuePtr);
+	    if (status) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	} else {
+	    if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+		    != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
+		    != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
 
     lappendList:
 	opnd = -1;
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
-		!= TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
 	DECACHE_STACK_INFO();
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
@@ -3464,6 +3472,11 @@ TEBCresume(
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
+		}
+		if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+			!= TCL_OK) {
+		    TRACE_ERROR(interp);
+		    goto errorInLappendListPtr;
 		}
 		if (TclListObjAppendElements(interp, valueToAssign,
 			objc, objv) != TCL_OK) {
@@ -4765,63 +4778,6 @@ TEBCresume(
 		goto TclLindexList;
 	    }
 	}
-
-	if (TclObjectHasInterface(valuePtr, list, length)
-	    || TclHasInternalRep(valuePtr, tclListTypePtr)) {
-	    int code, haveElements = 0, status;
-
-	    if (TclHasInternalRep(valuePtr, tclListTypePtr)) {
-		/* since the type is tclListTypePtr, this can't fail */
-		TclListObjGetElements(interp, valuePtr, &objc, &objv);
-		haveElements = 1;
-	    } else {
-		TclObjectDispatchNoDefault(interp, status, valuePtr, list,
-		    length, interp, valuePtr, &objc);
-		if (status != TCL_OK) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-
-		if (objc < 0) {
-		    objc = TCL_SIZE_MAX;
-		}
-	    } 
-
-	    Tcl_IncrRefCount(value2Ptr);
-	    DECACHE_STACK_INFO();
-	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
-	    CACHE_STACK_INFO();
-	    if (code != TCL_OK) {
-		goto TclLindexList;
-	    }
-	    Tcl_DecrRefCount(value2Ptr);
-
-	    if (haveElements && code == TCL_OK) {
-		tosPtr--;
-		pcAdjustment = 1;
-		goto lindexFastPath;
-	    }
-
-	    Tcl_ResetResult(interp);
-	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
-		index, interp, valuePtr, index, &objResultPtr);
-	    if (status != TCL_OK) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
-	    if (objResultPtr == NULL) {
-		TclNewObj(objResultPtr);
-	    }
-	    CACHE_STACK_INFO();
-	    if (objResultPtr == NULL) {
-		/* Index is out of range, return empty result. */
-		TclNewObj(objResultPtr);
-	    }
-	    Tcl_IncrRefCount(objResultPtr); // reference held here
-	    goto lindexDone;
-
-	}
     TclLindexList:
 	/*
 	 * Extract the desired list element.
@@ -4829,7 +4785,6 @@ TEBCresume(
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
 	CACHE_STACK_INFO();
 
-    lindexDone:
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4842,6 +4797,11 @@ TEBCresume(
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, -1);	/* Already has the correct refCount */
 
+    {
+
+	Tcl_Size lastidx;
+	TCL_UNUSEDVAR(int status);
+
     case INST_LIST_INDEX_IMM:	/* lindex with objc==3 and index in bytecode
 				 * stream */
 
@@ -4853,36 +4813,66 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	if (TclObjectHasInterface(valuePtr, list, length)
-		&& TclObjectHasInterface(valuePtr ,list ,index)) {
-	    TCL_UNUSEDVAR(int status);
-	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
-		length, interp, valuePtr, &length);
-
-	    /* Decode end-offset index values. */
-
-	    index = TclIndexDecode(opnd, length-1);
-
-	    /* Compute value @ index */
-	    if (index >= 0 && index < length) {
-		TclObjectDispatchNoDefault(interp, status, valuePtr, list,
-		    index, interp, valuePtr, index, &objResultPtr);
-		if (objResultPtr == NULL) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
-		TclNewObj(objResultPtr);
-	    }
+	/* when encoded index is TCL_INDEX_NONE it means there is no actual
+	 * index to decode
+	 */
+	if (opnd == TCL_INDEX_NONE) {
+	    TclNewObj(objResultPtr);
 	    pcAdjustment = 5;
 	    goto lindexFastPath2;
 	}
 
-	/*
-	 * Get the contents of the list, making sure that it really is a list
-	 * in the process.
-	 */
+	if (TclEncodedIndexIsFromEnd(opnd)
+	    && TclObjectHasInterface(valuePtr ,list ,indexEnd))
+	{
+	    index = TclIndexDecodeFromEnd(opnd);
+	    DECACHE_STACK_INFO();
+	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		indexEnd, interp, valuePtr, index, &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (status) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    if (objResultPtr == NULL) {
+		TclNewObj(objResultPtr);
+	    }
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	} else if (TclObjectHasInterface(valuePtr, list, length)
+	    && TclObjectHasInterface(valuePtr ,list ,index))
+	{
+	    TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		length, interp, valuePtr, &length);
+
+	    /* Decode end-offset index values. */
+	    if (Tcl_LengthIsFinite(length)) {
+		lastidx = TclIndexLast(length);
+	    } else {
+		lastidx = TclIndexLast(TCL_SIZE_MAX - 1);
+	    }
+
+	    index = TclIndexDecode(opnd, lastidx);
+
+	    /* Compute value @ index */
+	    if (index == TCL_INDEX_NONE) {
+		TclNewObj(objResultPtr);
+	    } else {
+		DECACHE_STACK_INFO();
+		TclObjectDispatchNoDefault(interp, status, valuePtr, list,
+		    index, interp, valuePtr, index, &objResultPtr);
+		CACHE_STACK_INFO();
+		if (status) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+		if (objResultPtr == NULL) {
+		    TclNewObj(objResultPtr);
+		}
+	    }
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
 
 	if (!TclHasInternalRep(valuePtr, tclListTypePtr)
 	    && TclObjectHasInterface(valuePtr, list, index)) {
@@ -4891,7 +4881,7 @@ TEBCresume(
 		goto gotError;
 	    }
 
-	    if (TclIndexIsFromEnd(opnd) && !Tcl_LengthIsFinite(objc)) {
+	    if (TclEncodedIndexIsFromEnd(opnd) && !Tcl_LengthIsFinite(objc)) {
 		/* end-relative index, and list end is indeterminate */
 		if (TclObjectDispatchNoDefault(interp, dstatus, valuePtr, list, indexEnd,
 		    interp, valuePtr, index, &objResultPtr) != TCL_OK
@@ -4920,6 +4910,11 @@ TEBCresume(
 	    /* Already has the correct refCount */
 	    NEXT_INST_F(5, 1, -1);
 	} else {
+	    /*
+	     * Get the contents of the list, making sure that it really is a list
+	     * in the process.
+	     */
+
 	    if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4928,19 +4923,19 @@ TEBCresume(
 
 	    index = TclIndexDecode(opnd, TclIndexLast(objc));
 	    pcAdjustment = 5;
-	}
 
-    lindexFastPath:
-	if (index >= 0 && index < objc) {
-	    objResultPtr = objv[index];
-	} else {
-	    TclNewObj(objResultPtr);
+	    if (index >= 0 && index < objc) {
+		objResultPtr = objv[index];
+	    } else {
+		TclNewObj(objResultPtr);
+	    }
 	}
 
     lindexFastPath2:
 
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(pcAdjustment, 1, 1);
+    }
 
     case INST_LIST_INDEX_MULTI:	/* 'lindex' with multiple index args */
 	/*
@@ -5102,8 +5097,8 @@ TEBCresume(
 	    NEXT_INST_F(9, 1, 1);
 	}
 
-	toIdxAnchor = TclIndexIsFromEnd(toIdx);
-	fromIdxAnchor = TclIndexIsFromEnd(fromIdx);
+	toIdxAnchor = TclEncodedIndexIsFromEnd(toIdx);
+	fromIdxAnchor = TclEncodedIndexIsFromEnd(fromIdx);
 
 	DECACHE_STACK_INFO();
 	if (!Tcl_LengthIsFinite(objc)
@@ -5127,7 +5122,7 @@ TEBCresume(
 		toIdx = TclIndexLast(objc);
 	    }
 
-	    assert (toIdx < objc);
+	    assert (toIdx < objc || !Tcl_LengthIsFinite(objc));
 	    /*
 	    assert ( fromIdx != TCL_INDEX_NONE );
 	     *
@@ -5386,7 +5381,16 @@ TEBCresume(
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
-	slength = Tcl_GetCharLength(valuePtr);
+	if (TclObjectHasInterface(valuePtr ,string ,length)) {
+	    int status;
+	    status = TclObjectInterfaceCall(valuePtr ,string ,length ,valuePtr ,&slength);
+	    if (status) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	} else {
+	    slength = Tcl_GetCharLength(valuePtr);
+	}
 	TclNewIntObj(objResultPtr, slength);
 	TRACE(("\"%.20s\" => %" TCL_Z_MODIFIER "u\n", O2S(valuePtr), slength));
 	NEXT_INST_F(1, 1, 1);
@@ -5452,7 +5456,6 @@ TEBCresume(
 	 * Get char length to calculate what 'end' means.
 	 */
 
-	slength = Tcl_GetCharLength(valuePtr);
 	if (TclObjectHasInterface(valuePtr, string, index)) {
 	    int status;
 	    status = TclStringIndexInterface(interp, valuePtr, value2Ptr, &objResultPtr);
@@ -5461,6 +5464,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	} else {
+	    slength = Tcl_GetCharLength(valuePtr);
 	    DECACHE_STACK_INFO();
 	    if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
@@ -5500,7 +5504,10 @@ TEBCresume(
     case INST_STR_RANGE:
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
-	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2));
+	if (Tcl_LengthIsFinite(slength)) {
+	    slength--;
+	} 
 
 	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength, &fromIdx) != TCL_OK) {
@@ -5523,6 +5530,8 @@ TEBCresume(
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
 
+    {
+	Tcl_Size lastidx;
     case INST_STR_RANGE_IMM:
 	valuePtr = OBJ_AT_TOS;
 	fromIdx = TclGetInt4AtPtr(pc+1);
@@ -5535,78 +5544,62 @@ TEBCresume(
 	    TRACE_APPEND(("\n"));
 	    NEXT_INST_F(9, 0, 0);
 	}
+	if (Tcl_LengthIsFinite(slength)) {
+	    lastidx = TclIndexLast(slength);
+	} else {
+	    lastidx = TclIndexLast(TCL_SIZE_MAX - 1);
+	}
 
-	if (TclObjectHasInterface(valuePtr, list, index)) {
-	    if ((TclIndexIsFromEnd(toIdx) || TclIndexIsFromEnd(fromIdx))
-		&& !Tcl_LengthIsFinite(slength)) {
+	toIdx = TclIndexDecode(toIdx, lastidx);
 
-		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
-		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
+	/* Decode index operands. */
 
-		if (TclObjectInterfaceCall(valuePtr,
-		    string, rangeEnd, valuePtr, fromIdx, toIdx, &objResultPtr)
-		    != TCL_OK || objResultPtr == NULL) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
-		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
-		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
-		if (TclObjectInterfaceCall(valuePtr, string, range, valuePtr,
-		    fromIdx, toIdx, &objResultPtr)
-		    != TCL_OK || objResultPtr == NULL) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
+	/*
+	assert ( toIdx != TCL_INDEX_NONE );
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (toIdx == TCL_INDEX_NONE) {
+	    goto emptyRange;
+	}
+
+	if (toIdx == TCL_INDEX_NONE) {
+	    goto emptyRange;
+	} else if (toIdx >= lastidx) {
+	    toIdx = lastidx;
+	}
+
+	assert (toIdx != TCL_INDEX_NONE && (toIdx <= lastidx));
+
+	/*
+	assert ( fromIdx != TCL_INDEX_NONE );
+	 *
+	 * Extra safety for legacy bytecodes:
+	 */
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+
+	fromIdx = TclIndexDecode(fromIdx, slength - 1);
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = TCL_INDEX_START;
+	}
+
+	if (fromIdx + 1 <= toIdx + 1) {
+	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	    if (objResultPtr == NULL) {
+		TRACE_ERROR(interp);
+		goto gotError;
 	    }
 	} else {
-	    /* Decode index operands. */
-
-	    /*
-	    assert ( toIdx != TCL_INDEX_NONE );
-	     *
-	     * Extra safety for legacy bytecodes:
-	     */
-	    if (toIdx == TCL_INDEX_NONE) {
-		goto emptyRange;
-	    }
-
-	    toIdx = TclIndexDecode(toIdx, slength - 1);
-	    if (toIdx == TCL_INDEX_NONE) {
-		goto emptyRange;
-	    } else if (toIdx >= slength) {
-		toIdx = slength - 1;
-	    }
-
-	    assert ( toIdx != TCL_INDEX_NONE && toIdx < slength );
-
-	    /*
-	    assert ( fromIdx != TCL_INDEX_NONE );
-	     *
-	     * Extra safety for legacy bytecodes:
-	     */
-	    if (fromIdx == TCL_INDEX_NONE) {
-		fromIdx = TCL_INDEX_START;
-	    }
-
-	    fromIdx = TclIndexDecode(fromIdx, slength - 1);
-	    if (fromIdx == TCL_INDEX_NONE) {
-		fromIdx = TCL_INDEX_START;
-	    }
-
-	    if (fromIdx + 1 <= toIdx + 1) {
-		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
-		if (objResultPtr == NULL) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
-	    emptyRange:
-		TclNewObj(objResultPtr);
-	    }
+	emptyRange:
+	    TclNewObj(objResultPtr);
 	}
+
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
+
+    }
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;

@@ -30,6 +30,7 @@ apply [list {} {
 	    @llength@ length
 	    @lrange@ lrange
 	    @lreplace@ lreplace
+	    @string@ string
 	}
 	{
 	    @mode@ uncompiled
@@ -39,6 +40,7 @@ apply [list {} {
 	    @llength@ {[lindex llength]}
 	    @lrange@ {[lindex lrange]}
 	    @lreplace@ {[lindex lreplace]}
+	    @string@ {[lindex string]}
 	}
     } {
 		set script [string map $map {
@@ -77,8 +79,7 @@ apply [list {} {
 			} -cleanup {
 				catch {unset list}
 				catch {unset res}
-			} -returnCodes 1 -result {list length indeterminate}
-
+			} -result 7ffffffffffffffe
 
 
 			test {indexhex lindex dynamic @mode@} {INST_LIST_INDEX} \
@@ -92,7 +93,9 @@ apply [list {} {
 			} -result 2db
 
 
-			test {indexhex lindex dynamic end @mode@} {INST_LIST_INDEX} \
+			test {indexhex lindex dynamic end @mode@} {
+				INST_LIST_INDEX
+			} \
 			-constraints testindexhex \
 			-body {
 				set index {}
@@ -103,7 +106,7 @@ apply [list {} {
 				catch {unset index}
 				catch {unset list}
 				catch {unset res}
-			} -returnCodes 1 -result {list length indeterminate}
+			} -result 7ffffffffffffffe
 
 
 			test {indexhex lindex drill @mode@} {} \
@@ -114,6 +117,16 @@ apply [list {} {
 			} -cleanup {
 				catch {unset list}
 			} -result 2db
+
+
+			test {indexhex lindex drill end @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lindex@ $list end-731 0 0 0
+			} -cleanup {
+				catch {unset list}
+			} -result 7ffffffffffffd23
 
 
 			test {indexhex lrange constant @mode@} {} \
@@ -142,28 +155,32 @@ apply [list {} {
 			-constraints testindexhex \
 			-body {
 				set list [testindexhex]
-				@lrange@ $list 10 end
+				@lrange@ $list 0x7ffffffffffffffa end
 			} -cleanup {
 				catch {unset list}
-			} -returnCodes 1 -result {list length indeterminate}
+			} -result {7ffffffffffffffa 7ffffffffffffffb 7ffffffffffffffc}
 
 
-			test {indexhex lrange end dynamic @mode@} {} \
+			test {indexhex lrange end dynamic beyond @mode@} {
+				the requested range is beyond the end of the list
+			} \
 			-constraints testindexhex \
 			-body {
 				set list [testindexhex]
-				set back [expr {-5 + 0}]
-				@lrange@ $list 10 end-$back
+				# -10 becomes end--10, i.e end+10
+				set backfrom [expr {-10 + 0}]
+				set backto [expr {-5 + 0}]
+				@lrange@ $list end-$backfrom end-$backto
 			} -cleanup {
 				catch {unset list}
-			} -returnCodes 1 -result {list length indeterminate}
+			} -result {}
 
 
 			test {indexhex lrange end minus constant @mode@} {} \
 			-constraints testindexhex \
 			-body {
 				set list [testindexhex]
-				@lrange@ $list 10 end-1
+				@lrange@ $list 0x7fffffffffffffa end-1
 			} -cleanup {
 				catch {unset list}
 			} -returnCodes 1 -result {list length indeterminate}
@@ -228,10 +245,9 @@ apply [list {} {
 			-body {
 				set list [testindexhex]
 				string index $list end
-				return success
 			} -cleanup {
 				catch {unset list}
-			} -returnCodes 1 -result {list length indeterminate}
+			} -result 3 
 
 
 			test {indexhex string length @mode@} {} \
@@ -282,13 +298,13 @@ apply [list {} {
 
 				# This produces an error until index ranges are expanded in some later
 				# version of Tcl.
-				set status [catch {string range $list 2147483640 2147483648} cres copts]
+				set status [catch {string range $list 2147483630 2147483648} cres copts]
 
 				@lappend@ res $status $cres
 				return $res
 			} -cleanup {
 				catch {unset list}
-			} -result {success {d73ac8f } 1 {}}
+			} -result {success {d73ac8f } 0 {1d73ac8e 1d73ac8f 1}}
 
 
 			test {integer lappend @mode@} {} \
@@ -386,7 +402,6 @@ apply [list {} {
 				set list [testlistinteger {}]
 				set res {}
 				@lappend@ list 8 9 10 12 13
-				after 100
 				lappend res [@linsert@ $list 3 11]
 				set representation [::tcl::unsupported::representation $list]
 				regsub {(value is a testListInteger).*} $representation {\1} representation
@@ -415,43 +430,60 @@ apply [list {} {
 			-body {
 				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
-				after 100
 				@lreplace@ $list -1 -1 7 
 			} -cleanup {
 				catch {unset list}
 			} -result {7 8 9 10 11 12 13}
-		}]
-		#try $script
 
+			test {integer string range @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+			    set list [testlistinteger {}]
+				set list2 [lseq 0 15000]
+				set failed {}
+				for {set i 0} {$i < 10000} {incr i} {
+					set end [expr {$i * 2}]
+					set res1 [@string@ range $list $i $end]
+					set res2 [@string@ range $list2 $i $end] 
+					if {$res1 ne $res2} {
+						lappend failed $i $res1
+					}
+				}
+				return $failed
+			} -cleanup {
+				catch {unset list}
+			} -result {}
+		}]
+		try $script
     }
 
     set suites {linsert lset}  
 
-    foreach suite {linsert lset} {
-	    set namespace [list $suite tests]
-	    namespace eval $namespace [list source [
-		    file join [file dirname [file dirname [
-			    file normalize [file join [info script] ...]]]] $suite.test]]
-	    namespace eval $namespace {
-		    proc newlist list {
-			    if {[string is list $list]} {
-				    set integer 1
-				    foreach item $list {
-					    if {![string is integer $item]} {
-						    set integer 0
-						    break
-					    }
-				    }
-				    if {$integer} {
-					    testlistinteger $list
-				    }
-			    }
-			    return $list
-		    }
-		    try $tests
-	    }
-	    namespace delete $namespace
-    }
+	foreach suite {linsert lset} {
+		set namespace [list $suite tests]
+		namespace eval $namespace [list source [
+			file join [file dirname [file dirname [
+				file normalize [file join [info script] ...]]]] $suite.test]]
+		namespace eval $namespace {
+			proc newlist list {
+				if {[string is list $list]} {
+					set integer 1
+					foreach item $list {
+						if {![string is integer $item]} {
+							set integer 0
+							break
+						}
+					}
+					if {$integer} {
+						testlistinteger $list
+					}
+				}
+				return $list
+			}
+			try $tests
+		}
+		namespace delete $namespace
+	}
 
 
     # cleanup

@@ -23,6 +23,8 @@
  *	only used for testing.
  */
 
+#include <math.h>
+
 #include "tcl.h"
 #include "tclInt.h"
 
@@ -70,8 +72,8 @@ static int ErrorMaxElementsExceeded(Tcl_Interp *interp);
 typedef struct ListInteger {
     int refCount;
     int ownstring;
-    int size;
-    int used;
+    Tcl_Size size;
+    Tcl_Size used;
     int values[1];
 } ListInteger;
 
@@ -292,7 +294,7 @@ static int ListIntegerListStringLength(
     ,Tcl_Size *lengthPtr
 ) {
     *lengthPtr = -1;
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*
@@ -306,21 +308,101 @@ static int ListIntegerStringListIndexFromStringIndex(
 */
 
 static int ListIntegerListStringRange(
+    Tcl_Interp * interp,
     TCL_UNUSED(Tcl_Obj *),	/* The Tcl object to find the range of. */ \
-    TCL_UNUSED(Tcl_Size),	/* First index of the range. */ \
-    TCL_UNUSED(Tcl_Size),	/* Last index of the range. */ \
+    Tcl_Size fromIdx,	/* First index of the range. */ \
+    Tcl_Size toIdx,	/* Last index of the range. */ \
     Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 ) {
-    *resPtrPtr = NULL;
+    char *valPtr;
+    Tcl_Obj *resPtr, *numPtr ,*rangePtr;
+    Tcl_Size cursor = 0 ,digits = 1 ,incr = 1 ,length ,more ,movlen
+	,needed ,nextchars = 0 ,chars = 0 ,top = incr * 10;
+    
+
+    while (chars < fromIdx) {
+	more = digits * incr;
+	/* spaces */
+	nextchars = chars + more;
+	nextchars += incr * 1;
+	if (nextchars > fromIdx) {
+	    incr /= 10;
+	    if (incr == 0) {
+		break;
+	    }
+	} else {
+	    cursor += incr;
+	    chars = nextchars;
+	    if (cursor >= top) {
+		incr *= 10;
+		top = incr * 10;
+		digits +=1;
+	    }
+	}
+    }
+
+    resPtr = Tcl_ObjPrintf("%lu cursor" ,cursor);
+    Tcl_AppendPrintfToObj(resPtr ,"\n%lu fromIdx" ,fromIdx);
+    Tcl_AppendPrintfToObj(resPtr ,"\n%lu chars" ,chars);
+    Tcl_AppendPrintfToObj(resPtr ,"\n%lu digits" ,digits);
+    Tcl_AppendPrintfToObj(resPtr ,"\n%lu incr" ,incr);
+    Tcl_AppendPrintfToObj(resPtr ,"\n%lu more\n" ,digits * incr);
+    rangePtr = Tcl_NewObj();
+
+    numPtr = Tcl_ObjPrintf("%lu" ,cursor);
+    valPtr = Tcl_GetStringFromObj(numPtr ,&length); 
+    needed = toIdx - fromIdx + 1;
+    cursor +=1;
+    while (chars < fromIdx) {
+	if (length == 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "failed to find beginning list index for string range"));
+	    }
+	    return TCL_ERROR;
+	}
+	valPtr++;
+	chars++;
+	length--;
+    }
+    if (length > 0) {
+	movlen = needed > length ? length : needed;
+	Tcl_AppendToObj(rangePtr ,valPtr ,movlen);
+	needed -= movlen;
+    }
+    Tcl_DecrRefCount(numPtr);
+
+    while (needed > 0) {
+	Tcl_AppendToObj(rangePtr ," ",1);
+	needed--;
+	if (needed > 0) {
+	    numPtr = Tcl_ObjPrintf("%lu" ,cursor);
+	    valPtr = Tcl_GetStringFromObj(numPtr ,&length); 
+	    movlen = length > needed ? needed : length;
+	    Tcl_AppendToObj(rangePtr ,valPtr ,movlen);
+	    needed -= movlen;
+	    Tcl_DecrRefCount(numPtr);
+	}
+	cursor +=1;
+    }
+
+    /*
+    Tcl_AppendObjToObj(resPtr ,rangePtr);
+    Tcl_DecrRefCount(resPtr);
+    */
+    *resPtrPtr = rangePtr;
     return TCL_OK;
 }
 
 static int ListIntegerListStringRangeEnd(
+    Tcl_Interp * interp,
     TCL_UNUSED(Tcl_Obj *),	/* The Tcl object to find the range of. */ \
     TCL_UNUSED(Tcl_Size),	/* First index of the range. */ \
     TCL_UNUSED(Tcl_Size),	/* Last index of the range. */ \
     Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */)
 {
+    /* suppress unused parameter warning */
+    (void) interp;
     *resPtrPtr = NULL;
     return TCL_OK;
 }
@@ -336,6 +418,7 @@ static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {
     return ListIntegerListObjReplace(interp, listPtr, length, 0, 1, &objPtr);
 }
 
+
 static int ListIntegerListObjAppendList(
     TCL_UNUSEDVAR(Tcl_Interp *interp),	    /* Used to report errors if not NULL. */ \
     TCL_UNUSEDVAR(Tcl_Obj *listPtr),	    /* List object to append elements to. */ \
@@ -348,26 +431,43 @@ static int ListIntegerListObjIndex(
     TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
     Tcl_Obj * listObj,/* List object to index into. */ \
     Tcl_Size index,	/* Index of element to return. */ \
-    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **resPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 ) {
     ListInteger *listRepPtr = ListGetInternalRep(listObj);
     Tcl_Size num;
     if (index >= 0 && index < listRepPtr->used) {
 	num = listRepPtr->values[index];
-	*objPtrPtr = Tcl_NewLongObj(num);
+	*resPtrPtr = Tcl_NewLongObj(num);
     } else {
-	*objPtrPtr = NULL;
+	*resPtrPtr = NULL;
     }
     return TCL_OK;
 }
 
 static int ListIntegerListObjIndexEnd(
     TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
-    TCL_UNUSED(Tcl_Obj *),/* List object to index into. */ \
-    TCL_UNUSED(Tcl_Size),/* Index of element to return. */ \
-    TCL_UNUSED(Tcl_Obj **)/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj * listObj,/* List object to index into. */ \
+    Tcl_Size index,/* Index of element to return. */ \
+    Tcl_Obj **resPtrPtr /* The resulting Tcl_Obj* is stored here. */
 ) {
-    return TCL_ERROR;
+    int num;
+    ListInteger *listRepPtr = ListGetInternalRep(listObj);
+    if (index > TCL_SIZE_MAX) {
+	*resPtrPtr = NULL;
+	return TCL_ERROR;
+    }
+    Tcl_Size idx = listRepPtr->used - 1 - index;
+    if (idx > listRepPtr->used) {
+	*resPtrPtr = NULL;
+	return TCL_ERROR;
+    }
+    if (idx < 0) {
+	*resPtrPtr = NULL;
+	return TCL_ERROR;
+    }
+    num = listRepPtr->values[idx];
+    *resPtrPtr = Tcl_NewLongObj(num);
+    return TCL_OK;
 }
 
 static int ListIntegerListObjIsSorted(

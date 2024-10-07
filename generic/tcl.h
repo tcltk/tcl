@@ -2331,6 +2331,10 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     Tcl_Obj *givenPtr,	    /* Value to search for. */ \
     int *resPtr				/* Location to store the result in. */ \
 
+/*
+ * constraints
+ *  index >= 0
+*/
 #define tclObjTypeInterfaceArgsListIndex \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object to index into. */ \
@@ -2426,7 +2430,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 
 #define tclObjTypeInterfaceArgsStringLength \
-    Tcl_Obj *listPtr, \
+    Tcl_Obj *valuePtr, \
     Tcl_Size *lengthPtr	/* An address at which to store the length. */
 
 
@@ -2437,6 +2441,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 
 #define tclObjTypeInterfaceArgsStringRange \
+    Tcl_Interp *interp,	\
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
     Tcl_Size first,	/* First index of the range. */ \
     Tcl_Size last,	/* Last index of the range. */ \
@@ -2444,6 +2449,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 
 #define tclObjTypeInterfaceArgsStringRangeEnd \
+    Tcl_Interp *interp,	\
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
     Tcl_Size first,	/* First index of the range. */ \
     Tcl_Size last,	/* Last index of the range. */ \

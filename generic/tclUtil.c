@@ -3423,13 +3423,15 @@ GetWideForIndex(
  *
  * Tcl_GetIntForIndex --
  *
- *	Provides an integer corresponding to the list index held in a Tcl
- *	object. The string value 'objPtr' is expected have the format
- *	integer([+-]integer)? or end([+-]integer)?.
+ *	Provides an integer corresponding to the list index indicated by
+ *	'objPtr' which must have the format integer([+-]integer)? or
+ *	end([+-]integer)?.
  *
  *	If the computed index lies within the valid range of Tcl indices
  *	(0..TCL_SIZE_MAX) it is returned. Higher values are returned as
- *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
+ *	TCL_SIZE_MAX. If objPtr is negative, the result is TCL_INDEX_NONE (-1).
+ *	If endValue is -1, a negative result is an offset from the end of the
+ *	list,
  *
  *	Callers should pass reasonable values for endValue - one in the
  *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
@@ -3477,8 +3479,6 @@ Tcl_GetIntForIndex(
 	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
 	    *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
-	} else if ((wide < 0) && (endValue >= 0)) {
-	    *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
 	} else {
 	    *indexPtr = (Tcl_Size) wide;
 	}
@@ -3730,6 +3730,8 @@ GetEndOffsetFromObj(
     } else if (offset == WIDE_MIN) {
 	*widePtr = (endValue == -1) ? WIDE_MIN : -1;
     } else if (offset < 0) {
+
+
 	/* end-(n-1) - Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;
     } else {
@@ -3975,9 +3977,21 @@ TclIndexDecode(
     }
     return TCL_INDEX_NONE;
 }
+
 
-int TclIndexIsFromEnd(Tcl_Size index) {
-    return index <= 0;
+Tcl_Size
+TclIndexDecodeFromEnd(
+    int encoded    /* Value to decode */
+)		    /* Meaning of "end" to use, > TCL_INDEX_END */
+{
+    Tcl_Size endValue;
+    assert(encoded <= TCL_INDEX_END);
+    endValue = encoded - TCL_INDEX_END;
+    return endValue;
+}
+
+int TclEncodedIndexIsFromEnd(Tcl_Size index) {
+    return index < 0;
 }
 
 /*
