@@ -1194,9 +1194,9 @@ install-libraries: libraries
 	do \
 	    $(INSTALL_DATA) "$$i" $(SHQ_SCRIPT_INSTALL_DIR)/cookiejar0.2; \
 	done
-	@echo $(call shquote ,Installing package http 2.10b4 as a Tcl Module)
+	@echo $(call shquote ,Installing package http 2.10.0 as a Tcl Module)
 	@$(INSTALL_DATA) $(SHQ_TOP_DIR)/library/http/http.tcl \
-		$(SHQ_MODULE_INSTALL_DIR)/9.0/http-2.10b4.tm
+		$(SHQ_MODULE_INSTALL_DIR)/9.0/http-2.10.0tm
 	@echo $(call shquote ,Installing package opt0.4 files\
 		to $(SCRIPT_INSTALL_DIR)/opt0.4/)
 	@for i in $(SHQ_TOP_DIR)/library/opt/*.tcl; do \
