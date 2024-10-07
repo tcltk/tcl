@@ -3708,7 +3708,7 @@ Tcl_GetNumberFromObj(
 	/* Handle dict separately, because it doesn't have a lengthProc */
 	if (TclHasInternalRep(objPtr, &tclDictType)) {
 	    Tcl_DictObjSize(NULL, objPtr, &length);
-	    if (length > 1) {
+	    if (length > 0) {
 	    listRep:
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));

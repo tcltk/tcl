@@ -509,7 +509,7 @@ test expr-11.15 {CompileAddExpr: runtime error} {
 } {1 {cannot use non-numeric string "1 2 3" as left operand of "+"}}
 test expr-11.16 {CompileAddExpr: runtime error} {
     list [catch {expr {~[dict create foo bar]}} msg] $msg
-} {1 {cannot use non-numeric string "foo bar" as operand of "~"}}
+} {1 {cannot use a list as operand of "~"}}
 
 test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5

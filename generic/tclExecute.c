@@ -9112,7 +9112,7 @@ IllegalExprOperandType(
 	Tcl_Size length;
 	if (TclHasInternalRep(opndPtr, &tclDictType)) {
 	    Tcl_DictObjSize(NULL, opndPtr, &length);
-	    if (length > 1) {
+	    if (length > 0) {
 	    listRep:
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"cannot use a list as %soperand of \"%s\"", ord, op));
