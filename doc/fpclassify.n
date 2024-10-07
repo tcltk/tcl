@@ -11,14 +11,14 @@
 '\"
 '\" See the file "COPYING" for information on usage and redistribution.
 '\"
-.TH fpclassify n 8.7 Tcl "Tcl Float Classifier"
+.TH fpclassify n 9.0 Tcl "Tcl Float Classifier"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 fpclassify \- Floating point number classification of Tcl values
 .SH SYNOPSIS
-package require \fBtcl 8.7\fR
+package require \fBtcl 9.0\fR
 .sp
 \fBfpclassify \fIvalue\fR
 .BE

@@ -11,7 +11,7 @@
 '\"
 '\" See the file "COPYING" for information on usage and redistribution.
 '\"
-.TH array n 8.7 Tcl "Tcl Built-In Commands"
+.TH array n 9.0 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!

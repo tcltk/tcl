@@ -449,7 +449,7 @@ access path. In addition to the directories present if "Safe Mode" is off,
 the ::auto_path includes the numerous subdirectories and module paths
 that belong to the access path.
 .SH SYNC MODE
-Before Tcl version 8.7, the Safe Base kept each safe interpreter's
+Before Tcl version 9.0, the Safe Base kept each safe interpreter's
 ::auto_path synchronized with a tokenized form of its access path.
 Limitations of Tcl 8.4 and earlier made this feature necessary.  This
 definition of ::auto_path did not conform its specification in library(n)
