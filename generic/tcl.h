@@ -2216,7 +2216,7 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b3"), \
+	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0.0"), \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
@@ -2593,8 +2593,7 @@ TclBounceRefCount(
 
 /*
  * Declare that obj will no longer be used or referenced.
- * This will release the obj if there is no referece count,
- * otherwise let it be.
+ * This will free the obj if there are no references to the obj.
  */
 #   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr);

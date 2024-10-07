@@ -1010,7 +1010,7 @@ TclpOpenFileChannel(
 	if (interp) {
 	    /*
 	     * We need this just to ensure we return the correct error messages under
-	     * some circumstances (relative paths only), so because the normalization 
+	     * some circumstances (relative paths only), so because the normalization
 	     * is very expensive, don't invoke it for native or absolute paths.
 	     * Note: since paths starting with ~ are relative in 9.0 for windows,
 	     * it doesn't need to consider tilde expansion (in opposite to 8.x).
