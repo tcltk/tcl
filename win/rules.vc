@@ -33,7 +33,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 11
+RULES_VERSION_MINOR = 12
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1262,7 +1262,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
-PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
+# Even when building against Tcl 8, PRJLIBNAME9 must not have "t"
+PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 PRJLIBNAME	= $(PRJLIBNAME9)
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
