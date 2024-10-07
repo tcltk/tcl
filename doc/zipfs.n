@@ -20,7 +20,7 @@
 zipfs \- Mount and work with ZIP files within Tcl
 .SH SYNOPSIS
 .nf
-\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIZIPFS\fR?
+\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR
 \fBzipfs exists\fI filename\fR
 \fBzipfs find\fI directoryName\fR
 \fBzipfs info\fI filename\fR
@@ -54,13 +54,12 @@ mounted archive in memory and are not persisted to disk.
 Paths in mounted archives are case-sensitive on all platforms.
 .\" METHOD: canonical
 .TP
-\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
+\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR
 .
 This takes the name of a file, \fIfilename\fR, and produces where it would be
 mapped into a zipfs mount as its result. If specified, \fImountpoint\fR says
 within which mount the mapping will be done; if omitted, the main root of the
-zipfs system is used. The \fIinZipfs\fR argument is a an optional boolean
-which controls whether to fully canonicalize the name; it defaults to true.
+zipfs system is used.
 .\" METHOD: exists
 .TP
 \fBzipfs exists\fI filename\fR
