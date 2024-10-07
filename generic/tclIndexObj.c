@@ -841,7 +841,7 @@ Tcl_WrongNumArgs(
     }
 
     /*
-     * If processing an an ensemble implementation, rewrite the results in
+     * If processing an ensemble implementation, rewrite the results in
      * terms of how the ensemble was invoked.
      */
 

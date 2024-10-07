@@ -6,6 +6,8 @@
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.

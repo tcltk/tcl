@@ -11,6 +11,8 @@
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -2345,10 +2347,11 @@ Tcl_LassignObjCmd(
 	    return TCL_ERROR;
 	}
 	/*
-	 * Must incrref elemObj. If the var name being set is same as the
-	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
-	 * the elements in the list (in case list refCount was 1) BEFORE
-	 * the elemObj is stored in the var. See tests 6.{25,26}
+	 * Increment the refCount of elemObj because if its refCount is 1 and the
+	 * Tcl_Obj for the name of the variable being set happens to be the same
+	 * Tcl_Obj as the list value, ObjSetVar2 converts the internal
+	 * representation to a VAR, causing the elements in the list to be freed
+	 * before they can be stored in the var. See tests 6.{25,26}
 	 */
 	Tcl_IncrRefCount(elemObj);
 	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj,

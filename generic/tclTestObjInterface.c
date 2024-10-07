@@ -1,5 +1,5 @@
 /*
- * Copyright © 2021 Nathan Coulter
+ * Copyright © 2021-2024 Nathan Coulter
  *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,

@@ -12,6 +12,8 @@
  */
 
 /*
+ * Copyright © 2008 Nathan Coulter <msofer@users.sourceforge.net>
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -9764,7 +9766,7 @@ TclNRCoroutineObjCmd(
     }
 
     /*
-     * We ARE creating the coroutine command: allocate the corresponding
+     * We ARE creating the coroutine command: Allocate the corresponding
      * struct and create the corresponding command.
      */
 
@@ -9780,7 +9782,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode.
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.

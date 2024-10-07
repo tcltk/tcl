@@ -6,13 +6,15 @@
  * Copyright © 2005-2007 Donal K. Fellows.
  * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
- * Copyright © 2021-2024 Nathan Coulter.  All rights reserved.
+ * Copyright © 2021-2023 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter.  All rights reserved.
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.

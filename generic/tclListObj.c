@@ -7,6 +7,8 @@
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -1659,10 +1661,9 @@ ListObjRange(tclObjTypeInterfaceArgsListRange)
  *
  * TclListObjGetElement --
  *
- *	Returns a single element from the array of the elements in a list
- *	object, without doing doing any bounds checking.  Caller must ensure
- *	that ObjPtr of of type 'tclListTypePtr' and that  index is valid for the
- *	list.
+ *	Returns a single element from the array of the elements in a list object,
+ *	without doing any bounds checking.  Caller must ensure that ObjPtr is of
+ *	type 'tclListTypePtr' and that index is valid for the list.
  *
  *----------------------------------------------------------------------
  */
@@ -1681,8 +1682,7 @@ TclListObjGetElement(
  *
  * Tcl_ListObjGetElements --
  *
- *	This function returns an (objc,objv) array of the elements in a list
- *	object.
+ *	Returns an (objc,objv) array of the elements in a list object.
  *
  * Results:
  *	The return value is normally TCL_OK; in this case *objcPtr is set to

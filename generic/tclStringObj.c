@@ -7,6 +7,8 @@
  */
 
 /*
+ * Copyright © 2024 Nathan Coulter
+ *
  * You may distribute and/or modify this program under the terms of the GNU
  * Affero General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -652,15 +654,15 @@ TclGetUniChar(
     }
 
     /*
-	 * Optimize the ByteArray case:  N need need to convert to a string to
-	 * perform the indexing operation.
+     * Optimize the ByteArray case: No need to convert to a string to
+     * perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size length = 0;
 	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
-		return -1;
+	    return -1;
 	}
 
 	return bytes[index];

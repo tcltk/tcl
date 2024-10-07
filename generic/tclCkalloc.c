@@ -1286,7 +1286,7 @@ TclAllocElemsEx(
  *
  *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
  *    requested size plus some more for future growth. The amount of
- *    reallocation is adjusted depending on on failure.
+ *    reallocation is adjusted depending on failure.
  *
  *
  * Results:

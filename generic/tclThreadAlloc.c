@@ -80,7 +80,7 @@ typedef union Block {
 #define blockReqSize	b.reqSize
 
 /*
- * The following defines the minimum and and maximum block sizes and the number
+ * The following defines the minimum and maximum block sizes and the number
  * of buckets in the bucket cache.
  */
 

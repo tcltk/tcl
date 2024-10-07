@@ -410,7 +410,7 @@ int my_LStringObjRange(
  *
  * my_LStringObjReverse --
  *
- *	Creates a new Obj with the the order of the elements in the lstring
+ *	Creates a new Obj with the order of the elements in the lstring
  *	value reversed, where first is last and last is first, etc.
  *
  * Results:

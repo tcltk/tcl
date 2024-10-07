@@ -694,7 +694,7 @@ TclChanPushObjCmd(
 	    rtPtr->parent);
 
     /*
-     * Register the transform in our our map for proper handling of deleted
+     * Register the transform in our map for proper handling of deleted
      * interpreters and/or threads.
      */
 
@@ -2481,7 +2481,7 @@ ForwardProc(
      * quiescent. Because of this we can treat the data as belonging to us,
      * without fear of race conditions. I.e. we can read and write as we like.
      *
-     * The only thing we cannot be sure of is the resultPtr. This can be be
+     * The only thing we cannot be sure of is the resultPtr. This can be
      * NULLed if the originating thread went away while the event is handled
      * here now.
      */
