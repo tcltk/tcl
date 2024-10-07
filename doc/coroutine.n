@@ -104,7 +104,7 @@ with quite a bit of similarity to \fBcoroprobe\fR. However, with
 .VS "8.7, TIP383"
 The coroutine is not immediately resumed after the injection has been done.  A
 consequence of this is that multiple injections may be done before the
-coroutine is resumed. There injected commands are performed in \fIreverse
+coroutine is resumed. The injected commands are performed in \fIreverse
 order of definition\fR (that is, they are internally stored on a stack).
 .VE "8.7, TIP383"
 .IP \(bu
@@ -251,10 +251,6 @@ puts [\fBcoroprobe \fIcollect\fR set accumulator]
 puts [\fIcollect\fR]
 # ==> 123 {abc def} 456 pqr RST xyz
 .CE
-.PP
-This example shows a simple coroutine that collects non-empty values and
-returns a list of them when not given an argument. It also shows how we can
-look inside the coroutine to find out what it is doing.
 .VE "8.7, TIP383"
 .SS "DETAILED SEMANTICS"
 .PP
