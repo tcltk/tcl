@@ -1586,13 +1586,21 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
-
-	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
-	    if (state == BAD_OCTAL) {
-		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
+	    Tcl_Size argc;
+	    const char **argv;
+	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
+		Tcl_Free(argv);
+		Tcl_AppendToObj(msg, "a list", -1);
+	    } else {
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
+		Tcl_AppendToObj(msg, "\"", -1);
+		if (state == BAD_OCTAL) {
+		    Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
+		}
 	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
