@@ -192,8 +192,8 @@ TclpInitLibraryPath(
  *
  *	Append the value of the TCL_LIBRARY environment variable onto the path
  *	pointer. If the env variable points to another version of tcl (e.g.
- *	"tcl7.6") also append the path to this version (e.g.,
- *	"tcl7.6/../tcl8.2")
+ *	"tcl8.6") also append the path to this version (e.g.,
+ *	"tcl8.6/../tcl9.0")
  *
  * Results:
  *	None.
@@ -219,7 +219,7 @@ AppendEnvironment(
 
     /*
      * The shortlib value needs to be the tail component of the lib path. For
-     * example, "lib/tcl8.4" -> "tcl8.4" while "usr/share/tcl8.5" -> "tcl8.5".
+     * example, "lib/tcl9.0" -> "tcl9.0" while "usr/share/tcl9.0" -> "tcl9.0".
      */
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {

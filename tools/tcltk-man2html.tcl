@@ -14,7 +14,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+	tclsh9.0 (or the equivalent tclsh90.exe\non Windows)."
     exit 1
 }
 

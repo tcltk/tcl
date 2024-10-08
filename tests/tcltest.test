@@ -359,7 +359,7 @@ set printerror [makeFile {
 	    \"Path/that/is/really/long/and/contains/no/spaces\""
     ::tcltest::PrintError "a really really long string containing a \
 	    \"Really/Long/Path/that/contains/no/spaces/and/is/longer/than/eighty/characters/to/see/what/happens\""
-    ::tcltest::PrintError "Problem renaming file: error renaming \"Z:/ws/tcl8.2/win32-ix86/tests/core\" to \"Z:/ws/tcl8.2/win32-ix86/tests/movecore-core\""
+    ::tcltest::PrintError "Problem renaming file: error renaming \"Z:/ws/tcl9.0/win32-ix86/tests/core\" to \"Z:/ws/tcl9.0/win32-ix86/tests/movecore-core\""
     exit
 } printerror.tcl]
 

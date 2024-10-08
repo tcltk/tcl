@@ -429,7 +429,7 @@ TclCleanupVar(
  *
  *	This function is used to locate a variable given its name(s). It has
  *	been mostly superseded by TclObjLookupVar, it is now only used by the
- *	trace code. It is kept in tcl8.5 mainly because it is in the internal
+ *	trace code. It is kept in tcl9.0 mainly because it is in the internal
  *	stubs table, so that some extension may be calling it.
  *
  * Results:
