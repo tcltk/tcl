@@ -506,7 +506,7 @@ test expr-11.14 {CompileAddExpr: runtime error} {
 } {1 {cannot use a list as right operand of "+"}}
 test expr-11.15 {CompileAddExpr: runtime error} {
     list [catch {expr {{1 2 3}+24.0}} msg] $msg
-} {1 {cannot use non-numeric string "1 2 3" as left operand of "+"}}
+} {1 {cannot use a list as left operand of "+"}}
 test expr-11.16 {CompileAddExpr: runtime error} {
     list [catch {expr {~[dict create foo bar]}} msg] $msg
 } {1 {cannot use a list as operand of "~"}}

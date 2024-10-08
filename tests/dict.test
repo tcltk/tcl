@@ -1004,7 +1004,7 @@ test dict-17.12 {dict filter command: script} -returnCodes error -body {
     }
 } -cleanup {
     unset k v
-} -result {expected boolean value but got "a b"}
+} -result {expected boolean value but got a list}
 test dict-17.13 {dict filter command: script} -body {
     list [catch {dict filter {a b} script {k v} {error x}} msg] $msg \
 	    $::errorInfo

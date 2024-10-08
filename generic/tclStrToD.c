@@ -1525,11 +1525,15 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
-
-	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
+	    if (TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1) {
+		Tcl_AppendToObj(msg, "a list", -1);
+	    } else {
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
+		Tcl_AppendToObj(msg, "\"", -1);
+	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	}
