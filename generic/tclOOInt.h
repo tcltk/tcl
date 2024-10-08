@@ -682,22 +682,26 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
  * sets up the declarations needed for the main macro, FOREACH_HASH, which
- * does the actual iteration. FOREACH_HASH_VALUE is a restricted version that
- * only iterates over values.
+ * does the actual iteration. FOREACH_HASH_KEY and FOREACH_HASH_VALUE are
+ * restricted versions that only iterate over keys or values respectively.
  * REQUIRES DECLARATION: FOREACH_HASH_DECLS;
  */
 
 #define FOREACH_HASH_DECLS \
     Tcl_HashEntry *hPtr;Tcl_HashSearch search
 #define FOREACH_HASH(key, val, tablePtr) \
-    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ?	\
-	    (*(void **)&(key)=Tcl_GetHashKey((tablePtr),hPtr),		\
-	    *(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;		\
-	    hPtr=Tcl_NextHashEntry(&search))
+    for(hPtr=Tcl_FirstHashEntry((tablePtr) ,&search); hPtr != NULL ?	\
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr),		\
+	    *(void **)&(val)=Tcl_GetHashValue(hPtr), 1):0;		\
+	    hPtr = Tcl_NextHashEntry(&search))
+#define FOREACH_HASH_KEY(key, tablePtr) \
+    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), 1) : 0; \
+	    hPtr = Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_VALUE(val, tablePtr) \
-    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ?	\
-	    (*(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;		\
-	    hPtr=Tcl_NextHashEntry(&search))
+    for(hPtr = Tcl_FirstHashEntry((tablePtr) ,&search); hPtr != NULL ? \
+	    (*(void **)&(val) = Tcl_GetHashValue(hPtr), 1): 0;		\
+	    hPtr = Tcl_NextHashEntry(&search))
 
 /*
  * Convenience macro for duplicating a list. Needs no external declaration,

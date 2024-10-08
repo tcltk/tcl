@@ -798,10 +798,9 @@ TclOOUnknownDefinition(
     Tcl_Obj *const *objv)
 {
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
+    FOREACH_HASH_DECLS;
     Tcl_Size soughtLen;
-    const char *soughtStr, *matchedStr = NULL;
+    const char *soughtStr, *nameStr, *matchedStr = NULL;
 
     if (objc < 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -817,18 +816,13 @@ TclOOUnknownDefinition(
     if (soughtLen == 0) {
 	goto noMatch;
     }
-    hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-    while (hPtr != NULL) {
-	const char *nameStr = (const char *)
-		Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
-
+    FOREACH_HASH_KEY(nameStr, &nsPtr->cmdTable) {
 	if (strncmp(soughtStr, nameStr, soughtLen) == 0) {
 	    if (matchedStr != NULL) {
 		goto noMatch;
 	    }
 	    matchedStr = nameStr;
 	}
-	hPtr = Tcl_NextHashEntry(&search);
     }
 
     if (matchedStr != NULL) {

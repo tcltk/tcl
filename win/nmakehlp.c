@@ -113,7 +113,7 @@ main(
 	case 'l':
 	    if (argc < 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-	       		"usage: %s -l <linker option> ?<mandatory option> ...?\n"
+			"usage: %s -l <linker option> ?<mandatory option> ...?\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -505,9 +505,9 @@ IsIn(
 
 /*
  * GetVersionFromFile --
- * 	Looks for a match string in a file and then returns the version
- * 	following the match where a version is anything acceptable to
- * 	package provide or package ifneeded.
+ *	Looks for a match string in a file and then returns the version
+ *	following the match where a version is anything acceptable to
+ *	package provide or package ifneeded.
  */
 
 static const char *
@@ -742,7 +742,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 	return 2; /* Have no real error reporting mechanism into nmake */
     }
     dirlen = strlen(dir);
-    if ((dirlen + 3) > sizeof(path)) {
+    if (dirlen > sizeof(path) - 3) {
 	return 2;
     }
     strncpy(path, dir, dirlen);
