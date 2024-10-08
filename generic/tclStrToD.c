@@ -1527,7 +1527,11 @@ TclParseNumber(
 	if (interp != NULL) {
 	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
-	    if (TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1) {
+	    Tcl_Size argc;
+	    const char **argv;
+	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
+		Tcl_Free(argv);
 		Tcl_AppendToObj(msg, "a list", -1);
 	    } else {
 		Tcl_AppendToObj(msg, "\"", -1);

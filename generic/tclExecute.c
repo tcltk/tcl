@@ -9121,8 +9121,11 @@ IllegalExprOperandType(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
+	Tcl_Size objcPtr;
+	Tcl_Obj **objvPtr;
 	if ((lengthProc && lengthProc(opndPtr) > 1)
-		|| TclMaxListLength(TclGetString(opndPtr), TCL_INDEX_NONE, NULL) > 1) {
+		|| ((TclMaxListLength(TclGetString(opndPtr), TCL_INDEX_NONE, NULL) > 1)
+		&& (Tcl_ListObjGetElements(NULL, opndPtr, &objcPtr, &objvPtr) == TCL_OK))) {
 	    goto listRep;
 	}
 	description = "non-numeric string";
