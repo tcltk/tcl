@@ -4985,7 +4985,7 @@ Tcl_LsortObjCmd(
     }
     if (elementArray) {
 	if (elmArrSize <= MAXCALLOC) {
-	    ckfree((char *)elementArray);
+	    ckfree(elementArray);
 	} else {
 	    free((char *)elementArray);
 	}

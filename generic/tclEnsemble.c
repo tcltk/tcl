@@ -2574,7 +2574,7 @@ ClearTable(
 	    Tcl_DecrRefCount(prefixObj);
 	    hPtr = Tcl_NextHashEntry(&search);
 	}
-	ckfree((char *) ensemblePtr->subcommandArrayPtr);
+	ckfree(ensemblePtr->subcommandArrayPtr);
     }
     Tcl_DeleteHashTable(hash);
 }

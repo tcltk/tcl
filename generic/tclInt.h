@@ -4315,7 +4315,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	Tcl_Obj *_isobjPtr = (Tcl_Obj *)(objPtr);			\
 	if (_isobjPtr->bytes != NULL) {					\
 	    if (_isobjPtr->bytes != &tclEmptyString) {			\
-		ckfree((char *)_isobjPtr->bytes);			\
+		ckfree(_isobjPtr->bytes);			\
 	    }								\
 	    _isobjPtr->bytes = NULL;					\
 	}								\

@@ -41,7 +41,7 @@
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
 #define TclBNRealloc(x,s) ((void*)attemptckrealloc((char*)(x),(size_t)(s)))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
-#define TclBNFree(x) (ckfree((char*)(x)))
+#define TclBNFree(x) (ckfree(x))
 
 #undef MP_MALLOC
 #undef MP_CALLOC

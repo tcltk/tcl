@@ -1491,7 +1491,7 @@ LinkFree(
     if (linkPtr->flags & LINK_ALLOC_LAST) {
 	ckfree(linkPtr->lastValue.aryPtr);
     }
-    ckfree((char *)linkPtr);
+    ckfree(linkPtr);
 }
 
 /*

@@ -284,10 +284,10 @@ FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr)  /* Free any allocated me
 	for(i=0; i<arithSeriesRepPtr->len; i++) {
 	    Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
 	}
-	ckfree((char *)arithSeriesRepPtr->elements);
+	ckfree(arithSeriesRepPtr->elements);
 	arithSeriesRepPtr->elements = NULL;
     }
-    ckfree((char *)arithSeriesRepPtr);
+    ckfree(arithSeriesRepPtr);
 }
 
 
@@ -1009,7 +1009,7 @@ TclArithSeriesObjReverse(
 	    for (i=0; i<len; i++) {
 		Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
 	    }
-	    ckfree((char*)arithSeriesRepPtr->elements);
+	    ckfree(arithSeriesRepPtr->elements);
 	}
 	arithSeriesRepPtr->elements = NULL;
 
