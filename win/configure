@@ -5027,9 +5027,6 @@ printf "%s\n" "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
  ;;
 esac
 fi
-
-printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
-
 TCL_ZLIB_LIB_NAME=$zlib_lib_name
 
 TCL_TOMMATH_LIB_NAME=$tommath_lib_name
