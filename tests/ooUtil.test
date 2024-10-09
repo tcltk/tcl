@@ -20,12 +20,12 @@ test ooUtil-1.1 {TIP 478: classmethod} -setup {
 } -body {
     oo::class create ActiveRecord {
 	superclass parent
-        classmethod find args {
+	classmethod find args {
 	    return "[self] called with arguments: $args"
 	}
     }
     oo::class create Table {
-        superclass ActiveRecord
+	superclass ActiveRecord
     }
     Table find foo bar
 } -cleanup {
@@ -52,10 +52,10 @@ test ooUtil-1.3 {TIP 478: classmethod must not interfere with constructor signat
     oo::class create parent
 } -body {
     oo::class create TestClass {
-        superclass oo::class parent
-        self method create {name ignore body} {
-            next $name $body
-        }
+	superclass oo::class parent
+	self method create {name ignore body} {
+	    next $name $body
+	}
     }
     TestClass create okay {} {}
 } -cleanup {
@@ -66,15 +66,15 @@ test ooUtil-1.4 {TIP 478: classmethod with several inheritance levels} -setup {
 } -body {
     oo::class create ActiveRecord {
 	superclass parent
-        classmethod find args {
+	classmethod find args {
 	    return "[self] called with arguments: $args"
 	}
     }
     oo::class create Table {
-        superclass ActiveRecord
+	superclass ActiveRecord
     }
     oo::class create SubTable {
-        superclass Table
+	superclass Table
     }
     SubTable find foo bar
 } -cleanup {
@@ -85,7 +85,7 @@ test ooUtil-1.5 {TIP 478: classmethod and instances} -setup {
 } -body {
     oo::class create ActiveRecord {
 	superclass parent
-        classmethod find args {
+	classmethod find args {
 	    return "[self] called with arguments: $args"
 	}
     }
@@ -102,7 +102,7 @@ test ooUtil-1.6 {TIP 478: classmethod and instances} -setup {
 } -body {
     oo::class create ActiveRecord {
 	superclass parent
-        classmethod find args {
+	classmethod find args {
 	    return "[self] called with arguments: $args"
 	}
     }
@@ -120,19 +120,19 @@ test ooUtil-1.7 {} -setup {
 } -body {
     oo::class create Foo {
 	superclass parent
-        classmethod bar {} {
-            puts "This is in the class; self is [self]"
-            my meee
-        }
-        classmethod meee {} {
-            puts "This is meee"
-        }
+	classmethod bar {} {
+	    puts "This is in the class; self is [self]"
+	    my meee
+	}
+	classmethod meee {} {
+	    puts "This is meee"
+	}
     }
     oo::class create Grill {
-        superclass Foo
-        classmethod meee {} {
-            puts "This is meee 2"
-        }
+	superclass Foo
+	classmethod meee {} {
+	    puts "This is meee 2"
+	}
     }
     list [Foo bar] [Grill bar] [[Foo new] bar] [[Grill new] bar]
 } -cleanup {
@@ -549,7 +549,7 @@ test ooUtil-8.1 {TIP 567: call oo::define twice from metaclass constructor} -set
     }
     ::oo::class create B {
 	superclass ::oo::class parent
-    	constructor {{definitionScript ""}} {
+	constructor {{definitionScript ""}} {
 	    next $definitionScript
 	    next {superclass ::A}
 	}
@@ -578,10 +578,10 @@ test ooUtil-tcllib-ticket-b3577ed586 {test scoping of delegation in oo::class.De
 } -result {::ooutiltest::dog}
 test ooUtil-tcllib-ticket-fe7a0e0a3a {classmethod must not interfere with constructor signatures} -setup {
     oo::class create TestClass {
-        superclass oo::class
-        self method create {name ignore body} {
-            next $name $body
-        }
+	superclass oo::class
+	self method create {name ignore body} {
+	    next $name $body
+	}
     }
 } -body {
     TestClass create okay {} {}

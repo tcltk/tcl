@@ -620,7 +620,7 @@ test pkg-3.53 {Tcl_PkgRequire procedure, picking best stable version} -constrain
     set x xxx
 } -body {
     foreach i {1.2b1 1.1} {
-        package ifneeded t $i "set x $i; package provide t $i"
+	package ifneeded t $i "set x $i; package provide t $i"
     }
     package require t
     set x

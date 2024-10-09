@@ -482,10 +482,10 @@ test proc-old-7.15 {return with special completion code} {
 
 test proc-old-8.1 {unset and undefined local arrays} {
     proc t1 {} {
-        foreach v {xxx, yyy} {
-            catch {unset $v}
-        }
-        set yyy(foo) bar
+	foreach v {xxx, yyy} {
+	    catch {unset $v}
+	}
+	set yyy(foo) bar
     }
     t1
 } bar
@@ -493,7 +493,7 @@ test proc-old-8.1 {unset and undefined local arrays} {
 test proc-old-9.1 {empty command name} {
     catch {rename {} ""}
     proc t1 {args} {
-        return
+	return
     }
     set v [t1]
     catch {$v}
@@ -501,11 +501,11 @@ test proc-old-9.1 {empty command name} {
 
 test proc-old-10.1 {ByteCode epoch change during recursive proc execution} {
     proc t1 x {
-        set y 20
-        rename expr expr.old
-        rename expr.old expr
-        if {$x} then {t1 0} ;# recursive call after foo's code is invalidated
-        return 20
+	set y 20
+	rename expr expr.old
+	rename expr.old expr
+	if {$x} then {t1 0} ;# recursive call after foo's code is invalidated
+	return 20
     }
     t1 1
 } 20

@@ -1111,9 +1111,9 @@ test dict-18.4 {dict-list relationship} -body {
 # It shows a bad ref counter when running with memdebug on.
 test dict-19.1 {memory bug} {
     apply {{} {
-        set successors [dict create x {c d}]
-        dict set successors x a b
-        dict get $successors x
+	set successors [dict create x {c d}]
+	dict set successors x a b
+	dict get $successors x
     }}
 } [dict create c d a b]
 test dict-19.2 {dict: testing for leaks} -constraints memory -body {

@@ -78,15 +78,15 @@ if 0 {
 }
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
-        set ValueRange {0 1 2}
+	set ValueRange {0 1 2}
     } else {
-        set ValueRange {0 1}
+	set ValueRange {0 1}
     }
 
     # For each value of ThreadLevel, source this file recursively in the
     # same interpreter.
     foreach ThreadLevel $ValueRange {
-        source [info script]
+	source [info script]
     }
     if {[llength $threadStack]} {
 	eval [lpop threadStack]
@@ -94,7 +94,7 @@ if {![info exists ThreadLevel]} {
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     if {![testConstraint ThreadLevelSummary]} {
-        ::tcltest::cleanupTests
+	::tcltest::cleanupTests
     }
     return
 }
@@ -451,7 +451,7 @@ test http-3.29.$ThreadLevel {http::geturl IPv6 address} -body {
     # that it can be tested without also trying to make a connection.
     set error [catch {http::geturl $ipv6url -validate 1} token]
     if {$error && [string match "couldn't open socket: *" $token]} {
-            set error 0
+	set error 0
     }
     set error
 } -cleanup {

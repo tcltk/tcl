@@ -1315,8 +1315,8 @@ test filename-14.31 {Bug 2918610} -setup {
     makeFile {} bar.soom $d
 } -body {
     foreach fn [glob $d/bar.soom] {
-        set root [file rootname $fn]
-        close [open $root {WRONLY CREAT}]
+	set root [file rootname $fn]
+	close [open $root {WRONLY CREAT}]
     }
     llength [glob -directory $d *]
 } -cleanup {
@@ -1479,12 +1479,12 @@ if {[testConstraint testsetplatform]} {
 test filename-17.2 {windows specific glob with executable} -body {
     makeDirectory execglob
     foreach ext {exe com cmd bat notexecutable} {
-        makeFile contents execglob/abc.$ext
+	makeFile contents execglob/abc.$ext
     }
     lsort [glob -nocomplain -dir [temporaryDirectory]/execglob -tails -types x *]
 } -constraints {win} -cleanup {
     foreach ext {exe com cmd bat ps1 notexecutable} {
-        removeFile execglob/abc.$ext
+	removeFile execglob/abc.$ext
     }
     removeDirectory execglob
 } -result {abc.bat abc.cmd abc.com abc.exe}

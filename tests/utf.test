@@ -1177,9 +1177,9 @@ proc GetUniCharTest {s index result} {
     variable count
     # Use quotes, not {} so test output shows exact string on error
     test getunichar-1.$count "Tcl_GetUniChar $s $index" \
-        -constraints testgetunichar \
-        -body "testgetunichar $s $index" \
-        -result $result
+	-constraints testgetunichar \
+	-body "testgetunichar $s $index" \
+	-result $result
     incr count
 }
 variable count 1

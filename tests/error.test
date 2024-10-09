@@ -88,7 +88,7 @@ test error-1.8 {simple errors from commands} {
     # problem. Anyhow, I believe it's out of date (bug's been fixed) so this
     # test is re-enabled.
     proc p {} {
-        uplevel 1 catch p error
+	uplevel 1 catch p error
     }
     p
 } 0
