@@ -904,9 +904,16 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+	if test -z "$TCL_PACKAGE_PATH"; then
+		SC_LIST_APPEND(TCL_PACKAGE_PATH, libdir)
+		nextpath=${prefix}/lib
+		SC_LIST_APPEND(TCL_PACKAGE_PATH, nextpath)
+	fi
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib"
+	if test -z "$TCL_PACKAGE_PATH"; then
+		nextpath=${prefix}/lib
+		SC_LIST_APPEND(TCL_PACKAGE_PATH, nextpath)
+	fi
 fi
 
 #--------------------------------------------------------------------

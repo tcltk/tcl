@@ -5,6 +5,33 @@
 # See the file "COPYING" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+
+#------------------------------------------------------------------------
+# SC_LIST_APPEND --
+#
+#	Appends $2 to the Tcl list named by $1.
+#
+# Arguments:
+#	none
+#
+# Results:
+#
+#	The new value is assigned to the variable named by $1.
+#
+#	In contrast with lappend, the resulting value is not necessarily the
+#	"canonical" representation of the list.
+#
+#------------------------------------------------------------------------
+AC_DEFUN([SC_LIST_APPEND],[[
+  if test x$]$1[ = x; then
+	  ]$1[="\"`printf '%s' "$]$2[" \
+		| sed -re 's:/:\\\\:g' | sed -re 's:":\\\\":g'`\""
+  else
+	  ]$1[="$]$1[ \"`printf '%s' "$]$2[" \
+		| sed -re 's:/:\\\\:g' | sed -re 's:":\\\\":g'`\""
+  fi
+]])
+
 #------------------------------------------------------------------------
 # SC_PATH_TCLCONFIG --
 #
