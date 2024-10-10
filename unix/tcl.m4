@@ -9,7 +9,16 @@
 #------------------------------------------------------------------------
 # SC_LIST_APPEND --
 #
-#	Appends $2 to the Tcl list named by $1.
+#	Appends $2 to the Tcl list named by $1.  Not only is $2 properly quoted as
+#	a Tcl list item, but it is also properly quoted as word in an sh command.
+#	This means that items in the list can be accessed from an sh script:
+#
+#		item="item one"
+#		SC_LIST_APPEND([mylist],item)
+#		item="item two"
+#		SC_LIST_APPEND([mylist],item)
+#		#print each item on a separate line
+#		printf 'item %s\n' $mylist
 #
 # Arguments:
 #	none
@@ -23,12 +32,12 @@
 #
 #------------------------------------------------------------------------
 AC_DEFUN([SC_LIST_APPEND],[[
-  if test x$]$1[ = x; then
+  if test "x$]$1[" = x; then
 	  ]$1[="\"`printf '%s' "$]$2[" \
-		| sed -re 's:/:\\\\:g' | sed -re 's:":\\\\":g'`\""
+		| sed -re 's:\\\\:\\\\\\\\:g' | sed -re 's:":\\\\":g'`\""
   else
 	  ]$1[="$]$1[ \"`printf '%s' "$]$2[" \
-		| sed -re 's:/:\\\\:g' | sed -re 's:":\\\\":g'`\""
+		| sed -re 's:\\\\:\\\\\\\\:g' | sed -re 's:":\\\\":g'`\""
   fi
 ]])
 
