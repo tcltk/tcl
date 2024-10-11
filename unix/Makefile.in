@@ -811,7 +811,7 @@ MINIZIP_OBJS = \
 
 ZIP_INSTALL_OBJS	= @ZIP_INSTALL_OBJS@
 
-SHQ_@ = $(kall shquote ,$@)
+SHQ_@ = $(call shquote ,$@)
 SHQ_abs_builddir = $(call shquote ,$(abs_builddir))
 SHQ_BIN_INSTALL_DIR = $(call shquote ,$(BIN_INSTALL_DIR))
 SHQ_BUILD_DIR = $(call shquote ,$(BUILD_DIR))
