@@ -17,8 +17,10 @@
 #		SC_LIST_APPEND([mylist],item)
 #		item="item two"
 #		SC_LIST_APPEND([mylist],item)
-#		#print each item on a separate line
-#		printf 'item %s\n' $mylist
+#		eval "set -- $mylist"
+#		for item in "$@"; do
+#			: ;#something with $item
+#		done
 #
 # Arguments:
 #	none

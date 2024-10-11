@@ -811,7 +811,8 @@ MINIZIP_OBJS = \
 
 ZIP_INSTALL_OBJS	= @ZIP_INSTALL_OBJS@
 
-SHQ_@ = $(call shquote ,$@)
+SHQ_@ = $(kall shquote ,$@)
+SHQ_abs_builddir = $(call shquote ,$(abs_builddir))
 SHQ_BIN_INSTALL_DIR = $(call shquote ,$(BIN_INSTALL_DIR))
 SHQ_BUILD_DIR = $(call shquote ,$(BUILD_DIR))
 SHQ_CONFIG_INSTALL_DIR = $(call shquote ,$(CONFIG_INSTALL_DIR))
@@ -837,12 +838,14 @@ SHQ_PACKAGE_DIR = $(call shquote ,$(PACKAGE_DIR))
 SHQ_PKG_DIR = $(call shquote ,$(PKG_DIR))
 SHQ_PKGS_DIR = $(call shquote ,$(PKGS_DIR))
 SHQ_PRIVATE_INCLUDE_INSTALL_DIR = $(call shquote ,$(PRIVATE_INCLUDE_INSTALL_DIR))
+SHQ_SCRIPT= $(call shquote ,$(SCRIPT))
 SHQ_SCRIPT_INSTALL_DIR = $(call shquote ,$(SCRIPT_INSTALL_DIR))
 SHQ_STUB_LIB_FILE = $(call shquote ,$(STUB_LIB_FILE))
 SHQ_TCL_BUILDTIME_LIBRARY = $(call shquote ,$(TCL_BUILDTIME_LIBRARY))
 SHQ_TCL_EXE = $(call shquote ,$(TCL_EXE))
 SHQ_TCL_LIB_FILE = $(call shquote ,$(TCL_LIB_FILE))
 SHQ_TCL_MODULE_PATH = $(call shquote ,$(TCL_MODULE_PATH))
+SHQ_TCL_STUB_LIB_FILE = $(call shquote ,$(TCL_STUB_LIB_FILE))
 SHQ_TCL_VFS_PATH = $(call shquote ,$(TCL_VFS_PATH))
 SHQ_TCL_VFS_ROOT = $(call shquote ,$(TCL_VFS_ROOT))
 SHQ_TCL_ZIP_FILE = $(call shquote ,$(TCL_ZIP_FILE))
@@ -981,26 +984,26 @@ topDirName:
 # This keeps tcltest from picking up an already installed version of the Tcl
 # library.
 SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
-		TCLLIBPATH=$(call shquote ,$(abs_builddir))/pkgs \
-		TCL_LIBRARY=$(call shquote ,${TCL_BUILDTIME_LIBRARY})
+		TCLLIBPATH=$(SHQ_abs_builddir)/pkgs \
+		TCL_LIBRARY=$(SHQ_TCL_BUILDTIME_LIBRARY)
 
 ${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST} ${TCL_ZIP_FILE}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
 
 tcltest-real:
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} \
-		@TCL_BUILD_LIB_SPEC@ $(call shquote ,${TCL_STUB_LIB_FILE}) ${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o $(call shquote ,${TCLTEST_EXE})
-	@if test $(call shquote ,${ZIPFS_BUILD}) = 2 ; then \
-	    if test x$(call shquote ,$(MACHER)) = x ; then \
-	    cat $(call shquote ,${TCL_ZIP_FILE}) >> $(call shquote ,${TCLTEST_EXE}); \
-	    else $(call shquote ,$(MACHER)) \
-			append $(call shquote ,${TCLTEST_EXE}) \
-			$(call shquote ,${TCL_ZIP_FILE}) /tmp/macher_output; \
-		 mv /tmp/macher_output $(call shquote ,${TCLTEST_EXE}); \
-		 chmod u+x $(call shquote ,${TCLTEST_EXE}); \
+		@TCL_BUILD_LIB_SPEC@ $(SHQ_TCL_STUB_LIB_FILE) ${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${CC_SEARCH_FLAGS} -o $(SHQ_TCLTEST_EXE)
+	@if test $(SHQ_ZIPFS_BUILD) = 2 ; then \
+	    if test x$(SHQ_MACHER) = x ; then \
+	    cat $(SHQ_TCL_ZIP_FILE) >> $(SHQ_TCLTEST_EXE); \
+	    else $(SHQ_MACHER) \
+			append $(SHQ_TCLTEST_EXE) \
+			$(SHQ_TCL_ZIP_FILE) /tmp/macher_output; \
+		 mv /tmp/macher_output $(SHQ_TCLTEST_EXE); \
+		 chmod u+x $(SHQ_TCLTEST_EXE); \
 	    fi; \
-	    $(call shquote ,${NATIVE_ZIP}) -A $(call shquote ,${TCLTEST_EXE}) \
+	    $(SHQ_NATIVE_ZIP) -A $(SHQ_TCLTEST_EXE) \
 	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
@@ -1015,30 +1018,30 @@ tcltest-real:
 test: test-tcl test-packages
 
 test-tcl: ${TCLTEST_EXE}
-	$(SHELL_ENV) ./$(call shquote ,${TCLTEST_EXE}) \
-		$(call shquote ,$(TOP_DIR))/tests/all.tcl $(TESTFLAGS)
+	$(SHELL_ENV) ./$(SHQ_TCLTEST_EXE) \
+		$(SHQ_TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) $(GDB) --args ./$(call shquote ,${TCLTEST_EXE}) \
-		$(call shquote ,$(TOP_DIR))/tests/all.tcl \
+	$(SHELL_ENV) $(GDB) --args ./$(SHQ_TCLTEST_EXE) \
+		$(SHQ_TOP_DIR)/tests/all.tcl \
 		$(TESTFLAGS) -singleproc 1
 
 lldb-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) $(LLDB) -- ./$(call shquote ,${TCLTEST_EXE}) \
-		$(call shquote ,$(TOP_DIR))/tests/all.tcl \
+	$(SHELL_ENV) $(LLDB) -- ./$(SHQ_TCLTEST_EXE) \
+		$(SHQ_TOP_DIR)/tests/all.tcl \
 		$(TESTFLAGS) -singleproc 1
 
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
-	$(SHELL_ENV) ./$(call shquote ,${TCLTEST_EXE})
+	$(SHELL_ENV) ./$(SHQ_TCLTEST_EXE)
 
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: ${TCLTEST_EXE}
 	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp \
 		;source ../tests/all.tcl;exec chmod +w .' \
-		| $(SHELL_ENV) ./$(call shquote ,${TCLTEST_EXE})
+		| $(SHELL_ENV) ./$(SHQ_TCLTEST_EXE)
 
 # The following target generates the shared libraries in dltest/ that are used
 # for testing; they are included as part of the "tcltest" target (via the
@@ -1056,28 +1059,28 @@ dltest.marker: ${STUB_LIB_FILE}
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: ${TCL_EXE}
-	$(SHELL_ENV) ./${SHQ_TCL_EXE} $(call shquote ,$(SCRIPT))
+	$(SHELL_ENV) ./${SHQ_TCL_EXE} $(SHQ_SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
 	$(SHELL_ENV) $(GDB) ./${SHQ_TCL_EXE}
 
 gdb-script: ${TCLTEST_EXE}
-	$(SHELL_ENV) $(GDB) --args $(call shquote ,$(SCRIPT))
+	$(SHELL_ENV) $(GDB) --args $(SHQ_SCRIPT)
 
 lldb: ${TCL_EXE}
 	$(SHELL_ENV) $(LLDB) ./${SHQ_TCL_EXE}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./$(call shquote ,${TCLTEST_EXE}) \
-		$(call shquote ,$(TOP_DIR))/tests/all.tcl -singleproc 1 \
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./$(SHQ_TCLTEST_EXE) \
+		$(SHQ_TOP_DIR)/tests/all.tcl -singleproc 1 \
 		-constraints valgrind $(TESTFLAGS)
 
 testresults/valgrind/%.result: ${TCL_EXE} ${TCLTEST_EXE}
 	@mkdir -p testresults/valgrind
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) \
-		./$(call shquote ,${TCLTEST_EXE}) \
-		$(call shquote ,$(TOP_DIR))/tests/all.tcl -singleproc 1 \
+		./$(SHQ_TCLTEST_EXE) \
+		$(SHQ_TOP_DIR)/tests/all.tcl -singleproc 1 \
 		-constraints valgrind -file $(call shquote ,$(basename $(notdir $@))) \
 		> $(SHQ_@).tmp 2>&1
 	@mv $(SHQ_@).tmp $(SHQ_@)
