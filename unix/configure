@@ -5210,9 +5210,6 @@ printf "%s\n" "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
 
 fi
 
-printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
-
-
 #------------------------------------------------------------------------
 #	Add stuff for libtommath
 

@@ -159,7 +159,6 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
-AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
 AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
