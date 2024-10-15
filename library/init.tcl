@@ -46,7 +46,7 @@ package require -exact Tcl 8.6.16
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-	set auto_path $env(TCLLIBPATH)
+	set auto_path [string map [list $::tcl_platform(pathSeparator) \ ] $env(TCLLIBPATH)]
     } else {
 	set auto_path ""
     }
