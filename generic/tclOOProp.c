@@ -109,11 +109,11 @@ ReadProperty(
     Tcl_DecrRefCount(args[1]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a continue", propName));
 	return TCL_ERROR;
     default:
@@ -144,11 +144,11 @@ WriteProperty(
     Tcl_DecrRefCount(args[2]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a continue", propName));
 	return TCL_ERROR;
     default:

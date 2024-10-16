@@ -86,7 +86,6 @@
 	}								\
     } while (0)
 
-#ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "crypt.h"
 #include "zutil.h"
@@ -6284,8 +6283,6 @@ ZipFSLoadFile(
     return ret;
 #endif /* ANDROID */
 }
-
-#endif /* HAVE_ZLIB */
 
 /*
  *-------------------------------------------------------------------------
@@ -6308,7 +6305,6 @@ int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-#ifdef HAVE_ZLIB
     static const EnsembleImplMap initMap[] = {
 	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
@@ -6381,15 +6377,8 @@ TclZipfs_Init(
 		ZipFSTclLibraryObjCmd, NULL, NULL);
     }
     return TCL_OK;
-#else /* !HAVE_ZLIB */
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-    return TCL_ERROR;
-#endif /* HAVE_ZLIB */
 }
 
-#ifdef HAVE_ZLIB
-
 #if !defined(STATIC_BUILD)
 static int
 ZipfsAppHookFindTclInit(
@@ -6612,86 +6601,6 @@ TclZipfs_AppHook(
     }
     return result;
 }
-
-#else /* !HAVE_ZLIB */
-
-/*
- *-------------------------------------------------------------------------
- *
- * TclZipfs_Mount, TclZipfs_MountBuffer, TclZipfs_Unmount --
- *
- *	Dummy version when no ZLIB support available.
- *
- *-------------------------------------------------------------------------
- */
-
-static inline void
-Unsupported(
-    Tcl_Interp *interp)
-{
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-}
-
-int
-TclZipfs_Mount(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(const char *))	/* Password for opening the ZIP, or NULL if
-				 * the ZIP is unprotected. */
-{
-    Unsupported(interp);
-    return TCL_ERROR;
-}
-
-int
-TclZipfs_MountBuffer(
-    Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    TCL_UNUSED(const void *),
-    TCL_UNUSED(size_t),
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(int))
-{
-    Unsupported(interp);
-    return TCL_ERROR;
-}
-
-int
-TclZipfs_Unmount(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *))	/* Mount point path. */
-{
-    Unsupported(interp);
-    return TCL_ERROR;
-}
-
-const char *
-TclZipfs_AppHook(
-    TCL_UNUSED(int *), /*argcPtr*/
-#ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)) /* argvPtr */
-#else /* !_WIN32 */
-    TCL_UNUSED(char ***))	/* Pointer to argv */
-#endif /* _WIN32 */
-{
-    return NULL;
-}
-
-Tcl_Obj *
-TclZipfs_TclLibrary(void)
-{
-    return NULL;
-}
-
-int
-TclIsZipfsPath(
-    TCL_UNUSED(const char *)) /* path */
-{
-    return 0;
-}
-
-#endif /* !HAVE_ZLIB */
 
 /*
  * Local Variables:

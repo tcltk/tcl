@@ -26,9 +26,9 @@
 
 #include "tclInt.h"
 #include "tclUuid.h"
-#if defined(HAVE_ZLIB) && defined(TCL_WITH_INTERNAL_ZLIB)
+#ifdef TCL_WITH_INTERNAL_ZLIB
 #include "zlib.h"
-#endif /* HAVE_ZLIB */
+#endif /* TCL_WITH_INTERNAL_ZLIB */
 
 /*
  * The data structure below is used to report background errors. One such
@@ -1117,7 +1117,7 @@ static const struct {
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
 #endif
-#if defined(HAVE_ZLIB) && defined(TCL_WITH_INTERNAL_ZLIB)
+#ifdef TCL_WITH_INTERNAL_ZLIB
 	    ".zlib-"
 #if ZLIB_VER_MAJOR < 10
 	    "0"
@@ -1127,7 +1127,7 @@ static const struct {
 	    "0"
 #endif
 	    STRINGIFY(ZLIB_VER_MINOR)
-#endif
+#endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
 const char *

@@ -1120,7 +1120,7 @@ LinkTraceProc(
 			&& !IsSpecial(valueDouble)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-		    return (char *) "variable array must have float value";
+		    return (char *)"variable array must have float value";
 		}
 		linkPtr->lastValue.fPtr[i] = (float) valueDouble;
 	    }
@@ -1130,7 +1130,7 @@ LinkTraceProc(
 		    && !IsSpecial(valueDouble)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-		return (char *) "variable must have float value";
+		return (char *)"variable must have float value";
 	    }
 	    LinkedVar(float) = linkPtr->lastValue.f = (float) valueDouble;
 	}

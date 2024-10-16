@@ -188,9 +188,9 @@ TclCreateLiteral(
     Interp *iPtr,
     const char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    Tcl_Size length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If the value is
-				 * TCL_INDEX_NONE, it will be computed here. */
+    Tcl_Size length,	/* Number of bytes in the string. */
+    size_t hash, /* The string's hash. If the value is
+					 * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,

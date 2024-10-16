@@ -602,7 +602,7 @@ SetEnsembleConfigOptions(
     Tcl_Size len;
     int allocatedMapFlag = 0;
     Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
-	    *unknownObj = NULL; 	/* Defaults, silence gcc 4 warnings */
+	    *unknownObj = NULL;	/* Defaults, silence gcc 4 warnings */
     Tcl_Obj *listObj;
     Tcl_DictSearch search;
     int permitPrefix, flags = 0;	/* silence gcc 4 warning */

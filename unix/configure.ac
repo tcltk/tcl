@@ -175,7 +175,6 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
   AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
 ])
-AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 #------------------------------------------------------------------------
 #	Add stuff for libtommath
@@ -736,11 +735,11 @@ AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
-                 "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t"
-                 "mov %%edi, %%ebx  \n\t"
-                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+		 "cpuid            \n\t"
+		 "mov %%ebx, %%esi   \n\t"
+		 "mov %%edi, %%ebx  \n\t"
+		 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+		 : "a"(index) : "edi");
     ]])],[tcl_cv_cpuid=yes],[tcl_cv_cpuid=no])])
 if test $tcl_cv_cpuid = yes; then
     AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
@@ -786,22 +785,22 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     # Construct a fake local framework structure to make linking with
     # '-framework Tcl' and running of tcltest work
     AC_CONFIG_COMMANDS([Tcl.framework], [n=Tcl &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
+	f=$n.framework && v=Versions/$VERSION &&
+	rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
     ], VERSION=${TCL_VERSION})
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     # default install directory for bundled packages
     if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
-        PACKAGE_DIR="/Library/Tcl"
+	PACKAGE_DIR="/Library/Tcl"
     else
-        PACKAGE_DIR="$libdir"
+	PACKAGE_DIR="$libdir"
     fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
-        # override libdir default
-        libdir="/Library/Frameworks"
+	# override libdir default
+	libdir="/Library/Frameworks"
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
@@ -828,9 +827,9 @@ else
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
+	TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
+	TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"

@@ -2676,11 +2676,11 @@ TclResolveTildePathList(
     for (i = 0; i < objc; ++i) {
 	path = Tcl_GetString(objv[i]);
 	if (path[0] == '~') {
-	    break;		/* At least one path needs resolution */
+	    break; /* At least one path needs resolution */
 	}
     }
     if (i == objc) {
-	return pathsObj;	/* No paths needed to be resolved */
+	return pathsObj; /* No paths needed to be resolved */
     }
 
     resolvedPaths = Tcl_NewListObj(objc, NULL);
