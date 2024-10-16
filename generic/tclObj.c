@@ -2172,6 +2172,7 @@ Tcl_GetBoolFromObj(
     char *charPtr)		/* Place to store resulting boolean. */
 {
     int result;
+    Tcl_Size length;
 
     if ((flags & TCL_NULL_OK)
 	    && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
@@ -2232,6 +2233,18 @@ Tcl_GetBoolFromObj(
 		*charPtr = result;
 	    }
 	    return TCL_OK;
+	}
+	/* This handles tclDictTypePtr too since it provides a list length proc. */
+	if (TclObjectHasInterface(objPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
+	    if (!status && length > 1) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("expected boolean value%s but got a list",
+			    (flags & TCL_NULL_OK) ? " or \"\"" : ""));
+		}
+		return TCL_ERROR;
+	    }
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr,
@@ -2596,6 +2609,7 @@ Tcl_GetDoubleFromObj(
     Tcl_Obj *objPtr,		/* The object from which to get a double. */
     double *dblPtr)		/* Place to store resulting double. */
 {
+    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, tclDoubleTypePtr)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -2621,6 +2635,20 @@ Tcl_GetDoubleFromObj(
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
+
+	/* This handles tclDictTypePtr too since it provides a list length proc. */
+	if (TclObjectHasInterface(objPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
+	    if (!status && length > 1) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected real number but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
+	}
+
+
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
     return TCL_ERROR;
 }
@@ -2838,6 +2866,7 @@ Tcl_GetLongFromObj(
     Tcl_Obj *objPtr,		/* The object from which to get a long. */
     long *longPtr)		/* Place to store resulting long. */
 {
+    Tcl_Size length;
     do {
 #ifdef TCL_WIDE_INT_IS_LONG
 	if (TclHasInternalRep(objPtr, tclIntTypePtr)) {
@@ -2916,6 +2945,17 @@ Tcl_GetLongFromObj(
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
+	}
+	/* This handles tclDictTypePtr too since it provides a list length proc. */
+	if (TclObjectHasInterface(objPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
+	    if (!status && length > 1) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3159,6 +3199,7 @@ Tcl_GetWideIntFromObj(
     Tcl_Obj *objPtr,		/* Object from which to get a wide int. */
     Tcl_WideInt *wideIntPtr)	/* Place to store resulting long. */
 {
+    Tcl_Size length;
     do {
 	if (TclHasInternalRep(objPtr, tclIntTypePtr)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
@@ -3211,6 +3252,17 @@ Tcl_GetWideIntFromObj(
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
 	    }
 	    return TCL_ERROR;
+	}
+	/* This handles tclDictTypePtr too since it provides a list length proc. */
+	if (TclObjectHasInterface(objPtr ,list ,length)) {
+	    int status;
+	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
+	    if (!status && length > 1) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected integer but got a list", -1));
+		}
+		return TCL_ERROR;
+	    }
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
@@ -3885,32 +3937,28 @@ Tcl_GetNumberFromObj(
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
 	}
-	/* Handle dict separately, because it doesn't have a lengthProc */
 	if (TclHasInternalRep(objPtr, tclDictTypePtr)) {
 	    Tcl_DictObjSize(NULL, objPtr, &length);
 	    if (length > 0) {
-	    listRep:
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
 		}
 		return TCL_ERROR;
 	    }
 	}
+	/* This handles tclDictTypePtr too since it provides a list length proc. */
 	if (TclObjectHasInterface(objPtr ,list ,length)) {
 	    int status;
 	    status = Tcl_ListObjLength(interp ,objPtr ,&length);
-	    if (!status && length != 1) {
-		goto listRep;
+	    if (!status && length > 1) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected number but got a list", -1));
+		}
+		return TCL_ERROR;
 	    }
 	}
     } while (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
-    /* Don't try to convert index or boolean's to a list */
-    if (!TclHasInternalRep(objPtr, &tclIndexType)
-	    && !TclHasInternalRep(objPtr, tclBooleanTypePtr)
-	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
-	goto listRep;
-    }
+	TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
     return TCL_ERROR;
 }
 

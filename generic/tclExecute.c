@@ -9269,6 +9269,8 @@ IllegalExprOperandType(
     int type;
     const unsigned char opcode = *pc;
     const char *description, *op = "unknown";
+    Tcl_Size objc;
+    Tcl_Obj **objvPtr;
 
     if (opcode == INST_EXPON) {
 	op = "**";
@@ -9291,7 +9293,10 @@ IllegalExprOperandType(
 	if (TclObjectHasInterface(opndPtr ,list ,length)) {
 	    int status;
 	    status = Tcl_ListObjLength(interp,opndPtr,&length);
-	    if (!status && length > 1) {
+	    if ((!status && length > 1)
+			|| ((TclMaxListLength(TclGetString(opndPtr), TCL_INDEX_NONE, NULL) > 1)
+			&& (Tcl_ListObjGetElements(NULL, opndPtr, &objc, &objvPtr) == TCL_OK))
+		) {
 		goto listRep;
 	    }
 	}
