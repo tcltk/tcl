@@ -1976,7 +1976,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 # Results:
 #
 #	Defines some of the following vars:
-#		NO_STRING_H
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
 #		HAVE_SYS_PARAM_H
@@ -1988,13 +1987,6 @@ AC_DEFUN([SC_MISSING_POSIX_HEADERS], [
     AC_CHECK_HEADER(string.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strstr, string.h, , tcl_ok=0)
     AC_EGREP_HEADER(strerror, string.h, , tcl_ok=0)
-
-    # See also memmove check below for a place where NO_STRING_H can be
-    # set and why.
-
-    if test $tcl_ok = 0; then
-	AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?])
-    fi
 
     AC_CHECK_HEADER(sys/wait.h, , [AC_DEFINE(NO_SYS_WAIT_H, 1, [Do we have <sys/wait.h>?])])
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H, 1, [Do we have <dlfcn.h>?])])

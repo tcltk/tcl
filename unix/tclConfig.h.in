@@ -349,9 +349,6 @@
 /* Do we have getwd() */
 #undef NO_GETWD
 
-/* Do we have memmove()? */
-#undef NO_MEMMOVE
-
 /* Do we have mknod() */
 #undef NO_MKNOD
 
@@ -360,9 +357,6 @@
 
 /* Do we have strerror() */
 #undef NO_STRERROR
-
-/* Do we have <string.h>? */
-#undef NO_STRING_H
 
 /* Do we have <sys/wait.h>? */
 #undef NO_SYS_WAIT_H

@@ -85,11 +85,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#ifdef NO_STRING_H
-#include "../compat/string.h"
-#else
 #include <string.h>
-#endif
 #include <locale.h>
 
 /*

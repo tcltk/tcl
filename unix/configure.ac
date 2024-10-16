@@ -387,16 +387,6 @@ AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems have no memmove
-#       (we assume they have bcopy instead). {The replacement define is in
-#       compat/string.h}
-#--------------------------------------------------------------------
-
-AC_CHECK_FUNC(memmove, , [
-    AC_DEFINE(NO_MEMMOVE, 1, [Do we have memmove()?])
-    AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
-
-#--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
 #	they don't exist.
 #--------------------------------------------------------------------
