@@ -1934,10 +1934,15 @@ dnl # preprocessing tests use only CPPFLAGS.
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
 #		HAVE_SYS_PARAM_H
+#		HAVE_STRING_H ?
 #
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_MISSING_POSIX_HEADERS], [
+    AC_CHECK_HEADER(string.h, tcl_ok=1, tcl_ok=0)
+    AC_EGREP_HEADER(strstr, string.h, , tcl_ok=0)
+    AC_EGREP_HEADER(strerror, string.h, , tcl_ok=0)
+
     AC_CHECK_HEADER(sys/wait.h, , [AC_DEFINE(NO_SYS_WAIT_H, 1, [Do we have <sys/wait.h>?])])
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H, 1, [Do we have <dlfcn.h>?])])
 
