@@ -429,18 +429,18 @@ test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
 } [subst {[set level 2; incr level [info level]] global 1 global 1 global}]
 test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
     set ::auto_index(noSuchCommand) {
-        proc noSuchCommand {} {lappend ::info global}
+	proc noSuchCommand {} {lappend ::info global}
     }
     set ::auto_index(::[string trimleft [namespace current]::test_ns_1::noSuchCommand :]) [list \
-        proc [namespace current]::test_ns_1::noSuchCommand {} {
-            lappend ::info ns
-        }]
+	proc [namespace current]::test_ns_1::noSuchCommand {} {
+	    lappend ::info ns
+	}]
     catch {rename ::noSuchCommand {}}
     set ::child [interp create]
     $::child alias bar noSuchCommand
     set ::info {}
     namespace eval test_ns_1 {
-        $::child eval bar
+	$::child eval bar
     }
     namespace delete test_ns_1
     interp delete $::child

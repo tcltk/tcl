@@ -581,9 +581,9 @@ test registry-7.7 {GetValueNames: names with spaces} -constraints {win reg} -set
 
 test registry-8.1 {OpenSubKey} -constraints {win reg nonPortable english} \
     -body {
-        # This test will only succeed if the current user does not have
-        # registry access on the specified machine.
-        registry keys {\\mom\HKEY_LOCAL_MACHINE}
+	# This test will only succeed if the current user does not have
+	# registry access on the specified machine.
+	registry keys {\\mom\HKEY_LOCAL_MACHINE}
     } -returnCodes error -result "unable to open key: Access is denied."
 test registry-8.2 {OpenSubKey} -constraints {win reg} -setup {
     registry delete HKEY_CURRENT_USER\\TclFoobar
@@ -651,25 +651,25 @@ test registry-10.2 {RecursiveDeleteKey} -constraints {win reg} -setup {
 
 test registry-11.1 {SetValue: recursive creation} \
     -constraints {win reg} -setup {
-        registry delete HKEY_CURRENT_USER\\TclFoobar
+	registry delete HKEY_CURRENT_USER\\TclFoobar
     } -body {
-        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
-        set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
+	registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+	set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
     } -result {foobar}
 test registry-11.2 {SetValue: modification} -constraints {win reg} \
     -setup {
-        registry delete HKEY_CURRENT_USER\\TclFoobar
+	registry delete HKEY_CURRENT_USER\\TclFoobar
     } -body {
-        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
-        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat frob
-        set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
+	registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+	registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat frob
+	set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
     } -result {frob}
 test registry-11.3 {SetValue: failure} \
     -constraints {win reg nonPortable english} \
     -body {
-        # This test will only succeed if the current user does not have
-        # registry access on the specified machine.
-        registry set {\\mom\HKEY_CURRENT_USER\TclFoobar} bar foobar
+	# This test will only succeed if the current user does not have
+	# registry access on the specified machine.
+	registry set {\\mom\HKEY_CURRENT_USER\TclFoobar} bar foobar
     } -returnCodes error -result {unable to open key: Access is denied.}
 
 test registry-12.1 {BroadcastValue} -constraints {win reg} -body {

@@ -225,30 +225,30 @@ apply {{} {
     foreach ls $lss {
 	foreach a $idxs {
 	    foreach b $idxs {
-                # Shared, uncompiled
-                set ls2 $ls
-                set expected [list [catch {$lrange $ls $a $b} m] $m]
-                # Shared, compiled
-                set tester [list lrange $ls $a $b]
-                set script [list catch $tester m]
-                set script "list \[$script\] \$m"
-                test lrange-5.[incr n].1 {lrange shared compiled} -body \
+		# Shared, uncompiled
+		set ls2 $ls
+		set expected [list [catch {$lrange $ls $a $b} m] $m]
+		# Shared, compiled
+		set tester [list lrange $ls $a $b]
+		set script [list catch $tester m]
+		set script "list \[$script\] \$m"
+		test lrange-5.[incr n].1 {lrange shared compiled} -body \
 			[list apply [list {} $script]] -result $expected
-                # Unshared, uncompiled
-                set tester [string map [list %l [list $ls] %a $a %b $b] {
-                    [string cat l range] [lrange %l 0 end] %a %b
-                }]
-                set script [list catch $tester m]
-                set script "list \[$script\] \$m"
-                test lrange-5.$n.2 {lrange unshared uncompiled} -body \
+		# Unshared, uncompiled
+		set tester [string map [list %l [list $ls] %a $a %b $b] {
+		    [string cat l range] [lrange %l 0 end] %a %b
+		}]
+		set script [list catch $tester m]
+		set script "list \[$script\] \$m"
+		test lrange-5.$n.2 {lrange unshared uncompiled} -body \
 			[list apply [list {} $script]] -result $expected
-                # Unshared, compiled
-                set tester [string map [list %l [list $ls] %a $a %b $b] {
-                    lrange [lrange %l 0 end] %a %b
-                }]
-                set script [list catch $tester m]
-                set script "list \[$script\] \$m"
-                test lrange-5.$n.3 {lrange unshared compiled} -body \
+		# Unshared, compiled
+		set tester [string map [list %l [list $ls] %a $a %b $b] {
+		    lrange [lrange %l 0 end] %a %b
+		}]
+		set script [list catch $tester m]
+		set script "list \[$script\] \$m"
+		test lrange-5.$n.3 {lrange unshared compiled} -body \
 			[list apply [list {} $script]] -result $expected
 	    }
 	}

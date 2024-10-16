@@ -64,12 +64,12 @@ test source-1.3 {source command} -setup {
 
 proc ListGlobMatch {expected actual} {
     if {[llength $expected] != [llength $actual]} {
-        return 0
+	return 0
     }
     foreach e $expected a $actual {
-        if {![string match $e $a]} {
-            return 0
-        }
+	if {![string match $e $a]} {
+	    return 0
+	}
     }
     return 1
 }

@@ -104,12 +104,12 @@ proc hello_world {} {
     set a ""
     set L1 [set l0 [set h_1 [set q 0]]]
     for {put_hello_char [expr [put_hello_char [expr [set h 7]*10+2]]+29]} {$l0?[put_hello_char $l0]
-        :!$h_1} {put_hello_char $ll;expr {$L1==2?[set ll [expr 32+0-0+[set bar 0]]]:0}} {expr {[incr L1]==[expr 1+([string length "abc"]-[string length "abc"])]
-        ?[set ll [set l0 [expr 54<<1]]]:$ll==108&&$L1<3?
-        [incr ll [expr 1|1<<1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]; set l0; set l0 $l0; set l0; set l0]:$L1==4&&$ll==32?[set ll [expr 19+$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+[set foo [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]]]]
-        :[set q [expr $q-$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]};expr {$L1==5?[incr ll -8; set ll $ll; set ll]:$q&&$h1&&1};expr {$L1==4+2
-        ?[incr ll 3]:[expr ([string length "abc"]-[string length "abc"])+1]};expr {$ll==($h<<4)+2+0&&$L1!=6?[incr ll -6]:[set h1 [expr 100+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]}
-        expr {$L1!=1<<3?[incr q [expr ([string length "abc"]-[string length "abc"])-1]]:[set h_1 [set ll $h1]]}
+	:!$h_1} {put_hello_char $ll;expr {$L1==2?[set ll [expr 32+0-0+[set bar 0]]]:0}} {expr {[incr L1]==[expr 1+([string length "abc"]-[string length "abc"])]
+	?[set ll [set l0 [expr 54<<1]]]:$ll==108&&$L1<3?
+	[incr ll [expr 1|1<<1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]; set l0; set l0 $l0; set l0; set l0]:$L1==4&&$ll==32?[set ll [expr 19+$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+[set foo [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]]]]
+	:[set q [expr $q-$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]};expr {$L1==5?[incr ll -8; set ll $ll; set ll]:$q&&$h1&&1};expr {$L1==4+2
+	?[incr ll 3]:[expr ([string length "abc"]-[string length "abc"])+1]};expr {$ll==($h<<4)+2+0&&$L1!=6?[incr ll -6]:[set h1 [expr 100+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]}
+	expr {$L1!=1<<3?[incr q [expr ([string length "abc"]-[string length "abc"])-1]]:[set h_1 [set ll $h1]]}
     }
     set a
 }
@@ -718,7 +718,7 @@ test expr-16.1 {GetToken: checks whether integer token starting with "0x" (e.g.,
     set a(VALUE) ff15
     set i 123
     if {[expr 0x$a(VALUE)] & 16} {
-        set i {}
+	set i {}
     }
     set i
 } {}
@@ -752,17 +752,17 @@ test expr-18.2 {whitespace strings should not be == 0 (buggy strtol/strtoul)} {
 
 test expr-19.1 {expr and interpreter result object resetting} {
     proc p {} {
-        set t  10.0
-        set x  2.0
-        set dx 0.2
-        set f  {$dx-$x/10}
-        set g  {-$x/5}
-        set center 1.0
-        set x  [expr $x-$center]
-        set dx [expr $dx+$g]
-        set x  [expr $x+$f+$center]
-        set x  [expr $x+$f+$center]
-        set y  [expr round($x)]
+	set t  10.0
+	set x  2.0
+	set dx 0.2
+	set f  {$dx-$x/10}
+	set g  {-$x/5}
+	set center 1.0
+	set x  [expr $x-$center]
+	set dx [expr $dx+$g]
+	set x  [expr $x+$f+$center]
+	set x  [expr $x+$f+$center]
+	set y  [expr round($x)]
     }
     p
 } 3
@@ -788,15 +788,15 @@ test expr-20.2 {double invocation of variable traces} -body {
        set name [lindex $args [expr {$argc - 3}]]
        upvar 1 $name var
        if {[incr counter] % 2 == 1} {
-           set var "$counter oops [concat $extraargs]"
+	   set var "$counter oops [concat $extraargs]"
        } else {
-           set var "$counter + [concat $extraargs]"
+	   set var "$counter + [concat $extraargs]"
        }
     }
     trace add variable exprtracevar read [list exprtraceproc 10]
     list [catch {expr "$exprtracevar + 20"} a] $a \
-        [catch {expr "$exprtracevar + 20"} b] $b \
-        [unset exprtracevar exprtracecounter]
+	[catch {expr "$exprtracevar + 20"} b] $b \
+	[unset exprtracevar exprtracecounter]
 } -match glob -result {1 * 0 32 {}}
 test expr-20.3 {broken substitution of integer digits} {
     # fails with 8.0.x, but not 8.1b2
@@ -818,15 +818,15 @@ test expr-20.7 {handling of compile error in runtime case} {
 } {1 foo}
 
 # Test for non-numeric boolean literal handling
-test expr-21.1 	{non-numeric boolean literals} {expr false } false
-test expr-21.2 	{non-numeric boolean literals} {expr true  } true
-test expr-21.3 	{non-numeric boolean literals} {expr off   } off
-test expr-21.4 	{non-numeric boolean literals} {expr on    } on
-test expr-21.5 	{non-numeric boolean literals} {expr no    } no
-test expr-21.6 	{non-numeric boolean literals} {expr yes   } yes
-test expr-21.7 	{non-numeric boolean literals} {expr !false} 1
-test expr-21.8 	{non-numeric boolean literals} {expr !true } 0
-test expr-21.9 	{non-numeric boolean literals} {expr !off  } 1
+test expr-21.1	{non-numeric boolean literals} {expr false } false
+test expr-21.2	{non-numeric boolean literals} {expr true  } true
+test expr-21.3	{non-numeric boolean literals} {expr off   } off
+test expr-21.4	{non-numeric boolean literals} {expr on    } on
+test expr-21.5	{non-numeric boolean literals} {expr no    } no
+test expr-21.6	{non-numeric boolean literals} {expr yes   } yes
+test expr-21.7	{non-numeric boolean literals} {expr !false} 1
+test expr-21.8	{non-numeric boolean literals} {expr !true } 0
+test expr-21.9	{non-numeric boolean literals} {expr !off  } 1
 test expr-21.10 {non-numeric boolean literals} {expr !on   } 0
 test expr-21.11 {non-numeric boolean literals} {expr !no   } 1
 test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
@@ -5743,25 +5743,25 @@ test expr-31.15 {boolean conversion} -body {
 
 test expr-32.1 {expr mod basics} {
     set mod_nums [list \
-        {-3 1} {-3 2} {-3 3} {-3 4} {-3 5} \
-        {-3 -1} {-3 -2} {-3 -3} {-3 -4} {-3 -5} \
-        {-2 1} {-2 2} {-2 3} {-2 4} {-2 5} \
-        {-2 -1} {-2 -2} {-2 -3} {-2 -4} {-2 -5} \
-        {-1 1} {-1 2} {-1 3} {-1 4} {-1 5} \
-        {-1 -1} {-1 -2} {-1 -3} {-1 -4} {-1 -5} \
-        {0 -100} {0 -1} {0 1} {0 100} \
-        {1 1} {1 2} {1 3} {1 4} {1 5} \
-        {1 -1} {1 -2} {1 -3} {1 -4} {1 -5} \
-        {2 1} {2 2} {2 3} {2 4} {2 5} \
-        {2 -1} {2 -2} {2 -3} {2 -4} {2 -5} \
-        {3 1} {3 2} {3 3} {3 4} {3 5} \
-        {3 -1} {3 -2} {3 -3} {3 -4} {3 -5} \
-        ]
+	{-3 1} {-3 2} {-3 3} {-3 4} {-3 5} \
+	{-3 -1} {-3 -2} {-3 -3} {-3 -4} {-3 -5} \
+	{-2 1} {-2 2} {-2 3} {-2 4} {-2 5} \
+	{-2 -1} {-2 -2} {-2 -3} {-2 -4} {-2 -5} \
+	{-1 1} {-1 2} {-1 3} {-1 4} {-1 5} \
+	{-1 -1} {-1 -2} {-1 -3} {-1 -4} {-1 -5} \
+	{0 -100} {0 -1} {0 1} {0 100} \
+	{1 1} {1 2} {1 3} {1 4} {1 5} \
+	{1 -1} {1 -2} {1 -3} {1 -4} {1 -5} \
+	{2 1} {2 2} {2 3} {2 4} {2 5} \
+	{2 -1} {2 -2} {2 -3} {2 -4} {2 -5} \
+	{3 1} {3 2} {3 3} {3 4} {3 5} \
+	{3 -1} {3 -2} {3 -3} {3 -4} {3 -5} \
+	]
     set results [list]
     foreach pair $mod_nums {
-        set dividend [lindex $pair 0]
-        set divisor [lindex $pair 1]
-        lappend results [expr {$dividend % $divisor}]
+	set dividend [lindex $pair 0]
+	set divisor [lindex $pair 1]
+	lappend results [expr {$dividend % $divisor}]
     }
     set results
 } [list \
@@ -5782,25 +5782,25 @@ test expr-32.1 {expr mod basics} {
 
 test expr-32.2 {expr div basics} {
     set mod_nums [list \
-        {-3 1} {-3 2} {-3 3} {-3 4} {-3 5} \
-        {-3 -1} {-3 -2} {-3 -3} {-3 -4} {-3 -5} \
-        {-2 1} {-2 2} {-2 3} {-2 4} {-2 5} \
-        {-2 -1} {-2 -2} {-2 -3} {-2 -4} {-2 -5} \
-        {-1 1} {-1 2} {-1 3} {-1 4} {-1 5} \
-        {-1 -1} {-1 -2} {-1 -3} {-1 -4} {-1 -5} \
-        {0 -100} {0 -1} {0 1} {0 100} \
-        {1 1} {1 2} {1 3} {1 4} {1 5} \
-        {1 -1} {1 -2} {1 -3} {1 -4} {1 -5} \
-        {2 1} {2 2} {2 3} {2 4} {2 5} \
-        {2 -1} {2 -2} {2 -3} {2 -4} {2 -5} \
-        {3 1} {3 2} {3 3} {3 4} {3 5} \
-        {3 -1} {3 -2} {3 -3} {3 -4} {3 -5} \
-        ]
+	{-3 1} {-3 2} {-3 3} {-3 4} {-3 5} \
+	{-3 -1} {-3 -2} {-3 -3} {-3 -4} {-3 -5} \
+	{-2 1} {-2 2} {-2 3} {-2 4} {-2 5} \
+	{-2 -1} {-2 -2} {-2 -3} {-2 -4} {-2 -5} \
+	{-1 1} {-1 2} {-1 3} {-1 4} {-1 5} \
+	{-1 -1} {-1 -2} {-1 -3} {-1 -4} {-1 -5} \
+	{0 -100} {0 -1} {0 1} {0 100} \
+	{1 1} {1 2} {1 3} {1 4} {1 5} \
+	{1 -1} {1 -2} {1 -3} {1 -4} {1 -5} \
+	{2 1} {2 2} {2 3} {2 4} {2 5} \
+	{2 -1} {2 -2} {2 -3} {2 -4} {2 -5} \
+	{3 1} {3 2} {3 3} {3 4} {3 5} \
+	{3 -1} {3 -2} {3 -3} {3 -4} {3 -5} \
+	]
     set results [list]
     foreach pair $mod_nums {
-        set dividend [lindex $pair 0]
-        set divisor [lindex $pair 1]
-        lappend results [expr {$dividend / $divisor}]
+	set dividend [lindex $pair 0]
+	set divisor [lindex $pair 1]
+	lappend results [expr {$dividend / $divisor}]
     }
     set results
 } [list \
@@ -5850,12 +5850,12 @@ test expr-33.1 {parse largest long value} {
     string is integer $max_long
 
     list \
-        [expr {" $max_long_str "}] \
-        [expr {$max_long_str + 0}] \
-        [expr {$max_long + 0}] \
-        [expr {2147483647 + 0}] \
-        [expr {$max_long == $max_long_hex}] \
-        [expr {int(2147483647 + 1) > 0}] \
+	[expr {" $max_long_str "}] \
+	[expr {$max_long_str + 0}] \
+	[expr {$max_long + 0}] \
+	[expr {2147483647 + 0}] \
+	[expr {$max_long == $max_long_hex}] \
+	[expr {int(2147483647 + 1) > 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
 test expr-33.2 {parse smallest long value} {
@@ -5870,12 +5870,12 @@ test expr-33.2 {parse smallest long value} {
     # expression literal is being promoted to a wide type
     # when it should be parsed as a long type.
     list \
-        [expr {" $min_long_str "}] \
-        [expr {$min_long_str + 0}] \
-        [expr {$min_long + 0}] \
-        [expr {-2147483648 + 0}] \
-        [expr {$min_long == $min_long_hex}] \
-        [expr {int(-2147483648 - 1) == -0x80000001}] \
+	[expr {" $min_long_str "}] \
+	[expr {$min_long_str + 0}] \
+	[expr {$min_long + 0}] \
+	[expr {-2147483648 + 0}] \
+	[expr {$min_long == $min_long_hex}] \
+	[expr {int(-2147483648 - 1) == -0x80000001}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
 test expr-33.3 {parse largest wide value} wideIs64bit {
@@ -5887,12 +5887,12 @@ test expr-33.3 {parse largest wide value} wideIs64bit {
     string is integer $max_wide
 
     list \
-        [expr {" $max_wide_str "}] \
-        [expr {$max_wide_str + 0}] \
-        [expr {$max_wide + 0}] \
-        [expr {9223372036854775807 + 0}] \
-        [expr {$max_wide == $max_wide_hex}] \
-        [expr {wide(9223372036854775807 + 1) < 0}] \
+	[expr {" $max_wide_str "}] \
+	[expr {$max_wide_str + 0}] \
+	[expr {$max_wide + 0}] \
+	[expr {9223372036854775807 + 0}] \
+	[expr {$max_wide == $max_wide_hex}] \
+	[expr {wide(9223372036854775807 + 1) < 0}] \
 
 } {9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 1 1}
 test expr-33.4 {parse smallest wide value} wideIs64bit {
@@ -5907,12 +5907,12 @@ test expr-33.4 {parse smallest wide value} wideIs64bit {
     # wide integer is not being parsed correctly with
     # the leading - sign.
     list \
-        [expr {" $min_wide_str "}] \
-        [expr {$min_wide_str + 0}] \
-        [expr {$min_wide + 0}] \
-        [expr {-9223372036854775808 + 0}] \
-        [expr {$min_wide == $min_wide_hex}] \
-        [expr {wide(-9223372036854775808 - 1) == 0x7FFFFFFFFFFFFFFF}] \
+	[expr {" $min_wide_str "}] \
+	[expr {$min_wide_str + 0}] \
+	[expr {$min_wide + 0}] \
+	[expr {-9223372036854775808 + 0}] \
+	[expr {$min_wide == $min_wide_hex}] \
+	[expr {wide(-9223372036854775808 - 1) == 0x7FFFFFFFFFFFFFFF}] \
 
 } {-9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808 1 1}
 

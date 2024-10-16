@@ -1585,7 +1585,7 @@ test interp-20.45 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-        namespace eval foo {}
+	namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x} msg] $msg]
@@ -1596,7 +1596,7 @@ test interp-20.46 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-        namespace eval foo {}
+	namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x x} msg] $msg]
@@ -1617,7 +1617,7 @@ test interp-20.48 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-        namespace eval foo {}
+	namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x bar::x} msg] $msg]
@@ -2154,7 +2154,7 @@ test interp-26.6 {result code transmission: all combined--bug 1637} -setup {
     }
     foreach c {return} {
 	interp hide $interp  $c
-        interp alias $interp $c {} MyTestAlias $interp $c
+	interp alias $interp $c {} MyTestAlias $interp $c
     }
     interp eval $interp {proc ret {code} {return -code $code ret$code}}
     set res {}
@@ -2374,7 +2374,7 @@ test interp-28.1 {getting fooled by child's namespace ?} -setup {
 } -body {
     $i alias parent parent $i
     set r [interp eval $i {
-        namespace eval foo {
+	namespace eval foo {
 	    proc list {args} {
 		return "dummy foo::list"
 	    }
@@ -2564,11 +2564,11 @@ test interp-29.3.3 {recursion limit} {
 test interp-29.3.4 {recursion limit error reporting} {
     interp create child
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			     interp recursionlimit {} 5
 			     set x ok
 			}
@@ -2584,11 +2584,11 @@ test interp-29.3.4 {recursion limit error reporting} {
 test interp-29.3.5 {recursion limit error reporting} {
     interp create child
     set r1 [child eval {
-        catch {			# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    interp recursionlimit {} 4
 			    set x ok
 			}
@@ -2604,11 +2604,11 @@ test interp-29.3.5 {recursion limit error reporting} {
 test interp-29.3.6 {recursion limit error reporting} {
     interp create child
     set r1 [child eval {
-        catch {			# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    interp recursionlimit {} 6
 			    set x ok
 			}
@@ -2629,11 +2629,11 @@ test interp-29.3.7a {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set x ok
 			}
@@ -2650,12 +2650,12 @@ test interp-29.3.7b {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
 			update
-		        eval {	# 5
+			eval {	# 5
 			    set x ok
 			}
 		    }
@@ -2671,11 +2671,11 @@ test interp-29.3.7c {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 5}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set set set
 			    $set x ok
@@ -2693,11 +2693,11 @@ test interp-29.3.8a {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 4}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set x ok
 			}
@@ -2714,12 +2714,12 @@ test interp-29.3.8b {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 4}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
 			update
-		        eval {	# 5
+			eval {	# 5
 			    set x ok
 			}
 		    }
@@ -2735,11 +2735,11 @@ test interp-29.3.9a {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 6}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set x ok
 			}
@@ -2756,11 +2756,11 @@ test interp-29.3.9b {recursion limit error reporting} {
     interp create child
     after 0 {interp recursionlimit child 6}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    set set set
 			    $set x ok
 			}
@@ -2777,11 +2777,11 @@ test interp-29.3.10a {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 4}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			     update
 			     set x ok
 			}
@@ -2798,12 +2798,12 @@ test interp-29.3.10b {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 4}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
 			update
-		        eval {	# 5
+			eval {	# 5
 			    set x ok
 			}
 		    }
@@ -2819,11 +2819,11 @@ test interp-29.3.11a {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 5}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set x ok
 			}
@@ -2840,11 +2840,11 @@ test interp-29.3.11b {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 5}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set set set
 			    $set x ok
@@ -2862,11 +2862,11 @@ test interp-29.3.12a {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 6}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set x ok
 			}
@@ -2883,11 +2883,11 @@ test interp-29.3.12b {recursion limit error reporting} {
     interp create child
     after 0 {child recursionlimit 6}
     set r1 [child eval {
-        catch { 		# nesting level 1
+	catch {			# nesting level 1
 	    eval {		# 2
-	        eval {		# 3
+		eval {		# 3
 		    eval {	# 4
-		        eval {	# 5
+			eval {	# 5
 			    update
 			    set set set
 			    $set x ok
@@ -3024,10 +3024,10 @@ test interp-29.6.9 {safe interpreter recursion limit} {
 	child eval {
 	    interp create child2 -safe
 	    set n [catch {
-	        interp recursionlimit child2 42
-            } msg]
-            list $n $msg
-        }
+		interp recursionlimit child2 42
+	    } msg]
+	    list $n $msg
+	}
     ]
     interp delete child
     set result
@@ -3035,13 +3035,13 @@ test interp-29.6.9 {safe interpreter recursion limit} {
 test interp-29.6.10 {safe interpreter recursion limit} {
     interp create child -safe
     set result [
-        child eval {
+	child eval {
 	    interp create child2 -safe
 	    set n [catch {
-	        child2 recursionlimit 42
-            } msg]
-            list $n $msg
-        }
+		child2 recursionlimit 42
+	    } msg]
+	    list $n $msg
+	}
     ]
     interp delete child
     set result
@@ -3113,7 +3113,7 @@ test interp-32.1 {parent's working directory should be inherited by a child inte
     file delete cwd_test
     interp delete $i
     expr {[string equal $parent $child] ? 1 :
-             "\{$parent\} != \{$child\}"}
+	     "\{$parent\} != \{$child\}"}
 } -cleanup {
     cd [workingDirectory]
 } -result 1
@@ -3618,15 +3618,15 @@ test interp-36.7 {ChildBgerror sets error handler of child [1999035]} -setup {
     child bgerror handler
     variable result {untouched}
     proc handler {args} {
-        variable result
-        set result [lindex $args 0]
+	variable result
+	set result [lindex $args 0]
     }
 } -body {
     child eval {
-        variable done {}
-        after 0 error foo
-        after 10 [list ::set [namespace which -variable done] {}]
-        vwait [namespace which -variable done]
+	variable done {}
+	after 0 error foo
+	after 10 [list ::set [namespace which -variable done] {}]
+	vwait [namespace which -variable done]
     }
     set result
 } -cleanup {

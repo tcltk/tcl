@@ -361,16 +361,16 @@ test compExpr-7.1 {Memory Leak} -constraints memory -setup {
 
 test compExpr-7.2 {[Bug 1869989]: expr parser memleak} -constraints memory -setup {
     proc getbytes {} {
-        set lines [split [memory info] \n]
-        lindex $lines 3 3
+	set lines [split [memory info] \n]
+	lindex $lines 3 3
     }
 } -body {
     set i 5
     set end [getbytes]
     while {[incr i -1]} {
-        expr ${i}000
-        set tmp $end
-        set end [getbytes]
+	expr ${i}000
+	set tmp $end
+	set end [getbytes]
     }
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
@@ -387,27 +387,27 @@ proc extract {opcodes descriptor} {
 
 test compExpr-8.1 {TIP 582: expression comments} -setup {} -body {
     extract {loadStk add} [tcl::unsupported::getbytecode script {expr {
-        $abc
+	$abc
 	# + $def
 	+ $ghi
     }}]
 } -result {loadStk loadStk add}
 test compExpr-8.2 {TIP 582: expression comments} -setup {} -body {
     extract {loadStk add} [tcl::unsupported::getbytecode script {expr {
-        $abc
+	$abc
 	# + $def
 	# + $ghi }}]
 } -result loadStk
 test compExpr-8.3 {TIP 582: expression comments} -setup {} -body {
     extract {loadStk add} [tcl::unsupported::getbytecode script {expr {
-        $abc
+	$abc
 	# + $def\
 	+ $ghi
     }}]
 } -result loadStk
 test compExpr-8.4 {TIP 582: expression comments} -setup {} -body {
     extract {loadStk add} [tcl::unsupported::getbytecode script {expr {
-        $abc
+	$abc
 	# + $def\\
 	+ $ghi
     }}]

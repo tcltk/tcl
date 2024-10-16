@@ -647,7 +647,7 @@ test exec-17.1 {inheriting standard I/O} -constraints {exec} -setup {
     set f [open $path(script) w]
     puts $f [list lassign [list \
 	    [info nameofexecutable] $path(gorp.file) $path(echo) $path(sleep) \
-        ] exe file echo sleep]
+	] exe file echo sleep]
     puts $f {
 	close stdout
 	set f [open $file w]

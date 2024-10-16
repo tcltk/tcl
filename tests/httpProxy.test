@@ -65,21 +65,21 @@ if 0 {
 }
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
-        set ValueRange {0 1 2}
+	set ValueRange {0 1 2}
     } else {
-        set ValueRange {0 1}
+	set ValueRange {0 1}
     }
 
     # For each value of ThreadLevel, source this file recursively in the
     # same interpreter.
     foreach ThreadLevel $ValueRange {
-        source [info script]
+	source [info script]
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     if {![testConstraint ThreadLevelSummary]} {
-        putsBlurb
-        ::tcltest::cleanupTests
+	putsBlurb
+	::tcltest::cleanupTests
     }
     return
 }
@@ -88,14 +88,14 @@ catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
 http::config -threadlevel $ThreadLevel
 
 testConstraint needsTls         [expr {    [testConstraint needsTclTls]
-                                        || [testConstraint needsTwapi]
-                                        || [testConstraint needsTwapiFull]
-                                }]
+					|| [testConstraint needsTwapi]
+					|| [testConstraint needsTwapiFull]
+				}]
 
 if {[testConstraint needsTclTls]} {
     package require tls
     http::register https 443 [list ::tls::socket -ssl2 0 -ssl3 0 \
-            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1] ::tls::socketCmd 1 1
+	    -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1] ::tls::socketCmd 1 1
     testConstraint knownTwapiFullBugThreadlevelAny 1
     testConstraint knownTwapiFullBugThreadUsed 1
 } elseif {[testConstraint needsTwapi]} {
@@ -135,18 +135,18 @@ if {[testConstraint needsTclTls]} {
     testConstraint knownTwapiFullBugThreadlevelAny [testConstraint knownBug]
 
     if {($ThreadLevel == 1)} {
-        if {[catch {package require Thread}]} {
-            set usingThread 0
-        } else {
-            set usingThread 2
-        }
+	if {[catch {package require Thread}]} {
+	    set usingThread 0
+	} else {
+	    set usingThread 2
+	}
     } else {
-        set usingThread $ThreadLevel
+	set usingThread $ThreadLevel
     }
     if {$usingThread} {
-        testConstraint knownTwapiFullBugThreadUsed [testConstraint knownBug]
+	testConstraint knownTwapiFullBugThreadUsed [testConstraint knownBug]
     } else {
-        testConstraint knownTwapiFullBugThreadUsed 1
+	testConstraint knownTwapiFullBugThreadUsed 1
     }
 } else {
 }
@@ -207,7 +207,7 @@ test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 no-auth} -constraints {
     set token [http::geturl http://$n4host:$n4port/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed]"
+	     [dict get $ri proxyUsed]"
 } -result {complete ok 400 -- none} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -220,7 +220,7 @@ test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 no-auth} -constraints {
     set token [http::geturl http://\[$n6host\]:$n6port/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed]"
+	     [dict get $ri proxyUsed]"
 } -result {complete ok 400 -- none} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -233,7 +233,7 @@ test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 with-auth} -constraints
     set token [http::geturl http://$a4host:$a4port/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed]"
+	     [dict get $ri proxyUsed]"
 } -result {complete ok 400 -- none} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -246,7 +246,7 @@ test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 with-auth} -constraints
     set token [http::geturl http://\[$a6host\]:$a6port/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed]"
+	     [dict get $ri proxyUsed]"
 } -result {complete ok 400 -- none} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -260,8 +260,8 @@ test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {} -setup {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -275,8 +275,8 @@ test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsTls 
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -290,8 +290,8 @@ test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {nee
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- HttpProxy -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -306,8 +306,8 @@ test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {ne
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- SecureProxy -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -322,8 +322,8 @@ test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {nee
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- HttpProxy -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -338,8 +338,8 @@ test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {ne
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- SecureProxy -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res
@@ -356,8 +356,8 @@ test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -374,8 +374,8 @@ test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} 
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -392,8 +392,8 @@ test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -410,8 +410,8 @@ test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -428,8 +428,8 @@ test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -446,8 +446,8 @@ test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pro
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -473,8 +473,8 @@ test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -504,8 +504,8 @@ test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -535,8 +535,8 @@ test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -568,8 +568,8 @@ test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -597,8 +597,8 @@ test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -632,8 +632,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -663,8 +663,8 @@ test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -694,8 +694,8 @@ test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pr
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -731,8 +731,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -765,8 +765,8 @@ test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request n
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -785,8 +785,8 @@ test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -con
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -803,8 +803,8 @@ test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -co
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -821,8 +821,8 @@ test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- HttpProxy 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -839,8 +839,8 @@ test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -857,8 +857,8 @@ test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- HttpProxy 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -875,8 +875,8 @@ test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provid
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -902,8 +902,8 @@ test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -933,8 +933,8 @@ test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -962,8 +962,8 @@ test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -997,8 +997,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1028,8 +1028,8 @@ test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provi
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1065,8 +1065,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1085,8 +1085,8 @@ test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -co
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1103,8 +1103,8 @@ test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -c
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1121,8 +1121,8 @@ test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- HttpProxy 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1139,8 +1139,8 @@ test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1157,8 +1157,8 @@ test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- HttpProxy 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1175,8 +1175,8 @@ test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provi
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
 } -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1} -cleanup {
     catch {http::cleanup $token}
     unset -nocomplain token ri res pos1 pos2
@@ -1202,8 +1202,8 @@ test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1237,8 +1237,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1268,8 +1268,8 @@ test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1305,8 +1305,8 @@ after idle {
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1334,8 +1334,8 @@ test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}
@@ -1365,8 +1365,8 @@ test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-prov
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
     set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
     set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
-             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
-             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+	     [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+	     [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
 } -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
     catch {http::cleanup $token0}
     catch {http::cleanup $token}

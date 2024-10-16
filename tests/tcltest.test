@@ -712,10 +712,10 @@ test tcltest-8.60 {::workingDirectory}  {
 	list $f1 $f2 $f3 $f4 $f5
     }
     -result "[list $normaldirectory \
-                   $normaldirectory \
-                   $current \
-                   $current \
-                   $current]"
+		   $normaldirectory \
+		   $current \
+		   $current \
+		   $current]"
     -cleanup {
 	set ::tcltest::workingDirectory $old
 	cd $current
@@ -1324,9 +1324,9 @@ test tcltest-21.7a {expect with glob} \
 test tcltest-21.8 {force a test command failure} \
     -setup {set fail $::tcltest::currentFailure} \
     -body {
-        test tcltest-21.8.0 {
-            return 2
-        } {1}
+	test tcltest-21.8.0 {
+	    return 2
+	} {1}
     } \
     -returnCodes 1 \
     -cleanup {set ::tcltest::currentFailure $fail} \
@@ -1523,8 +1523,8 @@ proc matchNegative { expected actual } {
    set match 0
    foreach a $actual e $expected {
       if { $a != $e } {
-         set match 1
-        break
+	 set match 1
+	break
       }
    }
    return $match

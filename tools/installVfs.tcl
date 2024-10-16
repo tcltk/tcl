@@ -28,18 +28,18 @@ proc mapDir {resultvar prefix filepath} {
     while {[llength $queue]} {
       set queue [lassign $queue qprefix qpath]
       foreach ftail [glob -directory $qpath -nocomplain -tails *] {
-          set f [file join $qpath $ftail]
-          if {[file isdirectory $f]} {
-            if {$ftail eq "CVS"} continue
-            lappend queue [file join $qprefix $ftail] $f
-          } elseif {[file isfile $f]} {
-              if {$ftail eq "pkgIndex.tcl"} continue
-              if {$ftail eq "manifest.txt"} {
-                lappend result $f [file join $qprefix pkgIndex.tcl]
-              } else {
-                lappend result $f [file join $qprefix $ftail]
-              }
-          }
+	  set f [file join $qpath $ftail]
+	  if {[file isdirectory $f]} {
+	    if {$ftail eq "CVS"} continue
+	    lappend queue [file join $qprefix $ftail] $f
+	  } elseif {[file isfile $f]} {
+	      if {$ftail eq "pkgIndex.tcl"} continue
+	      if {$ftail eq "manifest.txt"} {
+		lappend result $f [file join $qprefix pkgIndex.tcl]
+	      } else {
+		lappend result $f [file join $qprefix $ftail]
+	      }
+	  }
        }
     }
 }

@@ -1726,7 +1726,7 @@ test chan-io-14.9 {reuse of stdio special channels} -setup {
 } -constraints {stdio fileevent} -body {
     set f [open $path(script) w]
     chan puts $f {
-        array set path [lindex $argv 0]
+	array set path [lindex $argv 0]
 	set f [open $path(test1) w]
 	chan puts $f hello
 	chan close $f
@@ -2081,7 +2081,7 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
-        set x "$x$x"
+	set x "$x$x"
     }
     set f [open $path(output) w]
     chan close $f
@@ -2095,9 +2095,9 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
-        set result "file size only [file size $path(output)]"
+	set result "file size only [file size $path(output)]"
     } else {
-        set result ok
+	set result ok
     }
 } -result ok
 
@@ -2151,7 +2151,7 @@ test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
-        set x "$x$x"
+	set x "$x$x"
     }
     set f [open $path(output) w]
     chan close $f
@@ -2165,9 +2165,9 @@ test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
-        set result probably_broken
+	set result probably_broken
     } else {
-        set result ok
+	set result ok
     }
 } -result ok
 test chan-io-28.4 {Tcl_Chan Close} -constraints {testchannel} -setup {
@@ -5321,7 +5321,7 @@ test chan-io-39.23 {
     chan close $sock
 } -result {{} auto}
 test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
-        writable so we can't change -eofchar or -translation} -setup {
+	writable so we can't change -eofchar or -translation} -setup {
     set l [list]
 } -body {
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
@@ -5804,23 +5804,23 @@ test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileeven
 test chan-io-46.2 {Tcl event loop vs multiple interpreters} testfevent {
     testfevent create
     testfevent cmd {
-        variable x 0
-        after 100 {set x triggered}
-        vwait [namespace which -variable x]
-        set x
+	variable x 0
+	after 100 {set x triggered}
+	vwait [namespace which -variable x]
+	set x
     }
 } {triggered}
 test chan-io-46.3 {Tcl event loop vs multiple interpreters} testfevent {
     testfevent create
     testfevent cmd {
-        set x 0
-        after 10 {lappend x timer}
-        after 30
-        set result $x
-        update idletasks
-        lappend result $x
-        update
-        lappend result $x
+	set x 0
+	after 10 {lappend x timer}
+	after 30
+	set result $x
+	update idletasks
+	lappend result $x
+	update
+	lappend result $x
     }
 } {0 0 {0 timer}}
 
@@ -5838,7 +5838,7 @@ test chan-io-47.1 {chan event vs multiple interpreters} -setup {
     lappend x [chan event $f2 readable]
     testfevent delete
     lappend x [chan event $f readable] [chan event $f2 readable] \
-        [chan event $f3 readable]
+	[chan event $f3 readable]
 } -cleanup {
     chan close $f
     chan close $f2
@@ -5855,7 +5855,7 @@ test chan-io-47.2 {deleting chan event on interpreter delete} -setup {
     testfevent share $f2
     testfevent share $f3
     testfevent cmd "chan event $f2 readable {script 2}
-        chan event $f3 readable {script 3}"
+	chan event $f3 readable {script 3}"
     chan event $f4 readable {script 4}
     testfevent delete
     list [chan event $f readable] [chan event $f2 readable] \
@@ -6707,7 +6707,7 @@ test chan-io-52.3 {TclCopyChannel} -constraints {fcopy} -setup {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {($s1 == $s2) && ($s0 == $s1)} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -6737,7 +6737,7 @@ test chan-io-52.5 {TclCopyChannel, all} -constraints {fcopy} -setup {
     chan close $f1
     chan close $f2
     if {[file size $thisScript] == [file size $path(test1)]} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -6753,7 +6753,7 @@ test chan-io-52.5a {TclCopyChannel, all, other negative value} -setup {
     chan close $f1
     chan close $f2
     if {[file size $thisScript] == [file size $path(test1)]} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -6769,7 +6769,7 @@ test chan-io-52.5b {TclCopyChannel, all, wrap to negative value} -setup {
     chan close $f1
     chan close $f2
     if {[file size $thisScript] ==  [file size $path(test1)]} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -6787,7 +6787,7 @@ test chan-io-52.6 {TclCopyChannel} -setup {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {($s1 == $s2) && ($s0 == $s1)} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -6801,7 +6801,7 @@ test chan-io-52.7 {TclCopyChannel} -constraints {fcopy} -setup {
     chan copy $f1 $f2
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     if {[file size $thisScript] == [file size $path(test1)]} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -cleanup {
@@ -6931,7 +6931,7 @@ test chan-io-53.2 {CopyData} -setup {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {($s1 == $s2) && ($s0 == $s1)} {
-        lappend result ok
+	lappend result ok
     }
     return $result
 } -result {0 0 ok}
@@ -7065,8 +7065,8 @@ proc doFcopy {in out {bytes 0} {error {}}} {
     } elseif {[chan eof $in]} {
 	set fcopyTestDone 0
     } else {
-        # Delay next chan copy to wait for size>0 input bytes
-        after 100 [list chan copy $in $out -size 1000 \
+	# Delay next chan copy to wait for size>0 input bytes
+	after 100 [list chan copy $in $out -size 1000 \
 		-command [namespace code [list doFcopy $in $out]]]
     }
 }
@@ -7082,9 +7082,9 @@ test chan-io-53.7 {CopyData: Flooding chan copy from pipe} -setup {
 	proc Write {count} {
 	    chan puts -nonewline "1234567890"
 	    if {[incr count -1]} {
-	        after 10 [list Write $count]
+		after 10 [list Write $count]
 	    } else {
-	        set ::ready 1
+		set ::ready 1
 	    }
 	}
 	chan configure stdout -buffering none
@@ -7235,7 +7235,7 @@ test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     rename ::done {}
     if {[testConstraint win]} {
 	after 1000;		# Allow Windows time to figure out that the
-                                # process is gone
+				# process is gone
     }
     catch {close $out}
     catch {removeFile out}
@@ -7276,7 +7276,7 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	chan puts stderr SRV
 	set l {}
 	set srv [socket -server new -myaddr 127.0.0.1 0]
-        set port [lindex [chan configure $srv -sockname] 2]
+	set port [lindex [chan configure $srv -sockname] 2]
 	chan puts stderr WAITING
 	chan event stdin readable bye
 	puts "OK $port"

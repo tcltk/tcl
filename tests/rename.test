@@ -163,10 +163,10 @@ set SAVED_UNKNOWN "proc unknown "
 append SAVED_UNKNOWN [list [info args unknown.old] [info body unknown.old]]
 test rename-5.1 {repeated rename deletion and redefinition of same command} {
     for {set i 0} {$i < 10} {incr i} {
-        eval $SAVED_UNKNOWN
-        tcl_wordBreakBefore "" 0
-        rename tcl_wordBreakBefore {}
-        rename unknown {}
+	eval $SAVED_UNKNOWN
+	tcl_wordBreakBefore "" 0
+	rename tcl_wordBreakBefore {}
+	rename unknown {}
     }
 } {}
 
@@ -175,8 +175,8 @@ catch {rename unknown.old unknown}
 
 test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile proc is renamed} -body {
     proc x {} {
-        set a 123
-        set b [incr a]
+	set a 123
+	set b [incr a]
     }
     x
     rename incr incr.old

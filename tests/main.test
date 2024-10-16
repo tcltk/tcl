@@ -27,8 +27,8 @@ namespace eval ::tcl::test::main {
     proc type {chan script} {
 	foreach line [split $script \n] {
 	    if {[catch {
-	        puts $chan $line
-	        flush $chan
+		puts $chan $line
+		flush $chan
 	    }]} {
 		return
 	    }
@@ -553,24 +553,24 @@ namespace eval ::tcl::test::main {
 	\nExit MainLoop\nIn exit\neven 0\n"
 
     test Tcl_Main-4.5 {
-        Tcl_Main: Bug 1481986
+	Tcl_Main: Bug 1481986
     } -constraints {
-        exec tcl::test
+	exec tcl::test
     } -setup {
-        set rc [makeFile {
-                testsetmainloop
-                after 0 {puts "Event callback"}
-        } rc]
+	set rc [makeFile {
+		testsetmainloop
+		after 0 {puts "Event callback"}
+	} rc]
     } -body {
-        set f [open "|[list [interpreter] -appinitprocsetrcfile $rc]" w+]
-        after 1000
-        type $f {puts {Interactive output}
-            exit
-        }
-        read $f
+	set f [open "|[list [interpreter] -appinitprocsetrcfile $rc]" w+]
+	after 1000
+	type $f {puts {Interactive output}
+	    exit
+	}
+	read $f
     } -cleanup {
-        catch {close $f}
-        removeFile rc
+	catch {close $f}
+	removeFile rc
     } -result "Event callback\nInteractive output\n"
 
     # Tests Tcl_Main-5.*: interactive operations
@@ -756,8 +756,8 @@ namespace eval ::tcl::test::main {
 	catch {chan configure $f -blocking 0}
     } -body {
 	type $f "testsetmainloop
-	         after 2000 testexitmainloop
-	         puts \{1 2"
+		 after 2000 testexitmainloop
+		 puts \{1 2"
 	after 4000
 	type $f "3 4\}"
 	set code1 [catch {gets $f} line1]

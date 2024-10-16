@@ -47,19 +47,19 @@ proc ::practcl::_pkgindex_directory {path} {
       close $fin
       # Look for a teapot style Package statement
       foreach line [split $dat \n] {
-        set line [string trim $line]
-        if { [string range $line 0 9] != "# Package " } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
-        break
+	set line [string trim $line]
+	if { [string range $line 0 9] != "# Package " } continue
+	set package [lindex $line 2]
+	set version [lindex $line 3]
+	break
       }
       # Look for a package provide statement
       foreach line [split $dat \n] {
-        set line [string trim $line]
-        if { [string range $line 0 14] != "package provide" } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
-        break
+	set line [string trim $line]
+	if { [string range $line 0 14] != "package provide" } continue
+	set package [lindex $line 2]
+	set version [lindex $line 3]
+	break
       }
       append buffer "package ifneeded $package $version \[list source \[file join \$dir [file tail $file]\]\]" \n
     }
@@ -73,14 +73,14 @@ proc ::practcl::_pkgindex_directory {path} {
       set fname [file rootname [file tail $file]]
       # Look for a package provide statement
       foreach line [split $dat \n] {
-        set line [string trim $line]
-        if { [string range $line 0 14] != "package provide" } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
-        if {[string index $package 0] in "\$ \[ @"} continue
-        if {[string index $version 0] in "\$ \[ @"} continue
-        append buffer "package ifneeded $package $version \[list source \[file join \$dir [file tail $file]\]\]" \n
-        break
+	set line [string trim $line]
+	if { [string range $line 0 14] != "package provide" } continue
+	set package [lindex $line 2]
+	set version [lindex $line 3]
+	if {[string index $package 0] in "\$ \[ @"} continue
+	if {[string index $version 0] in "\$ \[ @"} continue
+	append buffer "package ifneeded $package $version \[list source \[file join \$dir [file tail $file]\]\]" \n
+	break
       }
     }
     return $buffer
@@ -156,8 +156,8 @@ lappend ::PATHSTACK $dir
     # Build a list of all of the paths
     if {[llength $paths]} {
       foreach path $paths {
-        if {$path eq $base} continue
-        set path_indexed($path) 0
+	if {$path eq $base} continue
+	set path_indexed($path) 0
       }
     } else {
       puts [list WARNING: NO PATHS FOUND IN $base]
@@ -179,9 +179,9 @@ if {![file exists $pkginstall]} {
       set thisdir [file_relative $base $path]
       set idxbuf [::practcl::_pkgindex_directory $path]
       if {[string length $idxbuf]} {
-        incr path_indexed($path)
-        append buffer "set dir \[set PKGDIR \[file join \[lindex \$::PATHSTACK end\] $thisdir\]\]" \n
-        append buffer [string map {$dir $PKGDIR} [string trimright $idxbuf]] \n
+	incr path_indexed($path)
+	append buffer "set dir \[set PKGDIR \[file join \[lindex \$::PATHSTACK end\] $thisdir\]\]" \n
+	append buffer [string map {$dir $PKGDIR} [string trimright $idxbuf]] \n
       }
     }
   }
@@ -209,9 +209,9 @@ proc ::practcl::installDir {d1 d2} {
     } elseif {[file isfile $f]} {
 	    file copy -force $f [file join $d2 $ftail]
 	    if {$::tcl_platform(platform) eq {unix}} {
-        file attributes [file join $d2 $ftail] -permissions 0o644
+	file attributes [file join $d2 $ftail] -permissions 0o644
 	    } else {
-        file attributes [file join $d2 $ftail] -readonly 1
+	file attributes [file join $d2 $ftail] -readonly 1
 	    }
     }
   }

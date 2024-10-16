@@ -144,7 +144,7 @@ test unload-3.1 {basic loading of non-unloadable package in a safe interpreter} 
     catch {rename pkgb_sub {}}
     load [file join $testDir tcl9pkgb$ext] Pkgb child
     list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
-         [catch {pkgb_sub 12 10} msg2] $msg2
+	 [catch {pkgb_sub 12 10} msg2] $msg2
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
 test unload-3.2 {basic loading of unloadable package in a safe interpreter} \
 	[list $dll $loaded] {

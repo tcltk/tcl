@@ -1339,7 +1339,7 @@ proc writeLinks {outDir} {
 #----------------------------------------------------------------------
 
 puts "Compiling time zones -- [clock format [clock seconds] \
-                                   -format {%x %X} -locale system]"
+	                           -format {%x %X} -locale system]"
 
 # Determine directories
 

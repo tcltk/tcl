@@ -103,16 +103,16 @@ test lpop-99.1 {performance} -constraints perf -body {
     set l [lrepeat 10000 x]
     set l2 $l
     set t1 [time {
-        while {[llength $l] >= 2} {
-            lpop l end
-        }
+	while {[llength $l] >= 2} {
+	    lpop l end
+	}
     }]
     set l [lrepeat 30000 x]
     set l2 $l
     set t2 [time {
-        while {[llength $l] >= 2} {
-            lpop l end
-        }
+	while {[llength $l] >= 2} {
+	    lpop l end
+	}
     }]
     regexp {\d+} $t1 ms1
     regexp {\d+} $t2 ms2
@@ -125,16 +125,16 @@ test lpop-99.2 {performance} -constraints perf -body {
     set l [lrepeat 10000 x]
     set l2 $l
     set t1 [time {
-        while {[llength $l] >= 2} {
-            lpop l 1
-        }
+	while {[llength $l] >= 2} {
+	    lpop l 1
+	}
     }]
     set l [lrepeat 30000 x]
     set l2 $l
     set t2 [time {
-        while {[llength $l] >= 2} {
-            lpop l 1
-        }
+	while {[llength $l] >= 2} {
+	    lpop l 1
+	}
     }]
     regexp {\d+} $t1 ms1
     regexp {\d+} $t2 ms2

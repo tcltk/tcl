@@ -89,9 +89,9 @@ proc httpdRead { sock } {
 	# Read the HTTP headers
 
 	set readCount [gets $sock line]
-        if {[regexp {^([^:]+):(.*)$} $line -> key val]} {
-            lappend data(meta) $key [string trim $val]
-        }
+	if {[regexp {^([^:]+):(.*)$} $line -> key val]} {
+	    lappend data(meta) $key [string trim $val]
+	}
 
     } elseif {$data(state) == "query"} {
 
@@ -233,20 +233,20 @@ proc httpdRespond { sock } {
 	if {$data(proto) == "HEAD"} {
 	    puts $sock "HTTP/1.0 200 OK"
 	} else {
-            # Split the response to test for [Bug 26245326]
+	    # Split the response to test for [Bug 26245326]
 	    puts -nonewline $sock "HT"
-            flush $sock
-            puts $sock "TP/1.0 200 Data follows"
+	    flush $sock
+	    puts $sock "TP/1.0 200 Data follows"
 	}
 	puts $sock "Date: [clock format [clock seconds] \
-                              -format {%a, %d %b %Y %H:%M:%S %Z}]"
+			      -format {%a, %d %b %Y %H:%M:%S %Z}]"
 	puts $sock "Content-Type: $type"
 	puts $sock "Content-Length: [string length $html]"
-        foreach {key val} $data(meta) {
-            if {[string match "X-*" $key]} {
-                puts $sock "$key: $val"
-            }
-        }
+	foreach {key val} $data(meta) {
+	    if {[string match "X-*" $key]} {
+		puts $sock "$key: $val"
+	    }
+	}
 	puts $sock ""
 	flush $sock
 	if {$data(proto) != "HEAD"} {

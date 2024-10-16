@@ -1267,14 +1267,14 @@ test if-10.6 {double invocation of variable traces} -body {
        set name [lindex $args [expr {$argc - 3}]]
        upvar 1 $name var
        if {[incr counter] % 2 == 1} {
-           set var "$counter oops [concat $extraargs]"
+	   set var "$counter oops [concat $extraargs]"
        } else {
-           set var "$counter + [concat $extraargs]"
+	   set var "$counter + [concat $extraargs]"
        }
     }
     trace add variable iftracevar read [list iftraceproc 10]
     list [catch {if "$iftracevar + 20" {}} a] $a \
-        [catch {if "$iftracevar + 20" {}} b] $b
+	[catch {if "$iftracevar + 20" {}} b] $b
 } -cleanup {
     unset iftracevar iftracecounter a b
 } -match glob -result {1 {*} 0 {}}

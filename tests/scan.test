@@ -559,7 +559,7 @@ test scan-5.19 {bigint scanning invalid} -setup {
     set a {};
 } -body {
     list [scan "207698809136909011942886895" \
-           %llu a] $a
+	   %llu a] $a
 } -result {1 207698809136909011942886895}
 test scan-5.20 {ignore digit separators} -setup {
     set a {}; set b {}; set c {};

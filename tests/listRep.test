@@ -43,8 +43,8 @@ proc describe {l args} {dict get [testlistrep describe $l] {*}$args}
 proc irange {first last} {
     set l {}
     while {$first <= $last} {
-        lappend l $first
-        incr first
+	lappend l $first
+	incr first
     }
     return $l
 }
@@ -56,7 +56,7 @@ proc tailSpace {l} {
     # Returns the trailing space in a list store
     array set rep [describe $l]
     dict with rep(store) {
-        return [expr {$numAllocated - ($firstUsed + $numUsed)}]
+	return [expr {$numAllocated - ($firstUsed + $numUsed)}]
     }
 }
 proc allocated {l} {
@@ -84,8 +84,8 @@ proc spaceEqual {l} {
     set leadSpace [leadSpace $l]
     set tailSpace [tailSpace $l]
     if {$leadSpace == 0 && $tailSpace == 0} {
-        # At least one must be positive
-        return 0
+	# At least one must be positive
+	return 0
     }
     set diff [expr {$leadSpace - $tailSpace}]
     return [expr {$diff >= -1 && $diff <= 1}]
@@ -101,15 +101,15 @@ proc hasSpan {l args} {
     # span values (start and length)
     array set rep [describe $l]
     if {![info exists rep(span)]} {
-        return 0
+	return 0
     }
     if {[llength $args] == 0} {
-        return 1; # No need to check values
+	return 1; # No need to check values
     }
     lassign $args start len
     if {[dict get $rep(span) spanStart] == $start &&
-        [dict get $rep(span) spanLength] == $len} {
-        return 1
+	[dict get $rep(span) spanLength] == $len} {
+	return 1
     }
     return 0
 }
@@ -121,25 +121,25 @@ proc checkListrep {l listLen numAllocated leadSpace tailSpace {refCount 0}} {
     set rep(leadSpace) [dict get $rep(store) firstUsed]
     set rep(numAllocated) [dict get $rep(store) numAllocated]
     set rep(tailSpace) [expr {
-                              $rep(numAllocated) - ($rep(leadSpace) + [dict get $rep(store) numUsed])
-                          }]
+			      $rep(numAllocated) - ($rep(leadSpace) + [dict get $rep(store) numUsed])
+			  }]
     set rep(refCount) [dict get $rep(store) refCount]
 
     if {[info exists rep(span)]} {
-        set rep(listLen) [dict get $rep(span) spanLength]
+	set rep(listLen) [dict get $rep(span) spanLength]
     } else {
-        set rep(listLen) [dict get $rep(store) numUsed]
+	set rep(listLen) [dict get $rep(store) numUsed]
     }
 
     set errors [list]
     foreach arg {listLen numAllocated leadSpace tailSpace} {
-        if {$rep($arg) != [set $arg]} {
-            lappend errors "$arg in list representation ($rep($arg)) is not expected value ([set $arg])."
-        }
+	if {$rep($arg) != [set $arg]} {
+	    lappend errors "$arg in list representation ($rep($arg)) is not expected value ([set $arg])."
+	}
     }
     # Check refCount only if caller has specified it as non-0
     if {$refCount && $refCount != $rep(refCount)} {
-        lappend errors "refCount in list representation ($rep(refCount)) is not expected value ($refCount)."
+	lappend errors "refCount in list representation ($rep(refCount)) is not expected value ($refCount)."
     }
     return $errors
 }
@@ -148,7 +148,7 @@ proc assertListrep {l listLen numAllocated leadSpace tailSpace {refCount 0}} {
     # Like check_listrep but raises error
     set errors [checkListrep $l $listLen $numAllocated $leadSpace $tailSpace $refCount]
     if {[llength $errors]} {
-        error [join $errors \n]
+	error [join $errors \n]
     }
     return
 }
@@ -179,7 +179,7 @@ if {[testConstraint testlistrep]} {
     assertListrep [freeSpaceBoth] 8 14 3 3 1
     assertListrep [zombieSample] 1000 1200 0 0 1
     if {![hasSpan [zombieSample]] || [dict get [testlistrep describe [zombieSample]] span spanStart] == 0} {
-        error "zombieSample span missing or span start is at 0."
+	error "zombieSample span missing or span start is at 0."
     }
 }
 

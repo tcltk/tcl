@@ -145,7 +145,7 @@ proc _test_run {args} {
       set args [lrange $args 1 end]
     } else {
       if {[llength $args] <= 2} {
-        return -code error "value expected for option $o"
+	return -code error "value expected for option $o"
       }
       set _($o) [lindex $args 1]
       set args [lrange $args 2 end]
@@ -177,7 +177,7 @@ proc _test_run {args} {
     if {[regexp {^\s*(?:setup|cleanup)\s+} $_(c)]} {
       set _(c) [lindex $_(c) 1]
       if {$_(-uplevel)} {
-        set _(c) [list uplevel 1 $_(c)]
+	set _(c) [list uplevel 1 $_(c)]
       }
       {*}$_(outcmd) [if 1 $_(c)]
       continue
@@ -192,7 +192,7 @@ proc _test_run {args} {
       if {$_(-convert-result) ne ""} { set _(r) [if 1 $_(-convert-result)] }
       {*}$_(outcmd) $_(r)
       if {[llength $_(ittime)] > 1} { # decrement max-count
-        lset _(ittime) 1 [expr {[lindex $_(ittime) 1] - 1}]
+	lset _(ittime) 1 [expr {[lindex $_(ittime) 1] - 1}]
       }
     }
     {*}$_(outcmd) [set _(m) [timerate $_(c) {*}$_(ittime)]]

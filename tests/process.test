@@ -114,11 +114,11 @@ test process-4.1 {exec one child} -body {
     set statuses [tcl::process status -wait]
     set status [lindex [tcl::process status $pid] 1]
     expr {
-           [llength $list] eq 1
-        && [lindex $list 0] eq $pid
-        && [dict size $statuses] eq 1
-        && [dict get $statuses $pid] eq $status
-        && $status eq 0
+	   [llength $list] eq 1
+	&& [lindex $list 0] eq $pid
+	&& [dict size $statuses] eq 1
+	&& [dict get $statuses $pid] eq $status
+	&& $status eq 0
     }
 } -result {1} -cleanup {
     tcl::process purge
@@ -134,14 +134,14 @@ test process-4.2 {exec two children in parallel} -body {
     set status1 [lindex [tcl::process status $pid1] 1]
     set status2 [lindex [tcl::process status $pid2] 1]
     expr {
-           [llength $list] eq 2
-        && [lsearch $list $pid1] >= 0
-        && [lsearch $list $pid2] >= 0
-        && [dict size $statuses] eq 2
-        && [dict get $statuses $pid1] eq $status1
-        && [dict get $statuses $pid2] eq $status2
-        && $status1 eq 0
-        && $status2 eq 0
+	   [llength $list] eq 2
+	&& [lsearch $list $pid1] >= 0
+	&& [lsearch $list $pid2] >= 0
+	&& [dict size $statuses] eq 2
+	&& [dict get $statuses $pid1] eq $status1
+	&& [dict get $statuses $pid2] eq $status2
+	&& $status1 eq 0
+	&& $status2 eq 0
     }
 } -result {1} -cleanup {
     tcl::process purge
@@ -151,9 +151,9 @@ test process-4.2 {exec two children in parallel} -body {
 test process-4.3 {exec 3-stage pipe} -body {
     tcl::process autopurge 0
     set pids [exec \
-          [interpreter] $path(exit) 0 \
-        | [interpreter] $path(exit) 0 \
-        | [interpreter] $path(exit) 0 \
+	  [interpreter] $path(exit) 0 \
+	| [interpreter] $path(exit) 0 \
+	| [interpreter] $path(exit) 0 \
     &]
     lassign $pids pid1 pid2 pid3
     set list [tcl::process list]
@@ -162,18 +162,18 @@ test process-4.3 {exec 3-stage pipe} -body {
     set status2 [lindex [tcl::process status $pid2] 1]
     set status3 [lindex [tcl::process status $pid3] 1]
     expr {
-           [llength $pids] eq 3
-        && [llength $list] eq 3
-        && [lsearch $list $pid1] >= 0
-        && [lsearch $list $pid2] >= 0
-        && [lsearch $list $pid3] >= 0
-        && [dict size $statuses] eq 3
-        && [dict get $statuses $pid1] eq $status1
-        && [dict get $statuses $pid2] eq $status2
-        && [dict get $statuses $pid3] eq $status3
-        && $status1 eq 0
-        && $status2 eq 0
-        && $status3 eq 0
+	   [llength $pids] eq 3
+	&& [llength $list] eq 3
+	&& [lsearch $list $pid1] >= 0
+	&& [lsearch $list $pid2] >= 0
+	&& [lsearch $list $pid3] >= 0
+	&& [dict size $statuses] eq 3
+	&& [dict get $statuses $pid1] eq $status1
+	&& [dict get $statuses $pid2] eq $status2
+	&& [dict get $statuses $pid3] eq $status3
+	&& $status1 eq 0
+	&& $status2 eq 0
+	&& $status3 eq 0
     }
 } -result {1} -cleanup {
     tcl::process purge
@@ -190,11 +190,11 @@ test process-5.1 {exec one child} -body {
     set statuses [tcl::process status -wait]
     set status [lindex [tcl::process status $pid] 1]
     expr {
-           [llength $list] eq 1
-        && [lindex $list 0] eq $pid
-        && [dict size $statuses] eq 1
-        && [dict get $statuses $pid] eq $status
-        && $status eq 0
+	   [llength $list] eq 1
+	&& [lindex $list 0] eq $pid
+	&& [dict size $statuses] eq 1
+	&& [dict get $statuses $pid] eq $status
+	&& $status eq 0
     }
 } -result {1} -cleanup {
     close $f
@@ -213,14 +213,14 @@ test process-5.2 {exec two children in parallel} -body {
     set status1 [lindex [tcl::process status $pid1] 1]
     set status2 [lindex [tcl::process status $pid2] 1]
     expr {
-           [llength $list] eq 2
-        && [lsearch $list $pid1] >= 0
-        && [lsearch $list $pid2] >= 0
-        && [dict size $statuses] eq 2
-        && [dict get $statuses $pid1] eq $status1
-        && [dict get $statuses $pid2] eq $status2
-        && $status1 eq 0
-        && $status2 eq 0
+	   [llength $list] eq 2
+	&& [lsearch $list $pid1] >= 0
+	&& [lsearch $list $pid2] >= 0
+	&& [dict size $statuses] eq 2
+	&& [dict get $statuses $pid1] eq $status1
+	&& [dict get $statuses $pid2] eq $status2
+	&& $status1 eq 0
+	&& $status2 eq 0
     }
 } -result {1} -cleanup {
     close $f1
@@ -232,9 +232,9 @@ test process-5.2 {exec two children in parallel} -body {
 test process-5.3 {exec 3-stage pipe} -body {
     tcl::process autopurge 0
     set f [open "|
-          \"[interpreter]\" \"$path(exit)\" 0
-        | \"[interpreter]\" \"$path(exit)\" 0
-        | \"[interpreter]\" \"$path(exit)\" 0
+	  \"[interpreter]\" \"$path(exit)\" 0
+	| \"[interpreter]\" \"$path(exit)\" 0
+	| \"[interpreter]\" \"$path(exit)\" 0
     "]
     set pids [pid $f]
     lassign $pids pid1 pid2 pid3
@@ -244,18 +244,18 @@ test process-5.3 {exec 3-stage pipe} -body {
     set status2 [lindex [tcl::process status $pid2] 1]
     set status3 [lindex [tcl::process status $pid3] 1]
     expr {
-           [llength $pids] eq 3
-        && [llength $list] eq 3
-        && [lsearch $list $pid1] >= 0
-        && [lsearch $list $pid2] >= 0
-        && [lsearch $list $pid3] >= 0
-        && [dict size $statuses] eq 3
-        && [dict get $statuses $pid1] eq $status1
-        && [dict get $statuses $pid2] eq $status2
-        && [dict get $statuses $pid3] eq $status3
-        && $status1 eq 0
-        && $status2 eq 0
-        && $status3 eq 0
+	   [llength $pids] eq 3
+	&& [llength $list] eq 3
+	&& [lsearch $list $pid1] >= 0
+	&& [lsearch $list $pid2] >= 0
+	&& [lsearch $list $pid3] >= 0
+	&& [dict size $statuses] eq 3
+	&& [dict get $statuses $pid1] eq $status1
+	&& [dict get $statuses $pid2] eq $status2
+	&& [dict get $statuses $pid3] eq $status3
+	&& $status1 eq 0
+	&& $status2 eq 0
+	&& $status3 eq 0
     }
 } -result {1} -cleanup {
     close $f
@@ -273,8 +273,8 @@ test process-6.1 {async status} -setup {
     signal_exit $path(test-signalfile); # signal exit (stop sleep)
     set status2 [lindex [tcl::process status -wait $pid] 1]
     expr {
-           $status1 eq {}
-        && $status2 eq 0
+	   $status1 eq {}
+	&& $status2 eq 0
     }
 } -result {1} -cleanup {
     tcl::process purge
@@ -301,12 +301,12 @@ test process-6.2 {selective wait} -setup {
     set status3_2 [lindex [tcl::process status -wait $pid2] 1]
     set status3_1 [lindex [tcl::process status $pid1] 1]
     expr {
-           $status1_1 eq {}
-        && $status1_2 eq {}
-        && $status2_1 eq 0
-        && $status2_2 eq {}
-        && $status3_1 eq 0
-        && $status3_2 eq 0
+	   $status1_1 eq {}
+	&& $status1_2 eq {}
+	&& $status2_1 eq 0
+	&& $status2_2 eq {}
+	&& $status3_1 eq 0
+	&& $status3_2 eq 0
     }
 } -result {1} -cleanup {
     tcl::process purge

@@ -203,19 +203,19 @@
     # ----------------------------------------------------------------------
 
     proc define::classmethod {name args} {
-        # Create the method on the class if the caller gave arguments and body
-        ::set argc [::llength [::info level 0]]
-        ::if {$argc == 3} {
-            ::return -code error -errorcode {TCL WRONGARGS} [::format \
+	# Create the method on the class if the caller gave arguments and body
+	::set argc [::llength [::info level 0]]
+	::if {$argc == 3} {
+	    ::return -code error -errorcode {TCL WRONGARGS} [::format \
 		{wrong # args: should be "%s name ?args body?"} \
-                [::lindex [::info level 0] 0]]
-        }
-        ::set cls [::uplevel 1 self]
-        ::if {$argc == 4} {
-            ::oo::define [::oo::DelegateName $cls] method $name {*}$args
-        }
-        # Make the connection by forwarding
-        ::tailcall forward $name myclass $name
+		[::lindex [::info level 0] 0]]
+	}
+	::set cls [::uplevel 1 self]
+	::if {$argc == 4} {
+	    ::oo::define [::oo::DelegateName $cls] method $name {*}$args
+	}
+	# Make the connection by forwarding
+	::tailcall forward $name myclass $name
     }
 
     # ----------------------------------------------------------------------
@@ -231,8 +231,8 @@
     # ----------------------------------------------------------------------
 
     proc define::initialise {body} {
-        ::set clsns [::info object namespace [::uplevel 1 self]]
-        ::tailcall apply [::list {} $body $clsns]
+	::set clsns [::info object namespace [::uplevel 1 self]]
+	::tailcall apply [::list {} $body $clsns]
     }
 
     # Make the [initialise] definition appear as [initialize] too

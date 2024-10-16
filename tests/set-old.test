@@ -354,10 +354,10 @@ test set-old-8.7 {array command, anymore option} {
 } {1 {"a" isn't an array}}
 test set-old-8.8 {array command, anymore option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array anymore a x]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array anymore a x]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {1 {"a" isn't an array}}
@@ -367,10 +367,10 @@ test set-old-8.9 {array command, donesearch option} {
 } {1 {"a" isn't an array}}
 test set-old-8.10 {array command, donesearch option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array donesearch a x]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array donesearch a x]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {1 {"a" isn't an array}}
@@ -388,10 +388,10 @@ test set-old-8.13 {array command, exists option} {
 } {1}
 test set-old-8.14 {array command, exists option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array exists a]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array exists a]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {0 0}
@@ -428,10 +428,10 @@ test set-old-8.20 {array command, get option, with pattern} {
 } {3 4 5 x1 x2 x3}
 test set-old-8.21 {array command, get option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array get a]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array get a]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {0 {}}
@@ -472,10 +472,10 @@ test set-old-8.27 {array command, names option} {
 } {{axy bxy} {axy bxy no xxx}}
 test set-old-8.28 {array command, names option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array names a]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array names a]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {0 {}}
@@ -488,10 +488,10 @@ test set-old-8.30 {array command, nextelement option} {
 } {1 {"a" isn't an array}}
 test set-old-8.31 {array command, nextelement option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array nextelement a b]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array nextelement a b]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {1 {"a" isn't an array}}
@@ -517,10 +517,10 @@ test set-old-8.36 {array command, set option} {
 } {b c d e xx yy}
 test set-old-8.37 {array command, set option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array set a {x 0}]
-        }
-        set a(x)
+	if {$x==1} {
+	    return [array set a {x 0}]
+	}
+	set a(x)
     }
     list [catch {foo 1} msg] $msg
 } {0 {}}
@@ -591,10 +591,10 @@ test set-old-8.44 {array command, size option} {
 } {0 1}
 test set-old-8.45 {array command, size option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
-        if {$x==1} {
-            return [array size a]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array size a]
+	}
+	set a(x) 123
     }
     list [catch {foo 1} msg] $msg
 } {0 0}
@@ -608,10 +608,10 @@ test set-old-8.47 {array command, startsearch option} {
 test set-old-8.48 {array command, startsearch option, array doesn't exist yet but has compiler-allocated procedure slot} {
     catch {rename p ""}
     proc p {x} {
-        if {$x==1} {
-            return [array startsearch a]
-        }
-        set a(x) 123
+	if {$x==1} {
+	    return [array startsearch a]
+	}
+	set a(x) 123
     }
     list [catch {p 1} msg] $msg
 } {1 {"a" isn't an array}}

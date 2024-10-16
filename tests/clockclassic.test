@@ -180,7 +180,7 @@ test clock-1.1 "clock format - bad time" {
 
 test clock-1.4 "clock format - bad flag" {*}{
     -body {
-    list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
+	list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
     }
     -match glob
     -result {1 {bad option "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -oops}}

@@ -126,11 +126,11 @@ test result-6.1 {Bug 1209759} -constraints testreturn -body {
 } -result {}
 test result-6.2 {Bug 1649062} -setup {
     proc foo {} {
-        if {[catch {
-            return -code error -errorinfo custom -errorcode CUSTOM foo
-        } err]} {
-            return [list $err $::errorCode $::errorInfo]
-        }
+	if {[catch {
+	    return -code error -errorinfo custom -errorcode CUSTOM foo
+	} err]} {
+	    return [list $err $::errorCode $::errorInfo]
+	}
     }
     set ::errorInfo {}
     set ::errorCode {}

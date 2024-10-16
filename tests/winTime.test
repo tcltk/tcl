@@ -57,7 +57,7 @@ test winTime-2.1 {Synchronization of Tcl and Windows clocks} testwinclock {
 	foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] break
 	set diff [expr { $tcl_sec - $sys_sec
 			 + 1.0e-6 * ( $tcl_usec - $sys_usec ) }]
-        if { abs($diff) > 0.1 } {
+	if { abs($diff) > 0.1 } {
 	    set failed "Tcl clock differs from system clock by $diff sec"
 	    break
 	} else {

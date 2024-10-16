@@ -47,13 +47,13 @@ test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} -se
 } -body {
     set x 123
     namespace eval test_ns_compile {
-        proc set {args} {
-            global x
-            lappend x test_ns_compile::set
-        }
-        proc p {} {
-            set 0
-        }
+	proc set {args} {
+	    global x
+	    lappend x test_ns_compile::set
+	}
+	proc p {} {
+	    set 0
+	}
     }
     list [test_ns_compile::p] [set x]
 } -result {{123 test_ns_compile::set} {123 test_ns_compile::set}}
@@ -72,8 +72,8 @@ test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset y}
 } -body {
     proc p {} {
-        set ::y 789
-        return $::y
+	set ::y 789
+	return $::y
     }
     list [p] $::y [expr {"y" in [info globals]}]
 } -result {789 789 1}
@@ -87,8 +87,8 @@ test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset a}
 } -body {
     proc p {} {
-        set ::a(1) 1
-        return $::a($::a(1))
+	set ::a(1) 1
+	return $::a($::a(1))
     }
     list [p] $::a(1) [expr {"a" in [info globals]}]
 } -result {1 1 1}
@@ -97,8 +97,8 @@ test compile-2.5 {TclCompileDollarVar: global array, called as ${arrName(0)}} -s
 } -body {
     proc p {} {
 	global a
-        set a(1) 1
-        return ${a(1)}$::a(1)$a(1)
+	set a(1) 1
+	return ${a(1)}$::a(1)$a(1)
     }
     list [p] $::a(1) [expr {"a" in [info globals]}]
 } -result {111 1 1}
@@ -108,8 +108,8 @@ test compile-3.1 {TclCompileCatchCmd: only catch cmds with scalar vars are compi
 } -body {
     set a(1) xyzzyx
     proc p {} {
-        global a
-        catch {set x 123} a(1)
+	global a
+	catch {set x 123} a(1)
     }
     list [p] $a(1)
 } -result {0 123}
@@ -253,19 +253,19 @@ test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
 } -body {
     set x 123
     proc p {} {
-        set ::y 789
-        return $::y
+	set ::y 789
+	return $::y
     }
     list $::x [expr {"x" in [info globals]}] \
-         [p] $::y [expr {"y" in [info globals]}]
+	 [p] $::y [expr {"y" in [info globals]}]
 } -result {123 1 789 789 1}
 test compile-6.2 {TclCompileSetCmd: global array names with ::s} -setup {
     catch {unset a}
 } -body {
     set ::a(1) 2
     proc p {} {
-        set ::a(1) 1
-        return $::a($::a(1))
+	set ::a(1) 1
+	return $::a($::a(1))
     }
     list $::a(1) [p] [set ::a($::a(1)) 3] $::a(1) [expr {"a" in [info globals]}]
 } -result {2 1 3 3 1}
@@ -274,9 +274,9 @@ test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} -setup {
     catch {unset x}
 } -body {
     namespace eval test_ns_compile {
-        variable v hello
-        variable arr
-        set ::x $::test_ns_compile::v
+	variable v hello
+	variable arr
+	set ::x $::test_ns_compile::v
 	set ::test_ns_compile::arr(1) 123
     }
     list $::x $::test_ns_compile::arr(1)
@@ -305,10 +305,10 @@ test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
 
 test compile-9.1 {UpdateStringOfByteCode: called for duplicate of compiled empty object} {
     proc p {} {
-        set x {}
-        eval $x
-        append x { }
-        eval $x
+	set x {}
+	eval $x
+	append x { }
+	eval $x
     }
     p
 } {}

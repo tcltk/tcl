@@ -41,8 +41,8 @@ catch {
 }
 
 # Test for commands defined in tcl::test package
-testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
-testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
+testConstraint testfilesystem	    [llength [info commands ::testfilesystem]]
+testConstraint testsetplatform	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
 # Some things fail under all Continuous Integration systems for subtle reasons
 # such as CI often running with elevated privileges in a container.
@@ -71,12 +71,12 @@ apply {{} {
 
 	set dir [pwd]
 	try {
-            set drives [lmap vol [file volumes] {
-                if {$vol eq [zipfs root] || [catch {cd $vol}]} {
-                    continue
-                }
-                set vol
-            }]
+	    set drives [lmap vol [file volumes] {
+		if {$vol eq [zipfs root] || [catch {cd $vol}]} {
+		    continue
+		}
+		set vol
+	    }]
 	    testConstraint moreThanOneDrive [expr {[llength $drives] > 1}]
 	} finally {
 	    cd $dir
@@ -291,7 +291,7 @@ test filesystem-1.30.3 {file normalization should distinguish between ~ and ~use
     set ::env(HOME) $oldhome
 } -body {
     list [string equal [file home] $::env(HOME)] \
-        [string equal $olduserhome [file home $::tcl_platform(user)]]
+	[string equal $olduserhome [file home $::tcl_platform(user)]]
 } -result {1 1}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix

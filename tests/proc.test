@@ -38,14 +38,14 @@ test proc-1.1 {Tcl_ProcObjCmd, put proc in namespace specified in name, if any} 
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1 {
-        namespace eval baz {}
+	namespace eval baz {}
     }
     proc test_ns_1::baz::p {} {
-        return "p in [namespace current]"
+	return "p in [namespace current]"
     }
     list [test_ns_1::baz::p] \
-         [namespace eval test_ns_1 {baz::p}] \
-         [info commands test_ns_1::baz::*]
+	 [namespace eval test_ns_1 {baz::p}] \
+	 [info commands test_ns_1::baz::*]
 } -result {{p in ::test_ns_1::baz} {p in ::test_ns_1::baz} ::test_ns_1::baz::p}
 test proc-1.2 {Tcl_ProcObjCmd, namespace specified in proc name must exist} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -56,53 +56,53 @@ test proc-1.3 {Tcl_ProcObjCmd, empty proc name} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     proc :: {} {
-        return "empty called"
+	return "empty called"
     }
     list [::] \
-         [info body {}]
+	 [info body {}]
 } -result {{empty called} {
-        return "empty called"
+	return "empty called"
     }}
 test proc-1.4 {Tcl_ProcObjCmd, simple proc name and proc defined in namespace} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1 {
-        namespace eval baz {
-            proc p {} {
-                return "p in [namespace current]"
-            }
-        }
+	namespace eval baz {
+	    proc p {} {
+		return "p in [namespace current]"
+	    }
+	}
     }
     list [test_ns_1::baz::p] \
-         [info commands test_ns_1::baz::*]
+	 [info commands test_ns_1::baz::*]
 } -result {{p in ::test_ns_1::baz} ::test_ns_1::baz::p}
 test proc-1.5 {Tcl_ProcObjCmd, qualified proc name and proc defined in namespace} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1::baz {}
     namespace eval test_ns_1 {
-        proc baz::p {} {
-            return "p in [namespace current]"
-        }
+	proc baz::p {} {
+	    return "p in [namespace current]"
+	}
     }
     list [test_ns_1::baz::p] \
-         [info commands test_ns_1::baz::*] \
-         [namespace eval test_ns_1::baz {namespace which p}]
+	 [info commands test_ns_1::baz::*] \
+	 [namespace eval test_ns_1::baz {namespace which p}]
 } -result {{p in ::test_ns_1::baz} ::test_ns_1::baz::p ::test_ns_1::baz::p}
 test proc-1.6 {Tcl_ProcObjCmd, namespace code ignores single ":"s in middle or end of command names} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1 {
-        proc q: {} {return "q:"}
-        proc value:at: {} {return "value:at:"}
+	proc q: {} {return "q:"}
+	proc value:at: {} {return "value:at:"}
     }
     list [namespace eval test_ns_1 {q:}] \
-         [namespace eval test_ns_1 {value:at:}] \
-         [test_ns_1::q:] \
-         [test_ns_1::value:at:] \
-         [lsort [info commands test_ns_1::*]] \
-         [namespace eval test_ns_1 {namespace which q:}] \
-         [namespace eval test_ns_1 {namespace which value:at:}]
+	 [namespace eval test_ns_1 {value:at:}] \
+	 [test_ns_1::q:] \
+	 [test_ns_1::value:at:] \
+	 [lsort [info commands test_ns_1::*]] \
+	 [namespace eval test_ns_1 {namespace which q:}] \
+	 [namespace eval test_ns_1 {namespace which value:at:}]
 } -result {q: value:at: q: value:at: {::test_ns_1::q: ::test_ns_1::value:at:} ::test_ns_1::q: ::test_ns_1::value:at:}
 test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array elements} -setup {
     catch {rename p ""}
@@ -138,9 +138,9 @@ test proc-2.2 {TclFindProc, simple proc name and proc defined in namespace} -set
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1 {
-        namespace eval baz {
-            proc p {} {return "p in [namespace current]"}
-        }
+	namespace eval baz {
+	    proc p {} {return "p in [namespace current]"}
+	}
     }
     namespace eval test_ns_1::baz {info body p}
 } -result {return "p in [namespace current]"}
@@ -149,7 +149,7 @@ test proc-2.3 {TclFindProc, qualified proc name and proc defined in namespace} -
 } -body {
     namespace eval test_ns_1::baz {}
     namespace eval test_ns_1 {
-        proc baz::p {} {return "p in [namespace current]"}
+	proc baz::p {} {return "p in [namespace current]"}
     }
     namespace eval test_ns_1 {info body baz::p}
 } -result {return "p in [namespace current]"}
@@ -171,8 +171,8 @@ test proc-3.2 {TclObjInterpProc, proc defined and executing in same namespace} -
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
     namespace eval test_ns_1::baz {
-        proc p {} {return "p in [namespace current]"}
-        p
+	proc p {} {return "p in [namespace current]"}
+	p
     }
 } -result {p in ::test_ns_1::baz}
 test proc-3.3 {TclObjInterpProc, proc defined and executing in different namespaces} -setup {
@@ -181,7 +181,7 @@ test proc-3.3 {TclObjInterpProc, proc defined and executing in different namespa
 } -body {
     proc p {} {return "p in [namespace current]"}
     namespace eval test_ns_1::baz {
-        p
+	p
     }
 } -result {p in ::}
 test proc-3.4 {TclObjInterpProc, procs execute in the namespace in which they were defined unless renamed into new namespace} -setup {
@@ -189,9 +189,9 @@ test proc-3.4 {TclObjInterpProc, procs execute in the namespace in which they we
     catch {rename p ""}
 } -body {
     namespace eval test_ns_1::baz {
-        proc p {} {return "p in [namespace current]"}
-        rename ::test_ns_1::baz::p ::p
-        list [p] [namespace which p]
+	proc p {} {return "p in [namespace current]"}
+	rename ::test_ns_1::baz::p ::p
+	list [p] [namespace which p]
     }
 } -result {{p in ::} ::p}
 test proc-3.5 {TclObjInterpProc, any old result is reset before appending error msg about missing arguments} -body {

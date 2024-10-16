@@ -150,7 +150,7 @@ test expr-old-1.53 {integer operators} {
     unset -nocomplain x
     set x yes
     list [expr {1 && $x}] [expr {$x && 1}] \
-         [expr {0 || $x}] [expr {$x || 0}]
+	 [expr {0 || $x}] [expr {$x || 0}]
 } {1 1 1 1}
 
 # Check the floating-point operators individually, along with

@@ -207,26 +207,26 @@ proc testreadwrite {size {mode ""} args} {
     set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
     set w [string repeat A $size]
     try {
-        set fd [open $tmpfile w$mode]
-        try {
-            if {[llength $args]} {
-                fconfigure $fd {*}$args
-            }
-            puts -nonewline $fd $w
-        } finally {
-            close $fd
-        }
-        set fd [open $tmpfile r$mode]
-        try {
-            if {[llength $args]} {
-                fconfigure $fd {*}$args
-            }
-            set r [read $fd]
-        } finally {
-            close $fd
-        }
+	set fd [open $tmpfile w$mode]
+	try {
+	    if {[llength $args]} {
+		fconfigure $fd {*}$args
+	    }
+	    puts -nonewline $fd $w
+	} finally {
+	    close $fd
+	}
+	set fd [open $tmpfile r$mode]
+	try {
+	    if {[llength $args]} {
+		fconfigure $fd {*}$args
+	    }
+	    set r [read $fd]
+	} finally {
+	    close $fd
+	}
     } finally {
-        file delete $tmpfile
+	file delete $tmpfile
     }
     string equal $w $r
 }
@@ -2542,6 +2542,8 @@ test io-28.7 {
     variable res
     after 0 [list coroutine c1 apply [list {} {
 	variable done
+	# Not a complete / correct channel implementation. Just enough
+	# to exercise the crash - closing from a read handler
 	set chan [chan create r {apply {{cmd chan args} {
 	    switch $cmd {
 		blocking - finalize {
@@ -6265,9 +6267,12 @@ test io-44.6 {FileEventProc procedure: write-only non-blocking channel} -setup {
     namespace eval refchan {
 	namespace ensemble create
 	namespace export *
-
+	# Change to taste depending on how much CPU you want to hog
+	variable delay 0
 
 	proc finalize {chan args} {
+	    namespace upvar c_$chan timer timer
+	    catch {after cancel $timer}
 	    namespace delete c_$chan
 	}
 
@@ -8354,7 +8359,7 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	puts stderr SRV
 	set l {}
 	set srv [socket -server new -myaddr 127.0.0.1 0]
-        set port [lindex [fconfigure $srv -sockname] 2]
+	set port [lindex [fconfigure $srv -sockname] 2]
 	puts stderr WAITING
 	fileevent stdin readable bye
 	puts "OK $port"

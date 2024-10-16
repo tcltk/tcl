@@ -102,8 +102,8 @@ test lreplace-1.26 {lreplace command} {
     catch {unset foo}
     set foo {a b}
     list [set foo [lreplace $foo end end]] \
-        [set foo [lreplace $foo end end]] \
-        [set foo [lreplace $foo end end]]
+	[set foo [lreplace $foo end end]] \
+	[set foo [lreplace $foo end end]]
 } {a {} {}}
 test lreplace-1.27 {lreplace command} -body {
     lreplace x 1 1
@@ -142,8 +142,8 @@ test lreplace-2.7 {lreplace errors} -body {
 
 test lreplace-3.1 {lreplace won't modify shared argument objects} {
     proc p {} {
-        lreplace "a b c" 1 1 "x y"
-        return "a b c"
+	lreplace "a b c" 1 1 "x y"
+	return "a b c"
     }
     p
 } "a b c"
@@ -348,8 +348,8 @@ test ledit-1.26 {ledit command} {
     catch {unset foo}
     set foo {a b}
     list [ledit foo end end] $foo \
-        [ledit foo end end] $foo \
-        [ledit foo end end] $foo
+	[ledit foo end end] $foo \
+	[ledit foo end end] $foo
 } {a a {} {} {} {}}
 test ledit-1.27 {lsubset command} -body {
     set l x
@@ -416,10 +416,10 @@ test ledit-2.10 {ledit errors} -body {
 
 test ledit-3.1 {ledit won't modify shared argument objects} {
     proc p {} {
-        set l "a b c"
-        ledit l 1 1 "x y"
-        # The literal in locals table should be unmodified
-        return [list "a b c" $l]
+	set l "a b c"
+	ledit l 1 1 "x y"
+	# The literal in locals table should be unmodified
+	return [list "a b c" $l]
     }
     p
 } {{a b c} {a {x y} c}}
@@ -514,10 +514,10 @@ test ledit-5.2 {compiled lreplace: Bug 47ac84309b} {
 
 test ledit-bug-a366c6efee {Bug [a366c6efee]} -body {
     apply {{} {
-        set l { }
-        string length [ledit l 1 1]; # Force string generation
-        set result foo
-        append result " " bar
+	set l { }
+	string length [ledit l 1 1]; # Force string generation
+	set result foo
+	append result " " bar
     }}
 } -result "foo bar"
 
