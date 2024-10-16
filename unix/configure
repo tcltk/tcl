@@ -4256,15 +4256,6 @@ fi
 rm -rf conftest*
 
 
-    # See also memmove check below for a place where NO_STRING_H can be
-    # set and why.
-
-    if test $tcl_ok = 0; then
-
-printf "%s\n" "#define NO_STRING_H 1" >>confdefs.h
-
-    fi
-
     ac_fn_c_check_header_compile "$LINENO" "sys/wait.h" "ac_cv_header_sys_wait_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_wait_h" = xyes
 then :
@@ -6709,46 +6700,6 @@ fi
 esac
 fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
-	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ld accepts -single_module flag" >&5
-printf %s "checking if ld accepts -single_module flag... " >&6; }
-if test ${tcl_cv_ld_single_module+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-		hold_ldflags=$LDFLAGS
-		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-int i;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  tcl_cv_ld_single_module=yes
-else case e in #(
-  e) tcl_cv_ld_single_module=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-		LDFLAGS=$hold_ldflags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_ld_single_module" >&5
-printf "%s\n" "$tcl_cv_ld_single_module" >&6; }
-	    if test $tcl_cv_ld_single_module = yes
-then :
-
-		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
-
-fi
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
