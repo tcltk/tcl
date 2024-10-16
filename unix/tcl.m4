@@ -1424,15 +1424,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    fat_32_64=yes])
 	    ])
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
-	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
-		hold_ldflags=$LDFLAGS
-		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_single_module=yes],
-		    [tcl_cv_ld_single_module=no])
-		LDFLAGS=$hold_ldflags])
-	    AS_IF([test $tcl_cv_ld_single_module = yes], [
-		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
-	    ])
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""

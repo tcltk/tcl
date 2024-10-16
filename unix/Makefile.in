@@ -2432,14 +2432,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(INSTALL_DATA_DIR) $(DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(MAC_OSX_DIR)/GNUmakefile $(MAC_OSX_DIR)/README \
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
-		$(MAC_OSX_DIR)/*.ac $(MAC_OSX_DIR)/*.xcconfig \
+		$(MAC_OSX_DIR)/*.ac \
 		$(DISTDIR)/macosx
 	$(DIST_INSTALL_SCRIPT) $(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/macosx
-	$(INSTALL_DATA_DIR) $(DISTDIR)/macosx/Tcl.xcodeproj
-	$(DIST_INSTALL_DATA) $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
-		$(MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \
-		$(DISTDIR)/macosx/Tcl.xcodeproj
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix/dltest
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
