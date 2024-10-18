@@ -10,10 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
@@ -79,7 +75,8 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.4.5"
+/* Note the dde version tracks Tcl version */
+#define TCL_DDE_VERSION		TCL_PATCH_LEVEL
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
@@ -89,22 +86,6 @@ static int ddeIsServer = 0;
 #define DDE_FLAG_FORCE 4
 
 TCL_DECLARE_MUTEX(ddeMutex)
-
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
 
 /*
  * Declarations for functions defined in this file.
@@ -133,19 +114,8 @@ static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
-DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tcldde14.dll" works without 3th argument */
-DLLEXPORT int		Tcldde_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcldde_SafeInit(Tcl_Interp *interp);
-#endif
-#ifdef __cplusplus
-}
-#endif
+int		Dde_Init(Tcl_Interp *interp);
+int		Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -167,22 +137,10 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.5-", 0)) {
-	return TCL_ERROR;
-    }
-
     Tcl_CreateObjCommand2(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_Init(
-    Tcl_Interp *interp)
-{
-    return Dde_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -210,14 +168,6 @@ Dde_SafeInit(
     }
     return result;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_SafeInit(
-    Tcl_Interp *interp)
-{
-    return Dde_SafeInit(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

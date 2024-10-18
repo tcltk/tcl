@@ -134,10 +134,6 @@ EXESUFFIX		= @EXESUFFIX@
 
 VER			= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
 DOTVER			= @TCL_MAJOR_VERSION@.@TCL_MINOR_VERSION@
-DDEVER			= @TCL_DDE_MAJOR_VERSION@@TCL_DDE_MINOR_VERSION@
-DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
-REGVER			= @TCL_REG_MAJOR_VERSION@@TCL_REG_MINOR_VERSION@
-REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
 TCL_ZIP_FILE		= @TCL_ZIP_FILE@
 TCL_VFS_PATH		= libtcl.vfs/tcl_library
@@ -147,18 +143,10 @@ TCL_VFS_ROOT		= libtcl.vfs
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
-DDE_DLL_FILE		= tcl9dde$(DDEVER)${DLLSUFFIX}
-DDE_DLL_FILE8		= tcldde$(DDEVER)${DLLSUFFIX}
-DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
-REG_DLL_FILE		= tcl9registry$(REGVER)${DLLSUFFIX}
-REG_DLL_FILE8		= tclregistry$(REGVER)${DLLSUFFIX}
-REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
-TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.5 [list load ${DDE_DLL_FILE}];\
-			  package ifneeded registry 1.3.7 [list load ${REG_DLL_FILE}]
+TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
@@ -453,6 +441,7 @@ WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
 	tclWinChan.$(OBJEXT) \
 	tclWinConsole.$(OBJEXT) \
+	tclWinDde.$(OBJEXT) \
 	tclWinSerial.$(OBJEXT) \
 	tclWinError.$(OBJEXT) \
 	tclWinFCmd.$(OBJEXT) \
@@ -461,13 +450,10 @@ WIN_OBJS = \
 	tclWinLoad.$(OBJEXT) \
 	tclWinNotify.$(OBJEXT) \
 	tclWinPipe.$(OBJEXT) \
+	tclWinReg.$(OBJEXT) \
 	tclWinSock.$(OBJEXT) \
 	tclWinThrd.$(OBJEXT) \
 	tclWinTime.$(OBJEXT)
-
-DDE_OBJS = tclWinDde.$(OBJEXT)
-
-REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
@@ -529,9 +515,7 @@ tcltest.sh: tcltest.cmd
 
 tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
-
-winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE} ${DDE_DLL_FILE8} ${REG_DLL_FILE8}
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ ${TCL_ZIP_FILE} $(TCLSH)
 
 libraries:
 
@@ -539,20 +523,13 @@ doc:
 
 tclzipfile: ${TCL_ZIP_FILE}
 
-${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
+${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS}
 	@rm -rf ${TCL_VFS_ROOT}
 	@mkdir -p ${TCL_VFS_PATH}
 	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
 	@( \
 	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
-	  if test "${ZIPFS_BUILD}" != "2" ; then \
-	    $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
-	    $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry; \
-	  else \
-	    rm -rf ${TCL_VFS_PATH}/dde; \
-	    rm -rf ${TCL_VFS_PATH}/registry; \
-	  fi \
 	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
@@ -581,9 +558,9 @@ $(CAT32): cat32.$(OBJEXT)
 # The following targets are configured by autoconf to generate either a shared
 # library or static library
 
-${TCL_STUB_LIB_FILE}: ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
+${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@$(RM) ${TCL_STUB_LIB_FILE}
-	@MAKE_STUB_LIB@ ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
+	@MAKE_STUB_LIB@ ${STUB_OBJS}
 	@POST_MAKE_LIB@
 
 ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
@@ -597,26 +574,10 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
-${TCL_LIB_FILE}: ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS} tclWinPanic.$(OBJEXT)
 	@$(RM) ${TCL_LIB_FILE}
-	@MAKE_LIB@ ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
+	@MAKE_LIB@ ${TCL_OBJS} tclWinPanic.$(OBJEXT)
 	@POST_MAKE_LIB@
-
-${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
-	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
-
-${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
-	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
-
-${DDE_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinDde.$(OBJEXT)
-	@MAKE_DLL@ tcl8WinDde.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE8}.manifest
-
-${REG_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinReg.$(OBJEXT)
-	@MAKE_DLL@ -DTCL_MAJOR_VERSION=8 tcl8WinReg.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE8}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
@@ -670,18 +631,6 @@ tclWinInit.${OBJEXT}: tclWinInit.c
 
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
-
-tclWinReg.${OBJEXT}: tclWinReg.c
-	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
-
-tcl8WinReg.${OBJEXT}: tclWinReg.c
-	$(CC)  -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
-
-tclWinDde.${OBJEXT}: tclWinDde.c
-	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
-
-tcl8WinDde.${OBJEXT}: tclWinDde.c
-	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclAppInit.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
@@ -853,14 +802,6 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde${DDEDOTVER} registry${REGDOTVER}; \
-	    do \
-	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
-		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
-		$(MKDIR) "$(LIB_INSTALL_DIR)/$$i"; \
-		else true; \
-		fi; \
-	    done;
 	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TOMMATH_DLL_FILE) $(TCLSH); \
 	    do \
 	    if [ -f $$i ]; then \
@@ -875,34 +816,6 @@ install-binaries: binaries
 		$(COPY) $$i "$(LIB_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@if [ -f $(DDE_DLL_FILE) ]; then \
-	    echo Installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
-	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		"$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
-	    fi
-	@if [ -f $(DDE_DLL_FILE8) ]; then \
-	    echo Installing $(DDE_DLL_FILE8); \
-	    $(COPY) $(DDE_DLL_FILE8) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
-	    fi
-	@if [ -f $(DDE_LIB_FILE) ]; then \
-	    echo Installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
-	    fi
-	@if [ -f $(REG_DLL_FILE) ]; then \
-	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
-		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    fi
-	@if [ -f $(REG_DLL_FILE8) ]; then \
-	    echo Installing $(REG_DLL_FILE8); \
-	    $(COPY) $(REG_DLL_FILE8) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    fi
-	@if [ -f $(REG_LIB_FILE) ]; then \
-	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    fi
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
