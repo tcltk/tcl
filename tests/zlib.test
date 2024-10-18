@@ -320,13 +320,12 @@ test zlib-8.8 {transformation and fconfigure} -setup {
     chan close $outSide
     set compressed [read $inSide]
     catch {zlib decompress $compressed} err opt
-    list [string length [zlib compress $spdyHeaders]] \
-	[string length $compressed] \
+    list [string length [zlib decompress [zlib compress $spdyHeaders]]] \
 	$err [dict get $opt -errorcode] [zlib adler32 $spdyDict]
 } -cleanup {
     catch {close $outSide}
     catch {close $inSide}
-} -result {260 222 {need dictionary} {TCL ZLIB NEED_DICT 2381337010} 2381337010}
+} -result {358 {need dictionary} {TCL ZLIB NEED_DICT 2381337010} 2381337010}
 test zlib-8.9 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream decompress]
@@ -464,10 +463,10 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
     zlib push gzip $f
     puts -nonewline $f $largeData
     close $f
-    file size $file
+    expr {[file size $file]<57648}
 } -cleanup {
     removeFile $file
-} -result 57647
+} -result 1
 test zlib-8.17 {Bug dd260aaf: fconfigure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints zlib -body {

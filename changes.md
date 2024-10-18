@@ -6,9 +6,8 @@ changes to the Tcl source code at
 
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
 
-The changes since Tcl 9.0.0 include...
-
-
+## Changes since Tk 9.0.0
+ - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
@@ -147,6 +146,5 @@ writing Tcl scripts.
 # Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
 
