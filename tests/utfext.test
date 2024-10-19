@@ -227,10 +227,11 @@ namespace eval utftest {
     proc testspacelimit {direction enc comment hexin hexout} {
 	set id $comment-[join $hexin ""]-spacelimit
 
-        # Double the input to avoid pathological single char
-        # whereby nothing is written to output
-        set hexin $hexin$hexin
-        set hexout $hexout$hexout
+        # Triple the input to avoid pathological short input case where
+        # whereby nothing is written to output. The test below
+        # requires $nchars > 0
+        set hexin $hexin$hexin$hexin
+        set hexout $hexout$hexout$hexout
 
 	set flags [list start end]
 	set constraints [list testencoding]
