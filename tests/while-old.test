@@ -42,8 +42,8 @@ test while-old-1.4 {basic while loops, multiline test expr} {
     set value 1
     while {($tcl_platform(platform) != "foobar1") && \
 	    ($tcl_platform(platform) != "foobar2")} {
-        incr value
-        break
+	incr value
+	break
     }
     set value
 } {2}

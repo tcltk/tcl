@@ -25,7 +25,7 @@ enum GPNFlags {
 };
 
 /*
- * Shared bits for [property] declarations. 
+ * Shared bits for [property] declarations.
  */
 enum PropOpt {
     PROP_ALL, PROP_READABLE, PROP_WRITABLE
@@ -109,11 +109,11 @@ ReadProperty(
     Tcl_DecrRefCount(args[1]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a continue", propName));
 	return TCL_ERROR;
     default:
@@ -144,11 +144,11 @@ WriteProperty(
     Tcl_DecrRefCount(args[2]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a continue", propName));
 	return TCL_ERROR;
     default:
@@ -212,7 +212,7 @@ GetPropertyName(
 	 */
 
 	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
-	Tcl_Obj *otherName = GetPropertyName(interp, oPtr, 
+	Tcl_Obj *otherName = GetPropertyName(interp, oPtr,
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
 	result = Tcl_RestoreInterpState(interp, foo);
 	if (otherName != NULL) {
@@ -334,7 +334,7 @@ TclOO_Configurable_Configure(
 
 	code = TCL_OK;
 	for (i = 0; i < objc; i += 2) {
-	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i], 
+	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i],
 		    &cache);
 	    if (namePtr == NULL) {
 		code = TCL_ERROR;
@@ -381,7 +381,7 @@ Configurable_Getter(
     Tcl_Obj *valuePtr;
 
     if ((int) Tcl_ObjectContextSkippedArgs(context) != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, NULL);
 	return TCL_ERROR;
     }
@@ -416,7 +416,7 @@ Configurable_Setter(
     Tcl_Var varPtr, aryVar;
 
     if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), 
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context),
 		objv, "value");
 	return TCL_ERROR;
     }
@@ -465,7 +465,7 @@ DetailsCloner(
  *	Installs a basic property implementation for a property, either on
  *	an instance or on a class. It's up to the code that calls these
  *	to ensure that the property name is syntactically valid.
- * 
+ *
  * ----------------------------------------------------------------------
  */
 
@@ -637,7 +637,6 @@ GetAllClassProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -665,7 +664,7 @@ GetAllClassProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
@@ -736,7 +735,7 @@ SortPropList(
  *
  * TclOOGetAllObjectProperties --
  *
- *	Get the sorted list of all properties known to a object, including to its
+ *	Get the sorted list of all properties known to an object, including to
  *	its classes. Manages a cache so this operation is usually cheap.
  *
  * ----------------------------------------------------------------------
@@ -752,7 +751,6 @@ TclOOGetAllObjectProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -777,7 +775,7 @@ TclOOGetAllObjectProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
@@ -1053,7 +1051,7 @@ TclOODefinePropertyCmd(
     }
     if (!useInstance && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1318,7 +1316,7 @@ ReleasePropertyList(
 {
     Tcl_Obj *propertyObj;
     Tcl_Size i;
-    
+
     FOREACH(propertyObj, *propList) {
 	Tcl_DecrRefCount(propertyObj);
     }

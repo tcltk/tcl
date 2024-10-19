@@ -363,17 +363,17 @@ test parseOld-10.14 {syntax errors} {
 "eval \$x[format "%01000d" 0]("}}
 test parseOld-10.15 {syntax errors, missplaced braces} {
     catch {
-        proc misplaced_end_brace {} {
-            set what foo
-            set when [expr ${what}size - [set off$what]}]
+	proc misplaced_end_brace {} {
+	    set what foo
+	    set when [expr ${what}size - [set off$what]}]
     } msg
     set msg
 } {extra characters after close-brace}
 test parseOld-10.16 {syntax errors, missplaced braces} {
     catch {
-        set a {
-            set what foo
-            set when [expr ${what}size - [set off$what]}]
+	set a {
+	    set what foo
+	    set when [expr ${what}size - [set off$what]}]
     } msg
     set msg
 } {extra characters after close-brace}

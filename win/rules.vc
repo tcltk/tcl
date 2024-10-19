@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 11
+RULES_VERSION_MINOR = 12
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1294,7 +1294,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
-PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
+# Even when building against Tcl 8, PRJLIBNAME9 must not have "t"
+PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 !if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
 PRJLIBNAME	= $(PRJLIBNAME8)
 !else
@@ -1446,9 +1447,6 @@ OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !if "$(_USE_64BIT_TIME_T)" == "1"
 OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
-
-# _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
@@ -1459,9 +1457,9 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 # so we pass both
 !if !$(DOING_TCL) && !$(DOING_TK)
 PKGNAMEFLAGS = /DPACKAGE_NAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               /DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
-               /DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
-               /DMODULE_SCOPE=extern
+	/DPACKAGE_TCLNAME="\"$(PRJ_PACKAGE_TCLNAME)\"" \
+	/DPACKAGE_VERSION="\"$(DOTVERSION)\"" \
+	/DMODULE_SCOPE=extern
 !endif
 
 # crt picks the C run time based on selected OPTS
@@ -1798,18 +1796,18 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "FileDescription",  "Tcl extension " PROJECT
-            VALUE "OriginalFilename", PRJLIBNAME
-            VALUE "FileVersion",      DOTVERSION
-            VALUE "ProductName",      "Package " PROJECT " for Tcl"
-            VALUE "ProductVersion",   DOTVERSION
-        END
+	BLOCK "040904b0"
+	BEGIN
+	    VALUE "FileDescription",  "Tcl extension " PROJECT
+	    VALUE "OriginalFilename", PRJLIBNAME
+	    VALUE "FileVersion",      DOTVERSION
+	    VALUE "ProductName",      "Package " PROJECT " for Tcl"
+	    VALUE "ProductVersion",   DOTVERSION
+	END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1200
+	VALUE "Translation", 0x409, 1200
     END
 END
 

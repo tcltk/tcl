@@ -418,7 +418,7 @@ TclCleanupVar(
  *
  *	This function is used to locate a variable given its name(s). It has
  *	been mostly superseded by TclObjLookupVar, it is now only used by the
- *	trace code. It is kept in tcl8.5 mainly because it is in the internal
+ *	trace code. It is kept in tcl9.0 mainly because it is in the internal
  *	stubs table, so that some extension may be calling it.
  *
  * Results:
@@ -745,7 +745,7 @@ TclObjLookupVarEx(
 	    TclFreeInternalRep(cachedNamePtr);
 
 	    /*
-	     * Now go ahead and convert it the the "localVarName" type,
+	     * Now go ahead and convert it to the "localVarName" type,
 	     * since we suspect at least some use of the value as a
 	     * varname and we want to resolve it quickly.
 	     */
@@ -2990,7 +2990,7 @@ Tcl_LappendObjCmd(
  *
  *	These functions implement the "array for" Tcl command.
  *	    array for {k v} a {}
- *	The array for command iterates over the array, setting the the
+ *	The array for command iterates over the array, setting the
  *	specified loop variables, and executing the body each iteration.
  *
  *	ArrayForObjCmd() is the standard wrapper around ArrayForNRCmd().

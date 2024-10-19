@@ -12,7 +12,7 @@
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
 .nf
-\fBpackage require tcl 8.7\fR
+\fBpackage require tcl 9.0\fR
 \fBpackage require msgcat 1.7\fR
 
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
@@ -98,7 +98,7 @@ use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
 .RE
-.\" COMMAND: mcc
+.\" COMMAND: mcn
 .TP
 \fB::msgcat::mcn \fInamespace src-string\fR ?\fIarg arg ...\fR?
 .VS "TIP 490"

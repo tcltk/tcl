@@ -473,11 +473,11 @@ proc testISO { f2 G V u secs } {
     puts $f2 "test clock-3.[incr case] {ISO week-based calendar [format %04d-W%02d-%d $G $V $u]} {"
     puts $f2 "    clock format $secs -format {%a %A %g %G %u %U %V %w %W} -gmt true; \# $G-W[format %02d $V]-$u"
     puts $f2 "} {[lindex $shortdays $u] [lindex $longdays $u]\
-             [format %02d [expr { $G % 100 }]] $G\
-             $u\
-             [clock format $secs -format %U -gmt true]\
-             [format %02d $V] [expr { $u % 7 }]\
-             [clock format $secs -format %W -gmt true]}"
+	     [format %02d [expr { $G % 100 }]] $G\
+	     $u\
+	     [clock format $secs -format %U -gmt true]\
+	     [format %02d $V] [expr { $u % 7 }]\
+	     [clock format $secs -format %W -gmt true]}"
 
 }
 

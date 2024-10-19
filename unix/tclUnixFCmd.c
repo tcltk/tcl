@@ -2066,7 +2066,7 @@ TclpObjNormalizePath(
     if (haveRealpath) {
 	if (nextCheckpoint == 0) {
 	    /*
-	     * The path contains at most one component, e.g. '/foo' or '/', so
+	     * The path contains at most one component, e.g. '/foo' or '/',
 	     * so there is nothing to resolve. Also, on some platforms
 	     * 'Realpath' transforms an empty string into the normalized pwd,
 	     * which is the wrong answer.
@@ -2097,7 +2097,7 @@ TclpObjNormalizePath(
 		 * Uncommenting this would mean that this native filesystem
 		 * routine claims the path is normalized if the file exists,
 		 * which would permit the caller to avoid iterating through
-		 * other filesystems filesystems. Saving lots of calls is
+		 * other filesystems. Saving lots of calls is
 		 * probably worth the extra access() time, but in the common
 		 * case that no other filesystems are registered this is an
 		 * unnecessary expense.

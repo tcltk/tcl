@@ -173,33 +173,33 @@ test chan-16.8 {chan command: pending input subcommand} -setup {
 }
 test chan-16.9 {chan command: pending input subcommand} -setup {
     proc chan-16.9-accept {sock addr port} {
-        chan configure $sock -blocking 0 -buffering line -buffersize 32
-        chan event $sock readable [list chan-16.9-readable $sock]
+	chan configure $sock -blocking 0 -buffering line -buffersize 32
+	chan event $sock readable [list chan-16.9-readable $sock]
     }
 
     proc chan-16.9-readable {sock} {
-        set r [chan gets $sock line]
-        set l [string length $line]
-        set e [chan eof $sock]
-        set b [chan blocked $sock]
-        set i [chan pending input $sock]
+	set r [chan gets $sock line]
+	set l [string length $line]
+	set e [chan eof $sock]
+	set b [chan blocked $sock]
+	set i [chan pending input $sock]
 
-        lappend ::chan-16.9-data $r $l $e $b $i
+	lappend ::chan-16.9-data $r $l $e $b $i
 
-        if {$r >= 0 || $e || $l || !$b || $i > 128} {
-            set data [read $sock $i]
-            lappend ::chan-16.9-data [string range $data 0 2]
-            lappend ::chan-16.9-data [string range $data end-2 end]
-            set ::chan-16.9-done 1
-            chan event $sock readable {}
-        } else {
+	if {$r >= 0 || $e || $l || !$b || $i > 128} {
+	    set data [read $sock $i]
+	    lappend ::chan-16.9-data [string range $data 0 2]
+	    lappend ::chan-16.9-data [string range $data end-2 end]
+	    set ::chan-16.9-done 1
+	    chan event $sock readable {}
+	} else {
 	    after idle chan-16.9-client
 	}
     }
 
     proc chan-16.9-client {} {
-        chan puts -nonewline $::client ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
-        chan flush $::client
+	chan puts -nonewline $::client ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
+	chan flush $::client
     }
 
     set ::server [socket -server chan-16.9-accept -myaddr 127.0.0.1 0]

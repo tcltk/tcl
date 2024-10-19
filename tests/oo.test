@@ -66,7 +66,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-        [oo::object new] destroy
+	[oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -1475,24 +1475,24 @@ test oo-7.9 {OO: defining inheritance in namespaces} -setup {
 test oo-7.10 {OO: next after object deletion, bug [135804138e]} -setup {
     set ::result ""
     oo::class create c1 {
-        method m1 {} {
-           lappend ::result c1::m1
-        }
+	method m1 {} {
+	   lappend ::result c1::m1
+	}
     }
     oo::class create c2 {
-        superclass c1
-        destructor {
-            lappend ::result c2::destructor
-            my m1
-            lappend ::result /c2::destructor
-        }
-        method m1 {} {
-            lappend ::result c2::m1
-            rename [self] {}
-            lappend ::result no-self
-            next
-            lappend ::result /c2::m1
-        }
+	superclass c1
+	destructor {
+	    lappend ::result c2::destructor
+	    my m1
+	    lappend ::result /c2::destructor
+	}
+	method m1 {} {
+	    lappend ::result c2::m1
+	    rename [self] {}
+	    lappend ::result no-self
+	    next
+	    lappend ::result /c2::m1
+	}
     }
 } -body {
     c2 create o
@@ -1765,6 +1765,31 @@ test oo-11.7 {Bug 154f0982f2: createWithNamespace and an existing namespace} -se
     Aclass destroy
     catch {namespace delete test_oo117}
 } -result {can't create namespace "::test_oo117": already exists}
+test oo-11.8 {Bug 708422: unset traces in deletion shouldn't crash} -setup {
+    oo::class create foo {
+	self export createWithNamespace
+	method dummy {} {}
+    }
+    set result {}
+} -body {
+    oo::define foo {
+	variable x
+	constructor {} {
+	    trace add variable x unset [list apply {{self ns args} {
+		global result
+		lappend result [info object isa object $self]
+		lappend result [namespace exists $ns]
+		# Method dispatch fails; too much gone in this case
+		catch {$self dummy} msg
+		lappend result $msg
+	    }} [self] [self namespace]]
+	}
+    }
+    [foo createWithNamespace bar oo-11.8] destroy
+    return $result
+} -cleanup {
+    foo destroy
+} -result {1 0 {impossible to invoke method "dummy": no defined method or unknown method}}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -2995,7 +3020,7 @@ test oo-18.8 {OO: define/self command support} -setup {
 test oo-18.9 {OO: define/self command support} -setup {
     oo::class create parent
     set c [oo::class create now_this_is_a_very_very_long_class_name_indeed {
-        superclass parent
+	superclass parent
     }]
 } -body {
     catch {oo::define $c {error err}} msg opt

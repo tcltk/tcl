@@ -505,18 +505,18 @@ test execute-4.1 {Tcl_GetCommandFromObj, convert to tclCmdNameType} -setup {
     unset -nocomplain y
 } -body {
     namespace eval test_ns_1 {
-        namespace export cmd1
-        proc cmd1 {args} {return "cmd1: $args"}
-        proc cmd2 {args} {return "cmd2: $args"}
+	namespace export cmd1
+	proc cmd1 {args} {return "cmd1: $args"}
+	proc cmd2 {args} {return "cmd2: $args"}
     }
     namespace eval test_ns_1::test_ns_2 {
-        namespace import ::test_ns_1::*
+	namespace import ::test_ns_1::*
     }
     set x "test_ns_1::"
     set y "test_ns_2::"
     list [namespace which -command ${x}${y}cmd1] \
-         [catch {namespace which -command ${x}${y}cmd2} msg] $msg \
-         [catch {namespace which -command ${x}${y}:cmd2} msg] $msg
+	 [catch {namespace which -command ${x}${y}cmd2} msg] $msg \
+	 [catch {namespace which -command ${x}${y}:cmd2} msg] $msg
 } -result {::test_ns_1::test_ns_2::cmd1 0 {} 0 {}}
 test execute-4.2 {Tcl_GetCommandFromObj, check if cached tclCmdNameType is invalid} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -524,19 +524,19 @@ test execute-4.2 {Tcl_GetCommandFromObj, check if cached tclCmdNameType is inval
     unset -nocomplain l
 } -body {
     proc foo {} {
-        return "global foo"
+	return "global foo"
     }
     namespace eval test_ns_1 {
-        proc whichFoo {} {
-            return [namespace which -command foo]
-        }
+	proc whichFoo {} {
+	    return [namespace which -command foo]
+	}
     }
     set l ""
     lappend l [test_ns_1::whichFoo]
     namespace eval test_ns_1 {
-        proc foo {} {
-            return "namespace foo"
-        }
+	proc foo {} {
+	    return "namespace foo"
+	}
     }
     lappend l [test_ns_1::whichFoo]
 } -result {::foo ::test_ns_1::foo}
@@ -545,18 +545,18 @@ test execute-4.3 {Tcl_GetCommandFromObj, command never found} -setup {
     catch {rename foo ""}
 } -body {
     namespace eval test_ns_1 {
-        proc foo {} {
-            return "namespace foo"
-        }
+	proc foo {} {
+	    return "namespace foo"
+	}
     }
     namespace eval test_ns_1 {
-        proc foo {} {
-            return "namespace foo"
-        }
+	proc foo {} {
+	    return "namespace foo"
+	}
     }
     list [namespace eval test_ns_1 {namespace which -command foo}] \
-         [rename test_ns_1::foo ""] \
-         [catch {namespace eval test_ns_1 {namespace which -command foo}} msg] $msg
+	 [rename test_ns_1::foo ""] \
+	 [catch {namespace eval test_ns_1 {namespace which -command foo}} msg] $msg
 } -result {::test_ns_1::foo {} 0 {}}
 
 test execute-5.1 {SetCmdNameFromAny, set cmd name to empty heap string if NULL} -setup {
@@ -574,10 +574,10 @@ test execute-6.1 {UpdateStringOfCmdName: called for duplicate of empty cmdName o
     proc {} {} {}
     proc { } {} {}
     proc p {} {
-        set x {}
-        $x
-        append x { }
-        $x
+	set x {}
+	$x
+	append x { }
+	$x
     }
     p
 } {}

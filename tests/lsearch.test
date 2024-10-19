@@ -47,7 +47,7 @@ test lsearch-2.5 {search modes} {
 } 1
 test lsearch-2.6 {search modes} -returnCodes error -body {
     lsearch -regexp {xyz bbcc *bc*} *bc*
-} -result {couldn't compile regular expression pattern: quantifier operand invalid}
+} -result {cannot compile regular expression pattern: invalid quantifier operand}
 test lsearch-2.7 {search modes} {
     lsearch -regexp {b.x ^bc xy bcx} ^bc
 } 3

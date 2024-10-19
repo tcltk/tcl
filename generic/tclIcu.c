@@ -1,7 +1,7 @@
 /*
  * tclIcu.c --
  *
- * 	tclIcu.c implements various Tcl commands that make use of
+ *	tclIcu.c implements various Tcl commands that make use of
  *	the ICU library if present on the system.
  *	(Adapted from tkIcu.c)
  *

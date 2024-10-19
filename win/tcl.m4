@@ -258,10 +258,10 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of ${TCL_BIN_DIR}/tclConfig.sh])
 
     if test -f "${TCL_BIN_DIR}/tclConfig.sh" ; then
-        AC_MSG_RESULT([loading])
+	AC_MSG_RESULT([loading])
 	. "${TCL_BIN_DIR}/tclConfig.sh"
     else
-        AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
+	AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
 
     #
@@ -274,9 +274,9 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     #
 
     if test -f $TCL_BIN_DIR/Makefile ; then
-        TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
-        TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
-        TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
+	TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
+	TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
+	TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
     fi
 
     eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
@@ -318,10 +318,10 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of ${TK_BIN_DIR}/tkConfig.sh])
 
     if test -f "${TK_BIN_DIR}/tkConfig.sh" ; then
-        AC_MSG_RESULT([loading])
+	AC_MSG_RESULT([loading])
 	. "${TK_BIN_DIR}/tkConfig.sh"
     else
-        AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
+	AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
 
 
@@ -570,9 +570,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     fi
 
     if test "$CYGPATH" = "echo"; then
-        DEPARG='"$<"'
+	DEPARG='"$<"'
     else
-        DEPARG='"$(shell $(CYGPATH) $<)"'
+	DEPARG='"$(shell $(CYGPATH) $<)"'
     fi
 
     # set various compiler flags depending on whether we are using gcc or cl
@@ -644,7 +644,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	[ac_cv_enable_auto_image_base=no])
     )
     CFLAGS=$hold_cflags
-    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+    if test "$ac_cv_enable_auto_image_base" = "yes" ; then
 	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 
@@ -669,18 +669,18 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
-            AC_MSG_RESULT([using static flags])
+	    AC_MSG_RESULT([using static flags])
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
-            AC_MSG_RESULT([using shared flags])
+	    AC_MSG_RESULT([using shared flags])
 
 	    # ad-hoc check to see if CC supports -shared.
 	    if "${CC}" -shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
 		AC_MSG_ERROR([${CC} does not support the -shared option.
-                You will need to upgrade to a newer version of the toolchain.])
+		You will need to upgrade to a newer version of the toolchain.])
 	    fi
 
 	    runtime=
@@ -772,13 +772,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
-            AC_MSG_RESULT([using static flags])
+	    AC_MSG_RESULT([using static flags])
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
-            AC_MSG_RESULT([using shared flags])
+	    AC_MSG_RESULT([using shared flags])
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
@@ -1246,32 +1246,32 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     AC_CACHE_VAL(ac_cv_path_zip, [
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-        for j in `ls -r $dir/zip 2> /dev/null` \
-            `ls -r $dir/zip 2> /dev/null` ; do
-        if test x"$ac_cv_path_zip" = x ; then
-            if test -f "$j" ; then
-            ac_cv_path_zip=$j
-            break
-            fi
-        fi
-        done
+	for j in `ls -r $dir/zip 2> /dev/null` \
+	    `ls -r $dir/zip 2> /dev/null` ; do
+	if test x"$ac_cv_path_zip" = x ; then
+	    if test -f "$j" ; then
+	    ac_cv_path_zip=$j
+	    break
+	    fi
+	fi
+	done
     done
     ])
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip"
-        AC_MSG_RESULT([$ZIP_PROG])
-        ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="*"
-        AC_MSG_RESULT([Found INFO Zip in environment])
-        # Use standard arguments for zip
+	ZIP_PROG="$ac_cv_path_zip"
+	AC_MSG_RESULT([$ZIP_PROG])
+	ZIP_PROG_OPTIONS="-rq"
+	ZIP_PROG_VFSSEARCH="*"
+	AC_MSG_RESULT([Found INFO Zip in environment])
+	# Use standard arguments for zip
     else
-        # It is not an error if an installed version of Zip can't be located.
-        # We can use the locally distributed minizip instead
-        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
-        ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="*"
-        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-        AC_MSG_RESULT([No zip found on PATH building minizip])
+	# It is not an error if an installed version of Zip can't be located.
+	# We can use the locally distributed minizip instead
+	ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+	ZIP_PROG_OPTIONS="-o -r"
+	ZIP_PROG_VFSSEARCH="*"
+	ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+	AC_MSG_RESULT([No zip found on PATH building minizip])
     fi
     AC_SUBST(ZIP_PROG)
     AC_SUBST(ZIP_PROG_OPTIONS)

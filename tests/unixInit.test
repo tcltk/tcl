@@ -96,11 +96,26 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 } -cleanup {
     unset -nocomplain env(LANG)
 } -match regexp -result {^(iso8859-15?|utf-8)$}
+
+# unixInit-3.2 depends on the *spawned* [interpreter] being able to locate
+# tcl_library without setting of TCL_LIBRARY env. This in turn depends on
+# Tcl's "library" directory being under the parent or grandparent of the
+# executable directory (the initScript search path in tclInterp.c).
+# Thus this constraint. On GiuHub CI, the only time this is not true
+# is for the XCode builds.
+if {[string match [zipfs root]* [info library]] ||
+    [file isfile [file normalize [file join [info nameofexecutable] .. .. library init.tcl]]] ||
+    [file isfile [file normalize [file join [info nameofexecutable] .. .. .. library init.tcl]]]
+} {
+    tcltest::testConstraint enableUnixInit32 1
+} else {
+    tcltest::testConstraint enableUnixInit32 0
+}
 test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
     catch {set oldtcl_library $env(TCL_LIBRARY)}
     unset -nocomplain env(TCL_LIBRARY)
-} -constraints {unix stdio knownBug} -body {
+} -constraints {unix stdio enableUnixInit32} -body {
     set env(LANG) japanese
     set env(LC_ALL) japanese
     set f [open "|[list [interpreter]]" w+]

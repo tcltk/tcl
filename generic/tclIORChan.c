@@ -522,9 +522,10 @@ TclChanCreateObjCmd(
      * Actually: rCreate MODE CMDPREFIX
      *           [0]     [1]  [2]
      */
-
-#define MODE	(1)
-#define CMD	(2)
+    enum ArgIndices {
+	MODE = 1,
+	CMD = 2
+    };
 
     /*
      * Number of arguments...
@@ -705,7 +706,7 @@ TclChanCreateObjCmd(
     }
 
     /*
-     * Register the channel in the I/O system, and in our our map for 'chan
+     * Register the channel in the I/O system, and in our map for 'chan
      * postevent'.
      */
 
@@ -739,9 +740,6 @@ TclChanCreateObjCmd(
     Tcl_DecrRefCount(rcPtr->cmd);
     Tcl_Free(rcPtr);
     return TCL_ERROR;
-
-#undef MODE
-#undef CMD
 }
 
 /*
@@ -826,9 +824,10 @@ TclChanPostEventObjCmd(
      *
      * where EVENTSPEC = {read write ...} (Abbreviations allowed as well).
      */
-
-#define CHAN	(1)
-#define EVENT	(2)
+    enum ArgIndices {
+	CHAN = 1,
+	EVENT = 2
+    };
 
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
@@ -980,9 +979,6 @@ TclChanPostEventObjCmd(
 
     Tcl_ResetResult(interp);
     return TCL_OK;
-
-#undef CHAN
-#undef EVENT
 }
 
 /*
@@ -2987,7 +2983,7 @@ ForwardProc(
      * quiescent. Because of this we can treat the data as belonging to us,
      * without fear of race conditions. I.e. we can read and write as we like.
      *
-     * The only thing we cannot be sure of is the resultPtr. This can be be
+     * The only thing we cannot be sure of is the resultPtr. This can be
      * NULLed if the originating thread went away while the event is handled
      * here now.
      */

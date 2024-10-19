@@ -19,16 +19,16 @@ package require http 2.10
 variable httpd_output
 proc create_httpd {} {
     proc httpd_read {chan} {
-        variable httpd_output
-        if {[gets $chan line] >= 0} {
-            #puts stderr "read '$line'"
-            set httpd_output $line
-        }
-        if {[eof $chan]} {
-            puts stderr "eof from httpd"
-            fileevent $chan readable {}
-            close $chan
-        }
+	variable httpd_output
+	if {[gets $chan line] >= 0} {
+	    #puts stderr "read '$line'"
+	    set httpd_output $line
+	}
+	if {[eof $chan]} {
+	    puts stderr "eof from httpd"
+	    fileevent $chan readable {}
+	    close $chan
+	}
     }
     variable httpd_output
     set httpd_script [file join [pwd] [file dirname [info script]] httpd11.tcl]
@@ -44,29 +44,29 @@ proc halt_httpd {} {
     variable httpd_output
     variable httpd
     if {[info exists httpd]} {
-        puts $httpd "quit"
-        vwait httpd_output
-        close $httpd
+	puts $httpd "quit"
+	vwait httpd_output
+	close $httpd
     }
     unset -nocomplain httpd_output httpd
 }
 
 proc meta {tok {key ""}} {
     if {$key eq ""} {
-        return [http::meta $tok]
+	return [http::meta $tok]
     } else {
-        return [http::metaValue $tok $key]
+	return [http::metaValue $tok $key]
     }
 }
 
 proc state {tok {key ""}} {
     upvar 1 $tok state
     if {$key ne ""} {
-        if {[array names state -exact $key] ne {}} {
-            return $state($key)
-        } else {
-            return ""
-        }
+	if {[array names state -exact $key] ne {}} {
+	    return $state($key)
+	} else {
+	    return ""
+	}
     }
     set res [array get state]
     dict set res body <elided>
@@ -78,7 +78,7 @@ proc check_crc {tok args} {
     set data [expr {[llength $args] ? [lindex $args 0] : [http::data $tok]}]
     set chk [format %x [zlib crc32 $data]]
     if {$crc ne $chk} {
-        return  "crc32 mismatch: $crc ne $chk"
+	return  "crc32 mismatch: $crc ne $chk"
     }
     return "ok"
 }
@@ -97,20 +97,20 @@ if 0 {
 }
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
-        set ValueRange {0 1 2}
+	set ValueRange {0 1 2}
     } else {
-        set ValueRange {0 1}
+	set ValueRange {0 1}
     }
 
     # For each value of ThreadLevel, source this file recursively in the
     # same interpreter.
     foreach ThreadLevel $ValueRange {
-        source [info script]
+	source [info script]
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     if {![testConstraint ThreadLevelSummary]} {
-        ::tcltest::cleanupTests
+	::tcltest::cleanupTests
     }
     return
 }
@@ -135,11 +135,11 @@ test http11-1.1.$ThreadLevel "normal,gzip,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -headers {accept-encoding gzip}]
+		 -timeout 10000 -headers {accept-encoding gzip}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding] \
-        [http::meta $tok content-encoding] [http::meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding] \
+	[http::meta $tok content-encoding] [http::meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -149,10 +149,10 @@ test http11-1.2.$ThreadLevel "normal,deflated,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -headers {accept-encoding deflate}]
+		 -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -162,10 +162,10 @@ test http11-1.2.1.$ThreadLevel "normal,deflated,non-chunked,msdeflate" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1&msdeflate=1 \
-                 -timeout 10000 -headers {accept-encoding deflate}]
+		 -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -177,10 +177,10 @@ test http11-1.3.$ThreadLevel "normal,compressed,non-chunked" -constraints badCom
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -headers {accept-encoding compress}]
+		 -timeout 10000 -headers {accept-encoding compress}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -190,10 +190,10 @@ test http11-1.4.$ThreadLevel "normal,identity,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -headers {accept-encoding identity}]
+		 -timeout 10000 -headers {accept-encoding identity}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -203,10 +203,10 @@ test http11-1.5.$ThreadLevel "normal request for document, unsupported coding" -
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -headers {accept-encoding unsupported}]
+		 -timeout 10000 -headers {accept-encoding unsupported}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding]
+	[meta $tok content-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -216,11 +216,11 @@ test http11-1.6.$ThreadLevel "normal, specify 1.1 " -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -protocol 1.1 -timeout 10000]
+		 -protocol 1.1 -timeout 10000]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok connection] [meta $tok transfer-encoding] \
-        [http::meta $tok connection] [http::meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok transfer-encoding] \
+	[http::meta $tok connection] [http::meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -230,10 +230,10 @@ test http11-1.7.$ThreadLevel "normal, 1.1 and keepalive " -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -protocol 1.1 -keepalive 1 -timeout 10000]
+		 -protocol 1.1 -keepalive 1 -timeout 10000]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok connection] [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -243,10 +243,10 @@ test http11-1.8.$ThreadLevel "normal, 1.1 and keepalive, server close" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -protocol 1.1 -keepalive 1 -timeout 10000]
+		 -protocol 1.1 -keepalive 1 -timeout 10000]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok connection] [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -256,10 +256,10 @@ test http11-1.9.$ThreadLevel "normal,gzip,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -headers {accept-encoding gzip}]
+		 -timeout 10000 -headers {accept-encoding gzip}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -269,10 +269,10 @@ test http11-1.10.$ThreadLevel "normal,deflate,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -headers {accept-encoding deflate}]
+		 -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -282,10 +282,10 @@ test http11-1.10.1.$ThreadLevel "normal,deflate,chunked,msdeflate" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
-                 -timeout 10000 -headers {accept-encoding deflate}]
+		 -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -297,10 +297,10 @@ test http11-1.11.$ThreadLevel "normal,compress,chunked" -constraints badCompress
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -headers {accept-encoding compress}]
+		 -timeout 10000 -headers {accept-encoding compress}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -310,10 +310,10 @@ test http11-1.12.$ThreadLevel "normal,identity,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -headers {accept-encoding identity}]
+		 -timeout 10000 -headers {accept-encoding identity}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+	[meta $tok content-encoding] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -325,15 +325,15 @@ test http11-1.13.$ThreadLevel "normal, 1.1 and keepalive as server default, no z
     http::config -zip 0
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?transfer= \
-                 -protocol 1.1 -keepalive 1 -timeout 10000]
+		 -protocol 1.1 -keepalive 1 -timeout 10000]
     http::wait $tok
     set res1 [list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok connection] [meta $tok transfer-encoding] [state $tok reusing] [state $tok connection]]
+	[meta $tok connection] [meta $tok transfer-encoding] [state $tok reusing] [state $tok connection]]
     set toj [http::geturl http://localhost:$httpd_port/testdoc.html?transfer= \
-                 -protocol 1.1 -keepalive 1 -timeout 10000]
+		 -protocol 1.1 -keepalive 1 -timeout 10000]
     http::wait $toj
     set res2 [list [http::status $toj] [http::code $toj] [check_crc $toj] \
-        [meta $toj connection] [meta $toj transfer-encoding] [state $toj reusing] [state $toj connection]]
+	[meta $toj connection] [meta $toj transfer-encoding] [state $toj reusing] [state $toj connection]]
     concat $res1 -- $res2
 } -cleanup {
     catch {http::cleanup $tok}
@@ -363,12 +363,12 @@ test http11-2.0.$ThreadLevel "-channel" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan]
+		 -timeout 5000 -channel $chan]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -381,14 +381,14 @@ test http11-2.1.$ThreadLevel "-channel, encoding gzip" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     set diff [expr {[file size testdoc.html] - [file size testfile.tmp]}]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding] -- $diff bytes lost
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding] -- $diff bytes lost
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -405,14 +405,14 @@ test http11-2.1.1.$ThreadLevel "-channel, encoding gzip" -setup {
     set fileName largedoc.html
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/$fileName \
-                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     set diff [expr {[file size $fileName] - [file size testfile.tmp]}]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding] -- $diff bytes lost
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding] -- $diff bytes lost
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -425,13 +425,13 @@ test http11-2.2.$ThreadLevel "-channel, encoding deflate" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -444,13 +444,13 @@ test http11-2.2.1.$ThreadLevel "-channel, encoding deflate,msdeflate" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -465,14 +465,14 @@ test http11-2.3.$ThreadLevel "-channel,encoding compress" -constraints badCompre
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan \
-                 -headers {accept-encoding compress}]
+		 -timeout 5000 -channel $chan \
+		 -headers {accept-encoding compress}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -485,14 +485,14 @@ test http11-2.4.$ThreadLevel "-channel,encoding identity" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan \
-                 -headers {accept-encoding identity}]
+		 -timeout 5000 -channel $chan \
+		 -headers {accept-encoding identity}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -506,18 +506,18 @@ test http11-2.4.1.$ThreadLevel "-channel,encoding identity with -progress" -setu
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan \
-                 -headers {accept-encoding identity} \
-                 -progress [namespace code [list progress logdata]]]
+		 -timeout 5000 -channel $chan \
+		 -headers {accept-encoding identity} \
+		 -progress [namespace code [list progress logdata]]]
 
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length $data]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length $data]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -532,18 +532,18 @@ test http11-2.4.2.$ThreadLevel "-channel,encoding identity with -progress progre
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan \
-                 -headers {accept-encoding identity} \
-                 -progress [namespace code [list progressPause logdata]]]
+		 -timeout 5000 -channel $chan \
+		 -headers {accept-encoding identity} \
+		 -progress [namespace code [list progressPause logdata]]]
 
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length $data]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length $data]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -557,14 +557,14 @@ test http11-2.5.$ThreadLevel "-channel,encoding unsupported" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan \
-                 -headers {accept-encoding unsupported}]
+		 -timeout 5000 -channel $chan \
+		 -headers {accept-encoding unsupported}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -577,14 +577,14 @@ test http11-2.6.$ThreadLevel "-channel,encoding gzip,non-chunked" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -597,14 +597,14 @@ test http11-2.7.$ThreadLevel "-channel,encoding deflate,non-chunked" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -620,14 +620,14 @@ test http11-2.7.1.$ThreadLevel "-channel,encoding deflate,non-chunked,msdeflate"
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1&msdeflate=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -642,14 +642,14 @@ test http11-2.8.$ThreadLevel "-channel,encoding compress,non-chunked" -constrain
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding compress}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding compress}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -662,14 +662,14 @@ test http11-2.9.$ThreadLevel "-channel,encoding identity,non-chunked" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 5000 -channel $chan -headers {accept-encoding identity}]
+		 -timeout 5000 -channel $chan -headers {accept-encoding identity}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -682,15 +682,15 @@ test http11-2.10.$ThreadLevel "-channel,deflate,keepalive" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan -keepalive 1 \
+		 -timeout 5000 -channel $chan -keepalive 1 \
 		 -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -703,15 +703,15 @@ test http11-2.10.1.$ThreadLevel "-channel,deflate,keepalive,msdeflate" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
-                 -timeout 5000 -channel $chan -keepalive 1 \
+		 -timeout 5000 -channel $chan -keepalive 1 \
 		 -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -724,14 +724,14 @@ test http11-2.11.$ThreadLevel "-channel,identity,keepalive" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -headers {accept-encoding identity} \
-                 -timeout 5000 -channel $chan -keepalive 1]
+		 -headers {accept-encoding identity} \
+		 -timeout 5000 -channel $chan -keepalive 1]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -744,14 +744,14 @@ test http11-2.12.$ThreadLevel "-channel,negotiate,keepalive" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan -keepalive 1]
+		 -timeout 5000 -channel $chan -keepalive 1]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
-        [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding] [meta $tok x-requested-encodings]\
-        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+	[meta $tok connection] [meta $tok content-encoding]\
+	[meta $tok transfer-encoding] [meta $tok x-requested-encodings]\
+	[expr {[file size testdoc.html]-[file size testfile.tmp]}]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan
@@ -792,12 +792,12 @@ test http11-3.0.$ThreadLevel "-handler,close,identity" -setup {
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -handler [namespace code [list handler testdata]]]
+		 -timeout 10000 -handler [namespace code [list handler testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata
@@ -809,13 +809,13 @@ test http11-3.1.$ThreadLevel "-handler,protocol1.0" -setup {
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -protocol 1.0 \
-                 -handler [namespace code [list handler testdata]]]
+		 -timeout 10000 -protocol 1.0 \
+		 -handler [namespace code [list handler testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata
@@ -827,13 +827,13 @@ test http11-3.2.$ThreadLevel "-handler,close,chunked" -setup {
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -keepalive 0 -binary 1\
-                 -handler [namespace code [list handler testdata]]]
+		 -timeout 10000 -keepalive 0 -binary 1\
+		 -handler [namespace code [list handler testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata
@@ -845,13 +845,13 @@ test http11-3.3.$ThreadLevel "-handler,keepalive,chunked" -setup {
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 10000 -keepalive 1 -binary 1\
-                 -handler [namespace code [list handler testdata]]]
+		 -timeout 10000 -keepalive 1 -binary 1\
+		 -handler [namespace code [list handler testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata
@@ -873,12 +873,12 @@ test http11-3.4.$ThreadLevel "-handler,close,identity; HTTP/1.0 server does not 
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1&nosendclose=any \
-                 -timeout 10000 -handler [namespace code [list handler testdata]]]
+		 -timeout 10000 -handler [namespace code [list handler testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata
@@ -891,12 +891,12 @@ test http11-3.5.$ThreadLevel "-handler,close,identity as http11-3.0 but handlerP
     set testdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -handler [namespace code [list handlerPause testdata]]]
+		 -timeout 10000 -handler [namespace code [list handlerPause testdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata ::WaitHere
@@ -909,15 +909,15 @@ test http11-3.6.$ThreadLevel "-handler,close,identity as http11-3.0 but with -pr
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -handler [namespace code [list handler testdata]] \
-                 -progress [namespace code [list progress logdata]]]
+		 -timeout 10000 -handler [namespace code [list handler testdata]] \
+		 -progress [namespace code [list progress logdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata logdata ::WaitHere
@@ -930,15 +930,15 @@ test http11-3.7.$ThreadLevel "-handler,close,identity as http11-3.0 but with -pr
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 -handler [namespace code [list handler testdata]] \
-                 -progress [namespace code [list progressPause logdata]]]
+		 -timeout 10000 -handler [namespace code [list handler testdata]] \
+		 -progress [namespace code [list progressPause logdata]]]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length $testdata]}] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length $testdata]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length $testdata]}] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length $testdata]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain testdata logdata ::WaitHere
@@ -950,16 +950,16 @@ test http11-3.8.$ThreadLevel "close,identity no -handler but with -progress" -se
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 \
-                 -progress [namespace code [list progress logdata]] \
-                 -headers {accept-encoding {}}]
+		 -timeout 10000 \
+		 -progress [namespace code [list progress logdata]] \
+		 -headers {accept-encoding {}}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain logdata ::WaitHere
@@ -971,16 +971,16 @@ test http11-3.9.$ThreadLevel "close,identity no -handler but with -progress prog
     set logdata ""
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
-                 -timeout 10000 \
-                 -progress [namespace code [list progressPause logdata]] \
-                 -headers {accept-encoding {}}]
+		 -timeout 10000 \
+		 -progress [namespace code [list progressPause logdata]] \
+		 -headers {accept-encoding {}}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok]\
-        [meta $tok connection] [meta $tok content-encoding] \
-        [meta $tok transfer-encoding] \
-        [expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
-        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
-        [expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
+	[meta $tok connection] [meta $tok content-encoding] \
+	[meta $tok transfer-encoding] \
+	[expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
+	[expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+	[expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
 } -cleanup {
     catch {http::cleanup $tok}
     unset -nocomplain logdata ::WaitHere
@@ -992,12 +992,12 @@ test http11-4.0.$ThreadLevel "normal post request" -setup {
 } -body {
     set query [http::formatQuery q 1 z 2]
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -query $query -timeout 10000]
+		 -query $query -timeout 10000]
     http::wait $tok
     list status [http::status $tok] code [http::code $tok]\
-        crc [check_crc $tok]\
-        connection [meta $tok connection]\
-        query-length [meta $tok x-query-length]
+	crc [check_crc $tok]\
+	connection [meta $tok connection]\
+	query-length [meta $tok x-query-length]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -1008,13 +1008,13 @@ test http11-4.1.$ThreadLevel "normal post request, check query length" -setup {
 } -body {
     set query [http::formatQuery q 1 z 2]
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -headers [list x-check-query yes] \
-                 -query $query -timeout 10000]
+		 -headers [list x-check-query yes] \
+		 -query $query -timeout 10000]
     http::wait $tok
     list status [http::status $tok] code [http::code $tok]\
-        crc [check_crc $tok]\
-        connection [meta $tok connection]\
-        query-length [meta $tok x-query-length]
+	crc [check_crc $tok]\
+	connection [meta $tok connection]\
+	query-length [meta $tok x-query-length]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -1025,13 +1025,13 @@ test http11-4.2.$ThreadLevel "normal post request, check long query length" -set
 } -body {
     set query [string repeat a 24576]
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
-                 -headers [list x-check-query yes]\
-                 -query $query -timeout 10000]
+		 -headers [list x-check-query yes]\
+		 -query $query -timeout 10000]
     http::wait $tok
     list status [http::status $tok] code [http::code $tok]\
-        crc [check_crc $tok]\
-        connection [meta $tok connection]\
-        query-length [meta $tok x-query-length]
+	crc [check_crc $tok]\
+	connection [meta $tok connection]\
+	query-length [meta $tok x-query-length]
 } -cleanup {
     catch {http::cleanup $tok}
     halt_httpd
@@ -1045,13 +1045,13 @@ test http11-4.3.$ThreadLevel "normal post request, check channel query length" -
     seek $chan 0
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
-                 -headers [list x-check-query yes]\
-                 -querychannel $chan -timeout 10000]
+		 -headers [list x-check-query yes]\
+		 -querychannel $chan -timeout 10000]
     http::wait $tok
     list status [http::status $tok] code [http::code $tok]\
-        crc [check_crc $tok]\
-        connection [meta $tok connection]\
-        query-length [meta $tok x-query-length]
+	crc [check_crc $tok]\
+	connection [meta $tok connection]\
+	query-length [meta $tok x-query-length]
 } -cleanup {
     catch {http::cleanup $tok}
     close $chan

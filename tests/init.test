@@ -125,7 +125,7 @@ test init-2.8 {load tcl::HistAdd} -setup {
 
 test init-3.0 {random stuff in the auto_index, should still work} {
     set auto_index(foo:::bar::blah) {
-        namespace eval foo {namespace eval bar {proc blah {} {return 1}}}
+	namespace eval foo {namespace eval bar {proc blah {} {return 1}}}
     }
     foo:::bar::blah
 } 1
@@ -138,14 +138,14 @@ set count 0
 foreach arg [subst -nocommands -novariables {
     c
     {argument
-                which spans
-                multiple lines}
+		which spans
+		multiple lines}
     {argument which is all on one line but which is of such great length that the Tcl C library will truncate it when appending it onto the global error stack}
     {argument which spans multiple lines
-                and is long enough to be truncated and
+		and is long enough to be truncated and
 "               <- includes a false lead in the prune point search
-                and must be longer still to force truncation}
-                {contrived example: rare circumstance
+		and must be longer still to force truncation}
+		{contrived example: rare circumstance
 		where the point at which to prune the
 		error stack cannot be uniquely determined.
 		foo bar foo

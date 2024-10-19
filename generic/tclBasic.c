@@ -463,14 +463,23 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* [zipfs] has MANY unsafe commands! */
+    /*
+     * [zipfs] perhaps has some safe commands. But like file make it inaccessible
+     * until they are analyzed to be safe.
+     */
+    {"zipfs", NULL},
+    {"zipfs", "canonical"},
+    {"zipfs", "exists"},
+    {"zipfs", "info"},
+    {"zipfs", "list"},
     {"zipfs", "lmkimg"},
     {"zipfs", "lmkzip"},
     {"zipfs", "mkimg"},
     {"zipfs", "mkkey"},
     {"zipfs", "mkzip"},
     {"zipfs", "mount"},
-    {"zipfs", "mount_data"},
+    {"zipfs", "mountdata"},
+    {"zipfs", "root"},
     {"zipfs", "unmount"},
     {NULL, NULL}
 };
@@ -1240,7 +1249,7 @@ Tcl_CreateInterp(void)
 
     nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
     if (nsPtr == NULL) {
-	Tcl_Panic("can't create math operator namespace");
+	Tcl_Panic("cannot create math operator namespace");
     }
     Tcl_Export(interp, nsPtr, "*", 1);
 #define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
@@ -1330,19 +1339,9 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
-    /*
-     * Only build in zlib support if we've successfully detected a library to
-     * compile and link against.
-     */
-
-#ifdef HAVE_ZLIB
-    if (TclZlibInit(interp) != TCL_OK) {
+    if (TclZlibInit(interp) != TCL_OK || TclZipfs_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
-    if (TclZipfs_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetStringResult(interp));
-    }
-#endif
 
     TOP_CB(iPtr) = NULL;
     return interp;
@@ -8861,7 +8860,7 @@ TclNRTailcallObjCmd(
      */
 
     if (objc > 1) {
-	Tcl_Obj *listPtr, *nsObjPtr;
+	Tcl_Obj *listPtr;
 	Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 
 	/*
@@ -8869,9 +8868,8 @@ TclNRTailcallObjCmd(
 	 * namespace, the rest the command to be tailcalled.
 	 */
 
-	nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
 	listPtr = Tcl_NewListObj(objc, objv);
-	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }
@@ -9024,8 +9022,8 @@ TclNRYieldToObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
+    Tcl_Obj *listPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -9054,8 +9052,7 @@ TclNRYieldToObjCmd(
      */
 
     listPtr = Tcl_NewListObj(objc, objv);
-    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
-    TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
 
     /*
      * Add the callback in the caller's env, then instruct TEBC to yield.
@@ -9749,7 +9746,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode. Note that
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.

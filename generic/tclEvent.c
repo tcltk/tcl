@@ -15,6 +15,9 @@
 
 #include "tclInt.h"
 #include "tclUuid.h"
+#ifdef TCL_WITH_INTERNAL_ZLIB
+#include "zlib.h"
+#endif /* TCL_WITH_INTERNAL_ZLIB */
 
 /*
  * The data structure below is used to report background errors. One such
@@ -1112,7 +1115,7 @@ static const struct {
 	    "0"
 #endif
 	    STRINGIFY(ZLIB_VER_MINOR)
-#endif
+#endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
 const char *
@@ -1523,7 +1526,7 @@ Tcl_VwaitObjCmd(
     }
 
     if ((unsigned) objc - 1 > sizeof(localItems) / sizeof(localItems[0])) {
-	vwaitItems = (VwaitItem *) Tcl_Alloc(sizeof(VwaitItem) * (objc - 1));
+	vwaitItems = (VwaitItem *)Tcl_Alloc(sizeof(VwaitItem) * (objc - 1));
     }
 
     for (i = 1; i < objc; i++) {
