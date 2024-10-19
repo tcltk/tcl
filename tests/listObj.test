@@ -37,7 +37,7 @@ test listobj-2.1 {Tcl_SetListObj, use in lappend} {
 } {{1 abc def} {1 abc def 1 ghi jkl} {1 abc def 1 ghi jkl}}
 test listobj-2.2 {Tcl_SetListObj, use in ObjInterpProc} {
     proc return_args {args} {
-        return $args
+	return $args
     }
     list [return_args] [return_args x] [return_args x y]
 } {{} x {x y}}
@@ -64,7 +64,7 @@ test listobj-3.4 {Tcl_ListObjAppend, error in conversion} {
 test listobj-3.5 {Tcl_ListObjAppend, force internal rep array to grow} {
     set x ""
     list [lappend x 1 1] [lappend x 2 2] [lappend x 3 3] [lappend x 4 4] \
-        [lappend x 5 5] [lappend x 6 6] [lappend x 7 7] [lappend x 8 8] $x
+	[lappend x 5 5] [lappend x 6 6] [lappend x 7 7] [lappend x 8 8] $x
 } {{1 1} {1 1 2 2} {1 1 2 2 3 3} {1 1 2 2 3 3 4 4} {1 1 2 2 3 3 4 4 5 5} {1 1 2 2 3 3 4 4 5 5 6 6} {1 1 2 2 3 3 4 4 5 5 6 6 7 7} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}}
 
 test listobj-4.1 {Tcl_ListObjAppendElement, list conversion} {
@@ -86,7 +86,7 @@ test listobj-4.4 {Tcl_ListObjAppendElement, error in conversion} {
 test listobj-4.5 {Tcl_ListObjAppendElement, force internal rep array to grow} {
     set x ""
     list [lappend x 1] [lappend x 2] [lappend x 3] [lappend x 4] \
-        [lappend x 5] [lappend x 6] [lappend x 7] [lappend x 8] $x
+	[lappend x 5] [lappend x 6] [lappend x 7] [lappend x 8] $x
 } {1 {1 2} {1 2 3} {1 2 3 4} {1 2 3 4 5} {1 2 3 4 5 6} {1 2 3 4 5 6 7} {1 2 3 4 5 6 7 8} {1 2 3 4 5 6 7 8}}
 
 test listobj-5.1 {Tcl_ListObjIndex, basic tests} {
@@ -233,9 +233,9 @@ test listobj-11.2 {Bug e58d7e19e9: Upwards compatibility of TclObjTypeHasProc()}
 proc listobjmemcheck script {
     set end [lindex [split [memory info] \n] 3 3]
     for {set i 0} {$i < 5} {incr i} {
-        uplevel 1 $script
-        set tmp $end
-        set end [lindex [split [memory info] \n] 3 3]
+	uplevel 1 $script
+	set tmp $end
+	set end [lindex [split [memory info] \n] 3 3]
     }
     expr {$end - $tmp}
 }
@@ -244,27 +244,27 @@ test listobj-12.1 {Tcl_ListObjIndex memory leaks for native lists} -constraints 
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [lrepeat 1000 x]
-        set errorMessage [testlistobj indexmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [lrepeat 1000 x]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 test listobj-12.2 {Tcl_ListObjIndex memory leaks for native lists with spans} -constraints {
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [testlistrep new 1000 100 100]
-        set errorMessage [testlistobj indexmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [testlistrep new 1000 100 100]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 test listobj-12.3 {Tcl_ListObjIndex memory leaks for lseq} -constraints {
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [lseq 1000]
-        set errorMessage [testlistobj indexmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [lseq 1000]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 
@@ -272,27 +272,27 @@ test listobj-13.1 {Tcl_ListObjGetElements memory leaks for native lists} -constr
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [lrepeat 1000 x]
-        set errorMessage [testlistobj getelementsmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [lrepeat 1000 x]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 test listobj-13.2 {Tcl_ListObjElements memory leaks for native lists with spans} -constraints {
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [testlistrep new 1000 100 100]
-        set errorMessage [testlistobj getelementsmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [testlistrep new 1000 100 100]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 test listobj-13.3 {Tcl_ListObjElements memory leaks for lseq} -constraints {
     testobj memory
 } -body {
     list [listobjmemcheck {
-        testobj set 1 [lseq 1000]
-        set errorMessage [testlistobj getelementsmemcheck 1]
-        testobj freeallvars
+	testobj set 1 [lseq 1000]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
     }] $errorMessage
 } -result {0 {}}
 

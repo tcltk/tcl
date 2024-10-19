@@ -1339,19 +1339,9 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
-    /*
-     * Only build in zlib support if we've successfully detected a library to
-     * compile and link against.
-     */
-
-#ifdef HAVE_ZLIB
-    if (TclZlibInit(interp) != TCL_OK) {
+    if (TclZlibInit(interp) != TCL_OK || TclZipfs_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
-    if (TclZipfs_Init(interp) != TCL_OK) {
-	Tcl_Panic("%s", Tcl_GetStringResult(interp));
-    }
-#endif
 
     TOP_CB(iPtr) = NULL;
     return interp;
@@ -9756,7 +9746,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode. Note that
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.

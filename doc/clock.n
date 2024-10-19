@@ -584,7 +584,7 @@ On input, accepts a string of digits (or floating point with the time fraction)
 and interprets it as an Astronomical Julian Day Number (JDN/JD).
 The Astronomical Julian Date is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
-Julian calendar, which contains also the time fraktion (after floating point).
+Julian calendar, which contains also the time fraction (after floating point).
 The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440587.5.
 This value corresponds the julian day used in sqlite-database, and is the same
 as result of \fBselect julianday(:seconds, 'unixepoch')\fR.
@@ -596,7 +596,7 @@ On input, accepts a string of digits (or floating point with the time fraction)
 and interprets it as a Calendar Julian Day Number.
 The Calendar Julian Date is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
-Julian calendar, which contains also the time fraktion (after floating point).
+Julian calendar, which contains also the time fraction (after floating point).
 The epoch time of 1 January 1970 corresponds to Astronomical JDN 2440588.
 .IP \fB%Es\fR
 This affects similar to \fB%s\fR, but in opposition to \fB%s\fR it parses
@@ -642,7 +642,7 @@ On output, produces a two-digit number giving the hour of the day
 On output, produces a three-digit number giving the day of the year
 (001-366).  On input, accepts such a number.
 .IP \fB%J\fR
-On output, produces a string of digits giving the calendar Julian Day Number.
+On output, produces a string of digits giving the Julian Day Number.
 On input, accepts a string of digits and interprets it as a Julian Day Number.
 The Julian Day Number is a count of the number of calendar days
 that have elapsed since 1 January, 4713 BCE of the proleptic
@@ -832,7 +832,7 @@ that give the rules for various locales.  A complete list
 of the location names is too lengthy to be listed here.
 On most Tcl installations, the definitions of the locations
 are to be found in named files in the directory
-.QW "\fI/no_backup/tools/lib/tcl8.5/clock/tzdata\fR" .
+.QW "\fI/no_backup/tools/lib/tcl9.0/clock/tzdata\fR" .
 On some Unix systems, these files are omitted, and the definitions are
 instead obtained from system files in
 .QW "\fI/usr/share/zoneinfo\fR" ,
@@ -933,7 +933,7 @@ acceptable formats are
 .QW "\fIdd monthname yy\fR" ,
 .QW "?\fICC\fR?\fIyymmdd\fR" ,
 and
-.QW "\fIdd\fB\-\fImonthname\fB\-\fR?\fICC\fR?\fIyy\fR" .
+.QW "\fIdd\fB-\fImonthname\fB-\fR?\fICC\fR?\fIyy\fR" .
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so

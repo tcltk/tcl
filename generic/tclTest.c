@@ -2219,10 +2219,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-        Tcl_SetObjResult(interp,
-                         Tcl_ObjPrintf("%s wrote past output buffer",
-                                       transformer == Tcl_ExternalToUtf ?
-                                       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+	Tcl_SetObjResult(interp,
+			 Tcl_ObjPrintf("%s wrote past output buffer",
+				       transformer == Tcl_ExternalToUtf ?
+				       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];
@@ -8378,7 +8378,7 @@ InterpCmdResolver(
 	     *      compilation (e.g. in TclProcCompileProc)
 	     *
 	     *   When these conditions hold, this function resolves the
-	     *   passed-in cmd literal into a cmd "y", which is taken from the
+	     *   passed-in cmd literal into a cmd "y", which is taken from
 	     *   the global namespace (for simplicity).
 	     */
 
@@ -8404,7 +8404,7 @@ InterpCmdResolver(
 	     *
 	     *   When these conditions hold, this function resolves the
 	     *   passed-in cmd literal into a cmd "y" or "Y" depending on the
-	     *   context. The resolved procs are taken from the the global
+	     *   context. The resolved procs are taken from the global
 	     *   namespace (for simplicity).
 	     */
 

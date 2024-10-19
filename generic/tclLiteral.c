@@ -180,7 +180,7 @@ TclCreateLiteral(
 				 * not a NUL-terminated string. */
     Tcl_Size length,	/* Number of bytes in the string. */
     size_t hash, /* The string's hash. If the value is
-				         * TCL_INDEX_NONE, it will be computed here. */
+					 * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,

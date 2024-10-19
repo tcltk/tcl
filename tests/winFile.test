@@ -86,19 +86,19 @@ proc getuser {fname} {
     set owner ""
     set tail [file tail $tryname]
     if {[info exists env(OSTYPE)] && $env(OSTYPE) eq "msys"} {
-        set dirtext [exec ls -l $fname]
-        foreach line [split $dirtext "\n"] {
-            set owner [lindex $line 2]
-        }
+	set dirtext [exec ls -l $fname]
+	foreach line [split $dirtext "\n"] {
+	    set owner [lindex $line 2]
+	}
     } else {
-        set dirtext [exec cmd /c dir /q [file nativename $fname]]
-        foreach line [split $dirtext "\n"] {
-            if {[string match -nocase "*$tail" $line]} {
-                set attrs [string range $line 0 end-[string length $tail]]
-                regexp { [^ \\]+\\.*$} $attrs owner
-                set owner [string trim $owner]
-            }
-        }
+	set dirtext [exec cmd /c dir /q [file nativename $fname]]
+	foreach line [split $dirtext "\n"] {
+	    if {[string match -nocase "*$tail" $line]} {
+		set attrs [string range $line 0 end-[string length $tail]]
+		regexp { [^ \\]+\\.*$} $attrs owner
+		set owner [string trim $owner]
+	    }
+	}
     }
     if {$owner eq ""} {
 	error "getuser: Owner not found in output of dir/q"

@@ -61,8 +61,8 @@ test info-1.6 {info args option} {
 test info-1.7 {info args option} {
     catch {namespace delete test_ns_info2}
     namespace eval test_ns_info2 {
-        namespace import ::test_ns_info1::*
-        list [info args p] [info args q]
+	namespace import ::test_ns_info1::*
+	list [info args p] [info args q]
     }
 } {x {y z}}
 
@@ -79,8 +79,8 @@ test info-2.3 {info body option} -body {
 test info-2.4 {info body option} {
     catch {namespace delete test_ns_info2}
     namespace eval test_ns_info2 {
-        namespace import ::test_ns_info1::*
-        list [info body p] [info body q]
+	namespace import ::test_ns_info1::*
+	list [info body p] [info body q]
     }
 } {{return "x=$x"} {return "y=$y"}}
 # Prior to 8.3.0 this would cause a crash because [info body]
@@ -132,7 +132,7 @@ test info-4.1 {info commands option} -body {
     proc t2 {} {}
     set x " [info commands] "
     list [string match {* t1 *} $x] [string match {* t2 *} $x] \
-            [string match {* set *} $x] [string match {* list *} $x]
+	    [string match {* set *} $x] [string match {* list *} $x]
 } -cleanup {unset x} -result {1 1 1 1}
 test info-4.2 {info commands option} -body {
     proc t1 {} {}
@@ -229,8 +229,8 @@ test info-6.10 {info default option} -setup {
 test info-6.11 {info default option} {
     catch {namespace delete test_ns_info2}
     namespace eval test_ns_info2 {
-        namespace import ::test_ns_info1::*
-        list [info default p x foo] $foo [info default q y bar] $bar
+	namespace import ::test_ns_info1::*
+	list [info default p x foo] $foo [info default q y bar] $bar
     }
 } {0 {} 1 27}
 
@@ -248,15 +248,15 @@ test info-7.3 {info exists option} {
 } 1
 test info-7.4 {info exists option} -body {
     proc t1 {x} {
-        global _nonexistent_
-        return [info exists _nonexistent_]
+	global _nonexistent_
+	return [info exists _nonexistent_]
     }
     t1 2
 } -setup {unset -nocomplain _nonexistent_} -result 0
 test info-7.5 {info exists option} {
     proc t1 {x} {
-        set y 47
-        return [info exists y]
+	set y 47
+	return [info exists y]
     }
     t1 2
 } 1
@@ -284,7 +284,7 @@ test info-8.1 {info globals option} -body {
     set value 23
     set a " [info globals] "
     list [string match {* x *} $a] [string match {* y *} $a] \
-            [string match {* value *} $a] [string match {* _foobar_ *} $a]
+	    [string match {* value *} $a] [string match {* _foobar_ *} $a]
 } -cleanup {unset x y value a} -result {1 1 1 0}
 test info-8.2 {info globals option} -body {
     set _xxx1 1
@@ -317,27 +317,27 @@ test info-9.1 {info level option} {
 } 0
 test info-9.2 {info level option} {
     proc t1 {a b} {
-        set x [info le]
-        set y [info level 1]
-        list $x $y
+	set x [info le]
+	set y [info level 1]
+	list $x $y
     }
     t1 146 testString
 } {1 {t1 146 testString}}
 test info-9.3 {info level option} {
     proc t1 {a b} {
-        t2 [expr {$a*2}] $b
+	t2 [expr {$a*2}] $b
     }
     proc t2 {x y} {
-        list [info level] [info level 1] [info level 2] [info level -1] \
-                [info level 0]
+	list [info level] [info level 1] [info level 2] [info level -1] \
+		[info level 0]
     }
     t1 146 {a {b c} {{{c}}}}
 } {2 {t1 146 {a {b c} {{{c}}}}} {t2 292 {a {b c} {{{c}}}}} {t1 146 {a {b c} {{{c}}}}} {t2 292 {a {b c} {{{c}}}}}}
 test info-9.4 {info level option} {
     proc t1 {} {
-        set x [info level]
-        set y [info level 1]
-        list $x $y
+	set x [info level]
+	set y [info level 1]
+	list $x $y
     }
     t1
 } {1 t1}
@@ -398,7 +398,7 @@ set tcl_library $savedLibrary; unset savedLibrary
 
 test info-11.1 {info loaded option} -body {
     info loaded a b c
-} -returnCodes error -result {wrong # args: should be "info loaded ?interp? ?packageName?"}
+} -returnCodes error -result {wrong # args: should be "info loaded ?interp? ?prefix?"}
 test info-11.2 {info loaded option} -body {
     info loaded {}; info loaded gorp
 } -returnCodes error -result {could not find interpreter "gorp"}
@@ -406,21 +406,21 @@ test info-11.2 {info loaded option} -body {
 test info-12.1 {info locals option} -body {
     set a 22
     proc t1 {x y} {
-        set b 13
-        set c testing
-        global a
+	set b 13
+	set c testing
+	global a
 	global aa
 	set aa 23
-        return [info locals]
+	return [info locals]
     }
     lsort [t1 23 24]
 } -cleanup {unset a aa} -result {b c x y}
 test info-12.2 {info locals option} {
     proc t1 {x y} {
-        set xx1 2
-        set xx2 3
-        set y 4
-        return [info loc x*]
+	set xx1 2
+	set xx2 3
+	set y 4
+	return [info loc x*]
     }
     lsort [t1 2 3]
 } {x xx1 xx2}
@@ -436,16 +436,16 @@ test info-12.5 {info locals option} {
 } {}
 test info-12.6 {info locals vs unset compiled locals} {
     proc t1 {lst} {
-        foreach $lst $lst {}
-        unset lst
-        return [info locals]
+	foreach $lst $lst {}
+	unset lst
+	return [info locals]
     }
     lsort [t1 {a b c c d e f}]
 } {a b c d e f}
 test info-12.7 {info locals with temporary variables} {
     proc t1 {} {
-        foreach a {b c} {}
-        info locals
+	foreach a {b c} {}
+	info locals
     }
     t1
 } {a}
@@ -475,7 +475,7 @@ test info-15.1 {info procs option} -body {
     proc t2 {} {}
     set x " [info procs] "
     list [string match {* t1 *} $x] [string match {* t2 *} $x] \
-            [string match {* _undefined_ *} $x]
+	    [string match {* _undefined_ *} $x]
 } -cleanup {unset x} -result {1 1 0}
 test info-15.2 {info procs option} {
     proc _tt1 {} {}
@@ -491,9 +491,9 @@ test info-15.4 {info procs option} -setup {
     catch {namespace delete test_ns_info2}
 } -body {
     namespace eval test_ns_info2 {
-        namespace import ::test_ns_info1::*
-        proc r {} {}
-        list [lsort [info procs]] [info procs p*]
+	namespace import ::test_ns_info1::*
+	proc r {} {}
+	list [lsort [info procs]] [info procs p*]
     }
 } -result {{p q r} p}
 test info-15.5 {info procs option with a proc in a namespace} -setup {
@@ -503,7 +503,7 @@ test info-15.5 {info procs option with a proc in a namespace} -setup {
 	proc p1 { arg } {
 	    puts cmd
 	}
-        proc p2 { arg } {
+	proc p2 { arg } {
 	    puts cmd
 	}
     }
@@ -516,7 +516,7 @@ test info-15.6 {info procs option with a pattern in a namespace} -setup {
 	proc p1 { arg } {
 	    puts cmd
 	}
-        proc p2 { arg } {
+	proc p2 { arg } {
 	    puts cmd
 	}
     }
@@ -526,7 +526,7 @@ test info-15.7 {info procs option with a global shadowing proc} -setup {
     catch {namespace delete test_ns_info2}
 } -body {
     proc string_cmd { arg } {
-        puts cmd
+	puts cmd
     }
     namespace eval test_ns_info2 {
 	proc string_cmd { arg } {
@@ -542,10 +542,10 @@ test info-15.8 {info procs option with a global shadowing proc} -setup {
     catch {namespace delete test_ns_info2}
 } -constraints knownBug -body {
     proc string_cmd { arg } {
-        puts cmd
+	puts cmd
     }
     proc string_cmd2 { arg } {
-        puts cmd
+	puts cmd
     }
     namespace eval test_ns_info2 {
 	proc string_cmd { arg } {
@@ -553,7 +553,7 @@ test info-15.8 {info procs option with a global shadowing proc} -setup {
 	}
     }
     namespace eval test_ns_info2 {
-        lsort [info procs string*]
+	lsort [info procs string*]
     }
 } -result [lsort [list string_cmd string_cmd2]]
 
@@ -617,9 +617,9 @@ test info-19.1 {info vars option} -body {
     set a 1
     set b 2
     proc t1 {x y} {
-        global a b
-        set c 33
-        return [info vars]
+	global a b
+	set c 33
+	return [info vars]
     }
     lsort [t1 18 19]
 } -cleanup {unset a b} -result {a b c x y}
@@ -627,9 +627,9 @@ test info-19.2 {info vars option} -body {
     set xxx1 1
     set xxx2 2
     proc t1 {xxa y} {
-        global xxx1 xxx2
-        set c 33
-        return [info vars x*]
+	global xxx1 xxx2
+	set c 33
+	return [info vars x*]
     }
     lsort [t1 18 19]
 } -cleanup {unset xxx1 xxx2} -result {xxa xxx1 xxx2}
@@ -641,8 +641,8 @@ test info-19.4 {info vars option} -returnCodes error -body {
 } -result {wrong # args: should be "info vars ?pattern?"}
 test info-19.5 {info vars with temporary variables} {
     proc t1 {} {
-        foreach a {b c} {}
-        info vars
+	foreach a {b c} {}
+	info vars
     }
     t1
 } {a}
@@ -1599,8 +1599,8 @@ type source line 1589 file info.test cmd {info frame 0} proc ::a level 0}
 test info-30.17 {bs+nl in multi-body switch, direct} {
     switch -regexp -- {key    } \
 	^key     { reduce [info frame 0] ;# 1601 } \
-        \t###    { } \
-        {[0-9]*} { }
+	\t###    { } \
+	{[0-9]*} { }
 } {type source line 1601 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-30.18 {bs+nl, literal word, uplevel through proc, appended, loss of primary tracking data} {
@@ -1642,7 +1642,7 @@ test info-30.20 {bs+nl in single-body switch, direct} {
 	^key     { reduce \
 		       [info frame 0] }
 	\t###    { }
-        {[0-9]*} { }
+	{[0-9]*} { }
     }
 } {type source line 1643 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
 

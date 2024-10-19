@@ -1525,11 +1525,19 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got \"",
+	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
-
-	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_Size argc;
+	    const char **argv;
+	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
+		Tcl_Free(argv);
+		Tcl_AppendToObj(msg, "a list", -1);
+	    } else {
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
+		Tcl_AppendToObj(msg, "\"", -1);
+	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	}
@@ -3174,7 +3182,7 @@ ShorteningInt64Conversion(
 
 	/*
 	 * Does the current digit put us on the low side of the exact value
-	 * but within within roundoff of being exact?
+	 * but within roundoff of being exact?
 	 */
 
 	if (b < mplus || (b == mplus
@@ -3572,7 +3580,7 @@ ShorteningBignumConversionPowD(
 
 	/*
 	 * Does the current digit put us on the low side of the exact value
-	 * but within within roundoff of being exact?
+	 * but within roundoff of being exact?
 	 */
 
 	r1 = mp_cmp_mag(&b, (m2plus > m2minus)? &mplus : &mminus);

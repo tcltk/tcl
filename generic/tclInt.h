@@ -68,11 +68,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
-#ifdef NO_STRING_H
-#include "../compat/string.h"
-#else
 #include <string.h>
-#endif
 #include <locale.h>
 
 /*
@@ -3439,7 +3435,7 @@ MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    Tcl_Size *sizePtr);
 MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *targetName,
-				const char *packageName);
+				const char *prefix);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
 MODULE_SCOPE int	TclCompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);

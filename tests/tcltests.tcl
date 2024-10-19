@@ -75,47 +75,47 @@ namespace eval ::tcltests {
     #  testnumargs "lappend" "varName" "?value ...?"
     proc testnumargs {cmd {fixed {}} {optional {}} args} {
 	variable count
-        set minargs [llength $fixed]
-        set maxargs [expr {$minargs + [llength $optional]}]
-        if {[regexp {\.\.\.\??$} [lindex $optional end]]} {
-            unset maxargs; # No upper limit on num of args
-        }
-        set message "wrong # args: should be \"$cmd"
-        if {[llength $fixed]} {
-            append message " $fixed"
-        }
-        if {[llength $optional]} {
-            append message " $optional"
-        }
-        if {[llength $fixed] == 0 && [llength $optional] == 0} {
-            append message " \""
-        } else {
-            append message "\""
-        }
-        set label [join $cmd -]
-        if {$minargs > 0} {
-            set arguments [lrepeat [expr {$minargs-1}] x]
-            test $label-minargs-[incr count($label-minargs)] \
+	set minargs [llength $fixed]
+	set maxargs [expr {$minargs + [llength $optional]}]
+	if {[regexp {\.\.\.\??$} [lindex $optional end]]} {
+	    unset maxargs; # No upper limit on num of args
+	}
+	set message "wrong # args: should be \"$cmd"
+	if {[llength $fixed]} {
+	    append message " $fixed"
+	}
+	if {[llength $optional]} {
+	    append message " $optional"
+	}
+	if {[llength $fixed] == 0 && [llength $optional] == 0} {
+	    append message " \""
+	} else {
+	    append message "\""
+	}
+	set label [join $cmd -]
+	if {$minargs > 0} {
+	    set arguments [lrepeat [expr {$minargs-1}] x]
+	    test $label-minargs-[incr count($label-minargs)] \
 		"$label no arguments" \
-                -body "$cmd" \
-                -result $message -returnCodes error \
-                {*}$args
-            if {$minargs > 1} {
-                test $label-minargs-[incr count($label-minargs)] \
+		-body "$cmd" \
+		-result $message -returnCodes error \
+		{*}$args
+	    if {$minargs > 1} {
+		test $label-minargs-[incr count($label-minargs)] \
 		    "$label missing arguments" \
-                    -body "$cmd $arguments" \
-                    -result $message -returnCodes error \
-                    {*}$args
-            }
-        }
-        if {[info exists maxargs]} {
-            set arguments [lrepeat [expr {$maxargs+1}] x]
-            test $label-maxargs-[incr count($label-maxargs)] \
+		    -body "$cmd $arguments" \
+		    -result $message -returnCodes error \
+		    {*}$args
+	    }
+	}
+	if {[info exists maxargs]} {
+	    set arguments [lrepeat [expr {$maxargs+1}] x]
+	    test $label-maxargs-[incr count($label-maxargs)] \
 		"$label extra arguments" \
-                -body "$cmd $arguments" \
-                -result $message -returnCodes error \
-                {*}$args
-        }
+		-body "$cmd $arguments" \
+		-result $message -returnCodes error \
+		{*}$args
+	}
     }
 
     init

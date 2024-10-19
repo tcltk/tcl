@@ -3023,9 +3023,9 @@ TclNativeCreateNativeRep(
     Tcl_Size len;
     WCHAR *wp;
 
-    if (TclFSCwdIsNative()) {
+    if (TclFSCwdIsNative() || Tcl_FSGetPathType(pathPtr) == TCL_PATH_ABSOLUTE) {
 	/*
-	 * The cwd is native, which means we can use the translated path
+	 * The cwd is native (or path is absolute), use the translated path
 	 * without worrying about normalization (this will also usually be
 	 * shorter so the utf-to-external conversion will be somewhat faster).
 	 */

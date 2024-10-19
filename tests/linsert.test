@@ -101,8 +101,8 @@ test linsert-2.6 {syntax (TIP 323)} {
 
 test linsert-3.1 {linsert won't modify shared argument objects} {
     proc p {} {
-        linsert "a b c" 1 "x y"
-        return "a b c"
+	linsert "a b c" 1 "x y"
+	return "a b c"
     }
     p
 } "a b c"

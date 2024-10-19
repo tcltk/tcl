@@ -73,7 +73,6 @@
 	}								\
     } while (0)
 
-#ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "crypt.h"
 #include "zutil.h"
@@ -5837,10 +5836,30 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_Size len;
     char *path;
+    int ret, decrRef = 0;
 
-    pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    if (!pathPtr) {
-	return -1;
+    if (TclFSCwdIsNative() || Tcl_FSGetPathType(pathPtr) == TCL_PATH_ABSOLUTE) {
+	/*
+	 * The cwd is native (or path is absolute), use the translated path
+	 * without worrying about normalization (this will also usually be
+	 * shorter so the utf-to-external conversion will be somewhat faster).
+	 */
+
+	pathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (pathPtr == NULL) {
+	    return -1;
+	}
+	decrRef = 1; /* Tcl_FSGetTranslatedPath increases refCount */
+    } else {
+	/*
+	 * Make sure the normalized path is set.
+	 */
+
+	pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (!pathPtr) {
+	    return -1;
+	}
+	/* Tcl_FSGetNormalizedPath doesn't increase refCount */
     }
     path = TclGetStringFromObj(pathPtr, &len);
 
@@ -5849,7 +5868,15 @@ ZipFSPathInFilesystemProc(
      * and sufficient condition as zipfs mounts at arbitrary paths are
      * not permitted (unlike Androwish).
      */
-    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? -1 : TCL_OK;
+    ret = (
+	(len < ZIPFS_VOLUME_LEN) ||
+	strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN)
+    ) ? -1 : TCL_OK;
+
+    if (decrRef) {
+	Tcl_DecrRefCount(pathPtr);
+    }
+    return ret;
 }
 
 /*
@@ -6176,8 +6203,6 @@ ZipFSLoadFile(
     return ret;
 #endif /* ANDROID */
 }
-
-#endif /* HAVE_ZLIB */
 
 /*
  *-------------------------------------------------------------------------
@@ -6200,7 +6225,6 @@ int
 TclZipfs_Init(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-#ifdef HAVE_ZLIB
     static const EnsembleImplMap initMap[] = {
 	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 1},
 	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 1},
@@ -6222,8 +6246,8 @@ TclZipfs_Init(
 	"proc ::tcl::zipfs::Find dir {\n"
 	"    set result {}\n"
 	"    if {[catch {\n"
-        "        concat [glob -directory $dir -nocomplain *] [glob -directory $dir -types hidden -nocomplain *]\n"
-        "    } list]} {\n"
+	"        concat [glob -directory $dir -nocomplain *] [glob -directory $dir -types hidden -nocomplain *]\n"
+	"    } list]} {\n"
 	"        return $result\n"
 	"    }\n"
 	"    foreach file $list {\n"
@@ -6272,15 +6296,8 @@ TclZipfs_Init(
 		ZipFSTclLibraryObjCmd, NULL, NULL);
     }
     return TCL_OK;
-#else /* !HAVE_ZLIB */
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-    return TCL_ERROR;
-#endif /* HAVE_ZLIB */
 }
 
-#ifdef HAVE_ZLIB
-
 #if !defined(STATIC_BUILD)
 static int
 ZipfsAppHookFindTclInit(
@@ -6503,81 +6520,6 @@ TclZipfs_AppHook(
     }
     return result;
 }
-
-#else /* !HAVE_ZLIB */
-
-/*
- *-------------------------------------------------------------------------
- *
- * TclZipfs_Mount, TclZipfs_MountBuffer, TclZipfs_Unmount --
- *
- *	Dummy version when no ZLIB support available.
- *
- *-------------------------------------------------------------------------
- */
-
-int
-TclZipfs_Mount(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
-				 * the ZIP is unprotected. */
-{
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-    return TCL_ERROR;
-}
-
-int
-TclZipfs_MountBuffer(
-    Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    TCL_UNUSED(const void *),
-    TCL_UNUSED(size_t),
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(int))
-{
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-    return TCL_ERROR;
-}
-
-int
-TclZipfs_Unmount(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *))	/* Mount point path. */
-{
-    ZIPFS_ERROR(interp, "no zlib available");
-    ZIPFS_ERROR_CODE(interp, "NO_ZLIB");
-    return TCL_ERROR;
-}
-
-const char *
-TclZipfs_AppHook(
-    TCL_UNUSED(int *), /*argcPtr*/
-#ifdef _WIN32
-    TCL_UNUSED(WCHAR ***)) /* argvPtr */
-#else /* !_WIN32 */
-    TCL_UNUSED(char ***))		/* Pointer to argv */
-#endif /* _WIN32 */
-{
-    return NULL;
-}
-
-Tcl_Obj *
-TclZipfs_TclLibrary(void)
-{
-    return NULL;
-}
-
-int
-TclIsZipfsPath(
-    TCL_UNUSED(const char *)) /* path */
-{
-    return 0;
-}
-
-#endif /* !HAVE_ZLIB */
 
 /*
  * Local Variables:

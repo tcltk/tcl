@@ -506,7 +506,7 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
     set child [open |[list [interpreter]] r+]
     puts $child "exit 3"
     list [catch {close $child} msg] $msg [lindex $::errorCode 0] \
-        [lindex $::errorCode 2]
+	[lindex $::errorCode 2]
 } {1 {child process exited abnormally} CHILDSTATUS 3}
 
 test event-11.1 {Tcl_VwaitCmd procedure} -body {
@@ -596,13 +596,13 @@ test event-11.8 {Bug 16828b3744} -setup {
 	variable continue
 
 	method start {} {
-           after idle [self] destroy
+	   after idle [self] destroy
 
-           set continue 0
-           vwait [namespace current]::continue
+	   set continue 0
+	   vwait [namespace current]::continue
 	}
 	destructor {
-           set continue 1
+	   set continue 1
 	}
     }
 } -body {
