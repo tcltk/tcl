@@ -1069,7 +1069,7 @@ Tcl_CreateEncoding(
 	    replaceMe->hPtr = NULL;
 	}
 
-	name = (char *) Tcl_Alloc(strlen(typePtr->encodingName) + 1);
+	name = (char *)Tcl_Alloc(strlen(typePtr->encodingName) + 1);
 	encodingPtr->name	= strcpy(name, typePtr->encodingName);
 	encodingPtr->hPtr	= hPtr;
 	Tcl_SetHashValue(hPtr, encodingPtr);
@@ -1249,7 +1249,7 @@ Tcl_ExternalToUtfDStringEx(
 			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
 			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1571,7 +1571,7 @@ Tcl_UtfToExternalDStringEx(
 			    "u: 'U+%06X'",
 			    pos, ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-			    buf, (void *)NULL);
+			    buf, (char *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1825,8 +1825,7 @@ OpenEncodingFileChannel(
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown encoding \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name,
-		(void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(searchPath);
@@ -1900,8 +1899,7 @@ LoadEncodingFile(
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invalid encoding file \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name,
-		(void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_CloseEx(NULL, chan, 0);
 
@@ -2528,8 +2526,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80
-		&& !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
+	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
 
 	    CHECK_ISOLATEDSURROGATE;
 	    /*
@@ -2597,8 +2594,7 @@ UtfToUtfProc(
 	    *statePtr = 0; /* Reset surrogate */
 
 	    if (flags & ENCODING_INPUT) {
-		if (((len < 2) && (ch != 0))
-			|| ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
+		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
 		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -2716,7 +2712,6 @@ UtfToUtfProc(
 		}
 	    }
 	}
-
     }
 
     *srcReadPtr = src - srcStart;
@@ -3033,8 +3028,7 @@ Utf16ToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; src < srcEnd && numChars <= charLimit;
-	    src += 2, numChars++) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; src += 2, numChars++) {
 	if (dst > dstEnd && !HIGH_SURROGATE(ch)) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3273,31 +3267,26 @@ UtfToUtf16Proc(
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
-	if (flags & TCL_ENCODING_LE) {
-	    if (ch <= 0xFFFF) {
+	if (ch <= 0xFFFF) {
+	    if (flags & TCL_ENCODING_LE) {
 		*dst++ = (ch & 0xFF);
 		*dst++ = (ch >> 8);
 	    } else {
-		if ((dst+2) > dstEnd) {
-		    /* Surrogates need 2 more bytes! Bug [66da4d4228] */
-		    result = TCL_CONVERT_NOSPACE;
-		    break;
-		}
+		*dst++ = (ch >> 8);
+		*dst++ = (ch & 0xFF);
+	    }
+	} else {
+	    if ((dst+2) > dstEnd) {
+		/* Surrogates need 2 more bytes! Bug [66da4d4228] */
+		result = TCL_CONVERT_NOSPACE;
+		break;
+	    }
+	    if (flags & TCL_ENCODING_LE) {
 		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (ch & 0xFF);
 		*dst++ = ((ch >> 8) & 0x3) | 0xDC;
-	    }
-	} else {
-	    if (ch <= 0xFFFF) {
-		*dst++ = (ch >> 8);
-		*dst++ = (ch & 0xFF);
 	    } else {
-		if ((dst+2) > dstEnd) {
-		    /* Surrogates need 2 more bytes! Bug [66da4d4228] */
-		    result = TCL_CONVERT_NOSPACE;
-		    break;
-		}
 		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
 		*dst++ = ((ch >> 8) & 0x3) | 0xDC;
@@ -3497,8 +3486,7 @@ TableToUtfProc(
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
-		    /* For prefix bytes, we don't fallback to cp1252, see
-		     * [1355b9a874] */
+		    /* For prefix bytes, we don't fallback to cp1252, see [1355b9a874] */
 		    ch = byte;
 		}
 	    } else {
@@ -4170,7 +4158,7 @@ EscapeFromUtfProc(
     }
 
     encodingPtr = GetTableEncoding(dataPtr, state);
-    tableDataPtr = (TableEncodingData *) encodingPtr->clientData;
+    tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
     tablePrefixBytes = tableDataPtr->prefixBytes;
     tableFromUnicode = (const unsigned short *const *)
 	    tableDataPtr->fromUnicode;
@@ -4207,7 +4195,7 @@ EscapeFromUtfProc(
 	    oldState = state;
 	    for (state = 0; state < dataPtr->numSubTables; state++) {
 		encodingPtr = GetTableEncoding(dataPtr, state);
-		tableDataPtr = (TableEncodingData *) encodingPtr->clientData;
+		tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
 		word = tableDataPtr->fromUnicode[(ch >> 8)][ch & 0xFF];
 		if (word != 0) {
 		    break;
@@ -4221,7 +4209,7 @@ EscapeFromUtfProc(
 		    break;
 		}
 		encodingPtr = GetTableEncoding(dataPtr, state);
-		tableDataPtr = (TableEncodingData *) encodingPtr->clientData;
+		tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
 		word = tableDataPtr->fallback;
 	    }
 
@@ -4545,17 +4533,14 @@ TclEncodingProfileNameToId(
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendStringsToObj(
-		    errorObj, " ", encodingProfiles[i].name, ",",
-		    (void *)NULL);
+		    errorObj, " ", encodingProfiles[i].name, ",", (char *)NULL);
 	}
 	Tcl_AppendStringsToObj(
-		errorObj, " or ", encodingProfiles[numProfiles-1].name,
-		(void *)NULL);
+		errorObj, " or ", encodingProfiles[numProfiles-1].name, (char *)NULL);
 
 	Tcl_SetObjResult(interp, errorObj);
 	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILE", profileName,
-		(void *)NULL);
+		interp, "TCL", "ENCODING", "PROFILE", profileName, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -4582,18 +4567,16 @@ TclEncodingProfileIdToName(
 {
     size_t i;
 
-    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
-	    ++i) {
+    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
 	if (profileValue == encodingProfiles[i].value) {
 	    return encodingProfiles[i].name;
 	}
     }
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Internal error. Bad profile id \"%d\".",
-		profileValue));
+		"Internal error. Bad profile id \"%d\".", profileValue));
 	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILEID", (void *)NULL);
+		interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
     }
     return NULL;
 }
