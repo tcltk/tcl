@@ -313,8 +313,11 @@ IcuError(
 	    codeMessage = u_errorName(code);
 	}
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s. ICU error (%d): %s",
-		message, code, codeMessage ? codeMessage : ""));
+		"%s%sICU error (%d): %s",
+		message ? message : "",
+                message ? ". " : "",
+                code,
+                codeMessage ? codeMessage : ""));
 	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, NULL);
     }
     return TCL_ERROR;
@@ -753,14 +756,14 @@ IcuConverttoDString(
     UErrorCodex status = U_ZERO_ERRORZ;
     UConverter *ucnvPtr = ucnv_open(icuEncName, &status);
     if (ucnvPtr == NULL) {
-	return IcuError(interp, "Could not get encoding converter.", status);
+	return IcuError(interp, "Could not get encoding converter", status);
     }
     if (strict) {
         ucnv_setFromUCallBack(ucnvPtr, UCNV_FROM_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
         if (U_FAILURE(status)) {
             /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
             ucnv_close(ucnvPtr);
-            return IcuError(interp, "Could not set conversion callback.", status);
+            return IcuError(interp, "Could not set conversion callback", status);
         }
     }
 
@@ -840,14 +843,14 @@ IcuBytesToUCharDString(
     UErrorCodex status = U_ZERO_ERRORZ;
     UConverter *ucnvPtr = ucnv_open(icuEncName, &status);
     if (ucnvPtr == NULL) {
-	return IcuError(interp, "Could not get encoding converter.", status);
+	return IcuError(interp, "Could not get encoding converter", status);
     }
     if (strict) {
         ucnv_setToUCallBack(ucnvPtr, UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
         if (U_FAILURE(status)) {
             /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
             ucnv_close(ucnvPtr);
-            return IcuError(interp, "Could not set conversion callback.", status);
+            return IcuError(interp, "Could not set conversion callback", status);
         }
     }
 
@@ -930,7 +933,7 @@ IcuNormalizeUCharDString(
     UErrorCodex status = U_ZERO_ERRORZ;
     UNormalizer2 *normalizer = fn(&status);
     if (U_FAILURE(status)) {
-	return IcuError(interp, "Could not get ICU normalizer.", status);
+	return IcuError(interp, "Could not get ICU normalizer", status);
     }
 
     UCharx *utf16;
@@ -969,7 +972,7 @@ IcuNormalizeUCharDString(
 	    /* FALLTHRU */
 	default:
 	    Tcl_DStringFree(dsOutPtr);
-	    return IcuError(interp, "String normalization failed.", status);
+	    return IcuError(interp, "String normalization failed", status);
 	}
     }
 
@@ -991,6 +994,7 @@ static int IcuParseConvertOptions(
 	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ICUENCNAME STRING");
 	return TCL_ERROR;
     }
+    objc -= 2; /* truncate fixed arguments */
 
     /* Use GetIndexFromObj for option parsing so -failindex can be added later */
 
@@ -998,13 +1002,13 @@ static int IcuParseConvertOptions(
     enum { OPT_PROFILE, OPT_FAILINDEX } opt;
     int i;
     int strict = 1;
-    for (i = 1; i < objc - 3; ++i) {
+    for (i = 1; i < objc; ++i) {
 	if (Tcl_GetIndexFromObj(
 		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	++i;
-	if (i >= (objc-1)) {
+	if (i == objc) {
 	    Tcl_SetObjResult(interp,
 			     Tcl_ObjPrintf("Missing value for option %s.",
 					   Tcl_GetString(objv[i - 1])));
@@ -1111,58 +1115,24 @@ IcuConverttoObjCmd(
     int objc,              /* Number of arguments. */
     Tcl_Obj *const objv[]) /* Argument objects. */
 {
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-profile PROFILE? ICUENCNAME STRING");
-	return TCL_ERROR;
-    }
+    int strict;
+    Tcl_Obj *failindexVar;
 
-    /* Use GetIndexFromObj for option parsing so -failindex can be added later */
-
-    static const char *optNames[] = {"-profile", "-failindex", NULL};
-    enum { OPT_PROFILE, OPT_FAILINDEX } opt;
-    int i;
-    int strict = 1;
-    for (i = 1; i < objc - 3; ++i) {
-	if (Tcl_GetIndexFromObj(
-		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	++i;
-	if (i >= (objc-1)) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Missing value for option %s.",
-					   Tcl_GetString(objv[i - 1])));
-	    return TCL_ERROR;
-	}
-	const char *s = Tcl_GetString(objv[i]);
-	switch (opt) {
-	case OPT_PROFILE:
-	    if (!strcmp(s, "replace")) {
-		strict = 0;
-	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
-                         " \"-profile\". Must be \"strict\" or \"replace\".",
-                         s));
-		return TCL_ERROR;
-	    }
-	    break;
-        case OPT_FAILINDEX:
-            /* TBD */
-            Tcl_SetResult(interp,
-                "Option -failindex not implemented.", TCL_STATIC);
-            return TCL_ERROR;
-	}
+    if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
+        return TCL_ERROR;
     }
 
     Tcl_DString dsIn;
     Tcl_DString dsOut;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-        IcuConverttoDString(interp, &dsIn, Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+        IcuConverttoDString(interp, &dsIn,
+            Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringResult(interp, &dsOut);
+    Tcl_SetObjResult(interp,
+        Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
+                            Tcl_DStringLength(&dsOut)));
+    Tcl_DStringFree(&dsOut);
     return TCL_OK;
 }
 
@@ -1207,7 +1177,7 @@ IcuNormalizeObjCmd(
 	    return TCL_ERROR;
 	}
 	++i;
-	if (i >= (objc-1)) {
+	if (i == (objc-1)) {
 	    Tcl_SetObjResult(interp,
 			     Tcl_ObjPrintf("Missing value for option %s.",
 					   Tcl_GetString(objv[i - 1])));
