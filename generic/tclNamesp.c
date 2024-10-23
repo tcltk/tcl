@@ -1084,10 +1084,10 @@ TclNamespaceDeleted(
 
 void
 TclTeardownNamespace(
-    Namespace *nsPtr)	/* Points to the namespace to be dismantled
+    Namespace *nsPtr)		/* Points to the namespace to be dismantled
 				 * and unlinked from its parent. */
 {
-    Interp *iPtr = (Interp *) nsPtr->interp;
+    Tcl_Interp *interp = nsPtr->interp;
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     int i;
@@ -1112,7 +1112,7 @@ TclTeardownNamespace(
 
     while (nsPtr->cmdTable.numEntries > 0) {
 	int length = nsPtr->cmdTable.numEntries;
-	Command **cmds = (Command **)TclStackAlloc((Tcl_Interp *) iPtr,
+	Command **cmds = (Command **)TclStackAlloc(interp,
 		sizeof(Command *) * length);
 
 	i = 0;
@@ -1124,11 +1124,10 @@ TclTeardownNamespace(
 	    i++;
 	}
 	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmds[i]);
+	    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmds[i]);
 	    TclCleanupCommandMacro(cmds[i]);
 	}
-	TclStackFree((Tcl_Interp *) iPtr, cmds);
+	TclStackFree(interp, cmds);
     }
     Tcl_DeleteHashTable(&nsPtr->cmdTable);
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
@@ -1184,7 +1183,7 @@ TclTeardownNamespace(
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
 	int length = nsPtr->childTable.numEntries;
-	Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
+	Namespace **children = (Namespace **)TclStackAlloc(interp,
 		sizeof(Namespace *) * length);
 
 	i = 0;
@@ -1199,13 +1198,13 @@ TclTeardownNamespace(
 	    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
 	    TclNsDecrRefCount(children[i]);
 	}
-	TclStackFree((Tcl_Interp *) iPtr, children);
+	TclStackFree(interp, children);
     }
 #else
     if (nsPtr->childTablePtr != NULL) {
 	while (nsPtr->childTablePtr->numEntries > 0) {
 	    int length = nsPtr->childTablePtr->numEntries;
-	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+	    Namespace **children = TclStackAlloc(interp,
 		    sizeof(Namespace *) * length);
 
 	    i = 0;
@@ -1220,7 +1219,7 @@ TclTeardownNamespace(
 		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
 		TclNsDecrRefCount(children[i]);
 	    }
-	    TclStackFree((Tcl_Interp *) iPtr, children);
+	    TclStackFree(interp, children);
 	}
     }
 #endif
