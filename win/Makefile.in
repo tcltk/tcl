@@ -26,6 +26,9 @@ datarootdir		= @datarootdir@
 runstatedir		= @runstatedir@
 mandir			= @mandir@
 
+# Configure arguments
+PKG_CFG_ARGS		= @PKG_CFG_ARGS@
+
 # The following definition can be set to non-null for special systems like AFS
 # with replication. It allows the pathnames used for installation to be
 # different than those used for actually reference files at run-time.
@@ -495,8 +498,15 @@ ${TCL_DLL_FILE}: ${TCL_LIB_FILE} ${TCL_OBJS} tcl.$(RES)
 	$(COPY) tclsh.exe.manifest ${TCL_DLL_FILE}.manifest
 	@VC_MANIFEST_EMBED_DLL@
 
+ifeq (,$(findstring --disable-shared,$(PKG_CFG_ARGS)))
 ${TCL_LIB_FILE}:
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
+else
+${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
+	@$(RM) ${TCL_LIB_FILE}
+	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
+	@POST_MAKE_LIB@
+endif
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
@@ -847,7 +857,6 @@ distclean: distclean-packages clean
 # Bundled package targets
 #
 
-PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 packages:
