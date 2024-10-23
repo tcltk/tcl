@@ -26,6 +26,9 @@ datarootdir		= @datarootdir@
 runstatedir		= @runstatedir@
 mandir			= @mandir@
 
+# Configure arguments
+PKG_CFG_ARGS		= @PKG_CFG_ARGS@
+
 # The following definition can be set to non-null for special systems like AFS
 # with replication. It allows the pathnames used for installation to be
 # different than those used for actually reference files at run-time.
@@ -578,7 +581,7 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@MAKE_STUB_LIB@ ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
+${TCL_DLL_FILE}: ${TCL_LIB_FILE} ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${TCL_DLL_FILE}.manifest
@@ -589,10 +592,15 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
+ifeq (,$(findstring --disable-shared,$(PKG_CFG_ARGS)))
+${TCL_LIB_FILE}:
+	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
+else
 ${TCL_LIB_FILE}: ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
 	@MAKE_LIB@ ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
+endif
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
@@ -607,7 +615,7 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${TEST_DLL_FILE}.manifest
 
-${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
+${TEST_EXE_FILE}: @LIBRARIES@ ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 		tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
@@ -1031,7 +1039,6 @@ distclean: distclean-packages clean
 # Bundled package targets
 #
 
-PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 packages:

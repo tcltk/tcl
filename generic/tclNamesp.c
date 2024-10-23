@@ -1182,10 +1182,10 @@ TclDeleteNamespaceChildren(
 
 void
 TclTeardownNamespace(
-    Namespace *nsPtr)	/* Points to the namespace to be dismantled
+    Namespace *nsPtr)		/* Points to the namespace to be dismantled
 				 * and unlinked from its parent. */
 {
-    Interp *iPtr = (Interp *) nsPtr->interp;
+    Tcl_Interp *interp = nsPtr->interp;
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Tcl_Size i;
@@ -1210,7 +1210,7 @@ TclTeardownNamespace(
 
     while (nsPtr->cmdTable.numEntries > 0) {
 	Tcl_Size length = nsPtr->cmdTable.numEntries;
-	Command **cmds = (Command **)TclStackAlloc((Tcl_Interp *) iPtr,
+	Command **cmds = (Command **)TclStackAlloc(interp,
 		sizeof(Command *) * length);
 
 	i = 0;
@@ -1222,11 +1222,10 @@ TclTeardownNamespace(
 	    i++;
 	}
 	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmds[i]);
+	    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmds[i]);
 	    TclCleanupCommandMacro(cmds[i]);
 	}
-	TclStackFree((Tcl_Interp *) iPtr, cmds);
+	TclStackFree(interp, cmds);
     }
     Tcl_DeleteHashTable(&nsPtr->cmdTable);
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
