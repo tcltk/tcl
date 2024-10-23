@@ -1284,8 +1284,8 @@ TclTeardownNamespace(
 
     while (nsPtr->cmdTable.numEntries > 0) {
 	Tcl_Size length = nsPtr->cmdTable.numEntries;
-	Command **cmds = (Command **)
-		TclStackAlloc(interp, sizeof(Command *) * length);
+	Command **cmds = (Command **)TclStackAlloc(interp,
+		sizeof(Command *) * length);
 
 	i = 0;
 	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
