@@ -58,7 +58,6 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::verbose \fR?\fIlevel\fR?
 
 \fBtcltest::test \fIname description optionList\fR
-\fBtcltest::bytestring \fIstring\fR
 \fBtcltest::normalizeMsg \fImsg\fR
 \fBtcltest::normalizePath \fIpathVar\fR
 \fBtcltest::workingDirectory \fR?\fIdir\fR?
@@ -455,18 +454,6 @@ Resolves symlinks in a path, thus creating a path without internal
 redirection.  It is assumed that \fIpathVar\fR is absolute.
 \fIpathVar\fR is modified in place.  The Tcl command \fBfile normalize\fR
 is a sufficient replacement.
-.\" COMMAND: bytestring
-.TP
-\fBbytestring \fIstring\fR
-.
-Construct a string that consists of the requested sequence of bytes,
-as opposed to a string of properly formed UTF-8 characters using the
-value supplied in \fIstring\fR.  This allows the tester to create
-denormalized or improperly formed strings to pass to C procedures that
-are supposed to accept strings with embedded NULL types and confirm
-that a string result has a certain pattern of bytes.  This is
-exactly equivalent to the Tcl command \fBencoding convertfrom\fR
-\fBidentity\fR.
 .SH TESTS
 .PP
 The \fBtest\fR command is the heart of the \fBtcltest\fR package.
