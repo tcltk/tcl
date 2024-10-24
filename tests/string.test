@@ -432,6 +432,7 @@ test string-3.45f.$noComp {string equal -nocase empty string against byte array}
     run {string equal -nocase  [binary decode hex 00] ""}
 } 0
 
+
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
@@ -2072,47 +2073,47 @@ test string-23.0.$noComp {string is boolean, Bug 1187123} testindexobj {
 test string-23.1.$noComp {string is command with empty string} {
     set s ""
     list \
-        [run {string is alnum $s}] \
-        [run {string is alpha $s}] \
-        [run {string is ascii $s}] \
-        [run {string is control $s}] \
-        [run {string is boolean $s}] \
-        [run {string is digit $s}] \
-        [run {string is double $s}] \
-        [run {string is false $s}] \
-        [run {string is graph $s}] \
-        [run {string is integer $s}] \
-        [run {string is lower $s}] \
-        [run {string is print $s}] \
-        [run {string is punct $s}] \
-        [run {string is space $s}] \
-        [run {string is true $s}] \
-        [run {string is upper $s}] \
-        [run {string is wordchar $s}] \
-        [run {string is xdigit $s}] \
+	[run {string is alnum $s}] \
+	[run {string is alpha $s}] \
+	[run {string is ascii $s}] \
+	[run {string is control $s}] \
+	[run {string is boolean $s}] \
+	[run {string is digit $s}] \
+	[run {string is double $s}] \
+	[run {string is false $s}] \
+	[run {string is graph $s}] \
+	[run {string is integer $s}] \
+	[run {string is lower $s}] \
+	[run {string is print $s}] \
+	[run {string is punct $s}] \
+	[run {string is space $s}] \
+	[run {string is true $s}] \
+	[run {string is upper $s}] \
+	[run {string is wordchar $s}] \
+	[run {string is xdigit $s}] \
 
 } {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
 test string-23.2.$noComp {string is command with empty string} {
     set s ""
     list \
-        [run {string is alnum -strict $s}] \
-        [run {string is alpha -strict $s}] \
-        [run {string is ascii -strict $s}] \
-        [run {string is control -strict $s}] \
-        [run {string is boolean -strict $s}] \
-        [run {string is digit -strict $s}] \
-        [run {string is double -strict $s}] \
-        [run {string is false -strict $s}] \
-        [run {string is graph -strict $s}] \
-        [run {string is integer -strict $s}] \
-        [run {string is lower -strict $s}] \
-        [run {string is print -strict $s}] \
-        [run {string is punct -strict $s}] \
-        [run {string is space -strict $s}] \
-        [run {string is true -strict $s}] \
-        [run {string is upper -strict $s}] \
-        [run {string is wordchar -strict $s}] \
-        [run {string is xdigit -strict $s}] \
+	[run {string is alnum -strict $s}] \
+	[run {string is alpha -strict $s}] \
+	[run {string is ascii -strict $s}] \
+	[run {string is control -strict $s}] \
+	[run {string is boolean -strict $s}] \
+	[run {string is digit -strict $s}] \
+	[run {string is double -strict $s}] \
+	[run {string is false -strict $s}] \
+	[run {string is graph -strict $s}] \
+	[run {string is integer -strict $s}] \
+	[run {string is lower -strict $s}] \
+	[run {string is print -strict $s}] \
+	[run {string is punct -strict $s}] \
+	[run {string is space -strict $s}] \
+	[run {string is true -strict $s}] \
+	[run {string is upper -strict $s}] \
+	[run {string is wordchar -strict $s}] \
+	[run {string is xdigit -strict $s}] \
 
 } {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
 
@@ -2283,12 +2284,12 @@ test string-26.10.$noComp {tcl::prefix} -body {
 } -returnCodes 2 -result {ambiguous option "be": must be apa, bepa, bear, or depa}
 test string-26.10.1.$noComp {tcl::prefix} -setup {
     proc _testprefix {args} {
-        array set opts {-a x -b y -c y}
-        foreach {opt val} $args {
-            set opt [tcl::prefix match -error {-level 1} {-a -b -c} $opt]
-            set opts($opt) $val
-        }
-        array get opts
+	array set opts {-a x -b y -c y}
+	foreach {opt val} $args {
+	    set opt [tcl::prefix match -error {-level 1} {-a -b -c} $opt]
+	    set opts($opt) $val
+	}
+	array get opts
     }
 } -body {
     set a [catch {_testprefix -x u} result options]
@@ -2304,15 +2305,15 @@ test string-26.10.1.$noComp {tcl::prefix} -setup {
 proc MemStress {args} {
     set res {}
     foreach body $args {
-        set end 0
-        for {set i 0} {$i < 5} {incr i} {
-            proc MemStress_Body {} $body
-            uplevel 1 MemStress_Body
-            rename MemStress_Body {}
-            set tmp $end
-            set end [lindex [lindex [split [memory info] "\n"] 3] 3]
-        }
-        lappend res [expr {$end - $tmp}]
+	set end 0
+	for {set i 0} {$i < 5} {incr i} {
+	    proc MemStress_Body {} $body
+	    uplevel 1 MemStress_Body
+	    rename MemStress_Body {}
+	    set tmp $end
+	    set end [lindex [lindex [split [memory info] "\n"] 3] 3]
+	}
+	lappend res [expr {$end - $tmp}]
     }
     return $res
 }
@@ -2320,21 +2321,21 @@ proc MemStress {args} {
 test string-26.11.$noComp {tcl::prefix: testing for leaks} -body {
     # This test is made to stress object reference management
     MemStress {
-        set table {hejj miff gurk}
-        set item [lindex $table 1]
-        # If not careful, this can cause a circular reference
-        # that will cause a leak.
-        tcl::prefix match $table $item
+	set table {hejj miff gurk}
+	set item [lindex $table 1]
+	# If not careful, this can cause a circular reference
+	# that will cause a leak.
+	tcl::prefix match $table $item
     } {
-        # A similar case with nested lists
-        set table2 {hejj {miff maff} gurk}
-        set item [lindex [lindex $table2 1] 0]
-        tcl::prefix match $table2 $item
+	# A similar case with nested lists
+	set table2 {hejj {miff maff} gurk}
+	set item [lindex [lindex $table2 1] 0]
+	tcl::prefix match $table2 $item
     } {
-        # A similar case with dict
-        set table3 {hejj {miff maff} gurk2}
-        set item [lindex [dict keys [lindex $table3 1]] 0]
-        tcl::prefix match $table3 $item
+	# A similar case with dict
+	set table3 {hejj {miff maff} gurk2}
+	set item [lindex [dict keys [lindex $table3 1]] 0]
+	tcl::prefix match $table3 $item
     }
 } -constraints memory -result {0 0 0}
 
@@ -2343,29 +2344,29 @@ test string-26.12.$noComp {tcl::prefix: testing for leaks} -body {
     # in real code.  The shared literal "miff" causes a connection
     # between the item and the table.
     MemStress {
-        proc stress1 {item} {
-            set table [list hejj miff gurk]
-            tcl::prefix match $table $item
-        }
-        proc stress2 {} {
-            stress1 miff
-        }
-        stress2
-        rename stress1 {}
-        rename stress2 {}
+	proc stress1 {item} {
+	    set table [list hejj miff gurk]
+	    tcl::prefix match $table $item
+	}
+	proc stress2 {} {
+	    stress1 miff
+	}
+	stress2
+	rename stress1 {}
+	rename stress2 {}
     }
 } -constraints memory -result 0
 
 test string-26.13.$noComp {tcl::prefix: testing for leaks} -body {
     # This test is made to stress object reference management
     MemStress {
-        set table [list hejj miff]
-        set item $table
-        set error $table
-        # Use the same objects in all places
-        catch {
-            tcl::prefix match -error $error $table $item
-        }
+	set table [list hejj miff]
+	set item $table
+	set error $table
+	# Use the same objects in all places
+	catch {
+	    tcl::prefix match -error $error $table $item
+	}
     }
 } -constraints memory -result {0}
 

@@ -466,7 +466,7 @@ denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.  This is
 exactly equivalent to the Tcl command \fBencoding convertfrom\fR
-\fBidentity\fR.
+\fBidentity\fR. This function is deprecated.
 .SH TESTS
 .PP
 The \fBtest\fR command is the heart of the \fBtcltest\fR package.
