@@ -4656,11 +4656,11 @@ TEBCresume(
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
-		return ((Tcl_MethodCallProc *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
+		return mPtr->typePtr->callProc(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, opnd, objv);
 	    }
 #endif /* TCL_NO_DEPRECATED */
-	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
+	    return mPtr->type2Ptr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
