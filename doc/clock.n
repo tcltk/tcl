@@ -103,7 +103,7 @@ have 59 or 61 seconds.
 .TP
 \fInow\fR
 Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as
-replacement for today, which is simply interpolated to the runt-time as value
+replacement for today, which is simply interpolated to the run-time as value
 of \fBclock seconds\fR. For example:
 .sp
 \fBclock format now -f %a; # current day of the week\fR
