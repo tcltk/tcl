@@ -661,16 +661,11 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-!if $(STATIC_BUILD)
 # Remove the registry and dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
-!else
-    @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
-    @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
-!endif
 	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
 	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
@@ -1136,17 +1131,13 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
 	@echo Installing $(TCLDDELIBNAME)
-!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-!endif
 	@echo Installing $(TCLREGLIBNAME)
-!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
-!endif
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
