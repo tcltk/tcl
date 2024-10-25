@@ -474,7 +474,7 @@ ExecuteCallback(
 	}
 	nonBytes:
 	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
-		(void *)NULL);
+		(char *)NULL);
 	Tcl_Release(eval);
 	return TCL_ERROR;
 

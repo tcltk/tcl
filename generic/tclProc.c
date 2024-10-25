@@ -188,14 +188,14 @@ Tcl_ProcObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": unknown namespace",
 		procName));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create procedure \"%s\": bad procedure name",
 		procName));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -503,7 +503,7 @@ TclCreateProc(
 		    "precompiled header expects %" TCL_SIZE_MODIFIER "d", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "BYTECODELIES", (void *)NULL);
+		    "BYTECODELIES", (char *)NULL);
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -533,14 +533,14 @@ TclCreateProc(
 	    Tcl_AppendToObj(errorObj, "\"", -1);
 	    Tcl_SetObjResult(interp, errorObj);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (void *)NULL);
+		    "FORMALARGUMENTFORMAT", (char *)NULL);
 	    goto procError;
 	}
 	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (void *)NULL);
+		    "FORMALARGUMENTFORMAT", (char *)NULL);
 	    goto procError;
 	}
 
@@ -559,7 +559,7 @@ TclCreateProc(
 			    "formal parameter \"%s\" is an array element",
 			    TclGetString(fieldValues[0])));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "FORMALARGUMENTFORMAT", (void *)NULL);
+			    "FORMALARGUMENTFORMAT", (char *)NULL);
 		    goto procError;
 		}
 	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
@@ -569,7 +569,7 @@ TclCreateProc(
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"FORMALARGUMENTFORMAT", (void *)NULL);
+			"FORMALARGUMENTFORMAT", (char *)NULL);
 		goto procError;
 	    }
 	    argnamei++;
@@ -597,7 +597,7 @@ TclCreateProc(
 			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"BYTECODELIES", (void *)NULL);
+			"BYTECODELIES", (char *)NULL);
 		goto procError;
 	    }
 
@@ -619,7 +619,7 @@ TclCreateProc(
 			"default value inconsistent with precompiled body", -1);
 		    Tcl_SetObjResult(interp, errorObj);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "BYTECODELIES", (void *)NULL);
+			    "BYTECODELIES", (char *)NULL);
 		    goto procError;
 		}
 	    }
@@ -847,7 +847,7 @@ badLevel:
 	name = objPtr ? TclGetString(objPtr) : "1" ;
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, (char *)NULL);
     return -1;
 }
 
@@ -1099,7 +1099,7 @@ ProcWrongNumArgs(
 	    if (defPtr->value.objPtr != NULL) {
 		TclNewObj(argObj);
 		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?",
-			(void *)NULL);
+			(char *)NULL);
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
 		numArgs--;
 		final = "?arg ...?";
@@ -1861,7 +1861,7 @@ InterpProcNR2(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invoked \"%s\" outside of a loop",
 		((result == TCL_BREAK) ? "break" : "continue")));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RESULT", "UNEXPECTED", (char *)NULL);
 	result = TCL_ERROR;
 
 	/* FALLTHRU */
@@ -1944,7 +1944,7 @@ TclProcCompileProc(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"a precompiled script jumped interps", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"CROSSINTERPBYTECODE", (void *)NULL);
+			"CROSSINTERPBYTECODE", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    codePtr->compileEpoch = iPtr->compileEpoch;
@@ -1969,7 +1969,7 @@ TclProcCompileProc(
 
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
-	    Tcl_AppendStringsToObj(message, description, " \"", (void *)NULL);
+	    Tcl_AppendStringsToObj(message, description, " \"", (char *)NULL);
 	    Tcl_AppendLimitedToObj(message, procName, TCL_INDEX_NONE, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
@@ -2462,7 +2462,7 @@ SetLambdaFromAny(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
 		Tcl_GetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
 	return TCL_ERROR;
     }
     result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
@@ -2470,7 +2470,7 @@ SetLambdaFromAny(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
 		TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", (char *)NULL);
 	return TCL_ERROR;
     }
 
