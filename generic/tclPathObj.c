@@ -2491,7 +2491,7 @@ MakeTildeRelativePath(
 			"couldn't find HOME environment variable to expand path",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-			"HOMELESS", (void *)NULL);
+			"HOMELESS", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2503,7 +2503,7 @@ MakeTildeRelativePath(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"user \"%s\" doesn't exist", user));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}

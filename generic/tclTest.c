@@ -550,7 +550,7 @@ Tcltest_Init(
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
 #if defined(TCL_NO_DEPRECATED)
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-			info.objProc2, (void *)version, NULL);
+		info.objProc2, (void *)version, NULL);
 #else
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
