@@ -466,6 +466,12 @@ test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
 test encoding-15.31 {UtfToUtfProc -profile strict CESU-8 (bytes F0-F4 are invalid)} -body {
     encoding convertfrom -profile strict cesu-8 \xF1\x86\x83\x9C
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
+test encoding-15.32 {UtfToUtfProc CESU-8 [2f22a7364d]} -body {
+    encoding convertto cesu-8 \U1f600
+} -result \xED\xA0\xBD\xED\xB8\x80
+test encoding-15.33 {UtfToUtfProc CESU-8 [63325009a8]} -body {
+    encoding convertto cesu-8 \u0400
+} -result \xD0\x80
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -1176,7 +1182,17 @@ test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     encoding convertfrom -profile replace jis0208 \x78\x79
 } -result \uFFFD\uFFFD
 
+test encoding-bug-201c7a3aa6-strict {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile strict iso2022 \U1f600
+} -result {unexpected character at index 0: 'U+01F600'} -returnCodes error
 
+test encoding-bug-201c7a3aa6-replace {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile replace iso2022 \U1f600
+} -result ?
+
+test encoding-bug-201c7a3aa6-tcl8 {Crash encoding non-BMP to iso2022} -body {
+    encoding convertto -profile tcl8 iso2022 \U1f600
+} -result ?
 
 # cleanup
 namespace delete ::tcl::test::encoding

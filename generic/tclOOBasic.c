@@ -91,13 +91,14 @@ TclOO_Class_Constructor(
 	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
-    } else if ((size_t) objc == skip) {
-	return TCL_OK;
     }
 
     /*
      * Make the class definition delegate. This is special; it doesn't reenter
      * here (and the class definition delegate doesn't run any constructors).
+     * 
+     * This needs to be done before consideration of whether to pass the script
+     * argument to [oo::define]. [Bug 680503]
      */
 
     nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
@@ -105,6 +106,14 @@ TclOO_Class_Constructor(
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
 	    TclGetString(nameObj), NULL, -1, NULL, -1);
     Tcl_BounceRefCount(nameObj);
+
+    /*
+     * If there's nothing else to do, we're done.
+     */
+
+    if ((size_t) objc == skip) {
+	return TCL_OK;
+    }
 
     /*
      * Delegate to [oo::define] to do the work.
@@ -725,14 +734,20 @@ TclOO_Object_LinkVar(
  *
  *	Look up a variable in an object. Tricky because of private variables.
  *
+ * Returns:
+ *	Handle to the variable if it can be found, or NULL if there's an error.
+ *
  * ----------------------------------------------------------------------
  */
 Tcl_Var
 TclOOLookupObjectVar(
     Tcl_Interp *interp,
-    Tcl_Object object,
-    Tcl_Obj *varName,
-    Tcl_Var *aryPtr)
+    Tcl_Object object,		/* Object we're looking up within. */
+    Tcl_Obj *varName,		/* User-visible name we're looking up. */
+    Tcl_Var *aryPtr)		/* Where to write the handle to the array
+				 * containing the element; if not an element,
+				 * then the variable this points to is set to
+				 * NULL. */
 {
     const char *arg = TclGetString(varName);
     Tcl_Obj *varNamePtr;
@@ -815,7 +830,15 @@ TclOOLookupObjectVar(
     Tcl_DecrRefCount(varNamePtr);
     if (var == NULL) {
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *) NULL);
+    } else if (*aryPtr == NULL && TclIsVarArrayElement((Var *) var)) {
+	/*
+	 * If the varPtr points to an element of an array but we don't already
+	 * have the array, find it now. Note that this can't be easily
+	 * backported; the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
+	 */
+	*aryPtr = (Tcl_Var) TclVarParentArray(var);
     }
+
     return var;
 }
 
@@ -858,16 +881,6 @@ TclOO_Object_VarName(
      */
     if (!TclIsVarArrayElement((Var *) varPtr)) {
 	TclSetVarNamespaceVar((Var *) varPtr);
-    }
-
-    /*
-     * If the varPtr points to an element of an array but we don't already
-     * have the array, find it now. Note that this can't be easily backported;
-     * the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
-     */
-
-    if (aryVar == NULL && TclIsVarArrayElement((Var *) varPtr)) {
-	aryVar = (Tcl_Var) TclVarParentArray(varPtr);
     }
 
     /*
@@ -1126,8 +1139,8 @@ TclOOSelfObjCmd(
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->oPtr->namespacePtr->fullName, -1));
+	Tcl_SetObjResult(interp,
+		TclNewNamespaceObj(contextPtr->oPtr->namespacePtr));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;

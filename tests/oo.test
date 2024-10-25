@@ -1765,6 +1765,31 @@ test oo-11.7 {Bug 154f0982f2: createWithNamespace and an existing namespace} -se
     Aclass destroy
     catch {namespace delete test_oo117}
 } -result {can't create namespace "::test_oo117": already exists}
+test oo-11.8 {Bug 708422: unset traces in deletion shouldn't crash} -setup {
+    oo::class create foo {
+	self export createWithNamespace
+	method dummy {} {}
+    }
+    set result {}
+} -body {
+    oo::define foo {
+	variable x
+	constructor {} {
+            trace add variable x unset [list apply {{self ns args} {
+		global result
+		lappend result [info object isa object $self]
+		lappend result [namespace exists $ns]
+		# Method dispatch fails; too much gone in this case
+		catch {$self dummy} msg
+		lappend result $msg
+	    }} [self] [self namespace]]
+	}
+    }
+    [foo createWithNamespace bar oo-11.8] destroy
+    return $result
+} -cleanup {
+    foo destroy
+} -result {1 0 {impossible to invoke method "dummy": no defined method or unknown method}}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -3127,6 +3152,7 @@ test oo-19.5 {OO: varname array elements [Bug 2da1cb0c80]} -setup {
 } -cleanup {
     $obj destroy
 } -result ::tcl_platform(platform)
+# Test oo-19.5.1 is no longer relevant
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {

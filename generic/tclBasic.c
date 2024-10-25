@@ -453,7 +453,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* 
+    /*
      * [zipfs] perhaps has some safe commands. But like file make it inaccessible
      * until they are analyzed to be safe.
      */
@@ -8874,7 +8874,7 @@ TclNRTailcallObjCmd(
      */
 
     if (objc > 1) {
-	Tcl_Obj *listPtr, *nsObjPtr;
+	Tcl_Obj *listPtr;
 	Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 
 	/*
@@ -8882,9 +8882,8 @@ TclNRTailcallObjCmd(
 	 * namespace, the rest the command to be tailcalled.
 	 */
 
-	nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
 	listPtr = Tcl_NewListObj(objc, objv);
-	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
 
 	iPtr->varFramePtr->tailcallPtr = listPtr;
     }
@@ -9037,8 +9036,8 @@ TclNRYieldToObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
+    Tcl_Obj *listPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -9067,8 +9066,7 @@ TclNRYieldToObjCmd(
      */
 
     listPtr = Tcl_NewListObj(objc, objv);
-    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, TCL_INDEX_NONE);
-    TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(nsPtr));
 
     /*
      * Add the callback in the caller's env, then instruct TEBC to yield.
@@ -9762,7 +9760,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode. Note that
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.

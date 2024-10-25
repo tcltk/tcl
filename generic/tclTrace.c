@@ -1455,7 +1455,7 @@ TclCheckInterpTraces(
 
 	if (!(tracePtr->flags & TCL_TRACE_EXEC_IN_PROGRESS)) {
 	    /*
-	     * The proc invoked might delete the traced command which which
+	     * The proc invoked might delete the traced command which
 	     * might try to free tracePtr. We want to use tracePtr until the
 	     * end of this if section, so we use Tcl_Preserve() and
 	     * Tcl_Release() to be sure it is not freed while we still need

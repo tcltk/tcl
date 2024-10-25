@@ -215,7 +215,7 @@ typedef struct ChannelState {
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */
-    size_t epoch;		/* Used to test validity of stored channelname
+    Tcl_Size epoch;		/* Used to test validity of stored channelname
 				 * lookup results. */
     int maxPerms;		/* TIP #220: Max access privileges
 				 * the channel was created with. */

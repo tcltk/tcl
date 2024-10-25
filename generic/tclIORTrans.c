@@ -529,9 +529,10 @@ TclChanPushObjCmd(
      * Actually: rPush CHANNEL CMDPREFIX
      *           [0]   [1]     [2]
      */
-
-#define CHAN	(1)
-#define CMD	(2)
+    enum ArgIndices {
+	CHAN = 1,
+	CMD = 2
+    };
 
     /*
      * Number of arguments...
@@ -682,7 +683,7 @@ TclChanPushObjCmd(
 	    rtPtr->parent);
 
     /*
-     * Register the transform in our our map for proper handling of deleted
+     * Register the transform in our map for proper handling of deleted
      * interpreters and/or threads.
      */
 
@@ -714,9 +715,6 @@ TclChanPushObjCmd(
 
     Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
-
-#undef CHAN
-#undef CMD
 }
 
 /*
@@ -751,8 +749,9 @@ TclChanPopObjCmd(
      * Actually: rPop CHANNEL
      *           [0]  [1]
      */
-
-#define CHAN	(1)
+    enum ArgIndices {
+	CHAN = 1
+    };
 
     const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
@@ -786,8 +785,6 @@ TclChanPopObjCmd(
 
     Tcl_UnstackChannel(interp, chan);
     return TCL_OK;
-
-#undef CHAN
 }
 
 /*
@@ -2473,7 +2470,7 @@ ForwardProc(
      * quiescent. Because of this we can treat the data as belonging to us,
      * without fear of race conditions. I.e. we can read and write as we like.
      *
-     * The only thing we cannot be sure of is the resultPtr. This can be be
+     * The only thing we cannot be sure of is the resultPtr. This can be
      * NULLed if the originating thread went away while the event is handled
      * here now.
      */

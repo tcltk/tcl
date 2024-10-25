@@ -2399,7 +2399,7 @@ DeleteScanNumberCache(
  *
  * NOTES --
  *
- *	Some measurements show that it is faster to use a table to to perform
+ *	Some measurements show that it is faster to use a table to perform
  *	uuencode and base64 value encoding than to calculate the output (at
  *	least on intel P4 arch).
  *

@@ -1732,7 +1732,7 @@ TclOODefineDefnNsObjCmd(
 	if (nsPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	nsNamePtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+	nsNamePtr = TclNewNamespaceObj(nsPtr);
 	Tcl_IncrRefCount(nsNamePtr);
     }
 
@@ -3394,7 +3394,7 @@ Configurable_ObjectWritableProps_Set(
  *	instance.
  *
  * BuildPropertyList --
- * 
+ *
  *	Helper for the helpers. Scans a property list and does the filtering
  *	or adding of the property to add or remove
  *

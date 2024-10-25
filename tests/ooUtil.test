@@ -177,6 +177,18 @@ test ooUtil-1.9 {TIP 478: classmethod in safe child interp} -setup {
 } -cleanup {
     interp delete $safeinterp
 } -result {{::Table called with arguments: foo bar} {}}
+test ooUtil-1.10.1 {Bug 680503: classmethod shouldn't require create body} -body {
+    oo::class create C
+    oo::define C {classmethod cm {} {}}
+} -cleanup {
+    catch {C destroy}
+} -result {}
+test ooUtil-1.10.2 {Bug 680503: case that worked} -body {
+    oo::class create C {}
+    oo::define C {classmethod cm {} {}}
+} -cleanup {
+    catch {C destroy}
+} -result {}
 
 test ooUtil-2.1 {TIP 478: callback generation} -setup {
     oo::class create parent
