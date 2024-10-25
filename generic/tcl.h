@@ -42,7 +42,6 @@ extern "C" {
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * README.md		(sections 0 and 2, with and without separator)
- * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
  */
@@ -2447,8 +2446,7 @@ TclBounceRefCount(
 
 /*
  * Declare that obj will no longer be used or referenced.
- * This will release the obj if there is no referece count,
- * otherwise let it be.
+ * This will free the obj if there are no references to the obj.
  */
 #   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr);

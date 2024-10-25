@@ -1,6 +1,5 @@
-# Commands covered:  set (plus basic command syntax).  Also tests the
-# procedures in the file tclOldParse.c.  This set of tests is an old
-# one that predates the new parser in Tcl 8.1.
+# Commands covered:  set (plus basic command syntax).  This set
+# of tests is an old one that predates the parser in Tcl 8.1.
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
@@ -363,17 +362,17 @@ test parseOld-10.14 {syntax errors} {
 "eval \$x[format "%01000d" 0]("}}
 test parseOld-10.15 {syntax errors, missplaced braces} {
     catch {
-        proc misplaced_end_brace {} {
-            set what foo
-            set when [expr ${what}size - [set off$what]}]
+	proc misplaced_end_brace {} {
+	    set what foo
+	    set when [expr ${what}size - [set off$what]}]
     } msg
     set msg
 } {extra characters after close-brace}
 test parseOld-10.16 {syntax errors, missplaced braces} {
     catch {
-        set a {
-            set what foo
-            set when [expr ${what}size - [set off$what]}]
+	set a {
+	    set what foo
+	    set when [expr ${what}size - [set off$what]}]
     } msg
     set msg
 } {extra characters after close-brace}

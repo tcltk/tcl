@@ -82,7 +82,7 @@ typedef struct TestAsyncHandler {
 				/* Next is list of handlers. */
 } TestAsyncHandler;
 
-#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 #   undef Tcl_CreateObjCommand2
 #   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
 #   define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
@@ -548,7 +548,7 @@ Tcltest_Init(
     }
 
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8 && defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED)
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 			info.objProc2, (void *)version, NULL);
 #else
@@ -812,11 +812,11 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8 && defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED)
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		info.objProc2, (void *)version, NULL);
 #else
-	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
+	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
 #endif
     }
@@ -2168,10 +2168,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-        Tcl_SetObjResult(interp,
-                         Tcl_ObjPrintf("%s wrote past output buffer",
-                                       transformer == Tcl_ExternalToUtf ?
-                                       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+	Tcl_SetObjResult(interp,
+			 Tcl_ObjPrintf("%s wrote past output buffer",
+				       transformer == Tcl_ExternalToUtf ?
+				       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];

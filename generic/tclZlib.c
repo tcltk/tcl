@@ -15,7 +15,6 @@
  */
 
 #include "tclInt.h"
-#ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "tclIO.h"
 
@@ -4041,143 +4040,6 @@ TclZlibInit(
 
     return Tcl_PkgProvideEx(interp, "tcl::zlib", TCL_ZLIB_VERSION, NULL);
 }
-
-/*
- *----------------------------------------------------------------------
- *	Stubs used when a suitable zlib installation was not found during
- *	configure.
- *----------------------------------------------------------------------
- */
-
-#else /* !HAVE_ZLIB */
-int
-Tcl_ZlibStreamInit(
-    Tcl_Interp *interp,
-    int mode,
-    int format,
-    int level,
-    Tcl_Obj *dictObj,
-    Tcl_ZlibStream *zshandle)
-{
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unimplemented", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", (char *)NULL);
-    }
-    return TCL_ERROR;
-}
-
-int
-Tcl_ZlibStreamClose(
-    Tcl_ZlibStream zshandle)
-{
-    return TCL_OK;
-}
-
-int
-Tcl_ZlibStreamReset(
-    Tcl_ZlibStream zshandle)
-{
-    return TCL_OK;
-}
-
-Tcl_Obj *
-Tcl_ZlibStreamGetCommandName(
-    Tcl_ZlibStream zshandle)
-{
-    return NULL;
-}
-
-int
-Tcl_ZlibStreamEof(
-    Tcl_ZlibStream zshandle)
-{
-    return 1;
-}
-
-int
-Tcl_ZlibStreamChecksum(
-    Tcl_ZlibStream zshandle)
-{
-    return 0;
-}
-
-int
-Tcl_ZlibStreamPut(
-    Tcl_ZlibStream zshandle,
-    Tcl_Obj *data,
-    int flush)
-{
-    return TCL_OK;
-}
-
-int
-Tcl_ZlibStreamGet(
-    Tcl_ZlibStream zshandle,
-    Tcl_Obj *data,
-    size_t count)
-{
-    return TCL_OK;
-}
-
-int
-Tcl_ZlibDeflate(
-    Tcl_Interp *interp,
-    int format,
-    Tcl_Obj *data,
-    int level,
-    Tcl_Obj *gzipHeaderDictObj)
-{
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unimplemented", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", (char *)NULL);
-    }
-    return TCL_ERROR;
-}
-
-int
-Tcl_ZlibInflate(
-    Tcl_Interp *interp,
-    int format,
-    Tcl_Obj *data,
-    size_t bufferSize,
-    Tcl_Obj *gzipHeaderDictObj)
-{
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unimplemented", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", (char *)NULL);
-    }
-    return TCL_ERROR;
-}
-
-unsigned int
-Tcl_ZlibCRC32(
-    TCL_UNUSED(unsigned int),
-    TCL_UNUSED(const unsigned char *),
-    TCL_UNUSED(size_t))
-{
-    return 0;
-}
-
-unsigned int
-Tcl_ZlibAdler32(
-    TCL_UNUSED(unsigned int),
-    TCL_UNUSED(const unsigned char *),
-    TCL_UNUSED(size_t))
-{
-    return 0;
-}
-
-void
-Tcl_ZlibStreamSetCompressionDictionary(
-    Tcl_ZlibStream zshandle,
-    Tcl_Obj *compressionDictionaryObj)
-{
-    /* Do nothing. */
-}
-#endif /* HAVE_ZLIB */
 
 /*
  * Local Variables:

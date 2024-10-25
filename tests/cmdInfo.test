@@ -82,8 +82,8 @@ test cmdinfo-5.1 {Names for commands created when inside namespaces} \
     namespace eval cmdInfoNs1 {}   ;# creates namespace cmdInfoNs1
     # create namespace cmdInfoNs1::cmdInfoNs2 and execute a script in it
     set x [namespace eval cmdInfoNs1::cmdInfoNs2 {
-        # the following creates a cmd in the global namespace
-        testcmdtoken create testCmd
+	# the following creates a cmd in the global namespace
+	testcmdtoken create testCmd
     }]
     set y [testcmdtoken name $x]
     rename ::testCmd newTestCmd

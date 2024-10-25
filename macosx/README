@@ -78,40 +78,6 @@ The Mac OS X specific configure flags are --enable-framework and
 --disable-corefoundation (which disables CF and notably reverts to the standard
 select based notifier).
 
-- It is also possible to build with the Xcode IDE via the projects in
-tcl/macosx, take care to use the project matching your DevTools and OS version:
-	Tcl.xcodeproj:		    for Xcode 3.2 on 10.6
-These have the following targets:
-	Tcl:			    calls through to tcl/macosx/GNUMakefile.
-	tcltest:		    static build of tcltest for debugging.
-	tests:			    build tcltest target and run tcl testsuite.
-The following build configurations are available:
-	Debug:			    debug build for the active architecture,
-				    with Fix & Continue enabled.
-	Debug clang:		    use clang compiler.
-	Debug llvm-gcc:		    use llvm-gcc compiler.
-	Debug gcc40:		    use gcc 4.0 compiler.
-	DebugNoFixAndContinue:      disable Fix & Continue.
-	DebugNoCF:		    disable corefoundation.
-	DebugMemCompile:	    enable memory and bytecode debugging.
-	DebugLeaks:		    define PURIFY.
-	DebugGCov:		    enable generation of gcov data files.
-	Release:		    release build for the active architecture.
-	ReleaseUniversal:	    32/64-bit universal build.
-	ReleaseUniversal clang:	    use clang compiler.
-	ReleaseUniversal llvm-gcc:  use llvm-gcc compiler.
-	ReleaseUniversal gcc40:	    use gcc 4.0 compiler.
-	ReleaseUniversal10.5SDK:    build against the 10.5 SDK (with 10.5
-				    deployment target).
-	Note that the non-SDK configurations have their deployment target set to
-	10.6 (Tcl.xcodeproj).
-The Xcode projects refer to the toplevel tcl source directory via the
-TCL_SRCROOT user build setting, by default this is set to the project-relative
-path '../../tcl', if your tcl source directory is named differently, e.g.
-'../../tcl9.1', you need to manually change the TCL_SRCROOT setting by editing
-your ${USER}.pbxuser file (located inside the Tcl.xcodeproj bundle directory)
-with a text editor.
-
 - To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
 	export CFLAGS="-arch x86_64 -arch arm64"
 This requires Mac OS X 10.6 and Xcode 10.2 and will work on any architecture.
@@ -130,8 +96,8 @@ Detailed Instructions for building with macosx/GNUmakefile
 Setup this shell variable as follows:
 	ver="9.1"
 
-- Setup environment variables as desired, e.g. for a universal build on 10.5:
-	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.5"
+- Setup environment variables as desired, e.g. for a universal build on 10.9:
+	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.9"
 	export CFLAGS
 
 - Change to the directory containing the Tcl source tree and build:

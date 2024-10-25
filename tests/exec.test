@@ -640,7 +640,7 @@ test exec-17.1 {inheriting standard I/O} -constraints {exec} -setup {
     set f [open $path(script) w]
     puts $f [list lassign [list \
 	    [info nameofexecutable] $path(gorp.file) $path(echo) $path(sleep) \
-        ] exe file echo sleep]
+	] exe file echo sleep]
     puts $f {
 	close stdout
 	set f [open $file w]
@@ -716,8 +716,8 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
 # Test with encoding mismatches (Bug 0f1ddc0df7fb7)
 test exec-21.1 {exec encoding mismatch on stdout} -setup {
     set path(script) [makeFile {
-        fconfigure stdout -translation binary
-        puts a\xe9b
+	fconfigure stdout -translation binary
+	puts a\xe9b
     } script]
     set enc [encoding system]
     encoding system utf-8
@@ -729,8 +729,8 @@ test exec-21.1 {exec encoding mismatch on stdout} -setup {
 } -result a\uFFFDb
 test exec-21.2 {exec encoding mismatch on stderr} -setup {
     set path(script) [makeFile {
-        fconfigure stderr -translation binary
-        puts stderr a\xe9b
+	fconfigure stderr -translation binary
+	puts stderr a\xe9b
     } script]
     set enc [encoding system]
     encoding system utf-8

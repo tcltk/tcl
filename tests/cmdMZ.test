@@ -290,19 +290,19 @@ test cmdMZ-4.9 {Tcl_SplitObjCmd: basic split commands} {
 } {{} {} {} {}}
 test cmdMZ-4.10 {Tcl_SplitObjCmd: basic split commands} {
     apply {{} {
-        set x {}
-        foreach f [split {]\n} {}] {
-            append x $f
-        }
-        return $x
+	set x {}
+	foreach f [split {]\n} {}] {
+	    append x $f
+	}
+	return $x
     }}
 } {]\n}
 test cmdMZ-4.11 {Tcl_SplitObjCmd: basic split commands} {
     apply {{} {
-        set x ab\x00c
-        set y [split $x {}]
+	set x ab\x00c
+	set y [split $x {}]
 	binary scan $y c* z
-        return $z
+	return $z
     }}
 } {97 32 98 32 0 32 99}
 test cmdMZ-4.12 {Tcl_SplitObjCmd: basic split commands} {

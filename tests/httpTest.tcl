@@ -32,8 +32,8 @@ namespace eval ::httpTest {
     variable testResults {}
     variable testOptions
     array set testOptions {
-        -verbose 0
-        -dotted  1
+	-verbose 0
+	-dotted  1
     }
     # -verbose - 0 quiet 1 write to stdout 2 write more
     # -dotted  - (boolean) use dots for absences in lists of transactions
@@ -42,8 +42,8 @@ namespace eval ::httpTest {
 proc httpTest::Puts {txt} {
     variable testOptions
     if {$testOptions(-verbose) > 0} {
-        puts stdout $txt
-        flush stdout
+	puts stdout $txt
+	flush stdout
     }
     return
 }
@@ -61,10 +61,10 @@ proc http::Log {args} {
     set time [expr {[clock milliseconds] - $TestStartTimeInMs}]
     set txt [list $time {*}$args]
     if {[string first ^ $txt] >= 0} {
-        ::httpTest::LogRecord $txt
-        ::httpTest::Puts $txt
+	::httpTest::LogRecord $txt
+	::httpTest::Puts $txt
     } elseif {$::httpTest::testOptions(-verbose) > 1} {
-        ::httpTest::Puts $txt
+	::httpTest::Puts $txt
     }
     return
 }
@@ -82,17 +82,17 @@ proc httpTest::LogRecord {txt} {
     set pos [string first ^ $txt]
     set len [string length  $txt]
     if {$pos > $len - 3} {
-        puts stdout "Logging Error: $txt"
-        puts stdout "Fix this call to Log in http-*.tm so it has ^ then\
+	puts stdout "Logging Error: $txt"
+	puts stdout "Fix this call to Log in http-*.tm so it has ^ then\
 		a letter then a numeral."
-        flush stdout
+	flush stdout
     } elseif {$pos < 0} {
-        # Called by mistake.
+	# Called by mistake.
     } else {
-        set letter [string index $txt [incr pos]]
-        set number [string index $txt [incr pos]]
-        # Max 9 requests!
-        lappend testResults [list $letter $number]
+	set letter [string index $txt [incr pos]]
+	set number [string index $txt [incr pos]]
+	# Max 9 requests!
+	lappend testResults [list $letter $number]
     }
 
     return
@@ -147,17 +147,17 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
     set clean {}
     set dirty {}
     for {set i 1} {$i <= $n} {incr i} {
-        if {$i in $badTrans} {
-            continue
-        }
-        set myStart   [lsearch -exact $someResults [list B $i]]
-        set myEnd     [lsearch -exact $someResults [list $term $i]]
+	if {$i in $badTrans} {
+	    continue
+	}
+	set myStart   [lsearch -exact $someResults [list B $i]]
+	set myEnd     [lsearch -exact $someResults [list $term $i]]
 
-        if {($myStart < 0 || $myEnd < 0)} {
-            set res "Cannot find positions of transaction $i"
+	if {($myStart < 0 || $myEnd < 0)} {
+	    set res "Cannot find positions of transaction $i"
 	    append msg $res \n
 	    Puts $res
-        }
+	}
 
 	set overlaps {}
 	for {set j $myStart} {$j <= $myEnd} {incr j} {
@@ -167,7 +167,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
 	    }
 	}
 
-        if {[llength $overlaps] == 0} {
+	if {[llength $overlaps] == 0} {
 	    set res "Transaction $i has no overlaps"
 	    Puts $res
 	    lappend clean $i
@@ -176,7 +176,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
 		lappend dirty .
 	    } else {
 	    }
-        } else {
+	} else {
 	    set res "Transaction $i overlaps with [join $overlaps { }]"
 	    Puts $res
 	    lappend dirty $i
@@ -185,7 +185,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
 		lappend clean .
 	    } else {
 	    }
-        }
+	}
     }
     return [list $msg $clean $dirty]
 }
@@ -214,7 +214,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
 
 proc httpTest::PipelineNext {Start End prevPair pair any} {
     if {$prevPair eq {}} {
-        return 1
+	return 1
     }
 
     lassign $prevPair letter number
@@ -222,10 +222,10 @@ proc httpTest::PipelineNext {Start End prevPair pair any} {
     if {$letter eq $Start} {
 	return [expr {($newLetter eq $End) && ($newNumber == $number)}]
     } elseif {$any} {
-        set nxt [list $Start [expr {$number + 1}]]
+	set nxt [list $Start [expr {$number + 1}]]
 	return [expr {($newLetter eq $Start) && ($newNumber > $number)}]
     } else {
-        set nxt [list $Start [expr {$number + 1}]]
+	set nxt [list $Start [expr {$number + 1}]]
 	return [expr {($newLetter eq $Start) && ($newNumber == $number + 1)}]
     }
 }
@@ -243,21 +243,21 @@ proc httpTest::TestPipeline {someResults n Start End msg desc badTrans} {
     set ok 1
     set any [llength $badTrans]
     foreach pair $someResults {
-        lassign $pair letter number
-        if {($letter in [list $Start $End]) && ($number ni $badTrans)} {
-            lappend sequence $pair
-            if {![PipelineNext $Start $End $prevPair $pair $any]} {
+	lassign $pair letter number
+	if {($letter in [list $Start $End]) && ($number ni $badTrans)} {
+	    lappend sequence $pair
+	    if {![PipelineNext $Start $End $prevPair $pair $any]} {
 		set ok 0
 		break
-            }
-            set prevPair $pair
-        }
+	    }
+	    set prevPair $pair
+	}
     }
 
     if {!$ok} {
-        set res "$desc are not pipelined: {$sequence}"
-        append msg $res \n
-        Puts $res
+	set res "$desc are not pipelined: {$sequence}"
+	append msg $res \n
+	Puts $res
     }
     return $msg
 }
@@ -272,32 +272,32 @@ proc httpTest::TestSequence {someResults n msg badTrans} {
     variable testOptions
 
     for {set i 1} {$i <= $n} {incr i} {
-        if {$i in $badTrans} {
+	if {$i in $badTrans} {
 	    continue
-        }
-        set sequence {}
-        foreach pair $someResults {
-            lassign $pair letter number
-            if {$number == $i} {
-                lappend sequence $letter
-            }
-        }
-        if {$sequence eq {A B C D E F}} {
-        } else {
-            set res "Wrong sequence for token ::http::$i - {$sequence}"
+	}
+	set sequence {}
+	foreach pair $someResults {
+	    lassign $pair letter number
+	    if {$number == $i} {
+		lappend sequence $letter
+	    }
+	}
+	if {$sequence eq {A B C D E F}} {
+	} else {
+	    set res "Wrong sequence for token ::http::$i - {$sequence}"
 	    append msg $res \n
 	    Puts $res
-            if {"X" in $sequence} {
-                set res "- and error(s) X"
+	    if {"X" in $sequence} {
+		set res "- and error(s) X"
 		append msg $res \n
 		Puts $res
-            }
-            if {"Y" in $sequence} {
-                set res "- and warnings(s) Y"
+	    }
+	    if {"Y" in $sequence} {
+		set res "- and warnings(s) Y"
 		append msg $res \n
 		Puts $res
-            }
-        }
+	    }
+	}
     }
     return $msg
 }
@@ -375,7 +375,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 
     set nextRetry [lsearch -glob -index 0 $someResults {[PQR]}]
     if {$nextRetry < 0} {
-        return [MostAnalysis $someResults $n $msg $skipOverlaps $notIncluded $notPiped]
+	return [MostAnalysis $someResults $n $msg $skipOverlaps $notIncluded $notPiped]
     }
     set badTrans $notIncluded
     set tryCount 0
@@ -389,9 +389,9 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 
     set dummyTry   {}
     for {set i 1} {$i <= $n} {incr i} {
-        set first [lsearch -exact $beforeTry [list A $i]]
-        set last  [lsearch -exact $beforeTry [list F $i]]
-        if {$first < 0} {
+	set first [lsearch -exact $beforeTry [list A $i]]
+	set last  [lsearch -exact $beforeTry [list F $i]]
+	if {$first < 0} {
 	    set res "Transaction $i was not started in connection number $tryCount"
 	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n
@@ -400,14 +400,14 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 		lappend badTrans $i
 	    } else {
 	    }
-        } elseif {$last < 0} {
+	} elseif {$last < 0} {
 	    set res "Transaction $i was started but unfinished in connection number $tryCount"
 	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n
 	    Puts $res
 	    lappend badTrans $i
 	    lappend dummyTry [list A $i]
-        } else {
+	} else {
 	    set res "Transaction $i was started and finished in connection number $tryCount"
 	    # So include it in the call below of MostAnalysis.
 	    # So lappend it to notIncluded and don't include it in the recursive call of
@@ -415,7 +415,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 	    # append msg $res \n
 	    Puts $res
 	    lappend notIncluded $i
-        }
+	}
     }
 
     # Analyse the part of the results before the first replay:
@@ -499,7 +499,7 @@ proc httpTest::cleanupHttpTest {} {
 proc httpTest::setHttpTestOptions {key args} {
     variable testOptions
     if {$key ni {-dotted -verbose}} {
-        return -code error {valid options are -dotted, -verbose}
+	return -code error {valid options are -dotted, -verbose}
     }
     set testOptions($key) {*}$args
 }

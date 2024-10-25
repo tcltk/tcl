@@ -9114,7 +9114,7 @@ IllegalExprOperandType(
 	Tcl_Size length;
 	if (TclHasInternalRep(opndPtr, &tclDictType)) {
 	    Tcl_DictObjSize(NULL, opndPtr, &length);
-	    if (length > 1) {
+	    if (length > 0) {
 	    listRep:
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"cannot use a list as %soperand of \"%s\"", ord, op));
@@ -9123,7 +9123,11 @@ IllegalExprOperandType(
 	    }
 	}
 	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(opndPtr, lengthProc);
-	if (lengthProc && lengthProc(opndPtr) > 1) {
+	Tcl_Size objcPtr;
+	Tcl_Obj **objvPtr;
+	if ((lengthProc && lengthProc(opndPtr) > 1)
+		|| ((TclMaxListLength(TclGetString(opndPtr), TCL_INDEX_NONE, NULL) > 1)
+		&& (Tcl_ListObjGetElements(NULL, opndPtr, &objcPtr, &objvPtr) == TCL_OK))) {
 	    goto listRep;
 	}
 	description = "non-numeric string";

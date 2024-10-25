@@ -102,8 +102,8 @@ proc httpTestScript::START {} {
     variable ActualKeepAlive
 
     if {[info exists StartDone] && ($StartDone == 1)} {
-        set msg {START has been called twice without an intervening STOP}
-        return -code error $msg
+	set msg {START has been called twice without an intervening STOP}
+	return -code error $msg
     }
 
     set StartDone 1
@@ -148,12 +148,12 @@ proc httpTestScript::STOP {} {
     variable RequestsMade
 
     if {$StopDone} {
-        # Don't do anything on a second call.
-        return
+	# Don't do anything on a second call.
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     set StopDone 1
@@ -162,10 +162,10 @@ proc httpTestScript::STOP {} {
     unset -nocomplain StartDone
 
     if {$CountFinishedSoFar == $RequestsWhenStopped} {
-        if {[info exists TimeOutCode]} {
-            after cancel $TimeOutCode
-        }
-        set ::httpTestScript::FOREVER 0
+	if {[info exists TimeOutCode]} {
+	    after cancel $TimeOutCode
+	}
+	set ::httpTestScript::FOREVER 0
     }
     return
 }
@@ -179,11 +179,11 @@ proc httpTestScript::DELAY {t} {
     variable StopDone
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     variable Delay
@@ -200,11 +200,11 @@ proc httpTestScript::KEEPALIVE {b} {
     variable StopDone
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     variable KeepAlive
@@ -221,15 +221,15 @@ proc httpTestScript::WAIT {t} {
     variable ExtraTime
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     if {(![string is integer -strict $t]) || $t < 0} {
-        return -code error {argument to WAIT must be a non-negative integer}
+	return -code error {argument to WAIT must be a non-negative integer}
     }
 
     incr ExtraTime $t
@@ -245,11 +245,11 @@ proc httpTestScript::PIPELINE {b} {
     variable StopDone
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     ::http::config -pipeline $b
@@ -265,11 +265,11 @@ proc httpTestScript::POSTFRESH {b} {
     variable StopDone
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     ::http::config -postfresh $b
@@ -285,11 +285,11 @@ proc httpTestScript::REPOST {b} {
     variable StopDone
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     ::http::config -repost $b
@@ -347,11 +347,11 @@ proc httpTestScript::RequestAfter {uriCode validate query args} {
     variable KeepAlive
 
     if {$StopDone} {
-        return
+	return
     }
 
     if {![info exists StartDone]} {
-        return -code error {initialise the script by calling command START}
+	return -code error {initialise the script by calling command START}
     }
 
     incr CountRequestedSoFar
@@ -375,24 +375,24 @@ proc httpTestScript::Requester {uriCode keepAlive validate query args} {
 	}
 	set queryArgs {}
     } elseif {$validate} {
-        return -code error {cannot have both -validate (HEAD) and -query (POST)}
+	return -code error {cannot have both -validate (HEAD) and -query (POST)}
     } else {
 	set queryArgs [list -query [join $args &]]
     }
 
     if {[catch {
-        ::http::geturl     $absUrl        \
-                -validate  $validate      \
-                -timeout   10000          \
-                {*}$queryArgs             \
-                -keepalive $keepAlive     \
-                -command   ::httpTestScript::WhenFinished
+	::http::geturl     $absUrl        \
+		-validate  $validate      \
+		-timeout   10000          \
+		{*}$queryArgs             \
+		-keepalive $keepAlive     \
+		-command   ::httpTestScript::WhenFinished
     } token]} {
-        set msg $token
-        catch {puts stdout "Error: $msg"}
-        return
+	set msg $token
+	catch {puts stdout "Error: $msg"}
+	return
     } else {
-        # Request will begin.
+	# Request will begin.
     }
 
     return
@@ -463,13 +463,13 @@ URL      $state(url)
 
     incr CountFinishedSoFar
     if {$StopDone && ($CountFinishedSoFar == $RequestsWhenStopped)} {
-        if {[info exists TimeOutCode]} {
-            after cancel $TimeOutCode
-        }
-        if {$RequestsMade ne $RequestList && $ActualKeepAlive} {
+	if {[info exists TimeOutCode]} {
+	    after cancel $TimeOutCode
+	}
+	if {$RequestsMade ne $RequestList && $ActualKeepAlive} {
 	    ::http::Log ^X$tk unexpected result - Script asked for "{$RequestList}" but got "{$RequestsMade}" - token $hToken
-        }
-        set ::httpTestScript::FOREVER 0
+	}
+	set ::httpTestScript::FOREVER 0
     }
 
     return
@@ -486,7 +486,7 @@ proc httpTestScript::runHttpTestScript {scr} {
     # Release when all requests have been served or have timed out.
 
     if {$TimeOutDone} {
-        return -code error {test script timed out}
+	return -code error {test script timed out}
     }
 
     return $RequestsWhenStopped
@@ -502,7 +502,7 @@ proc httpTestScript::cleanupHttpTestScript {} {
     }
 
     for {set i 1} {$i <= $RequestsWhenStopped} {incr i} {
-        http::cleanup ::http::$i
+	http::cleanup ::http::$i
     }
 
     return

@@ -58,12 +58,12 @@ proc buried::within {args} {return "within: $args"}
 
 namespace eval buried {
     namespace eval under {
-        proc neath {args} {return "neath: $args"}
+	proc neath {args} {return "neath: $args"}
     }
     namespace eval ::buried {
-        proc relative {args} {return "relative: $args"}
-        proc ::top {args} {return "top: $args"}
-        proc ::buried::explicit {args} {return "explicit: $args"}
+	proc relative {args} {return "relative: $args"}
+	proc ::top {args} {return "top: $args"}
+	proc ::buried::explicit {args} {return "explicit: $args"}
     }
 }
 
@@ -131,13 +131,13 @@ test autoMkindex-1.3 {examine tclIndex} -setup {
 } -body {
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
-        set dir "."
-        variable auto_index
-        source tclIndex
-        set ::result ""
-        foreach elem [lsort [array names auto_index]] {
-            lappend ::result [list $elem $auto_index($elem)]
-        }
+	set dir "."
+	variable auto_index
+	source tclIndex
+	set ::result ""
+	foreach elem [lsort [array names auto_index]] {
+	    lappend ::result [list $elem $auto_index($elem)]
+	}
     }
     return $result
 } -cleanup {
@@ -150,13 +150,13 @@ test autoMkindex-2.1 {commands on the autoload path can be imported} -setup {
 } -body {
     auto_mkindex . autoMkindex.tcl
     child eval {
-        namespace eval blt {}
-        set auto_path [linsert $auto_path 0 .]
-        set info [list [catch {namespace import buried::*} result] $result]
-        foreach name [lsort [info commands pub_*]] {
-            lappend info $name [namespace origin $name]
-        }
-        return $info
+	namespace eval blt {}
+	set auto_path [linsert $auto_path 0 .]
+	set info [list [catch {namespace import buried::*} result] $result]
+	foreach name [lsort [info commands pub_*]] {
+	    lappend info $name [namespace origin $name]
+	}
+	return $info
     }
 } -cleanup {
     interp delete child
@@ -194,13 +194,13 @@ test autoMkindex-3.2 {auto_mkindex_parser::command} -setup {
     }
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
-        set dir "."
-        variable auto_index
-        source tclIndex
-        set ::result ""
-        foreach elem [lsort [array names auto_index]] {
-            lappend ::result [list $elem $auto_index($elem)]
-        }
+	set dir "."
+	variable auto_index
+	source tclIndex
+	set ::result ""
+	foreach elem [lsort [array names auto_index]] {
+	    lappend ::result [list $elem $auto_index($elem)]
+	}
 	return $::result
     }
 } -cleanup {
@@ -220,13 +220,13 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} -setup {
     }
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
-        set dir "."
-        variable auto_index
-        source tclIndex
-        set ::result ""
-        foreach elem [lsort [array names auto_index]] {
-            lappend ::result [list $elem $auto_index($elem)]
-        }
+	set dir "."
+	variable auto_index
+	source tclIndex
+	set ::result ""
+	foreach elem [lsort [array names auto_index]] {
+	    lappend ::result [list $elem $auto_index($elem)]
+	}
     }
     list [lsearch -inline $::result *mycmd4*] \
 	[lsearch -inline $::result *mycmd5*] \

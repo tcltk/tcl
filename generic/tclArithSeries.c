@@ -514,11 +514,11 @@ assignNumber(
 
     if (Tcl_GetNumberFromObj(interp, numberObj, &clientData,
 		&tcl_number_type) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
     if (tcl_number_type == TCL_NUMBER_BIG) {
-    	/* bignum is not supported yet. */
-    	Tcl_WideInt w;
+	/* bignum is not supported yet. */
+	Tcl_WideInt w;
 	(void)Tcl_GetWideIntFromObj(interp, numberObj, &w);
 	return TCL_ERROR;
     }
