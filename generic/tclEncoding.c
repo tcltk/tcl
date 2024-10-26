@@ -3284,12 +3284,16 @@ UtfToUtf16Proc(
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
-	src += len;
 	if (flags & TCL_ENCODING_LE) {
 	    if (ch <= 0xFFFF) {
 		*dst++ = (ch & 0xFF);
 		*dst++ = (ch >> 8);
 	    } else {
+		if ((dst+2) > dstEnd) {
+		    /* Surrogates need 2 more bytes! Bug [66da4d4228] */
+		    result = TCL_CONVERT_NOSPACE;
+		    break;
+		}
 		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (ch & 0xFF);
@@ -3300,12 +3304,18 @@ UtfToUtf16Proc(
 		*dst++ = (ch >> 8);
 		*dst++ = (ch & 0xFF);
 	    } else {
+		if ((dst+2) > dstEnd) {
+		    /* Surrogates need 2 more bytes! Bug [66da4d4228] */
+		    result = TCL_CONVERT_NOSPACE;
+		    break;
+		}
 		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
 		*dst++ = ((ch >> 8) & 0x3) | 0xDC;
 		*dst++ = (ch & 0xFF);
 	    }
 	}
+	src += len;
     }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
