@@ -57,7 +57,6 @@ extern "C" {
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * README.md		(sections 0 and 2, with and without separator)
- * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
  */

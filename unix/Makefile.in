@@ -2591,14 +2591,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(INSTALL_DATA_DIR) $(SHQ_DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(SHQ_MAC_OSX_DIR)/GNUmakefile $(SHQ_MAC_OSX_DIR)/README \
 		$(SHQ_MAC_OSX_DIR)/*.c $(SHQ_MAC_OSX_DIR)/*.in \
-		$(SHQ_MAC_OSX_DIR)/*.ac $(SHQ_MAC_OSX_DIR)/*.xcconfig \
+		$(SHQ_MAC_OSX_DIR)/*.ac \
 		$(SHQ_DISTDIR)/macosx
 	$(DIST_INSTALL_SCRIPT) $(SHQ_MAC_OSX_DIR)/configure $(SHQ_DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(SHQ_TOP_DIR)/license.terms $(SHQ_DISTDIR)/macosx
-	$(INSTALL_DATA_DIR) $(SHQ_DISTDIR)/macosx/Tcl.xcodeproj
-	$(DIST_INSTALL_DATA) $(SHQ_MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
-		$(SHQ_MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \
-		$(SHQ_DISTDIR)/macosx/Tcl.xcodeproj
 	$(INSTALL_DATA_DIR) $(SHQ_DISTDIR)/unix/dltest
 	$(DIST_INSTALL_DATA) $(SHQ_UNIX_DIR)/dltest/*.c $(SHQ_UNIX_DIR)/dltest/Makefile.in \
 		$(SHQ_UNIX_DIR)/dltest/README $(SHQ_DISTDIR)/unix/dltest
