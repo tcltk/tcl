@@ -36939,9 +36939,10 @@ test clock-59.2 {correct time zone names, format and scan back, bug and regressi
     } {
 	set v [clock format $base -timezone Etc/GMT-2 -format "%Y-%m-%d %H:%M:%S %Z"]
 	lappend result [expr {[set t [clock scan $v -format "%Y-%m-%d %H:%M:%S %Z"]] == $base ? 1 : "0 ($t != $base for $v)"}]
+	lappend result [expr {[set t [clock scan $v]] == $base ? 1 : "0 ($t != $base for $v)"}]
     }
     set result
-} [lrepeat 6 1]
+} [lrepeat 12 1]
 
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
