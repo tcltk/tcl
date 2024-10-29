@@ -36824,6 +36824,22 @@ test clock-59.1 {military time zones} {
     join $trouble \n
 } {}
 
+test clock-59.2 {correct time zone names, format and scan back, bug and regression [2c237beffbace823]} {
+    set result {}
+    foreach {base tz} {
+	 1700000000 "Etc/GMT-2"
+	 1700000000 "Etc/GMT+2"
+	 1301184000 "Europe/Kaliningrad"
+	  152632800 "Pacific/Chatham"
+	 -765317964 "America/Paramaribo"
+	-2337928528 "Australia/Eucla"
+    } {
+	set v [clock format $base -timezone Etc/GMT-2]
+	lappend result [expr {[set t [clock scan $v]] == $base ? 1 : "0 ($t != $base for $v)"}]
+    }
+    set res
+} [lrepeat 6 1]
+
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
 test clock-60.1 {case insensitive weekday names} {

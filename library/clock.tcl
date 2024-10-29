@@ -3414,7 +3414,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
     # this code is security sensitive.  Make sure that the path name
     # cannot escape the given directory.
 
-    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
+    if { [regexp {^[/\\]|^[a-zA-Z]+:|(?:^|[/\\])\.\.} $fileName] } {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone $:fileName] \
 	    "time zone \":$fileName\" not valid"
@@ -3455,7 +3455,7 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     # this code is security sensitive.  Make sure that the path name
     # cannot escape the given directory.
 
-    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
+    if { [regexp {^[/\\]|^[a-zA-Z]+:|(?:^|[/\\])\.\.} $fileName] } {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone $:fileName] \
 	    "time zone \":$fileName\" not valid"
