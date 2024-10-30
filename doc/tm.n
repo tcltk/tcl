@@ -296,15 +296,12 @@ These paths are seen and therefore shared by all Tcl shells in the
 \fB$::env(PATH)\fR of the user.
 .PP
 Note that \fIX\fR and \fIy\fR follow the general rules set out
-above. In other words, Tcl 8.4, for example, will look at these 10
+above. In other words, Tcl 9.1, for example, will look at these 4
 environment variables:
 .PP
 .CS
-\fB$::env(TCL8.4_TM_PATH)\fR  \fB$::env(TCL8_4_TM_PATH)\fR
-\fB$::env(TCL8.3_TM_PATH)\fR  \fB$::env(TCL8_3_TM_PATH)\fR
-\fB$::env(TCL8.2_TM_PATH)\fR  \fB$::env(TCL8_2_TM_PATH)\fR
-\fB$::env(TCL8.1_TM_PATH)\fR  \fB$::env(TCL8_1_TM_PATH)\fR
-\fB$::env(TCL8.0_TM_PATH)\fR  \fB$::env(TCL8_0_TM_PATH)\fR
+\fB$::env(TCL9.1_TM_PATH)\fR  \fB$::env(TCL9_1_TM_PATH)\fR
+\fB$::env(TCL9.0_TM_PATH)\fR  \fB$::env(TCL9_0_TM_PATH)\fR
 .CE
 .PP
 Paths initialized from the environment variables undergo tilde
