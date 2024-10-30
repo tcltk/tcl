@@ -72,8 +72,10 @@ namespace eval tcl {
 		lappend ::auto_path $Dir
 	    }
 	}
-	set Dir [file join [file dirname [file dirname \
-		[info nameofexecutable]]] lib]
+	# fully normalize this path so that any symbolic link to the executable
+	# does not change the value of the resulting lib path.
+	set Dir [file join [file dirname [file dirname [file dirname [
+	    file normalize [file join [info nameofexecutable] ...]]]]] lib]
 	if {$Dir ni $::auto_path} {
 	    lappend ::auto_path $Dir
 	}
@@ -651,7 +653,8 @@ proc auto_execok name {
 	return ""
     }
 
-    set path "[file dirname [info nameofexecutable]];.;"
+    set path "[file dirname [file dirname [file normalize [
+		file join [info nameofexecutable] ...]]]];.;"
     if {[info exists env(SystemRoot)]} {
 	set windir $env(SystemRoot)
     } elseif {[info exists env(WINDIR)]} {
