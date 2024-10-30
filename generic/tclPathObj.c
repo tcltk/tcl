@@ -2697,8 +2697,7 @@ TclGetHomeDirObj(
  *      An error is returned if such a component IS present AND cannot
  *      be resolved.
  *
- *	The output dsPtr will be initialized irrespective of result
- *	and must be cleared by caller on success.
+ *	The output dsPtr must be cleared by caller on success.
  *
  * Results:
  *      TCL_OK - path did not contain leading ~ or it was successful resolved
@@ -2713,12 +2712,13 @@ int Tcl_FSTildeExpand(
 
 {
     Tcl_Size split;
+    int result;
 
     assert(path);
     assert(dsPtr);
 
+    Tcl_DStringInit(dsPtr);
     if (path[0] != '~') {
-	Tcl_DStringInit(dsPtr);
 	Tcl_DStringAppend(dsPtr, path, -1);
 	return TCL_OK;
     }
@@ -2733,23 +2733,26 @@ int Tcl_FSTildeExpand(
 
     if (split == 1) {
         /* No user name specified '~' or '~/...' -> current user */
-	return MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
+	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
     } else {
         /* User name specified - ~user, ~user/... */
         const char *user;
         Tcl_DString dsUser;
-	int ret;
 
 	Tcl_DStringInit(&dsUser);
         Tcl_DStringAppend(&dsUser, path+1, split-1);
         user = Tcl_DStringValue(&dsUser);
 
 	/* path[split] is / for ~user/... or \0 for ~user */
-	ret = MakeTildeRelativePath(interp, user,
+	result = MakeTildeRelativePath(interp, user,
 		  path[split] ? &path[split + 1] : NULL, dsPtr);
 	Tcl_DStringFree(&dsUser);
-	return ret;
     }
+    if (result != TCL_OK) {
+        /* Do not rely on caller to free in case of errors */
+        Tcl_DStringFree(dsPtr);
+    }
+    return result;
 }
 
 /*
