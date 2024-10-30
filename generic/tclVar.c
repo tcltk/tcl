@@ -1961,7 +1961,7 @@ TclPtrSetVarIdx(
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISCONST, index);
-	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (char *)NULL);
 	}
 	goto earlyError;
     }
@@ -2252,7 +2252,7 @@ TclPtrIncrObjVarIdx(
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "incr", ISCONST, index);
-	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (char *)NULL);
 	}
 	return NULL;
     }
@@ -2489,7 +2489,7 @@ TclPtrUnsetVarIdx(
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset", ISCONST, index);
-	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "CONST", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "CONST", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -4889,7 +4889,7 @@ Tcl_ConstObjCmd(
 	    "const", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (TclIsVarArray(varPtr)) {
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAY, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (char *)NULL);
 	return TCL_ERROR;
     }
     if (TclIsVarArrayElement(varPtr)) {
@@ -4897,7 +4897,7 @@ Tcl_ConstObjCmd(
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAYELEMENT, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4909,7 +4909,7 @@ Tcl_ConstObjCmd(
 	    return TCL_OK;
 	}
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", EXISTS, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (char *)NULL);
 	return TCL_ERROR;
     }
 
