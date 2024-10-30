@@ -28,7 +28,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.8
+    variable Version 2.5.9
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -50,7 +50,7 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    if {!$fullutf} {
+    if {![package vsatisfies [package provide Tcl] 9.0-]} {
 	namespace export bytestring	;# dups [encoding convertfrom identity]
     }
     namespace export debug		;#	[configure -debug]
@@ -3346,7 +3346,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-if {!$::tcltest::fullutf} {
+if {![package vsatisfies [package provide Tcl] 9.0-]} {
     proc tcltest::bytestring {string} {
 	return [encoding convertfrom identity $string]
     }
