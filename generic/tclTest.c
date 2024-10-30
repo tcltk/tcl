@@ -308,6 +308,7 @@ static Tcl_CmdProc	TestsetplatformCmd;
 static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
+static Tcl_ObjCmdProc	TestfstildeexpandCmd;
 static Tcl_CmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc2	TestWrongNumArgsObjCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructObjCmd;
@@ -726,6 +727,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfstildeexpand",
+	    TestfstildeexpandCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
@@ -4937,6 +4940,45 @@ TesttranslatefilenameCmd(
     }
     Tcl_AppendResult(interp, result, (char *)NULL);
     Tcl_DStringFree(&buffer);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestfstildeexpandCmd --
+ *
+ *	This procedure implements the "testfstildeexpand" command.
+ *	It is used to test the Tcl_FSTildeExpand command. It differs
+ *      from the script level "file tildeexpand" tests because of a
+ *	slightly different code path.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestfstildeexpandCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_DString buffer;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "PATH");
+	return TCL_ERROR;
+    }
+    if (Tcl_FSTildeExpand(interp, Tcl_GetString(objv[1]), &buffer) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(&buffer));
     return TCL_OK;
 }
 
