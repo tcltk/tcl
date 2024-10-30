@@ -107,6 +107,15 @@ slowing its clock by a tiny fraction for some minutes until it is
 back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
+\fInow\fR
+Instead of \fItimeVal\fR a non-integer value \fBnow\fR can be used as
+replacement for today, which is simply interpolated to the run-time as value
+of \fBclock seconds\fR. For example:
+.sp
+\fBclock format now -f %a; # current day of the week\fR
+.sp
+\fBclock add now 1 month; # next month\fR
+.TP
 \fIunit\fR
 .
 One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
