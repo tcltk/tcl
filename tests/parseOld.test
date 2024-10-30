@@ -12,9 +12,8 @@
 # See the file "COPYING" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-# Commands covered:  set (plus basic command syntax).  Also tests the
-# procedures in the file tclOldParse.c.  This set of tests is an old
-# one that predates the new parser in Tcl 8.1.
+# Commands covered:  set (plus basic command syntax).  This set
+# of tests is an old one that predates the parser in Tcl 8.1.
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
