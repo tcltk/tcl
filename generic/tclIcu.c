@@ -59,17 +59,17 @@ typedef struct UConverter UConverter;
 typedef struct UConverterFromUnicodeArgs UConverterFromUnicodeArgs;
 typedef struct UConverterToUnicodeArgs UConverterToUnicodeArgs;
 typedef void   (*UConverterFromUCallback)(const void *context,
-                                          UConverterFromUnicodeArgs *args,
-                                          const UCharx *codeUnits,
-                                          int32_t length, UChar32x codePoint,
-                                          UConverterCallbackReasonx reason,
-                                          UErrorCodex *pErrorCode);
+					  UConverterFromUnicodeArgs *args,
+					  const UCharx *codeUnits,
+					  int32_t length, UChar32x codePoint,
+					  UConverterCallbackReasonx reason,
+					  UErrorCodex *pErrorCode);
 typedef void   (*UConverterToUCallback)(const void *context,
-                                        UConverterToUnicodeArgs *args,
-                                        const char *codeUnits,
-                                        int32_t length,
-                                        UConverterCallbackReasonx reason,
-                                        UErrorCodex *pErrorCode);
+					UConverterToUnicodeArgs *args,
+					const char *codeUnits,
+					int32_t length,
+					UConverterCallbackReasonx reason,
+					UErrorCodex *pErrorCode);
 /*
  * Prototypes for ICU functions sorted by category.
  */
@@ -113,19 +113,19 @@ typedef const char *(*fn_ucnv_getAlias)(const char *, uint16_t, UErrorCodex *);
 typedef const char *(*fn_ucnv_getAvailableName)(int32_t);
 typedef UConverter *(*fn_ucnv_open)(const char *converterName, UErrorCodex *);
 typedef void        (*fn_ucnv_setFromUCallBack)(UConverter *,
-                                                UConverterFromUCallback newAction,
-                                                const void *newContext,
-                                                UConverterFromUCallback *oldAction,
-                                                const void **oldContext,
-                                                UErrorCodex *err);
+						UConverterFromUCallback newAction,
+						const void *newContext,
+						UConverterFromUCallback *oldAction,
+						const void **oldContext,
+						UErrorCodex *err);
 typedef void        (*fn_ucnv_setToUCallBack)(UConverter *,
-                                                UConverterToUCallback newAction,
-                                                const void *newContext,
-                                                UConverterToUCallback *oldAction,
-                                                const void **oldContext,
-                                                UErrorCodex *err);
+						UConverterToUCallback newAction,
+						const void *newContext,
+						UConverterToUCallback *oldAction,
+						const void **oldContext,
+						UErrorCodex *err);
 typedef int32_t     (*fn_ucnv_toUChars)(UConverter *, UCharx *dest,
-                                        int32_t destCapacity, const char *src, int32_t srcLen, UErrorCodex *);
+					int32_t destCapacity, const char *src, int32_t srcLen, UErrorCodex *);
 typedef UConverterFromUCallback fn_UCNV_FROM_U_CALLBACK_STOP;
 typedef UConverterToUCallback   fn_UCNV_TO_U_CALLBACK_STOP;
 
@@ -315,9 +315,9 @@ IcuError(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s%sICU error (%d): %s",
 		message ? message : "",
-                message ? ". " : "",
-                code,
-                codeMessage ? codeMessage : ""));
+		message ? ". " : "",
+		code,
+		codeMessage ? codeMessage : ""));
 	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, NULL);
     }
     return TCL_ERROR;
@@ -749,7 +749,7 @@ IcuConverttoDString(
     Tcl_DString *dsOutPtr) /* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-        ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
+	ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -759,20 +759,20 @@ IcuConverttoDString(
 	return IcuError(interp, "Could not get encoding converter", status);
     }
     if (strict) {
-        ucnv_setFromUCallBack(ucnvPtr, UCNV_FROM_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
-        if (U_FAILURE(status)) {
-            /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
-            ucnv_close(ucnvPtr);
-            return IcuError(interp, "Could not set conversion callback", status);
-        }
+	ucnv_setFromUCallBack(ucnvPtr, UCNV_FROM_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
+	if (U_FAILURE(status)) {
+	    /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
+	    ucnv_close(ucnvPtr);
+	    return IcuError(interp, "Could not set conversion callback", status);
+	}
     }
 
     UCharx *utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetResult(
-	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	Tcl_SetObjResult( interp,
+		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 
@@ -780,25 +780,25 @@ IcuConverttoDString(
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstCapacity,
-                             utf16, utf16len, &status);
+			     utf16, utf16len, &status);
     if (U_FAILURE(status)) {
-        switch (status) {
-        case U_STRING_NOT_TERMINATED_WARNING:
-            break; /* We don't care */
-        case U_BUFFER_OVERFLOW_ERROR:
-            Tcl_DStringSetLength(dsOutPtr, dstLen);
-            status = U_ZERO_ERRORZ; /* Reset before call */
-            dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
-                                     utf16, utf16len, &status);
-            if (U_SUCCESS(status)) {
-                break;
-            }
-            /* FALLTHRU */
-        default:
-            Tcl_DStringFree(dsOutPtr);
-            ucnv_close(ucnvPtr);
-            return IcuError(interp, "ICU error while encoding", status);
-        }
+	switch (status) {
+	case U_STRING_NOT_TERMINATED_WARNING:
+	    break; /* We don't care */
+	case U_BUFFER_OVERFLOW_ERROR:
+	    Tcl_DStringSetLength(dsOutPtr, dstLen);
+	    status = U_ZERO_ERRORZ; /* Reset before call */
+	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
+				     utf16, utf16len, &status);
+	    if (U_SUCCESS(status)) {
+		break;
+	    }
+	    /* FALLTHRU */
+	default:
+	    Tcl_DStringFree(dsOutPtr);
+	    ucnv_close(ucnvPtr);
+	    return IcuError(interp, "ICU error while encoding", status);
+	}
     }
     Tcl_DStringSetLength(dsOutPtr, dstLen);
     ucnv_close(ucnvPtr);
@@ -830,13 +830,13 @@ IcuBytesToUCharDString(
     Tcl_DString *dsOutPtr) /* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-        ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
+	ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
     if (nbytes > INT_MAX) {
-	Tcl_SetResult(
-	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 
@@ -846,12 +846,12 @@ IcuBytesToUCharDString(
 	return IcuError(interp, "Could not get encoding converter", status);
     }
     if (strict) {
-        ucnv_setToUCallBack(ucnvPtr, UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
-        if (U_FAILURE(status)) {
-            /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
-            ucnv_close(ucnvPtr);
-            return IcuError(interp, "Could not set conversion callback", status);
-        }
+	ucnv_setToUCallBack(ucnvPtr, UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &status);
+	if (U_FAILURE(status)) {
+	    /* TODO - use ucnv_getInvalidUChars to retrieve failing chars */
+	    ucnv_close(ucnvPtr);
+	    return IcuError(interp, "Could not set conversion callback", status);
+	}
     }
 
     int dstLen;
@@ -859,26 +859,26 @@ IcuBytesToUCharDString(
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-                           (const char *)bytes, nbytes, &status);
+			   (const char *)bytes, nbytes, &status);
     if (U_FAILURE(status)) {
-        switch (status) {
-        case U_STRING_NOT_TERMINATED_WARNING:
-            break; /* We don't care */
-        case U_BUFFER_OVERFLOW_ERROR:
-            dstCapacity = sizeof(UCharx) * dstLen;
-            Tcl_DStringSetLength(dsOutPtr, dstCapacity);
-            status = U_ZERO_ERRORZ; /* Reset before call */
-            dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-                                   (const char *)bytes, nbytes, &status);
-            if (U_SUCCESS(status)) {
-                break;
-            }
-            /* FALLTHRU */
-        default:
-            Tcl_DStringFree(dsOutPtr);
-            ucnv_close(ucnvPtr);
-            return IcuError(interp, "ICU error while decoding", status);
-        }
+	switch (status) {
+	case U_STRING_NOT_TERMINATED_WARNING:
+	    break; /* We don't care */
+	case U_BUFFER_OVERFLOW_ERROR:
+	    dstCapacity = sizeof(UCharx) * dstLen;
+	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
+	    status = U_ZERO_ERRORZ; /* Reset before call */
+	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
+				   (const char *)bytes, nbytes, &status);
+	    if (U_SUCCESS(status)) {
+		break;
+	    }
+	    /* FALLTHRU */
+	default:
+	    Tcl_DStringFree(dsOutPtr);
+	    ucnv_close(ucnvPtr);
+	    return IcuError(interp, "ICU error while decoding", status);
+	}
     }
     Tcl_DStringSetLength(dsOutPtr, sizeof(UCharx)*dstLen);
     ucnv_close(ucnvPtr);
@@ -944,8 +944,8 @@ IcuNormalizeUCharDString(
     utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     if (utf16len > INT_MAX) {
-	Tcl_SetResult(
-	    interp, "Max length supported by ICU exceeded.", TCL_STATIC);
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
     Tcl_DStringInit(dsOutPtr);
@@ -1023,16 +1023,16 @@ static int IcuParseConvertOptions(
 		Tcl_SetObjResult(
 		    interp,
 		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
-                         " \"-profile\". Must be \"strict\" or \"replace\".",
-                         s));
+			 " \"-profile\". Must be \"strict\" or \"replace\".",
+			 s));
 		return TCL_ERROR;
 	    }
 	    break;
-        case OPT_FAILINDEX:
-            /* TBD */
-            Tcl_SetResult(interp,
-                "Option -failindex not implemented.", TCL_STATIC);
-            return TCL_ERROR;
+	case OPT_FAILINDEX:
+	    /* TBD */
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("Option -failindex not implemented.", TCL_INDEX_NONE));
+	    return TCL_ERROR;
 	}
     }
     *strictPtr = strict;
@@ -1068,26 +1068,26 @@ IcuConvertfromObjCmd(
     Tcl_Obj *failindexVar;
 
     if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     Tcl_Size nbytes;
     const unsigned char *bytes = Tcl_GetBytesFromObj(interp, objv[objc-1], &nbytes);
     if (bytes == NULL) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     Tcl_DString ds;
     if (IcuBytesToUCharDString(interp, bytes, nbytes,
-            Tcl_GetString(objv[objc-2]), strict, &ds) != TCL_OK) {
-        return TCL_ERROR;
+	    Tcl_GetString(objv[objc-2]), strict, &ds) != TCL_OK) {
+	return TCL_ERROR;
     }
     Tcl_Obj *resultObj = IcuObjFromUCharDString(interp, &ds, strict);
     if (resultObj) {
-        Tcl_SetObjResult(interp, resultObj);
-        return TCL_OK;
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
     } else {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 }
 
@@ -1119,19 +1119,19 @@ IcuConverttoObjCmd(
     Tcl_Obj *failindexVar;
 
     if (IcuParseConvertOptions(interp, objc, objv, &strict, &failindexVar) != TCL_OK) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     Tcl_DString dsIn;
     Tcl_DString dsOut;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-        IcuConverttoDString(interp, &dsIn,
-            Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
+	IcuConverttoDString(interp, &dsIn,
+	    Tcl_GetString(objv[objc-2]), strict, &dsOut) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
-        Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
-                            Tcl_DStringLength(&dsOut)));
+	Tcl_NewByteArrayObj((unsigned char *)Tcl_DStringValue(&dsOut),
+			    Tcl_DStringLength(&dsOut)));
     Tcl_DStringFree(&dsOut);
     return TCL_OK;
 }
@@ -1457,11 +1457,11 @@ TclIcuInit(
 	    ICUUC_SYM(ucnv_getAlias);
 	    ICUUC_SYM(ucnv_getAvailableName);
 	    ICUUC_SYM(ucnv_open);
-            ICUUC_SYM(ucnv_setFromUCallBack);
-            ICUUC_SYM(ucnv_setToUCallBack);
+	    ICUUC_SYM(ucnv_setFromUCallBack);
+	    ICUUC_SYM(ucnv_setToUCallBack);
 	    ICUUC_SYM(ucnv_toUChars);
-            ICUUC_SYM(UCNV_FROM_U_CALLBACK_STOP);
-            ICUUC_SYM(UCNV_TO_U_CALLBACK_STOP);
+	    ICUUC_SYM(UCNV_FROM_U_CALLBACK_STOP);
+	    ICUUC_SYM(UCNV_TO_U_CALLBACK_STOP);
 
 	    ICUUC_SYM(ubrk_open);
 	    ICUUC_SYM(ubrk_close);
@@ -1512,9 +1512,9 @@ TclIcuInit(
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
-                                 IcuConverttoObjCmd, 0, TclIcuCleanup);
+				 IcuConverttoObjCmd, 0, TclIcuCleanup);
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
-                                 IcuConvertfromObjCmd, 0, TclIcuCleanup);
+				 IcuConvertfromObjCmd, 0, TclIcuCleanup);
 	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
