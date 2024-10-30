@@ -402,11 +402,8 @@ This variable and functionality only exist if
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\eS\fR, meaning anything
-but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
-which is any Unicode word character (number, letter, or underscore).
+characters.  It defaults to \fB\ew\fR, which is any Unicode
+word character (number, letter, or underscore).
 .\" VARIABLE: tcl_nonwordchars
 .TP
 \fBtcl_nonwordchars\fR
@@ -414,10 +411,7 @@ which is any Unicode word character (number, letter, or underscore).
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW non-word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\es\fR, meaning any Unicode space
-character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
+characters.  It defaults to \fB\eW\fR, which is anything but a
 Unicode word character (number, letter, or underscore).
 .\" VARIABLE: tcl_version
 .TP
