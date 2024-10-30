@@ -34,6 +34,7 @@ This variable is initialized during startup to contain, in order:
 the directories listed in the \fBTCLLIBPATH\fR environment variable,
 the directory named by the \fBtcl_library\fR global variable,
 the parent directory of \fBtcl_library\fR,
+\fB[file dirname [file dirname [info nameofexecutable]]]/lib\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
 Additional locations to look for files and package indices should
 normally be added to this variable using \fBlappend\fR.
