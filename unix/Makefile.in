@@ -1208,9 +1208,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(SHQ_TOP_DIR)/library/msgcat/msgcat.tcl \
 		$(SHQ_MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm
-	@echo $(call shquote ,Installing package tcltest 2.5.8 as a Tcl Module)
+	@echo $(call shquote ,Installing package tcltest 2.5.9 as a Tcl Module)
 	@$(INSTALL_DATA) $(SHQ_TOP_DIR)/library/tcltest/tcltest.tcl \
-		$(SHQ_MODULE_INSTALL_DIR)/9.0/tcltest-2.5.8.tm
+		$(SHQ_MODULE_INSTALL_DIR)/9.0/tcltest-2.5.9.tm
 	@echo $(call shquote ,Installing package platform 1.0.19 as a Tcl Module)
 	@$(INSTALL_DATA) $(SHQ_TOP_DIR)/library/platform/platform.tcl \
 		$(SHQ_MODULE_INSTALL_DIR)/9.0/platform-1.0.19.tm
