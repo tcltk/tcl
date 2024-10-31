@@ -351,9 +351,18 @@ test clock-1.4.1 "clock format - unexpected option for this sub-command" {
     list [catch {clock format 0 -base 0} msg] $msg $::errorCode
 } [subst {1 {bad option "-base": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -base}}]
 
-test clock-1.5 "clock format - bad timezone" {
-    list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode
-} {1 {time zone ":NOWHERE" not found} {CLOCK badTimeZone :NOWHERE}}
+test clock-1.5 "clock format - bad timezone" -body {
+    clock format 0 -format "%s" -timezone :NOWHERE
+} -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
+foreach tz [list {*}{
+  ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
+  zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+  } [list $::tcl::clock::DataDir/GMT]
+] {
+test clock-1.5.1 "clock format - bad timezone" -body {
+    clock format 0 -format "%s" -timezone $tz
+} -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
+}
 
 test clock-1.6 "clock format - gmt + timezone" {
     list [catch {clock format 0 -timezone :GMT -gmt true} msg] $msg $::errorCode
