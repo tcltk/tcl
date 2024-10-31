@@ -3416,7 +3416,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 
     if { [regexp {^[/\\]|^[a-zA-Z]+:|(?:^|[/\\])\.\.} $fileName] } {
 	return -code error \
-	    -errorcode [list CLOCK badTimeZone $:fileName] \
+	    -errorcode [list CLOCK badTimeZone :$fileName] \
 	    "time zone \":$fileName\" not valid"
     }
     if { [catch {
