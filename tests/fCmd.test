@@ -93,6 +93,7 @@ testConstraint fileSharing 0
 testConstraint notFileSharing 1
 testConstraint linkFile 1
 testConstraint linkDirectory 1
+testConstraint testfstildeexpand [llength [info commands testfstildeexpand]]
 
 # Several tests require need to match results against the Unix username
 set user {}
@@ -2775,8 +2776,14 @@ test fCmd-31.9 {file home USER does not follow env(HOME)} -setup {
     string tolower [file home $::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
 
+# file tildeexpand and testfstildexpand are identical in behavior
+# but tested separately as the former is a script wrapper that does some
+# sanitization/optimization while the latter is a raw call to Tcl_FSTildeExpand.
 test fCmd-32.1 {file tildeexpand ~} -body {
     file tildeexpand ~
+} -result [file join $::env(HOME)]
+test fCmd-32.1.1 {Tcl_FSTildeExpand ~} -constraints testfstildeexpand -body {
+    testfstildeexpand ~
 } -result [file join $::env(HOME)]
 test fCmd-32.2 {file tildeexpand ~ - obeys env} -setup {
     set ::env(HOME) $::env(HOME)/xxx
@@ -2785,6 +2792,13 @@ test fCmd-32.2 {file tildeexpand ~ - obeys env} -setup {
 } -body {
     file tildeexpand ~
 } -result [file join $::env(HOME) xxx]
+test fCmd-32.2.1 {Tcl_FSTildeExpand ~ - obeys env} -setup {
+    set ::env(HOME) $::env(HOME)/xxx
+} -cleanup {
+    set ::env(HOME) [file dirname $::env(HOME)]
+} -constraints testfstildeexpand -body {
+    testfstildeexpand ~
+} -result [file join $::env(HOME) xxx]
 test fCmd-32.3 {file tildeexpand ~ - error} -setup {
     set saved $::env(HOME)
     unset ::env(HOME)
@@ -2792,6 +2806,14 @@ test fCmd-32.3 {file tildeexpand ~ - error} -setup {
     set ::env(HOME) $saved
 } -body {
     file tildeexpand ~
+} -returnCodes error -result {couldn't find HOME environment variable to expand path}
+test fCmd-32.3.1 {Tcl_FSTildeExpand ~ - error} -setup {
+    set saved $::env(HOME)
+    unset ::env(HOME)
+} -cleanup {
+    set ::env(HOME) $saved
+} -constraints testfstildeexpand -body {
+    testfstildeexpand ~
 } -returnCodes error -result {couldn't find HOME environment variable to expand path}
 test fCmd-32.4 {
     file tildeexpand ~ - relative path. Following 8.x ~ expansion behavior, relative
@@ -2804,20 +2826,46 @@ test fCmd-32.4 {
 } -body {
     file tildeexpand ~
 } -result relative/path
+test fCmd-32.4.1 {
+    Tcl_FSTildeExpand ~ - relative path. Following 8.x ~ expansion behavior, relative
+    paths are not made absolute
+} -setup {
+    set saved $::env(HOME)
+    set ::env(HOME) relative/path
+} -cleanup {
+    set ::env(HOME) $saved
+} -constraints testfstildeexpand -body {
+    testfstildeexpand ~
+} -result relative/path
 test fCmd-32.5 {file tildeexpand ~USER} -body {
     # Note - as in 8.x this form does NOT necessarily give same result as
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
+test fCmd-32.5.1 {Tcl_FSTildeExpand ~USER} -constraints testfstildeexpand -body {
+    # Note - as in 8.x this form does NOT necessarily give same result as
+    # env(HOME) even when user is current user. Assume result contains user
+    # name, else not sure how to check
+    string tolower [testfstildeexpand ~$::tcl_platform(user)]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
 test fCmd-32.6 {file tildeexpand ~UNKNOWNUSER} -body {
     file tildeexpand ~nosuchuser
+} -returnCodes error -result {user "nosuchuser" doesn't exist}
+test fCmd-32.6.1 {Tcl_FSTildeExpand ~UNKNOWNUSER} -constraints testfstildeexpand -body {
+    testfstildeexpand ~nosuchuser
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
 test fCmd-32.7 {file tildeexpand ~extra arg} -body {
     file tildeexpand ~ arg
 } -returnCodes error -result {wrong # args: should be "file tildeexpand path"}
+test fCmd-32.7.1 {Tcl_FSTildeExpand ~extra arg} -constraints testfstildeexpand -body {
+    testfstildeexpand ~ arg
+} -returnCodes error -result {wrong # args: should be "testfstildeexpand PATH"}
 test fCmd-32.8 {file tildeexpand ~/path} -body {
     file tildeexpand ~/foo
+} -result [file join $::env(HOME)/foo]
+test fCmd-32.8.1 {Tcl_FSTildeExpand ~/path} -constraints testfstildeexpand -body {
+    testfstildeexpand ~/foo
 } -result [file join $::env(HOME)/foo]
 test fCmd-32.9 {file tildeexpand ~USER/bar} -body {
     # Note - as in 8.x this form does NOT necessarily give same result as
@@ -2825,23 +2873,47 @@ test fCmd-32.9 {file tildeexpand ~USER/bar} -body {
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)/bar]
 } -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
+test fCmd-32.9.1 {Tcl_FSTildeExpand ~USER/bar} -constraints testfstildeexpand -body {
+    # Note - as in 8.x this form does NOT necessarily give same result as
+    # env(HOME) even when user is current user. Assume result contains user
+    # name, else not sure how to check
+    string tolower [testfstildeexpand ~$::tcl_platform(user)/bar]
+} -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
 test fCmd-32.10 {file tildeexpand ~UNKNOWNUSER} -body {
     file tildeexpand ~nosuchuser/foo
+} -returnCodes error -result {user "nosuchuser" doesn't exist}
+test fCmd-32.10.1 {Tcl_FSTildeExpand ~UNKNOWNUSER} -constraints testfstildeexpand -body {
+    testfstildeexpand ~nosuchuser/foo
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
 test fCmd-32.11 {file tildeexpand /~/path} -body {
     file tildeexpand /~/foo
 } -result /~/foo
+test fCmd-32.11.1 {Tcl_FSTildeExpand /~/path} -constraints testfstildeexpand -body {
+    testfstildeexpand /~/foo
+} -result /~/foo
 test fCmd-32.12 {file tildeexpand /~user/path} -body {
     file tildeexpand /~$::tcl_platform(user)/foo
+} -result /~$::tcl_platform(user)/foo
+test fCmd-32.12.1 {Tcl_FSTildeExpand /~user/path} -constraints testfstildeexpand -body {
+    testfstildeexpand /~$::tcl_platform(user)/foo
 } -result /~$::tcl_platform(user)/foo
 test fCmd-32.13 {file tildeexpand ./~} -body {
     file tildeexpand ./~
 } -result ./~
+test fCmd-32.13.1 {Tcl_FSTildeExpand ./~} -constraints testfstildeexpand -body {
+    testfstildeexpand ./~
+} -result ./~
 test fCmd-32.14 {file tildeexpand relative/path} -body {
     file tildeexpand relative/path
 } -result relative/path
+test fCmd-32.14.1 {Tcl_FSTildeExpand relative/path} -constraints testfstildeexpand -body {
+    testfstildeexpand relative/path
+} -result relative/path
 test fCmd-32.15 {file tildeexpand ~\\path} -body {
     file tildeexpand ~\\foo
+} -constraints win -result [file join $::env(HOME)/foo]
+test fCmd-32.15.1 {Tcl_FSTildeExpand ~\\path} -constraints testfstildeexpand -body {
+    testfstildeexpand ~\\foo
 } -constraints win -result [file join $::env(HOME)/foo]
 test fCmd-32.16 {file tildeexpand ~USER\\bar} -body {
     # Note - as in 8.x this form does NOT necessarily give same result as
@@ -2849,12 +2921,25 @@ test fCmd-32.16 {file tildeexpand ~USER\\bar} -body {
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)\\bar]
 } -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
+test fCmd-32.16.1 {Tcl_FSTildeExpand ~USER\\bar} -constraints testfstildeexpand -body {
+    # Note - as in 8.x this form does NOT necessarily give same result as
+    # env(HOME) even when user is current user. Assume result contains user
+    # name, else not sure how to check
+    string tolower [testfstildeexpand ~$::tcl_platform(user)\\bar]
+} -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
 test fCmd-32.17 {file tildeexpand ~USER does not mirror HOME} -setup {
     set ::env(HOME) [file join $::env(HOME) foo]
 } -cleanup {
     set ::env(HOME) [file dirname $::env(HOME)]
 } -body {
     string tolower [file tildeexpand ~$::tcl_platform(user)]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
+test fCmd-32.17.1 {Tcl_FSTildeExpand ~USER does not mirror HOME} -setup {
+    set ::env(HOME) [file join $::env(HOME) foo]
+} -cleanup {
+    set ::env(HOME) [file dirname $::env(HOME)]
+} -constraints testfstildeexpand -body {
+    string tolower [testfstildeexpand ~$::tcl_platform(user)]
 } -match glob -result [gethomedirglob $::tcl_platform(user)]
 
 

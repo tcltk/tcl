@@ -2562,6 +2562,74 @@ TclGetHomeDirObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_FSTildeExpand --
+ *
+ *	Copies the path passed in to the output Tcl_DString dsPtr,
+ *	resolving leading ~ and ~user components in the path if present.
+ *      An error is returned if such a component IS present AND cannot
+ *      be resolved.
+ *
+ *	The output dsPtr must be cleared by caller on success.
+ *
+ * Results:
+ *      TCL_OK - path did not contain leading ~ or it was successful resolved
+ *      TCL_ERROR - ~ component could not be resolved.
+ *
+ *----------------------------------------------------------------------
+ */
+int Tcl_FSTildeExpand(
+    Tcl_Interp *interp,	/* May be NULL. Only used for error messages */
+    const char *path,	/* Path to resolve tilde */
+    Tcl_DString *dsPtr) /* Output DString for resolved path. */
+
+{
+    Tcl_Size split;
+    int result;
+
+    assert(path);
+    assert(dsPtr);
+
+    Tcl_DStringInit(dsPtr);
+    if (path[0] != '~') {
+	Tcl_DStringAppend(dsPtr, path, -1);
+	return TCL_OK;
+    }
+
+    /*
+     * We have multiple cases '~', '~user', '~/foo/bar...', '~user/foo...'
+     * FindSplitPos returns 1 for '~/...' as well as for '~'. Note on
+     * Windows FindSplitPos implicitly checks for '\' as separator
+     * in addition to what is passed.
+     */
+    split = FindSplitPos(path, '/');
+
+    if (split == 1) {
+        /* No user name specified '~' or '~/...' -> current user */
+	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
+    } else {
+        /* User name specified - ~user, ~user/... */
+        const char *user;
+        Tcl_DString dsUser;
+
+	Tcl_DStringInit(&dsUser);
+        Tcl_DStringAppend(&dsUser, path+1, split-1);
+        user = Tcl_DStringValue(&dsUser);
+
+	/* path[split] is / for ~user/... or \0 for ~user */
+	result = MakeTildeRelativePath(interp, user,
+		  path[split] ? &path[split + 1] : NULL, dsPtr);
+	Tcl_DStringFree(&dsUser);
+    }
+    if (result != TCL_OK) {
+        /* Do not rely on caller to free in case of errors */
+        Tcl_DStringFree(dsPtr);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclResolveTildePath --
  *
  *	If the passed path is begins with a tilde, does tilde resolution
@@ -2585,46 +2653,18 @@ TclResolveTildePath(
 {
     const char *path;
     Tcl_Size len;
-    Tcl_Size split;
     Tcl_DString resolvedPath;
 
     path = Tcl_GetStringFromObj(pathObj, &len);
+    /* Optimize to skip unnecessary calls below */
     if (path[0] != '~') {
 	return pathObj;
     }
 
-    /*
-     * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
-     * split becomes value 1 for '~/...' as well as for '~'. Note on
-     * Windows FindSplitPos will implicitly check for '\' as separator
-     * in addition to what is passed.
-     */
-    split = FindSplitPos(path, '/');
-
-    if (split == 1) {
-	/* No user name specified -> current user */
-	if (MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL,
-		&resolvedPath) != TCL_OK) {
-	    return NULL;
-	}
-    } else {
-	/* User name specified - ~user */
-	const char *expandedUser;
-	Tcl_DString userName;
-
-	Tcl_DStringInit(&userName);
-	Tcl_DStringAppend(&userName, path+1, split-1);
-	expandedUser = Tcl_DStringValue(&userName);
-
-	/* path[split] is / or \0 */
-	if (MakeTildeRelativePath(interp, expandedUser,
-		path[split] ? &path[split+1] : NULL,
-		&resolvedPath) != TCL_OK) {
-	    Tcl_DStringFree(&userName);
-	    return NULL;
-	}
-	Tcl_DStringFree(&userName);
+    if (Tcl_FSTildeExpand(interp, path, &resolvedPath) != TCL_OK) {
+	return NULL;
     }
+
     return Tcl_DStringToObj(&resolvedPath);
 }
 

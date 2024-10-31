@@ -2502,11 +2502,12 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
-# Removed by TIP #652
-#
-#declare 657 {
-#    int Tcl_UniCharIsUnicode(int ch)
-#}
+
+# TIP 701
+declare 657 {
+    int Tcl_FSTildeExpand(Tcl_Interp *interp, const char *path,
+        Tcl_DString *dsPtr)
+}
 
 # TIP 656
 declare 658 {
