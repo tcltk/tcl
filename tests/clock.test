@@ -280,7 +280,7 @@ test clock-1.4 "clock format - bad flag" {*}{
     -result {1 {bad switch "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badSwitch -oops}}
 }
 
-test clock-1.5 "clock format - bad timezone" -body {
+test clock-1.5 "clock format - bad timezone (not found)" -body {
     clock format 0 -format "%s" -timezone :NOWHERE
 } -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
 foreach tz [list {*}{
@@ -288,7 +288,7 @@ foreach tz [list {*}{
   zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
   } [list $::tcl::clock::DataDir/GMT]
 ] {
-test clock-1.5.1 "clock format - bad timezone" -body {
+test clock-1.5.1 "clock format - bad timezone (not valid - unsafe path)" -body {
     clock format 0 -format "%s" -timezone $tz
 } -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
 }
