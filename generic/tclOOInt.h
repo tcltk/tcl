@@ -293,7 +293,6 @@ typedef struct ThreadLocalData {
 				 * because Tcl_Objs can cross interpreter
 				 * boundaries within a thread (objects don't
 				 * generally cross threads). */
-    int delQueued;	/* The queued class/object deletion is started.*/
 } ThreadLocalData;
 
 typedef struct Foundation {
@@ -326,6 +325,8 @@ typedef struct Foundation {
     Tcl_Obj *clonedName;	/* Shared object containing the name of a
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
+
+    int delQueued;              /* Queued class/object deletion is started.*/
 } Foundation;
 
 /*

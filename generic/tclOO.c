@@ -867,17 +867,17 @@ ObjectRenamedTrace(
 	 * Ensure that we don't recurse very deeply and blow out the C stack.
 	 * [Bug 02977e0004]
 	 */
-	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
+	Foundation *fPtr = GetFoundation(interp);
 	NRE_callback *callbackPtr = NULL;
 
-	if (!tsdPtr->delQueued) {
+	if (!fPtr->delQueued) {
 	    callbackPtr = TOP_CB(interp);
 	}
 	TclNRAddCallback(interp, ObjectDeleteNRCB, oPtr, NULL, NULL, NULL);
-	if (!tsdPtr->delQueued) {
-	    tsdPtr->delQueued = 1;
+	if (!fPtr->delQueued) {
+	    fPtr->delQueued = 1;
 	    TclNRRunCallbacks(interp, TCL_OK, callbackPtr);
-	    tsdPtr->delQueued = 0;
+	    fPtr->delQueued = 0;
 	}
     } else {
 	oPtr->command = NULL;
