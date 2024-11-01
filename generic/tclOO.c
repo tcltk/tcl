@@ -850,8 +850,24 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
+	/*
+	 * Ensure that we don't recurse very deeply and blow out the C stack.
+	 * [Bug 02977e0004]
+	 */
 	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
-	if (!tsdPtr->delQueueTail) {
+	if (oPtr->classPtr) {
+	    /*
+	     * Classes currently need the recursion to get destructor calling
+	     * right. This is a bug, but it requires a major rewrite of things
+	     * to fix. 
+	     */
+	    Tcl_DeleteNamespace(oPtr->namespacePtr);
+	    oPtr->command = NULL;
+	    TclOODecrRefCount(oPtr);
+	} else if (!tsdPtr->delQueueTail) {
+	    /*
+	     * Process a queue of objects to delete.
+	     */
 	    Object *currPtr, *tmp;
 	    tsdPtr->delQueueTail = oPtr;
 	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
@@ -862,9 +878,11 @@ ObjectRenamedTrace(
 	    }
 	    tsdPtr->delQueueTail = NULL;
 	} else {
+	    /*
+	     * Enqueue the object.
+	     */
 	    tsdPtr->delQueueTail->delNext = oPtr;
 	    tsdPtr->delQueueTail = oPtr;
-	    // Tcl_DeleteNamespace(oPtr->namespacePtr);
 	}
     } else {
 	oPtr->command = NULL;

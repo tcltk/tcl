@@ -888,9 +888,8 @@ Tcl_DeleteNamespace(
     Tcl_Namespace *namespacePtr)/* Points to the namespace to delete. */
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
-    Interp *iPtr = (Interp *) nsPtr->interp;
-    Namespace *globalNsPtr = (Namespace *)
-	    TclGetGlobalNamespace((Tcl_Interp *) iPtr);
+    Tcl_Interp *interp = nsPtr->interp;
+    Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
@@ -934,8 +933,7 @@ Tcl_DeleteNamespace(
 	    entryPtr != NULL;) {
 	cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
 	if (cmdPtr->nreProc == TclNRInterpCoroutine) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
-		    (Tcl_Command) cmdPtr);
+	    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	} else {
 	    entryPtr = Tcl_NextHashEntry(&search);
@@ -958,7 +956,7 @@ Tcl_DeleteNamespace(
 
 	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
 	ensemblePtr->next = ensemblePtr;
-	Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
+	Tcl_DeleteCommandFromToken(interp, ensemblePtr->token);
     }
 
     /*
@@ -1013,7 +1011,7 @@ Tcl_DeleteNamespace(
 
 	TclTeardownNamespace(nsPtr);
 
-	if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
+	if ((nsPtr != globalNsPtr) || (((Interp *) interp)->flags & DELETED)) {
 	    /*
 	     * If this is the global namespace, then it may have residual
 	     * "errorInfo" and "errorCode" variables for errors that occurred
@@ -1039,8 +1037,8 @@ Tcl_DeleteNamespace(
 	     * Restore the ::errorInfo and ::errorCode traces.
 	     */
 
-	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
-	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+	    EstablishErrorInfoTraces(NULL, interp, NULL, NULL, 0);
+	    EstablishErrorCodeTraces(NULL, interp, NULL, NULL, 0);
 
 	    /*
 	     * We didn't really kill it, so remove the KILLED marks, so it can
