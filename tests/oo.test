@@ -438,6 +438,28 @@ test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
 } -cleanup {
     parent destroy
 } -result 0
+test oo-1.24 {basic test of OO functionality: deep nested ownership} -setup {
+    oo::class create parent
+} -constraints knownBug -body {
+    oo::class create abc {
+	superclass parent
+	self method make {} {oo::copy [self] xyz}
+	destructor {incr ::count}
+    }
+    apply {n {
+	set ::count 0
+	# Make a lot of "nested" objects
+	set base abc
+	for {set i 1; set obj $base} {$i < $n} {incr i} {
+	     set obj [$obj make]
+	}
+	# Kill them all in one go; should not crash!
+	$base destroy
+	return [expr {$n - $::count}]
+    }} 10000
+} -cleanup {
+    parent destroy
+} -result 0
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
