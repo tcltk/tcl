@@ -867,19 +867,26 @@ ObjectRenamedTrace(
 	 * Ensure that we don't recurse very deeply and blow out the C stack.
 	 * [Bug 02977e0004]
 	 */
-	Foundation *fPtr = GetFoundation(interp);
-	NRE_callback *callbackPtr = NULL;
+	Foundation *fPtr = oPtr->fPtr; /* same as GetFoundation(interp); */
+	NRE_callback *callbackPtr;
 
-	if (!fPtr->delQueued) {
-	    callbackPtr = TOP_CB(interp);
+	/* first 100 nested alls direct (uses program stack) */
+	if (fPtr->delQueued++ < 100) {
+	    Tcl_DeleteNamespace(oPtr->namespacePtr);
+	    fPtr->delQueued--;
+	    goto done;
 	}
+	/* next via NRE */
+	callbackPtr = TOP_CB(interp);
 	TclNRAddCallback(interp, ObjectDeleteNRCB, oPtr, NULL, NULL, NULL);
-	if (!fPtr->delQueued) {
-	    fPtr->delQueued = 1;
+	/* avoid too large NRE-stack (cache washout, etc), so run them after
+	 * every 100 nested calls */
+	if (!(fPtr->delQueued % 100)) {
 	    TclNRRunCallbacks(interp, TCL_OK, callbackPtr);
-	    fPtr->delQueued = 0;
 	}
+	fPtr->delQueued--;
     } else {
+      done:
 	oPtr->command = NULL;
 	TclOODecrRefCount(oPtr);
     }
