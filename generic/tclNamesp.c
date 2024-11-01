@@ -1083,7 +1083,7 @@ Tcl_DeleteNamespace(
 
 	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
 	ensemblePtr->next = ensemblePtr;
-	Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
+	Tcl_DeleteCommandFromToken(interp, ensemblePtr->token);
     }
 
     /*
@@ -1162,8 +1162,8 @@ Tcl_DeleteNamespace(
 	     * Restore the ::errorInfo and ::errorCode traces.
 	     */
 
-	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
-	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+	    EstablishErrorInfoTraces(NULL, interp, NULL, NULL, 0);
+	    EstablishErrorCodeTraces(NULL, interp, NULL, NULL, 0);
 
 	    /*
 	     * We didn't really kill it, so remove the KILLED marks, so it can
