@@ -850,10 +850,44 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
-	Tcl_DeleteNamespace(oPtr->namespacePtr);
+	/*
+	 * Ensure that we don't recurse very deeply and blow out the C stack.
+	 * [Bug 02977e0004]
+	 */
+	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
+	if (oPtr->classPtr) {
+	    /*
+	     * Classes currently need the recursion to get destructor calling
+	     * right. This is a bug, but it requires a major rewrite of things
+	     * to fix. 
+	     */
+	    Tcl_DeleteNamespace(oPtr->namespacePtr);
+	    oPtr->command = NULL;
+	    TclOODecrRefCount(oPtr);
+	} else if (!tsdPtr->delQueueTail) {
+	    /*
+	     * Process a queue of objects to delete.
+	     */
+	    Object *currPtr, *tmp;
+	    tsdPtr->delQueueTail = oPtr;
+	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
+		Tcl_DeleteNamespace(currPtr->namespacePtr);
+		currPtr->command = NULL;
+		tmp = currPtr->delNext;
+		TclOODecrRefCount(currPtr);
+	    }
+	    tsdPtr->delQueueTail = NULL;
+	} else {
+	    /*
+	     * Enqueue the object.
+	     */
+	    tsdPtr->delQueueTail->delNext = oPtr;
+	    tsdPtr->delQueueTail = oPtr;
+	}
+    } else {
+	oPtr->command = NULL;
+	TclOODecrRefCount(oPtr);
     }
-    oPtr->command = NULL;
-    TclOODecrRefCount(oPtr);
     return;
 }
 
@@ -1102,7 +1136,7 @@ ObjectNamespaceDeleted(
     Class *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    Tcl_Interp *interp = oPtr->fPtr->interp;
+    Tcl_Interp *interp = fPtr->interp;
     int i;
 
     if (Destructing(oPtr)) {
@@ -1138,12 +1172,12 @@ ObjectNamespaceDeleted(
     if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
-	int result;
-	Tcl_InterpState state;
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
-
 	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1175,11 +1209,11 @@ ObjectNamespaceDeleted(
 	 * as well.
 	 */
 
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+	Tcl_DeleteCommandFromToken(interp, oPtr->command);
     }
 
     if (oPtr->myCommand) {
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
+	Tcl_DeleteCommandFromToken(interp, oPtr->myCommand);
     }
 
     /*
@@ -1254,7 +1288,6 @@ ObjectNamespaceDeleted(
 
     if (IsRootObject(oPtr) && !Destructing(fPtr->classCls->thisPtr)
 	    && !Tcl_InterpDeleted(interp)) {
-
 	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
     }
 
