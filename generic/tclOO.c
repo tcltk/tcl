@@ -870,7 +870,7 @@ ObjectRenamedTrace(
 	Foundation *fPtr = oPtr->fPtr; /* same as GetFoundation(interp); */
 	NRE_callback *callbackPtr;
 
-	/* first 100 nested alls direct (uses program stack) */
+	/* first 100 nested calls direct (uses program stack) */
 	if (fPtr->delQueued++ < 100) {
 	    Tcl_DeleteNamespace(oPtr->namespacePtr);
 	    fPtr->delQueued--;
