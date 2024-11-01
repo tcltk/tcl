@@ -812,6 +812,19 @@ MyDeleted(
     oPtr->myCommand = NULL;
 }
 
+static int
+ObjectDeleteNRCB(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Object *oPtr = data[0];
+    Tcl_DeleteNamespace(oPtr->namespacePtr);
+    oPtr->command = NULL;
+    TclOODecrRefCount(oPtr);
+    return TCL_OK;
+}
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -855,34 +868,16 @@ ObjectRenamedTrace(
 	 * [Bug 02977e0004]
 	 */
 	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
-	if (oPtr->classPtr) {
-	    /*
-	     * Classes currently need the recursion to get destructor calling
-	     * right. This is a bug, but it requires a major rewrite of things
-	     * to fix. 
-	     */
-	    Tcl_DeleteNamespace(oPtr->namespacePtr);
-	    oPtr->command = NULL;
-	    TclOODecrRefCount(oPtr);
-	} else if (!tsdPtr->delQueueTail) {
-	    /*
-	     * Process a queue of objects to delete.
-	     */
-	    Object *currPtr, *tmp;
-	    tsdPtr->delQueueTail = oPtr;
-	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
-		Tcl_DeleteNamespace(currPtr->namespacePtr);
-		currPtr->command = NULL;
-		tmp = currPtr->delNext;
-		TclOODecrRefCount(currPtr);
-	    }
-	    tsdPtr->delQueueTail = NULL;
-	} else {
-	    /*
-	     * Enqueue the object.
-	     */
-	    tsdPtr->delQueueTail->delNext = oPtr;
-	    tsdPtr->delQueueTail = oPtr;
+	NRE_callback *callbackPtr = NULL;
+
+	if (!tsdPtr->delQueued) {
+	    callbackPtr = TOP_CB(interp);
+	}
+	TclNRAddCallback(interp, ObjectDeleteNRCB, oPtr, NULL, NULL, NULL);
+	if (!tsdPtr->delQueued) {
+	    tsdPtr->delQueued = 1;
+	    TclNRRunCallbacks(interp, TCL_OK, callbackPtr);
+	    tsdPtr->delQueued = 0;
 	}
     } else {
 	oPtr->command = NULL;

@@ -197,8 +197,6 @@ typedef struct Object {
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
     LIST_STATIC(Tcl_Obj *) variables;
-    struct Object *delNext;	/* If non-NULL, the next object to have its
-				 * namespace deleted. */
 } Object;
 
 #define OBJECT_DESTRUCTING	1	/* Indicates that an object is being or has
@@ -295,8 +293,7 @@ typedef struct ThreadLocalData {
 				 * because Tcl_Objs can cross interpreter
 				 * boundaries within a thread (objects don't
 				 * generally cross threads). */
-    Object *delQueueTail;	/* The tail object in the deletion queue. If
-				 * NULL, there is no deletion queue. */
+    int delQueued;	/* The queued class/object deletion is started.*/
 } ThreadLocalData;
 
 typedef struct Foundation {
