@@ -1081,16 +1081,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\tm.tcl"          "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\parray.tcl"      "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\safe.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\*.tcl"           "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\tclIndex"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
