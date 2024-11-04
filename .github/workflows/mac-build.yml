@@ -74,7 +74,7 @@ jobs:
         timeout-minutes: 15
       - name: Run Tests
         run: |
-          make test CFLAGS="-file oo.test -verbose t"
+          make test TESTFLAGS="-file oo.test -verbose t"
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
