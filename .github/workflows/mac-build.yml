@@ -25,10 +25,10 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
       - name: Build
-        run: make all
+        run: make -j4 all
         timeout-minutes: 15
       - name: Run Tests
-        run: make test styles=develop
+        run: make -j4 test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
@@ -64,8 +64,12 @@ jobs:
         timeout-minutes: 5
       - name: Build
         run: |
-          make all tcltest
+          make -j4 all tcltest
         timeout-minutes: 15
+      - name: Info
+        run: |
+          ulimit -a || echo 'get limit failed'
+          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Run Tests
         run: |
           make test
