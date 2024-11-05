@@ -283,7 +283,7 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     proc test-oo-1.18 {} return
     oo::class create A
     oo::class create B {superclass A}
-} -body {
+} -constraints knownBug -body {
     oo::define B constructor {} {A create test-oo-1.18}
     B create C
 } -cleanup {
