@@ -12,10 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
@@ -87,22 +83,6 @@ static const char *const typeNames[] = {
 
 static DWORD lastType = REG_RESOURCE_LIST;
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
-
 /*
  * Declarations for functions defined in this file.
  */
@@ -141,19 +121,8 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tclregistry13.dll" works without 3th argument */
-DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
-#endif
-#ifdef __cplusplus
-}
-#endif
+int		Registry_Init(Tcl_Interp *interp);
+int		Registry_Unload(Tcl_Interp *interp, int flags);
 
 /*
  *----------------------------------------------------------------------
@@ -177,23 +146,12 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
-	return TCL_ERROR;
-    }
-
     cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.3.7", NULL);
+    /* Note the registry version tracks Tcl version */
+    return Tcl_PkgProvideEx(interp, "registry", TCL_PATCH_LEVEL, NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Init(
-    Tcl_Interp *interp)
-{
-    return Registry_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -240,15 +198,6 @@ Registry_Unload(
 
     return TCL_OK;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Unload(
-    Tcl_Interp *interp,
-    int flags)
-{
-    return Registry_Unload(interp, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

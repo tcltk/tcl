@@ -5132,6 +5132,16 @@ typedef struct NRE_callback {
 #endif /* MAC_OSX_TCL */
 
 /*
+ * Static Win32 libraries. Here and not in tclWinInt.h because latter not
+ * included by generic tclBasic code.
+ */
+#ifdef _WIN32
+MODULE_SCOPE Tcl_LibraryInitProc Registry_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Dde_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Dde_SafeInit;
+#endif
+
+/*
  * Other externals.
  */
 

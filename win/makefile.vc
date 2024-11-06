@@ -23,7 +23,7 @@
 #	release  -- Builds everything that ships with a release. (default)
 #	core     -- Builds the core [tclXX.(dll|lib)]
 #	shell    -- Builds tclsh and the core.
-#	dlls     -- Just builds the windows extensions.
+#	dlls     -- Just builds the windows shared libs for tommath etc.
 #	all      -- Builds everything.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
@@ -71,8 +71,7 @@
 #		pdbs      = Produce separate debug symbol files.
 #		profile   = Adds profiling hooks.  Map file is assumed.
 #		static    = Builds a static library of the core instead of a
-#			    dll.  The shell will be static (and large), and
-#			    have the dde and registry extensions linked inside.
+#			    dll.  The shell will be static (and large).
 #		symbols   = Adds symbols for step debugging.
 #		thrdalloc = Use the thread allocator (shared global free pool).
 #		unchecked = Allows a symbols build to not use the debug
@@ -200,26 +199,8 @@ TCL_TEST_LIBRARY=
 !if [echo PKG_SHELL_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
 !endif
-!if [echo PKG_DDE_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
-!endif
-!if [echo PKG_REG_VER =\>> versions.vc] \
-   && [nmakehlp -V ..\library\registry\pkgIndex.tcl "registry " >> versions.vc]
-!endif
 
 !include versions.vc
-
-DDEDOTVERSION = 1.4
-DDEVERSION = $(DDEDOTVERSION:.=)
-
-REGDOTVERSION = 1.3
-REGVERSION = $(REGDOTVERSION:.=)
-
-TCLREGLIBNAME	= $(PROJECT)9registry$(REGVERSION)$(SUFX:t=).$(EXT)
-TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
-
-TCLDDELIBNAME	= $(PROJECT)9dde$(DDEVERSION)$(SUFX:t=).$(EXT)
-TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
@@ -432,6 +413,7 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWin32Dll.obj \
 	$(TMP_DIR)\tclWinChan.obj \
 	$(TMP_DIR)\tclWinConsole.obj \
+	$(TMP_DIR)\tclWinDde.obj \
 	$(TMP_DIR)\tclWinError.obj \
 	$(TMP_DIR)\tclWinFCmd.obj \
 	$(TMP_DIR)\tclWinFile.obj \
@@ -439,14 +421,13 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinLoad.obj \
 	$(TMP_DIR)\tclWinNotify.obj \
 	$(TMP_DIR)\tclWinPipe.obj \
+	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinSerial.obj \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
 !if $(STATIC_BUILD)
 	$(TMP_DIR)\tclWinPanic.obj \
-	$(TMP_DIR)\tclWinReg.obj \
-	$(TMP_DIR)\tclWinDde.obj \
 !else
 	$(TMP_DIR)\tcl.res
 !endif
@@ -499,7 +480,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 #             build does not embed the library zip in the DLL irrespective
 #             of the noembed setting. A copy is made as $(TCLLIBRAW)
 #             as the $(TCLLIB) binary is potentially modified later.
-# dlls      - these are the registry and dde DLL's or static libraries
+# dlls      - these are the zlib, tommath etc. support dlls
 # $(TCLSH)  - the Tcl shell WITHOUT any embedded zip. This needs $(TCLLIB)
 #             to be built first as it links against it. A copy is made
 #             as $(TCLSHRAW) as $(TCLSH) binary may be modified later.
@@ -534,7 +515,7 @@ shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
 !endif
 
-dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
+dlls:	    setup $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
 tcltest:    setup core $(TCLTEST) dlls
@@ -552,10 +533,7 @@ setup:      default-setup
 test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
-	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
-<<
+	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS)
 
 runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
@@ -605,24 +583,6 @@ $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLTESTRAW)
-!endif
-
-!if $(STATIC_BUILD)
-$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
-	$(LIBCMD) $**
-!else
-$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(DLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
-!endif
-
-!if $(STATIC_BUILD)
-$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(LIBCMD) $**
-!else
-$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(DLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
 !if "$(MACHINE)" == "ARM64"
@@ -943,14 +903,6 @@ $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 
 ### The following objects should be built using the stub interfaces
 
-$(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
-	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
-
-
-$(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
-	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
-
-
 ### The following objects are part of the stub library and should not
 ### be built as DLL objects.  -Zl is used to avoid a dependency on any
 ### specific C run-time.
@@ -1123,14 +1075,6 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
-	@echo Installing $(TCLDDELIBNAME)
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@echo Installing $(TCLREGLIBNAME)
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
@@ -1174,10 +1118,6 @@ tidy:
 	@if exist $(TCLSH) del $(TCLSH)
 	@echo Removing $(TCLTEST) ...
 	@if exist $(TCLTEST) del $(TCLTEST)
-	@echo Removing $(TCLDDELIB) ...
-	@if exist $(TCLDDELIB) del $(TCLDDELIB)
-	@echo Removing $(TCLREGLIB) ...
-	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
 hose: default-hose hose-pkgs

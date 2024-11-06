@@ -1343,6 +1343,18 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
+#ifdef _WIN32
+    /*
+     * For compatibility reasons (see TIP 702), registry and dde are not
+     * immediately loaded into an interp until a package require is done.
+     * Note also, this platform specific code is here and not in Win32 module
+     * because needs to be done after the initialization above but there is
+     * no appropriate platform callout hook at this point of initialization.
+     */
+    Tcl_StaticLibrary(NULL, "Registry", Registry_Init, NULL);
+    Tcl_StaticLibrary(NULL, "Dde", Dde_Init, Dde_SafeInit);
+#endif
+
     TOP_CB(iPtr) = NULL;
     return interp;
 }
