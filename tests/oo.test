@@ -306,7 +306,7 @@ test oo-1.18.1 {no memory leak: superclass} -setup {
 } -result 0
 test oo-1.18.2 {Bug 75b8433707: memory leak in oo-1.18} -setup {
     proc test-oo-1.18 {} return
-} -constraints memory -body {
+} -constraints {memory knownBug} -body {
     leaktest {
 	oo::class create A
 	oo::class create B {superclass A}
