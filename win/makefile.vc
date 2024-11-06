@@ -621,11 +621,9 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-# Remove the registry and dde directories as the DLLS are still external
-	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
-	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
-	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
-	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
+# Remove the registry and dde dll's
+	@del "$(LIBTCLVFS)\tcl_library\registry\*.dll"
+	@del "$(LIBTCLVFS)\tcl_library\dde\*.dll"
 	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
 	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
