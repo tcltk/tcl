@@ -351,9 +351,18 @@ test clock-1.4.1 "clock format - unexpected option for this sub-command" {
     list [catch {clock format 0 -base 0} msg] $msg $::errorCode
 } [subst {1 {bad option "-base": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -base}}]
 
-test clock-1.5 "clock format - bad timezone" {
-    list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode
-} {1 {time zone ":NOWHERE" not found} {CLOCK badTimeZone :NOWHERE}}
+test clock-1.5 "clock format - bad timezone (not found)" -body {
+    clock format 0 -format "%s" -timezone :NOWHERE
+} -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
+foreach tz [list {*}{
+  ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
+  zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+  } [list $::tcl::clock::DataDir/GMT]
+] {
+test clock-1.5.1 "clock format - bad timezone (not valid - unsafe path)" -body {
+    clock format 0 -format "%s" -timezone $tz
+} -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
+}
 
 test clock-1.6 "clock format - gmt + timezone" {
     list [catch {clock format 0 -timezone :GMT -gmt true} msg] $msg $::errorCode
@@ -38220,6 +38229,23 @@ test clock-59.1 {military time zones} {
     }
     join $trouble \n
 } {}
+
+test clock-59.2 {correct time zone names, format and scan back, bug and regression [2c237beffbace823]} {
+    set result {}
+    foreach {base tz} {
+	 1700000000 "Etc/GMT-2"
+	 1700000000 "Etc/GMT+2"
+	 1301184000 "Europe/Kaliningrad"
+	  152632800 "Pacific/Chatham"
+	 -765317964 "America/Paramaribo"
+	-2337928528 "Australia/Eucla"
+    } {
+	set v [clock format $base -timezone Etc/GMT-2 -format "%Y-%m-%d %H:%M:%S %Z"]
+	lappend result [expr {[set t [clock scan $v -format "%Y-%m-%d %H:%M:%S %Z"]] == $base ? 1 : "0 ($t != $base for $v)"}]
+	lappend result [expr {[set t [clock scan $v]] == $base ? 1 : "0 ($t != $base for $v)"}]
+    }
+    set result
+} [lrepeat 12 1]
 
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
