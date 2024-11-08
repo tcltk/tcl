@@ -35,6 +35,7 @@
 
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_ObjCmdProc void
+#   define Tcl_CmdTraceProc void
 #   define Tcl_CmdObjTraceProc void
 #endif /* TCL_NO_DEPRECATED */
 
@@ -3913,6 +3914,7 @@ extern const TclStubs *tclStubsPtr;
 
 #ifdef TCL_NO_DEPRECATED
 #   undef Tcl_ObjCmdProc
+#   undef Tcl_CmdTraceProc
 #   undef Tcl_CmdObjTraceProc
 #endif /* TCL_NO_DEPRECATED */
 
@@ -4149,6 +4151,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclUtfPrev
 #ifdef TCL_NO_DEPRECATED
 #   undef Tcl_CreateObjCommand
+#   undef Tcl_CreateTrace
 #   undef Tcl_CreateObjTrace
 #   undef Tcl_NRCallObjProc
 #   undef Tcl_NRCreateCommand

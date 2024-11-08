@@ -78,6 +78,7 @@
 
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_CreateObjCommand 0
+#   define Tcl_CreateTrace 0
 #   define Tcl_CreateObjTrace 0
 #   define Tcl_NRCallObjProc 0
 #   define Tcl_NRCreateCommand 0

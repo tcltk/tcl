@@ -175,15 +175,8 @@ static void		CmdDelProc1(void *clientData);
 static void		CmdDelProc2(void *clientData);
 static Tcl_CmdProc	CmdProc1;
 static Tcl_CmdProc	CmdProc2;
-static void		CmdTraceDeleteProc(
-			    void *clientData, Tcl_Interp *interp,
-			    int level, char *command, Tcl_CmdProc *cmdProc,
-			    void *cmdClientData, int argc,
-			    const char **argv);
-static void		CmdTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, char *command,
-			    Tcl_CmdProc *cmdProc, void *cmdClientData,
-			    int argc, const char **argv);
+static Tcl_CmdObjTraceProc2	CmdTraceDeleteProc;
+static Tcl_CmdObjTraceProc2	CmdTraceProc;
 static Tcl_ObjCmdProc2	CreatedCommandProc;
 static Tcl_ObjCmdProc2	CreatedCommandProc2;
 static void		DelCallbackProc(void *clientData,
@@ -1356,7 +1349,7 @@ TestcmdtraceCmd(
 
     if (strcmp(Tcl_GetString(objv[1]), "tracetest") == 0) {
 	Tcl_DStringInit(&buffer);
-	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
+	cmdTrace = Tcl_CreateObjTrace2(interp, 50000, 0, CmdTraceProc, &buffer, NULL);
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1372,13 +1365,13 @@ TestcmdtraceCmd(
 	 * TclNRExecuteByteCode.
 	 */
 
-	cmdTrace = Tcl_CreateTrace(interp, 50000, CmdTraceDeleteProc, NULL);
+	cmdTrace = Tcl_CreateObjTrace2(interp, 50000, 0, CmdTraceDeleteProc, NULL, NULL);
 	Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
     } else if (strcmp(Tcl_GetString(objv[1]), "leveltest") == 0) {
 	Interp *iPtr = (Interp *) interp;
 	Tcl_DStringInit(&buffer);
-	cmdTrace = Tcl_CreateTrace(interp, iPtr->numLevels + 4, CmdTraceProc,
-		&buffer);
+	cmdTrace = Tcl_CreateObjTrace2(interp, iPtr->numLevels + 4, 0, CmdTraceProc,
+		&buffer, NULL);
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1409,8 +1402,8 @@ TestcmdtraceCmd(
 	Tcl_Trace t1, t2;
 
 	Tcl_DStringInit(&buffer);
-	t1 = Tcl_CreateTrace(interp, 1, CmdTraceProc, &buffer);
-	t2 = Tcl_CreateTrace(interp, 50000, CmdTraceProc, &buffer);
+	t1 = Tcl_CreateObjTrace2(interp, 1, 0, CmdTraceProc, &buffer, NULL);
+	t2 = Tcl_CreateObjTrace2(interp, 50000, 0, CmdTraceProc, &buffer, NULL);
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	if (result == TCL_OK) {
 	    Tcl_ResetResult(interp);
@@ -1427,42 +1420,41 @@ TestcmdtraceCmd(
     return TCL_OK;
 }
 
-static void
+static int
 CmdTraceProc(
     void *clientData,	/* Pointer to buffer in which the
 				 * command and arguments are appended.
 				 * Accumulates test result. */
     TCL_UNUSED(Tcl_Interp *),
-    TCL_UNUSED(int) /*level*/,
-    char *command,		/* The command being traced (after
+    TCL_UNUSED(Tcl_Size) /*level*/,
+    const char *command,		/* The command being traced (after
 				 * substitutions). */
-    TCL_UNUSED(Tcl_CmdProc *) /*cmdProc*/,
-    TCL_UNUSED(void *),
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    TCL_UNUSED(Tcl_Command) /*cmdProc*/,
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
 {
     Tcl_DString *bufPtr = (Tcl_DString *) clientData;
-    int i;
+    Tcl_Size i;
 
     Tcl_DStringAppendElement(bufPtr, command);
 
     Tcl_DStringStartSublist(bufPtr);
-    for (i = 0;  i < argc;  i++) {
-	Tcl_DStringAppendElement(bufPtr, argv[i]);
+    for (i = 0;  i < objc;  i++) {
+	Tcl_DStringAppendElement(bufPtr, Tcl_GetString(objv[i]));
     }
     Tcl_DStringEndSublist(bufPtr);
+    return TCL_OK;
 }
 
-static void
+static int
 CmdTraceDeleteProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*level*/,
-    TCL_UNUSED(char *) /*command*/,
-    TCL_UNUSED(Tcl_CmdProc *),
-    TCL_UNUSED(void *),
-    TCL_UNUSED(int) /*argc*/,
-    TCL_UNUSED(const char **) /*argv*/)
+    TCL_UNUSED(Tcl_Size) /*level*/,
+    TCL_UNUSED(const char *) /*command*/,
+    TCL_UNUSED(Tcl_Command),
+    TCL_UNUSED(Tcl_Size) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     /*
      * Remove ourselves to test whether calling Tcl_DeleteTrace within a trace
@@ -1471,6 +1463,7 @@ CmdTraceDeleteProc(
      */
 
     Tcl_DeleteTrace(interp, cmdTrace);
+    return TCL_OK;
 }
 
 static int
