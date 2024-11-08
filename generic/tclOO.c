@@ -405,12 +405,8 @@ InitFoundation(
      * Basic method declarations for the core classes.
      */
 
-    for (i = 0 ; objMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->objectCls, &objMethods[i]);
-    }
-    for (i = 0 ; clsMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->classCls, &clsMethods[i]);
-    }
+    TclOODefineBasicMethods(fPtr->objectCls, objMethods);
+    TclOODefineBasicMethods(fPtr->classCls, clsMethods);
 
     /*
      * Finish setting up the class of classes by marking the 'new' method as
@@ -458,9 +454,7 @@ InitFoundation(
     Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    for (i = 0 ; cfgMethods[i].name ; i++) {
-	TclOONewBasicMethod(((Object *) cfgCls)->classPtr, &cfgMethods[i]);
-    }
+    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
 
     /*
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
