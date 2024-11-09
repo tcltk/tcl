@@ -739,12 +739,11 @@ genstubs:
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
+
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
 #---------------------------------------------------------------------
 
-# NOTE: you can define HHC on the command-line to override this.
-# nmake does not set macro values if already set on the command line.
 !if defined(PROCESSOR_ARCHITECTURE) && "$(PROCESSOR_ARCHITECTURE)" == "AMD64"
 HHC="%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe"
 !else
@@ -755,30 +754,32 @@ HTMLBASE=TclTk$(VERSION)
 HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
 CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 
-htmlhelp: chmsetup $(CHMFILE)
+htmlhelp: $(CHMFILE)
 
-$(CHMFILE): $(DOCDIR)\*
+htmldocs: $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+
+$(CHMFILE): htmldocs chmsetup
 	@echo Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
-Default topic=contents.htm
+Default topic=index.html
 Display compile progress=no
 Error log file=$(HTMLBASE).log
 Full-text search=Yes
 Language=0x409 English (United States)
 Title=Tcl/Tk $(DOTVERSION) Help
 [FILES]
-contents.htm
+index.html
 docs.css
-Keywords\*.htm
-TclCmd\*.htm
-TclLib\*.htm
-TkCmd\*.htm
-TkLib\*.htm
-UserCmd\*.htm
+Keywords\*.html
+TclCmd\*.html
+TclLib\*.html
+TkCmd\*.html
+TkLib\*.html
+UserCmd\*.html
 <<
 
 chmsetup:
