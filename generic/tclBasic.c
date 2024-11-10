@@ -2515,6 +2515,7 @@ Tcl_ExposeCommand(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Command
 Tcl_CreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter returned by a
@@ -2686,6 +2687,7 @@ Tcl_CreateCommand(
     TclResetShadowedCmdRefs(interp, cmdPtr);
     return (Tcl_Command) cmdPtr;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

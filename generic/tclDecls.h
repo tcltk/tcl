@@ -4150,6 +4150,7 @@ extern const TclStubs *tclStubsPtr;
 #undef TclUtfNext
 #undef TclUtfPrev
 #ifdef TCL_NO_DEPRECATED
+#   undef Tcl_CreateCommand
 #   undef Tcl_CreateObjCommand
 #   undef Tcl_CreateTrace
 #   undef Tcl_CreateObjTrace

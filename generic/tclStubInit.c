@@ -77,6 +77,7 @@
 #define TclUnusedStubEntry 0
 
 #ifdef TCL_NO_DEPRECATED
+#   define Tcl_CreateCommand 0
 #   define Tcl_CreateObjCommand 0
 #   define Tcl_CreateTrace 0
 #   define Tcl_CreateObjTrace 0
