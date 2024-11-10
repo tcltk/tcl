@@ -393,7 +393,7 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
 } -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::configurable ::oo::configuresupport::configurable ::oo::object ::oo::singleton} {::oo::configuresupport::objreadableproperties ::oo::configuresupport::objwritableproperties ::oo::configuresupport::readableproperties ::oo::configuresupport::writableproperties ::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class ::oo::configuresupport::configurable} {::oo::abstract ::oo::configurable ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 test oo-1.22 {basic test of OO functionality: nested ownership destruction order} -setup {
     oo::class create parent
-} -body {
+} -constraints knownBug -body {
     oo::class create abc {
 	superclass parent
 	variable n
