@@ -614,7 +614,7 @@ MODULE_SCOPE Tcl_Var	TclOOLookupObjectVar(Tcl_Interp *interp,
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 			    Tcl_ObjectContext context, Tcl_Size objc,
 			    Tcl_Obj *const *objv, Tcl_Size skip);
-MODULE_SCOPE void	TclOONewBasicMethod(Class *clsPtr,
+MODULE_SCOPE void	TclOODefineBasicMethods(Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,
