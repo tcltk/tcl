@@ -380,7 +380,7 @@ TclOODelMethodRef(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewBasicMethod --
+ * TclOODefineBasicMethods --
  *
  *	Helper that makes it cleaner to create very simple methods during
  *	basic system initialization. Not suitable for general use.
@@ -389,17 +389,21 @@ TclOODelMethodRef(
  */
 
 void
-TclOONewBasicMethod(
-    Class *clsPtr,		/* Class to attach the method to. */
-    const DeclaredClassMethod *dcm)
-				/* Name of the method, whether it is public,
-				 * and the function to implement it. */
+TclOODefineBasicMethods(
+    Class *clsPtr,		/* Class to attach the methods to. */
+    const DeclaredClassMethod *dcmAry)
+				/* Static table of method definitions. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_AUTO_LENGTH);
+    int i;
 
-    TclNewMethod((Tcl_Class) clsPtr, namePtr,
-	    (dcm->isPublic ? PUBLIC_METHOD : 0), &dcm->definition, NULL);
-    Tcl_BounceRefCount(namePtr);
+    for (i = 0 ; dcmAry[i].name ; i++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(dcmAry[i].name, TCL_AUTO_LENGTH);
+
+	TclNewMethod((Tcl_Class) clsPtr, namePtr,
+		(dcmAry[i].isPublic ? PUBLIC_METHOD : 0),
+		&dcmAry[i].definition, NULL);
+	Tcl_BounceRefCount(namePtr);
+    }
 }
 
 /*

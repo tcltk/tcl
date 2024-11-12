@@ -405,12 +405,8 @@ InitFoundation(
      * Basic method declarations for the core classes.
      */
 
-    for (i = 0 ; objMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->objectCls, &objMethods[i]);
-    }
-    for (i = 0 ; clsMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->classCls, &clsMethods[i]);
-    }
+    TclOODefineBasicMethods(fPtr->objectCls, objMethods);
+    TclOODefineBasicMethods(fPtr->classCls, clsMethods);
 
     /*
      * Finish setting up the class of classes by marking the 'new' method as
@@ -458,9 +454,7 @@ InitFoundation(
     Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    for (i = 0 ; cfgMethods[i].name ; i++) {
-	TclOONewBasicMethod(((Object *) cfgCls)->classPtr, &cfgMethods[i]);
-    }
+    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
 
     /*
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
@@ -1175,7 +1169,7 @@ ObjectNamespaceDeleted(
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
-    Tcl_Interp *interp = oPtr->fPtr->interp;
+    Tcl_Interp *interp = fPtr->interp;
     Tcl_Size i;
 
     if (Destructing(oPtr)) {
@@ -1213,12 +1207,12 @@ ObjectNamespaceDeleted(
     if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL, NULL, NULL);
-	int result;
-	Tcl_InterpState state;
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
-
 	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
