@@ -1364,7 +1364,7 @@ UnregisterTcpServerInterpCleanupProc(
 	return;
     }
 
-    hPtr = Tcl_FindHashEntry(hTblPtr, (char *)acceptCallbackPtr);
+    hPtr = Tcl_FindHashEntry(hTblPtr, acceptCallbackPtr);
     if (hPtr != NULL) {
 	Tcl_DeleteHashEntry(hPtr);
     }

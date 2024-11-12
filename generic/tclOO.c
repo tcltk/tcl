@@ -81,8 +81,8 @@ static Tcl_InterpDeleteProc	KillFoundation;
 static void		MyDeleted(void *clientData);
 static void		ObjectNamespaceDeleted(void *clientData);
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
-static inline void	RemoveClass(Class **list, int num, int idx);
-static inline void	RemoveObject(Object **list, int num, int idx);
+static inline void	RemoveClass(Class **list, Tcl_Size num, Tcl_Size idx);
+static inline void	RemoveObject(Object **list, Tcl_Size num, Tcl_Size idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicNRObjectCmd(void *clientData,
@@ -201,8 +201,8 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 static inline void
 RemoveClass(
     Class **list,
-    int num,
-    int idx)
+    Tcl_Size num,
+    Tcl_Size idx)
 {
     for (; idx + 1 < num; idx++) {
 	list[idx] = list[idx + 1];
@@ -213,8 +213,8 @@ RemoveClass(
 static inline void
 RemoveObject(
     Object **list,
-    int num,
-    int idx)
+    Tcl_Size num,
+    Tcl_Size idx)
 {
     for (; idx + 1 < num; idx++) {
 	list[idx] = list[idx + 1];
@@ -308,7 +308,7 @@ InitFoundation(
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
-    int i;
+    Tcl_Size i;
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -389,9 +389,9 @@ InitFoundation(
      */
 
     TclNewLiteralStringObj(namePtr, "new");
-    Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
+    Tcl_NewInstanceMethod(interp, (Tcl_Object)fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
-    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
+    fPtr->classCls->constructorPtr = (Method *)Tcl_NewMethod(interp,
 	    (Tcl_Class)fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
     /*
@@ -628,7 +628,7 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    int creationEpoch;
+    Tcl_Size creationEpoch;
 
     oPtr = (Object *)ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -831,7 +831,7 @@ MyClassDeleted(
 static void
 ObjectRenamedTrace(
     void *clientData,		/* The object being deleted. */
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
     int flags)			/* Why was the object deleted? */
@@ -854,44 +854,10 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
-	/*
-	 * Ensure that we don't recurse very deeply and blow out the C stack.
-	 * [Bug 02977e0004]
-	 */
-	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
-	if (oPtr->classPtr) {
-	    /*
-	     * Classes currently need the recursion to get destructor calling
-	     * right. This is a bug, but it requires a major rewrite of things
-	     * to fix. 
-	     */
-	    Tcl_DeleteNamespace(oPtr->namespacePtr);
-	    oPtr->command = NULL;
-	    TclOODecrRefCount(oPtr);
-	} else if (!tsdPtr->delQueueTail) {
-	    /*
-	     * Process a queue of objects to delete.
-	     */
-	    Object *currPtr, *tmp;
-	    tsdPtr->delQueueTail = oPtr;
-	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
-		Tcl_DeleteNamespace(currPtr->namespacePtr);
-		currPtr->command = NULL;
-		tmp = currPtr->delNext;
-		TclOODecrRefCount(currPtr);
-	    }
-	    tsdPtr->delQueueTail = NULL;
-	} else {
-	    /*
-	     * Enqueue the object.
-	     */
-	    tsdPtr->delQueueTail->delNext = oPtr;
-	    tsdPtr->delQueueTail = oPtr;
-	}
-    } else {
-	oPtr->command = NULL;
-	TclOODecrRefCount(oPtr);
+	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
+    oPtr->command = NULL;
+    TclOODecrRefCount(oPtr);
     return;
 }
 
@@ -1266,7 +1232,7 @@ ObjectNamespaceDeleted(
     }
 
     if (oPtr->myclassCommand) {
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myclassCommand);
+	Tcl_DeleteCommandFromToken(interp, oPtr->myclassCommand);
     }
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(interp, oPtr->myCommand);
@@ -2446,7 +2412,7 @@ Tcl_ClassGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *)typePtr);
+    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2485,7 +2451,7 @@ Tcl_ClassSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *)typePtr);
+	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2526,7 +2492,7 @@ Tcl_ObjectGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *)typePtr);
+    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2565,7 +2531,7 @@ Tcl_ObjectSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *)typePtr);
+	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2899,8 +2865,8 @@ Tcl_ObjectContextInvokeNext(
     Tcl_Size skip)
 {
     CallContext *contextPtr = (CallContext *) context;
-    int savedIndex = contextPtr->index;
-    int savedSkip = contextPtr->skip;
+    Tcl_Size savedIndex = contextPtr->index;
+    Tcl_Size savedSkip = contextPtr->skip;
     int result;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
@@ -3242,7 +3208,7 @@ Tcl_ObjectSetMethodNameMapper(
     Tcl_Object object,
     Tcl_ObjectMapMethodNameProc *mapMethodNameProc)
 {
-    ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
+    ((Object *)object)->mapMethodNameProc = mapMethodNameProc;
 }
 
 Tcl_Class
@@ -3257,7 +3223,7 @@ Tcl_GetObjectClassName(
     Tcl_Interp *interp,
     Tcl_Object object)
 {
-    Tcl_Object classObj = (Tcl_Object) (((Object *) object)->selfCls)->thisPtr;
+    Tcl_Object classObj = (Tcl_Object)(((Object *)object)->selfCls)->thisPtr;
 
     if (classObj == NULL) {
 	return NULL;

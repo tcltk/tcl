@@ -92,7 +92,7 @@ PkguaDeleteTokens(
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)Tcl_GetThreadData((&dataKey), sizeof(ThreadSpecificData));
     Tcl_HashEntry *entryPtr =
-	    Tcl_FindHashEntry(&tsdPtr->interpTokenMap, (char *) interp);
+	    Tcl_FindHashEntry(&tsdPtr->interpTokenMap, interp);
 
     if (entryPtr) {
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));

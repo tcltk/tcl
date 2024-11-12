@@ -250,8 +250,6 @@ struct Object {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this object *claims* to
 				 * support. */
-    Object *delNext;		/* If non-NULL, the next object to have its
-				 * namespace deleted. */
 };
 
 enum ObjectFlags {
@@ -371,8 +369,6 @@ typedef struct ThreadLocalData {
 				 * because Tcl_Objs can cross interpreter
 				 * boundaries within a thread (objects don't
 				 * generally cross threads). */
-    Object *delQueueTail;	/* The tail object in the deletion queue. If
-				 * NULL, there is no deletion queue. */
 } ThreadLocalData;
 
 /*
@@ -579,9 +575,9 @@ MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
-MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
+MODULE_SCOPE Tcl_Size	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
+MODULE_SCOPE Tcl_Size	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);

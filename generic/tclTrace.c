@@ -2682,7 +2682,7 @@ TclCallVarTraces(
     Tcl_Preserve(iPtr);
     if (arrayPtr && !TclIsVarTraceActive(arrayPtr)
 	    && (arrayPtr->flags & traceflags)) {
-	hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) arrayPtr);
+	hPtr = Tcl_FindHashEntry(&iPtr->varTraces, arrayPtr);
 	active.varPtr = arrayPtr;
 	for (tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr);
 		tracePtr != NULL; tracePtr = active.nextTracePtr) {
@@ -2727,7 +2727,7 @@ TclCallVarTraces(
     }
     active.varPtr = varPtr;
     if (varPtr->flags & traceflags) {
-	hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+	hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	for (tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr);
 		tracePtr != NULL; tracePtr = active.nextTracePtr) {
 	    active.nextTracePtr = tracePtr->nextPtr;
@@ -2965,7 +2965,7 @@ Tcl_UntraceVar2(
 #endif
     flags &= flagMask;
 
-    hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+    hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
     for (tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr), prevPtr = NULL; ;
 	    prevPtr = tracePtr, tracePtr = tracePtr->nextPtr) {
 	if (tracePtr == NULL) {
@@ -3122,7 +3122,7 @@ Tcl_VarTraceInfo2(
      * Find the relevant trace, if any, and return its clientData.
      */
 
-    hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+    hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 
     if (hPtr) {
 	VarTrace *tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr);

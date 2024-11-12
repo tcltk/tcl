@@ -867,7 +867,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		    if (Tcl_FindHashEntry(&addedCommandsTable,
-			    (char *) elemObjPtr) == NULL) {
+			    elemObjPtr) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		    } else {
 			TclDecrRefCount(elemObjPtr);
