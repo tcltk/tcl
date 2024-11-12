@@ -827,7 +827,7 @@ MyDeleted(
 
 static void
 ObjectRenamedTrace(
-    ClientData clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
     const char *newName,	/* What it's getting renamed to. (unused) */
@@ -850,44 +850,10 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
-	/*
-	 * Ensure that we don't recurse very deeply and blow out the C stack.
-	 * [Bug 02977e0004]
-	 */
-	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
-	if (oPtr->classPtr) {
-	    /*
-	     * Classes currently need the recursion to get destructor calling
-	     * right. This is a bug, but it requires a major rewrite of things
-	     * to fix. 
-	     */
-	    Tcl_DeleteNamespace(oPtr->namespacePtr);
-	    oPtr->command = NULL;
-	    TclOODecrRefCount(oPtr);
-	} else if (!tsdPtr->delQueueTail) {
-	    /*
-	     * Process a queue of objects to delete.
-	     */
-	    Object *currPtr, *tmp;
-	    tsdPtr->delQueueTail = oPtr;
-	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
-		Tcl_DeleteNamespace(currPtr->namespacePtr);
-		currPtr->command = NULL;
-		tmp = currPtr->delNext;
-		TclOODecrRefCount(currPtr);
-	    }
-	    tsdPtr->delQueueTail = NULL;
-	} else {
-	    /*
-	     * Enqueue the object.
-	     */
-	    tsdPtr->delQueueTail->delNext = oPtr;
-	    tsdPtr->delQueueTail = oPtr;
-	}
-    } else {
-	oPtr->command = NULL;
-	TclOODecrRefCount(oPtr);
+	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
+    oPtr->command = NULL;
+    TclOODecrRefCount(oPtr);
     return;
 }
 

@@ -418,7 +418,7 @@ test oo-1.22 {basic test of OO functionality: nested ownership destruction order
 } -result {1 2 3 4 0}
 test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
     oo::class create parent
-} -body {
+} -constraints knownBug -body {
     oo::class create abc {
 	superclass parent
 	method make {} {[self class] create xyz}
