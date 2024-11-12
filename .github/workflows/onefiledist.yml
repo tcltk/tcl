@@ -40,6 +40,10 @@ jobs:
           chmod +x tclsh${TCL_PATCHLEVEL}_snapshot
           tar -cf tclsh${TCL_PATCHLEVEL}_snapshot.tar tclsh${TCL_PATCHLEVEL}_snapshot
         working-directory: 1dist
+      - name: Info
+        run: |
+          ulimit -a || echo 'get limit failed'
+          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
@@ -76,8 +80,8 @@ jobs:
         working-directory: unix
       - name: Build
         run: |
-          make tclsh
-          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
+          make -j4 tclsh
+          make -j4 shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_BIN=`pwd`/tclsh" >> $GITHUB_ENV
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
         working-directory: unix
@@ -103,6 +107,10 @@ jobs:
               "Tcl-$TCL_PATCHLEVEL-(snapshot).dmg" \
               "contents/"
         working-directory: 1dist
+      - name: Info
+        run: |
+          ulimit -a || echo 'get limit failed'
+          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
@@ -148,6 +156,10 @@ jobs:
         run: |
           cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
         working-directory: 1dist
+      - name: Info
+        run: |
+          ulimit -a || echo 'get limit failed'
+          echo 'puts exe:\t[info nameofexecutable]\nver:\t[info patchlevel]\t[if {![catch tcl::build-info ret]} {set ret}]\nlib:\t[info library]\nplat:\t[lsort -dictionary -stride 2 [array get tcl_platform]]' | make runtest || echo 'get info failed'
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
