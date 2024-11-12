@@ -237,15 +237,15 @@ Searching may start part-way through the list:
 It is also possible to search inside elements:
 .PP
 .CS
-\fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
-      \fI\(-> {a abc} {b bcd}\fR
+\fBlsearch\fR -index 1 -all -inline {{abc abc} {abc bcd} {abc cde}} *bc*
+      \fI\(-> {abc abc} {abc bcd}\fR
 .CE
 .PP
 The same thing for a flattened list:
 .PP
 .CS
-\fBlsearch\fR -stride 2 -index 1 -all -inline {a abc b bcd c cde} *bc*
-      \fI\(-> {a abc b bcd}\fR
+\fBlsearch\fR -stride 2 -index 1 -all -inline {abc abc abc bcd abc cde} *bc*
+      \fI\(-> abc abc abc bcd\fR
 .CE
 .SH "SEE ALSO"
 foreach(n),
