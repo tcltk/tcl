@@ -407,6 +407,8 @@ struct Foundation {
     Tcl_Obj *clonedName;	/* Shared object containing the name of a
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
+    Tcl_Obj *mcdName;		/* The shared object for calling the helper to
+				 * mix in class delegates. */
 };
 
 /*
