@@ -447,7 +447,7 @@ Tcl_Init(
 "	lappend dirs [eval $script]\n"
 "	set tcl_library [lindex $dirs end]\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
-"	if {[file exists $tclfile]} {\n"
+"	if {$tcl_library ne \"\" && [file exists $tclfile]} {\n"
 "	    if {[catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
 "		append errors \"$tclfile: $msg\n\"\n"
 "		append errors \"[dict get $opts -errorinfo]\n\"\n"
