@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 12
+RULES_VERSION_MINOR = 13
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -881,6 +881,10 @@ USE_THREAD_ALLOC= 0
 !message *** Build for Tcl8
 TCL_BUILD_FOR = 8
 !endif
+!if [nmakehlp -f $(OPTS) "tk8"]
+!message *** Build for Tk8
+TK_BUILD_FOR = 8
+!endif
 
 !if $(TCL_MAJOR_VERSION) == 8
 !if [nmakehlp -f $(OPTS) "time64bit"]
@@ -1450,6 +1454,9 @@ OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
+!endif
+!if "$(TK_BUILD_FOR)" == "8"
+OPTDEFINES	= $(OPTDEFINES) /DTK_MAJOR_VERSION=8
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions

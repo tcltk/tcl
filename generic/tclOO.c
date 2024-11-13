@@ -366,12 +366,14 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     TclNewLiteralStringObj(fPtr->myName, "my");
+    TclNewLiteralStringObj(fPtr->mcdName, "::oo::MixinClassDelegates");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
     Tcl_IncrRefCount(fPtr->myName);
+    Tcl_IncrRefCount(fPtr->mcdName);
 
     TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -610,6 +612,7 @@ KillFoundation(
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
     TclDecrRefCount(fPtr->myName);
+    TclDecrRefCount(fPtr->mcdName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
