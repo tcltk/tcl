@@ -3892,13 +3892,13 @@ ClockValidDate(
 	    goto error;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > 59) {
+	if (yyMinutes < 0 || yyMinutes > 60) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
+	if (yySeconds < 0 || yySeconds > 60 || yySecondOfDay <= -1) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;
