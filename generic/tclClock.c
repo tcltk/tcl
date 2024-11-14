@@ -3793,7 +3793,7 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
-    int leapDay = -1;
+    int leapDay = 30;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3857,7 +3857,7 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if ((leapDay < 0) || (yyDay == leapDay)) {
+	} else if (yyDay < leapDay) {
 	    leapDay = 0;
 	}
 	if ((info->flags & CLF_MONTH)) {
