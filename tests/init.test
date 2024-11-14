@@ -52,7 +52,7 @@ test init-0.2 {no init.tcl from empty tcl_library, bug [43c94f95988f3057]} -setu
     set res
 } -cleanup {
     if {[info exists org_tcl_lib]} {
-    set ::env(TCL_LIBRARY) org_tcl_lib
+    set ::env(TCL_LIBRARY) $org_tcl_lib
     unset org_tcl_lib
     } else {
     unset -nocomplain ::env(TCL_LIBRARY)
