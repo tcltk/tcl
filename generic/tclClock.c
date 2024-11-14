@@ -3793,6 +3793,7 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
+    int leapDay = -1;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3843,6 +3844,11 @@ ClockValidDate(
 	    errMsg = "invalid month";
 	    errCode = "month";
 	    goto error;
+	} else if ((yyMonth == 6) || (yyMonth == 12)) {
+	    /* leap seconds/minutes can only be in june or december*/
+	    leapDay = (yyMonth == 12) ? 31: 30;
+	} else {
+	    leapDay = 0;
 	}
     }
     /* day of month */
@@ -3851,7 +3857,10 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if ((info->flags & CLF_MONTH)) {
+	} else if ((leapDay < 0) || (yyDay == leapDay)) {
+	    leapDay = 0;
+	}
+	if ((info->flags & CLF_MONTH)) {
 	    const int *h = hath[IsGregorianLeapYear(&yydate)];
 
 	    if (yyDay > h[yyMonth - 1]) {
@@ -3890,15 +3899,19 @@ ClockValidDate(
 	    errMsg = "invalid time (hour)";
 	    errCode = "hour";
 	    goto error;
+	} else if (yyHour == 24) {
+	    leapDay = 0;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > 60) {
+	if (yyMinutes < 0 || yyMinutes > (leapDay ? 60 : 59)) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
+	} else if (yyMinutes == 60) {
+	    leapDay = 0;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > 60 || yySecondOfDay <= -1) {
+	if (yySeconds < 0 || yySeconds > (leapDay ? 60 : 59) || yySecondOfDay <= -1) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;
