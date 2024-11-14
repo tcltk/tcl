@@ -172,6 +172,9 @@ if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
 # clock-38
 #	Regression test to verify that changes in TZ work
 #	both east and west of Greenwich
+#
+# clock-39
+#	Leap seconds/minutes/hours
 
 
 # Note that all code between comments '# BEGIN' and '# END' is
@@ -37178,13 +37181,13 @@ if {!$valid_mode} {
   } {86399 86400 172800}
 } else {
   test clock-46.8a {regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
+    list [clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S] \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {86400 1 {unable to convert input string: invalid time (hour)}}
   test clock-46.8b {freescan: regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1} msg] $msg \
+    list [clock scan 24:00:00 -base 0 -gmt 1] \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {86400 1 {unable to convert input string: invalid time (hour)}}
 }
 
 proc _invalid_test {testtz scnargs args} {
@@ -38434,6 +38437,31 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 } -cleanup {
     msgcat::mclocale $current
 } -result {1}
+
+test clock-68.1 {Leap second [f2b5f89c0d], valid} -body {
+    clock scan "2012-06-30 23:59:60" -gmt 1
+} -result 1341100800
+test clock-68.2 {Leap minute [f2b5f89c0d], valid} -body {
+    clock scan "2012-06-30 23:60:00" -gmt 1
+} -result 1341100800
+test clock-68.3 {Leap hour [f2b5f89c0d], valid} -body {
+    clock scan "2012-06-30 24:00:00" -gmt 1
+} -result 1341100800
+test clock-68.4 {Leap second [f2b5f89c0d], wrong day} -body {
+    clock scan "2012-06-29 23:59:60" -gmt 1 -valid 1
+} -errorCode {CLOCK invInpStr seconds} -result {unable to convert input string: invalid time}
+test clock-68.5 {Leap second [f2b5f89c0d], wrong month} -body {
+    clock scan "2012-05-30 23:59:60" -gmt 1 -valid 1
+} -errorCode {CLOCK invInpStr seconds} -result {unable to convert input string: invalid time}
+test clock-68.6 {Leap second [f2b5f89c0d], minute} -body {
+    clock scan "2012-05-30 23:60:60" -gmt 1 -valid 1
+} -errorCode {CLOCK invInpStr minutes} -result {unable to convert input string: invalid time (minutes)}
+test clock-68.7 {Leap second [f2b5f89c0d], hour + second} -body {
+    clock scan "2012-05-30 24:00:60" -gmt 1 -valid 1
+} -errorCode {CLOCK invInpStr seconds} -result {unable to convert input string: invalid time}
+test clock-68.8 {Leap second [f2b5f89c0d], hour +  minute} -body {
+    clock scan "2012-05-30 24:60:00" -gmt 1 -valid 1
+} -errorCode {CLOCK invInpStr minutes} -result {unable to convert input string: invalid time (minutes)}
 
 # cleanup
 
