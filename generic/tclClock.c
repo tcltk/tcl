@@ -3886,7 +3886,7 @@ ClockValidDate(
 
     if (info->flags & CLF_TIME) {
 	/* hour */
-	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 23 : 12)) {
+	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 24 : 12)) {
 	    errMsg = "invalid time (hour)";
 	    errCode = "hour";
 	    goto error;
