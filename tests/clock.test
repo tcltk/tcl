@@ -36136,7 +36136,7 @@ test clock-46.6 {freescan: regression test - bad time} \
 	# 13:00 am/pm are invalid input strings...
 	list [clock scan "13:00 am" -base 0 -gmt 1] \
 	     [clock scan "13:00 pm" -base 0 -gmt 1]
-    } -result {-1 -1}
+    } -result {3600 46800}
 
 test clock-46.7 {regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {
     list [clock scan 23:59:59 -base 0 -gmt 1 -format %H:%M:%S] \
@@ -37119,30 +37119,29 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
     msgcat::mclocale $current
 } -result {1}
 
-test clock-68.1 {Leap second [f2b5f89c0d], valid} -constraints knownBug -body {
-    clock scan "2012-06-30 23:59:60" -gmt 1
-} -result 1341100800
-test clock-68.2 {Leap minute [f2b5f89c0d], valid} -constraints knownBug -body {
-    clock scan "2012-06-30 23:60:00" -gmt 1
-} -result 1341100800
-test clock-68.3 {Leap hour [f2b5f89c0d], valid} -constraints knownBug -body {
-    clock scan "2012-06-30 24:00:00" -gmt 1
-} -result 1341100800
-test clock-68.4 {Leap second [f2b5f89c0d], wrong day} -constraints knownBug -body {
-    clock scan "2012-06-29 23:59:60" -gmt 1
-} -result 1341014400
-test clock-68.5 {Leap second [f2b5f89c0d], wrong month} -constraints knownBug -body {
-    clock scan "2012-05-30 23:59:60" -gmt 1
-} -result 1338422400
-test clock-68.6 {Leap second [f2b5f89c0d], minute} -constraints knownBug -body {
-    clock scan "2012-05-30 23:60:60" -gmt 1
-} -result 1338422460
-test clock-68.7 {Leap second [f2b5f89c0d], hour + second} -constraints knownBug -body {
-    clock scan "2012-05-30 24:00:60" -gmt 1
-} -result 1338422460
-test clock-68.8 {Leap second [f2b5f89c0d], hour +  minute} -constraints knownBug -body {
-    clock scan "2012-05-30 24:60:00" -gmt 1
-} -result 1338426000
+test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no validity check)} -body {
+    set res {}
+    foreach {d i} {
+	"2012-06-30 23:59:60" 1341100800
+	"2012-06-30 23:60:00" 1341100800
+	"2012-06-30 24:00:00" 1341100800
+	"2012-06-29 23:59:60" 1341014400
+	"2012-05-30 23:59:60" 1338422400
+	"2012-05-30 23:60:60" 1338422460
+	"2012-05-30 24:00:60" 1338422460
+	"2012-05-30 24:60:00" 1338426000
+    } {
+	# check with free scan:
+	if {[set t [clock scan $d -gmt 1]] != $i} {
+	    lappend res "free-scan \"$d\" == $t, expected $i"
+	}
+	# check with formatted scan:
+	if {[set t [clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S"]] != $i} {
+	    lappend res "fmt-scan \"$d\" == $t, expected $i"
+	}
+    }
+    set res; # must be empty
+} -result {}
 
 # cleanup
 
