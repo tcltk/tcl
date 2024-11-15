@@ -155,6 +155,9 @@ if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
 # clock-38
 #	Regression test to verify that changes in TZ work
 #	both east and west of Greenwich
+#
+# clock-68
+#	Leap seconds/minutes/hours
 
 
 # Note that all code between comments '# BEGIN' and '# END' is
@@ -37115,6 +37118,31 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 } -cleanup {
     msgcat::mclocale $current
 } -result {1}
+
+test clock-68.1 {Leap second [f2b5f89c0d], valid} -constraints knownBug -body {
+    clock scan "2012-06-30 23:59:60" -gmt 1
+} -result 1341100800
+test clock-68.2 {Leap minute [f2b5f89c0d], valid} -constraints knownBug -body {
+    clock scan "2012-06-30 23:60:00" -gmt 1
+} -result 1341100800
+test clock-68.3 {Leap hour [f2b5f89c0d], valid} -constraints knownBug -body {
+    clock scan "2012-06-30 24:00:00" -gmt 1
+} -result 1341100800
+test clock-68.4 {Leap second [f2b5f89c0d], wrong day} -constraints knownBug -body {
+    clock scan "2012-06-29 23:59:60" -gmt 1
+} -result 1341014400
+test clock-68.5 {Leap second [f2b5f89c0d], wrong month} -constraints knownBug -body {
+    clock scan "2012-05-30 23:59:60" -gmt 1
+} -result 1338422400
+test clock-68.6 {Leap second [f2b5f89c0d], minute} -constraints knownBug -body {
+    clock scan "2012-05-30 23:60:60" -gmt 1
+} -result 1338422460
+test clock-68.7 {Leap second [f2b5f89c0d], hour + second} -constraints knownBug -body {
+    clock scan "2012-05-30 24:00:60" -gmt 1
+} -result 1338422460
+test clock-68.8 {Leap second [f2b5f89c0d], hour +  minute} -constraints knownBug -body {
+    clock scan "2012-05-30 24:60:00" -gmt 1
+} -result 1338426000
 
 # cleanup
 
