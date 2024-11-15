@@ -196,26 +196,23 @@ static int		EncodingFromUtfProc(void *clientData,
 			    int *dstCharsPtr);
 static void		ExitProcEven(void *clientData);
 static void		ExitProcOdd(void *clientData);
-static Tcl_ObjCmdProc2	GetTimesObjCmd;
+static Tcl_ObjCmdProc2	GetTimesCmd;
 static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_ObjCmdProc2	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
-static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, Tcl_Size level, const char *command,
-			    Tcl_Command commandToken, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_CmdObjTraceProc TraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_ObjCmdProc2	TestasyncCmd;
-static Tcl_ObjCmdProc2	TestbumpinterpepochObjCmd;
-static Tcl_ObjCmdProc2	TestbytestringObjCmd;
-static Tcl_ObjCmdProc2	TestsetbytearraylengthObjCmd;
-static Tcl_ObjCmdProc2	TestpurebytesobjObjCmd;
-static Tcl_ObjCmdProc2	TeststringbytesObjCmd;
-static Tcl_ObjCmdProc2	TestcmdinfoObjCmd;
+static Tcl_ObjCmdProc2	TestbumpinterpepochCmd;
+static Tcl_ObjCmdProc2	TestbytestringCmd;
+static Tcl_ObjCmdProc2	TestsetbytearraylengthCmd;
+static Tcl_ObjCmdProc2	TestpurebytesobjCmd;
+static Tcl_ObjCmdProc2	TeststringbytesCmd;
+static Tcl_ObjCmdProc2	TestcmdinfoCmd;
 static Tcl_ObjCmdProc2	TestcmdtokenCmd;
 static Tcl_ObjCmdProc2	TestcmdtraceCmd;
 static Tcl_ObjCmdProc2	TestconcatobjCmd;
@@ -223,12 +220,12 @@ static Tcl_ObjCmdProc2	TestcreatecommandCmd;
 static Tcl_ObjCmdProc2	TestdcallCmd;
 static Tcl_ObjCmdProc2	TestdelCmd;
 static Tcl_ObjCmdProc2	TestdelassocdataCmd;
-static Tcl_ObjCmdProc2	TestdoubledigitsObjCmd;
+static Tcl_ObjCmdProc2	TestdoubledigitsCmd;
 static Tcl_ObjCmdProc2	TestdstringCmd;
-static Tcl_ObjCmdProc2	TestencodingObjCmd;
-static Tcl_ObjCmdProc2	TestevalexObjCmd;
-static Tcl_ObjCmdProc2	TestevalobjvObjCmd;
-static Tcl_ObjCmdProc2	TesteventObjCmd;
+static Tcl_ObjCmdProc2	TestencodingCmd;
+static Tcl_ObjCmdProc2	TestevalexCmd;
+static Tcl_ObjCmdProc2	TestevalobjvCmd;
+static Tcl_ObjCmdProc2	TesteventCmd;
 static int		TesteventProc(Tcl_Event *event, int flags);
 static int		TesteventDeleteProc(Tcl_Event *event,
 			    void *clientData);
@@ -237,7 +234,7 @@ static Tcl_ObjCmdProc2	TestexprlongCmd;
 static Tcl_ObjCmdProc2	TestexprlongobjCmd;
 static Tcl_ObjCmdProc2	TestexprdoubleCmd;
 static Tcl_ObjCmdProc2	TestexprdoubleobjCmd;
-static Tcl_ObjCmdProc2	TestexprparserObjCmd;
+static Tcl_ObjCmdProc2	TestexprparserCmd;
 static Tcl_ObjCmdProc2	TestexprstringCmd;
 static Tcl_ObjCmdProc2	TestfileCmd;
 static Tcl_ObjCmdProc2	TestfilelinkCmd;
@@ -257,13 +254,13 @@ static Tcl_ObjCmdProc2	TestsetmainloopCmd;
 static Tcl_ObjCmdProc2	TestexitmainloopCmd;
 static Tcl_ObjCmdProc2	TestpanicCmd;
 static Tcl_ObjCmdProc2	TestparseargsCmd;
-static Tcl_ObjCmdProc2	TestparserObjCmd;
-static Tcl_ObjCmdProc2	TestparsevarObjCmd;
-static Tcl_ObjCmdProc2	TestparsevarnameObjCmd;
-static Tcl_ObjCmdProc2	TestpreferstableObjCmd;
-static Tcl_ObjCmdProc2	TestprintObjCmd;
-static Tcl_ObjCmdProc2	TestregexpObjCmd;
-static Tcl_ObjCmdProc2	TestreturnObjCmd;
+static Tcl_ObjCmdProc2	TestparserCmd;
+static Tcl_ObjCmdProc2	TestparsevarCmd;
+static Tcl_ObjCmdProc2	TestparsevarnameCmd;
+static Tcl_ObjCmdProc2	TestpreferstableCmd;
+static Tcl_ObjCmdProc2	TestprintCmd;
+static Tcl_ObjCmdProc2	TestregexpCmd;
+static Tcl_ObjCmdProc2	TestreturnCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
 static Tcl_ObjCmdProc2	TestsetassocdataCmd;
@@ -277,13 +274,13 @@ static Tcl_ObjCmdProc2	TeststaticlibraryCmd;
 static Tcl_ObjCmdProc2	TesttranslatefilenameCmd;
 static Tcl_ObjCmdProc2	TestfstildeexpandCmd;
 static Tcl_ObjCmdProc2	TestupvarCmd;
-static Tcl_ObjCmdProc2	TestWrongNumArgsObjCmd;
-static Tcl_ObjCmdProc2	TestGetIndexFromObjStructObjCmd;
+static Tcl_ObjCmdProc2	TestWrongNumArgsCmd;
+static Tcl_ObjCmdProc2	TestGetIndexFromObjStructCmd;
 static Tcl_ObjCmdProc2	TestChannelCmd;
 static Tcl_ObjCmdProc2	TestChannelEventCmd;
 static Tcl_ObjCmdProc2	TestSocketCmd;
-static Tcl_ObjCmdProc2	TestFilesystemObjCmd;
-static Tcl_ObjCmdProc2	TestSimpleFilesystemObjCmd;
+static Tcl_ObjCmdProc2	TestFilesystemCmd;
+static Tcl_ObjCmdProc2	TestSimpleFilesystemCmd;
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
 static Tcl_Obj *	TestReportGetNativePath(Tcl_Obj *pathPtr);
@@ -334,7 +331,7 @@ static Tcl_ObjCmdProc2	TestInterpResolverCmd;
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 static Tcl_ObjCmdProc2	TestcpuidCmd;
 #endif
-static Tcl_ObjCmdProc2	TestApplyLambdaObjCmd;
+static Tcl_ObjCmdProc2	TestApplyLambdaCmd;
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -547,31 +544,31 @@ Tcltest_Init(
      * Create additional commands and math functions for testing Tcl.
      */
 
-    Tcl_CreateObjCommand2(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "gettimes", GetTimesCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "noop", NoopObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testpurebytesobj", TestpurebytesobjObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
+    Tcl_CreateObjCommand2(interp, "testpurebytesobj", TestpurebytesobjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testsetbytearraylength", TestsetbytearraylengthCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testbytestring", TestbytestringCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "teststringbytes", TeststringbytesCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testfilesystem", TestFilesystemObjCmd,
+    Tcl_CreateObjCommand2(interp, "testfilesystem", TestFilesystemCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testsimplefilesystem", TestSimpleFilesystemObjCmd,
+    Tcl_CreateObjCommand2(interp, "testsimplefilesystem", TestSimpleFilesystemCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testgetindexfromobjstruct",
-	    TestGetIndexFromObjStructObjCmd, NULL, NULL);
+	    TestGetIndexFromObjStructCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testasync", TestasyncCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testbumpinterpepoch",
-	    TestbumpinterpepochObjCmd, NULL, NULL);
+	    TestbumpinterpepochCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testchannel", TestChannelCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testchannelevent", TestChannelEventCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "testcmdtrace", TestcmdtraceCmd,
 	    NULL, NULL);
@@ -583,18 +580,18 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testdel", TestdelCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testdoubledigits", TestdoubledigitsObjCmd,
+    Tcl_CreateObjCommand2(interp, "testdoubledigits", TestdoubledigitsCmd,
 			 NULL, NULL);
     Tcl_DStringInit(&dstring);
     Tcl_CreateObjCommand2(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "testencoding", TestencodingObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "testencoding", TestencodingCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "testevalex", TestevalexObjCmd,
+    Tcl_CreateObjCommand2(interp, "testevalex", TestevalexCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testevalobjv", TestevalobjvObjCmd,
+    Tcl_CreateObjCommand2(interp, "testevalobjv", TestevalobjvCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testevent", TesteventObjCmd,
+    Tcl_CreateObjCommand2(interp, "testevent", TesteventCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testexithandler", TestexithandlerCmd,
 	    NULL, NULL);
@@ -606,7 +603,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testexprdoubleobj", TestexprdoubleobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testexprparser", TestexprparserObjCmd,
+    Tcl_CreateObjCommand2(interp, "testexprparser", TestexprparserCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testexprstring", TestexprstringCmd,
 	    NULL, NULL);
@@ -637,19 +634,19 @@ Tcltest_Init(
 	    NULL);
     Tcl_CreateObjCommand2(interp, "testpanic", TestpanicCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
-    Tcl_CreateObjCommand2(interp, "testparser", TestparserObjCmd,
+    Tcl_CreateObjCommand2(interp, "testparser", TestparserCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testparsevar", TestparsevarObjCmd,
+    Tcl_CreateObjCommand2(interp, "testparsevar", TestparsevarCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testparsevarname", TestparsevarnameObjCmd,
+    Tcl_CreateObjCommand2(interp, "testparsevarname", TestparsevarnameCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testpreferstable", TestpreferstableObjCmd,
+    Tcl_CreateObjCommand2(interp, "testpreferstable", TestpreferstableCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testprint", TestprintObjCmd,
+    Tcl_CreateObjCommand2(interp, "testprint", TestprintCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testregexp", TestregexpObjCmd,
+    Tcl_CreateObjCommand2(interp, "testregexp", TestregexpCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testreturn", TestreturnObjCmd,
+    Tcl_CreateObjCommand2(interp, "testreturn", TestreturnCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
@@ -707,7 +704,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testinterpresolver", TestInterpResolverCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testapplylambda", TestApplyLambdaObjCmd,
+    Tcl_CreateObjCommand2(interp, "testapplylambda", TestApplyLambdaCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
@@ -1030,7 +1027,7 @@ AsyncThreadProc(
 }
 
 static int
-TestbumpinterpepochObjCmd(
+TestbumpinterpepochCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -1049,7 +1046,7 @@ TestbumpinterpepochObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestcmdinfoObjCmd --
+ * TestcmdinfoCmd --
  *
  *	This procedure implements the "testcmdinfo" command.  It is used to
  *	test Tcl_GetCommandInfo, Tcl_SetCommandInfo, and command creation and
@@ -1065,7 +1062,7 @@ TestbumpinterpepochObjCmd(
  */
 
 static int
-TestcmdinfoObjCmd(
+TestcmdinfoCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -1137,8 +1134,8 @@ TestcmdinfoObjCmd(
     case CMDINFO_MODIFY:
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
-	info.objProc2 = NULL;
-	info.objClientData2 = NULL;
+	info.objProc = NULL;
+	info.objClientData = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
 	info.namespacePtr = NULL;
@@ -1386,7 +1383,7 @@ TestcmdtraceCmd(
 
 	deleteCalled = 0;
 	cmdTrace = Tcl_CreateObjTrace2(interp, 50000,
-		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
+		TCL_ALLOW_INLINE_COMPILATION, TraceProc,
 		&deleteCalled, ObjTraceDeleteProc);
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
@@ -1465,7 +1462,7 @@ CmdTraceDeleteProc(
 }
 
 static int
-ObjTraceProc(
+TraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     TCL_UNUSED(Tcl_Size) /*level*/,
@@ -1787,7 +1784,7 @@ TestdelassocdataCmd(
  */
 
 static int
-TestdoubledigitsObjCmd(
+TestdoubledigitsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     Tcl_Size objc,			/* Parameter count */
@@ -2225,7 +2222,7 @@ static int UtfExtWrapper(
  */
 
 static int
-TestencodingObjCmd(
+TestencodingCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -2395,7 +2392,7 @@ EncodingFreeProc(
 /*
  *----------------------------------------------------------------------
  *
- * TestevalexObjCmd --
+ * TestevalexCmd --
  *
  *	This procedure implements the "testevalex" command.  It is
  *	used to test Tcl_EvalEx.
@@ -2410,7 +2407,7 @@ EncodingFreeProc(
  */
 
 static int
-TestevalexObjCmd(
+TestevalexCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -2441,7 +2438,7 @@ TestevalexObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestevalobjvObjCmd --
+ * TestevalobjvCmd --
  *
  *	This procedure implements the "testevalobjv" command.  It is
  *	used to test Tcl_EvalObjv.
@@ -2456,7 +2453,7 @@ TestevalexObjCmd(
  */
 
 static int
-TestevalobjvObjCmd(
+TestevalobjvCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -2478,7 +2475,7 @@ TestevalobjvObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TesteventObjCmd --
+ * TesteventCmd --
  *
  *	This procedure implements a 'testevent' command.  The command
  *	is used to test event queue management.
@@ -2505,7 +2502,7 @@ TestevalobjvObjCmd(
  */
 
 static int
-TesteventObjCmd(
+TesteventCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Size objc,			/* Parameter count */
@@ -3947,7 +3944,7 @@ CleanupTestSetassocdataTests(
 /*
  *----------------------------------------------------------------------
  *
- * TestparserObjCmd --
+ * TestparserCmd --
  *
  *	This procedure implements the "testparser" command.  It is
  *	used for testing the new Tcl script parser in Tcl 8.1.
@@ -3962,7 +3959,7 @@ CleanupTestSetassocdataTests(
  */
 
 static int
-TestparserObjCmd(
+TestparserCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4004,7 +4001,7 @@ TestparserObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestexprparserObjCmd --
+ * TestexprparserCmd --
  *
  *	This procedure implements the "testexprparser" command.  It is
  *	used for testing the new Tcl expression parser in Tcl 8.1.
@@ -4019,7 +4016,7 @@ TestparserObjCmd(
  */
 
 static int
-TestexprparserObjCmd(
+TestexprparserCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4153,7 +4150,7 @@ PrintParse(
 /*
  *----------------------------------------------------------------------
  *
- * TestparsevarObjCmd --
+ * TestparsevarCmd --
  *
  *	This procedure implements the "testparsevar" command.  It is
  *	used for testing Tcl_ParseVar.
@@ -4168,7 +4165,7 @@ PrintParse(
  */
 
 static int
-TestparsevarObjCmd(
+TestparsevarCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4194,7 +4191,7 @@ TestparsevarObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestparsevarnameObjCmd --
+ * TestparsevarnameCmd --
  *
  *	This procedure implements the "testparsevarname" command.  It is
  *	used for testing the new Tcl script parser in Tcl 8.1.
@@ -4209,7 +4206,7 @@ TestparsevarObjCmd(
  */
 
 static int
-TestparsevarnameObjCmd(
+TestparsevarnameCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4257,7 +4254,7 @@ TestparsevarnameObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestpreferstableObjCmd --
+ * TestpreferstableCmd --
  *
  *	This procedure implements the "testpreferstable" command.  It is
  *	used for being able to test the "package" command even when the
@@ -4273,7 +4270,7 @@ TestparsevarnameObjCmd(
  */
 
 static int
-TestpreferstableObjCmd(
+TestpreferstableCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(Tcl_Size) /*objc*/,
@@ -4288,7 +4285,7 @@ TestpreferstableObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestprintObjCmd --
+ * TestprintCmd --
  *
  *	This procedure implements the "testprint" command.  It is
  *	used for being able to test the Tcl_ObjPrintf() function.
@@ -4303,7 +4300,7 @@ TestpreferstableObjCmd(
  */
 
 static int
-TestprintObjCmd(
+TestprintCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4328,7 +4325,7 @@ TestprintObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestregexpObjCmd --
+ * TestregexpCmd --
  *
  *	This procedure implements the "testregexp" command. It is used to give
  *	a direct interface for regexp flags. It's identical to
@@ -4345,7 +4342,7 @@ TestprintObjCmd(
  */
 
 static int
-TestregexpObjCmd(
+TestregexpCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -4652,7 +4649,7 @@ TestregexpXflags(
 /*
  *----------------------------------------------------------------------
  *
- * TestreturnObjCmd --
+ * TestreturnCmd --
  *
  *	This procedure implements the "testreturn" command. It is
  *	used to verify that a
@@ -4670,7 +4667,7 @@ TestregexpXflags(
  */
 
 static int
-TestreturnObjCmd(
+TestreturnCmd(
     TCL_UNUSED(void *),
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(Tcl_Size) /*objc*/,
@@ -5307,7 +5304,7 @@ TestgetvarfullnameCmd(
 /*
  *----------------------------------------------------------------------
  *
- * GetTimesObjCmd --
+ * GetTimesCmd --
  *
  *	This procedure implements the "gettimes" command.  It is used for
  *	computing the time needed for various basic operations such as reading
@@ -5323,7 +5320,7 @@ TestgetvarfullnameCmd(
  */
 
 static int
-GetTimesObjCmd(
+GetTimesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The current interpreter. */
     TCL_UNUSED(Tcl_Size) /*cobjc*/,
@@ -5541,7 +5538,7 @@ NoopObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TeststringbytesObjCmd --
+ * TeststringbytesCmd --
  *	Returns bytearray value of the bytes in argument string rep
  *
  * Results:
@@ -5554,7 +5551,7 @@ NoopObjCmd(
  */
 
 static int
-TeststringbytesObjCmd(
+TeststringbytesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -5575,7 +5572,7 @@ TeststringbytesObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestpurebytesobjObjCmd --
+ * TestpurebytesobjCmd --
  *
  *	This object-based procedure constructs a pure bytes object
  *	without type and with internal representation containing NULL's.
@@ -5594,7 +5591,7 @@ TeststringbytesObjCmd(
  */
 
 static int
-TestpurebytesobjObjCmd(
+TestpurebytesobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -5626,7 +5623,7 @@ TestpurebytesobjObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestsetbytearraylengthObjCmd --
+ * TestsetbytearraylengthCmd --
  *
  *	Testing command 'testsetbytearraylength` used to test the public
  *	interface routine Tcl_SetByteArrayLength().
@@ -5641,7 +5638,7 @@ TestpurebytesobjObjCmd(
  */
 
 static int
-TestsetbytearraylengthObjCmd(
+TestsetbytearraylengthCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -5675,7 +5672,7 @@ TestsetbytearraylengthObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestbytestringObjCmd --
+ * TestbytestringCmd --
  *
  *	This object-based procedure constructs a string which can
  *	possibly contain invalid UTF-8 bytes.
@@ -5690,7 +5687,7 @@ TestsetbytearraylengthObjCmd(
  */
 
 static int
-TestbytestringObjCmd(
+TestbytestringCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -6751,7 +6748,7 @@ TestServiceModeCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestWrongNumArgsObjCmd --
+ * TestWrongNumArgsCmd --
  *
  *	Test the Tcl_WrongNumArgs function.
  *
@@ -6765,7 +6762,7 @@ TestServiceModeCmd(
  */
 
 static int
-TestWrongNumArgsObjCmd(
+TestWrongNumArgsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -6803,7 +6800,7 @@ TestWrongNumArgsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestGetIndexFromObjStructObjCmd --
+ * TestGetIndexFromObjStructCmd --
  *
  *	Test the Tcl_GetIndexFromObjStruct function.
  *
@@ -6817,7 +6814,7 @@ TestWrongNumArgsObjCmd(
  */
 
 static int
-TestGetIndexFromObjStructObjCmd(
+TestGetIndexFromObjStructCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
@@ -6863,7 +6860,7 @@ TestGetIndexFromObjStructObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestFilesystemObjCmd --
+ * TestFilesystemCmd --
  *
  *	This procedure implements the "testfilesystem" command. It is used to
  *	test Tcl_FSRegister, Tcl_FSUnregister, and can be used to test that
@@ -6879,7 +6876,7 @@ TestGetIndexFromObjStructObjCmd(
  */
 
 static int
-TestFilesystemObjCmd(
+TestFilesystemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
@@ -7250,7 +7247,7 @@ SimplePathInFilesystem(
  */
 
 static int
-TestSimpleFilesystemObjCmd(
+TestSimpleFilesystemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
@@ -8523,7 +8520,7 @@ TestInterpResolverCmd(
 /*
  *------------------------------------------------------------------------
  *
- * TestApplyLambdaObjCmd --
+ * TestApplyLambdaCmd --
  *
  *	Implements the Tcl command testapplylambda. This tests the apply
  *	implementation handling of a lambda where the lambda has a list
@@ -8540,7 +8537,7 @@ TestInterpResolverCmd(
  *
  *------------------------------------------------------------------------
  */
-int TestApplyLambdaObjCmd (
+int TestApplyLambdaCmd (
     TCL_UNUSED(void*),
     Tcl_Interp *interp,    /* Current interpreter. */
     TCL_UNUSED(Tcl_Size),       /* objc. */
