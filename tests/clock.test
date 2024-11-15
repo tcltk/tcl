@@ -38478,7 +38478,7 @@ test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validi
 	}
 	# check with formatted scan:
 	if {![catch { clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S" } t] || ![string match *$i* $t]} {
-	    lappend res "fmt-scan \"$d\" == $t, expected $i"
+	    lappend res "fmt-scan \"$d\" == \"$t\", expected \"$i\""
 	}
     }
     set res; # must be empty
@@ -38494,6 +38494,11 @@ if {$valid_mode && [info exists ::tcltest::skippedBecause(valid_off)]} {
     incr ::tcltest::numTests(Total) -$::tcltest::skippedBecause(valid_off)
     incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(valid_off)
     unset ::tcltest::skippedBecause(valid_off)
+}
+if {!$valid_mode && [info exists ::tcltest::skippedBecause(!valid_off)]} {
+    incr ::tcltest::numTests(Total) -$::tcltest::skippedBecause(!valid_off)
+    incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(!valid_off)
+    unset ::tcltest::skippedBecause(!valid_off)
 }
 ::tcltest::cleanupTests
 namespace delete ::testClock
