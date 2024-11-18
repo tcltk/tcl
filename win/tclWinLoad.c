@@ -413,18 +413,14 @@ UnloadMemory(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    struct Tcl_LoadHandle_ *handlePtr = (struct Tcl_LoadHandle_ *)loadHandle;
-
     MemoryFreeLibrary(loadHandle->clientData);
-    Tcl_Free(handlePtr);
+    Tcl_Free(loadHandle);
 }
 
 void* FindMemSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
 	const char* symbol)
 {
-    struct Tcl_LoadHandle_ *handlePtr = (struct Tcl_LoadHandle_ *)loadHandle;
-
-    void *res = MemoryGetProcAddress(handlePtr->clientData, symbol);
+    void *res = MemoryGetProcAddress(loadHandle->clientData, symbol);
 
     if (!res && interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
