@@ -12,6 +12,8 @@
  */
 
 #include "tclWinInt.h"
+#define UNICODE
+#include "MemoryModule.h"
 
 /*
  * Native name of the directory in the native filesystem where DLLs used in
@@ -395,6 +397,74 @@ InitDLLDirectoryName(void)
     return TCL_OK;
 }
 
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(Tcl_Interp *),
+    size_t size)
+{
+    return Tcl_Alloc(size);
+}
+
+static void
+UnloadMemory(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
+				 * that represents the loaded file. */
+{
+    struct Tcl_LoadHandle_ *handlePtr = (struct Tcl_LoadHandle_ *)loadHandle;
+
+    MemoryFreeLibrary(loadHandle->clientData);
+    Tcl_Free(handlePtr);
+}
+
+void* FindMemSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+	const char* symbol)
+{
+    struct Tcl_LoadHandle_ *handlePtr = (struct Tcl_LoadHandle_ *)loadHandle;
+
+    void *res = MemoryGetProcAddress(handlePtr->clientData, symbol);
+
+    if (!res && interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\" in memory-loaded dll", symbol));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
+		(char *)NULL);
+    }
+    return res;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    Tcl_Interp *interp,
+    void *data,
+    TCL_UNUSED(int),
+    TCL_UNUSED(int),
+    Tcl_LoadHandle *loadHandle,
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+    TCL_UNUSED(int))
+{
+    struct Tcl_LoadHandle_ *handlePtr;
+    void *hInstance;
+
+    hInstance = MemoryLoadLibrary(data);
+    if (!hInstance) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"cannot load dll in memory", -1));
+	Tcl_SetErrorCode(interp, "WIN_LOAD", "LOAD_MEMORY", (char *)NULL);
+    }
+    handlePtr = (struct Tcl_LoadHandle_ *)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr->clientData = hInstance;
+    handlePtr->findSymbolProcPtr = &FindMemSymbol;
+    handlePtr->unloadFileProcPtr = &UnloadMemory;
+    *loadHandle = handlePtr;
+    *unloadProcPtr = &UnloadMemory;
+    return TCL_OK;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
+
 /*
  * Local Variables:
  * mode: c

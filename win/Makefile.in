@@ -265,7 +265,7 @@ MINIZIP_OBJS = \
 ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
 CC_SWITCHES = -I"${BUILD_DIR}" -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
--I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+-I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" -DTCL_LOAD_FROM_MEMORY \
 ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
@@ -453,6 +453,7 @@ TOMMATH_OBJS = \
 
 
 WIN_OBJS = \
+	MemoryModule.$(OBJEXT) \
 	tclWin32Dll.$(OBJEXT) \
 	tclWinChan.$(OBJEXT) \
 	tclWinConsole.$(OBJEXT) \
@@ -701,6 +702,9 @@ tclMainW.${OBJEXT}: tclMain.c
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
+
+MemoryModule.${OBJEXT}: $(WIN_DIR)/MemoryModule.c
+	$(CC) -c $(CC_SWITCHES) -DUNICODE @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.
