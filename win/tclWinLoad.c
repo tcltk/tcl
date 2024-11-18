@@ -417,8 +417,8 @@ UnloadMemory(
     Tcl_Free(loadHandle);
 }
 
-void* FindMemSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-	const char* symbol)
+void *FindMemSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+	const char *symbol)
 {
     void *res = MemoryGetProcAddress(loadHandle->clientData, symbol);
 
@@ -441,7 +441,7 @@ TclpLoadMemory(
     Tcl_FSUnloadFileProc **unloadProcPtr,
     TCL_UNUSED(int))
 {
-    struct Tcl_LoadHandle_ *handlePtr;
+    Tcl_LoadHandle handlePtr;
     void *hInstance;
 
     hInstance = MemoryLoadLibrary(data);
@@ -449,8 +449,9 @@ TclpLoadMemory(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot load dll in memory", -1));
 	Tcl_SetErrorCode(interp, "WIN_LOAD", "LOAD_MEMORY", (char *)NULL);
+	return TCL_ERROR;
     }
-    handlePtr = (struct Tcl_LoadHandle_ *)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = hInstance;
     handlePtr->findSymbolProcPtr = &FindMemSymbol;
     handlePtr->unloadFileProcPtr = &UnloadMemory;
