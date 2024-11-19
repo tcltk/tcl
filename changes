@@ -9361,3 +9361,22 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-09-07 tzdata updated to Olson's tzdata2024b (nijtmans)
 
 - Released 8.6.15, Sep 13, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+2024-09-17 (bug) [02d5d6] unneeded path normalization (sebres)
+
+2024-10-18 (bug) [cfdf80] zlib stream returns negative checksums (nadkarni)
+
+2024-10-18 (bug) [73d5cb] zlib-8.8, zlib-8.16 fail on Fedora 40 (nijtmans)
+
+2024-10-22 (bug) [bc6934] win/makefile: wrong recipe to buid libtcl.a and
+	missing dependencies (sebres)
+
+2024-10-29 (bug) [2c237b] [clock] regression in tzdata, %z instead of offset
+	TZ-name (sebres)
+
+2024-11-13 (bug) [43c94f] Tcl will not start properly if there is an init.tcl 
+	file in the current dir (sebres) 
+
+2024-11-15 (bug) [f2b5f8] clock scan of leapsecond: wrong result (sebres)
+
+- Released 8.6.16, ??? ??, 2024 - details at https://core.tcl-lang.org/tcl/ -
