@@ -3845,10 +3845,11 @@ ClockValidDate(
 	    errCode = "month";
 	    goto error;
 	} else if ((yyMonth == 6) || (yyMonth == 12)) {
-	    /* leap seconds/minutes can only be in june or december*/
+	    /* leap seconds/minutes can be the last day in june or december */
 	    leapDay = (yyMonth == 12) ? 31: 30;
 	} else {
-	    leapDay = 0;
+	    /* leap seconds/minutes can be the first day in july or january */
+	    leapDay = ((yyMonth == 7) || (yyMonth == 1));
 	}
     }
     /* day of month */
@@ -3857,7 +3858,7 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if (yyDay < leapDay) {
+	} else if (yyDay != leapDay) {
 	    leapDay = 0;
 	}
 	if ((info->flags & CLF_MONTH)) {
