@@ -3895,7 +3895,7 @@ ClockValidDate(
 
     if (info->flags & CLF_TIME) {
 	/* hour */
-	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 24 : 12)) {
+	if (yyHour < (yyMeridian != MER24) || yyHour > ((yyMeridian == MER24) ? 24 : 12)) {
 	    errMsg = "invalid time (hour)";
 	    errCode = "hour";
 	    goto error;
@@ -3903,7 +3903,7 @@ ClockValidDate(
 	    leapDay = 0;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > (leapDay ? 60 : 59)) {
+	if (yyMinutes < 0 || yyMinutes > (leapDay ? 60 : 59) || (yyMinutes && (yyHour == 24))) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
@@ -3911,7 +3911,7 @@ ClockValidDate(
 	    leapDay = 0;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > (leapDay ? 60 : 59) || yySecondOfDay <= -1) {
+	if (yySeconds < 0 || yySeconds > (leapDay ? 60 : 59) || yySecondOfDay <= -1 || (yySeconds && (yyHour == 24))) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;

@@ -38483,8 +38483,8 @@ test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validi
 	"2012-06-29 23:59:60" "invalid time"
 	"2012-05-30 23:59:60" "invalid time"
 	"2012-05-30 23:60:60" "invalid time"
-	"2012-05-30 24:00:60" "invalid time"
-	"2012-05-30 24:60:00" "invalid time"
+	"2012-05-30 24:00:01" "invalid time"
+	"2012-05-30 24:01:00" "invalid time"
     } {
 	# check with free scan:
 	if {![catch { clock scan $d -gmt 1 } t] || ![string match *$i* $t]} {
