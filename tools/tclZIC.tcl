@@ -14,6 +14,8 @@
 #		   files are to be found.
 #	outputDir - Directory (e.g., ../library/tzdata) where
 #		    the time zone information files are to be placed.
+#		    Use empty value to select tzdata of current tcl-library,
+#		    or --tcl-tzdata to select tzdata of current interpreter.
 #
 # Results:
 #	May produce error messages on the standard error.  An exit
@@ -23,9 +25,13 @@
 # 'zic' command, and produces Tcl time zone information files suitable
 # for loading into the 'clock' namespace.
 #
+# Additionally it produces a file containing list of leap seconds ".leapsec",
+# representing unix-times of slow-downs of OS by positive leap second.
+#
 #----------------------------------------------------------------------
 #
 # Copyright © 2004 Kevin B. Kenny.	 All rights reserved.
+# Copyright © 2024 Sergey G. Brester.	 All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
@@ -1342,6 +1348,80 @@ proc writeLinks {outDir} {
 
 #----------------------------------------------------------------------
 #
+# produceLeapSecList --
+#
+#	Produces a file containing list of leap seconds ".leapsec",
+#	representing unix-times of slow-downs of OS by positive leap second.
+#
+# Parameters:
+#	inDir - Name of the directory with the input file "leapseconds".
+#	outDir - Name of the directory where the output file ".leapsec" go.
+#
+# Results:
+#	None.
+#
+# Side effects:
+#	Writes a file with leap second list.
+
+proc produceLeapSecList {inDir outDir} {
+    set f [open [file join $inDir "leapseconds"] rb]
+    try {
+	fconfigure $f -encoding utf-8 -translation auto
+	set lst {}
+	while {[set l [gets $f]] ne "" || ![eof $f]} {
+	    # bypass comment:
+	    if {[regexp {^[#]} $l]} continue
+	    #Leap  1972  Jun 30  23:59:60  + S
+	    # parse list element:
+	    if {![regexp {^[Ll]eap\s*(\d+\s+\S+\s+\d+)\s+(\d+:\d+:\d+)\s+([\-+])\s+S\s*$} $l l swd swt sign]} {
+		if {[string is space $l]} continue
+		return -code error "unexpected line $l: doesn't match list of leap seconds"
+	    }
+	    if {$sign eq "-"} {
+		puts "ignore \"$swd $swt\" - minus leap second doesn't need to be extra handled (no representation in unix time or NTP)"
+		continue
+	    }
+	    # normalize (-1 second, combine spaces):
+	    set swt [string map {"23:59:60" "23:59:59" "23:60:00" "23:59:59" "24:00:00" "23:59:59"} $swt]
+	    regsub -all {\s+} "$swd $swt" " " swdt
+	    # to unix time (UTC):
+	    set tm [clock scan $swdt -format "%Y %b %d %T" -gmt 1 -locale en]
+	    # check by date conversion:
+	    if {[set dt [string trimleft [clock format $tm -gmt 1 -format "%Y %b %d %T" -locale en]]] ne $swdt} {
+		return -code error "unexpected $swdt by element $l: doesn't match the timestamp, $dt != $swdt"
+	    }
+	    # +1 second (we will hold the incremented unix-times in the leap-sec list to check scanned time against it):
+	    incr tm
+	    # one more check (leap second always matches end of the day):
+	    if {$tm % 3600} {
+		return -code error "unexpected $swdt by element $l: non zero remainder by unix-time $tm % 3600"
+	    }
+	    lappend lst $tm
+	}
+    } finally {
+	close $f
+    }
+    set f [open [file join $outDir ".leapsec"] wb]
+    try {
+    	fconfigure $f -encoding utf-8 -translation lf
+    	puts $f "# leap seconds list (unix times of leap seconds)"
+	puts $f "# created by $::argv0 - do not edit"
+	# canonical list of epochs (compiled in TEBC as static literal):
+	puts $f "list {*}{"
+	set i 0
+	foreach tm [lsort -integer $lst] {
+	    puts -nonewline $f [format "\t%11s" $tm]
+	    if {[incr i] == 6} {puts $f ""; set i 0}
+	}
+	if {$i} {puts $f ""}
+	puts $f "}"
+    } finally {
+	close $f
+    }
+}
+
+#----------------------------------------------------------------------
+#
 # MAIN PROGRAM
 #
 #----------------------------------------------------------------------
@@ -1352,6 +1432,16 @@ puts "Compiling time zones -- [clock format [clock seconds] \
 # Determine directories
 
 lassign $argv inDir outDir
+
+switch -- $outDir "" {
+    set outDir [file join [file dirname [info script]] .. library tzdata]
+} "--tcl-tzdata" {
+    if {[info exists ::tcl::clock::DataDir]} {
+	set outDir $::tcl::clock::DataDir
+    } else {
+	set outDir [file join [info library] tzdata]
+    }
+}
 
 puts "Olson files in $inDir"
 puts "Tcl files to be placed in $outDir"
@@ -1379,6 +1469,15 @@ if {$errorCount > 0} {
 writeZones $outDir
 writeLinks $outDir
 if {$errorCount > 0} {
+    exit 1
+}
+
+# Write the leap second list file
+
+if {[catch {
+    produceLeapSecList $inDir $outDir
+} msg]} {
+    puts stderr $msg
     exit 1
 }
 
