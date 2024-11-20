@@ -37181,13 +37181,13 @@ if {!$valid_mode} {
   } {86399 86400 172800}
 } else {
   test clock-46.8a {regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
+    list [catch {clock scan 24:00:01 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time (hour)}}
   test clock-46.8b {freescan: regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1} msg] $msg \
+    list [catch {clock scan 24:00:01 -base 0 -gmt 1} msg] $msg \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time (hour)}}
 }
 
 proc _invalid_test {testtz scnargs args} {
@@ -38469,8 +38469,8 @@ test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validi
 	"2012-06-29 23:59:60" "invalid time"
 	"2012-05-30 23:59:60" "invalid time"
 	"2012-05-30 23:60:60" "invalid time"
-	"2012-05-30 24:00:60" "invalid time"
-	"2012-05-30 24:60:00" "invalid time"
+	"2012-05-30 24:00:01" "invalid time"
+	"2012-05-30 24:01:00" "invalid time"
     } {
 	# check with free scan:
 	if {![catch { clock scan $d -gmt 1 } t] || ![string match *$i* $t]} {

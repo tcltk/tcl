@@ -20,14 +20,6 @@
 #include "tclDate.h"
 
 /*
- * Windows has mktime. The configurators do not check.
- */
-
-#ifdef _WIN32
-#define HAVE_MKTIME 1
-#endif
-
-/*
  * Table of the days in each month, leap and common years
  */
 
@@ -3741,8 +3733,8 @@ ClockScanCommit(
 	}
     }
 
-    /* If seconds overflows the day (no validate case), increase days */
-    if (yySecondOfDay >= SECONDS_PER_DAY) {
+    /* If seconds overflows the day (no validate and "24:00" case), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY + ((info->flags & CLF_TIME) && (yyHour == 24))) {
 	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
 	yySecondOfDay %= SECONDS_PER_DAY;
     }
@@ -3886,19 +3878,19 @@ ClockValidDate(
 
     if (info->flags & CLF_TIME) {
 	/* hour */
-	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 23 : 12)) {
+	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 24 : 12)) {
 	    errMsg = "invalid time (hour)";
 	    errCode = "hour";
 	    goto error;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > 59) {
+	if (yyMinutes < 0 || yyMinutes > 59 || (yyMinutes && (yyHour == 24))) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
+	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1 || (yySeconds && (yyHour == 24))) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;
