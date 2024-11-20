@@ -1956,7 +1956,7 @@ ConvertLocalToUTC(
     /* check DST-hole: if retrieved seconds is out of range */
     if (ltzoc->rangesVal[0] > seconds || seconds >= ltzoc->rangesVal[1]) {
     dstHole:
-#if 1
+#if 0
 	printf("given local-time is outside the time-zone (in DST-hole): "
 		"%" TCL_LL_MODIFIER "d - offs %d => %" TCL_LL_MODIFIER "d <= %" TCL_LL_MODIFIER "d < %" TCL_LL_MODIFIER "d\n",
 		fields->localSeconds, fields->tzOffset,
@@ -3901,7 +3901,7 @@ ClockValidDate(
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
-	} else if ((yyMinutes != 29) && (yyMinutes != 59)) {
+	} else if ((yyMinutes != 14) && (yyMinutes != 29) && (yyMinutes != 44) && (yyMinutes != 59)) {
 	    leapDay = 0;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
