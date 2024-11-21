@@ -1866,6 +1866,28 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 
 #----------------------------------------------------------------------
 #
+# LoadLeapSecList --
+#
+#	Reads list of leap seconds from ".leapsec", representing unix-times
+#	of slow-downs of OS by positive leap second.
+#	It is uncached in the interpreter, because gets cached internally
+#	in clock-engine once per process.
+#
+# Parameters:
+#	None.
+#
+# Results:
+#	Canonical list of leap seconds.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::LoadLeapSecList {} {
+    variable DataDir
+    source [file join $DataDir ".leapsec"]
+}
+
+#----------------------------------------------------------------------
+#
 # GetJulianDayFromEraYearDay --
 #
 #	Given a year, month and day on the Gregorian calendar, determines
