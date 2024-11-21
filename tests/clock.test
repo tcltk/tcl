@@ -38463,7 +38463,7 @@ test clock-68.1a {Leap second, minute, hour [f2b5f89c0d], regression test (valid
     foreach {d i} {
 	"2012-06-30 23:59:60" 1341100800
 	"2012-06-30 24:00:00" 1341100800
-        } {
+    } {
 	# check with free scan:
 	if {[set t [clock scan $d -gmt 1]] != $i} {
 	    lappend res "free-scan \"$d\" == $t, expected $i"
