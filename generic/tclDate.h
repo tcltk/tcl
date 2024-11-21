@@ -97,6 +97,7 @@ typedef enum ClockLiteral {
     LIT_TZDATA,
     LIT_GETSYSTEMTIMEZONE,
     LIT_SETUPTIMEZONE,
+    LIT_LOADLEAPSECLIST,
     LIT_MCGET,
     LIT_GETSYSTEMLOCALE, LIT_GETCURRENTLOCALE,
     LIT_LOCALIZE_FORMAT,
@@ -119,6 +120,7 @@ typedef enum ClockLiteral {
     "::tcl::clock::TZData", \
     "::tcl::clock::GetSystemTimeZone", \
     "::tcl::clock::SetupTimeZone", \
+    "::tcl::clock::LoadLeapSecList", \
     "::tcl::clock::mcget", \
     "::tcl::clock::GetSystemLocale", "::tcl::clock::mclocale", \
     "::tcl::clock::LocalizeFormat" \
@@ -280,11 +282,18 @@ ClockInitDateInfo(
  * Structure containing the command arguments supplied to [clock format] and [clock scan]
  */
 
+typedef struct TclLeapSecTab {
+    size_t refCount;		/* Number of live references. */
+    Tcl_Size size;		/* Number of leap seconds in table */
+    /* Tcl_WideInt *seconds;	 * Array of leap seconds in UTC unix-time */
+} TclLeapSecTab;
+
 enum ClockFmtScnCmdArgsFlags {
     CLF_VALIDATE_S1 = (1 << 0),
     CLF_VALIDATE_S2 = (1 << 1),
     CLF_VALIDATE = (CLF_VALIDATE_S1|CLF_VALIDATE_S2),
     CLF_EXTENDED = (1 << 4),
+    CLF_STRICT_LEAPSEC = (1 << 7),
     CLF_STRICT = (1 << 8),
     CLF_LOCALE_USED = (1 << 15)
 };
@@ -348,6 +357,8 @@ typedef struct ClockClientData {
     Tcl_Obj *prevSetupTimeZone;
     Tcl_Obj *prevSetupTZData;
 
+    TclLeapSecTab *leapSecTab;
+
     Tcl_Obj *defaultLocale;
     Tcl_Obj *defaultLocaleDict;
     Tcl_Obj *currentLocale;
@@ -368,8 +379,8 @@ typedef struct ClockClientData {
     /* Last-period cache for fast UTC to Local and backwards conversion */
     ClockLastTZOffs lastTZOffsCache[2];
 
-    int defFlags;		    /* Default flags (from configure), ATM
-				     * only CLF_VALIDATE supported */
+    int defFlags;		/* Default flags (from configure), ATM only
+				 * CLF_VALIDATE & CLF_STRICT_LEAPSEC supported */
 } ClockClientData;
 
 #define ClockDefaultYearCentury 2000

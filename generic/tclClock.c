@@ -60,6 +60,9 @@ static const char *const eras[] = { "CE", "BCE", NULL };
 
 static Tcl_ThreadDataKey tmKey;
 
+/* Global leap seconds table (cached last known table, protected by clockMutex) */
+static TclLeapSecTab *globLeapSecTab = NULL;
+
 /*
  * Mutex protecting 'gmtime', 'localtime' and 'mktime' calls and the statics
  * in the date parsing code.
@@ -233,6 +236,8 @@ TclClockInit(
     data->prevSetupTimeZone = NULL;
     data->prevSetupTZData = NULL;
 
+    data->leapSecTab = NULL;
+
     data->defaultLocale = NULL;
     data->defaultLocaleDict = NULL;
     data->currentLocale = NULL;
@@ -294,7 +299,8 @@ TclClockInit(
 
 static void
 ClockConfigureClear(
-    ClockClientData *data)
+    ClockClientData *data,
+    int force)
 {
     ClockFrmScnClearCaches();
 
@@ -311,6 +317,25 @@ ClockConfigureClear(
     TclUnsetObjRef(data->prevSetupTimeZoneUnnorm);
     TclUnsetObjRef(data->prevSetupTimeZone);
     TclUnsetObjRef(data->prevSetupTZData);
+
+    if (data->leapSecTab || force) {
+	Tcl_MutexLock(&clockMutex);
+	/* if force clear, invalidate global leapsec table */
+	if (force && globLeapSecTab) {
+	    if (globLeapSecTab->refCount-- <= 1) {
+		ckfree(globLeapSecTab);
+	    }
+	    globLeapSecTab = NULL;
+	}
+	/* free local leapsec table */
+	if (data->leapSecTab) {
+	    if (data->leapSecTab->refCount-- <= 1) {
+		ckfree(data->leapSecTab);
+	    }
+	    data->leapSecTab = NULL;
+	}
+	Tcl_MutexUnlock(&clockMutex);
+    }
 
     TclUnsetObjRef(data->defaultLocale);
     data->defaultLocaleDict = NULL;
@@ -372,7 +397,7 @@ ClockDeleteCmdProc(
 	    data->mcLitIdxs = NULL;
 	}
 
-	ClockConfigureClear(data);
+	ClockConfigureClear(data, 0);
 
 	ckfree(data->literals);
 	ckfree(data);
@@ -967,12 +992,14 @@ ClockConfigureObjCmd(
 	"-default-locale",	"-clear",	  "-current-locale",
 	"-year-century",  "-century-switch",
 	"-min-year", "-max-year", "-max-jdn", "-validate",
+	"-strict-leap-sec",
 	"-init-complete",	  "-setup-tz", "-system-tz", NULL
     };
     enum optionInd {
 	CLOCK_DEFAULT_LOCALE, CLOCK_CLEAR_CACHE, CLOCK_CURRENT_LOCALE,
 	CLOCK_YEAR_CENTURY, CLOCK_CENTURY_SWITCH,
 	CLOCK_MIN_YEAR, CLOCK_MAX_YEAR, CLOCK_MAX_JDN, CLOCK_VALIDATE,
+	CLOCK_STRICT_LEAP_SEC,
 	CLOCK_INIT_COMPLETE,  CLOCK_SETUP_TZ, CLOCK_SYSTEM_TZ
     };
     int optionIndex;		/* Index of an option. */
@@ -1138,8 +1165,26 @@ ClockConfigureObjCmd(
 			Tcl_NewBooleanObj(dataPtr->defFlags & CLF_VALIDATE));
 	    }
 	    break;
+	case CLOCK_STRICT_LEAP_SEC:
+	    if (i < objc) {
+		int val;
+
+		if (Tcl_GetBooleanFromObj(interp, objv[i], &val) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (val) {
+		    dataPtr->defFlags |= CLF_STRICT_LEAPSEC;
+		} else {
+		    dataPtr->defFlags &= ~CLF_STRICT_LEAPSEC;
+		}
+	    }
+	    if (i + 1 >= objc) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewBooleanObj(dataPtr->defFlags & CLF_STRICT_LEAPSEC));
+	    }
+	    break;
 	case CLOCK_CLEAR_CACHE:
-	    ClockConfigureClear(dataPtr);
+	    ClockConfigureClear(dataPtr, 1);
 	    break;
 	case CLOCK_INIT_COMPLETE: {
 	    /*
@@ -1376,6 +1421,212 @@ ClockFormatNumericTimeZone(
 	p = TclItoAw(buf + 5, z, '0', 2);
     }
     return Tcl_NewStringObj(buf, p - buf);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LoadLeapSecTab --
+ *
+ *	Load global leap second table as array of wide-ints.
+ *
+ * Results:
+ *	Returns table.
+ *
+ * Side effects:
+ *	May change the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+static TclLeapSecTab *
+LoadLeapSecTab(
+    ClockFmtScnCmdArgs *opts)	/* Options */
+{
+    Tcl_Interp *interp;
+    Tcl_WideInt *leapSecs;
+    Tcl_Size i, objc;
+    Tcl_Obj *objPtr, **objv;
+
+    Tcl_MutexLock(&clockMutex);
+    /* if globally cached table present share it in current dataPtr */
+    if (globLeapSecTab) {
+	globLeapSecTab->refCount++;
+	opts->dataPtr->leapSecTab = globLeapSecTab;
+	goto done;
+    }
+    globLeapSecTab = NULL;
+    interp = opts->interp;
+
+    /* obtain list via ::tcl::clock::LoadLeapSecList */
+    objPtr = opts->dataPtr->literals[LIT_LOADLEAPSECLIST];
+    if (Tcl_EvalObjv(interp, 1, &objPtr, 0) != TCL_OK) {
+	goto done;
+    }
+    objPtr = Tcl_GetObjResult(interp);
+    if (TclListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+	goto done;
+    }
+    /* array of wide-ints from list of wide-integer */
+    globLeapSecTab = (TclLeapSecTab *)ckalloc(
+	sizeof(TclLeapSecTab) + sizeof(Tcl_WideInt) * objc);
+    globLeapSecTab->refCount = 1; /* refernced in global var */
+    globLeapSecTab->size = objc;
+    leapSecs = (Tcl_WideInt *)(globLeapSecTab + 1);
+    for (i = 0; i < objc; i++) {
+	if (TclGetWideIntFromObj(interp, objv[i], &leapSecs[i]) != TCL_OK) {
+	    Tcl_AppendResult(interp, " in the leap seconds table", (char *)NULL);
+	    ckfree(globLeapSecTab);
+	    globLeapSecTab = NULL;
+	    goto done;
+	}
+    }
+    /* share current table in clock data structure */
+    globLeapSecTab->refCount++;
+    opts->dataPtr->leapSecTab = globLeapSecTab;
+
+done:
+    Tcl_MutexUnlock(&clockMutex);   
+    return opts->dataPtr->leapSecTab;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsLeapSecond --, IsRealLeapSecond --
+ *
+ *	Check given date can be a leap second.
+ *	This my estimate it using day/month & time as well as check
+ *	real leap seconds table depending on CLF_STRICT_LEAPSEC flag.
+ *
+ * Results:
+ *	Returns 1 if yes, 0 if no, -1 if error.
+ *
+ * Side effects:
+ *	May changes the interpreter result (once by caching).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IsRealLeapSecond(
+    ClockFmtScnCmdArgs *opts,	/* Options */
+    Tcl_WideInt seconds)	/* Unix-time in UTC */
+{
+    TclLeapSecTab *leapSecTab;
+    Tcl_WideInt *leapSecs;
+    Tcl_Size lo, hi, mi, i;
+
+    if (!(leapSecTab = opts->dataPtr->leapSecTab)) {
+	if (!(leapSecTab = LoadLeapSecTab(opts))) {
+	    return -2; /* error by load of table */
+	}
+    }
+
+    leapSecs = (Tcl_WideInt *)(leapSecTab + 1);
+    hi = leapSecTab->size - 1;
+
+    /* fast exit if empty table or we're outside */
+    if (!leapSecTab->size || seconds < leapSecs[0] || seconds > leapSecs[hi]) {
+	return 0; /* not found */
+    }
+
+    /* 
+     * Interpolation bin search (IBS) to find the second, which should take
+     * O(log log n) on almost uniform distributed list (like leap seconds),
+     * instead of O(log n) by simple binary search and doesn't yield to worst
+     * result like interpolation (or adaptive) search on some poor cases.
+     */
+    lo = 0;
+    while (lo < hi) {
+	/* + 0.5 to use round by cast to int */
+	i = (Tcl_WideInt)(lo + ((double)(hi-lo) * (double)(seconds - leapSecs[lo])) / (leapSecs[hi] - leapSecs[lo]) + 0.5);
+	if (i < lo || i > hi) {
+	    i = (lo + hi) / 2;
+	}
+	if (seconds == leapSecs[i]) {
+	    return 1; /* found */
+	}
+	if (seconds > leapSecs[i]) {
+	    mi = (i + hi) / 2;
+	    if (seconds == leapSecs[mi]) {
+		return 1; /* found */
+	    }
+	    if (seconds < leapSecs[mi]) {
+		lo = i + 1;
+		hi = mi;
+	    } else {
+		lo = mi + 1;
+	    }
+	} else {
+	    mi = (i + lo) / 2;
+	    if (seconds == leapSecs[mi]) {
+		return 1; /* found */
+	    }
+	    if (seconds > leapSecs[mi]) {
+		lo = mi;
+		hi = i - 1;
+	    } else {
+		hi = mi - 1;
+	    }
+	}
+    }
+    if (seconds == leapSecs[lo]) {
+	return 1; /* found */
+    }
+
+    return 0; /* not found */
+}
+
+static int
+IsLeapSecond(
+    ClockFmtScnCmdArgs *opts,	/* Options */
+    TclDateFields *date)	/* Date fields structure */
+{
+    /* 
+     * If we don't need to be strict with the leap second,
+     * estimate it is a leap second using simple rules,
+     * only allowed at 23:59:60 UTC, on 31 Dec or 30 Jun,
+     * which results to 00:00:00 UTC, on 1 Jan or 1 Jul.
+     */
+
+    if (!(opts->flags & CLF_STRICT_LEAPSEC)) {
+    	if (date->tzOffset != 0) {
+    	    /* original tokens are in current TZ, so calculate needed for UTC */
+	    /* get julian day and time from UTC seconds */
+	    TclDateFields temp;
+	    ClockExtractJDAndSODFromSeconds(temp.julianDay, temp.secondOfDay,
+		    date->seconds);
+	    /* 00:00:00 UTC ? */
+	    if (temp.secondOfDay == 0) {
+		/* get day and month from julian day */
+		GetGregorianEraYearDay(&temp, GREGORIAN_CHANGE_DATE);
+		GetMonthDay(&temp);
+		/* 1 Jan or 1 Jul ? */
+		if (temp.dayOfMonth == 1 && (temp.month == 1 || temp.month == 7)) {
+		    return 1; /* assume leap second */
+		}
+	    }
+    	} else {
+	    /* GMT/UTC - we can use givent date structure, and don't need
+	     * to obtain tokens (already converted by scan commit. */
+
+	    /* 00:00:00 UTC ? */
+	    if (date->secondOfDay == 0) {
+		/* 31 Dec or 30 Jun ? */
+		if ( (date->dayOfMonth == 31 && date->month == 12)
+		  || (date->dayOfMonth == 30 && date->month == 6)
+		) {
+		    return 1; /* assume leap second */
+		}
+	    }
+    	}
+    }
+
+    /*
+     * Check using real leap seconds table.
+     */
+    return IsRealLeapSecond(opts, date->seconds);
 }
 
 /*
@@ -3308,7 +3559,7 @@ ClockParseFmtScnArgs(
 
     if (operation == CLC_OP_SCN) {
     	/* default flags (from configure) */
-    	opts->flags |= dataPtr->defFlags & CLF_VALIDATE;
+    	opts->flags |= dataPtr->defFlags;
     } else {
     	/* clock value (as current base) */
 	opts->baseObj = objv[(baseIdx = 1)];
@@ -3765,6 +4016,49 @@ ClockScanCommit(
 	}
     }
 
+    /* Check it may be a leap second, e. g. 23:59:60 GMT */
+    if ((info->flags & CLF_TIME) &&
+        (yySeconds == 60) && !(yydate.seconds % SECONDS_PER_DAY)
+    ) {
+	/* consult the UTC time over leap table */
+	switch (IsLeapSecond(opts, &yydate)) {
+	  case 1:
+	    /* 
+	     * It is a leap second, so because it is implemented by OS 
+	     * using freeze of time and due to ISO 8601 "T235960" represents
+	     * the final second of a calendar day with a leap second in UTC,
+	     * just decrement unix time (UTC/local) and the seconds of 
+	     * curent minute (59) for further validation, so we will stay
+	     * in the same calendar day and 23:59:59 UTC (just as long second)
+	     */
+	    yydate.seconds--;
+	    yydate.localSeconds--;
+	    yySeconds--;
+	    /* adjust other - may be needed by validatation or other calcs */
+	    if (yySecondOfDay) {
+		yySecondOfDay--;
+	    } else {
+		/* next day 00:00:00, so switch back to prev day 23:59:59 */
+		yydate.julianDay--;
+		yySecondOfDay = SECONDS_PER_DAY-1;
+		if (!(--yyDay)) {
+		    /* next month, switch month back */
+		    if (!(--yyMonth)) {
+			/* next year, switch year back */
+			yyMonth = 12;
+			--yyYear;
+		    }
+		    /* last day of month */
+		    yyDay = hath[IsGregorianLeapYear(&yydate)][yyMonth - 1];
+		}
+	    }
+	    break;
+	  case -2:
+	    /* error case - cannot load table (error in opts->interp) */
+	    return TCL_ERROR;
+	}
+    }
+
     /* Increment UTC seconds with relative time */
 
     yydate.seconds += yyRelSeconds;
@@ -3889,9 +4183,12 @@ ClockValidDate(
     if (info->flags & CLF_TIME) {
 	/* hour */
 	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 23 : 12)) {
-	    errMsg = "invalid time (hour)";
-	    errCode = "hour";
-	    goto error;
+	    /* allow 24:00:00 as special case, see [aee9f2b916afd976] */
+	    if (yyMeridian != MER24 || yyHour != 24 || yyMinutes != 0 || yySeconds != 0) {
+		errMsg = "invalid time (hour)";
+		errCode = "hour";
+		goto error;
+	    }
 	}
 	/* minutes */
 	if (yyMinutes < 0 || yyMinutes > 59) {
@@ -3901,22 +4198,26 @@ ClockValidDate(
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
 	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
-	    errMsg = "invalid time";
-	    errCode = "seconds";
-	    goto error;
+	    if (yySeconds != 60) {
+		errMsg = "invalid time";
+		errCode = "seconds";
+		goto error;
+	    } 
+	    /* else check later on stage 2 whether it was valid leap second */
 	}
     }
 
     if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
-    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
      * and time-zone conversion (local to UTC time).
      */
   stage_2:
+
+    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /* time, regarding the modifications by the time-zone (looks for given time
      * in between DST-time hole, so does not exist in this time-zone) */
@@ -3930,6 +4231,13 @@ ClockValidDate(
 	if (yydate.localSeconds == TCL_INV_SECONDS) {
 	    errMsg = "invalid time (does not exist in this time-zone)";
 	    errCode = "out-of-time";
+	    goto error;
+	}
+
+	/* if still leap second (not reset in commit) - wrong */
+	if (yySeconds == 60) {
+	    errMsg = "invalid time";
+	    errCode = "seconds";
 	    goto error;
 	}
     }
