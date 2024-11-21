@@ -3229,7 +3229,8 @@ Tcl_LoadFile(
      */
 
     {
-	int ret, size;
+	int ret;
+	size_t size;
 	void *buffer;
 	Tcl_StatBuf statBuf;
 	Tcl_Channel data;
@@ -3238,15 +3239,8 @@ Tcl_LoadFile(
 	if (ret < 0) {
 	    goto mustCopyToTempAnyway;
 	}
-	size = (int) statBuf.st_size;
+	size = statBuf.st_size;
 
-	/*
-	 * Tcl_Read takes an int:  Determine whether the file size is wide.
-	 */
-
-	if (size != (Tcl_WideInt) statBuf.st_size) {
-	    goto mustCopyToTempAnyway;
-	}
 	data = Tcl_FSOpenFileChannel(interp, pathPtr, "rb", 0666);
 	if (!data) {
 	    goto mustCopyToTempAnyway;

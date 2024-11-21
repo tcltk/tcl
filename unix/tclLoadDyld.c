@@ -497,7 +497,7 @@ UnloadFile(
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
     TCL_UNUSED(Tcl_Interp *),
-    int size)			/* Size of desired buffer. */
+    size_t size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
 

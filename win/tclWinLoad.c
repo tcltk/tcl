@@ -12,6 +12,8 @@
  */
 
 #include "tclWinInt.h"
+#define UNICODE
+#include "MemoryModule.h"
 
 /*
  * Native name of the directory in the native filesystem where DLLs used in
@@ -395,6 +397,71 @@ InitDLLDirectoryName(void)
     return TCL_OK;
 }
 
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(Tcl_Interp *),
+    size_t size)
+{
+    return Tcl_Alloc(size);
+}
+
+static void
+UnloadMemory(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
+				 * that represents the loaded file. */
+{
+    MemoryFreeLibrary(loadHandle->clientData);
+    Tcl_Free(loadHandle);
+}
+
+void *FindMemSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
+	const char *symbol)
+{
+    void *res = MemoryGetProcAddress(loadHandle->clientData, symbol);
+
+    if (!res && interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\" in memory-loaded dll", symbol));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
+		(char *)NULL);
+    }
+    return res;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    Tcl_Interp *interp,
+    void *data,
+    TCL_UNUSED(int),
+    TCL_UNUSED(int),
+    Tcl_LoadHandle *loadHandle,
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+    TCL_UNUSED(int))
+{
+    Tcl_LoadHandle handlePtr;
+    void *hInstance;
+
+    hInstance = MemoryLoadLibrary(data);
+    if (!hInstance) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"cannot load dll in memory", -1));
+	Tcl_SetErrorCode(interp, "WIN_LOAD", "LOAD_MEMORY", (char *)NULL);
+	return TCL_ERROR;
+    }
+    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr->clientData = hInstance;
+    handlePtr->findSymbolProcPtr = &FindMemSymbol;
+    handlePtr->unloadFileProcPtr = &UnloadMemory;
+    *loadHandle = handlePtr;
+    *unloadProcPtr = &UnloadMemory;
+    return TCL_OK;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
+
 /*
  * Local Variables:
  * mode: c

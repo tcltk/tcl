@@ -64,7 +64,7 @@ TclpDlopen(
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
     TCL_UNUSED(Tcl_Interp *),
-    TCL_UNUSED(int))
+    TCL_UNUSED(size_t))
 {
     return NULL;
 }
