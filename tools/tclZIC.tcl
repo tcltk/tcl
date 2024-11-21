@@ -1364,6 +1364,7 @@ proc writeLinks {outDir} {
 #	Writes a file with leap second list.
 
 proc produceLeapSecList {inDir outDir} {
+    puts "calculating: .leapsec"
     set f [open [file join $inDir "leapseconds"] rb]
     try {
 	fconfigure $f -encoding utf-8 -translation auto
@@ -1393,8 +1394,8 @@ proc produceLeapSecList {inDir outDir} {
 	    # +1 second (we will hold the incremented unix-times in the leap-sec list to check scanned time against it):
 	    incr tm
 	    # one more check (leap second always matches end of the day):
-	    if {$tm % 3600} {
-		return -code error "unexpected $swdt by element $l: non zero remainder by unix-time $tm % 3600"
+	    if {$tm % 86400} {
+		return -code error "unexpected $swdt by element $l: non zero remainder by unix-time $tm % 86400"
 	    }
 	    lappend lst $tm
 	}
@@ -1409,7 +1410,7 @@ proc produceLeapSecList {inDir outDir} {
 	# canonical list of epochs (compiled in TEBC as static literal):
 	puts $f "list {*}{"
 	set i 0
-	foreach tm [lsort -integer $lst] {
+	foreach tm [lsort -integer -unique $lst] {
 	    puts -nonewline $f [format "\t%11s" $tm]
 	    if {[incr i] == 6} {puts $f ""; set i 0}
 	}
@@ -1482,5 +1483,6 @@ if {[catch {
 }
 
 # All done!
+puts "done"
 
 exit
