@@ -489,7 +489,7 @@ UnloadFile(
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
     TCL_UNUSED(Tcl_Interp *),
-    int size)			/* Size of desired buffer. */
+    size_t size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
 
@@ -536,8 +536,8 @@ TclpLoadMemory(
     Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
-    int size,			/* Allocation size of buffer. */
-    int codeSize,		/* Size of code data read into buffer or -1 if
+    size_t size,		/* Allocation size of buffer. */
+    Tcl_Size codeSize,	/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
@@ -577,7 +577,7 @@ TclpLoadMemory(
 #	define arch_abi CPU_ARCH_ABI64
 #endif /*  __LP64__ */
 
-	if ((size_t) codeSize >= sizeof(struct fat_header)
+	if ((size_t)codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
 	    uint32_t fh_nfat_arch = OSSwapBigToHostInt32(fh->nfat_arch);
 
@@ -585,7 +585,7 @@ TclpLoadMemory(
 	     * Fat binary, try to find mach_header for our architecture
 	     */
 
-	    if ((size_t) codeSize >= sizeof(struct fat_header) +
+	    if ((size_t)codeSize >= sizeof(struct fat_header) +
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
 		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
 		const NXArchInfo *arch = NXGetLocalArchInfo();
