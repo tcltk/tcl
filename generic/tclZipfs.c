@@ -1656,7 +1656,7 @@ ZipFSOpenArchive(
 	 */
 
 	zf->length = Tcl_Seek(zf->chan, 0, SEEK_END);
-	if (zf->length == (size_t) TCL_INDEX_NONE) {
+	if (zf->length == (size_t)TCL_INDEX_NONE) {
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
@@ -3473,7 +3473,7 @@ ZipFSMkZipOrImg(
 	     * Copy everything up to the ZIP-related suffix.
 	     */
 
-	    if ((size_t) Tcl_Write(out, (char *) zf->data,
+	    if ((size_t)Tcl_Write(out, (char *) zf->data,
 		    zf->passOffset) != zf->passOffset) {
 		memset(passBuf, 0, sizeof(passBuf));
 		Tcl_DecrRefCount(list);

@@ -132,19 +132,19 @@ TclSockMinimumBuffers(
 	return TCL_ERROR;
     }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 		(char *) &size, len);
     }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 		(char *) &size, len);
     }
     return TCL_OK;
