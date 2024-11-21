@@ -1958,9 +1958,9 @@ ConvertLocalToUTC(
     dstHole:
 #if 0
 	printf("given local-time is outside the time-zone (in DST-hole): "
-		"%d - offs %d => %d <= %d < %d\n",
-		(int)fields->localSeconds, fields->tzOffset,
-		(int)ltzoc->rangesVal[0], (int)seconds, (int)ltzoc->rangesVal[1]);
+		"%" TCL_LL_MODIFIER "d - offs %d => %" TCL_LL_MODIFIER "d <= %" TCL_LL_MODIFIER "d < %" TCL_LL_MODIFIER "d\n",
+		fields->localSeconds, fields->tzOffset,
+		ltzoc->rangesVal[0], seconds, ltzoc->rangesVal[1]);
 #endif
 	/* because we don't know real TZ (we're outsize), just invalidate local
 	 * time (which could be verified in ClockValidDate later) */
@@ -3733,8 +3733,8 @@ ClockScanCommit(
 	}
     }
 
-    /* If seconds overflows the day (no validate and "24:00" case), increase days */
-    if (yySecondOfDay >= SECONDS_PER_DAY + ((info->flags & CLF_TIME) && (yyHour == 24))) {
+    /* If seconds overflows the day (no validate but not "24:00" or leap-second case), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY + ((info->flags & CLF_TIME) && ((yyHour == 24) || (yySeconds == 60)))) {
 	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
 	yySecondOfDay %= SECONDS_PER_DAY;
     }
@@ -3785,13 +3785,14 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
+    int leapDay = 1;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
-    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
-	    "yySecondOfDay %d, sec %d, daySec %d, tzOffset %d\n",
+    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %" TCL_LL_MODIFIER "d, "
+	    "yySecondOfDay %" TCL_LL_MODIFIER "d, sec %" TCL_LL_MODIFIER "d, daySec %" TCL_LL_MODIFIER "d, tzOffset %d\n",
 	    yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds,
-	    yySecondOfDay, (int)yydate.localSeconds, (int)(yydate.localSeconds % SECONDS_PER_DAY),
+	    yySecondOfDay, yydate.localSeconds, yydate.localSeconds % SECONDS_PER_DAY,
 	    yydate.tzOffset);
 #endif
 
@@ -3835,6 +3836,12 @@ ClockValidDate(
 	    errMsg = "invalid month";
 	    errCode = "month";
 	    goto error;
+	} else if ((yyMonth == 6) || (yyMonth == 12)) {
+	    /* leap seconds/minutes can be the last day in june or december */
+	    leapDay = (yyMonth == 12) ? 31: 30;
+	} else {
+	    /* leap seconds/minutes can be the first day in july or january */
+	    leapDay = ((yyMonth == 7) || (yyMonth == 1));
 	}
     }
     /* day of month */
@@ -3843,11 +3850,15 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if ((info->flags & CLF_MONTH)) {
+	} else if (yyDay != leapDay) {
+	    leapDay = 0;
+	}
+	if ((info->flags & CLF_MONTH)) {
 	    const int *h = hath[IsGregorianLeapYear(&yydate)];
 
 	    if (yyDay > h[yyMonth - 1]) {
 		errMsg = "invalid day";
+		errCode = "day";
 		goto error;
 	    }
 	}
@@ -3882,15 +3893,19 @@ ClockValidDate(
 	    errMsg = "invalid time (hour)";
 	    errCode = "hour";
 	    goto error;
+	} else if (yyHour == 24) {
+	    leapDay = 0;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > 59 || (yyMinutes && (yyHour == 24))) {
+	if (yyMinutes < 0 || yyMinutes > (leapDay ? 60 : 59) || (yyMinutes && (yyHour == 24))) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
+	} else if ((yyMinutes != 14) && (yyMinutes != 29) && (yyMinutes != 44) && (yyMinutes != 59)) {
+	    leapDay = 0;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1 || (yySeconds && (yyHour == 24))) {
+	if (yySeconds < 0 || yySeconds > (leapDay ? 60 : 59) || yySecondOfDay <= -1 || (yySeconds && (yyHour == 24))) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;
