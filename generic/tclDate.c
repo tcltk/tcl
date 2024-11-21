@@ -2348,9 +2348,9 @@ ToSeconds(
     case MER24:
 	return (Hours * 60 + Minutes) * 60 + Seconds;
     case MERam:
-	return ((Hours % 12) * 60 + Minutes) * 60 + Seconds;
+	return (((Hours / 24) * 24 + (Hours % 12)) * 60 + Minutes) * 60 + Seconds;
     case MERpm:
-	return (((Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
+	return (((Hours / 24) * 24 + (Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
     }
     return -1;			/* Should never be reached */
 }
@@ -2643,7 +2643,7 @@ TclClockFreeScan(
     /* parse */
     status = yyparse(info);
     if (status == 1) {
-    	const char *msg = NULL;
+	const char *msg = NULL;
 	if (info->errFlags & CLF_HAVEDATE) {
 	    msg = "more than one date in string";
 	} else if (info->errFlags & CLF_TIME) {

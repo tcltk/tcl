@@ -9536,12 +9536,6 @@ then :
   printf "%s\n" "#define HAVE_LOCALTIME_R 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "mktime" "ac_cv_func_mktime"
-if test "x$ac_cv_func_mktime" = xyes
-then :
-  printf "%s\n" "#define HAVE_MKTIME 1" >>confdefs.h
-
-fi
 
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking tm_tzadj in struct tm" >&5

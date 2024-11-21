@@ -160,9 +160,6 @@
 /* Define to 1 if you have the 'mkstemps' function. */
 #undef HAVE_MKSTEMPS
 
-/* Define to 1 if you have the 'mktime' function. */
-#undef HAVE_MKTIME
-
 /* Do we have MT-safe gethostbyaddr() ? */
 #undef HAVE_MTSAFE_GETHOSTBYADDR
 

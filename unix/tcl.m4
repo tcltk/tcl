@@ -2088,7 +2088,7 @@ AC_DEFUN([SC_TIME_HANDLER], [
     AC_CHECK_HEADERS(sys/time.h)
     AC_CHECK_HEADERS_ONCE([sys/time.h])
 
-    AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
+    AC_CHECK_FUNCS(gmtime_r localtime_r)
 
     AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_tzadj;]])],

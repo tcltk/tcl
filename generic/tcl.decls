@@ -2426,7 +2426,7 @@ declare 656 {
 # TIP 701
 declare 657 {
     int Tcl_FSTildeExpand(Tcl_Interp *interp, const char *path,
-        Tcl_DString *dsPtr)
+	Tcl_DString *dsPtr)
 }
 
 # TIP 656

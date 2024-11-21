@@ -2732,16 +2732,16 @@ int Tcl_FSTildeExpand(
     split = FindSplitPos(path, '/');
 
     if (split == 1) {
-        /* No user name specified '~' or '~/...' -> current user */
+	/* No user name specified '~' or '~/...' -> current user */
 	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
     } else {
-        /* User name specified - ~user, ~user/... */
-        const char *user;
-        Tcl_DString dsUser;
+	/* User name specified - ~user, ~user/... */
+	const char *user;
+	Tcl_DString dsUser;
 
 	Tcl_DStringInit(&dsUser);
-        Tcl_DStringAppend(&dsUser, path+1, split-1);
-        user = Tcl_DStringValue(&dsUser);
+	Tcl_DStringAppend(&dsUser, path+1, split-1);
+	user = Tcl_DStringValue(&dsUser);
 
 	/* path[split] is / for ~user/... or \0 for ~user */
 	result = MakeTildeRelativePath(interp, user,
@@ -2749,8 +2749,8 @@ int Tcl_FSTildeExpand(
 	Tcl_DStringFree(&dsUser);
     }
     if (result != TCL_OK) {
-        /* Do not rely on caller to free in case of errors */
-        Tcl_DStringFree(dsPtr);
+	/* Do not rely on caller to free in case of errors */
+	Tcl_DStringFree(dsPtr);
     }
     return result;
 }
