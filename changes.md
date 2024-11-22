@@ -16,6 +16,7 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [cannot build .chm help file (Windows)](https://core.tcl-lang.org/tcl/tktview/bb110c)
  - [TIP 701 - Tcl_FSTildeExpand C API](https://core.tcl-lang.org/tips/doc/trunk/tip/701.md)
  - [buffer overwrite for non-BMP characters in utf-16](https://core.tcl-lang.org/tcl/tktview/66da4d)
+ - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
@@ -154,5 +155,3 @@ writing Tcl scripts.
 # Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
-
