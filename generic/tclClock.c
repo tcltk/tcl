@@ -3785,7 +3785,7 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
-    int leapDay = 1;
+    int leapDay = -1;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3842,12 +3842,22 @@ ClockValidDate(
 	    errMsg = "invalid month";
 	    errCode = "month";
 	    goto error;
-	} else if (leapDay && ((yyMonth == 6) || (yyMonth == 12))) {
-	    /* leap seconds/minutes can be the last day in june or december */
-	    leapDay = (yyMonth == 12) ? 31: 30;
-	} else {
-	    /* leap seconds/minutes can be the first day in july or january */
-	    leapDay = ((yyMonth == 7) || (yyMonth == 1));
+	} else if (leapDay) {
+	    switch (yyMonth) {
+	    case 6:
+		leapDay = 30;
+		break;
+	    case 12:
+		leapDay = 31;
+		break;
+	    case 1:
+	    case 7:
+		leapDay = 1;
+		break;
+	    default:
+		leapDay = 0;
+		break;
+	    }
 	}
     }
     /* day of month */
@@ -3856,7 +3866,7 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if (yyDay != leapDay) {
+	} else if ((leapDay > 0) && (info->flags & CLF_DAYOFMONTH) && (yyDay != leapDay)) {
 	    leapDay = 0;
 	}
 	if ((info->flags & CLF_MONTH)) {
