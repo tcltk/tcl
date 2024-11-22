@@ -38477,7 +38477,7 @@ test clock-68.1a {Leap second, minute, hour [f2b5f89c0d], regression test (valid
 } -result {}
 test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validity check)} -constraints !valid_off -body {
     # regardless solution for [f2b5f89c0d], this conversions must fail on -valid 1 (constraints !valid_off),
-    # because of wrong day and month for the leap second:
+    # because of wrong day and month for the leap second. There were only leap seconds from 1972 - 2016:
     set res {}
     foreach {d i} {
 	"2012-06-29 23:59:60" "invalid time"
@@ -38485,6 +38485,8 @@ test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validi
 	"2012-05-30 23:60:60" "invalid time"
 	"2012-05-30 24:00:01" "invalid time"
 	"2012-05-30 24:01:00" "invalid time"
+	"1971-06-30 23:59:60" "invalid time"
+	"2018-06-30 23:59:60" "invalid time"
     } {
 	# check with free scan:
 	if {![catch { clock scan $d -gmt 1 } t] || ![string match *$i* $t]} {
