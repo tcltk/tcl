@@ -3810,6 +3810,9 @@ ClockValidDate(
 		errCode = "iso year";
 		goto error;
 	    }
+	    if ((yydate.iso8601Year < 1972) || (yydate.iso8601Year > 2017)) {
+		leapDay = 0;
+	    }
 	}
 	if (info->flags & CLF_YEAR) {
 	    if (yyYear < dataPtr->validMinYear
@@ -3817,6 +3820,9 @@ ClockValidDate(
 		errMsg = "invalid year";
 		errCode = "year";
 		goto error;
+	    }
+	    if ((yyYear < 1972) || (yyYear > 2017)) {
+		leapDay = 0;
 	    }
 	} else if ((info->flags & CLF_ISO8601YEAR)) {
 	    yyYear = yydate.iso8601Year; /* used to recognize leap */
@@ -3836,7 +3842,7 @@ ClockValidDate(
 	    errMsg = "invalid month";
 	    errCode = "month";
 	    goto error;
-	} else if ((yyMonth == 6) || (yyMonth == 12)) {
+	} else if (leapDay && ((yyMonth == 6) || (yyMonth == 12))) {
 	    /* leap seconds/minutes can be the last day in june or december */
 	    leapDay = (yyMonth == 12) ? 31: 30;
 	} else {
@@ -3901,7 +3907,7 @@ ClockValidDate(
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
-	} else if ((yyMinutes != 14) && (yyMinutes != 29) && (yyMinutes != 44) && (yyMinutes != 59)) {
+	} else if ((yyMinutes % 15) != 14) {
 	    leapDay = 0;
 	}
 	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
