@@ -3245,7 +3245,7 @@ Tcl_LoadFile(
 	if (!data) {
 	    goto mustCopyToTempAnyway;
 	}
-	buffer = TclpLoadMemoryGetBuffer(interp, size);
+	buffer = TclpLoadMemoryGetBuffer(size);
 	if (!buffer) {
 	    Tcl_CloseEx(interp, data, 0);
 	    goto mustCopyToTempAnyway;
