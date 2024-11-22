@@ -3913,7 +3913,7 @@ ClockValidDate(
 	    leapDay = 0;
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > (leapDay ? 60 : 59) || (yyMinutes && (yyHour == 24))) {
+	if (yyMinutes < 0 || yyMinutes > 59 || (yyMinutes && (yyHour == 24))) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
