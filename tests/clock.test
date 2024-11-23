@@ -38461,9 +38461,8 @@ test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no val
 test clock-68.1a {Leap second, minute, hour [f2b5f89c0d], regression test (validity check)} -body {
     set res {}
     foreach {d i} {
-	"2012-06-30 23:59:60" 1341100800
 	"2012-06-30 24:00:00" 1341100800
-    } {
+        } {
 	# check with free scan:
 	if {[set t [clock scan $d -gmt 1]] != $i} {
 	    lappend res "free-scan \"$d\" == $t, expected $i"
@@ -38475,9 +38474,8 @@ test clock-68.1a {Leap second, minute, hour [f2b5f89c0d], regression test (valid
     }
     set res; # must be empty
 } -result {}
-test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validity check)} -constraints !valid_off -body {
-    # regardless solution for [f2b5f89c0d], this conversions must fail on -valid 1 (constraints !valid_off),
-    # because of wrong day and month for the leap second. There were only leap seconds from 1972 - 2016:
+test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constraints !valid_off -body {
+    # Leap seconds are not supported. "24:00" is supported.
     set res {}
     foreach {d i} {
 	"2012-06-29 23:59:60" "invalid time"
@@ -38486,6 +38484,7 @@ test clock-68.2 {Leap second, minute, hour [f2b5f89c0d], regression test (validi
 	"2012-05-30 24:00:01" "invalid time"
 	"2012-05-30 24:01:00" "invalid time"
 	"1971-06-30 23:59:60" "invalid time"
+	"2012-06-30 23:59:60" "invalid time"
 	"2018-06-30 23:59:60" "invalid time"
     } {
 	# check with free scan:

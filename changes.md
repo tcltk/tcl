@@ -10,7 +10,6 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
  - [regression in tzdata, %z instead of offset TZ-name](https://core.tcl-lang.org/tcl/tktview/2c237b)
  - [Tcl will not start properly if there is an init.tcl file in the current dir](https://core.tcl-lang.org/tcl/tktview/43c94f)
- - [clock scan of leapsecond: wrong result](https://core.tcl-lang.org/tcl/tktview/f2b5f8)
  - [clock scan "24:00", ISO-8601 compatibility](https://core.tcl-lang.org/tcl/tktview/aee9f2)
  - [install registry and dde in $INSTALL_DIR\lib always](https://core.tcl-lang.org/tcl/tktview/364bd9)
  - [cannot build .chm help file (Windows)](https://core.tcl-lang.org/tcl/tktview/bb110c)
