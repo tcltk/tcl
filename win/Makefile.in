@@ -699,7 +699,7 @@ tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
 MemoryModule.${OBJEXT}: $(WIN_DIR)/MemoryModule.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.

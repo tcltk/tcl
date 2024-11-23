@@ -441,7 +441,7 @@ TclpLoadMemory(
     Tcl_Interp *interp,		/* Used for error reporting. */
     void *data,			/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
-    TCL_UNUSED(size_t),	/* Allocation size of buffer. */
+    size_t size,	/* Allocation size of buffer. */
     Tcl_Size codeSize,	/* Size of code data read into buffer or TCL_INDEX_NONE
 				 * if an error occurred and buffer should be
 				 * free'd. */
@@ -461,7 +461,7 @@ TclpLoadMemory(
 	Tcl_Free(data);
 	return TCL_ERROR;
     }
-    hInstance = MemoryLoadLibrary(data);
+    hInstance = MemoryLoadLibrary(data, size);
     if (hInstance == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot load dll in memory", TCL_INDEX_NONE));

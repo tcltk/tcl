@@ -911,7 +911,7 @@ $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
 $(TMP_DIR)\MemoryModule.obj: $(WIN_DIR)\MemoryModule.c
-	$(cc32) $(pkgcflags) /DUNICODE -Fo$@ $?
+	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE -Fo$@ $?
 
 # Following the lead of the autoconf based make, we define the
 # CFG_RUNTIME_*DIR flags specifically for tclPkgConfig
