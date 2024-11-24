@@ -3243,6 +3243,9 @@ Tcl_LoadFile(
 
 	data = Tcl_FSOpenFileChannel(interp, pathPtr, "rb", 0666);
 	if (!data) {
+	    if (interp) {
+		Tcl_ResetResult(interp);
+	    }
 	    goto mustCopyToTempAnyway;
 	}
 	buffer = TclpLoadMemoryGetBuffer(size);
@@ -3252,7 +3255,7 @@ Tcl_LoadFile(
 	}
 	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_CloseEx(interp, data, 0);
-	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
+	ret = TclpLoadMemory(buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;
@@ -3260,9 +3263,6 @@ Tcl_LoadFile(
     }
 
   mustCopyToTempAnyway:
-    if (interp) {
-	Tcl_ResetResult(interp);
-    }
 #endif /* TCL_LOAD_FROM_MEMORY */
 
     /*

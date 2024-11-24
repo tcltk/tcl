@@ -3733,8 +3733,8 @@ ClockScanCommit(
 	}
     }
 
-    /* If seconds overflows the day (no validate but not "24:00" or leap-second case), increase days */
-    if (yySecondOfDay >= SECONDS_PER_DAY + ((info->flags & CLF_TIME) && ((yyHour == 24) || (yySeconds == 60)))) {
+    /* If seconds overflows the day (not valide case, or 24:00), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY) {
 	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
 	yySecondOfDay %= SECONDS_PER_DAY;
     }
@@ -3785,7 +3785,6 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
-    int leapDay = -1;
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
@@ -3810,9 +3809,6 @@ ClockValidDate(
 		errCode = "iso year";
 		goto error;
 	    }
-	    if ((yydate.iso8601Year < 1972) || (yydate.iso8601Year > 2017)) {
-		leapDay = 0;
-	    }
 	}
 	if (info->flags & CLF_YEAR) {
 	    if (yyYear < dataPtr->validMinYear
@@ -3820,9 +3816,6 @@ ClockValidDate(
 		errMsg = "invalid year";
 		errCode = "year";
 		goto error;
-	    }
-	    if ((yyYear < 1972) || (yyYear > 2017)) {
-		leapDay = 0;
 	    }
 	} else if ((info->flags & CLF_ISO8601YEAR)) {
 	    yyYear = yydate.iso8601Year; /* used to recognize leap */
@@ -3842,22 +3835,6 @@ ClockValidDate(
 	    errMsg = "invalid month";
 	    errCode = "month";
 	    goto error;
-	} else if (leapDay) {
-	    switch (yyMonth) {
-	    case 6:
-		leapDay = 30;
-		break;
-	    case 12:
-		leapDay = 31;
-		break;
-	    case 1:
-	    case 7:
-		leapDay = 1;
-		break;
-	    default:
-		leapDay = 0;
-		break;
-	    }
 	}
     }
     /* day of month */
@@ -3866,8 +3843,6 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if ((leapDay > 0) && (info->flags & CLF_DAYOFMONTH) && (yyDay != leapDay)) {
-	    leapDay = 0;
 	}
 	if ((info->flags & CLF_MONTH)) {
 	    const int *h = hath[IsGregorianLeapYear(&yydate)];
@@ -3905,23 +3880,28 @@ ClockValidDate(
 
     if (info->flags & CLF_TIME) {
 	/* hour */
-	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 24 : 12)) {
-	    errMsg = "invalid time (hour)";
-	    errCode = "hour";
-	    goto error;
-	} else if (yyHour == 24) {
-	    leapDay = 0;
+	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 23 : 12)) {
+	    /* allow 24:00:00 as special case, see [aee9f2b916afd976] */
+	    if (yyMeridian == MER24 && yyHour == 24) {
+		if (yyMinutes != 0 || yySeconds != 0) {
+		    errMsg = "invalid time";
+		    errCode = "time";
+		    goto error;
+		}
+	    } else {
+		errMsg = "invalid time (hour)";
+		errCode = "hour";
+		goto error;
+	    }
 	}
 	/* minutes */
-	if (yyMinutes < 0 || yyMinutes > 59 || (yyMinutes && (yyHour == 24))) {
+	if (yyMinutes < 0 || yyMinutes > 59) {
 	    errMsg = "invalid time (minutes)";
 	    errCode = "minutes";
 	    goto error;
-	} else if ((yyMinutes % 15) != 14) {
-	    leapDay = 0;
 	}
-	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
-	if (yySeconds < 0 || yySeconds > (leapDay ? 60 : 59) || yySecondOfDay <= -1 || (yySeconds && (yyHour == 24))) {
+	/* oldscan could return secondOfDay -1 by invalid time (see ToSeconds) */
+	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
 	    goto error;
@@ -3931,13 +3911,14 @@ ClockValidDate(
     if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
-    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
      * and time-zone conversion (local to UTC time).
      */
   stage_2:
+
+    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /* time, regarding the modifications by the time-zone (looks for given time
      * in between DST-time hole, so does not exist in this time-zone) */

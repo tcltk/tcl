@@ -921,7 +921,8 @@ A time of day, which is of the form:
 or
 .QW "\fBhhmm \fR?\fBmeridian\fR? ?\fBzone\fR?" .
 If no \fImeridian\fR is specified, \fIhh\fR is interpreted on
-a 24-hour clock.
+a 24-hour clock. The "24:00" and "24:00:00" formats (with or without
+colon) are supported only if no \fImeridian\fR is specified.
 .TP
 \fIdate\fR
 .
@@ -951,7 +952,9 @@ or
 .QW "\fICCyy-mm-dd\fBT\fIhh:mm:ss\fR" .
 Note that only these four formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
-specifications specified in ISO8601.  Other formats can be recognized by
+specifications specified in ISO8601.  For example, leap seconds are
+not supported. The "24:00" and "24:00:00" formats (with or without
+colon) are supported.  Other formats can be recognized by
 giving an explicit \fB\-format\fR option to the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR

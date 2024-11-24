@@ -70,7 +70,6 @@ TclpLoadMemoryGetBuffer(
 
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     TCL_UNUSED(void *),
     TCL_UNUSED(size_t),
     TCL_UNUSED(Tcl_Size),
@@ -78,10 +77,6 @@ TclpLoadMemory(
     TCL_UNUSED(Tcl_FSUnloadFileProc **),
     TCL_UNUSED(int))
 {
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
-		"is not available on this system", -1));
-    }
     return TCL_ERROR;
 }
 
