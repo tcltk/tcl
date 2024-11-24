@@ -3263,6 +3263,7 @@ Tcl_LoadFile(
     }
 
   mustCopyToTempAnyway:
+    Tcl_Panic("Copying to temp disabled"); // TODO!: Remove this when merging to trunk!
 #endif /* TCL_LOAD_FROM_MEMORY */
 
     /*
