@@ -3902,13 +3902,14 @@ ClockValidDate(
     if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
-    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
      * and time-zone conversion (local to UTC time).
      */
   stage_2:
+
+    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /* time, regarding the modifications by the time-zone (looks for given time
      * in between DST-time hole, so does not exist in this time-zone) */
