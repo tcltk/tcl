@@ -2537,7 +2537,7 @@ GetYearWeekDay(
     dayOfFiscalYear = fields->julianDay - temp.julianDay;
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
-    if (fields->dayOfWeek < 1) {
+    if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
 	fields->dayOfWeek += 7;
     }
 }
@@ -3887,6 +3887,12 @@ ClockValidDate(
 		    errMsg = "invalid time";
 		    errCode = "time";
 		    goto error;
+		}
+		/* 24:00 is next day 00:00, correct day of week if given */
+		if (info->flags & CLF_DAYOFWEEK) {
+		    if (++yyDayOfWeek > 7) { /* Mon .. Sun == 1 .. 7 */
+			yyDayOfWeek = 1;
+		    }
 		}
 	    } else {
 		errMsg = "invalid time (hour)";
