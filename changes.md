@@ -155,7 +155,6 @@ writing Tcl scripts.
 # Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [Wrong handling of "24:00" for weekdays](https://core.tcl-lang.org/tcl/tktview/882da1)
  - [lsearch -stride with -subindices and -inline -all gives unexpected result](https://core.tcl-lang.org/tcl/tktview/5a1aaa)
  - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
  - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
