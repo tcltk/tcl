@@ -438,7 +438,6 @@ FindMemSymbol(
 
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     void *data,			/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
     size_t size,	/* Allocation size of buffer. */
@@ -463,9 +462,6 @@ TclpLoadMemory(
     }
     hInstance = MemoryLoadLibrary(data, size);
     if (hInstance == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot load dll in memory", TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "WIN_LOAD", "LOAD_MEMORY", (char *)NULL);
 	return TCL_ERROR;
     }
     handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
