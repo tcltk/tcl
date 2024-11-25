@@ -38438,6 +38438,31 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
     msgcat::mclocale $current
 } -result {1}
 
+proc _check_scan {res_ d tz fmt i {fmt2str ""}} {
+    upvar $res_ res
+    # expectation is fail on result like "invalid time":
+    set e [expr {![string is wideinteger -strict $i] && [string match "*invalid*" $i]}];
+    # conversion:
+    set lmscan {{args} {
+	upvar d d tz tz fmt fmt fmt2str fmt2str
+	set s [clock scan $d -timezone $tz {*}$args]
+	if {$fmt2str eq ""} {
+	    set s
+	} else {
+	    clock format $s -timezone $tz -locale en -format $fmt2str
+	}
+    }}
+    # check with free scan:
+    set v [catch { apply $lmscan } t]
+    if {($v != $e) || (!$e ? $t != $i : ![string match "*$i*" $t])} {
+	lappend res "free-scan \"$d\" [expr {!$v ? "succeeds" : "fails"}] with \"$t\" expected [expr {!$e ? "success" : "fail"}] with \"$i\""
+    }
+    # check with formatted scan:
+    set v [catch { apply $lmscan -locale en -format $fmt } t]
+    if {($v != $e) || (!$e ? $t != $i : ![string match "*$i*" $t])} {
+	lappend res "frmt-scan \"$d\" [expr {!$v ? "succeeds" : "fails"}] with \"$t\" expected [expr {!$e ? "success" : "fail"}] with \"$i\""
+    }
+}
 test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no validity check)} -constraints valid_off -body {
     set res {}
     foreach {d i} {
@@ -38447,14 +38472,8 @@ test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no val
 	"2012-05-30 24:00:60" 1338422460
 	"2012-05-30 24:60:00" 1338426000
     } {
-	# check with free scan:
-	if {[set t [clock scan $d -gmt 1]] != $i} {
-	    lappend res "free-scan \"$d\" == $t, expected $i"
-	}
-	# check with formatted scan:
-	if {[set t [clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S"]] != $i} {
-	    lappend res "frmt-scan \"$d\" == $t, expected $i"
-	}
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
     }
     join $res \n; # must be empty
 } -result {}
@@ -38462,15 +38481,24 @@ test clock-68.1a {24:00 time [aee9f2b916], regression test} -body {
     set res {}
     foreach {d i} {
 	"2012-06-30 24:00:00" 1341100800
-        } {
-	# check with free scan:
-	if {[set t [clock scan $d -gmt 1]] != $i} {
-	    lappend res "free-scan \"$d\" == $t, expected $i"
-	}
-	# check with formatted scan:
-	if {[set t [clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S"]] != $i} {
-	    lappend res "frmt-scan \"$d\" == $t, expected $i"
-	}
+    } {
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
+    }
+    join $res \n; # must be empty
+} -result {}
+test clock-68.1b {24:00 time [aee9f2b916], [882da1e28b], regression test} -body {
+    set res {}
+    foreach {d tz i} {
+	"Sat, 2012-06-30 24:00:00 GMT"     GMT 1341100800
+	"Sat, 2012-06-30 24:00:00 +1145" +1145 1341058500
+	"Sat, 2012-06-30 24:00:00 -1145" -1145 1341143100
+	"Sun, 2012-07-01 24:00:00 GMT"     GMT 1341187200
+	"Sun, 2012-07-01 24:00:00 +1145" +1145 1341144900
+	"Sun, 2012-07-01 24:00:00 -1145" -1145 1341229500
+    } {
+	# check with free and format scan:
+	_check_scan res $d $tz "%a, %Y-%m-%d %H:%M:%S %z" $i
     }
     join $res \n; # must be empty
 } -result {}
@@ -38487,14 +38515,8 @@ test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constr
 	"2012-06-30 23:59:60" "invalid time"
 	"2018-06-30 23:59:60" "invalid time"
     } {
-	# check with free scan:
-	if {![catch { clock scan $d -gmt 1 } t] || ![string match *$i* $t]} {
-	    lappend res "free-scan \"$d\" == \"$t\", expected \"$i\""
-	}
-	# check with formatted scan:
-	if {![catch { clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S" } t] || ![string match *$i* $t]} {
-	    lappend res "frmt-scan \"$d\" == \"$t\", expected \"$i\""
-	}
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
     }
     join $res \n; # must be empty
 } -result {}
