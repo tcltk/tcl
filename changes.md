@@ -16,6 +16,7 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [TIP 701 - Tcl_FSTildeExpand C API](https://core.tcl-lang.org/tips/doc/trunk/tip/701.md)
  - [buffer overwrite for non-BMP characters in utf-16](https://core.tcl-lang.org/tcl/tktview/66da4d)
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
+ - [Wrong result by "lsearch -stride -subindices -inline -all"](https://core.tcl-lang.org/tcl/info/5a1aaa20)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
