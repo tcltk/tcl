@@ -3733,8 +3733,8 @@ ClockScanCommit(
 	}
     }
 
-    /* If seconds overflows the day (not valide case, or 24:00), increase days */
-    if (yySecondOfDay >= SECONDS_PER_DAY) {
+    /* If seconds overflows the day (no validate and "24:00" case), increase days */
+    if (yySecondOfDay >= SECONDS_PER_DAY + ((info->flags & CLF_TIME) && (yyHour == 24))) {
 	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
 	yySecondOfDay %= SECONDS_PER_DAY;
     }
