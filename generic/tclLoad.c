@@ -1257,8 +1257,9 @@ TclFinalizeLoad(void)
 	Tcl_Free(libraryPtr->prefix);
 	Tcl_Free(libraryPtr);
     }
+    TclpFinalizeLoad();
 }
-
+
 /*
  * Local Variables:
  * mode: c

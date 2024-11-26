@@ -13,6 +13,7 @@
 #define _TCLWININT
 
 #include "tclInt.h"
+#include <strsafe.h>
 
 #ifdef HAVE_NO_SEH
 /*
