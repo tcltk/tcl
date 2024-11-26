@@ -523,6 +523,7 @@ InitDLLDirectoryName(void)
   copyToGlobalBuffer:
     dllDirectoryName = (WCHAR *)Tcl_Alloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
+    Tcl_InitHashTable(&tempDllTable, TCL_ONE_WORD_KEYS);
     return TCL_OK;
 }
 
