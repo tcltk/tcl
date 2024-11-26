@@ -3547,8 +3547,10 @@ MODULE_SCOPE void	TclpFinalizeNotifier(void *clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 #ifdef _WIN32
+MODULE_SCOPE void	TclpFinalizeLoad(void);
 MODULE_SCOPE void	TclInitSockets(void);
 #else
+#define TclpFinalizeLoad() /* do nothing */
 #define TclInitSockets() /* do nothing */
 #endif
 struct addrinfo; /* forward declaration, needed for TclCreateSocketAddress */
