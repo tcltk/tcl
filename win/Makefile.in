@@ -556,9 +556,7 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	  else \
 	    rm -rf ${TCL_VFS_PATH}/dde; \
 	    rm -rf ${TCL_VFS_PATH}/registry; \
-	  fi; \
-	  echo "  package ifneeded tk 9.0.1 [list load [file normalize [file join \$$dir tcl9tk90.dll]]]" > ${TCL_VFS_ROOT}/pkgIndex.tcl; \
-	  $(COPY) -a /usr/bin/tcl9tk90.dll ${TCL_VFS_ROOT}; \
+	  fi \
 	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
