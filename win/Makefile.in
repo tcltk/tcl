@@ -453,7 +453,6 @@ TOMMATH_OBJS = \
 
 
 WIN_OBJS = \
-	MemoryModule.$(OBJEXT) \
 	tclWin32Dll.$(OBJEXT) \
 	tclWinChan.$(OBJEXT) \
 	tclWinConsole.$(OBJEXT) \
@@ -702,9 +701,6 @@ tclMainW.${OBJEXT}: tclMain.c
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
-
-MemoryModule.${OBJEXT}: $(WIN_DIR)/MemoryModule.c
-	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.

@@ -13,9 +13,11 @@
 
 #include "tclWinInt.h"
 #ifdef TCL_LOAD_FROM_MEMORY
+#undef  UNICODE
 #undef  _UNICODE
+#define UNICODE
 #define _UNICODE
-#include "MemoryModule.h"
+#include "MemoryModule.c"
 #endif
 
 /*
