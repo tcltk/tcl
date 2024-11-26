@@ -2246,7 +2246,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) TclGetStringFromObj(joinObjPtr, &length);
+    (void)TclGetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -2663,8 +2663,7 @@ Tcl_LpopObjCmd(
 	    /* empty list, throw the same error as with index "end" */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"index \"end\" out of range", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-		"OUTOFRANGE", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	elemPtr = elemPtrs[listLen - 1];
@@ -3203,7 +3202,7 @@ Tcl_LreverseObjCmd(
     }
 
     if (Tcl_IsShared(objv[1])
-	|| ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
+	    || ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
 	Tcl_Obj *resultObj, **dataArray;
 	ListRep listRep;
 
@@ -3504,8 +3503,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" out of range",
 			    TclGetString(indices[j])));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-			    "OUTOFRANGE", (char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
@@ -3734,7 +3732,7 @@ Tcl_LsearchObjCmd(
 	    } else {
 		itemPtr = listv[i+groupOffset];
 	    }
-	    switch ((enum datatypes) dataType) {
+	    switch ((enum datatypes)dataType) {
 	    case ASCII:
 		bytes = TclGetString(itemPtr);
 		match = strCmpFn(patternBytes, bytes);
@@ -3839,7 +3837,7 @@ Tcl_LsearchObjCmd(
 	    switch (mode) {
 	    case SORTED:
 	    case EXACT:
-		switch ((enum datatypes) dataType) {
+		switch ((enum datatypes)dataType) {
 		case ASCII:
 		    bytes = TclGetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
@@ -3925,6 +3923,10 @@ Tcl_LsearchObjCmd(
 		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
+		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
+		    Tcl_BounceRefCount(itemPtr); 
+		    itemPtr = listv[i + groupOffset];
+			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);
@@ -4612,8 +4614,7 @@ Tcl_LsortObjCmd(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" out of range",
 			    TclGetString(indexv[j])));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-			    "OUTOFRANGE", (char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
@@ -4880,8 +4881,7 @@ Tcl_LsortObjCmd(
 	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
-	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
-		    &a) != TCL_OK) {
+	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
@@ -5089,7 +5089,7 @@ Tcl_LeditObjCmd(
     }
 
     /*
-     * Tcl_ObjSetVar2 mau return a value different from listPtr in the
+     * Tcl_ObjSetVar2 may return a value different from listPtr in the
      * presence of traces etc.. Note that finalValuePtr will always have a
      * reference count of at least 1 corresponding to the reference from the
      * var. If it is same as listPtr, then ref count will be at least 2
@@ -5273,7 +5273,6 @@ SortCompare(
 
 	    return 0;
 	}
-
 
 	objPtr1 = elemPtr1->collationKey.objValuePtr;
 	objPtr2 = elemPtr2->collationKey.objValuePtr;
