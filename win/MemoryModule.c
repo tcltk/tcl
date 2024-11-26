@@ -560,7 +560,6 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
     PIMAGE_NT_HEADERS old_header;
     unsigned char *code, *headers;
     ptrdiff_t locationDelta;
-    SYSTEM_INFO sysInfo;
     PIMAGE_SECTION_HEADER section;
     DWORD i;
     size_t optionalSectionSize;
@@ -615,9 +614,8 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
         }
     }
 
-    GetNativeSystemInfo(&sysInfo);
-    alignedImageSize = AlignValueUp(old_header->OptionalHeader.SizeOfImage, sysInfo.dwPageSize);
-    if (alignedImageSize != AlignValueUp(lastSectionEnd, sysInfo.dwPageSize)) {
+    alignedImageSize = AlignValueUp(old_header->OptionalHeader.SizeOfImage, old_header->OptionalHeader.SectionAlignment);
+    if (alignedImageSize != AlignValueUp(lastSectionEnd, old_header->OptionalHeader.SectionAlignment)) {
         SetLastError(ERROR_BAD_EXE_FORMAT);
         return NULL;
     }
@@ -690,7 +688,7 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
     result->getProcAddress = getProcAddress;
     result->freeLibrary = freeLibrary;
     result->userdata = userdata;
-    result->pageSize = sysInfo.dwPageSize;
+    result->pageSize = old_header->OptionalHeader.SectionAlignment;
 #ifdef _WIN64
     result->blockedMemory = blockedMemory;
 #endif
