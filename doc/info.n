@@ -187,7 +187,7 @@ the command.
 .IP \fBcmd\fR
 The command before substitutions were performed.
 .IP \fBproc\fR
-For type \fBprod\fR, the name of the procedure containing the command.
+For type \fBproc\fR, the name of the procedure containing the command.
 .IP \fBlambda\fR
 For a command in a script evaluated as the body of an unnamed routine via the
 \fBapply\fR command, the definition of that routine.
