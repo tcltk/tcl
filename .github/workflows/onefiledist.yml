@@ -125,7 +125,7 @@ jobs:
     timeout-minutes: 10
     env:
       CC: gcc
-      CFGOPT: --disable-symbols --disable-shared
+      CFGOPT: --enable-memorymodule --disable-symbols --disable-shared
     steps:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
