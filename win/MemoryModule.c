@@ -441,6 +441,17 @@ PerformBaseRelocation(PMEMORYMODULE module, ptrdiff_t delta)
     return TRUE;
 }
 
+#ifdef _WIN64
+static BOOL
+RegisterExceptionHandling(PMEMORYMODULE module)
+{
+    PIMAGE_DATA_DIRECTORY pDir = GET_HEADER_DICTIONARY(module, IMAGE_DIRECTORY_ENTRY_EXCEPTION);
+    PRUNTIME_FUNCTION pEntry = (PRUNTIME_FUNCTION)(module->codeBase + pDir->VirtualAddress);
+    UINT count = (pDir->Size / sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY)) - 1;
+    return RtlAddFunctionTable(pEntry, count, (DWORD64)module->codeBase);
+}
+#endif
+
 static BOOL
 BuildImportTable(PMEMORYMODULE module)
 {
@@ -728,6 +739,12 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
     if (!BuildImportTable(result)) {
         goto error;
     }
+
+#ifdef _WIN64
+    if (!RegisterExceptionHandling(result)) {
+        goto error;
+    }
+#endif
 
     // mark memory pages depending on section headers and release
     // sections that are marked as "discardable"
