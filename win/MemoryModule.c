@@ -54,10 +54,12 @@
 #define IMAGE_SIZEOF_BASE_RELOCATION (sizeof(IMAGE_BASE_RELOCATION))
 #endif
 
-#ifdef _WIN64
-#define HOST_MACHINE IMAGE_FILE_MACHINE_AMD64
-#else
+#ifndef _WIN64
 #define HOST_MACHINE IMAGE_FILE_MACHINE_I386
+#elif defined(_M_ARM64) || defined(__aarch64__)
+#define HOST_MACHINE IMAGE_FILE_MACHINE_ARM64
+#else
+#define HOST_MACHINE IMAGE_FILE_MACHINE_AMD64
 #endif
 
 #include "MemoryModule.h"

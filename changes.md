@@ -17,6 +17,7 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [buffer overwrite for non-BMP characters in utf-16](https://core.tcl-lang.org/tcl/tktview/66da4d)
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
  - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
+ - [Wrong result by "lsearch -stride -subindices -inline -all"](https://core.tcl-lang.org/tcl/info/5a1aaa20)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
