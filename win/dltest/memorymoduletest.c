@@ -19,14 +19,12 @@ static HMODULE hModule = NULL;
 
 static bool threadAttachCalled = false;
 
-#if 1 /* disabled, because it doesn't work */
 #ifdef _MSC_VER
 __declspec(thread)
 #elif defined __GNUC__
 __thread
 #elif __cplusplus
 thread_local
-#endif
 #endif
 int threadVar = 0;
 
@@ -201,7 +199,8 @@ Memorymoduletest_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.6-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+	/* Tcl 8.6 doesn't have Tcl_DStringToObj() */
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "memorymoduletest", "1.0.0");
