@@ -400,6 +400,44 @@ InitDLLDirectoryName(void)
 
 #ifdef TCL_LOAD_FROM_MEMORY
 
+struct __emutls_object
+{
+  size_t size;
+  size_t align;
+  void *ptr;
+  void *templ;
+};
+struct __emutls_array
+{
+  void *skip_destructor_rounds;
+  void *size;
+  void **data[];
+};
+
+static char tls_storage[256] = {0};
+
+static void *fake_emutls_get_address(struct __emutls_object *obj) {
+	(void)obj;
+    // TODO to be implemented. For now just point to some static storage.
+    return tls_storage;
+}
+
+static int fake_GetModuleFileNameW(void *module, WCHAR *path) {
+	(void)module;
+	static const WCHAR wpath[] = L"TODO.dll";
+    // TODO to be implemented. For now just point to some static storage.
+	wcscpy(path, wpath);
+    return wcslen(wpath);
+}
+
+static int fake_GetModuleFileNameA(void *module, char *path) {
+	(void)module;
+	static const char apath[] = "TODO.dll";
+    // TODO to be implemented. For now just point to some static storage.
+	strcpy(path, apath);
+    return strlen(apath);
+}
+
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
     size_t size)
@@ -434,6 +472,19 @@ FindMemSymbol(
     return res;
 }
 
+static FARPROC
+FakeDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void *userdata)
+{
+    if (!strcmp(name, "__emutls_get_address")) {
+	return (FARPROC)(void *)fake_emutls_get_address;
+    } else if (!strcmp(name, "GetModuleFileNameW")) {
+    	return (FARPROC)(void *)fake_GetModuleFileNameW;
+    } else if (!strcmp(name, "GetModuleFileNameA")) {
+    	return (FARPROC)(void *)fake_GetModuleFileNameA;
+    }
+    return MemoryDefaultGetProcAddress(module, name, userdata);
+}
+
 MODULE_SCOPE int
 TclpLoadMemory(
     void *data,			/* Buffer containing the desired code
@@ -458,7 +509,9 @@ TclpLoadMemory(
 	Tcl_Free(data);
 	return TCL_ERROR;
     }
-    hInstance = MemoryLoadLibrary(data, size);
+    hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
+	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
+
     if (hInstance == NULL) {
 	return TCL_ERROR;
     }
