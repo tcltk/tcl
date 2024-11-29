@@ -112,6 +112,11 @@ DWORD MemorySizeofResource(HMEMORYMODULE, HMEMORYRSRC);
 LPVOID MemoryLoadResource(HMEMORYMODULE, HMEMORYRSRC);
 
 /**
+ * Get a pointer to the hInstance.
+ */
+HMODULE MemoryGetCodeBase(HMEMORYMODULE);
+
+/**
  * Load a string resource.
  */
 int MemoryLoadString(HMEMORYMODULE, UINT, LPTSTR, int);

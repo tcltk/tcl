@@ -1116,6 +1116,11 @@ LPVOID MemoryLoadResource(HMEMORYMODULE module, HMEMORYRSRC resource)
     return codeBase + entry->OffsetToData;
 }
 
+HMODULE MemoryGetCodeBase(HMEMORYMODULE module)
+{
+    return (HMODULE)((PMEMORYMODULE)module)->codeBase;
+}
+
 int
 MemoryLoadString(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize)
 {
