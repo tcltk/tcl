@@ -403,18 +403,25 @@ InitDLLDirectoryName(void)
 static HMODULE kernel32 = NULL;
 static Tcl_HashTable vfsPathTable;
 
-static int fake_GetModuleFileNameW(void *module, WCHAR *path) {
-    (void)module;
-    // TODO to be implemented. For now just point to some static storage.
-    wcscpy(path, L"TODOW.dll");
-    return wcslen(path);
+static int fake_GetModuleFileNameW(HMODULE module, WCHAR *path, WORD nSize) {
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    if (entry == NULL) {
+	return GetModuleFileNameW(module, path, nSize);
+    }
+    return MultiByteToWideChar(CP_UTF8, 0, (const char *)Tcl_GetHashValue(entry), -1 , path, nSize);
 }
 
-static int fake_GetModuleFileNameA(void *module, char *path) {
-    (void)module;
-    // TODO to be implemented. For now just point to some static storage.
-    strcpy(path, "TODOA.dll");
-    return strlen(path);
+static int fake_GetModuleFileNameA(HMODULE module, LPSTR lpFilename, WORD nSize) {
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    if (entry == NULL) {
+	return GetModuleFileNameA(module, lpFilename, nSize);
+    }
+    strncpy(lpFilename, (const char *)Tcl_GetHashValue(entry), nSize);
+    return strlen(lpFilename);
 }
 
 MODULE_SCOPE void *
@@ -454,21 +461,17 @@ FindMemSymbol(
 static FARPROC
 FakeDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void *userdata)
 {
-    Tcl_LoadHandle loadHandle = (Tcl_LoadHandle)userdata;
-    Tcl_HashEntry *entry;
-    int isNew;
-
     if (kernel32 == NULL) {
-	kernel32 = GetModuleHandleW(L"KERNEL32");
-	Tcl_InitHashTable(&vfsPathTable, TCL_ONE_WORD_KEYS);
+	Tcl_MutexLock(&dllDirectoryNameMutex);
+	if (kernel32 == NULL) {
+	    kernel32 = GetModuleHandleW(L"KERNEL32");
+	    Tcl_InitHashTable(&vfsPathTable, TCL_ONE_WORD_KEYS);
+	}
+	Tcl_MutexUnlock(&dllDirectoryNameMutex);
     }
     if ((module == kernel32) && !strcmp(name, "GetModuleFileNameW")) {
-	entry = Tcl_CreateHashEntry(&vfsPathTable, module, &isNew);
-	Tcl_SetHashValue(entry, loadHandle->name);
 	return (FARPROC)(void *)fake_GetModuleFileNameW;
     } else if ((module == kernel32) && !strcmp(name, "GetModuleFileNameA")) {
-	entry = Tcl_CreateHashEntry(&vfsPathTable, module, &isNew);
-	Tcl_SetHashValue(entry, loadHandle->name);
 	return (FARPROC)(void *)fake_GetModuleFileNameA;
     }
     return MemoryDefaultGetProcAddress(module, name, userdata);
@@ -495,6 +498,7 @@ TclpLoadMemory(
     Tcl_LoadHandle handlePtr;
     void *hInstance;
     size_t handleSize = offsetof(struct Tcl_LoadHandle_, name) + (path ? strlen(path) : 1);
+    int isNew;
 
     if (codeSize < 1) {
 	Tcl_Free(data);
@@ -510,6 +514,10 @@ TclpLoadMemory(
     }
     hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
 	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, handlePtr);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_CreateHashEntry(&vfsPathTable, MemoryGetCodeBase(hInstance), &isNew);
+    Tcl_SetHashValue(entry, handlePtr->name);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
     if (hInstance == NULL) {
 	Tcl_Free(handlePtr);
 	return TCL_ERROR;

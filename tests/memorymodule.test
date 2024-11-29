@@ -16,12 +16,12 @@ test memorymodule-1.0 {info loaded} memorymoduletest {
 test memorymodule-1.1 {GetModuleFileNameA (WIP)} memorymoduletest {
     package require memorymoduletest
     GetModuleFileNameA
-} TODOA.dll
+} //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
 
 test memorymodule-1.2 {GetModuleFileNameW (WIP)} memorymoduletest {
     package require memorymoduletest
     GetModuleFileNameW
-} TODOW.dll
+} //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
 
 test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
     package require Thread
