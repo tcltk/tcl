@@ -400,42 +400,21 @@ InitDLLDirectoryName(void)
 
 #ifdef TCL_LOAD_FROM_MEMORY
 
-struct __emutls_object
-{
-  size_t size;
-  size_t align;
-  void *ptr;
-  void *templ;
-};
-struct __emutls_array
-{
-  void *skip_destructor_rounds;
-  void *size;
-  void **data[];
-};
-
-static char tls_storage[256] = {0};
-
-static void *fake_emutls_get_address(struct __emutls_object *obj) {
-	(void)obj;
-    // TODO to be implemented. For now just point to some static storage.
-    return tls_storage;
-}
+static HMODULE kernel32 = NULL;
+static Tcl_HashTable vfsPathTable;
 
 static int fake_GetModuleFileNameW(void *module, WCHAR *path) {
-	(void)module;
-	static const WCHAR wpath[] = L"TODO.dll";
+    (void)module;
     // TODO to be implemented. For now just point to some static storage.
-	wcscpy(path, wpath);
-    return wcslen(wpath);
+    wcscpy(path, L"TODOW.dll");
+    return wcslen(path);
 }
 
 static int fake_GetModuleFileNameA(void *module, char *path) {
-	(void)module;
-	static const char apath[] = "TODO.dll";
+    (void)module;
     // TODO to be implemented. For now just point to some static storage.
-	strcpy(path, apath);
-    return strlen(apath);
+    strcpy(path, "TODOA.dll");
+    return strlen(path);
 }
 
 MODULE_SCOPE void *
@@ -475,12 +454,22 @@ FindMemSymbol(
 static FARPROC
 FakeDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void *userdata)
 {
-    if (!strcmp(name, "__emutls_get_address")) {
-	return (FARPROC)(void *)fake_emutls_get_address;
-    } else if (!strcmp(name, "GetModuleFileNameW")) {
-    	return (FARPROC)(void *)fake_GetModuleFileNameW;
-    } else if (!strcmp(name, "GetModuleFileNameA")) {
-    	return (FARPROC)(void *)fake_GetModuleFileNameA;
+    Tcl_LoadHandle loadHandle = (Tcl_LoadHandle)userdata;
+    Tcl_HashEntry *entry;
+    int isNew;
+
+    if (kernel32 == NULL) {
+	kernel32 = GetModuleHandleW(L"KERNEL32");
+	Tcl_InitHashTable(&vfsPathTable, TCL_ONE_WORD_KEYS);
+    }
+    if ((module == kernel32) && !strcmp(name, "GetModuleFileNameW")) {
+	entry = Tcl_CreateHashEntry(&vfsPathTable, module, &isNew);
+	Tcl_SetHashValue(entry, loadHandle->name);
+	return (FARPROC)(void *)fake_GetModuleFileNameW;
+    } else if ((module == kernel32) && !strcmp(name, "GetModuleFileNameA")) {
+	entry = Tcl_CreateHashEntry(&vfsPathTable, module, &isNew);
+	Tcl_SetHashValue(entry, loadHandle->name);
+	return (FARPROC)(void *)fake_GetModuleFileNameA;
     }
     return MemoryDefaultGetProcAddress(module, name, userdata);
 }
@@ -493,6 +482,7 @@ TclpLoadMemory(
     Tcl_Size codeSize,	/* Size of code data read into buffer or TCL_INDEX_NONE
 				 * if an error occurred and buffer should be
 				 * free'd. */
+    const char *path, /* path in VFS, or NULL if the path is unknown */
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
@@ -504,21 +494,27 @@ TclpLoadMemory(
 {
     Tcl_LoadHandle handlePtr;
     void *hInstance;
+    size_t handleSize = offsetof(struct Tcl_LoadHandle_, name) + (path ? strlen(path) : 1);
 
     if (codeSize < 1) {
 	Tcl_Free(data);
 	return TCL_ERROR;
     }
-    hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
-	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
-
-    if (hInstance == NULL) {
-	return TCL_ERROR;
-    }
-    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = hInstance;
+    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(handleSize);
     handlePtr->findSymbolProcPtr = &FindMemSymbol;
     handlePtr->unloadFileProcPtr = &UnloadMemory;
+    if (path) {
+	strcpy(handlePtr->name, path);
+    } else {
+	handlePtr->name[0] = 0;
+    }
+    hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
+	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, handlePtr);
+    if (hInstance == NULL) {
+	Tcl_Free(handlePtr);
+	return TCL_ERROR;
+    }
+    handlePtr->clientData = hInstance;
     *loadHandle = handlePtr;
     *unloadProcPtr = &UnloadMemory;
     return TCL_OK;

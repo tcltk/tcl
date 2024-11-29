@@ -1,0 +1,48 @@
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint memorymoduletest [expr {0 == [catch {zipfs mount dltest/memorymoduletest.zip [file join [zipfs root] memorymoduletest]}]}]
+
+lappend auto_path [file join [zipfs root] memorymoduletest]
+
+test memorymodule-1.0 {info loaded} memorymoduletest {
+    package require memorymoduletest
+    info loaded {} Memorymoduletest
+} [file join [zipfs root] memorymoduletest/tcl9memorymoduletest.dll]
+
+test memorymodule-1.1 {GetModuleFileNameA (WIP)} memorymoduletest {
+    package require memorymoduletest
+    GetModuleFileNameA
+} TODOA.dll
+
+test memorymodule-1.2 {GetModuleFileNameW (WIP)} memorymoduletest {
+    package require memorymoduletest
+    GetModuleFileNameW
+} TODOW.dll
+
+test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
+    package require Thread
+    package require memorymoduletest
+    set t1 [thread::create]
+    ThreadVar 15; # Set ThreadVar to 15 in the main thread
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require memorymoduletest
+	# set ThreadVar to 16 in the subthread
+	ThreadVar 16
+	return [ThreadVar]
+    } result
+    thread::release $t1
+    # ThreadVar in main thread should be unchanged (15)
+    list [ThreadVar] $result
+} -result {15 16}
+
+
+# cleanup
+::tcltest::cleanupTests
+return
+

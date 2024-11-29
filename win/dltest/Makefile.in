@@ -12,7 +12,8 @@ SHLIB_SUFFIX =		@SHLIB_SUFFIX@
 DLTEST_LD =		@DLTEST_LD@
 SRC_DIR =		@TCL_SRC_DIR@/win/dltest
 BUILD_DIR =		@builddir@
-TCL_VERSION=		@TCL_VERSION@
+NATIVE_ZIP =		@ZIP_PROG@
+TCL_VERSION =		@TCL_VERSION@
 
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
@@ -24,8 +25,14 @@ LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@ -static-libgcc
 CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic \
 	${SHLIB_CFLAGS} -DUSE_TCL_STUBS ${AC_FLAGS}
 
-all: tcl9memorymoduletest${SHLIB_SUFFIX}
-	@touch ../dltest.marker
+all: memorymoduletest.zip
+
+memorymoduletest.zip:	tcl9memorymoduletest${SHLIB_SUFFIX}
+	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
+	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
+	  $$zip memorymoduletest.zip pkgIndex.tcl *.dll >/dev/null && \
+	  echo "memorymoduletest.zip successful created with $$zip" \
+	  )
 
 memorymoduletest.o: $(SRC_DIR)/memorymoduletest.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/memorymoduletest.c

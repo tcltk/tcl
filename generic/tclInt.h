@@ -3263,6 +3263,7 @@ struct Tcl_LoadHandle_ {
 				 * loaded module */
     Tcl_FSUnloadFileProc* unloadFileProcPtr;
 				/* Procedure that unloads a loaded module */
+    char name[TCLFLEXARRAY];
 };
 
 /* Flags for conversion of doubles to digit strings */
@@ -3669,8 +3670,8 @@ MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 MODULE_SCOPE int	TclpUtime(Tcl_Obj *pathPtr, struct utimbuf *tval);
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *	TclpLoadMemoryGetBuffer(size_t size);
-MODULE_SCOPE int	TclpLoadMemory(void *buffer,
-			    size_t size, Tcl_Size codeSize, Tcl_LoadHandle *loadHandle,
+MODULE_SCOPE int	TclpLoadMemory(void *buffer, size_t size,
+			    Tcl_Size codeSize,  const char *path, Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 #endif
 MODULE_SCOPE void	TclInitThreadStorage(void);
