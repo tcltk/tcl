@@ -515,7 +515,7 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *entryPtr;
     const char *bytes;
-    size_t globalHash, length;
+    Tcl_Size globalHash, length;
 
     bytes = TclGetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -703,7 +703,8 @@ AddLocalLiteralEntry(
     {
 	char *bytes;
 	int found;
-	size_t length, i;
+	size_t i;
+	Tcl_Size length;
 
 	found = 0;
 	for (i=0 ; i<localTablePtr->numBuckets ; i++) {
@@ -1183,7 +1184,8 @@ TclVerifyLocalLiteralTable(
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
     char *bytes;
-    size_t i, length, count = 0;
+    size_t i, count = 0;
+    Tcl_Size length;
 
     for (i=0 ; i<localTablePtr->numBuckets ; i++) {
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
@@ -1232,7 +1234,8 @@ TclVerifyGlobalLiteralTable(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
     char *bytes;
-    size_t i, length, count = 0;
+    size_t i, count = 0;
+    Tcl_Size length;
 
     for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
 	for (globalPtr=globalTablePtr->buckets[i] ; globalPtr!=NULL;
