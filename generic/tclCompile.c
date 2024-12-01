@@ -740,7 +740,7 @@ static const Tcl_ObjType substCodeType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
-#define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
+#define SubstFlags(objPtr) (objPtr)->internalRep.ptr2
 
 /*
  * Helper macros.

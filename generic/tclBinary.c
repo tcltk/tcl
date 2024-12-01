@@ -188,9 +188,9 @@ typedef struct {
 	( (len < 0 || BYTEARRAY_MAX_LEN < (len)) \
 	? (Tcl_Panic("negative length specified or max size of a Tcl value exceeded"), 0) \
 	: (offsetof(ByteArray, bytes) + (len)) )
-#define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
+#define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->ptr)
 #define SET_BYTEARRAY(irPtr, baPtr) \
-		(irPtr)->twoPtrValue.ptr1 = (baPtr)
+		(irPtr)->ptr = (baPtr)
 
 int
 TclIsPureByteArray(

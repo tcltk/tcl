@@ -5667,8 +5667,8 @@ TestpurebytesobjCmd(
     }
     objPtr = Tcl_NewObj();
     /*
-    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.ptr = NULL;
+    objPtr->internalRep.ptr2 = NULL;
     */
     memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
     if (objc == 2) {

@@ -47,7 +47,7 @@ const Tcl_ObjType tclIndexType = {
 
 /*
  * The definition of the internal representation of the "index" object; The
- * internalRep.twoPtrValue.ptr1 field of an object of "index" type will be a
+ * internalRep.ptr field of an object of "index" type will be a
  * pointer to one of these structures.
  *
  * Keep this structure declaration in sync with tclTestObj.c
@@ -216,7 +216,7 @@ Tcl_GetIndexFromObjStruct(
     if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
 	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
 	if (irPtr) {
-	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	    indexRep = (IndexRep *)irPtr->ptr;
 	    if ((indexRep->tablePtr == tablePtr)
 		    && (indexRep->offset == offset)
 		    && (indexRep->index != TCL_INDEX_NONE)) {
@@ -285,12 +285,12 @@ Tcl_GetIndexFromObjStruct(
     if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
     if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	indexRep = (IndexRep *)irPtr->ptr;
     } else {
 	Tcl_ObjInternalRep ir;
 
 	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
-	ir.twoPtrValue.ptr1 = indexRep;
+	ir.ptr = indexRep;
 	Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
     }
     indexRep->tablePtr = (void *) tablePtr;
@@ -386,7 +386,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->ptr;
     const char *indexStr = EXPAND_OF(indexRep);
 
     Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
@@ -418,10 +418,10 @@ DupIndex(
     Tcl_ObjInternalRep ir;
     IndexRep *dupIndexRep = (IndexRep *)Tcl_Alloc(sizeof(IndexRep));
 
-    memcpy(dupIndexRep, TclFetchInternalRep(srcPtr, &tclIndexType)->twoPtrValue.ptr1,
+    memcpy(dupIndexRep, TclFetchInternalRep(srcPtr, &tclIndexType)->ptr,
 	    sizeof(IndexRep));
 
-    ir.twoPtrValue.ptr1 = dupIndexRep;
+    ir.ptr = dupIndexRep;
     Tcl_StoreInternalRep(dupPtr, &tclIndexType, &ir);
 }
 
@@ -446,7 +446,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    Tcl_Free(TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1);
+    Tcl_Free(TclFetchInternalRep(objPtr, &tclIndexType)->ptr);
     objPtr->typePtr = NULL;
 }
 
@@ -867,7 +867,7 @@ Tcl_WrongNumArgs(
 	    const Tcl_ObjInternalRep *irPtr;
 
 	    if ((irPtr = TclFetchInternalRep(origObjv[i], &tclIndexType))) {
-		IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+		IndexRep *indexRep = (IndexRep *)irPtr->ptr;
 
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
@@ -914,7 +914,7 @@ Tcl_WrongNumArgs(
 	const Tcl_ObjInternalRep *irPtr;
 
 	if ((irPtr = TclFetchInternalRep(objv[i], &tclIndexType))) {
-	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	    IndexRep *indexRep = (IndexRep *)irPtr->ptr;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *)NULL);
 	} else {

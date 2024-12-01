@@ -140,8 +140,8 @@ static const Tcl_ObjType nsNameType = {
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(nnPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (nnPtr);					\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (nnPtr);					\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &nsNameType, &ir);		\
     } while (0)
 
@@ -149,7 +149,7 @@ static const Tcl_ObjType nsNameType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &nsNameType);		\
-	(nnPtr) = irPtr ? (ResolvedNsName *) irPtr->twoPtrValue.ptr1 : NULL; \
+	(nnPtr) = irPtr ? (ResolvedNsName *) irPtr->ptr : NULL; \
     } while (0)
 
 /*

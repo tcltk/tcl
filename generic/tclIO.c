@@ -347,8 +347,8 @@ static const Tcl_ObjType chanObjType = {
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(resPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (resPtr);					\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (resPtr);					\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
     } while (0)
 
@@ -356,7 +356,7 @@ static const Tcl_ObjType chanObjType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->ptr : NULL;		\
     } while (0)
 
 #define BUSY_STATE(st, fl) \

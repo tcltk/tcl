@@ -266,7 +266,7 @@ my_LStringObjIndex(
     Tcl_Size index,
     Tcl_Obj **charObjPtr)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
 
   (void)interp;
 
@@ -303,7 +303,7 @@ my_LStringObjIndex(
 static Tcl_Size
 my_LStringObjLength(Tcl_Obj *lstringObjPtr)
 {
-    LString *lstringRepPtr = (LString *)lstringObjPtr->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString *)lstringObjPtr->internalRep.ptr;
     return lstringRepPtr->strlen;
 }
 
@@ -328,7 +328,7 @@ my_LStringObjLength(Tcl_Obj *lstringObjPtr)
 static void
 DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 {
-  LString *srcLString = (LString*)srcPtr->internalRep.twoPtrValue.ptr1;
+  LString *srcLString = (LString*)srcPtr->internalRep.ptr;
   LString *copyLString = (LString*)Tcl_Alloc(sizeof(LString));
 
   memcpy(copyLString, srcLString, sizeof(LString));
@@ -337,8 +337,8 @@ DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
   copyLString->string[srcLString->strlen] = '\0';
   copyLString->elements = NULL;
   Tcl_ObjInternalRep itr;
-  itr.twoPtrValue.ptr1 = copyLString;
-  itr.twoPtrValue.ptr2 = NULL;
+  itr.ptr = copyLString;
+  itr.ptr2 = NULL;
   Tcl_StoreInternalRep(copyPtr, srcPtr->typePtr, &itr);
 
   return;
@@ -372,7 +372,7 @@ my_LStringObjSetElem(
     Tcl_Obj *const indicies[],
     Tcl_Obj *valueObj)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
     Tcl_Size index;
     int status;
     Tcl_Obj *returnObj;
@@ -389,7 +389,7 @@ my_LStringObjSetElem(
     }
 
     returnObj = Tcl_IsShared(lstringObj) ? Tcl_DuplicateObj(lstringObj) : lstringObj;
-    lstringRepPtr = (LString*)returnObj->internalRep.twoPtrValue.ptr1;
+    lstringRepPtr = (LString*)returnObj->internalRep.ptr;
 
     if (index >= lstringRepPtr->strlen) {
 	index = lstringRepPtr->strlen;
@@ -438,7 +438,7 @@ static int my_LStringObjRange(
     Tcl_Obj **newObjPtr)
 {
     Tcl_Obj *rangeObj;
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
     LString *rangeRep;
     Tcl_WideInt len = toIdx - fromIdx + 1;
 
@@ -462,8 +462,8 @@ static int my_LStringObjRange(
 	rangeRep->elements = NULL;
 	rangeObj = Tcl_NewObj();
 	Tcl_ObjInternalRep itr;
-	itr.twoPtrValue.ptr1 = rangeRep;
-	itr.twoPtrValue.ptr2 = NULL;
+	itr.ptr = rangeRep;
+	itr.ptr2 = NULL;
 	Tcl_StoreInternalRep(rangeObj, lstringObj->typePtr, &itr);
 	if (rangeRep->strlen > 0) {
 	    Tcl_InvalidateStringRep(rangeObj);
@@ -495,7 +495,7 @@ static int my_LStringObjRange(
 static int
 my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
 {
-    LString *srcRep = (LString*)srcObj->internalRep.twoPtrValue.ptr1;
+    LString *srcRep = (LString*)srcObj->internalRep.ptr;
     Tcl_Obj *revObj;
     LString *revRep = (LString*)Tcl_Alloc(sizeof(LString));
     Tcl_ObjInternalRep itr;
@@ -515,8 +515,8 @@ my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
 	*dstp-- = *srcp++;
     }
     revObj = Tcl_NewObj();
-    itr.twoPtrValue.ptr1 = revRep;
-    itr.twoPtrValue.ptr2 = NULL;
+    itr.ptr = revRep;
+    itr.ptr2 = NULL;
     Tcl_StoreInternalRep(revObj, srcObj->typePtr, &itr);
     if (revRep->strlen > 0) {
 	Tcl_InvalidateStringRep(revObj);
@@ -554,7 +554,7 @@ my_LStringReplace(
     Tcl_Size numToInsert,
     Tcl_Obj *const insertObjs[])
 {
-    LString *lstringRep = (LString*)listObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRep = (LString*)listObj->internalRep.ptr;
     Tcl_Size newLen;
     Tcl_Size x, ix, kx;
     char *newStr;
@@ -717,8 +717,8 @@ my_NewLStringObj(
     strcpy(lstringRepPtr->string, string);
     lstringRepPtr->elements = NULL;
     lstringPtr = Tcl_NewObj();
-    itr.twoPtrValue.ptr1 = lstringRepPtr;
-    itr.twoPtrValue.ptr2 = NULL;
+    itr.ptr = lstringRepPtr;
+    itr.ptr2 = NULL;
     Tcl_StoreInternalRep(lstringPtr, lstringTypePtr, &itr);
     if (lstringRepPtr->strlen > 0) {
 	Tcl_InvalidateStringRep(lstringPtr);
@@ -740,7 +740,7 @@ my_NewLStringObj(
 static void
 lstringFreeElements(Tcl_Obj* lstringObj)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
     if (lstringRepPtr->elements) {
 	Tcl_Obj **objptr = lstringRepPtr->elements;
 	while (objptr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
@@ -770,13 +770,13 @@ lstringFreeElements(Tcl_Obj* lstringObj)
 static void
 freeRep(Tcl_Obj* lstringObj)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
     if (lstringRepPtr->string) {
 	Tcl_Free(lstringRepPtr->string);
     }
     lstringFreeElements(lstringObj);
     Tcl_Free((char*)lstringRepPtr);
-    lstringObj->internalRep.twoPtrValue.ptr1 = NULL;
+    lstringObj->internalRep.ptr = NULL;
 }
 
 /*
@@ -800,7 +800,7 @@ static int my_LStringGetElements(Tcl_Interp *interp,
 				 Tcl_Size *objcptr,
 				 Tcl_Obj ***objvptr)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.ptr;
     Tcl_Obj **objPtr;
     char *cptr = lstringRepPtr->string;
     (void)interp;
@@ -968,7 +968,7 @@ lgen(
     Tcl_Obj* objPtr,
     Tcl_Size index)
 {
-    LgenSeries *lgenSeriesPtr = (LgenSeries*)objPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *lgenSeriesPtr = (LgenSeries*)objPtr->internalRep.ptr;
     Tcl_Obj *elemObj = NULL;
     Tcl_Interp *intrp = lgenSeriesPtr->interp;
     Tcl_Obj *genCmd = lgenSeriesPtr->genFnObj;
@@ -998,7 +998,7 @@ lgen(
 static Tcl_Size
 lgenSeriesObjLength(Tcl_Obj *objPtr)
 {
-    LgenSeries *lgenSeriesRepPtr = (LgenSeries *)objPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *lgenSeriesRepPtr = (LgenSeries *)objPtr->internalRep.ptr;
     return lgenSeriesRepPtr->len;
 }
 
@@ -1015,7 +1015,7 @@ lgenSeriesObjIndex(
     LgenSeries *lgenSeriesRepPtr;
     Tcl_Obj *element;
 
-    lgenSeriesRepPtr = (LgenSeries*)lgenSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    lgenSeriesRepPtr = (LgenSeries*)lgenSeriesObjPtr->internalRep.ptr;
 
     if (index < 0 || index >= lgenSeriesRepPtr->len) {
 	*elemPtr = NULL;
@@ -1050,7 +1050,7 @@ UpdateStringOfLgen(Tcl_Obj *objPtr)
     size_t bytlen;
     Tcl_Obj *tmpstr = Tcl_NewObj();
 
-    lgenSeriesRepPtr = (LgenSeries*)objPtr->internalRep.twoPtrValue.ptr1;
+    lgenSeriesRepPtr = (LgenSeries*)objPtr->internalRep.ptr;
 
     for (i=0, bytlen=0; i<lgenSeriesRepPtr->len; i++) {
 	element = lgen(objPtr, i);
@@ -1075,13 +1075,13 @@ UpdateStringOfLgen(Tcl_Obj *objPtr)
 static void
 FreeLgenInternalRep(Tcl_Obj *objPtr)
 {
-    LgenSeries *lgenSeries = (LgenSeries*)objPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *lgenSeries = (LgenSeries*)objPtr->internalRep.ptr;
     if (lgenSeries->genFnObj) {
 	Tcl_DecrRefCount(lgenSeries->genFnObj);
     }
     lgenSeries->interp = NULL;
     Tcl_Free(lgenSeries);
-    objPtr->internalRep.twoPtrValue.ptr1 = 0;
+    objPtr->internalRep.ptr = 0;
 }
 
 static void DupLgenSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
@@ -1115,7 +1115,7 @@ DupLgenSeriesRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
-    LgenSeries *srcLgenSeries = (LgenSeries*)srcPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *srcLgenSeries = (LgenSeries*)srcPtr->internalRep.ptr;
     Tcl_Size repSize = sizeof(LgenSeries);
     LgenSeries *copyLgenSeries = (LgenSeries*)Tcl_Alloc(repSize);
 
@@ -1125,8 +1125,8 @@ DupLgenSeriesRep(
     copyLgenSeries->genFnObj = Tcl_DuplicateObj(srcLgenSeries->genFnObj);
     Tcl_IncrRefCount(copyLgenSeries->genFnObj);
     copyPtr->typePtr = &lgenType;
-    copyPtr->internalRep.twoPtrValue.ptr1 = copyLgenSeries;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    copyPtr->internalRep.ptr = copyLgenSeries;
+    copyPtr->internalRep.ptr2 = NULL;
     return;
 }
 
@@ -1168,8 +1168,8 @@ newLgenObj(
     // Addd 0 placeholder for index
     Tcl_ListObjAppendElement(interp, lGenSeriesRepPtr->genFnObj, Tcl_NewIntObj(0));
     Tcl_IncrRefCount(lGenSeriesRepPtr->genFnObj);
-    lGenSeriesObj->internalRep.twoPtrValue.ptr1 = lGenSeriesRepPtr;
-    lGenSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
+    lGenSeriesObj->internalRep.ptr = lGenSeriesRepPtr;
+    lGenSeriesObj->internalRep.ptr2 = NULL;
     lGenSeriesObj->typePtr = &lgenType;
 
     if (length > 0) {

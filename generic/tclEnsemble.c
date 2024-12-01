@@ -96,8 +96,8 @@ static const Tcl_ObjType ensembleCmdType = {
 #define ECRSetInternalRep(objPtr, ecRepPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (ecRepPtr);				\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
     } while (0)
 
@@ -106,7 +106,7 @@ static const Tcl_ObjType ensembleCmdType = {
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);	\
 	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)				\
-		irPtr->twoPtrValue.ptr1 : NULL;				\
+		irPtr->ptr : NULL;				\
     } while (0)
 
 /*

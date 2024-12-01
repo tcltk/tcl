@@ -180,12 +180,12 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     if ((bignum).used > 0x7FFF) {                                   \
 	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));             \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
+	(objPtr)->internalRep.ptr = temp;                  \
+	(objPtr)->internalRep.size2 = -1;           \
     } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
-		| ((bignum).alloc << 15) | ((bignum).used));                \
+	(objPtr)->internalRep.ptr = (bignum).dp;           \
+	(objPtr)->internalRep.size2 = ((bignum).sign << 30) \
+		| ((bignum).alloc << 15) | ((bignum).used);                \
     }
 
 /*
@@ -279,7 +279,7 @@ const Tcl_HashKeyType tclObjHashKeyType = {
  * argument in a Tcl command.
  *
  * NOTE: the ResolvedCmdName that gets cached is stored in the
- * twoPtrValue.ptr1 field, and the twoPtrValue.ptr2 field is unused. You might
+ * ptr field, and the ptr2 field is unused. You might
  * think you could use the simpler otherValuePtr field to store the single
  * ResolvedCmdName pointer, but DO NOT DO THIS. It seems that some extensions
  * use the second internal pointer field of the twoPtrValue field for their
@@ -1205,7 +1205,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.twoPtrValue.ptr1's.
+ *	internalRep.ptr's.
  *
  *----------------------------------------------------------------------
  */
@@ -1234,7 +1234,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
+	objPtr->internalRep.ptr = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -3311,8 +3311,8 @@ FreeBignum(
 
     TclUnpackBignum(objPtr, toFree);
     mp_clear(&toFree);
-    if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr2) < 0) {
-	Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
+    if (objPtr->internalRep.size2 < 0) {
+	Tcl_Free(objPtr->internalRep.ptr);
     }
     objPtr->typePtr = NULL;
 }
@@ -3522,8 +3522,8 @@ GetBignumFromObj(
 	    } else {
 		TclUnpackBignum(objPtr, *bignumValue);
 		/* Optimized TclFreeInternalRep */
-		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+		objPtr->internalRep.ptr = NULL;
+		objPtr->internalRep.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		/*
 		 * TODO: If objPtr has a string rep, this leaves
@@ -4415,7 +4415,7 @@ Tcl_GetCommandFromObj(
      * to discard the old rep and create a new one.
      */
 
-    resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
+    resPtr = (ResolvedCmdName *)objPtr->internalRep.ptr;
     if (TclHasInternalRep(objPtr, &tclCmdNameType)) {
 	Command *cmdPtr = resPtr->cmdPtr;
 
@@ -4443,7 +4443,7 @@ Tcl_GetCommandFromObj(
     if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
 	return NULL;
     }
-    resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
+    resPtr = (ResolvedCmdName *)objPtr->internalRep.ptr;
     return (Tcl_Command) (resPtr ? resPtr->cmdPtr : NULL);
 }
 
@@ -4514,8 +4514,8 @@ SetCmdNameObj(
     if (resPtr == NULL) {
 	TclFreeInternalRep(objPtr);
 
-	objPtr->internalRep.twoPtrValue.ptr1 = fillPtr;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	objPtr->internalRep.ptr = fillPtr;
+	objPtr->internalRep.ptr2 = NULL;
 	objPtr->typePtr = &tclCmdNameType;
     }
 }
@@ -4532,7 +4532,7 @@ TclSetCmdNameObj(
     ResolvedCmdName *resPtr;
 
     if (TclHasInternalRep(objPtr, &tclCmdNameType)) {
-	resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
+	resPtr = (ResolvedCmdName *)objPtr->internalRep.ptr;
 	if (resPtr != NULL && resPtr->cmdPtr == cmdPtr) {
 	    return;
 	}
@@ -4567,7 +4567,7 @@ FreeCmdNameInternalRep(
     Tcl_Obj *objPtr)	/* CmdName object with internal
 				 * representation to free. */
 {
-    ResolvedCmdName *resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedCmdName *resPtr = (ResolvedCmdName *)objPtr->internalRep.ptr;
 
 	/*
 	 * Decrement the reference count of the ResolvedCmdName structure. If
@@ -4614,10 +4614,10 @@ DupCmdNameInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
 {
-    ResolvedCmdName *resPtr = (ResolvedCmdName *)srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedCmdName *resPtr = (ResolvedCmdName *)srcPtr->internalRep.ptr;
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    copyPtr->internalRep.ptr = resPtr;
+    copyPtr->internalRep.ptr2 = NULL;
 	resPtr->refCount++;
     copyPtr->typePtr = &tclCmdNameType;
 }
@@ -4677,7 +4677,7 @@ SetCmdNameFromAny(
 	return TCL_ERROR;
     }
 
-    resPtr = (ResolvedCmdName *)objPtr->internalRep.twoPtrValue.ptr1;
+    resPtr = (ResolvedCmdName *)objPtr->internalRep.ptr;
     if (TclHasInternalRep(objPtr, &tclCmdNameType) && (resPtr->refCount == 1)) {
 	/*
 	 * Re-use existing ResolvedCmdName struct when possible.
@@ -4744,8 +4744,8 @@ Tcl_RepresentationCmd(
 		    objv[1]->internalRep.doubleValue);
 	} else {
 	    Tcl_AppendPrintfToObj(descObj, ", internal representation %p:%p",
-		    (void *) objv[1]->internalRep.twoPtrValue.ptr1,
-		    (void *) objv[1]->internalRep.twoPtrValue.ptr2);
+		    (void *) objv[1]->internalRep.ptr,
+		    (void *) objv[1]->internalRep.ptr2);
 	}
     }
 

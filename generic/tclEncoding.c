@@ -260,7 +260,7 @@ static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
 /*
- * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1
+ * A Tcl_ObjType for holding a cached Tcl_Encoding in the ptr
  * field of the internalrep. This should help the lifetime of encodings be more
  * useful. See concerns raised in [Bug 1077262].
  */
@@ -277,8 +277,8 @@ static const Tcl_ObjType encodingType = {
 #define EncodingSetInternalRep(objPtr, encoding) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (encoding);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (encoding);				\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);		\
     } while (0)
 
@@ -286,7 +286,7 @@ static const Tcl_ObjType encodingType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep ((objPtr), &encodingType);		\
-	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL; \
+	(encoding) = irPtr ? (Tcl_Encoding)irPtr->ptr : NULL; \
     } while (0)
 
 /*

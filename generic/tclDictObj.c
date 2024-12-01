@@ -153,8 +153,8 @@ const Tcl_ObjType tclDictType = {
 #define DictSetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-	ir.twoPtrValue.ptr2 = NULL;                                     \
+	ir.ptr = (dictRepPtr);                             \
+	ir.ptr2 = NULL;                                     \
 	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
     } while (0)
 
@@ -162,7 +162,7 @@ const Tcl_ObjType tclDictType = {
     do {                                                                \
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
-	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(dictRepPtr) = irPtr ? (Dict *)irPtr->ptr : NULL;	\
     } while (0)
 
 /*
@@ -2254,7 +2254,7 @@ TclDictObjSmartRef(
     result = Tcl_NewObj();
     DictSetInternalRep(result, dict);
     dict->refCount++;
-    result->internalRep.twoPtrValue.ptr2 = NULL;
+    result->internalRep.ptr2 = NULL;
     result->typePtr = &tclDictType;
 
     return result;

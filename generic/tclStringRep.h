@@ -61,10 +61,10 @@ typedef struct {
 #define stringAttemptRealloc(ptr, numChars) \
     (String *) Tcl_AttemptRealloc((ptr), STRING_SIZE(numChars))
 #define GET_STRING(objPtr) \
-    ((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
+    ((String *) (objPtr)->internalRep.ptr)
 #define SET_STRING(objPtr, stringPtr) \
-    ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
-    ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
+    ((objPtr)->internalRep.ptr2 = NULL),			\
+    ((objPtr)->internalRep.ptr = (void *) (stringPtr))
 
 #endif /*  _TCLSTRINGREP */
 /*

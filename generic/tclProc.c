@@ -73,8 +73,8 @@ const Tcl_ObjType tclProcBodyType = {
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(procPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (procPtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (procPtr);				\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
     } while (0)
 
@@ -82,7 +82,7 @@ const Tcl_ObjType tclProcBodyType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);	\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(procPtr) = irPtr ? (Proc *)irPtr->ptr : NULL;	\
     } while (0)
 
 /*
@@ -123,8 +123,8 @@ static const Tcl_ObjType lambdaType = {
 #define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (procPtr);				\
-	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
+	ir.ptr = (procPtr);				\
+	ir.ptr2 = (nsObjPtr);				\
 	Tcl_IncrRefCount((nsObjPtr));					\
 	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);		\
     } while (0)
@@ -133,8 +133,8 @@ static const Tcl_ObjType lambdaType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &lambdaType);		\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
-	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
+	(procPtr) = irPtr ? (Proc *)irPtr->ptr : NULL;	\
+	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->ptr2 : NULL;	\
     } while (0)
 
 /*

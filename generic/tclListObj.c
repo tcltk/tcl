@@ -201,8 +201,8 @@ const Tcl_ObjType tclListType = {
  */
 #define ListObjStompRep(objPtr_, repPtr_)                              \
     do {                                                               \
-	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
-	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
+	(objPtr_)->internalRep.ptr = (repPtr_)->storePtr; \
+	(objPtr_)->internalRep.ptr2 = (repPtr_)->spanPtr;  \
 	(objPtr_)->typePtr = &tclListType;                             \
     } while (0)
 
@@ -3452,8 +3452,8 @@ SetListFromAny(
      */
     ListRepIncrRefs(&listRep);
     TclFreeInternalRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = listRep.storePtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = listRep.spanPtr;
+    objPtr->internalRep.ptr = listRep.storePtr;
+    objPtr->internalRep.ptr2 = listRep.spanPtr;
     objPtr->typePtr = &tclListType;
 
     return TCL_OK;

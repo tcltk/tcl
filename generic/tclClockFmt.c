@@ -649,10 +649,10 @@ static const Tcl_ObjType ClockFmtObjType = {
 };
 
 #define ObjClockFmtScn(objPtr) \
-    (*((ClockFmtScnStorage **)&(objPtr)->internalRep.twoPtrValue.ptr1))
+    (*((ClockFmtScnStorage **)&(objPtr)->internalRep.ptr))
 
 #define ObjLocFmtKey(objPtr) \
-    (*((Tcl_Obj **)&(objPtr)->internalRep.twoPtrValue.ptr2))
+    (*((Tcl_Obj **)&(objPtr)->internalRep.ptr2))
 
 static void
 ClockFmtObj_DupInternalRep(

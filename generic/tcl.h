@@ -715,19 +715,33 @@ typedef struct Tcl_ObjType {
  */
 
 typedef union Tcl_ObjInternalRep {	/* The internal representation: */
+#ifndef TCL_NO_DEPRECATED
     long longValue;		/*   - an long integer value. */
+#endif
     double doubleValue;		/*   - a double-precision floating value. */
+#ifndef TCL_NO_DEPRECATED
     void *otherValuePtr;	/*   - another, type-specific value, */
 				/*     not used internally any more. */
+#endif
     Tcl_WideInt wideValue;	/*   - an integer value >= 64bits */
     struct {			/*   - internal rep as two pointers. */
 	void *ptr1;
 	void *ptr2;
     } twoPtrValue;
+#ifndef TCL_NO_DEPRECATED
     struct {			/*   - internal rep as a pointer and a long, */
 	void *ptr;		/*     not used internally any more. */
 	unsigned long value;
     } ptrAndLongRep;
+#endif
+    struct {
+	void *ptr;
+	void *ptr2;
+    };
+    struct {
+	Tcl_Size size;
+	Tcl_Size size2;
+    };
 } Tcl_ObjInternalRep;
 
 /*

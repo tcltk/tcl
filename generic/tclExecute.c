@@ -136,14 +136,14 @@ typedef struct {
 	if (auxObjList) {					\
 	    (objPtr)->length += auxObjList->length;		\
 	}							\
-	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;	\
+	(objPtr)->internalRep.ptr = auxObjList;	\
 	auxObjList = (objPtr);					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
     do {							\
 	tmpPtr = auxObjList;					\
-	auxObjList = (Tcl_Obj *)tmpPtr->internalRep.twoPtrValue.ptr1;	\
+	auxObjList = (Tcl_Obj *)tmpPtr->internalRep.ptr;	\
 	Tcl_DecrRefCount(tmpPtr);				\
     } while (0)
 
@@ -713,11 +713,11 @@ ReleaseDictIterator(
      * that we were holding.
      */
 
-    searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
+    searchPtr = (Tcl_DictSearch *)irPtr->ptr;
     Tcl_DictObjDone(searchPtr);
     Tcl_Free(searchPtr);
 
-    dictPtr = (Tcl_Obj *)irPtr->twoPtrValue.ptr2;
+    dictPtr = (Tcl_Obj *)irPtr->ptr2;
     TclDecrRefCount(dictPtr);
 }
 
@@ -2636,7 +2636,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(CURR_DEPTH);
+	objPtr->internalRep.size2 = CURR_DEPTH;
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
 	TRACE(("=> mark depth as %" TCL_T_MODIFIER "d\n", CURR_DEPTH));
@@ -2651,7 +2651,7 @@ TEBCresume(
 	 */
 
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
+	objc = CURR_DEPTH - auxObjList->internalRep.size2;
 	POP_TAUX_OBJ();
 #ifdef TCL_COMPILE_DEBUG
 	/* Ugly abuse! */
@@ -2758,7 +2758,7 @@ TEBCresume(
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
+	objc = CURR_DEPTH - auxObjList->internalRep.size2;
 	POP_TAUX_OBJ();
 	if (objc) {
 	    pcAdjustment = 1;
@@ -6515,8 +6515,8 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoPtrValue.ptr1 = NULL;
-	tmpPtr->internalRep.twoPtrValue.ptr2 = (void *)iterMax;
+	tmpPtr->internalRep.ptr = NULL;
+	tmpPtr->internalRep.ptr2 = (void *)iterMax;
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
 
 	/*
@@ -6525,7 +6525,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoPtrValue.ptr1 = infoPtr;
+	tmpPtr->internalRep.ptr = infoPtr;
 	PUSH_OBJECT(tmpPtr); /* infoPtr object */
 	TRACE_APPEND(("jump to loop step\n"));
 
@@ -6543,13 +6543,13 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.ptr;
 	numLists = infoPtr->numLists;
 	TRACE(("=> "));
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1;
-	iterMax = (size_t)tmpPtr->internalRep.twoPtrValue.ptr2;
+	iterNum = (size_t)tmpPtr->internalRep.ptr;
+	iterMax = (size_t)tmpPtr->internalRep.ptr2;
 
 	/*
 	 * If some list still has a remaining list element iterate one more
@@ -6562,7 +6562,7 @@ TEBCresume(
 	     * Set the variables and jump back to run the body
 	     */
 
-	    tmpPtr->internalRep.twoPtrValue.ptr1 =(void *)(iterNum + 1);
+	    tmpPtr->internalRep.ptr =(void *)(iterNum + 1);
 
 	    listTmpDepth = numLists + 1;
 
@@ -6658,7 +6658,7 @@ TEBCresume(
     case INST_FOREACH_END:
 	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.ptr;
 	numLists = infoPtr->numLists;
 	TRACE(("=> loop terminated\n"));
 	NEXT_INST_V(1, numLists+2, 0);
@@ -6675,7 +6675,7 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
+	infoPtr = (ForeachInfo *)tmpPtr->internalRep.ptr;
 	numLists = infoPtr->numLists;
 	TRACE_APPEND(("=> appending to list at depth %" TCL_SIZE_MODIFIER "d\n", 3 + numLists));
 
@@ -7142,8 +7142,8 @@ TEBCresume(
 	{
 	    Tcl_ObjInternalRep ir;
 	    TclNewObj(statePtr);
-	    ir.twoPtrValue.ptr1 = searchPtr;
-	    ir.twoPtrValue.ptr2 = dictPtr;
+	    ir.ptr = searchPtr;
+	    ir.ptr2 = dictPtr;
 	    Tcl_StoreInternalRep(statePtr, &dictIteratorType, &ir);
 	}
 	varPtr = LOCAL(opnd);
@@ -7166,7 +7166,7 @@ TEBCresume(
 
 	    if (statePtr &&
 		    (irPtr = TclFetchInternalRep(statePtr, &dictIteratorType))) {
-		searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
+		searchPtr = (Tcl_DictSearch *)irPtr->ptr;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
 		Tcl_Panic("mis-issued dictNext!");
@@ -7607,7 +7607,7 @@ TEBCresume(
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
 		    && (PTR2INT(*catchTop) >
-			PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2))) {
+			auxObjList->internalRep.size2)) {
 		break;
 	    }
 	    POP_TAUX_OBJ();

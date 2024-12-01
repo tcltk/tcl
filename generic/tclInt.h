@@ -2668,11 +2668,11 @@ typedef struct ListRep {
 
 /* Returns a pointer to the ListStore component */
 #define ListObjStorePtr(listObj_) \
-    ((ListStore *)((listObj_)->internalRep.twoPtrValue.ptr1))
+    ((ListStore *)((listObj_)->internalRep.ptr))
 
 /* Returns a pointer to the ListSpan component */
 #define ListObjSpanPtr(listObj_) \
-    ((ListSpan *)((listObj_)->internalRep.twoPtrValue.ptr2))
+    ((ListSpan *)((listObj_)->internalRep.ptr2))
 
 /* Returns the ListRep internal representaton in a Tcl_Obj */
 #define ListObjGetRep(listObj_, listRepPtr_) \
@@ -4329,7 +4329,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	    (objPtr) = TclThreadAllocObj();				\
 	} else {							\
 	    (objPtr) = cachePtr->firstObjPtr;				\
-	    cachePtr->firstObjPtr = (Tcl_Obj *)(objPtr)->internalRep.twoPtrValue.ptr1; \
+	    cachePtr->firstObjPtr = (Tcl_Obj *)(objPtr)->internalRep.ptr; \
 	    --cachePtr->numObjects;					\
 	}								\
     } while (0)
@@ -4343,7 +4343,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 			(cachePtr->numObjects >= ALLOC_NOBJHIGH)))) {	\
 	    TclThreadFreeObj(objPtr);					\
 	} else {							\
-	    (objPtr)->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr; \
+	    (objPtr)->internalRep.ptr = cachePtr->firstObjPtr; \
 	    cachePtr->firstObjPtr = objPtr;				\
 	    ++cachePtr->numObjects;					\
 	}								\
@@ -4371,14 +4371,14 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 	}								\
 	(objPtr) = tclFreeObjList;					\
 	tclFreeObjList = (Tcl_Obj *)					\
-		tclFreeObjList->internalRep.twoPtrValue.ptr1;		\
+		tclFreeObjList->internalRep.ptr;		\
 	Tcl_MutexUnlock(&tclObjMutex);					\
     } while (0)
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
     do {								\
 	Tcl_MutexLock(&tclObjMutex);					\
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) tclFreeObjList; \
+	(objPtr)->internalRep.ptr = (void *) tclFreeObjList; \
 	tclFreeObjList = (objPtr);					\
 	Tcl_MutexUnlock(&tclObjMutex);					\
     } while (0)
@@ -4553,11 +4553,11 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
     do {								\
 	Tcl_Obj *bignumObj = (objPtr);					\
 	int bignumPayload =						\
-		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
+		bignumObj->internalRep.size2;	\
 	if (bignumPayload == -1) {					\
-	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
+	    (bignum) = *((mp_int *) bignumObj->internalRep.ptr); \
 	} else {							\
-	    (bignum).dp = (mp_digit *)bignumObj->internalRep.twoPtrValue.ptr1;	\
+	    (bignum).dp = (mp_digit *)bignumObj->internalRep.ptr;	\
 	    (bignum).sign = bignumPayload >> 30;			\
 	    (bignum).alloc = (bignumPayload >> 15) & 0x7FFF;		\
 	    (bignum).used = bignumPayload & 0x7FFF;			\

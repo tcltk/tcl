@@ -115,8 +115,8 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(rePtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (rePtr);					\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (rePtr);					\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);		\
     } while (0)
 
@@ -124,7 +124,7 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->ptr : NULL;	\
     } while (0)
 
 /*

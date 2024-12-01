@@ -532,8 +532,8 @@ typedef struct ByteCode {
 #define ByteCodeSetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (codePtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
+	ir.ptr = (codePtr);				\
+	ir.ptr2 = NULL;					\
 	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
     } while (0)
 
@@ -541,7 +541,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), (typePtr));		\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->ptr : NULL;	\
     } while (0)
 
 /*

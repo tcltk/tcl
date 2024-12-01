@@ -262,7 +262,7 @@ StashCallChain(
 
     callPtr->refCount++;
     TclGetString(objPtr);
-    ir.twoPtrValue.ptr1 = callPtr;
+    ir.ptr = callPtr;
     Tcl_StoreInternalRep(objPtr, &methodNameType, &ir);
 }
 
@@ -291,7 +291,7 @@ DupMethodNameRep(
     Tcl_Obj *dstPtr)
 {
     StashCallChain(dstPtr, (CallChain *)
-	    TclFetchInternalRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
+	    TclFetchInternalRep(srcPtr, &methodNameType)->ptr);
 }
 
 static void
@@ -299,7 +299,7 @@ FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
     TclOODeleteChain((CallChain *)
-	    TclFetchInternalRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
+	    TclFetchInternalRep(objPtr, &methodNameType)->ptr);
 }
 
 /*
@@ -1221,7 +1221,7 @@ TclOOGetCallContext(
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
 	if ((irPtr = TclFetchInternalRep(cacheInThisObj, &methodNameType))) {
-	    callPtr = (CallChain *) irPtr->twoPtrValue.ptr1;
+	    callPtr = (CallChain *) irPtr->ptr;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;

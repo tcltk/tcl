@@ -543,7 +543,7 @@ TclThreadAllocObj(void)
 	    cachePtr->lastPtr = newObjsPtr + numMove - 1;
 	    objPtr = cachePtr->firstObjPtr;	/* NULL */
 	    while (numMove-- > 0) {
-		newObjsPtr[numMove].internalRep.twoPtrValue.ptr1 = objPtr;
+		newObjsPtr[numMove].internalRep.ptr = objPtr;
 		objPtr = newObjsPtr + numMove;
 	    }
 	    cachePtr->firstObjPtr = newObjsPtr;
@@ -555,7 +555,7 @@ TclThreadAllocObj(void)
      */
 
     objPtr = cachePtr->firstObjPtr;
-    cachePtr->firstObjPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
+    cachePtr->firstObjPtr = (Tcl_Obj *)objPtr->internalRep.ptr;
     cachePtr->numObjects--;
     return objPtr;
 }
@@ -592,7 +592,7 @@ TclThreadFreeObj(
      * Get this thread's list and push on the free Tcl_Obj.
      */
 
-    objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
+    objPtr->internalRep.ptr = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
     if (cachePtr->numObjects == 0) {
 	cachePtr->lastPtr = objPtr;
@@ -694,9 +694,9 @@ MoveObjs(
      */
 
     while (numMove-- > 1) {
-	objPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
+	objPtr = (Tcl_Obj *)objPtr->internalRep.ptr;
     }
-    fromPtr->firstObjPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
+    fromPtr->firstObjPtr = (Tcl_Obj *)objPtr->internalRep.ptr;
 
     /*
      * Move all objects as a block - they are already linked to each other, we
@@ -704,7 +704,7 @@ MoveObjs(
      */
 
     toPtr->lastPtr = objPtr;
-    objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr; /* NULL */
+    objPtr->internalRep.ptr = toPtr->firstObjPtr; /* NULL */
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 
@@ -739,9 +739,9 @@ PutObjs(
     } else {
 	do {
 	    lastPtr = firstPtr;
-	    firstPtr = (Tcl_Obj *)firstPtr->internalRep.twoPtrValue.ptr1;
+	    firstPtr = (Tcl_Obj *)firstPtr->internalRep.ptr;
 	} while (keep-- > 1);
-	lastPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	lastPtr->internalRep.ptr = NULL;
     }
 
     /*
@@ -750,7 +750,7 @@ PutObjs(
      */
 
     Tcl_MutexLock(objLockPtr);
-    fromPtr->lastPtr->internalRep.twoPtrValue.ptr1 = sharedPtr->firstObjPtr;
+    fromPtr->lastPtr->internalRep.ptr = sharedPtr->firstObjPtr;
     sharedPtr->firstObjPtr = firstPtr;
     if (sharedPtr->numObjects == 0) {
 	sharedPtr->lastPtr = fromPtr->lastPtr;

@@ -359,7 +359,7 @@ IsLink(
     Tcl_Obj *objPtr)
 {
     Tcl_ObjInternalRep *irPtr = &objPtr->internalRep;
-    return irPtr->twoPtrValue.ptr1 && !irPtr->twoPtrValue.ptr2;
+    return irPtr->ptr && !irPtr->ptr2;
 }
 
 /* Follow links (smart pointers) if present. */
@@ -368,7 +368,7 @@ FollowPossibleLink(
     Tcl_Obj *objPtr)
 {
     if (IsLink(objPtr)) {
-	objPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
+	objPtr = (Tcl_Obj *) objPtr->internalRep.ptr;
     }
     /* assert(!IsLink(objPtr)); */
     return objPtr;
@@ -378,7 +378,7 @@ Tcl_Obj *
 TclStrIdxTreeNewObj(void)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
-    TclStrIdxTree *tree = (TclStrIdxTree *) &objPtr->internalRep.twoPtrValue;
+    TclStrIdxTree *tree = (TclStrIdxTree *) &objPtr->internalRep;
 
     /*
      * This assert states that we can safely directly have a tree node as the
@@ -403,9 +403,9 @@ StrIdxTreeObj_DupIntRepProc(
     srcPtr = FollowPossibleLink(srcPtr);
 
     /* create smart pointer to it (ptr1 != NULL, ptr2 = NULL) */
-    TclInitObjRef(*((Tcl_Obj **) &copyPtr->internalRep.twoPtrValue.ptr1),
+    TclInitObjRef(*((Tcl_Obj **) &copyPtr->internalRep.ptr),
 	    srcPtr);
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    copyPtr->internalRep.ptr2 = NULL;
     copyPtr->typePtr = &StrIdxTreeObjType;
 }
 
@@ -416,10 +416,10 @@ StrIdxTreeObj_FreeIntRepProc(
     /* follow links (smart pointers) */
     if (IsLink(objPtr)) {
 	/* is a link */
-	TclUnsetObjRef(*((Tcl_Obj **) &objPtr->internalRep.twoPtrValue.ptr1));
+	TclUnsetObjRef(*((Tcl_Obj **) &objPtr->internalRep.ptr));
     } else {
 	/* is a tree */
-	TclStrIdxTree *tree = (TclStrIdxTree *) &objPtr->internalRep.twoPtrValue;
+	TclStrIdxTree *tree = (TclStrIdxTree *) &objPtr->internalRep;
 
 	if (tree->firstPtr != NULL) {
 	    TclStrIdxTreeFree(tree->firstPtr);
@@ -451,7 +451,7 @@ TclStrIdxTreeGetFromObj(
     objPtr = FollowPossibleLink(objPtr);
 
     /* return tree root in internal representation */
-    return (TclStrIdxTree *) &objPtr->internalRep.twoPtrValue;
+    return (TclStrIdxTree *) &objPtr->internalRep;
 }
 
 /*

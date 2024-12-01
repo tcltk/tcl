@@ -89,12 +89,12 @@ typedef struct {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->ptr))
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
 	do {							\
 		Tcl_ObjInternalRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
+		ir.ptr = (void *) (fsPathPtr);	\
+		ir.ptr2 = NULL;			\
 		Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
 	} while (0)
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
