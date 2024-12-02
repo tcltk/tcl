@@ -403,7 +403,7 @@ InitDLLDirectoryName(void)
 static HMODULE kernel32 = NULL;
 static Tcl_HashTable vfsPathTable;
 
-static int fake_GetModuleFileNameW(HMODULE module, WCHAR *path, WORD nSize) {
+static DWORD fake_GetModuleFileNameW(HMODULE module, WCHAR *path, WORD nSize) {
     Tcl_MutexLock(&dllDirectoryNameMutex);
     Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
     Tcl_MutexUnlock(&dllDirectoryNameMutex);
@@ -413,7 +413,7 @@ static int fake_GetModuleFileNameW(HMODULE module, WCHAR *path, WORD nSize) {
     return MultiByteToWideChar(CP_UTF8, 0, (const char *)Tcl_GetHashValue(entry), -1 , path, nSize);
 }
 
-static int fake_GetModuleFileNameA(HMODULE module, LPSTR lpFilename, WORD nSize) {
+static DWORD fake_GetModuleFileNameA(HMODULE module, LPSTR lpFilename, WORD nSize) {
     Tcl_MutexLock(&dllDirectoryNameMutex);
     Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
     Tcl_MutexUnlock(&dllDirectoryNameMutex);
@@ -421,7 +421,8 @@ static int fake_GetModuleFileNameA(HMODULE module, LPSTR lpFilename, WORD nSize)
 	return GetModuleFileNameA(module, lpFilename, nSize);
     }
     strncpy(lpFilename, (const char *)Tcl_GetHashValue(entry), nSize);
-    return strlen(lpFilename);
+    lpFilename[nSize] = 0;
+    return (DWORD)strlen(lpFilename);
 }
 
 MODULE_SCOPE void *
