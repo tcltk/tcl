@@ -4,6 +4,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint memorymodule [expr {0 != [tcl::build-info memorymodule]}]
 testConstraint memorymoduletest [expr {0 == [catch {zipfs mount dltest/memorymoduletest.zip [file join [zipfs root] memorymoduletest]}]}]
 
 lappend auto_path [file join [zipfs root] memorymoduletest]
@@ -13,12 +14,12 @@ test memorymodule-1.0 {info loaded} memorymoduletest {
     info loaded {} Memorymoduletest
 } [file join [zipfs root] memorymoduletest/tcl9memorymoduletest.dll]
 
-test memorymodule-1.1 {GetModuleFileNameA (WIP)} memorymoduletest {
+test memorymodule-1.1 {GetModuleFileNameA (WIP)} {memorymoduletest memorymodule} {
     package require memorymoduletest
     GetModuleFileNameA
 } //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
 
-test memorymodule-1.2 {GetModuleFileNameW (WIP)} memorymoduletest {
+test memorymodule-1.2 {GetModuleFileNameW (WIP)} {memorymoduletest memorymodule} {
     package require memorymoduletest
     GetModuleFileNameW
 } //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
