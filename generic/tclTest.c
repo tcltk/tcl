@@ -25,6 +25,7 @@
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>
+#include <assert.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -279,6 +280,7 @@ static Tcl_ObjCmdProc2	TestWrongNumArgsCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructCmd;
 static Tcl_ObjCmdProc	TestChannelCmd;
 static Tcl_ObjCmdProc	TestChannelEventCmd;
+static Tcl_ObjCmdProc	TestChanCreateCmd;
 static Tcl_ObjCmdProc	TestSocketCmd;
 static Tcl_ObjCmdProc	TestFilesystemCmd;
 static Tcl_ObjCmdProc	TestSimpleFilesystemCmd;
@@ -567,6 +569,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testchannel", TestChannelCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testchannelevent", TestChannelEventCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testchancreate", TestChanCreateCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
@@ -8751,6 +8755,277 @@ vamoose:
     }
     return ret;
 }
+
+/*
+ * testchan{source,sink} implementation - TestChanCreateObjCmd
+ */
+
+/*
+ * Common blocking procedure for source and sink.
+ * Channel is always ready so no-op :-)
+ */
+static int
+TestChanBlockMode(ClientData instanceData, int mode)
+{
+    return 0;
+}
+
+static void
+TestChanSourceWatch(ClientData instanceData, int mask)
+{
+    if (mask)
+	Tcl_Panic("WatchModeProc not implemented for testchansource");
+}
+
+static void
+TestChanSinkWatch(ClientData instanceData, int mask)
+{
+    if (mask)
+	Tcl_Panic("WatchModeProc not implemented for testchansink");
+}
+
+typedef struct TestChanSourceState {
+    Tcl_Size numSourced; /* How many bytes returned so far */
+    int len;             /* Length of data[] */
+    unsigned char data[1];
+
+} TestChanSourceState;
+
+static int
+TestChanSourceInput(
+    ClientData instanceData,
+    char *outPtr,      /* Where to store data. Assumed aligned */
+    int maxReadCount,  /* Maximum number of bytes to read. */
+    int *errorCodePtr) /* Where to store error codes. */
+{
+    TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
+
+    /* Arbitrary failsafe to prevent running out of memory */
+    if (chanPtr->numSourced > 100000000)
+	return 0;
+
+    /*
+     * Bit of optimization to minimize overhead since goal is channel i/o
+     * measurement. Wonder if compiler would have been better anyways...
+     */
+    if (chanPtr->len == 1) {
+	memset(outPtr, chanPtr->data[0], maxReadCount);
+    } else if (chanPtr->len == sizeof(unsigned short)) {
+	unsigned short val = *(unsigned short *)chanPtr->data;
+	unsigned short *to = (unsigned short *)outPtr;
+	unsigned short *end = to + (maxReadCount / sizeof(unsigned short));
+	while (to < end)
+	    *to++ = val;
+	if (maxReadCount - (sizeof(short) * (end-to))) {
+	    *(unsigned char *)chanPtr->data[0];
+	}
+    } else if (chanPtr->len == sizeof(unsigned int)) {
+	unsigned int val = *(unsigned int *)chanPtr->data;
+	unsigned int *to = (unsigned int *)outPtr;
+	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
+	int nremain = maxReadCount - (sizeof(int) * (end - to));
+	while (to < end)
+	    *to++ = val;
+	assert(nremain < chanPtr->len);
+	while (nremain--)
+	    *(nremain + (char *)to) = chanPtr->data[nremain];
+    }
+    else {
+	char *to = outPtr;
+	char *end = to + (maxReadCount / chanPtr->len);
+	int nremain = maxReadCount - (chanPtr->len * (end - to));
+	while (to < end) {
+	    memmove(to, chanPtr->data, chanPtr->len);
+	    to += chanPtr->len;
+	}
+	if (nremain) {
+	    assert(nremain < chanPtr->len);
+	    memmove(outPtr + maxReadCount - nremain, chanPtr->data, nremain);
+	}
+    }
+    chanPtr->numSourced += maxReadCount;
+    return maxReadCount;
+}
+
+static int
+TestChanSourceClose2 (
+    ClientData instanceData,
+    TCL_UNUSED(Tcl_Interp *),	/* interp */
+    int flags)
+{
+    if (flags && instanceData)
+        Tcl_Free(instanceData);
+    return 0;
+}
+
+static int
+TestChanSinkOutput (
+    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(const char *),	/* Bytes to write */
+    int         nbytes,
+    TCL_UNUSED(int *))		/* errorCodePtr */
+{
+    return nbytes;
+}
+
+static int
+TestChanSinkClose2 (
+    TCL_UNUSED(ClientData),	/* Instance data */
+    TCL_UNUSED(Tcl_Interp *),	/* interp */
+    int flags)
+{
+    return 0;
+}
+
+Tcl_ChannelType TestChanSourceDispatch = {
+    "testchansource", /* Channel type name */
+    (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
+    NULL,
+    TestChanSourceInput,
+    NULL, /* closeProc - not needed for Tcl 9 */
+    NULL, /* Seek */
+    NULL, /* SetOption */
+    NULL, /* GetOption */
+    TestChanSourceWatch,
+    NULL, /* GetHandle */
+    TestChanSourceClose2,
+    TestChanBlockMode, /* BlockMode */
+    NULL, /* Flush */
+    NULL, /* Handler */
+    NULL, /* WideSeek. */
+    NULL, /* ThreadAction */
+    NULL  /* Truncate */
+};
+
+Tcl_ChannelType TestChanSinkDispatch = {
+    "testchansink", /* Channel type name */
+    (Tcl_ChannelTypeVersion)TCL_CHANNEL_VERSION_5,
+    NULL,
+    NULL,
+    TestChanSinkOutput,
+    NULL, /* No Seek ability */
+    NULL, /* SetOption */
+    NULL, /* GetOption */
+    TestChanSinkWatch,
+    NULL, /* GetHandle */
+    TestChanSinkClose2,
+    TestChanBlockMode, /* BlockMode */
+    NULL, /* Flush */
+    NULL, /* Handler */
+    NULL, /* WideSeekProc. */
+    NULL, /* ThreadAction */
+    NULL  /* Truncate */
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestChanCreateCmd --
+ *
+ *	This procedure implements the "testchancreate" command. The
+ *	purpose is primarily isolated performance testing of channels
+ *	and encodings.
+ *
+ *	testchancreate source ?BINARY?
+ *        Creates a read-only channel that will continuously return
+ *        BINARY (defaults to '\0')
+ *	testchancreate sink
+ *        Sends written data off into the void.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates, deletes and returns channel event handlers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestChanCreateCmd(
+    TCL_UNUSED(void*),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Size len;
+    static const char *cmds[] = {"source", "sink", NULL};
+    enum { SOURCE, SINK } cmd;
+    int ret;
+    int flags;
+    void *instancePtr;
+    Tcl_ChannelType *dispatchPtr;
+    unsigned char *bytes = NULL;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "source|sink ...");
+	return TCL_ERROR;
+    }
+    ret = Tcl_GetIndexFromObj(interp, objv[1], cmds, "source|sink", 0, &cmd);
+    if (ret != TCL_OK)
+	return ret;
+
+    switch (cmd) {
+    case SINK:
+	if (objc > 2) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "sink");
+	    return TCL_ERROR;
+	}
+	flags = TCL_WRITABLE;
+	instancePtr = NULL;
+	dispatchPtr = &TestChanSinkDispatch;
+	break;
+    case SOURCE:
+	if (objc > 3) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "source ?BINARY?");
+	    return TCL_ERROR;
+	}
+	if (objc == 2) {
+	    bytes = NULL;
+	    len = 0;
+	}
+	else {
+	    bytes = Tcl_GetBytesFromObj(interp, objv[2], &len);
+	    if (bytes == NULL)
+		return TCL_ERROR;
+	}
+	if (len == 0) {
+	    len = 1;
+	    bytes = "\0";
+	}
+	TestChanSourceState *sourceStatePtr;
+	sourceStatePtr = Tcl_Alloc(sizeof(TestChanSourceState) + len -
+				   sizeof(sourceStatePtr->data));
+	sourceStatePtr->numSourced = 0;
+	sourceStatePtr->len = len;
+	memmove(sourceStatePtr->data, bytes, len);
+	instancePtr = sourceStatePtr;
+	flags = TCL_READABLE;
+	dispatchPtr = &TestChanSourceDispatch;
+	break;
+    }
+
+    Tcl_Channel chan;
+    char channelName[100];
+    static int nameCounter;
+    snprintf(channelName,
+	     sizeof(channelName) / sizeof(channelName[0]),
+	     "%s%d",
+	     cmds[cmd],
+	     ++nameCounter);/* don't bother about race conditions */
+
+    chan = Tcl_CreateChannel(dispatchPtr, channelName, instancePtr, flags);
+    if (chan == NULL) {
+	if (instancePtr)
+	    Tcl_Free(instancePtr);
+	Tcl_SetResult(interp, "Failed to create channel", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    Tcl_RegisterChannel(interp, chan);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
+    return TCL_OK;
+}
+
 
 /*
  * Local Variables:
