@@ -232,9 +232,9 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
  * Types of Tcl_Objs used to cache variable lookups.
  *
  * localVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
- *			  or NULL if it is this same obj
- *   twoPtrValue.ptr2: index into locals table
+ *   ptrAndSize.ptr:	pointer to name obj in varFramePtr->localCache
+ *			or NULL if it is this same obj
+ *   ptrAndSize.size:	index into locals table
  *
  * parsedVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the array name Tcl_Obj, or NULL if it is a
@@ -253,8 +253,8 @@ static const Tcl_ObjType localVarNameType = {
 	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr = (namePtr);					\
 	if (ptr) {Tcl_IncrRefCount(ptr);}				\
-	ir.twoPtrValue.ptr1 = ptr;					\
-	ir.twoPtrValue.ptr2 = INT2PTR(index);				\
+	ir.ptrAndSize.ptr = ptr;					\
+	ir.ptrAndSize.size = index;					\
 	Tcl_StoreInternalRep((objPtr), &localVarNameType, &ir);		\
     } while (0)
 
@@ -262,8 +262,8 @@ static const Tcl_ObjType localVarNameType = {
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);	\
-	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;	\
-	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE; \
+	(name) = irPtr ? (Tcl_Obj *)irPtr->ptrAndSize.ptr : NULL;	\
+	(index) = irPtr ? irPtr->ptrAndSize.size : TCL_INDEX_NONE;	\
     } while (0)
 
 static const Tcl_ObjType parsedVarNameType = {
@@ -5790,9 +5790,9 @@ TclObjVarErrMsg(
  * localVarName -
  *
  * INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
- *			  or NULL if it is this same obj
- *   twoPtrValue.ptr2: index into locals table
+ *   ptrAndSize.ptr:  pointer to name obj in varFramePtr->localCache
+ *		      or NULL if it is this same obj
+ *   ptrAndSize.size: index into locals table
  */
 
 static void
