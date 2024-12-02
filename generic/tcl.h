@@ -728,6 +728,14 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
 	void *ptr;		/*     not used internally any more. */
 	unsigned long value;
     } ptrAndLongRep;
+    struct {
+	void *ptr;
+	void *ptr2;
+    };
+    struct {
+	void *notUsed;
+	Tcl_Size size;
+    };
 } Tcl_ObjInternalRep;
 
 /*
