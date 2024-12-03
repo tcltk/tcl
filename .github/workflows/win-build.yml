@@ -21,12 +21,13 @@ jobs:
     strategy:
       matrix:
         config:
+          - ""
+          - "CHECKS=nodep"
+          - "OPTS=static"
           - "OPTS=memorymodule"
-          - "CHECKS=nodep OPTS=memorymodule"
-          - "OPTS=static,memorymodule"
-          - "OPTS=noembed,memorymodule"
-          - "OPTS=symbols,memorymodule"
-          - "OPTS=symbols,memorymodule STATS=compdbg,memdbg"
+          - "OPTS=noembed"
+          - "OPTS=symbols"
+          - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -65,13 +66,14 @@ jobs:
     strategy:
       matrix:
         config:
+          - ""
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
+          - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-memorymodule"
-          - "--enable-memorymodule CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "--enable-memorymodule --disable-shared"
-          - "--enable-memorymodule --disable-zipfs"
-          - "--enable-memorymodule --enable-symbols"
-          - "--enable-memorymodule --enable-symbols=mem"
-          - "--enable-memorymodule --enable-symbols=all"
+          - "--enable-symbols"
+          - "--enable-symbols=mem"
+          - "--enable-symbols=all"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Install MSYS2
