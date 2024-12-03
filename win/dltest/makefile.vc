@@ -1,0 +1,44 @@
+TOP = .
+
+# optional build flags
+LOC =
+
+# variables
+SHAREDLIB = tcl9memorymoduletest.dll
+IMPLIB    = memorymoduletest.lib
+
+CC = cl
+AS = ml
+LD = link
+CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Zi $(LOC) -DUSE_TCL_STUBS -I../../generic
+WFLAGS  = -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
+LDFLAGS = -nologo -debug -incremental:no -opt:ref
+
+OBJS = memorymoduletest.obj
+
+# targets
+all: $(SHAREDLIB) $(IMPLIB)
+
+$(IMPLIB): $(SHAREDLIB)
+
+$(SHAREDLIB): $(OBJS)
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	  -out:$@ $(OBJS)
+
+{$(TOP)}.c.obj:
+	$(CC) -c $(WFLAGS) $(CFLAGS) $<
+
+memorymoduletest.obj: $(TOP)/memorymoduletest.c
+
+# cleanup
+clean:
+	-del $(STATICLIB)
+	-del $(SHAREDLIB)
+	-del $(IMPLIB)
+	-del *.obj
+	-del *.res
+	-del *.exp
+	-del *.exe
+	-del *.pdb
+	-del *.manifest
+	-del foo.gz

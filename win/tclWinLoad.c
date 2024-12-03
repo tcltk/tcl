@@ -12,6 +12,9 @@
  */
 
 #include "tclWinInt.h"
+#ifdef TCL_LOAD_FROM_MEMORY
+#include "MemoryModule.c"
+#endif
 
 /*
  * Native name of the directory in the native filesystem where DLLs used in
@@ -63,7 +66,7 @@ TclpDlopen(
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
-    TCL_UNUSED(int) /*flags*/)
+    TCL_UNUSED(int) /* flags */)
 {
     HINSTANCE hInstance = NULL;
     const WCHAR *nativeName;
@@ -93,7 +96,7 @@ TclpDlopen(
 	/*
 	 * Remember the first error on load attempt to be used if the
 	 * second load attempt below also fails.
-	*/
+	 */
 	firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
@@ -175,7 +178,7 @@ TclpDlopen(
      */
 
     handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = (void *)hInstance;
+    handlePtr->clientData = hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;
@@ -256,7 +259,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
+    HINSTANCE hInstance = (HINSTANCE)loadHandle->clientData;
 
     FreeLibrary(hInstance);
     Tcl_Free(loadHandle);
@@ -395,6 +398,139 @@ InitDLLDirectoryName(void)
     return TCL_OK;
 }
 
+#ifdef TCL_LOAD_FROM_MEMORY
+
+static HMODULE kernel32 = NULL;
+static Tcl_HashTable vfsPathTable;
+
+static DWORD fake_GetModuleFileNameW(HMODULE module, WCHAR *path, WORD nSize) {
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    if (entry == NULL) {
+	return GetModuleFileNameW(module, path, nSize);
+    }
+    return MultiByteToWideChar(CP_UTF8, 0, (const char *)Tcl_GetHashValue(entry), -1 , path, nSize);
+}
+
+static DWORD fake_GetModuleFileNameA(HMODULE module, LPSTR lpFilename, WORD nSize) {
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_FindHashEntry(&vfsPathTable, module);
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    if (entry == NULL) {
+	return GetModuleFileNameA(module, lpFilename, nSize);
+    }
+    strncpy(lpFilename, (const char *)Tcl_GetHashValue(entry), nSize);
+    lpFilename[nSize] = 0;
+    return (DWORD)strlen(lpFilename);
+}
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    size_t size)
+{
+    return Tcl_Alloc(size);
+}
+
+static void
+UnloadMemory(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
+				 * that represents the loaded file. */
+{
+    MemoryFreeLibrary(loadHandle->clientData);
+    Tcl_Free(loadHandle);
+}
+
+static void *
+FindMemSymbol(
+    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
+    const char *symbol)		/* Symbol name to look up. */
+{
+    void *res = MemoryGetProcAddress(loadHandle->clientData, symbol);
+
+    if (res == NULL && interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\" in memory-loaded dll", symbol));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
+		(char *)NULL);
+    }
+    return res;
+}
+
+static FARPROC
+FakeDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void *userdata)
+{
+    if (kernel32 == NULL) {
+	Tcl_MutexLock(&dllDirectoryNameMutex);
+	if (kernel32 == NULL) {
+	    kernel32 = GetModuleHandleW(L"KERNEL32");
+	    Tcl_InitHashTable(&vfsPathTable, TCL_ONE_WORD_KEYS);
+	}
+	Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    }
+    if ((module == kernel32) && !strcmp(name, "GetModuleFileNameW")) {
+	return (FARPROC)(void *)fake_GetModuleFileNameW;
+    } else if ((module == kernel32) && !strcmp(name, "GetModuleFileNameA")) {
+	return (FARPROC)(void *)fake_GetModuleFileNameA;
+    }
+    return MemoryDefaultGetProcAddress(module, name, userdata);
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    void *data,			/* Buffer containing the desired code
+				 * (allocated with TclpLoadMemoryGetBuffer). */
+    size_t size,	/* Allocation size of buffer. */
+    Tcl_Size codeSize,	/* Size of code data read into buffer or TCL_INDEX_NONE
+				 * if an error occurred and buffer should be
+				 * free'd. */
+    const char *path, /* path in VFS, or NULL if the path is unknown */
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
+				 * file which will be passed back to
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for this
+				 * file. */
+    TCL_UNUSED(int)) /* flags */
+{
+    Tcl_LoadHandle handlePtr;
+    void *hInstance;
+    size_t handleSize = offsetof(struct Tcl_LoadHandle_, name) + (path ? strlen(path) : 1);
+    int isNew;
+
+    if (codeSize < 1) {
+	Tcl_Free(data);
+	return TCL_ERROR;
+    }
+    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(handleSize);
+    handlePtr->findSymbolProcPtr = &FindMemSymbol;
+    handlePtr->unloadFileProcPtr = &UnloadMemory;
+    if (path) {
+	strcpy(handlePtr->name, path);
+    } else {
+	handlePtr->name[0] = 0;
+    }
+    hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
+	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, handlePtr);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_CreateHashEntry(&vfsPathTable, MemoryGetCodeBase(hInstance), &isNew);
+    Tcl_SetHashValue(entry, handlePtr->name);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    if (hInstance == NULL) {
+	Tcl_Free(handlePtr);
+	return TCL_ERROR;
+    }
+    handlePtr->clientData = hInstance;
+    *loadHandle = handlePtr;
+    *unloadProcPtr = &UnloadMemory;
+    return TCL_OK;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
+
 /*
  * Local Variables:
  * mode: c

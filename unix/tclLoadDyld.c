@@ -546,6 +546,7 @@ TclpLoadMemory(
     Tcl_Size codeSize,	/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
+    TCL_UNUSED(const char *),
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */

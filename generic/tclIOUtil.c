@@ -3255,7 +3255,7 @@ Tcl_LoadFile(
 	}
 	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_CloseEx(interp, data, 0);
-	ret = TclpLoadMemory(buffer, size, ret, handlePtr,
+	ret = TclpLoadMemory(buffer, size, ret, TclGetString(pathPtr), handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;

@@ -73,6 +73,7 @@ TclpLoadMemory(
     TCL_UNUSED(void *),
     TCL_UNUSED(size_t),
     TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(const char *),
     TCL_UNUSED(Tcl_LoadHandle *),
     TCL_UNUSED(Tcl_FSUnloadFileProc **),
     TCL_UNUSED(int))

@@ -712,6 +712,7 @@ VC_MANIFEST_EMBED_DLL
 CPP
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
+TCL_LOAD_FROM_MEMORY
 INSTALL_MSGS
 INSTALL_LIBRARIES
 TCL_ZIP_FILE
@@ -797,6 +798,7 @@ with_encoding
 enable_shared
 enable_64bit
 enable_zipfs
+enable_memorymodule
 enable_symbols
 enable_embedded_manifest
 '
@@ -1430,6 +1432,8 @@ Optional Features:
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-zipfs          build with Zipfs support (default: on)
+  --enable-memorymodule   load dll's from a vfs in memory in stead of copying
+                          to a temporary directory (default: off)
   --enable-symbols        build with debugging symbols (default: off)
   --enable-embedded-manifest
                           embed manifest if possible (default: yes)
@@ -5263,6 +5267,25 @@ fi
 
 
 #--------------------------------------------------------------------
+#	MemoryModule support - Tip 708
+#--------------------------------------------------------------------
+# Check whether --enable-memorymodule was given.
+if test ${enable_memorymodule+y}
+then :
+  enableval=$enable_memorymodule; tcl_ok=$enableval
+else case e in #(
+  e) tcl_ok=no ;;
+esac
+fi
+
+if test "$tcl_ok" != "no" ; then
+
+printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
+
+fi
+
+
+#--------------------------------------------------------------------
 # Perform additinal compiler tests.
 #--------------------------------------------------------------------
 
@@ -6006,7 +6029,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest"
+ac_config_files="$ac_config_files Makefile dltest/Makefile tclConfig.sh tclsh.exe.manifest"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6710,6 +6733,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "dltest/Makefile") CONFIG_FILES="$CONFIG_FILES dltest/Makefile" ;;
     "tclConfig.sh") CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
     "tclsh.exe.manifest") CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
 
