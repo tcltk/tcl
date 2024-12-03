@@ -538,6 +538,7 @@ TclpLoadMemory(
     Tcl_Size codeSize,	/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
+    const char *path,
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
@@ -649,7 +650,7 @@ TclpLoadMemory(
     if (!(flags & 2)) {
 	nsflags |= NSLINKMODULE_OPTION_BINDNOW;
     }
-    module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]", nsflags);
+    module = NSLinkModule(dyldObjFileImage, (path ? path : "[Memory Based Bundle]"), nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {
 	NSLinkEditErrors editError;
