@@ -210,7 +210,7 @@ AC_SUBST(INSTALL_MSGS)
 
 
 #--------------------------------------------------------------------
-#	Zipfs support - Tip 430
+#	MemoryModule support - Tip 708
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(memorymodule,
     AS_HELP_STRING([--enable-memorymodule],

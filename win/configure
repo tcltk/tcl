@@ -5267,7 +5267,7 @@ fi
 
 
 #--------------------------------------------------------------------
-#	Zipfs support - Tip 430
+#	MemoryModule support - Tip 708
 #--------------------------------------------------------------------
 # Check whether --enable-memorymodule was given.
 if test ${enable_memorymodule+y}
