@@ -17,48 +17,7 @@
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 
-#ifndef TCL_DYLD_USE_DLFCN
-/*
- * Use preferred dlfcn API on 10.4 and later
- */
-#   if !defined(NO_DLFCN_H) && MAC_OS_X_VERSION_MAX_ALLOWED >= 1040
-#	define TCL_DYLD_USE_DLFCN 1
-#   else
-#	define TCL_DYLD_USE_DLFCN 0
-#   endif
-#endif /* TCL_DYLD_USE_DLFCN */
-
-#ifndef TCL_DYLD_USE_NSMODULE
-/*
- * Use deprecated NSModule API only to support 10.3 and earlier:
- */
-#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-#	define TCL_DYLD_USE_NSMODULE 1
-#   else
-#	define TCL_DYLD_USE_NSMODULE 0
-#   endif
-#endif /* TCL_DYLD_USE_NSMODULE */
-
-#if TCL_DYLD_USE_DLFCN
 #include <dlfcn.h>
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-/*
- * Support for weakly importing dlfcn API.
- */
-extern void *		dlsym(void *handle, const char *symbol)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern char *		dlerror(void) WEAK_IMPORT_ATTRIBUTE;
-#endif
-#endif /* TCL_DYLD_USE_DLFCN */
-
-#if TCL_DYLD_USE_NSMODULE
-#include <mach-o/dyld.h>
-#endif
-
-#if (TCL_DYLD_USE_DLFCN && MAC_OS_X_VERSION_MIN_REQUIRED < 1040) || \
-	(MAC_OS_X_VERSION_MIN_REQUIRED < 1050)
-MODULE_SCOPE long	tclMacOSXDarwinRelease;
-#endif
 
 #ifdef TCL_DEBUG_LOAD
 #define TclLoadDbgMsg(m, ...) \
@@ -102,10 +61,6 @@ OpenResourceMap(
     static short (*openresourcemap)(CFBundleRef) = NULL;
 
     if (!initialized) {
-#if TCL_DYLD_USE_DLFCN
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-	if (tclMacOSXDarwinRelease >= 8)
-#endif
 	{
 	    openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
 		    "CFBundleOpenBundleResourceMap");
@@ -116,21 +71,6 @@ OpenResourceMap(
 		TclLoadDbgMsg("dlsym() failed: %s", errMsg);
 	    }
 #endif /* TCL_DEBUG_LOAD */
-	}
-	if (!openresourcemap)
-#endif /* TCL_DYLD_USE_DLFCN */
-	{
-#if TCL_DYLD_USE_NSMODULE
-	    if (NSIsSymbolNameDefinedWithHint(
-		    "_CFBundleOpenBundleResourceMap", "CoreFoundation")) {
-		NSSymbol nsSymbol = NSLookupAndBindSymbolWithHint(
-			"_CFBundleOpenBundleResourceMap", "CoreFoundation");
-
-		if (nsSymbol) {
-		    openresourcemap = NSAddressOfSymbol(nsSymbol);
-		}
-	    }
-#endif /* TCL_DYLD_USE_NSMODULE */
 	}
 	initialized = TRUE;
     }
@@ -252,13 +192,6 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFRelease(libURL);
 	}
 	if (versionedBundleRef) {
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-	    /*
-	     * Workaround CFBundle bug in Tiger and earlier. [Bug 2569449]
-	     */
-
-	    if (tclMacOSXDarwinRelease >= 9)
-#endif
 	    {
 		CFRelease(versionedBundleRef);
 	    }
