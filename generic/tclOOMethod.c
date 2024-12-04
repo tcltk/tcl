@@ -1143,24 +1143,26 @@ MethodErrorHandler(
     int nameLen, objectNameLen;
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const char *objectName, *kindName, *methodName =
+    const char *objectName, *kindName = "instance", *methodName =
 	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
-    Object *declarerPtr;
+    Object *declarerPtr = NULL;
     (void)methodNameObj;/* We pull the method name out of context instead of from argument */
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
+    } else if (mPtr->declaringClassPtr != NULL) {
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    if (declarerPtr) {
+	objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
+    } else {
+	objectName = "unknown or deleted";
+	objectNameLen = 18;
+    }
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 	    kindName, ELLIPSIFY(objectName, objectNameLen),
