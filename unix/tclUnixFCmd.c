@@ -246,37 +246,13 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && TCL_THREADS && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
-/*
- * Prior to Darwin 7, realpath is not thread-safe, c.f. Bug 711232; if we
- * might potentially be running on pre-10.3 OSX, check Darwin release at
- * runtime before using realpath.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define haveRealpath	(tclMacOSXDarwinRelease >= 7)
-#else
 #   define haveRealpath	1
-#endif
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
 #if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
-#elif defined(__APPLE__) && defined(__LP64__) && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-/*
- * Prior to Darwin 9, 64bit fts_open() without FTS_NOSTAT may crash (due to a
- * 64bit-unsafe ALIGN macro); if we could be running on pre-10.5 OSX, check
- * Darwin release at runtime and do a separate stat() if necessary.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define noFtsStat	(tclMacOSXDarwinRelease < 9)
 #else
 #   define noFtsStat	0
 #endif
@@ -545,7 +521,7 @@ TclUnixCopyFile(
     int srcFd, dstFd;
     unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -601,19 +577,19 @@ TclUnixCopyFile(
     }
     buffer = (char *)ckalloc(blockSize);
     while (1) {
-	nread = (size_t) read(srcFd, buffer, blockSize);
-	if ((nread == (size_t) -1) || (nread == 0)) {
+	nread = read(srcFd, buffer, blockSize);
+	if ((nread == -1) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = (size_t) -1;
+	if (write(dstFd, buffer, nread) != nread) {
+	    nread = -1;
 	    break;
 	}
     }
 
     ckfree(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
+    if ((close(dstFd) != 0) || (nread == -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
@@ -801,7 +777,7 @@ TclpObjCopyDirectory(
  *	EEXIST:	    path is a non-empty directory.
  *	EINVAL:	    path is a root directory.
  *	ENOENT:	    path doesn't exist or is "".
- * 	ENOTDIR:    path is not a directory.
+ *	ENOTDIR:    path is not a directory.
  *
  * Side effects:
  *	Directory removed. If an error occurs, the error will be returned
@@ -938,17 +914,17 @@ TraverseUnixTree(
 				 * filled with UTF-8 name of file causing
 				 * error. */
     int doRewind)		/* Flag indicating that to ensure complete
-    				 * traversal of source hierarchy, the readdir
-    				 * loop should be rewound whenever
-    				 * traverseProc has returned TCL_OK; this is
-    				 * required when traverseProc modifies the
-    				 * source hierarchy, e.g. by deleting
-    				 * files. */
+				 * traversal of source hierarchy, the readdir
+				 * loop should be rewound whenever
+				 * traverseProc has returned TCL_OK; this is
+				 * required when traverseProc modifies the
+				 * source hierarchy, e.g. by deleting
+				 * files. */
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;
-    int result, sourceLen;
-    int targetLen;
+    int result;
+    int targetLen, sourceLen;
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
@@ -1418,7 +1394,7 @@ GetOwnerAttribute(
     } else {
 	Tcl_DString ds;
 
-	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
+	(void)Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
 	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
@@ -1640,7 +1616,7 @@ SetPermissionsAttribute(
 	Tcl_Obj *modeObj;
 
 	TclNewLiteralStringObj(modeObj, "0o");
-	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
+	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_INDEX_NONE);
 	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
@@ -1939,8 +1915,8 @@ TclpObjNormalizePath(
 {
     const char *currentPathEndPosition;
     char cur;
-    const char *path = TclGetString(pathPtr);
-    size_t pathLen = pathPtr->length;
+    Tcl_Size pathLen;
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2033,7 +2009,7 @@ TclpObjNormalizePath(
     if (haveRealpath) {
 	if (nextCheckpoint == 0) {
 	    /*
-	     * The path contains at most one component, e.g. '/foo' or '/', so
+	     * The path contains at most one component, e.g. '/foo' or '/',
 	     * so there is nothing to resolve. Also, on some platforms
 	     * 'Realpath' transforms an empty string into the normalized pwd,
 	     * which is the wrong answer.
@@ -2044,7 +2020,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    int newNormLen;
+	    Tcl_Size newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
@@ -2060,7 +2036,7 @@ TclpObjNormalizePath(
 		 * Uncommenting this would mean that this native filesystem
 		 * routine claims the path is normalized if the file exists,
 		 * which would permit the caller to avoid iterating through
-		 * other filesystems filesystems. Saving lots of calls is
+		 * other filesystems. Saving lots of calls is
 		 * probably worth the extra access() time, but in the common
 		 * case that no other filesystems are registered this is an
 		 * unnecessary expense.
@@ -2163,14 +2139,15 @@ TclUnixOpenTemporaryFile(
     Tcl_DString templ, tmp;
     const char *string;
     int fd;
+    Tcl_Size length;
 
     /*
-     * We should also check against making more then TMP_MAX of these.
+     * We should also check against making more than TMP_MAX of these.
      */
 
     if (dirObj) {
-	string = TclGetString(dirObj);
-	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &templ);
+	string = TclGetStringFromObj(dirObj, &length);
+	Tcl_UtfToExternalDString(NULL, string, length, &templ);
     } else {
 	Tcl_DStringInit(&templ);
 	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
@@ -2179,8 +2156,8 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&templ, "/");
 
     if (basenameObj) {
-	string = TclGetString(basenameObj);
-	Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
+	string = TclGetStringFromObj(basenameObj, &length);
+	Tcl_UtfToExternalDString(NULL, string, length, &tmp);
 	TclDStringAppendDString(&templ, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
@@ -2191,8 +2168,8 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = TclGetString(extensionObj);
-	Tcl_UtfToExternalDString(NULL, string, extensionObj->length, &tmp);
+	string = TclGetStringFromObj(extensionObj, &length);
+	Tcl_UtfToExternalDString(NULL, string, length, &tmp);
 	TclDStringAppendDString(&templ, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);

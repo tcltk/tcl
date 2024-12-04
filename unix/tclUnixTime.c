@@ -272,7 +272,7 @@ TclpWideClicksToNanoseconds(
  *	and back.
  *
  * Results:
- * 	1 click in microseconds as double.
+ *	1 click in microseconds as double.
  *
  * Side effects:
  *	None.

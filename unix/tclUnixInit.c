@@ -11,13 +11,6 @@
 #include "tclInt.h"
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
-#   ifdef __APPLE__
-#	if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
-	    /* Support for weakly importing nl_langinfo on Darwin. */
-#	    define WEAK_IMPORT_NL_LANGINFO
-	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#	endif
-#    endif
 #endif
 #include <sys/resource.h>
 #if defined(__FreeBSD__) && defined(__GNUC__)
@@ -321,20 +314,6 @@ static const LocaleTable localeTable[] = {
 static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
-#if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
-	(TCL_THREADS && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
-	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
-	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
-	)))
-/*
- * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
- * initialize release global at startup from uname().
- */
-#define GET_DARWIN_RELEASE 1
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-long tclMacOSXDarwinRelease = 0;
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -422,16 +401,6 @@ TclpInitPlatform(void)
      */
 
     setlocale(LC_NUMERIC, "C");
-
-#ifdef GET_DARWIN_RELEASE
-    {
-	struct utsname name;
-
-	if (!uname(&name)) {
-	    tclMacOSXDarwinRelease = strtol(name.release, NULL, 10);
-	}
-    }
-#endif
 }
 
 /*
@@ -477,7 +446,7 @@ TclpInitLibraryPath(
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -736,7 +705,7 @@ Tcl_GetEncodingNameFromEnvironment(
  *----------------------------------------------------------------------
  */
 
-#if defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020
+#if defined(HAVE_COREFOUNDATION)
 /*
  * Helper because whether CFLocaleCopyCurrent and CFLocaleGetIdentifier are
  * strongly or weakly bound varies by version of OSX, triggering warnings.
@@ -771,7 +740,7 @@ InitMacLocaleInfoVar(
     }
     CFRelease(localeRef);
 }
-#endif /*defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MAX_ALLOWED > 1020*/
+#endif /*defined(HAVE_COREFOUNDATION)*/
 
 void
 TclpSetVariables(
@@ -796,9 +765,7 @@ TclpSetVariables(
      * Set msgcat fallback locale to current CFLocale identifier.
      */
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
     InitMacLocaleInfoVar(CFLocaleCopyCurrent, CFLocaleGetIdentifier, interp);
-#endif /* MAC_OS_X_VERSION_MAX_ALLOWED > 1020 */
 
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
 	const char *str;
@@ -996,16 +963,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    int *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, result = -1;
+    Tcl_Size i, result = -1;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 
