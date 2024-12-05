@@ -809,8 +809,6 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	    else $(MACHER) append ${LIB_FILE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${LIB_FILE}; chmod u+x ${LIB_FILE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${LIB_FILE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
@@ -840,8 +838,6 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
 	    else $(MACHER) append ${TCL_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${TCL_EXE}; chmod u+x ${TCL_EXE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${TCL_EXE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
@@ -903,8 +899,6 @@ tcltest-real:
 	    else $(MACHER) append ${TCLTEST_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${TCLTEST_EXE}; chmod u+x ${TCLTEST_EXE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${TCLTEST_EXE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 # Note, in the targets below TCL_LIBRARY needs to be set or else "make test"
