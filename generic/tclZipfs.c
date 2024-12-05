@@ -337,11 +337,12 @@ static Tcl_Obj *	ScriptLibrarySetup(const char *dirName);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    ZipEntry *z, size_t nameLength);
+			    ZipEntry *z, size_t nameLength, long long dataStartOffset);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    int entryCount, long long directoryStartOffset,
+			    int entryCount, long long dataStartOffset,
+                long long directoryStartOffset,
 			    long long suffixStartOffset);
 static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
@@ -3367,6 +3368,8 @@ ZipFSMkZipOrImg(
     int count, ret = TCL_ERROR;
     Tcl_Size pwlen = 0, slen = 0, lobjc;
     size_t len, i = 0;
+    long long dataStartOffset; /* The overall file offset of the start of the
+				 * data section of the file. */
     long long directoryStartOffset;
     /* The overall file offset of the start of the
      * central directory. */
@@ -3540,6 +3543,9 @@ ZipFSMkZipOrImg(
 	}
 	memset(passBuf, 0, sizeof(passBuf));
 	Tcl_Flush(out);
+	dataStartOffset = Tcl_Tell(out);
+    } else {
+	dataStartOffset = 0;
     }
 
     /*
@@ -3587,7 +3593,7 @@ ZipFSMkZipOrImg(
 	name = Tcl_UtfToExternalDString(tclUtf8Encoding, z->name, TCL_INDEX_NONE, &ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
-		z, len);
+		z, len, dataStartOffset);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
 		|| ((size_t) Tcl_Write(out, name, len) != len)) {
@@ -3607,7 +3613,7 @@ ZipFSMkZipOrImg(
     Tcl_Flush(out);
     suffixStartOffset = Tcl_Tell(out);
     SerializeCentralDirectorySuffix(start, end, (unsigned char *) buf,
-	    count, directoryStartOffset, suffixStartOffset);
+	    count, dataStartOffset, directoryStartOffset, suffixStartOffset);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error: %s", Tcl_PosixError(interp)));
@@ -3764,7 +3770,9 @@ SerializeCentralDirectoryEntry(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
-    size_t nameLength)		/* The length of the name. */
+    size_t nameLength,		/* The length of the name. */
+    long long dataStartOffset)	/* The overall file offset of the start of the 
+    				 * data section of the file. */
 {
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_SIG_OFFS,
 	    ZIP_CENTRAL_HEADER_SIG);
@@ -3789,7 +3797,7 @@ SerializeCentralDirectoryEntry(
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_IATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_EATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_LOCALHDR_OFFS,
-	    z->offset);
+	    z->offset - dataStartOffset);
 }
 
 static void
@@ -3798,6 +3806,9 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
+    long long dataStartOffset,
+				/* The overall file offset of the start of the
+				 * data file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3814,7 +3825,7 @@ SerializeCentralDirectorySuffix(
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSIZE_OFFS,
 	    suffixStartOffset - directoryStartOffset);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSTART_OFFS,
-	    directoryStartOffset);
+	    directoryStartOffset - dataStartOffset);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_COMMENTLEN_OFFS, 0);
 }
 

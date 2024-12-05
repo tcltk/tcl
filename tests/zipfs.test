@@ -921,6 +921,22 @@ namespace eval test_ns_zipfs {
         zipfs info [file join [zipfs root] testmt a]
     } -result {path "//zipfs:/testmt/a" not found in any zipfs volume} -returnCodes error
 
+    test zipfs-info-tcllib-1 "zipfs info offset on tcl library" -constraints zipfslib -body {
+        expr {[lindex [zipfs info [file dirname $::tcl_library]] 3] > 0}
+    } -result 1
+
+    test zipfs-info-tcllib-2 "extract zip using zipfs info" -constraints zipfslib -cleanup {
+	cleanup
+    } -body {
+        set mt [file dirname $::tcl_library]
+        lassign [zipfs info $mt] container_path - - offset
+        set fd [open $container_path rb]
+        chan seek $fd $offset
+        set zipdata [read $fd]
+        zipfs mountdata $zipdata /testmt
+        list [expr {$offset > 0}] [file exists [file join [zipfs root] testmt tcl_library]]
+    } -result {1 1}
+
     #
     # zipfs canonical
     test zipfs-canonical-minargs {zipfs canonical min args} -body {
