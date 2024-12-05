@@ -1208,100 +1208,120 @@ RenderDeclarerName(
 	((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void
-MethodErrorHandler(
+CommonMethErrorHandler(
     Tcl_Interp *interp,
-    TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// We pull the method name out of context instead of from argument
+    const char *special)
+
 {
-    Tcl_Size nameLen, objectNameLen;
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
+    Tcl_Size objectNameLen;
+    CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const char *objectName, *kindName, *methodName =
-	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
-    Object *declarerPtr;
+    const char *objectName, *kindName = "instance";
+
+    Object *declarerPtr = NULL;
+
 
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
+
+    } else if (mPtr->declaringClassPtr != NULL) {
+
+
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    if (declarerPtr) {
+	objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+    } else {
+	objectName = "unknown or deleted";
+	objectNameLen = 18;
+    }
+    if (!special) {
+	Tcl_Size nameLen;
+	const char *methodName = TclGetStringFromObj(mPtr->namePtr, &nameLen);
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 	    kindName, ELLIPSIFY(objectName, objectNameLen),
 	    ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
+    } else {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    (%s \"%.*s%s\" %s line %d)", kindName,
+	    ELLIPSIFY(objectName, objectNameLen), special, Tcl_GetErrorLine(interp)));
+    }
+}
+
+static void
+MethodErrorHandler(
+    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
+	/* We pull the method name out of context instead of from argument */
+{
+    CommonMethErrorHandler(interp, NULL);
 }
 
 static void
 ConstructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// Ignore. We know it is the constructor.
+	/* Ignore. We know it is the constructor. */
 {
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    Object *declarerPtr;
-    const char *objectName, *kindName;
-    Tcl_Size objectNameLen;
 
-    if (mPtr->declaringObjectPtr != NULL) {
-	declarerPtr = mPtr->declaringObjectPtr;
-	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
-	declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	kindName = "class";
-    }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
+
+
+
+    CommonMethErrorHandler(interp, "constructor");
+
+
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
 
 static void
 DestructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// Ignore. We know it is the destructor.
+	/* Ignore. We know it is the destructor. */
 {
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    Object *declarerPtr;
-    const char *objectName, *kindName;
-    Tcl_Size objectNameLen;
 
-    if (mPtr->declaringObjectPtr != NULL) {
-	declarerPtr = mPtr->declaringObjectPtr;
-	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
-	declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	kindName = "class";
-    }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
+
+
+
+    CommonMethErrorHandler(interp, "destructor");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
