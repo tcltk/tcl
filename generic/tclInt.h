@@ -3263,6 +3263,7 @@ struct Tcl_LoadHandle_ {
 				 * loaded module */
     Tcl_FSUnloadFileProc* unloadFileProcPtr;
 				/* Procedure that unloads a loaded module */
+    char name[TCLFLEXARRAY];
 };
 
 /* Flags for conversion of doubles to digit strings */

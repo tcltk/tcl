@@ -1072,6 +1072,9 @@ static const struct {
 #ifdef TCL_MEM_DEBUG
 	    ".memdebug"
 #endif
+#if defined(_WIN32) && defined(TCL_LOAD_FROM_MEMORY)
+	    ".memorymodule-0004"
+#endif
 #if defined(_MSC_VER)
 	    ".msvc-" STRINGIFY(_MSC_VER)
 #endif

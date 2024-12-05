@@ -52,11 +52,13 @@
 # 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
+#	OPTS=memorymodule,nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
+#		memorymodule   = load dll's from a vfs in memory in stead of
+#			    copying to a temporary directory.
 #		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
@@ -163,6 +165,13 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !else
 !message *** NOTE: The "staticpkg" option ignored for shared library builds.
 !endif
+!endif
+
+!if [nmakehlp -f $(OPTS) "memorymodule"]
+!message *** Option memorymodule specified.
+TCL_LOAD_FROM_MEMORY = 1
+!else
+TCL_LOAD_FROM_MEMORY = 0
 !endif
 
 !if [nmakehlp -f $(OPTS) "noembed"]
@@ -473,6 +482,10 @@ LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
 PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+
+!if $(TCL_LOAD_FROM_MEMORY)
+PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_LOAD_FROM_MEMORY
+!endif
 
 !if $(STATIC_BUILD)
 PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
@@ -897,6 +910,10 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 
 $(TMP_DIR)\tclTestABSList.obj: $(GENERICDIR)\tclTestABSList.c
 	$(cc32) $(appcflags) -Fo$@ $?
+
+$(TMP_DIR)\tclWinLoad.obj: $(WIN_DIR)\tclWinLoad.c
+	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
+	    -Fo$@ $?
 
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(CCAPPCMD) $?
