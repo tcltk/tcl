@@ -354,7 +354,7 @@ FreeElements(
 	for (i=0; i<len; i++) {
 	    Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
 	}
-	Tcl_Free((char *) arithSeriesRepPtr->elements);
+	Tcl_Free((void *)arithSeriesRepPtr->elements);
 	arithSeriesRepPtr->elements = NULL;
     }
 }
@@ -368,7 +368,7 @@ FreeArithSeriesInternalRep(
 
     if (arithSeriesRepPtr) {
 	FreeElements(arithSeriesRepPtr);
-	Tcl_Free((char *) arithSeriesRepPtr);
+	Tcl_Free((void *)arithSeriesRepPtr);
     }
 }
 
