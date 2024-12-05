@@ -1538,7 +1538,7 @@ TclGetOpenMode(
 	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	if (modeArgv) {
-	    ckfree((void *)modeArgv);
+	    ckfree((char *)modeArgv);
 	}
 	return -1;
     }
@@ -1642,7 +1642,7 @@ TclGetOpenMode(
 	}
     }
 
-    ckfree((void *)modeArgv);
+    ckfree((char *)modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
