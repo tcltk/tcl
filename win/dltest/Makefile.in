@@ -28,14 +28,16 @@ CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic \
 all: memorymoduletest.zip
 
 memorymoduletest.zip:	tcl9memorymoduletest${SHLIB_SUFFIX}
-	@if test -f ../minizip.exe; then \
+	@if test -n "${NATIVE_ZIP}"; then \
+	  if test -f ../minizip.exe; then \
 	    cp ../minizip.exe . ; \
-	fi
+	  fi; \
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
 	  $$zip memorymoduletest.zip pkgIndex.tcl *.dll >/dev/null && \
 	  echo "memorymoduletest.zip successful created with $$zip" \
-	  )
+	); \
+	fi
 
 memorymoduletest.o: $(SRC_DIR)/memorymoduletest.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/memorymoduletest.c
