@@ -75,7 +75,7 @@ typedef struct TclPipeThreadInfo {
 				 * to do read/write operation. Additionally
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
-    void *clientData;	/* Referenced data of the main thread */
+    void *clientData;		/* Referenced data of the main thread */
     HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
 
@@ -92,18 +92,19 @@ typedef struct TclPipeThreadInfo {
  * State PTI_STATE_STOP possible from idle state only, worker owns TI structure.
  * Otherwise PTI_STATE_END used (main thread hold ownership of the TI).
  */
-
-#define PTI_STATE_IDLE	0	/* idle or not yet initialzed */
-#define PTI_STATE_WORK	1	/* in work */
-#define PTI_STATE_STOP	2	/* thread should stop work (owns TI structure) */
-#define PTI_STATE_END	4	/* thread should stop work (worker is busy) */
-#define PTI_STATE_DOWN  8	/* worker is down */
-
+enum PipeWorkerStates {
+    PTI_STATE_IDLE = 0,		/* idle or not yet initialzed */
+    PTI_STATE_WORK = 1,		/* in work */
+    PTI_STATE_STOP = 2,		/* thread should stop work (owns TI structure) */
+    PTI_STATE_END = 4,		/* thread should stop work (worker is busy) */
+    PTI_STATE_DOWN = 8		/* worker is down */
+};
 
 MODULE_SCOPE
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
 			    void *clientData, HANDLE wakeEvent);
-MODULE_SCOPE int	TclPipeThreadWaitForSignal(TclPipeThreadInfo **pipeTIPtr);
+MODULE_SCOPE int	TclPipeThreadWaitForSignal(
+			    TclPipeThreadInfo **pipeTIPtr);
 
 static inline void
 TclPipeThreadSignal(
@@ -123,8 +124,10 @@ TclPipeThreadIsAlive(
     return (pipeTI && pipeTI->state != PTI_STATE_DOWN);
 };
 
-MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr, HANDLE wakeEvent);
-MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr, HANDLE hThread);
+MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr,
+			    HANDLE wakeEvent);
+MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
+			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);
 
 #endif	/* _TCLWININT */
