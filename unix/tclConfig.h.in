@@ -151,6 +151,9 @@
 /* Define to 1 if you have the 'lseek64' function. */
 #undef HAVE_LSEEK64
 
+/* Define to 1 if you have the 'memfd_create' function. */
+#undef HAVE_MEMFD_CREATE
+
 /* Define to 1 if you have the 'mkstemp' function. */
 #undef HAVE_MKSTEMP
 

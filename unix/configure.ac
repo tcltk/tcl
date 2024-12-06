@@ -296,6 +296,16 @@ AC_CHECK_HEADERS(termios.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
 AC_CHECK_HEADERS(sys/modem.h)
 
+#---------------------------------------------------------------------------
+#	Check for memfd_create.
+#---------------------------------------------------------------------------
+
+AC_CHECK_HEADER([sys/mman.h], tcl_ok=yes, tcl_ok=no)
+AC_CHECK_FUNCS([memfd_create], , tcl_ok=no)
+if test $tcl_ok = yes; then
+    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1)
+fi
+
 #--------------------------------------------------------------------
 #	Include sys/select.h if it exists and if it supplies things
 #	that appear to be useful and aren't already in sys/types.h.

@@ -9400,6 +9400,38 @@ then :
 fi
 
 
+#---------------------------------------------------------------------------
+#	Check for memfd_create.
+#---------------------------------------------------------------------------
+
+ac_fn_c_check_header_compile "$LINENO" "sys/mman.h" "ac_cv_header_sys_mman_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_mman_h" = xyes
+then :
+  tcl_ok=yes
+else case e in #(
+  e) tcl_ok=no ;;
+esac
+fi
+
+
+  for ac_func in memfd_create
+do :
+  ac_fn_c_check_func "$LINENO" "memfd_create" "ac_cv_func_memfd_create"
+if test "x$ac_cv_func_memfd_create" = xyes
+then :
+  printf "%s\n" "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
+
+else case e in #(
+  e) tcl_ok=no ;;
+esac
+fi
+
+done
+if test $tcl_ok = yes; then
+    printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
+
+fi
+
 #--------------------------------------------------------------------
 #	Include sys/select.h if it exists and if it supplies things
 #	that appear to be useful and aren't already in sys/types.h.
