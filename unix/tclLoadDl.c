@@ -10,6 +10,10 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifdef TCL_LOAD_FROM_MEMORY
+#   define _GNU_SOURCE
+#   include <sys/mman.h>
+#endif
 #include "tclInt.h"
 #ifdef NO_DLFCN_H
 #   include "../compat/dlfcn.h"
@@ -266,6 +270,84 @@ UnloadFile(
     dlclose(handle);
     Tcl_Free(loadHandle);
 }
+
+/*
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
+ */
+
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    size_t size)			/* Size of desired buffer. */
+{
+    return Tcl_Alloc(size);
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    void *buffer,		/* Buffer containing the desired code
+				 * (allocated with TclpLoadMemoryGetBuffer). */
+    size_t size,		/* Allocation size of buffer. */
+    Tcl_Size codeSize,	/* Size of code data read into buffer or -1 if
+				 * an error occurred and the buffer should
+				 * just be freed. */
+    const char *path,
+    Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
+				 * file which will be passed back to
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for this
+				 * file. */
+    int flags)
+{
+    Tcl_LoadHandle newHandle;
+    void *handle;
+    int fd;
+    char fdpath[1000];
+    int dlopenflags = 0;
+
+    if (codeSize < 1) {
+	Tcl_Free(buffer);
+	return TCL_ERROR;
+    }
+    fd = memfd_create(path, 0);
+    write(fd, buffer, size);
+	Tcl_Free(buffer);
+
+    snprintf(path, sizeof(path), "/proc/%d/fd/%d", getpid(), shm_fd);
+
+    if (flags & TCL_LOAD_GLOBAL) {
+	dlopenflags |= RTLD_GLOBAL;
+    } else {
+	dlopenflags |= RTLD_LOCAL;
+    }
+    if (flags & TCL_LOAD_LAZY) {
+	dlopenflags |= RTLD_LAZY;
+    } else {
+	dlopenflags |= RTLD_NOW;
+    }
+
+    handle = dlopen(path, dlopenflags);
+
+    if (!handle) {
+	Tcl_Free(buffer);
+	return TCL_ERROR;
+    }
+
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
+    newHandle->clientData = handle;
+    newHandle->findSymbolProcPtr = &FindSymbol;
+    newHandle->unloadFileProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
+    *unloadProcPtr = &UnloadFile;
+    return TCL_OK;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:
