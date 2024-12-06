@@ -315,10 +315,16 @@ TclpLoadMemory(
 	return TCL_ERROR;
     }
     fd = memfd_create(path, 0);
-    write(fd, buffer, size);
+    if (fd == -1 || write(fd, buffer, size) != size) {
+	if (fd != -1) {
+	    close(fd);
+	}
 	Tcl_Free(buffer);
+	return TCL_ERROR;
+    }
+    Tcl_Free(buffer);
 
-    snprintf(path, sizeof(path), "/proc/%d/fd/%d", getpid(), shm_fd);
+    snprintf(fdpath, sizeof(fdpath), "/proc/%d/fd/%d", getpid(), fd);
 
     if (flags & TCL_LOAD_GLOBAL) {
 	dlopenflags |= RTLD_GLOBAL;
