@@ -9379,4 +9379,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2024-11-15 (bug) [f2b5f8] clock scan of leapsecond: wrong result (sebres)
 
+2024-12-05 (bug) [0b809c] Segfault in TclOO with coroutines (goth,sebres)
+
 - Released 8.6.16, Dec 9, 2024 - details at https://core.tcl-lang.org/tcl/ -
