@@ -35,7 +35,7 @@ static Tcl_NotifierProcs tclNotifierHooks = {
 typedef struct EventSource {
     Tcl_EventSetupProc *setupProc;
     Tcl_EventCheckProc *checkProc;
-    ClientData clientData;
+    void *clientData;
     struct EventSource *nextPtr;
 } EventSource;
 
@@ -57,8 +57,10 @@ typedef struct ThreadSpecificData {
     Tcl_Event *lastEventPtr;	/* Last pending event, or NULL if none. */
     Tcl_Event *markerEventPtr;	/* Last high-priority event in queue, or NULL
 				 * if none. */
+    Tcl_Size eventCount;	/* Number of entries, but refer to comments in
+				 * Tcl_ServiceEvent(). */
     Tcl_Mutex queueMutex;	/* Mutex to protect access to the previous
-				 * three fields. */
+				 * four fields. */
     int serviceMode;		/* One of TCL_SERVICE_NONE or
 				 * TCL_SERVICE_ALL. */
     int blockTimeSet;		/* 0 means there is no maximum block time:
@@ -67,13 +69,13 @@ typedef struct ThreadSpecificData {
 				 * elapsed time for the next block. */
     int inTraversal;		/* 1 if Tcl_SetMaxBlockTime is being called
 				 * during an event source traversal. */
+    int initialized;		/* 1 if notifier has been initialized. */
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
-    ClientData clientData;	/* Opaque handle for platform specific
+    void *clientData;	/* Opaque handle for platform specific
 				 * notifier. */
-    int initialized;		/* 1 if notifier has been initialized. */
     struct ThreadSpecificData *nextPtr;
 				/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
@@ -186,6 +188,7 @@ TclFinalizeNotifier(void)
     }
     tsdPtr->firstEventPtr = NULL;
     tsdPtr->lastEventPtr = NULL;
+    tsdPtr->eventCount = 0;
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 
     Tcl_MutexLock(&listLock);
@@ -288,7 +291,7 @@ Tcl_SetNotifier(
  *	Tcl_QueueEvent to queue any events that are ready.
  *
  *	Each of these functions is passed two arguments, e.g.
- *		(*checkProc)(ClientData clientData, int flags));
+ *		(*checkProc)(void *clientData, int flags));
  *	ClientData is the same as the clientData argument here, and flags is a
  *	combination of things like TCL_FILE_EVENTS that indicates what events
  *	are of interest: setupProc and checkProc use flags to figure out
@@ -305,7 +308,7 @@ Tcl_CreateEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    ClientData clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)	/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -344,7 +347,7 @@ Tcl_DeleteEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    ClientData clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)	/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -486,10 +489,9 @@ QueueEvent(
     int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
+    int wasEmpty = 0;
+
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    if (tsdPtr->firstEventPtr != NULL) {
-	position &= ~TCL_QUEUE_ALERT_IF_EMPTY;
-    }
     if ((position & 3) == TCL_QUEUE_TAIL) {
 	/*
 	 * Append the event on the end of the queue.
@@ -530,8 +532,12 @@ QueueEvent(
 	    tsdPtr->lastEventPtr = evPtr;
 	}
     }
+    if (position & TCL_QUEUE_ALERT_IF_EMPTY) {
+	wasEmpty = (tsdPtr->eventCount <= 0);
+    }
+    tsdPtr->eventCount++;
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
-    return position & TCL_QUEUE_ALERT_IF_EMPTY;
+    return wasEmpty;
 }
 
 /*
@@ -556,7 +562,7 @@ QueueEvent(
 void
 Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
-    ClientData clientData)	/* The type-specific data. */
+    void *clientData)	/* The type-specific data. */
 {
     Tcl_Event *evPtr;		/* Pointer to the event being examined */
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
@@ -604,6 +610,7 @@ Tcl_DeleteEvents(
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
 	    ckfree(hold);
+	    tsdPtr->eventCount--;
 	} else {
 	    /*
 	     * Event is to be retained.
@@ -647,8 +654,9 @@ Tcl_ServiceEvent(
 {
     Tcl_Event *evPtr, *prevPtr;
     Tcl_EventProc *proc;
-    int result;
+    Tcl_Size eventCount;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int result;
 
     /*
      * Asynchronous event handlers are considered to be the highest priority
@@ -704,11 +712,19 @@ Tcl_ServiceEvent(
 	 * other threads to post events if we enter a recursive event loop in
 	 * this thread. Note that we are making the assumption that if the
 	 * proc returns 0, the event is still in the list.
+	 *
+	 * The eventCount is remembered and set to zero that the next
+	 * level of Tcl_ServiceEvent() gets an empty condition for the
+	 * Tcl_ThreadQueueEvent() to perform optional wakeups.
+	 * On exit of the next level, the eventCount is readjusted.
 	 */
 
+	eventCount = tsdPtr->eventCount;
+	tsdPtr->eventCount = 0;
 	Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	result = proc(evPtr, flags);
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
+	tsdPtr->eventCount += eventCount;
 
 	if (result) {
 	    /*
@@ -743,6 +759,7 @@ Tcl_ServiceEvent(
 	    }
 	    if (evPtr) {
 		ckfree(evPtr);
+		tsdPtr->eventCount--;
 	    }
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;
@@ -1189,7 +1206,7 @@ Tcl_ThreadAlert(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_InitNotifier(void)
 {
     if (tclNotifierHooks.initNotifierProc) {
@@ -1220,7 +1237,7 @@ Tcl_InitNotifier(void)
 
 void
 Tcl_FinalizeNotifier(
-    ClientData clientData)
+    void *clientData)
 {
     if (tclNotifierHooks.finalizeNotifierProc) {
 	tclNotifierHooks.finalizeNotifierProc(clientData);
@@ -1253,7 +1270,7 @@ Tcl_FinalizeNotifier(
 
 void
 Tcl_AlertNotifier(
-    ClientData clientData)	/* Pointer to thread data. */
+    void *clientData)	/* Pointer to thread data. */
 {
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
@@ -1380,7 +1397,7 @@ Tcl_CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
