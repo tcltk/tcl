@@ -18,6 +18,7 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
  - [Wrong result by "lsearch -stride -subindices -inline -all"](https://core.tcl-lang.org/tcl/info/5a1aaa)
  - [zipfs info on mountpoint of executable returns zero offset in field 4"](https://core.tcl-lang.org/tcl/info/aaa84f)
+ - [TIP #609 - required Tcl_ThreadAlert() skipped with nested event loop](https://core.tcl-lang.org/tcl/info/c7e4c4)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
