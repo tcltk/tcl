@@ -286,7 +286,7 @@ test filesystem-1.30.3 {file normalization should distinguish between ~ and ~use
 } -cleanup {
     set ::env(HOME) $oldhome
 } -body {
-    list [string equal [file normalize ~] $::env(HOME)] \
+    list [string equal [file normalize ~] [file normalize $::env(HOME)]] \
         [string equal $olduserhome [file normalize ~$::tcl_platform(user)]]
 } -result {1 1}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
