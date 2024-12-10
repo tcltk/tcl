@@ -547,7 +547,7 @@ Tcl_LoadObjCmd(
  *
  * Tcl_UnloadObjCmd --
  *
- *	Implements the the "unload" Tcl command. See the
+ *	Implements the "unload" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:

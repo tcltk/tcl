@@ -8556,7 +8556,7 @@ InterpCmdResolver(
 	     *      compilation (e.g. in TclProcCompileProc)
 	     *
 	     *   When these conditions hold, this function resolves the
-	     *   passed-in cmd literal into a cmd "y", which is taken from the
+	     *   passed-in cmd literal into a cmd "y", which is taken from
 	     *   the global namespace (for simplicity).
 	     */
 
@@ -8582,7 +8582,7 @@ InterpCmdResolver(
 	     *
 	     *   When these conditions hold, this function resolves the
 	     *   passed-in cmd literal into a cmd "y" or "Y" depending on the
-	     *   context. The resolved procs are taken from the the global
+	     *   context. The resolved procs are taken from the global
 	     *   namespace (for simplicity).
 	     */
 

@@ -2468,7 +2468,7 @@ TclCompileTokens(
 	     * commands. See the branch below for TCL_TOKEN_COMMAND, where the
 	     * adjustment being tracked here is taken into account. The good
 	     * thing is a table of everything is not needed, just the number of
-	     * lines to to add as correction.
+	     * lines to add as correction.
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
@@ -2661,8 +2661,7 @@ void
 TclCompileExprWords(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Points to first in an array of word tokens
-				 * tokens for the expression to compile
-				 * inline. */
+				 * for the expression to compile inline. */
     int numWords,		/* Number of word tokens starting at tokenPtr.
 				 * Must be at least 1. Each word token
 				 * contains one or more subtokens. */

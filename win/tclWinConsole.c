@@ -1483,7 +1483,7 @@ static void
 ConsoleWatchProc(
     void *instanceData,		/* Console state. */
     int newMask)		/* What events to watch for, one of
-				 * of TCL_READABLE, TCL_WRITABLE */
+				 * TCL_READABLE, TCL_WRITABLE */
 {
     ConsoleChannelInfo **nextPtrPtr, *ptr;
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
@@ -1720,7 +1720,7 @@ ConsoleReaderThread(
 
 	    /*
 	     * Loop back to recheck for exit conditions changes while the
-	     * the lock was not held.
+	     * lock was not held.
 	     */
 	    continue;
 	}
