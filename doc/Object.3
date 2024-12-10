@@ -131,6 +131,10 @@ typedef struct {
             void *\fIptr\fR;
             unsigned long \fIvalue\fR;
         } \fIptrAndLongRep\fR;
+        struct {
+            void *\fIptr\fR;
+            Tcl_Size \fIsize\fR;
+        } \fIptrAndSize\fR;
     } \fIinternalRep\fR;
 } \fBTcl_Obj\fR;
 .CE
@@ -160,9 +164,10 @@ The \fIinternalRep\fR union member holds
 a value's internal representation.
 This is either a (long) integer, a double-precision floating-point number,
 a pointer to a value containing additional information
-needed by the value's type to represent the value, a Tcl_WideInt
-integer, two arbitrary pointers, or a pair made up of an unsigned long
-integer and a pointer.
+needed by the value's type to represent the value, a \fBTcl_WideInt\fR
+integer, two arbitrary pointers, a pair made up of a pointer and an unsigned long
+integer, or a pair made up of a pointer and \fBTcl_Size\fR which is a signed integer
+type capable of holding the maximum lengths permitted in Tcl.
 .PP
 The \fIrefCount\fR member is used to tell when it is safe to free
 a value's storage.
