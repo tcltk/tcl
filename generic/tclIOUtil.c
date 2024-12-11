@@ -452,7 +452,8 @@ TclFSCwdIsNative(void)
 
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
-	Tcl_FSGetCwd(NULL);
+	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
+	if (temp) { Tcl_DecrRefCount(temp); }
     }
 
     if (tsdPtr->cwdClientData != NULL) {
