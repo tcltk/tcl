@@ -220,7 +220,7 @@ namespace eval icu {
     test icu-normalize-1 {Default normalization} -constraints icu -body {
 	icu normalize $s
     } -result \uFB01anc\u00e9
-    test icu-normalize-nfc-0 {NFC normalization} -constraints icu -body {
+    test icu-normalize-nfc-1 {NFC normalization} -constraints icu -body {
 	icu normalize -mode nfc $s
     } -result \uFB01anc\u00e9
     test icu-normalize-nfd-1 {NFD normalization} -constraints icu -body {
@@ -235,10 +235,10 @@ namespace eval icu {
 
     # Source has multiple diacritics with different canonical ordering
     foreach s [list \u1EC7 e\u0302\u0323 e\u0323\u0302] {
-	test icu-normalize-nfc-2 {fully composed} -constraints icu -body {
+	test icu-normalize-nfc-2-$s {fully composed} -constraints icu -body {
 	    icu normalize -mode nfc $s
 	} -result \u1EC7
-	test icu-normalize-nfc-2 {fully decomposed} -constraints icu -body {
+	test icu-normalize-nfc-3-$s {fully decomposed} -constraints icu -body {
 	    icu normalize -mode nfd $s
 	} -result e\u0323\u0302
     }
