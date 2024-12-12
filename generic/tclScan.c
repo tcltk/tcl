@@ -731,6 +731,17 @@ Tcl_ScanObjCmd(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -739,7 +750,8 @@ Tcl_ScanObjCmd(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
