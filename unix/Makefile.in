@@ -2278,7 +2278,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
-	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.c $(UNIX_DIR)/tclUnixPort.h $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/configure.ac \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
@@ -2367,7 +2367,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
 	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
 	$(DIST_INSTALL_SCRIPT) $(TOP_DIR)/win/configure $(DISTDIR)/win
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
+		$(TOP_DIR)/win/tclWinInt.h $(TOP_DIR)/win/tclWinPort.h \
 		$(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
