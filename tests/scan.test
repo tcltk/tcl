@@ -560,6 +560,11 @@ test scan-5.20 {ignore digit separators} -setup {
 } -body {
     list [scan "10_23_45" %d_%d_%d a b c] $a $b $c
 } -result {3 10 23 45}
+test scan-5.21 {integer scanning, %j, %q, &z, %t} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "42 43 44 45" "%jd %qd %zd %td" a b c d] $a $b $c $d
+} -result {4 42 43 44 45}
 
 test scan-6.1 {floating-point scanning} -setup {
     set a {}; set b {}; set c {}; set d {}
