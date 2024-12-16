@@ -232,15 +232,6 @@ typedef struct TclVarHashTable {
     TclVarHashCreateVar((tablePtr), (key), NULL)
 
 /*
- * Define this to reduce the amount of space that the average namespace
- * consumes by only allocating the table of child namespaces when necessary.
- * Defining it breaks compatibility for Tcl extensions (e.g., itcl) which
- * reach directly into the Namespace structure.
- */
-
-#undef BREAK_NAMESPACE_COMPAT
-
-/*
  * The structure below defines a namespace.
  * Note: the first five fields must match exactly the fields in a
  * Tcl_Namespace structure (see tcl.h). If you change one, be sure to change
@@ -262,15 +253,8 @@ typedef struct Namespace {
     struct Namespace *parentPtr;/* Points to the namespace that contains this
 				 * one. NULL if this is the global
 				 * namespace. */
-#ifndef BREAK_NAMESPACE_COMPAT
     Tcl_HashTable childTable;	/* Contains any child namespaces. Indexed by
 				 * strings; values have type (Namespace *). */
-#else
-    Tcl_HashTable *childTablePtr;
-				/* Contains any child namespaces. Indexed by
-				 * strings; values have type (Namespace *). If
-				 * NULL, there are no children. */
-#endif
 #if TCL_MAJOR_VERSION > 8
     size_t nsId;		/* Unique id for the namespace. */
 #else
