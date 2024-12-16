@@ -123,8 +123,8 @@ loaded;  otherwise it generates an error.
 .RS
 .PP
 A suitable version of the package is any version which satisfies at
-least one of the requirements, per the rules of \fBpackage
-vsatisfies\fR. If multiple versions are suitable the implementation
+least one of the requirements as defined in the section \fBREQUIREMENT\fR below.
+If multiple versions are suitable the implementation
 with the highest version is chosen. This last part is additionally
 influenced by the selection mode set with \fBpackage prefer\fR.
 .PP
@@ -205,7 +205,7 @@ commands.
 \fBpackage vsatisfies \fIversion requirement...\fR
 .
 Returns 1 if the \fIversion\fR satisfies at least one of the given
-requirements, and 0 otherwise. \fIrequirements\fR are defined in the REQUIREMENTS section below.
+requirements, and 0 otherwise. \fIrequirements\fR are defined in the \fBREQUIREMENT\fR section below.
 .\" METHOD: prefer
 .TP
 \fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
@@ -298,7 +298,7 @@ See the documentation for \fBpkg_mkIndex\fR for details.
 .SH "REQUIREMENT"
 .PP
 A \fIrequirement\fR string checks, if a compatible version number of a package is present.
-Most commands accept a list of requirements where the highest suitable version is matched.
+Most commands accept a list of requirement strings where the highest suitable version is matched.
 .PP
 Each \fIrequirement\fR is allowed to have any of the forms:
 .RS
