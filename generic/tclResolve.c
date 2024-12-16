@@ -262,23 +262,12 @@ BumpCmdRefEpochs(
 
     nsPtr->cmdRefEpoch++;
 
-#ifndef BREAK_NAMESPACE_COMPAT
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
 	BumpCmdRefEpochs(childNsPtr);
     }
-#else
-    if (nsPtr->childTablePtr != NULL) {
-	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	    Namespace *childNsPtr = Tcl_GetHashValue(entry);
-
-	    BumpCmdRefEpochs(childNsPtr);
-	}
-    }
-#endif
     TclInvalidateNsPath(nsPtr);
 }
 

@@ -750,12 +750,7 @@ Tcl_CreateNamespace(
      */
 
     if (
-#ifndef BREAK_NAMESPACE_COMPAT
 	Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL
-#else
-	parentPtr->childTablePtr != NULL &&
-	Tcl_FindHashEntry(parentPtr->childTablePtr, simpleName) != NULL
-#endif
     ) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't create namespace \"%s\": already exists", name));
@@ -779,11 +774,7 @@ Tcl_CreateNamespace(
     nsPtr->clientData = clientData;
     nsPtr->deleteProc = deleteProc;
     nsPtr->parentPtr = parentPtr;
-#ifndef BREAK_NAMESPACE_COMPAT
     Tcl_InitHashTable(&nsPtr->childTable, TCL_STRING_KEYS);
-#else
-    nsPtr->childTablePtr = NULL;
-#endif
     nsPtr->nsId = ++(tsdPtr->numNsCreated);
     nsPtr->interp = interp;
     nsPtr->flags = 0;
@@ -1028,7 +1019,7 @@ Tcl_DeleteNamespace(
 	 * being deleted, ignore any second call.
 	 */
 
-	nsPtr->flags |= NS_DYING | NS_TEARDOWN;
+	nsPtr->flags |= (NS_DYING | NS_TEARDOWN);
 
 	TclTeardownNamespace(nsPtr);
 
@@ -1042,14 +1033,7 @@ Tcl_DeleteNamespace(
 
 	    TclDeleteNamespaceVars(nsPtr);
 
-#ifndef BREAK_NAMESPACE_COMPAT
 	    Tcl_DeleteHashTable(&nsPtr->childTable);
-#else
-	    if (nsPtr->childTablePtr != NULL) {
-		Tcl_DeleteHashTable(nsPtr->childTablePtr);
-		ckfree(nsPtr->childTablePtr);
-	    }
-#endif
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
 
 	    nsPtr ->flags |= NS_DEAD;
@@ -1102,7 +1086,6 @@ TclDeleteNamespaceChildren(
      * Important: leave the hash table itself still live.
      */
 
-#ifndef BREAK_NAMESPACE_COMPAT
     unchecked = (nsPtr->childTable.numEntries > 0);
     while (nsPtr->childTable.numEntries > 0 && unchecked) {
 	size_t length = nsPtr->childTable.numEntries;
@@ -1127,34 +1110,6 @@ TclDeleteNamespaceChildren(
 	}
 	TclStackFree((Tcl_Interp *) iPtr, children);
     }
-#else
-    if (nsPtr->childTablePtr != NULL) {
-	unchecked = (nsPtr->childTable.numEntries > 0);
-	while (nsPtr->childTable.numEntries > 0 && unchecked) {
-	    size_t length = nsPtr->childTablePtr->numEntries;
-	    Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
-		    sizeof(Namespace *) * length);
-
-	    i = 0;
-	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		    entryPtr != NULL;
-		    entryPtr = Tcl_NextHashEntry(&search)) {
-		children[i] = (Namespace *)Tcl_GetHashValue(entryPtr);
-		children[i]->refCount++;
-		i++;
-	    }
-	    unchecked = 0;
-	    for (i = 0 ; i < length ; i++) {
-		if (!(children[i]->flags & NS_DYING)) {
-		    unchecked = 1;
-		    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
-		    TclNsDecrRefCount(children[i]);
-		}
-	    }
-	    TclStackFree((Tcl_Interp *) iPtr, children);
-	}
-    }
-#endif
 }
 
 /*
@@ -2352,15 +2307,7 @@ TclGetNamespaceForQualName(
 	 */
 
 	if (nsPtr != NULL) {
-#ifndef BREAK_NAMESPACE_COMPAT
 	    entryPtr = Tcl_FindHashEntry(&nsPtr->childTable, nsName);
-#else
-	    if (nsPtr->childTablePtr == NULL) {
-		entryPtr = NULL;
-	    } else {
-		entryPtr = Tcl_FindHashEntry(nsPtr->childTablePtr, nsName);
-	    }
-#endif
 	    if (entryPtr != NULL) {
 		nsPtr = (Namespace *)Tcl_GetHashValue(entryPtr);
 	    } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
@@ -2391,15 +2338,7 @@ TclGetNamespaceForQualName(
 	 */
 
 	if (altNsPtr != NULL) {
-#ifndef BREAK_NAMESPACE_COMPAT
 	    entryPtr = Tcl_FindHashEntry(&altNsPtr->childTable, nsName);
-#else
-	    if (altNsPtr->childTablePtr != NULL) {
-		entryPtr = Tcl_FindHashEntry(altNsPtr->childTablePtr, nsName);
-	    } else {
-		entryPtr = NULL;
-	    }
-#endif
 	    if (entryPtr != NULL) {
 		altNsPtr = (Namespace *)Tcl_GetHashValue(entryPtr);
 	    } else {
@@ -2824,17 +2763,8 @@ TclResetShadowedCmdRefs(
 
 	for (i = trailFront;  i >= 0;  i--) {
 	    trailNsPtr = trailPtr[i];
-#ifndef BREAK_NAMESPACE_COMPAT
 	    hPtr = Tcl_FindHashEntry(&shadowNsPtr->childTable,
 		    trailNsPtr->name);
-#else
-	    if (shadowNsPtr->childTablePtr != NULL) {
-		hPtr = Tcl_FindHashEntry(shadowNsPtr->childTablePtr,
-			trailNsPtr->name);
-	    } else {
-		hPtr = NULL;
-	    }
-#endif
 	    if (hPtr != NULL) {
 		shadowNsPtr = (Namespace *)Tcl_GetHashValue(hPtr);
 	    } else {
@@ -3086,27 +3016,13 @@ NamespaceChildrenCmd(
 	/*
 	 * Global namespace members are prefixed with "::", others not. Ticket [63449c0514]
 	 */
-	if (
-#ifndef BREAK_NAMESPACE_COMPAT
-	    Tcl_FindHashEntry(&nsPtr->childTable, (nsPtr != globalNsPtr ? 2 : 0) + pattern+length) != NULL
-#else
-	    nsPtr->childTablePtr != NULL &&
-	    Tcl_FindHashEntry(nsPtr->childTablePtr, (nsPtr != globalNsPtr ? 2 : 0) + pattern+length) != NULL
-#endif
-	) {
+	if (Tcl_FindHashEntry(&nsPtr->childTable, (nsPtr != globalNsPtr ? 2 : 0) + pattern+length) != NULL) {
 	    Tcl_ListObjAppendElement(interp, listPtr,
 		    Tcl_NewStringObj(pattern, -1));
 	}
 	goto searchDone;
     }
-#ifndef BREAK_NAMESPACE_COMPAT
     entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
-#else
-    if (nsPtr->childTablePtr == NULL) {
-	goto searchDone;
-    }
-    entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-#endif
     while (entryPtr != NULL) {
 	childNsPtr = (Namespace *)Tcl_GetHashValue(entryPtr);
 	if ((pattern == NULL)
@@ -4902,15 +4818,7 @@ TclGetNamespaceChildTable(
     Tcl_Namespace *nsPtr)
 {
     Namespace *nPtr = (Namespace *) nsPtr;
-#ifndef BREAK_NAMESPACE_COMPAT
     return &nPtr->childTable;
-#else
-    if (nPtr->childTablePtr == NULL) {
-	nPtr->childTablePtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(nPtr->childTablePtr, TCL_STRING_KEYS);
-    }
-    return nPtr->childTablePtr;
-#endif
 }
 
 /*
