@@ -43,22 +43,26 @@ typedef struct {
 #define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64",
+    "ia32_on_arm64"
 };
+
+/*
+ * Forward declarations
+ */
+
+static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
+static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
+static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
 /*
  * The default directory in which the init.tcl file is expected to be found.
  */
 
-static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
 static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
-
-static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
 static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
-
-static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
 /*
  *---------------------------------------------------------------------------
@@ -403,8 +407,9 @@ Tcl_GetEncodingNameFromEnvironment(
     if (acp == CP_UTF8) {
 	Tcl_DStringAppend(bufPtr, "utf-8", 5);
     } else {
-	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-	snprintf(Tcl_DStringValue(bufPtr), 2+TCL_INTEGER_SPACE, "cp%d", GetACP());
+	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
+	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
+		GetACP());
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);
@@ -452,6 +457,7 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
+    typedef int(__stdcall getVersionProc)(void *);
     const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
@@ -467,10 +473,11 @@ TclpSetVariables(
 
     if (!osInfoInitialized) {
 	HMODULE handle = GetModuleHandleW(L"NTDLL");
-	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *))(void *)GetProcAddress(handle, "RtlGetVersion");
+	getVersionProc *getVersion = (getVersionProc *) (void *)
+		GetProcAddress(handle, "RtlGetVersion");
+
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-	if (!getversion || getversion(&osInfo)) {
+	if (!getVersion || getVersion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
 	osInfoInitialized = 1;
@@ -483,12 +490,12 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    Tcl_SetVar2(interp, "tcl_platform", "os",
-	    "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
     if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
 	osInfo.dwMajorVersion = 11;
     }
-    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%ld.%ld",
+	    osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -542,7 +549,7 @@ TclpSetVariables(
      * Define what the platform PATH separator is. [TIP #315]
      */
 
-    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "pathSeparator", ";", TCL_GLOBAL_ONLY);
 }
 
 /*
