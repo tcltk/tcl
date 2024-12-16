@@ -2972,8 +2972,11 @@ NamespaceChildrenCmd(
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
 	}
+	/*
+	 * Global namespace members are prefixed with "::", others not. Ticket [63449c0514]
+	 */
 	if (
-	    Tcl_FindHashEntry(&nsPtr->childTable, pattern+length) != NULL
+	    Tcl_FindHashEntry(&nsPtr->childTable, (nsPtr != globalNsPtr ? 2 : 0) + pattern+length) != NULL
 	) {
 	    Tcl_ListObjAppendElement(interp, listPtr,
 		    Tcl_NewStringObj(pattern, -1));
