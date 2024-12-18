@@ -4066,7 +4066,7 @@ test oo-27.6 {variables declaration - non-interference of levels} -setup {
     foo create bar
     oo::objdefine bar {
 	variable y!
-	method y {} {list [next] [incr y!] [info var] [info local]}
+	method y {} {list [next] [incr y!] [info var] [info locals]}
 	export eval
     }
     bar y
