@@ -27,12 +27,10 @@ proc ::bgerrorIntercept {varName body} {
     }
 }
 
-
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
 # this test suite, interp creation and interp deletion are often used in
 # leaktests in order to leverage this sensitivity.
-
 
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
@@ -68,7 +66,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-        [oo::object new] destroy
+	[oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -1512,24 +1510,24 @@ test oo-7.9 {OO: defining inheritance in namespaces} -setup {
 test oo-7.10 {OO: next after object deletion, bug [135804138e]} -setup {
     set ::result ""
     oo::class create c1 {
-        method m1 {} {
-           lappend ::result c1::m1
-        }
+	method m1 {} {
+	   lappend ::result c1::m1
+	}
     }
     oo::class create c2 {
-        superclass c1
-        destructor {
-            lappend ::result c2::destructor
-            my m1
-            lappend ::result /c2::destructor
-        }
-        method m1 {} {
-            lappend ::result c2::m1
-            rename [self] {}
-            lappend ::result no-self
-            next
-            lappend ::result /c2::m1
-        }
+	superclass c1
+	destructor {
+	    lappend ::result c2::destructor
+	    my m1
+	    lappend ::result /c2::destructor
+	}
+	method m1 {} {
+	    lappend ::result c2::m1
+	    rename [self] {}
+	    lappend ::result no-self
+	    next
+	    lappend ::result /c2::m1
+	}
     }
 } -body {
     c2 create o
@@ -1748,9 +1746,7 @@ test oo-11.6.1 {
 	rename obj1 {}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.2 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -1765,9 +1761,7 @@ test oo-11.6.2 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.3 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -1784,9 +1778,7 @@ test oo-11.6.3 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.4 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -2775,6 +2767,7 @@ test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
     c destroy
 } -result $stdmethods
 
+
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
 } {1 foo {foo
@@ -2932,7 +2925,7 @@ test oo-18.8 {OO: define/self command support} -setup {
 test oo-18.9 {OO: define/self command support} -setup {
     oo::class create parent
     set c [oo::class create now_this_is_a_very_very_long_class_name_indeed {
-        superclass parent
+	superclass parent
     }]
 } -body {
     catch {oo::define $c {error err}} msg opt
@@ -3815,7 +3808,7 @@ test oo-27.6 {variables declaration - non-interference of levels} -setup {
     foo create bar
     oo::objdefine bar {
 	variable y!
-	method y {} {list [next] [incr y!] [info var] [info local]}
+	method y {} {list [next] [incr y!] [info var] [info locals]}
 	export eval
     }
     bar y
@@ -4606,11 +4599,11 @@ test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
 } -cleanup {
     base destroy
 } -result "Destroyed\nRpcClient -> otto-111"
-rename bgerrorIntercept {}
 
+rename bgerrorIntercept {}
 cleanupTests
 return
 
 # Local Variables:
-# MODE: Tcl
+# mode: tcl
 # End:
