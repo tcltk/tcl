@@ -57,43 +57,58 @@ static ProcessGlobalValue executableName = {
  * conversion is most appropriate for Tcl*Convert*Element() to perform, and
  * sets two bits of the flags value to indicate the mode selected.
  *
- * CONVERT_NONE		The element needs no quoting. Its literal string is
- *			suitable as is.
- * CONVERT_BRACE	The conversion should be enclosing the literal string
- *			in braces.
- * CONVERT_ESCAPE	The conversion should be using backslashes to escape
- *			any characters in the string that require it.
- * CONVERT_MASK		A mask value used to extract the conversion mode from
- *			the flags argument.
- *			Also indicates a strange conversion mode where all
- *			special characters are escaped with backslashes
- *			*except for braces*. This is a strange and unnecessary
- *			case, but it's part of the historical way in which
- *			lists have been formatted in Tcl. To experiment with
- *			removing this case, set the value of COMPAT to 0.
- *
- * One last flag value is used only by callers of TclScanElement(). The flag
- * value produced by a call to Tcl*Scan*Element() will never leave this bit
- * set.
- *
- * CONVERT_ANY		The caller of TclScanElement() declares it can make no
- *			promise about what public flags will be passed to the
- *			matching call of TclConvertElement(). As such,
- *			TclScanElement() has to determine the worst case
- *			destination buffer length over all possibilities, and
- *			in other cases this means an overestimate of the
- *			required size.
- *
  * For more details, see the comments on the Tcl*Scan*Element and
  * Tcl*Convert*Element routines.
  */
 
+enum ConvertFlags {
+    CONVERT_NONE = 0,		/* The element needs no quoting. Its literal
+				 * string is suitable as is. */
+    DONT_USE_BRACES = TCL_DONT_USE_BRACES,
+				/* The caller is insisting that brace quoting
+				 * not be used when converting the list
+				 * element. */
+    CONVERT_BRACE = 2,		/* The conversion should be enclosing the
+				 * literal string in braces. */
+    CONVERT_ESCAPE = 4,		/* The conversion should be using backslashes
+				 * to escape any characters in the string that
+				 * require it. */
+    DONT_QUOTE_HASH = TCL_DONT_QUOTE_HASH,
+				/* The caller insists that a leading hash
+				 * character ('#') should *not* be quoted. This
+				 * is appropriate when the caller can guarantee
+				 * the element is not the first element of a
+				 * list, so [eval] cannot mis-parse the element
+				 * as a comment.*/
+    CONVERT_MASK = CONVERT_BRACE | CONVERT_ESCAPE,
+				/* A mask value used to extract the conversion
+				 * mode from the flags argument.
+				 *
+				 * Also indicates a strange conversion mode
+				 * where all special characters are escaped
+				 * with backslashes *except for braces*. This
+				 * is a strange and unnecessary case, but it's
+				 * part of the historical way in which lists
+				 * have been formatted in Tcl. To experiment
+				 * with removing this case, define the value of
+				 * COMPAT to be 0. */
+    CONVERT_ANY = 16		/* The caller of TclScanElement() declares it
+				 * can make no promise about what public flags
+				 * will be passed to the matching call of
+				 * TclConvertElement(). As such,
+				 * TclScanElement() has to determine the worst
+				 * case destination buffer length over all
+				 * possibilities, and in other cases this means
+				 * an overestimate of the required size.
+				 *
+				 * Used only by callers of TclScanElement().
+				 * The flag value produced by a call to
+				 * Tcl*Scan*Element() will never leave this
+				 * bit set. */
+};
+#ifndef COMPAT
 #define COMPAT 1
-#define CONVERT_NONE	0
-#define CONVERT_BRACE	2
-#define CONVERT_ESCAPE	4
-#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
-#define CONVERT_ANY	16
+#endif
 
 /*
  * Prototypes for functions defined later in this file.
@@ -1065,7 +1080,7 @@ TclScanElement(
      * This is inconsistent with [list x{a"b}], but we will not change that now.
      * Set that preference here so that we compute a tight size requirement.
      */
-    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
 	preferBrace = 1;
     }
 #endif
@@ -1204,7 +1219,7 @@ TclScanElement(
 	 * Make room to escape leading #, if needed.
 	 */
 
-	if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
 	    bytesNeeded++;
 	}
 	*flagPtr = CONVERT_ESCAPE;
@@ -1224,7 +1239,7 @@ TclScanElement(
 	    extra = 2;
 	}
 	*flagPtr &= ~CONVERT_ANY;
-	*flagPtr |= TCL_DONT_USE_BRACES;
+	*flagPtr |= DONT_USE_BRACES;
     }
     if (forbidNone) {
 	/*
@@ -1242,7 +1257,7 @@ TclScanElement(
 
 	    bytesNeeded += (extra - braceCount);
 	    /* Make room to escape leading #, if needed. */
-	    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
 		bytesNeeded++;
 	    }
 
@@ -1252,14 +1267,14 @@ TclScanElement(
 	     * escape the braces.
 	     */
 
-	    if (*flagPtr & TCL_DONT_USE_BRACES) {
+	    if (*flagPtr & DONT_USE_BRACES) {
 		bytesNeeded += braceCount;
 	    }
 	    *flagPtr = CONVERT_MASK;
 	    return bytesNeeded;
 	}
 #endif /* COMPAT */
-	if (*flagPtr & TCL_DONT_USE_BRACES) {
+	if (*flagPtr & DONT_USE_BRACES) {
 	    /*
 	     * If the caller reports it will direct TclConvertElement() to
 	     * use escapes, add the extra bytes needed to have room for them.
@@ -1271,7 +1286,7 @@ TclScanElement(
 	     * Make room to escape leading #, if needed.
 	     */
 
-	    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+	    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
 		bytesNeeded++;
 	    }
 	} else {
@@ -1289,7 +1304,7 @@ TclScanElement(
      * So far, no need to quote or escape anything.
      */
 
-    if ((*src == '#') && !(*flagPtr & TCL_DONT_QUOTE_HASH)) {
+    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
 	/*
 	 * If we need to quote a leading #, make room to enclose in braces.
 	 */
@@ -1398,7 +1413,7 @@ TclConvertElement(
      * Let the caller demand we use escape sequences rather than braces.
      */
 
-    if ((flags & TCL_DONT_USE_BRACES) && (conversion & CONVERT_BRACE)) {
+    if ((flags & DONT_USE_BRACES) && (conversion & CONVERT_BRACE)) {
 	conversion = CONVERT_ESCAPE;
     }
 
@@ -1416,7 +1431,7 @@ TclConvertElement(
      * Escape leading hash as needed and requested.
      */
 
-    if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
+    if ((*src == '#') && !(flags & DONT_QUOTE_HASH)) {
 	if (conversion == CONVERT_ESCAPE) {
 	    p[0] = '\\';
 	    p[1] = '#';
@@ -1600,7 +1615,7 @@ Tcl_Merge(
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
-	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
@@ -1612,7 +1627,7 @@ Tcl_Merge(
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	flagPtr[i] |= ( i ? DONT_QUOTE_HASH : 0 );
 	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
@@ -2734,11 +2749,11 @@ Tcl_DStringAppendElement(
 	quoteHash = !TclNeedSpace(dsPtr->string, dst+1);
     }
     if (!quoteHash) {
-	flags |= TCL_DONT_QUOTE_HASH;
+	flags |= DONT_QUOTE_HASH;
     }
     newSize = dsPtr->length + needSpace + TclScanElement(element, TCL_INDEX_NONE, &flags);
     if (!quoteHash) {
-	flags |= TCL_DONT_QUOTE_HASH;
+	flags |= DONT_QUOTE_HASH;
     }
 
     /*

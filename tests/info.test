@@ -420,7 +420,7 @@ test info-12.2 {info locals option} {
 	set xx1 2
 	set xx2 3
 	set y 4
-	return [info loc x*]
+	return [info locals x*]
     }
     lsort [t1 2 3]
 } {x xx1 xx2}
@@ -602,7 +602,7 @@ test info-18.1 {info tclversion option} -body {
     scan [info tclversion] "%d.%d%c" a b c
 } -cleanup {unset -nocomplain a b c} -result 2
 test info-18.2 {info tclversion option} -body {
-    info t 2
+    info tclv 2
 } -returnCodes error -result {wrong # args: should be "info tclversion"}
 test info-18.3 {info tclversion option} -body {
     unset tcl_version

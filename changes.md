@@ -18,7 +18,9 @@ Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
  - [Wrong result by "lsearch -stride -subindices -inline -all"](https://core.tcl-lang.org/tcl/info/5a1aaa)
  - [zipfs info on mountpoint of executable returns zero offset in field 4"](https://core.tcl-lang.org/tcl/info/aaa84f)
- - [TIP #609 - required Tcl_ThreadAlert() skipped with nested event loop](https://core.tcl-lang.org/tcl/info/c7e4c4)
+ - [TIP 609 - required Tcl_ThreadAlert() skipped with nested event loop](https://core.tcl-lang.org/tcl/info/c7e4c4)
+ - [Size modifiers j, q, z, t not implemented]( https://core.tcl-lang.org/tcl/info/c4f365)
+ - [TIP 707 - ptrAndSize internal rep in Tcl_Obj](https://core.tcl-lang.org/tips/doc/trunk/tip/707.md)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
@@ -161,4 +163,5 @@ writing Tcl scripts.
  - [lsearch -stride with -subindices and -inline -all gives unexpected result](https://core.tcl-lang.org/tcl/tktview/5a1aaa)
  - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
  - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
+ - [[namespace children] doesn't match non-glob patterns below global namespace](https://core.tcl-lang.org/tcl/tktview/63449c0514)
 
