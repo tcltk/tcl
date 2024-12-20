@@ -2202,11 +2202,24 @@ InfoTimezoneCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_Obj *tzObj;
+
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?timezone?");
 	return TCL_ERROR;
     }
-    /* TODO: to be implemented */
+    if (objc > 1) {
+	tzObj = Tcl_SetVar2Ex(interp, "env", "TCL_TZ", objv[1], TCL_GLOBAL_ONLY);
+    } else {
+	tzObj = Tcl_GetVar2Ex(interp, "env", "TCL_TZ", TCL_GLOBAL_ONLY);
+    }
+    if (!tzObj) {
+	tzObj = Tcl_GetVar2Ex(interp, "env", "TZ", TCL_GLOBAL_ONLY);
+	if (!tzObj) {
+	    tzObj = Tcl_NewStringObj(":localtime", -1);
+	}
+    }
+    Tcl_SetObjResult(interp, tzObj);
     return TCL_OK;
 }
 
