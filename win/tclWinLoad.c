@@ -27,6 +27,11 @@ static WCHAR *dllDirectoryName = NULL;
 static Tcl_Mutex dllDirectoryNameMutex;
 #endif
 
+typedef struct {
+	struct Tcl_LoadHandle_ base;
+	char name[TCLFLEXARRAY];
+} TclWinLoadHandle;
+
 /*
  * Static functions defined within this file.
  */
@@ -70,7 +75,7 @@ TclpDlopen(
 {
     HINSTANCE hInstance = NULL;
     const WCHAR *nativeName;
-    Tcl_LoadHandle handlePtr;
+    TclWinLoadHandle *handlePtr;
     DWORD firstError;
 
     /*
@@ -177,11 +182,12 @@ TclpDlopen(
      * Succeded; package everything up for Tcl.
      */
 
-    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = hInstance;
-    handlePtr->findSymbolProcPtr = &FindSymbol;
-    handlePtr->unloadFileProcPtr = &UnloadFile;
-    *loadHandle = handlePtr;
+    handlePtr = (TclWinLoadHandle *)Tcl_Alloc(offsetof(TclWinLoadHandle, name) + 1);
+    handlePtr->base.clientData = hInstance;
+    handlePtr->base.findSymbolProcPtr = &FindSymbol;
+    handlePtr->base.unloadFileProcPtr = &UnloadFile;
+    handlePtr->name[0] = 0;
+    *loadHandle = &handlePtr->base;
     *unloadProcPtr = &UnloadFile;
     return TCL_OK;
 }
@@ -496,18 +502,18 @@ TclpLoadMemory(
 				 * file. */
     TCL_UNUSED(int)) /* flags */
 {
-    Tcl_LoadHandle handlePtr;
+	TclWinLoadHandle *handlePtr;
     void *hInstance;
-    size_t handleSize = offsetof(struct Tcl_LoadHandle_, name) + (path ? strlen(path) : 1);
+    size_t handleSize = offsetof(TclWinLoadHandle, name) + (path ? strlen(path) : 0) + 1;
     int isNew;
 
     if (codeSize < 1) {
 	Tcl_Free(data);
 	return TCL_ERROR;
     }
-    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(handleSize);
-    handlePtr->findSymbolProcPtr = &FindMemSymbol;
-    handlePtr->unloadFileProcPtr = &UnloadMemory;
+    handlePtr = (TclWinLoadHandle *)Tcl_Alloc(handleSize);
+    handlePtr->base.findSymbolProcPtr = &FindMemSymbol;
+    handlePtr->base.unloadFileProcPtr = &UnloadMemory;
     if (path) {
 	strcpy(handlePtr->name, path);
     } else {
@@ -523,8 +529,8 @@ TclpLoadMemory(
 	Tcl_Free(handlePtr);
 	return TCL_ERROR;
     }
-    handlePtr->clientData = hInstance;
-    *loadHandle = handlePtr;
+    handlePtr->base.clientData = hInstance;
+    *loadHandle = &handlePtr->base;
     *unloadProcPtr = &UnloadMemory;
     return TCL_OK;
 }
