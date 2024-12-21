@@ -1205,16 +1205,16 @@ RenderDeclarerName(
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
-	((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
+    ((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void
 CommonMethErrorHandler(
     Tcl_Interp *interp,
     const char *special)
-
 {
     Tcl_Size objectNameLen;
-    CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
+    CallContext *contextPtr = (CallContext *)((Interp *)
+	    interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName = "instance";
     Object *declarerPtr = NULL;
@@ -1222,17 +1222,14 @@ CommonMethErrorHandler(
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
-
     } else if (mPtr->declaringClassPtr != NULL) {
-
-
 	declarerPtr = mPtr->declaringClassPtr->thisPtr;
 	kindName = "class";
     }
 
     if (declarerPtr) {
 	objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
+		&objectNameLen);
     } else {
 	objectName = "unknown or deleted";
 	objectNameLen = 18;
@@ -1241,13 +1238,14 @@ CommonMethErrorHandler(
 	Tcl_Size nameLen;
 	const char *methodName = TclGetStringFromObj(mPtr->namePtr, &nameLen);
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
-	    kindName, ELLIPSIFY(objectName, objectNameLen),
-	    ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
+		"\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
+		kindName, ELLIPSIFY(objectName, objectNameLen),
+		ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
     } else {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" %s line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), special, Tcl_GetErrorLine(interp)));
+		"\n    (%s \"%.*s%s\" %s line %d)",
+		kindName, ELLIPSIFY(objectName, objectNameLen), special,
+		Tcl_GetErrorLine(interp)));
     }
 }
 
@@ -1255,8 +1253,8 @@ static void
 MethodErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	/* We pull the method name out of context instead of from argument */
 {
+    /* We pull the method name out of context instead of from argument. */
     CommonMethErrorHandler(interp, NULL);
 }
 
@@ -1264,62 +1262,20 @@ static void
 ConstructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	/* Ignore. We know it is the constructor. */
 {
-
-
-
-
-
+    /* We know this is for the constructor. */
     CommonMethErrorHandler(interp, "constructor");
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-
-
 
 static void
 DestructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	/* Ignore. We know it is the destructor. */
 {
-
-
-
-
-
+    /* We know this is for the destructor. */
     CommonMethErrorHandler(interp, "destructor");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *

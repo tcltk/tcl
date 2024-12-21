@@ -1758,11 +1758,46 @@ InfoLocaleCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?locale?");
+    int index = 5;
+    const char *locale = NULL;
+    static const char *const optionStrings[] = {
+	"-collate", "-ctype", "-monetary",	"-numeric", "-time", NULL
+    };
+    static const int lcTypes[] = {
+	LC_COLLATE, LC_CTYPE, LC_MONETARY, LC_NUMERIC, LC_TIME, LC_ALL
+    };
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?option? ?locale?");
 	return TCL_ERROR;
     }
-    /* TODO: to be implemented */
+    if (objc > 1) {
+	if (Tcl_GetIndexFromObj((objc > 2) ? interp : NULL, objv[1], optionStrings, "option", 0,
+		&index) != TCL_OK) {
+	    if ((objc > 2)) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_IsSafe(interp)) {
+		goto notSafeError;
+	    }
+	    locale = setlocale(LC_ALL, Tcl_GetString(objv[1]));
+	} else {
+	    if (Tcl_IsSafe(interp) && (objc > 2)) {
+	    notSafeError:
+		Tcl_AppendResult(interp, "Setting locale not allowed in safe interp", (char *)NULL);
+	    }
+	    locale = setlocale(lcTypes[index], (objc > 2) ? Tcl_GetString(objv[2]) : NULL);
+	}
+	if (!locale) {
+	    Tcl_AppendResult(interp, "invalid locale: \"",
+		    Tcl_GetString(objv[objc-1]), "\"", (char *)NULL);
+	    return TCL_ERROR;
+	}
+    }
+    if (!locale) {
+	locale = setlocale(lcTypes[index], NULL);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(locale, TCL_INDEX_NONE));
     return TCL_OK;
 }
 

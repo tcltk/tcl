@@ -249,7 +249,6 @@ static Tcl_ObjCmdProc	TestinterpdeleteCmd;
 static Tcl_ObjCmdProc	TestlinkCmd;
 static Tcl_ObjCmdProc	TestlinkarrayCmd;
 static Tcl_ObjCmdProc	TestlistrepCmd;
-static Tcl_ObjCmdProc	TestlocaleCmd;
 static Tcl_ObjCmdProc	TestmainthreadCmd;
 static Tcl_ObjCmdProc	TestsetmainloopCmd;
 static Tcl_ObjCmdProc	TestexitmainloopCmd;
@@ -634,8 +633,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlistrep", TestlistrepCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
-	    NULL);
     Tcl_CreateObjCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserCmd,
@@ -3915,67 +3912,6 @@ TestlistrepCmd(
 	break;
     }
     Tcl_SetObjResult(interp, resultObj);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestlocaleCmd --
- *
- *	This procedure implements the "testlocale" command.  It is used
- *	to test the effects of setting different locales in Tcl.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Modifies the current C locale.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestlocaleCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    int index;
-    const char *locale;
-    static const char *const optionStrings[] = {
-	"ctype", "numeric", "time", "collate", "monetary",
-	"all",	NULL
-    };
-    static const int lcTypes[] = {
-	LC_CTYPE, LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY,
-	LC_ALL
-    };
-
-    /*
-     * LC_CTYPE, etc. correspond to the indices for the strings.
-     */
-
-    if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "category ?locale?");
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (objc == 3) {
-	locale = Tcl_GetString(objv[2]);
-    } else {
-	locale = NULL;
-    }
-    locale = setlocale(lcTypes[index], locale);
-    if (locale) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp), locale, -1);
-    }
     return TCL_OK;
 }
 
