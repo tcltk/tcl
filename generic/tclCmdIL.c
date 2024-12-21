@@ -4349,11 +4349,10 @@ Tcl_LseqObjCmd(
 
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
-	double d;
-	// Don't consider Count type to indicate using double values in seqence
+	double d = elementCount->internalRep.doubleValue;
+	/* Don't consider Count type to indicate using double values in seqence */
 	useDoubles -= (useDoubles > 0) ? 1 : 0;
-	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
-	if (floor(d) == d) {
+	if (!isinf(d) && !isnan(d) && floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 		mp_int big;
 
