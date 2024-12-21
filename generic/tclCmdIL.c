@@ -4259,7 +4259,7 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	}
 	break;
 
@@ -4281,10 +4281,10 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    goto done;
+	    goto syntax;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4302,7 +4302,7 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4317,7 +4317,7 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	opmode = (SequenceOperators)values[1];
@@ -4332,7 +4332,7 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
