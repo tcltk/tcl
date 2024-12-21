@@ -449,7 +449,8 @@ NewArithSeriesDbl(
     double start,
     double end,
     double step,
-    Tcl_WideInt len)
+    Tcl_WideInt len,
+    unsigned precision)
 {
     Tcl_WideInt length;
     Tcl_Obj *arithSeriesObj;
@@ -473,7 +474,7 @@ NewArithSeriesDbl(
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->end = end;
     arithSeriesRepPtr->step = step;
-    arithSeriesRepPtr->precision = maxPrecision(start, end, step);
+    arithSeriesRepPtr->precision = precision;
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &arithSeriesType;
@@ -524,15 +525,23 @@ assignNumber(
     }
     if (useDoubles) {
 	if (tcl_number_type != TCL_NUMBER_INT) {
-	    *dblNumberPtr = *(double *)clientData;
+	    double value = *(double *)clientData;
+	    *intNumberPtr = (Tcl_WideInt)value;
+	    *dblNumberPtr = value;
 	} else {
-	    *dblNumberPtr = (double)*(Tcl_WideInt *)clientData;
+	    Tcl_WideInt value = *(Tcl_WideInt *)clientData;
+	    *intNumberPtr = value;
+	    *dblNumberPtr = (double)value;
 	}
     } else {
 	if (tcl_number_type == TCL_NUMBER_INT) {
-	    *intNumberPtr = *(Tcl_WideInt *)clientData;
+	    Tcl_WideInt value = *(Tcl_WideInt *)clientData;
+	    *intNumberPtr = value;
+	    *dblNumberPtr = (double)value;
 	} else {
-	    *intNumberPtr = (Tcl_WideInt)*(double *)clientData;
+	    double value = *(double *)clientData;
+	    *intNumberPtr = (Tcl_WideInt)value;
+	    *dblNumberPtr = value;
 	}
     }
     return TCL_OK;
@@ -565,8 +574,8 @@ TclNewArithSeriesObj(
     Tcl_Obj *stepObj,         /* increment value */
     Tcl_Obj *lenObj)          /* Number of elements */
 {
-    double dstart, dend, dstep;
-    Tcl_WideInt start, end, step;
+    double dstart, dend, dstep = 1.0;
+    Tcl_WideInt start, end, step = 1;
     Tcl_WideInt len = -1;
     Tcl_Obj *objPtr;
 
@@ -576,18 +585,13 @@ TclNewArithSeriesObj(
 	}
     } else {
 	start = 0;
-	dstart = start;
+	dstart = 0.0;
     }
     if (stepObj) {
 	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
 	    return NULL;
 	}
-	if (useDoubles) {
-	    step = dstep;
-	} else {
-	    dstep = step;
-	}
-	if (dstep == 0) {
+	if (!useDoubles ? !step : !dstep) {
 	    TclNewObj(objPtr);
 	    return objPtr;
 	}
@@ -598,36 +602,56 @@ TclNewArithSeriesObj(
 	}
     }
     if (lenObj) {
-	if (TCL_OK != Tcl_GetWideIntFromObj(interp, lenObj, &len)) {
+	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
 	    return NULL;
 	}
     }
 
-    if (startObj && endObj) {
+    if (endObj) {
 	if (!stepObj) {
 	    if (useDoubles) {
-		dstep = (dstart < dend) ? 1.0 : -1.0;
-		step = dstep;
+		if (dstart > dend) {
+		    dstep = -1.0;
+		    step = -1;
+		}
 	    } else {
-		step = (start < end) ? 1 : -1;
-		dstep = step;
+		if (start > end) {
+		    step = -1;
+		    dstep = -1.0;
+		}
 	    }
 	}
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
-		unsigned precision = maxPrecision(dstart, dend, dstep);
+		unsigned precision;
+
+		if (isinf(dstart) || isinf(dend)) {
+		    goto exceeded;
+		}
+		if (isnan(dstart) || isnan(dend)) {
+		    const char *description = "non-numeric floating-point value";
+		    char tmp[TCL_DOUBLE_SPACE + 2];
+
+		    tmp[0] = '\0';
+		    Tcl_PrintDouble(NULL, isnan(dstart)?dstart:dend, tmp);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"cannot use %s \"%s\" to estimate length of arith-series",
+			description, tmp));
+		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description,
+			(char *)NULL);
+		    return NULL;
+		}
+		precision = maxPrecision(dstart, dend, dstep);
 		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
 	    } else {
 		len = ArithSeriesLenInt(start, end, step);
 	    }
 	}
-    }
-
-    if (!endObj) {
+    } else {
 	if (useDoubles) {
 	    // Compute precision based on given command argument values
-	    unsigned precision = maxPrecision(dstart, len, dstep);
+	    unsigned precision = maxPrecision(dstart, 0, dstep);
 
 	    dend = dstart + (dstep * (len-1));
 	    // Make computed end value match argument(s) precision
@@ -639,7 +663,13 @@ TclNewArithSeriesObj(
 	}
     }
 
+    /*
+     * todo: check whether the boundary must be rather LIST_MAX, to be more
+     * similar to plain lists, otherwise it'd generare an error or panic later
+     * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
+     */
     if (len > TCL_SIZE_MAX) {
+      exceeded:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
@@ -647,8 +677,9 @@ TclNewArithSeriesObj(
     }
 
     objPtr = (useDoubles)
-	    ? NewArithSeriesDbl(dstart, dend, dstep, len)
-	    : NewArithSeriesInt(start, end, step, len);
+	    ? NewArithSeriesDbl(dstart, dend, dstep, len,
+		maxPrecision(dstart, dend, dstep))
+	    : NewArithSeriesInt(start, dend, step, len);
     return objPtr;
 }
 

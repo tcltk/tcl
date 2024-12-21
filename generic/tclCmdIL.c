@@ -4189,7 +4189,9 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles += (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    if ((keyword == TCL_NUMBER_DOUBLE || keyword == TCL_NUMBER_NAN)) {
+		useDoubles++;
+	    }
 	    value_i++;
 	    break;
 
