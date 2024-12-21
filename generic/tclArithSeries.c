@@ -284,8 +284,11 @@ ArithSeriesLenInt(
     if (step == 0) {
 	return 0;
     }
-    len = 1 + ((end - start) / step);
-    return (len < 0) ? -1 : len;
+    len = (end - start) / step + 1;
+    if (len < 0) {
+	return 0;
+    }
+    return len;
 }
 
 static Tcl_WideInt
@@ -295,19 +298,41 @@ ArithSeriesLenDbl(
     double step,
     unsigned precision)
 {
-    double istart, iend, istep, ilen;
+    double len, precMul = power10(precision);
 
     if (step == 0) {
 	return 0;
     }
-    istart = start * power10(precision);
-    iend = end * power10(precision);
-    istep = step * power10(precision);
-    ilen = (iend - istart + istep) / istep;
-    if (ilen < 0) {
+    start *= precMul;
+    end *= precMul;
+    step *= precMul;
+    /* distance */
+    end -= start;
+    /* 
+     * To improve numerical stability use wide arithmetic instead of IEEE-754
+     * when distance and step do not exceed wide-integers.
+     */
+    if (
+	(WIDE_MIN <= end && end <= WIDE_MAX) &&
+	(WIDE_MIN <= step && step <= WIDE_MAX)
+    ) {
+	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
+	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
+	return (iend / istep) + 1;
+    }
+    /*
+     * Too large, so use double (note the result may be instable due
+     * to IEEE-754, so if exact length is needed, better to avoid it and
+     * use count argument of lseq to specify it by invocation).
+     */
+    len = end / step + 1;
+    if (len > TCL_SIZE_MAX) {
+	return TCL_SIZE_MAX;
+    }
+    if (len < 0) {
 	return 0;
     }
-    return floor(ilen);
+    return (Tcl_WideInt)len;
 }
 
 /*
