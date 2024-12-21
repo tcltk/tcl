@@ -51,6 +51,7 @@ typedef struct {
     Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
+    Tcl_Size refCount;
 } ArithSeries;
 
 typedef struct {
@@ -336,23 +337,8 @@ DupArithSeriesInternalRep(
     ArithSeries *srcRepPtr = (ArithSeries *)
 	    srcPtr->internalRep.twoPtrValue.ptr1;
 
-    if (srcRepPtr->isDouble) {
-	ArithSeriesDbl *srcDblPtr = (ArithSeriesDbl *) srcRepPtr;
-	ArithSeriesDbl *copyDblPtr = (ArithSeriesDbl *)
-		Tcl_Alloc(sizeof(ArithSeriesDbl));
-
-	*copyDblPtr = *srcDblPtr;
-	copyDblPtr->base.elements = NULL;
-	copyPtr->internalRep.twoPtrValue.ptr1 = copyDblPtr;
-    } else {
-	ArithSeriesInt *srcIntPtr = (ArithSeriesInt *) srcRepPtr;
-	ArithSeriesInt *copyIntPtr = (ArithSeriesInt *)
-		Tcl_Alloc(sizeof(ArithSeriesInt));
-
-	*copyIntPtr = *srcIntPtr;
-	copyIntPtr->base.elements = NULL;
-	copyPtr->internalRep.twoPtrValue.ptr1 = copyIntPtr;
-    }
+    srcRepPtr->refCount++;
+    copyPtr->internalRep.twoPtrValue.ptr1 = srcRepPtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &arithSeriesType;
 }
@@ -394,7 +380,7 @@ FreeArithSeriesInternalRep(
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
 
-    if (arithSeriesRepPtr) {
+    if (arithSeriesRepPtr && arithSeriesRepPtr->refCount-- <= 1) {
 	FreeElements(arithSeriesRepPtr);
 	Tcl_Free((void *)arithSeriesRepPtr);
     }
@@ -442,6 +428,7 @@ NewArithSeriesInt(
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
     arithSeriesRepPtr->base.isDouble = 0;
+    arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
@@ -496,6 +483,7 @@ NewArithSeriesDbl(
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
     arithSeriesRepPtr->base.isDouble = 1;
+    arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
     arithSeriesRepPtr->precision = precision;
@@ -861,7 +849,7 @@ TclArithSeriesObjRange(
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	double dstart = ArithSeriesIndexDbl(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj)) {
+	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesDbl(dstart, dblRepPtr->step, len,
 		dblRepPtr->precision);
@@ -883,7 +871,7 @@ TclArithSeriesObjRange(
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) arithSeriesRepPtr;
 	Tcl_WideInt start = ArithSeriesIndexInt(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj)) {
+	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesInt(start, intRepPtr->step, len);
 	} else {
@@ -1025,7 +1013,7 @@ TclArithSeriesObjReverse(
 
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
-    if (Tcl_IsShared(arithSeriesObj)) {
+    if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	if (arithSeriesRepPtr->isDouble) {
 	    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	    resultObj = NewArithSeriesDbl(ArithSeriesEndDbl(dblRepPtr),
