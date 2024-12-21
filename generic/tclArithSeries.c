@@ -1155,30 +1155,36 @@ UpdateStringOfArithSeries(
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
     char *p;
-    Tcl_Obj *eleObj;
     Tcl_Size i, bytlen = 0;
+
+    if (!arithSeriesRepPtr->len) {
+	TclInitEmptyStringRep(arithSeriesObjPtr);
+	return;
+    }
 
     /*
      * Pass 1: estimate space.
      */
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	    double d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
-	    size_t slen = d>0 ? log10(d)+1 : d<0 ? log10(-d)+2 : 1;
+	    double d = (double)ArithSeriesIndexInt(arithSeriesRepPtr, i);
+	    Tcl_Size slen = d>0 ? log10(d)+1 : d<0 ? log10(-d)+2 : 1;
 
 	    bytlen += slen;
 	}
     } else {
+	char tmp[TCL_DOUBLE_SPACE + 2];
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
-	    char tmp[TCL_DOUBLE_SPACE + 2];
 
-	    tmp[0] = 0;
+	    tmp[0] = '\0';
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    if ((bytlen + strlen(tmp)) > TCL_SIZE_MAX) {
-		break; // overflow
-	    }
 	    bytlen += strlen(tmp);
+	    if (bytlen > TCL_SIZE_MAX) {
+		/* overflow, todo: check we could use some representation instead of the panic
+		 * to signal it is too large for string representation, because too heavy */
+		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
+	    }
 	}
     }
     bytlen += arithSeriesRepPtr->len; // Space for each separator
@@ -1188,21 +1194,26 @@ UpdateStringOfArithSeries(
      */
 
     p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
-    for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	if (TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i, &eleObj) == TCL_OK) {
-	    Tcl_Size slen;
-	    char *str = TclGetStringFromObj(eleObj, &slen);
+    if (!arithSeriesRepPtr->isDouble) {
+	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
+	    p += TclFormatInt(p, d);
+	    assert(p - arithSeriesObjPtr->bytes <= bytlen);
+	    *p++ = ' ';
+	}
+    } else {
+	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 
-	    strcpy(p, str);
-	    p[slen] = ' ';
-	    p += slen + 1;
-	    Tcl_DecrRefCount(eleObj);
-	} // else TODO: report error here?
+	    *p = '\0';
+	    Tcl_PrintDouble(NULL,d,p);
+	    p += strlen(p);
+	    assert(p - arithSeriesObjPtr->bytes <= bytlen);
+	    *p++ = ' ';
+	}
     }
-    if (bytlen > 0) {
-	arithSeriesObjPtr->bytes[bytlen - 1] = '\0';
-    }
-    arithSeriesObjPtr->length = bytlen - 1;
+    *(--p) = '\0';
+    arithSeriesObjPtr->length = p - arithSeriesObjPtr->bytes;
 }
 
 /*
