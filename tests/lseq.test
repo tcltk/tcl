@@ -816,6 +816,151 @@ test lseq-4.20 {lindex on lseq without index args, bug a9625d1f53554f9d} -body {
     unset -nocomplain res
 } -result {1000 0 999}
 
+test lseq-4.21.1 {Corner cases: overflows by Inf} -body {
+    set res {}
+    lappend res [catch {lseq -1e5555} msg] $msg
+    lappend res [catch {lseq 1e5555} msg] $msg
+    lappend res [catch {lseq -Inf} msg] $msg
+    lappend res [catch {lseq Inf} msg] $msg
+    lappend res [catch {lseq -1e5555 0} msg] $msg
+    lappend res [catch {lseq 0 1e5555} msg] $msg
+    lappend res [catch {lseq -1e5555 1e5555} msg] $msg
+    lappend res [catch {lseq -Inf -Inf} msg] $msg
+    lappend res [catch {lseq Inf Inf} msg] $msg
+    lappend res [catch {lseq 0 .. Inf} msg] $msg
+    lappend res [catch {lseq -Inf .. 0} msg] $msg
+    lappend res [catch {lseq 0 .. -Inf} msg] $msg
+    lappend res [catch {lseq -Inf .. Inf} msg] $msg
+    lappend res [catch {lseq Inf .. -Inf} msg] $msg
+} -cleanup {
+    unset -nocomplain res
+} -result [list {*}{
+    1 {expected integer but got "-1e5555"}
+    1 {expected integer but got "1e5555"}
+    1 {expected integer but got "-Inf"}
+    1 {expected integer but got "Inf"}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+    1 {max length of a Tcl list exceeded}
+}]
+test lseq-4.21.2 {Corner cases: expected Inf} -body {
+    set res {}
+    lappend res [lseq {1e5555+0} count 5]
+    lappend res [lseq Inf count 5]
+    lappend res [lseq Inf count 5 by 100]
+    lappend res [lseq Inf count 5 by Inf]
+    lappend res [lseq Inf count 5 by -Inf]
+    lappend res [lseq 5 by Inf]
+    lappend res [lseq 0 count 5 by Inf]
+    lappend res [lseq 5 by 1e307]
+    lappend res [lseq 0 count 5 by 1e307]
+    lappend res [lseq 5 by 5e306]
+    lappend res [lseq 0 count 5 by 5e306]
+} -cleanup {
+    unset -nocomplain res
+} -result [list {*}{
+    {Inf Inf Inf Inf Inf}
+    {Inf Inf Inf Inf Inf}
+    {Inf Inf Inf Inf Inf}
+    {Inf Inf Inf Inf Inf}
+    {Inf -NaN -NaN -NaN -NaN}
+    {0.0 Inf Inf Inf Inf}
+    {0.0 Inf Inf Inf Inf}
+    {0.0 1e+307 Inf Inf Inf}
+    {0.0 1e+307 Inf Inf Inf}
+    {0.0 5e+306 1e+307 1.5e+307 Inf}
+    {0.0 5e+306 1e+307 1.5e+307 Inf}
+}]
+test lseq-4.21.3 {Corner cases: expected -Inf} -body {
+    set res {}
+    lappend res [lseq {-1e5555+0} count 5]
+    lappend res [lseq -Inf count 5]
+    lappend res [lseq -Inf count 5 by 100]
+    lappend res [lseq -Inf count 5 by -Inf]
+    lappend res [lseq -Inf count 5 by Inf]
+    lappend res [lseq 5 by -Inf]
+    lappend res [lseq 0 count 5 by -Inf]
+    lappend res [lseq 5 by -1e307]
+    lappend res [lseq 0 count 5 by -1e307]
+    lappend res [lseq 5 by -5e306]
+    lappend res [lseq 0 count 5 by -5e306]
+} -cleanup {
+    unset -nocomplain res
+} -result [list {*}{
+    {-Inf -Inf -Inf -Inf -Inf}
+    {-Inf -Inf -Inf -Inf -Inf}
+    {-Inf -Inf -Inf -Inf -Inf}
+    {-Inf -Inf -Inf -Inf -Inf}
+    {-Inf -NaN -NaN -NaN -NaN}
+    {0.0 -Inf -Inf -Inf -Inf}
+    {0.0 -Inf -Inf -Inf -Inf}
+    {0.0 -1e+307 -Inf -Inf -Inf}
+    {0.0 -1e+307 -Inf -Inf -Inf}
+    {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
+    {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
+}]
+test lseq-4.21.4 {Corner cases: unexpected NaN} -body {
+    set res {}
+    lappend res [catch {lseq NaN} msg] $msg
+    lappend res [catch {lseq 0 .. NaN} msg] $msg
+} -cleanup {
+    unset -nocomplain res
+} -result {1 {expected integer but got "NaN"} 1 {cannot use non-numeric floating-point value "NaN" to estimate length of arith-series}}
+test lseq-4.21.5 {Corner cases: expected NaN} -body {
+    set res {}
+    lappend res [lseq NaN count 5]
+    lappend res [lseq NaN count 5 by 100]
+    lappend res [lseq NaN count 5 by NaN]
+    lappend res [lseq 5 by NaN]
+    lappend res [lseq 0 count 5 by NaN]
+    lappend res [lseq 5 by 1e307]
+    lappend res [lseq 0 count 5 by 1e307]
+    lappend res [lseq 5 by 5e306]
+    lappend res [lseq 0 count 5 by 5e306]
+} -cleanup {
+    unset -nocomplain res
+} -result [list {*}{
+    {NaN NaN NaN NaN NaN}
+    {NaN NaN NaN NaN NaN}
+    {NaN NaN NaN NaN NaN}
+    {0.0 NaN NaN NaN NaN}
+    {0.0 NaN NaN NaN NaN}
+    {0.0 1e+307 Inf Inf Inf}
+    {0.0 1e+307 Inf Inf Inf}
+    {0.0 5e+306 1e+307 1.5e+307 Inf}
+    {0.0 5e+306 1e+307 1.5e+307 Inf}
+}]
+test lseq-4.21.6 {Corner cases: empty list, reversed step} -body {
+    set res {}
+    lappend res [lseq -5 ..  0 by -1]
+    lappend res [lseq  5 ..  0 by  1]
+    lappend res [lseq  0 ..  5 by -1]
+    lappend res [lseq  0 .. -5 by  1]
+} -cleanup {
+    unset -nocomplain res
+} -result {{} {} {} {}}
+test lseq-4.21.7 {Corner cases: non-empty list, normal step} -body {
+    set res {}
+    lappend res [lseq -5 ..  0      ]
+    lappend res [lseq  5 ..  0 by -1]
+    lappend res [lseq  0 ..  5      ]
+    lappend res [lseq  0 .. -5 by -1]
+} -cleanup {
+    unset -nocomplain res
+} -result [list {*}{
+    {-5 -4 -3 -2 -1 0}
+    {5 4 3 2 1 0}
+    {0 1 2 3 4 5}
+    {0 -1 -2 -3 -4 -5}
+}]
+
 test lseq-convertToList {does not result in a memory error} -body {
 	trace add variable var1 write [list ::apply [list args {
 		error {this is an error}
