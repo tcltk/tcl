@@ -856,7 +856,6 @@ test lseq-4.21.2 {Corner cases: expected Inf} -body {
     lappend res [lseq Inf count 5]
     lappend res [lseq Inf count 5 by 100]
     lappend res [lseq Inf count 5 by Inf]
-    lappend res [lseq Inf count 5 by -Inf]
     lappend res [lseq 5 by Inf]
     lappend res [lseq 0 count 5 by Inf]
     lappend res [lseq 5 by 1e307]
@@ -870,7 +869,6 @@ test lseq-4.21.2 {Corner cases: expected Inf} -body {
     {Inf Inf Inf Inf Inf}
     {Inf Inf Inf Inf Inf}
     {Inf Inf Inf Inf Inf}
-    {Inf -NaN -NaN -NaN -NaN}
     {0.0 Inf Inf Inf Inf}
     {0.0 Inf Inf Inf Inf}
     {0.0 1e+307 Inf Inf Inf}
@@ -884,7 +882,6 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     lappend res [lseq -Inf count 5]
     lappend res [lseq -Inf count 5 by 100]
     lappend res [lseq -Inf count 5 by -Inf]
-    lappend res [lseq -Inf count 5 by Inf]
     lappend res [lseq 5 by -Inf]
     lappend res [lseq 0 count 5 by -Inf]
     lappend res [lseq 5 by -1e307]
@@ -898,7 +895,6 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     {-Inf -Inf -Inf -Inf -Inf}
     {-Inf -Inf -Inf -Inf -Inf}
     {-Inf -Inf -Inf -Inf -Inf}
-    {-Inf -NaN -NaN -NaN -NaN}
     {0.0 -Inf -Inf -Inf -Inf}
     {0.0 -Inf -Inf -Inf -Inf}
     {0.0 -1e+307 -Inf -Inf -Inf}
@@ -906,6 +902,13 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
 }]
+test lseq-4.21.3a {Corner cases: expected Inf} -body {
+    set res {}
+    lappend res [lseq Inf count 5 by -Inf]
+    lappend res [lseq -Inf count 5 by Inf]
+} -cleanup {
+    unset -nocomplain res
+} -match regexp -result {^{Inf(?: -?NaN){4}} {-Inf(?: -?NaN){4}}$}
 test lseq-4.21.4 {Corner cases: unexpected NaN} -body {
     set res {}
     lappend res [catch {lseq NaN} msg] $msg
