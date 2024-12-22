@@ -902,7 +902,9 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
 }]
-test lseq-4.21.3a {Corner cases: expected Inf} -body {
+test lseq-4.21.3a {Corner cases: expected +/-Inf, result to +/-NaN starting from 2nd element} -body {
+    # this test may be platform- or compiler-dependent, because the addition of 
+    # Inf and -Inf my result either to NaN or -NaN, so check it with a regexp
     set res {}
     lappend res [lseq Inf count 5 by -Inf]
     lappend res [lseq -Inf count 5 by Inf]
