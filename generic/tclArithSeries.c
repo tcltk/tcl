@@ -298,14 +298,18 @@ ArithSeriesLenDbl(
     double step,
     unsigned precision)
 {
-    double len, precMul = power10(precision);
+    double scaleFactor = power10(precision);
+    volatile double len; /* use volatile for more deterministic cross-platform
+			  * FP arithmetics, (e. g. to avoid wrong optimization
+			  * and divergent results by different compilers/platforms
+			  * with and w/o FPU_INLINE_ASM, _CONTROLFP, etc) */
 
     if (step == 0) {
 	return 0;
     }
-    start *= precMul;
-    end *= precMul;
-    step *= precMul;
+    start *= scaleFactor;
+    end *= scaleFactor;
+    step *= scaleFactor;
     /* distance */
     end -= start;
     /* 
@@ -322,8 +326,7 @@ ArithSeriesLenDbl(
     }
     /*
      * Too large, so use double (note the result may be instable due
-     * to IEEE-754, so if exact length is needed, better to avoid it and
-     * use count argument of lseq to specify it by invocation).
+     * to IEEE-754, so to be as precise as possible we'll use volatile len)
      */
     len = end / step + 1;
     if (len >= (double)TCL_SIZE_MAX) {
