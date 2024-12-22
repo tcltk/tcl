@@ -182,18 +182,14 @@ ArithSeriesIndexDbl(
     ArithSeries *arithSeriesRepPtr,
     Tcl_WideInt index)
 {
-    if (arithSeriesRepPtr->isDouble) {
-	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
-	double d = dblRepPtr->start;
-	if (index) {
-	    d += (index * dblRepPtr->step);
-	}
-
-	return ArithRound(d, dblRepPtr->precision);
-    } else {
-	ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
-	return (double)(intRepPtr->start + (index * intRepPtr->step));
+    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
+    assert(arithSeriesRepPtr->isDouble);
+    double d = dblRepPtr->start;
+    if (index) {
+	d += (index * dblRepPtr->step);
     }
+    
+    return ArithRound(d, dblRepPtr->precision);
 }
 
 static inline Tcl_WideInt
@@ -201,13 +197,9 @@ ArithSeriesIndexInt(
     ArithSeries *arithSeriesRepPtr,
     Tcl_WideInt index)
 {
-    if (arithSeriesRepPtr->isDouble) {
-	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
-	return (Tcl_WideInt) (dblRepPtr->start + (index * dblRepPtr->step));
-    } else {
-	ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
-	return intRepPtr->start + (index * intRepPtr->step);
-    }
+    ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
+    assert(!arithSeriesRepPtr->isDouble);
+    return intRepPtr->start + (index * intRepPtr->step);
 }
 
 static inline ArithSeries *
