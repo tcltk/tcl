@@ -313,8 +313,8 @@ ArithSeriesLenDbl(
      * when distance and step do not exceed wide-integers.
      */
     if (
-	(WIDE_MIN <= end && end <= WIDE_MAX) &&
-	(WIDE_MIN <= step && step <= WIDE_MAX)
+	((double)WIDE_MIN <= end && end <= (double)WIDE_MAX) &&
+	((double)WIDE_MIN <= step && step <= (double)WIDE_MAX)
     ) {
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
@@ -326,7 +326,7 @@ ArithSeriesLenDbl(
      * use count argument of lseq to specify it by invocation).
      */
     len = end / step + 1;
-    if (len > TCL_SIZE_MAX) {
+    if (len >= (double)TCL_SIZE_MAX) {
 	return TCL_SIZE_MAX;
     }
     if (len < 0) {
