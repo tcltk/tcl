@@ -32,7 +32,6 @@ typedef struct PkgAvail {
     char *script;		/* Script to invoke to provide this version of
 				 * the package. Malloc'ed and protected by
 				 * Tcl_Preserve and Tcl_Release. */
-    char *pkgIndex;		/* Full file name of pkgIndex file */
     struct PkgAvail *nextPtr;	/* Next in list of available versions of the
 				 * same package. */
 } PkgAvail;
@@ -828,9 +827,6 @@ SelectPackage(
 	pkgName->nextPtr = pkgFiles->names;
 	strcpy(pkgName->name, name);
 	pkgFiles->names = pkgName;
-	if (bestPtr->pkgIndex) {
-	    TclPkgFileSeen(interp, bestPtr->pkgIndex);
-	}
 	reqPtr->versionToProvide = versionToProvide;
 	Tcl_NRAddCallback(interp,
 		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
@@ -1145,10 +1141,6 @@ TclNRPackageObjCmd(
 		pkgPtr->availPtr = availPtr->nextPtr;
 		Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-		if (availPtr->pkgIndex) {
-		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
-		    availPtr->pkgIndex = NULL;
-		}
 		Tcl_Free(availPtr);
 	    }
 	    Tcl_Free(pkgPtr);
@@ -1200,10 +1192,6 @@ TclNRPackageObjCmd(
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-		if (availPtr->pkgIndex) {
-		    Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
-		    availPtr->pkgIndex = NULL;
-		}
 		break;
 	    }
 	}
@@ -1214,7 +1202,6 @@ TclNRPackageObjCmd(
 	}
 	if (availPtr == NULL) {
 	    availPtr = (PkgAvail *)Tcl_Alloc(sizeof(PkgAvail));
-	    availPtr->pkgIndex = NULL;
 	    DupBlock(availPtr->version, argv3, length + 1);
 
 	    if (prevPtr == NULL) {
@@ -1224,10 +1211,6 @@ TclNRPackageObjCmd(
 		availPtr->nextPtr = prevPtr->nextPtr;
 		prevPtr->nextPtr = availPtr;
 	    }
-	}
-	if (iPtr->scriptFile) {
-	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
-	    DupBlock(availPtr->pkgIndex, argv4, length + 1);
 	}
 	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, length + 1);
@@ -1622,10 +1605,6 @@ TclFreePackageInfo(
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-	    if (availPtr->pkgIndex) {
-		Tcl_EventuallyFree(availPtr->pkgIndex, TCL_DYNAMIC);
-		availPtr->pkgIndex = NULL;
-	    }
 	    Tcl_Free(availPtr);
 	}
 	Tcl_Free(pkgPtr);
