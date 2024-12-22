@@ -716,10 +716,23 @@ TclNewArithSeriesObj(
 	return NULL;
     }
 
-    objPtr = (useDoubles)
-	    ? NewArithSeriesDbl(dstart, dstep, len,
-		maxPrecision(dstart, dend, dstep))
-	    : NewArithSeriesInt(start, step, len);
+    if (useDoubles) {
+	/* ensure we'll not get NaN somewhere in the arith-series,
+	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
+	double d = dstart + (len - 1) * dstep;
+	if (isnan(d)) {
+	    const char *s = "domain error: argument not in valid range";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *)NULL);
+	    return NULL;
+	}
+
+	objPtr = NewArithSeriesDbl(dstart, dstep, len,
+			maxPrecision(dstart, dend, dstep));
+    } else {
+    	objPtr = NewArithSeriesInt(start, step, len);
+    }
+
     return objPtr;
 }
 

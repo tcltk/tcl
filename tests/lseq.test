@@ -902,29 +902,29 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
     {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
 }]
-test lseq-4.21.3a {Corner cases: expected +/-Inf, result to +/-NaN starting from 2nd element} -body {
-    # this test may be platform- or compiler-dependent, because the addition of 
-    # Inf and -Inf my result either to NaN or -NaN, so check it with a regexp
+test lseq-4.21.4a {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpected NaN} -body {
     set res {}
-    lappend res [lseq Inf count 5 by -Inf]
-    lappend res [lseq -Inf count 5 by Inf]
+    lappend res [list [catch {lseq Inf count 5 by -Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq -Inf count 5 by Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq {Inf - Inf} count 5} msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq NaN count 5}         msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq NaN count 5 by 100}  msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq NaN count 5 by NaN}  msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq 5 by NaN}            msg opt] $msg [dict getd $opt -errorcode ""]]
+    lappend res [list [catch {lseq 0 count 5 by NaN}    msg opt] $msg [dict getd $opt -errorcode ""]]
+    join $res \n
 } -cleanup {
-    unset -nocomplain res
-} -match regexp -result {^{Inf(?: -?NaN){4}} {-Inf(?: -?NaN){4}}$}
-test lseq-4.21.4 {Corner cases: unexpected NaN} -body {
+    unset -nocomplain res msg opt
+} -result [join [lrepeat 8 {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}] \n]
+test lseq-4.21.4b {Corner cases: unexpected NaN} -body {
     set res {}
     lappend res [catch {lseq NaN} msg] $msg
     lappend res [catch {lseq 0 .. NaN} msg] $msg
 } -cleanup {
-    unset -nocomplain res
+    unset -nocomplain res msg
 } -result {1 {expected integer but got "NaN"} 1 {cannot use non-numeric floating-point value "NaN" to estimate length of arith-series}}
-test lseq-4.21.5 {Corner cases: expected NaN} -body {
+test lseq-4.21.5 {Corner cases: expected Inf} -body {
     set res {}
-    lappend res [lseq NaN count 5]
-    lappend res [lseq NaN count 5 by 100]
-    lappend res [lseq NaN count 5 by NaN]
-    lappend res [lseq 5 by NaN]
-    lappend res [lseq 0 count 5 by NaN]
     lappend res [lseq 5 by 1e307]
     lappend res [lseq 0 count 5 by 1e307]
     lappend res [lseq 5 by 5e306]
@@ -932,11 +932,6 @@ test lseq-4.21.5 {Corner cases: expected NaN} -body {
 } -cleanup {
     unset -nocomplain res
 } -result [list {*}{
-    {NaN NaN NaN NaN NaN}
-    {NaN NaN NaN NaN NaN}
-    {NaN NaN NaN NaN NaN}
-    {0.0 NaN NaN NaN NaN}
-    {0.0 NaN NaN NaN NaN}
     {0.0 1e+307 Inf Inf Inf}
     {0.0 1e+307 Inf Inf Inf}
     {0.0 5e+306 1e+307 1.5e+307 Inf}
