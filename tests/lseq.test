@@ -951,6 +951,36 @@ test lseq-4.21.6 {Corner cases: empty list, reversed step} -body {
 } -cleanup {
     unset -nocomplain res
 } -result {{} {} {} {}}
+test lseq-4.21.6-lran {Corner cases: lrange empty list, reversed step} -body {
+    set res {}
+    # not shared:
+    lappend res [lrange [lseq -5 ..  0 by -1] 1 end-1]
+    lappend res [lrange [lseq  5 ..  0 by  1] 1 end-1]
+    lappend res [lrange [lseq  0 ..  5 by -1] 1 end-1]
+    lappend res [lrange [lseq  0 .. -5 by  1] 1 end-1]
+    # shared:
+    lappend res [lrange [set l [lseq -5 ..  0 by -1]] 1 end-1]
+    lappend res [lrange [set l [lseq  5 ..  0 by  1]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 ..  5 by -1]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 .. -5 by  1]] 1 end-1]
+} -cleanup {
+    unset -nocomplain res l
+} -result {{} {} {} {} {} {} {} {}}
+test lseq-4.21.6-lrev {Corner cases: lreverse empty list, reversed step} -body {
+    set res {}
+    # not shared:
+    lappend res [lreverse [lseq -5 ..  0 by -1]]
+    lappend res [lreverse [lseq  5 ..  0 by  1]]
+    lappend res [lreverse [lseq  0 ..  5 by -1]]
+    lappend res [lreverse [lseq  0 .. -5 by  1]]
+    # shared:
+    lappend res [lreverse [set l [lseq -5 ..  0 by -1]]]
+    lappend res [lreverse [set l [lseq  5 ..  0 by  1]]]
+    lappend res [lreverse [set l [lseq  0 ..  5 by -1]]]
+    lappend res [lreverse [set l [lseq  0 .. -5 by  1]]]
+} -cleanup {
+    unset -nocomplain res l
+} -result {{} {} {} {} {} {} {} {}}
 test lseq-4.21.7 {Corner cases: non-empty list, normal step} -body {
     set res {}
     lappend res [lseq -5 ..  0      ]
@@ -964,6 +994,46 @@ test lseq-4.21.7 {Corner cases: non-empty list, normal step} -body {
     {5 4 3 2 1 0}
     {0 1 2 3 4 5}
     {0 -1 -2 -3 -4 -5}
+}]
+test lseq-4.21.7-lran {Corner cases: lrange non-empty list, normal step} -body {
+    set res {}
+    # not shared:
+    lappend res [lrange [lseq -5 ..  0      ] 1 end-1]
+    lappend res [lrange [lseq  5 ..  0 by -1] 1 end-1]
+    lappend res [lrange [lseq  0 ..  5      ] 1 end-1]
+    lappend res [lrange [lseq  0 .. -5 by -1] 1 end-1]
+    # shared:
+    lappend res [lrange [set l [lseq -5 ..  0      ]] 1 end-1]
+    lappend res [lrange [set l [lseq  5 ..  0 by -1]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 ..  5      ]] 1 end-1]
+    lappend res [lrange [set l [lseq  0 .. -5 by -1]] 1 end-1]
+} -cleanup {
+    unset -nocomplain res l
+} -result [lrepeat 2 {*}{
+    {-4 -3 -2 -1}
+    {4 3 2 1}
+    {1 2 3 4}
+    {-1 -2 -3 -4}
+}]
+test lseq-4.21.7-lrev {Corner cases: lreverse non-empty list, normal step} -body {
+    set res {}
+    # not shared:
+    lappend res [lreverse [lseq -5 ..  0      ]]
+    lappend res [lreverse [lseq  5 ..  0 by -1]]
+    lappend res [lreverse [lseq  0 ..  5      ]]
+    lappend res [lreverse [lseq  0 .. -5 by -1]]
+    # shared:
+    lappend res [lreverse [set l [lseq -5 ..  0      ]]]
+    lappend res [lreverse [set l [lseq  5 ..  0 by -1]]]
+    lappend res [lreverse [set l [lseq  0 ..  5      ]]]
+    lappend res [lreverse [set l [lseq  0 .. -5 by -1]]]
+} -cleanup {
+    unset -nocomplain res l
+} -result [lrepeat 2 {*}{
+    {0 -1 -2 -3 -4 -5}
+    {0 1 2 3 4 5}
+    {5 4 3 2 1 0}
+    {-5 -4 -3 -2 -1 0}
 }]
 
 test lseq-convertToList {does not result in a memory error} -body {
