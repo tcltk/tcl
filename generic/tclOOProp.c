@@ -1009,7 +1009,7 @@ TclOOInstallStdPropertyImpls(
   badProp:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad property name \"%s\": %s", name, reason));
-    Tcl_SetErrorCode(interp, "TCL", "OO", "PROPERTY_FORMAT", NULL);
+    OO_ERROR(interp, PROPERTY_FORMAT);
     return TCL_ERROR;
 }
 
@@ -1052,7 +1052,7 @@ TclOODefinePropertyCmd(
     if (!useInstance && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"attempt to misuse API", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
+	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
 

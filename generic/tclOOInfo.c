@@ -888,7 +888,7 @@ InfoObjectVariablesCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "option \"%s\" is not exactly \"-private\"",
 		    TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_ARG");
+	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1015,7 +1015,7 @@ InfoClassConstrCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method",
 		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", (char *)NULL);
+	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
 
@@ -1193,7 +1193,7 @@ InfoClassDestrCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method",
 		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", (char *)NULL);
+	OO_ERROR(interp, METHOD_TYPE);
 	return TCL_ERROR;
     }
 
@@ -1690,7 +1690,7 @@ InfoClassVariablesCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "option \"%s\" is not exactly \"-private\"",
 		    TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_ARG");
+	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
 	isPrivate = 1;
@@ -1756,7 +1756,7 @@ InfoObjectCallCmd(
     if (contextPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot construct any call chain", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_CALL_CHAIN");
+	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
@@ -1802,7 +1802,7 @@ InfoClassCallCmd(
     if (callPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot construct any call chain", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_CALL_CHAIN");
+	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
