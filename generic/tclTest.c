@@ -201,7 +201,7 @@ static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_ObjCmdProc2	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
-static Tcl_CmdObjTraceProc TraceProc;
+static Tcl_CmdObjTraceProc2 TraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static Tcl_FreeProc	SpecialFree;
@@ -1134,8 +1134,10 @@ TestcmdinfoCmd(
     case CMDINFO_MODIFY:
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
+#ifndef TCL_NO_DEPRECATED
 	info.objProc = NULL;
 	info.objClientData = NULL;
+#endif
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
 	info.namespacePtr = NULL;

@@ -8,7 +8,7 @@ Version:       9.1a0
 Release:       2
 License:       BSD
 Group:         Development/Languages
-Source:        http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
+Source:        https://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
 URL:           https://www.tcl-lang.org/
 Buildroot:     /var/tmp/%{name}%{version}
 

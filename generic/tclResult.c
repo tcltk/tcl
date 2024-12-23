@@ -54,10 +54,10 @@ typedef struct {
  * Tcl_SaveInterpState --
  *
  *	Fills a token with a snapshot of the current state of the interpreter.
- *	The snapshot can be restored at any point by TclRestoreInterpState.
+ *	The snapshot can be restored at any point by Tcl_RestoreInterpState.
  *
- *	The token returned must be eventally passed to one of the routines
- *	TclRestoreInterpState or TclDiscardInterpState, or there will be a
+ *	The token returned must be eventually passed to one of the routines
+ *	Tcl_RestoreInterpState or Tcl_DiscardInterpState, or there will be a
  *	memory leak.
  *
  * Results:

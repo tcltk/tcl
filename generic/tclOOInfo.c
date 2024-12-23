@@ -664,7 +664,7 @@ InfoObjectMethodsCmd(
 		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
 	}
 	if (numNames > 0) {
-	    Tcl_Free((void *) names);
+	    Tcl_Free((void *)names);
 	}
     } else if (oPtr->methodsPtr) {
 	if (scope == SCOPE_DEFAULT) {
@@ -1440,7 +1440,7 @@ InfoClassMethodsCmd(
 		    Tcl_NewStringObj(names[i], TCL_AUTO_LENGTH));
 	}
 	if (numNames > 0) {
-	    Tcl_Free((void *) names);
+	    Tcl_Free((void *)names);
 	}
     } else {
 	FOREACH_HASH_DECLS;

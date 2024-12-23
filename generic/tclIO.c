@@ -248,7 +248,7 @@ static int	      WillRead(Channel *chanPtr);
  *
  *	Returns the number of bytes of data remaining in the buffer.
  *
- * int SpaceLeft(ChannelBuffer *bufPtr)
+ * Tcl_Size SpaceLeft(ChannelBuffer *bufPtr)
  *
  *	Returns the number of bytes of space remaining at the end of the
  *	buffer.
@@ -5674,13 +5674,13 @@ CommonGetsCleanup(
 
 	nextPtr = bufPtr->nextPtr;
 	for ( ; nextPtr != NULL; nextPtr = bufPtr->nextPtr) {
-	    int extra;
+	    Tcl_Size extra;
 
 	    extra = SpaceLeft(bufPtr);
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
 			nextPtr->buf + (BUFFER_PADDING - extra),
-			(size_t) extra);
+			extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
 	    }

@@ -199,7 +199,17 @@ and returns \fBTCL_OK\fR.
 Otherwise it returns \fBTCL_OK\fR after storing the element's
 value pointer.
 The reference count for the list element is not incremented;
-the caller must do that if it needs to retain a pointer to the element.
+the caller must do that if it needs to retain a pointer to the
+element, or "bounce" the reference count when the element is no longer
+needed. This is because a returned element may have a reference count
+of 0. Abstract Lists create a new element Obj on demand, and do not
+retain any element Obj values. Therefore, the caller is responsible for
+freeing the element when it is no longer needed. Note that this is a
+change from Tcl 8 where all list elements always have a reference
+count of at least 1. (See \fBABSTRACT LIST TYPES\fR, \fBSTORAGE
+MANAGEMENT OF VALUES\fR, Tcl_BounceRefCount(3), and lseq(n) for more
+information.)
+
 .PP
 \fBTcl_ListObjReplace\fR replaces zero or more elements
 of the list referenced by \fIlistPtr\fR

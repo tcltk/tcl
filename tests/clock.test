@@ -362,7 +362,7 @@ foreach tz [list {*}{
   zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
   } [list $::tcl::clock::DataDir/GMT]
 ] {
-test clock-1.5.1 "clock format - bad timezone (not valid - unsafe path)" -body {
+test clock-1.5.1.$tz "clock format - bad timezone (not valid - unsafe path)" -body {
     clock format 0 -format "%s" -timezone $tz
 } -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
 }
@@ -37181,13 +37181,13 @@ if {!$valid_mode} {
   } {86399 86400 172800}
 } else {
   test clock-46.8a {regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
+    list [catch {clock scan 24:00:01 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time (hour)}}
   test clock-46.8b {freescan: regression test - invalid time (hour)} {
-    list [catch {clock scan 24:00:00 -base 0 -gmt 1} msg] $msg \
+    list [catch {clock scan 24:00:01 -base 0 -gmt 1} msg] $msg \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
-  } {1 {unable to convert input string: invalid time (hour)} 1 {unable to convert input string: invalid time (hour)}}
+  } {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time (hour)}}
 }
 
 proc _invalid_test {testtz scnargs args} {
@@ -38438,30 +38438,88 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
     msgcat::mclocale $current
 } -result {1}
 
-test clock-68.1 {Leap second [f2b5f89c0d], valid} -body {
-    clock scan "2012-06-30 23:59:60" -gmt 1 -valid 0
-} -result 1341100800
-test clock-68.2 {Leap minute [f2b5f89c0d], valid} -body {
-    clock scan "2012-06-30 23:60:00" -gmt 1 -valid 0
-} -result 1341100800
-test clock-68.3 {Leap hour [f2b5f89c0d], valid} -body {
-    clock scan "2012-06-30 24:00:00" -gmt 1 -valid 0
-} -result 1341100800
-test clock-68.4 {Leap second [f2b5f89c0d], wrong day} -body {
-    clock scan "2012-06-29 23:59:60" -gmt 1 -valid 1
-} -errorCode {CLOCK invInpStr seconds} -result {unable to convert input string: invalid time}
-test clock-68.5 {Leap second [f2b5f89c0d], wrong month} -body {
-    clock scan "2012-05-30 23:59:60" -gmt 1 -valid 1
-} -errorCode {CLOCK invInpStr seconds} -result {unable to convert input string: invalid time}
-test clock-68.6 {Leap second [f2b5f89c0d], minute} -body {
-    clock scan "2012-05-30 23:60:60" -gmt 1 -valid 1
-} -errorCode {CLOCK invInpStr minutes} -result {unable to convert input string: invalid time (minutes)}
-test clock-68.7 {Leap second [f2b5f89c0d], hour + second} -body {
-    clock scan "2012-05-30 24:00:60" -gmt 1 -valid 1
-} -errorCode {CLOCK invInpStr hour} -result {unable to convert input string: invalid time (hour)}
-test clock-68.8 {Leap second [f2b5f89c0d], hour +  minute} -body {
-    clock scan "2012-05-30 24:60:00" -gmt 1 -valid 1
-} -errorCode {CLOCK invInpStr hour} -result {unable to convert input string: invalid time (hour)}
+proc _check_scan {res_ d tz fmt i {fmt2str ""}} {
+    upvar $res_ res
+    # expectation is fail on result like "invalid time":
+    set e [expr {![string is wideinteger -strict $i] && [string match "*invalid*" $i]}];
+    # conversion:
+    set lmscan {{args} {
+	upvar d d tz tz fmt fmt fmt2str fmt2str
+	set s [clock scan $d -timezone $tz {*}$args]
+	if {$fmt2str eq ""} {
+	    set s
+	} else {
+	    clock format $s -timezone $tz -locale en -format $fmt2str
+	}
+    }}
+    # check with free scan:
+    set v [catch { apply $lmscan } t]
+    if {($v != $e) || (!$e ? $t != $i : ![string match "*$i*" $t])} {
+	lappend res "free-scan \"$d\" [expr {!$v ? "succeeds" : "fails"}] with \"$t\" expected [expr {!$e ? "success" : "fail"}] with \"$i\""
+    }
+    # check with formatted scan:
+    set v [catch { apply $lmscan -locale en -format $fmt } t]
+    if {($v != $e) || (!$e ? $t != $i : ![string match "*$i*" $t])} {
+	lappend res "frmt-scan \"$d\" [expr {!$v ? "succeeds" : "fails"}] with \"$t\" expected [expr {!$e ? "success" : "fail"}] with \"$i\""
+    }
+}
+test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no validity check)} -constraints valid_off -body {
+    set res {}
+    foreach {d i} {
+	"2012-06-29 23:59:60" 1341014400
+	"2012-05-30 23:59:60" 1338422400
+	"2012-05-30 23:60:60" 1338422460
+	"2012-05-30 24:00:60" 1338422460
+	"2012-05-30 24:60:00" 1338426000
+    } {
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
+    }
+    join $res \n; # must be empty
+} -result {}
+test clock-68.1a {24:00 time [aee9f2b916], regression test} -body {
+    set res {}
+    foreach {d i} {
+	"2012-06-30 24:00:00" 1341100800
+    } {
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
+    }
+    join $res \n; # must be empty
+} -result {}
+test clock-68.1b {24:00 time [aee9f2b916], [882da1e28b], regression test} -body {
+    set res {}
+    foreach {d tz i} {
+	"Sat, 2012-06-30 24:00:00 GMT"     GMT 1341100800
+	"Sat, 2012-06-30 24:00:00 +1145" +1145 1341058500
+	"Sat, 2012-06-30 24:00:00 -1145" -1145 1341143100
+	"Sun, 2012-07-01 24:00:00 GMT"     GMT 1341187200
+	"Sun, 2012-07-01 24:00:00 +1145" +1145 1341144900
+	"Sun, 2012-07-01 24:00:00 -1145" -1145 1341229500
+    } {
+	# check with free and format scan:
+	_check_scan res $d $tz "%a, %Y-%m-%d %H:%M:%S %z" $i
+    }
+    join $res \n; # must be empty
+} -result {}
+test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constraints !valid_off -body {
+    # Leap seconds are not supported. "24:00" is supported.
+    set res {}
+    foreach {d i} {
+	"2012-06-29 23:59:60" "invalid time"
+	"2012-05-30 23:59:60" "invalid time"
+	"2012-05-30 23:60:60" "invalid time"
+	"2012-05-30 24:00:01" "invalid time"
+	"2012-05-30 24:01:00" "invalid time"
+	"1971-06-30 23:59:60" "invalid time"
+	"2012-06-30 23:59:60" "invalid time"
+	"2018-06-30 23:59:60" "invalid time"
+    } {
+	# check with free and format scan:
+	_check_scan res $d UTC "%Y-%m-%d %H:%M:%S" $i
+    }
+    join $res \n; # must be empty
+} -result {}
 
 # cleanup
 
@@ -38473,6 +38531,11 @@ if {$valid_mode && [info exists ::tcltest::skippedBecause(valid_off)]} {
     incr ::tcltest::numTests(Total) -$::tcltest::skippedBecause(valid_off)
     incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(valid_off)
     unset ::tcltest::skippedBecause(valid_off)
+}
+if {!$valid_mode && [info exists ::tcltest::skippedBecause(!valid_off)]} {
+    incr ::tcltest::numTests(Total) -$::tcltest::skippedBecause(!valid_off)
+    incr ::tcltest::numTests(Skipped) -$::tcltest::skippedBecause(!valid_off)
+    unset ::tcltest::skippedBecause(!valid_off)
 }
 ::tcltest::cleanupTests
 namespace delete ::testClock

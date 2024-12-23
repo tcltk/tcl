@@ -22,26 +22,12 @@
 #ifdef HAVE_COPYFILE
 #ifdef HAVE_COPYFILE_H
 #include <copyfile.h>
-#if defined(HAVE_WEAK_IMPORT) && (MAC_OS_X_VERSION_MIN_REQUIRED < 1040)
-/* Support for weakly importing copyfile. */
-#define WEAK_IMPORT_COPYFILE
-extern int		copyfile(const char *from, const char *to,
-			    copyfile_state_t state, copyfile_flags_t flags)
-			    WEAK_IMPORT_ATTRIBUTE;
-#endif /* HAVE_WEAK_IMPORT */
 #else /* HAVE_COPYFILE_H */
 int			copyfile(const char *from, const char *to,
 			    void *state, uint32_t flags);
 #define COPYFILE_ACL		(1<<0)
 #define COPYFILE_XATTR		(1<<2)
 #define COPYFILE_NOFOLLOW_SRC	(1<<18)
-#if defined(HAVE_WEAK_IMPORT) && (MAC_OS_X_VERSION_MIN_REQUIRED < 1040)
-/* Support for weakly importing copyfile. */
-#define WEAK_IMPORT_COPYFILE
-extern int		copyfile(const char *from, const char *to,
-			    void *state, uint32_t flags)
-			    WEAK_IMPORT_ATTRIBUTE;
-#endif /* HAVE_WEAK_IMPORT */
 #endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
 

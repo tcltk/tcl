@@ -82,7 +82,7 @@ typedef struct ThreadSpecificData {
     HANDLE condEvent;		/* Per-thread condition event */
     struct ThreadSpecificData *nextPtr;	/* Queue pointers */
     struct ThreadSpecificData *prevPtr;
-    int flags;			/* See flags below */
+    int flags;			/* See ThreadStateFlags below */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -90,15 +90,13 @@ static Tcl_ThreadDataKey dataKey;
 
 /*
  * State bits for the thread.
- * WIN_THREAD_UNINIT		Uninitialized. Must be zero because of the way
- *				ThreadSpecificData is created.
- * WIN_THREAD_RUNNING		Running, not waiting.
- * WIN_THREAD_BLOCKED		Waiting, or trying to wait.
  */
-
-#define WIN_THREAD_UNINIT	0x0
-#define WIN_THREAD_RUNNING	0x1
-#define WIN_THREAD_BLOCKED	0x2
+enum ThreadStateFlags {
+    WIN_THREAD_UNINIT = 0x0,	/* Uninitialized. Must be zero because of the
+				 * way ThreadSpecificData is created. */
+    WIN_THREAD_RUNNING = 0x1,	/* Running, not waiting. */
+    WIN_THREAD_BLOCKED = 0x2	/* Waiting, or trying to wait. */
+};
 
 /*
  * The per condition queue pointers and the Mutex used to serialize access to
@@ -108,8 +106,8 @@ static Tcl_ThreadDataKey dataKey;
 typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
-    struct ThreadSpecificData *firstPtr;	/* Queue pointers */
-    struct ThreadSpecificData *lastPtr;
+    ThreadSpecificData *firstPtr;	/* Queue pointers */
+    ThreadSpecificData *lastPtr;
 } WinCondition;
 
 /*

@@ -7,9 +7,6 @@
 /* Is gettimeofday() actually declared in <sys/time.h>? */
 #undef GETTOD_NOT_DECLARED
 
-/* Define to 1 if you have the <AvailabilityMacros.h> header file. */
-#undef HAVE_AVAILABILITYMACROS_H
-
 /* Define to 1 if the system has the type 'blkcnt_t'. */
 #undef HAVE_BLKCNT_T
 
@@ -159,9 +156,6 @@
 
 /* Define to 1 if you have the 'mkstemps' function. */
 #undef HAVE_MKSTEMPS
-
-/* Define to 1 if you have the 'mktime' function. */
-#undef HAVE_MKTIME
 
 /* Do we have MT-safe gethostbyaddr() ? */
 #undef HAVE_MTSAFE_GETHOSTBYADDR

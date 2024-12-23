@@ -20,14 +20,6 @@
 #include "tclDate.h"
 
 /*
- * Windows has mktime. The configurators do not check.
- */
-
-#ifdef _WIN32
-#define HAVE_MKTIME 1
-#endif
-
-/*
  * Table of the days in each month, leap and common years
  */
 
@@ -1966,9 +1958,9 @@ ConvertLocalToUTC(
     dstHole:
 #if 0
 	printf("given local-time is outside the time-zone (in DST-hole): "
-		"%d - offs %d => %d <= %d < %d\n",
-		(int)fields->localSeconds, fields->tzOffset,
-		(int)ltzoc->rangesVal[0], (int)seconds, (int)ltzoc->rangesVal[1]);
+		"%" TCL_LL_MODIFIER "d - offs %d => %" TCL_LL_MODIFIER "d <= %" TCL_LL_MODIFIER "d < %" TCL_LL_MODIFIER "d\n",
+		fields->localSeconds, fields->tzOffset,
+		ltzoc->rangesVal[0], seconds, ltzoc->rangesVal[1]);
 #endif
 	/* because we don't know real TZ (we're outsize), just invalidate local
 	 * time (which could be verified in ClockValidDate later) */
@@ -2545,7 +2537,7 @@ GetYearWeekDay(
     dayOfFiscalYear = fields->julianDay - temp.julianDay;
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
-    if (fields->dayOfWeek < 1) {
+    if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
 	fields->dayOfWeek += 7;
     }
 }
@@ -3741,7 +3733,7 @@ ClockScanCommit(
 	}
     }
 
-    /* If seconds overflows the day (no validate case), increase days */
+    /* If seconds overflows the day (not valide case, or 24:00), increase days */
     if (yySecondOfDay >= SECONDS_PER_DAY) {
 	yydate.julianDay += (yySecondOfDay / SECONDS_PER_DAY);
 	yySecondOfDay %= SECONDS_PER_DAY;
@@ -3796,10 +3788,10 @@ ClockValidDate(
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
-    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
-	    "yySecondOfDay %d, sec %d, daySec %d, tzOffset %d\n",
+    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %" TCL_LL_MODIFIER "d, "
+	    "yySecondOfDay %" TCL_LL_MODIFIER "d, sec %" TCL_LL_MODIFIER "d, daySec %" TCL_LL_MODIFIER "d, tzOffset %d\n",
 	    yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds,
-	    yySecondOfDay, (int)yydate.localSeconds, (int)(yydate.localSeconds % SECONDS_PER_DAY),
+	    yySecondOfDay, yydate.localSeconds, yydate.localSeconds % SECONDS_PER_DAY,
 	    yydate.tzOffset);
 #endif
 
@@ -3851,11 +3843,13 @@ ClockValidDate(
 	    errMsg = "invalid day";
 	    errCode = "day";
 	    goto error;
-	} else if ((info->flags & CLF_MONTH)) {
+	}
+	if ((info->flags & CLF_MONTH)) {
 	    const int *h = hath[IsGregorianLeapYear(&yydate)];
 
 	    if (yyDay > h[yyMonth - 1]) {
 		errMsg = "invalid day";
+		errCode = "day";
 		goto error;
 	    }
 	}
@@ -3887,9 +3881,24 @@ ClockValidDate(
     if (info->flags & CLF_TIME) {
 	/* hour */
 	if (yyHour < 0 || yyHour > ((yyMeridian == MER24) ? 23 : 12)) {
-	    errMsg = "invalid time (hour)";
-	    errCode = "hour";
-	    goto error;
+	    /* allow 24:00:00 as special case, see [aee9f2b916afd976] */
+	    if (yyMeridian == MER24 && yyHour == 24) {
+		if (yyMinutes != 0 || yySeconds != 0) {
+		    errMsg = "invalid time";
+		    errCode = "time";
+		    goto error;
+		}
+		/* 24:00 is next day 00:00, correct day of week if given */
+		if (info->flags & CLF_DAYOFWEEK) {
+		    if (++yyDayOfWeek > 7) { /* Mon .. Sun == 1 .. 7 */
+			yyDayOfWeek = 1;
+		    }
+		}
+	    } else {
+		errMsg = "invalid time (hour)";
+		errCode = "hour";
+		goto error;
+	    }
 	}
 	/* minutes */
 	if (yyMinutes < 0 || yyMinutes > 59) {
@@ -3897,7 +3906,7 @@ ClockValidDate(
 	    errCode = "minutes";
 	    goto error;
 	}
-	/* oldscan could return secondOfDay (parsedTime) -1 by invalid time (ex.: 25:00:00) */
+	/* oldscan could return secondOfDay -1 by invalid time (see ToSeconds) */
 	if (yySeconds < 0 || yySeconds > 59 || yySecondOfDay <= -1) {
 	    errMsg = "invalid time";
 	    errCode = "seconds";
@@ -3908,13 +3917,14 @@ ClockValidDate(
     if (!(stage & CLF_VALIDATE_S2) || !(opts->flags & CLF_VALIDATE_S2)) {
 	return TCL_OK;
     }
-    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /*
      * Further tests expected ready calculated julianDay (inclusive relative),
      * and time-zone conversion (local to UTC time).
      */
   stage_2:
+
+    opts->flags &= ~CLF_VALIDATE_S2; /* stage 2 is done */
 
     /* time, regarding the modifications by the time-zone (looks for given time
      * in between DST-time hole, so does not exist in this time-zone) */

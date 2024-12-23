@@ -708,7 +708,7 @@ Tcl_ScanObjCmd(
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
 		format += TclUtfToUniChar(format, &ch);
-		objIndex = (int) value - 1;
+		objIndex = (int)value - 1;
 	    }
 	}
 
@@ -718,7 +718,7 @@ Tcl_ScanObjCmd(
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    unsigned long long ull;
-	    ull  = strtoull(format-1, (char **) &format, 10); /* INTL: "C" locale. */
+	    ull  = strtoull(format-1, (char **)&format, 10); /* INTL: "C" locale. */
 	    assert(ull <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
 	    width = (Tcl_Size)ull;
 	    format += TclUtfToUniChar(format, &ch);
@@ -731,6 +731,17 @@ Tcl_ScanObjCmd(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -739,7 +750,8 @@ Tcl_ScanObjCmd(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
