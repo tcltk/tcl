@@ -858,10 +858,10 @@ test lseq-4.21.2 {Corner cases: expected Inf} -body {
     lappend res [lseq Inf count 5 by Inf]
     lappend res [lseq 5 by Inf]
     lappend res [lseq 0 count 5 by Inf]
-    lappend res [lseq 5 by 1e307]
-    lappend res [lseq 0 count 5 by 1e307]
-    lappend res [lseq 5 by 5e306]
-    lappend res [lseq 0 count 5 by 5e306]
+    lappend res [lseq 5 by 1e308]
+    lappend res [lseq 0 count 5 by 1e308]
+    lappend res [lseq 5 by 5e307]
+    lappend res [lseq 0 count 5 by 5e307]
 } -cleanup {
     unset -nocomplain res
 } -result [list {*}{
@@ -871,10 +871,10 @@ test lseq-4.21.2 {Corner cases: expected Inf} -body {
     {Inf Inf Inf Inf Inf}
     {0.0 Inf Inf Inf Inf}
     {0.0 Inf Inf Inf Inf}
-    {0.0 1e+307 Inf Inf Inf}
-    {0.0 1e+307 Inf Inf Inf}
-    {0.0 5e+306 1e+307 1.5e+307 Inf}
-    {0.0 5e+306 1e+307 1.5e+307 Inf}
+    {0.0 1e+308 Inf Inf Inf}
+    {0.0 1e+308 Inf Inf Inf}
+    {0.0 5e+307 1e+308 1.5e+308 Inf}
+    {0.0 5e+307 1e+308 1.5e+308 Inf}
 }]
 test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     set res {}
@@ -884,10 +884,10 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     lappend res [lseq -Inf count 5 by -Inf]
     lappend res [lseq 5 by -Inf]
     lappend res [lseq 0 count 5 by -Inf]
-    lappend res [lseq 5 by -1e307]
-    lappend res [lseq 0 count 5 by -1e307]
-    lappend res [lseq 5 by -5e306]
-    lappend res [lseq 0 count 5 by -5e306]
+    lappend res [lseq 5 by -1e308]
+    lappend res [lseq 0 count 5 by -1e308]
+    lappend res [lseq 5 by -5e307]
+    lappend res [lseq 0 count 5 by -5e307]
 } -cleanup {
     unset -nocomplain res
 } -result [list {*}{
@@ -897,12 +897,12 @@ test lseq-4.21.3 {Corner cases: expected -Inf} -body {
     {-Inf -Inf -Inf -Inf -Inf}
     {0.0 -Inf -Inf -Inf -Inf}
     {0.0 -Inf -Inf -Inf -Inf}
-    {0.0 -1e+307 -Inf -Inf -Inf}
-    {0.0 -1e+307 -Inf -Inf -Inf}
-    {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
-    {0.0 -5e+306 -1e+307 -1.5e+307 -Inf}
+    {0.0 -1e+308 -Inf -Inf -Inf}
+    {0.0 -1e+308 -Inf -Inf -Inf}
+    {0.0 -5e+307 -1e+308 -1.5e+308 -Inf}
+    {0.0 -5e+307 -1e+308 -1.5e+308 -Inf}
 }]
-test lseq-4.21.4a {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpected NaN} -body {
+test lseq-4.21.4 {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpected NaN} -body {
     set res {}
     lappend res [list [catch {lseq Inf count 5 by -Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
     lappend res [list [catch {lseq -Inf count 5 by Inf} msg opt] $msg [dict getd $opt -errorcode ""]]
@@ -916,27 +916,13 @@ test lseq-4.21.4a {Corner cases: unexpected Inf - Inf, result to +/-NaN, unexpec
 } -cleanup {
     unset -nocomplain res msg opt
 } -result [join [lrepeat 8 {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}] \n]
-test lseq-4.21.4b {Corner cases: unexpected NaN} -body {
+test lseq-4.21.5 {Corner cases: unexpected NaN} -body {
     set res {}
     lappend res [catch {lseq NaN} msg] $msg
     lappend res [catch {lseq 0 .. NaN} msg] $msg
 } -cleanup {
     unset -nocomplain res msg
 } -result {1 {expected integer but got "NaN"} 1 {cannot use non-numeric floating-point value "NaN" to estimate length of arith-series}}
-test lseq-4.21.5 {Corner cases: expected Inf} -body {
-    set res {}
-    lappend res [lseq 5 by 1e307]
-    lappend res [lseq 0 count 5 by 1e307]
-    lappend res [lseq 5 by 5e306]
-    lappend res [lseq 0 count 5 by 5e306]
-} -cleanup {
-    unset -nocomplain res
-} -result [list {*}{
-    {0.0 1e+307 Inf Inf Inf}
-    {0.0 1e+307 Inf Inf Inf}
-    {0.0 5e+306 1e+307 1.5e+307 Inf}
-    {0.0 5e+306 1e+307 1.5e+307 Inf}
-}]
 test lseq-4.21.6 {Corner cases: empty list, reversed step} -body {
     set res {}
     lappend res [lseq -5 ..  0 by -1]

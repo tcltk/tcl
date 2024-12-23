@@ -151,8 +151,13 @@ ArithRound(
     double d,
     unsigned n)
 {
-    double scalefactor = power10(n);
-    return round(d * scalefactor) / scalefactor;
+    double scaleFactor;
+
+    if (!n) {
+	return d;
+    }
+    scaleFactor = power10(n);
+    return round(d * scaleFactor) / scaleFactor;
 }
 
 static inline double
@@ -215,32 +220,54 @@ ArithSeriesGetInternalRep(
  * Compute number of significant fractional digits
  */
 static inline unsigned
-Precision(
-    double d)
+ObjPrecision(
+    Tcl_Obj *numObj)
 {
-    char tmp[TCL_DOUBLE_SPACE + 2], *off;
+    void *ptr;
+    int type;
 
-    tmp[0] = '\0';
-    Tcl_PrintDouble(NULL, d, tmp);
-    off = strchr(tmp, '.');
-    return (off ? strlen(off + 1) : 0);
+    if (TclHasInternalRep(numObj, &tclDoubleType) || (
+	  Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK &&
+	  type == TCL_NUMBER_DOUBLE
+	)
+    ) { /* TCL_NUMBER_DOUBLE */
+	const char *str = TclGetString(numObj);
+
+	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
+	    str = strchr(str, '.');
+	    return (str ? strlen(str + 1) : 0);
+	}
+	/* don't calculate precision for e-notation */
+    }
+    /* no fraction for TCL_NUMBER_NAN, TCL_NUMBER_INT, TCL_NUMBER_BIG */
+    return 0;
 }
 
 /*
  * Find longest number of digits after the decimal point.
  */
 static inline unsigned
-maxPrecision(
-    double start,
-    double end,
-    double step)
+maxObjPrecision(
+    Tcl_Obj *start,
+    Tcl_Obj *end,
+    Tcl_Obj *step)
 {
-    unsigned dp = Precision(step);
-    unsigned i = Precision(start);
-
-    dp = i>dp ? i : dp;
-    i  = Precision(end);
-    dp = i>dp ? i : dp;
+    unsigned i, dp = 0;
+    if (step) {
+	dp = ObjPrecision(step);
+    }
+    if (start) {
+	i = ObjPrecision(start);
+	if (i > dp) {
+	    dp = i;
+	}
+    }
+    if (end) {
+	i = ObjPrecision(end);
+	if (i > dp) {
+	    dp = i;
+	}
+    }
     return dp;
 }
 
@@ -290,7 +317,7 @@ ArithSeriesLenDbl(
     double step,
     unsigned precision)
 {
-    double scaleFactor = power10(precision);
+    double scaleFactor;
     volatile double len; /* use volatile for more deterministic cross-platform
 			  * FP arithmetics, (e. g. to avoid wrong optimization
 			  * and divergent results by different compilers/platforms
@@ -299,9 +326,12 @@ ArithSeriesLenDbl(
     if (step == 0) {
 	return 0;
     }
-    start *= scaleFactor;
-    end *= scaleFactor;
-    step *= scaleFactor;
+    if (precision) {
+	scaleFactor = power10(precision);
+	start *= scaleFactor;
+	end *= scaleFactor;
+	step *= scaleFactor;
+    }
     /* distance */
     end -= start;
     /* 
@@ -314,13 +344,15 @@ ArithSeriesLenDbl(
     ) {
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
-	return (iend / istep) + 1;
+	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
+	    return (iend / istep) + 1;
+	}
     }
     /*
      * Too large, so use double (note the result may be instable due
      * to IEEE-754, so to be as precise as possible we'll use volatile len)
      */
-    len = end / step + 1;
+    len = (end / step) + 1;
     if (len >= (double)TCL_SIZE_MAX) {
 	return TCL_SIZE_MAX;
     }
@@ -542,36 +574,35 @@ assignNumber(
     double *dblNumberPtr,
     Tcl_Obj *numberObj)
 {
-    void *clientData;
-    int tcl_number_type;
+    void *ptr;
+    int type;
 
-    if (Tcl_GetNumberFromObj(interp, numberObj, &clientData,
-		&tcl_number_type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, numberObj, &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (tcl_number_type == TCL_NUMBER_BIG) {
+    if (type == TCL_NUMBER_BIG) {
 	/* bignum is not supported yet. */
 	Tcl_WideInt w;
 	(void)Tcl_GetWideIntFromObj(interp, numberObj, &w);
 	return TCL_ERROR;
     }
     if (useDoubles) {
-	if (tcl_number_type != TCL_NUMBER_INT) {
-	    double value = *(double *)clientData;
+	if (type != TCL_NUMBER_INT) {
+	    double value = *(double *)ptr;
 	    *intNumberPtr = (Tcl_WideInt)value;
 	    *dblNumberPtr = value;
 	} else {
-	    Tcl_WideInt value = *(Tcl_WideInt *)clientData;
+	    Tcl_WideInt value = *(Tcl_WideInt *)ptr;
 	    *intNumberPtr = value;
 	    *dblNumberPtr = (double)value;
 	}
     } else {
-	if (tcl_number_type == TCL_NUMBER_INT) {
-	    Tcl_WideInt value = *(Tcl_WideInt *)clientData;
+	if (type == TCL_NUMBER_INT) {
+	    Tcl_WideInt value = *(Tcl_WideInt *)ptr;
 	    *intNumberPtr = value;
 	    *dblNumberPtr = (double)value;
 	} else {
-	    double value = *(double *)clientData;
+	    double value = *(double *)ptr;
 	    *intNumberPtr = (Tcl_WideInt)value;
 	    *dblNumberPtr = value;
 	}
@@ -610,6 +641,7 @@ TclNewArithSeriesObj(
     Tcl_WideInt start, end, step = 1;
     Tcl_WideInt len = -1;
     Tcl_Obj *objPtr;
+    unsigned precision = (unsigned)-1; /* unknown precision */
 
     if (startObj) {
 	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
@@ -656,8 +688,6 @@ TclNewArithSeriesObj(
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
-		unsigned precision;
-
 		if (isinf(dstart) || isinf(dend)) {
 		    goto exceeded;
 		}
@@ -674,7 +704,7 @@ TclNewArithSeriesObj(
 			(char *)NULL);
 		    return NULL;
 		}
-		precision = maxPrecision(dstart, dend, dstep);
+		precision = maxObjPrecision(startObj, endObj, stepObj);
 		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
 	    } else {
 		len = ArithSeriesLenInt(start, end, step);
@@ -683,7 +713,7 @@ TclNewArithSeriesObj(
     } else {
 	if (useDoubles) {
 	    // Compute precision based on given command argument values
-	    unsigned precision = maxPrecision(dstart, 0, dstep);
+	    precision = maxObjPrecision(startObj, NULL, stepObj);
 
 	    dend = dstart + (dstep * (len-1));
 	    // Make computed end value match argument(s) precision
@@ -719,8 +749,11 @@ TclNewArithSeriesObj(
 	    return NULL;
 	}
 
-	objPtr = NewArithSeriesDbl(dstart, dstep, len,
-			maxPrecision(dstart, dend, dstep));
+	if (precision == (unsigned)-1) {
+	    precision = maxObjPrecision(startObj, endObj, stepObj);
+	}
+
+	objPtr = NewArithSeriesDbl(dstart, dstep, len, precision);
     } else {
     	objPtr = NewArithSeriesInt(start, step, len);
     }
