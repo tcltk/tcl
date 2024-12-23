@@ -1268,6 +1268,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_ObjCmdProc
+#undef TclGetObjInterpProc
 #endif
 
 #if defined(USE_TCL_STUBS)

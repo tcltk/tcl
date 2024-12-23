@@ -4425,7 +4425,7 @@ TEBCresume(
 		    "self may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
+	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4453,7 +4453,7 @@ TEBCresume(
 		    "nextto may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
+	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4474,7 +4474,7 @@ TEBCresume(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not a class", TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", (char *)NULL);
+		OO_ERROR(interp, CLASS_REQUIRED);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4525,8 +4525,7 @@ TEBCresume(
 			"%s implementation by \"%s\" not reachable from here",
 			methodType, TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-			(char *)NULL);
+		OO_ERROR(interp, CLASS_NOT_REACHABLE);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4534,7 +4533,7 @@ TEBCresume(
 		    "%s has no non-filter implementation by \"%s\"",
 		    methodType, TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", (char *)NULL);
+	    OO_ERROR(interp, CLASS_NOT_THERE);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4552,7 +4551,7 @@ TEBCresume(
 		    "next may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (char *)NULL);
+	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4581,7 +4580,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no next %s implementation", methodType));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
+	    OO_ERROR(interp, NOTHING_NEXT);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG

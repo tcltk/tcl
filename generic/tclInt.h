@@ -3457,9 +3457,9 @@ MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    const char *reason, int index);
 #ifndef TCL_NO_DEPRECATED
 MODULE_SCOPE Tcl_ObjCmdProc TclObjInterpProc;
+#define TclObjInterpProc TclGetObjInterpProc()
 #endif
 MODULE_SCOPE Tcl_ObjCmdProc2 TclObjInterpProc2;
-#define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const objv[],
