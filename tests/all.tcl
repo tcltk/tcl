@@ -14,8 +14,7 @@ package require Tcl 8.5-
 package require tcltest 2.5
 namespace import ::tcltest::*
 
-configure {*}$argv -testdir [file dirname [file dirname [file normalize [
-    info script]/...]]]
+configure -testdir [file normalize [file dirname [info script]]] {*}$argv
 
 if {[singleProcess]} {
     interp debug {} -frame 1
