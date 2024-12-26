@@ -4863,11 +4863,14 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
-	    if (objResultPtr == NULL) {
+	    if (TclArithSeriesObjIndex(interp, valuePtr, index, 
+					&objResultPtr) != TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
+	    }
+	    if (!objResultPtr) {
+		TclNewObj(objResultPtr);
 	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
@@ -4930,14 +4933,13 @@ TEBCresume(
 	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
-	    if (index >= 0 && index < length) {
-		objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
-		if (objResultPtr == NULL) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
+	    if (TclArithSeriesObjIndex(interp, valuePtr, index,
+					&objResultPtr) != TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    if (!objResultPtr) {
 		TclNewObj(objResultPtr);
 	    }
 	    pcAdjustment = 5;
@@ -5144,7 +5146,10 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
+	    if (TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx,
+	    				&objResultPtr) != TCL_OK) {
+		objResultPtr = NULL;
+	    };
 	} else {
 	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
 	}
@@ -5163,25 +5168,28 @@ TEBCresume(
 
 	s1 = TclGetStringFromObj(valuePtr, &s1len);
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
+
+	if (TclHasInternalRep(value2Ptr,&tclArithSeriesType)) {
+	  if (TclArithSeriesInOperator(interp, valuePtr,
+	  				value2Ptr, &match) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
-	}
-	match = 0;
-	if (length > 0) {
+	  }
+	} else {
+	  if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	  }
+	  match = 0;
+	  if (length > 0) {
 	    Tcl_Size i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType);
 	    /*
 	     * An empty list doesn't match anything.
 	     */
 
 	    do {
-		if (isArithSeries) {
-		    o = TclArithSeriesObjIndex(NULL, value2Ptr, i);
-		} else {
-		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		}
+		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		if (o != NULL) {
 		    s2 = TclGetStringFromObj(o, &s2len);
 		} else {
@@ -5191,11 +5199,9 @@ TEBCresume(
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
 		}
-		if (isArithSeries) {
-		    TclDecrRefCount(o);
-		}
 		i++;
 	    } while (i < length && match == 0);
+	  }
 	}
 
 	if (*pc == INST_LIST_NOT_IN) {
@@ -6885,13 +6891,11 @@ TEBCresume(
 			if (elements) {
 			    valuePtr = elements[valIndex];
 			} else {
-			    DECACHE_STACK_INFO();
-			    valuePtr = TclArithSeriesObjIndex(
-				NULL, listPtr, valIndex);
-			    if (valuePtr == NULL) {
+			    TclArithSeriesObjIndex(
+				NULL, listPtr, valIndex, &valuePtr);
+			    if (!valuePtr) {
 				TclNewObj(valuePtr);
 			    }
-			    CACHE_STACK_INFO();
 			}
 		    }
 

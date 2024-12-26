@@ -2232,9 +2232,12 @@ Tcl_JoinObjCmd(
     if (listLen == 1) {
 	/* One element; return it */
 	if (isArithSeries) {
-	    Tcl_Obj *valueObj = TclArithSeriesObjIndex(interp, objv[1], 0);
-	    if (valueObj == NULL) {
+	    Tcl_Obj *valueObj;
+	    if (TclArithSeriesObjIndex(interp, objv[1], 0, &valueObj) != TCL_OK) {
 		return TCL_ERROR;
+	    }
+	    if (!valueObj) {
+		TclNewObj(valueObj);
 	    }
 	    Tcl_SetObjResult(interp, valueObj);
 	} else {
@@ -2267,9 +2270,11 @@ Tcl_JoinObjCmd(
 
 		    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 		}
-		valueObj = TclArithSeriesObjIndex(interp, objv[1], i);
-		if (valueObj == NULL) {
+		if (TclArithSeriesObjIndex(interp, objv[1], i, &valueObj) != TCL_OK) {
 		    return TCL_ERROR;
+		}
+		if (!valueObj) {
+		    TclNewObj(valueObj);
 		}
 		Tcl_AppendObjToObj(resObjPtr, valueObj);
 		Tcl_DecrRefCount(valueObj);
@@ -2760,8 +2765,8 @@ Tcl_LrangeObjCmd(
 
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
 	Tcl_Obj *rangeObj;
-	rangeObj = TclArithSeriesObjRange(interp, objv[1], first, last);
-	if (rangeObj) {
+	if (TclArithSeriesObjRange(interp, objv[1], first, last, 
+					&rangeObj) == TCL_OK) {
 	    Tcl_SetObjResult(interp, rangeObj);
 	} else {
 	    return TCL_ERROR;
@@ -3175,8 +3180,8 @@ Tcl_LreverseObjCmd(
      *  just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-	Tcl_Obj *resObj = TclArithSeriesObjReverse(interp, objv[1]);
-	if (resObj) {
+	Tcl_Obj *resObj;
+	if (TclArithSeriesObjReverse(interp, objv[1], &resObj) == TCL_OK) {
 	    Tcl_SetObjResult(interp, resObj);
 	    return TCL_OK;
 	} else {
@@ -4131,7 +4136,8 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status, keyword, useDoubles = 0, allowedArgs = NumericArg;
+    int status = TCL_ERROR, keyword, allowedArgs = NumericArg;
+    int useDoubles = 0;
     int remNums = 3;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
@@ -4176,7 +4182,9 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles |= (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    if ((keyword == TCL_NUMBER_DOUBLE || keyword == TCL_NUMBER_NAN)) {
+		useDoubles++;
+	    }
 	    value_i++;
 	    break;
 
@@ -4205,6 +4213,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
+	useDoubles = 0; /* Can only have Integer value. If a fractional value
+			 * is given, this will fail later. In other words,
+			 * "3.0" is allowed and used as Integer, but "3.1"
+			 * will be flagged as an error. (bug f4a4bd7f1070) */
 	break;
 
 /*    lseq n n */
@@ -4242,8 +4254,7 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	}
 	break;
 
@@ -4265,12 +4276,10 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	    break;
 	default:
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4288,8 +4297,7 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4304,8 +4312,7 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	opmode = (SequenceOperators)values[1];
@@ -4320,8 +4327,7 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    status = TCL_ERROR;
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4330,16 +4336,16 @@ Tcl_LseqObjCmd(
     default:
       syntax:
 	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
     }
 
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
-	double d;
-	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
-	if (floor(d) == d) {
+	double d = elementCount->internalRep.doubleValue;
+	/* Don't consider Count type to indicate using double values in seqence */
+	useDoubles -= (useDoubles > 0) ? 1 : 0;
+	if (!isinf(d) && !isnan(d) && floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 		mp_int big;
 

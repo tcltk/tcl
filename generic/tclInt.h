@@ -1052,15 +1052,19 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
-MODULE_SCOPE  Tcl_Obj *TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
-			    Tcl_Size index);
-MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
-			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
-			    Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE  int	TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
+			    Tcl_Size index, Tcl_Obj **elemObj);
+MODULE_SCOPE Tcl_Size	TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE int	TclArithSeriesObjRange(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx,
+			    Tcl_Size toIdx, Tcl_Obj **newObjPtr);
+MODULE_SCOPE int	TclArithSeriesObjReverse(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr, Tcl_Obj **newObjPtr);
 MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
+MODULE_SCOPE int	TclArithSeriesInOperator(Tcl_Interp *interp,
+			    Tcl_Obj *valueObj, Tcl_Obj *arithSeriesObjPtr,
+			    int *boolResult);
 MODULE_SCOPE Tcl_Obj *  TclNewArithSeriesObj(Tcl_Interp *interp,
 			    int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
 			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
