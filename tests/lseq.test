@@ -17,7 +17,6 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
-testConstraint knownBug 0
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
 
