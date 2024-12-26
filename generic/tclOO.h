@@ -121,10 +121,12 @@ typedef struct Tcl_MethodType2 {
  * binary compatibility.
  */
 enum TclOOMethodVersion {
+#ifndef TCL_NO_DEPRECATED
     TCL_OO_METHOD_VERSION_1 = 1,
+    TCL_OO_METHOD_VERSION_CURRENT = TCL_OO_METHOD_VERSION_1,
+#endif /* TCL_NO_DEPRECATED */
     TCL_OO_METHOD_VERSION_2 = 2
 };
-#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
