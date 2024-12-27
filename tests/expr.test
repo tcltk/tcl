@@ -7397,8 +7397,8 @@ test expr-60.9 {float classification: basic arg handling} -body {
 } -match glob -result *
 
 # Big matrix of comparisons, but it's just a binary isinf()
-set values {1.0 -1.0 0.0 -0.0 1e-314 Inf -Inf NaN}
-set results {0 0 0 0 0 0 0 1}
+set values {1 -1 1.0 -1.0 0.0 -0.0 1e-314 Inf -Inf NaN}
+set results {0 0 0 0 0 0 0 0 0 1}
 set ctr 0
 foreach v1 $values r1 $results {
     foreach v2 $values r2 $results {

@@ -8224,7 +8224,9 @@ ExprIsUnorderedFunc(
     if (type == TCL_NUMBER_NAN) {
 	result = 1;
     } else {
-	d = *((const double *) ptr);
+	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	    return TCL_ERROR;
+	}
 	result = (ClassifyDouble(d) == FP_NAN);
     }
 
@@ -8234,7 +8236,9 @@ ExprIsUnorderedFunc(
     if (type == TCL_NUMBER_NAN) {
 	result |= 1;
     } else {
-	d = *((const double *) ptr);
+	if (Tcl_GetDoubleFromObj(interp, objv[2], &d) != TCL_OK) {
+	    return TCL_ERROR;
+	}
 	result |= (ClassifyDouble(d) == FP_NAN);
     }
 
