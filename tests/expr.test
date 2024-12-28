@@ -7310,8 +7310,8 @@ foreach {v r} {
                -1/Inf	zero
                1e-314	subnormal
               -1e-314	subnormal
-        .0999999**320	subnormal
-       -.0999999**320	subnormal
+        .0999999**319	subnormal
+       -.0999999**319	subnormal
             1e-320/.9	subnormal
            -1e-320/.9	subnormal
                1e5555	infinite
