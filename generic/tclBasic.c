@@ -8050,6 +8050,61 @@ ClassifyDouble(
 #endif /* !fpclassify */
 }
 
+#define FP_CLS_ERROR -1
+static inline int
+DoubleObjClass(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)		/* Object with double to get its class. */
+{
+    double d;
+    void *ptr;
+    int type;
+
+    if (Tcl_GetNumberFromObj(interp, objPtr, &ptr, &type) != TCL_OK) {
+	return FP_CLS_ERROR;
+    }
+    switch (type) {
+      case TCL_NUMBER_NAN:
+	return FP_NAN;
+      case TCL_NUMBER_DOUBLE:
+        d = *((const double *) ptr);
+        break;
+      default:
+	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
+	    return FP_CLS_ERROR;
+	}
+	break;
+    }
+    return ClassifyDouble(d);
+}
+static inline int
+DoubleObjIsClass(
+    Tcl_Interp *interp,
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv,	/* Actual parameter list */
+    int cmpCls,			/* FP class to compare. */
+    int positive)		/* 1 if compare positive, 0 - otherwise  */
+{
+    int dCls;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    dCls = DoubleObjClass(interp, objv[1]);
+    if (dCls == FP_CLS_ERROR) {
+	return TCL_ERROR;
+    }
+    dCls = (
+    	positive
+	    ? (dCls == cmpCls)
+	    : (dCls != cmpCls && dCls != FP_NAN)
+    ) ? 1 : 0;
+    Tcl_SetObjResult(interp, ((Interp *)interp)->execEnvPtr->constants[dCls]);
+    return TCL_OK;
+}
+
 static int
 ExprIsFiniteFunc(
     TCL_UNUSED(void *),
@@ -8058,27 +8113,7 @@ ExprIsFiniteFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	type = ClassifyDouble(d);
-	result = (type != FP_INFINITE && type != FP_NAN);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 0);
 }
 
 static int
@@ -8089,26 +8124,7 @@ ExprIsInfinityFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_INFINITE);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 1);
 }
 
 static int
@@ -8119,26 +8135,7 @@ ExprIsNaNFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 1;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_NAN);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_NAN, 1);
 }
 
 static int
@@ -8149,26 +8146,7 @@ ExprIsNormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_NORMAL);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_NORMAL, 1);
 }
 
 static int
@@ -8179,26 +8157,7 @@ ExprIsSubnormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_SUBNORMAL);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_SUBNORMAL, 1);
 }
 
 static int
@@ -8209,40 +8168,21 @@ ExprIsUnorderedFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
+    int dCls, dCls2;
 
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    dCls = DoubleObjClass(interp, objv[1]);
+    dCls2 = DoubleObjClass(interp, objv[2]);
+    if (dCls == FP_CLS_ERROR || dCls2 == FP_CLS_ERROR) {
 	return TCL_ERROR;
     }
-    if (type == TCL_NUMBER_NAN) {
-	result = 1;
-    } else {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_NAN);
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type == TCL_NUMBER_NAN) {
-	result |= 1;
-    } else {
-	if (Tcl_GetDoubleFromObj(interp, objv[2], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result |= (ClassifyDouble(d) == FP_NAN);
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    
+    dCls = ((dCls == FP_NAN) || (dCls2 == FP_NAN)) ? 1 : 0;
+    Tcl_SetObjResult(interp, ((Interp *)interp)->execEnvPtr->constants[dCls]);
     return TCL_OK;
 }
 
