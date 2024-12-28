@@ -7309,6 +7309,11 @@ foreach {v r} {
                 1/Inf	zero
                -1/Inf	zero
                1e-314	subnormal
+              -1e-314	subnormal
+        .0999999**320	subnormal
+       -.0999999**320	subnormal
+            1e-320/.9	subnormal
+           -1e-320/.9	subnormal
                1e5555	infinite
           1e308**1e10	infinite
                   Inf	infinite
