@@ -8719,32 +8719,34 @@ ClassifyDouble(
 #endif /* !fpclassify */
 }
 
-#define FP_CLS_ERROR -1
 static inline int
 DoubleObjClass(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr)		/* Object with double to get its class. */
+    Tcl_Obj *objPtr,		/* Object with double to get its class. */
+    int *fpClsPtr)		/* FP class retrieved for double in object. */
 {
     double d;
     void *ptr;
     int type;
 
     if (Tcl_GetNumberFromObj(interp, objPtr, &ptr, &type) != TCL_OK) {
-	return FP_CLS_ERROR;
+	return TCL_ERROR;
     }
     switch (type) {
       case TCL_NUMBER_NAN:
-	return FP_NAN;
+	*fpClsPtr = FP_NAN;
+	return TCL_OK;
       case TCL_NUMBER_DOUBLE:
         d = *((const double *) ptr);
         break;
       default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
-	    return FP_CLS_ERROR;
+	    return TCL_ERROR;
 	}
 	break;
     }
-    return ClassifyDouble(d);
+    *fpClsPtr = ClassifyDouble(d);
+    return TCL_OK;
 }
 static inline int
 DoubleObjIsClass(
@@ -8761,8 +8763,7 @@ DoubleObjIsClass(
 	return TCL_ERROR;
     }
 
-    dCls = DoubleObjClass(interp, objv[1]);
-    if (dCls == FP_CLS_ERROR) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK) {
 	return TCL_ERROR;
     }
     dCls = (
@@ -8844,9 +8845,10 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    dCls = DoubleObjClass(interp, objv[1]);
-    dCls2 = DoubleObjClass(interp, objv[2]);
-    if (dCls == FP_CLS_ERROR || dCls2 == FP_CLS_ERROR) {
+    if (
+	DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
+	DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK
+    ) {
 	return TCL_ERROR;
     }
     
