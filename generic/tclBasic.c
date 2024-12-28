@@ -8739,6 +8739,9 @@ DoubleObjClass(
       case TCL_NUMBER_DOUBLE:
         d = *((const double *) ptr);
         break;
+      case TCL_NUMBER_INT:
+        d = (double)*((const Tcl_WideInt *) ptr);
+        break;
       default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 	    return TCL_ERROR;
