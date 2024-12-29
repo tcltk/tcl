@@ -3353,7 +3353,7 @@ SetListFromAny(
 		return TCL_ERROR;
 	    }
 	    if (!elemPtrs[j]) {
-		TclNewObj(elemPtrs[j])
+		TclNewObj(elemPtrs[j]);
 	    }
 	    Tcl_IncrRefCount(elemPtrs[j]);
 	}
