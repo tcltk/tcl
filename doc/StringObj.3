@@ -352,6 +352,22 @@ Tcl_Obj *newPtr = \fBTcl_ObjPrintf\fR(format, ...);
 but with greater convenience and efficiency when the appending
 functionality is needed.
 .PP
+When printing integer types defined by Tcl, such as \fBTcl_Size\fR
+or \fBTcl_WideInt\fR, a format size specifier is needed as the
+integer width of those types is dependent on the Tcl version,
+platform and compiler. To accomodate these differences, Tcl defines
+C preprocessor symbols \fBTCL_LL_MODIFER\fR and
+\fBTCL_SIZE_MODIFER\fR for use when formatting values of type
+\fBTcl_WideInt\fR and \fBTcl_Size\fR respectively. Their usage
+is illustrated by
+.PP
+.CS
+Tcl_WideInt wide;
+Tcl_Size len;
+Tcl_Obj *wideObj = Tcl_ObjPrintf("wide = %" \fBTCL_LL_MODIFIER\fR "d", wide);
+Tcl_Obj *lenObj = Tcl_ObjPrintf("len = %" \fBTCL_SIZE_MODIFIER\fR "d", len);
+.CE
+.PP
 The \fBTcl_SetObjLength\fR procedure changes the length of the
 string value of its \fIobjPtr\fR argument.  If the \fInewLength\fR
 argument is greater than the space allocated for the value's
