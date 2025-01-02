@@ -247,6 +247,28 @@ if test "$tcl_cv_intrinsics" = "yes"; then
 	    [Defined when the compilers supports intrinsics])
 fi
 
+# See if the compiler supports cpuid header.
+
+if test "${GCC}" = "yes" ; then
+  AC_CACHE_CHECK(for cpuid-header support in compiler,
+    tcl_cv_cpuidhead,
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
+  #   include <cpuid.h>
+  #endif
+  ]], [[
+    unsigned int regs;
+    __get_cpuid(0, &regs, &regs, &regs, &regs);
+  ]])],
+    [tcl_cv_cpuidhead=yes],
+    [tcl_cv_cpuidhead=no])
+  )
+  if test "$tcl_cv_cpuidhead" = "yes"; then
+    AC_DEFINE(HAVE_CPUID_H, 1,
+	    [Defined when the compilers supports cpuid header])
+  fi
+fi
+
 # See if the <wspiapi.h> header file is present
 
 AC_CACHE_CHECK(for wspiapi.h,

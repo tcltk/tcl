@@ -12,7 +12,7 @@
  */
 
 #include "tclWinInt.h"
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
+#if defined(HAVE_CPUID_H)
 #   include <cpuid.h>
 #elif defined(HAVE_INTRIN_H)
 #   include <intrin.h>
@@ -663,7 +663,7 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
+#if defined(HAVE_CPUID_H)
 
     __get_cpuid(index, &regsPtr[0], &regsPtr[1], &regsPtr[2], &regsPtr[3]);
     status = TCL_OK;
