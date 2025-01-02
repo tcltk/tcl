@@ -607,6 +607,7 @@ InitCmdFrame(
  * ----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Method
 TclOOMakeProcInstanceMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
@@ -645,6 +646,7 @@ TclOOMakeProcInstanceMethod(
     return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
 	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 TclOOMakeProcInstanceMethod2(
@@ -698,6 +700,7 @@ TclOOMakeProcInstanceMethod2(
  * ----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Method
 TclOOMakeProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
@@ -740,6 +743,7 @@ TclOOMakeProcMethod(
     return TclNewMethod(
 	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 TclOOMakeProcMethod2(
