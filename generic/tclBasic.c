@@ -8770,7 +8770,7 @@ DoubleObjIsClass(
 	return TCL_ERROR;
     }
     dCls = (
-    	positive
+	positive
 	    ? (dCls == cmpCls)
 	    : (dCls != cmpCls && dCls != FP_NAN)
     ) ? 1 : 0;

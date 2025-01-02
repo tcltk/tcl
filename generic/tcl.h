@@ -808,8 +808,8 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
 	unsigned long value;
     } ptrAndLongRep;
     struct {			/*   - use for pointer and length reps */
-        void *ptr;
-        Tcl_Size size;
+	void *ptr;
+	Tcl_Size size;
     } ptrAndSize;
 } Tcl_ObjInternalRep;
 
