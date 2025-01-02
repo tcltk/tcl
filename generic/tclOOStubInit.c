@@ -18,6 +18,8 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #   define Tcl_MethodIsType 0
 #   define Tcl_NewInstanceMethod 0
 #   define Tcl_NewMethod 0
+#   define TclOOMakeProcInstanceMethod 0
+#   define TclOOMakeProcMethod 0
 #endif
 
 /* !BEGIN!: Do not edit below this line. */
@@ -41,6 +43,8 @@ static const TclOOIntStubs tclOOIntStubs = {
     TclOOClassSetFilters, /* 13 */
     TclOOObjectSetMixins, /* 14 */
     TclOOClassSetMixins, /* 15 */
+    TclOOMakeProcInstanceMethod2, /* 16 */
+    TclOOMakeProcMethod2, /* 17 */
 };
 
 static const TclOOStubHooks tclOOStubHooks = {

@@ -755,7 +755,7 @@ TclNewArithSeriesObj(
 
 	objPtr = NewArithSeriesDbl(dstart, dstep, len, precision);
     } else {
-    	objPtr = NewArithSeriesInt(start, step, len);
+	objPtr = NewArithSeriesInt(start, step, len);
     }
 
     return objPtr;

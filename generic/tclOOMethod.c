@@ -440,7 +440,7 @@ TclOONewProcInstanceMethod(
 	return NULL;
     }
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
+    method = TclOOMakeProcInstanceMethod2(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
     if (method == NULL) {
 	Tcl_Free(pmPtr);
@@ -496,7 +496,7 @@ TclOONewProcMethod(
     }
 
     pmPtr = AllocProcedureMethodRecord(flags);
-    method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
+    method = TclOOMakeProcMethod2(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
     if (argsLen == TCL_INDEX_NONE) {
@@ -618,6 +618,45 @@ TclOOMakeProcInstanceMethod(
 				 * which _must not_ be NULL. */
     Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
 				 * NULL. */
+    const Tcl_MethodType *typePtr,
+				/* The type of the method to create. */
+    void *clientData,		/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcInstanceMethod", "TCL_OO_METHOD_VERSION_1");
+    }
+    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
+
+    InitCmdFrame(iPtr, procPtr);
+
+    return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
+	    (const Tcl_MethodType2 *)typePtr, clientData);
+}
+
+Tcl_Method
+TclOOMakeProcInstanceMethod2(
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    Object *oPtr,		/* The object to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which _must not_ be
+				 * NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
     const Tcl_MethodType2 *typePtr,
 				/* The type of the method to create. */
     void *clientData,		/* The per-method type-specific data. */
@@ -629,6 +668,10 @@ TclOOMakeProcInstanceMethod(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcInstanceMethod2", "TCL_OO_METHOD_VERSION_2");
+    }
     if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
 	    procPtrPtr) != TCL_OK) {
 	return NULL;
@@ -670,6 +713,49 @@ TclOOMakeProcMethod(
 				 * which _must not_ be NULL. */
     Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
 				 * NULL. */
+    const Tcl_MethodType *typePtr,
+				/* The type of the method to create. */
+    void *clientData,		/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcMethod", "TCL_OO_METHOD_VERSION_1");
+    }
+    if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
+
+    InitCmdFrame(iPtr, procPtr);
+
+    return TclNewMethod(
+	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType2 *)typePtr, clientData);
+}
+
+Tcl_Method
+TclOOMakeProcMethod2(
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Class *clsPtr,		/* The class to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
+				 * if so, up to caller to manage storage
+				 * (e.g., because it is a constructor or
+				 * destructor). */
+    const char *namePtr,	/* The name of the method as a string, which
+				 * _must not_ be NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
     const Tcl_MethodType2 *typePtr,
 				/* The type of the method to create. */
     void *clientData,		/* The per-method type-specific data. */
@@ -681,6 +767,10 @@ TclOOMakeProcMethod(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcMethod2", "TCL_OO_METHOD_VERSION_2");
+    }
     if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
 	    procPtrPtr) != TCL_OK) {
 	return NULL;
