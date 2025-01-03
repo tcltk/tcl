@@ -49,14 +49,15 @@ extern "C" {
 #if !defined(TCL_MAJOR_VERSION)
 #   define TCL_MAJOR_VERSION	9
 #endif
-#if TCL_MAJOR_VERSION == 9
-#   define TCL_MINOR_VERSION	0
-#   define TCL_RELEASE_LEVEL	TCL_FINAL_RELEASE
-#   define TCL_RELEASE_SERIAL	2
+#if TCL_MAJOR_VERSION != 9
+#   error "This header-file is for Tcl 9 only"
+#endif
+#define TCL_MINOR_VERSION   1
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#define TCL_RELEASE_SERIAL  0
 
-#   define TCL_VERSION		"9.0"
-#   define TCL_PATCH_LEVEL	"9.0.2"
-#endif /* TCL_MAJOR_VERSION */
+#define TCL_VERSION	    "9.1"
+#define TCL_PATCH_LEVEL	    "9.1a0"
 
 #if defined(RC_INVOKED)
 /*
@@ -321,24 +322,12 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if TCL_MAJOR_VERSION < 9
-    typedef int Tcl_Size;
-#   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
-#   define TCL_SIZE_MODIFIER ""
-#else
-    typedef ptrdiff_t Tcl_Size;
-#   define TCL_SIZE_MAX ((Tcl_Size)(((size_t)-1)>>1))
-#   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
-#endif /* TCL_MAJOR_VERSION */
+typedef ptrdiff_t Tcl_Size;
+#define TCL_SIZE_MAX ((Tcl_Size)(((size_t)-1)>>1))
+#define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 
 #ifdef _WIN32
-#   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
-	typedef struct __stat64 Tcl_StatBuf;
-#   elif defined(_USE_32BIT_TIME_T)
-	typedef struct _stati64	Tcl_StatBuf;
-#   else
-	typedef struct _stat32i64 Tcl_StatBuf;
-#   endif
+    typedef struct __stat64 Tcl_StatBuf;
 #elif defined(__CYGWIN__)
     typedef struct {
 	unsigned st_dev;
@@ -463,28 +452,18 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 typedef struct Tcl_RegExpIndices {
-#if TCL_MAJOR_VERSION > 8
     Tcl_Size start;		/* Character offset of first character in
 				 * match. */
     Tcl_Size end;		/* Character offset of first character after
 				 * the match. */
-#else
-    long start;
-    long end;
-#endif
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
     Tcl_Size nsubs;		/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-#if TCL_MAJOR_VERSION > 8
     Tcl_Size extendStart;	/* The offset at which a subsequent match
 				 * might begin. */
-#else
-    long extendStart;
-    long reserved;		/* Reserved for later use. */
-#endif
 } Tcl_RegExpInfo;
 
 /*
@@ -556,12 +535,14 @@ typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	void *cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -581,9 +562,10 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
-#if TCL_MAJOR_VERSION > 8
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
@@ -594,11 +576,6 @@ typedef void (Tcl_FreeProc) (void *blockPtr);
 #define Tcl_FileFreeProc Tcl_FreeProc
 #define Tcl_FileFreeProc Tcl_FreeProc
 #define Tcl_EncodingFreeProc Tcl_FreeProc
-#else
-#define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
-#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
-typedef void (Tcl_FreeProc) (char *blockPtr);
-#endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -667,7 +644,6 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
-#if TCL_MAJOR_VERSION > 8
     size_t version;		/* Version field for future-proofing. */
 
     /* List emulation functions - ObjType Version 1 */
@@ -691,21 +667,14 @@ typedef struct Tcl_ObjType {
 				/* "in" and "ni" expr list operation.
 				 * Determine if the given string value matches
 				 * an element in the list. */
-#endif
 } Tcl_ObjType;
 
-#if TCL_MAJOR_VERSION > 8
-#   define TCL_OBJTYPE_V0 0, \
-	   0,0,0,0,0,0,0,0	/* Pre-Tcl 9 */
-#   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
-	   a,0,0,0,0,0,0,0	/* Tcl 9 Version 1 */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType),  \
-	   a,b,c,d,e,f,g,h	/* Tcl 9 - AbstractLists */
-#else
-#   define TCL_OBJTYPE_V0 /* just empty */
-#   define TCL_OBJTYPE_V1(a) /* just empty */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) /* just empty */
-#endif
+#define TCL_OBJTYPE_V0 0, \
+	0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
+	a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType),  \
+	a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
 
 /*
  * The following structure stores an internal representation (internalrep) for
@@ -848,8 +817,13 @@ typedef struct {
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this field. */
+#ifdef TCL_NO_DEPRECATED
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
+#else
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
+#endif
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -951,11 +925,7 @@ typedef struct Tcl_DString {
  * TCL_COMBINE Combine surrogates
  */
 
-#if TCL_MAJOR_VERSION > 8
-#    define TCL_COMBINE		0x1000000
-#else
-#    define TCL_COMBINE		0
-#endif
+#define TCL_COMBINE		0x1000000
 /*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
@@ -1060,11 +1030,7 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
-#if TCL_MAJOR_VERSION > 8
-#  define TCL_HASH_TYPE size_t
-#else
-#  define TCL_HASH_TYPE unsigned
-#endif
+#   define TCL_HASH_TYPE size_t
 #endif
 
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
@@ -1189,15 +1155,10 @@ struct Tcl_HashTable {
 				 * table. */
     Tcl_Size rebuildSize;	/* Enlarge table when numEntries gets to be
 				 * this large. */
-#if TCL_MAJOR_VERSION > 8
     size_t mask;		/* Mask value used in hashing function. */
-#endif
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-#if TCL_MAJOR_VERSION < 9
-    int mask;			/* Mask value used in hashing function. */
-#endif
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
@@ -1315,12 +1276,8 @@ typedef enum {
  */
 
 typedef struct Tcl_Time {
-#if TCL_MAJOR_VERSION > 8
     long long sec;		/* Seconds. */
-#else
-    long sec;			/* Seconds. */
-#endif
-#if defined(_CYGWIN_) && TCL_MAJOR_VERSION > 8
+#if defined(_CYGWIN_)
     int usec;			/* Microseconds. */
 #else
     long usec;			/* Microseconds. */
@@ -1371,11 +1328,7 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * interface.
  */
 
-#if TCL_MAJOR_VERSION > 8
-#   define TCL_CLOSE2PROC		NULL
-#else
-#   define TCL_CLOSE2PROC		((void *) 1)
-#endif
+#define TCL_CLOSE2PROC		NULL
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
@@ -1923,12 +1876,10 @@ typedef struct Tcl_Parse {
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
-#if TCL_MAJOR_VERSION > 8
     int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
 				 * if the command appears to be incomplete.
 				 * This information is used by
 				 * Tcl_CommandComplete. */
-#endif
 
     /*
      * The fields below are intended only for the private use of the parser.
@@ -1947,9 +1898,6 @@ typedef struct Tcl_Parse {
 				 * beginning of region where the error
 				 * occurred (e.g. the open brace if the close
 				 * brace is missing). */
-#if TCL_MAJOR_VERSION < 9
-    int incomplete;
-#endif
     Tcl_Token staticTokens[NUM_STATIC_TOKENS];
 				/* Initial space for tokens for command. This
 				 * space should be large enough to accommodate
@@ -2030,11 +1978,7 @@ typedef struct Tcl_EncodingType {
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
-#if TCL_MAJOR_VERSION > 8
-#   define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
-#else
-#   define TCL_ENCODING_STOPONERROR	0x04
-#endif
+#define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 /* Internal use bits, do not define bits in this space. See above comment */
@@ -2044,7 +1988,7 @@ typedef struct Tcl_EncodingType {
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
-#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
+#define TCL_ENCODING_PROFILE_STRICT   0x00000000
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
@@ -2087,11 +2031,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#   if TCL_MAJOR_VERSION > 8
-#	define TCL_UTF_MAX		4
-#   else
-#	define TCL_UTF_MAX		3
-#   endif
+#   define TCL_UTF_MAX		4
 #endif
 
 /*
@@ -2140,11 +2080,7 @@ typedef struct Tcl_Config {
  */
 
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
-#if TCL_MAJOR_VERSION > 8
 #define Tcl_LimitHandlerDeleteProc Tcl_FreeProc
-#else
-typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
-#endif
 
 #if 0
 /*
@@ -2301,11 +2237,7 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#if TCL_MAJOR_VERSION > 8
-#   define TCL_STUB_MAGIC	((int) 0xFCA3BACB + (int) sizeof(void *))
-#else
-#   define TCL_STUB_MAGIC	((int) 0xFCA3BACF)
-#endif
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2327,43 +2259,14 @@ void *			TclStubCall(void *arg);
 #endif
 
 #ifdef USE_TCL_STUBS
-#if TCL_MAJOR_VERSION < 9
-# if TCL_UTF_MAX < 4
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
-	    TCL_STUB_MAGIC)
-# else
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, "8.7b1", \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
-	    TCL_STUB_MAGIC)
-# endif
-#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #else
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0.0"), \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
-	    TCL_STUB_MAGIC)
-#endif
-#else
-#if TCL_MAJOR_VERSION < 9
-#   define Tcl_InitStubs(interp, version, exact) \
-	Tcl_Panic(((void)interp, (void)version, \
-		(void)exact, "Please define -DUSE_TCL_STUBS"))
-#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \
 		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
-#else
-#   define Tcl_InitStubs(interp, version, exact) \
-	Tcl_PkgInitStubsCheck(interp, TCL_PATCH_LEVEL, \
-		1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
-#endif
 #endif
 
 /*
@@ -2405,7 +2308,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
-#if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)
+#if defined(USE_TCL_STUBS)
 #define Tcl_SetPanicProc(panicProc) \
     TclInitStubTable(((const char *(*)(Tcl_PanicProc *))TclStubCall((void *)panicProc))(panicProc))
 #define Tcl_InitSubsystems() \
