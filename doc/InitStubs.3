@@ -83,12 +83,22 @@ and a Boolean flag indicating whether the extension requires
 an exact version match or not.  If \fIexact\fR is 0, then the
 extension is indicating that newer versions of Tcl are acceptable
 as long as they have the same major version number as \fIversion\fR;
-non-zero means that only the specified \fIversion\fR is acceptable.
+1 means that only the specified \fIversion\fR is acceptable.
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
 acceptable, does not support stubs, or any other error condition occurred.
 .PP
 \fBTcl_InitStubs\fR is implemented as a macro.
+If \fBUSE_TCL_STUBS\fR is defined, this macro calls the real \fBTcl_InitStubs\fR
+function which has an additional \fBmagic\fR integer argument and uses the \fBexact\fR
+parameter to know the exact Tcl major version number. If you circumvent
+the macro in tcl.h, it should be called like this:
+.CS
+    if (Tcl_InitStubs(interp, "8.6-", TCL_MAJOR_VERSION<<8, TCL_STUB_MAGIC)) == NULL) {
+	return TCL_ERROR;
+    }
+}
+.CE
 If \fBUSE_TCL_STUBS\fR is not defined, it translates to a TCL version verification only.
 Thus, the call may also be used if the TCL library is directly linked.
 .SH "SEE ALSO"
