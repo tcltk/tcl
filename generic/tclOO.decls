@@ -135,8 +135,19 @@ declare 30 {
 declare 31 {
     Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
 }
+declare 32 {
+    int Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+	    void **clientDataPtr)
+}
+declare 33 {
+    Tcl_Method Tcl_NewInstanceMethod2(Tcl_Interp *interp, Tcl_Object object,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
+}
 declare 34 {
-    void TclOOUnusedStubEntry(void)
+    Tcl_Method Tcl_NewMethod2(Tcl_Interp *interp, Tcl_Class cls,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
 }
 
 ######################################################################
@@ -221,6 +232,18 @@ declare 14 {
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
 	    Tcl_Size numMixins, Class *const *mixins)
+}
+declare 16 {
+    Tcl_Method TclOOMakeProcInstanceMethod2(Tcl_Interp *interp, Object *oPtr,
+	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+	    const Tcl_MethodType2 *typePtr, void *clientData,
+	    Proc **procPtrPtr)
+}
+declare 17 {
+    Tcl_Method TclOOMakeProcMethod2(Tcl_Interp *interp, Class *clsPtr,
+	    int flags, Tcl_Obj *nameObj, const char *namePtr,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr,
+	    void *clientData, Proc **procPtrPtr)
 }
 
 return

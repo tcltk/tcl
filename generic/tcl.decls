@@ -2411,6 +2411,24 @@ declare 649 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    Tcl_Size *numBytesPtr)
 }
+declare 650 {
+    unsigned char *TclGetBytesFromObj_(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *numBytesPtr)
+}
+
+# TIP #481
+declare 651 {
+    char *TclGetStringFromObj_(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *TclGetUnicodeFromObj_(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+}
+
+# TIP 660
+declare 653 {
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
+}
 
 # TIP #575
 declare 654 {
@@ -2446,6 +2464,33 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
+# TIP #616
+declare 661 {
+    int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+}
+declare 662 {
+    int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    Tcl_Size *lengthPtr)
+}
+declare 663 {
+    int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
+}
+declare 664 {
+    int TclSplitList_(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
+	    const char ***argvPtr)
+}
+declare 665 {
+    void TclSplitPath_(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
+}
+declare 666 {
+    Tcl_Obj *TclFSSplitPath_(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
+}
+declare 667 {
+    int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
+
 # TIP #617
 declare 668 {
     Tcl_Size Tcl_UniCharLen(const int *uniStr)
@@ -2474,6 +2519,28 @@ declare 675 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int flags, char *charPtr)
 }
+declare 676 {
+    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
+	    const char *cmdName,
+	    Tcl_ObjCmdProc2 *proc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 677 {
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, Tcl_Size level, int flags,
+	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
+}
+declare 678 {
+    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
+	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
+	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 679 {
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
+	    void *clientData, Tcl_Size objc, Tcl_Obj *const objv[])
+}
+
 # TIP #638.
 declare 680 {
     int Tcl_GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,

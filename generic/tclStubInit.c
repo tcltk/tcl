@@ -85,6 +85,17 @@
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #endif
 
+#define TclDictObjSize_ Tcl_DictObjSize
+#define TclFSSplitPath_ Tcl_FSSplitPath
+#define TclListObjGetElements_ Tcl_ListObjGetElements
+#define TclListObjLength_ Tcl_ListObjLength
+#define TclParseArgsObjv_ Tcl_ParseArgsObjv
+#define TclSplitList_ Tcl_SplitList
+#define TclSplitPath_ Tcl_SplitPath
+#define TclGetBytesFromObj_ Tcl_GetBytesFromObj
+#define TclGetStringFromObj_ Tcl_GetStringFromObj
+#define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
+
 
 #if defined(TCL_NO_DEPRECATED)
 static void uniCodePanic(void) {
@@ -1946,10 +1957,10 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
     Tcl_GetBytesFromObj, /* 649 */
-    0, /* 650 */
-    0, /* 651 */
-    0, /* 652 */
-    0, /* 653 */
+    TclGetBytesFromObj_, /* 650 */
+    TclGetStringFromObj_, /* 651 */
+    TclGetUnicodeFromObj_, /* 652 */
+    Tcl_GetSizeIntFromObj, /* 653 */
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
@@ -1957,13 +1968,13 @@ const TclStubs tclStubs = {
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
-    0, /* 661 */
-    0, /* 662 */
-    0, /* 663 */
-    0, /* 664 */
-    0, /* 665 */
-    0, /* 666 */
-    0, /* 667 */
+    TclListObjGetElements_, /* 661 */
+    TclListObjLength_, /* 662 */
+    TclDictObjSize_, /* 663 */
+    TclSplitList_, /* 664 */
+    TclSplitPath_, /* 665 */
+    TclFSSplitPath_, /* 666 */
+    TclParseArgsObjv_, /* 667 */
     Tcl_UniCharLen, /* 668 */
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */
@@ -1972,10 +1983,10 @@ const TclStubs tclStubs = {
     TclGetUniChar, /* 673 */
     Tcl_GetBool, /* 674 */
     Tcl_GetBoolFromObj, /* 675 */
-    0, /* 676 */
-    0, /* 677 */
-    0, /* 678 */
-    0, /* 679 */
+    Tcl_CreateObjCommand2, /* 676 */
+    Tcl_CreateObjTrace2, /* 677 */
+    Tcl_NRCreateCommand2, /* 678 */
+    Tcl_NRCallObjProc2, /* 679 */
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
