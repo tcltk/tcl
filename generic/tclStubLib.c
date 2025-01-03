@@ -60,19 +60,26 @@ Tcl_InitStubs(
     const char *actualVersion = NULL;
     void *pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
-    const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
+    const char *tclName = "tcl";
 
-#undef TCL_STUB_MAGIC /* We need the TCL_STUB_MAGIC from Tcl 8.x here */
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+    if ((exact&0xFF00) < 0x900) {
+	magic = (int) 0xFCA3BACF; /* TCL_STUB_MAGIC from Tcl 8.x */
+	tclName = "Tcl";
+    }
     /*
      * We can't optimize this check by caching tclStubsPtr because that
      * prevents apps from being able to load/unload Tcl dynamically multiple
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
-	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
-	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
+    if (!stubsPtr || (stubsPtr->magic != magic)) {
+	if (((exact&0xFF00) >= 0x900) && stubsPtr && (stubsPtr->magic == TCL_STUB_MAGIC)) {
+	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf("this extension is compiled for Tcl %d.%d",
+		    (exact&0xFF00)>>8, (exact&0xFF0000)>>16));
+	} else {
+	    iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
+	    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
+	}
 	return NULL;
     }
 
