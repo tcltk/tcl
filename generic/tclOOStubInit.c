@@ -35,6 +35,8 @@ static const TclOOIntStubs tclOOIntStubs = {
     TclOOClassSetFilters, /* 13 */
     TclOOObjectSetMixins, /* 14 */
     TclOOClassSetMixins, /* 15 */
+    TclOOMakeProcInstanceMethod2, /* 16 */
+    TclOOMakeProcMethod2, /* 17 */
 };
 
 static const TclOOStubHooks tclOOStubHooks = {
