@@ -94,7 +94,7 @@
 #define TclSplitPath_ Tcl_SplitPath
 #define TclGetBytesFromObj_ Tcl_GetBytesFromObj
 #define TclGetStringFromObj_ Tcl_GetStringFromObj
-#define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
+#define TclGetUnicodeFromObj_ TclGetUnicodeFromObj
 
 
 #if defined(TCL_NO_DEPRECATED)
