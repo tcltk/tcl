@@ -1025,9 +1025,11 @@ declare 284 {
     void Tcl_SetMainLoop(Tcl_MainLoopProc *proc)
 }
 
-# Reserved for future use (8.0.x vs. 8.1)
-#  declare 285 {
-#  }
+declare 285 {
+    int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+}
 
 # Added in 8.1:
 
@@ -2412,7 +2414,7 @@ declare 649 {
 	    Tcl_Size *numBytesPtr)
 }
 declare 650 {
-    unsigned char *TclGetBytesFromObj_(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    Tcl_Size *numBytesPtr)
 }
 
@@ -2421,7 +2423,7 @@ declare 651 {
     char *TclGetStringFromObj_(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *TclGetUnicodeFromObj_(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 
 # TIP 660
@@ -2474,20 +2476,20 @@ declare 662 {
 	    Tcl_Size *lengthPtr)
 }
 declare 663 {
-    int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
 }
 declare 664 {
-    int TclSplitList_(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
 	    const char ***argvPtr)
 }
 declare 665 {
-    void TclSplitPath_(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
+    void TclSplitPath(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
 }
 declare 666 {
-    Tcl_Obj *TclFSSplitPath_(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
 }
 declare 667 {
-    int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+    int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 

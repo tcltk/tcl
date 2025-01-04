@@ -3502,7 +3502,6 @@ MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsZipfsPath(const char *path);
 MODULE_SCOPE void	TclZipfsFinalize(void);
 
-MODULE_SCOPE int *TclGetUnicodeFromObj(Tcl_Obj *, int *);
 MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
 MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
 MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, size_t);

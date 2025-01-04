@@ -85,16 +85,16 @@
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #endif
 
-#define TclDictObjSize_ Tcl_DictObjSize
-#define TclFSSplitPath_ Tcl_FSSplitPath
+#define TclDictObjSize Tcl_DictObjSize
+#define TclFSSplitPath Tcl_FSSplitPath
 #define TclListObjGetElements_ Tcl_ListObjGetElements
 #define TclListObjLength_ Tcl_ListObjLength
-#define TclParseArgsObjv_ Tcl_ParseArgsObjv
-#define TclSplitList_ Tcl_SplitList
-#define TclSplitPath_ Tcl_SplitPath
-#define TclGetBytesFromObj_ Tcl_GetBytesFromObj
+#define TclParseArgsObjv Tcl_ParseArgsObjv
+#define TclSplitList Tcl_SplitList
+#define TclSplitPath Tcl_SplitPath
+#define TclGetBytesFromObj Tcl_GetBytesFromObj
 #define TclGetStringFromObj_ Tcl_GetStringFromObj
-#define TclGetUnicodeFromObj_ TclGetUnicodeFromObj
+#define TclGetAliasObj Tcl_GetAliasObj
 
 
 #if defined(TCL_NO_DEPRECATED)
@@ -1592,7 +1592,7 @@ const TclStubs tclStubs = {
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
     Tcl_SetMainLoop, /* 284 */
-    0, /* 285 */
+    TclGetAliasObj, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
@@ -1957,9 +1957,9 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
     Tcl_GetBytesFromObj, /* 649 */
-    TclGetBytesFromObj_, /* 650 */
+    TclGetBytesFromObj, /* 650 */
     TclGetStringFromObj_, /* 651 */
-    TclGetUnicodeFromObj_, /* 652 */
+    TclGetUnicodeFromObj, /* 652 */
     Tcl_GetSizeIntFromObj, /* 653 */
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
@@ -1970,11 +1970,11 @@ const TclStubs tclStubs = {
     Tcl_AsyncMarkFromSignal, /* 660 */
     TclListObjGetElements_, /* 661 */
     TclListObjLength_, /* 662 */
-    TclDictObjSize_, /* 663 */
-    TclSplitList_, /* 664 */
-    TclSplitPath_, /* 665 */
-    TclFSSplitPath_, /* 666 */
-    TclParseArgsObjv_, /* 667 */
+    TclDictObjSize, /* 663 */
+    TclSplitList, /* 664 */
+    TclSplitPath, /* 665 */
+    TclFSSplitPath, /* 666 */
+    TclParseArgsObjv, /* 667 */
     Tcl_UniCharLen, /* 668 */
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */
