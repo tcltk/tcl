@@ -40,11 +40,11 @@ static int		MakeTildeRelativePath(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType fsPathType = {
-    "path",				/* name */
-    FreeFsPathInternalRep,		/* freeIntRepProc */
-    DupFsPathInternalRep,		/* dupIntRepProc */
-    UpdateStringOfFsPath,		/* updateStringProc */
-    SetFsPathFromAny,			/* setFromAnyProc */
+    "path",			/* name */
+    FreeFsPathInternalRep,	/* freeIntRepProc */
+    DupFsPathInternalRep,	/* dupIntRepProc */
+    UpdateStringOfFsPath,	/* updateStringProc */
+    SetFsPathFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 
@@ -224,7 +224,7 @@ TclFSNormalizeAbsolutePath(
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
 		}
-		(void)Tcl_GetStringFromObj(retVal, &curLen);
+		(void)TclGetStringFromObj(retVal, &curLen);
 		if (curLen == 0) {
 		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
@@ -250,7 +250,7 @@ TclFSNormalizeAbsolutePath(
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
 		}
-		(void)Tcl_GetStringFromObj(retVal, &curLen);
+		(void)TclGetStringFromObj(retVal, &curLen);
 		if (curLen == 0) {
 		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
@@ -276,8 +276,7 @@ TclFSNormalizeAbsolutePath(
 			 */
 
 			if (tclPlatform != TCL_PLATFORM_WINDOWS
-				&& Tcl_FSGetPathType(linkObj)
-					== TCL_PATH_RELATIVE) {
+				&& Tcl_FSGetPathType(linkObj) == TCL_PATH_RELATIVE) {
 			    /*
 			     * We need to follow this link which is relative
 			     * to retVal's directory. This means concatenating
@@ -285,7 +284,7 @@ TclFSNormalizeAbsolutePath(
 			     */
 
 			    const char *path =
-				    Tcl_GetStringFromObj(retVal, &curLen);
+				    TclGetStringFromObj(retVal, &curLen);
 
 			    while (curLen-- > 0) {
 				if (IsSeparatorOrNull(path[curLen])) {
@@ -300,7 +299,7 @@ TclFSNormalizeAbsolutePath(
 			    Tcl_SetObjLength(retVal, curLen+1);
 			    Tcl_AppendObjToObj(retVal, linkObj);
 			    TclDecrRefCount(linkObj);
-			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			    linkStr = TclGetStringFromObj(retVal, &curLen);
 			} else {
 			    /*
 			     * Absolute link.
@@ -313,7 +312,7 @@ TclFSNormalizeAbsolutePath(
 			    } else {
 				retVal = linkObj;
 			    }
-			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			    linkStr = TclGetStringFromObj(retVal, &curLen);
 
 			    /*
 			     * Convert to forward-slashes on windows.
@@ -330,7 +329,7 @@ TclFSNormalizeAbsolutePath(
 			    }
 			}
 		    } else {
-			linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			linkStr = TclGetStringFromObj(retVal, &curLen);
 		    }
 
 		    /*
@@ -404,10 +403,11 @@ TclFSNormalizeAbsolutePath(
     if (zipVolumeLen || (tclPlatform == TCL_PLATFORM_WINDOWS)) {
 	int needTrailingSlash = 0;
 	Tcl_Size len;
-	const char *path = Tcl_GetStringFromObj(retVal, &len);
+	const char *path = TclGetStringFromObj(retVal, &len);
 	if (zipVolumeLen) {
-	    if (len == (zipVolumeLen - 1))
+	    if (len == (zipVolumeLen - 1)) {
 		needTrailingSlash = 1;
+	    }
 	} else {
 	    if (len == 2 && path[0] != 0 && path[1] == ':') {
 		needTrailingSlash = 1;
@@ -585,7 +585,7 @@ TclPathPart(
 		 */
 
 		Tcl_Size numBytes;
-		const char *rest = Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
+		const char *rest = TclGetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
 		    goto standardPath;
@@ -622,7 +622,7 @@ TclPathPart(
 		 */
 
 		Tcl_Size numBytes;
-		const char *rest = Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
+		const char *rest = TclGetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
 		    goto standardPath;
@@ -651,7 +651,7 @@ TclPathPart(
 		const char *fileName, *extension;
 		Tcl_Size length;
 
-		fileName = Tcl_GetStringFromObj(fsPathPtr->normPathPtr,
+		fileName = TclGetStringFromObj(fsPathPtr->normPathPtr,
 			&length);
 		extension = TclGetExtension(fileName);
 		if (extension == NULL) {
@@ -703,7 +703,7 @@ TclPathPart(
 	    Tcl_Size length;
 	    const char *fileName, *extension;
 
-	    fileName = Tcl_GetStringFromObj(pathPtr, &length);
+	    fileName = TclGetStringFromObj(pathPtr, &length);
 	    extension = TclGetExtension(fileName);
 	    if (extension == NULL) {
 		Tcl_IncrRefCount(pathPtr);
@@ -726,7 +726,7 @@ TclPathPart(
 	splitPtr = Tcl_FSSplitPath(pathPtr, &splitElements);
 	Tcl_IncrRefCount(splitPtr);
 
-        if (portion == TCL_PATH_TAIL) {
+	if (portion == TCL_PATH_TAIL) {
 	    /*
 	     * Return the last component, unless it is the only component, and
 	     * it is the root of an absolute path.
@@ -826,12 +826,12 @@ Tcl_FSJoinPath(
     Tcl_Size objc;
     Tcl_Obj **objv;
 
-    if (TclListObjLengthM(NULL, listObj, &objc) != TCL_OK) {
+    if (TclListObjLength(NULL, listObj, &objc) != TCL_OK) {
 	return NULL;
     }
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
-    TclListObjGetElementsM(NULL, listObj, &objc, &objv);
+    TclListObjGetElements(NULL, listObj, &objc, &objv);
     res = TclJoinPath(elements, objv, 0);
     return res;
 }
@@ -883,7 +883,7 @@ TclJoinPath(
 		const char *str;
 		Tcl_Size len;
 
-		str = Tcl_GetStringFromObj(tailObj, &len);
+		str = TclGetStringFromObj(tailObj, &len);
 		if (len == 0) {
 		    /*
 		     * This happens if we try to handle the root volume '/'.
@@ -955,7 +955,7 @@ TclJoinPath(
 	Tcl_Obj *driveName = NULL;
 	Tcl_Obj *elt = objv[i];
 
-	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
+	strElt = TclGetStringFromObj(elt, &strEltLen);
 	driveNameLength = 0;
 	/* if forceRelative - all paths excepting first one are relative */
 	type = (forceRelative && (i > 0)) ? TCL_PATH_RELATIVE :
@@ -1052,10 +1052,10 @@ TclJoinPath(
 	if (res == NULL) {
 	    TclNewObj(res);
 	}
-	ptr = Tcl_GetStringFromObj(res, &length);
+	ptr = TclGetStringFromObj(res, &length);
 
-        /*
-         * A NULL value for fsPtr at this stage basically means we're trying
+	/*
+	 * A NULL value for fsPtr at this stage basically means we're trying
 	 * to join a relative path onto something which is also relative (or
 	 * empty). There's nothing particularly wrong with that.
 	 */
@@ -1087,7 +1087,7 @@ TclJoinPath(
 
 	    if (length > 0 && ptr[length -1] != '/') {
 		Tcl_AppendToObj(res, &separator, 1);
-		(void)Tcl_GetStringFromObj(res, &length);
+		(void)TclGetStringFromObj(res, &length);
 	    }
 	    Tcl_SetObjLength(res, length + strlen(strElt));
 
@@ -1352,7 +1352,7 @@ AppendPath(
      * internalrep produce the same results; that is, bugward compatibility.  If
      * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
-    bytes = Tcl_GetStringFromObj(tail, &length);
+    bytes = TclGetStringFromObj(tail, &length);
     if (length == 0) {
 	Tcl_AppendToObj(copy, "/", 1);
     } else {
@@ -1412,7 +1412,7 @@ TclFSMakePathRelative(
      * too little below, leading to wrong answers returned by glob.
      */
 
-    tempStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
+    tempStr = TclGetStringFromObj(cwdPtr, &cwdLen);
 
     /*
      * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about the
@@ -1432,7 +1432,7 @@ TclFSMakePathRelative(
 	}
 	break;
     }
-    tempStr = Tcl_GetStringFromObj(pathPtr, &len);
+    tempStr = TclGetStringFromObj(pathPtr, &len);
 
     return Tcl_NewStringObj(tempStr + cwdLen, len - cwdLen);
 }
@@ -1518,7 +1518,6 @@ Tcl_FSNewNativePath(
 {
     Tcl_Obj *pathPtr = NULL;
     FsPath *fsPathPtr;
-
 
     if (fromFilesystem->internalToNormalizedProc != NULL) {
 	pathPtr = (*fromFilesystem->internalToNormalizedProc)(clientData);
@@ -1658,7 +1657,7 @@ Tcl_FSGetTranslatedStringPath(
 
     if (transPtr != NULL) {
 	Tcl_Size len;
-	const char *orig = Tcl_GetStringFromObj(transPtr, &len);
+	const char *orig = TclGetStringFromObj(transPtr, &len);
 	char *result = (char *)Tcl_Alloc(len+1);
 
 	memcpy(result, orig, len+1);
@@ -1718,7 +1717,7 @@ Tcl_FSGetNormalizedPath(
 	/* TODO: Figure out why this is needed. */
 	TclGetString(pathPtr);
 
-	(void)Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &tailLen);
+	(void)TclGetStringFromObj(fsPathPtr->normPathPtr, &tailLen);
 	if (tailLen) {
 	    copy = AppendPath(dir, fsPathPtr->normPathPtr);
 	} else {
@@ -1731,7 +1730,7 @@ Tcl_FSGetNormalizedPath(
 	 * We now own a reference on both 'dir' and 'copy'
 	 */
 
-	(void) Tcl_GetStringFromObj(dir, &cwdLen);
+	(void) TclGetStringFromObj(dir, &cwdLen);
 
 	/* Normalize the combined string. */
 
@@ -1814,7 +1813,7 @@ Tcl_FSGetNormalizedPath(
 
 	    copy = AppendPath(fsPathPtr->cwdPtr, pathPtr);
 
-	    (void) Tcl_GetStringFromObj(fsPathPtr->cwdPtr, &cwdLen);
+	    (void) TclGetStringFromObj(fsPathPtr->cwdPtr, &cwdLen);
 	    cwdLen += (TclGetString(copy)[cwdLen] == '/');
 
 	    /*
@@ -2152,8 +2151,8 @@ Tcl_FSEqualPaths(
     if (firstPtr == NULL || secondPtr == NULL) {
 	return 0;
     }
-    firstStr = Tcl_GetStringFromObj(firstPtr, &firstLen);
-    secondStr = Tcl_GetStringFromObj(secondPtr, &secondLen);
+    firstStr = TclGetStringFromObj(firstPtr, &firstLen);
+    secondStr = TclGetStringFromObj(secondPtr, &secondLen);
     if ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen)) {
 	return 1;
     }
@@ -2172,8 +2171,8 @@ Tcl_FSEqualPaths(
 	return 0;
     }
 
-    firstStr = Tcl_GetStringFromObj(firstPtr, &firstLen);
-    secondStr = Tcl_GetStringFromObj(secondPtr, &secondLen);
+    firstStr = TclGetStringFromObj(firstPtr, &firstLen);
+    secondStr = TclGetStringFromObj(secondPtr, &secondLen);
     return ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen));
 }
 
@@ -2221,7 +2220,7 @@ SetFsPathFromAny(
      * cmdAH.test exercise most of the code).
      */
 
-    Tcl_GetStringFromObj(pathPtr, &len); /* TODO: Is this needed? */
+    TclGetStringFromObj(pathPtr, &len); /* TODO: Is this needed? */
     transPtr = TclJoinPath(1, &pathPtr, 1);
 
     /*
@@ -2348,7 +2347,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)		/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     Tcl_Size cwdLen;
@@ -2370,7 +2369,7 @@ UpdateStringOfFsPath(
 
     Tcl_IncrRefCount(copy);
     /* Steal copy's string rep */
-    pathPtr->bytes = Tcl_GetStringFromObj(copy, &cwdLen);
+    pathPtr->bytes = TclGetStringFromObj(copy, &cwdLen);
     pathPtr->length = cwdLen;
     TclInitEmptyStringRep(copy);
     TclDecrRefCount(copy);
@@ -2430,7 +2429,7 @@ TclNativePathInFilesystem(
 
 	Tcl_Size len;
 
-	(void) Tcl_GetStringFromObj(pathPtr, &len);
+	(void) TclGetStringFromObj(pathPtr, &len);
 	if (len == 0) {
 	    /*
 	     * We reject the empty path "".
@@ -2470,11 +2469,11 @@ TclNativePathInFilesystem(
  */
 int
 MakeTildeRelativePath(
-    Tcl_Interp *interp,  /* May be NULL. Only used for error messages */
-    const char *user,    /* User name. NULL -> current user */
-    const char *subPath, /* Rest of path. May be NULL */
-    Tcl_DString *dsPtr)  /* Output. Is initialized by the function. Must be
-                           freed on success */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
+    const char *user,		/* User name. NULL -> current user */
+    const char *subPath,	/* Rest of path. May be NULL */
+    Tcl_DString *dsPtr)		/* Output. Is initialized by the function. Must
+				 * be freed on success */
 {
     const char *dir;
     Tcl_DString dirString;
@@ -2483,30 +2482,30 @@ MakeTildeRelativePath(
     Tcl_DStringInit(&dirString);
 
     if (user == NULL || user[0] == 0) {
-        /* No user name specified -> current user */
+	/* No user name specified -> current user */
 
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
-            if (interp) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                                     "couldn't find HOME environment variable to"
-                                     " expand path", -1));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-                                 "HOMELESS", (void *)NULL);
-            }
-            return TCL_ERROR;
-        }
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"couldn't find HOME environment variable to expand path",
+			-1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
+			"HOMELESS", (char *)NULL);
+	    }
+	    return TCL_ERROR;
+	}
     } else {
-        /* User name specified - ~user */
+	/* User name specified - ~user */
 	dir = TclpGetUserHome(user, &dirString);
 	if (dir == NULL) {
 	    if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                                     "user \"%s\" doesn't exist", user));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-                                 (void *)NULL);
-            }
-            return TCL_ERROR;
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"user \"%s\" doesn't exist", user));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
+			(char *)NULL);
+	    }
+	    return TCL_ERROR;
 	}
     }
     if (subPath) {
@@ -2538,8 +2537,8 @@ MakeTildeRelativePath(
  */
 Tcl_Obj *
 TclGetHomeDirObj(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
-    const char *user)   /* User name. NULL -> current user */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
+    const char *user)		/* User name. NULL -> current user */
 {
     Tcl_DString dirString;
 
@@ -2547,6 +2546,74 @@ TclGetHomeDirObj(
 	return NULL;
     }
     return Tcl_DStringToObj(&dirString);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FSTildeExpand --
+ *
+ *	Copies the path passed in to the output Tcl_DString dsPtr,
+ *	resolving leading ~ and ~user components in the path if present.
+ *      An error is returned if such a component IS present AND cannot
+ *      be resolved.
+ *
+ *	The output dsPtr must be cleared by caller on success.
+ *
+ * Results:
+ *      TCL_OK - path did not contain leading ~ or it was successful resolved
+ *      TCL_ERROR - ~ component could not be resolved.
+ *
+ *----------------------------------------------------------------------
+ */
+int Tcl_FSTildeExpand(
+    Tcl_Interp *interp,	/* May be NULL. Only used for error messages */
+    const char *path,	/* Path to resolve tilde */
+    Tcl_DString *dsPtr) /* Output DString for resolved path. */
+
+{
+    Tcl_Size split;
+    int result;
+
+    assert(path);
+    assert(dsPtr);
+
+    Tcl_DStringInit(dsPtr);
+    if (path[0] != '~') {
+	Tcl_DStringAppend(dsPtr, path, -1);
+	return TCL_OK;
+    }
+
+    /*
+     * We have multiple cases '~', '~user', '~/foo/bar...', '~user/foo...'
+     * FindSplitPos returns 1 for '~/...' as well as for '~'. Note on
+     * Windows FindSplitPos implicitly checks for '\' as separator
+     * in addition to what is passed.
+     */
+    split = FindSplitPos(path, '/');
+
+    if (split == 1) {
+	/* No user name specified '~' or '~/...' -> current user */
+	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
+    } else {
+	/* User name specified - ~user, ~user/... */
+	const char *user;
+	Tcl_DString dsUser;
+
+	Tcl_DStringInit(&dsUser);
+	Tcl_DStringAppend(&dsUser, path+1, split-1);
+	user = Tcl_DStringValue(&dsUser);
+
+	/* path[split] is / for ~user/... or \0 for ~user */
+	result = MakeTildeRelativePath(interp, user,
+		  path[split] ? &path[split + 1] : NULL, dsPtr);
+	Tcl_DStringFree(&dsUser);
+    }
+    if (result != TCL_OK) {
+	/* Do not rely on caller to free in case of errors */
+	Tcl_DStringFree(dsPtr);
+    }
+    return result;
 }
 
 /*
@@ -2570,54 +2637,23 @@ TclGetHomeDirObj(
  */
 Tcl_Obj *
 TclResolveTildePath(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
     Tcl_Obj *pathObj)
 {
     const char *path;
     Tcl_Size len;
-    Tcl_Size split;
     Tcl_DString resolvedPath;
 
-    path = Tcl_GetStringFromObj(pathObj, &len);
+    path = TclGetStringFromObj(pathObj, &len);
+    /* Optimize to skip unnecessary calls below */
     if (path[0] != '~') {
 	return pathObj;
     }
 
-    /*
-     * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
-     * split becomes value 1 for '~/...' as well as for '~'. Note on
-     * Windows FindSplitPos will implicitly check for '\' as separator
-     * in addition to what is passed.
-     */
-    split = FindSplitPos(path, '/');
-
-    if (split == 1) {
-        /* No user name specified -> current user */
-	if (MakeTildeRelativePath(
-		interp, NULL, path[1] ? 2 + path : NULL, &resolvedPath)
-	    != TCL_OK) {
-	    return NULL;
-	}
-    } else {
-        /* User name specified - ~user */
-        const char *expandedUser;
-        Tcl_DString userName;
-
-        Tcl_DStringInit(&userName);
-        Tcl_DStringAppend(&userName, path+1, split-1);
-        expandedUser = Tcl_DStringValue(&userName);
-
-	/* path[split] is / or \0 */
-	if (MakeTildeRelativePath(interp,
-				  expandedUser,
-				  path[split] ? &path[split+1] : NULL,
-				  &resolvedPath)
-	    != TCL_OK) {
-	    Tcl_DStringFree(&userName);
-	    return NULL;
-	}
-	Tcl_DStringFree(&userName);
+    if (Tcl_FSTildeExpand(interp, path, &resolvedPath) != TCL_OK) {
+	return NULL;
     }
+
     return Tcl_DStringToObj(&resolvedPath);
 }
 
@@ -2657,29 +2693,29 @@ TclResolveTildePathList(
     const char *path;
 
     if (pathsObj == NULL) {
-        return NULL;
+	return NULL;
     }
     if (Tcl_ListObjGetElements(NULL, pathsObj, &objc, &objv) != TCL_OK) {
-        return NULL; /* Not a list */
+	return NULL; /* Not a list */
     }
 
     /*
      * Figure out if any paths need resolving to avoid unnecessary allocations.
      */
     for (i = 0; i < objc; ++i) {
-        path = Tcl_GetString(objv[i]);
-        if (path[0] == '~') {
-            break; /* At least one path needs resolution */
-        }
+	path = Tcl_GetString(objv[i]);
+	if (path[0] == '~') {
+	    break; /* At least one path needs resolution */
+	}
     }
     if (i == objc) {
-        return pathsObj; /* No paths needed to be resolved */
+	return pathsObj; /* No paths needed to be resolved */
     }
 
     resolvedPaths = Tcl_NewListObj(objc, NULL);
     for (i = 0; i < objc; ++i) {
 	Tcl_Obj *resolvedPath;
-        path = Tcl_GetString(objv[i]);
+	path = Tcl_GetString(objv[i]);
 	if (path[0] == 0) {
 	    continue; /* Skip empty strings */
 	}
@@ -2692,7 +2728,6 @@ TclResolveTildePathList(
 
     return resolvedPaths;
 }
-
 
 /*
  * Local Variables:

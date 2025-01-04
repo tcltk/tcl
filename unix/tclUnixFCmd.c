@@ -244,39 +244,13 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && TCL_THREADS && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
-/*
- * Prior to Darwin 7, realpath is not thread-safe, c.f. Bug 711232; if we
- * might potentially be running on pre-10.3 OSX, check Darwin release at
- * runtime before using realpath.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define haveRealpath	(tclMacOSXDarwinRelease >= 7)
-#else
 #   define haveRealpath	1
-#endif
-#else /* NO_REALPATH */
-/*
- * At least TclpObjNormalizedPath now requires REALPATH
-*/
-#error NO_REALPATH is not supported
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#if defined(__APPLE__) && defined(__LP64__) && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-/*
- * Prior to Darwin 9, 64bit fts_open() without FTS_NOSTAT may crash (due to a
- * 64bit-unsafe ALIGN macro); if we could be running on pre-10.5 OSX, check
- * Darwin release at runtime and do a separate stat() if necessary.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define noFtsStat	(tclMacOSXDarwinRelease < 9)
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+/* fts doesn't do stat64 */
+#   define noFtsStat	1
 #else
 #   define noFtsStat	0
 #endif
@@ -484,8 +458,7 @@ DoCopyFile(
 	char linkBuf[MAXPATHLEN+1];
 	int length;
 
-	length = readlink(src, linkBuf, MAXPATHLEN);
-							/* INTL: Native. */
+	length = readlink(src, linkBuf, MAXPATHLEN);	/* INTL: Native. */
 	if (length == -1) {
 	    return TCL_ERROR;
 	}
@@ -810,7 +783,7 @@ TclpObjCopyDirectory(
  *	EEXIST:	    path is a non-empty directory.
  *	EINVAL:	    path is a root directory.
  *	ENOENT:	    path doesn't exist or is "".
- * 	ENOTDIR:    path is not a directory.
+ *	ENOTDIR:    path is not a directory.
  *
  * Side effects:
  *	Directory removed. If an error occurs, the error will be returned
@@ -954,12 +927,12 @@ TraverseUnixTree(
 				 * filled with UTF-8 name of file causing
 				 * error. */
     int doRewind)		/* Flag indicating that to ensure complete
-    				 * traversal of source hierarchy, the readdir
-    				 * loop should be rewound whenever
-    				 * traverseProc has returned TCL_OK; this is
-    				 * required when traverseProc modifies the
-    				 * source hierarchy, e.g. by deleting
-    				 * files. */
+				 * traversal of source hierarchy, the readdir
+				 * loop should be rewound whenever
+				 * traverseProc has returned TCL_OK; this is
+				 * required when traverseProc modifies the
+				 * source hierarchy, e.g. by deleting
+				 * files. */
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;
@@ -1516,7 +1489,7 @@ SetGroupAttribute(
 	const char *string;
 	Tcl_Size length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetStringFromObj(attributePtr, &length);
 
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, length, 0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
@@ -1533,7 +1506,7 @@ SetGroupAttribute(
 			" group \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
-			"NO_GROUP", (void *)NULL);
+			"NO_GROUP", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1587,7 +1560,7 @@ SetOwnerAttribute(
 	const char *string;
 	Tcl_Size length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = TclGetStringFromObj(attributePtr, &length);
 
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, length, 0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
@@ -1604,7 +1577,7 @@ SetOwnerAttribute(
 			" user \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
-			"NO_USER", (void *)NULL);
+			"NO_USER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1699,7 +1672,7 @@ SetPermissionsAttribute(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unknown permission string format \"%s\"",
 			modeStringPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1786,7 +1759,7 @@ GetModeFromPermString(
 
     newMode = 0;
     for (i = 0; i < 9; i++) {
-	switch (*(modeStringPtr+i)) {
+	switch (modeStringPtr[i]) {
 	case 'r':
 	    if ((i%3) != 0) {
 		goto chmodStyleCheck;
@@ -1848,13 +1821,13 @@ GetModeFromPermString(
      * We now check for an "ugoa+-=rwxst" style permissions string
      */
 
-    for (n = 0 ; *(modeStringPtr+n) != '\0' ; n = n + i) {
+    for (n = 0 ; modeStringPtr[n] != '\0' ; n += i) {
 	oldMode = *modePtr;
 	who = op = what = op_found = who_found = 0;
-	for (i = 0 ; *(modeStringPtr+n+i) != '\0' ; i++ ) {
+	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++ ) {
 	    if (!who_found) {
 		/* who */
-		switch (*(modeStringPtr+n+i)) {
+		switch (modeStringPtr[n + i]) {
 		case 'u':
 		    who |= 0x9C0;
 		    continue;
@@ -1875,7 +1848,7 @@ GetModeFromPermString(
 	    }
 	    if (!op_found) {
 		/* op */
-		switch (*(modeStringPtr+n+i)) {
+		switch (modeStringPtr[n + i]) {
 		case '+':
 		    op = 1;
 		    op_found = 1;
@@ -1893,7 +1866,7 @@ GetModeFromPermString(
 		}
 	    }
 	    /* what */
-	    switch (*(modeStringPtr+n+i)) {
+	    switch (modeStringPtr[n + i]) {
 	    case 'r':
 		what |= 0x124;
 		continue;
@@ -1914,7 +1887,7 @@ GetModeFromPermString(
 	    default:
 		return TCL_ERROR;
 	    }
-	    if (*(modeStringPtr+n+i) == ',') {
+	    if (modeStringPtr[n + i] == ',') {
 		i++;
 		break;
 	    }
@@ -1966,7 +1939,7 @@ TclpObjNormalizePath(
     const char *currentPathEndPosition;
     char cur;
     Tcl_Size pathLen;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2067,7 +2040,7 @@ TclpObjNormalizePath(
     if (haveRealpath) {
 	if (nextCheckpoint == 0) {
 	    /*
-	     * The path contains at most one component, e.g. '/foo' or '/', so
+	     * The path contains at most one component, e.g. '/foo' or '/',
 	     * so there is nothing to resolve. Also, on some platforms
 	     * 'Realpath' transforms an empty string into the normalized pwd,
 	     * which is the wrong answer.
@@ -2098,7 +2071,7 @@ TclpObjNormalizePath(
 		 * Uncommenting this would mean that this native filesystem
 		 * routine claims the path is normalized if the file exists,
 		 * which would permit the caller to avoid iterating through
-		 * other filesystems filesystems. Saving lots of calls is
+		 * other filesystems. Saving lots of calls is
 		 * probably worth the extra access() time, but in the common
 		 * case that no other filesystems are registered this is an
 		 * unnecessary expense.
@@ -2208,7 +2181,7 @@ TclUnixOpenTemporaryFile(
      */
 
     if (dirObj) {
-	string = Tcl_GetStringFromObj(dirObj, &length);
+	string = TclGetStringFromObj(dirObj, &length);
 	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &templ, NULL) != TCL_OK) {
 	    return -1;
 	}
@@ -2220,7 +2193,7 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&templ, "/");
 
     if (basenameObj) {
-	string = Tcl_GetStringFromObj(basenameObj, &length);
+	string = TclGetStringFromObj(basenameObj, &length);
 	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &tmp, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&tmp);
 	    return -1;
@@ -2235,7 +2208,7 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = Tcl_GetStringFromObj(extensionObj, &length);
+	string = TclGetStringFromObj(extensionObj, &length);
 	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &tmp, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&templ);
 	    return -1;

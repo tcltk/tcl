@@ -127,21 +127,21 @@ it must be a numeric string.
 .SS "OPTIONAL SIZE MODIFIER"
 .PP
 The fifth part of a conversion specifier is a size modifier,
-which must be \fBll\fR, \fBh\fR, \fBl\fR, or \fBL\fR.
+which must be \fBll\fR, \fBh\fR, \fBl\fR, \fBz\fR, \fBt\fR, or \fBL\fR.
 If it is \fBll\fR it specifies that an integer value is taken
 without truncation for conversion to a formatted substring.
 If it is \fBh\fR it specifies that an integer value is
 truncated to a 16-bit range before converting.  This option is rarely useful.
-If it is \fBl\fR it specifies that the integer value is
-truncated to the same range as that produced by the \fBwide()\fR
+If it is \fBl\fR (or \fBj\fR or \fBq\fR) it specifies that the integer value
+is truncated to the same range as that produced by the \fBwide()\fR
 function of the \fBexpr\fR command (at least a 64-bit range).
+If it is \fBz\fR or \fBt\fR it specifies that the integer value is
+truncated to the range determined by the value of the \fBpointerSize\fR
+element of the \fBtcl_platform\fR array.
 If it is \fBL\fR it specifies that an integer or double value is taken
 without truncation for conversion to a formatted substring.
-If neither \fBh\fR nor \fBl\fR nor \fBL\fR are present, the integer value is
-truncated to the same range as that produced by the \fBint()\fR
-function of the \fBexpr\fR command (at least a 32-bit range, but
-determined by the value of the \fBwordSize\fR element of the
-\fBtcl_platform\fR array).
+If neither of those are present, the integer value is
+truncated to a 32-bit range.
 .SS "MANDATORY CONVERSION TYPE"
 .PP
 The last thing in a conversion specifier is an alphabetic character

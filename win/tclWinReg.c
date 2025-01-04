@@ -52,8 +52,9 @@
  * The following flag is used in OpenKeys to indicate that the specified key
  * should be created if it doesn't currently exist.
  */
-
-#define REG_CREATE 1
+enum OpenKeysFlags {
+    REG_CREATE = 1
+};
 
 /*
  * The following tables contain the mapping from registry root names to the
@@ -386,7 +387,7 @@ RegistryObjCmd(
 	     */
 
 	    mode |= KEY_ALL_ACCESS;
-	    if (OpenKey(interp, objv[n], mode, 1, &key) != TCL_OK) {
+	    if (OpenKey(interp, objv[n], mode, REG_CREATE, &key) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    RegCloseKey(key);
@@ -466,7 +467,7 @@ DeleteKey(
     if (*keyName == '\0') {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
-	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (char *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
     }
@@ -853,7 +854,7 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0) {/* empty body */}
+	    while (*wp++ != 0); /* empty loop body */
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
@@ -937,7 +938,6 @@ GetValueNames(
     size = MAX_KEY_LENGTH;
     while (RegEnumValueW(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
-
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);
 	name = Tcl_DStringValue(&ds);
@@ -1147,7 +1147,7 @@ ParseKeyName(
     if (!rootName) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad key \"%s\": must start with a valid root", name));
-	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (void *)NULL);
+	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1208,7 +1208,11 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    static LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
+    typedef LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD); 
+    static regDeleteKeyExProc regDeleteKeyEx = (regDeleteKeyExProc) NULL;
+				/* Really RegDeleteKeyExW() but that's not
+				 * available on all versions of Windows
+				 * supported by Tcl. */
 
     /*
      * Do not allow NULL or empty key name.
@@ -1248,11 +1252,11 @@ RecursiveDeleteKey(
 
 		checkExProc = 1;
 		handle = GetModuleHandleW(L"ADVAPI32");
-		regDeleteKeyExProc = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD))
-			(void *)GetProcAddress(handle, "RegDeleteKeyExW");
+		regDeleteKeyEx = (regDeleteKeyExProc) (void *)
+			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
-	    if (mode && regDeleteKeyExProc) {
-		result = regDeleteKeyExProc(startKey, keyName, mode, 0);
+	    if (mode && regDeleteKeyEx) {
+		result = regDeleteKeyEx(startKey, keyName, mode, 0);
 	    } else {
 		result = RegDeleteKeyW(startKey, keyName);
 	    }
@@ -1311,7 +1315,7 @@ SetValue(
 	Tcl_ResetResult(interp);
     }
     mode |= KEY_ALL_ACCESS;
-    if (OpenKey(interp, keyNameObj, mode, 1, &key) != TCL_OK) {
+    if (OpenKey(interp, keyNameObj, mode, REG_CREATE, &key) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1539,7 +1543,7 @@ AppendSystemError(
     }
 
     snprintf(id, sizeof(id), "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (void *)NULL);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
 

@@ -33,6 +33,7 @@ EXPORTS
     mp_dr_setup
     mp_error_to_string
     mp_exch
+    mp_expt_n
     mp_expt_u32
     mp_exptmod
     mp_exteuclid
@@ -75,6 +76,7 @@ EXPORTS
     mp_isodd
     mp_kronecker
     mp_lcm
+    mp_log_n
     mp_log_u32
     mp_lshd
     mp_mod
@@ -111,6 +113,7 @@ EXPORTS
     mp_reduce_is_2k
     mp_reduce_is_2k_l
     mp_reduce_setup
+    mp_root_n
     mp_root_u32
     mp_rshd
     mp_sbin_size
@@ -143,14 +146,15 @@ EXPORTS
     mp_unpack
     mp_xor
     mp_zero
-    s_mp_mul_digs
-    s_mp_sub
     s_mp_add
-    s_mp_toom_mul
-    s_mp_mul_digs_fast
+    s_mp_balance_mul
     s_mp_karatsuba_mul
-    s_mp_sqr_fast
-    s_mp_reverse
     s_mp_karatsuba_sqr
-    s_mp_toom_sqr
+    s_mp_mul_digs
+    s_mp_mul_digs_fast
+    s_mp_reverse
     s_mp_sqr
+    s_mp_sqr_fast
+    s_mp_sub
+    s_mp_toom_mul
+    s_mp_toom_sqr

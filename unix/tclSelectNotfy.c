@@ -336,7 +336,7 @@ TclpInitNotifier(void)
 	clazz.hbrBackground = NULL;
 	clazz.lpszMenuName = NULL;
 	clazz.lpszClassName = className;
-	clazz.lpfnWndProc = (void *) NotifierProc;
+	clazz.lpfnWndProc = (void *)NotifierProc;
 	clazz.hIcon = NULL;
 	clazz.hCursor = NULL;
 
@@ -1115,12 +1115,12 @@ NotifierThreadProc(
 		tspecPtr->tv_nsec = timePtr->tv_usec * 1000;
 	    }
 	    ret = pselect(numFdBits, &readableMask, &writableMask,
-			    &exceptionMask, tspecPtr, &notifierSigMask);
+		    &exceptionMask, tspecPtr, &notifierSigMask);
 	}
 #else
 	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
 	ret = select(numFdBits, &readableMask, &writableMask, &exceptionMask,
-			timePtr);
+		timePtr);
 	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
 #endif
 

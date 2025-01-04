@@ -120,7 +120,7 @@ const unsigned char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int	CommandComplete(const char *script, Tcl_Size numBytes);
+static int		CommandComplete(const char *script, Tcl_Size numBytes);
 static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
@@ -926,13 +926,13 @@ TclParseBackslash(
 	 */
 
 	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = Tcl_UtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[8];
 
 	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
-	    count = Tcl_UtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
 	}
 	result = unichar;
 	break;
@@ -1039,7 +1039,7 @@ ParseComment(
 
 static int
 ParseTokens(
-    const char *src,	/* First character to parse. */
+    const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
@@ -1396,7 +1396,7 @@ Tcl_ParseVarName(
 	    case '}': braceCount--; break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
-		   just the \ and let it run into the end */
+		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
 		   src++; numBytes--;
 		}
@@ -1531,7 +1531,7 @@ Tcl_ParseVarName(
 const char *
 Tcl_ParseVar(
     Tcl_Interp *interp,		/* Context for looking up variable. */
-    const char *start,	/* Start of variable substitution. First
+    const char *start,		/* Start of variable substitution. First
 				 * character must be "$". */
     const char **termPtr)	/* If non-NULL, points to word to fill in with
 				 * character just after last one in the
@@ -2206,7 +2206,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)Tcl_GetStringFromObj(result, &clPos);
+			(void)TclGetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2482,7 +2482,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     Tcl_Size length;
-    const char *script = Tcl_GetStringFromObj(objPtr, &length);
+    const char *script = TclGetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }

@@ -22,7 +22,7 @@
  * - TCL_COMPILE_STATS		OSCMa bytecode compiler statistics.
  *
  * - TCL_CFG_DO64BIT		NSCMdt tcl is compiled for a 64bit system.
- * - NDEBUG		NSCMdt tcl is compiled with symbol info off.
+ * - NDEBUG			NSCMdt tcl is compiled with symbol info off.
  * - TCL_CFG_OPTIMIZED		NSCMdt tcl is compiled with cc optimizations on
  * - TCL_CFG_PROFILED		NSCMdt tcl is compiled with profiling info.
  *

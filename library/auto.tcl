@@ -45,7 +45,7 @@ proc auto_reset {} {
 #	initialization script and set a global library variable.
 #
 # Arguments:
-# 	basename	Prefix of the directory name, (e.g., "tk")
+#	basename	Prefix of the directory name, (e.g., "tk")
 #	version		Version number of the package, (e.g., "8.0")
 #	patch		Patchlevel of the package, (e.g., "8.0.3")
 #	initScript	Initialization script to source (e.g., tk.tcl)
@@ -130,7 +130,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			} else {
 			    catch {zipfs unmount $mountpoint}
 			}
-	      	    }
+		    }
 		}
 	    }
 	}
@@ -307,7 +307,7 @@ proc auto_mkindex_old {dir args} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
 		    append index "set [list auto_index($procName)]"
-		    append index " \[list source \[file join \$dir [list $file]\]\]\n"
+		    append index " \[list source -encoding utf-8 \[file join \$dir [list $file]\]\]\n"
 		}
 	    }
 	    close $f
@@ -480,9 +480,9 @@ proc auto_mkindex_parser::childhook {cmd} {
 # "tclIndex" file for auto-loading.
 #
 # Arguments:
-#	name 	Name of command recognized in Tcl files.
+#	name	Name of command recognized in Tcl files.
 #	arglist	Argument list for command.
-#	body 	Implementation of command to handle indexing.
+#	body	Implementation of command to handle indexing.
 
 proc auto_mkindex_parser::command {name arglist body} {
     hook [list auto_mkindex_parser::commandInit $name $arglist $body]
@@ -494,9 +494,9 @@ proc auto_mkindex_parser::command {name arglist body} {
 # called when the interpreter used by the parser is created.
 #
 # Arguments:
-#	name 	Name of command recognized in Tcl files.
+#	name	Name of command recognized in Tcl files.
 #	arglist	Argument list for command.
-#	body 	Implementation of command to handle indexing.
+#	body	Implementation of command to handle indexing.
 
 proc auto_mkindex_parser::commandInit {name arglist body} {
     variable parser
@@ -594,7 +594,7 @@ proc auto_mkindex_parser::indexEntry {name} {
     set filenameParts [file split $scriptFile]
 
     append index [format \
-	    {set auto_index(%s) [list source [file join $dir %s]]%s} \
+	    {set auto_index(%s) [list source -encoding utf-8 [file join $dir %s]]%s} \
 	    $name $filenameParts \n]
     return
 }

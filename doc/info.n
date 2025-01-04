@@ -59,7 +59,7 @@ target are visible.
 .IP \fBimport\fR
 \fIcommandName\fR was created by \fBnamespace import\fR.
 .IP \fBnative\fR
-\fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
+\fIcommandName\fR was created by the \fBTcl_CreateObjCommand\fR
 interface directly without further registration of the type of command.
 .IP \fBobject\fR
 \fIcommandName\fR is the public command that represents an
@@ -202,7 +202,7 @@ the command.
 .IP \fBcmd\fR
 The command before substitutions were performed.
 .IP \fBproc\fR
-For type \fBprod\fR, the name of the procedure containing the command.
+For type \fBproc\fR, the name of the procedure containing the command.
 .IP \fBlambda\fR
 For a command in a script evaluated as the body of an unnamed routine via the
 \fBapply\fR command, the definition of that routine.
@@ -282,11 +282,11 @@ Returns the value of \fBtcl_library\fR, which is the name of the library
 directory in which the scripts distributed with Tcl scripts are stored.
 .\" METHOD: loaded
 .TP
-\fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
+\fBinfo loaded \fR?\fIinterp\fR? ?\fIprefix\fR?
 .
-Returns the name of each file loaded in \fIinterp\fR va \fBload\fR as part of
-\fIpackage\fR .  If \fIpackage\fR is not given, returns a list where each item
-is the name of the loaded file and the name of the package for which the file
+Returns the name of each file loaded in \fIinterp\fR by the \fBload\fR command
+with prefix \fIprefix\fR .  If \fIprefix\fR is not given, returns a list where
+each item is the name of the loaded file and the prefix for which the file
 was loaded.  For a statically-loaded package the name of the file is the empty
 string.  For \fIinterp\fR, the empty string is the current interpreter.
 .\" METHOD: locals
@@ -358,7 +358,7 @@ Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
 results are fully qualified.
 .RS
 .PP
-A variable that has been declared but not yet given a value will be included in 
+A variable that has been declared but not yet given a value will be included in
 the results.
 .RE
 .SS "CLASS INTROSPECTION"

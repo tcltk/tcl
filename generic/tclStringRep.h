@@ -18,7 +18,6 @@
 #ifndef _TCLSTRINGREP
 #define _TCLSTRINGREP
 
-
 /*
  * The following structure is the internal rep for a String object. It keeps
  * track of how much memory has been used and how much has been allocated for

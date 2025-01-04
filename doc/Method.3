@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ClassSetConstructor, Tcl_ClassSetDestructor, Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsPrivate, Tcl_MethodIsType, Tcl_MethodName, Tcl_NewInstanceMethod, Tcl_NewMethod, Tcl_ObjectContextInvokeNext, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
+Tcl_ClassSetConstructor, Tcl_ClassSetDestructor, Tcl_MethodDeclarerClass, Tcl_MethodDeclarerObject, Tcl_MethodIsPublic, Tcl_MethodIsPrivate, Tcl_MethodIsType, Tcl_MethodIsType2, Tcl_MethodName, Tcl_NewInstanceMethod, Tcl_NewInstanceMethod2, Tcl_NewMethod, Tcl_NewMethod2, Tcl_ObjectContextInvokeNext, Tcl_ObjectContextIsFiltering, Tcl_ObjectContextMethod, Tcl_ObjectContextObject, Tcl_ObjectContextSkippedArgs \- manipulate methods and method-call contexts
 .SH SYNOPSIS
 .nf
 \fB#include <tclOO.h>\fR
@@ -19,7 +19,15 @@ Tcl_Method
               clientData\fR)
 .sp
 Tcl_Method
+\fBTcl_NewMethod2\fR(\fIinterp, class, nameObj, flags, methodType2Ptr,
+              clientData\fR)
+.sp
+Tcl_Method
 \fBTcl_NewInstanceMethod\fR(\fIinterp, object, nameObj, flags, methodTypePtr,
+                      clientData\fR)
+.sp
+Tcl_Method
+\fBTcl_NewInstanceMethod2\fR(\fIinterp, object, nameObj, flags, methodType2Ptr,
                       clientData\fR)
 .sp
 \fBTcl_ClassSetConstructor\fR(\fIinterp, class, method\fR)
@@ -45,6 +53,9 @@ int
 .sp
 int
 \fBTcl_MethodIsType\fR(\fImethod, methodTypePtr, clientDataPtr\fR)
+.sp
+int
+\fBTcl_MethodIsType2\fR(\fImethod, methodType2Ptr, clientDataPtr\fR)
 .sp
 int
 \fBTcl_ObjectContextInvokeNext\fR(\fIinterp, context, objc, objv, skip\fR)
@@ -82,6 +93,9 @@ compatibility) for a non-exported method,
 and \fBTCL_OO_METHOD_PRIVATE\fR for a private method.
 .VE TIP500
 .AP Tcl_MethodType *methodTypePtr in
+A description of the type of the method to create, or the type of method to
+compare against.
+.AP Tcl_MethodType2 *methodType2Ptr in
 A description of the type of the method to create, or the type of method to
 compare against.
 .AP void *clientData in
@@ -126,10 +140,11 @@ can also be introspected upon to a limited degree; the function
 \fBTcl_MethodIsType\fR returns whether a method is of a particular type,
 assigning the per-method \fIclientData\fR to the variable pointed to by
 \fIclientDataPtr\fR if (that is non-NULL) if the type is matched.
+\fBTcl_MethodIsType2\fR does the same for TCL_OO_METHOD_VERSION_2.
 .SS "METHOD CREATION"
 .PP
 Methods are created by \fBTcl_NewMethod\fR and \fBTcl_NewInstanceMethod\fR,
-which
+or by \fBTcl_NewMethod2\fR and \fBTcl_NewInstanceMethod2\fR which
 create a method attached to a class or an object respectively. In both cases,
 the \fInameObj\fR argument gives the name of the method to create, the
 \fIflags\fR argument states whether the method should be exported
@@ -137,19 +152,20 @@ initially
 .VS TIP500
 or be marked as a private method,
 .VE TIP500
-the \fImethodTypePtr\fR argument describes the implementation of
+the \fImethodTypePtr\fR or \fImethodType2Ptr\fR (for TCL_OO_METHOD_VERSION_2)
+argument describes the implementation of
 the method (see the \fBMETHOD TYPES\fR section below) and the \fIclientData\fR
 argument gives some implementation-specific data that is passed on to the
 implementation of the method when it is called.
 .PP
-When the \fInameObj\fR argument to \fBTcl_NewMethod\fR is NULL, an
+When the \fInameObj\fR argument to \fBTcl_NewMethod\fR or \fBTcl_NewMethod2\fR is NULL, an
 unnamed method is created, which is used for constructors and destructors.
 Constructors should be installed into their class using the
 \fBTcl_ClassSetConstructor\fR function, and destructors (which must not
 require any arguments) should be installed into their class using the
 \fBTcl_ClassSetDestructor\fR function. Unnamed methods should not be used for
 any other purpose, and named methods should not be used as either constructors
-or destructors. Also note that a NULL \fImethodTypePtr\fR is used to provide
+or destructors. Also note that a NULL \fImethodTypePtr\fR or \fImethodType2Ptr\fR is used to provide
 internal signaling, and should not be used in client code.
 .SS "METHOD CALL CONTEXTS"
 .PP
@@ -178,8 +194,8 @@ executing. Note also that the method-call context is \fInever\fR deleted
 during the execution of this function.
 .SH "METHOD TYPES"
 .PP
-The types of methods are described by a pointer to a Tcl_MethodType structure,
-which is defined as:
+The types of methods are described by a pointer to a Tcl_MethodType or
+Tcl_MethodType2 (for TCL_OO_METHOD_VERSION_2) structure, which are defined as:
 .PP
 .CS
 typedef struct {
@@ -189,10 +205,18 @@ typedef struct {
     Tcl_MethodDeleteProc *\fIdeleteProc\fR;
     Tcl_CloneProc *\fIcloneProc\fR;
 } \fBTcl_MethodType\fR;
+
+typedef struct {
+    int \fIversion\fR;
+    const char *\fIname\fR;
+    Tcl_MethodCallProc2 *\fIcallProc\fR;
+    Tcl_MethodDeleteProc *\fIdeleteProc\fR;
+    Tcl_CloneProc *\fIcloneProc\fR;
+} \fBTcl_MethodType2\fR;
 .CE
 .PP
-The \fIversion\fR field allows for future expansion of the structure, and
-should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT. The
+The \fIversion\fR field should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT,
+TCL_OO_METHOD_VERSION_1 or TCL_OO_METHOD_VERSION_2. The
 \fIname\fR field provides a human-readable name for the type, and is the value
 that is exposed via the \fBinfo class methodtype\fR and
 \fBinfo object methodtype\fR Tcl commands.
@@ -218,6 +242,13 @@ typedef int \fBTcl_MethodCallProc\fR(
         Tcl_Interp *\fIinterp\fR,
         Tcl_ObjectContext \fIobjectContext\fR,
         int \fIobjc\fR,
+        Tcl_Obj *const *\fIobjv\fR);
+
+typedef int \fBTcl_MethodCallProc2\fR(
+        void *\fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_ObjectContext \fIobjectContext\fR,
+        Tcl_Size \fIobjc\fR,
         Tcl_Obj *const *\fIobjv\fR);
 .CE
 .PP

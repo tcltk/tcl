@@ -2411,7 +2411,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -4189,9 +4189,9 @@ printf "%s\n" "yes" >&6; }
     fi
 
     if test "$CYGPATH" = "echo"; then
-        DEPARG='"$<"'
+	DEPARG='"$<"'
     else
-        DEPARG='"$(shell $(CYGPATH) $<)"'
+	DEPARG='"$(shell $(CYGPATH) $<)"'
     fi
 
     # set various compiler flags depending on whether we are using gcc or cl
@@ -4236,7 +4236,7 @@ printf "%s\n" "$ac_cv_win32" >&6; }
 	if test "$ac_cv_win32" != "yes"; then
 	    as_fn_error $? "${CC} cannot produce win32 executables." "$LINENO" 5
 	fi
-	if test "$do64bit" != "arm64"; then
+	if test "$do64bit" != "arm64" -a "$do64bit" != "aarch64"; then
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
@@ -4435,7 +4435,7 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_auto_image_base" >&5
 printf "%s\n" "$ac_cv_enable_auto_image_base" >&6; }
     CFLAGS=$hold_cflags
-    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+    if test "$ac_cv_enable_auto_image_base" = "yes" ; then
 	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 
@@ -4461,20 +4461,20 @@ printf %s "checking compiler flags... " >&6; }
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using static flags" >&5
+	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using static flags" >&5
 printf "%s\n" "using static flags" >&6; }
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
+	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
 printf "%s\n" "using shared flags" >&6; }
 
 	    # ad-hoc check to see if CC supports -shared.
 	    if "${CC}" -shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
 		as_fn_error $? "${CC} does not support the -shared option.
-                You will need to upgrade to a newer version of the toolchain." "$LINENO" 5
+		You will need to upgrade to a newer version of the toolchain." "$LINENO" 5
 	    fi
 
 	    runtime=
@@ -4586,14 +4586,14 @@ printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using static flags" >&5
+	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using static flags" >&5
 printf "%s\n" "using static flags" >&6; }
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
+	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
 printf "%s\n" "using shared flags" >&6; }
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
@@ -4957,24 +4957,24 @@ then :
 
 printf "%s\n" "#define MP_64BIT 1" >>confdefs.h
 
-    if test "$do64bit" = "arm64"
+    if test "$do64bit" = "arm64" -o "$do64bit" = "aarch64"
 then :
 
-      if test "$GCC" == "yes"
+      if test "$GCC" = "yes"
 then :
 
-        ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a
+	ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a
 
-        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a
+	TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a
 
-        zlib_lib_name=libz.dll.a
-        tommath_lib_name=libtommath.dll.a
+	zlib_lib_name=libz.dll.a
+	tommath_lib_name=libtommath.dll.a
 
 else case e in #(
   e)
-        ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib
+	ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib
 
-        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib
+	TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib
 
        ;;
 esac
@@ -4982,21 +4982,21 @@ fi
 
 else case e in #(
   e)
-      if test "$GCC" == "yes"
+      if test "$GCC" = "yes"
 then :
 
-        ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
+	ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
 
-        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
+	TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
 
-        zlib_lib_name=libz.dll.a
-        tommath_lib_name=libtommath.dll.a
+	zlib_lib_name=libz.dll.a
+	tommath_lib_name=libtommath.dll.a
 
 else case e in #(
   e)
-        ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
+	ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
 
-        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
+	TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
 
        ;;
 esac
@@ -5017,6 +5017,9 @@ fi
 
 else case e in #(
   e)
+
+printf "%s\n" "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
+
   ZLIB_OBJS=\${ZLIB_OBJS}
 
   TOMMATH_OBJS=\${TOMMATH_OBJS}
@@ -5024,9 +5027,6 @@ else case e in #(
  ;;
 esac
 fi
-
-printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
-
 TCL_ZLIB_LIB_NAME=$zlib_lib_name
 
 TCL_TOMMATH_LIB_NAME=$tommath_lib_name
@@ -5190,37 +5190,37 @@ else case e in #(
   e)
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-        for j in `ls -r $dir/zip 2> /dev/null` \
-            `ls -r $dir/zip 2> /dev/null` ; do
-        if test x"$ac_cv_path_zip" = x ; then
-            if test -f "$j" ; then
-            ac_cv_path_zip=$j
-            break
-            fi
-        fi
-        done
+	for j in `ls -r $dir/zip 2> /dev/null` \
+	    `ls -r $dir/zip 2> /dev/null` ; do
+	if test x"$ac_cv_path_zip" = x ; then
+	    if test -f "$j" ; then
+	    ac_cv_path_zip=$j
+	    break
+	    fi
+	fi
+	done
     done
      ;;
 esac
 fi
 
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+	ZIP_PROG="$ac_cv_path_zip"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 printf "%s\n" "$ZIP_PROG" >&6; }
-        ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="*"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
+	ZIP_PROG_OPTIONS="-rq"
+	ZIP_PROG_VFSSEARCH="*"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
 printf "%s\n" "Found INFO Zip in environment" >&6; }
-        # Use standard arguments for zip
+	# Use standard arguments for zip
     else
-        # It is not an error if an installed version of Zip can't be located.
-        # We can use the locally distributed minizip instead
-        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
-        ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="*"
-        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH building minizip" >&5
+	# It is not an error if an installed version of Zip can't be located.
+	# We can use the locally distributed minizip instead
+	ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+	ZIP_PROG_OPTIONS="-o -r"
+	ZIP_PROG_VFSSEARCH="*"
+	ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH building minizip" >&5
 printf "%s\n" "No zip found on PATH building minizip" >&6; }
     fi
 
@@ -5357,6 +5357,54 @@ if test "$tcl_cv_intrinsics" = "yes"; then
 
 printf "%s\n" "#define HAVE_INTRIN_H 1" >>confdefs.h
 
+fi
+
+# See if the compiler supports cpuid header.
+
+if test "${GCC}" = "yes" ; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cpuid-header support in compiler" >&5
+printf %s "checking for cpuid-header support in compiler... " >&6; }
+if test ${tcl_cv_cpuidhead+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+  #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
+  #   include <cpuid.h>
+  #endif
+
+int
+main (void)
+{
+
+    unsigned int regs;
+    __get_cpuid(0, &regs, &regs, &regs, &regs);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_cpuidhead=yes
+else case e in #(
+  e) tcl_cv_cpuidhead=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cpuidhead" >&5
+printf "%s\n" "$tcl_cv_cpuidhead" >&6; }
+  if test "$tcl_cv_cpuidhead" = "yes"; then
+
+printf "%s\n" "#define HAVE_CPUID_H 1" >>confdefs.h
+
+  fi
 fi
 
 # See if the <wspiapi.h> header file is present
@@ -5903,9 +5951,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
+    TCL_PACKAGE_PATH="${libdir};${prefix}\\lib"
 else
-    TCL_PACKAGE_PATH="{${prefix}/lib}"
+    TCL_PACKAGE_PATH="${prefix}\\lib"
 fi
 
 # The tclsh.exe.manifest requires these

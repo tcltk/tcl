@@ -392,9 +392,9 @@ the maximum size of the C stack.
 .RE
 .\" METHOD: share
 .TP
-\fBinterp share\fI srcPath channelId destPath\fR
+\fBinterp share\fI srcPath channel destPath\fR
 .
-Causes the IO channel identified by \fIchannelId\fR to become shared
+Causes the IO channel identified by \fIchannel\fR to become shared
 between the interpreter identified by \fIsrcPath\fR and the interpreter
 identified by \fIdestPath\fR. Both interpreters have the same permissions
 on the IO channel.
@@ -415,9 +415,9 @@ invoking interpreter or one of its descendants then an error is generated.
 The target command does not have to be defined at the time of this invocation.
 .\" METHOD: transfer
 .TP
-\fBinterp transfer\fI srcPath channelId destPath\fR
+\fBinterp transfer\fI srcPath channel destPath\fR
 .
-Causes the IO channel identified by \fIchannelId\fR to become available in
+Causes the IO channel identified by \fIchannel\fR to become available in
 the interpreter identified by \fIdestPath\fR and unavailable in the
 interpreter identified by \fIsrcPath\fR.
 .SH "CHILD COMMAND"
@@ -644,6 +644,7 @@ built-in commands:
 \fBsubst\fR	\fBswitch\fR	\fBtell\fR	\fBtime\fR
 \fBtrace\fR	\fBunset\fR	\fBupdate\fR	\fBuplevel\fR
 \fBupvar\fR	\fBvariable\fR	\fBvwait\fR	\fBwhile\fR
+\fBzlib\fR
 .DE
 The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:
@@ -652,7 +653,7 @@ creates a safe interpreter:
 \fBcd\fR	\fBencoding\fR	\fBexec\fR	\fBexit\fR
 \fBfconfigure\fR	\fBfile\fR	\fBglob\fR	\fBload\fR
 \fBopen\fR	\fBpwd\fR	\fBsocket\fR	\fBsource\fR
-\fBunload\fR
+\fBunload\fR	\fBzipfs\fR
 .DE
 These commands can be recreated later as Tcl procedures or aliases, or
 re-exposed by \fBinterp expose\fR.

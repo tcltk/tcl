@@ -151,11 +151,6 @@ test dict-3.16 {dict/list shimmering - Bug 3004007} testobj {
     dict get $l q
     list $l [testobj objtype $l]
 } {{p 1 p 2 q 3} dict}
-test dict-3.17 {dict/list shimmering - Bug 3004007} testobj {
-    set l [list p 1 p 2 q 3]
-    dict get $l q
-    list [llength $l] [testobj objtype $l]
-} {6 dict}
 
 test dict-4.1 {dict replace command} {
     dict replace {a b c d}
@@ -1009,7 +1004,7 @@ test dict-17.12 {dict filter command: script} -returnCodes error -body {
     }
 } -cleanup {
     unset k v
-} -result {expected boolean value but got "a b"}
+} -result {expected boolean value but got a list}
 test dict-17.13 {dict filter command: script} -body {
     list [catch {dict filter {a b} script {k v} {error x}} msg] $msg \
 	    $::errorInfo
@@ -1116,9 +1111,9 @@ test dict-18.4 {dict-list relationship} -body {
 # It shows a bad ref counter when running with memdebug on.
 test dict-19.1 {memory bug} {
     apply {{} {
-        set successors [dict create x {c d}]
-        dict set successors x a b
-        dict get $successors x
+	set successors [dict create x {c d}]
+	dict set successors x a b
+	dict get $successors x
     }}
 } [dict create c d a b]
 test dict-19.2 {dict: testing for leaks} -constraints memory -body {

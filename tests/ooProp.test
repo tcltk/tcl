@@ -240,13 +240,13 @@ test ooProp-2.1 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
-        variable x y
-        method report {} {
-            lappend ::result "x=$x, y=$y"
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
+	variable x y
+	method report {} {
+	    lappend ::result "x=$x, y=$y"
+	}
     }
     set pt [Point new -x 3]
     $pt report
@@ -262,9 +262,9 @@ test ooProp-2.2 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     oo::configurable create 3DPoint {
 	superclass Point
@@ -285,9 +285,9 @@ test ooProp-2.3 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     set pt [Point new -x 3 -y 4]
     oo::objdefine $pt property z
@@ -303,9 +303,9 @@ test ooProp-2.4 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     [Point new] configure gorp
 } -returnCodes error -cleanup {
@@ -317,9 +317,9 @@ test ooProp-2.5 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     oo::configurable create 3DPoint {
 	superclass Point
@@ -338,9 +338,9 @@ test ooProp-2.6 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     [Point create p] configure -x 1 -y
 } -returnCodes error -cleanup {
@@ -353,9 +353,9 @@ test ooProp-2.7 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y -kind writable
-        constructor args {
-            my configure -x 0 -y 0 {*}$args
-        }
+	constructor args {
+	    my configure -x 0 -y 0 {*}$args
+	}
     }
     Point create p
     list [p configure -y ok] [catch {p configure -y} msg] $msg
@@ -369,10 +369,10 @@ test ooProp-2.8 {TIP 558: properties: configurable class system} -setup {
     oo::configurable create Point {
 	superclass parent
 	property x y -kind readable
-        constructor args {
-            my configure -x 0 {*}$args
+	constructor args {
+	    my configure -x 0 {*}$args
 	    variable y 123
-        }
+	}
     }
     Point create p
     list [p configure] [p configure -y] [catch {p configure -y foo} msg] $msg
@@ -768,7 +768,7 @@ test ooProp-4.1 {TIP 558: properties: error details} -setup {
 "property -x"
     (in definition script for class "::Point" line 1)
     invoked from within
-"oo::define Point {property -x}"} {TCLOO PROPERTY_FORMAT}}
+"oo::define Point {property -x}"} {TCL OO PROPERTY_FORMAT}}
 test ooProp-4.2 {TIP 558: properties: error details} -setup {
     oo::class create parent
     unset -nocomplain msg opt

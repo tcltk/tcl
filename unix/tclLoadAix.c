@@ -122,7 +122,7 @@ dlopen(
     for (mp = modList; mp; mp = mp->next) {
 	if (strcmp(mp->name, path) == 0) {
 	    mp->refCnt++;
-	    return (void *) mp;
+	    return (void *)mp;
 	}
     }
 
@@ -142,7 +142,7 @@ dlopen(
      * a normal char *. Ugly.
      */
 
-    mp->entry = (void *) load((char *)path, L_NOAUTODEFER, NULL);
+    mp->entry = (void *)load((char *)path, L_NOAUTODEFER, NULL);
     if (mp->entry == NULL) {
 	free(mp->name);
 	free(mp);
@@ -231,7 +231,7 @@ dlopen(
 	errvalid = 0;
     }
 
-    return (void *) mp;
+    return (void *)mp;
 }
 
 /*
@@ -253,11 +253,11 @@ caterr(
 	strcat(errbuf, "to many errors");
 	break;
     case L_ERROR_NOLIB:
-	strcat(errbuf, "can't load library");
+	strcat(errbuf, "cannot load library");
 	strcat(errbuf, p);
 	break;
     case L_ERROR_UNDEF:
-	strcat(errbuf, "can't find symbol");
+	strcat(errbuf, "cannot find symbol");
 	strcat(errbuf, p);
 	break;
     case L_ERROR_RLDBAD:

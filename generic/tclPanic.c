@@ -23,7 +23,7 @@
  * procedure.
  */
 
-static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
+static Tcl_PanicProc *panicProc = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -43,7 +43,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 
 const char *
 Tcl_SetPanicProc(
-    TCL_NORETURN1 Tcl_PanicProc *proc)
+    Tcl_PanicProc *proc)
 {
     panicProc = proc;
     return Tcl_InitSubsystems();
@@ -71,7 +71,7 @@ Tcl_SetPanicProc(
  */
 
 /* coverity[+kill] */
-void
+TCL_NORETURN void
 Tcl_Panic(
     const char *format,
     ...)
@@ -80,7 +80,6 @@ Tcl_Panic(
     char *arg1, *arg2, *arg3;	/* Additional arguments (variable in number)
 				 * to pass to fprintf. */
     char *arg4, *arg5, *arg6, *arg7, *arg8;
-
 
     va_start(argList, format);
     arg1 = va_arg(argList, char *);
@@ -104,21 +103,21 @@ Tcl_Panic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
 #endif
-#   if defined(__GNUC__)
-	__builtin_trap();
-#   elif defined(_WIN64)
-	__debugbreak();
-#   elif defined(_MSC_VER) && defined (_M_IX86)
-	_asm {int 3}
-#   elif defined(_WIN32)
-	DebugBreak();
-#   endif
-#if defined(_WIN32)
-	ExitProcess(1);
-#else
-	abort();
-#endif
     }
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER) && defined (_M_IX86)
+    _asm {int 3}
+#elif defined(_WIN32)
+    DebugBreak();
+#endif
+#if defined(_WIN32)
+    ExitProcess(1);
+#else
+    abort();
+#endif
 }
 
 /*

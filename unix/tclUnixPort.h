@@ -559,9 +559,7 @@ extern char **		environ;
  *---------------------------------------------------------------------------
  */
 
-#   ifdef HAVE_AVAILABILITYMACROS_H
-#	include <AvailabilityMacros.h>
-#   endif
+#    include <AvailabilityMacros.h>
 
 /*
  *---------------------------------------------------------------------------
@@ -570,41 +568,11 @@ extern char **		environ;
  */
 
 #   ifdef HAVE_WEAK_IMPORT
-#	if !defined(HAVE_AVAILABILITYMACROS_H) || !defined(MAC_OS_X_VERSION_MIN_REQUIRED)
-#	    undef HAVE_WEAK_IMPORT
-#	else
-#	    ifndef WEAK_IMPORT_ATTRIBUTE
-#		define WEAK_IMPORT_ATTRIBUTE	__attribute__((weak_import))
-#	    endif
+#	ifndef WEAK_IMPORT_ATTRIBUTE
+#	    define WEAK_IMPORT_ATTRIBUTE	__attribute__((weak_import))
 #	endif
 #   endif /* HAVE_WEAK_IMPORT */
 
-/*
- *---------------------------------------------------------------------------
- * Support for MAC_OS_X_VERSION_MAX_ALLOWED define from AvailabilityMacros.h:
- * only use API available in the indicated OS version or earlier.
- *---------------------------------------------------------------------------
- */
-
-#   ifdef MAC_OS_X_VERSION_MAX_ALLOWED
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1050 && defined(__LP64__)
-#	    undef HAVE_COREFOUNDATION
-#	endif
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1040
-#	    undef HAVE_OSSPINLOCKLOCK
-#	    undef HAVE_PTHREAD_ATFORK
-#	    undef HAVE_COPYFILE
-#	endif
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-	    /* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
-#	    define NO_REALPATH 1
-#	    undef HAVE_LANGINFO
-#	endif
-#   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
-#   if defined(HAVE_COREFOUNDATION) && defined(__LP64__) && \
-	    defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-#	warning "Weak import of 64-bit CoreFoundation is not supported, will not run on Mac OS X < 10.5."
-#   endif
     /*
      * For now, test exec-17.1 fails (I/O setup after closing stdout) with
      * posix_spawnp(), but the classic implementation (based on fork()+execvp())
@@ -657,8 +625,6 @@ typedef int socklen_t;
  * The following macros and declaration wrap the C runtime library functions.
  *---------------------------------------------------------------------------
  */
-
-#define TclpExit	exit
 
 #if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>

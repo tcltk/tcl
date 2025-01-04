@@ -7,9 +7,6 @@
 /* Is gettimeofday() actually declared in <sys/time.h>? */
 #undef GETTOD_NOT_DECLARED
 
-/* Define to 1 if you have the <AvailabilityMacros.h> header file. */
-#undef HAVE_AVAILABILITYMACROS_H
-
 /* Define to 1 if the system has the type 'blkcnt_t'. */
 #undef HAVE_BLKCNT_T
 
@@ -160,9 +157,6 @@
 /* Define to 1 if you have the 'mkstemps' function. */
 #undef HAVE_MKSTEMPS
 
-/* Define to 1 if you have the 'mktime' function. */
-#undef HAVE_MKTIME
-
 /* Do we have MT-safe gethostbyaddr() ? */
 #undef HAVE_MTSAFE_GETHOSTBYADDR
 
@@ -307,9 +301,6 @@
 /* Is weak import available? */
 #undef HAVE_WEAK_IMPORT
 
-/* Is there an installed zlib? */
-#undef HAVE_ZLIB
-
 /* Is this a Mac I see before me? */
 #undef MAC_OSX_TCL
 
@@ -352,9 +343,6 @@
 /* Do we have getwd() */
 #undef NO_GETWD
 
-/* Do we have memmove()? */
-#undef NO_MEMMOVE
-
 /* Do we have mknod() */
 #undef NO_MKNOD
 
@@ -363,9 +351,6 @@
 
 /* Do we have strerror() */
 #undef NO_STRERROR
-
-/* Do we have <string.h>? */
-#undef NO_STRING_H
 
 /* Do we have <sys/wait.h>? */
 #undef NO_SYS_WAIT_H
@@ -446,6 +431,9 @@
 
 /* Tcl with external libtommath */
 #undef TCL_WITH_EXTERNAL_TOMMATH
+
+/* Tcl with internal zlib */
+#undef TCL_WITH_INTERNAL_ZLIB
 
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD

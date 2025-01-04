@@ -12,8 +12,8 @@ Suffix=""
 
 while true; do
     case $1 in
-        -s | --symlinks  )      Sym="-s "      ;;
-        -z | --compress  )     Gzip=$2;  shift ;;
+	-s | --symlinks  )      Sym="-s "      ;;
+	-z | --compress  )     Gzip=$2;  shift ;;
 	-e | --extension )       Gz=$2;  shift ;;
 	-x | --suffix    )   Suffix=$2;  shift ;;
 	-*) cat <<EOF

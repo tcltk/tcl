@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+	tclsh9.0 (or the equivalent tclsh90.exe\non Windows)."
     exit 1
 }
 
@@ -610,8 +610,8 @@ array set remap_link_target {
     Tcl_Obj     Tcl_NewObj
     Tcl_ObjType Tcl_RegisterObjType
     Tcl_OpenFileChannelProc Tcl_FSOpenFileChannel
-    errorinfo 	env
-    errorcode 	env
+    errorinfo	env
+    errorcode	env
     tcl_pkgpath env
     Tcl_Command Tcl_CreateObjCommand
     Tcl_CmdProc Tcl_CreateObjCommand

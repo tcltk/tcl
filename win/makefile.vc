@@ -57,7 +57,7 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-# 		noembed   = Without this option, the Tcl core library scripts
+#		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
 #			    "noembed" is specified, the scripts are not embedded
@@ -254,6 +254,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclBinary.obj \
 	$(TMP_DIR)\tclCkalloc.obj \
 	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclClockFmt.obj \
 	$(TMP_DIR)\tclCmdAH.obj \
 	$(TMP_DIR)\tclCmdIL.obj \
 	$(TMP_DIR)\tclCmdMZ.obj \
@@ -276,6 +277,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclGet.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIcu.obj \
 	$(TMP_DIR)\tclIndexObj.obj \
 	$(TMP_DIR)\tclInterp.obj \
 	$(TMP_DIR)\tclIO.obj \
@@ -299,6 +301,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclOODefineCmds.obj \
 	$(TMP_DIR)\tclOOInfo.obj \
 	$(TMP_DIR)\tclOOMethod.obj \
+	$(TMP_DIR)\tclOOProp.obj \
 	$(TMP_DIR)\tclOOStubInit.obj \
 	$(TMP_DIR)\tclObj.obj \
 	$(TMP_DIR)\tclOptimize.obj \
@@ -317,6 +320,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclResult.obj \
 	$(TMP_DIR)\tclScan.obj \
 	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrIdxTree.obj \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
@@ -367,9 +371,9 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_div_d.obj \
 	$(TMP_DIR)\bn_mp_div_2.obj \
 	$(TMP_DIR)\bn_mp_div_2d.obj \
-	$(TMP_DIR)\bn_mp_div_3.obj \
+	$(TMP_DIR)\bn_s_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
-	$(TMP_DIR)\bn_mp_expt_u32.obj \
+	$(TMP_DIR)\bn_mp_expt_n.obj \
 	$(TMP_DIR)\bn_mp_get_mag_u64.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
@@ -462,12 +466,17 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+LIBTCLVFSSUBDIR = libtcl.vfs
+LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
 
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
-PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS
+
+!if $(STATIC_BUILD)
+PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
+!endif
 
 # Additional Link libraries needed beyond those in rules.vc
 PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
@@ -652,19 +661,15 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-!if $(STATIC_BUILD)
 # Remove the registry and dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
-!else
-    @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
-    @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
-!endif
-	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
+	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
+	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -698,6 +703,14 @@ clean-pkgs:
 	    popd \
 	  )
 
+hose-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) hose &\
+	    popd \
+	  )
+
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
 #---------------------------------------------------------------------
@@ -713,12 +726,11 @@ genstubs:
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
+
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
 #---------------------------------------------------------------------
 
-# NOTE: you can define HHC on the command-line to override this.
-# nmake does not set macro values if already set on the command line.
 !if defined(PROCESSOR_ARCHITECTURE) && "$(PROCESSOR_ARCHITECTURE)" == "AMD64"
 HHC="%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe"
 !else
@@ -729,30 +741,32 @@ HTMLBASE=TclTk$(VERSION)
 HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
 CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 
-htmlhelp: chmsetup $(CHMFILE)
+htmlhelp: $(CHMFILE)
 
-$(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) -encoding utf-8 $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+htmldocs: $(DOCDIR)\*
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+
+$(CHMFILE): htmldocs chmsetup
 	@echo Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
-Default topic=contents.htm
+Default topic=index.html
 Display compile progress=no
 Error log file=$(HTMLBASE).log
 Full-text search=Yes
 Language=0x409 English (United States)
 Title=Tcl/Tk $(DOTVERSION) Help
 [FILES]
-contents.htm
+index.html
 docs.css
-Keywords\*.htm
-TclCmd\*.htm
-TclLib\*.htm
-TkCmd\*.htm
-TkLib\*.htm
-UserCmd\*.htm
+Keywords\*.html
+TclCmd\*.html
+TclLib\*.html
+TkCmd\*.html
+TkLib\*.html
+UserCmd\*.html
 <<
 
 chmsetup:
@@ -787,7 +801,7 @@ tclConfig: $(OUT_DIR)\tclConfig.sh
 # TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 	@echo Creating tclConfig.sh
-        @nmakehlp -s << $** >$@
+	@nmakehlp -s << $** >$@
 @TCL_DLL_FILE@       $(TCLLIBNAME)
 @TCL_VERSION@        $(DOTVERSION)
 @TCL_MAJOR_VERSION@  $(TCL_MAJOR_VERSION)
@@ -819,7 +833,7 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
 @TCL_SRC_DIR@        $(ROOT)
-@TCL_PACKAGE_PATH@
+@TCL_PACKAGE_PATH@   $(LIB_INSTALL_DIR)
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
 @TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
@@ -871,7 +885,7 @@ $(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
 	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
 
 $(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
-	$(cc32) $(pkgcflags) -I$(TMP_DIR) \
+	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(TMP_DIR) \
 	    -Fo$@ $(GENERICDIR)\tclEvent.c
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
@@ -1063,16 +1077,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\tm.tcl"          "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\parray.tcl"      "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\safe.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\*.tcl"           "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\tclIndex"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
@@ -1118,17 +1124,13 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
 	@echo Installing $(TCLDDELIBNAME)
-!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-!endif
 	@echo Installing $(TCLREGLIBNAME)
-!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
-!endif
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
@@ -1178,7 +1180,7 @@ tidy:
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
-hose: default-hose
+hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
 

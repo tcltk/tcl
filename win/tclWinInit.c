@@ -43,22 +43,26 @@ typedef struct {
 #define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64",
+    "ia32_on_arm64"
 };
+
+/*
+ * Forward declarations
+ */
+
+static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
+static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
+static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
 /*
  * The default directory in which the init.tcl file is expected to be found.
  */
 
-static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
 static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
-
-static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
 static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
-
-static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
 /*
  *---------------------------------------------------------------------------
@@ -167,7 +171,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = Tcl_GetStringFromObj(pathPtr, &length);
+    bytes = TclGetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
@@ -181,8 +185,8 @@ TclpInitLibraryPath(
  *
  *	Append the value of the TCL_LIBRARY environment variable onto the path
  *	pointer. If the env variable points to another version of tcl (e.g.
- *	"tcl7.6") also append the path to this version (e.g.,
- *	"tcl7.6/../tcl8.2")
+ *	"tcl8.6") also append the path to this version (e.g.,
+ *	"tcl8.6/../tcl9.0")
  *
  * Results:
  *	None.
@@ -208,7 +212,7 @@ AppendEnvironment(
 
     /*
      * The shortlib value needs to be the tail component of the lib path. For
-     * example, "lib/tcl8.4" -> "tcl8.4" while "usr/share/tcl8.5" -> "tcl8.5".
+     * example, "lib/tcl9.0" -> "tcl9.0" while "usr/share/tcl9.0" -> "tcl9.0".
      */
 
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
@@ -403,8 +407,9 @@ Tcl_GetEncodingNameFromEnvironment(
     if (acp == CP_UTF8) {
 	Tcl_DStringAppend(bufPtr, "utf-8", 5);
     } else {
-	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-	snprintf(Tcl_DStringValue(bufPtr), 2+TCL_INTEGER_SPACE, "cp%d", GetACP());
+	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
+	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
+		GetACP());
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);
@@ -452,6 +457,7 @@ void
 TclpSetVariables(
     Tcl_Interp *interp)		/* Interp to initialize. */
 {
+    typedef int(__stdcall getVersionProc)(void *);
     const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     union {
@@ -467,10 +473,11 @@ TclpSetVariables(
 
     if (!osInfoInitialized) {
 	HMODULE handle = GetModuleHandleW(L"NTDLL");
-	int(__stdcall *getversion)(void *) =
-		(int(__stdcall *)(void *))(void *)GetProcAddress(handle, "RtlGetVersion");
+	getVersionProc *getVersion = (getVersionProc *) (void *)
+		GetProcAddress(handle, "RtlGetVersion");
+
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-	if (!getversion || getversion(&osInfo)) {
+	if (!getVersion || getVersion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
 	osInfoInitialized = 1;
@@ -483,12 +490,12 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    Tcl_SetVar2(interp, "tcl_platform", "os",
-	    "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
     if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
 	osInfo.dwMajorVersion = 11;
     }
-    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%ld.%ld",
+	    osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -516,14 +523,14 @@ TclpSetVariables(
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY);
 	} else {
-            /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
-            ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
-            if (ptr != NULL && ptr[0]) {
-                Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
-            } else {
-                /* Last resort */
-                Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
-            }
+	    /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
+	    ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
+	    if (ptr != NULL && ptr[0]) {
+		Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
+	    } else {
+		/* Last resort */
+		Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+	    }
 	}
     }
 
@@ -542,7 +549,7 @@ TclpSetVariables(
      * Define what the platform PATH separator is. [TIP #315]
      */
 
-    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "pathSeparator", ";", TCL_GLOBAL_ONLY);
 }
 
 /*
@@ -575,7 +582,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    Tcl_Size i, length, result = -1;
+    Tcl_Size i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;
@@ -591,9 +598,7 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = _wenviron[i];
-	env != NULL;
-	i++, env = _wenviron[i]) {
+    for (i = 0, env = _wenviron[i]; env != NULL; i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
@@ -601,7 +606,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

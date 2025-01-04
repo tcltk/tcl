@@ -281,9 +281,9 @@ test assemble-6.3 {push} {
 test assemble-6.4 {push4} {
     -body {
 	proc x {} "
-            [fillTables]
-            assemble {push hello}
-        "
+	    [fillTables]
+	    assemble {push hello}
+	"
 	x
     }
     -cleanup {
@@ -772,7 +772,7 @@ test assemble-7.43 {uplus} {
 	}
     }
     -returnCodes error
-    -result {can't use non-numeric floating-point value "NaN" as operand of "+"}
+    -result {cannot use non-numeric floating-point value "NaN" as operand of "+"}
 }
 test assemble-7.43.1 {tryCvtToNumeric} {
     -body {
@@ -866,9 +866,9 @@ test assemble-8.7 {load4} {
     -body {
 	proc x {a} "
 	    [fillTables]
-            set b \$a
-            assemble {load b}
-        "
+	    set b \$a
+	    assemble {load b}
+	"
 	x able
     }
     -result able
@@ -891,7 +891,7 @@ test assemble-8.8 {loadArray1} {
 test assemble-8.9 {loadArray4} {
     -body "
 	proc x {} {
-            [fillTables]
+	    [fillTables]
 	    set able(baker) charlie
 	    assemble {
 		push baker
@@ -919,7 +919,7 @@ test assemble-8.10 {append1} {
 test assemble-8.11 {append4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y {hello, }
 	    assemble {
 		push world; append y
@@ -946,7 +946,7 @@ test assemble-8.12 {appendArray1} {
 test assemble-8.13 {appendArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y(z) {hello, }
 	    assemble {
 		push z; push world; appendArray y
@@ -973,7 +973,7 @@ test assemble-8.14 {lappend1} {
 test assemble-8.15 {lappend4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y {hello,}
 	    assemble {
 		push world; lappend y
@@ -1000,7 +1000,7 @@ test assemble-8.16 {lappendArray1} {
 test assemble-8.17 {lappendArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y(z) {hello,}
 	    assemble {
 		push z; push world; lappendArray y
@@ -1027,11 +1027,11 @@ test assemble-8.18 {store1} {
 test assemble-8.19 {store4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    assemble {
 		push test; store y
 	    }
-            set y
+	    set y
 	"
 	x
     }
@@ -1054,7 +1054,7 @@ test assemble-8.20 {storeArray1} {
 test assemble-8.21 {storeArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    assemble {
 		push z; push test; storeArray y
 	    }
@@ -1352,9 +1352,9 @@ test assemble-12.6 {incr, stupid stack restriction} {
     -body {
 	proc x {} "
 	    [fillTables]
-            set y 5
-            assemble {push 3; incr y}
-        "
+	    set y 5
+	    assemble {push 3; incr y}
+	"
 	list [catch {x} result] $result $errorCode
     }
     -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
@@ -1443,9 +1443,9 @@ test assemble-13.9 {incrImm, stupid stack restriction} {
     -body {
 	proc x {} "
 	    [fillTables]
-            set y 5
-            assemble {incrImm y 3}
-        "
+	    set y 5
+	    assemble {incrImm y 3}
+	"
 	list [catch {x} result] $result $errorCode
     }
     -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}

@@ -47,8 +47,8 @@ typedef struct {
  * Declarations for functions defined in this file.
  */
 
-static Tcl_ObjCmdProc ProcBodyTestProcObjCmd;
-static Tcl_ObjCmdProc ProcBodyTestCheckObjCmd;
+static Tcl_ObjCmdProc ProcBodyTestProcCmd;
+static Tcl_ObjCmdProc ProcBodyTestCheckCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -59,14 +59,14 @@ static int	RegisterCommand(Tcl_Interp* interp,
  */
 
 static const CmdTable commands[] = {
-    { procCommand,	ProcBodyTestProcObjCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
+    { procCommand,	ProcBodyTestProcCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckCmd,	1 },
     { 0, 0, 0 }
 };
 
 static const CmdTable safeCommands[] = {
-    { procCommand,	ProcBodyTestProcObjCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
+    { procCommand,	ProcBodyTestProcCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckCmd,	1 },
     { 0, 0, 0 }
 };
 
@@ -196,7 +196,7 @@ ProcBodyTestInitInternal(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestProcObjCmd --
+ * ProcBodyTestProcCmd --
  *
  *  Implements the "procbodytest::proc" command. Here is the command
  *  description:
@@ -227,7 +227,7 @@ ProcBodyTestInitInternal(
  */
 
 static int
-ProcBodyTestProcObjCmd(
+ProcBodyTestProcCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
@@ -265,7 +265,7 @@ ProcBodyTestProcObjCmd(
 
     if (cmdPtr->objClientData != TclIsProc(cmdPtr)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"command \"", fullName, "\" is not a Tcl procedure", (void *)NULL);
+		"command \"", fullName, "\" is not a Tcl procedure", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -276,7 +276,7 @@ ProcBodyTestProcObjCmd(
     procPtr = (Proc *) cmdPtr->objClientData;
     if (procPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "procedure \"",
-		fullName, "\" does not have a Proc struct!", (void *)NULL);
+		fullName, "\" does not have a Proc struct!", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -288,7 +288,7 @@ ProcBodyTestProcObjCmd(
     if (bodyObjPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"failed to create a procbody object for procedure \"",
-		fullName, "\"", (void *)NULL);
+		fullName, "\"", (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_IncrRefCount(bodyObjPtr);
@@ -308,7 +308,7 @@ ProcBodyTestProcObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestCheckObjCmd --
+ * ProcBodyTestCheckCmd --
  *
  *  Implements the "procbodytest::check" command. Here is the command
  *  description:
@@ -326,7 +326,7 @@ ProcBodyTestProcObjCmd(
  */
 
 static int
-ProcBodyTestCheckObjCmd(
+ProcBodyTestCheckCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */

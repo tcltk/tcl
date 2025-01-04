@@ -18,34 +18,36 @@
 #include "tclUniData.c"
 
 /*
- * The following macros are used for fast character category tests. The x_BITS
+ * The following masks are used for fast character category tests. The x_BITS
  * values are shifted right by the category value to determine whether the
  * given category is included in the set.
  */
+enum UnicodeCharacterCategoryMasks {
+    ALPHA_BITS = (1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) |
+	(1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) |
+	(1 << OTHER_LETTER),
 
-#define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
-	| (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1<<OTHER_LETTER))
+    CONTROL_BITS = (1 << CONTROL) | (1 << FORMAT),
 
-#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT) | (1 << PRIVATE_USE))
+    DIGIT_BITS = (1 << DECIMAL_DIGIT_NUMBER),
 
-#define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
+    SPACE_BITS = (1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) |
+	(1 << PARAGRAPH_SEPARATOR),
 
-#define SPACE_BITS ((1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) \
-	| (1 << PARAGRAPH_SEPARATOR))
+    WORD_BITS = ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION),
 
-#define WORD_BITS (ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION))
+    PUNCT_BITS = (1 << CONNECTOR_PUNCTUATION) |
+	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) |
+	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) |
+	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION),
 
-#define PUNCT_BITS ((1 << CONNECTOR_PUNCTUATION) | \
-	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
-	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
-	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION))
-
-#define GRAPH_BITS (WORD_BITS | PUNCT_BITS | \
-	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
-	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
-	(1 << OTHER_NUMBER) | \
-	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
-	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
+    GRAPH_BITS = WORD_BITS | PUNCT_BITS |
+	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) |
+	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) |
+	(1 << OTHER_NUMBER) |
+	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) |
+	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL)
+};
 
 /*
  * Unicode characters less than this value are represented by themselves in
@@ -206,13 +208,11 @@ Invalid(
 
 Tcl_Size
 Tcl_UniCharToUtf(
-    int ch,	/* The Tcl_UniChar to be stored in the
-		 * buffer. Can be or'ed with flag TCL_COMBINE.
-		 */
-    char *buf)	/* Buffer in which the UTF-8 representation of
-		 * ch is stored. Must be large enough to hold the UTF-8
-		 * character (at most 4 bytes).
-		 */
+    int ch,			/* The Tcl_UniChar to be stored in the buffer.
+				 * Can be or'ed with flag TCL_COMBINE. */
+    char *buf)			/* Buffer in which the UTF-8 representation of
+				 * ch is stored. Must be large enough to hold
+				 * the UTF-8 character (at most 4 bytes). */
 {
     int flags = ch;
 
@@ -234,8 +234,8 @@ Tcl_UniCharToUtf(
 		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
-		    if (   (0x80 == (0xC0 & buf[0]))
-			&& (0    == (0xCF & buf[1]))) {
+		    if (    (0x80 == (0xC0 & buf[0]))
+			    && (0 == (0xCF & buf[1]))) {
 			/* Previous Tcl_UniChar was a high surrogate, so combine */
 			buf[2]  = (char) (0x80 | (0x3F & ch));
 			buf[1] |= (char) (0x80 | (0x0F & (ch >> 6)));
@@ -246,12 +246,11 @@ Tcl_UniCharToUtf(
 		    /* High surrogate */
 
 		    /* Add 0x10000 to the raw number encoded in the surrogate
-		     * pair in order to get the code point.
-		    */
+		     * pair in order to get the code point. */
 		    ch += 0x40;
 
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
-		       so following low surrogate can recognize it and combine */
+		     * so following low surrogate can recognize it and combine */
 		    buf[2] = (char) ((ch << 4) & 0x30);
 		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
 		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
@@ -268,9 +267,9 @@ Tcl_UniCharToUtf(
 	    return 4;
 	}
     } else if (ch == -1) {
-	if (   (0x80 == (0xC0 & buf[0]))
-	    && (0    == (0xCF & buf[1]))
-	    && (0xF0 == (0xF8 & buf[-1]))) {
+	if (       (0x80 == (0xC0 & buf[0]))
+		&& (0    == (0xCF & buf[1]))
+		&& (0xF0 == (0xF8 & buf[-1]))) {
 	    ch = 0xD7C0
 		+ ((0x07 & buf[-1]) << 8)
 		+ ((0x3F & buf[0])  << 2)
@@ -310,9 +309,9 @@ three:
 
 char *
 Tcl_UniCharToUtfDString(
-    const int *uniStr,	/* Unicode string to convert to UTF-8. */
+    const int *uniStr,		/* Unicode string to convert to UTF-8. */
     Tcl_Size uniLength,		/* Length of Unicode string. Negative for nul
-    				 * terminated string */
+				 * terminated string */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -441,9 +440,9 @@ static const unsigned short cp1252[32] = {
 
 Tcl_Size
 Tcl_UtfToUniChar(
-    const char *src,	/* The UTF-8 string. */
-    int *chPtr)/* Filled with the Unicode character represented by
-				 * the UTF-8 string. */
+    const char *src,		/* The UTF-8 string. */
+    int *chPtr)			/* Filled with the Unicode character
+				 * represented by the UTF-8 string. */
 {
     int byte;
 
@@ -679,11 +678,11 @@ Tcl_UtfToUniCharDString(
     endPtr = src + length;
     optPtr = endPtr - 4;
     while (p <= optPtr) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += Tcl_UtfToUniChar(p, &ch);
+	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while (p < endPtr) {
@@ -929,7 +928,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -968,7 +967,7 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = Tcl_UtfToUniChar(src, &find);
+	int find, len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1191,7 +1190,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-    Tcl_UtfToUniChar(src, &i);
+    TclUtfToUniChar(src, &i);
     return i;
 }
 
@@ -1220,7 +1219,7 @@ Tcl_UtfAtIndex(
     Tcl_UniChar ch = 0;
 
     while (index-- > 0) {
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }
@@ -1330,7 +1329,7 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -1383,7 +1382,7 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -1439,7 +1438,7 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if (len < TclUtfCount(titleChar)) {
@@ -1451,7 +1450,7 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
@@ -1718,7 +1717,6 @@ TclUtfCmp(
     }
     return UCHAR(*cs) - UCHAR(*ct);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1758,7 +1756,6 @@ TclUtfCasecmp(
     }
     return UCHAR(*cs) - UCHAR(*ct);
 }
-
 
 /*
  *----------------------------------------------------------------------

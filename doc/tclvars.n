@@ -28,6 +28,7 @@ This variable is initialized during startup to contain, in order:
 the directories listed in the \fBTCLLIBPATH\fR environment variable,
 the directory named by the \fBtcl_library\fR global variable,
 the parent directory of \fBtcl_library\fR,
+\fB[file dirname [file dirname [info nameofexecutable]]]/lib\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
 Additional locations to look for files and package indices should
 normally be added to this variable using \fBlappend\fR.
@@ -396,11 +397,8 @@ This variable and functionality only exist if
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\eS\fR, meaning anything
-but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
-which is any Unicode word character (number, letter, or underscore).
+characters.  It defaults to \fB\ew\fR, which is any Unicode
+word character (number, letter, or underscore).
 .\" VARIABLE: tcl_nonwordchars
 .TP
 \fBtcl_nonwordchars\fR
@@ -408,10 +406,7 @@ which is any Unicode word character (number, letter, or underscore).
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW non-word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\es\fR, meaning any Unicode space
-character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
+characters.  It defaults to \fB\eW\fR, which is anything but a
 Unicode word character (number, letter, or underscore).
 .\" VARIABLE: tcl_version
 .TP

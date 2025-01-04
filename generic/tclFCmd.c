@@ -918,8 +918,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-        /*
-         * Return the last component, unless it is the only component, and it
+	/*
+	 * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 
@@ -1041,7 +1041,7 @@ TclFileAttrsCmd(
 	 * Use objStrings as a list object.
 	 */
 
-	if (TclListObjLengthM(interp, objStrings, &numObjStrings) != TCL_OK) {
+	if (TclListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)
@@ -1115,7 +1115,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1139,7 +1139,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1152,7 +1152,7 @@ TclFileAttrsCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"value for \"%s\" missing", TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
-			"NOVALUE", (void *)NULL);
+			"NOVALUE", (char *)NULL);
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,
@@ -1247,12 +1247,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Create link from source to target.
@@ -1310,12 +1310,12 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
+		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&ds);
 
 	/*
 	 * Read link
@@ -1446,7 +1446,7 @@ TclFileTemporaryCmd(
     if (objc > 2) {
 	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[2];
-	const char *string = Tcl_GetStringFromObj(templateObj, &length);
+	const char *string = TclGetStringFromObj(templateObj, &length);
 
 	/*
 	 * Treat an empty string as if it wasn't there.
@@ -1598,7 +1598,7 @@ TclFileTempDirCmd(
     if (objc > 1) {
 	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[1];
-	const char *string = Tcl_GetStringFromObj(templateObj, &length);
+	const char *string = TclGetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
 
 	/*

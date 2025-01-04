@@ -1253,9 +1253,23 @@ proc writeZones {outDir} {
 	# Generate data for a zone
 
 	set data ""
+	set tzmapped {}
 	foreach {
 	    time offset dst name
 	} [processTimeZone $zoneName $zones($zoneName)] {
+	    if {$name eq "%z"} {
+		# map %z to pure offset zone (e. g. offset -7200 -> -0200):
+		set name [format "%+03d%02d" [expr {
+				$offset / 60 / 60
+			    }] [expr {
+				(abs($offset) / 60) % 60
+			    }]
+			]
+		if {![dict exists $tzmapped $offset]} { # output once per offs
+		    puts "\tmap %z ($offset) -> $name"
+		    dict set tzmapped $offset $name
+		}
+	    }
 	    append data "\n    " [list [list $time $offset $dst $name]]
 	}
 	append data \n
@@ -1333,7 +1347,7 @@ proc writeLinks {outDir} {
 #----------------------------------------------------------------------
 
 puts "Compiling time zones -- [clock format [clock seconds] \
-                                   -format {%x %X} -locale system]"
+	                           -format {%x %X} -locale system]"
 
 # Determine directories
 

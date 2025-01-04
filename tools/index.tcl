@@ -14,12 +14,12 @@
 # state -	state variable that controls action of text proc.
 #
 # topics -	array indexed by (package,section,topic) with value
-# 		of topic ID.
+#		of topic ID.
 #
 # keywords -	array indexed by keyword string with value of topic ID.
 #
-# curID - 	current topic ID, starts at 0 and is incremented for
-# 		each new topic file.
+# curID -	current topic ID, starts at 0 and is incremented for
+#		each new topic file.
 #
 # curPkg -	current package name (e.g. Tcl).
 #

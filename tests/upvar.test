@@ -521,8 +521,8 @@ test upvar-10.1 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        upvar 1 {*}{
-        } [return [incr n -[linenumber]]] x
+	upvar 1 {*}{
+	} [return [incr n -[linenumber]]] x
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -655,8 +655,8 @@ test upvar-NS-3.1 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        namespace upvar {*}{
-        } [return [incr n -[linenumber]]] x y
+	namespace upvar {*}{
+	} [return [incr n -[linenumber]]] x y
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -665,8 +665,8 @@ test upvar-NS-3.2 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        namespace upvar :: {*}{
-        } [return [incr n -[linenumber]]] x
+	namespace upvar :: {*}{
+	} [return [incr n -[linenumber]]] x
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -675,8 +675,8 @@ test upvar-NS-3.3 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        variable x {*}{
-        } [return [incr n -[linenumber]]]
+	variable x {*}{
+	} [return [incr n -[linenumber]]]
     }} [linenumber]
 } -cleanup {
     rename linenumber {}

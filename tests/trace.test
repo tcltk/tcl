@@ -120,9 +120,9 @@ test trace-1.6 {trace array element reads} {
     set info {}
     trace add variable x read traceArray2
     proc p {} {
-        global x
-        set x(2) willi
-        return $x(2)
+	global x
+	set x(2) willi
+	return $x(2)
     }
     list [catch {p} msg] $msg $info
 } {0 willi {x 2 read}}
@@ -131,15 +131,15 @@ test trace-1.7 {trace array element reads, create element undefined if nonexista
     set info {}
     trace add variable x read q
     proc q {name1 name2 op} {
-        global info
-        set info [list $name1 $name2 $op]
-        global $name1
-        set ${name1}($name2) wolf
+	global info
+	set info [list $name1 $name2 $op]
+	global $name1
+	set ${name1}($name2) wolf
     }
     proc p {} {
-        global x
-        set x(X) willi
-        return $x(Y)
+	global x
+	set x(X) willi
+	return $x(Y)
     }
     list [catch {p} msg] $msg $info
 } {0 wolf {x Y read}}
@@ -1642,10 +1642,10 @@ test trace-21.9 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
     proc ::soom args {lappend ::info SUCCESS [info level]}
     set ::info {}
     namespace eval test_ns_1 {
-        proc soom args {lappend ::info FAIL [info level]}
-        # [testevalobjv 1 ...] ought to produce the same
+	proc soom args {lappend ::info FAIL [info level]}
+	# [testevalobjv 1 ...] ought to produce the same
        # results as [uplevel #0 ...].
-        testevalobjv 1 foo x
+	testevalobjv 1 foo x
        uplevel #0 foo x
     }
     namespace delete test_ns_1
@@ -1658,10 +1658,10 @@ test trace-21.10 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
     proc ::soom args {lappend ::info SUCCESS [info level]}
     set ::info {}
     namespace eval test_ns_1 {
-        proc soom args {lappend ::info FAIL [info level]}
-        # [testevalobjv 1 ...] ought to produce the same
+	proc soom args {lappend ::info FAIL [info level]}
+	# [testevalobjv 1 ...] ought to produce the same
        # results as [uplevel #0 ...].
-        testevalobjv 1 foo x
+	testevalobjv 1 foo x
        uplevel #0 foo x
     }
     namespace delete test_ns_1
@@ -1695,7 +1695,7 @@ test trace-21.12 {bug 2438181} -setup {
     trace add execution set2 leave {puts one two three #;}
 } -body {
     set2 a hello
-} -returnCodes 1 -result {wrong # args: should be "puts ?-nonewline? ?channelId? string"}
+} -returnCodes 1 -result {wrong # args: should be "puts ?-nonewline? ?channel? string"}
 
 proc factorial {n} {
     if {$n != 1} { return [expr {$n * [factorial [expr {$n -1 }]]}] }
@@ -2058,20 +2058,20 @@ test trace-27.3 {command trace info nonsense} {
 test trace-28.1 {enterstep and leavestep traces with update idletasks (615043)} {
     catch {rename foo {}}
     proc foo {} {
-        set a 1
-        update idletasks
-        set b 1
+	set a 1
+	update idletasks
+	set b 1
     }
 
     set info {}
     trace add execution foo {enter enterstep leavestep leave} \
-        [list traceExecute foo]
+	[list traceExecute foo]
     update
     after idle {set a "idle"}
     foo
 
     trace remove execution foo {enter enterstep leavestep leave} \
-        [list traceExecute foo]
+	[list traceExecute foo]
     rename foo {}
     unset -nocomplain a
     join $info "\n"
@@ -2412,12 +2412,12 @@ test trace-34.1 {Bug 1201035} {
     set ::x [list]
     proc foo {} {lappend ::x foo}
     proc bar args {
-        lappend ::x $args
-        trace remove execution foo leavestep bar
-        trace remove execution foo enterstep bar
-        trace add execution foo leavestep bar
-        trace add execution foo enterstep bar
-        lappend ::x done
+	lappend ::x $args
+	trace remove execution foo leavestep bar
+	trace remove execution foo enterstep bar
+	trace add execution foo leavestep bar
+	trace add execution foo enterstep bar
+	lappend ::x done
     }
     trace add execution foo leavestep bar
     trace add execution foo enterstep bar
@@ -2446,7 +2446,7 @@ test trace-34.3 {Bug 1224585} {
 test trace-34.4 {Bug 1047286} {
     variable x notrace
     proc callback {old - -} {
-        variable x "$old exists: [namespace which -command $old]"
+	variable x "$old exists: [namespace which -command $old]"
     }
     namespace eval ::foo {proc bar {} {}}
     trace add command ::foo::bar delete [namespace code callback]
@@ -2457,7 +2457,7 @@ test trace-34.4 {Bug 1047286} {
 test trace-34.5 {Bug 1047286} {
     variable x notrace
     proc callback {old - -} {
-        variable x "$old exists: [namespace which -command $old]"
+	variable x "$old exists: [namespace which -command $old]"
     }
     namespace eval ::foo {proc bar {} {}}
     trace add command ::foo::bar delete [namespace code callback]
@@ -2468,19 +2468,19 @@ test trace-34.5 {Bug 1047286} {
 test trace-34.6 {Bug 1458266} -setup {
     proc dummy {} {}
     proc stepTraceHandler {cmdString args} {
-        variable log
-        append log "[expr {[info level] - 1}]: [lindex [split $cmdString] 0]\n"
-        dummy
-        isTracedInside_2
+	variable log
+	append log "[expr {[info level] - 1}]: [lindex [split $cmdString] 0]\n"
+	dummy
+	isTracedInside_2
     }
     proc cmdTraceHandler {cmdString args} {
-        # silent
+	# silent
     }
     proc isTracedInside_1 {} {
-        isTracedInside_2
+	isTracedInside_2
     }
     proc isTracedInside_2 {} {
-        set x 2
+	set x 2
     }
 } -body {
     variable log {}

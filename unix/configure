@@ -2710,7 +2710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -4256,15 +4256,6 @@ fi
 rm -rf conftest*
 
 
-    # See also memmove check below for a place where NO_STRING_H can be
-    # set and why.
-
-    if test $tcl_ok = 0; then
-
-printf "%s\n" "#define NO_STRING_H 1" >>confdefs.h
-
-    fi
-
     ac_fn_c_check_header_compile "$LINENO" "sys/wait.h" "ac_cv_header_sys_wait_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_wait_h" = xyes
 then :
@@ -5205,10 +5196,10 @@ then :
   ZLIB_INCLUDE=-I\${ZLIB_DIR}
 
 
+printf "%s\n" "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
+
+
 fi
-
-printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
-
 
 #------------------------------------------------------------------------
 #	Add stuff for libtommath
@@ -5793,7 +5784,7 @@ then :
 			;;
 		    *)
 			# Make sure only first arg gets _r
-		    	CC=`echo "$CC" | sed -e 's/^\([^ ]*\)/\1_r/'`
+			CC=`echo "$CC" | sed -e 's/^\([^ ]*\)/\1_r/'`
 			;;
 		esac
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Using $CC for compiling with threads" >&5
@@ -6367,19 +6358,19 @@ fi
 	    if test "$do64bit" = yes
 then :
 
-	        if test "$GCC" = yes
+		if test "$GCC" = yes
 then :
 
-	            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: 64bit mode not supported by gcc" >&5
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: 64bit mode not supported by gcc" >&5
 printf "%s\n" "$as_me: WARNING: 64bit mode not supported by gcc" >&2;}
 
 else case e in #(
   e)
-	            do64bit_ok=yes
-	            SHLIB_LD="ld -64 -shared -rdata_shared"
-	            CFLAGS="$CFLAGS -64"
-	            LDFLAGS_ARCH="-64"
-	         ;;
+		    do64bit_ok=yes
+		    SHLIB_LD="ld -64 -shared -rdata_shared"
+		    CFLAGS="$CFLAGS -64"
+		    LDFLAGS_ARCH="-64"
+		 ;;
 esac
 fi
 
@@ -6402,16 +6393,12 @@ fi
 
 	    case $system in
 	    DragonFly-*|FreeBSD-*)
-		if test "${TCL_THREADS}" = "1"
-then :
-
-		    # The -pthread needs to go in the LDFLAGS, not LIBS
-		    LIBS=`echo $LIBS | sed s/-pthread//`
-		    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-fi
+		# The -pthread needs to go in the LDFLAGS, not LIBS
+		LIBS=`echo $LIBS | sed s/-pthread//`
+		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 	    ;;
-            esac
+	    esac
 
 	    if test $doRpath = yes
 then :
@@ -6706,46 +6693,6 @@ fi
 esac
 fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
-	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ld accepts -single_module flag" >&5
-printf %s "checking if ld accepts -single_module flag... " >&6; }
-if test ${tcl_cv_ld_single_module+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-		hold_ldflags=$LDFLAGS
-		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-int i;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  tcl_cv_ld_single_module=yes
-else case e in #(
-  e) tcl_cv_ld_single_module=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-		LDFLAGS=$hold_ldflags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_ld_single_module" >&5
-printf "%s\n" "$tcl_cv_ld_single_module" >&6; }
-	    if test $tcl_cv_ld_single_module = yes
-then :
-
-		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
-
-fi
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
@@ -6868,7 +6815,7 @@ then :
 
 			for v in CFLAGS CPPFLAGS LDFLAGS; do
 			    eval $v'="$hold_'$v'"'
-		        done
+			done
 fi
 		    LIBS=$hold_libs ;;
 esac
@@ -6933,7 +6880,7 @@ then :
 
 printf "%s\n" "#define NO_COREFOUNDATION_64 1" >>confdefs.h
 
-                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
+			LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
 
 fi
 
@@ -6954,11 +6901,11 @@ printf "%s\n" "#define _OE_SOCKETS 1" >>confdefs.h
 	    if test "$SHARED_BUILD" = 1
 then :
 
-	        SHLIB_LD='${CC} -shared'
+		SHLIB_LD='${CC} -shared'
 
 else case e in #(
   e)
-	        SHLIB_LD='${CC} -non_shared'
+		SHLIB_LD='${CC} -non_shared'
 	     ;;
 esac
 fi
@@ -7301,7 +7248,7 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-	        LDFLAGS=$hold_ldflags ;;
+		LDFLAGS=$hold_ldflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_ld_Bexport" >&5
@@ -7419,37 +7366,37 @@ fi
     if test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""
 then :
 
-        LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
-        if test "${SHLIB_SUFFIX}" = ".dll"
+	LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+	MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+	if test "${SHLIB_SUFFIX}" = ".dll"
 then :
 
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
-            DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+	    DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
 
 else case e in #(
   e)
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
-         ;;
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	 ;;
 esac
 fi
 
 else case e in #(
   e)
-        LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
+	LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
-        if test "$RANLIB" = ""
+	if test "$RANLIB" = ""
 then :
 
-            MAKE_LIB='$(STLIB_LD) $@ ${OBJS}'
+	    MAKE_LIB='$(STLIB_LD) $@ ${OBJS}'
 
 else case e in #(
   e)
-            MAKE_LIB='${STLIB_LD} $@ ${OBJS} ; ${RANLIB} $@'
-         ;;
+	    MAKE_LIB='${STLIB_LD} $@ ${OBJS} ; ${RANLIB} $@'
+	 ;;
 esac
 fi
-        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
      ;;
 esac
 fi
@@ -7458,11 +7405,11 @@ fi
     if test "$RANLIB" = ""
 then :
 
-        MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS}'
+	MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS}'
 
 else case e in #(
   e)
-        MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS} ; ${RANLIB} $@'
+	MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS} ; ${RANLIB} $@'
      ;;
 esac
 fi
@@ -7474,7 +7421,7 @@ fi
     if test "x${TCL_LIBS}" = x
 then :
 
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
+	TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
 fi
 
 
@@ -7922,15 +7869,15 @@ else case e in #(
 	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
 main (void)
 {
 switch (0) {
-            case 1: case (sizeof(long long)==sizeof(long)): ;
-        }
+	    case 1: case (sizeof(long long)==sizeof(long)): ;
+	}
   ;
   return 0;
 }
@@ -8076,7 +8023,7 @@ int
 main (void)
 {
 struct dirent64 *p; DIR64 d = opendir64(".");
-            p = readdir64(d); rewinddir64(d); closedir64(d);
+	    p = readdir64(d); rewinddir64(d); closedir64(d);
   ;
   return 0;
 }
@@ -8143,8 +8090,8 @@ esac
 fi
 
 			if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-	        test "x${ac_cv_func_lseek64}" = "xyes" && \
-	        test "x${ac_cv_func_open64}" = "xyes" ; then
+		test "x${ac_cv_func_lseek64}" = "xyes" && \
+		test "x${ac_cv_func_open64}" = "xyes" ; then
 
 printf "%s\n" "#define HAVE_TYPE_OFF64_T 1" >>confdefs.h
 
@@ -9669,12 +9616,6 @@ then :
   printf "%s\n" "#define HAVE_LOCALTIME_R 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "mktime" "ac_cv_func_mktime"
-if test "x$ac_cv_func_mktime" = xyes
-then :
-  printf "%s\n" "#define HAVE_MKTIME 1" >>confdefs.h
-
-fi
 
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking tm_tzadj in struct tm" >&5
@@ -9890,28 +9831,6 @@ fi
 
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems have no memmove
-#       (we assume they have bcopy instead). {The replacement define is in
-#       compat/string.h}
-#--------------------------------------------------------------------
-
-ac_fn_c_check_func "$LINENO" "memmove" "ac_cv_func_memmove"
-if test "x$ac_cv_func_memmove" = xyes
-then :
-
-else case e in #(
-  e)
-
-printf "%s\n" "#define NO_MEMMOVE 1" >>confdefs.h
-
-
-printf "%s\n" "#define NO_STRING_H 1" >>confdefs.h
-  ;;
-esac
-fi
-
-
-#--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
 #	they don't exist.
 #--------------------------------------------------------------------
@@ -10017,7 +9936,7 @@ int
 main (void)
 {
 
-    	socklen_t foo;
+	socklen_t foo;
 
   ;
   return 0;
@@ -10584,14 +10503,6 @@ printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
 printf "%s\n" "#define TCL_WIDE_CLICKS 1" >>confdefs.h
 
-    ac_fn_c_check_header_compile "$LINENO" "AvailabilityMacros.h" "ac_cv_header_AvailabilityMacros_h" "$ac_includes_default"
-if test "x$ac_cv_header_AvailabilityMacros_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_AVAILABILITYMACROS_H 1" >>confdefs.h
-
-fi
-
-    if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if weak import is available" >&5
 printf %s "checking if weak import is available... " >&6; }
 if test ${tcl_cv_cc_weak_import+y}
@@ -10599,18 +10510,11 @@ then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #endif
-		    int rand(void) __attribute__((weak_import));
+		int rand(void) __attribute__((weak_import));
 
 int
 main (void)
@@ -10629,36 +10533,29 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-	    CFLAGS=$hold_cflags ;;
+	CFLAGS=$hold_cflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_weak_import" >&5
 printf "%s\n" "$tcl_cv_cc_weak_import" >&6; }
-	if test $tcl_cv_cc_weak_import = yes; then
+    if test $tcl_cv_cc_weak_import = yes; then
 
 printf "%s\n" "#define HAVE_WEAK_IMPORT 1" >>confdefs.h
 
-	fi
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Darwin SUSv3 extensions are available" >&5
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Darwin SUSv3 extensions are available" >&5
 printf %s "checking if Darwin SUSv3 extensions are available... " >&6; }
 if test ${tcl_cv_cc_darwin_c_source+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #endif
-		    #define _DARWIN_C_SOURCE 1
-		    #include <sys/cdefs.h>
+		#define _DARWIN_C_SOURCE 1
+		#include <sys/cdefs.h>
 
 int
 main (void)
@@ -10676,16 +10573,15 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	    CFLAGS=$hold_cflags ;;
+	CFLAGS=$hold_cflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_darwin_c_source" >&5
 printf "%s\n" "$tcl_cv_cc_darwin_c_source" >&6; }
-	if test $tcl_cv_cc_darwin_c_source = yes; then
+    if test $tcl_cv_cc_darwin_c_source = yes; then
 
 printf "%s\n" "#define _DARWIN_C_SOURCE 1" >>confdefs.h
 
-	fi
     fi
     # Build .bundle dltest binaries in addition to .dylib
     DLTEST_LD='${CC} -bundle -Wl,-w ${CFLAGS} ${LDFLAGS}'
@@ -11023,11 +10919,11 @@ main (void)
 
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
-                 "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t"
-                 "mov %%edi, %%ebx  \n\t"
-                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+		 "cpuid            \n\t"
+		 "mov %%ebx, %%esi   \n\t"
+		 "mov %%edi, %%ebx  \n\t"
+		 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+		 : "a"(index) : "edi");
 
   ;
   return 0;
@@ -11139,13 +11035,13 @@ printf "%s\n" "#define TCL_FRAMEWORK 1" >>confdefs.h
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     # default install directory for bundled packages
     if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
-        PACKAGE_DIR="/Library/Tcl"
+	PACKAGE_DIR="/Library/Tcl"
     else
-        PACKAGE_DIR="$libdir"
+	PACKAGE_DIR="$libdir"
     fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
-        # override libdir default
-        libdir="/Library/Frameworks"
+	# override libdir default
+	libdir="/Library/Frameworks"
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
@@ -11172,9 +11068,9 @@ else
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
+	TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
+	TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
@@ -11203,28 +11099,28 @@ if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
     # Put a plausible default for CC_FOR_BUILD in Makefile.
     if test -z "$CC_FOR_BUILD"; then
       if test "x$cross_compiling" = "xno"; then
-        CC_FOR_BUILD='$(CC)'
+	CC_FOR_BUILD='$(CC)'
       else
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
 printf %s "checking for gcc... " >&6; }
-        if test ${ac_cv_path_cc+y}
+	if test ${ac_cv_path_cc+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-            search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-            for dir in $search_path ; do
-                for j in `ls -r $dir/gcc 2> /dev/null` \
-                        `ls -r $dir/gcc 2> /dev/null` ; do
-                    if test x"$ac_cv_path_cc" = x ; then
-                        if test -f "$j" ; then
-                            ac_cv_path_cc=$j
-                            break
-                        fi
-                    fi
-                done
-            done
-         ;;
+	    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	    for dir in $search_path ; do
+		for j in `ls -r $dir/gcc 2> /dev/null` \
+			`ls -r $dir/gcc 2> /dev/null` ; do
+		    if test x"$ac_cv_path_cc" = x ; then
+			if test -f "$j" ; then
+			    ac_cv_path_cc=$j
+			    break
+			fi
+		    fi
+		done
+	    done
+	 ;;
 esac
 fi
 
@@ -11244,17 +11140,17 @@ then :
   printf %s "(cached) " >&6
 else case e in #(
   e) rm -f conftest*
-         echo 'int main () { return 0; }' > conftest.c
-         bfd_cv_build_exeext=
-         ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
-         for file in conftest.*; do
-           case $file in
-           *.c | *.o | *.obj | *.ilk | *.pdb) ;;
-           *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
-           esac
-         done
-         rm -f conftest*
-         test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no ;;
+	 echo 'int main () { return 0; }' > conftest.c
+	 bfd_cv_build_exeext=
+	 ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+	 for file in conftest.*; do
+	   case $file in
+	   *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+	   *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+	   esac
+	 done
+	 rm -f conftest*
+	 test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $bfd_cv_build_exeext" >&5
@@ -11282,25 +11178,25 @@ else case e in #(
   e)
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-        for j in `ls -r $dir/macher 2> /dev/null` \
-            `ls -r $dir/macher 2> /dev/null` ; do
-        if test x"$ac_cv_path_macher" = x ; then
-            if test -f "$j" ; then
-            ac_cv_path_macher=$j
-            break
-            fi
-        fi
-        done
+	for j in `ls -r $dir/macher 2> /dev/null` \
+	    `ls -r $dir/macher 2> /dev/null` ; do
+	if test x"$ac_cv_path_macher" = x ; then
+	    if test -f "$j" ; then
+	    ac_cv_path_macher=$j
+	    break
+	    fi
+	fi
+	done
     done
      ;;
 esac
 fi
 
     if test -f "$ac_cv_path_macher" ; then
-        MACHER_PROG="$ac_cv_path_macher"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHER_PROG" >&5
+	MACHER_PROG="$ac_cv_path_macher"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHER_PROG" >&5
 printf "%s\n" "$MACHER_PROG" >&6; }
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found macher in environment" >&5
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found macher in environment" >&5
 printf "%s\n" "Found macher in environment" >&6; }
     fi
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
@@ -11312,37 +11208,37 @@ else case e in #(
   e)
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-        for j in `ls -r $dir/zip 2> /dev/null` \
-            `ls -r $dir/zip 2> /dev/null` ; do
-        if test x"$ac_cv_path_zip" = x ; then
-            if test -f "$j" ; then
-            ac_cv_path_zip=$j
-            break
-            fi
-        fi
-        done
+	for j in `ls -r $dir/zip 2> /dev/null` \
+	    `ls -r $dir/zip 2> /dev/null` ; do
+	if test x"$ac_cv_path_zip" = x ; then
+	    if test -f "$j" ; then
+	    ac_cv_path_zip=$j
+	    break
+	    fi
+	fi
+	done
     done
      ;;
 esac
 fi
 
     if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+	ZIP_PROG="$ac_cv_path_zip"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
 printf "%s\n" "$ZIP_PROG" >&6; }
-        ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="*"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
+	ZIP_PROG_OPTIONS="-rq"
+	ZIP_PROG_VFSSEARCH="*"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
 printf "%s\n" "Found INFO Zip in environment" >&6; }
-        # Use standard arguments for zip
+	# Use standard arguments for zip
     else
-        # It is not an error if an installed version of Zip can't be located.
-        # We can use the locally distributed minizip instead
-        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
-        ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="*"
-        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
+	# It is not an error if an installed version of Zip can't be located.
+	# We can use the locally distributed minizip instead
+	ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+	ZIP_PROG_OPTIONS="-o -r"
+	ZIP_PROG_VFSSEARCH="*"
+	ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
 printf "%s\n" "No zip found on PATH. Building minizip" >&6; }
     fi
 
@@ -11400,13 +11296,15 @@ fi
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl ~/Library/Frameworks /Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl:/Library/Tcl:~/Library/Frameworks:/Library/Frameworks"
+	# Allow tclsh to find Tk when multiple versions are installed. See Tk [1562e10c58].
+	TCL_PACKAGE_PATH="$TCL_PACKAGE_PATH:/Library/Frameworks/Tk.framework/Versions"
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib} ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}:${prefix}/lib"
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${prefix}/lib} ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
 #--------------------------------------------------------------------
@@ -12621,11 +12519,11 @@ printf "%s\n" "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "Tcl.framework":C) n=Tcl &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
+	f=$n.framework && v=Versions/$VERSION &&
+	rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
      ;;
 
   esac

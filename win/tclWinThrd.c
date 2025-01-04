@@ -38,7 +38,7 @@ static CRITICAL_SECTION initLock;
 
 /*
  * allocLock is used by Tcl's version of malloc for synchronization. For
- * obvious reasons, cannot use any dyamically allocated storage.
+ * obvious reasons, cannot use any dynamically allocated storage.
  */
 
 #if TCL_THREADS
@@ -79,10 +79,10 @@ static CRITICAL_SECTION joinLock;
 #if TCL_THREADS
 
 typedef struct ThreadSpecificData {
-    HANDLE condEvent;			/* Per-thread condition event */
+    HANDLE condEvent;		/* Per-thread condition event */
     struct ThreadSpecificData *nextPtr;	/* Queue pointers */
     struct ThreadSpecificData *prevPtr;
-    int flags;				/* See flags below */
+    int flags;			/* See ThreadStateFlags below */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -90,15 +90,13 @@ static Tcl_ThreadDataKey dataKey;
 
 /*
  * State bits for the thread.
- * WIN_THREAD_UNINIT		Uninitialized. Must be zero because of the way
- *				ThreadSpecificData is created.
- * WIN_THREAD_RUNNING		Running, not waiting.
- * WIN_THREAD_BLOCKED		Waiting, or trying to wait.
  */
-
-#define WIN_THREAD_UNINIT	0x0
-#define WIN_THREAD_RUNNING	0x1
-#define WIN_THREAD_BLOCKED	0x2
+enum ThreadStateFlags {
+    WIN_THREAD_UNINIT = 0x0,	/* Uninitialized. Must be zero because of the
+				 * way ThreadSpecificData is created. */
+    WIN_THREAD_RUNNING = 0x1,	/* Running, not waiting. */
+    WIN_THREAD_BLOCKED = 0x2	/* Waiting, or trying to wait. */
+};
 
 /*
  * The per condition queue pointers and the Mutex used to serialize access to
@@ -108,8 +106,8 @@ static Tcl_ThreadDataKey dataKey;
 typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
-    struct ThreadSpecificData *firstPtr;	/* Queue pointers */
-    struct ThreadSpecificData *lastPtr;
+    ThreadSpecificData *firstPtr;	/* Queue pointers */
+    ThreadSpecificData *lastPtr;
 } WinCondition;
 
 /*
@@ -120,7 +118,7 @@ typedef struct {
 static DWORD tlsKey;
 
 typedef struct {
-    Tcl_Mutex	     tlock;
+    Tcl_Mutex tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
 #endif /* USE_THREAD_ALLOC */
@@ -131,12 +129,12 @@ typedef struct {
  */
 
 typedef struct {
-  LPTHREAD_START_ROUTINE lpStartAddress; /* Original startup routine */
-  LPVOID lpParameter;		/* Original startup data */
-  unsigned int fpControl;	/* Floating point control word from the
+    LPTHREAD_START_ROUTINE lpStartAddress;
+				/* Original startup routine */
+    LPVOID lpParameter;		/* Original startup data */
+    unsigned int fpControl;	/* Floating point control word from the
 				 * main thread */
 } WinThread;
-
 
 /*
  *----------------------------------------------------------------------
@@ -203,12 +201,12 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
-    void *clientData,	/* The one argument to Main(). */
-    size_t stackSize,	/* Size of stack for the new thread. */
+    void *clientData,		/* The one argument to Main(). */
+    size_t stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
-    WinThread *winThreadPtr;		/* Per-thread startup info */
+    WinThread *winThreadPtr;	/* Per-thread startup info */
     HANDLE tHandle;
 
     winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
@@ -219,8 +217,7 @@ TclpThreadCreate(
     EnterCriticalSection(&joinLock);
 
     *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned
-		 */
+                 * on WIN64 sizeof void* != sizeof unsigned */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,
@@ -292,7 +289,7 @@ Tcl_JoinThread(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 TclpThreadExit(
     int status)
 {
@@ -458,7 +455,7 @@ TclpGlobalUnlock(void)
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
- *	use by the memory allocator. The alloctor must use this lock, because
+ *	use by the memory allocator. The allocator must use this lock, because
  *	all other locks are allocated...
  *
  * Results:
@@ -568,9 +565,9 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *)Tcl_Alloc(sizeof(CRITICAL_SECTION));
+	    csPtr = (CRITICAL_SECTION *) Tcl_Alloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
-	    *mutexPtr = (Tcl_Mutex)csPtr;
+	    *mutexPtr = (Tcl_Mutex) csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
@@ -660,7 +657,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    const Tcl_Time *timePtr)	/* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
@@ -927,9 +924,6 @@ TclpFinalizeCondition(
     }
 }
 
-
-
-
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
@@ -1030,7 +1024,6 @@ TclpFreeAllocCache(
     }
 }
 #endif /* USE_THREAD_ALLOC */
-
 
 void *
 TclpThreadCreateKey(void)

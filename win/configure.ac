@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -129,25 +129,25 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
   AS_IF([test "$do64bit" != "no"], [
     AC_DEFINE(MP_64BIT, 1, [Using libtommath.dll in 64-bit mode])
-    AS_IF([test "$do64bit" = "arm64"], [
-      AS_IF([test "$GCC" == "yes"],[
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
-        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
-        zlib_lib_name=libz.dll.a
-        tommath_lib_name=libtommath.dll.a
+    AS_IF([test "$do64bit" = "arm64" -o "$do64bit" = "aarch64"], [
+      AS_IF([test "$GCC" = "yes"],[
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
+	AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
+	zlib_lib_name=libz.dll.a
+	tommath_lib_name=libtommath.dll.a
       ], [
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
-        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
+	AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
       ])
     ], [
-      AS_IF([test "$GCC" == "yes"],[
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
-        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
-        zlib_lib_name=libz.dll.a
-        tommath_lib_name=libtommath.dll.a
+      AS_IF([test "$GCC" = "yes"],[
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
+	AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
+	zlib_lib_name=libz.dll.a
+	tommath_lib_name=libtommath.dll.a
       ], [
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
-        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
+	AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
       ])
     ])
   ], [
@@ -155,10 +155,10 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
+  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
-AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
 AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
@@ -232,7 +232,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
-            [Defined when enums are missing from winbase.h])
+	    [Defined when enums are missing from winbase.h])
 fi
 
 # See if the compiler supports intrinsics.
@@ -252,7 +252,29 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
-            [Defined when the compilers supports intrinsics])
+	    [Defined when the compilers supports intrinsics])
+fi
+
+# See if the compiler supports cpuid header.
+
+if test "${GCC}" = "yes" ; then
+  AC_CACHE_CHECK(for cpuid-header support in compiler,
+    tcl_cv_cpuidhead,
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
+  #   include <cpuid.h>
+  #endif
+  ]], [[
+    unsigned int regs;
+    __get_cpuid(0, &regs, &regs, &regs, &regs);
+  ]])],
+    [tcl_cv_cpuidhead=yes],
+    [tcl_cv_cpuidhead=no])
+  )
+  if test "$tcl_cv_cpuidhead" = "yes"; then
+    AC_DEFINE(HAVE_CPUID_H, 1,
+	    [Defined when the compilers supports cpuid header])
+  fi
 fi
 
 # See if the <wspiapi.h> header file is present
@@ -267,7 +289,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
-            [Defined when wspiapi.h exists])
+	    [Defined when wspiapi.h exists])
 fi
 
 # See if declarations like FINDEX_INFO_LEVELS are
@@ -289,7 +311,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
-            [Defined when enums are missing from winbase.h])
+	    [Defined when enums are missing from winbase.h])
 fi
 
 #--------------------------------------------------------------------
@@ -365,9 +387,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
+    TCL_PACKAGE_PATH="${libdir};${prefix}\\lib"
 else
-    TCL_PACKAGE_PATH="{${prefix}/lib}"
+    TCL_PACKAGE_PATH="${prefix}\\lib"
 fi
 
 # The tclsh.exe.manifest requires these

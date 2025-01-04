@@ -22,6 +22,26 @@ testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
 testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint time64bit [expr {
+    ([llength [info command testsize]] ?
+	[testsize st_mtime] : $::tcl_platform(pointerSize)) >= 8
+}]
+testConstraint filetime64bit [expr {
+    [testConstraint time64bit] && (
+	![testConstraint unix] || [apply {{} {
+	  # check whether disk may have 2038 problem, see [fd91b0ca09cb171f]:
+	  set fn [makeFile "" foo.text]
+	  if {[catch {
+	    exec sh -c "TZ=:UTC LC_TIME=en_US touch -ma -t '207006290000' '$fn' && TZ=:UTC LC_TIME=en_US ls -l '$fn'"
+	  } res]} {
+	    #puts "Check constraint failed:\t$res"
+	    set res {}
+	  }
+	  removeFile $fn
+	  regexp {\mJun\s+29\s+2070\M} $res
+	}}]
+    )
+}]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
     ($::tcl_platform(osVersion) >= 5.0
@@ -197,12 +217,12 @@ source [file join [file dirname [info script]] encodingVectors.tcl]
 # on system endianness
 proc endianUtf {enc} {
     if {$::tcl_platform(byteOrder) eq "littleEndian"} {
-        set endian le
+	set endian le
     } else {
-        set endian be
+	set endian be
     }
     if {$enc eq "utf-16$endian" || $enc eq "utf-32$endian"} {
-        return [string range $enc 0 5]
+	return [string range $enc 0 5]
     }
     return ""
 }
@@ -212,47 +232,47 @@ proc endianUtf {enc} {
 proc badnumargs {id cmd cmdargs} {
     variable numargErrors
     test $id.a "Syntax error: $cmd $cmdargs" \
-        -body [list {*}$cmd {*}$cmdargs] \
-        -result $numargErrors($cmd) \
-        -match regexp \
-        -returnCodes error
+	-body [list {*}$cmd {*}$cmdargs] \
+	-result $numargErrors($cmd) \
+	-match regexp \
+	-returnCodes error
     test $id.b "Syntax error: $cmd (byte compiled)" \
-        -setup [list proc compiled_proc {} [list {*}$cmd {*}$cmdargs]] \
-        -body {compiled_proc} \
-        -cleanup {rename compiled_proc {}} \
-        -result $numargErrors($cmd) \
-        -match regexp \
-        -returnCodes error
+	-setup [list proc compiled_proc {} [list {*}$cmd {*}$cmdargs]] \
+	-body {compiled_proc} \
+	-cleanup {rename compiled_proc {}} \
+	-result $numargErrors($cmd) \
+	-match regexp \
+	-returnCodes error
 }
 
 # Wraps tests resulting in unknown encoding errors
 proc unknownencodingtest {id cmd} {
     set result "unknown encoding \"[lindex $cmd end-1]\""
     test $id.a "Unknown encoding error: $cmd" \
-        -body [list encoding {*}$cmd] \
-        -result $result \
-        -returnCodes error
+	-body [list encoding {*}$cmd] \
+	-result $result \
+	-returnCodes error
     test $id.b "Syntax error: $cmd (byte compiled)" \
-        -setup [list proc encoding_test {} [list encoding {*}$cmd]] \
-        -body {encoding_test} \
-        -cleanup {rename encoding_test {}} \
-        -result $result \
-        -returnCodes error
+	-setup [list proc encoding_test {} [list encoding {*}$cmd]] \
+	-body {encoding_test} \
+	-cleanup {rename encoding_test {}} \
+	-result $result \
+	-returnCodes error
 }
 
 # Wraps tests for conversion, successful or not.
 # Really more general than just for encoding conversion.
 proc testconvert {id body result args} {
     test $id.a $body \
-        -body $body \
-        -result $result \
-        {*}$args
+	-body $body \
+	-result $result \
+	{*}$args
     dict append args -setup \n[list proc compiled_script {} $body]
     dict append args -cleanup "\nrename compiled_script {}"
     test $id.b "$body (byte compiled)" \
-        -body {compiled_script} \
-        -result $result \
-        {*}$args
+	-body {compiled_script} \
+	-result $result \
+	{*}$args
 }
 
 # Wrapper to verify encoding convert{to,from} ?-profile?
@@ -262,17 +282,17 @@ proc testconvert {id body result args} {
 proc testprofile {id converter enc profile data result args} {
     testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
     if {[set enc2 [endianUtf $enc]] ne ""} {
-        # If utf{16,32}-{le,be}, also do utf{16,32}
-        testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
+	# If utf{16,32}-{le,be}, also do utf{16,32}
+	testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
     }
 
     # If this is the default profile, generate a test without specifying profile
     if {$profile eq $::encDefaultProfile} {
-        testconvert $id.$enc.default [list encoding $converter $enc $data] $result {*}$args
-        if {[set enc2 [endianUtf $enc]] ne ""} {
-            # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc2.default [list encoding $converter $enc2 $data] $result {*}$args
-        }
+	testconvert $id.$enc.default [list encoding $converter $enc $data] $result {*}$args
+	if {[set enc2 [endianUtf $enc]] ne ""} {
+	    # If utf{16,32}-{le,be}, also do utf{16,32}
+	    testconvert $id.$enc2.default [list encoding $converter $enc2 $data] $result {*}$args
+	}
     }
 }
 
@@ -284,17 +304,17 @@ proc testprofile {id converter enc profile data result args} {
 proc testfailindex {id converter enc data result failidx {profile default}} {
     testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc [list $data]\] \[set idx\]" [list $result $failidx]
     if {[set enc2 [endianUtf $enc]] ne ""} {
-        # If utf{16,32}-{le,be}, also do utf{16,32}
-        testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+	# If utf{16,32}-{le,be}, also do utf{16,32}
+	testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
     }
 
     # If this is the default profile, generate a test without specifying profile
     if {$profile eq $::encDefaultProfile} {
-        testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc [list $data]\] \[set idx]" [list $result $failidx]
-        if {[set enc2 [endianUtf $enc]] ne ""} {
-            # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc2.default "list \[encoding $converter -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
-        }
+	testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc [list $data]\] \[set idx]" [list $result $failidx]
+	if {[set enc2 [endianUtf $enc]] ne ""} {
+	    # If utf{16,32}-{le,be}, also do utf{16,32}
+	    testconvert $id.$enc2.default "list \[encoding $converter -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+	}
     }
 }
 
@@ -362,10 +382,10 @@ foreach {enc str hex ctrl comment} $encValidStrings {
     set prefix_bytes [encoding convertto $enc A]
     set suffix_bytes [encoding convertto $enc B]
     foreach profile $encProfiles {
-        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes $str
-        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes $str$suffix
-        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes $prefix$str
-        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix
+	testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes $str
+	testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes $str$suffix
+	testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes $prefix$str
+	testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix
     }
 }
 
@@ -384,36 +404,36 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set errorWithoutPrefix [list "unexpected byte sequence starting at index $failidx: *" -returnCodes error -match glob]
     set errorWithPrefix [list "unexpected byte sequence starting at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $str]
-        } else {
-            set result $errorWithoutPrefix
-        }
-        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes {*}$result
+	if {$failidx == -1} {
+	    set result [list $str]
+	} else {
+	    set result $errorWithoutPrefix
+	}
+	testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes {*}$result
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $str$suffix]
-        } else {
-            set result $errorWithoutPrefix
-        }
-        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes {*}$result
+	if {$failidx == -1} {
+	    set result [list $str$suffix]
+	} else {
+	    set result $errorWithoutPrefix
+	}
+	testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes {*}$result
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $prefix$str]
-        } else {
-            set result $errorWithPrefix
-        }
-        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes {*}$result
+	if {$failidx == -1} {
+	    set result [list $prefix$str]
+	} else {
+	    set result $errorWithPrefix
+	}
+	testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes {*}$result
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $prefix$str$suffix]
-        } else {
-            set result $errorWithPrefix
-        }
-        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes {*}$result
+	if {$failidx == -1} {
+	    set result [list $prefix$str$suffix]
+	} else {
+	    set result $errorWithPrefix
+	}
+	testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes {*}$result
     }
 }
 
@@ -426,10 +446,10 @@ foreach {enc str hex ctrl comment} $encValidStrings {
     set prefix_bytes [encoding convertto $enc $prefix]
     set suffix_bytes [encoding convertto $enc $suffix]
     foreach profile $encProfiles {
-        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str -1 $profile
-        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $str$suffix -1 $profile
-        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $prefix$str -1 $profile
-        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix -1 $profile
+	testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str -1 $profile
+	testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $str$suffix -1 $profile
+	testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $prefix$str -1 $profile
+	testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix -1 $profile
     }
 }
 
@@ -444,41 +464,41 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set suffix_bytes [encoding convertto $enc $suffix]
     set prefixLen [string length $prefix_bytes]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str $failidx $profile
+	testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str $failidx $profile
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
-        if {$failidx == -1} {
-            # If success expected
-            set result $str$suffix
-        } else {
-            # Failure expected
-            set result ""
-        }
-        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $result $failidx $profile
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $str$suffix
+	} else {
+	    # Failure expected
+	    set result ""
+	}
+	testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $result $failidx $profile
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
-        set expected_failidx $failidx
-        if {$failidx == -1} {
-            # If success expected
-            set result $prefix$str
-        } else {
-            # Failure expected
-            set result $prefix
-            incr expected_failidx $prefixLen
-        }
-        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $result $expected_failidx $profile
+	set expected_failidx $failidx
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $prefix$str
+	} else {
+	    # Failure expected
+	    set result $prefix
+	    incr expected_failidx $prefixLen
+	}
+	testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $result $expected_failidx $profile
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
-        set expected_failidx $failidx
-        if {$failidx == -1} {
-            # If success expected
-            set result $prefix$str$suffix
-        } else {
-            # Failure expected
-            set result $prefix
-            incr expected_failidx $prefixLen
-        }
-        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $result $expected_failidx $profile
+	set expected_failidx $failidx
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $prefix$str$suffix
+	} else {
+	    # Failure expected
+	    set result $prefix
+	    incr expected_failidx $prefixLen
+	}
+	testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $result $expected_failidx $profile
     }
 }
 
@@ -527,10 +547,10 @@ foreach {enc str hex ctrl comment} $encValidStrings {
     set prefix_bytes [encoding convertto $enc A]
     set suffix_bytes [encoding convertto $enc B]
     foreach profile $encProfiles {
-        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str $bytes
-        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix $bytes$suffix_bytes
-        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str $prefix_bytes$bytes
-        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes
+	testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str $bytes
+	testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix $bytes$suffix_bytes
+	testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str $prefix_bytes$bytes
+	testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes
     }
 }
 
@@ -550,36 +570,36 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     set errorWithoutPrefix [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
     set errorWithPrefix [list "unexpected character at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $bytes]
-        } else {
-            set result $errorWithoutPrefix
-        }
-        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str {*}$result
+	if {$failidx == -1} {
+	    set result [list $bytes]
+	} else {
+	    set result $errorWithoutPrefix
+	}
+	testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str {*}$result
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $bytes$suffix_bytes]
-        } else {
-            set result $errorWithoutPrefix
-        }
-        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix {*}$result
+	if {$failidx == -1} {
+	    set result [list $bytes$suffix_bytes]
+	} else {
+	    set result $errorWithoutPrefix
+	}
+	testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix {*}$result
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $prefix_bytes$bytes]
-        } else {
-            set result $errorWithPrefix
-        }
-        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str {*}$result
+	if {$failidx == -1} {
+	    set result [list $prefix_bytes$bytes]
+	} else {
+	    set result $errorWithPrefix
+	}
+	testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str {*}$result
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
-        if {$failidx == -1} {
-            set result [list $prefix_bytes$bytes$suffix_bytes]
-        } else {
-            set result $errorWithPrefix
-        }
-        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix {*}$result
+	if {$failidx == -1} {
+	    set result [list $prefix_bytes$bytes$suffix_bytes]
+	} else {
+	    set result $errorWithPrefix
+	}
+	testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix {*}$result
     }
 }
 
@@ -593,10 +613,10 @@ foreach {enc str hex ctrl comment} $encValidStrings {
     set prefix_bytes [encoding convertto $enc A]
     set suffix_bytes [encoding convertto $enc B]
     foreach profile $encProfiles {
-        testfailindex cmdAH-4.4.14.$enc.$printable.solo convertto $enc $str $bytes -1 $profile
-        testfailindex cmdAH-4.4.14.$enc.$printable.lead convertto $enc $str$suffix $bytes$suffix_bytes -1 $profile
-        testfailindex cmdAH-4.4.14.$enc.$printable.tail convertto $enc $prefix$str $prefix_bytes$bytes -1 $profile
-        testfailindex cmdAH-4.4.14.$enc.$printable.middle convertto $enc $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes -1 $profile
+	testfailindex cmdAH-4.4.14.$enc.$printable.solo convertto $enc $str $bytes -1 $profile
+	testfailindex cmdAH-4.4.14.$enc.$printable.lead convertto $enc $str$suffix $bytes$suffix_bytes -1 $profile
+	testfailindex cmdAH-4.4.14.$enc.$printable.tail convertto $enc $prefix$str $prefix_bytes$bytes -1 $profile
+	testfailindex cmdAH-4.4.14.$enc.$printable.middle convertto $enc $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes -1 $profile
     }
 }
 
@@ -609,41 +629,41 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     set suffix B
     set prefixLen [string length [encoding convertto $enc $prefix]]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        testfailindex cmdAH-4.4.14.$printable.solo convertto $enc $str $bytes $failidx $profile
+	testfailindex cmdAH-4.4.14.$printable.solo convertto $enc $str $bytes $failidx $profile
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
-        if {$failidx == -1} {
-            # If success expected
-            set result $bytes$suffix
-        } else {
-            # Failure expected
-            set result ""
-        }
-        testfailindex cmdAH-4.4.14.$printable.lead convertto $enc $str$suffix $result $failidx $profile
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $bytes$suffix
+	} else {
+	    # Failure expected
+	    set result ""
+	}
+	testfailindex cmdAH-4.4.14.$printable.lead convertto $enc $str$suffix $result $failidx $profile
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
-        set expected_failidx $failidx
-        if {$failidx == -1} {
-            # If success expected
-            set result $prefix$bytes
-        } else {
-            # Failure expected
-            set result $prefix
-            incr expected_failidx $prefixLen
-        }
-        testfailindex cmdAH-4.4.14.$printable.tail convertto $enc $prefix$str $result $expected_failidx $profile
+	set expected_failidx $failidx
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $prefix$bytes
+	} else {
+	    # Failure expected
+	    set result $prefix
+	    incr expected_failidx $prefixLen
+	}
+	testfailindex cmdAH-4.4.14.$printable.tail convertto $enc $prefix$str $result $expected_failidx $profile
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
-        set expected_failidx $failidx
-        if {$failidx == -1} {
-            # If success expected
-            set result $prefix$bytes$suffix
-        } else {
-            # Failure expected
-            set result $prefix
-            incr expected_failidx $prefixLen
-        }
-        testfailindex cmdAH-4.4.14.$printable.middle convertto $enc $prefix$str$suffix $result $expected_failidx $profile
+	set expected_failidx $failidx
+	if {$failidx == -1} {
+	    # If success expected
+	    set result $prefix$bytes$suffix
+	} else {
+	    # Failure expected
+	    set result $prefix
+	    incr expected_failidx $prefixLen
+	}
+	testfailindex cmdAH-4.4.14.$printable.middle convertto $enc $prefix$str$suffix $result $expected_failidx $profile
     }
 }
 
@@ -1257,15 +1277,15 @@ test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
 }
 test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     -constraints testchmod
-    -setup  	 {testchmod 0o444 $gorpfile}
-    -body   	 {file readable $gorpfile}
-    -result 	 1
+    -setup	 {testchmod 0o444 $gorpfile}
+    -body	 {file readable $gorpfile}
+    -result	 1
 }
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
     -constraints {unix notRoot testchmod notWsl}
-    -setup  	 {testchmod 0o333 $gorpfile}
-    -body   	 {file readable $gorpfile}
-    -result 	 0
+    -setup	 {testchmod 0o333 $gorpfile}
+    -body	 {file readable $gorpfile}
+    -result	 0
 }
 
 # writable
@@ -1276,15 +1296,15 @@ test cmdAH-17.1 {Tcl_FileObjCmd: writable} {
 }
 test cmdAH-17.2 {Tcl_FileObjCmd: writable} {
     -constraints {notRoot testchmod}
-    -setup  	 {testchmod 0o555 $gorpfile}
-    -body   	 {file writable $gorpfile}
-    -result 	 0
+    -setup	 {testchmod 0o555 $gorpfile}
+    -body	 {file writable $gorpfile}
+    -result	 0
 }
 test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
     -constraints testchmod
-    -setup  	 {testchmod 0o222 $gorpfile}
-    -body   	 {file writable $gorpfile}
-    -result 	 1
+    -setup	 {testchmod 0o222 $gorpfile}
+    -body	 {file writable $gorpfile}
+    -result	 1
 }
 
 # executable
@@ -1309,15 +1329,15 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
     set x {}
     set gorpexes {}
     foreach ext {exe com cmd bat} {
-        lappend x [file exe nosuchfile.$ext]
-        set gorpexe [makeFile foo gorp.$ext]
-        lappend gorpexes $gorpexe
-        lappend x [file exe $gorpexe] [file exe [string toupper $gorpexe]]
+	lappend x [file exe nosuchfile.$ext]
+	set gorpexe [makeFile foo gorp.$ext]
+	lappend gorpexes $gorpexe
+	lappend x [file exe $gorpexe] [file exe [string toupper $gorpexe]]
     }
     set x
 } -cleanup {
     foreach gorpexe $gorpexes {
-        removeFile $gorpexe
+	removeFile $gorpexe
     }
 } -result {0 1 1 0 1 1 0 1 1 0 1 1}
 test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
@@ -1707,7 +1727,7 @@ test cmdAH-24.14.1 {
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
 
 # 3155760000 is 64-bit Unix time, Wed Jan 01 00:00:00 GMT 2070:
-test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setup {
+test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit filetime64bit} -setup {
     set filename [makeFile "" foo.text]
 } -body {
     # This test may fail if your system does not have a 64-bit time_t.
@@ -1716,7 +1736,7 @@ test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setu
 } -cleanup {
     removeFile $filename
 } -result {3155760000 3155760000}
-test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -setup {
+test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit filetime64bit} -setup {
     set filename [makeFile "" foo.text]
 } -body {
     # This test may fail if your system does not have a 64-bit time_t.
@@ -1735,7 +1755,7 @@ test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -setup {
     # prefer temp file to check owner (try to avoid bug [7de2d722bd]):
     if {
 	[info exists ::env(TEMP)] && [file isdirectory $::env(TEMP)] &&
-        [file dirname $fn] ne [file normalize $::env(TEMP)]
+	[file dirname $fn] ne [file normalize $::env(TEMP)]
     } {
 	set fn [file join $::env(TEMP)/test-owner-from-tcl.txt]
 	set fn [makeFile "data" test-owner-from-tcl.txt $::env(TEMP)]
@@ -1796,7 +1816,7 @@ test cmdAH-27.1 {Tcl_FileObjCmd: size} -returnCodes error -body {
 test cmdAH-27.2 {Tcl_FileObjCmd: size} {
     set oldsize [file size $gorpfile]
     set f [open $gorpfile a]
-    fconfigure $f -translation lf -eofchar {}
+    fconfigure $f -translation lf
     puts $f "More text"
     close $f
     expr {[file size $gorpfile] - $oldsize}

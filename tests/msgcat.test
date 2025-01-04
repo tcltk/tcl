@@ -259,8 +259,8 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     test msgcat-2.5 {mcmset, global scope} -setup {
 	namespace eval :: {
 	    ::msgcat::mcmset  foo_BAR {
-	        src1 trans1
-	        src2 trans2
+		src1 trans1
+		src2 trans2
 	    }
 	}
 	variable locale [mclocale]
@@ -321,11 +321,11 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     variable result
     array set result {
 	foo,ov0 ov0_ROOT foo,ov1 ov1_foo foo,ov2 ov2_foo
-        foo,ov3 ov3_foo foo,ov4 ov4
+	foo,ov3 ov3_foo foo,ov4 ov4
 	foo_BAR,ov0 ov0_ROOT foo_BAR,ov1 ov1_foo foo_BAR,ov2 ov2_foo_BAR
-        foo_BAR,ov3 ov3_foo_BAR	foo_BAR,ov4 ov4
-        foo_BAR_baz,ov0 ov0_ROOT foo_BAR_baz,ov1 ov1_foo
-        foo_BAR_baz,ov2 ov2_foo_BAR
+	foo_BAR,ov3 ov3_foo_BAR	foo_BAR,ov4 ov4
+	foo_BAR_baz,ov0 ov0_ROOT foo_BAR_baz,ov1 ov1_foo
+	foo_BAR_baz,ov2 ov2_foo_BAR
 	foo_BAR_baz,ov3 ov3_foo_BAR_baz foo_BAR_baz,ov4 ov4
     }
     variable loc
@@ -380,7 +380,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     test msgcat-4.4 {mcunknown, overridden} -setup {
 	rename ::msgcat::mcunknown SavedMcunknown
 	proc ::msgcat::mcunknown {dom s} {
-            return unknown:$dom:$s
+	    return unknown:$dom:$s
 	}
 	mcset foo unk1 "unknown 1"
 	variable locale [mclocale]
@@ -396,7 +396,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     test msgcat-4.5 {mcunknown, overridden} -setup {
 	rename ::msgcat::mcunknown SavedMcunknown
 	proc ::msgcat::mcunknown {dom s} {
-            return unknown:$dom:$s
+	    return unknown:$dom:$s
 	}
 	mcset foo unk1 "unknown 1"
 	variable locale [mclocale]
@@ -412,7 +412,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     test msgcat-4.6 {mcunknown, uplevel context} -setup {
 	rename ::msgcat::mcunknown SavedMcunknown
 	proc ::msgcat::mcunknown {dom s} {
-            return "unknown:$dom:$s:[expr {[info level] - 1}]"
+	    return "unknown:$dom:$s:[expr {[info level] - 1}]"
 	}
 	mcset foo unk1 "unknown 1"
 	variable locale [mclocale]
@@ -432,7 +432,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     foreach loc $locales {
 	if { $loc eq {} } {
 	    set msg ROOT
-        } else {
+	} else {
 	    set msg [string tolower $loc]
 	}
 	makeFile [list ::msgcat::mcset $loc abc abc-$loc] $msg.msg $msgdir
@@ -552,7 +552,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     foreach loc $locales {
 	if { $loc eq {} } {
 	    set msg ROOT
-        } else {
+	} else {
 	    set msg [string tolower $loc]
 	}
 	removeFile $msg.msg $msgdir
@@ -1057,7 +1057,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.1 {invocation loadcmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1071,7 +1071,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.2 {invocation failed in loadcmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	} -cleanup {
@@ -1089,7 +1089,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.3 {invocation changecmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    set resultvariable ""
 	} -cleanup {
@@ -1102,7 +1102,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.4 {invocation unknowncmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1117,7 +1117,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.5 {disable global unknowncmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1137,7 +1137,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.6 {unknowncmd failing} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1181,7 +1181,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	}
 	# full namespace is ::msgcat::test:baz
 	namespace eval baz {
-            set ObjCur [::msgcat::test::bar::ClassCur new]
+	    set ObjCur [::msgcat::test::bar::ClassCur new]
 	}
 	variable locale [mclocale]
 	mclocale foo_BAR
@@ -1236,6 +1236,30 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	bar::ObjCur method1
     } -result con2baz
 
+    # HaO 2024-07-15 fix me
+    # Ticket 91b3a5bb: I have no idea what the following case should do.
+    # But currently, it raises an error and that should not happen.
+    # The background is the tklib tooltip package.
+    # This package captures the caller namespace to later invoke msgcat with current data.
+    # If the caller namespace is a method, it currently fails.
+    test msgcat-15.5 {ticket 91b3a5bb: method namespace recorded and evaluated gives error}\
+    -setup {
+	oo::class create App {}
+	oo::define App {
+	    constructor {} { my add_one }
+	    method add_one {} { recordMsgcat }
+	}
+	proc ::recordMsgcat {} { set ::nscaller [uplevel 1 {namespace current}] }
+	set application [App new]
+} -cleanup {
+	$application destroy
+	App destroy
+	unset -nocomplain ::nscaller
+	rename ::recordMsgcat ""
+    } -body {
+	namespace eval $::nscaller [list ::msgcat::mc "Test"]
+    } -returnCodes ok -result Test
+
     # Test msgcat-16.*: command mcpackagenamespaceget
 
     test msgcat-16.1 {mcpackagenamespaceget in namespace procedure} -body {
@@ -1259,7 +1283,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	    oo::define ClassCur method method1 {} {msgcat::mcpackagenamespaceget}
 	}
 	namespace eval baz {
-            set ObjCur [::msgcat::test::bar::ClassCur new]
+	    set ObjCur [::msgcat::test::bar::ClassCur new]
 	}
     } -cleanup {
 	namespace delete bar baz

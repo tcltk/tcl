@@ -152,7 +152,7 @@ TesteventloopCmd(
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (void *)NULL);
+		"\": must be done or wait", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -206,11 +206,11 @@ TestvolumetypeCmd(
 
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (void *)NULL);
+		(path?path:""), "\"", (char *)NULL);
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_AppendResult(interp, volType, (void *)NULL);
+    Tcl_AppendResult(interp, volType, (char *)NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }
@@ -454,8 +454,8 @@ TestplatformChmod(
     }
 
     /* Get process SID */
-    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
-	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw)
+	    && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
     pTokenUser = (TOKEN_USER *)Tcl_Alloc(dw);
@@ -463,10 +463,9 @@ TestplatformChmod(
 	goto done;
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
-    aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
-    if (!CopySid(aceEntry[nSids].sidLen,
-		 aceEntry[nSids].pSid,
-		 pTokenUser->User.Sid)) {
+    aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
+    if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+	    pTokenUser->User.Sid)) {
 	Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }
@@ -506,7 +505,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
-	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
 	    Tcl_Free(pTokenGroup);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -536,7 +535,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
-	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
 	    LocalFree(pWorldSid);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -583,14 +582,9 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath,
-			      SE_FILE_OBJECT,
-			      DACL_SECURITY_INFORMATION |
-				  PROTECTED_DACL_SECURITY_INFORMATION,
-			      NULL,
-			      NULL,
-			      newAcl,
-			      NULL) == ERROR_SUCCESS) {
+    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
     }
 
@@ -614,8 +608,6 @@ TestplatformChmod(
 
     /* Run normal chmod command */
     return chmod(nativePath, pmode);
-
-
 }
 
 /*
@@ -665,7 +657,7 @@ TestchmodCmd(
 	}
 	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    (void *)NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);

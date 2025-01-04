@@ -192,7 +192,7 @@ test switch-5.1 {errors in -regexp matching} -returnCodes error -body {
 	aaaab	{subst exact}
 	default	{subst none}
     }
-} -result {couldn't compile regular expression pattern: quantifier operand invalid}
+} -result {cannot compile regular expression pattern: invalid quantifier operand}
 
 test switch-6.1 {backslashes in patterns} {
     switch -exact {\a\$\.\[} {
@@ -246,9 +246,9 @@ test switch-7.4 {"-" bodies} -body {
 test switch-8.1 {empty body} {
     set msg {}
     switch {2} {
-    	1 {set msg 1}
-        2 {}
-        default {set msg 2}
+	1 {set msg 1}
+	2 {}
+	default {set msg 2}
     }
 } {}
 proc test_switch_body {} {
@@ -257,13 +257,13 @@ proc test_switch_body {} {
 test switch-8.2 {weird body text, variable} {
     set cmd {test_switch_body}
     switch Foo {
-    	Foo $cmd
+	Foo $cmd
     }
 } {INVOKED}
 test switch-8.3 {weird body text, variable} {
     set cmd {test_switch_body}
     switch Foo {
-    	Foo {$cmd}
+	Foo {$cmd}
     }
 } {INVOKED}
 

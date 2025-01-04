@@ -18,7 +18,7 @@
 
 typedef struct {
     int initialized;
-    Tcl_DString errorMsg; /* UTF-8 encoded error-message */
+    Tcl_DString errorMsg;	/* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -75,7 +75,8 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds,
+		NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -131,19 +132,19 @@ TclSockMinimumBuffers(
 	return TCL_ERROR;
     }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 		(char *) &size, len);
     }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 		(char *) &size, len);
     }
     return TCL_OK;
@@ -188,7 +189,8 @@ TclCreateSocketAddress(
     int result;
 
     if (host != NULL) {
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
+		NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 	    return 0;
 	}
@@ -261,7 +263,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-        return 0;
+	return 0;
     }
 
     /*

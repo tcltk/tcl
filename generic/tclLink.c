@@ -109,13 +109,13 @@ static int		SetInvalidRealFromAny(Tcl_Interp *interp,
  * A marker type used to flag weirdnesses so we can pass them around right.
  */
 
-static Tcl_ObjType invalidRealType = {
+static const Tcl_ObjType invalidRealType = {
     "invalidReal",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 /*
@@ -300,7 +300,7 @@ Tcl_LinkArray(
 
 	/*
 	 * If no address is given create one and use as address the
-         * not needed linkPtr->lastValue
+	 * not needed linkPtr->lastValue
 	 */
 
 	if (addr == NULL) {
@@ -570,7 +570,7 @@ SetInvalidRealFromAny(
     const char *endPtr;
     Tcl_Size length;
 
-    str = Tcl_GetStringFromObj(objPtr, &length);
+    str = TclGetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
@@ -615,7 +615,7 @@ GetInvalidIntFromObj(
     int *intPtr)
 {
     Tcl_Size length;
-    const char *str = Tcl_GetStringFromObj(objPtr, &length);
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || ((length == 2) && (str[0] == '0')
 	    && strchr("xXbBoOdD", str[1]))) {
@@ -824,7 +824,7 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = TclGetStringFromObj(valueObj, &valueLength);
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)Tcl_Realloc(*pp, ++valueLength);
@@ -832,7 +832,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
@@ -876,7 +876,7 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+	if (TclListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
 		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
@@ -891,7 +891,7 @@ LinkTraceProc(
 		if (GetInt(objv[i], varPtr)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *) "variable array must have integer values";
+		    return (char *) "variable array must have integer values";
 		}
 	    }
 	} else {
@@ -959,7 +959,7 @@ LinkTraceProc(
 		if (Tcl_GetBooleanFromObj(NULL, objv[i], varPtr) != TCL_OK) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *) "variable array must have boolean value";
+		    return (char *) "variable array must have boolean value";
 		}
 	    }
 	} else {
@@ -978,10 +978,10 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(SCHAR_MIN, valueInt, SCHAR_MAX)) {
+			|| !InRange(SCHAR_MIN, valueInt, SCHAR_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *) "variable array must have char value";
+		    return (char *) "variable array must have char value";
 		}
 		linkPtr->lastValue.cPtr[i] = (char) valueInt;
 	    }
@@ -1000,7 +1000,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, (int)UCHAR_MAX)) {
+			|| !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		    return (char *)
@@ -1027,7 +1027,7 @@ LinkTraceProc(
 			|| !InRange(SHRT_MIN, valueInt, SHRT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *) "variable array must have short value";
+		    return (char *) "variable array must have short value";
 		}
 		linkPtr->lastValue.sPtr[i] = (short) valueInt;
 	    }
@@ -1046,10 +1046,10 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, (int)USHRT_MAX)) {
+			|| !InRange(0, valueInt, (int)USHRT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *)
+		    return (char *)
 			"variable array must have unsigned short value";
 		}
 		linkPtr->lastValue.usPtr[i] = (unsigned short) valueInt;
@@ -1073,7 +1073,7 @@ LinkTraceProc(
 			|| !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *)
+		    return (char *)
 			    "variable array must have unsigned int value";
 		}
 		linkPtr->lastValue.uiPtr[i] = (unsigned int) valueWide;
@@ -1095,7 +1095,7 @@ LinkTraceProc(
 		if (GetUWide(objv[i], &valueUWide)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *)
+		    return (char *)
 			    "variable array must have unsigned wide int value";
 		}
 		linkPtr->lastValue.uwPtr[i] = valueUWide;
@@ -1115,10 +1115,10 @@ LinkTraceProc(
 	    for (i=0; i < objc; i++) {
 		if (GetDouble(objv[i], &valueDouble)
 			&& !InRange(FLT_MIN, fabs(valueDouble), FLT_MAX)
-		        && !IsSpecial(valueDouble)) {
+			&& !IsSpecial(valueDouble)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-	            return (char *) "variable array must have float value";
+		    return (char *)"variable array must have float value";
 		}
 		linkPtr->lastValue.fPtr[i] = (float) valueDouble;
 	    }
@@ -1128,7 +1128,7 @@ LinkTraceProc(
 		    && !IsSpecial(valueDouble)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
-		return (char *) "variable must have float value";
+		return (char *)"variable must have float value";
 	    }
 	    LinkedVar(float) = linkPtr->lastValue.f = (float) valueDouble;
 	}

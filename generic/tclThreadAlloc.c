@@ -69,7 +69,7 @@ typedef union Block {
 #define blockReqSize	b.reqSize
 
 /*
- * The following defines the minimum and and maximum block sizes and the number
+ * The following defines the minimum and maximum block sizes and the number
  * of buckets in the bucket cache.
  */
 
@@ -214,7 +214,7 @@ GetCache(void)
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
-        memset(cachePtr, 0, sizeof(Cache));
+	memset(cachePtr, 0, sizeof(Cache));
 	Tcl_MutexLock(listLockPtr);
 	cachePtr->nextPtr = firstCachePtr;
 	firstCachePtr = cachePtr;

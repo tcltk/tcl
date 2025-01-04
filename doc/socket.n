@@ -261,8 +261,6 @@ close $sockChan
 puts "The time on $server is $line1"
 puts "That is [lindex $line2 0]s since the server started"
 .CE
-.SH "HISTORY"
-Support for IPv6 was added in Tcl 8.6.
 .SH "SEE ALSO"
 chan(n), flush(n), open(n), read(n)
 .SH KEYWORDS

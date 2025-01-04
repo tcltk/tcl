@@ -63,7 +63,7 @@ TclpDlopen(
      * The flags below used to be BIND_IMMEDIATE; they were changed at the
      * suggestion of Wolfgang Kechel (wolfgang@prs.de): "This enables
      * verbosity for missing symbols when loading a shared lib and allows to
-     * load libtk8.0.sl into tclsh8.0 without problems.  In general, this
+     * load libtk9.0.sl into tclsh9.0 without problems.  In general, this
      * delays resolving symbols until they are actually needed.  Shared libs
      * do no longer need all libraries linked in when they are build."
      */
@@ -141,12 +141,12 @@ FindSymbol(
      */
 
     if (shl_findsym(&handle, symbol, (short) TYPE_PROCEDURE,
-	    (void *) &proc) != 0) {
+	    (void *)&proc) != 0) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
 	Tcl_DStringAppend(&newName, symbol, TCL_INDEX_NONE);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
-		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
+		(short) TYPE_PROCEDURE, (void *)&proc) != 0) {
 	    proc = NULL;
 	}
 	Tcl_DStringFree(&newName);

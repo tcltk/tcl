@@ -32,25 +32,27 @@ TCL_DECLARE_MUTEX(serialMutex)
 /*
  * Bit masks used in the flags field of the SerialInfo structure below.
  */
+enum SerialFlags {
+    SERIAL_PENDING = 1 << 0,	/* Message is pending in the queue. */
+    SERIAL_ASYNC = 1 << 1,	/* Channel is non-blocking. */
 
-#define SERIAL_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define SERIAL_ASYNC	(1<<1)	/* Channel is non-blocking. */
+    /*
+     * Bit masks used in the sharedFlags field of the SerialInfo structure
+     * below.
+     */
 
-/*
- * Bit masks used in the sharedFlags field of the SerialInfo structure below.
- */
+    SERIAL_EOF = 1 << 2,	/* Serial has reached EOF. */
+    SERIAL_ERROR = 1 << 4,
 
-#define SERIAL_EOF	(1<<2)	/* Serial has reached EOF. */
-#define SERIAL_ERROR	(1<<4)
+    /*
+     * Bit masks used for noting whether to drain or discard output on close.
+     * They are disjoint from each other; at most one may be set at a time.
+     */
 
-/*
- * Bit masks used for noting whether to drain or discard output on close. They
- * are disjoint from each other; at most one may be set at a time.
- */
-
-#define SERIAL_CLOSE_DRAIN   (1<<6)	/* Drain all output on close. */
-#define SERIAL_CLOSE_DISCARD (1<<7)	/* Discard all output on close. */
-#define SERIAL_CLOSE_MASK    (3<<6)	/* Both two bits above. */
+    SERIAL_CLOSE_DRAIN = 1<<6,	/* Drain all output on close. */
+    SERIAL_CLOSE_DISCARD = 1<<7,/* Discard all output on close. */
+    SERIAL_CLOSE_MASK = 3<<6	/* Both two bits above. */
+};
 
 /*
  * Default time to block between checking status on the serial port.
@@ -59,13 +61,14 @@ TCL_DECLARE_MUTEX(serialMutex)
 #define SERIAL_DEFAULT_BLOCKTIME 10	/* 10 msec */
 
 /*
- * Define Win32 read/write error masks returned by ClearCommError()
+ * Win32 read/write error masks for values returned by ClearCommError()
  */
-
-#define SERIAL_READ_ERRORS \
-	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME  | CE_BREAK)
-#define SERIAL_WRITE_ERRORS \
+enum TclWinCommErrorMasks {
+    SERIAL_READ_ERRORS =	/* Errors in the reader side. */
+	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME  | CE_BREAK),
+    SERIAL_WRITE_ERRORS =	/* Errors in the writer side. */
 	(CE_TXFULL | CE_PTO)
+};
 
 /*
  * This structure describes per-instance data for a serial based channel.
@@ -85,7 +88,8 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned long long lastEventTime;	/* Time in milliseconds since last readable
+    unsigned long long lastEventTime;
+				/* Time in milliseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -202,23 +206,23 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
  */
 
 static const Tcl_ChannelType serialChannelType = {
-    "serial",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    SerialInputProc,		/* Input proc. */
-    SerialOutputProc,		/* Output proc. */
+    "serial",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    SerialInputProc,
+    SerialOutputProc,
+    NULL,			/* Deprecated. */
+    SerialSetOptionProc,
+    SerialGetOptionProc,
+    SerialWatchProc,
+    SerialGetHandleProc,
+    SerialCloseProc,
+    SerialBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
     NULL,			/* Seek proc. */
-    SerialSetOptionProc,	/* Set option proc. */
-    SerialGetOptionProc,	/* Get option proc. */
-    SerialWatchProc,		/* Set up notifier to watch the channel. */
-    SerialGetHandleProc,	/* Get an OS handle from channel. */
-    SerialCloseProc,		/* close2proc. */
-    SerialBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    SerialThreadActionProc,	/* thread action proc */
-    NULL                       /* truncate */
+    SerialThreadActionProc,
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -380,7 +384,8 @@ SerialGetMilliseconds(void)
 
     Tcl_GetTime(&time);
 
-    return ((unsigned long long)time.sec * 1000 + (unsigned long)time.usec / 1000);
+    return (unsigned long long)time.sec * 1000
+	    + (unsigned long)time.usec / 1000;
 }
 
 /*
@@ -561,7 +566,7 @@ SerialCheckProc(
 
 static int
 SerialBlockProc(
-    void *instanceData,    /* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -600,7 +605,7 @@ SerialBlockProc(
 
 static int
 SerialCloseProc(
-    void *instanceData,    /* Pointer to SerialInfo structure. */
+    void *instanceData,		/* Pointer to SerialInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -613,7 +618,6 @@ SerialCloseProc(
 	return EINVAL;
     }
 
-
     if (serialPtr->validMask & TCL_READABLE) {
 	PurgeComm(serialPtr->handle, PURGE_RXABORT | PURGE_RXCLEAR);
 	CloseHandle(serialPtr->osRead.hEvent);
@@ -621,7 +625,7 @@ SerialCloseProc(
     serialPtr->validMask &= ~TCL_READABLE;
 
     if (serialPtr->writeThread) {
-    	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
+	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
 
 	CloseHandle(serialPtr->osWrite.hEvent);
 	CloseHandle(serialPtr->evWritable);
@@ -855,7 +859,7 @@ SerialBlockingWrite(
 
 static int
 SerialInputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -962,7 +966,7 @@ SerialInputProc(
 
 static int
 SerialOutputProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -1192,7 +1196,7 @@ SerialEventProc(
 
 static void
 SerialWatchProc(
-    void *instanceData,	/* Serial state. */
+    void *instanceData,		/* Serial state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1249,13 +1253,13 @@ SerialWatchProc(
 
 static int
 SerialGetHandleProc(
-    void *instanceData,	/* The serial state. */
+    void *instanceData,		/* The serial state. */
     TCL_UNUSED(int) /*direction*/,
-    void **handlePtr)	/* Where to store the handle. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
 
-    *handlePtr = (void *) infoPtr->handle;
+    *handlePtr = (void *)infoPtr->handle;
     return TCL_OK;
 }
 
@@ -1281,7 +1285,7 @@ SerialWriterThread(
     LPVOID arg)
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
-    SerialInfo *infoPtr = NULL; /* access info only after success init/wait */
+    SerialInfo *infoPtr = NULL;	/* access info only after success init/wait */
     DWORD bytesWritten, toWrite;
     char *buf;
     OVERLAPPED myWrite;		/* Have an own OVERLAPPED in this thread. */
@@ -1480,7 +1484,6 @@ TclWinOpenSerialChannel(
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
 
-
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
     PurgeComm(handle,
 	    PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
@@ -1612,12 +1615,12 @@ SerialModemStatusStr(
 
 static int
 SerialSetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* Serial state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
 {
-    SerialInfo *infoPtr;
+    SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DCB dcb;
     BOOL result, flag;
     size_t len, vlen;
@@ -1625,8 +1628,6 @@ SerialSetOptionProc(
     const WCHAR *native;
     Tcl_Size argc;
     const char **argv;
-
-    infoPtr = (SerialInfo *) instanceData;
 
     /*
      * Parse options. This would be far easier if we had Tcl_Objs to work with
@@ -1655,7 +1656,7 @@ SerialSetOptionProc(
 			"bad mode \"%s\" for -closemode: must be"
 			" default, discard, or drain", value));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1680,7 +1681,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -mode: should be baud,parity,data,stop",
 			value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1744,7 +1745,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -handshake: must be one of"
 			" xonxoff, rtscts, dtrdsr or none", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1772,8 +1773,9 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (void *)NULL);
+			" two elements with each a single 8-bit character",
+			TCL_INDEX_NONE));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -1795,12 +1797,12 @@ SerialSetOptionProc(
 	    Tcl_UniChar character = 0;
 	    int charLen;
 
-	    charLen = Tcl_UtfToUniChar(argv[0], &character);
+	    charLen = TclUtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
 	    dcb.XonChar = (char) character;
-	    charLen = Tcl_UtfToUniChar(argv[1], &character);
+	    charLen = TclUtfToUniChar(argv[1], &character);
 	    if ((character > 0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
@@ -1830,7 +1832,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -ttycontrol: should be "
 			"a list of signal,value pairs", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (char *)NULL);
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -1848,7 +1850,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set DTR signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1860,7 +1862,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set RTS signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1872,7 +1874,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set BREAK signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1883,7 +1885,7 @@ SerialSetOptionProc(
 			    "bad signal name \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		res = TCL_ERROR;
 		break;
@@ -1923,7 +1925,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -sysbuffer: should be "
 			"a list of one or two integers > 0", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2036,17 +2038,15 @@ SerialSetOptionProc(
 
 static int
 SerialGetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* Serial state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
-    SerialInfo *infoPtr;
+    SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DCB dcb;
     size_t len;
     int valid = 0;		/* Flag if valid option parsed. */
-
-    infoPtr = (SerialInfo *) instanceData;
 
     if (optionName == NULL) {
 	len = 0;
