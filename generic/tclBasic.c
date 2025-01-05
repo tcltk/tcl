@@ -68,7 +68,7 @@
  * compatible with AddressSanitizer (ASan) use-after-return detection.
  */
 
-#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#if defined(_MSC_VER)
 #include <intrin.h> /* for _AddressOfReturnAddress() */
 #endif
 
@@ -85,7 +85,7 @@ TclGetCStackPtr(void)
 {
 #if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
     return __builtin_frame_address(0);
-#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#elif defined(_MSC_VER)
     return _AddressOfReturnAddress();
 #else
     ptrdiff_t unused = 0;
