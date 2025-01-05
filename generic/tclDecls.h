@@ -1950,7 +1950,7 @@ EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
 EXTERN char *		TclGetStringFromObj_(Tcl_Obj *objPtr,
 				Tcl_Size *lengthPtr);
 /* 652 */
-EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
+EXTERN int *		TclGetUnicodeFromObj(Tcl_Obj *objPtr,
 				Tcl_Size *lengthPtr);
 /* 653 */
 EXTERN int		Tcl_GetSizeIntFromObj(Tcl_Interp *interp,
@@ -2758,7 +2758,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 649 */
     unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 650 */
     char * (*tclGetStringFromObj_) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 651 */
-    Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 652 */
+    int * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 652 */
     int (*tcl_GetSizeIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr); /* 653 */
     int (*tcl_UtfCharComplete) (const char *src, Tcl_Size length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */

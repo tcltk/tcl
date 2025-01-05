@@ -2423,7 +2423,7 @@ declare 651 {
     char *TclGetStringFromObj_(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+    int *TclGetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 
 # TIP 660

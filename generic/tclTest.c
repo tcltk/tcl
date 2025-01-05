@@ -243,7 +243,9 @@ static Tcl_ObjCmdProc	TestbytestringObjCmd;
 static Tcl_ObjCmdProc	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc	TeststringbytesObjCmd;
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	Testutf16stringObjCmd;
+#endif /* TCL_NO_DEPRECATED */
 static Tcl_ObjCmdProc	TestcmdinfoObjCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
@@ -588,7 +590,9 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
+#ifndef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testutf16string", Testutf16stringObjCmd, NULL, NULL);
+#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -5794,6 +5798,7 @@ TestbytestringObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 Testutf16stringObjCmd(
     TCL_UNUSED(void *),
@@ -5801,7 +5806,7 @@ Testutf16stringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    const unsigned short *p;
+    const Tcl_UniChar *p;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -5812,6 +5817,7 @@ Testutf16stringObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(p, TCL_INDEX_NONE));
     return TCL_OK;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
