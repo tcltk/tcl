@@ -13,7 +13,7 @@
 
 #include "tclWinInt.h"
 #if defined(HAVE_CPUID_H)
-#   xinclude <cpuid.h>
+#   include <cpuid.h>
 #elif defined(_MSC_VER)
 #   include <intrin.h>
 #endif
