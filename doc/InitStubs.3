@@ -24,13 +24,33 @@ Tcl interpreter handle.
 The requirement string of compatible Tcl versions.
 It consists of one requirement as described for \fBpackage require\fR (\fBPACKAGE\fR manual page in the section \fBREQUIREMENT\fR).
 Multiple requirement strings like with \fBpackage require\fR are not supported.
+Examples:
+.CS
+Tcl_InitStubs(interp, "8.5", 0); /* This extension only uses the Tcl 8.5 API. It will work with 8.6 as well */
+Tcl_InitStubs(interp, "8.6", 0); /* This extension only uses the Tcl 8.6 API. It will work with 8.6 only */
+Tcl_InitStubs(interp, "9.0", 0); /* This extension only uses the Tcl 9.0 API. It will work with 9.0 only */
+.CE
+If any such extension is ported to Tcl 9.0, without additional API usage (only int -> Tcl_Size conversions, nothing more):
+.CS
+Tcl_InitStubs(interp, "8.5-", 0); /* This extension only uses the Tcl 8.5 API. It will work with 8.6 and (recompiled) with 9.0 as well */
+Tcl_InitStubs(interp, "8.6-", 0); /* This extension only uses the Tcl 8.6 API. It will work (recompiled) with 9.0 as well */
+.CE
+If you don't know which Tcl version you are developing for, do the following:
+.CS
+$ tclsh
+% info tclversion
+9.0
+.CE
+Now you know what requirement string to fill.
 .AP int exact in
 1 means that only the particular version specified by
-\fIversion\fR is acceptable.
+\fIrequirement\fR is acceptable.
 An exact version number must be given as \fIrequirement\fR.
-0 means that versions newer than \fIversion\fR are also
-acceptable as long as they have the same major version number
-as \fIversion\fR. Other bits have no effect.
+0 means that versions newer than \fIrequirement\fR are also
+acceptable. If the requirement string ends with \fB-\fR,
+higher major versions are acceptable as well, otherwise
+the major version must be the same as in the requirement string.
+Other bits have no effect.
 See the \fB-require\fR option of the \fBpackage require\fR command.
 .BE
 .SH INTRODUCTION
@@ -41,7 +61,7 @@ This provides two significant benefits to Tcl users:
 .IP 1) 5
 Extensions that use the stubs mechanism can be loaded into
 multiple versions of Tcl without being recompiled or
-relinked.
+relinked, as long as the major Tcl version is the same.
 .IP 2) 5
 Extensions that use the stubs mechanism can be dynamically
 loaded into statically-linked Tcl applications.
@@ -81,8 +101,10 @@ and ensure that the correct version of Tcl is loaded.  In addition
 to an interpreter handle, it accepts as arguments a version number
 and a Boolean flag indicating whether the extension requires
 an exact version match or not.  If \fIexact\fR is 0, then the
-extension is indicating that newer versions of Tcl are acceptable
-as long as they have the same major version number as \fIversion\fR;
+extension is indicating that newer versions of Tcl are acceptable.
+If the requirement string ends with \fB-\fR,
+higher major versions are acceptable as well, otherwise
+the major version must be the same as in the requirement string.
 1 means that only the specified \fIversion\fR is acceptable.
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
@@ -94,9 +116,8 @@ function which has an additional \fBmagic\fR integer argument and uses the \fBex
 parameter to know the exact Tcl major version number. If you circumvent
 the macro in tcl.h, it should be called like this:
 .CS
-    if (Tcl_InitStubs(interp, "8.6-", TCL_MAJOR_VERSION<<8, TCL_STUB_MAGIC)) == NULL) {
-	return TCL_ERROR;
-    }
+if (Tcl_InitStubs(interp, "9.0", TCL_MAJOR_VERSION<<8, TCL_STUB_MAGIC)) == NULL) {
+    return TCL_ERROR;
 }
 .CE
 If \fBUSE_TCL_STUBS\fR is not defined, it translates to a TCL version verification only.
