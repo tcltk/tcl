@@ -65,8 +65,20 @@ Tcl_InitStubs(
      */
 
     if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
-	iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
-	iPtr->freeProc = TCL_STATIC;
+	exact &= 0xFFFF00; /* Filter out minor/major Tcl version */
+	if (!exact) {
+	    exact = 0x060800;
+	}
+	if (stubsPtr && (stubsPtr->magic == ((int)0xFCA3BACB + (int)sizeof(void *)))
+		&& ((exact|0x010000) == 0x070800)) {
+	    /* We are running in Tcl 9.x, but extension is compiled with 8.6 or 8.7 */
+	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf(
+		    "this extension is compiled for Tcl %d.%d",
+		    (exact & 0x0FF00)>>8, (exact & 0x0FF0000)>>16));
+	} else {
+	    iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
+	    iPtr->freeProc = TCL_STATIC;
+	}
 	return NULL;
     }
 
@@ -74,7 +86,7 @@ Tcl_InitStubs(
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 

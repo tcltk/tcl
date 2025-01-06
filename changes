@@ -9384,3 +9384,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 - Released 8.6.16, Dec 11, 2024 - details at https://core.tcl-lang.org/tcl/ -
 
 2024-12-16 (bug) [63449c] [namespace children] doesn't match non-glob patterns below the global namespace (stu)
+
+2025-01-06 (bug) [63449c] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)
