@@ -167,7 +167,7 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.5-", 0)) {
+    if (!Tcl_InitStubs(interp, TCL_VERSION, 0)) {
 	return TCL_ERROR;
     }
 
