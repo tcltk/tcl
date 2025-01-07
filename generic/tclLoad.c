@@ -482,11 +482,10 @@ Tcl_LoadObjCmd(
 	Interp *iPtr = (Interp *) target;
 	if (iPtr->legacyResult && *(iPtr->legacyResult) && !iPtr->legacyFreeProc) {
 	    /*
-	     * A call to Tcl_InitStubs() determined the caller extension and
-	     * this interp are incompatible in their stubs mechanisms, and
-	     * recorded the error in the oldest legacy place we have to do so.
+	     * A call to Tcl_InitStubs() determined the caller extension
+	     * Stubs were introduced in Tcl 8.1, so there's only one possible reason.
 	     */
-	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+	    Tcl_SetObjResult(target, Tcl_NewStringObj("this extension is compiled for Tcl 8.x", -1));
 	    iPtr->legacyResult = NULL;
 	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}

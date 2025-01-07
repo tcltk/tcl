@@ -80,7 +80,7 @@ and a Boolean flag indicating whether the extension requires
 an exact version match or not.  If \fIexact\fR is 0, then the
 extension is indicating that newer versions of Tcl are acceptable
 as long as they have the same major version number as \fIversion\fR;
-non-zero means that only the specified \fIversion\fR is acceptable.
+1 means that only the specified \fIversion\fR is acceptable.
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
 acceptable, does not support stubs, or any other error condition occurred.

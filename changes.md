@@ -4,6 +4,20 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.0.2 arises from the check-in with tag `core-9-0-2`.
+
+Tcl patch releases have the primary purpose of delivering bug fixes
+to the userbase.
+
+# Bug fixes
+ - Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
+
+# Incompatibilities
+ - No known incompatibilities with the Tcl 9.0.0 public interface.
+
+# Updated bundled packages, libraries, standards, data
+ - sqlite3 3.48.0
+
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
 
 Tcl patch releases have the primary purpose of delivering bug fixes
