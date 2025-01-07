@@ -60,17 +60,19 @@ Tcl_InitStubs(
     const char *actualVersion = NULL;
     void *pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
-    const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
+    const char *tclName = "tcl";
 
-#undef TCL_STUB_MAGIC /* We need the TCL_STUB_MAGIC from Tcl 8.x here */
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+    if ((exact&0xFF00) < 0x900) {
+	magic = TCL_STUB_MAGIC; /* TCL_STUB_MAGIC from Tcl 8.x */
+	tclName = "Tcl";
+    }
     /*
      * We can't optimize this check by caching tclStubsPtr because that
      * prevents apps from being able to load/unload Tcl dynamically multiple
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
+    if (!stubsPtr || (stubsPtr->magic != magic)) {
 	exact &= 0xFFFF00; /* Filter out minor/major Tcl version */
 	if (!exact) {
 	    exact = 0x060800;
@@ -81,6 +83,14 @@ Tcl_InitStubs(
 	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf(
 		    "this extension is compiled for Tcl %d.%d",
 		    (exact & 0x0FF00)>>8, (exact & 0x0FF0000)>>16));
+	} else if (stubsPtr && (stubsPtr->magic == TCL_STUB_MAGIC)
+		&& ((exact & 0x0FF00) >= 0x0900)) {
+	    /* We are running in Tcl 8.x, but extension is compiled with 9.0+ */
+	    char major[4], minor[4];
+	    snprintf(major, sizeof(major), "%d", (exact & 0xFF00)>>8);
+	    snprintf(minor, sizeof(minor), "%d", (exact & 0xFF0000)>>16);
+	    stubsPtr->tcl_AppendResult(interp, 
+		    "this extension is compiled for Tcl ", major, ".", minor, (char *)NULL);
 	} else {
 	    iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
 	    iPtr->freeProc = 0; /* TCL_STATIC */
