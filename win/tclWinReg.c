@@ -1208,7 +1208,7 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    typedef LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD); 
+    typedef LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD);
     static regDeleteKeyExProc regDeleteKeyEx = (regDeleteKeyExProc) NULL;
 				/* Really RegDeleteKeyExW() but that's not
 				 * available on all versions of Windows

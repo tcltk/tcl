@@ -68,7 +68,7 @@
  * compatible with AddressSanitizer (ASan) use-after-return detection.
  */
 
-#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#if defined(_MSC_VER)
 #include <intrin.h> /* for _AddressOfReturnAddress() */
 #endif
 
@@ -85,7 +85,7 @@ TclGetCStackPtr(void)
 {
 #if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
     return __builtin_frame_address(0);
-#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#elif defined(_MSC_VER)
     return _AddressOfReturnAddress();
 #else
     ptrdiff_t unused = 0;
@@ -8068,11 +8068,11 @@ DoubleObjClass(
 	*fpClsPtr = FP_NAN;
 	return TCL_OK;
       case TCL_NUMBER_DOUBLE:
-        d = *((const double *) ptr);
-        break;
+	d = *((const double *) ptr);
+	break;
       case TCL_NUMBER_INT:
-        d = (double)*((const Tcl_WideInt *) ptr);
-        break;
+	d = (double)*((const Tcl_WideInt *) ptr);
+	break;
       default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 	    return TCL_ERROR;
@@ -8185,7 +8185,7 @@ ExprIsUnorderedFunc(
     ) {
 	return TCL_ERROR;
     }
-    
+
     dCls = ((dCls == FP_NAN) || (dCls2 == FP_NAN)) ? 1 : 0;
     Tcl_SetObjResult(interp, ((Interp *)interp)->execEnvPtr->constants[dCls]);
     return TCL_OK;
