@@ -637,7 +637,7 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     Tcl_Size i;
-	int mode;
+    int mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
