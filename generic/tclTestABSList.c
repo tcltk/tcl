@@ -668,7 +668,7 @@ my_SetAbstractProc(int ptype)
 static Tcl_Obj *
 my_NewLStringObj(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[])
 {
     LString *lstringRepPtr;
@@ -922,7 +922,7 @@ static int
 lLStringObjCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[])
 {
   Tcl_Obj *lstringObj;
@@ -1136,7 +1136,7 @@ DupLgenSeriesRep(
 Tcl_Obj *
 newLgenObj(
     Tcl_Interp *interp,
-    int objc,
+	Tcl_Size objc,
     Tcl_Obj * const objv[])
 {
     Tcl_WideInt length;
@@ -1187,7 +1187,7 @@ static int
 lGenObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[])
 {
     Tcl_Obj *genObj = newLgenObj(interp, objc-1, &objv[1]);
@@ -1206,7 +1206,7 @@ int Lgen_Init(Tcl_Interp *interp) {
     if (Tcl_InitStubs(interp, "8.7", 0) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_CreateObjCommand(interp, "lgen", lGenObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "lgen", lGenObjCmd, NULL, NULL);
     Tcl_PkgProvide(interp, "lgen", "1.0");
     return TCL_OK;
 }
@@ -1249,8 +1249,8 @@ int Tcl_ABSListTest_Init(Tcl_Interp *interp) {
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_CreateObjCommand(interp, "lstring", lLStringObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "lgen", lGenObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "lstring", lLStringObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "lgen", lGenObjCmd, NULL, NULL);
     Tcl_PkgProvide(interp, "abstractlisttest", "1.0.0");
     return TCL_OK;
 }

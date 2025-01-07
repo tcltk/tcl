@@ -18,11 +18,12 @@ to the userbase.
 # Updated bundled packages, libraries, standards, data
  - sqlite3 3.48.0
 
-Release Tcl 9.1a0 arises from the check-in with tag `core-9-1-a0`.
+Release Tcl 9.1a0 arises from the check-in with tag core-9-1-a0.
 
 Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
 writing Tcl scripts.
 
+## Continued 64-bit capacity: Command line arguments larger than 2Gb
 
 

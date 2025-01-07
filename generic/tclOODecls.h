@@ -18,6 +18,10 @@
 #   define USE_TCLOO_STUBS
 #endif
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_MethodType void
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -270,14 +274,11 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if TCL_MAJOR_VERSION < 9
-    /* TIP #630 for 8.7 */
-#   undef Tcl_MethodIsType2
-#   define Tcl_MethodIsType2 Tcl_MethodIsType
-#   undef Tcl_NewInstanceMethod2
-#   define Tcl_NewInstanceMethod2 Tcl_NewInstanceMethod
-#   undef Tcl_NewMethod2
-#   define Tcl_NewMethod2 Tcl_NewMethod
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodType
+#   undef Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod
 #endif
 
 #endif /* _TCLOODECLS */
