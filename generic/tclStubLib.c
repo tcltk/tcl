@@ -63,7 +63,7 @@ Tcl_InitStubs(
     const char *tclName = "tcl";
 
     if ((exact&0xFF00) < 0x900) {
-	magic = (int) 0xFCA3BACF; /* TCL_STUB_MAGIC from Tcl 8.x */
+	magic = (int)0xFCA3BACF; /* TCL_STUB_MAGIC from Tcl 8.x */
 	tclName = "Tcl";
     }
     /*
@@ -73,9 +73,24 @@ Tcl_InitStubs(
      */
 
     if (!stubsPtr || (stubsPtr->magic != magic)) {
-	if (((exact&0xFF00) >= 0x900) && stubsPtr && (stubsPtr->magic == TCL_STUB_MAGIC)) {
-	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf("this extension is compiled for Tcl %d.%d",
-		    (exact&0xFF00)>>8, (exact&0xFF0000)>>16));
+	exact &= 0xFFFF00; /* Filter out minor/major Tcl version */
+	if (!exact) {
+	    exact = 0x060800;
+	}
+	if (stubsPtr && (stubsPtr->magic == TCL_STUB_MAGIC)
+		&& ((exact|0x010000) == 0x070800)) {
+	    /* We are running in Tcl 9.x, but extension is compiled with 8.6 or 8.7 */
+	    stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_ObjPrintf(
+		    "this extension is compiled for Tcl %d.%d",
+		    (exact & 0x0FF00)>>8, (exact & 0x0FF0000)>>16));
+	} else if (stubsPtr && (stubsPtr->magic == (int)0xFCA3BACF)
+		&& ((exact & 0x0FF00) >= 0x0900)) {
+	    char major[4], minor[4];
+	    snprintf(major, sizeof(major), "%d", (exact & 0xFF00)>>8);
+	    snprintf(minor, sizeof(minor), "%d", (exact & 0xFF0000)>>16);
+	    /* We are running in Tcl 8.x, but extension is compiled with 9.0+ */
+	    stubsPtr->tcl_AppendResult(interp, 
+		    "this extension is compiled for Tcl ", major, ".", minor, (char *)NULL);
 	} else {
 	    iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
 	    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
