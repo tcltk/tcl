@@ -22,7 +22,6 @@ jobs:
       matrix:
         config:
           - ""
-          - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=noembed"
           - "OPTS=symbols"
@@ -66,7 +65,6 @@ jobs:
       matrix:
         config:
           - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--disable-zipfs"
           - "--enable-symbols"

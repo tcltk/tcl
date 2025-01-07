@@ -60,14 +60,12 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-#if TCL_MAJOR_VERSION > 8
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, Tcl_Size objc, Tcl_Obj *const *objv);
-#else
-#define Tcl_MethodCallProc2 Tcl_MethodCallProc
-#endif
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
 	void **newClientData);
@@ -81,6 +79,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_MethodType {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
@@ -97,8 +96,8 @@ typedef struct Tcl_MethodType {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
+#endif /* TCL_NO_DEPRECATED */
 
-#if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_MethodType2 {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_2 in
@@ -115,9 +114,6 @@ typedef struct Tcl_MethodType2 {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType2;
-#else
-#define Tcl_MethodType2 Tcl_MethodType
-#endif
 
 /*
  * The correct value for the version field of the Tcl_MethodType structure.
@@ -125,10 +121,12 @@ typedef struct Tcl_MethodType2 {
  * binary compatibility.
  */
 enum TclOOMethodVersion {
+#ifndef TCL_NO_DEPRECATED
     TCL_OO_METHOD_VERSION_1 = 1,
+    TCL_OO_METHOD_VERSION_CURRENT = TCL_OO_METHOD_VERSION_1,
+#endif /* TCL_NO_DEPRECATED */
     TCL_OO_METHOD_VERSION_2 = 2
 };
-#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
