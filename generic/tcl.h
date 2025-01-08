@@ -2244,7 +2244,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN void	Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
 #else
 #   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
@@ -2265,8 +2265,7 @@ void *			TclStubCall(void *arg);
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-#define Tcl_Main(argc, argv, proc) \
-	Tcl_MainEx(argc, argv, proc, \
+#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
 EXTERN TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
@@ -2287,7 +2286,7 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #endif
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *	TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
 EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif

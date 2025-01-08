@@ -2419,9 +2419,9 @@ TCL_DDE_MAJOR_VERSION=1
 TCL_DDE_MINOR_VERSION=4
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
-TCL_REG_VERSION=1.3
+TCL_REG_VERSION=1.4
 TCL_REG_MAJOR_VERSION=1
-TCL_REG_MINOR_VERSION=3
+TCL_REG_MINOR_VERSION=4
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@
@@ -5361,50 +5361,44 @@ fi
 
 # See if the compiler supports cpuid header.
 
-if test "${GCC}" = "yes" ; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cpuid-header support in compiler" >&5
-printf %s "checking for cpuid-header support in compiler... " >&6; }
-if test ${tcl_cv_cpuidhead+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cpuid.h" >&5
+printf %s "checking for cpuid.h... " >&6; }
+if test ${tcl_cv_cpuid_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-  #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
-  #   include <cpuid.h>
-  #endif
+#include <cpuid.h>
 
 int
 main (void)
 {
 
-    unsigned int regs;
-    __get_cpuid(0, &regs, &regs, &regs, &regs);
+    __get_cpuid(0, 0, 0, 0, 0);
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"
+if ac_fn_c_try_compile "$LINENO"
 then :
-  tcl_cv_cpuidhead=yes
+  tcl_cv_cpuid_h=yes
 else case e in #(
-  e) tcl_cv_cpuidhead=no ;;
+  e) tcl_cv_cpuid_h=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+ ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cpuidhead" >&5
-printf "%s\n" "$tcl_cv_cpuidhead" >&6; }
-  if test "$tcl_cv_cpuidhead" = "yes"; then
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cpuid_h" >&5
+printf "%s\n" "$tcl_cv_cpuid_h" >&6; }
+if test "$tcl_cv_cpuid_h" = "yes"; then
 
 printf "%s\n" "#define HAVE_CPUID_H 1" >>confdefs.h
 
-  fi
 fi
 
 # See if the <wspiapi.h> header file is present
