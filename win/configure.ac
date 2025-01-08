@@ -210,7 +210,7 @@ AC_SUBST(INSTALL_MSGS)
 
 
 #--------------------------------------------------------------------
-#	MemoryModule support - Tip 708
+#	MemoryModule support - Tip 709
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(memorymodule,
     AS_HELP_STRING([--enable-memorymodule],

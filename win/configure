@@ -5267,7 +5267,7 @@ fi
 
 
 #--------------------------------------------------------------------
-#	MemoryModule support - Tip 708
+#	MemoryModule support - Tip 709
 #--------------------------------------------------------------------
 # Check whether --enable-memorymodule was given.
 if test ${enable_memorymodule+y}
