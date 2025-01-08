@@ -89,7 +89,7 @@ Tcl_InitStubs(
 	    char major[4], minor[4];
 	    snprintf(major, sizeof(major), "%d", (exact & 0xFF00)>>8);
 	    snprintf(minor, sizeof(minor), "%d", (exact & 0xFF0000)>>16);
-	    stubsPtr->tcl_AppendResult(interp, 
+	    stubsPtr->tcl_AppendResult(interp,
 		    "this extension is compiled for Tcl ", major, ".", minor, (char *)NULL);
 	} else {
 	    iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";

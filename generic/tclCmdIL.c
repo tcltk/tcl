@@ -3927,7 +3927,7 @@ Tcl_LsearchObjCmd(
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
-		    Tcl_BounceRefCount(itemPtr); 
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i + groupOffset];
 			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {

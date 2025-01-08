@@ -193,7 +193,7 @@ ArithSeriesIndexDbl(
     if (index) {
 	d += (index * dblRepPtr->step);
     }
-    
+
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -334,7 +334,7 @@ ArithSeriesLenDbl(
     }
     /* distance */
     end -= start;
-    /* 
+    /*
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
      */
@@ -1086,7 +1086,7 @@ TclArithSeriesObjReverse(
 		-dblRepPtr->step, arithSeriesRepPtr->len, dblRepPtr->precision);
 	} else {
 	    ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
-	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr), 
+	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr),
 		-intRepPtr->step, arithSeriesRepPtr->len);
 	}
     } else {
