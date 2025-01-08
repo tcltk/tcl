@@ -322,9 +322,15 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if TCL_MAJOR_VERSION < 9
+# ifndef Tcl_Size
     typedef int Tcl_Size;
+# endif
+# ifndef TCL_SIZE_MAX
 #   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
+# endif
+# ifndef TCL_SIZE_MODIFIER
 #   define TCL_SIZE_MODIFIER ""
+#endif
 #else
     typedef ptrdiff_t Tcl_Size;
 #   define TCL_SIZE_MAX ((Tcl_Size)(((size_t)-1)>>1))
@@ -2087,7 +2093,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#   if TCL_MAJOR_VERSION > 8
+#   if defined(BUILD_tcl) || TCL_MAJOR_VERSION > 8
 #	define TCL_UTF_MAX		4
 #   else
 #	define TCL_UTF_MAX		3
@@ -2321,7 +2327,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 const char *		TclInitStubTable(const char *version);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
-    TCL_NORETURN void	Tcl_ConsolePanic(const char *format, ...);
+    TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
 #else
 #   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
@@ -2371,8 +2377,7 @@ void *			TclStubCall(void *arg);
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-#define Tcl_Main(argc, argv, proc) \
-	Tcl_MainEx(argc, argv, proc, \
+#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
 EXTERN TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
@@ -2393,7 +2398,7 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #endif
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *	TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
 EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
