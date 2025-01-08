@@ -47,17 +47,17 @@ extern "C" {
  */
 
 #if !defined(TCL_MAJOR_VERSION)
-#   define TCL_MAJOR_VERSION   8
+#   define TCL_MAJOR_VERSION	8
 #endif
 #if TCL_MAJOR_VERSION != 8
 #   error "This header-file is for Tcl 8 only"
 #endif
-#define TCL_MINOR_VERSION   7
+#define TCL_MINOR_VERSION	7
 #define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL	1
 
-#define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7b1"
+#define TCL_VERSION		"8.7"
+#define TCL_PATCH_LEVEL	"8.7b1"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
@@ -92,7 +92,7 @@ extern "C" {
 #ifndef TCL_THREADS
 #   define TCL_THREADS 1
 #endif
-#endif /* !TCL_NO_DEPRECATED */
+#endif /* RC_INVOKED */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -416,12 +416,18 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if TCL_MAJOR_VERSION < 9
+# ifndef Tcl_Size
     typedef int Tcl_Size;
+# endif
+# ifndef TCL_SIZE_MAX
 #   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
+# endif
+# ifndef TCL_SIZE_MODIFIER
 #   define TCL_SIZE_MODIFIER ""
+#endif
 #else
     typedef ptrdiff_t Tcl_Size;
-#   define TCL_SIZE_MAX ((ptrdiff_t)(((size_t)-1)>>1))
+#   define TCL_SIZE_MAX ((Tcl_Size)(((size_t)-1)>>1))
 #   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 #endif /* TCL_MAJOR_VERSION */
 
@@ -637,6 +643,8 @@ typedef struct stat *Tcl_OldStat_;
  *			exited; the interpreter's result is meaningless.
  * TCL_CONTINUE		Go on to the next iteration of the current loop; the
  *			interpreter's result is meaningless.
+ * Integer return codes in the range TCL_CODE_USER_MIN to TCL_CODE_USER_MAX are
+ * reserved for the use of packages.
  */
 
 #define TCL_OK			0
@@ -644,6 +652,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_RETURN		2
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
+#define TCL_CODE_USER_MIN	5
+#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
 
 #ifndef TCL_NO_DEPRECATED
 #define TCL_RESULT_SIZE		200
@@ -706,7 +716,6 @@ typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
-#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -722,7 +731,6 @@ typedef void (Tcl_ExitProc) (void *clientData);
 typedef void (Tcl_FileProc) (void *clientData, int mask);
 typedef void (Tcl_FileFreeProc) (void *clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
-typedef void (Tcl_FreeProc) (char *blockPtr);
 typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
@@ -731,7 +739,22 @@ typedef int (Tcl_MathProc) (void *clientData, Tcl_Interp *interp,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#if TCL_MAJOR_VERSION > 8
+typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
+	Tcl_Size objc, struct Tcl_Obj *const *objv);
+typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
+	struct Tcl_Obj *const *objv);
+typedef void (Tcl_FreeProc) (void *blockPtr);
+#define Tcl_ExitProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_EncodingFreeProc Tcl_FreeProc
+#else
 #define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
+typedef void (Tcl_FreeProc) (char *blockPtr);
+#endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -1442,8 +1465,16 @@ typedef enum {
  */
 
 typedef struct Tcl_Time {
+#if TCL_MAJOR_VERSION > 8
+    long long sec;		/* Seconds. */
+#else
     long sec;			/* Seconds. */
+#endif
+#if defined(_CYGWIN_) && TCL_MAJOR_VERSION > 8
+    int usec;			/* Microseconds. */
+#else
     long usec;			/* Microseconds. */
+#endif
 } Tcl_Time;
 
 typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
@@ -1600,9 +1631,6 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverBlockModeProc *blockModeProc;
 				/* Set blocking mode for the raw channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_2 channels or later.
-     */
     Tcl_DriverFlushProc *flushProc;
 				/* Function to call to flush a channel. May be
 				 * NULL. */
@@ -1610,26 +1638,15 @@ typedef struct Tcl_ChannelType {
 				/* Function to call to handle a channel event.
 				 * This will be passed up the stacked channel
 				 * chain. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_3 channels or later.
-     */
     Tcl_DriverWideSeekProc *wideSeekProc;
 				/* Function to call to seek on the channel
 				 * which can handle 64-bit offsets. May be
 				 * NULL, and must be NULL if seekProc is
 				 * NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_4 channels or later.
-     * TIP #218, Channel Thread Actions.
-     */
     Tcl_DriverThreadActionProc *threadActionProc;
 				/* Function to call to notify the driver of
 				 * thread specific activity for a channel. May
 				 * be NULL. */
-    /*
-     * Only valid in TCL_CHANNEL_VERSION_5 channels or later.
-     * TIP #208, File Truncation.
-     */
     Tcl_DriverTruncateProc *truncateProc;
 				/* Function to call to truncate the underlying
 				 * file to a particular length. May be NULL if
@@ -2239,7 +2256,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#   ifdef BUILD_tcl
+#   if defined(BUILD_tcl) || TCL_MAJOR_VERSION > 8
 #	define TCL_UTF_MAX		4
 #   else
 #	define TCL_UTF_MAX		3
