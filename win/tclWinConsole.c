@@ -176,7 +176,7 @@ typedef struct ConsoleHandleInfo {
  *     is queued and dropped on receipt.
  */
 typedef struct ConsoleChannelInfo {
-    HANDLE handle; 		/* Console handle */
+    HANDLE handle;		/* Console handle */
     Tcl_ThreadId threadId;	/* Id of owning thread */
     struct ConsoleChannelInfo *nextWatchingChannelPtr;
 				/* Pointer to next channel watching events. */

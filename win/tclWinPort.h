@@ -114,7 +114,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef ENOTEMPTY
-#   define ENOTEMPTY 	41	/* Directory not empty */
+#   define ENOTEMPTY	41	/* Directory not empty */
 #endif
 #ifndef EREMOTE
 #   define EREMOTE	66	/* The object is remote */
