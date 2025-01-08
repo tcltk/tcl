@@ -2418,7 +2418,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(DIST_INSTALL_SCRIPT) $(TOP_DIR)/win/configure $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(TOP_DIR)/win/tclWinInt.h $(TOP_DIR)/win/tclWinPort.h \
-		$(DISTDIR)/win
+		$(TOP_DIR)/win//MemoryModule.h $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win

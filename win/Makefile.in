@@ -667,6 +667,9 @@ tclTestMain.${OBJEXT}: tclAppInit.c
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
+tclWinLoad.${OBJEXT}: tclWinLoad.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
+
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
@@ -1015,10 +1018,13 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: tcltest
+test-tcl: tcltest dltest/memorymoduletest.zip
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "$(TEST_LOAD_FACILITIES)"
+
+dltest/memorymoduletest.zip:
+	( cd dltest; make; )
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: tcltest

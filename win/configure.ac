@@ -210,6 +210,18 @@ AC_SUBST(INSTALL_MSGS)
 
 
 #--------------------------------------------------------------------
+#	MemoryModule support - Tip 708
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(memorymodule,
+    AS_HELP_STRING([--enable-memorymodule],
+	[load dll's from a vfs in memory in stead of copying to a temporary directory (default: off)]),
+    [tcl_ok=$enableval], [tcl_ok=no])
+if test "$tcl_ok" != "no" ; then
+    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Are we building with MemoryModule enabled?])
+fi
+AC_SUBST(TCL_LOAD_FROM_MEMORY)
+
+#--------------------------------------------------------------------
 # Perform additinal compiler tests.
 #--------------------------------------------------------------------
 
@@ -485,7 +497,7 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest])
+AC_CONFIG_FILES([Makefile dltest/Makefile tclConfig.sh tclsh.exe.manifest])
 AC_OUTPUT
 
 dnl Local Variables:
