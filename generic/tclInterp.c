@@ -1820,7 +1820,7 @@ AliasNRCmd(
      */
 
     if (TclInitRewriteEnsemble(interp, 1, prefc, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
     TclSkipTailcall(interp);
     return Tcl_NREvalObj(interp, listPtr, flags);

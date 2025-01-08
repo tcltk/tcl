@@ -887,7 +887,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }
@@ -1738,7 +1738,7 @@ InitEnsembleRewrite(
      */
 
     if (TclInitRewriteEnsemble(interp, toRewrite, rewriteLength, objv)) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble);
     }
     *lengthPtr = len;
     return argObjs;

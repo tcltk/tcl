@@ -5072,7 +5072,11 @@ typedef struct NRE_callback {
  * Inline version of Tcl_NRAddCallback.
  */
 
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp, postProcPtr, ...) \
+    TclNRAddCallback_(interp, postProcPtr __VA_OPT__(,) __VA_ARGS__,	\
+	    NULL, NULL, NULL, NULL)
+
+#define TclNRAddCallback_(interp,postProcPtr,data0,data1,data2,data3,...) \
     do {								\
 	NRE_callback *_callbackPtr;					\
 	TCLNR_ALLOC((interp), (_callbackPtr));				\
