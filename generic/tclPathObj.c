@@ -1523,7 +1523,7 @@ MakePathFromNormalized(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "can't find object string representation", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "WTF",
-			    NULL);
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2397,7 +2397,7 @@ SetFsPathFromAny(
 			    "couldn't find HOME environment variable to"
 			    " expand path", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-			    "HOMELESS", NULL);
+			    "HOMELESS", (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2422,7 +2422,7 @@ SetFsPathFromAny(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "user \"%s\" doesn't exist", expandedUser));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-			    NULL);
+			    (char *)NULL);
 		}
 		Tcl_DStringFree(&userName);
 		Tcl_DStringFree(&temp);

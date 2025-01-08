@@ -83,8 +83,11 @@ resolved within the calling context's namespace if not fully qualified),
 passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
 a successful result) returning the fully qualified name of the created object
 (the result of the constructor is ignored). The name of the instance's
-internal namespace will be \fInsName\fR unless that namespace already exists
-(when an arbitrary name will be chosen instead). If the constructor fails
+internal namespace will be \fInsName\fR;
+.VS
+it is an error if that namespace cannot be created.
+.VE
+If the constructor fails
 (i.e., returns a non-OK result) then the object is destroyed and the error
 message is the result of this method call.
 .SH EXAMPLES

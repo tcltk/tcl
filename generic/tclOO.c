@@ -610,6 +610,10 @@ KillFoundation(
  *	call TclOOAddToSubclasses() to add it to the right class's list of
  *	subclasses.
  *
+ * Returns:
+ *	Pointer to the object structure created, or NULL if a specific
+ *	namespace was asked for but couldn't be created.
+ *
  * ----------------------------------------------------------------------
  */
 
@@ -652,11 +656,16 @@ AllocObject(
 
     if (nsNameStr != NULL) {
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, nsNameStr, oPtr, NULL);
-	if (oPtr->namespacePtr != NULL) {
-	    creationEpoch = ++fPtr->tsdPtr->nsCount;
-	    goto configNamespace;
+	if (oPtr->namespacePtr == NULL) {
+	    /*
+	     * Couldn't make the specific namespace. Report as an error.
+	     * [Bug 154f0982f2]
+	     */
+	    ckfree(oPtr);
+	    return NULL;
 	}
-	Tcl_ResetResult(interp);
+	creationEpoch = ++fPtr->tsdPtr->nsCount;
+	goto configNamespace;
     }
 
     while (1) {
@@ -818,7 +827,7 @@ MyDeleted(
 
 static void
 ObjectRenamedTrace(
-    ClientData clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
     const char *newName,	/* What it's getting renamed to. (unused) */
@@ -1051,6 +1060,10 @@ TclOOReleaseClassContents(
     }
 
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
+	/* instance gets deleted, so if method remains, reset it there */
+	if (mPtr->refCount > 1 && mPtr->declaringClassPtr == clsPtr) {
+	    mPtr->declaringClassPtr = NULL;
+	}
 	TclOODelMethodRef(mPtr);
     }
     Tcl_DeleteHashTable(&clsPtr->classMethods);
@@ -1093,7 +1106,7 @@ ObjectNamespaceDeleted(
     Class *mixinPtr;
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
-    Tcl_Interp *interp = oPtr->fPtr->interp;
+    Tcl_Interp *interp = fPtr->interp;
     int i;
 
     if (Destructing(oPtr)) {
@@ -1129,12 +1142,12 @@ ObjectNamespaceDeleted(
     if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
-	int result;
-	Tcl_InterpState state;
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
-
 	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
@@ -1166,11 +1179,11 @@ ObjectNamespaceDeleted(
 	 * as well.
 	 */
 
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
+	Tcl_DeleteCommandFromToken(interp, oPtr->command);
     }
 
     if (oPtr->myCommand) {
-	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->myCommand);
+	Tcl_DeleteCommandFromToken(interp, oPtr->myCommand);
     }
 
     /*
@@ -1200,6 +1213,10 @@ ObjectNamespaceDeleted(
 
     if (oPtr->methodsPtr) {
 	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
+	    /* instance gets deleted, so if method remains, reset it there */
+	    if (mPtr->refCount > 1 && mPtr->declaringObjectPtr == oPtr) {
+		mPtr->declaringObjectPtr = NULL;
+	    }
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
@@ -1245,7 +1262,6 @@ ObjectNamespaceDeleted(
 
     if (IsRootObject(oPtr) && !Destructing(fPtr->classCls->thisPtr)
 	    && !Tcl_InterpDeleted(interp)) {
-
 	Tcl_DeleteCommandFromToken(interp, fPtr->classCls->thisPtr->command);
     }
 
@@ -1773,7 +1789,7 @@ TclNewObjectInstanceCommon(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't create object \"%s\": command already exists with"
 		    " that name", nameStr));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", (char *)NULL);
 	    return NULL;
 	}
     }
@@ -1783,6 +1799,9 @@ TclNewObjectInstanceCommon(
      */
 
     oPtr = AllocObject(interp, simpleName, nsPtr, nsNameStr);
+    if (oPtr == NULL) {
+	return NULL;
+    }
     oPtr->selfCls = classPtr;
     AddRef(classPtr->thisPtr);
     TclOOAddToInstances(oPtr, classPtr);
@@ -1827,7 +1846,7 @@ FinalizeAlloc(
     if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"object deleted in constructor", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", (char *)NULL);
 	result = TCL_ERROR;
     }
     if (result != TCL_OK) {
@@ -1896,7 +1915,7 @@ Tcl_CopyObjectInstance(
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not clone the class of classes", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", (char *)NULL);
 	return NULL;
     }
 
@@ -2587,7 +2606,7 @@ TclOOObjectCmdCore(
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
-		    TclGetString(methodNamePtr), NULL);
+		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
 	}
     } else {
@@ -2603,7 +2622,7 @@ TclOOObjectCmdCore(
 		    "impossible to invoke method \"%s\": no defined method or"
 		    " unknown method", TclGetString(methodNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), NULL);
+		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2630,7 +2649,7 @@ TclOOObjectCmdCore(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "no valid method implementation", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(methodNamePtr), NULL);
+		    TclGetString(methodNamePtr), (char *)NULL);
 	    TclOODeleteContext(contextPtr);
 	    return TCL_ERROR;
 	}
@@ -2711,7 +2730,7 @@ Tcl_ObjectContextInvokeNext(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"no next %s implementation", methodType));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2780,7 +2799,7 @@ TclNRObjectContextInvokeNext(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"no next %s implementation", methodType));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2859,7 +2878,7 @@ Tcl_GetObjectFromObj(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "%s does not refer to an object", TclGetString(objPtr)));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
-	    NULL);
+	    (char *)NULL);
     return NULL;
 }
 

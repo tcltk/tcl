@@ -5097,7 +5097,7 @@ unix time commands (kenny)
 
 2001-05-03 (new feature) [auto_import] now matches patterns like
 [namespace import], not like [string match] (porter)
-        **** POTENTIAL INCOMPATABILITY ****
+	**** POTENTIAL INCOMPATABILITY ****
 
 2001-05-07 (new feature)[416643] distinct srand() seed per interp (sofer)
 
@@ -5193,7 +5193,7 @@ relative to executable (porter)
 
 2001-08-24 (bug fix) [auto_import] now matches patterns like
 [namespace import], not like [string match] (porter)
-        **** POTENTIAL INCOMPATABILITY ****
+	**** POTENTIAL INCOMPATABILITY ****
 
 2001-08-27 (new feature) added Tcl_SetMainLoop() to enable loading Tk as a
 true package (hobbs)
@@ -5251,7 +5251,7 @@ interpreter deletion (sofer, rbrunner)
 
 2001-10-16 (new feature, Mac) change in binary extension format from MachO
 bundles to standard .dylib dynamic libraries like on other unices.
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-10-18 (bug fix) corrected off-by-one-day error in clock scan with
 relative months and years during swing hours. (lavana)
@@ -5286,7 +5286,7 @@ compiles to 0 bytecodes (sofer)
 
 2001-09-17 (new feature) compiling with TCL_COMPILE_DEBUG now required to
 enable all compile and execution tracing (sofer)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-09-19 (bug fix)[411825] made TclNeedSpace UTF-8 aware (fellows)
 
@@ -5302,12 +5302,12 @@ enable all compile and execution tracing (sofer)
 2001-11-06 (new feature) revitalized makefile.vc (gravereaux)
 
 2001-11-07 (new feature) Cygwin gcc support dropped.  Use mingw (dejong)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-11-07 (new feature) Support --include-dir= and --libdir= options to
 configure.  Store in tclConfig.sh as TCL_INCLUDE_SPEC and TCL_LIB_SPEC.
 (dejong)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-11-08 (new feature) Enable --enable-threads on FreeBSD (dejong)
 
@@ -5335,7 +5335,7 @@ or a dynamic string as well as a static string to indicate an error (fellows)
 
 2001-12-05 (new feature) new algorithm for [array get] adds safety when read
 traces modify the array. (sofer)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-12-10 (bug fix)[490514] doc fixes (porter,english)
 
@@ -5348,7 +5348,7 @@ all (dejong)
 
 2001-12-28 (new feature) new command [memory onexit] replaces [checkmem] when
 compiled with TCL_MEM_DEBUG.  Added documentation. (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2001-12-28 (bug fix) proper case in [auto_execok] use of $env(COMPSPEC) (hobbs)
 
@@ -5429,7 +5429,7 @@ cached Command for all namespaces, avoiding repeated lookups (sofer)
 Added compiler macro USE_NON_CONST to keep using those old API prototypes
 that present irreconcilable source incompatibilities with header files
 of prior Tcl releases.  Others will need to be reconciled.
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-03-04 (bug fix)[474358, 218099, 219314, 524674] fixed several problems
 related to the handling of iso2022 text and finalization of escape-based
@@ -5447,7 +5447,7 @@ encodings. (taguchi, takahashi, hobbs)
 
 2002-03-24 (bug fix)[511666,511658,523217,530960] expanded
 Tcl_FSMatchInDirectory to handle assorted [glob] bugs in VFS. (darley)
-        *** POTENTIAL INCOMPATIBILITY with prior 8.4a releases ***
+	*** POTENTIAL INCOMPATIBILITY with prior 8.4a releases ***
 
 2002-03-25 (bug fix)[495726] stopped tcltest disabling of auto-loading (porter)
 
@@ -5498,7 +5498,7 @@ kupries)
 2002-05-31 (bug fix)[550534] plug interp leak in [pkg_mkIndex] (helmut)
 
 2002-05-31 (dead code)[474335,555635] removed all use of matherr() (english)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-06-04 (new feature)[TIP 85,521362] custom result match in tcltest
 (markus, porter)
@@ -5522,7 +5522,7 @@ examination of LC_ALL, LC_MESSAGES environment variables (haible, porter)
 
 2002-06-17 (new feature)[565088] header files assume modern C compiler by
 default; older compilers may need configuration (english)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-06-17 (bug fix)[554068] [exec] argument quoting on Windows (darley)
 
@@ -5541,7 +5541,7 @@ default; older compilers may need configuration (english)
 options to configure (max)
 
 2002-06-26 (bug fix)[565880] [clock format] now respects locale (max)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-07-03 (bug fix)[577015] [catch] catches even compile errors (sofer)
 
@@ -5569,7 +5569,7 @@ options to configure (max)
 2002-08-04 (new feature)[584051,580433,585105,582429][TIP 27] Tcl interfaces
 	are now fully CONST-ified.  Use the symbols USE_NON_CONST or
 	USE_COMPAT_CONST to select interfaces with fewer changes.
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-08-05 (bug fix)[589859] tcltest setup and cleanup scripts skipped when
 	test body is skipped (porter)
@@ -5674,13 +5674,13 @@ in DYLD_FRAMEWORK_PATH (if set). (steffen)
 2002-11-06 (feature enhancement) added new TclInThreadExit function to
 test for thread exit vs whole process exit condition. The TclInExit
 function now correctly returns 1 during Tcl_Finalize processing.
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-11-13 (bug fix)[615043] some execution traces were not firing
 
 2002-11-18 (bug fix)[634856] multiple signs no longer accepted as valid integer
 [string is integer ++1] => 0
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-11-26 (bug fix)[593810,597924] clean exit of channel worker threads on Win
 
@@ -5713,7 +5713,7 @@ packages in multiple interps.
 2003-02-01 (bug fix)[656660] MT-safety for [clock format]
 
 2003-02-03 (bug fix)[651271] command rename traces get fully-qualified names
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2003-02-07 (performance improvement) [glob] on Windows is 2.5 times faster
 
@@ -5750,7 +5750,7 @@ packages in multiple interps.
 2003-02-22 (bug fix)[571002] plugged data leak during thread exit
 
 2003-02-25 (feature change) [pkg_mkIndex -load]: case-insensitive match
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2003-02-27 (bug fix)[694232] stop [lsearch -start 0 {} x] segfault
 
@@ -5801,7 +5801,7 @@ defined on all platforms, even those where TCL_WIDE_INT_IS_LONG is defined.
 Also made the Tcl_Value struct have a wideValue field on all platforms.
 Potential incompatibility for TCL_WIDE_INT_IS_LONG platforms because that
 struct changes size.
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2003-04-25 (bug fix)[727271] Catch any errors returned by the Windows
 functions handling TLS ASAP instead of waiting to get some mysterious crash
@@ -6101,7 +6101,7 @@ tclConfig.sh (hobbs)
 gmt works on all platforms. (kenny, welton, glessner)
 
 2004-05-16 (feature rewrite) bytecode execution of {expand} changed
-        *** POTENTIAL INCOMPATIBILITY with prior 8.5a releases ***
+	*** POTENTIAL INCOMPATIBILITY with prior 8.5a releases ***
 
 2004-05-18 (platform support) makefile.vc now generates tclConfig.sh (thoyts)
 
@@ -6255,7 +6255,7 @@ tables to avoid system limits (mistachkin)
 (hobbs,darley)
 
 2004-10-14 (performance) [info commands/globals/procs/vars $pattern] faster
-                when $pattern is trivial (fellows)
+	when $pattern is trivial (fellows)
 
 2004-10-14 (new feature)[TIP 217] [lsort -indices] (salsman,fellows)
 
@@ -7626,7 +7626,7 @@ introduced by first versions of the NRE conversion (nadkarni,porter)
 2009-10-24 Broken DST applied EU rules to US zones (lehenbauer,kenny)
 
 2009-10-29 (bug fix)[2800740] halved bignum memory on 64-bit systems (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2009-11-05 (bug fix)[2854929] TM search path support in Safe Base (kupries)
 
@@ -7643,7 +7643,7 @@ introduced by first versions of the NRE conversion (nadkarni,porter)
 2009-11-16 (bug fix)[2891556] encoding finalization crash (mistachkin,ferrieux)
 
 2009-11-18 (bug fix)[2849797] consistent names for std chans (nijtmans,fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2009-11-19 (enhancement) [load]able Tcltest extension (nijtmans)
 
@@ -7708,14 +7708,14 @@ introduced by first versions of the NRE conversion (nadkarni,porter)
 2010-02-22 (bug fix)[2762041] zlib chan transforms read EOF too early (kupries)
 
 2010-02-27 (bug fix)[801429] Tcl_SetMainLoop() thread safety (fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-03-02 (enhancement) -fvisibility-hidden build support (nijtmans)
 
 2010-03-04 (bug fix)[2962664] [oo::class destroy] crash (fellows)
 
 2010-03-05 (interface) TclOO typedefs for function pointers (fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-03-09 (bug fix)[2936225] stop [chan copy] to slow channel consuming all
 memory with buffer backup (ferrieux)
@@ -7740,7 +7740,7 @@ memory with buffer backup (ferrieux)
 2010-04-02 (new feature)[TIP 357] Tcl_LoadFile, Tcl_FindSymbol, etc. (kenny)
 
 2010-04-05 (configure change)[TIP 364] default build: --enable-threads (fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-04-02 (new feature)[TIP 348] [info errorstack], [return -errorstack]
 (ferrieux)
@@ -7759,7 +7759,7 @@ memory with buffer backup (ferrieux)
 2010-06-18 (bug fix)[3017997] Add .cmd to file extensions for [exec] (fellows)
 
 2010-06-28 (bug fix)[3019634] support errno.h changes in MSVC++ 2010 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-07-02 (enhancement) -errorcode for [expr] domain errors (fellows)
 
@@ -7770,7 +7770,7 @@ memory with buffer backup (ferrieux)
 2010-08-04 (enhancement) Win [load] use LOAD_WITH_ALTERED_SEARCH_PATH (hobbs)
 
 2010-08-04 (platform support) panic on detection of win9x system (hobbs)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-08-10 (fix) Handle non-null-terminated bytearrys in glob matching (hobbs)
 
@@ -7779,7 +7779,7 @@ memory with buffer backup (ferrieux)
 2010-08-11 (platform) Drop pre-aix 4.2 support, ldAix (hobbs)
 
 2010-08-14 (frq)[2819611] changed signatures of hash fnctions, delete-file, and get-native-path (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-08-15 (bug fix)[3045010] tweaked error message for wrong#args of lambda's (fellows)
 
@@ -7796,7 +7796,7 @@ memory with buffer backup (ferrieux)
 2010-08-31 windows makefile and stub changes (nijtmans)
 
 2010-09-01 (bug fix)[3057639] compiled lappend trace consistency (hobbs,kupries)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-09-01 fixed safe glob handling of -directory (kupries)
 
@@ -7835,7 +7835,7 @@ memory with buffer backup (ferrieux)
 2010-10-13 (bug fix)[467523,983660] alt fix allows empty literal share (porter)
 
 2010-10-15 (bugfix)[3085863] updated unicode tables (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2010-10-16 refactored implementation of dict iteration (fellows)
 
@@ -8387,7 +8387,7 @@ Many optmizations, improvements, and tightened stack management in bytecode.
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-05-20 (bug fix) Stop eof and blocked state leaking thru stacks (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-05-20 (bug fix)[13d3af3] Win: socket -async tried only first IP address
 
@@ -8401,7 +8401,7 @@ is deleted after it is [load]ed (kupries)
 2014-06-05 (bug fix) io-12.6 (kupries,porter)
 
 2014-06-15 (RFE)[1b0266d] [dict replace|remove] return canonical dict (fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-06-16 (bug fix) socket-2.13 workaround broken select() (porter)
 
@@ -8410,12 +8410,12 @@ is deleted after it is [load]ed (kupries)
 2014-06-22 (RFE)[2f9df4c] -cleanup scripts before -out compare (nijtmans)
 
 2014-07-04 (update) Update Unicode data to 7.0 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-07-08 (bug) [chan push] converts blocked writes to error (aspect,porter)
 
 2014-07-10 (bug fix)[7368d2] memleak Tcl_SetVar2(..,TCL_APPEND_VALUE) (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-07-11 (bug) leaks in SetFsPathFromAny, [info frame] (porter)
 
@@ -8435,7 +8435,7 @@ is deleted after it is [load]ed (kupries)
 
 2014-07-30 (enhancement) use refcounts, not Tcl_Preserve to manage lifetime
 of Tcl_Channel  (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-07-31 (bug fix)[a84a720] double free in oo chain deletion (porter)
 
@@ -8455,7 +8455,7 @@ include ::oo::class (fellows)
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-09-05 (bug)[ccc2c2] Regression [lreplace {} 1 1] (bron,fellows)
 
@@ -8500,7 +8500,7 @@ include ::oo::class (fellows)
 2014-12-03 (bug)[0c043a] Fix compiled [set var($) val] (porter)
 
 2014-12-04 (bug)[d2ffcc] Limit $... and bareword parsing to ASCII (ladayaroslav,porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2014-12-06 (bug)[c6cd4a] Win: hang in async socket connection (shults,nadkarni)
 
@@ -8525,7 +8525,7 @@ include ::oo::class (fellows)
 2015-02-20 (bug)[32b615] Fix compiled [lreplace] (lreplace-4.[345]) (aspect)
 
 2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 --- Released 8.6.4, March 12, 2015 --- https://core.tcl-lang.org/tcl/ for details
 
@@ -8541,7 +8541,7 @@ include ::oo::class (fellows)
 
 2015-05-14 (enhance)[b9d043] Default use of gzip transfer encoding (fellows)
 => http 2.8.9
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2015-05-15 (bug)[9dd1bd] destructor [self] after failed constructor (calvo,fellows)
 
@@ -8560,7 +8560,7 @@ include ::oo::class (fellows)
 2015-06-16 (bug)[e770d9] Higher baud on serial channels (woods,nijtmans)
 
 2015-06-18 (update) Update Unicode data to 8.0 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2015-06-18 (bug)[a4cb3f] compiled [lreplace] handling of end (bron,aspect)
 
@@ -8642,7 +8642,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-03-23 [f12535] enable test bindings customization (vogel,nijtmans)
 
 2016-04-04 (bug)[47ac84] compiled [lreplace] fixes (aspect,ferrieux,fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-04-08 (bug)[866368] RE \w includes 'Punctuation Connector' (nijtmans)
 
@@ -8667,7 +8667,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-06-21 (bug)[c383eb] crash in [glob -path a] (oehlmann,porter)
 
 2016-06-21 (update) Update Unicode data to 9.0 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-06-22 (bug)[16896d] Tcl_DString tolerate append to self. (dah,porter)
 
@@ -8676,22 +8676,22 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-06-27 (bug)[dd260a] crash in [chan configure -dictionary] (madden,aspect)
 
 2016-07-02 (bug)[f961d7] usage message with parameters with spaces (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-02 (enhancement)[09fabc] Sort order of -relateddir (lanam)
 
 2016-07-07 (bug)[5d7ca0] Win: [file executable] for .cmd and .ps1 (nadkarni)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
 
 2016-07-09 [ae61a6] [file] handling of Win hard-coded names (CON) (nadkarni)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)
 
 2016-07-09 (bug)[1493a4] [namespace upvar] use of resolvers (beric,fellows)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-10 (bug)[da340d] integer division in clock math (nadkarni)
 
@@ -8704,7 +8704,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-09-07 (bug)[4dbdd9] Memleak in test var-8.3 (mr_calvin,porter)
 
 2016-10-03 (bug)[2bf561] Allow empty command as alias target (yorick,nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-10-04 (bug)[4d5ae7] Crash in async connects host no address (gahr,fellows)
 
@@ -8730,26 +8730,26 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2016-11-11 (bug)[79614f] invalidate VFS mounts on sytem encoding change (yorick)
 
 2016-11-14 OSX: End panic() as legacy support macro; system conflicts (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2016-11-15 (bug) TclOO fix stops crash mixing Itcl and snit (fellows)
 
 2016-11-17 (update) Reconcile libtommath updates; purge unused files (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2017-01-09 (bug)[b87ad7] Repair drifts in timer clock (sebres)
 
 2017-01-17 (update) => zlib 1.2.11 (nijtmans)
 
 2017-01-31 (bug)[39f630] Revise Tcl_LinkVar to tolerate some prefixes (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2017-02-01 (bug)[d0f7ba] Improper NAN optimization. expr-22.1[01] (aspect)
 
 2017-02-26 (bug)[25842c] zlib stream finalization (aspect)
 
 2017-03-07 (deprecate) Remove unmaintained makefile.bc file (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2017-03-14 (enhancement) [clock] and [encoding] are now ensembles (kenny)
 
@@ -8779,12 +8779,12 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2017-05-29 (bug)[a3fb33] crash in [lsort] on long lists (sebres)
 
 2017-06-05 (bug)[67aa9a] Tcl_UtfToUniChar() revised handling invalid UTF-8 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2017-06-08 (bug)[2738427] Tcl_NumUtfChars() corner case utf-4.9 (nijtmans)
 
 2017-06-22 (update) Update Unicode data to 10.0 (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2017-06-22 (TIP 473) Let [oo::copy] specify target namespace (fellows)
 
@@ -8985,17 +8985,17 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2020-03-28 (bug)[ffeb20] [binary decode base64] ignore invalid chars (dgp)
 See RFC 2045
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-03-31 (bug)[b8e82d] some -maxlen values break uuencode round trip (dgp)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-04-01 (bug)[f58371] Fileevent run in proper thread (bron,sebres)
 
 2020-04-13 (bug)[afa4b2] TclNeedSpace bug; tests util-8.5 .. util-8.11 (dgp)
 
 2020-04-13 (bug)[085913] Tcl_DStringAppendElement # quoting precision (dgp)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-04-13 (bug)[a7f685] test util-5.52 (dgp)
 
@@ -9012,10 +9012,10 @@ See RFC 2045
 2020-05-11 (bug)[d402ff] Win32 potential crash when using main() (werner)
 
 2020-05-13 (bug)[81242a] revised documentation for Tcl_UtfAtIndex() (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-05-13 (bug)[ed2980] Tcl_UtfToUniChar reads > TCL_UTF_MAX bytes (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-06-02 (bug) prevent segfault in parser (sebres)
 
@@ -9027,10 +9027,10 @@ See RFC 2045
 2020-06-24 (bug)[f70ce1] zlib multi-stream inflate acts only on first (sebres)
 
 2020-07-09 (bug)[a1bd37] [clock scan] new ISO format (clock-34.(19-24)) (sebres)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-07-10 (bug)[501974] [clock scan] +time zone (clock-34.(53-68)) (sebres)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-07-15 (bug)[3c6e47] compiled [lappend] performance, avoid copy (sebres)
 
@@ -9052,7 +9052,7 @@ See RFC 2045
 => tcltest 2.5.3
 
 2020-09-25 (new) force -eofchar \x1A when evaluating library scripts (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-09-29 (bug)[0063cb] http::geturl -headers must be dict (oehlmann,nijtmans)
 
@@ -9061,10 +9061,10 @@ See RFC 2045
 2020-10-22 (bug)[c97593] Usage of gnu_printf in latest mingw-w64 (nijtmans)
 
 2020-10-26 (new)[48898a] improve error message consistency (stu)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-11-06 (new) revised case of module names (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2020-12-10 (bug)[ed5be7] Win: recognize "comx:" as serial port (oehlmann)
 
@@ -9085,7 +9085,7 @@ See RFC 2045
 2021-02-19 (bug)[1dab71,7c64aa] BRE broken by uninitialized value use (lane)
 
 2021-03-09 (bug)[8419c5] Unix tty channels tolerate EINTR (nijtmans)
-        *** POTENTIAL INCOMPATIBILITY ***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2021-03-10 (bug)[4c591f] [string compare] EIAS violation (nijtmans)
 
@@ -9255,7 +9255,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2023-09-14 (bug) [00655c] ClockGetdatefieldsObjCmd(): avoid signed integer
 	overflow and platform-dependent behavior (nijtmans)
 
-2023-09-28 TIP #662: Tcl_VarEval is not depreciated any more (nijtmans)
+2023-09-28 TIP #662: Tcl_VarEval is not deprecated any more (nijtmans)
 
 2023-10-01 (bug) [7b3167] tclOO.c: initialize fakeObject.refCount (nijtmans)
 
@@ -9294,3 +9294,95 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2024-02-06 [86b3c1] endless loop when ::unknown is moved into a namespace (nash)
 
 - Released 8.6.14, Feb 28, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+2024-03-03 [d63061] remove private unicode 0xE000-0xF8FF from unicode
+	control group (nijtmans)
+
+2024-03-05 [1b8a89] TCL_PACKAGE_PATH in tclConfig.sh change from TCL list to ":"
+	(UNIX) or ";" (Windows) separated items (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2024-03-11 Time zones added: Alaska Standard/Daylight (nijtmans)
+
+2024-03-12 [1acd17] fix compiled mapped ensembles (sebres)
+
+2024-03-15 [f23022] fix encoding koi8-u codepoint 0xB4
+
+2024-03-20 [6811a0] speedup op unicode transformation related operations (sebres)
+
+2024-03-26 Add encodings: koi8-ru, koi8-t
+
+2024-04-04 [7cb740] Fix Tcl_ParseArgsObjv with TCL_ARGV_GENFUNC option (gavilan)
+
+2024-04-12 Hash speedup for pointer compare. Option TCL_HASH_KEY_DIRECT_COMPARE
+	for hash tables (sebres)
+
+2024-04-17 [TIP 692] Deprecate Tcl_GetAlias()
+
+2024-05-04 [a5f4a7] Correct tcl::tm::path autoload (nadkarni)
+
+2024-05-05 [3c26de] Remove empty all items from tclConfig.sh path variables.
+
+2024-05-17 [87271f] Fix crash in oo+coroutine (fellows)
+
+2024-05-20 [7842f3] fix crash in oo destructors in same namespace
+	(fellows,sebres)
+
+2024-05-21 [79474c] Fix crash in reflected channels
+
+2024-05-22 [c6897e] Fix crash due to unchecked file descriptor size
+
+2024-05-23 [3fc328] Fix report of non ASCII computer names on Windows (fasel)
+
+2024-05-27 [e3f4a8] Fix error message caused by interp limit
+
+2024-06-13 [1d26e5] Source files with BOM also in safe interpreters
+
+2024-07-01 [5fca83] Fix encoding system result for system locale ISO-8859-1
+
+2024-07-02 [0de6c1] Fix crash in [child invokehidden info frame] /nadkarni)
+
+2024-07-14 [74b611] Fix removal of oo variable by [info exists]
+
+2024-07-15 [91b3a5] Make [self] work inside [$obj eval] (fellows)
+
+2024-08-06 [154f09] Tcl_NewObjectInstance() errors on namespace re-use (fellows)
+	*** POTENTIAL INCOMPATIBILITY -- breaks Itcl 4.2 ***
+
+2024-08-07 [2da1cb] Fix [$obj varname] for linked varnames (fellows)
+
+2024-08-09 Unicode version 16 (nijtmans)
+
+2024-08-12 [7179c6] Fix byte compiled [incr] with wide int increment
+
+2024-08-18 [6a8c58] Fix Windows NTFS alternate data streams (ADS) accessability
+	(nijtmans)
+
+2024-09-07 tzdata updated to Olson's tzdata2024b (nijtmans)
+
+- Released 8.6.15, Sep 13, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+2024-09-17 (bug) [02d5d6] unneeded path normalization (sebres)
+
+2024-10-18 (bug) [cfdf80] zlib stream returns negative checksums (nadkarni)
+
+2024-10-18 (bug) [73d5cb] zlib-8.8, zlib-8.16 fail on Fedora 40 (nijtmans)
+
+2024-10-22 (bug) [bc6934] win/makefile: wrong recipe to buid libtcl.a and
+	missing dependencies (sebres)
+
+2024-10-29 (bug) [2c237b] [clock] regression in tzdata, %z instead of offset
+	TZ-name (sebres)
+
+2024-11-13 (bug) [43c94f] Tcl will not start properly if there is an init.tcl 
+	file in the current dir (sebres) 
+
+2024-11-15 (bug) [f2b5f8] clock scan of leapsecond: wrong result (sebres)
+
+2024-12-05 (bug) [0b809c] Segfault in TclOO with coroutines (goth,sebres)
+
+- Released 8.6.16, Dec 11, 2024 - details at https://core.tcl-lang.org/tcl/ -
+
+2024-12-16 (bug) [63449c] [namespace children] doesn't match non-glob patterns below the global namespace (stu)
+
+2025-01-06 (bug) [63449c] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)

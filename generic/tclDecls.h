@@ -467,7 +467,7 @@ EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
 				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				CONST84 char **targetCmdPtr, int *objcPtr,
-				Tcl_Obj ***objv);
+				Tcl_Obj ***objvPtr);
 /* 150 */
 EXTERN ClientData	Tcl_GetAssocData(Tcl_Interp *interp,
 				const char *name,
@@ -685,8 +685,7 @@ EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* 230 */
-EXTERN void		Tcl_SetPanicProc(
-				TCL_NORETURN1 Tcl_PanicProc *panicProc);
+EXTERN void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
 /* 231 */
 EXTERN int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
 /* 232 */
@@ -877,7 +876,7 @@ EXTERN int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
 EXTERN int		Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
 /* 294 */
-EXTERN void		Tcl_ExitThread(int status);
+EXTERN TCL_NORETURN void Tcl_ExitThread(int status);
 /* 295 */
 EXTERN int		Tcl_ExternalToUtf(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -1499,7 +1498,7 @@ EXTERN void		Tcl_GetCommandFullName(Tcl_Interp *interp,
 EXTERN int		Tcl_FSEvalFileEx(Tcl_Interp *interp,
 				Tcl_Obj *fileName, const char *encodingName);
 /* 519 */
-EXTERN Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
+EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 /* 520 */
 EXTERN void		Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
 				Tcl_LimitHandlerProc *handlerProc,
@@ -1872,7 +1871,9 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 685 is reserved */
 /* Slot 686 is reserved */
 /* Slot 687 is reserved */
-/* 688 */
+/* Slot 688 is reserved */
+/* Slot 689 is reserved */
+/* 690 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2050,7 +2051,7 @@ typedef struct TclStubs {
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
     int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, int *argcPtr, CONST84 char ***argvPtr); /* 148 */
-    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
+    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 149 */
     ClientData (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
     int (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
@@ -2139,7 +2140,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
+    void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2203,7 +2204,7 @@ typedef struct TclStubs {
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
-    void (*tcl_ExitThread) (int status); /* 294 */
+    TCL_NORETURN1 void (*tcl_ExitThread) (int status); /* 294 */
     int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */
     char * (*tcl_ExternalToUtfDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 296 */
     void (*tcl_FinalizeThread) (void); /* 297 */
@@ -2428,7 +2429,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
     int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
-    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
+    Tcl_ExitProc * (*tcl_SetExitProc) (Tcl_ExitProc *proc); /* 519 */
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData); /* 521 */
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
@@ -2597,7 +2598,9 @@ typedef struct TclStubs {
     void (*reserved685)(void);
     void (*reserved686)(void);
     void (*reserved687)(void);
-    void (*tclUnusedStubEntry) (void); /* 688 */
+    void (*reserved688)(void);
+    void (*reserved689)(void);
+    void (*tclUnusedStubEntry) (void); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3947,8 +3950,10 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 685 is reserved */
 /* Slot 686 is reserved */
 /* Slot 687 is reserved */
+/* Slot 688 is reserved */
+/* Slot 689 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3973,14 +3978,6 @@ extern const TclStubs *tclStubsPtr;
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
-#ifndef __cplusplus
-#   undef Tcl_EventuallyFree
-#   define Tcl_EventuallyFree \
-	   ((void (*)(void *,void *))(void *)(tclStubsPtr->tcl_EventuallyFree)) /* 132 */
-#   undef Tcl_SetResult
-#   define Tcl_SetResult \
-	   ((void (*)(Tcl_Interp *, char *, void *))(void *)(tclStubsPtr->tcl_SetResult)) /* 232 */
-#endif
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)

@@ -2690,7 +2690,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".14"
+TCL_PATCH_LEVEL=".16"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -5752,7 +5752,7 @@ then :
 			;;
 		    *)
 			# Make sure only first arg gets _r
-		    	CC=`echo "$CC" | sed -e 's/^\([^ ]*\)/\1_r/'`
+			CC=`echo "$CC" | sed -e 's/^\([^ ]*\)/\1_r/'`
 			;;
 		esac
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Using $CC for compiling with threads" >&5
@@ -6317,19 +6317,19 @@ fi
 	    if test "$do64bit" = yes
 then :
 
-	        if test "$GCC" = yes
+		if test "$GCC" = yes
 then :
 
-	            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: 64bit mode not supported by gcc" >&5
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: 64bit mode not supported by gcc" >&5
 printf "%s\n" "$as_me: WARNING: 64bit mode not supported by gcc" >&2;}
 
 else case e in #(
   e)
-	            do64bit_ok=yes
-	            SHLIB_LD="ld -64 -shared -rdata_shared"
-	            CFLAGS="$CFLAGS -64"
-	            LDFLAGS_ARCH="-64"
-	         ;;
+		    do64bit_ok=yes
+		    SHLIB_LD="ld -64 -shared -rdata_shared"
+		    CFLAGS="$CFLAGS -64"
+		    LDFLAGS_ARCH="-64"
+		 ;;
 esac
 fi
 
@@ -6361,7 +6361,7 @@ then :
 		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
 fi
 	    ;;
-            esac
+	    esac
 
 	    if test $doRpath = yes
 then :
@@ -6849,7 +6849,7 @@ then :
 
 			for v in CFLAGS CPPFLAGS LDFLAGS; do
 			    eval $v'="$hold_'$v'"'
-		        done
+			done
 fi
 		    LIBS=$hold_libs ;;
 esac
@@ -6914,7 +6914,7 @@ then :
 
 printf "%s\n" "#define NO_COREFOUNDATION_64 1" >>confdefs.h
 
-                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
+			LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
 
 fi
 
@@ -6959,7 +6959,7 @@ then :
   SHLIB_LD="ld -shared"
 else case e in #(
   e)
-	        SHLIB_LD="ld -non_shared"
+		SHLIB_LD="ld -non_shared"
 	     ;;
 esac
 fi
@@ -6976,11 +6976,11 @@ fi
 	    if test "$SHARED_BUILD" = 1
 then :
 
-	        SHLIB_LD='${CC} -shared'
+		SHLIB_LD='${CC} -shared'
 
 else case e in #(
   e)
-	        SHLIB_LD='${CC} -non_shared'
+		SHLIB_LD='${CC} -non_shared'
 	     ;;
 esac
 fi
@@ -7358,7 +7358,7 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-	        LDFLAGS=$hold_ldflags ;;
+		LDFLAGS=$hold_ldflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_ld_Bexport" >&5
@@ -7475,37 +7475,37 @@ fi
     if test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""
 then :
 
-        LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
-        if test "${SHLIB_SUFFIX}" = ".dll"
+	LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+	MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${LDFLAGS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+	if test "${SHLIB_SUFFIX}" = ".dll"
 then :
 
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
-            DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+	    DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
 
 else case e in #(
   e)
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
-         ;;
+	    INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	 ;;
 esac
 fi
 
 else case e in #(
   e)
-        LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
+	LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
-        if test "$RANLIB" = ""
+	if test "$RANLIB" = ""
 then :
 
-            MAKE_LIB='$(STLIB_LD) $@ ${OBJS}'
+	    MAKE_LIB='$(STLIB_LD) $@ ${OBJS}'
 
 else case e in #(
   e)
-            MAKE_LIB='${STLIB_LD} $@ ${OBJS} ; ${RANLIB} $@'
-         ;;
+	    MAKE_LIB='${STLIB_LD} $@ ${OBJS} ; ${RANLIB} $@'
+	 ;;
 esac
 fi
-        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
+	INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
      ;;
 esac
 fi
@@ -7514,11 +7514,11 @@ fi
     if test "$RANLIB" = ""
 then :
 
-        MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS}'
+	MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS}'
 
 else case e in #(
   e)
-        MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS} ; ${RANLIB} $@'
+	MAKE_STUB_LIB='${STLIB_LD} $@ ${STUB_LIB_OBJS} ; ${RANLIB} $@'
      ;;
 esac
 fi
@@ -7530,7 +7530,7 @@ fi
     if test "x${TCL_LIBS}" = x
 then :
 
-        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
+	TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
 fi
 
 
@@ -7743,9 +7743,6 @@ printf "%s\n" "enabled $tcl_ok debugging" >&6; }
 
 
 
-printf "%s\n" "#define TCL_TOMMATH 1" >>confdefs.h
-
-
 printf "%s\n" "#define MP_PREC 4" >>confdefs.h
 
 
@@ -7904,15 +7901,15 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 	# See if we should use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
 main (void)
 {
 switch (0) {
-            case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
-        }
+	    case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
+	}
   ;
   return 0;
 }
@@ -7991,7 +7988,7 @@ int
 main (void)
 {
 struct dirent64 *p; DIR64 d = opendir64(".");
-            p = readdir64(d); rewinddir64(d); closedir64(d);
+	    p = readdir64(d); rewinddir64(d); closedir64(d);
   ;
   return 0;
 }
@@ -8095,8 +8092,8 @@ esac
 fi
 
 			if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-	        test "x${ac_cv_func_lseek64}" = "xyes" && \
-	        test "x${ac_cv_func_open64}" = "xyes" ; then
+		test "x${ac_cv_func_lseek64}" = "xyes" && \
+		test "x${ac_cv_func_open64}" = "xyes" ; then
 
 printf "%s\n" "#define HAVE_TYPE_OFF64_T 1" >>confdefs.h
 
@@ -9077,8 +9074,8 @@ printf "%s\n" "#define HAVE_MTSAFE_GETHOSTBYADDR 1" >>confdefs.h
 
     elif test "`uname -s`" = "HP-UX" && \
 	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
-        # Starting with HPUX 11.00 (we believe), gethostbyX
-        # are actually MT-safe as they always return pointers
+	# Starting with HPUX 11.00 (we believe), gethostbyX
+	# are actually MT-safe as they always return pointers
 	# from TSD instead of static storage.
 
 printf "%s\n" "#define HAVE_MTSAFE_GETHOSTBYNAME 1" >>confdefs.h
@@ -10178,7 +10175,7 @@ int
 main (void)
 {
 
-    	socklen_t foo;
+	socklen_t foo;
 
   ;
   return 0;
@@ -11344,11 +11341,11 @@ main (void)
 
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
-                 "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t"
-                 "mov %%edi, %%ebx  \n\t"
-                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+		 "cpuid            \n\t"
+		 "mov %%ebx, %%esi   \n\t"
+		 "mov %%edi, %%ebx  \n\t"
+		 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+		 : "a"(index) : "edi");
 
   ;
   return 0;
@@ -11461,13 +11458,13 @@ printf "%s\n" "#define TCL_FRAMEWORK 1" >>confdefs.h
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     # default install directory for bundled packages
     if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
-        PACKAGE_DIR="/Library/Tcl"
+	PACKAGE_DIR="/Library/Tcl"
     else
-        PACKAGE_DIR="$libdir"
+	PACKAGE_DIR="$libdir"
     fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
-        # override libdir default
-        libdir="/Library/Frameworks"
+	# override libdir default
+	libdir="/Library/Frameworks"
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
@@ -11494,9 +11491,9 @@ else
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
+	TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
+	TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
@@ -11516,6 +11513,8 @@ VERSION=${TCL_VERSION}
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
 	TCL_PACKAGE_PATH="~/Library/Tcl:/Library/Tcl:~/Library/Frameworks:/Library/Frameworks"
+	# Allow tclsh to find Tk when multiple versions are installed. See Tk [1562e10c58].
+	TCL_PACKAGE_PATH="$TCL_PACKAGE_PATH:/Library/Frameworks/Tk.framework/Versions"
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
@@ -12739,11 +12738,11 @@ printf "%s\n" "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "Tcl.framework":C) n=Tcl &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
+	f=$n.framework && v=Versions/$VERSION &&
+	rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
      ;;
 
   esac

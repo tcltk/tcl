@@ -534,7 +534,7 @@ declare 148 {
 declare 149 {
     int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr,
-	    int *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 150 {
     ClientData Tcl_GetAssocData(Tcl_Interp *interp, const char *name,
@@ -814,7 +814,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -1058,7 +1058,7 @@ declare 293 {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 294 {
-    void Tcl_ExitThread(int status)
+    TCL_NORETURN void Tcl_ExitThread(int status)
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1872,7 +1872,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
@@ -2327,7 +2327,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 688 {
+declare 690 {
     void TclUnusedStubEntry(void)
 }
 

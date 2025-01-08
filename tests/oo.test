@@ -13,12 +13,24 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+# A helper for intercepting background errors
+proc ::bgerrorIntercept {varName body} {
+    set old [interp bgerror {}]
+    interp bgerror {} [list apply {{var msg args} {
+	upvar #0 $var v
+	lappend v $msg
+    }} $varName]
+    try {
+	uplevel 1 $body
+    } finally {
+	interp bgerror {} $old
+    }
+}
 
 # The foundational objects oo::object and oo::class are sensitive to reference
 # counting errors and are deallocated only when an interp is deleted, so in
 # this test suite, interp creation and interp deletion are often used in
 # leaktests in order to leverage this sensitivity.
-
 
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
@@ -54,7 +66,7 @@ test oo-0.2 {basic test of OO's ability to clean up its initial state} {
 } {}
 test oo-0.3 {basic test of OO's ability to clean up its initial state} -body {
     leaktest {
-        [oo::object new] destroy
+	[oo::object new] destroy
     }
 } -constraints memory -result 0
 test oo-0.4 {basic test of OO's ability to clean up its initial state} -body {
@@ -378,6 +390,112 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
 } -cleanup {
     interp delete $fresh
 } -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+test oo-1.22 {basic test of OO functionality: nested ownership destruction order} -setup {
+    oo::class create parent
+} -body {
+    oo::class create abc {
+	superclass parent
+	variable n
+	constructor {} {set n 0}
+	method make {i} {set n $i; [self class] create xyz}
+	destructor {lappend ::deathOrder $n}
+    }
+    apply {n {
+	set ::deathOrder {}
+	# Make some "nested" objects
+	set base [abc new]
+	for {set i 1; set obj $base} {$i < $n} {incr i} {
+	     set obj [$obj make $i]
+	}
+	# Kill them all in one go; should come apart in right order!
+	$base destroy
+	return $::deathOrder
+    }} 5
+} -cleanup {
+    parent destroy
+} -result {1 2 3 4 0}
+test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
+    oo::class create parent
+} -constraints knownBug -body {
+    oo::class create abc {
+	superclass parent
+	method make {} {[self class] create xyz}
+	destructor {incr ::count}
+    }
+    apply {n {
+	set ::count 0
+	# Make a lot of "nested" objects
+	set base [abc new]
+	for {set i 1; set obj $base} {$i < $n} {incr i} {
+	     set obj [$obj make]
+	}
+	# Kill them all in one go; should not crash!
+	$base destroy
+	return [expr {$n - $::count}]
+    }} 10000
+} -cleanup {
+    parent destroy
+} -result 0
+test oo-1.24 {basic test of OO functionality: deep nested ownership} -setup {
+    oo::class create parent
+} -constraints knownBug -body {
+    oo::class create abc {
+	superclass parent
+	self method make {} {oo::copy [self] xyz}
+    }
+    apply {n {
+	# Make a lot of "nested" objects
+	set base abc
+	lappend lst $base [info object namespace $base]
+	for {set i 1; set obj $base} {$i < $n} {incr i} {
+	     set obj [$obj make]
+	     lappend lst $obj [info object namespace $obj]
+	}
+	# Kill them all in one go; should not crash!
+	$base destroy
+	# How many classes still there (cnt must remain 0)
+	set cnt 0
+	foreach {obj ns} $lst {
+	    if {[namespace which -command $obj] ne "" || [namespace exists $ns]} {
+		incr cnt
+	    }
+	}
+	return $cnt
+    }} 10000
+} -cleanup {
+    parent destroy
+} -result 0
+
+test oo-1.25 {basic test of OO functionality: touch method after instance deletion, bug [0b809cd3fc8b6e5e]} -body {
+    set ::result {}
+    # test for eval and deletion of coro, in both cases the coroutine shall be deleted
+    foreach v {"eval" "del"} {
+	# 1st (deleted class)
+	oo::class create A
+	oo::define A method retard-it {} {yield}
+	coroutine tcoro [A new] retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	A destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+	# 2nd (deleted object of class)
+	oo::class create A
+	oo::define A method retard-it {} {yield}
+	set obj [A new]
+	coroutine tcoro $obj retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	$obj destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+	A destroy
+	# 3rd  (deleted object)
+	set obj [oo::object new]
+	oo::objdefine $obj method retard-it {} {yield}
+	coroutine tcoro $obj retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	$obj destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+    }
+    set ::result
+} -result [lrepeat 6 D]
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -668,28 +786,30 @@ test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
 } -result {1 foo {}}
 test oo-3.7 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [rename [cls create obj] {}] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [rename obj {}]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
     oo::class create cls
-    set result {}
-    proc bgerror msg {lappend ::result $msg}
 } -cleanup {
     cls destroy
-    rename bgerror {}
 } -body {
     oo::define cls destructor {error foo}
-    list [namespace delete [info object namespace [cls create obj]]] \
-	[update idletasks] $result [info commands obj]
-} -result {{} {} foo {}}
+    bgerrorIntercept result {
+	set result [cls create obj]
+	lappend result [namespace delete [info object namespace obj]]
+	update idletasks
+	lappend result [info commands obj]
+    }
+} -result {::obj {} foo {}}
 test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
     oo::class create cls
     set result {}
@@ -1390,24 +1510,24 @@ test oo-7.9 {OO: defining inheritance in namespaces} -setup {
 test oo-7.10 {OO: next after object deletion, bug [135804138e]} -setup {
     set ::result ""
     oo::class create c1 {
-        method m1 {} {
-           lappend ::result c1::m1
-        }
+	method m1 {} {
+	   lappend ::result c1::m1
+	}
     }
     oo::class create c2 {
-        superclass c1
-        destructor {
-            lappend ::result c2::destructor
-            my m1
-            lappend ::result /c2::destructor
-        }
-        method m1 {} {
-            lappend ::result c2::m1
-            rename [self] {}
-            lappend ::result no-self
-            next
-            lappend ::result /c2::m1
-        }
+	superclass c1
+	destructor {
+	    lappend ::result c2::destructor
+	    my m1
+	    lappend ::result /c2::destructor
+	}
+	method m1 {} {
+	    lappend ::result c2::m1
+	    rename [self] {}
+	    lappend ::result no-self
+	    next
+	    lappend ::result /c2::m1
+	}
     }
 } -body {
     c2 create o
@@ -1626,9 +1746,7 @@ test oo-11.6.1 {
 	rename obj1 {}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.2 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -1643,9 +1761,7 @@ test oo-11.6.2 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.3 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -1662,9 +1778,7 @@ test oo-11.6.3 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
+} -result 0
 test oo-11.6.4 {
     OO: cleanup ReleaseClassContents() where class is mixed into one of its
     instances
@@ -1684,6 +1798,19 @@ test oo-11.6.4 {
 } -result done -cleanup {
     rename obj1 {}
 }
+
+test oo-11.7 {Bug 154f0982f2: createWithNamespace and an existing namespace} -setup {
+    oo::class create Aclass {
+	self export createWithNamespace
+	method ns {} {namespace current}
+    }
+} -body {
+    namespace eval test_oo117 {variable name [namespace current]}
+    list [Aclass createWithNamespace aInstance $test_oo117::name] [aInstance ns]
+} -returnCodes error -cleanup {
+    Aclass destroy
+    catch {namespace delete test_oo117}
+} -result {can't create namespace "::test_oo117": already exists}
 
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
@@ -2640,6 +2767,7 @@ test oo-17.14 {OO: instance method unexport (bug 900cb0284bc)} -setup {
     c destroy
 } -result $stdmethods
 
+
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
 } {1 foo {foo
@@ -2797,7 +2925,7 @@ test oo-18.8 {OO: define/self command support} -setup {
 test oo-18.9 {OO: define/self command support} -setup {
     oo::class create parent
     set c [oo::class create now_this_is_a_very_very_long_class_name_indeed {
-        superclass parent
+	superclass parent
     }]
 } -body {
     catch {oo::define $c {error err}} msg opt
@@ -2841,6 +2969,16 @@ test oo-18.11 {OO: define/self command support} -setup {
     (in definition script for class "::foo" line 1)
     invoked from within
 "oo::define foo {rename ::foo {}; self {error foobar}}"}
+test oo-18.12 {OO: self callable via eval method} -setup {
+    oo::class create parent {
+	export eval
+    }
+    parent create ::foo
+} -body {
+    foo eval { self }
+} -cleanup {
+    parent destroy
+} -result ::foo
 
 test oo-19.1 {OO: varname method} -setup {
     oo::object create inst
@@ -2894,6 +3032,45 @@ test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
 } -cleanup {
     testClass destroy
 } -result 0
+test oo-19.4 {OO: varname ghosts [Bug 74b6110204]} -setup {
+    oo::class create testClass {
+	export varname
+	self export createWithNamespace
+    }
+    set obj [testClass createWithNamespace testoo19_4 testoo19_4]
+    set ns [info object namespace $obj]
+} -body {
+    set v [$obj varname foo]
+    list [namespace which -variable $v] \
+	[info exists $v] [namespace which -variable $v]
+} -cleanup {
+    testClass destroy
+} -result {::testoo19_4::foo 0 ::testoo19_4::foo}
+test oo-19.5 {OO: varname array elements [Bug 2da1cb0c80]} -setup {
+    set obj [oo::object new]
+    oo::objdefine $obj export eval varname
+} -constraints knownBug -body {
+    $obj eval {
+	namespace upvar :: tcl_platform(platform) foo
+    }
+    $obj varname foo
+} -cleanup {
+    $obj destroy
+} -result ::tcl_platform(platform)
+test oo-19.5.1 {OO: varname array elements before Tcl 9 [Bug 2da1cb0c80]} -setup {
+    oo::class create testClass {
+	self export createWithNamespace
+	export eval varname
+    }
+} -body {
+    set obj [testClass createWithNamespace obj oo-19.5.1]
+    $obj eval {
+	namespace upvar :: tcl_platform(platform) foo
+    }
+    $obj varname foo
+} -cleanup {
+    testClass destroy
+} -result ::oo-19.5.1::foo
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
@@ -3296,6 +3473,121 @@ test oo-22.2 {OO and info frame: Bug 3001438} -setup {
 } -match glob -cleanup {
     c destroy
 } -result {* cmd {info frame 0} method test class ::c level 0}
+# Common code for oo-22.{3,4,5,6}
+oo::class create WorkerBase
+oo::class create WorkerSupport {
+    superclass oo::class WorkerBase
+    variable result stop
+    method WithWorkers {nworkers args script} {
+	set workers {}
+	try {
+	    for {set n 1} {$n <= $nworkers} {incr n} {
+		lappend workers [set worker [[self] new]]
+		$worker schedule {*}$args
+	    }
+	    return [uplevel 1 $script]
+	} finally {
+	    foreach worker $workers {$worker destroy}
+	}
+    }
+    method run {nworkers} {
+	set result {}
+	set stopvar [my varname stop]
+	set stop false
+	my WithWorkers $nworkers [list my Work [my varname result]] {
+	    after idle [namespace code {set stop true}]
+	    vwait $stopvar
+	}
+	return $result
+    }
+}
+oo::class create Worker {
+    superclass WorkerBase
+    method schedule {args} {
+	set coro [namespace current]::coro
+	if {![llength [info commands $coro]]} {
+	    coroutine $coro {*}$args
+	}
+    }
+    method Work args {error unimplemented}
+    method dump {} {
+	info frame [expr {[info frame] - 1}]
+    }
+}
+test oo-22.3 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly restored pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    A run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
+test oo-22.4 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works with the source class still around
+    oo::copy A B
+    B run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::B *} {* method Work class ::B *}}
+test oo-22.5 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works with the source class deleted
+    oo::copy A B
+    catch {A destroy}
+    B run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::B *} {* method Work class ::B *}}
+test oo-22.6 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
+    # Triggers a crash with incorrectly cloned pmPtr->procPtr->cmdPtr
+    WorkerSupport create A {
+	superclass Worker
+	method Work {var} {
+	    after 0 [info coroutine]
+	    yield
+	    lappend $var [my dump]
+	}
+    }
+    # Copies the methods, changing the declarer
+    # Test it works in the original source class with the copy around
+    oo::copy A B
+    B run 2
+    A run 2
+} -cleanup {
+    catch {rename dump {}}
+    catch {A destroy}
+    catch {B destroy}
+} -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
+WorkerBase destroy
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {
@@ -3516,7 +3808,7 @@ test oo-27.6 {variables declaration - non-interference of levels} -setup {
     foo create bar
     oo::objdefine bar {
 	variable y!
-	method y {} {list [next] [incr y!] [info var] [info local]}
+	method y {} {list [next] [incr y!] [info var] [info locals]}
 	export eval
     }
     bar y
@@ -4159,8 +4451,6 @@ test oo-35.5 {Bug 1a56550e96: introspectors must traverse mixin links correctly}
 } -cleanup {
     base destroy
 } -result {{c d e} {c d e}}
-
-
 test oo-35.6 {
     Bug : teardown of an object that is a class that is an instance of itself
 } -setup {
@@ -4182,12 +4472,138 @@ test oo-35.6 {
 } -cleanup {
     rename obj {}
 } -result done
-
-
+test oo-35.7.1 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    # In this case, sub-objects are deleted during major object NS cleanup and
+    # are trying to call back into the major object (which is mostky gone at
+    # this point). Things are messy; error is reported via bgerror as the
+    # avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {impossible to invoke method "write": no defined method or unknown method}
+test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    # In this case, sub-objects are deleted during major object NS cleanup, and
+    # we've a destructor on the major class to monitor when it happens. Things
+    # are still messy, but the order is clear; error is reported via bgerror as
+    # the avenue most likely to reach a user.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {Destroyed
+impossible to invoke method "write": no defined method or unknown method}
+test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	variable interiorObjects
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    set obj [MkObjectRpc create cfg [self] 111]
+	    lappend interiorObjects $obj
+	    return $obj
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	    # Explicit destroy of interior objects
+	    foreach obj $interiorObjects {
+		$obj destroy
+	    }
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    # In this case, sub-objects are deleted while the destructor is running and
+    # the destroy is neat, so things work sanely. Error follows standard Tcl
+    # error flow route; bgerror is not used.
+    bgerrorIntercept ::result {
+	set FH [RpcClient new]
+	$FH create_bug
+	$FH destroy
+	update
+    }
+    join $result \n
+} -cleanup {
+    base destroy
+} -result "Destroyed\nRpcClient -> otto-111"
 
+rename bgerrorIntercept {}
 cleanupTests
 return
 
 # Local Variables:
-# MODE: Tcl
+# mode: tcl
 # End:

@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".14"
+TCL_PATCH_LEVEL=".16"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -153,19 +153,19 @@ zlib_lib_name=zdll.lib
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
   AS_IF([test "$do64bit" != "no"], [
-    AS_IF([test "$do64bit" = "arm64"], [
-      AS_IF([test "$GCC" == "yes"],[
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
-        zlib_lib_name=libz.dll.a
+    AS_IF([test "$do64bit" = "arm64" -o "$do64bit" = "aarch64"], [
+      AS_IF([test "$GCC" = "yes"],[
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
+	zlib_lib_name=libz.dll.a
       ], [
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
       ])
     ], [
-      AS_IF([test "$GCC" == "yes"],[
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
-        zlib_lib_name=libz.dll.a
+      AS_IF([test "$GCC" = "yes"],[
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
+	zlib_lib_name=libz.dll.a
       ], [
-        AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
+	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
       ])
     ])
   ], [
@@ -232,7 +232,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
-            [Defined when enums are missing from winbase.h])
+	    [Defined when enums are missing from winbase.h])
 fi
 
 # See if the compiler supports intrinsics.
@@ -252,7 +252,24 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
-            [Defined when the compilers supports intrinsics])
+	    [Defined when the compilers supports intrinsics])
+fi
+
+# See if the compiler supports cpuid header.
+
+AC_CACHE_CHECK(for cpuid.h,
+    tcl_cv_cpuid_h,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <cpuid.h>
+]], [[
+    __get_cpuid(0, 0, 0, 0, 0);
+  ]])],
+    [tcl_cv_cpuid_h=yes],
+    [tcl_cv_cpuid_h=no])
+)
+if test "$tcl_cv_cpuid_h" = "yes"; then
+    AC_DEFINE(HAVE_CPUID_H, 1,
+	    [Defined when cpuid.h exists])
 fi
 
 # See if the <wspiapi.h> header file is present
@@ -267,7 +284,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
-            [Defined when wspiapi.h exists])
+	    [Defined when wspiapi.h exists])
 fi
 
 # See if declarations like FINDEX_INFO_LEVELS are
@@ -289,7 +306,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
-            [Defined when enums are missing from winbase.h])
+	    [Defined when enums are missing from winbase.h])
 fi
 
 #--------------------------------------------------------------------
@@ -360,15 +377,15 @@ CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
 
 if test ${SHARED_BUILD} = 0 ; then
     if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
+	RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
+	RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
     if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
+	RC_DEFINES="${RC_DEFINE} DEBUG"
     else
-        RC_DEFINES=""
+	RC_DEFINES=""
     fi
 fi
 

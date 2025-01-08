@@ -214,15 +214,6 @@ typedef struct TclVarHashTable {
     TclVarHashCreateVar((tablePtr), (key), NULL)
 
 /*
- * Define this to reduce the amount of space that the average namespace
- * consumes by only allocating the table of child namespaces when necessary.
- * Defining it breaks compatibility for Tcl extensions (e.g., itcl) which
- * reach directly into the Namespace structure.
- */
-
-#undef BREAK_NAMESPACE_COMPAT
-
-/*
  * The structure below defines a namespace.
  * Note: the first five fields must match exactly the fields in a
  * Tcl_Namespace structure (see tcl.h). If you change one, be sure to change
@@ -244,15 +235,8 @@ typedef struct Namespace {
     struct Namespace *parentPtr;/* Points to the namespace that contains this
 				 * one. NULL if this is the global
 				 * namespace. */
-#ifndef BREAK_NAMESPACE_COMPAT
     Tcl_HashTable childTable;	/* Contains any child namespaces. Indexed by
 				 * strings; values have type (Namespace *). */
-#else
-    Tcl_HashTable *childTablePtr;
-				/* Contains any child namespaces. Indexed by
-				 * strings; values have type (Namespace *). If
-				 * NULL, there are no children. */
-#endif
     long nsId;			/* Unique id for the namespace. */
     Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
@@ -400,10 +384,13 @@ struct NamespacePathEntry {
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
  * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
  * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
+ * TCL_FIND_IF_NOT_SIMPLE       - Retrieve last namespace even if the rest of
+ *                                name is not simple name (contains ::).
  */
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
+#define TCL_FIND_IF_NOT_SIMPLE		0x2000
 
 /*
  * The client data for an ensemble command. This consists of the table of
@@ -2915,6 +2902,14 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    int *sizePtr, int *literalPtr);
+MODULE_SCOPE int	TclDictGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj **valuePtrPtr);
+MODULE_SCOPE int	TclDictPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, Tcl_Obj *valuePtr);
+MODULE_SCOPE int	TclDictPutString(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key, const char *value);
+MODULE_SCOPE int	TclDictRemove(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+			    const char *key);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
@@ -2991,9 +2986,6 @@ MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    unsigned int *sizePtr);
-MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
-			    Tcl_Obj *unquotedPrefix, int globFlags,
-			    Tcl_GlobTypeData *types);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3074,6 +3066,7 @@ MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
+struct addrinfo; /* forward declaration, needed for TclCreateSocketAddress */
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, int port, int willBind,
@@ -3117,7 +3110,7 @@ MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
-MODULE_SCOPE void	TclpThreadExit(int status);
+MODULE_SCOPE void	TCL_NORETURN TclpThreadExit(int status);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
 MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
@@ -3177,7 +3170,7 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
+MODULE_SCOPE int	TclpUtfToUCS4(const char *, int *);
 MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
 MODULE_SCOPE int	TclUCS4ToLower(int ch);
 #if TCL_UTF_MAX == 4
@@ -3202,9 +3195,9 @@ MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 MODULE_SCOPE int	TclpUtime(Tcl_Obj *pathPtr, struct utimbuf *tval);
 #ifdef TCL_LOAD_FROM_MEMORY
-MODULE_SCOPE void *	TclpLoadMemoryGetBuffer(Tcl_Interp *interp, int size);
+MODULE_SCOPE void *	TclpLoadMemoryGetBuffer(size_t size);
 MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
-			    int size, int codeSize, Tcl_LoadHandle *loadHandle,
+			    size_t size, int codeSize, Tcl_LoadHandle *loadHandle,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 #endif
 MODULE_SCOPE void	TclInitThreadStorage(void);
@@ -3992,6 +3985,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * the result of Tcl_UtfToUniChar. The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE int	TclUtfToUniChar(const char *string, Tcl_UniChar *ch);
+ * MODULE_SCOPE int	TclpUtfToUCS4(const char *src, int *ucs4Ptr);
  *----------------------------------------------------------------
  */
 
@@ -3999,6 +3993,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(((UCHAR(*(str))) < 0x80) ?		\
 	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+
+#define TclUtfToUCS4(src, ucs4Ptr) \
+	(((UCHAR(*(src))) < 0x80) ?		\
+	    ((*(ucs4Ptr) = UCHAR(*(src))), 1)	\
+	    : TclpUtfToUCS4(src, ucs4Ptr))
 
 /*
  *----------------------------------------------------------------

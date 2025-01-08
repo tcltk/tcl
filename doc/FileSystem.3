@@ -20,10 +20,9 @@ int
 int
 \fBTcl_FSUnregister\fR(\fIfsPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSData\fR(\fIfsPtr\fR)
 .sp
-void
 \fBTcl_FSMountsChanged\fR(\fIfsPtr\fR)
 .sp
 const Tcl_Filesystem *
@@ -45,7 +44,7 @@ int
 \fBTcl_FSDeleteFile\fR(\fIpathPtr\fR)
 .sp
 int
-\fBTcl_FSRemoveDirectory\fR(\fIpathPtr, int recursive, errorPtr\fR)
+\fBTcl_FSRemoveDirectory\fR(\fIpathPtr, recursive, errorPtr\fR)
 .sp
 int
 \fBTcl_FSRenameFile\fR(\fIsrcPathPtr, destPathPtr\fR)
@@ -81,10 +80,10 @@ int
 \fBTcl_FSUtime\fR(\fIpathPtr, tval\fR)
 .sp
 int
-\fBTcl_FSFileAttrsGet\fR(\fIinterp, int index, pathPtr, objPtrRef\fR)
+\fBTcl_FSFileAttrsGet\fR(\fIinterp, index, pathPtr, objPtrRef\fR)
 .sp
 int
-\fBTcl_FSFileAttrsSet\fR(\fIinterp, int index, pathPtr, Tcl_Obj *objPtr\fR)
+\fBTcl_FSFileAttrsSet\fR(\fIinterp, index, pathPtr, objPtr\fR)
 .sp
 const char *const *
 \fBTcl_FSFileAttrStrings\fR(\fIpathPtr, objPtrRef\fR)
@@ -125,7 +124,7 @@ Tcl_Obj *
 int
 \fBTcl_FSConvertToPathType\fR(\fIinterp, pathPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSGetInternalRep\fR(\fIpathPtr, fsPtr\fR)
 .sp
 Tcl_Obj *
@@ -201,6 +200,8 @@ rename operation.
 .AP Tcl_Obj *destPathPtr in
 As for \fIpathPtr\fR, but used for the destination filename for a copy or
 rename operation.
+.AP int recursive in
+Whether to remove subdirectories and their contents as well.
 .AP "const char" *encodingName in
 The encoding of the data stored in the
 file identified by \fIpathPtr\fR and to be evaluated.
@@ -212,7 +213,7 @@ this structure will be returned. This parameter may be NULL.
 .AP Tcl_Interp *interp in
 Interpreter to use either for results, evaluation, or reporting error
 messages.
-.AP ClientData clientData in
+.AP void *clientData in
 The native description of the path value to create.
 .AP Tcl_Obj *firstPtr in
 The first of two path values to compare. The value may be converted
@@ -223,11 +224,15 @@ to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
 .AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
+The number of elements in the \fIlistObj\fR which should
 be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
+.AP int index in
+The index of the attribute in question.
+.AP Tcl_Obj *objPtr in
+The value to set in the operation.
 .AP Tcl_Obj **objPtrRef out
 Filled with a value containing the result of the operation.
 .AP Tcl_Obj *resultPtr out
@@ -249,7 +254,7 @@ Name of a procedure to look up in the file's symbol table
 Filled with the init function for this code.
 .AP Tcl_PackageInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
 .AP Tcl_LoadHandle *loadHandlePtr out
@@ -370,7 +375,8 @@ variable to the
 POSIX error code (which signifies a
 .QW "cross-domain link" ).
 .PP
-\fBTcl_FSCopyDirectory\fR attempts to copy the directory given by \fIsrcPathPtr\fR to the
+\fBTcl_FSCopyDirectory\fR attempts to copy the directory given by
+\fIsrcPathPtr\fR to the
 path name given by \fIdestPathPtr\fR. If the two paths given lie in the same
 filesystem (according to \fBTcl_FSGetFileSystemForPath\fR) then that
 filesystem's
@@ -423,14 +429,12 @@ reading the file contents.
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
 The eofchar for files is
-.QW \e32
+.QW \ex1A
 (^Z) for all platforms.
 If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 \fBTcl_FSEvalFile\fR is a simpler version of
@@ -486,8 +490,9 @@ is a Tcl_Obj specifying the contents of the symbolic link given by
 \fIlinkNamePtr\fR, or NULL if the link could not be read. The result is owned
 by the caller, which should call \fBTcl_DecrRefCount\fR when the result is no
 longer needed. If the \fItoPtr\fR is not NULL, Tcl should create a link
-of one of the types passed in in the \fIlinkAction\fR flag. This flag is
-an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
+of one of the types passed in in the \fIlinkAction\fR flag.
+This flag is an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR
+and \fBTCL_CREATE_HARD_LINK\fR.
 Where a choice exists (i.e.\ more than one flag is passed in), the Tcl
 convention is to prefer symbolic links. When a link is successfully
 created, the return value should be \fItoPtr\fR (which is therefore
@@ -653,7 +658,7 @@ filesystem object.
 It returns 1 if the paths are equal, and 0 if they are different. If
 either path is NULL, 0 is always returned.
 .PP
-\fBTcl_FSGetNormalizedPath\fR this important function attempts to extract
+\fBTcl_FSGetNormalizedPath\fR attempts to extract
 from the given Tcl_Obj a unique normalized path representation, whose
 string value can be used as a unique identifier for the file.
 .PP
@@ -744,7 +749,7 @@ filesystems, so that they can easily retrieve the native (char* or
 TCHAR*) representation of a path. This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR. It may be desirable in the
 future to have non-string-based native representations (for example,
-on MacOSX, a representation using a fileSpec of FSRef structure would
+on macOS, a representation using a fileSpec of FSRef structure would
 probably be more efficient). On Windows a full Unicode representation
 would allow for paths of unlimited length. Currently the representation
 is simply a character string which may contain either the relative path
@@ -841,7 +846,7 @@ general that is not a good thing to do). \fBTCL_OK\fR will be returned.
 the list of known filesystems, if it is known, and returns \fBTCL_OK\fR. If
 the filesystem is not currently registered, \fBTCL_ERROR\fR is returned.
 .PP
-\fBTcl_FSData\fR will return the ClientData associated with the given
+\fBTcl_FSData\fR will return the clientData associated with the given
 filesystem, if that filesystem is registered. Otherwise it will
 return NULL.
 .PP
@@ -1397,10 +1402,10 @@ typedef int \fBTcl_FSFileAttrsGetProc\fR(
 .PP
 Returns a standard Tcl return code. The attribute value retrieved,
 which corresponds to the \fIindex\fR'th element in the list returned by
-the \fBTcl_FSFileAttrStringsProc\fR, is a Tcl_Obj placed in \fIobjPtrRef\fR (if
-\fBTCL_OK\fR was returned) and is likely to have a reference count of zero. Either
-way we must either store it somewhere (e.g.\ the Tcl result), or
-Incr/Decr its reference count to ensure it is properly freed.
+the \fBTcl_FSFileAttrStringsProc\fR, is a Tcl_Obj placed in \fIobjPtrRef\fR
+(if \fBTCL_OK\fR was returned) and is likely to have a reference count of
+zero. Either way we must either store it somewhere (e.g.\ the Tcl result),
+or Incr/Decr its reference count to ensure it is properly freed.
 .SS FILEATTRSSETPROC
 .PP
 Function to process a \fBTcl_FSFileAttrsSet\fR call, used by \fBfile

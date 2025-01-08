@@ -156,11 +156,11 @@ typedef int (\fBTcl_ArgvGenFuncProc\fR)(
         void *\fIdstPtr\fR);
 .CE
 .PP
-The \fIclientData\fR is the value from the table entry, the \fIinterp\fR is
-where to store any error messages, the \fIkeyStr\fR is the name of the
-argument, \fIobjc\fR and \fIobjv\fR describe an array of all the remaining
-arguments, and \fIdstPtr\fR argument to the \fBTcl_ArgvGenFuncProc\fR is the
-location to write the parsed value (or values) to.
+The \fIclientData\fR is the value from the table entry, the \fIinterp\fR
+is where to store any error messages, \fIobjc\fR and \fIobjv\fR describe
+an array of all the remaining arguments, and \fIdstPtr\fR argument to the
+\fBTcl_ArgvGenFuncProc\fR is the location to write the parsed value
+(or values) to.
 .RE
 .TP
 \fBTCL_ARGV_HELP\fR

@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -45,25 +45,35 @@ test list-1.24 {basic tests} {list} {}
 test list-1.25 {basic tests} {list # #} {{#} #}
 test list-1.26 {basic tests} {list #\{ #\{} {\#\{ #\{}
 test list-1.27 {basic null treatment} {
-    set l [list "" "\0" "\0\0"]
-    set e "{} \0 \0\0"
+    set l [list "" "\x00" "\x00\x00"]
+    set e "{} \x00 \x00\x00"
     string equal $l $e
 } 1
 test list-1.28 {basic null treatment} {
-    set result "\0a\0b"
+    set result "\x00a\x00b"
     list $result [string length $result]
-} "\0a\0b 4"
+} "\x00a\x00b 4"
 test list-1.29 {basic null treatment} {
-    set result "\0a\0b"
+    set result "\x00a\x00b"
     set srep "$result 4"
     set lrep [list $result [string length $result]]
     string equal $srep $lrep
 } 1
 test list-1.30 {basic null treatment} {
-    set l [list "\0abc" "xyz"]
-    set e "\0abc xyz"
+    set l [list "\x00abc" "xyz"]
+    set e "\x00abc xyz"
     string equal $l $e
 } 1
+test list-1.31 {bug [e38dce74e2]} {
+    set l #foo
+    set e {}
+    list {*}$l {*}$e
+} {{#foo}}
+test list-1.32 {bug [e38dce74e2]} {
+    set l " #foo"
+    set e {}
+    list {*}$l {*}$e
+} {{#foo}}
 
 # For the next round of tests create a list and then pick it apart
 # with "index" to make sure that we get back exactly what went in.

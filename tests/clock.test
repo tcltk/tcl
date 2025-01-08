@@ -155,6 +155,9 @@ if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
 # clock-38
 #	Regression test to verify that changes in TZ work
 #	both east and west of Greenwich
+#
+# clock-68
+#	Leap seconds/minutes/hours
 
 
 # Note that all code between comments '# BEGIN' and '# END' is
@@ -280,9 +283,18 @@ test clock-1.4 "clock format - bad flag" {*}{
     -result {1 {bad option "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -oops}}
 }
 
-test clock-1.5 "clock format - bad timezone" {
-    list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode
-} {1 {time zone ":NOWHERE" not found} {CLOCK badTimeZone :NOWHERE}}
+test clock-1.5 "clock format - bad timezone (not found)" -body {
+    clock format 0 -format "%s" -timezone :NOWHERE
+} -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
+foreach tz [list {*}{
+  ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
+  zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+  } [list $::tcl::clock::DataDir/GMT]
+] {
+test clock-1.5.1.$tz "clock format - bad timezone (not valid - unsafe path)" -body {
+    clock format 0 -format "%s" -timezone $tz
+} -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
+}
 
 test clock-1.6 "clock format - gmt + timezone" {
     list [catch {clock format 0 -timezone :GMT -gmt true} msg] $msg $::errorCode
@@ -36083,11 +36095,18 @@ test clock-44.1 {regression test - time zone name containing hyphen } \
     } \
     -result {12:34:56-0500}
 
-test clock-45.1 {regression test - time zone containing only two digits} \
+test clock-44.2 {regression test - time zone containing only two digits} \
     -body {
 	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
     } \
     -result 482134530
+
+test clock-44.3 {regression test - spaces between some scan tokens are optional} \
+    -body {
+	list [clock scan {9 Apr 2024} -format {%d %b%Y} -gmt 1] \
+	     [clock scan {Tue, 9 Apr 2024 00:00:00 +0000} -format {%a, %d %b%Y %H:%M:%S %Z} -gmt 1]
+    } \
+    -result {1712620800 1712620800}
 
 test clock-46.1 {regression test - month zero} \
     -body {
@@ -36105,6 +36124,25 @@ test clock-46.4 {regression test - month thirteen} \
     -body {
 	clock scan 20041301
     } -result [clock scan 2005-01-01 -format %Y-%m-%d]
+
+test clock-46.5 {regression test - good time} \
+    -body {
+	# 12:01 apm are valid input strings...
+	list [clock scan "12:01 am" -base 0 -gmt 1] \
+	     [clock scan "12:01 pm" -base 0 -gmt 1]
+    } -result {60 43260}
+test clock-46.6 {freescan: regression test - bad time} \
+    -body {
+	# 13:00 am/pm are invalid input strings...
+	list [clock scan "13:00 am" -base 0 -gmt 1] \
+	     [clock scan "13:00 pm" -base 0 -gmt 1]
+    } -result {3600 46800}
+
+test clock-46.7 {regression test - switch day by large not-valid time, see bug [3ee8f1c2a785f4d8]} {
+    list [clock scan 23:59:59 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 24:00:00 -base 0 -gmt 1 -format %H:%M:%S] \
+	 [clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S]
+} {86399 86400 172800}
 
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012
@@ -36901,6 +36939,23 @@ test clock-59.1 {military time zones} {
     join $trouble \n
 } {}
 
+test clock-59.2 {correct time zone names, format and scan back, bug and regression [2c237beffbace823]} {
+    set result {}
+    foreach {base tz} {
+	 1700000000 "Etc/GMT-2"
+	 1700000000 "Etc/GMT+2"
+	 1301184000 "Europe/Kaliningrad"
+	  152632800 "Pacific/Chatham"
+	 -765317964 "America/Paramaribo"
+	-2337928528 "Australia/Eucla"
+    } {
+	set v [clock format $base -timezone Etc/GMT-2 -format "%Y-%m-%d %H:%M:%S %Z"]
+	lappend result [expr {[set t [clock scan $v -format "%Y-%m-%d %H:%M:%S %Z"]] == $base ? 1 : "0 ($t != $base for $v)"}]
+	lappend result [expr {[set t [clock scan $v]] == $base ? 1 : "0 ($t != $base for $v)"}]
+    }
+    set result
+} [lrepeat 12 1]
+
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
 test clock-60.1 {case insensitive weekday names} {
@@ -37063,6 +37118,30 @@ test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]}
 } -cleanup {
     msgcat::mclocale $current
 } -result {1}
+
+test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no validity check)} -body {
+    set res {}
+    foreach {d i} {
+	"2012-06-30 23:59:60" 1341100800
+	"2012-06-30 23:60:00" 1341100800
+	"2012-06-30 24:00:00" 1341100800
+	"2012-06-29 23:59:60" 1341014400
+	"2012-05-30 23:59:60" 1338422400
+	"2012-05-30 23:60:60" 1338422460
+	"2012-05-30 24:00:60" 1338422460
+	"2012-05-30 24:60:00" 1338426000
+    } {
+	# check with free scan:
+	if {[set t [clock scan $d -gmt 1]] != $i} {
+	    lappend res "free-scan \"$d\" == $t, expected $i"
+	}
+	# check with formatted scan:
+	if {[set t [clock scan $d -gmt 1 -format "%Y-%m-%d %H:%M:%S"]] != $i} {
+	    lappend res "fmt-scan \"$d\" == $t, expected $i"
+	}
+    }
+    set res; # must be empty
+} -result {}
 
 # cleanup
 

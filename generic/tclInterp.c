@@ -420,8 +420,7 @@ Tcl_Init(
 "    set dirs {}\n"
 "    set errors {}\n"
 "    foreach script $scripts {\n"
-"	lappend dirs [eval $script]\n"
-"	set tcl_library [lindex $dirs end]\n"
+"	if {[set tcl_library [eval $script]] eq \"\"} continue\n"
 "	set tclfile [file join $tcl_library init.tcl]\n"
 "	if {[file exists $tclfile]} {\n"
 "	    if {[catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
@@ -432,6 +431,7 @@ Tcl_Init(
 "	    unset -nocomplain tclDefaultLibrary\n"
 "	    return\n"
 "	}\n"
+"	lappend dirs $tcl_library\n"
 "    }\n"
 "    unset -nocomplain tclDefaultLibrary\n"
 "    set msg \"Can't find a usable init.tcl in the following directories: \n\"\n"
@@ -771,7 +771,7 @@ NRInterpCmd(
 	childPtr = NULL;
 	last = 0;
 	for (i = 2; i < objc; i++) {
-	    if ((last == 0) && (Tcl_GetString(objv[i])[0] == '-')) {
+	    if ((last == 0) && (TclGetString(objv[i])[0] == '-')) {
 		if (Tcl_GetIndexFromObj(interp, objv[i], createOptions,
 			"option", 0, &index) != TCL_OK) {
 		    return TCL_ERROR;
@@ -845,7 +845,7 @@ NRInterpCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"cannot delete the current interpreter", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			"DELETESELF", NULL);
+			"DELETESELF", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
@@ -1087,18 +1087,18 @@ NRInterpCmd(
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "alias \"%s\" in path \"%s\" not found",
-		    aliasName, Tcl_GetString(objv[2])));
+		    aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
-		    NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
 	if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "target interpreter for alias \"%s\" in path \"%s\" is "
-		    "not my descendant", aliasName, Tcl_GetString(objv[2])));
+		    "not my descendant", aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "TARGETSHROUDED", NULL);
+		    "TARGETSHROUDED", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1264,7 +1264,7 @@ Tcl_GetAlias(
     const char *aliasName,	/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
-    const char **targetNamePtr,	/* (Return) name of target command. */
+    const char **targetCmdPtr,	/* (Return) name of target command. */
     int *argcPtr,		/* (Return) count of addnl args. */
     const char ***argvPtr)	/* (Return) additional arguments. */
 {
@@ -1278,7 +1278,7 @@ Tcl_GetAlias(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (char *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1288,8 +1288,8 @@ Tcl_GetAlias(
     if (targetInterpPtr != NULL) {
 	*targetInterpPtr = aliasPtr->targetInterp;
     }
-    if (targetNamePtr != NULL) {
-	*targetNamePtr = TclGetString(objv[0]);
+    if (targetCmdPtr != NULL) {
+	*targetCmdPtr = TclGetString(objv[0]);
     }
     if (argcPtr != NULL) {
 	*argcPtr = objc - 1;
@@ -1326,7 +1326,7 @@ Tcl_GetAliasObj(
     const char *aliasName,	/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
-    const char **targetNamePtr,	/* (Return) name of target command. */
+    const char **targetCmdPtr,	/* (Return) name of target command. */
     int *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
@@ -1340,7 +1340,7 @@ Tcl_GetAliasObj(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (char *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1350,8 +1350,8 @@ Tcl_GetAliasObj(
     if (targetInterpPtr != NULL) {
 	*targetInterpPtr = aliasPtr->targetInterp;
     }
-    if (targetNamePtr != NULL) {
-	*targetNamePtr = TclGetString(objv[0]);
+    if (targetCmdPtr != NULL) {
+	*targetCmdPtr = TclGetString(objv[0]);
     }
     if (objcPtr != NULL) {
 	*objcPtr = objc - 1;
@@ -1446,7 +1446,7 @@ TclPreventAliasLoop(
 		    "cannot define or rename alias \"%s\": would create a loop",
 		    Tcl_GetCommandName(cmdInterp, cmd)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "ALIASLOOP", NULL);
+		    "ALIASLOOP", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1488,7 +1488,7 @@ AliasCreate(
     Tcl_Interp *parentInterp,	/* Interp in which target command will be
 				 * invoked. */
     Tcl_Obj *namePtr,		/* Name of alias cmd. */
-    Tcl_Obj *targetNamePtr,	/* Name of target cmd. */
+    Tcl_Obj *targetCmdPtr,	/* Name of target cmd. */
     int objc,			/* Additional arguments to store */
     Tcl_Obj *const objv[])	/* with alias. */
 {
@@ -1508,8 +1508,8 @@ AliasCreate(
     aliasPtr->objc = objc + 1;
     prefv = &aliasPtr->objPtr;
 
-    *prefv = targetNamePtr;
-    Tcl_IncrRefCount(targetNamePtr);
+    *prefv = targetCmdPtr;
+    Tcl_IncrRefCount(targetCmdPtr);
     for (i = 0; i < objc; i++) {
 	*(++prefv) = objv[i];
 	Tcl_IncrRefCount(objv[i]);
@@ -1540,7 +1540,7 @@ AliasCreate(
 	Command *cmdPtr;
 
 	Tcl_DecrRefCount(aliasPtr->token);
-	Tcl_DecrRefCount(targetNamePtr);
+	Tcl_DecrRefCount(targetCmdPtr);
 	for (i = 0; i < objc; i++) {
 	    Tcl_DecrRefCount(objv[i]);
 	}
@@ -1666,7 +1666,7 @@ AliasDelete(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", TclGetString(namePtr)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS",
-		TclGetString(namePtr), NULL);
+		TclGetString(namePtr), (char *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1710,7 +1710,7 @@ AliasDescribe(
      */
 
     childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
-    hPtr = Tcl_FindHashEntry(&childPtr->aliasTable, Tcl_GetString(namePtr));
+    hPtr = Tcl_FindHashEntry(&childPtr->aliasTable, TclGetString(namePtr));
     if (hPtr == NULL) {
 	return TCL_OK;
     }
@@ -1805,7 +1805,7 @@ AliasNRCmd(
     cmdc = prefc + objc - 1;
 
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = listPtr->internalRep.twoPtrValue.ptr1;
+    listRep = (List *)listPtr->internalRep.twoPtrValue.ptr1;
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
 
@@ -2241,7 +2241,7 @@ GetInterp(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not find interpreter \"%s\"", TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INTERP",
-		TclGetString(pathPtr), NULL);
+		TclGetString(pathPtr), (char *)NULL);
     }
     return searchInterp;
 }
@@ -2279,7 +2279,7 @@ ChildBgerror(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "BGERRORFORMAT", NULL);
+		    "BGERRORFORMAT", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	TclSetBgErrorHandler(childInterp, objv[0]);
@@ -2850,7 +2850,7 @@ ChildExpose(
 		"permission denied: safe interpreter cannot expose commands",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2895,7 +2895,7 @@ ChildRecursionLimit(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("permission denied: "
 		    "safe interpreters cannot change recursion limit", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		    NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (TclGetIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
@@ -2905,7 +2905,7 @@ ChildRecursionLimit(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "recursion limit must be > 0", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "BADLIMIT",
-		    NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetRecursionLimit(childInterp, limit);
@@ -2913,7 +2913,7 @@ ChildRecursionLimit(
 	if (interp == childInterp && iPtr->numLevels > limit) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "falling back due to new recursion limit", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, objv[0]);
@@ -2956,7 +2956,7 @@ ChildHide(
 		"permission denied: safe interpreter cannot hide commands",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3041,7 +3041,7 @@ ChildInvokeHidden(
 		"not allowed to invoke hidden commands from safe interpreter",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3118,7 +3118,7 @@ ChildMarkTrusted(
 		"permission denied: safe interpreter cannot mark trusted",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     ((Interp *) childInterp)->flags &= ~SAFE_INTERP;
@@ -3376,7 +3376,7 @@ Tcl_LimitCheck(
 	} else if (iPtr->limit.exceeded & TCL_LIMIT_COMMANDS) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command count limit exceeded", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "COMMANDS", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "COMMANDS", (char *)NULL);
 	    Tcl_Release(interp);
 	    return TCL_ERROR;
 	}
@@ -3402,7 +3402,7 @@ Tcl_LimitCheck(
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"time limit exceeded", -1));
-		Tcl_SetErrorCode(interp, "TCL", "LIMIT", "TIME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LIMIT", "TIME", (char *)NULL);
 		Tcl_Release(interp);
 		return TCL_ERROR;
 	    }
@@ -4414,7 +4414,7 @@ ChildCommandLimitCmd(
     if (interp == childInterp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"limits on current interpreter inaccessible", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4428,8 +4428,7 @@ ChildCommandLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4438,22 +4437,19 @@ ChildCommandLimitCmd(
 
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_COMMANDS)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_COMMANDS)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_COMMANDS)) {
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewIntObj(Tcl_LimitGetCommands(childInterp)));
+	    TclDictPut(NULL, dictPtr, options[2], Tcl_NewIntObj(
+		    Tcl_LimitGetCommands(childInterp)));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
@@ -4502,7 +4498,7 @@ ChildCommandLimitCmd(
 	    switch ((enum Options) index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(scriptObj, &scriptLen);
+		(void) TclGetStringFromObj(scriptObj, &scriptLen);
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
@@ -4513,13 +4509,13 @@ ChildCommandLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "granularity must be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
 	    case OPT_VAL:
 		limitObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &limitLen);
+		(void) TclGetStringFromObj(objv[i+1], &limitLen);
 		if (limitLen == 0) {
 		    break;
 		}
@@ -4530,7 +4526,7 @@ ChildCommandLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "command limit value must be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
@@ -4602,7 +4598,7 @@ ChildTimeLimitCmd(
     if (interp == childInterp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"limits on current interpreter inaccessible", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4616,8 +4612,7 @@ ChildTimeLimitCmd(
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
-			limitCBPtr->scriptObj);
+		TclDictPut(NULL, dictPtr, options[0], limitCBPtr->scriptObj);
 	    } else {
 		goto putEmptyCommandInDict;
 	    }
@@ -4625,29 +4620,25 @@ ChildTimeLimitCmd(
 	    Tcl_Obj *empty;
 	putEmptyCommandInDict:
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[0], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[0], empty);
 	}
-	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
-		Tcl_NewIntObj(Tcl_LimitGetGranularity(childInterp,
-		TCL_LIMIT_TIME)));
+	TclDictPut(NULL, dictPtr, options[1], Tcl_NewIntObj(
+		Tcl_LimitGetGranularity(childInterp, TCL_LIMIT_TIME)));
 
 	if (Tcl_LimitTypeEnabled(childInterp, TCL_LIMIT_TIME)) {
 	    Tcl_Time limitMoment;
 
 	    Tcl_LimitGetTime(childInterp, &limitMoment);
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewLongObj(limitMoment.usec/1000));
-	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
+	    TclDictPut(NULL, dictPtr, options[2],
+		    Tcl_NewLongObj(limitMoment.usec / 1000));
+	    TclDictPut(NULL, dictPtr, options[3],
 		    Tcl_NewLongObj(limitMoment.sec));
 	} else {
 	    Tcl_Obj *empty;
 
 	    TclNewObj(empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[2], -1), empty);
-	    Tcl_DictObjPut(NULL, dictPtr,
-		    Tcl_NewStringObj(options[3], -1), empty);
+	    TclDictPut(NULL, dictPtr, options[2], empty);
+	    TclDictPut(NULL, dictPtr, options[3], empty);
 	}
 	Tcl_SetObjResult(interp, dictPtr);
 	return TCL_OK;
@@ -4711,7 +4702,7 @@ ChildTimeLimitCmd(
 	    switch ((enum Options) index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);
+		(void) TclGetStringFromObj(objv[i+1], &scriptLen);
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
@@ -4722,13 +4713,13 @@ ChildTimeLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "granularity must be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
 	    case OPT_MILLI:
 		milliObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &milliLen);
+		(void) TclGetStringFromObj(objv[i+1], &milliLen);
 		if (milliLen == 0) {
 		    break;
 		}
@@ -4739,7 +4730,7 @@ ChildTimeLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "milliseconds must be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		limitMoment.usec = ((long) tmp)*1000;
@@ -4747,7 +4738,7 @@ ChildTimeLimitCmd(
 	    case OPT_SEC: {
 		Tcl_WideInt sec;
 		secObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &secLen);
+		(void) TclGetStringFromObj(objv[i+1], &secLen);
 		if (secLen == 0) {
 		    break;
 		}
@@ -4764,7 +4755,7 @@ ChildTimeLimitCmd(
 			    "seconds must be at least 0", -1));
 		badValue:
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		limitMoment.sec = sec;
@@ -4784,7 +4775,7 @@ ChildTimeLimitCmd(
 			    "may only set -milliseconds if -seconds is not "
 			    "also being reset", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADUSAGE", NULL);
+			    "BADUSAGE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 		if (milliLen == 0 && (secObj == NULL || secLen > 0)) {
@@ -4792,7 +4783,7 @@ ChildTimeLimitCmd(
 			    "may only reset -milliseconds if -seconds is "
 			    "also being reset", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADUSAGE", NULL);
+			    "BADUSAGE", (char *)NULL);
 		    return TCL_ERROR;
 		}
 	    }

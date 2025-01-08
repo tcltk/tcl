@@ -71,10 +71,12 @@ expand each path element to its long version. This attribute cannot be
 set. \fB\-readonly\fR gives the value or sets or clears the readonly
 attribute of the file. \fB\-shortname\fR gives a string where every
 path element is replaced with its short (8.3) version of the
-name. This attribute cannot be set. \fB\-system\fR gives or sets or
-clears the value of the system attribute of the file.
+name if possible. For path elements that cannot be mapped to short
+names, the long name is retained. This attribute cannot be set.
+\fB\-system\fR gives or sets or clears the value of the system
+attribute of the file.
 .PP
-On Mac OS X and Darwin, \fB\-creator\fR gives or sets the
+On macOS and Darwin, \fB\-creator\fR gives or sets the
 Finder creator type of the file. \fB\-hidden\fR gives or sets or clears
 the hidden attribute of the file. \fB\-readonly\fR gives or sets or
 clears the readonly attribute of the file. \fB\-rsrclength\fR gives

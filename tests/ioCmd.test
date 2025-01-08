@@ -8,7 +8,7 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -61,7 +61,7 @@ test iocmd-1.7 {puts command} {
 } 7
 test iocmd-1.8 {puts command} {
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar {} -encoding iso8859-1
+    fconfigure $f -translation binary
     puts -nonewline $f [binary format a4a5 foo bar]
     close $f
     file size $path(test1)
@@ -153,10 +153,10 @@ test iocmd-4.11 {read command} {
 test iocmd-4.12 {read command} -setup {
     set f [open $path(test1)]
 } -body {
-    list [catch {read $f 12z} msg] $msg $::errorCode
+    read $f 12z
 } -cleanup {
     close $f
-} -result {1 {expected non-negative integer but got "12z"} {TCL VALUE NUMBER}}
+} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
@@ -249,8 +249,7 @@ test iocmd-8.8 {fconfigure command} {
 test iocmd-8.9 {fconfigure command} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary
+    fconfigure $f1 -translation binary -buffering none -buffersize 4040
     set x [fconfigure $f1]
     close $f1
     set x
@@ -482,7 +481,7 @@ test iocmd-12.11 {POSIX open access modes: BINARY} {
     set result [read -nonewline $f]
     close $f
     set result
-} \u0048
+} H
 
 test iocmd-13.1 {errors in open command} {
     list [catch {open} msg] $msg
@@ -563,7 +562,6 @@ test ioCmd-13.11 {open ... a+ must not use O_APPEND: Bug 1773127} -setup {
 } -cleanup {
     removeFile $f
 } -result 341234x6
-
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $::errorCode
@@ -1018,7 +1016,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
@@ -1983,10 +1981,11 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c readable {note TOCK}]
-    set stop [after 15000 {note TIMEOUT}]
+    set tock {}
+    note [fileevent $c readable {lappend res TOCK; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c r]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
@@ -1996,10 +1995,10 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
-    note [fileevent $c writable {note TOCK}]
-    set stop [after 15000 {note TIMEOUT}]
+    note [fileevent $c writable {lappend res TOCK; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c w]}
-    vwait ::res
+    vwait ::tock
     catch {after cancel $stop}
     close $c
     rename foo {}
@@ -2116,6 +2115,74 @@ test iocmd-32.2 {delete interp of reflected chan} {
     }
     interp delete child
 } {}
+
+# 1st attempt without error in write, another with error in write:
+foreach ::writeErr {0 1} {
+test iocmd-32.3.$::writeErr {prevent copy-state against segfault by finalize, bug [79474c58800cdf94]} -setup {
+    proc test_chan {args} {
+      set rest [lassign $args mode chan]
+      lappend ::ret $mode
+      switch -exact $mode {
+        read {puts $chan "Test" ; close $chan}
+        write {if {$::writeErr} {return "boom"}; set data [lindex $rest 0]; string length $data}
+        finalize {after 20 {set ::done done}}
+        initialize {return "initialize watch finalize read write"}
+      }
+    }
+    set clchlst {}
+    set toev [after 5000 {set ::done tout}]
+} -body {
+    set ::ret {}
+    set ch [chan create "read write" test_chan]
+    lappend clchlst $ch
+
+    lassign [chan pipe] in1 out1
+    lappend clchlst $in1 $out1
+    lassign [chan pipe] in2 out2
+    lappend clchlst $in2 $out2
+    lassign [chan pipe] in3 out3
+    lappend clchlst $in3 $out3
+
+    # simulate exec: echo test >@ $out2 2>@ $out3 <@ $in1 &:
+    fileevent $out2 writable [list apply {{cho che} {
+	puts $cho test; close $cho; close $che
+    }} $out2 $out3]
+    # recopy to given chans in handler
+    fileevent $in2 readable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $in readable {}
+	}
+    }} $in2 $ch]
+    fileevent $in3 readable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $in readable {}
+	}
+    }} $in3 $ch]
+    fileevent $out1 writable [list apply {{in out} {
+	if {[catch {
+	    chan copy $in $out
+	} msg]} {
+	    #puts err:$msg
+	    fileevent $out writable {}
+	}
+    }} $ch $out1]
+
+    vwait ::done
+    lappend ::ret $::done
+} -cleanup {
+    foreach ch $clchlst {
+	catch {close $ch}
+    }
+    after cancel $toev
+    unset -nocomplain ::done ::ret ch in1 in2 in3 out1 out2 out3 toev clchlst
+} -result {initialize read write finalize done}
+}; unset ::writeErr
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and
@@ -2303,7 +2370,7 @@ test iocmd.tf-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd.tf-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd.tf-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track

@@ -154,6 +154,9 @@ Convert integer to signed decimal string.
 .TP 10
 \fBu\fR
 Convert integer to unsigned decimal string.
+The conversion makes no sense without reference to a truncation range,
+so the size modifier \fBll\fR is not permitted in combination
+with conversion character \fBu\fR.
 .TP 10
 \fBi\fR
 Convert integer to signed decimal string (equivalent to \fBd\fR).

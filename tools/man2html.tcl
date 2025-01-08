@@ -143,7 +143,7 @@ proc main {argv} {
 	# build hyperlink database arrays: NAME_file and KEY_file
 	#
 	puts "\nScanning man pages in $tcl_dir/$package/doc..."
-	uplevel \#0 [list source $homeDir/man2html1.tcl]
+	uplevel \#0 [list source -encoding utf-8 $homeDir/man2html1.tcl]
 
 	doDir $tcl_dir/$package/doc
 
@@ -168,7 +168,7 @@ proc main {argv} {
 
 	# now translate the man pages to HTML pages
 	#
-	uplevel \#0 [list source $homeDir/man2html2.tcl]
+	uplevel \#0 [list source -encoding utf-8 $homeDir/man2html2.tcl]
 	puts "\nBuilding html pages from man pages in $tcl_dir/$package/doc..."
 	doDir $tcl_dir/$package/doc
 

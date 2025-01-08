@@ -249,7 +249,7 @@ except that it can be passed more than one value to append and
 each value must be a null-terminated string (i.e. none of the
 values may contain internal null characters).  Any number of
 \fIstring\fR arguments may be provided, but the last argument
-must be a NULL pointer to indicate the end of the list.
+must be (char *)NULL to indicate the end of the list.
 .PP
 \fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
 except that instead of taking a variable number of arguments it takes an

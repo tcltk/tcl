@@ -4,7 +4,7 @@
  *	This file contains code for converting from Win32 errors to errno
  *	errors.
  *
- * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
+ * Copyright (c) 1995-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -381,7 +381,7 @@ TclWinConvertError(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+MODULE_SCOPE TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -391,17 +391,17 @@ tclWinDebugPanic(
 
     if (IsDebuggerPresent()) {
 	WCHAR msgString[TCL_MAX_WARN_LEN];
-	char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+	char buf[TCL_MAX_WARN_LEN * 3];
 
 	vsnprintf(buf, sizeof(buf), format, argList);
-	msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+	msgString[TCL_MAX_WARN_LEN-1] = '\0';
 	MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
 
 	/*
 	 * Truncate MessageBox string if it is too long to not overflow the buffer.
 	 */
 
-	if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+	if (msgString[TCL_MAX_WARN_LEN-1] != '\0') {
 	    memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
 	}
 	OutputDebugStringW(msgString);

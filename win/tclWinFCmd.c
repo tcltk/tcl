@@ -925,7 +925,7 @@ TclpObjCopyDirectory(
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    *errorPtr = TclDStringToObj(&ds);
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);

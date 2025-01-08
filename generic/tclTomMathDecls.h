@@ -67,10 +67,12 @@
 #define mp_div_2 TclBN_mp_div_2
 #define mp_div_2d TclBN_mp_div_2d
 #define mp_div_3 TclBN_mp_div_3
+#define s_mp_div_3 TclBN_mp_div_3
 #define mp_div_d TclBN_mp_div_d
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
 #define mp_expt_d_ex TclBN_mp_expt_d_ex
+#define mp_expt_n TclBN_mp_expt_d
 #define mp_expt_u32 TclBN_mp_expt_d
 #define mp_get_mag_ull TclBN_mp_get_mag_ull
 #define mp_grow TclBN_mp_grow
@@ -207,8 +209,7 @@ EXTERN mp_err		TclBN_mp_div_3(const mp_int *a, mp_int *q,
 /* 18 */
 EXTERN void		TclBN_mp_exch(mp_int *a, mp_int *b);
 /* 19 */
-EXTERN mp_err		TclBN_mp_expt_d(const mp_int *a, unsigned int b,
-				mp_int *c);
+EXTERN mp_err		TclBN_mp_expt_d(const mp_int *a, int b, mp_int *c);
 /* 20 */
 EXTERN mp_err		TclBN_mp_grow(mp_int *a, int size);
 /* 21 */
@@ -390,7 +391,7 @@ typedef struct TclTomMathStubs {
     mp_err (*tclBN_mp_div_2d) (const mp_int *a, int b, mp_int *q, mp_int *r); /* 16 */
     mp_err (*tclBN_mp_div_3) (const mp_int *a, mp_int *q, mp_digit *r); /* 17 */
     void (*tclBN_mp_exch) (mp_int *a, mp_int *b); /* 18 */
-    mp_err (*tclBN_mp_expt_d) (const mp_int *a, unsigned int b, mp_int *c); /* 19 */
+    mp_err (*tclBN_mp_expt_d) (const mp_int *a, int b, mp_int *c); /* 19 */
     mp_err (*tclBN_mp_grow) (mp_int *a, int size); /* 20 */
     mp_err (*tclBN_mp_init) (mp_int *a); /* 21 */
     mp_err (*tclBN_mp_init_copy) (mp_int *a, const mp_int *b); /* 22 */

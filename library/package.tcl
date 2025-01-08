@@ -31,16 +31,16 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
     global tcl_platform
     if {$ext eq ""} {set ext [info sharedlibextension]}
     if {$tcl_platform(platform) eq "windows"} {
-        return [string equal -nocase [file extension $fileName] $ext]
+	return [string equal -nocase [file extension $fileName] $ext]
     } else {
-        # Some unices add trailing numbers after the .so, so
-        # we could have something like '.so.1.2'.
-        set root $fileName
-        while {1} {
-            set currExt [file extension $root]
-            if {$currExt eq $ext} {
-                return 1
-            }
+	# Some unices add trailing numbers after the .so, so
+	# we could have something like '.so.1.2'.
+	set root $fileName
+	while {1} {
+	    set currExt [file extension $root]
+	    if {$currExt eq $ext} {
+		return 1
+	    }
 
 	    # The current extension does not match; if it is not a numeric
 	    # value, quit, as we are only looking to ignore version number
@@ -51,7 +51,7 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
 	    if {![string is integer -strict [string range $currExt 1 end]]} {
 		return 0
 	    }
-            set root [file rootname $root]
+	    set root [file rootname $root]
 	}
     }
 }
@@ -291,7 +291,7 @@ proc pkg_mkIndex {args} {
 		    set ::tcl::type load
 		} else {
 		    set ::tcl::debug sourcing
-		    source [file join $::tcl::dir $::tcl::file]
+		    source -encoding utf-8 [file join $::tcl::dir $::tcl::file]
 		    set ::tcl::type source
 		}
 
@@ -441,7 +441,7 @@ proc tclPkgSetup {dir pkg version files} {
 	    if {$type eq "load"} {
 		set auto_index($cmd) [list load [file join $dir $f] $pkg]
 	    } else {
-		set auto_index($cmd) [list source [file join $dir $f]]
+		set auto_index($cmd) [list source -encoding utf-8 [file join $dir $f]]
 	    }
 	}
     }
@@ -491,7 +491,7 @@ proc tclPkgUnknown {name args} {
 		set dir [file dirname $file]
 		if {![info exists procdDirs($dir)]} {
 		    try {
-			source $file
+			source -encoding utf-8 $file
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
@@ -509,7 +509,7 @@ proc tclPkgUnknown {name args} {
 	    # safe interps usually don't have "file exists",
 	    if {([interp issafe] || [file exists $file])} {
 		try {
-		    source $file
+		    source -encoding utf-8 $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue

@@ -135,7 +135,7 @@ foreach i [lrange $argv [incr arg] end] {
 	lappend files $i
     }
 }
-source [file join [file dirname [info script]] index.tcl]
+source -encoding utf-8 [file join [file dirname [info script]] index.tcl]
 generateContents $baseName $version $files
-source [file join [file dirname [info script]] man2help2.tcl]
+source -encoding utf-8 [file join [file dirname [info script]] man2help2.tcl]
 generateHelp $baseName $files

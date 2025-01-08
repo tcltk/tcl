@@ -125,7 +125,7 @@ proc GetData {chan} {
     }
 }
 
-fconfigure $chan -blocking 0 -encoding binary
+fconfigure $chan -blocking 0 -translation binary
 \fBfileevent\fR $chan readable [list GetData $chan]
 .CE
 .PP

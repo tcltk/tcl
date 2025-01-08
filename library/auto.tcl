@@ -141,7 +141,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	# source command, but no file exists command
 
 	if {[interp issafe] || [file exists $file]} {
-	    if {![catch {uplevel #0 [list source $file]} msg opts]} {
+	    if {![catch {uplevel #0 [list source -encoding utf-8 $file]} msg opts]} {
 		return
 	    }
 	    append errors "$file: $msg\n"
@@ -214,6 +214,7 @@ proc auto_mkindex {dir args} {
     auto_mkindex_parser::cleanup
 
     set fid [open "tclIndex" w]
+    fconfigure $fid -encoding utf-8
     puts -nonewline $fid $index
     close $fid
     cd $oldDir
@@ -245,7 +246,7 @@ proc auto_mkindex_old {dir args} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
 		    append index "set [list auto_index($procName)]"
-		    append index " \[list source \[file join \$dir [list $file]\]\]\n"
+		    append index " \[list source -encoding utf-8 \[file join \$dir [list $file]\]\]\n"
 		}
 	    }
 	    close $f
@@ -531,7 +532,7 @@ proc auto_mkindex_parser::indexEntry {name} {
     set filenameParts [file split $scriptFile]
 
     append index [format \
-	    {set auto_index(%s) [list source [file join $dir %s]]%s} \
+	    {set auto_index(%s) [list source -encoding utf-8 [file join $dir %s]]%s} \
 	    $name $filenameParts \n]
     return
 }

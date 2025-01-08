@@ -605,6 +605,7 @@ built-in commands:
 \fBtell\fR	\fBtime\fR	\fBtrace\fR	\fBunset\fR
 \fBupdate\fR	\fBuplevel\fR	\fBupvar\fR	\fBvariable\fR
 \fBvwait\fR	\fBwhile\fR
+\fBzlib\fR
 .DE
 The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:

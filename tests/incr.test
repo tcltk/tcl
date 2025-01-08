@@ -236,6 +236,63 @@ test incr-1.30 {TclCompileIncrCmd: array var, braced (no subs)} -setup {
     incr {array($foo)}
 } -result 5
 
+test incr-1.31 {no overflow in TclCompileIncrCmd and Tcl_IncrObjCmd, bug [7179c6724cd38271]} {
+    set res [list]
+    # TclCompileIncrCmd: compiled incr TEBC with immutable constant offs (INST_INCR_*_IMM instructions):
+    lappend res [set i 0; incr i 0x7FFFFFFF]
+    lappend res [set i 0; incr i 0xFFFFFF80]
+    lappend res [set i 0; incr i 0xFFFFFF81]
+    lappend res [set i 0; incr i 0xFFFFFFFF]
+    lappend res [set i 0; incr i 0x10000007F]
+    lappend res [set i 0; incr i 0x100000080]
+    lappend res [set i 0; incr i 0x7FFFFFFFFFFFFFFF]
+    lappend res [set i 0; incr i 0xFFFFFFFFFFFFFF80]
+    lappend res [set i 0; incr i 0xFFFFFFFFFFFFFF81]
+    lappend res [set i 0; incr i 0xFFFFFFFFFFFFFFFF]
+    lappend res [set i 0; incr i 0x1000000000000007F]
+    lappend res [set i 0; incr i 0x10000000000000080]
+    # TclCompileIncrCmd: compiled incr TEBC with dynamic offs (INST_INCR_* instructions without _IMM):
+    lappend res [set i 0; incr i [set x 0x7FFFFFFF]]
+    lappend res [set i 0; incr i [set x 0xFFFFFF80]]
+    lappend res [set i 0; incr i [set x 0xFFFFFF81]]
+    lappend res [set i 0; incr i [set x 0xFFFFFFFF]]
+    lappend res [set i 0; incr i [set x 0x10000007F]]
+    lappend res [set i 0; incr i [set x 0x100000080]]
+    lappend res [set i 0; incr i [set x 0x7FFFFFFFFFFFFFFF]]
+    lappend res [set i 0; incr i [set x 0xFFFFFFFFFFFFFF80]]
+    lappend res [set i 0; incr i [set x 0xFFFFFFFFFFFFFF81]]
+    lappend res [set i 0; incr i [set x 0xFFFFFFFFFFFFFFFF]]
+    lappend res [set i 0; incr i [set x 0x1000000000000007F]]
+    lappend res [set i 0; incr i [set x 0x10000000000000080]]
+    # Tcl_IncrObjCmd: non-compiled incr command (or NRE):
+    set cmd incr
+    lappend res [set i 0; $cmd i 0x7FFFFFFF]
+    lappend res [set i 0; $cmd i 0xFFFFFF80]
+    lappend res [set i 0; $cmd i 0xFFFFFF81]
+    lappend res [set i 0; $cmd i 0xFFFFFFFF]
+    lappend res [set i 0; $cmd i 0x10000007F]
+    lappend res [set i 0; $cmd i 0x100000080]
+    lappend res [set i 0; $cmd i 0x7FFFFFFFFFFFFFFF]
+    lappend res [set i 0; $cmd i 0xFFFFFFFFFFFFFF80]
+    lappend res [set i 0; $cmd i 0xFFFFFFFFFFFFFF81]
+    lappend res [set i 0; $cmd i 0xFFFFFFFFFFFFFFFF]
+    lappend res [set i 0; $cmd i 0x1000000000000007F]
+    lappend res [set i 0; $cmd i 0x10000000000000080]
+} [lrepeat 3 \
+    [expr 0x7FFFFFFF] \
+    [expr 0xFFFFFF80] \
+    [expr 0xFFFFFF81] \
+    [expr 0xFFFFFFFF] \
+    [expr 0x10000007F] \
+    [expr 0x100000080] \
+    [expr 0x7FFFFFFFFFFFFFFF] \
+    [expr 0xFFFFFFFFFFFFFF80] \
+    [expr 0xFFFFFFFFFFFFFF81] \
+    [expr 0xFFFFFFFFFFFFFFFF] \
+    [expr 0x1000000000000007F] \
+    [expr 0x10000000000000080] \
+]
+
 # Check "incr" and computed command names.
 
 unset -nocomplain x i

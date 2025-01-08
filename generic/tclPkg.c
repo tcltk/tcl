@@ -153,7 +153,7 @@ Tcl_PkgProvideEx(
 	return TCL_OK;
     }
 
-    if (CheckVersionAndConvert(interp, Tcl_GetString(pkgPtr->version), &pvi,
+    if (CheckVersionAndConvert(interp, TclGetString(pkgPtr->version), &pvi,
 	    NULL) != TCL_OK) {
 	return TCL_ERROR;
     } else if (CheckVersionAndConvert(interp, version, &vi, NULL) != TCL_OK) {
@@ -173,8 +173,8 @@ Tcl_PkgProvideEx(
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "conflicting versions provided for package \"%s\": %s, then %s",
-	    name, Tcl_GetString(pkgPtr->version), version));
-    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT", NULL);
+	    name, TclGetString(pkgPtr->version), version));
+    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -306,7 +306,7 @@ Tcl_PkgRequireEx(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Cannot load package \"%s\" in standalone executable:"
 		" This package is not compiled with stub support", name));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED", (char *)NULL);
 	return NULL;
     }
 
@@ -326,7 +326,7 @@ Tcl_PkgRequireEx(
 	}
 	ov = Tcl_NewStringObj(version, -1);
 	if (exact) {
-	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
+	    Tcl_AppendStringsToObj(ov, "-", version, (char *)NULL);
 	}
 	Tcl_IncrRefCount(ov);
 	if (Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr) == TCL_OK) {
@@ -414,11 +414,7 @@ PkgRequireCoreStep1(ClientData data[], Tcl_Interp *interp, int result) {
 		AddRequirementsToDString(&command, reqc, reqv);
 
 		Tcl_NRAddCallback(interp, PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
-		Tcl_NREvalObj(interp,
-		    Tcl_NewStringObj(Tcl_DStringValue(&command), Tcl_DStringLength(&command)),
-		    TCL_EVAL_GLOBAL
-		);
-		Tcl_DStringFree(&command);
+		Tcl_NREvalObj(interp, TclDStringToObj(&command), TCL_EVAL_GLOBAL);
 	    }
 	    return TCL_OK;
     } else {
@@ -436,7 +432,7 @@ PkgRequireCoreStep2(ClientData data[], Tcl_Interp *interp, int result) {
     if ((result != TCL_OK) && (result != TCL_ERROR)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bad return code: %d", result));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", (char *)NULL);
 	result = TCL_ERROR;
     }
     if (result == TCL_ERROR) {
@@ -462,7 +458,7 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
     if (reqPtr->pkgPtr->version == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't find package %s", name));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", (char *)NULL);
 	AddRequirementsToResult(interp, reqc, reqv);
 	return TCL_ERROR;
     }
@@ -472,7 +468,7 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
      */
 
     if (reqc != 0) {
-	CheckVersionAndConvert(interp, Tcl_GetString(reqPtr->pkgPtr->version),
+	CheckVersionAndConvert(interp, TclGetString(reqPtr->pkgPtr->version),
 		&pkgVersionI, NULL);
 	satisfies = SomeRequirementSatisfied(pkgVersionI, reqc, reqv);
 
@@ -481,9 +477,9 @@ PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result) {
 	if (!satisfies) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "version conflict for package \"%s\": have %s, need",
-		    name, Tcl_GetString(reqPtr->pkgPtr->version)));
+		    name, TclGetString(reqPtr->pkgPtr->version)));
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
-		    NULL);
+		    (char *)NULL);
 	    AddRequirementsToResult(interp, reqc, reqv);
 	    return TCL_ERROR;
 	}
@@ -529,7 +525,7 @@ SelectPackage(ClientData data[], Tcl_Interp *interp, int result) {
 		" attempt to provide %s %s requires %s",
 		name, (char *) pkgPtr->clientData, name));
 	AddRequirementsToResult(interp, reqc, reqv);
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -689,12 +685,12 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
 		    " no version of package %s provided",
 		    name, versionToProvide, name));
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED",
-		    NULL);
+		    (char *)NULL);
 	} else {
 	    char *pvi, *vi;
 
 	    if (TCL_OK != CheckVersionAndConvert(interp,
-		    Tcl_GetString(reqPtr->pkgPtr->version), &pvi, NULL)) {
+		    TclGetString(reqPtr->pkgPtr->version), &pvi, NULL)) {
 		result = TCL_ERROR;
 	    } else if (CheckVersionAndConvert(interp,
 		    versionToProvide, &vi, NULL) != TCL_OK) {
@@ -711,9 +707,9 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
 			    "attempt to provide package %s %s failed:"
 			    " package %s %s provided instead",
 			    name, versionToProvide,
-			    name, Tcl_GetString(reqPtr->pkgPtr->version)));
+			    name, TclGetString(reqPtr->pkgPtr->version)));
 		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
-			    "WRONGPROVIDE", NULL);
+			    "WRONGPROVIDE", (char *)NULL);
 		}
 	    }
 	}
@@ -725,7 +721,7 @@ SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result) {
 		"attempt to provide package %s %s failed:"
 		" bad return code: %s",
 		name, versionToProvide, TclGetString(codePtr)));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", (char *)NULL);
 	TclDecrRefCount(codePtr);
 	result = TCL_ERROR;
     }
@@ -831,7 +827,7 @@ Tcl_PkgPresentEx(
 
 	    if (foundVersion == NULL) {
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name,
-			NULL);
+			(char *)NULL);
 	    }
 	    return foundVersion;
 	}
@@ -844,7 +840,7 @@ Tcl_PkgPresentEx(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"package %s is not present", name));
     }
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name, NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name, (char *)NULL);
     return NULL;
 }
 
@@ -962,7 +958,7 @@ TclNRPackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = Tcl_GetStringFromObj(objv[3], &length);
+	argv3 = TclGetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -1003,7 +999,7 @@ TclNRPackageObjCmd(
 		prevPtr->nextPtr = availPtr;
 	    }
 	}
-	argv4 = Tcl_GetStringFromObj(objv[4], &length);
+	argv4 = TclGetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, (unsigned) length + 1);
 	break;
     }
@@ -1174,7 +1170,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		ckfree(iPtr->packageUnknown);
 	    }
-	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
+	    argv2 = TclGetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -1512,7 +1508,7 @@ CheckVersionAndConvert(
     ckfree(ibuf);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "expected version number but got \"%s\"", string));
-    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSION", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSION", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -1775,7 +1771,7 @@ CheckRequirement(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"expected versionMin-versionMax but got \"%s\"", string));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSIONRANGE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSIONRANGE", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1830,7 +1826,7 @@ AddRequirementsToResult(
     int i, length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
+	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {

@@ -56,10 +56,10 @@ extern "C" {
 #endif
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  14
+#define TCL_RELEASE_SERIAL  16
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.14"
+#define TCL_PATCH_LEVEL	    "8.6.16"
 
 /*
  *----------------------------------------------------------------------------
@@ -148,20 +148,15 @@ extern "C" {
 #	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   endif
 #   define TCL_NORETURN __attribute__ ((noreturn))
-#   if defined(BUILD_tcl) || defined(BUILD_tk)
-#	define TCL_NORETURN1 __attribute__ ((noreturn))
-#   else
-#	define TCL_NORETURN1 /* nothing */
-#   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
-#	define TCL_NORETURN _declspec(noreturn)
+#	define TCL_NORETURN __declspec(noreturn)
 #   else
 #	define TCL_NORETURN /* nothing */
 #   endif
-#   define TCL_NORETURN1 /* nothing */
 #endif
+#define TCL_NORETURN1 /* nothing */
 
 /*
  * Allow a part of Tcl's API to be explicitly marked as deprecated.
@@ -1234,10 +1229,18 @@ struct Tcl_HashEntry {
  * TCL_HASH_KEY_SYSTEM_HASH -	If this flag is set then all memory internally
  *                              allocated for the hash table that is not for an
  *                              entry will use the system heap.
+ * TCL_HASH_KEY_DIRECT_COMPARE -
+ * 	                        Allows fast comparison for hash keys directly
+ *                              by compare of their key.oneWordValue values,
+ *                              before call of compareKeysProc (much slower
+ *                              than a direct compare, so it is speed-up only
+ *                              flag). Don't use it if keys contain values rather
+ *                              than pointers.
  */
 
 #define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
 #define TCL_HASH_KEY_SYSTEM_HASH    0x2
+#define TCL_HASH_KEY_DIRECT_COMPARE 0x4
 
 /*
  * Structure definition for the methods associated with a hash table key type.
@@ -2550,9 +2553,9 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
-#define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
+#define Tcl_SetHashValue(h, value) ((h)->clientData = (void *)(value))
 #define Tcl_GetHashKey(tablePtr, h) \
-	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
+	((void *)(((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
 		   ? (h)->key.oneWordValue \
 		   : (h)->key.string))

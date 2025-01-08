@@ -324,11 +324,15 @@ test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
 # todo: rewrite this if monotonic clock is provided resp. command "after"
 # gets microsecond accuracy (RFE [fdfbd5e10] gets merged):
 proc _nrt_sleep {msec} {
-    set usec [expr {$msec * 1000}]
     set stime [clock microseconds]
-    while {abs([clock microseconds] - $stime) < $usec} {
-      # don't use after 0 unless it's NRT-capable, so yes - busy-wait (but it's more precise):
-      # after 0
+    set usec [expr {$msec * 1000}]
+    set etime [expr {$stime + $usec}]
+    while {[set tm [clock microseconds]] < $etime} {
+	# don't use after 0 unless it's NRT-capable, so yes - busy-wait (but it's more precise):
+	# after 0
+	if {$tm < $stime} { # avoid too long delays by backwards time jumps, simply skip test
+	    tcltest::Skip "time-jump?"
+	}
     }
 }
 _nrt_sleep 0; # warm up (clock, compile, etc)
@@ -408,6 +412,9 @@ test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
 test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measurement} -body {
     set m1 [timerate {_nrt_sleep 0.01} 50]
     set m2 [timerate {_nrt_sleep 1.00} 50]
+    if {[testConstraint valgrind] && ([lindex $m1 0] >= 100 || [lindex $m1 2] <= 500)} {
+	tcltest::Skip "too-slow-by-valgrind"
+    }
     list [list \
 	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
 	[expr {[lindex $m1 0] < 100}] \

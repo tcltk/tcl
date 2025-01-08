@@ -209,16 +209,17 @@ restrictions on how they are related.
 that it takes a vector of values to pass as additional arguments instead
 of a vector of strings.
 .PP
-\fBTcl_GetAlias\fR returns information about an alias \fIaliasName\fR
+\fBTcl_GetAliasObj\fR returns information in the form of a pointer to
+a vector of Tcl_Obj structures about an alias \fIaliasName\fR
 in \fIinterp\fR. Any of the result fields can be \fBNULL\fR, in
 which case the corresponding datum is not returned. If a result field is
 non\-\fBNULL\fR, the address indicated is set to the corresponding datum.
-For example, if \fItargetNamePtr\fR is non\-\fBNULL\fR it is set to a
+For example, if \fItargetCmdPtr\fR is non\-\fBNULL\fR it is set to a
 pointer to the string containing the name of the target command.
 .PP
-\fBTcl_GetAliasObj\fR is similar to \fBTcl_GetAlias\fR except that it
-returns a pointer to a vector of Tcl_Obj structures instead of a vector of
-strings.
+\fBTcl_GetAlias\fR is similar to \fBTcl_GetAliasObj\fR except that it
+returns a pointer to a vector of string instead of a vector of
+Tcl_Obj structures. \fBTcl_GetAlias\fR is deprecated.
 .PP
 \fBTcl_ExposeCommand\fR moves the command named \fIhiddenCmdName\fR from
 the set of hidden commands to the set of exposed commands, putting

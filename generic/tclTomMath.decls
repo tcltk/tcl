@@ -80,7 +80,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err TclBN_mp_expt_d(const mp_int *a, unsigned int b, mp_int *c)
+    mp_err TclBN_mp_expt_d(const mp_int *a, int b, mp_int *c)
 }
 declare 20 {
     mp_err TclBN_mp_grow(mp_int *a, int size)

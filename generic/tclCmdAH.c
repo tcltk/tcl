@@ -628,7 +628,7 @@ BadEncodingSubcommand(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "not allowed to invoke subcommand %s of encoding", subcommandName));
-    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -794,7 +794,7 @@ EncodingDirsObjCmd(
 		"expected directory list but got \"%s\"",
 		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1319,7 +1319,7 @@ BadFileSubcommand(
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "not allowed to invoke subcommand %s of file", subcommandName));
-    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -1622,7 +1622,7 @@ FileAttrSizeCmd(
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(buf.st_size));
     return TCL_OK;
 }
 
@@ -2063,7 +2063,7 @@ PathFilesystemCmd(
     if (fsInfo == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		Tcl_GetString(objv[1]), NULL);
+		TclGetString(objv[1]), (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2213,7 +2213,7 @@ PathSplitCmd(
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2315,7 +2315,7 @@ FilesystemSeparatorCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    Tcl_GetString(objv[1]), NULL);
+		    TclGetString(objv[1]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2681,7 +2681,7 @@ TclNRForIterCallback(
 	Tcl_ResetResult(interp);
 	TclNewObj(boolObj);
 	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
-		NULL);
+		(char *)NULL);
 	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
     case TCL_BREAK:
 	result = TCL_OK;
@@ -2910,7 +2910,7 @@ EachloopCmd(
 		    (statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		    "NEEDVARS", NULL);
+		    "NEEDVARS", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}

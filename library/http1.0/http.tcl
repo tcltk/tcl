@@ -94,8 +94,8 @@ proc http_get { url args } {
 	meta		{}
 	currentsize	0
 	totalsize	0
-        type            text/html
-        body            {}
+	type            text/html
+	body            {}
 	status		""
     }
     set options {-blocksize -channel -command -handler -headers \

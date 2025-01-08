@@ -97,8 +97,8 @@ proc ::tcl::tm::add {args} {
 
     set newpaths $paths
     foreach p $args {
-	if {$p in $newpaths} {
-	    # Ignore a path already on the list.
+	if {($p eq "") || ($p in $newpaths)} {
+	    # Ignore any path which is empty or already on the list.
 	    continue
 	}
 
@@ -326,18 +326,13 @@ proc ::tcl::tm::Defaults {} {
 	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 
-    if {$tcl_platform(platform) eq "windows"} {
-	set sep ";"
-    } else {
-	set sep ":"
-    }
     for {set n $minor} {$n >= 0} {incr n -1} {
 	foreach ev [::list \
 			TCL${major}.${n}_TM_PATH \
 			TCL${major}_${n}_TM_PATH \
-        ] {
+	] {
 	    if {![info exists env($ev)]} continue
-	    foreach p [split $env($ev) $sep] {
+	    foreach p [split $env($ev) $::tcl_platform(pathSeparator)] {
 		path add $p
 	    }
 	}

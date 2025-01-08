@@ -92,7 +92,7 @@ static int subsystemsInitialized = 0;
  * non-NULL value.
  */
 
-static TCL_NORETURN1 Tcl_ExitProc *appExitPtr = NULL;
+static Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
@@ -266,13 +266,9 @@ HandleBgErrors(
 
 	    if (errChannel != NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr, *valuePtr = NULL;
+		Tcl_Obj *valuePtr = NULL;
 
-		TclNewLiteralStringObj(keyPtr, "-errorinfo");
-		Tcl_IncrRefCount(keyPtr);
-		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
-		Tcl_DecrRefCount(keyPtr);
-
+		TclDictGet(NULL, options, "-errorinfo", &valuePtr);
 		Tcl_WriteChars(errChannel,
 			"error in background error handler:\n", -1);
 		if (valuePtr) {
@@ -316,7 +312,7 @@ TclDefaultBgErrorHandlerObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *keyPtr, *valuePtr;
+    Tcl_Obj *valuePtr;
     Tcl_Obj *tempObjv[2];
     int result, code, level;
     Tcl_InterpState saved;
@@ -330,27 +326,21 @@ TclDefaultBgErrorHandlerObjCmd(
      * Check for a valid return options dictionary.
      */
 
-    TclNewLiteralStringObj(keyPtr, "-level");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-level", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    TclNewLiteralStringObj(keyPtr, "-code");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-code", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &code) == TCL_ERROR) {
@@ -408,18 +398,12 @@ TclDefaultBgErrorHandlerObjCmd(
 	Tcl_SetObjResult(interp, tempObjv[1]);
     }
 
-    TclNewLiteralStringObj(keyPtr, "-errorcode");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-errorcode", &valuePtr);
     if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_SetObjErrorCode(interp, valuePtr);
     }
 
-    TclNewLiteralStringObj(keyPtr, "-errorinfo");
-    Tcl_IncrRefCount(keyPtr);
-    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
+    result = TclDictGet(NULL, objv[2], "-errorinfo", &valuePtr);
     if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
@@ -860,7 +844,7 @@ Tcl_DeleteThreadExitHandler(
 
 Tcl_ExitProc *
 Tcl_SetExitProc(
-    TCL_NORETURN1 Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
+    Tcl_ExitProc *proc)		/* New exit handler for app or NULL */
 {
     Tcl_ExitProc *prevExitProc;
 
@@ -941,7 +925,7 @@ Tcl_Exit(
     int status)			/* Exit status for application; typically 0
 				 * for normal return, 1 for error return. */
 {
-    TCL_NORETURN1 Tcl_ExitProc *currentAppExitPtr;
+    Tcl_ExitProc *currentAppExitPtr;
 
     Tcl_MutexLock(&exitMutex);
     currentAppExitPtr = appExitPtr;
@@ -995,8 +979,7 @@ Tcl_Exit(
 	}
     }
 
-    TclpExit(status);
-    Tcl_Panic("OS exit failed!");
+    exit(status);
 }
 
 /*
@@ -1523,7 +1506,7 @@ Tcl_VwaitObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't wait for variable \"%s\": would wait forever",
 		nameString));
-	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (char *)NULL);
 	return TCL_ERROR;
     }
     if (!done) {

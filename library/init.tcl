@@ -18,7 +18,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6.14
+package require -exact Tcl 8.6.16
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -493,12 +493,12 @@ proc auto_load_index {} {
 	set dir [lindex $auto_path $i]
 	set f ""
 	if {$issafe} {
-	    catch {source [file join $dir tclIndex]}
+	    catch {source -encoding utf-8 [file join $dir tclIndex]}
 	} elseif {[catch {set f [open [file join $dir tclIndex]]}]} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -eofchar "\x1A {}"
+		fconfigure $f -eofchar "\x1A {}" -encoding utf-8
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
@@ -510,7 +510,7 @@ proc auto_load_index {} {
 			}
 			set name [lindex $line 0]
 			set auto_index($name) \
-				"source [file join $dir [lindex $line 1]]"
+				"source -encoding utf-8 [file join $dir [lindex $line 1]]"
 		    }
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
@@ -611,12 +611,12 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index $pattern] {
-            if {([namespace which -command $name] eq "")
+	foreach name [array names auto_index $pattern] {
+	    if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace inscope :: $auto_index($name)
-            }
-        }
+		namespace inscope :: $auto_index($name)
+	    }
+	}
     }
 }
 

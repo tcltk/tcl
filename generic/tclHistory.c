@@ -131,7 +131,7 @@ Tcl_RecordAndEvalObj(
 {
     int result, call = 1;
     Tcl_CmdInfo info;
-    HistoryObjs *histObjsPtr =
+    HistoryObjs *histObjsPtr = (HistoryObjs *)
 	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
@@ -139,7 +139,7 @@ Tcl_RecordAndEvalObj(
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)ckalloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -215,7 +215,7 @@ DeleteHistoryObjs(
     ClientData clientData,
     Tcl_Interp *interp)
 {
-    HistoryObjs *histObjsPtr = clientData;
+    HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

@@ -393,13 +393,13 @@ TclRegisterLiteral(
 				 * the literal should not be shared across
 				 * namespaces. */
 {
-    CompileEnv *envPtr = ePtr;
+    CompileEnv *envPtr = (CompileEnv *)ePtr;
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
     unsigned hash;
-    int localHash, objIndex, new;
+    int localHash, objIndex, isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -453,7 +453,7 @@ TclRegisterLiteral(
      */
 
     globalPtr = NULL;
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
+    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &isNew, nsPtr, flags,
 	    &globalPtr);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
@@ -693,7 +693,7 @@ AddLocalLiteralEntry(
 	}
 
 	if (!found) {
-	    bytes = Tcl_GetStringFromObj(objPtr, &length);
+	    bytes = TclGetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
 		    "AddLocalLiteralEntry", (length>60? 60 : length), bytes);
 	}
@@ -1170,7 +1170,7 @@ TclVerifyLocalLiteralTable(
 		localPtr=localPtr->nextPtr) {
 	    count++;
 	    if (localPtr->refCount != -1) {
-		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %d",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
@@ -1221,7 +1221,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount < 1) {
-		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
+		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : length), bytes, globalPtr->refCount);

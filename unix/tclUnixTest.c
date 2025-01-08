@@ -105,7 +105,7 @@ TclplatformtestInit(
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfork", TestforkObjCmd,
-        NULL, NULL);
+	NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
@@ -164,7 +164,7 @@ TestfilehandlerCmd(
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
 		" option ... \"", NULL);
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     pipePtr = NULL;
     if (argc >= 3) {
@@ -259,9 +259,9 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 
-        while (read(GetFd(pipePtr->readFile), buffer, 4000) > 0) {
+	while (read(GetFd(pipePtr->readFile), buffer, 4000) > 0) {
 	    /* Empty loop body. */
-        }
+	}
     } else if (strcmp(argv[1], "fill") == 0) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -270,9 +270,9 @@ TestfilehandlerCmd(
 	}
 
 	memset(buffer, 'a', 4000);
-        while (write(GetFd(pipePtr->writeFile), buffer, 4000) > 0) {
+	while (write(GetFd(pipePtr->writeFile), buffer, 4000) > 0) {
 	    /* Empty loop body. */
-        }
+	}
     } else if (strcmp(argv[1], "fillpartial") == 0) {
 	char buf[TCL_INTEGER_SPACE];
 
@@ -480,18 +480,18 @@ TestgetopenfileCmd(
     ClientData filePtr;
 
     if (argc != 3) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" channelName forWriting\"", NULL);
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     if (Tcl_GetOpenFile(interp, argv[1], atoi(argv[2]), 1, &filePtr)
 	    == TCL_ERROR) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     if (filePtr == NULL) {
-        Tcl_AppendResult(interp,
+	Tcl_AppendResult(interp,
 		"Tcl_GetOpenFile succeeded but FILE * NULL!", NULL);
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -521,9 +521,9 @@ TestsetdefencdirCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" defaultDir\"", NULL);
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     Tcl_SetDefaultEncodingDir(argv[1]);
@@ -557,14 +557,14 @@ TestforkObjCmd(
     pid_t pid;
 
     if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
     }
     pid = fork();
     if (pid == -1) {
-        Tcl_AppendResult(interp,
-                "Cannot fork", NULL);
-        return TCL_ERROR;
+	Tcl_AppendResult(interp,
+		"Cannot fork", NULL);
+	return TCL_ERROR;
     }
     /* Only needed when pthread_atfork is not present,
      * should not hurt otherwise. */
@@ -600,8 +600,8 @@ TestgetdefencdirCmd(
     const char **argv)		/* Argument strings. */
 {
     if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], NULL);
-        return TCL_ERROR;
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], NULL);
+	return TCL_ERROR;
     }
 
     Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), NULL);

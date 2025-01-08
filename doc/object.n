@@ -64,6 +64,11 @@ The \fBoo::object\fR class supports the following non-exported methods:
 This method concatenates the arguments, \fIarg\fR, as if with \fBconcat\fR,
 and then evaluates the resulting script in the namespace that is uniquely
 associated with \fIobj\fR, returning the result of the evaluation.
+.RS
+.PP
+Note that object-internal commands such as \fBmy\fR and \fBself\fR can be
+invoked in this context.
+.RE
 .TP
 \fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
 .

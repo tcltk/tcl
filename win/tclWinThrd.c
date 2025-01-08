@@ -3,9 +3,9 @@
  *
  *	This file implements the Windows-specific thread operations.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright (c) 1998 Sun Microsystems, Inc.
+ * Copyright (c) 1999 Scriptics Corporation
+ * Copyright (c) 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -29,10 +29,7 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
  */
 
 static CRITICAL_SECTION globalLock;
-static int init = 0;
-#define GLOBAL_LOCK TclpGlobalLock()
-#define GLOBAL_UNLOCK TclpGlobalUnlock()
-
+static int initialized = 0;
 
 /*
  * This is the global lock used to serialize initialization and finalization
@@ -214,7 +211,7 @@ TclpThreadCreate(
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
-    WinThread *winThreadPtr;		/* Per-thread startup info */
+    WinThread *winThreadPtr;	/* Per-thread startup info */
     HANDLE tHandle;
 
     winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
@@ -225,15 +222,14 @@ TclpThreadCreate(
     EnterCriticalSection(&joinLock);
 
     *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned
-		 */
+                 * on WIN64 sizeof void* != sizeof unsigned */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
 #else
-    tHandle = CreateThread(NULL, (DWORD) stackSize,
+    tHandle = CreateThread(NULL, (DWORD)stackSize,
 	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
 #endif
 
@@ -298,7 +294,7 @@ Tcl_JoinThread(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 TclpThreadExit(
     int status)
 {
@@ -332,7 +328,7 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-    return (Tcl_ThreadId)(size_t)GetCurrentThreadId();
+    return (Tcl_ThreadId)INT2PTR(GetCurrentThreadId());
 }
 
 /*
@@ -357,7 +353,7 @@ Tcl_GetCurrentThread(void)
 void
 TclpInitLock(void)
 {
-    if (!init) {
+    if (!initialized) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -365,7 +361,7 @@ TclpInitLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	init = 1;
+	initialized = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -419,7 +415,7 @@ TclpInitUnlock(void)
 void
 TclpGlobalLock(void)
 {
-    if (!init) {
+    if (!initialized) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -427,7 +423,7 @@ TclpGlobalLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	init = 1;
+	initialized = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
@@ -494,7 +490,7 @@ Tcl_GetAllocMutex(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeLock
+ * TclFinalizeLock
  *
  *	This procedure is used to destroy all private resources used in this
  *	file.
@@ -512,7 +508,7 @@ Tcl_GetAllocMutex(void)
 void
 TclFinalizeLock(void)
 {
-    GLOBAL_LOCK;
+    TclpGlobalLock();
     DeleteCriticalSection(&joinLock);
 
     /*
@@ -520,7 +516,7 @@ TclFinalizeLock(void)
      */
 
     DeleteCriticalSection(&globalLock);
-    init = 0;
+    initialized = 0;
 
 #ifdef TCL_THREADS
     if (allocOnce) {
@@ -567,7 +563,7 @@ Tcl_MutexLock(
     CRITICAL_SECTION *csPtr;
 
     if (*mutexPtr == NULL) {
-	GLOBAL_LOCK;
+	TclpGlobalLock();
 
 	/*
 	 * Double inside global lock check to avoid a race.
@@ -579,7 +575,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	GLOBAL_UNLOCK;
+	TclpGlobalUnlock();
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     EnterCriticalSection(csPtr);
@@ -681,7 +677,7 @@ Tcl_ConditionWait(
      */
 
     if (tsdPtr->flags == WIN_THREAD_UNINIT) {
-	GLOBAL_LOCK;
+	TclpGlobalLock();
 
 	/*
 	 * Create the per-thread event and queue pointers.
@@ -695,7 +691,7 @@ Tcl_ConditionWait(
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	    doExit = 1;
 	}
-	GLOBAL_UNLOCK;
+	TclpGlobalUnlock();
 
 	if (doExit) {
 	    /*
@@ -710,7 +706,7 @@ Tcl_ConditionWait(
     }
 
     if (*condPtr == NULL) {
-	GLOBAL_LOCK;
+	TclpGlobalLock();
 
 	/*
 	 * Initialize the per-condition queue pointers and Mutex.
@@ -724,7 +720,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) winCondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	GLOBAL_UNLOCK;
+	TclpGlobalUnlock();
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     winCondPtr = *((WinCondition **)condPtr);

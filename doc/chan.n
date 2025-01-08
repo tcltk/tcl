@@ -21,6 +21,7 @@ channels \fBstdin\fR, \fBstdout\fR or \fBstderr\fR which correspond to
 the process's standard input, output and error streams respectively).
 \fIOption\fR indicates what to do with the channel; any unique
 abbreviation for \fIoption\fR is acceptable. Valid options are:
+.\" METHOD: blocked
 .TP
 \fBchan blocked \fIchannelId\fR
 .
@@ -30,6 +31,7 @@ process to block, and returns 1 if that was the case. It returns 0
 otherwise. Note that this only ever returns 1 when the channel has
 been configured to be non-blocking; all Tcl channels have blocking
 turned on by default.
+.\" METHOD: close
 .TP
 \fBchan close \fIchannelId\fR ?\fIdirection\fR?
 .
@@ -90,6 +92,7 @@ system resource, which can change how other processes or systems respond to
 the Tcl program.
 .VE 8.6
 .RE
+.\" METHOD: configure
 .TP
 \fBchan configure \fIchannelId\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
 .
@@ -112,8 +115,10 @@ for the options supported by that specific type of channel. For
 example, see the manual entry for the \fBsocket\fR command for additional
 options for sockets, and the \fBopen\fR command for additional options for
 serial devices.
+.RE
+.\" OPTION: -blocking
 .TP
-\fB\-blocking\fR \fIboolean\fR
+\fB\-blocking\fI boolean\fR
 .
 The \fB\-blocking\fR option determines whether I/O operations on the
 channel can cause the process to block indefinitely.  The value of the
@@ -125,8 +130,9 @@ documentation for those commands for details.  For non-blocking mode to
 work correctly, the application must be using the Tcl event loop
 (e.g. by calling \fBTcl_DoOneEvent\fR or invoking the \fBvwait\fR
 command).
+.\" OPTION: -buffering
 .TP
-\fB\-buffering\fR \fInewValue\fR
+\fB\-buffering\fI newValue\fR
 .
 If \fInewValue\fR is \fBfull\fR then the I/O system will buffer output
 until its internal buffer is full or until the \fBchan flush\fR
@@ -139,13 +145,15 @@ channels that connect to terminal-like devices; for these channels the
 initial setting is \fBline\fR.  Additionally, \fBstdin\fR and
 \fBstdout\fR are initially set to \fBline\fR, and \fBstderr\fR is set
 to \fBnone\fR.
+.\" OPTION: -buffersize
 .TP
-\fB\-buffersize\fR \fInewSize\fR
+\fB\-buffersize\fI newSize\fR
 .
-\fINewvalue\fR must be an integer; its value is used to set the size
+\fInewSize\fR must be an integer; its value is used to set the size
 of buffers, in bytes, subsequently allocated for this channel to store
-input or output. \fINewvalue\fR must be a number of no more than one
+input or output. \fInewSize\fR must be a number of no more than one
 million, allowing buffers of up to one million bytes in size.
+.\" OPTION: -encoding
 .TP
 \fB\-encoding\fR \fIname\fR
 .
@@ -174,6 +182,7 @@ The default encoding for newly opened channels is the same platform-
 and locale-dependent system encoding used for interfacing with the
 operating system, as returned by \fBencoding system\fR.
 .RE
+.\" OPTION: -eofchar
 .TP
 \fB\-eofchar\fR \fIchar\fR
 .TP
@@ -197,10 +206,11 @@ for writing.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7f;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
+.\" OPTION: -translation
 .TP
-\fB\-translation\fR \fImode\fR
+\fB\-translation\fI translation\fR
 .TP
-\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR
+\fB\-translation\fR \fB{\fIinTranslation outTranslation\fB}\fR
 .
 In Tcl scripts the end of a line is always represented using a single
 newline character (\en).  However, in actual files and devices the end
@@ -226,9 +236,7 @@ you can specify a single value that will apply to both reading and
 writing.  When querying the translation mode of a read-write channel, a
 two-element list will always be returned.  The following values are
 currently supported:
-.TP
-\fBauto\fR
-.
+.IP \fBauto\fR
 As the input translation mode, \fBauto\fR treats any of newline
 (\fBlf\fR), carriage return (\fBcr\fR), or carriage return followed by
 a newline (\fBcrlf\fR) as the end of line representation.  The end of
@@ -239,26 +247,24 @@ all platforms Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses
 \fBlf\fR, and for the various flavors of Windows it chooses
 \fBcrlf\fR.  The default setting for \fB\-translation\fR is \fBauto\fR
 for both input and output.
-.TP
-\fBbinary\fR
-.
-No end-of-line translations are performed.  This is nearly identical
-to \fBlf\fR mode, except that in addition \fBbinary\fR mode also sets
-the end-of-file character to the empty string (which disables it) and
-sets the encoding to \fBbinary\fR (which disables encoding filtering).
-See the description of \fB\-eofchar\fR and \fB\-encoding\fR for more
-information.
-.TP
-\fBcr\fR
-.
+.IP \fBbinary\fR
+Like \fBlf\fR, no end-of-line translation is performed, but in addition, sets
+\fB\-eofchar\fR to the empty string to disable it, and sets \fB\-encoding\fR
+to \fBiso8859-1\fR.  With this one setting, a channel is fully configured
+for binary input and output:  Each byte read from the channel
+becomes the Unicode character having the same value as that byte, and each
+character written to the channel becomes a single byte in the output.  This
+makes it possible to work seamlessly with binary data as long as each character
+in the data remains in the range of 0 to 255 so that there is no distinction
+between binary data and text.  For example, A JPEG image can be read from a
+such a channel, manipulated, and then written back to such a channel.
+.IP \fBcr\fR
 The end of a line in the underlying file or device is represented by a
 single carriage return character.  As the input translation mode,
 \fBcr\fR mode converts carriage returns to newline characters.  As the
 output translation mode, \fBcr\fR mode translates newline characters
 to carriage returns.
-.TP
-\fBcrlf\fR
-.
+.IP \fBcrlf\fR
 The end of a line in the underlying file or device is represented by a
 carriage return character followed by a linefeed character.  As the
 input translation mode, \fBcrlf\fR mode converts
@@ -266,15 +272,13 @@ carriage-return-linefeed sequences to newline characters.  As the
 output translation mode, \fBcrlf\fR mode translates newline characters
 to carriage-return-linefeed sequences.  This mode is typically used on
 Windows platforms and for network connections.
-.TP
-\fBlf\fR
-.
+.IP \fBlf\fR
 The end of a line in the underlying file or device is represented by a
 single newline (linefeed) character.  In this mode no translations
 occur during either input or output.  This mode is typically used on
 UNIX platforms.
 .RE
-.RE
+.\" METHOD: copy
 .TP
 \fBchan copy \fIinputChan outputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
 .
@@ -346,6 +350,7 @@ incoming bytes are valid UTF-8 characters and convert them according
 to the output encoding. The behaviour of the system for bytes which
 are not valid UTF-8 characters is undefined in this case.
 .RE
+.\" METHOD: create
 .TP
 \fBchan create \fImode cmdPrefix\fR
 .
@@ -364,7 +369,7 @@ reading, writing, or both. It has to be a list containing any of the
 strings
 .QW \fBread\fR
 or
-.QW \fBwrite\fR .
+.QW \fBwrite\fR ,
 The list must have at least one
 element, as a channel you can neither write to nor read from makes no
 sense. The handler command for the new channel must support the chosen
@@ -412,12 +417,14 @@ interpreters.  While it arranges for the execution of arbitrary Tcl
 code the system also makes sure that the code is always executed
 within the safe interpreter.
 .RE
+.\" METHOD: eof
 .TP
 \fBchan eof \fIchannelId\fR
 .
 Test whether the last input operation on the channel called
 \fIchannelId\fR failed because the end of the data stream was reached,
 returning 1 if end-of-file was reached, and 0 otherwise.
+.\" METHOD: event
 .TP
 \fBchan event \fIchannelId event\fR ?\fIscript\fR?
 .
@@ -444,7 +451,8 @@ while waiting for the data to arrive.  If an application invokes
 no input data available, the process will block; until the input data
 arrives, it will not be able to service other events, so it will
 appear to the user to
-.QW "freeze up" .
+.QW "freeze up"
+\&.
 With \fBchan event\fR, the
 process can tell when data is present and only invoke \fBchan gets\fR
 or \fBchan read\fR when they will not block.
@@ -486,6 +494,7 @@ to report the error.  In addition, the file event handler is deleted
 if it ever returns an error; this is done in order to prevent infinite
 loops due to buggy handlers.
 .RE
+.\" METHOD: flush
 .TP
 \fBchan flush \fIchannelId\fR
 .
@@ -500,6 +509,7 @@ buffered output has been flushed; the remainder will be flushed in the
 background as fast as the underlying file or device is able to absorb
 it.
 .RE
+.\" METHOD: gets
 .TP
 \fBchan gets \fIchannelId\fR ?\fIvarName\fR?
 .
@@ -521,12 +531,14 @@ distinguished from an empty line using the \fBchan eof\fR command, and
 the partial-line-but-non-blocking case can be distinguished with the
 \fBchan blocked\fR command.
 .RE
+.\" METHOD: names
 .TP
 \fBchan names\fR ?\fIpattern\fR?
 .
 Produces a list of all channel names. If \fIpattern\fR is specified,
 only those channel names that match it (according to the rules of
 \fBstring match\fR) will be returned.
+.\" METHOD: pending
 .TP
 \fBchan pending \fImode channelId\fR
 .
@@ -538,8 +550,10 @@ callback to impose application-specific limits on input line lengths to avoid
 a potential denial-of-service attack where a hostile user crafts
 an extremely long line that exceeds the available memory to buffer it).
 Returns -1 if the channel was not opened for the mode in question.
+.\" METHOD: pipe
 .TP
 \fBchan pipe\fR
+.
 .VS 8.6
 Creates a standalone pipe whose read- and write-side channels are
 returned as a 2-element list, the first element being the read side and
@@ -560,10 +574,12 @@ differences, but the details of what exactly gets written when are not. This
 is most likely to show up when using pipelines for testing; care should be
 taken to ensure that deadlocks do not occur and that potential short reads are
 allowed for.
-.RE
 .VE 8.6
+.RE
+.\" METHOD: pop
 .TP
 \fBchan pop \fIchannelId\fR
+.
 .VS 8.6
 Removes the topmost transformation from the channel \fIchannelId\fR, if there
 is any. If there are no transformations added to \fIchannelId\fR, this is
@@ -571,6 +587,7 @@ equivalent to \fBchan close\fR of that channel. The result is normally the
 empty string, but can be an error in some situations (i.e. where the
 underlying system stream is closed and that results in an error).
 .VE 8.6
+.\" METHOD: postevent
 .TP
 \fBchan postevent \fIchannelId eventSpec\fR
 .
@@ -607,8 +624,10 @@ where the event is posted from a safe interpreter and listened for by
 a trusted interpreter. \fBChan event\fR handlers are \fIalways\fR
 executed in the interpreter that set them up.
 .RE
+.\" METHOD: push
 .TP
 \fBchan push \fIchannelId cmdPrefix\fR
+.
 .VS 8.6
 Adds a new transformation on top of the channel \fIchannelId\fR. The
 \fIcmdPrefix\fR argument describes a list of one or more words which represent
@@ -619,6 +638,7 @@ is important to make sure that the transformation is capable of supporting the
 channel mode that it is used with or this can make the channel neither
 readable nor writable.
 .VE 8.6
+.\" METHOD: puts
 .TP
 \fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
 .
@@ -658,6 +678,7 @@ used in an event-driven fashion with the \fBchan event\fR command
 (do not invoke \fBchan puts\fR unless you have recently been notified
 via a file event that the channel is ready for more output data).
 .RE
+.\" METHOD: read
 .TP
 \fBchan read \fIchannelId\fR ?\fInumChars\fR?
 .TP
@@ -712,6 +733,7 @@ end-of-file character, see \fBchan configure -eofchar\fR. If there no
 end-of-file character has been configured for the channel, then
 \fBchan read\fR will block forever.
 .RE
+.\" METHOD: seek
 .TP
 \fBchan seek \fIchannelId offset\fR ?\fIorigin\fR?
 .
@@ -720,20 +742,14 @@ the channel named \fIchannelId\fR to be \fIoffset\fR bytes relative to
 \fIorigin\fR. \fIOffset\fR must be an integer (which may be negative)
 and \fIorigin\fR must be one of the following:
 .RS
-.TP 10
-\fBstart\fR
-.
+.IP \fBstart\fR
 The new access position will be \fIoffset\fR bytes from the start
 of the underlying file or device.
-.TP 10
-\fBcurrent\fR
-.
+.IP \fBcurrent\fR
 The new access position will be \fIoffset\fR bytes from the current
 access position; a negative \fIoffset\fR moves the access position
 backwards in the underlying file or device.
-.TP 10
-\fBend\fR
-.
+.IP \fBend\fR
 The new access position will be \fIoffset\fR bytes from the end of the
 file or device.  A negative \fIoffset\fR places the access position
 before the end of file, and a positive \fIoffset\fR places the access
@@ -751,6 +767,7 @@ Note that \fIoffset\fR values are byte offsets, not character offsets.
 Both \fBchan seek\fR and \fBchan tell\fR operate in terms of bytes,
 not characters, unlike \fBchan read\fR.
 .RE
+.\" METHOD: tell
 .TP
 \fBchan tell \fIchannelId\fR
 .
@@ -760,6 +777,7 @@ value returned is a byte offset that can be passed to \fBchan seek\fR
 in order to set the channel to a particular position.  Note that this
 value is in terms of bytes, not characters like \fBchan read\fR.  The
 value returned is -1 for channels that do not support seeking.
+.\" METHOD: truncate
 .TP
 \fBchan truncate \fIchannelId\fR ?\fIlength\fR?
 .
@@ -769,10 +787,18 @@ offset within the underlying data stream if \fIlength\fR is
 omitted). The channel is flushed before truncation.
 .
 .SH EXAMPLES
+.SS "SIMPLE CHANNEL OPERATION EXAMPLES"
 .PP
-This opens a file using a known encoding (CP1252, a very common encoding
-on Windows), searches for a string, rewrites that part, and truncates the
-file after a further two lines.
+Instruct Tcl to always send output to \fBstdout\fR immediately,
+whether or not it is to a terminal:
+.PP
+.CS
+\fBfconfigure\fR stdout -buffering none
+.CE
+.PP
+In the following example a file is opened using the encoding CP1252, which is
+common on Windows, searches for a string, rewrites that part, and truncates the
+file two lines later.
 .PP
 .CS
 set f [open somefile.txt r+]
@@ -782,7 +808,7 @@ set offset 0
 \fI# Search for string "FOOBAR" in the file\fR
 while {[\fBchan gets\fR $f line] >= 0} {
     set idx [string first FOOBAR $line]
-    if {$idx > -1} {
+    if {$idx >= 0} {
         \fI# Found it; rewrite line\fR
 
         \fBchan seek\fR $f [expr {$offset + $idx}]
@@ -803,8 +829,8 @@ while {[\fBchan gets\fR $f line] >= 0} {
 \fBchan close\fR $f
 .CE
 .PP
-A network server that does echoing of its input line-by-line without
-preventing servicing of other connections at the same time.
+A network server that echoes its input line-by-line without
+preventing servicing of other connections at the same time:
 .PP
 .CS
 # This is a very simple logger...
@@ -842,9 +868,11 @@ vwait forever
 .SH "SEE ALSO"
 close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
 fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
-socket(n), tell(n), refchan(n), transchan(n)
+socket(n), tell(n), refchan(n), transchan(n),
+Tcl_StandardChannels(3)
 .SH KEYWORDS
-channel, input, output, events, offset
+blocking, channel, end of file, events, input, non-blocking,
+offset, output, readable, seek, stdio, tell, writable
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

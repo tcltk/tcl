@@ -1253,9 +1253,23 @@ proc writeZones {outDir} {
 	# Generate data for a zone
 
 	set data ""
+	set tzmapped {}
 	foreach {
 	    time offset dst name
 	} [processTimeZone $zoneName $zones($zoneName)] {
+	    if {$name eq "%z"} {
+		# map %z to pure offset zone (e. g. offset -7200 -> -0200):
+		set name [format "%+03d%02d" [expr {
+				$offset / 60 / 60
+			    }] [expr {
+				(abs($offset) / 60) % 60
+			    }]
+			]
+		if {![dict exists $tzmapped $offset]} { # output once per offs
+		    puts "\tmap %z ($offset) -> $name"
+		    dict set tzmapped $offset $name
+		}
+	    }
 	    append data "\n    " [list [list $time $offset $dst $name]]
 	}
 	append data \n
@@ -1263,7 +1277,7 @@ proc writeZones {outDir} {
 	# Write the data to the information file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
+	fconfigure $f -translation lf -encoding utf-8
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f ""
 	puts $f [list set TZData(:$zoneName) $data]
@@ -1316,7 +1330,7 @@ proc writeLinks {outDir} {
 	# Write the file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
+	fconfigure $f -translation lf -encoding utf-8
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f $ifCmd
 	puts $f $setCmd

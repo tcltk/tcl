@@ -367,11 +367,14 @@ InitializeHostName(
 
     if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
 	/*
-	 * Convert string from native to UTF then change to lowercase.
+	 * Convert string from WCHAR to utf-8, then change to lowercase,
+	 * then to system encoding.
 	 */
+	Tcl_DString inDs;
 
-	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *)wbuf, -1, &ds));
-
+	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *)wbuf, -1, &inDs));
+	Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&inDs), -1, &ds);
+	Tcl_DStringFree(&inDs);
     } else {
 	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
@@ -380,20 +383,14 @@ InitializeHostName(
 	     * documents gethostname() as being always adequate.
 	     */
 
-	    Tcl_DString inDs;
-
-	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 256);
-	    if (gethostname(Tcl_DStringValue(&inDs),
-		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs),
-			-1, &ds);
-	    }
-	    Tcl_DStringFree(&inDs);
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringSetLength(&ds, 256);
+	    gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	    Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
 	}
     }
 
-    *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
+    *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = Tcl_DStringLength(&ds);
     *valuePtr = (char *)ckalloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);

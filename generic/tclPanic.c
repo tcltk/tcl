@@ -14,7 +14,7 @@
  */
 
 #include "tclInt.h"
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
     MODULE_SCOPE TCL_NORETURN void tclWinDebugPanic(const char *format, ...);
 #endif
 
@@ -23,10 +23,10 @@
  * procedure.
  */
 
-#if 0
-static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
+#if defined(__CYGWIN__)
+static Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
-static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
+static Tcl_PanicProc *panicProc = NULL;
 #endif
 
 /*
@@ -52,7 +52,7 @@ Tcl_SetPanicProc(
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
     if ((proc != tclWinDebugPanic) || (panicProc == NULL))
-#elif 0
+#elif defined(__CYGWIN__)
     if (proc == NULL)
 	panicProc = tclWinDebugPanic;
     else
@@ -76,7 +76,7 @@ Tcl_SetPanicProc(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_PanicVA(
     const char *format,		/* Format string, suitable for passing to
 				 * fprintf. */
@@ -106,23 +106,23 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-#if defined(_WIN32)
-#   if defined(__GNUC__)
-	__builtin_trap();
-#   elif defined(_WIN64)
-	__debugbreak();
-#   elif defined(_MSC_VER) && defined (_M_IX86)
-	_asm {int 3}
-#   else
-	DebugBreak();
-#   endif
-#endif
-#if defined(_WIN32)
-	ExitProcess(1);
-#else
-	abort();
-#endif
     }
+#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER) && defined (_M_IX86)
+    _asm {int 3}
+#else
+    DebugBreak();
+#endif
+#endif
+#if defined(_WIN32)
+    ExitProcess(1);
+#else
+    abort();
+#endif
 }
 
 /*
@@ -149,7 +149,7 @@ Tcl_PanicVA(
  */
 
 /* coverity[+kill] */
-void
+TCL_NORETURN void
 Tcl_Panic(
     const char *format,
     ...)
@@ -158,7 +158,6 @@ Tcl_Panic(
 
     va_start(argList, format);
     Tcl_PanicVA(format, argList);
-    va_end (argList);
 }
 
 /*

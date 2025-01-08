@@ -553,7 +553,7 @@ TclChanPushObjCmd(
      */
 
     chanObj = objv[CHAN];
-    parentChan = Tcl_GetChannel(interp, Tcl_GetString(chanObj), &mode);
+    parentChan = Tcl_GetChannel(interp, TclGetString(chanObj), &mode);
     if (parentChan == NULL) {
 	return TCL_ERROR;
     }
@@ -607,7 +607,7 @@ TclChanPushObjCmd(
     if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
-                Tcl_GetString(cmdObj), Tcl_GetString(resObj)));
+                TclGetString(cmdObj), TclGetString(resObj)));
 	Tcl_DecrRefCount(resObj);
 	goto error;
     }
@@ -618,7 +618,7 @@ TclChanPushObjCmd(
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "chan handler \"%s initialize\" returned %s",
-		    Tcl_GetString(cmdObj),
+		    TclGetString(cmdObj),
 		    Tcl_GetString(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(resObj);
 	    goto error;
@@ -632,7 +632,7 @@ TclChanPushObjCmd(
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s\" does not support all required methods",
-                Tcl_GetString(cmdObj)));
+                TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -654,7 +654,7 @@ TclChanPushObjCmd(
     if (!mode) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s\" makes the channel inaccessible",
-                Tcl_GetString(cmdObj)));
+                TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -665,14 +665,14 @@ TclChanPushObjCmd(
     if (!IMPLIES(HAS(methods, METH_DRAIN), HAS(methods, METH_READ))) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s\" supports \"drain\" but not \"read\"",
-                Tcl_GetString(cmdObj)));
+                TclGetString(cmdObj)));
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_FLUSH), HAS(methods, METH_WRITE))) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s\" supports \"flush\" but not \"write\"",
-                Tcl_GetString(cmdObj)));
+                TclGetString(cmdObj)));
 	goto error;
     }
 
@@ -693,14 +693,14 @@ TclChanPushObjCmd(
      */
 
     rtmPtr = GetReflectedTransformMap(interp);
-    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, Tcl_GetString(rtId), &isNew);
+    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, TclGetString(rtId), &isNew);
     if (!isNew && rtPtr != Tcl_GetHashValue(hPtr)) {
 	Tcl_Panic("TclChanPushObjCmd: duplicate transformation handle");
     }
     Tcl_SetHashValue(hPtr, rtPtr);
 #ifdef TCL_THREADS
     rtmPtr = GetThreadReflectedTransformMap();
-    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, Tcl_GetString(rtId), &isNew);
+    hPtr = Tcl_CreateHashEntry(&rtmPtr->map, TclGetString(rtId), &isNew);
     Tcl_SetHashValue(hPtr, rtPtr);
 #endif /* TCL_THREADS */
 
@@ -1014,7 +1014,7 @@ ReflectClose(
 
     if (!rtPtr->dead) {
 	rtmPtr = GetReflectedTransformMap(rtPtr->interp);
-	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, TclGetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
@@ -1027,7 +1027,7 @@ ReflectClose(
 
 #ifdef TCL_THREADS
 	rtmPtr = GetThreadReflectedTransformMap();
-	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, TclGetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
@@ -2056,7 +2056,7 @@ InvokeTclMethod(
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
 		int cmdLen;
-		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rtPtr->interp);
@@ -2583,7 +2583,7 @@ ForwardProc(
 	 */
 
 	rtmPtr = GetReflectedTransformMap(interp);
-	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, TclGetString(rtPtr->handle));
 	Tcl_DeleteHashEntry(hPtr);
 
 	/*
@@ -2593,7 +2593,7 @@ ForwardProc(
 	 */
 
 	rtmPtr = GetThreadReflectedTransformMap();
-	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
+	hPtr = Tcl_FindHashEntry(&rtmPtr->map, TclGetString(rtPtr->handle));
 	Tcl_DeleteHashEntry(hPtr);
 
 	FreeReflectedTransformArgs(rtPtr);
@@ -2822,7 +2822,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     int len;
-    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
+    const char *msgStr = TclGetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, ckalloc(len));

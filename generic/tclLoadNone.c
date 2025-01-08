@@ -93,8 +93,7 @@ TclGuessPackageName(
 
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    Tcl_Interp *interp,		/* Dummy: unused by this implementation */
-    int size)			/* Dummy: unused by this implementation */
+     int size)			/* Dummy: unused by this implementation */
 {
     return NULL;
 }
@@ -103,7 +102,7 @@ MODULE_SCOPE int
 TclpLoadMemory(
     Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Dummy: unused by this implementation */
-    int size,			/* Dummy: unused by this implementation */
+    size_t size,		/* Dummy: unused by this implementation */
     int codeSize,		/* Dummy: unused by this implementation */
     Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
     Tcl_FSUnloadFileProc **unloadProcPtr,

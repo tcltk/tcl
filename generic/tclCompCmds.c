@@ -608,11 +608,13 @@ TclCompileCatchCmd(
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
+	/* DGP */
 	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
 
+	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
 	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
@@ -2293,8 +2295,7 @@ DisassembleDictUpdateInfo(
 	Tcl_ListObjAppendElement(NULL, variables,
 		Tcl_NewIntObj(duiPtr->varIndices[i]));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
-	    variables);
+    TclDictPut(NULL, dictObj, "variables", variables);
 }
 
 /*
@@ -3035,14 +3036,13 @@ DisassembleForeachInfo(
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewIntObj(infoPtr->firstValueTemp + i));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
+    TclDictPut(NULL, dictObj, "data", objPtr);
 
     /*
      * Loop counter.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "loop", Tcl_NewIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3058,7 +3058,7 @@ DisassembleForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 static void
@@ -3077,8 +3077,7 @@ DisassembleNewForeachInfo(
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+    TclDictPut(NULL, dictObj, "jumpOffset", Tcl_NewIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
@@ -3094,7 +3093,7 @@ DisassembleNewForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    TclDictPut(NULL, dictObj, "assign", objPtr);
 }
 
 /*
