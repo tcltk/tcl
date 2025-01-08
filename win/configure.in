@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".16"
+TCL_PATCH_LEVEL=".17"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -249,24 +249,19 @@ fi
 
 # See if the compiler supports cpuid header.
 
-if test "${GCC}" = "yes" ; then
-  AC_CACHE_CHECK(for cpuid-header support in compiler,
-    tcl_cv_cpuidhead,
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))))
-  #   include <cpuid.h>
-  #endif
-  ]], [[
-    unsigned int regs;
-    __get_cpuid(0, &regs, &regs, &regs, &regs);
+AC_CACHE_CHECK(for cpuid.h,
+    tcl_cv_cpuid_h,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <cpuid.h>
+]], [[
+    __get_cpuid(0, 0, 0, 0, 0);
   ]])],
-    [tcl_cv_cpuidhead=yes],
-    [tcl_cv_cpuidhead=no])
-  )
-  if test "$tcl_cv_cpuidhead" = "yes"; then
+    [tcl_cv_cpuid_h=yes],
+    [tcl_cv_cpuid_h=no])
+)
+if test "$tcl_cv_cpuid_h" = "yes"; then
     AC_DEFINE(HAVE_CPUID_H, 1,
-	    [Defined when the compilers supports cpuid header])
-  fi
+	    [Defined when cpuid.h exists])
 fi
 
 # See if the <wspiapi.h> header file is present
