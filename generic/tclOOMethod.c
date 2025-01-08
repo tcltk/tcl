@@ -1580,7 +1580,7 @@ InvokeForwardMethod(
     TclListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
-    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    TclNRAddCallback(interp, FinalizeForwardCall, argObjs);
     /*
      * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use
      * of the TCL_EVAL_NOERR flag results in an evaluation configuration

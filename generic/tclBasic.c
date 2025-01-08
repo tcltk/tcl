@@ -6737,7 +6737,7 @@ TclNRInvoke(
      */
 
     iPtr->numLevels++;
-    Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRPostInvoke);
 
     /*
      * Normal command resolution of objv[0] isn't going to find cmdPtr.

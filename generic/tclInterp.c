@@ -3112,8 +3112,7 @@ ChildInvokeHidden(
     if (namespaceName == NULL) {
 	NRE_callback *rootPtr = TOP_CB(childInterp);
 
-	Tcl_NRAddCallback(interp, NRPostInvokeHidden, childInterp,
-		rootPtr, NULL, NULL);
+	TclNRAddCallback(interp, NRPostInvokeHidden, childInterp, rootPtr);
 	return TclNRInvoke(NULL, childInterp, objc, objv);
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;

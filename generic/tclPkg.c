@@ -449,9 +449,8 @@ TclNRPkgRequireProc(
 {
     RequireProcArgs *args = (RequireProcArgs *)clientData;
 
-    Tcl_NRAddCallback(interp,
-	    PkgRequireCore, (void *) args->name, INT2PTR(reqc), (void *) reqv,
-	    args->clientDataPtr);
+    TclNRAddCallback(interp, PkgRequireCore,
+	    args->name, INT2PTR(reqc), reqv, args->clientDataPtr);
     return TCL_OK;
 }
 
@@ -471,17 +470,17 @@ PkgRequireCore(
 	return code;
     }
     reqPtr = (Require *)Tcl_Alloc(sizeof(Require));
-    Tcl_NRAddCallback(interp, PkgRequireCoreCleanup, reqPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, PkgRequireCoreCleanup, reqPtr);
     reqPtr->clientDataPtr = data[3];
     reqPtr->name = name;
     reqPtr->pkgPtr = FindPackage(interp, name);
     if (reqPtr->pkgPtr->version == NULL) {
-	Tcl_NRAddCallback(interp,
+	TclNRAddCallback(interp,
 		SelectPackage, reqPtr, INT2PTR(reqc), reqv,
 		(void *)PkgRequireCoreStep1);
     } else {
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), reqv, NULL);
+	TclNRAddCallback(interp,
+		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), reqv);
     }
     return TCL_OK;
 }
@@ -505,8 +504,8 @@ PkgRequireCoreStep1(
      */
 
     if (reqPtr->pkgPtr->version != NULL) {
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	TclNRAddCallback(interp,
+		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), reqv);
 	return TCL_OK;
     }
 
@@ -521,8 +520,8 @@ PkgRequireCoreStep1(
 	 * No package unknown script. Move on to finalizing.
 	 */
 
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	TclNRAddCallback(interp,
+		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), reqv);
 	return TCL_OK;
     }
 
@@ -535,8 +534,8 @@ PkgRequireCoreStep1(
     Tcl_DStringAppendElement(&command, name);
     AddRequirementsToDString(&command, reqc, reqv);
 
-    Tcl_NRAddCallback(interp,
-	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
+    TclNRAddCallback(interp,
+	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), reqv);
     Tcl_NREvalObj(interp, Tcl_DStringToObj(&command), TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
@@ -570,7 +569,7 @@ PkgRequireCoreStep2(
      */
 
     reqPtr->pkgPtr = FindPackage(interp, name);
-    Tcl_NRAddCallback(interp,
+    TclNRAddCallback(interp,
 	    SelectPackage, reqPtr, INT2PTR(reqc), reqv,
 	    (void *)PkgRequireCoreFinal);
     return TCL_OK;
@@ -801,8 +800,8 @@ SelectPackage(
     }
 
     if (bestPtr == NULL) {
-	Tcl_NRAddCallback(interp,
-		(Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	TclNRAddCallback(interp,
+		(Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), reqv);
     } else {
 	/*
 	 * We found an ifneeded script for the package. Be careful while
@@ -832,8 +831,8 @@ SelectPackage(
 	    TclPkgFileSeen(interp, bestPtr->pkgIndex);
 	}
 	reqPtr->versionToProvide = versionToProvide;
-	Tcl_NRAddCallback(interp,
-		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
+	TclNRAddCallback(interp,
+		SelectPackageFinal, reqPtr, INT2PTR(reqc), reqv,
 		data[3]);
 	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1),
 		TCL_EVAL_GLOBAL);
@@ -939,8 +938,8 @@ SelectPackageFinal(
 	return result;
     }
 
-    Tcl_NRAddCallback(interp,
-	    (Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
+    TclNRAddCallback(interp,
+	    (Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), reqv);
     return TCL_OK;
 }
 
@@ -1360,11 +1359,11 @@ TclNRPackageObjCmd(
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
-	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
-	    Tcl_NRAddCallback(interp,
+	    TclNRAddCallback(interp,
+		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr);
+	    TclNRAddCallback(interp,
 		    PkgRequireCore, (void *) argv3, INT2PTR(newobjc),
-		    newObjvPtr, NULL);
+		    newObjvPtr);
 	    return TCL_OK;
 	} else {
 	    Tcl_Obj *const *newobjv = objv + 3;
@@ -1386,11 +1385,10 @@ TclNRPackageObjCmd(
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
-	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
-	    Tcl_NRAddCallback(interp,
-		    PkgRequireCore, (void *) argv2, INT2PTR(newobjc),
-		    newObjvPtr, NULL);
+	    TclNRAddCallback(interp,
+		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr);
+	    TclNRAddCallback(interp,
+		    PkgRequireCore, argv2, INT2PTR(newobjc), newObjvPtr);
 	    return TCL_OK;
 	}
 	break;
