@@ -5095,6 +5095,13 @@ typedef struct NRE_callback {
 #define TclSetErrorCode(interp, ...) \
     Tcl_SetErrorCode((interp), __VA_ARGS__, (char *) NULL)
 
+/*
+ * Wrapper for Tcl_AppendStringsToObj that makes certain there's a trailing
+ * NULL.
+ */
+#define TclAppendStringsToObj(objPtr, ...) \
+    Tcl_AppendStringsToObj((objPtr), __VA_ARGS__, (char *)NULL)
+
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
     TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))

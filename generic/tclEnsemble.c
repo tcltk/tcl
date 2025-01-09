@@ -668,7 +668,7 @@ SetEnsembleConfigOptions(
 			    (Tcl_Namespace*) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
+			Tcl_AppendToObj(newCmd, "::", 2);
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -2772,10 +2772,10 @@ BuildEnsembleConfig(
 			Tcl_Obj *cmdObj, *cmdPrefixObj;
 
 			TclNewObj(cmdObj);
-			Tcl_AppendStringsToObj(cmdObj,
+			TclAppendStringsToObj(cmdObj,
 				ensemblePtr->nsPtr->fullName,
 				(ensemblePtr->nsPtr->parentPtr ? "::" : ""),
-				nsCmdName, (char *)NULL);
+				nsCmdName);
 			cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
 			Tcl_SetHashValue(hPtr, cmdPrefixObj);
 			Tcl_IncrRefCount(cmdPrefixObj);

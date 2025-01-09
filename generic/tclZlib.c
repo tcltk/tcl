@@ -451,11 +451,12 @@ GenerateHeader(
 	if (result != TCL_OK) {
 	    if (interp) {
 		if (result == TCL_CONVERT_UNKNOWN) {
-		    Tcl_AppendResult(interp,
-			    "Comment contains characters > 0xFF", (char *)NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Comment contains characters > 0xFF",
+			    TCL_AUTO_LENGTH));
 		} else {
-		    Tcl_AppendResult(interp, "Comment too large for zip",
-			    (char *)NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Comment too large for zip", TCL_AUTO_LENGTH));
 		}
 	    }
 	    result = TCL_ERROR; /* TCL_CONVERT_* -> TCL_ERROR */
@@ -487,11 +488,12 @@ GenerateHeader(
 	if (result != TCL_OK) {
 	    if (interp) {
 		if (result == TCL_CONVERT_UNKNOWN) {
-		    Tcl_AppendResult(interp,
-			    "Filename contains characters > 0xFF", (char *)NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Filename contains characters > 0xFF",
+			    TCL_AUTO_LENGTH));
 		} else {
-		    Tcl_AppendResult(interp,
-			    "Filename too large for zip", (char *)NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Filename too large for zip", TCL_AUTO_LENGTH));
 		}
 	    }
 	    result = TCL_ERROR;	/* TCL_CONVERT_* -> TCL_ERROR */

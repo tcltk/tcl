@@ -9808,14 +9808,12 @@ CopyData(
 	if (size < 0) {
 	readError:
 	    if (interp) {
-		TclNewObj(errObj);
-		Tcl_AppendStringsToObj(errObj, "error reading \"",
-			Tcl_GetChannelName(inChan), "\": ", (char *)NULL);
+		errObj = Tcl_ObjPrintf("error reading \"%s\": ",
+			Tcl_GetChannelName(inChan));
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
-		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (char *)NULL);
+		    TclAppendStringsToObj(errObj, Tcl_PosixError(interp));
 		}
 	    }
 	    if (msg != NULL) {
@@ -9884,14 +9882,12 @@ CopyData(
 	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
-		TclNewObj(errObj);
-		Tcl_AppendStringsToObj(errObj, "error writing \"",
-			Tcl_GetChannelName(outChan), "\": ", (char *)NULL);
+		errObj = Tcl_ObjPrintf("error writing \"%s\"",
+			Tcl_GetChannelName(outChan));
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
-		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (char *)NULL);
+		    TclAppendStringsToObj(errObj, Tcl_PosixError(interp));
 		}
 	    }
 	    if (msg != NULL) {

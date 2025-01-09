@@ -2123,7 +2123,7 @@ InfoCmdTypeCmd(
 
     if (Tcl_IsSafe(interp)
 	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
-	Tcl_AppendResult(interp, "native", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("native", TCL_AUTO_LENGTH));
     } else {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));

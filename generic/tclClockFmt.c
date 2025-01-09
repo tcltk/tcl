@@ -860,8 +860,9 @@ FindOrCreateFmtScnStorage(
     Tcl_MutexUnlock(&ClockFmtMutex);
 
     if (fss == NULL && interp != NULL) {
-	Tcl_AppendResult(interp, "retrieve clock format failed \"",
-		strFmt ? strFmt : "", "\"", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"retrieve clock format failed \"%s\"",
+		strFmt ? strFmt : ""));
 	TclSetErrorCode(interp, "TCL", "EINVAL");
     }
 
