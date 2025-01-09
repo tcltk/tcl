@@ -718,7 +718,7 @@ SetDictFromAny(
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing value to go with key", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "DICTIONARY");
     }
   errorInFindDictElement:
     DeleteChainTable(dict);
@@ -812,8 +812,8 @@ TclTraceDictPath(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "key \"%s\" not known in dictionary",
 			    TclGetString(keyv[i])));
-		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-			    TclGetString(keyv[i]), (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+			    TclGetString(keyv[i]));
 		}
 		return NULL;
 	    }
@@ -1771,9 +1771,9 @@ DictGetCmd(
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"key \"%s\" not known in dictionary",
-		TclGetString(objv[objc-1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		TclGetString(objv[objc-1]), (char *)NULL);
+		TclGetString(objv[objc - 1])));
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+		TclGetString(objv[objc - 1]));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
@@ -2704,7 +2704,7 @@ DictForNRCmd(
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "for");
 	return TCL_ERROR;
     }
     searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
@@ -2899,7 +2899,7 @@ DictMapNRCmd(
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "map");
 	return TCL_ERROR;
     }
     storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
@@ -3339,7 +3339,7 @@ DictFilterCmd(
 	if (varc != 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "must have exactly two variable names", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter");
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];

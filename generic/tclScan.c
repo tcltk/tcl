@@ -345,7 +345,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES");
 	    goto error;
 	}
 
@@ -365,8 +365,7 @@ ValidateFormat(
 			"specified field width %" TCL_LL_MODIFIER
 			"u exceeds limit %" TCL_SIZE_MODIFIER "d.",
 			ull, (Tcl_Size)TCL_SIZE_MAX-1));
-		Tcl_SetErrorCode(
-			interp, "TCL", "FORMAT", "WIDTHLIMIT", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "FORMAT", "WIDTHLIMIT");
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;
@@ -419,7 +418,7 @@ ValidateFormat(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH");
 		goto error;
 	    }
 	    /* FALLTHRU */
@@ -433,7 +432,7 @@ ValidateFormat(
 		Tcl_AppendToObj(errorMsg, buf, -1);
 		Tcl_AppendToObj(errorMsg, " conversion", -1);
 		Tcl_SetObjResult(interp, errorMsg);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "FORMAT", "BADSIZE");
 		goto error;
 	    }
 	    /*
@@ -485,7 +484,7 @@ ValidateFormat(
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched [ in format string", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "FORMAT", "BRACKET");
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -494,7 +493,7 @@ ValidateFormat(
 	    Tcl_AppendToObj(errorMsg, buf, -1);
 	    Tcl_AppendToObj(errorMsg, "\"", -1);
 	    Tcl_SetObjResult(interp, errorMsg);
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "FORMAT", "BADTYPE");
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -541,7 +540,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED");
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
 	    /*
@@ -552,7 +551,7 @@ ValidateFormat(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
 		    -1));
-	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED");
 	    goto error;
 	}
     }
@@ -564,12 +563,12 @@ ValidateFormat(
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"%n$\" argument index out of range", -1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE");
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
 		-1));
-	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH");
     }
 
   error:
@@ -976,7 +975,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "MEMORY");
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);
@@ -1003,8 +1002,7 @@ Tcl_ScanObjCmd(
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
-			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
-				"BADUNSIGNED", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED");
 			return TCL_ERROR;
 		    }
 		}
@@ -1022,7 +1020,7 @@ Tcl_ScanObjCmd(
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "MEMORY");
 			return TCL_ERROR;
 		    } else {
 			Tcl_SetBignumObj(objPtr, &big);

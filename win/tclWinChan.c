@@ -1195,8 +1195,7 @@ TclpOpenFileChannel(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE");
 	break;
     }
 

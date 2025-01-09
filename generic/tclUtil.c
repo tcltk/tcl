@@ -672,8 +672,7 @@ FindElement(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "%s element in braces followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK");
 		}
 		return TCL_ERROR;
 	    }
@@ -724,8 +723,7 @@ FindElement(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "%s element in quotes followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK");
 		}
 		return TCL_ERROR;
 	    }
@@ -757,16 +755,14 @@ FindElement(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open brace in %s", typeStr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE");
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open quote in %s", typeStr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -916,8 +912,7 @@ Tcl_SplitList(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));
-		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList");
 	    }
 	    return TCL_ERROR;
 	}
@@ -3742,7 +3737,7 @@ GetEndOffsetFromObj(
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "VALUE", "INDEX");
     }
 
     return TCL_ERROR;
@@ -3932,8 +3927,9 @@ TclIndexEncode(
 
 rangeerror:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"index \"%s\" out of range", TclGetString(objPtr)));
+	TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
     }
     return TCL_ERROR;
 }
@@ -4604,7 +4600,7 @@ TclReToGlob(
   invalidGlob:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "RE2GLOB", code);
     }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;

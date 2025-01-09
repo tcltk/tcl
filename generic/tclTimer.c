@@ -825,8 +825,7 @@ Tcl_AfterObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad argument \"%s\": must be"
 		    " cancel, idle, info, or an integer", arg));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
-		    arg, (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument", arg);
 	    return TCL_ERROR;
 	}
     }
@@ -965,7 +964,7 @@ Tcl_AfterObjCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "event \"%s\" doesn't exist", eventStr));
-	    Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
+	    TclSetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultListPtr;

@@ -168,8 +168,8 @@ TclOOGetClassFromObj(
     if (oPtr->classPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" is not a class", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		TclGetString(objPtr), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
+		TclGetString(objPtr));
 	return NULL;
     }
     return oPtr->classPtr;
@@ -306,16 +306,14 @@ InfoObjectDefnCmd(
   unknownMethod:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 
   wrongType:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "definition not available for this kind of method",
 	    TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -415,16 +413,14 @@ InfoObjectForwardCmd(
   unknownMethod:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 
   wrongType:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "prefix argument list not available for this kind of method",
 	    TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -619,8 +615,7 @@ InfoObjectMethodsCmd(
 		if (++i >= objc) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "missing option for -scope"));
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ARGUMENT", "MISSING");
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
@@ -745,8 +740,7 @@ InfoObjectMethodTypeCmd(
   unknownMethod:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 
@@ -1073,8 +1067,7 @@ InfoClassDefnCmd(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
 	return TCL_ERROR;
     }
     procPtr = TclOOGetProcFromMethod((Method *) Tcl_GetHashValue(hPtr));
@@ -1082,8 +1075,7 @@ InfoClassDefnCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"definition not available for this kind of method",
 		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
 	return TCL_ERROR;
     }
 
@@ -1272,8 +1264,7 @@ InfoClassForwardCmd(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
 	return TCL_ERROR;
     }
     prefixObj = TclOOGetFwdFromMethod((Method *) Tcl_GetHashValue(hPtr));
@@ -1281,8 +1272,7 @@ InfoClassForwardCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"prefix argument list not available for this kind of method",
 		TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[2]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
 	return TCL_ERROR;
     }
 
@@ -1403,8 +1393,7 @@ InfoClassMethodsCmd(
 		if (++i >= objc) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "missing option for -scope"));
-		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ARGUMENT", "MISSING");
 		    return TCL_ERROR;
 		}
 		if (Tcl_GetIndexFromObj(interp, objv[i], scopes, "scope", 0,
@@ -1518,8 +1507,7 @@ InfoClassMethodTypeCmd(
   unknownMethod:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "unknown method \"%s\"", TclGetString(objv[2])));
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[2]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[2]));
     return TCL_ERROR;
 }
 

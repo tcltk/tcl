@@ -731,7 +731,7 @@ TclRegError(
 
     snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
-    Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, (char *)NULL);
+    TclSetErrorCode(interp, "REGEXP", cbuf, buf);
 }
 
 /*

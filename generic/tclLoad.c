@@ -192,8 +192,7 @@ Tcl_LoadObjCmd(
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY");
 	code = TCL_ERROR;
 	goto done;
     }
@@ -258,8 +257,8 @@ Tcl_LoadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "file \"%s\" is already loaded for prefix \"%s\"",
 		    fullFileName, libraryPtr->prefix));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-		    "SPLITPERSONALITY", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+		    "SPLITPERSONALITY");
 	    code = TCL_ERROR;
 	    Tcl_MutexUnlock(&libraryMutex);
 	    goto done;
@@ -295,8 +294,7 @@ Tcl_LoadObjCmd(
 	if (fullFileName[0] == 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no library with prefix \"%s\" is loaded statically", prefix));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC");
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -357,8 +355,8 @@ Tcl_LoadObjCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"cannot figure out prefix for %s",
 			fullFileName));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-			"WHATLIBRARY", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+			"WHATLIBRARY");
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -454,8 +452,7 @@ Tcl_LoadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "cannot use library in a safe interpreter: no"
 		    " %s_SafeInit procedure", libraryPtr->prefix));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE");
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -465,8 +462,7 @@ Tcl_LoadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "cannot attach library to interpreter: no %s_Init procedure",
 		    libraryPtr->prefix));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT");
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -624,8 +620,7 @@ Tcl_UnloadObjCmd(
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must specify either file name or prefix", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY");
 	code = TCL_ERROR;
 	goto done;
     }
@@ -692,8 +687,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"library with prefix \"%s\" is loaded statically and cannot be unloaded",
 		prefix));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC");
 	code = TCL_ERROR;
 	goto done;
     }
@@ -704,8 +698,7 @@ Tcl_UnloadObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"file \"%s\" has never been loaded", fullFileName));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED");
 	code = TCL_ERROR;
 	goto done;
     }
@@ -734,8 +727,7 @@ Tcl_UnloadObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"file \"%s\" has never been loaded in this interpreter",
 		fullFileName));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
-		(char *)NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED");
 	code = TCL_ERROR;
 	goto done;
     }
@@ -795,8 +787,7 @@ UnloadLibrary(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"file \"%s\" cannot be unloaded under a safe interpreter",
 			fullFileName));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT");
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -808,8 +799,7 @@ UnloadLibrary(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"file \"%s\" cannot be unloaded under a trusted interpreter",
 			fullFileName));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
-			(char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT");
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -962,8 +952,7 @@ UnloadLibrary(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"file \"%s\" cannot be unloaded: unloading disabled",
 		fullFileName));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "DISABLED",
-		NULL);
+	TclSetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "DISABLED");
 	code = TCL_ERROR;
 #endif
     }

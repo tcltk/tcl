@@ -599,8 +599,8 @@ TclOO_Object_Unknown(
 	}
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"object \"%s\" has no %s", TclGetString(tmpBuf), piece));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[skip]), (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
+		TclGetString(objv[skip]));
 	return TCL_ERROR;
     }
 
@@ -618,8 +618,7 @@ TclOO_Object_Unknown(
     Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     Tcl_Free((void *)methodNames);
     Tcl_SetObjResult(interp, errorMsg);
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[skip]), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "METHOD", TclGetString(objv[skip]));
     return TCL_ERROR;
 }
 
@@ -676,7 +675,7 @@ TclOO_Object_LinkVar(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "variable name \"%s\" illegal: must not contain namespace"
 		    " separator", varName));
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "UPVAR", "INVERTED");
 	    return TCL_ERROR;
 	}
 
@@ -705,7 +704,7 @@ TclOO_Object_LinkVar(
 
 	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT");
 	    return TCL_ERROR;
 	}
 
@@ -827,7 +826,7 @@ TclOOLookupObjectVar(
 	    (Var **) aryPtr);
     Tcl_DecrRefCount(varNamePtr);
     if (var == NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *) NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg);
     } else if (*aryPtr == NULL && TclIsVarArrayElement((Var *) var)) {
 	/*
 	 * If the varPtr points to an element of an array but we don't already

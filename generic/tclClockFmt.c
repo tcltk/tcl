@@ -862,7 +862,7 @@ FindOrCreateFmtScnStorage(
     if (fss == NULL && interp != NULL) {
 	Tcl_AppendResult(interp, "retrieve clock format failed \"",
 		strFmt ? strFmt : "", "\"", (char *)NULL);
-	Tcl_SetErrorCode(interp, "TCL", "EINVAL", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "EINVAL");
     }
 
     return fss;
@@ -1609,7 +1609,7 @@ ClockScnToken_DayOfWeek_Proc(
 	if (val > 7) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 		    "day of week is greater than 7", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(opts->interp, "CLOCK", "badDayOfWeek", (char *)NULL);
+	    TclSetErrorCode(opts->interp, "CLOCK", "badDayOfWeek");
 	    return TCL_ERROR;
 	}
 	info->date.dayOfWeek = val;
@@ -2704,7 +2704,7 @@ ClockScan(
   overflow:
     Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
 	    "integer value too large to represent", TCL_AUTO_LENGTH));
-    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", (char *)NULL);
+    TclSetErrorCode(opts->interp, "CLOCK", "dateTooLarge");
     goto done;
 
   not_match:
@@ -2720,7 +2720,7 @@ ClockScan(
 	    TclGetString(opts->localeObj),
 	    tok && tok->tokWord.start ? tok->tokWord.start : "NULL"));
 #endif
-    Tcl_SetErrorCode(opts->interp, "CLOCK", "badInputString", (char *)NULL);
+    TclSetErrorCode(opts->interp, "CLOCK", "badInputString");
     goto done;
 }
 

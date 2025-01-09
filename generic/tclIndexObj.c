@@ -357,7 +357,7 @@ Tcl_GetIndexFromObjStruct(
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key);
     }
     return TCL_ERROR;
 }
@@ -538,7 +538,7 @@ PrefixMatchObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing value for -message", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "NOARG");
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -548,7 +548,7 @@ PrefixMatchObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing value for -error", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "NOARG");
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -560,7 +560,7 @@ PrefixMatchObjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"error options must have an even number of elements",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "DICTIONARY");
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -958,7 +958,7 @@ Tcl_WrongNumArgs(
 	Tcl_AppendStringsToObj(objPtr, message, (char *)NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", (char *)NULL);
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "WRONGARGS");
     Tcl_SetObjResult(interp, objPtr);
 }
 
@@ -1383,7 +1383,7 @@ TclGetCompletionCodeFromObj(
 		"bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
 		TclGetString(value)));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE");
     }
     return TCL_ERROR;
 }

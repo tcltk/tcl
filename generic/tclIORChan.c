@@ -861,7 +861,7 @@ TclChanPostEventObjCmd(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can not find reflected channel named \"%s\"", chanId));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId);
 	return TCL_ERROR;
     }
 

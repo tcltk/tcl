@@ -163,7 +163,7 @@ TclNamespaceEnsembleCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tried to manipulate ensemble of deleted namespace",
 		    TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD");
 	}
 	return TCL_ERROR;
     }
@@ -337,8 +337,7 @@ InitEnsembleFromOptions(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "ensemble subcommand implementations "
 			    "must be non-empty lists", TCL_AUTO_LENGTH));
-		    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
-			    "EMPTY_TARGET", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "EMPTY_TARGET");
 		    goto mapError;
 		}
 		cmd = TclGetString(listv[0]);
@@ -348,7 +347,7 @@ InitEnsembleFromOptions(
 			    (Tcl_Namespace *) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendStringsToObj(newCmd, "::", (char *)NULL);
+			Tcl_AppendToObj(newCmd, "::", 2);
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -655,8 +654,7 @@ SetEnsembleConfigOptions(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "ensemble subcommand implementations "
 			    "must be non-empty lists", TCL_AUTO_LENGTH));
-		    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
-			    "EMPTY_TARGET", (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "EMPTY_TARGET");
 		    goto finishSearchAndError;
 		}
 		if (TclListObjGetElements(interp, listObj, &len,
@@ -700,8 +698,7 @@ SetEnsembleConfigOptions(
 	case CONF_NAMESPACE:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "option -namespace is read-only", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "READ_ONLY",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "READ_ONLY");
 	    goto freeMapAndError;
 	case CONF_PREFIX:
 	    if (Tcl_GetBooleanFromObj(interp, objv[1],
@@ -872,8 +869,7 @@ GetEnsembleFromCommand(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp,
-		    "TCL", "ENSEMBLE", "NOT_ENSEMBLE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE");
 	}
 	return NULL;
     }
@@ -1088,8 +1084,7 @@ Tcl_SetEnsembleMappingDict(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"ensemble target is not a fully-qualified command",
 			TCL_AUTO_LENGTH));
-		Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
-			"UNQUALIFIED_TARGET", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "ENSEMBLE", "UNQUALIFIED_TARGET");
 		Tcl_DictObjDone(&search);
 		return TCL_ERROR;
 	    }
@@ -1494,8 +1489,8 @@ Tcl_FindEnsemble(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not an ensemble command",
 			TclGetString(cmdNameObj)));
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENSEMBLE",
-			TclGetString(cmdNameObj), (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "LOOKUP", "ENSEMBLE",
+			TclGetString(cmdNameObj));
 	    }
 	    return NULL;
 	}
@@ -1795,7 +1790,7 @@ NsEnsembleImplementationCmdNR(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "ensemble activated for deleted namespace",
 		    TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD");
 	}
 	return TCL_ERROR;
     }
@@ -2004,8 +1999,7 @@ NsEnsembleImplementationCmdNR(
      */
 
     Tcl_ResetResult(interp);
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "SUBCOMMAND",
-	    TclGetString(subObj), (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "LOOKUP", "SUBCOMMAND", TclGetString(subObj));
     if (ensemblePtr->subcommandTable.numEntries == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown subcommand \"%s\": namespace %s does not"
@@ -2379,8 +2373,7 @@ EnsembleUnknownCallback(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unknown subcommand handler deleted its ensemble",
 		    TCL_AUTO_LENGTH));
-	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_DELETED",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_DELETED");
 	}
 	result = TCL_ERROR;
     }
@@ -2447,8 +2440,7 @@ EnsembleUnknownCallback(
 	    Tcl_AddErrorInfo(interp, "\n    result of "
 		    "ensemble unknown subcommand handler: ");
 	    Tcl_AppendObjToErrorInfo(interp, unknownCmd);
-	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT",
-		    (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT");
 	} else {
 	    Tcl_AddErrorInfo(interp,
 		    "\n    (ensemble unknown subcommand handler)");

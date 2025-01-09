@@ -1655,8 +1655,8 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad mode \"%s\" for -closemode: must be"
 			" default, discard, or drain", value));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
+			"VALUE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -1681,7 +1681,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -mode: should be baud,parity,data,stop",
 			value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "SERIALMODE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -1745,7 +1745,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -handshake: must be one of"
 			" xonxoff, rtscts, dtrdsr or none", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE");
 	    }
 	    return TCL_ERROR;
 	}
@@ -1775,7 +1775,7 @@ SerialSetOptionProc(
 			"bad value for -xchar: should be a list of"
 			" two elements with each a single 8-bit character",
 			TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "XCHAR");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -1832,7 +1832,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -ttycontrol: should be "
 			"a list of signal,value pairs", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -1849,8 +1849,8 @@ SerialSetOptionProc(
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set DTR signal", TCL_INDEX_NONE));
-			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "OPERATION",
+				"FCONFIGURE", "TTY_SIGNAL");
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1861,8 +1861,8 @@ SerialSetOptionProc(
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set RTS signal", TCL_INDEX_NONE));
-			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "OPERATION",
+				"FCONFIGURE", "TTY_SIGNAL");
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1873,8 +1873,8 @@ SerialSetOptionProc(
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set BREAK signal", TCL_INDEX_NONE));
-			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
+			TclSetErrorCode(interp, "TCL", "OPERATION",
+				"FCONFIGURE", "TTY_SIGNAL");
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1884,8 +1884,7 @@ SerialSetOptionProc(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "bad signal name \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
-			    (char *)NULL);
+		    TclSetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL");
 		}
 		res = TCL_ERROR;
 		break;
@@ -1925,7 +1924,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -sysbuffer: should be "
 			"a list of one or two integers > 0", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER");
 	    }
 	    return TCL_ERROR;
 	}

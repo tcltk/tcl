@@ -1539,7 +1539,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, "\"", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "NUMBER");
 	}
     }
 
@@ -4802,7 +4802,7 @@ Tcl_InitBignumFromDouble(
 	    const char *s = "integer value too large to represent";
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+	    TclSetErrorCode(interp, "ARITH", "IOVERFLOW", s);
 	}
 	return TCL_ERROR;
     }

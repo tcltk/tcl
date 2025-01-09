@@ -190,7 +190,7 @@ TclMacOSXGetFileAttribute(
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "UNSUPPORTED");
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
 }
@@ -322,7 +322,7 @@ TclMacOSXSetFileAttribute(
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "UNSUPPORTED");
 		return TCL_ERROR;
 	    }
 
@@ -363,7 +363,7 @@ TclMacOSXSetFileAttribute(
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
-    Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);
+    TclSetErrorCode(interp, "TCL", "UNSUPPORTED");
     return TCL_ERROR;
 #endif
 }
@@ -635,7 +635,7 @@ SetOSTypeFromAny(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected Macintosh OS type but got \"%s\": ", string));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "VALUE", "MAC_OSTYPE");
 	}
 	result = TCL_ERROR;
     } else {

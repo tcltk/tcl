@@ -1465,7 +1465,7 @@ Tcl_GetChannel(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can not find channel named \"%s\"", chanName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (char *)NULL);
+	TclSetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName);
 	return NULL;
     }
 

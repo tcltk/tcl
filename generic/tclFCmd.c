@@ -1115,7 +1115,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE");
 	    goto end;
 	}
 
@@ -1139,7 +1139,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    TclSetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE");
 	    goto end;
 	}
 
@@ -1151,8 +1151,7 @@ TclFileAttrsCmd(
 	    if (i + 1 == objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"value for \"%s\" missing", TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
-			"NOVALUE", (char *)NULL);
+		TclSetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NOVALUE");
 		goto end;
 	    }
 	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,

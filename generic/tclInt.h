@@ -5089,6 +5089,12 @@ typedef struct NRE_callback {
 	TOP_CB(interp) = _callbackPtr;					\
     } while (0)
 
+/*
+ * Wrapper for Tcl_SetErrorCode that makes certain there's a trailing NULL.
+ */
+#define TclSetErrorCode(interp, ...) \
+    Tcl_SetErrorCode((interp), __VA_ARGS__, (char *) NULL)
+
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
     TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
