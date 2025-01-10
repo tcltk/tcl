@@ -200,7 +200,12 @@ TclPrintObject(
     char *bytes;
     Tcl_Size length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    if (objPtr) {
+	bytes = TclGetStringFromObj(objPtr, &length);
+    } else {
+	bytes = "";
+	length = 0;
+    }
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
