@@ -654,11 +654,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
-#   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
-#   undef Tcl_RestoreResult
 #   define Tcl_RestoreResult 0
-#   undef Tcl_DiscardResult
 #   define Tcl_DiscardResult 0
 #   undef Tcl_SetResult
 #   define Tcl_SetResult 0

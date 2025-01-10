@@ -4326,6 +4326,8 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GlobalEval
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
+#undef Tcl_GetAlias
+#undef Tcl_SavedResult
 #undef Tcl_SaveResult
 #undef Tcl_RestoreResult
 #undef Tcl_DiscardResult
@@ -4523,9 +4525,6 @@ extern const TclStubs *tclStubsPtr;
  * Deprecated Tcl procedures:
  */
 
-#ifdef TCL_NO_DEPRECATED
-#   undef Tcl_SavedResult
-#endif /* TCL_NO_DEPRECATED */
 #undef Tcl_EvalObj
 #define Tcl_EvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, 0)
