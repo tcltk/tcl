@@ -2905,21 +2905,21 @@ test fCmd-32.14.1 {Tcl_FSTildeExpand relative/path} -constraints testfstildeexpa
 test fCmd-32.15 {file tildeexpand ~\\path} -body {
     file tildeexpand ~\\foo
 } -constraints win -result [file join $::env(HOME)/foo]
-test fCmd-32.15.1 {Tcl_FSTildeExpand ~\\path} -constraints testfstildeexpand -body {
+test fCmd-32.15.1 {Tcl_FSTildeExpand ~\\path} -constraints {testfstildeexpand win} -body {
     testfstildeexpand ~\\foo
-} -constraints win -result [file join $::env(HOME)/foo]
+} -result [file join $::env(HOME)/foo]
 test fCmd-32.16 {file tildeexpand ~USER\\bar} -body {
     # Note - as in 8.x this form does NOT necessarily give same result as
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)\\bar]
 } -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
-test fCmd-32.16.1 {Tcl_FSTildeExpand ~USER\\bar} -constraints testfstildeexpand -body {
+test fCmd-32.16.1 {Tcl_FSTildeExpand ~USER\\bar} -constraints {testfstildeexpand win} -body {
     # Note - as in 8.x this form does NOT necessarily give same result as
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [testfstildeexpand ~$::tcl_platform(user)\\bar]
-} -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
+} -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
 test fCmd-32.17 {file tildeexpand ~USER does not mirror HOME} -setup {
     set ::env(HOME) [file join $::env(HOME) foo]
 } -cleanup {
