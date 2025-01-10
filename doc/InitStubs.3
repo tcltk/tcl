@@ -14,44 +14,23 @@ Tcl_InitStubs \- initialize the Tcl stubs mechanism
 \fB#include <tcl.h>\fR
 .sp
 const char *
-\fBTcl_InitStubs\fR(\fIinterp, requirement, exact\fR)
+\fBTcl_InitStubs\fR(\fIinterp, version, exact\fR)
 .fi
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Tcl interpreter handle.
-.AP "const char" *requirement in
-The requirement string of compatible Tcl versions.
-It consists of one requirement as described for \fBpackage require\fR (\fBPACKAGE\fR manual page in the section \fBREQUIREMENT\fR).
-Multiple requirement strings like with \fBpackage require\fR are not supported.
-Examples:
-.CS
-Tcl_InitStubs(interp, "8.5", 0); /* This extension only uses the Tcl 8.5 API. It will work with 8.6 as well */
-Tcl_InitStubs(interp, "8.6", 0); /* This extension only uses the Tcl 8.6 API. It will work with 8.6 only */
-Tcl_InitStubs(interp, "9.0", 0); /* This extension only uses the Tcl 9.0 API. It will work with 9.0 only */
-.CE
-If any such extension is ported to Tcl 9.0, without additional API usage (only int -> Tcl_Size conversions, nothing more):
-.CS
-Tcl_InitStubs(interp, "8.5-", 0); /* This extension only uses the Tcl 8.5 API. It will work with 8.6 and (recompiled) with 9.0 as well */
-Tcl_InitStubs(interp, "8.6-", 0); /* This extension only uses the Tcl 8.6 API. It will work (recompiled) with 9.0 as well */
-.CE
-If you don't know which Tcl version you are developing for, do the following:
-.CS
-$ tclsh
-% info tclversion
-9.0
-.CE
-Now you know what requirement string to fill.
+.AP "const char" *version in
+A version string, indicating which minimal version of Tcl is accepted.
+Normally just \fB"9.0"\fR. Or \fB"8.6-"\fR if both 8.6 and 9.0 are accepted.
 .AP int exact in
 1 means that only the particular version specified by
-\fIrequirement\fR is acceptable.
-An exact version number must be given as \fIrequirement\fR.
-0 means that versions newer than \fIrequirement\fR are also
-acceptable. If the requirement string ends with \fB-\fR,
-higher major versions are acceptable as well, otherwise
-the major version must be the same as in the requirement string.
+\fIversion\fR is accepted.
+0 means that versions newer than \fIversion\fR are also
+accepted. If the\fIversion\fR ends with \fB-\fR,
+higher major versions are accepted as well, otherwise
+the major version must be the same as in \fIversion\fR.
 Other bits have no effect.
-See the \fB-require\fR option of the \fBpackage require\fR command.
 .BE
 .SH INTRODUCTION
 .PP
@@ -100,28 +79,18 @@ more information.
 and ensure that the correct version of Tcl is loaded.  In addition
 to an interpreter handle, it accepts as arguments a version number
 and a Boolean flag indicating whether the extension requires
-an exact version match or not.  If \fIexact\fR is 0, then the
-extension is indicating that newer versions of Tcl are acceptable.
-If the requirement string ends with \fB-\fR,
-higher major versions are acceptable as well, otherwise
-the major version must be the same as in the requirement string.
-1 means that only the specified \fIversion\fR is acceptable.
+an exact version match or not.  If \fIexact\fR is 0, then versions
+newer than \fIversion\fR are also accepted. If the\fIversion\fR
+ends with \fB-\fR, higher major versions are accepted as well,
+otherwise the major version must be the same as in \fIversion\fR.
+1 means that only the specified \fIversion\fR is accepted.
+\fIversion\fR can be any construct as described for \fBpackage require\fR
+(\fBPACKAGE\fR manual page in the section \fBREQUIREMENT\fR).
+Multiple requirement strings like with \fBpackage require\fR are not supported.
+
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
-acceptable, does not support stubs, or any other error condition occurred.
-.PP
-\fBTcl_InitStubs\fR is implemented as a macro.
-If \fBUSE_TCL_STUBS\fR is defined, this macro calls the real \fBTcl_InitStubs\fR
-function which has an additional \fBmagic\fR integer argument and uses the \fBexact\fR
-parameter to know the exact Tcl major version number. If you circumvent
-the macro in tcl.h, it should be called like this:
-.CS
-if (Tcl_InitStubs(interp, "9.0", TCL_MAJOR_VERSION<<8, TCL_STUB_MAGIC)) == NULL) {
-    return TCL_ERROR;
-}
-.CE
-If \fBUSE_TCL_STUBS\fR is not defined, it translates to a TCL version verification only.
-Thus, the call may also be used if the TCL library is directly linked.
+accepted, does not support stubs, or any other error condition occurred.
 .SH "SEE ALSO"
 Tk_InitStubs
 package
