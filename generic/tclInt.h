@@ -5102,6 +5102,13 @@ typedef struct NRE_callback {
 #define TclAppendStringsToObj(objPtr, ...) \
     Tcl_AppendStringsToObj((objPtr), __VA_ARGS__, (char *)NULL)
 
+/*
+ * Wrapper for writing to the interpreter result.
+ */
+#define TclPrintfResult(interp, format, ...) \
+    Tcl_SetObjResult((interp),						\
+	    Tcl_ObjPrintf((format) __VA_OPT__(,) __VA_ARGS__))
+
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \
     TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))

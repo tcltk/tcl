@@ -1245,10 +1245,10 @@ Tcl_ExternalToUtfDStringEx(
 		    char buf[TCL_INTEGER_SPACE];
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
 			    nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "unexpected byte sequence starting at index %"
 			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
-			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
+			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed]));
 		    TclSetErrorCode(interp,
 			    "TCL", "ENCODING", "ILLEGALSEQUENCE", buf);
 		}
@@ -1567,10 +1567,10 @@ Tcl_UtfToExternalDStringEx(
 		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
 			    nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
-			    pos, ucs4));
+			    pos, ucs4);
 		    TclSetErrorCode(interp,
 			    "TCL", "ENCODING", "ILLEGALSEQUENCE", buf);
 		}
@@ -1824,8 +1824,7 @@ OpenEncodingFileChannel(
     }
 
     if ((NULL == chan) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown encoding \"%s\"", name));
+	TclPrintfResult(interp, "unknown encoding \"%s\"", name);
 	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_DecrRefCount(fileNameObj);
@@ -1898,8 +1897,7 @@ LoadEncodingFile(
 	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid encoding file \"%s\"", name));
+	TclPrintfResult(interp, "invalid encoding file \"%s\"", name);
 	TclSetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name);
     }
     Tcl_CloseEx(NULL, chan, 0);
@@ -4572,8 +4570,8 @@ TclEncodingProfileIdToName(
 	}
     }
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Internal error. Bad profile id \"%d\".", profileValue));
+	TclPrintfResult(interp,
+		"Internal error. Bad profile id \"%d\".", profileValue);
 	TclSetErrorCode(interp, "TCL", "ENCODING", "PROFILEID");
     }
     return NULL;

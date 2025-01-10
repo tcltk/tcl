@@ -469,10 +469,10 @@ MemoryAllocationError(
     size_t size)        /* Size of attempted allocation that failed */
 {
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
-		size));
+		size);
 	TclSetErrorCode(interp, "TCL", "MEMORY");
     }
     return TCL_ERROR;
@@ -498,8 +498,7 @@ ListLimitExceededError(
     Tcl_Interp *interp)
 {
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", -1));
+	TclPrintfResult(interp, "max length of a Tcl list exceeded");
 	TclSetErrorCode(interp, "TCL", "MEMORY");
     }
     return TCL_ERROR;
@@ -676,9 +675,7 @@ ListRepValidate(
 
 failure:
     Tcl_Panic("List internal failure in %s line %d. Condition: %s",
-	      file,
-	      lineNum,
-	      condition);
+	      file, lineNum, condition);
 }
 
 /*
@@ -2986,8 +2983,8 @@ TclLsetFlat(
 		|| (valueObj == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%s\" out of range", TclGetString(indexArray[-1])));
+		TclPrintfResult(interp,
+			"index \"%s\" out of range", TclGetString(indexArray[-1]));
 		TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
 	    }
 	    result = TCL_ERROR;
@@ -3175,8 +3172,8 @@ TclListObjSetElement(
     /* Ensure that the index is in bounds. */
     if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
+	    TclPrintfResult(interp,
+		    "index \"%" TCL_SIZE_MODIFIER "d\" out of range", index);
 	    TclSetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE");
 	}
 	return TCL_ERROR;

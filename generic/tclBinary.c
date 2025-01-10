@@ -401,8 +401,7 @@ TclGetBytesFromObj(
 	     * value is outside the int range. */
 
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"byte sequence length exceeds INT_MAX", -1));
+		TclPrintfResult(interp, "byte sequence length exceeds INT_MAX");
 		TclSetErrorCode(interp, "TCL", "API", "OUTDATED");
 	    }
 	    return NULL;
@@ -518,10 +517,10 @@ MakeByteArray(
 	    proper = 0;
 	    if (demandProper) {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "expected byte sequence but character %"
 			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
-			    dst - byteArrayPtr->bytes, src, ch));
+			    dst - byteArrayPtr->bytes, src, ch);
 		    TclSetErrorCode(interp, "TCL", "VALUE", "BYTES");
 		}
 		Tcl_Free(byteArrayPtr);
@@ -967,9 +966,8 @@ BinaryFormatCmd(
 		if (count == BINARY_ALL) {
 		    count = listc;
 		} else if (count > listc) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "number of elements in list does not match count",
-			    -1));
+		    TclPrintfResult(interp,
+			    "number of elements in list does not match count");
 		    return TCL_ERROR;
 		}
 		if (TclListObjGetElements(interp, objv[arg], &listc,
@@ -983,8 +981,8 @@ BinaryFormatCmd(
 
 	case 'x':
 	    if (count == BINARY_ALL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot use \"*\" in format string with \"x\"", -1));
+		TclPrintfResult(interp,
+			"cannot use \"*\" in format string with \"x\"");
 		return TCL_ERROR;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1298,9 +1296,9 @@ BinaryFormatCmd(
 
  badValue:
     Tcl_ResetResult(interp);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "expected %s string but got \"%s\" instead",
-	    errorString, errorValue));
+	    errorString, errorValue);
     return TCL_ERROR;
 
  badCount:
@@ -1318,8 +1316,7 @@ BinaryFormatCmd(
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad field specifier \"%s\"", buf));
+	TclPrintfResult(interp, "bad field specifier \"%s\"", buf);
 	return TCL_ERROR;
     }
 
@@ -1699,8 +1696,7 @@ BinaryScanCmd(
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad field specifier \"%s\"", buf));
+	TclPrintfResult(interp, "bad field specifier \"%s\"", buf);
 	return TCL_ERROR;
     }
 
@@ -2565,9 +2561,9 @@ BinaryDecodeHex(
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     TclSetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID");
     return TCL_ERROR;
 }
@@ -2634,8 +2630,7 @@ BinaryEncode64(
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"line length out of range", -1));
+		TclPrintfResult(interp, "line length out of range");
 		TclSetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH");
 		return TCL_ERROR;
@@ -2762,47 +2757,45 @@ BinaryEncodeUu(
 		return TCL_ERROR;
 	    }
 	    if (lineLength < 5 || lineLength > 85) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"line length out of range", -1));
+		TclPrintfResult(interp, "line length out of range");
 		TclSetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH");
 		return TCL_ERROR;
 	    }
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
-	case OPT_WRAPCHAR:
+	case OPT_WRAPCHAR: {
 	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
-	    {
-		const unsigned char *p = wrapchar;
-		Tcl_Size numBytes = wrapcharlen;
+	    const unsigned char *p = wrapchar;
+	    Tcl_Size numBytes = wrapcharlen;
 
-		while (numBytes) {
-		    switch (*p) {
-			case '\t':
-			case '\v':
-			case '\f':
-			case '\r':
-			    p++; numBytes--;
-			    continue;
-			case '\n':
-			    numBytes--;
-			    break;
-			default:
-			badwrap:
-			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				    "invalid wrapchar; will defeat decoding",
-				    -1));
-			    TclSetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR");
-			    return TCL_ERROR;
+	    while (numBytes) {
+		switch (*p) {
+		    case '\t':
+		    case '\v':
+		    case '\f':
+		    case '\r':
+			p++;
+			numBytes--;
+			continue;
+		    case '\n':
+			numBytes--;
+			break;
+		    default:
+		    badwrap:
+			TclPrintfResult(interp,
+				"invalid wrapchar; will defeat decoding");
+			TclSetErrorCode(interp, "TCL", "BINARY",
+				"ENCODE", "WRAPCHAR");
+			return TCL_ERROR;
 		    }
 		}
 		if (numBytes) {
 		    goto badwrap;
 		}
-	    }
 	    break;
+	}
 	}
     }
 
@@ -3018,7 +3011,7 @@ BinaryDecodeUu(
     return TCL_OK;
 
   shortUu:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("short uuencode data"));
+    TclPrintfResult(interp, "short uuencode data");
     TclSetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT");
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3029,9 +3022,9 @@ BinaryDecodeUu(
     } else {
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "invalid uuencode character \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     TclSetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID");
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -3205,9 +3198,9 @@ BinaryDecode64(
 	TclUtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "invalid base64 character \"%c\" (U+%06X) at position %"
-	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1));
+	    TCL_Z_MODIFIER "u", ucs4, ucs4, data - datastart - 1);
     TclSetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID");
     TclDecrRefCount(resultObj);
     return TCL_ERROR;

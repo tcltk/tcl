@@ -2368,8 +2368,7 @@ TEBCresume(
 	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yield can only be called in a coroutine", -1));
+	    TclPrintfResult(interp, "yield can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD");
 	    CACHE_STACK_INFO();
@@ -2398,8 +2397,7 @@ TEBCresume(
 	if (!corPtr) {
 	    TRACE(("[%.30s] => ERROR: yield outside coroutine\n",
 		    O2S(valuePtr)));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto can only be called in a coroutine", -1));
+	    TclPrintfResult(interp, "yieldto can only be called in a coroutine");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD");
 	    CACHE_STACK_INFO();
@@ -2408,8 +2406,7 @@ TEBCresume(
 	if (((Namespace *)TclGetCurrentNamespace(interp))->flags & NS_DYING) {
 	    TRACE(("[%.30s] => ERROR: yield in deleted\n",
 		    O2S(valuePtr)));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto called in deleted namespace", -1));
+	    TclPrintfResult(interp, "yieldto called in deleted namespace");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED");
 	    CACHE_STACK_INFO();
@@ -2470,8 +2467,8 @@ TEBCresume(
 
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", -1));
+	    TclPrintfResult(interp,
+		    "tailcall can only be called from a proc or lambda");
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL");
 	    CACHE_STACK_INFO();
@@ -4349,8 +4346,8 @@ TEBCresume(
 	    /* Empty loop body */
 	}
 	if (framePtr == rootFramePtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad level \"%s\"", TclGetString(OBJ_AT_TOS)));
+	    TclPrintfResult(interp,
+		    "bad level \"%s\"", TclGetString(OBJ_AT_TOS));
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
@@ -4389,9 +4386,9 @@ TEBCresume(
 	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
 	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES ) {
 	    Tcl_DecrRefCount(objResultPtr);
-	    instOriginError:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
+	instOriginError:
+	    TclPrintfResult(interp,
+		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS));
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
 		    TclGetString(OBJ_AT_TOS));
@@ -4419,9 +4416,8 @@ TEBCresume(
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    TRACE(("=> ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "self may only be called from inside a method",
-		    -1));
+	    TclPrintfResult(interp,
+		    "self may only be called from inside a method");
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
@@ -4447,9 +4443,8 @@ TEBCresume(
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "nextto may only be called from inside a method",
-		    -1));
+	    TclPrintfResult(interp,
+		    "nextto may only be called from inside a method");
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
@@ -4469,8 +4464,8 @@ TEBCresume(
 
 	    if (classPtr == NULL) {
 		TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"\"%s\" is not a class", TclGetString(valuePtr)));
+		TclPrintfResult(interp,
+			"\"%s\" is not a class", TclGetString(valuePtr));
 		DECACHE_STACK_INFO();
 		OO_ERROR(interp, CLASS_REQUIRED);
 		CACHE_STACK_INFO();
@@ -4519,17 +4514,17 @@ TEBCresume(
 			|| miPtr->mPtr->declaringClassPtr != classPtr) {
 		    continue;
 		}
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		TclPrintfResult(interp,
 			"%s implementation by \"%s\" not reachable from here",
-			methodType, TclGetString(valuePtr)));
+			methodType, TclGetString(valuePtr));
 		DECACHE_STACK_INFO();
 		OO_ERROR(interp, CLASS_NOT_REACHABLE);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "%s has no non-filter implementation by \"%s\"",
-		    methodType, TclGetString(valuePtr)));
+		    methodType, TclGetString(valuePtr));
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CLASS_NOT_THERE);
 	    CACHE_STACK_INFO();
@@ -4545,9 +4540,8 @@ TEBCresume(
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "next may only be called from inside a method",
-		    -1));
+	    TclPrintfResult(interp,
+		    "next may only be called from inside a method");
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    CACHE_STACK_INFO();
@@ -4575,8 +4569,8 @@ TEBCresume(
 	    }
 
 	    TRACE_APPEND(("ERROR: no TclOO next impl\n"));
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no next %s implementation", methodType));
+	    TclPrintfResult(interp,
+		    "no next %s implementation", methodType);
 	    DECACHE_STACK_INFO();
 	    OO_ERROR(interp, NOTHING_NEXT);
 	    CACHE_STACK_INFO();
@@ -5923,8 +5917,7 @@ TEBCresume(
 
 	    case INST_RSHIFT:
 		if (w2 < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+		    TclPrintfResult(interp, "negative shift argument");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    TclSetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5971,8 +5964,7 @@ TEBCresume(
 
 	    case INST_LSHIFT:
 		if (w2 < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+		    TclPrintfResult(interp, "negative shift argument");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    TclSetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5993,8 +5985,8 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "integer value too large to represent", -1));
+		    TclPrintfResult(interp,
+			    "integer value too large to represent");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    TclSetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -6825,9 +6817,9 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (!objResultPtr) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "key \"%s\" not known in dictionary",
-		    TclGetString(OBJ_AT_TOS)));
+		    TclGetString(OBJ_AT_TOS));
 	    DECACHE_STACK_INFO();
 	    TclSetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS));
@@ -7532,14 +7524,14 @@ TEBCresume(
 	 */
 
     divideByZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	TclPrintfResult(interp, "divide by zero");
 	DECACHE_STACK_INFO();
 	TclSetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero");
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	TclPrintfResult(interp, "out of memory");
 	DECACHE_STACK_INFO();
 	TclSetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory");
 	CACHE_STACK_INFO();
@@ -7551,8 +7543,7 @@ TEBCresume(
 	 */
 
     exponOfZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", -1));
+	TclPrintfResult(interp, "exponentiation of zero by negative power");
 	DECACHE_STACK_INFO();
 	TclSetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power");
@@ -8114,8 +8105,7 @@ ExecuteExtendedBinaryMathOp(
 	    invalid = 0;
 	}
 	if (invalid) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "negative shift argument", -1));
+	    TclPrintfResult(interp, "negative shift argument");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8145,8 +8135,7 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
+		TclPrintfResult(interp, "integer value too large to represent");
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const Tcl_WideInt *)ptr2));
@@ -8392,8 +8381,7 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (type2 != TCL_NUMBER_INT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+	    TclPrintfResult(interp, "exponent too large");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8468,12 +8456,10 @@ ExecuteExtendedBinaryMathOp(
 	}
 
     overflowExpon:
-
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
 		|| !TclHasInternalRep(value2Ptr, &tclIntType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+	    TclPrintfResult(interp, "exponent too large");
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -9105,8 +9091,8 @@ IllegalExprOperandType(
 	    Tcl_DictObjSize(NULL, opndPtr, &length);
 	    if (length > 0) {
 	    listRep:
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot use a list as %soperand of \"%s\"", ord, op));
+		TclPrintfResult(interp,
+			"cannot use a list as %soperand of \"%s\"", ord, op);
 		TclSetErrorCode(interp, "ARITH", "DOMAIN", "list");
 		return;
 	    }
@@ -9129,9 +9115,9 @@ IllegalExprOperandType(
 	description = "(big) integer";
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    TclPrintfResult(interp,
 	    "cannot use %s \"%s\" as %soperand of \"%s\"", description,
-	    TclGetString(opndPtr), ord, op));
+	    TclGetString(opndPtr), ord, op);
     TclSetErrorCode(interp, "ARITH", "DOMAIN", description);
 }
 

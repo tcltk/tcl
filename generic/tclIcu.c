@@ -294,8 +294,7 @@ FunctionNotAvailableError(
     Tcl_Interp *interp)
 {
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"ICU function not available", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "ICU function not available");
 	TclSetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP");
     }
     return TCL_ERROR;
@@ -312,12 +311,12 @@ IcuError(
 	if (u_errorName) {
 	    codeMessage = u_errorName(code);
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"%s%sICU error (%d): %s",
 		message ? message : "",
 		message ? ". " : "",
 		code,
-		codeMessage ? codeMessage : ""));
+		codeMessage ? codeMessage : "");
 	TclSetErrorCode(interp, "TCL", "ICU", codeMessage);
     }
     return TCL_ERROR;
@@ -603,9 +602,9 @@ IcuDetectObjCmd(
     int all = 0;
     if (objc == 3) {
 	if (strcmp("-all", Tcl_GetString(objv[2]))) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    TclPrintfResult(interp,
 		    "Invalid option %s, must be \"-all\"",
-		    Tcl_GetString(objv[2])));
+		    Tcl_GetString(objv[2]));
 	    return TCL_ERROR;
 	}
 	all = 1;
@@ -771,8 +770,7 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult( interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
 
@@ -835,8 +833,7 @@ IcuBytesToUCharDString(
     }
 
     if (nbytes > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
 
@@ -944,8 +941,7 @@ IcuNormalizeUCharDString(
     utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	TclPrintfResult(interp, "Max length supported by ICU exceeded.");
 	return TCL_ERROR;
     }
     Tcl_DStringInit(dsOutPtr);
@@ -1009,9 +1005,8 @@ static int IcuParseConvertOptions(
 	}
 	++i;
 	if (i == objc) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Missing value for option %s.",
-					   Tcl_GetString(objv[i - 1])));
+	    TclPrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1020,18 +1015,16 @@ static int IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
-			 " \"-profile\". Must be \"strict\" or \"replace\".",
-			 s));
+		TclPrintfResult(interp,
+			"Invalid value \"%s\" supplied for option"
+			" \"-profile\". Must be \"strict\" or \"replace\".",
+			s);
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_FAILINDEX:
 	    /* TBD */
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("Option -failindex not implemented.", TCL_INDEX_NONE));
+	    TclPrintfResult(interp, "Option -failindex not implemented.");
 	    return TCL_ERROR;
 	}
     }
@@ -1178,9 +1171,8 @@ IcuNormalizeObjCmd(
 	}
 	++i;
 	if (i == (objc-1)) {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Missing value for option %s.",
-					   Tcl_GetString(objv[i - 1])));
+	    TclPrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[i]);
@@ -1189,16 +1181,16 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option \"-profile\". Must be "
-				  "\"strict\" or \"replace\".",
-				  s));
+		TclPrintfResult(interp,
+			"Invalid value \"%s\" supplied for option \"-profile\"."
+			" Must be \"strict\" or \"replace\".",
+			s);
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_MODE:
-	    if (Tcl_GetIndexFromObj(interp, objv[i], normalizationForms, "normalization mode", 0, &mode) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], normalizationForms,
+		    "normalization mode", 0, &mode) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    break;

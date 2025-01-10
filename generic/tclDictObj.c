@@ -716,8 +716,7 @@ SetDictFromAny(
 
   missingValue:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing value to go with key", -1));
+	TclPrintfResult(interp, "missing value to go with key");
 	TclSetErrorCode(interp, "TCL", "VALUE", "DICTIONARY");
     }
   errorInFindDictElement:
@@ -809,9 +808,9 @@ TclTraceDictPath(
 	    }
 	    if ((flags & DICT_PATH_CREATE) != DICT_PATH_CREATE) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    TclPrintfResult(interp,
 			    "key \"%s\" not known in dictionary",
-			    TclGetString(keyv[i])));
+			    TclGetString(keyv[i]));
 		    TclSetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 			    TclGetString(keyv[i]));
 		}
@@ -1769,9 +1768,9 @@ DictGetCmd(
 	return result;
     }
     if (valuePtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	TclPrintfResult(interp,
 		"key \"%s\" not known in dictionary",
-		TclGetString(objv[objc - 1])));
+		TclGetString(objv[objc - 1]));
 	TclSetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		TclGetString(objv[objc - 1]));
 	return TCL_ERROR;
@@ -2702,8 +2701,7 @@ DictForNRCmd(
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", -1));
+	TclPrintfResult(interp, "must have exactly two variable names");
 	TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "for");
 	return TCL_ERROR;
     }
@@ -2897,8 +2895,8 @@ DictMapNRCmd(
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", -1));
+	TclPrintfResult(interp,
+		"must have exactly two variable names");
 	TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "map");
 	return TCL_ERROR;
     }
@@ -3337,8 +3335,7 @@ DictFilterCmd(
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "must have exactly two variable names", -1));
+	    TclPrintfResult(interp, "must have exactly two variable names");
 	    TclSetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter");
 	    return TCL_ERROR;
 	}

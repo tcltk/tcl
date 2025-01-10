@@ -267,8 +267,7 @@ TclChannelTransform(
     }
 
     if (TCL_OK != TclListObjLength(interp, cmdObjPtr, &objc)) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("-command value is not a list", -1));
+	TclPrintfResult(interp, "-command value is not a list");
 	return TCL_ERROR;
     }
 
@@ -473,8 +472,7 @@ ExecuteCallback(
 	    break;
 	}
     nonBytes:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"chan transform callback received non-bytes", TCL_AUTO_LENGTH));
+	TclPrintfResult(interp, "chan transform callback received non-bytes");
 	Tcl_Release(eval);
 	return TCL_ERROR;
 
