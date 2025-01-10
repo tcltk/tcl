@@ -4332,6 +4332,7 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_RestoreResult
 #undef Tcl_DiscardResult
 #undef Tcl_SetResult
+#undef Tcl_MakeSafe
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \
