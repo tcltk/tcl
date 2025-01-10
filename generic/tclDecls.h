@@ -4476,6 +4476,22 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #   undef Tcl_UniCharLen
 #   define Tcl_UniCharLen Tcl_Char16Len
+#   ifndef TCL_NO_DEPRECATED
+#	undef Tcl_GetUnicode
+#	undef Tcl_GetUnicodeFromObj
+#	undef Tcl_SetUnicodeObj
+#	undef Tcl_AppendUnicodeToObj
+#	undef Tcl_UtfAtIndex
+#	undef Tcl_GetCharLength
+#	undef Tcl_UniCharNcmp
+#	undef Tcl_UniCharNcasecmp
+#	undef Tcl_UniCharCaseMatch
+#	undef Tcl_GetRange
+#	undef Tcl_GetUniChar
+#	undef Tcl_NumUtfChars
+#	undef Tcl_UtfNcmp
+#	undef Tcl_UtfNcasecmp
+#   endif
 #elif !defined(BUILD_tcl)
 #   undef Tcl_NumUtfChars
 #   define Tcl_NumUtfChars TclNumUtfChars
