@@ -448,7 +448,7 @@ tcltest.cmd: Makefile
 	  echo 'set OWD=%CD%'; \
 	  echo 'cd /d %TEMP%'; \
 	  echo 'rem "%BDP%\$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" %TESTFLAGS% -load "$(TEST_LOAD_FACILITIES)" %*'; \
-	  echo '"%BDP%\$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" %TESTFLAGS% -load "$(TEST_LOAD_PRMS)" %*'; \
+	  echo '"%BDP%\$(TEST_EXE_FILE)" -encoding utf-8 "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" %TESTFLAGS% -load "$(TEST_LOAD_PRMS)" %*'; \
 	  echo 'cd /d %OWD%'; \
 	) > tcltest.cmd;
 	@(\
@@ -457,7 +457,7 @@ tcltest.cmd: Makefile
 	  echo 'BDP=$$(dirname $$(readlink -f %0))'; \
 	  echo 'cd /tmp'; \
 	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
-	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_PRMS)" "$$@"'; \
+	  echo '"$$BDP/$(TEST_EXE_FILE)" -encoding utf-8 "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_PRMS)" "$$@"'; \
 	) > tcltest.sh;
 
 tcltest.sh: tcltest.cmd
@@ -806,7 +806,7 @@ test: test-tcl test-packages
 
 test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
+	./$(TCLSH) -encoding utf-8 "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "$(TEST_LOAD_FACILITIES)"
 
 # Useful target to launch a built tclsh with the proper path,...
@@ -830,7 +830,7 @@ shquotequote = $(subst ',\",$(subst ",\",$(1)))
 gdb-test: tcltest
 	@printf '%s ' 'set env TCL_LIBRARY=$(LIBRARY_DIR)' > gdb.run
 	@printf '\n' >>gdb.run
-	@printf '%s ' set args $(ROOT_DIR_NATIVE)/tests/all.tcl \
+	@printf '%s ' set args -encoding utf-8 $(ROOT_DIR_NATIVE)/tests/all.tcl \
 		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
 	$(GDB) ${TEST_EXE_FILE} --command=gdb.run
 	rm gdb.run

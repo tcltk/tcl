@@ -723,14 +723,14 @@ tcltest-real:
 test: test-tcl test-packages
 
 test-tcl: ${TCLTEST_EXE}
-	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
+	$(SHELL_ENV) ./${TCLTEST_EXE} -encoding utf-8 $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
 	@printf '%s ' set env @LD_LIBRARY_PATH_VAR@=\"`pwd`$${@LD_LIBRARY_PATH_VAR@:+:$${@LD_LIBRARY_PATH_VAR}}\" > gdb.run
 	@printf '\n' >>gdb.run
 	@printf '%s ' set env TCL_LIBRARY=\'$(call shquotesingle,${TCL_BUILDTIME_LIBRARY})\' >> gdb.run
 	@printf '\n' >>gdb.run
-	@printf '%s ' set args $(call shquotequote,$(TOP_DIR))/tests/all.tcl\
+	@printf '%s ' set args -encoding utf-8 $(call shquotequote,$(TOP_DIR))/tests/all.tcl\
 		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
 	rm gdb.run
@@ -770,7 +770,7 @@ lldb: ${TCL_EXE}
 	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} -encoding utf-8 \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
 		$(TESTFLAGS)
 
@@ -781,7 +781,7 @@ trace-shell: ${TCL_EXE}
 	$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCL_EXE} $(SCRIPT)
 
 trace-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
+	$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCLTEST_EXE} -encoding utf-8 $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
 
 #--------------------------------------------------------------------------
 # Installation rules
