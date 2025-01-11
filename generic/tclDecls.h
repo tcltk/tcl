@@ -4476,7 +4476,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #   undef Tcl_UniCharLen
 #   define Tcl_UniCharLen Tcl_Char16Len
-#   ifndef TCL_NO_DEPRECATED
+#   ifdef TCL_NO_DEPRECATED
 #	undef Tcl_GetUnicode
 #	undef Tcl_GetUnicodeFromObj
 #	undef Tcl_SetUnicodeObj
