@@ -11,6 +11,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef STATIC_BUILD
+#ifdef TCL_NO_DEPRECATED
+# define TCL_UTF_MAX 4 /* Make sure not to use the UTf-16 compatibility wrappers */
+#endif
 #include "tcl.h"
 
 /*

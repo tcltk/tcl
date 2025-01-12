@@ -12,6 +12,9 @@
  */
 
 #undef STATIC_BUILD
+#ifdef TCL_NO_DEPRECATED
+# define TCL_UTF_MAX 4 /* Make sure not to use the UTf-16 compatibility wrappers */
+#endif
 #include "tcl.h"
 #if defined(_WIN32) && defined(_MSC_VER)
 #   define snprintf _snprintf
