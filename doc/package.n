@@ -123,8 +123,8 @@ loaded;  otherwise it generates an error.
 .RS
 .PP
 A suitable version of the package is any version which satisfies at
-least one of the requirements, per the rules of \fBpackage
-vsatisfies\fR. If multiple versions are suitable the implementation
+least one of the requirements as defined in the section \fBREQUIREMENT\fR below.
+If multiple versions are suitable the implementation
 with the highest version is chosen. This last part is additionally
 influenced by the selection mode set with \fBpackage prefer\fR.
 .PP
@@ -205,62 +205,7 @@ commands.
 \fBpackage vsatisfies \fIversion requirement...\fR
 .
 Returns 1 if the \fIversion\fR satisfies at least one of the given
-requirements, and 0 otherwise. Each \fIrequirement\fR is allowed to
-have any of the forms:
-.RS
-.IP \fImin\fR
-This form is called
-.QW min-bounded .
-.IP \fImin\fB\-\fR
-This form is called
-.QW min-unbound .
-.IP \fImin\fB\-\fImax\fR
-This form is called
-.QW bounded .
-.PP
-where
-.QW \fImin\fR
-and
-.QW \fImax\fR
-are valid version numbers. The legacy syntax is
-a special case of the extended syntax, keeping backward
-compatibility. Regarding satisfaction the rules are:
-.IP [1]
-The \fIversion\fR has to pass at least one of the listed
-\fIrequirement\fRs to be satisfactory.
-.IP [2]
-A version satisfies a
-.QW bounded
-requirement when
-.RS
-.IP [a]
-For \fImin\fR equal to the \fImax\fR if, and only if the \fIversion\fR
-is equal to the \fImin\fR.
-.IP [b]
-Otherwise if, and only if the \fIversion\fR is greater than or equal
-to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
-and \fImax\fR have been padded internally with
-.QW a0 .
-Note that while the comparison to \fImin\fR is inclusive, the
-comparison to \fImax\fR is exclusive.
-.RE
-.IP [3]
-A
-.QW min-bounded
-requirement is a
-.QW bounded
-requirement in disguise,
-with the \fImax\fR part implicitly specified as the next higher major
-version number of the \fImin\fR part. A version satisfies it per the
-rules above.
-.IP [4]
-A \fIversion\fR satisfies a
-.QW min-unbound
-requirement if, and only if it is greater than or equal to the
-\fImin\fR, where the \fImin\fR has been padded internally with
-.QW a0 .
-There is no constraint to a maximum.
-.RE
+requirements, and 0 otherwise. \fIrequirements\fR are defined in the \fBREQUIREMENT\fR section below.
 .\" METHOD: prefer
 .TP
 \fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
@@ -350,6 +295,66 @@ and \fBpackage provide\fR commands in scripts, and use the procedure
 Once you have done this, packages will be loaded automatically
 in response to \fBpackage require\fR commands.
 See the documentation for \fBpkg_mkIndex\fR for details.
+.SH "REQUIREMENT"
+.PP
+A \fIrequirement\fR string checks, if a compatible version number of a package is present.
+Most commands accept a list of requirement strings where the highest suitable version is matched.
+.PP
+Each \fIrequirement\fR is allowed to have any of the forms:
+.RS
+.IP \fImin\fR
+This form is called
+.QW min-bounded .
+.IP \fImin\fB\-\fR
+This form is called
+.QW min-unbound .
+.IP \fImin\fB\-\fImax\fR
+This form is called
+.QW bounded .
+.PP
+where
+.QW \fImin\fR
+and
+.QW \fImax\fR
+are valid version numbers. The legacy syntax is
+a special case of the extended syntax, keeping backward
+compatibility. Regarding satisfaction the rules are:
+.IP [1]
+The \fIversion\fR has to pass at least one of the listed
+\fIrequirement\fRs to be satisfactory.
+.IP [2]
+A version satisfies a
+.QW bounded
+requirement when
+.RS
+.IP [a]
+For \fImin\fR equal to the \fImax\fR if, and only if the \fIversion\fR
+is equal to the \fImin\fR.
+.IP [b]
+Otherwise if, and only if the \fIversion\fR is greater than or equal
+to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
+and \fImax\fR have been padded internally with
+.QW a0 .
+Note that while the comparison to \fImin\fR is inclusive, the
+comparison to \fImax\fR is exclusive.
+.RE
+.IP [3]
+A
+.QW min-bounded
+requirement is a
+.QW bounded
+requirement in disguise,
+with the \fImax\fR part implicitly specified as the next higher major
+version number of the \fImin\fR part. A version satisfies it per the
+rules above.
+.IP [4]
+A \fIversion\fR satisfies a
+.QW min-unbound
+requirement if, and only if it is greater than or equal to the
+\fImin\fR, where the \fImin\fR has been padded internally with
+.QW a0 .
+There is no constraint to a maximum.
+.RE
 .SH EXAMPLES
 .PP
 To state that a Tcl script requires the Tk and http packages, put this
