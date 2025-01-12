@@ -144,9 +144,9 @@ typedef struct {
  * was called for a result.
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static int freeCount;
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -243,9 +243,9 @@ static Tcl_ObjCmdProc	TestbytestringObjCmd;
 static Tcl_ObjCmdProc	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc	TeststringbytesObjCmd;
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static Tcl_ObjCmdProc	Testutf16stringObjCmd;
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 static Tcl_ObjCmdProc	TestcmdinfoObjCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
@@ -297,10 +297,10 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static Tcl_FreeProc	TestsaveresultFree;
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -590,9 +590,9 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
     Tcl_CreateObjCommand(interp, "testutf16string", Testutf16stringObjCmd, NULL, NULL);
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
     Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -690,7 +690,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
 #endif
@@ -5798,7 +5798,7 @@ TestbytestringObjCmd(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static int
 Testutf16stringObjCmd(
     TCL_UNUSED(void *),
@@ -5817,7 +5817,7 @@ Testutf16stringObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(p, TCL_INDEX_NONE));
     return TCL_OK;
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 
 /*
  *----------------------------------------------------------------------
@@ -5918,7 +5918,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
@@ -6036,7 +6036,7 @@ TestsaveresultFree(
 {
     freeCount++;
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 
 /*
  *----------------------------------------------------------------------

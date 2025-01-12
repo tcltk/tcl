@@ -1473,6 +1473,7 @@ TeststringobjCmd(
 	    }
 	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
+#ifndef TCL_NO_DEPRECATED
 	case 10: {				/* range */
 	    Tcl_Size first, last;
 	    if (objc != 5) {
@@ -1485,6 +1486,7 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_GetRange(varPtr[varIndex], first, last));
 	    break;
 	}
+#endif /* TCL_NO_DEPRECATED */
 	case 11:			/* appendself */
 	    if (objc != 4) {
 		goto wrongNumArgs;
@@ -1516,6 +1518,7 @@ TeststringobjCmd(
 	    Tcl_AppendToObj(varPtr[varIndex], string + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
+#ifndef TCL_NO_DEPRECATED
 	case 12:			/* appendself2 */
 	    if (objc != 4) {
 		goto wrongNumArgs;
@@ -1547,6 +1550,7 @@ TeststringobjCmd(
 	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
+#endif /* TCL_NO_DEPRECATED */
 	case 13: /* newunicode*/
 	    unicode = (unsigned short *)ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
 	    for (i = 0; i < (objc - 3); ++i) {
@@ -1564,6 +1568,8 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    ckfree(unicode);
 	    break;
+	default:
+		return TCL_ERROR;
     }
 
     return TCL_OK;
