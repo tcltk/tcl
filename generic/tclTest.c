@@ -143,7 +143,7 @@ typedef struct {
  * was called for a result.
  */
 
-#ifdef TCL_NO_DEPRECATED
+#ifndef TCL_NO_DEPRECATED
 static int freeCount;
 #endif /* TCL_NO_DEPRECATED */
 
@@ -296,7 +296,7 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
-#ifdef TCL_NO_DEPRECATED
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static Tcl_FreeProc	TestsaveresultFree;
 #endif /* TCL_NO_DEPRECATED */
@@ -689,7 +689,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#ifdef TCL_NO_DEPRECATED
+#ifndef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
 #endif /* TCL_NO_DEPRECATED */
@@ -5917,7 +5917,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_NO_DEPRECATED
+#ifndef TCL_NO_DEPRECATED
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
