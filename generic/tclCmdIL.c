@@ -1475,7 +1475,7 @@ InfoFunctionsCmd(
 	return TCL_ERROR;
     }
 
-    script = Tcl_NewStringObj(
+    script = TclNewString(
 "	    ::apply [::list {{pattern *}} {\n"
 "		::set cmds {}\n"
 "		::foreach cmd [::info commands ::tcl::mathfunc::$pattern] {\n"
@@ -1488,7 +1488,7 @@ InfoFunctionsCmd(
 "		    }\n"
 "		}\n"
 "		::return $cmds\n"
-"	    } [::namespace current]] ", -1);
+"	    } [::namespace current]] ");
 
     if (objc == 2) {
 	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
@@ -2115,10 +2115,10 @@ InfoCmdTypeCmd(
 
     if (Tcl_IsSafe(interp)
 	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("native", TCL_AUTO_LENGTH));
+	Tcl_SetObjResult(interp, TclNewString("native"));
     } else {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclGetCommandTypeName(command), TCL_AUTO_LENGTH));
     }
     return TCL_OK;
 }
@@ -2192,7 +2192,7 @@ Tcl_JoinObjCmd(
 	return TCL_OK;
     }
 
-    joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
+    joinObjPtr = (objc == 2) ? TclNewString(" ") : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
     (void)TclGetStringFromObj(joinObjPtr, &length);
@@ -3486,8 +3486,8 @@ Tcl_LsearchObjCmd(
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j));
+		    TclPrintfErrorInfo(interp,
+			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j);
 		    goto done;
 		}
 		sortInfo.indexv[j] = encoded;
@@ -4618,8 +4618,8 @@ Tcl_LsortObjCmd(
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j));
+		    TclPrintfErrorInfo(interp,
+			    "\n    (-index option item number %" TCL_Z_MODIFIER "u)", j);
 		    sortInfo.resultCode = TCL_ERROR;
 		    goto done;
 		}

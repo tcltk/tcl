@@ -1052,9 +1052,8 @@ Tcl_FSMatchInDirectory(
     cwd = Tcl_FSGetCwd(NULL);
     if (cwd == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "glob couldn't determine the current working directory",
-		    -1));
+	    TclPrintfResult(interp,
+		    "glob couldn't determine the current working directory");
 	}
 	return TCL_ERROR;
     }
@@ -1529,10 +1528,9 @@ TclGetOpenMode(
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
     invAccessMode:
 	if (interp != NULL) {
-	    Tcl_AddErrorInfo(interp,
-		    "\n    while processing open access modes \"");
-	    Tcl_AddErrorInfo(interp, modeString);
-	    Tcl_AddErrorInfo(interp, "\"");
+	    TclPrintfErrorInfo(interp,
+		    "\n    while processing open access modes \"%s\"",
+		    modeString);
 	    TclSetErrorCode(interp, "TCL", "OPENMODE", "INVALID");
 	}
 	if (modeArgv) {
@@ -1811,10 +1809,9 @@ Tcl_FSEvalFileEx(
 	int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	TclPrintfErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
   end:
@@ -1963,10 +1960,9 @@ EvalFileCallback(
 	const int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	TclPrintfErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
     Tcl_DecrRefCount(objPtr);
@@ -3587,9 +3583,8 @@ Tcl_FSUnloadFile(
 {
     if (handle->unloadFileProcPtr == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot unload: filesystem does not support unloading",
-		    -1));
+	    TclPrintfResult(interp,
+		    "cannot unload: filesystem does not support unloading");
 	}
 	return TCL_ERROR;
     }

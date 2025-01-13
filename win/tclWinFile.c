@@ -1519,7 +1519,7 @@ TclpGetUserHome(
 
 		GetProfilesDirectoryW(buf, &size);
 		Tcl_WCharToUtfDString(buf, size-1, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/", 1);
+		TclDStringAppendLiteral(bufferPtr, "/");
 		Tcl_DStringAppend(bufferPtr, name, nameLen);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
@@ -2622,7 +2622,7 @@ TclpObjNormalizePath(
 		     */
 
 		    nextCheckpoint = 0;
-		    Tcl_AppendToObj(to, currentPathEndPosition, TCL_INDEX_NONE);
+		    Tcl_AppendToObj(to, currentPathEndPosition, TCL_AUTO_LENGTH);
 
 		    /*
 		     * Convert link to forward slashes.
@@ -2796,7 +2796,7 @@ TclpObjNormalizePath(
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
-	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_AUTO_LENGTH);
 	    path = TclGetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
@@ -2869,7 +2869,7 @@ TclWinVolumeRelativeNormalize(
 	const char *drive = TclGetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
-	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
+	Tcl_AppendToObj(absolutePath, path, TCL_AUTO_LENGTH);
 	Tcl_IncrRefCount(absolutePath);
 
 	/*
@@ -2902,7 +2902,7 @@ TclWinVolumeRelativeNormalize(
 		 * characters.
 		 */
 
-		Tcl_AppendToObj(absolutePath, "/", 1);
+		TclAppendLiteralToObj(absolutePath, "/");
 	    }
 	} else {
 	    Tcl_DecrRefCount(useThisCwd);
@@ -2919,10 +2919,10 @@ TclWinVolumeRelativeNormalize(
 	     */
 
 	    absolutePath = Tcl_NewStringObj(path, 2);
-	    Tcl_AppendToObj(absolutePath, "/", 1);
+	    TclAppendLiteralToObj(absolutePath, "/");
 	}
 	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, TCL_INDEX_NONE);
+	Tcl_AppendToObj(absolutePath, path + 2, TCL_AUTO_LENGTH);
     }
     *useThisCwdPtr = useThisCwd;
     return absolutePath;

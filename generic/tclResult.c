@@ -314,7 +314,7 @@ Tcl_AppendResult(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_AUTO_LENGTH);
     }
     Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
@@ -361,7 +361,7 @@ Tcl_AppendElement(
     }
     bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes + length)) {
-	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
+	TclAppendLiteralToObj(iPtr->objResultPtr, " ");
     }
     Tcl_AppendObjToObj(iPtr->objResultPtr, listPtr);
     Tcl_DecrRefCount(listPtr);

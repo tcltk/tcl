@@ -240,7 +240,7 @@ WaitProcessStatus(
 		    "error waiting for process to exit: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("POSIX", -1);
+	    errorStrings[0] = TclNewString("POSIX");
 	    errorStrings[1] = Tcl_NewStringObj(Tcl_ErrnoId(), -1);
 	    errorStrings[2] = Tcl_NewStringObj(msg, -1);
 	    *errorObjPtr = Tcl_NewListObj(3, errorStrings);
@@ -269,11 +269,10 @@ WaitProcessStatus(
 	     */
 
 	    if (msgObjPtr) {
-		*msgObjPtr = Tcl_NewStringObj(
-			"child process exited abnormally", -1);
+		*msgObjPtr = TclNewString("child process exited abnormally");
 	    }
 	    if (errorObjPtr) {
-		errorStrings[0] = Tcl_NewStringObj("CHILDSTATUS", -1);
+		errorStrings[0] = TclNewString("CHILDSTATUS");
 		TclNewIntObj(errorStrings[1], resolvedPid);
 		TclNewIntObj(errorStrings[2], WEXITSTATUS(waitStatus));
 		*errorObjPtr = Tcl_NewListObj(3, errorStrings);
@@ -295,7 +294,7 @@ WaitProcessStatus(
 	    *msgObjPtr = Tcl_ObjPrintf("child killed: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("CHILDKILLED", -1);
+	    errorStrings[0] = TclNewString("CHILDKILLED");
 	    TclNewIntObj(errorStrings[1], resolvedPid);
 	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WTERMSIG(waitStatus)), -1);
 	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
@@ -317,7 +316,7 @@ WaitProcessStatus(
 	    *msgObjPtr = Tcl_ObjPrintf("child suspended: %s", msg);
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("CHILDSUSP", -1);
+	    errorStrings[0] = TclNewString("CHILDSUSP");
 	    TclNewIntObj(errorStrings[1], resolvedPid);
 	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WSTOPSIG(waitStatus)), -1);
 	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
@@ -335,14 +334,13 @@ WaitProcessStatus(
 	    *codePtr = waitStatus;
 	}
 	if (msgObjPtr) {
-	    *msgObjPtr = Tcl_NewStringObj(
-		    "child wait status didn't make sense\n", -1);
+	    *msgObjPtr = TclNewString("child wait status didn't make sense\n");
 	}
 	if (errorObjPtr) {
-	    errorStrings[0] = Tcl_NewStringObj("TCL", -1);
-	    errorStrings[1] = Tcl_NewStringObj("OPERATION", -1);
-	    errorStrings[2] = Tcl_NewStringObj("EXEC", -1);
-	    errorStrings[3] = Tcl_NewStringObj("ODDWAITRESULT", -1);
+	    errorStrings[0] = TclNewString("TCL");
+	    errorStrings[1] = TclNewString("OPERATION");
+	    errorStrings[2] = TclNewString("EXEC");
+	    errorStrings[3] = TclNewString("ODDWAITRESULT");
 	    TclNewIntObj(errorStrings[4], resolvedPid);
 	    *errorObjPtr = Tcl_NewListObj(5, errorStrings);
 	}

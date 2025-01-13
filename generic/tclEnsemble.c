@@ -346,7 +346,7 @@ InitEnsembleFromOptions(
 			    (Tcl_Namespace *) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendToObj(newCmd, "::", 2);
+			TclAppendLiteralToObj(newCmd, "::");
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -667,7 +667,7 @@ SetEnsembleConfigOptions(
 			    (Tcl_Namespace*) nsPtr);
 
 		    if (nsPtr->parentPtr) {
-			Tcl_AppendToObj(newCmd, "::", 2);
+			TclAppendLiteralToObj(newCmd, "::");
 		    }
 		    Tcl_AppendObjToObj(newCmd, listv[0]);
 		    Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
@@ -2013,7 +2013,7 @@ NsEnsembleImplementationCmdNR(
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i],
 		    TCL_AUTO_LENGTH);
-	    Tcl_AppendToObj(errorObj, ", ", 2);
+	    TclAppendLiteralToObj(errorObj, ", ");
 	}
 	Tcl_AppendPrintfToObj(errorObj, "or %s",
 		ensemblePtr->subcommandArrayPtr[i]);
@@ -2415,16 +2415,13 @@ EnsembleUnknownCallback(
 		    "unknown subcommand handler returned bad code: ");
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return",
-			TCL_AUTO_LENGTH);
+		TclAppendLiteralToObj(Tcl_GetObjResult(interp), "return");
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break",
-			TCL_AUTO_LENGTH);
+		TclAppendLiteralToObj(Tcl_GetObjResult(interp), "break");
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue",
-			TCL_AUTO_LENGTH);
+		TclAppendLiteralToObj(Tcl_GetObjResult(interp), "continue");
 		break;
 	    default:
 		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);

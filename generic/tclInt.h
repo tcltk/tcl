@@ -4897,6 +4897,20 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 
 /*
  *----------------------------------------------------------------
+ * Convenience macro for Tcl_AppendToObj and Tcl_NewStringObj.
+ * The ANSI C "prototypes" for these macros are:
+ *
+ * MODULE_SCOPE void	    TclAppendLiteralToObj(Tcl_DString *dsPtr,
+ *				const char *sLiteral);
+ * MODULE_SCOPE Tcl_Obj *   TclNewString(const char *sLiteral);
+ */
+#define TclAppendLiteralToObj(objPtr, sLiteral) \
+    Tcl_AppendToObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
+#define TclNewString(sLiteral) \
+    Tcl_NewStringObj((sLiteral), sizeof(sLiteral "") - 1)
+
+/*
+ *----------------------------------------------------------------
  * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace.
  */
 
@@ -5103,10 +5117,13 @@ typedef struct NRE_callback {
     Tcl_AppendStringsToObj((objPtr), __VA_ARGS__, (char *)NULL)
 
 /*
- * Wrapper for writing to the interpreter result.
+ * Wrapper for writing to the interpreter result and error info.
  */
 #define TclPrintfResult(interp, format, ...) \
     Tcl_SetObjResult((interp),						\
+	    Tcl_ObjPrintf((format) __VA_OPT__(,) __VA_ARGS__))
+#define TclPrintfErrorInfo(interp, format, ...) \
+    Tcl_AppendObjToErrorInfo((interp),					\
 	    Tcl_ObjPrintf((format) __VA_OPT__(,) __VA_ARGS__))
 
 #if NRE_USE_SMALL_ALLOC

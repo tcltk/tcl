@@ -7886,15 +7886,15 @@ Tcl_BadChannelOption(
 				 * generic options only. */
 {
     if (interp != NULL) {
-	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	Tcl_Size argc, i;
 	Tcl_DString ds;
 	Tcl_Obj *errObj;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, genericopt, -1);
+	TclDStringAppendLiteral(&ds,
+		"blocking buffering buffersize encoding eofchar profile "
+		"translation");
 	if (optionList && (*optionList)) {
 	    TclDStringAppendLiteral(&ds, " ");
 	    Tcl_DStringAppend(&ds, optionList, -1);
@@ -8033,7 +8033,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
 	Tcl_DStringAppendElement(dsPtr,
-	    Tcl_GetEncodingName(statePtr->encoding));
+		Tcl_GetEncodingName(statePtr->encoding));
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8047,7 +8047,7 @@ Tcl_GetChannelOption(
 	    snprintf(buf, sizeof(buf), "%c", statePtr->inEofChar);
 	}
 	if (len > 0) {
-		Tcl_DStringAppend(dsPtr, buf, -1);
+	    Tcl_DStringAppend(dsPtr, buf, -1);
 	    return TCL_OK;
 	}
 	Tcl_DStringAppendElement(dsPtr, buf);
@@ -9688,6 +9688,24 @@ MoveBytes(
     return TCL_OK;	/* Silence compiler warnings */
 }
 
+static inline Tcl_Obj *
+ErrorCopying(
+    Tcl_Interp *interp,
+    Tcl_Channel chan,
+    const char *direction,
+    Tcl_Obj *msg)
+{
+    const char *chanName = Tcl_GetChannelName(chan);
+    const char *details = (msg ? TclGetString(msg) : Tcl_PosixError(interp));
+
+    if (chanName) {
+	return Tcl_ObjPrintf("error %s \"%s\": %s",
+		direction, chanName, details);
+    } else {
+	return Tcl_ObjPrintf("error %s closed channel: %s", direction, details);
+    }
+}
+
 static int
 CopyData(
     CopyState *csPtr,		/* State of copy operation. */
@@ -9807,14 +9825,7 @@ CopyData(
 	if (size < 0) {
 	readError:
 	    if (interp) {
-		if (Tcl_GetChannelName(inChan)) {
-		    errObj = Tcl_ObjPrintf("error reading \"%s\": %s",
-			    Tcl_GetChannelName(inChan),
-			    (msg ? TclGetString(msg) : Tcl_PosixError(interp)));
-		} else {
-		    errObj = Tcl_ObjPrintf("error reading closed channel: %s",
-			    (msg ? TclGetString(msg) : Tcl_PosixError(interp)));
-		}
+		errObj = ErrorCopying(interp, inChan, "reading", msg);
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);
@@ -9882,14 +9893,7 @@ CopyData(
 	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
-		if (Tcl_GetChannelName(outChan)) {
-		    errObj = Tcl_ObjPrintf("error writing \"%s\": %s",
-			    Tcl_GetChannelName(outChan),
-			    (msg ? TclGetString(msg) : Tcl_PosixError(interp)));
-		} else {
-		    errObj = Tcl_ObjPrintf("error writing closed channel: %s",
-			    (msg ? TclGetString(msg) : Tcl_PosixError(interp)));
-		}
+		errObj = ErrorCopying(interp, outChan, "writing", msg);
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);

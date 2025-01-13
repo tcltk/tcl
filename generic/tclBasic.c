@@ -3558,14 +3558,14 @@ Tcl_GetCommandFullName(
 
     if ((cmdPtr != NULL) && TclRoutineHasName(cmdPtr)) {
 	if (cmdPtr->nsPtr != NULL) {
-	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, TCL_AUTO_LENGTH);
 	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
-		Tcl_AppendToObj(objPtr, "::", 2);
+		TclAppendLiteralToObj(objPtr, "::");
 	    }
 	}
 	if (cmdPtr->hPtr != NULL) {
 	    name = (char *)Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
-	    Tcl_AppendToObj(objPtr, name, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(objPtr, name, TCL_AUTO_LENGTH);
 	}
     }
 }
@@ -4986,7 +4986,7 @@ TEOV_RunEnterTraces(
 
 	    TclNewLiteralStringObj(info, "\n    (enter trace on \"");
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
-	    Tcl_AppendToObj(info, "\")", 2);
+	    TclAppendLiteralToObj(info, "\")");
 	    Tcl_AppendObjToErrorInfo(interp, info);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
@@ -5038,7 +5038,7 @@ TEOV_RunLeaveTraces(
 
 	    TclNewLiteralStringObj(info, "\n    (leave trace on \"");
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
-	    Tcl_AppendToObj(info, "\")", 2);
+	    TclAppendLiteralToObj(info, "\")");
 	    Tcl_AppendObjToErrorInfo(interp, info);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
@@ -5381,8 +5381,9 @@ TclEvalEx(
 			 * Attempt to expand a non-list.
 			 */
 
-			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)", objectsUsed));
+			TclPrintfErrorInfo(interp,
+				"\n    (expanding word %" TCL_SIZE_MODIFIER "d)",
+				objectsUsed);
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
@@ -9266,7 +9267,7 @@ CoroTypeObjCmd(
 
     corPtr = (CoroutineData *)cmdPtr->objClientData;
     if (!COR_IS_SUSPENDED(corPtr)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("active", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, TclNewString("active"));
 	return TCL_OK;
     }
 
@@ -9277,10 +9278,10 @@ CoroTypeObjCmd(
 
     switch (corPtr->nargs) {
     case COROUTINE_ARGUMENTS_SINGLE_OPTIONAL:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("yield", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, TclNewString("yield"));
 	return TCL_OK;
     case COROUTINE_ARGUMENTS_ARBITRARY:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, TclNewString("yieldto"));
 	return TCL_OK;
     default:
 	TclPrintfResult(interp, "unknown coroutine type");
@@ -9477,11 +9478,9 @@ InjectHandler(
 	 */
 
 	if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
-	    Tcl_ListObjAppendElement(NULL, listPtr,
-		    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
+	    Tcl_ListObjAppendElement(NULL, listPtr, TclNewString("yield"));
 	} else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
-	    Tcl_ListObjAppendElement(NULL, listPtr,
-		    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
+	    Tcl_ListObjAppendElement(NULL, listPtr, TclNewString("yieldto"));
 	} else {
 	    /*
 	     * I don't think this is reachable...

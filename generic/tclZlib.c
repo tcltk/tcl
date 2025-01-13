@@ -2561,9 +2561,7 @@ ZlibPushSubcmd(
     return TCL_OK;
 
   genericOptionError:
-    Tcl_AddErrorInfo(interp, "\n    (in ");
-    Tcl_AddErrorInfo(interp, pushOptions[option]);
-    Tcl_AddErrorInfo(interp, " option)");
+    TclPrintfErrorInfo(interp, "\n    (in %s option)", pushOptions[option]);
     return TCL_ERROR;
 }
 
@@ -3262,8 +3260,7 @@ ZlibTransformOutput(
     }
 
     errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
+    Tcl_ListObjAppendElement(NULL, errObj, TclNewString("-errorcode"));
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, chanDataPtr->outStream.adler));
     Tcl_ListObjAppendElement(NULL, errObj,
@@ -3511,11 +3508,7 @@ ZlibTransformGetOption(
 	    }
 	} else {
 	    if (chanDataPtr->compDictObj) {
-		Tcl_Size length;
-		const char *str = TclGetStringFromObj(chanDataPtr->compDictObj,
-			&length);
-
-		Tcl_DStringAppend(dsPtr, str, length);
+		TclDStringAppendObj(dsPtr, chanDataPtr->compDictObj);
 	    }
 	    return TCL_OK;
 	}
@@ -3962,8 +3955,7 @@ ResultDecompress(
 
   handleError:
     errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
+    Tcl_ListObjAppendElement(NULL, errObj, TclNewString("-errorcode"));
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, chanDataPtr->inStream.adler));
     Tcl_ListObjAppendElement(NULL, errObj,

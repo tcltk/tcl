@@ -784,23 +784,23 @@ ParseExpr(
 			if (isdigit(UCHAR(*stop)) || (stop == start + 1)) {
 			    switch (start[1]) {
 			    case 'b':
-				Tcl_AppendToObj(post,
-					" (invalid binary number?)", -1);
+				TclAppendLiteralToObj(post,
+					" (invalid binary number?)");
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "BINARY";
 				break;
 			    case 'o':
-				Tcl_AppendToObj(post,
-					" (invalid octal number?)", -1);
+				TclAppendLiteralToObj(post,
+					" (invalid octal number?)");
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "OCTAL";
 				break;
 			    default:
 				if (isdigit(UCHAR(start[1]))) {
-				    Tcl_AppendToObj(post,
-					    " (invalid octal number?)", -1);
+				    TclAppendLiteralToObj(post,
+					    " (invalid octal number?)");
 				    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				    errCode = "BADNUMBER";
 				    subErrCode = "OCTAL";
@@ -1449,7 +1449,7 @@ ParseExpr(
 	 */
 
 	if (post != NULL) {
-	    Tcl_AppendToObj(msg, ";\n", -1);
+	    TclAppendLiteralToObj(msg, ";\n");
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
@@ -1460,10 +1460,9 @@ ParseExpr(
 	 */
 
 	numBytes = parsePtr->end - parsePtr->string;
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (parsing expression \"%.*s%s\")",
+	TclPrintfErrorInfo(interp, "\n    (parsing expression \"%.*s%s\")",
 		(numBytes < limit) ? (int)numBytes : (int)limit - 3,
-		parsePtr->string, (numBytes < limit) ? "" : "..."));
+		parsePtr->string, (numBytes < limit) ? "" : "...");
 	if (errCode) {
 	    TclSetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode, subErrCode);
 	}

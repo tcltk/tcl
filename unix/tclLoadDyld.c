@@ -164,7 +164,7 @@ TclpDlopen(
 
 	TclNewObj(errObj);
 	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(errObj, errMsg, TCL_AUTO_LENGTH);
 	}
 	Tcl_SetObjResult(interp, errObj);
 	result = TCL_ERROR;

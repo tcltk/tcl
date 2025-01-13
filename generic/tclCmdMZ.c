@@ -811,9 +811,9 @@ Tcl_RegsubObjCmd(
 	    Tcl_Free(args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    TclPrintfErrorInfo(interp,
 			    "\n    (%s substitution computation script)",
-			    options[REGSUB_COMMAND]));
+			    options[REGSUB_COMMAND]);
 		}
 		goto done;
 	    }
@@ -2928,7 +2928,7 @@ StringLowerCmd(
 	length2 = Tcl_UtfToLower(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3013,7 +3013,7 @@ StringUpperCmd(
 	length2 = Tcl_UtfToUpper(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3098,7 +3098,7 @@ StringTitleCmd(
 	length2 = Tcl_UtfToTitle(string2);
 	Tcl_SetObjLength(resultPtr, length2 + (start - string1));
 
-	Tcl_AppendToObj(resultPtr, end, -1);
+	Tcl_AppendToObj(resultPtr, end, TCL_AUTO_LENGTH);
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
@@ -3615,10 +3615,10 @@ TclNRSwitchObjCmd(
 	if (splitObjs) {
 	    for (i=0 ; i<objc ; i+=2) {
 		if (TclGetString(objv[i])[0] == '#') {
-		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		    TclAppendLiteralToObj(Tcl_GetObjResult(interp),
 			    ", this may be due to a comment incorrectly"
 			    " placed outside of a switch body - see the"
-			    " \"switch\" documentation", -1);
+			    " \"switch\" documentation");
 		    TclSetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			    "BADARM", "COMMENT?");
 		    break;
@@ -3919,10 +3919,9 @@ SwitchPostProc(
 	int limit = 50;
 	int overflow = (patternLength > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%.*s%s\" arm line %d)",
+	TclPrintfErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
 		(int) (overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
     TclStackFree(interp, ctxPtr);
     return result;
@@ -4875,9 +4874,8 @@ TryPostBody(
      */
 
     if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
 	if (handlersObj != NULL) {
 	    Tcl_DecrRefCount(handlersObj);
 	}
@@ -4890,9 +4888,8 @@ TryPostBody(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
     }
     resultObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(resultObj);

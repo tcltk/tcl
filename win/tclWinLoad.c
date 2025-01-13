@@ -138,32 +138,35 @@ TclpDlopen(
 	    case ERROR_DLL_NOT_FOUND:
 		TclSetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND");
 	    notFoundMsg:
-		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" could not be found in library path", TCL_INDEX_NONE);
+		TclAppendLiteralToObj(errMsg,
+			"this library or a dependent library could not be "
+			"found in library path");
 		break;
 	    case ERROR_PROC_NOT_FOUND:
 		TclSetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND");
-		Tcl_AppendToObj(errMsg, "A function specified in the import"
-			" table could not be resolved by the system. Windows"
-			" is not telling which one, I'm sorry.", TCL_INDEX_NONE);
+		TclAppendLiteralToObj(errMsg,
+			"A function specified in the import table could "
+			"not be resolved by the system. Windows is not "
+			"telling which one, I'm sorry.");
 		break;
 	    case ERROR_INVALID_DLL:
 		TclSetErrorCode(interp, "WIN_LOAD", "INVALID_DLL");
-		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" is damaged", TCL_INDEX_NONE);
+		TclAppendLiteralToObj(errMsg,
+			"this library or a dependent library is damaged");
 		break;
 	    case ERROR_DLL_INIT_FAILED:
 		TclSetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED");
-		Tcl_AppendToObj(errMsg, "the library initialization"
-			" routine failed", TCL_INDEX_NONE);
+		TclAppendLiteralToObj(errMsg,
+			"the library initialization routine failed");
 		break;
 	    case ERROR_BAD_EXE_FORMAT:
 		TclSetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT");
-		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
+		TclAppendLiteralToObj(errMsg,
+			"Bad exe format. Possibly a 32/64-bit mismatch.");
 		break;
 	    default:
 		Tcl_WinConvertError(lastError);
-		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_INDEX_NONE);
+		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_AUTO_LENGTH);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
 	}
@@ -310,7 +313,7 @@ TclpTempFileNameForLibrary(
 	Tcl_DecrRefCount(fileName);
 	return NULL;
     }
-    Tcl_AppendToObj(fileName, "/", 1);
+    TclAppendLiteralToObj(fileName, "/");
     Tcl_AppendObjToObj(fileName, tail);
     return fileName;
 }

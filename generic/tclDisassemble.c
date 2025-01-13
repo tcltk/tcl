@@ -197,7 +197,7 @@ TclPrintObject(
 				 * representation should be printed. */
     Tcl_Size maxChars)		/* Maximum number of chars to print. */
 {
-    char *bytes;
+    const char *bytes;
     Tcl_Size length;
 
     if (objPtr) {
@@ -287,7 +287,7 @@ DisassembleByteCodeObj(
     Tcl_AppendPrintfToObj(bufferObj,
 	    "ByteCode %p, refCt %" TCL_SIZE_MODIFIER "d, epoch %" TCL_SIZE_MODIFIER "d, interp %p (epoch %" TCL_SIZE_MODIFIER "d)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
-    Tcl_AppendToObj(bufferObj, "  Source ", -1);
+    TclAppendLiteralToObj(bufferObj, "  Source ");
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
     GetLocationInformation(codePtr->procPtr, &fileObj, &line);
@@ -346,7 +346,7 @@ DisassembleByteCodeObj(
 			(localPtr->flags & VAR_TEMPORARY) ? ", temp" : "",
 			(localPtr->flags & VAR_RESOLVED) ? ", resolved" : "");
 		if (TclIsVarTemporary(localPtr)) {
-		    Tcl_AppendToObj(bufferObj, "\n", -1);
+		    TclAppendLiteralToObj(bufferObj, "\n");
 		} else {
 		    Tcl_AppendPrintfToObj(bufferObj, ", \"%s\"\n",
 			    localPtr->name);
@@ -396,7 +396,7 @@ DisassembleByteCodeObj(
     if (numCmds == 0) {
 	pc = codeStart;
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    TclAppendLiteralToObj(bufferObj, "    ");
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 	return bufferObj;
@@ -458,7 +458,7 @@ DisassembleByteCodeObj(
 		srcOffset, (srcOffset + srcLen - 1));
     }
     if (numCmds > 0) {
-	Tcl_AppendToObj(bufferObj, "\n", -1);
+	TclAppendLiteralToObj(bufferObj, "\n");
     }
 
     /*
@@ -507,14 +507,14 @@ DisassembleByteCodeObj(
 	 */
 
 	while ((pc-codeStart) < codeOffset) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    TclAppendLiteralToObj(bufferObj, "    ");
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
 	Tcl_AppendPrintfToObj(bufferObj, "  Command %" TCL_SIZE_MODIFIER "d: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
-	Tcl_AppendToObj(bufferObj, "\n", -1);
+	TclAppendLiteralToObj(bufferObj, "\n");
     }
     if (pc < codeLimit) {
 	/*
@@ -522,7 +522,7 @@ DisassembleByteCodeObj(
 	 */
 
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", -1);
+	    TclAppendLiteralToObj(bufferObj, "    ");
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
     }
@@ -661,7 +661,7 @@ FormatInstruction(
 	const char *bytes;
 	Tcl_Size length;
 
-	Tcl_AppendToObj(bufferObj, "\t# ", -1);
+	TclAppendLiteralToObj(bufferObj, "\t# ");
 	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
@@ -670,12 +670,12 @@ FormatInstruction(
 	    PrintSourceToObj(bufferObj, suffixSrc, 40);
 	}
     }
-    Tcl_AppendToObj(bufferObj, "\n", -1);
+    TclAppendLiteralToObj(bufferObj, "\n");
     if (auxPtr && auxPtr->type->printProc) {
-	Tcl_AppendToObj(bufferObj, "\t\t[", -1);
+	TclAppendLiteralToObj(bufferObj, "\t\t[");
 	auxPtr->type->printProc(auxPtr->clientData, bufferObj, codePtr,
 		pcOffset);
-	Tcl_AppendToObj(bufferObj, "]\n", -1);
+	TclAppendLiteralToObj(bufferObj, "]\n");
     }
     return numBytes;
 }
@@ -873,11 +873,11 @@ PrintSourceToObj(
     Tcl_Size i = 0, len;
 
     if (stringPtr == NULL) {
-	Tcl_AppendToObj(appendObj, "\"\"", -1);
+	TclAppendLiteralToObj(appendObj, "\"\"");
 	return;
     }
 
-    Tcl_AppendToObj(appendObj, "\"", -1);
+    TclAppendLiteralToObj(appendObj, "\"");
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
 	int ucs4;
@@ -885,27 +885,27 @@ PrintSourceToObj(
 	len = TclUtfToUniChar(p, &ucs4);
 	switch (ucs4) {
 	case '"':
-	    Tcl_AppendToObj(appendObj, "\\\"", -1);
+	    TclAppendLiteralToObj(appendObj, "\\\"");
 	    i += 2;
 	    continue;
 	case '\f':
-	    Tcl_AppendToObj(appendObj, "\\f", -1);
+	    TclAppendLiteralToObj(appendObj, "\\f");
 	    i += 2;
 	    continue;
 	case '\n':
-	    Tcl_AppendToObj(appendObj, "\\n", -1);
+	    TclAppendLiteralToObj(appendObj, "\\n");
 	    i += 2;
 	    continue;
 	case '\r':
-	    Tcl_AppendToObj(appendObj, "\\r", -1);
+	    TclAppendLiteralToObj(appendObj, "\\r");
 	    i += 2;
 	    continue;
 	case '\t':
-	    Tcl_AppendToObj(appendObj, "\\t", -1);
+	    TclAppendLiteralToObj(appendObj, "\\t");
 	    i += 2;
 	    continue;
 	case '\v':
-	    Tcl_AppendToObj(appendObj, "\\v", -1);
+	    TclAppendLiteralToObj(appendObj, "\\v");
 	    i += 2;
 	    continue;
 	default:
@@ -923,9 +923,9 @@ PrintSourceToObj(
 	}
     }
     if (*p != '\0') {
-	Tcl_AppendToObj(appendObj, "...", -1);
+	TclAppendLiteralToObj(appendObj, "...");
     }
-    Tcl_AppendToObj(appendObj, "\"", -1);
+    TclAppendLiteralToObj(appendObj, "\"");
 }
 
 /*
@@ -979,27 +979,27 @@ DisassembleByteCodeAsDicts(
 	    TclNewObj(descriptor[0]);
 	    if (!(localPtr->flags & (VAR_ARRAY|VAR_LINK))) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("scalar", -1));
+			TclNewString("scalar"));
 	    }
 	    if (localPtr->flags & VAR_ARRAY) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("array", -1));
+			TclNewString("array"));
 	    }
 	    if (localPtr->flags & VAR_LINK) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("link", -1));
+			TclNewString("link"));
 	    }
 	    if (localPtr->flags & VAR_ARGUMENT) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("arg", -1));
+			TclNewString("arg"));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("temp", -1));
+			TclNewString("temp"));
 	    }
 	    if (localPtr->flags & VAR_RESOLVED) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("resolved", -1));
+			TclNewString("resolved"));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, variables,
@@ -1088,8 +1088,7 @@ DisassembleByteCodeAsDicts(
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".%d", val));
 		} else if (val == -2) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
-			    ".end", -1));
+		    Tcl_ListObjAppendElement(NULL, inst, TclNewString(".end"));
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".end-%d", -2-val));

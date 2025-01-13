@@ -190,7 +190,7 @@ TclDumpMemoryInfo(
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
-	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
+	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, TCL_AUTO_LENGTH);
     }
     return 1;
 }

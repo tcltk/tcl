@@ -342,7 +342,7 @@ Tcl_MainEx(
     } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-	appName = Tcl_NewStringObj("tclsh", -1);
+	appName = TclNewString("tclsh");
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
@@ -501,7 +501,7 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
-	    Tcl_AppendToObj(is.commandPtr, "\n", 1);
+	    TclAppendLiteralToObj(is.commandPtr, "\n");
 	    if (!TclObjCommandComplete(is.commandPtr)) {
 		is.prompt = PROMPT_CONTINUE;
 		continue;
@@ -773,7 +773,7 @@ StdinProc(
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
-    Tcl_AppendToObj(commandPtr, "\n", 1);
+    TclAppendLiteralToObj(commandPtr, "\n");
     if (!TclObjCommandComplete(commandPtr)) {
 	isPtr->prompt = PROMPT_CONTINUE;
 	goto prompt;
@@ -884,8 +884,7 @@ Prompt(
     } else {
 	code = Tcl_EvalObjEx(interp, promptCmdPtr, TCL_EVAL_GLOBAL);
 	if (code != TCL_OK) {
-	    Tcl_AddErrorInfo(interp,
-		    "\n    (script that generates prompt)");
+	    Tcl_AddErrorInfo(interp, "\n    (script that generates prompt)");
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan != NULL) {
 		if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {

@@ -839,7 +839,7 @@ TclpNativeJoinPath(
 	 */
 
 	if (length > 0 && (start[length-1] != '/')) {
-	    Tcl_AppendToObj(prefix, "/", 1);
+	    TclAppendLiteralToObj(prefix, "/");
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
@@ -875,7 +875,7 @@ TclpNativeJoinPath(
 
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
-	    Tcl_AppendToObj(prefix, "/", 1);
+	    TclAppendLiteralToObj(prefix, "/");
 	    (void)TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
@@ -931,10 +931,9 @@ Tcl_JoinPath(
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    Tcl_Size i, len;
+    Tcl_Size i;
     Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
-    const char *resultStr;
 
     /*
      * Build the list of paths.
@@ -959,8 +958,7 @@ Tcl_JoinPath(
      * Store the result.
      */
 
-    resultStr = TclGetStringFromObj(resultObj, &len);
-    Tcl_DStringAppend(resultPtr, resultStr, len);
+    TclDStringAppendObj(resultPtr, resultObj);
     Tcl_DecrRefCount(resultObj);
 
     /*
@@ -1307,9 +1305,9 @@ Tcl_GlobObjCmd(
 
 		const char *temp = TclGetString(pathOrDir);
 		if (strpbrk(temp, "\\/") == NULL) {
-		    Tcl_AppendToObj(pathOrDir, last-1, 1);
+		    Tcl_AppendToObj(pathOrDir, last - 1, 1);
 		} else if (!strcmp(temp, "//zipfs:")) {
-		    Tcl_AppendToObj(pathOrDir, "/", 1);
+		    TclAppendLiteralToObj(pathOrDir, "/");
 		}
 	    }
 
@@ -2249,7 +2247,7 @@ DoGlob(
 		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
-		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		    TclAppendLiteralToObj(joinedPtr, "/");
 		}
 	    }
 	    Tcl_AppendToObj(joinedPtr, Tcl_DStringValue(&append),
@@ -2287,7 +2285,7 @@ DoGlob(
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
-		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		    TclAppendLiteralToObj(joinedPtr, "/");
 		}
 	    }
 	}

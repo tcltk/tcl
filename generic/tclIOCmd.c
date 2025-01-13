@@ -437,7 +437,7 @@ Tcl_ReadObjCmd(
 	Tcl_Obj *returnOptsPtr = NULL;
 	if (TclChannelGetBlockingMode(chan)) {
 	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+	    Tcl_DictObjPut(NULL, returnOptsPtr, TclNewString("-data"),
 		    resultPtr);
 	} else {
 	    Tcl_DecrRefCount(resultPtr);
@@ -1148,7 +1148,7 @@ Tcl_OpenObjCmd(
 		Tcl_Obj *permObj;
 
 		TclNewLiteralStringObj(permObj, "0o");
-		Tcl_AppendToObj(permObj, permString+scanned+1, -1);
+		Tcl_AppendToObj(permObj, permString+scanned+1, TCL_AUTO_LENGTH);
 		code = TclGetIntFromObj(NULL, permObj, &prot);
 		Tcl_DecrRefCount(permObj);
 	    }

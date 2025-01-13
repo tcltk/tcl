@@ -2777,8 +2777,7 @@ ChildDebugCmd(
     iPtr = (Interp *) childInterp;
     if (objc == 0) {
 	TclNewObj(resultPtr);
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewStringObj("-frame", -1));
+	Tcl_ListObjAppendElement(NULL, resultPtr, TclNewString("-frame"));
 	Tcl_ListObjAppendElement(NULL, resultPtr,
 		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
 	Tcl_SetObjResult(interp, resultPtr);

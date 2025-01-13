@@ -2085,7 +2085,7 @@ ZipFSCatalogFilesystem(
 	    Tcl_DString ds2;
 
 	    Tcl_DStringInit(&ds2);
-	    Tcl_DStringAppend(&ds2, "assets/.root/", -1);
+	    TclDStringAppendLiteral(&ds2, "assets/.root/");
 	    Tcl_DStringAppend(&ds2, path, -1);
 	    if (ZipFSLookup(Tcl_DStringValue(&ds2))) {
 		/* should not happen but skip it anyway */
@@ -2093,8 +2093,7 @@ ZipFSCatalogFilesystem(
 		goto nextent;
 	    }
 	    Tcl_DStringSetLength(&ds, 0);
-	    Tcl_DStringAppend(&ds, Tcl_DStringValue(&ds2),
-		    Tcl_DStringLength(&ds2));
+	    TclDStringAppendDString(&ds, &ds2);
 	    path = Tcl_DStringValue(&ds);
 	    Tcl_DStringFree(&ds2);
 #else /* !ANDROID */
@@ -2898,9 +2897,8 @@ RandomChar(
     return TCL_OK;
 
   failed:
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (evaluating PRNG step %d for password encoding)",
-	    step));
+    TclPrintfErrorInfo(interp,
+	    "\n    (evaluating PRNG step %d for password encoding)", step);
     return TCL_ERROR;
 }
 
@@ -3319,7 +3317,7 @@ ZipFSFind(
     Tcl_Obj *cmd[2];
     int result;
 
-    cmd[0] = Tcl_NewStringObj("::tcl::zipfs::find", -1);
+    cmd[0] = TclNewString("::tcl::zipfs::find");
     cmd[1] = dirRoot;
     Tcl_IncrRefCount(cmd[0]);
     result = Tcl_EvalObjv(interp, 2, cmd, 0);
@@ -5553,7 +5551,7 @@ static Tcl_Obj *
 ZipFSFilesystemSeparatorProc(
     TCL_UNUSED(Tcl_Obj *) /*pathPtr*/)
 {
-    return Tcl_NewStringObj("/", -1);
+    return TclNewString("/");
 }
 
 /*
@@ -5671,7 +5669,7 @@ ZipFSMatchInDirectoryProc(
 
 	strip = len + 1;
 	Tcl_DStringAppend(&dsPref, prefix, prefixLen);
-	Tcl_DStringAppend(&dsPref, "/", 1);
+	TclDStringAppendLiteral(&dsPref, "/");
 	prefix = Tcl_DStringValue(&dsPref);
 	prefixBuf = &dsPref;
     }
@@ -6096,14 +6094,14 @@ ZipFSFileAttrsGetProc(
 	    *objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
 		    z->zipFilePtr->mountPointLen);
 	} else {
-	    *objPtrRef = Tcl_NewStringObj("", 0);
+	    *objPtrRef = TclNewString("");
 	}
 	break;
     case ZIP_ATTR_ARCHIVE:
 	*objPtrRef = Tcl_NewStringObj(z ? z->zipFilePtr->name : "", -1);
 	break;
     case ZIP_ATTR_PERMISSIONS:
-	*objPtrRef = Tcl_NewStringObj("0o555", -1);
+	*objPtrRef = TclNewString("0o555");
 	break;
     case ZIP_ATTR_CRC:
 	TclNewIntObj(*objPtrRef, z ? z->crc32 : 0);
@@ -6164,7 +6162,7 @@ static Tcl_Obj *
 ZipFSFilesystemPathTypeProc(
     TCL_UNUSED(Tcl_Obj *) /*pathPtr*/)
 {
-    return Tcl_NewStringObj("zip", -1);
+    return TclNewString("zip");
 }
 
 /*

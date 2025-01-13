@@ -895,9 +895,9 @@ StatOpenFile(
      * Anything else and we definitely couldn't have got here anyway.
      */
     if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	STORE_ELEM("type", Tcl_NewStringObj("directory", TCL_INDEX_NONE));
+	STORE_ELEM("type", TclNewString("directory"));
     } else {
-	STORE_ELEM("type", Tcl_NewStringObj("file", TCL_INDEX_NONE));
+	STORE_ELEM("type", TclNewString("file"));
     }
 #undef STORE_ELEM
 

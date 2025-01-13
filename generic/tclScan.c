@@ -342,9 +342,8 @@ ValidateFormat(
 	gotSequential = 1;
 	if (gotXpg) {
 	mixedXPG:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
-		    -1));
+	    Tcl_SetObjResult(interp, TclNewString(
+		    "cannot mix \"%\" and \"%n$\" conversion specifiers"));
 	    TclSetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES");
 	    goto error;
 	}
@@ -415,9 +414,8 @@ ValidateFormat(
 	switch (ch) {
 	case 'c':
 	    if (flags & SCAN_WIDTH) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"field width may not be specified in %c conversion",
-			-1));
+		Tcl_SetObjResult(interp, TclNewString(
+			"field width may not be specified in %c conversion"));
 		TclSetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH");
 		goto error;
 	    }
@@ -427,10 +425,10 @@ ValidateFormat(
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		errorMsg = Tcl_NewStringObj(
-			"field size modifier may not be specified in %", -1);
-		Tcl_AppendToObj(errorMsg, buf, -1);
-		Tcl_AppendToObj(errorMsg, " conversion", -1);
+		errorMsg = TclNewString(
+			"field size modifier may not be specified in %");
+		Tcl_AppendToObj(errorMsg, buf, TCL_AUTO_LENGTH);
+		TclAppendLiteralToObj(errorMsg, " conversion");
 		Tcl_SetObjResult(interp, errorMsg);
 		TclSetErrorCode(interp, "TCL", "FORMAT", "BADSIZE");
 		goto error;
@@ -487,10 +485,9 @@ ValidateFormat(
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	    errorMsg = Tcl_NewStringObj(
-		    "bad scan conversion character \"", -1);
-	    Tcl_AppendToObj(errorMsg, buf, -1);
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    errorMsg = TclNewString("bad scan conversion character \"");
+	    Tcl_AppendToObj(errorMsg, buf, TCL_AUTO_LENGTH);
+	    TclAppendLiteralToObj(errorMsg, "\"");
 	    Tcl_SetObjResult(interp, errorMsg);
 	    TclSetErrorCode(interp, "TCL", "FORMAT", "BADTYPE");
 	    goto error;
@@ -536,9 +533,8 @@ ValidateFormat(
     }
     for (i = 0; i < numVars; i++) {
 	if (nassign[i] > 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "variable is assigned by multiple \"%n$\" conversion specifiers",
-		    -1));
+	    Tcl_SetObjResult(interp, TclNewString(
+		    "variable is assigned by multiple \"%n$\" conversion specifiers"));
 	    TclSetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED");
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
@@ -559,8 +555,8 @@ ValidateFormat(
 
   badIndex:
     if (gotXpg) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"%n$\" argument index out of range", -1));
+	Tcl_SetObjResult(interp, TclNewString(
+		"\"%n$\" argument index out of range"));
 	TclSetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE");
     } else {
 	TclPrintfResult(interp,

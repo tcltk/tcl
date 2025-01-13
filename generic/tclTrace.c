@@ -2671,12 +2671,11 @@ TclCallVarTraces(
 		Tcl_SetObjResult((Tcl_Interp *)iPtr,
 			Tcl_NewStringObj(result, -1));
 	    }
-	    Tcl_AddErrorInfo((Tcl_Interp *)iPtr, "");
 
-	    Tcl_AppendObjToErrorInfo((Tcl_Interp *)iPtr, Tcl_ObjPrintf(
+	    TclPrintfErrorInfo((Tcl_Interp *)iPtr,
 		    "\n    (%s trace on \"%s%s%s%s\")", type, part1,
 		    (element ? "(" : ""), (element ? element : ""),
-		    (element ? ")" : "") ));
+		    (element ? ")" : "") );
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, element, verb,
 			TclGetString((Tcl_Obj *) result));

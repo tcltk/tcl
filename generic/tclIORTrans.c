@@ -2008,8 +2008,8 @@ InvokeTclMethod(
 		Tcl_DecrRefCount(cmd);
 		result = TCL_ERROR;
 	    }
-	    Tcl_AppendObjToErrorInfo(rtPtr->interp, Tcl_ObjPrintf(
-		    "\n    (chan handler subcommand \"%s\")", method));
+	    TclPrintfErrorInfo(rtPtr->interp,
+		    "\n    (chan handler subcommand \"%s\")", method);
 	    resObj = MarshallError(rtPtr->interp);
 	}
 	Tcl_IncrRefCount(resObj);

@@ -3179,9 +3179,8 @@ ArrayForLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"array for\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+	    TclPrintfErrorInfo(interp, "\n    (\"array for\" body line %d)",
+		    Tcl_GetErrorLine(interp));
 	}
 	goto arrayfordone;
     }
@@ -4815,9 +4814,9 @@ Tcl_GetVariableFullName(
 
     nsPtr = TclGetVarNsPtr(varPtr);
     if (nsPtr) {
-	Tcl_AppendToObj(objPtr, nsPtr->fullName, -1);
+	Tcl_AppendToObj(objPtr, nsPtr->fullName, TCL_AUTO_LENGTH);
 	if (nsPtr != iPtr->globalNsPtr) {
-	    Tcl_AppendToObj(objPtr, "::", 2);
+	    TclAppendLiteralToObj(objPtr, "::");
 	}
     }
     if (TclIsVarInHash(varPtr)) {

@@ -405,7 +405,7 @@ Tcl_GetEncodingNameFromEnvironment(
 
     Tcl_DStringInit(bufPtr);
     if (acp == CP_UTF8) {
-	Tcl_DStringAppend(bufPtr, "utf-8", 5);
+	TclDStringAppendLiteral(bufPtr, "utf-8");
     } else {
 	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
 	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",

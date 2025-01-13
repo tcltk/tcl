@@ -792,8 +792,6 @@ TclNRAssembleObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
-    Tcl_Obj* backtrace;		/* Object where extra error information is
-				 * constructed. */
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
@@ -811,12 +809,8 @@ TclNRAssembleObjCmd(
      */
 
     if (codePtr == NULL) {
-	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AppendObjToErrorInfo(interp, objv[0]);
-	Tcl_AddErrorInfo(interp, "\" body, line ");
-	TclNewIntObj(backtrace, Tcl_GetErrorLine(interp));
-	Tcl_AppendObjToErrorInfo(interp, backtrace);
-	Tcl_AddErrorInfo(interp, ")");
+	TclPrintfErrorInfo(interp, "\n    (\"%s\" body, line %d)",
+		TclGetString(objv[0]), Tcl_GetErrorLine(interp));
 	return TCL_ERROR;
     }
 
@@ -981,10 +975,9 @@ TclCompileAssembleCmd(
 
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%.*s\" body, line %d)",
+	TclPrintfErrorInfo(interp, "\n    (\"%.*s\" body, line %d)",
 		(int)parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
-		Tcl_GetErrorLine(interp)));
+		Tcl_GetErrorLine(interp));
 	envPtr->numCommands = numCommands;
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
@@ -4246,20 +4239,16 @@ AddBasicBlockRangeToErrorInfo(
 				/* Compilation environment */
     Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
 				/* Tcl interpreter */
-    Tcl_Obj* lineNo;		/* Line number in the source */
 
-    Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    TclNewIntObj(lineNo, bbPtr->startLine);
-    Tcl_IncrRefCount(lineNo);
-    Tcl_AppendObjToErrorInfo(interp, lineNo);
-    Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
-	TclSetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AppendObjToErrorInfo(interp, lineNo);
+	TclPrintfErrorInfo(interp,
+		"\n    in assembly code between lines %d and %d",
+		bbPtr->startLine, bbPtr->successor1->startLine);
     } else {
-	Tcl_AddErrorInfo(interp, "end of assembly code");
+	TclPrintfErrorInfo(interp,
+		"\n    in assembly code between lines %d and end of assembly code",
+		bbPtr->startLine);
     }
-    Tcl_DecrRefCount(lineNo);
 }
 
 /*

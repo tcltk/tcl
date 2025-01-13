@@ -212,8 +212,8 @@ CatchObjCmdCallback(
      */
 
     if (rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (\"catch\" body line %d)",
+		Tcl_GetErrorLine(interp));
 	return TCL_ERROR;
     }
 
@@ -900,8 +900,8 @@ EvalCmdErrMsg(
     int result)
 {
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (\"eval\" body line %d)",
+		Tcl_GetErrorLine(interp));
     }
     return result;
 }
@@ -2342,10 +2342,8 @@ StoreStatData(
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue)                  \
-	Tcl_DictObjPut(NULL, result,            \
-	    Tcl_NewStringObj((key), -1),        \
-	    (objValue));
+#define DOBJPUT(key, objValue) \
+	Tcl_DictObjPut(NULL, result, TclNewString(key), (objValue))
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
 	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
@@ -2590,8 +2588,7 @@ TclNRForIterCallback(
 	Tcl_ResetResult(interp);
 	break;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp,
-		Tcl_ObjPrintf(iterPtr->msg, Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, iterPtr->msg, Tcl_GetErrorLine(interp));
     }
     TclSmallFreeEx(interp, iterPtr);
     return result;
@@ -2918,10 +2915,9 @@ ForeachLoopStep(
 	result = TCL_OK;
 	goto finish;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)",
+	TclPrintfErrorInfo(interp, "\n    (\"%s\" body line %d)",
 		(statePtr->resultList != NULL ? "lmap" : "foreach"),
-		Tcl_GetErrorLine(interp)));
+		Tcl_GetErrorLine(interp));
     default:
 	goto done;
     }
@@ -2981,10 +2977,10 @@ ForeachAssignments(
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
 		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
-			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			TclPrintfErrorInfo(interp,
 				"\n    (setting %s loop variable \"%s\")",
 				(statePtr->resultList != NULL ? "lmap" : "foreach"),
-				TclGetString(statePtr->varvList[i][v])));
+				TclGetString(statePtr->varvList[i][v]));
 			return TCL_ERROR;
 		    }
 		} else {
@@ -2998,10 +2994,10 @@ ForeachAssignments(
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
 	    if (varValuePtr == NULL) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		TclPrintfErrorInfo(interp,
 			"\n    (setting %s loop variable \"%s\")",
 			(statePtr->resultList != NULL ? "lmap" : "foreach"),
-			TclGetString(statePtr->varvList[i][v])));
+			TclGetString(statePtr->varvList[i][v]));
 		return TCL_ERROR;
 	    }
 	}

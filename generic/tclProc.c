@@ -205,14 +205,12 @@ Tcl_ProcObjCmd(
 
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, objv[2],
 	    objv[3], &procPtr) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	Tcl_AddErrorInfo(interp, simpleName);
-	Tcl_AddErrorInfo(interp, "\")");
+	TclPrintfErrorInfo(interp, "\n    (creating proc \"%s\")", simpleName);
 	return TCL_ERROR;
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
+	    TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -869,8 +867,8 @@ Uplevel_Callback(
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"uplevel\" body line %d)", Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (\"uplevel\" body line %d)",
+		Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -1074,7 +1072,7 @@ ProcWrongNumArgs(
 	    sizeof(Tcl_Obj *) * (numArgs+1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
-	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
+	desiredObjs[0] = TclNewString("lambdaExpr");
     } else {
 	desiredObjs[0] = framePtr->objv[skip-1];
     }
@@ -2073,10 +2071,9 @@ MakeProcError(
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (procedure \"%.*s%s\" line %d)",
+    TclPrintfErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : (int)nameLen), procName,
-	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp));
 }
 
 /*
@@ -2475,8 +2472,8 @@ SetLambdaFromAny(
 
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr, bodyPtr,
 	    &procPtr) != TCL_OK) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (parsing lambda expression \"%s\")", name));
+	TclPrintfErrorInfo(interp, "\n    (parsing lambda expression \"%s\")",
+		name);
 	return TCL_ERROR;
     }
 
@@ -2767,10 +2764,9 @@ MakeLambdaError(
     const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > (Tcl_Size)limit);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (lambda term \"%.*s%s\" line %d)",
+    TclPrintfErrorInfo(interp, "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : (int)nameLen), procName,
-	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp));
 }
 
 /*

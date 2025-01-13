@@ -2375,7 +2375,7 @@ PrintDictUpdateInfo(
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    TclAppendLiteralToObj(appendObj, ", ");
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
     }
@@ -3055,11 +3055,11 @@ PrintForeachInfo(
     ForeachVarList *varsPtr;
     Tcl_Size i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
+    TclAppendLiteralToObj(appendObj, "data=[");
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    TclAppendLiteralToObj(appendObj, ", ");
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		(infoPtr->firstValueTemp + i));
@@ -3068,19 +3068,19 @@ PrintForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    TclAppendLiteralToObj(appendObj, ",");
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%" TCL_Z_MODIFIER "u\t[",
 		(infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
+		TclAppendLiteralToObj(appendObj, ", ");
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	TclAppendLiteralToObj(appendObj, "]");
     }
 }
 
@@ -3099,18 +3099,18 @@ PrintNewForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    TclAppendLiteralToObj(appendObj, ",");
 	}
-	Tcl_AppendToObj(appendObj, "[", -1);
+	TclAppendLiteralToObj(appendObj, "[");
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ",", -1);
+		TclAppendLiteralToObj(appendObj, ",");
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	TclAppendLiteralToObj(appendObj, "]");
     }
 }
 
@@ -3352,7 +3352,7 @@ TclCompileFormatCmd(
 	if (*bytes == '%') {
 	    Tcl_AppendToObj(tmpObj, start, bytes - start);
 	    if (*++bytes == '%') {
-		Tcl_AppendToObj(tmpObj, "%", 1);
+		TclAppendLiteralToObj(tmpObj, "%");
 	    } else {
 		const char *b = TclGetStringFromObj(tmpObj, &len);
 

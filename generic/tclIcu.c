@@ -1395,7 +1395,7 @@ TclIcuInit(
 	 */
 	if (icu_fns.libs[0] == NULL) {
 	    Tcl_ResetResult(interp);
-	    nameobj = Tcl_NewStringObj("icu.dll", TCL_AUTO_LENGTH);
+	    nameobj = TclNewString("icu.dll");
 	    Tcl_IncrRefCount(nameobj);
 	    if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
 		    == TCL_OK) {
@@ -1410,12 +1410,12 @@ TclIcuInit(
 	if (icu_fns.libs[0] == NULL) {
 	    /* No icu.dll. Try last fallback */
 	    Tcl_ResetResult(interp);
-	    nameobj = Tcl_NewStringObj("icuuc.dll", TCL_AUTO_LENGTH);
+	    nameobj = TclNewString("icuuc.dll");
 	    Tcl_IncrRefCount(nameobj);
 	    if (Tcl_LoadFile(interp, nameobj, NULL, 0, NULL, &icu_fns.libs[0])
 		    == TCL_OK) {
 		Tcl_DecrRefCount(nameobj);
-		nameobj = Tcl_NewStringObj("icuin.dll", TCL_AUTO_LENGTH);
+		nameobj = TclNewString("icuin.dll");
 		Tcl_IncrRefCount(nameobj);
 		(void) Tcl_LoadFile(interp, nameobj, NULL, 0, NULL,
 			&icu_fns.libs[1]);

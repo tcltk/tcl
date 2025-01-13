@@ -829,7 +829,7 @@ TclpSetVariables(
     if (*p) {
 	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
     }
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
 	/* Some platforms build configure scripts expect ~ expansion so do that */
 	Tcl_Obj *origPaths;

@@ -2155,7 +2155,7 @@ TclSetBooleanFromAny(
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
+	TclAppendLiteralToObj(msg, "\"");
 	Tcl_SetObjResult(interp, msg);
 	TclSetErrorCode(interp, "TCL", "VALUE", "BOOLEAN");
     }
@@ -4746,12 +4746,12 @@ Tcl_RepresentationCmd(
     }
 
     if (objv[1]->bytes) {
-	Tcl_AppendToObj(descObj, ", string representation \"", -1);
+	TclAppendLiteralToObj(descObj, ", string representation \"");
 	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
 		16, "...");
-	Tcl_AppendToObj(descObj, "\"", -1);
+	TclAppendLiteralToObj(descObj, "\"");
     } else {
-	Tcl_AppendToObj(descObj, ", no string representation", -1);
+	TclAppendLiteralToObj(descObj, ", no string representation");
     }
 
     Tcl_SetObjResult(interp, descObj);

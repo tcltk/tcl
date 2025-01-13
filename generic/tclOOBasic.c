@@ -499,9 +499,8 @@ FinalizeEval(
 	    namePtr = "my";
 	}
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (in \"%s eval\" script line %d)",
-		namePtr, Tcl_GetErrorLine(interp)));
+	TclPrintfErrorInfo(interp, "\n    (in \"%s eval\" script line %d)",
+		namePtr, Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -605,12 +604,12 @@ TclOO_Object_Unknown(
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(errorMsg, ", ", TCL_AUTO_LENGTH);
+	    TclAppendLiteralToObj(errorMsg, ", ");
 	}
 	Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     }
     if (i) {
-	Tcl_AppendToObj(errorMsg, " or ", TCL_AUTO_LENGTH);
+	TclAppendLiteralToObj(errorMsg, " or ");
     }
     Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     Tcl_Free((void *)methodNames);
