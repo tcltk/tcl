@@ -24,7 +24,6 @@
 #ifdef TCL_NO_DEPRECATED
 #   define TCL_UTF_MAX 4
 #else
-#   define TCL_NO_DEPRECATED
 #   define TCL_UTF_MAX 3
 #endif
 #define TCLBOOLWARNING(boolPtr) /* needed here because we compile with -Wc++-compat */
@@ -144,9 +143,9 @@ typedef struct {
  * was called for a result.
  */
 
-#if TCL_UTF_MAX < 4
+#ifdef TCL_NO_DEPRECATED
 static int freeCount;
-#endif /* TCL_UTF_MAX */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -297,10 +296,10 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
-#if TCL_UTF_MAX < 4
+#ifdef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static Tcl_FreeProc	TestsaveresultFree;
-#endif /* TCL_UTF_MAX */
+#endif /* TCL_NO_DEPRECATED */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -690,10 +689,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#if TCL_UTF_MAX < 4
+#ifdef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
-#endif
+#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
@@ -5918,7 +5917,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX < 4
+#ifdef TCL_NO_DEPRECATED
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
@@ -6036,7 +6035,7 @@ TestsaveresultFree(
 {
     freeCount++;
 }
-#endif /* TCL_UTF_MAX */
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
