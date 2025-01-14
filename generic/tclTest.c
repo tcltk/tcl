@@ -32,6 +32,25 @@
 #include "tclOO.h"
 #include <math.h>
 
+#if TCL_UTF_MAX > 3
+/* TCL_NO_DEPRECATED was specified, so the core doesn't have a Tcl_SetResult stub entry */
+#undef Tcl_SetResult
+#define Tcl_SetResult(interp, result, freeProc) \
+	do { \
+	    const char *__result = result; \
+	    Tcl_FreeProc *__freeProc = freeProc; \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, TCL_INDEX_NONE)); \
+	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
+		if (__freeProc == TCL_DYNAMIC) { \
+		    ckfree(__result); \
+		} else { \
+		    (*__freeProc)((char *)__result); \
+		} \
+	    } \
+	} while(0)
+#endif /* TCL_UTF_MAX */
+
+
 /* We want to test the UTF-32 versions of the following 3 functions */
 #undef Tcl_UtfNext
 #undef Tcl_UtfPrev
@@ -523,6 +542,9 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #endif
 #ifdef USE_NMAKE
 	    ".nmake"
+#endif
+#if TCL_UTF_MAX > 3
+	    ".no-deprecate"
 #endif
 #if !TCL_THREADS
 	    ".no-thread"
