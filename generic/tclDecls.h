@@ -4331,8 +4331,9 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_SaveResult
 #undef Tcl_RestoreResult
 #undef Tcl_DiscardResult
-#undef Tcl_SetResult
 #undef Tcl_MakeSafe
+#endif /* TCL_NO_DEPRECATED */
+#undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \
@@ -4346,7 +4347,6 @@ extern const TclStubs *tclStubsPtr;
 		} \
 	    } \
 	} while(0)
-#endif /* TCL_NO_DEPRECATED */
 
 #if defined(USE_TCL_STUBS)
 #   if defined(_WIN32) && defined(_WIN64)

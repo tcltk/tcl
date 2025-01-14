@@ -15,13 +15,14 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #undef BUILD_tcl
+#undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
 #undef TCL_UTF_MAX
 #ifdef TCL_NO_DEPRECATED
+#   undef TCL_NO_DEPRECATED
 #   define TCL_UTF_MAX 4
 #else
 #   define TCL_UTF_MAX 3
@@ -31,6 +32,11 @@
 #include "tclOO.h"
 #include <math.h>
 
+/* We want to test the UTF-32 versions of the following 3 functions */
+#undef Tcl_UtfNext
+#undef Tcl_UtfPrev
+#define Tcl_UtfNext (tclStubsPtr->tcl_UtfNext)
+#define Tcl_UtfPrev (tclStubsPtr->tcl_UtfPrev)
 /*
  * Required for Testregexp*Cmd
  */
@@ -143,9 +149,9 @@ typedef struct {
  * was called for a result.
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static int freeCount;
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -296,10 +302,10 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static Tcl_FreeProc	TestsaveresultFree;
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -689,10 +695,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
-#endif /* TCL_NO_DEPRECATED */
+#endif
     Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
@@ -2167,7 +2173,7 @@ static int UtfExtWrapper(
 	if (dstCharsVar == NULL ||
 	    (valueObj = Tcl_ObjGetVar2(interp, dstCharsVar, NULL, 0)) == NULL
 	) {
-	    Tcl_SetResult(interp,
+	    Tcl_SetResult(interp, (char *)
 			 "dstCharsVar must be specified with integer value if "
 			 "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
 	    return TCL_ERROR;
@@ -2190,7 +2196,7 @@ static int UtfExtWrapper(
 			    &dstWrote,
 			    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetResult(interp,
+	Tcl_SetResult(interp, (char *)
 		      "Tcl_ExternalToUtf wrote past output buffer",
 		      TCL_STATIC);
 	result = TCL_ERROR;
@@ -5917,7 +5923,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if TCL_UTF_MAX < 4
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
@@ -6035,7 +6041,7 @@ TestsaveresultFree(
 {
     freeCount++;
 }
-#endif /* TCL_NO_DEPRECATED */
+#endif /* TCL_UTF_MAX */
 
 /*
  *----------------------------------------------------------------------
