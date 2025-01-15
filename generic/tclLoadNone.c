@@ -93,27 +93,23 @@ TclGuessPackageName(
 
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-     int size)			/* Dummy: unused by this implementation */
+     size_t size)			/* Dummy: unused by this implementation */
 {
     return NULL;
 }
 
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Dummy: unused by this implementation */
     size_t size,		/* Dummy: unused by this implementation */
     int codeSize,		/* Dummy: unused by this implementation */
+    const char *path,	/* Dummy: unused by this implementation */
     Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
     Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Dummy: unused by this implementation */
     int flags)
 				/* Dummy: unused by this implementation */
 {
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
-		"is not available on this system", -1));
-    }
     return TCL_ERROR;
 }
 

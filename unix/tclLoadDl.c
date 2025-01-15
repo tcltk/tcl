@@ -83,19 +83,19 @@ TclpDlopen(
      * relative path.
      */
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const char *)Tcl_FSGetNativePath(pathPtr);
     /*
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
     if (flags & TCL_LOAD_GLOBAL) {
-    	dlopenflags |= RTLD_GLOBAL;
+	dlopenflags |= RTLD_GLOBAL;
     } else {
-    	dlopenflags |= RTLD_LOCAL;
+	dlopenflags |= RTLD_LOCAL;
     }
     if (flags & TCL_LOAD_LAZY) {
-    	dlopenflags |= RTLD_LAZY;
+	dlopenflags |= RTLD_LAZY;
     } else {
-    	dlopenflags |= RTLD_NOW;
+	dlopenflags |= RTLD_NOW;
     }
     handle = dlopen(native, dlopenflags);
     if (handle == NULL) {
@@ -106,7 +106,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = TclGetString(pathPtr);
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
 	/*
@@ -127,11 +127,11 @@ TclpDlopen(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
-		    Tcl_GetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr));
 	}
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -168,7 +168,7 @@ FindSymbol(
     Tcl_DString newName, ds;	/* Buffers for converting the name to
 				 * system encoding and prepending an
 				 * underscore*/
-    void *handle = (void *) loadHandle->clientData;
+    void *handle = loadHandle->clientData;
 				/* Native handle to the loaded library */
     void *proc;			/* Address corresponding to the resolved
 				 * symbol */
@@ -210,15 +210,14 @@ FindSymbol(
  *
  * UnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory. Code
- *	pointers in the formerly loaded file are no longer valid after calling
- *	this function.
+ *	Unloads a dynamic shared object, after which all pointers to functions
+ *	in the formerly-loaded object are no longer valid.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Code removed from memory.
+ *	Memory for the loaded object is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -264,6 +263,38 @@ TclGuessPackageName(
 {
     return 0;
 }
+
+/*
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
+ */
+
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+     size_t size)		/* Dummy: unused by this implementation */
+{
+    return NULL;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    void *buffer,		/* Dummy: unused by this implementation */
+    size_t size,		/* Dummy: unused by this implementation */
+    int codeSize,		/* Dummy: unused by this implementation */
+    const char *path,	/* Dummy: unused by this implementation */
+    Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+				/* Dummy: unused by this implementation */
+    int flags)
+				/* Dummy: unused by this implementation */
+{
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:

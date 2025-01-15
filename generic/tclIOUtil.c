@@ -3262,10 +3262,11 @@ Tcl_LoadFile(
     }
 
     /*
-     * The filesystem doesn't support 'load', so we fall back on the following
-     * technique:
-     *
-     * First check if it is readable -- and exists!
+     * The filesystem doesn't support 'load'. Fall to the following:
+     */
+
+    /*
+     * Make sure the file is accessible.
      */
 
     if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
@@ -3279,9 +3280,9 @@ Tcl_LoadFile(
 
 #ifdef TCL_LOAD_FROM_MEMORY
     /*
-     * The platform supports loading code from memory, so ask for a buffer of
-     * the appropriate size, read the file into it and load the code from the
-     * buffer:
+     * The platform supports loading a dynamic shared object from memory.
+     * Create a sufficiently large buffer, read the file into it, and then load
+     * the dynamic shared object from the buffer:
      */
 
     {
@@ -3298,7 +3299,7 @@ Tcl_LoadFile(
 	size = statBuf.st_size;
 
 	/*
-	 * Tcl_Read takes an int: check that file size isn't wide.
+	 * Tcl_Read takes an int:  Determine whether the file size <= INT_MAX
 	 */
 
 	if (size > INT_MAX) {
@@ -3306,6 +3307,9 @@ Tcl_LoadFile(
 	}
 	data = Tcl_FSOpenFileChannel(interp, pathPtr, "rb", 0666);
 	if (!data) {
+	    if (interp) {
+		Tcl_ResetResult(interp);
+	    }
 	    goto mustCopyToTempAnyway;
 	}
 	buffer = TclpLoadMemoryGetBuffer(size);
@@ -3315,7 +3319,7 @@ Tcl_LoadFile(
 	}
 	ret = Tcl_Read(data, buffer, size);
 	Tcl_Close(interp, data);
-	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
+	ret = TclpLoadMemory(buffer, size, ret, TclGetString(pathPtr), handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;
@@ -3323,14 +3327,10 @@ Tcl_LoadFile(
     }
 
   mustCopyToTempAnyway:
-    if (interp) {
-	Tcl_ResetResult(interp);
-    }
 #endif /* TCL_LOAD_FROM_MEMORY */
 
     /*
-     * Get a temporary filename to use, first to copy the file into, and then
-     * to load.
+     * Get a temporary filename, first to copy the file into, and then to load.
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);

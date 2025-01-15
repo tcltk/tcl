@@ -562,13 +562,13 @@ TclpLoadMemoryGetBuffer(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
     size_t size,		/* Allocation size of buffer. */
     int codeSize,		/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
+    const char *path,
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
@@ -583,7 +583,6 @@ TclpLoadMemory(
     NSObjectFileImage dyldObjFileImage = NULL;
     Tcl_DyldModuleHandle *modulePtr;
     NSModule module;
-    const char *objFileImageErrMsg = NULL;
     int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
 
     /*
@@ -652,26 +651,16 @@ TclpLoadMemory(
 	if (err == NSObjectFileImageSuccess) {
 	    err = NSCreateObjectFileImageFromMemory(buffer, codeSize,
 		    &dyldObjFileImage);
-	    if (err != NSObjectFileImageSuccess) {
-		objFileImageErrMsg = DyldOFIErrorMsg(err);
-	    }
-	} else {
-	    objFileImageErrMsg = DyldOFIErrorMsg(err);
 	}
     }
 
     /*
      * If it went wrong (or we were asked to just deallocate), get rid of the
-     * memory block and create an error message.
+     * memory block.
      */
 
     if (dyldObjFileImage == NULL) {
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
-	if (objFileImageErrMsg != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "NSCreateObjectFileImageFromMemory() error: %s",
-		    objFileImageErrMsg));
-	}
 	return TCL_ERROR;
     }
 
@@ -693,7 +682,6 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
 	return TCL_ERROR;
     }
 
