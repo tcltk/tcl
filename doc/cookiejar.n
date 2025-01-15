@@ -189,7 +189,7 @@ package require http
 \fBpackage require cookiejar\fR
 
 set cookiedb [file join [file home] cookiejar]
-http::configure -cookiejar [\fBhttp::cookiejar new\fR $cookiedb]
+http::config -cookiejar [\fBhttp::cookiejar new\fR $cookiedb]
 
 # No further explicit steps are required to use cookies
 set tok [http::geturl http://core.tcl-lang.org/]

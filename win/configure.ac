@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -129,7 +129,7 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
   AS_IF([test "$do64bit" != "no"], [
     AC_DEFINE(MP_64BIT, 1, [Using libtommath.dll in 64-bit mode])
-    AS_IF([test "$do64bit" = "arm64"], [
+    AS_IF([test "$do64bit" = "arm64" -o "$do64bit" = "aarch64"], [
       AS_IF([test "$GCC" = "yes"],[
 	AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
 	AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
@@ -253,6 +253,23 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
 	    [Defined when the compilers supports intrinsics])
+fi
+
+# See if the compiler supports cpuid header.
+
+AC_CACHE_CHECK(for cpuid.h,
+    tcl_cv_cpuid_h,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <cpuid.h>
+]], [[
+    __get_cpuid(0, 0, 0, 0, 0);
+  ]])],
+    [tcl_cv_cpuid_h=yes],
+    [tcl_cv_cpuid_h=no])
+)
+if test "$tcl_cv_cpuid_h" = "yes"; then
+    AC_DEFINE(HAVE_CPUID_H, 1,
+	    [Defined when cpuid.h exists])
 fi
 
 # See if the <wspiapi.h> header file is present

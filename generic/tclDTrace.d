@@ -209,6 +209,10 @@ struct Tcl_Obj {
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
+	struct {
+	    void *ptr;
+	    Tcl_Size size;
+	} ptrAndSize;
     } internalRep;
 };
 

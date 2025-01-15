@@ -2058,6 +2058,27 @@ test interp-25.1 {testing aliasing of string commands} -setup {
     interp delete a
 } -result ""
 
+test interp-25.2 {lambda on different interpreters, bug [67d5f75c36cbada6]} -setup {
+    catch {interp delete a}
+    interp create a
+} -body {
+    set res {}
+    set lambda {{} { list OK from lambda }}
+    lappend res [apply $lambda]
+    lappend res [a eval [list apply $lambda]]
+    set lambda [list apply {{} { list OK from lambda }}]
+    lappend res [eval $lambda]
+    lappend res [a eval $lambda]
+    # cover also epoch change (command list is replaced):
+    a eval {proc list args {return {NO LIST}}}
+    lappend res [a eval $lambda]
+    lappend res [eval $lambda]
+    set res
+} -cleanup {
+    interp delete a
+    unset -nocomplain res lambda
+} -result [list {*}[lrepeat 4 {OK from lambda}] {NO LIST} {OK from lambda}]
+
 #
 # Interps result transmission
 #

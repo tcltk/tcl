@@ -809,8 +809,6 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	    else $(MACHER) append ${LIB_FILE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${LIB_FILE}; chmod u+x ${LIB_FILE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${LIB_FILE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
@@ -840,8 +838,6 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
 	    else $(MACHER) append ${TCL_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${TCL_EXE}; chmod u+x ${TCL_EXE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${TCL_EXE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
@@ -903,8 +899,6 @@ tcltest-real:
 	    else $(MACHER) append ${TCLTEST_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
 		 mv /tmp/macher_output ${TCLTEST_EXE}; chmod u+x ${TCLTEST_EXE}; \
 	    fi; \
-	    ${NATIVE_ZIP} -A ${TCLTEST_EXE} \
-	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 # Note, in the targets below TCL_LIBRARY needs to be set or else "make test"
@@ -2333,7 +2327,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
-	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.c $(UNIX_DIR)/tclUnixPort.h $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/configure.ac \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
@@ -2422,7 +2416,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
 	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
 	$(DIST_INSTALL_SCRIPT) $(TOP_DIR)/win/configure $(DISTDIR)/win
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
+		$(TOP_DIR)/win/tclWinInt.h $(TOP_DIR)/win/tclWinPort.h \
 		$(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
@@ -2445,9 +2440,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOOL_DIR)/valgrind_check_success $(DISTDIR)/tools
 	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
 		$(DISTDIR)/tools/findBadExternals.tcl \
-		$(DISTDIR)/tools/loadICU.tcl \
+		$(DISTDIR)/tools/loadICU.tcl $(DISTDIR)/tools/addVerToFile.tcl \
 		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
-		$(DISTDIR)/tools/tcltk-man2html.tcl
+		$(DISTDIR)/tools/tcltk-man2html.tcl $(DISTDIR)/win/buildall.vc.bat \
+		$(DISTDIR)/unix/install-sh $(DISTDIR)/unix/installManPage
 	$(INSTALL_DATA_DIR) $(DISTDIR)/pkgs
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs

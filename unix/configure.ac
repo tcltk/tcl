@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -536,44 +536,27 @@ if test "`uname -s`" = "Darwin" ; then
 	[Can this platform load code from memory?])
     AC_DEFINE(TCL_WIDE_CLICKS, 1,
 	[Does this platform have wide high-resolution clicks?])
-    AC_CHECK_HEADERS(AvailabilityMacros.h)
-    if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #endif
-		    int rand(void) __attribute__((weak_import));
-		]], [[rand();]])],
-		[tcl_cv_cc_weak_import=yes],[tcl_cv_cc_weak_import=no])
-	    CFLAGS=$hold_cflags])
-	if test $tcl_cv_cc_weak_import = yes; then
-	    AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
-	fi
-	AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
-	    tcl_cv_cc_darwin_c_source, [
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #endif
-		    #define _DARWIN_C_SOURCE 1
-		    #include <sys/cdefs.h>
-		]], [[]])],[tcl_cv_cc_darwin_c_source=yes],[tcl_cv_cc_darwin_c_source=no])
-	    CFLAGS=$hold_cflags])
-	if test $tcl_cv_cc_darwin_c_source = yes; then
-	    AC_DEFINE(_DARWIN_C_SOURCE, 1,
-		    [Are Darwin SUSv3 extensions available?])
-	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+		int rand(void) __attribute__((weak_import));
+	    ]], [[rand();]])],
+	    [tcl_cv_cc_weak_import=yes],[tcl_cv_cc_weak_import=no])
+	CFLAGS=$hold_cflags])
+    if test $tcl_cv_cc_weak_import = yes; then
+	AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
+    fi
+    AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
+	tcl_cv_cc_darwin_c_source, [
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+		#define _DARWIN_C_SOURCE 1
+		#include <sys/cdefs.h>
+	    ]], [[]])],[tcl_cv_cc_darwin_c_source=yes],[tcl_cv_cc_darwin_c_source=no])
+	CFLAGS=$hold_cflags])
+    if test $tcl_cv_cc_darwin_c_source = yes; then
+	AC_DEFINE(_DARWIN_C_SOURCE, 1,
+		[Are Darwin SUSv3 extensions available?])
     fi
     # Build .bundle dltest binaries in addition to .dylib
     DLTEST_LD='${CC} -bundle -Wl,-w ${CFLAGS} ${LDFLAGS}'

@@ -2710,7 +2710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -10503,14 +10503,6 @@ printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
 printf "%s\n" "#define TCL_WIDE_CLICKS 1" >>confdefs.h
 
-    ac_fn_c_check_header_compile "$LINENO" "AvailabilityMacros.h" "ac_cv_header_AvailabilityMacros_h" "$ac_includes_default"
-if test "x$ac_cv_header_AvailabilityMacros_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_AVAILABILITYMACROS_H 1" >>confdefs.h
-
-fi
-
-    if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if weak import is available" >&5
 printf %s "checking if weak import is available... " >&6; }
 if test ${tcl_cv_cc_weak_import+y}
@@ -10518,18 +10510,11 @@ then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
-		    #endif
-		    int rand(void) __attribute__((weak_import));
+		int rand(void) __attribute__((weak_import));
 
 int
 main (void)
@@ -10548,36 +10533,29 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-	    CFLAGS=$hold_cflags ;;
+	CFLAGS=$hold_cflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_weak_import" >&5
 printf "%s\n" "$tcl_cv_cc_weak_import" >&6; }
-	if test $tcl_cv_cc_weak_import = yes; then
+    if test $tcl_cv_cc_weak_import = yes; then
 
 printf "%s\n" "#define HAVE_WEAK_IMPORT 1" >>confdefs.h
 
-	fi
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Darwin SUSv3 extensions are available" >&5
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if Darwin SUSv3 extensions are available" >&5
 printf %s "checking if Darwin SUSv3 extensions are available... " >&6; }
 if test ${tcl_cv_cc_darwin_c_source+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
-		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
-		    #endif
-		    #elif MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-		    #endif
-		    #define _DARWIN_C_SOURCE 1
-		    #include <sys/cdefs.h>
+		#define _DARWIN_C_SOURCE 1
+		#include <sys/cdefs.h>
 
 int
 main (void)
@@ -10595,16 +10573,15 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	    CFLAGS=$hold_cflags ;;
+	CFLAGS=$hold_cflags ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_darwin_c_source" >&5
 printf "%s\n" "$tcl_cv_cc_darwin_c_source" >&6; }
-	if test $tcl_cv_cc_darwin_c_source = yes; then
+    if test $tcl_cv_cc_darwin_c_source = yes; then
 
 printf "%s\n" "#define _DARWIN_C_SOURCE 1" >>confdefs.h
 
-	fi
     fi
     # Build .bundle dltest binaries in addition to .dylib
     DLTEST_LD='${CC} -bundle -Wl,-w ${CFLAGS} ${LDFLAGS}'

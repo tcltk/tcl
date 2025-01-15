@@ -623,6 +623,10 @@ TclOOMakeProcInstanceMethod(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
+    if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcInstanceMethod", "TCL_OO_METHOD_VERSION_1");
+    }
     if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
 	    procPtrPtr) != TCL_OK) {
 	return NULL;
@@ -634,6 +638,45 @@ TclOOMakeProcInstanceMethod(
 
     return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
 	    typePtr, clientData);
+}
+
+Tcl_Method
+TclOOMakeProcInstanceMethod2(
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    Object *oPtr,		/* The object to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which _must not_ be
+				 * NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
+    const Tcl_MethodType2 *typePtr,
+				/* The type of the method to create. */
+    void *clientData,		/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcInstanceMethod2", "TCL_OO_METHOD_VERSION_2");
+    }
+    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
+
+    InitCmdFrame(iPtr, procPtr);
+
+    return TclNewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
+	    (const Tcl_MethodType *)typePtr, clientData);
 }
 
 /*
@@ -675,6 +718,10 @@ TclOOMakeProcMethod(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
+    if (typePtr->version > TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcMethod", "TCL_OO_METHOD_VERSION_1");
+    }
     if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
 	    procPtrPtr) != TCL_OK) {
 	return NULL;
@@ -686,6 +733,49 @@ TclOOMakeProcMethod(
 
     return TclNewMethod(
 	    (Tcl_Class) clsPtr, nameObj, flags, typePtr, clientData);
+}
+
+Tcl_Method
+TclOOMakeProcMethod2(
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Class *clsPtr,		/* The class to modify. */
+    int flags,			/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
+				 * if so, up to caller to manage storage
+				 * (e.g., because it is a constructor or
+				 * destructor). */
+    const char *namePtr,	/* The name of the method as a string, which
+				 * _must not_ be NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which _must not_ be NULL. */
+    Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
+				 * NULL. */
+    const Tcl_MethodType2 *typePtr,
+				/* The type of the method to create. */
+    void *clientData,		/* The per-method type-specific data. */
+    Proc **procPtrPtr)		/* A pointer to the variable in which to write
+				 * the procedure record reference. Presumably
+				 * inside the structure indicated by the
+				 * pointer in clientData. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr;
+
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
+		"TclOOMakeProcMethod2", "TCL_OO_METHOD_VERSION_2");
+    }
+    if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
+	    procPtrPtr) != TCL_OK) {
+	return NULL;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->cmdPtr = NULL;
+
+    InitCmdFrame(iPtr, procPtr);
+
+    return TclNewMethod(
+	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
 }
 
 /*
@@ -1205,101 +1295,75 @@ RenderDeclarerName(
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
-	((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
+    ((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
+
+static void
+CommonMethErrorHandler(
+    Tcl_Interp *interp,
+    const char *special)
+{
+    Tcl_Size objectNameLen;
+    CallContext *contextPtr = (CallContext *)((Interp *)
+	    interp)->varFramePtr->clientData;
+    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
+    const char *objectName, *kindName = "instance";
+    Object *declarerPtr = NULL;
+
+    if (mPtr->declaringObjectPtr != NULL) {
+	declarerPtr = mPtr->declaringObjectPtr;
+	kindName = "object";
+    } else if (mPtr->declaringClassPtr != NULL) {
+	declarerPtr = mPtr->declaringClassPtr->thisPtr;
+	kindName = "class";
+    }
+
+    if (declarerPtr) {
+	objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
+		&objectNameLen);
+    } else {
+	objectName = "unknown or deleted";
+	objectNameLen = 18;
+    }
+    if (!special) {
+	Tcl_Size nameLen;
+	const char *methodName = TclGetStringFromObj(mPtr->namePtr, &nameLen);
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
+		kindName, ELLIPSIFY(objectName, objectNameLen),
+		ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
+    } else {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (%s \"%.*s%s\" %s line %d)",
+		kindName, ELLIPSIFY(objectName, objectNameLen), special,
+		Tcl_GetErrorLine(interp)));
+    }
+}
 
 static void
 MethodErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// We pull the method name out of context instead of from argument
 {
-    Tcl_Size nameLen, objectNameLen;
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const char *objectName, *kindName, *methodName =
-	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
-    Object *declarerPtr;
-
-    if (mPtr->declaringObjectPtr != NULL) {
-	declarerPtr = mPtr->declaringObjectPtr;
-	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
-	declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	kindName = "class";
-    }
-
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
-	    kindName, ELLIPSIFY(objectName, objectNameLen),
-	    ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
+    /* We pull the method name out of context instead of from argument. */
+    CommonMethErrorHandler(interp, NULL);
 }
 
 static void
 ConstructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// Ignore. We know it is the constructor.
 {
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    Object *declarerPtr;
-    const char *objectName, *kindName;
-    Tcl_Size objectNameLen;
-
-    if (mPtr->declaringObjectPtr != NULL) {
-	declarerPtr = mPtr->declaringObjectPtr;
-	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
-	declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	kindName = "class";
-    }
-
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
+    /* We know this is for the constructor. */
+    CommonMethErrorHandler(interp, "constructor");
 }
 
 static void
 DestructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	// Ignore. We know it is the destructor.
 {
-    CallContext *contextPtr = (CallContext *)
-	    ((Interp *) interp)->varFramePtr->clientData;
-    Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    Object *declarerPtr;
-    const char *objectName, *kindName;
-    Tcl_Size objectNameLen;
-
-    if (mPtr->declaringObjectPtr != NULL) {
-	declarerPtr = mPtr->declaringObjectPtr;
-	kindName = "object";
-    } else {
-	if (mPtr->declaringClassPtr == NULL) {
-	    Tcl_Panic("method not declared in class or object");
-	}
-	declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	kindName = "class";
-    }
-
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
-	    &objectNameLen);
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
+    /* We know this is for the destructor. */
+    CommonMethErrorHandler(interp, "destructor");
 }
 
 /*
@@ -1431,7 +1495,7 @@ TclOONewForwardInstanceMethod(
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"method forward prefix must be non-empty", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
+	OO_ERROR(interp, BAD_FORWARD);
 	return NULL;
     }
 
@@ -1470,7 +1534,7 @@ TclOONewForwardMethod(
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"method forward prefix must be non-empty", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", (char *)NULL);
+	OO_ERROR(interp, BAD_FORWARD);
 	return NULL;
     }
 

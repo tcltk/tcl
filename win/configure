@@ -2411,7 +2411,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -4236,7 +4236,7 @@ printf "%s\n" "$ac_cv_win32" >&6; }
 	if test "$ac_cv_win32" != "yes"; then
 	    as_fn_error $? "${CC} cannot produce win32 executables." "$LINENO" 5
 	fi
-	if test "$do64bit" != "arm64"; then
+	if test "$do64bit" != "arm64" -a "$do64bit" != "aarch64"; then
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
@@ -4957,7 +4957,7 @@ then :
 
 printf "%s\n" "#define MP_64BIT 1" >>confdefs.h
 
-    if test "$do64bit" = "arm64"
+    if test "$do64bit" = "arm64" -o "$do64bit" = "aarch64"
 then :
 
       if test "$GCC" = "yes"
@@ -5356,6 +5356,48 @@ printf "%s\n" "$tcl_cv_intrinsics" >&6; }
 if test "$tcl_cv_intrinsics" = "yes"; then
 
 printf "%s\n" "#define HAVE_INTRIN_H 1" >>confdefs.h
+
+fi
+
+# See if the compiler supports cpuid header.
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cpuid.h" >&5
+printf %s "checking for cpuid.h... " >&6; }
+if test ${tcl_cv_cpuid_h+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <cpuid.h>
+
+int
+main (void)
+{
+
+    __get_cpuid(0, 0, 0, 0, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cpuid_h=yes
+else case e in #(
+  e) tcl_cv_cpuid_h=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cpuid_h" >&5
+printf "%s\n" "$tcl_cv_cpuid_h" >&6; }
+if test "$tcl_cv_cpuid_h" = "yes"; then
+
+printf "%s\n" "#define HAVE_CPUID_H 1" >>confdefs.h
 
 fi
 
