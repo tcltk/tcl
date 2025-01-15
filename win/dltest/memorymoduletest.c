@@ -175,6 +175,44 @@ Mmt_ThreadVar(
     return TCL_OK;
 }
 
+#ifdef _MSC_VER
+static void throwException() {
+    RaiseException(
+        1,                    // exception code
+        0,                    // continuable exception
+        0, NULL);             // no arguments
+}
+
+static int
+Mmt_NestedException(
+    void *dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument strings. */
+{
+    (void)dummy;
+    int result = -1;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    __try
+    {
+	throwException();
+	result = 0; /* should not be executed*/
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER)
+    {
+	/* this should be executed */
+	result = GetExceptionCode();
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    return TCL_OK;
+}
+#endif /* _MSC_VER */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -211,5 +249,8 @@ Memorymoduletest_Init(
     Tcl_CreateObjCommand(interp, "GetModuleFileNameW", Mmt_ModuleFileNameWCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "ThreadAttachCalled", Mmt_ThreadAttachCalled, NULL, NULL);
     Tcl_CreateObjCommand(interp, "ThreadVar", Mmt_ThreadVar, NULL, NULL);
+#ifdef _MSC_VER
+    Tcl_CreateObjCommand(interp, "NestedException", Mmt_NestedException, NULL, NULL);
+#endif /* _MSC_VER */
     return TCL_OK;
 }

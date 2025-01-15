@@ -6,6 +6,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint memorymodule [expr {0 != [tcl::build-info memorymodule]}]
 testConstraint memorymoduletest [expr {0 == [catch {zipfs mount dltest/memorymoduletest.zip [file join [zipfs root] memorymoduletest]}]}]
+testConstraint nestedexception [expr {[tcl::build-info msvc] != 0}]
 
 lappend auto_path [file join [zipfs root] memorymoduletest]
 
@@ -42,6 +43,9 @@ test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
     list [ThreadVar] $result
 } -result {15 16}
 
+test memorymodule-2.1 {nexted exception} -constraints nestedexception -body {
+    NestedException
+} -result 1
 
 # cleanup
 ::tcltest::cleanupTests
