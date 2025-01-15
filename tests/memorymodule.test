@@ -43,7 +43,7 @@ test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
     list [ThreadVar] $result
 } -result {15 16}
 
-test memorymodule-2.1 {nexted exception} -constraints nestedexception -body {
+test memorymodule-2.1 {nexted exception} -constraints {memorymoduletest nestedexception} -body {
     NestedException
 } -result 1
 
