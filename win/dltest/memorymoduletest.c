@@ -183,6 +183,25 @@ Mmt_ThreadVar(
     return TCL_OK;
 }
 
+static int
+Mmt_GetTlsIndex(
+    void *dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument strings. */
+{
+    extern int _tls_index;
+    (void)dummy;
+
+    if (objc > 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(_tls_index));
+    return TCL_OK;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -206,7 +225,6 @@ INIT_NAME (
 				 * made available. */
 {
     int code;
-    threadVar = hModule;
 
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	/* Tcl 8.6 doesn't have Tcl_DStringToObj() */
@@ -220,5 +238,6 @@ INIT_NAME (
     Tcl_CreateObjCommand(interp, PACKAGE_NS "::GetModuleFileNameW", Mmt_ModuleFileNameWCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, PACKAGE_NS "::ThreadAttachCalled", Mmt_ThreadAttachCalled, NULL, NULL);
     Tcl_CreateObjCommand(interp, PACKAGE_NS "::ThreadVar", Mmt_ThreadVar, NULL, NULL);
+    Tcl_CreateObjCommand(interp, PACKAGE_NS "::GetTlsIndex", Mmt_GetTlsIndex, NULL, NULL);
     return TCL_OK;
 }

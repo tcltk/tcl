@@ -54,6 +54,12 @@ test memorymodule-3.0 {Multiple DLL's} -constraints {memorymoduletest} -body {
     lappend result [memorymoduletest2::ThreadVar]; # Check second module
 } -result {15 15 16}
 
+test memorymodule-3.1 {Multiple DLL's} -constraints {memorymoduletest} -body {
+    package require memorymoduletest2
+    package require memorymoduletest
+    # The two _tls_index should NOT be the same
+    expr {[memorymoduletest::GetTlsIndex] == [memorymoduletest2::GetTlsIndex]}
+} -result 0
 
 
 # cleanup
