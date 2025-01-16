@@ -10,3 +10,4 @@
 
 if {![package vsatisfies [package provide Tcl] 9.0]} {return}
 package ifneeded memorymoduletest 1.0.0 [list load [file join $dir tcl9memorymoduletest.dll]]
+package ifneeded memorymoduletest2 1.0.0 [list load [file join $dir tcl9memorymoduletest2.dll] Memorymoduletest2]

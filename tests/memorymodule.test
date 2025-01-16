@@ -42,6 +42,19 @@ test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
     list [ThreadVar] $result
 } -result {15 16}
 
+test memorymodule-3.0 {Multiple DLL's} -constraints {memorymoduletest} -body {
+    package require memorymoduletest2
+    package require memorymoduletest
+    set result {}
+    memorymoduletest::ThreadVar 15; # Modify first module
+    lappend result [memorymoduletest::ThreadVar]; # Check first module
+    memorymoduletest2::ThreadVar 16; # Modify second module
+    lappend result [memorymoduletest::ThreadVar]; # Check first module
+    memorymoduletest::ThreadVar 17; # Modify first module
+    lappend result [memorymoduletest2::ThreadVar]; # Check second module
+} -result {15 15 16}
+
+
 
 # cleanup
 ::tcltest::cleanupTests

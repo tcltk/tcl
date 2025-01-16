@@ -15,6 +15,14 @@
 #include <stdbool.h>
 #include "tcl.h"
 
+#ifndef INIT_NAME
+#define INIT_NAME Memorymoduletest_Init
+#endif
+
+#ifndef PACKAGE_NS
+#define PACKAGE_NS "memorymoduletest"
+#endif
+
 static HMODULE hModule = NULL;
 
 static bool threadAttachCalled = false;
@@ -171,7 +179,7 @@ Mmt_ThreadVar(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(threadVar));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)threadVar));
     return TCL_OK;
 }
 
@@ -193,23 +201,24 @@ Mmt_ThreadVar(
  */
 
 DLLEXPORT int
-Memorymoduletest_Init(
+INIT_NAME (
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
+    threadVar = hModule;
 
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	/* Tcl 8.6 doesn't have Tcl_DStringToObj() */
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "memorymoduletest", "1.0.0");
+    code = Tcl_PkgProvide(interp,PACKAGE_NS, "1.0.0");
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "GetModuleFileNameA", Mmt_ModuleFileNameACmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "GetModuleFileNameW", Mmt_ModuleFileNameWCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "ThreadAttachCalled", Mmt_ThreadAttachCalled, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "ThreadVar", Mmt_ThreadVar, NULL, NULL);
+    Tcl_CreateObjCommand(interp, PACKAGE_NS "::GetModuleFileNameA", Mmt_ModuleFileNameACmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, PACKAGE_NS "::GetModuleFileNameW", Mmt_ModuleFileNameWCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, PACKAGE_NS "::ThreadAttachCalled", Mmt_ThreadAttachCalled, NULL, NULL);
+    Tcl_CreateObjCommand(interp, PACKAGE_NS "::ThreadVar", Mmt_ThreadVar, NULL, NULL);
     return TCL_OK;
 }

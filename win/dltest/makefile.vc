@@ -3,16 +3,22 @@ TOP = .
 # optional build flags
 LOC =
 
-# variables
-SHAREDLIB = tcl9memorymoduletest.dll
-IMPLIB    = memorymoduletest.lib
-
 CC = cl
 AS = ml
 LD = link
 CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Zi $(LOC) -DUSE_TCL_STUBS -I../../generic
 WFLAGS  = -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 LDFLAGS = -nologo -debug -incremental:no -opt:ref
+
+# variables
+!ifndef BUILD2
+SHAREDLIB = tcl9memorymoduletest.dll
+IMPLIB    = memorymoduletest.lib
+!else
+SHAREDLIB = tcl9memorymoduletest2.dll
+IMPLIB    = memorymoduletest2.lib
+CFLAGS = $(CFLAGS) /DPACKAGE_NS=\"memorymoduletest2\" /DINIT_NAME=Memorymoduletest2_Init
+!endif
 
 OBJS = memorymoduletest.obj
 
@@ -21,7 +27,7 @@ all: $(SHAREDLIB) $(IMPLIB)
 
 $(IMPLIB): $(SHAREDLIB)
 
-$(SHAREDLIB): $(OBJS)
+$(SHAREDLIB): clean $(OBJS)
 	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
 	  -out:$@ $(OBJS)
 
