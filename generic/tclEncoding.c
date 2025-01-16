@@ -1391,6 +1391,7 @@ Tcl_ExternalToUtf(
 	if (*dstCharsPtr <= maxChars) {
 	    break;
 	}
+        //__debugbreak();
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	*statePtr = savedState;
     } while (1);
