@@ -106,7 +106,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = TclGetString(pathPtr);
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	/*
@@ -127,7 +127,7 @@ TclpDlopen(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
-		    Tcl_GetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr));
 	}
 	return TCL_ERROR;
     }
@@ -168,7 +168,7 @@ FindSymbol(
     Tcl_DString newName, ds;	/* Buffers for converting the name to
 				 * system encoding and prepending an
 				 * underscore*/
-    void *handle = (void *) loadHandle->clientData;
+    void *handle = loadHandle->clientData;
 				/* Native handle to the loaded library */
     void *proc;			/* Address corresponding to the resolved
 				 * symbol */
@@ -258,6 +258,36 @@ UnloadFile(
     dlclose(handle);
     ckfree(loadHandle);
 }
+
+/*
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
+ */
+
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(size_t))
+{
+    return NULL;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(size_t),
+    TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_LoadHandle *),
+    TCL_UNUSED(Tcl_FSUnloadFileProc **),
+    TCL_UNUSED(int))
+{
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:

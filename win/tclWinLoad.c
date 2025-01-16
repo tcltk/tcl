@@ -175,7 +175,7 @@ TclpDlopen(
      */
 
     handlePtr = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = (void *) hInstance;
+    handlePtr->clientData = (void *)hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;
@@ -395,6 +395,35 @@ InitDLLDirectoryName(void)
     return TCL_OK;
 }
 
+/*
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
+ */
+
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(size_t))
+{
+    return NULL;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(size_t),
+    TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_LoadHandle *),
+    TCL_UNUSED(Tcl_FSUnloadFileProc **),
+    TCL_UNUSED(int))
+{
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 /*
  * Local Variables:
  * mode: c
