@@ -15,9 +15,19 @@
 #include <stdbool.h>
 #include "tcl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 static HMODULE hModule = NULL;
 
 static bool threadAttachCalled = false;
+
+/* read-only thread-specify variables. Cannot be written to. */
+extern int _tls_index;
+extern int _tls_start;
+extern int _tls_end;
 
 #ifdef _MSC_VER
 __declspec(thread)
@@ -50,6 +60,9 @@ DllMain(
     return TRUE;
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -153,6 +166,10 @@ Mmt_ThreadAttachCalled(
     return TCL_OK;
 }
 
+/* Mmt_ThreadVar access a treaded (integer) variable.  */
+/* Special values -end, -index and -start can access
+ * the (read-only) special variables _tls_end, _tls_index
+ * and _tls_start */
 static int
 Mmt_ThreadVar(
     void *dummy,		/* Not used. */
@@ -161,12 +178,26 @@ Mmt_ThreadVar(
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     (void)dummy;
+    static const char *options[] = {
+	    "-end", "-index", "-start", NULL
+    };
 
     if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "");
+	Tcl_WrongNumArgs(interp, 1, objv, "?int? | -end | -index | -start");
 	return TCL_ERROR;
     }
     if (objc == 2) {
+	int index;
+	int value = -1;
+	if (Tcl_GetIndexFromObj(NULL, objv[1], options, "options", 0, &index) == TCL_OK) {
+	    switch (index) {
+	    case 0: value = _tls_end; break;
+	    case 1: value = _tls_index; break;
+	    case 2: value = _tls_start; break;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(value));
+	    return TCL_OK;
+	}
 	if (Tcl_GetIntFromObj(interp, objv[1], &threadVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
