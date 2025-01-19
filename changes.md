@@ -10,13 +10,17 @@ Tcl patch releases have the primary purpose of delivering bug fixes
 to the userbase.
 
 # Bug fixes
- - Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
+ - [Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
+ - [$interp eval $lambda] after [eval $lambda] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/98006f)
+ - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/67d5f7)
+ - [test lseq hangs with -Os](https://core.tcl-lang.org/tcl/tktview/d2a3c5)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
 
 # Updated bundled packages, libraries, standards, data
  - sqlite3 3.48.0
+ - tzdata 2025a
 
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
 
