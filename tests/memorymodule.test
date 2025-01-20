@@ -3,12 +3,13 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
-testConstraint memorymodule [expr {0 != [tcl::build-info memorymodule]}]
 testConstraint memorymoduletest [expr {0 == [catch {zipfs mount dltest/memorymoduletest.zip [file join [zipfs root] memorymoduletest]}]}]
-testConstraint nestedexception [expr {[tcl::build-info msvc] != 0}]
 
 lappend auto_path [file join [zipfs root] memorymoduletest]
+
+testConstraint thread [expr {[catch {package require thread 3.0}] == 0}]
+testConstraint memorymodule [expr {[tcl::build-info memorymodule] != 0}]
+testConstraint nestedexception [expr {[tcl::build-info msvc] != 0}]
 
 test memorymodule-1.0 {info loaded} memorymoduletest {
     package require memorymoduletest
@@ -25,7 +26,7 @@ test memorymodule-1.2 {GetModuleFileNameW (WIP)} {memorymoduletest memorymodule}
     GetModuleFileNameW
 } //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
 
-test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
+test memorymodule-2.0 {LTS, create thread before accessing var} -constraints {memorymoduletest thread} -body {
     package require Thread
     package require memorymoduletest
     set t1 [thread::create]
@@ -43,9 +44,41 @@ test memorymodule-2.0 {LTS} -constraints {memorymoduletest thread} -body {
     list [ThreadVar] $result
 } -result {15 16}
 
-test memorymodule-2.1 {nexted exception} -constraints {memorymoduletest nestedexception} -body {
+test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {memorymoduletest thread} -body {
+    package require Thread
+    package require memorymoduletest
+    ThreadVar 15; # Set ThreadVar to 15 in the main thread
+    set t1 [thread::create]; #create thread _before_ setting the variable
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require memorymoduletest
+	# set ThreadVar to 16 in the subthread
+	ThreadVar 16
+	return [ThreadVar]
+    } result
+    thread::release $t1
+    # ThreadVar in main thread should be unchanged (15)
+    list [ThreadVar] $result
+} -result {15 16}
+
+test memorymodule-2.2 {nexted exception} -constraints {memorymoduletest nestedexception} -body {
     NestedException
 } -result 1
+
+test memorymodule-3.0 {_tls_index} -body {
+    set t1 [thread::create];
+    ThreadVar 18; # Set ThreadVar to 18 in the main thread
+    thread::preserve $t1
+    thread::send $t1 {
+	lappend auto_path [file join [zipfs root] memorymoduletest]
+	package require memorymoduletest
+	ThreadVar 19; # Set ThreadVar to 18 in the main thread
+	return [list [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]]
+    } result
+    thread::release $t1
+    lappend result [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]
+} -result {0 0 0 0 0 0}
 
 # cleanup
 ::tcltest::cleanupTests
