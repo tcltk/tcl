@@ -110,12 +110,12 @@ static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int resu
  * Helper macros.
  */
 
-#define DupBlock(v,s,len) \
-    ((v) = (char *)Tcl_Alloc(len), memcpy((v),(s),(len)))
-#define DupString(v,s) \
+#define DupBlock(v, s, len) \
+    ((v) = (char *)Tcl_Alloc(len), memcpy((v), (s), (len)))
+#define DupString(v, s) \
     do { \
 	size_t local__len = strlen(s) + 1; \
-	DupBlock((v),(s),local__len); \
+	DupBlock((v), (s), local__len); \
     } while (0)
 
 /*
@@ -1066,12 +1066,12 @@ TclNRPackageObjCmd(
 {
     static const char *const pkgOptions[] = {
 	"files",  "forget",  "ifneeded", "names",   "prefer",
-	"present", "provide", "require",  "unknown", "vcompare",
+	"present", "provide", "require", "unknown", "vcompare",
 	"versions", "vsatisfies", NULL
     };
     enum pkgOptionsEnum {
 	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
-	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
+	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE, PKG_UNKNOWN, PKG_VCOMPARE,
 	PKG_VERSIONS, PKG_VSATISFIES
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
@@ -1246,7 +1246,7 @@ TclNRPackageObjCmd(
 		    hPtr = Tcl_NextHashEntry(&search)) {
 		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
+		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
 			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
 		}
 	    }
@@ -1361,7 +1361,7 @@ TclNRPackageObjCmd(
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
+		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL, NULL);
 	    Tcl_NRAddCallback(interp,
 		    PkgRequireCore, (void *) argv3, INT2PTR(newobjc),
 		    newObjvPtr, NULL);
@@ -1387,7 +1387,7 @@ TclNRPackageObjCmd(
 	    }
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
+		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL, NULL);
 	    Tcl_NRAddCallback(interp,
 		    PkgRequireCore, (void *) argv2, INT2PTR(newobjc),
 		    newObjvPtr, NULL);

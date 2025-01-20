@@ -70,7 +70,7 @@ typedef struct {
     struct hostent hent;
     char hbuf[2048];
 #endif
-}  ThreadSpecificData;
+} ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
 #if ((!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
@@ -164,14 +164,14 @@ TclUnixSetBlockingMode(
  *
  * TclpGetPwNam --
  *
- *      Thread-safe wrappers for getpwnam(). See "man getpwnam" for more
- *      details.
+ *	Thread-safe wrappers for getpwnam(). See "man getpwnam" for more
+ *	details.
  *
  * Results:
- *      Pointer to struct passwd on success or NULL on error.
+ *	Pointer to struct passwd on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -244,14 +244,14 @@ TclpGetPwNam(
  *
  * TclpGetPwUid --
  *
- *      Thread-safe wrappers for getpwuid(). See "man getpwuid" for more
- *      details.
+ *	Thread-safe wrappers for getpwuid(). See "man getpwuid" for more
+ *	details.
  *
  * Results:
- *      Pointer to struct passwd on success or NULL on error.
+ *	Pointer to struct passwd on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -347,14 +347,14 @@ FreePwBuf(
  *
  * TclpGetGrNam --
  *
- *      Thread-safe wrappers for getgrnam(). See "man getgrnam" for more
- *      details.
+ *	Thread-safe wrappers for getgrnam(). See "man getgrnam" for more
+ *	details.
  *
  * Results:
- *      Pointer to struct group on success or NULL on error.
+ *	Pointer to struct group on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -427,14 +427,14 @@ TclpGetGrNam(
  *
  * TclpGetGrGid --
  *
- *      Thread-safe wrappers for getgrgid(). See "man getgrgid" for more
- *      details.
+ *	Thread-safe wrappers for getgrgid(). See "man getgrgid" for more
+ *	details.
  *
  * Results:
- *      Pointer to struct group on success or NULL on error.
+ *	Pointer to struct group on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -530,14 +530,14 @@ FreeGrBuf(
  *
  * TclpGetHostByName --
  *
- *      Thread-safe wrappers for gethostbyname(). See "man gethostbyname" for
- *      more details.
+ *	Thread-safe wrappers for gethostbyname(). See "man gethostbyname" for
+ *	more details.
  *
  * Results:
- *      Pointer to struct hostent on success or NULL on error.
+ *	Pointer to struct hostent on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -555,7 +555,7 @@ TclpGetHostByName(
     int local_errno;
 
     return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-			   sizeof(tsdPtr->hbuf), &local_errno);
+	    sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr = NULL;
@@ -598,14 +598,14 @@ TclpGetHostByName(
  *
  * TclpGetHostByAddr --
  *
- *      Thread-safe wrappers for gethostbyaddr(). See "man gethostbyaddr" for
- *      more details.
+ *	Thread-safe wrappers for gethostbyaddr(). See "man gethostbyaddr" for
+ *	more details.
  *
  * Results:
- *      Pointer to struct hostent on success or NULL on error.
+ *	Pointer to struct hostent on success or NULL on error.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -661,14 +661,14 @@ TclpGetHostByAddr(
  *
  * CopyGrp --
  *
- *      Copies string fields of the group structure to the private buffer,
- *      honouring the size of the buffer.
+ *	Copies string fields of the group structure to the private buffer,
+ *	honouring the size of the buffer.
  *
  * Results:
- *      0 on success or -1 on error (errno = ERANGE).
+ *	0 on success or -1 on error (errno = ERANGE).
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -734,14 +734,14 @@ CopyGrp(
  *
  * CopyHostent --
  *
- *      Copies string fields of the hostent structure to the private buffer,
- *      honouring the size of the buffer.
+ *	Copies string fields of the hostent structure to the private buffer,
+ *	honouring the size of the buffer.
  *
  * Results:
- *      Number of bytes copied on success or -1 on error (errno = ERANGE)
+ *	Number of bytes copied on success or -1 on error (errno = ERANGE)
  *
  * Side effects:
- *      None
+ *	None
  *
  *---------------------------------------------------------------------------
  */
@@ -796,15 +796,15 @@ CopyHostent(
  *
  * CopyPwd --
  *
- *      Copies string fields of the passwd structure to the private buffer,
- *      honouring the size of the buffer.
+ *	Copies string fields of the passwd structure to the private buffer,
+ *	honouring the size of the buffer.
  *
  * Results:
- *      0 on success or -1 on error (errno = ERANGE).
+ *	0 on success or -1 on error (errno = ERANGE).
  *
  * Side effects:
- *      We are not copying the gecos field as it may not be supported on all
- *      platforms.
+ *	We are not copying the gecos field as it may not be supported on all
+ *	platforms.
  *
  *---------------------------------------------------------------------------
  */
@@ -862,14 +862,14 @@ CopyPwd(
  *
  * CopyArray --
  *
- *      Copies array of NULL-terminated or fixed-length strings to the private
- *      buffer, honouring the size of the buffer.
+ *	Copies array of NULL-terminated or fixed-length strings to the private
+ *	buffer, honouring the size of the buffer.
  *
  * Results:
- *      Number of bytes copied on success or -1 on error (errno = ERANGE)
+ *	Number of bytes copied on success or -1 on error (errno = ERANGE)
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -897,7 +897,7 @@ CopyArray(
 	 */
     }
     len = sizeof(char *) * (i + 1);	/* Leave place for the array. */
-    if (len >  buflen) {
+    if (len > buflen) {
 	return -1;
     }
 
@@ -926,14 +926,14 @@ CopyArray(
  *
  * CopyString --
  *
- *      Copies a NULL-terminated string to the private buffer, honouring the
- *      size of the buffer
+ *	Copies a NULL-terminated string to the private buffer, honouring the
+ *	size of the buffer
  *
  * Results:
- *      0 success or -1 on error (errno = ERANGE)
+ *	0 success or -1 on error (errno = ERANGE)
  *
  * Side effects:
- *      None
+ *	None
  *
  *---------------------------------------------------------------------------
  */

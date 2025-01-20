@@ -39,7 +39,7 @@ typedef struct DeclaredSlot {
     const Tcl_MethodType resolverType;
 } DeclaredSlot;
 
-#define SLOT(name,getter,setter,resolver)				\
+#define SLOT(name, getter, setter, resolver) \
     {"::oo::" name,							\
 	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
 		    getter, NULL, NULL},				\
@@ -1836,7 +1836,6 @@ TclOODefineDestructorObjCmd(
 	return TCL_ERROR;
     }
 
-
     (void) TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*
@@ -2497,7 +2496,6 @@ ClassMixin_Get(
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
-
 }
 
 static int

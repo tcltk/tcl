@@ -1170,8 +1170,6 @@ test source-bigdata-1 "source" -setup {
 # encoding convertto
 # dict *
 
-
-
 # cleanup
 ::tcltest::cleanupTests
 return

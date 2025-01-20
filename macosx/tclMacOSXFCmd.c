@@ -640,7 +640,7 @@ SetOSTypeFromAny(
 	result = TCL_ERROR;
     } else {
 	OSType osType;
-	char bytes[4] = {'\0','\0','\0','\0'};
+	char bytes[4] = {'\0', '\0', '\0', '\0'};
 
 	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |

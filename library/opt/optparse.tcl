@@ -362,10 +362,6 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     #######
 
-
-
-
-
     # Loop over all descriptions, calling OptDoOne which will
     # eventually eat all the arguments.
     proc OptDoAll {descriptionsName argumentsName} {

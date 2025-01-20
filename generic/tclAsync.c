@@ -201,7 +201,6 @@ Tcl_AsyncMark(
 	Tcl_ThreadAlert(token->originThrdId);
     }
     Tcl_MutexUnlock(&asyncMutex);
-
 }
 
 /*

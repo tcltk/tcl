@@ -270,7 +270,9 @@ DoRenameFile(
 	    retval = TCL_OK;
 	}
 #ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+	// Empty body
+    }
 #endif
 #endif
 
@@ -388,7 +390,6 @@ DoRenameFile(
 	 * or dest specified the current working directory on the current
 	 * filesystem. EACCES is returned for those cases.
 	 */
-
     } else if (Tcl_GetErrno() == EEXIST) {
 	/*
 	 * Reports EEXIST any time the target already exists. If it makes
@@ -660,7 +661,9 @@ DoCopyFile(
 	    retval = TCL_OK;
 	}
 #ifndef HAVE_NO_SEH
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+	// Empty body
+    }
 #endif
 #endif
 
@@ -904,8 +907,8 @@ TclpObjCopyDirectory(
     Tcl_Obj *normSrcPtr, *normDestPtr;
     int ret;
 
-    normSrcPtr = Tcl_FSGetNormalizedPath(NULL,srcPathPtr);
-    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
+    normSrcPtr = Tcl_FSGetNormalizedPath(NULL, srcPathPtr);
+    normDestPtr = Tcl_FSGetNormalizedPath(NULL, destPathPtr);
     if ((normSrcPtr == NULL) || (normDestPtr == NULL)) {
 	return TCL_ERROR;
     }
@@ -1121,7 +1124,6 @@ DoRemoveJustDirectory(
 	}
     }
     return TCL_ERROR;
-
 }
 
 static int
@@ -2029,7 +2031,7 @@ TclpCreateTemporaryDirectory(
 	char tempbuf[SUFFIX_LENGTH + 1];
 	int i;
 	static const char randChars[] =
-	    "QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
+		"QWERTYUIOPASDFGHJKLZXCVBNM1234567890";
 	static const int numRandChars = sizeof(randChars) - 1;
 
 	/*

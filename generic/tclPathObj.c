@@ -55,17 +55,17 @@ static const Tcl_ObjType fsPathType = {
  */
 
 typedef struct {
-    Tcl_Obj *translatedPathPtr; /*  If the path has been normalized (flags ==
-				 *  0), this is NULL.  Otherwise it is a path
-				 *  in which any ~user sequences have been
-				 *  translated away. */
-    Tcl_Obj *normPathPtr;	/*  If the path has been normalized (flags ==
-				 *  0), this is an absolute path without ., ..
-				 *  or ~user components.  Otherwise it is a
-				 *  path, possibly absolute, to normalize
-				 *  relative to cwdPtr. */
-    Tcl_Obj *cwdPtr;		/*  If NULL, either translatedPtr exists or
-				 *  normPathPtr exists and is absolute. */
+    Tcl_Obj *translatedPathPtr; /* If the path has been normalized (flags ==
+				 * 0), this is NULL.  Otherwise it is a path
+				 * in which any ~user sequences have been
+				 * translated away. */
+    Tcl_Obj *normPathPtr;	/* If the path has been normalized (flags ==
+				 * 0), this is an absolute path without ., ..
+				 * or ~user components.  Otherwise it is a
+				 * path, possibly absolute, to normalize
+				 * relative to cwdPtr. */
+    Tcl_Obj *cwdPtr;		/* If NULL, either translatedPtr exists or
+				 * normPathPtr exists and is absolute. */
     int flags;			/* Flags to describe interpretation - see
 				 * below. */
     void *nativePathPtr;	/* Native representation of this path, which
@@ -89,15 +89,17 @@ typedef struct {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
-#define SETPATHOBJ(pathPtr,fsPathPtr) \
-	do {							\
-		Tcl_ObjInternalRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
-	} while (0)
-#define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
+#define PATHOBJ(pathPtr) \
+    ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define SETPATHOBJ(pathPtr, fsPathPtr) \
+    do {							\
+	Tcl_ObjInternalRep ir;					\
+	ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);		\
+	ir.twoPtrValue.ptr2 = NULL;				\
+	Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
+    } while (0)
+#define PATHFLAGS(pathPtr) \
+    (PATHOBJ(pathPtr)->flags)
 
 /*
  *---------------------------------------------------------------------------
@@ -852,7 +854,7 @@ TclJoinPath(
 	return res;
     }
 
-    assert ( elements > 0 );
+    assert(elements > 0);
 
     if (elements == 2) {
 	Tcl_Obj *elt = objv[0];
@@ -913,7 +915,6 @@ TclJoinPath(
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
 			    || (strchr(TclGetString(elt), '\\') == NULL)) {
-
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len);
 			}
@@ -945,7 +946,7 @@ TclJoinPath(
 	}
     }
 
-    assert ( res == NULL );
+    assert(res == NULL);
 
     for (i = 0; i < elements; i++) {
 	Tcl_Size driveNameLength;
@@ -1111,7 +1112,7 @@ TclJoinPath(
 	    Tcl_SetObjLength(res, length);
 	}
     }
-    assert ( res != NULL );
+    assert(res != NULL);
     return res;
 }
 
@@ -2451,8 +2452,8 @@ TclNativePathInFilesystem(
  *
  * MakeTildeRelativePath --
  *
- *      Returns a path relative to the home directory of a user.
- *      Note there is a difference between not specifying a user and
+ *	Returns a path relative to the home directory of a user.
+ *	Note there is a difference between not specifying a user and
  *	explicitly specifying the current user. This mimics Tcl8's tilde
  *	expansion.
  *
@@ -2530,7 +2531,7 @@ MakeTildeRelativePath(
  *	Wrapper around MakeTildeRelativePath. See that function.
  *
  * Results:
- *      Returns a Tcl_Obj containing the home directory of a user
+ *	Returns a Tcl_Obj containing the home directory of a user
  *	or NULL on failure with error message in interp if non-NULL.
  *
  *----------------------------------------------------------------------
@@ -2555,14 +2556,14 @@ TclGetHomeDirObj(
  *
  *	Copies the path passed in to the output Tcl_DString dsPtr,
  *	resolving leading ~ and ~user components in the path if present.
- *      An error is returned if such a component IS present AND cannot
- *      be resolved.
+ *	An error is returned if such a component IS present AND cannot
+ *	be resolved.
  *
  *	The output dsPtr must be cleared by caller on success.
  *
  * Results:
- *      TCL_OK - path did not contain leading ~ or it was successful resolved
- *      TCL_ERROR - ~ component could not be resolved.
+ *	TCL_OK - path did not contain leading ~ or it was successful resolved
+ *	TCL_ERROR - ~ component could not be resolved.
  *
  *----------------------------------------------------------------------
  */
@@ -2594,7 +2595,8 @@ int Tcl_FSTildeExpand(
 
     if (split == 1) {
 	/* No user name specified '~' or '~/...' -> current user */
-	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL, dsPtr);
+	result = MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL,
+		dsPtr);
     } else {
 	/* User name specified - ~user, ~user/... */
 	const char *user;
@@ -2606,7 +2608,7 @@ int Tcl_FSTildeExpand(
 
 	/* path[split] is / for ~user/... or \0 for ~user */
 	result = MakeTildeRelativePath(interp, user,
-		  path[split] ? &path[split + 1] : NULL, dsPtr);
+		path[split] ? &path[split + 1] : NULL, dsPtr);
 	Tcl_DStringFree(&dsUser);
     }
     if (result != TCL_OK) {
@@ -2627,10 +2629,10 @@ int Tcl_FSTildeExpand(
  *	begin with a tilde, returns as is.
  *
  * Results:
- *      Returns a Tcl_Obj with resolved path. This may be a new Tcl_Obj
+ *	Returns a Tcl_Obj with resolved path. This may be a new Tcl_Obj
  *	with ref count 0 or that pathObj that was passed in without its
  *	ref count modified.
- *      Returns NULL if the path begins with a ~ that cannot be resolved
+ *	Returns NULL if the path begins with a ~ that cannot be resolved
  *	and stores an error message in interp if non-NULL.
  *
  *----------------------------------------------------------------------
@@ -2666,9 +2668,9 @@ TclResolveTildePath(
  *	the paths with any ~-prefixed paths resolved.
  *
  *	Empty strings and ~-prefixed paths that cannot be resolved are
- *      removed from the returned list.
+ *	removed from the returned list.
  *
- *      The trailing components of the path are returned verbatim. No
+ *	The trailing components of the path are returned verbatim. No
  *	processing is done on them. Moreover, no assumptions should be
  *	made about the separators in the returned path. They may be /
  *	or native. Appropriate path manipulations functions should be

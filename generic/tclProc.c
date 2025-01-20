@@ -722,15 +722,15 @@ TclGetFrame(
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
-	int result;
-	Tcl_Obj obj;
+    int result;
+    Tcl_Obj obj;
 
-	obj.bytes = (char *) name;
-	obj.length = strlen(name);
-	obj.typePtr = NULL;
-	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeInternalRep(&obj);
-	return result;
+    obj.bytes = (char *) name;
+    obj.length = strlen(name);
+    obj.typePtr = NULL;
+    result = TclObjGetFrame(interp, &obj, framePtrPtr);
+    TclFreeInternalRep(&obj);
+    return result;
 }
 
 /*
@@ -844,7 +844,7 @@ TclObjGetFrame(
     }
 badLevel:
     if (name == NULL) {
-	name = objPtr ? TclGetString(objPtr) : "1" ;
+	name = objPtr ? TclGetString(objPtr) : "1";
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad level \"%s\"", name));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL", name, (char *)NULL);
@@ -906,7 +906,6 @@ TclNRUplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
@@ -934,8 +933,8 @@ TclNRUplevelObjCmd(
 	    if (result == -1) {
 		return TCL_ERROR;
 	    }
-	    objc -= 1;
-	    objv += 1;
+	    objc--;
+	    objv++;
 	    goto havelevel;
 	}
     }
@@ -974,7 +973,6 @@ TclNRUplevelObjCmd(
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
-
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -1364,7 +1362,7 @@ InitArgsAndLocals(
 
     if (localCt) {
 	if (!codePtr->localCachePtr) {
-	    InitLocalCache(procPtr) ;
+	    InitLocalCache(procPtr);
 	}
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
@@ -2537,7 +2535,6 @@ SetLambdaFromAny(
 	     */
 
 	    Tcl_IncrRefCount(contextPtr->data.eval.path);
-
 	}
 
 	if (contextPtr->type == TCL_LOCATION_SOURCE) {

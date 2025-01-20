@@ -603,7 +603,7 @@ Tcl_RegsubObjCmd(
 
 	Tcl_Size slen;
 	int nocase, wsrclc;
-	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
+	int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, size_t);
 	Tcl_UniChar *p;
 
 	numMatches = 0;
@@ -726,7 +726,6 @@ Tcl_RegsubObjCmd(
 
     numMatches = 0;
     for ( ; offset <= wlen; ) {
-
 	/*
 	 * The flags argument is set if string is part of a larger string, so
 	 * that "^" won't match.
@@ -1236,7 +1235,6 @@ Tcl_SplitObjCmd(
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
 	Tcl_DeleteHashTable(&charReuseTable);
-
     } else if (splitCharLen == 1) {
 	const char *p;
 
@@ -1246,7 +1244,7 @@ Tcl_SplitObjCmd(
 	 * byte in length.
 	 */
 
-	while (*stringPtr && (p=strchr(stringPtr,*splitChars)) != NULL) {
+	while (*stringPtr && (p=strchr(stringPtr, *splitChars)) != NULL) {
 	    objPtr = Tcl_NewStringObj(stringPtr, p - stringPtr);
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	    stringPtr = p + 1;
@@ -1954,7 +1952,7 @@ StringMapCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size length1, length2,  mapElemc, index;
+    Tcl_Size length1, length2, mapElemc, index;
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
@@ -2536,7 +2534,7 @@ StringStartCmd(
 	    p = next;
 	}
 	if (cur != index) {
-	    cur += 1;
+	    cur++;
 	}
     }
     TclNewIndexObj(obj, cur);
@@ -2907,7 +2905,7 @@ StringLowerCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -2992,7 +2990,7 @@ StringUpperCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3077,7 +3075,7 @@ StringTitleCmd(
 	Tcl_Obj *resultPtr;
 
 	length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[2], length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -3702,7 +3700,7 @@ TclNRSwitchObjCmd(
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern, noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -4402,20 +4400,20 @@ Tcl_TimeRateObjCmd(
 	     */
 
 	    switch (result) {
-		case TCL_OK:
-		    break;
-		case TCL_BREAK:
-		    /*
-		     * Force stop immediately.
-		     */
-		    threshold = 1;
-		    maxcnt = 0;
-		    /* FALLTHRU */
-		case TCL_CONTINUE:
-		    result = TCL_OK;
-		    break;
-		default:
-		    goto done;
+	    case TCL_OK:
+		break;
+	    case TCL_BREAK:
+		/*
+		 * Force stop immediately.
+		 */
+		threshold = 1;
+		maxcnt = 0;
+		/* FALLTHRU */
+	    case TCL_CONTINUE:
+		result = TCL_OK;
+		break;
+	    default:
+		goto done;
 	    }
 
 	    /*

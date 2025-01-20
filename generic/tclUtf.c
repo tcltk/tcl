@@ -158,7 +158,7 @@ static const unsigned char bounds[28] = {
     0xA0, 0xBF,	/* \xE0\x80 through \xE0\x9F are invalid prefixes */
     0x80, 0xBF, 0x80, 0xBF, 0x80, 0xBF, /* (\xE4 - \xEC) -- all valid */
     0x90, 0xBF,	/* \xF0\x80 through \xF0\x8F are invalid prefixes */
-    0x80, 0x8F  /* \xF4\x90 and higher are invalid prefixes */
+    0x80, 0x8F	/* \xF4\x90 and higher are invalid prefixes */
 };
 
 static int
@@ -370,7 +370,6 @@ Tcl_Char16ToUtfDString(
 	return NULL;
     }
     if (uniLength < 0) {
-
 	uniLength = 0;
 	w = uniStr;
 	while (*w != '\0') {

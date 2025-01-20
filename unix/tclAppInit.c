@@ -29,7 +29,7 @@ extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
-extern void                XtToolkitInitialize(void);
+extern void		XtToolkitInitialize(void);
 extern Tcl_LibraryInitProc Tclxttest_Init;
 #endif /* TCL_XT_TEST */
 

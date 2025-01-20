@@ -839,7 +839,6 @@ TclpFreeAllocCache(
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
-
     } else {
 	/*
 	 * Called by TclFinalizeThreadAlloc() during the process

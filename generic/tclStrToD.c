@@ -71,9 +71,9 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #  include <sunmath.h>
 #  define TCL_IEEE_DOUBLE_ROUNDING_DECL
 #  define TCL_IEEE_DOUBLE_ROUNDING \
-    ieee_flags("set","precision","double",NULL)
+    ieee_flags("set", "precision", "double", NULL)
 #  define TCL_DEFAULT_DOUBLE_ROUNDING \
-    ieee_flags("clear","precision",NULL,NULL)
+    ieee_flags("clear", "precision", NULL, NULL)
 
 # endif
 #endif
@@ -583,7 +583,7 @@ TclParseNumber(
 	    const char *before, *after;
 
 	    if (p==bytes) {
-		/* Not allowed at beginning  */
+		/* Not allowed at beginning */
 		goto endgame;
 	    }
 	    /*
@@ -592,11 +592,15 @@ TclParseNumber(
 	     *   example: 5___6
 	     */
 	    for (before = (p - 1);
-		 (before && *before == '_');
-		 before = (before > p ? (before - 1) : NULL));
+		    (before && *before == '_');
+		    before = (before > p ? (before - 1) : NULL)) {
+		// empty
+	    }
 	    for (after = (p + 1);
-		 (after && *after && *after == '_');
-		 after = (*after && *after == '_') ? (after + 1) : NULL);
+		    (after && *after && *after == '_');
+		    after = (*after && *after == '_') ? (after + 1) : NULL) {
+		// empty
+	    }
 
 	    switch (state) {
 	    case ZERO_B:
@@ -633,7 +637,7 @@ TclParseNumber(
 		goto endgame;
 	    case ZERO_X:
 	    case HEXADECIMAL:
-		if ( (!before || isxdigit(UCHAR(*before))) &&
+		if ((!before || isxdigit(UCHAR(*before))) &&
 			(!after || isxdigit(UCHAR(*after)))) {
 		    break;
 		}
@@ -652,7 +656,6 @@ TclParseNumber(
 
     continue_num:
 	switch (state) {
-
 	case INITIAL:
 	    /*
 	     * Initial state. Acceptable characters are +, -, digits, period,
@@ -934,8 +937,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
-			err = mp_init_u64(&significandBig,
-				significandWide);
+			err = mp_init_u64(&significandBig, significandWide);
 		    }
 		}
 		if (!significandOverflow) {
@@ -949,7 +951,7 @@ TclParseNumber(
 		    if (significandWide != 0) {
 			significandWide <<= shift;
 		    }
-		    significandWide += 1;
+		    significandWide++;
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
@@ -967,7 +969,7 @@ TclParseNumber(
 	case ZERO_D:
 	    if (c == '0') {
 		numTrailZeros++;
-	    } else if ( ! isdigit(UCHAR(c))) {
+	    } else if (!isdigit(UCHAR(c))) {
 		goto endgame;
 	    }
 	    state = DECIMAL;
@@ -4891,7 +4893,6 @@ TclBignumToDouble(
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
-
 	    /*
 	     * Round to even
 	     */
@@ -4905,7 +4906,6 @@ TclBignumToDouble(
 		}
 	    }
 	} else {
-
 	    /*
 	     * Ordinary rounding
 	     */

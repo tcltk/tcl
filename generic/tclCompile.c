@@ -1438,7 +1438,7 @@ void
 TclInitCompileEnv(
     Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
 				 * structure is initialized. */
-    CompileEnv *envPtr,/* Points to the CompileEnv structure to
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
@@ -2704,7 +2704,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start,tokenPtr[1].size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr, 1);
 	return;
     }
 
@@ -3079,7 +3079,7 @@ TclFindCompiledLocal(
 		char *localName = localPtr->name;
 
 		if ((nameBytes == localPtr->nameLength) &&
-			(strncmp(name,localName,nameBytes) == 0)) {
+			(strncmp(name, localName, nameBytes) == 0)) {
 		    return i;
 		}
 	    }

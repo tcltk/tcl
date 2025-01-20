@@ -139,7 +139,7 @@ GrowStringBuffer(
     Tcl_Size capacity;
 
     assert(needed <= TCL_SIZE_MAX - 1);
-    needed += 1; /* Include terminating nul */
+    needed++;			/* Include terminating nul */
 
     if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
@@ -177,14 +177,14 @@ GrowUnicodeBuffer(
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
-		  STRING_MAXCHARS);
+		STRING_MAXCHARS);
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
 	stringPtr = (String *) TclReallocElemsEx(stringPtr,
 		needed + 1, /* +1 for nul */
 		sizeof(Tcl_UniChar), offsetof(String, unicode), &maxChars);
-	maxChars -= 1; /* End nul not included */
+	maxChars--;		/* End nul not included */
     } else {
 	/*
 	 * First allocation - just big enough. Note needed does
@@ -2246,7 +2246,7 @@ Tcl_AppendFormatToObj(
 	    if ((isNegative || gotPlus || gotSpace) && (useBig || ch=='d')) {
 		Tcl_AppendToObj(segment,
 			(isNegative ? "-" : gotPlus ? "+" : " "), 1);
-		segmentLimit -= 1;
+		segmentLimit--;
 	    }
 
 	    if (gotHash || (ch == 'p')) {
@@ -2465,7 +2465,6 @@ Tcl_AppendFormatToObj(
 		Tcl_DecrRefCount(pure);
 		break;
 	    }
-
 	    }
 	    break;
 	}
@@ -3905,7 +3904,7 @@ TclStringFirst(
     for (checkStr = uh + start; checkStr + ln <= endStr; checkStr++) {
 	if ((*checkStr == *un) && (0 ==
 		memcmp(checkStr + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-	    value =  (checkStr - uh);
+	    value = (checkStr - uh);
 	    goto firstEnd;
 	}
     }
@@ -4211,9 +4210,9 @@ TclStringReplace(
 	if (insertPtr == NULL) {
 	    /* Replace something with nothing. */
 
-	    assert ( first <= numBytes ) ;
-	    assert ( count <= numBytes ) ;
-	    assert ( first + count <= numBytes ) ;
+	    assert(first <= numBytes);
+	    assert(count <= numBytes);
+	    assert(first + count <= numBytes);
 
 	    result = Tcl_NewByteArrayObj(NULL, numBytes - count);/* PANIC? */
 	    TclAppendBytesToByteArray(result, bytes, first);

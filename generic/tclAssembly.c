@@ -1297,7 +1297,6 @@ AssembleOneLine(
 
     instType = TalInstructionTable[tblIdx].instType;
     switch (instType) {
-
     case ASSEM_PUSH:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "value");
@@ -1377,8 +1376,8 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	if (opnd < 0 || opnd > 3) {
-	    Tcl_SetObjResult(interp,
-		     Tcl_NewStringObj("operand must be [0..3]", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "operand must be [0..3]", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", (char *)NULL);
 	    goto cleanup;
 	}
@@ -2265,7 +2264,7 @@ GetListIndexOperand(
      * when list size limits grow.
      */
     status = TclIndexEncode(interp, value,
-	    TCL_INDEX_NONE,TCL_INDEX_NONE, result);
+	    TCL_INDEX_NONE, TCL_INDEX_NONE, result);
 
     Tcl_DecrRefCount(value);
     *tokenPtrPtr = TokenAfter(tokenPtr);
@@ -3820,7 +3819,7 @@ ProcessCatchesInBasicBlock(
      */
 
     if (bbPtr->flags & BB_JUMPTABLE) {
-	for (jtEntry = Tcl_FirstHashEntry(&bbPtr->jtPtr->hashTable,&jtSearch);
+	for (jtEntry = Tcl_FirstHashEntry(&bbPtr->jtPtr->hashTable, &jtSearch);
 		result == TCL_OK && jtEntry != NULL;
 		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
 	    targetLabel = (Tcl_Obj*)Tcl_GetHashValue(jtEntry);

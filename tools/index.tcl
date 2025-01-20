@@ -182,7 +182,6 @@ proc dash {} {
 }
 
 
-
 # initGlobals, tab, font, char, macro2 --
 #
 # These procedures do nothing during the first pass.

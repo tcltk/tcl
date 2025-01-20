@@ -743,7 +743,6 @@ FindElement(
 		}
 	    }
 	    break;
-
 	}
 	p++;
     }
@@ -1051,7 +1050,7 @@ TclScanElement(
     Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;	/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1098,96 +1097,97 @@ TclScanElement(
     }
 
     while (length) {
-      if (CHAR_TYPE(*p) != TYPE_NORMAL) {
-	switch (*p) {
-	case '{':	/* TYPE_BRACE */
+	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
+	    switch (*p) {
+	    case '{':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '{' => '\{' */
-	    nestingLevel++;
-	    break;
-	case '}':	/* TYPE_BRACE */
+		extra++;	/* Escape '{' => '\{' */
+		nestingLevel++;
+		break;
+	    case '}':	/* TYPE_BRACE */
 #if COMPAT
-	    braceCount++;
+		braceCount++;
 #endif /* COMPAT */
-	    extra++;				/* Escape '}' => '\}' */
-	    if (nestingLevel-- < 1) {
-		/*
-		 * Unbalanced braces!  Cannot format with brace quoting.
-		 */
+		extra++;	/* Escape '}' => '\}' */
+		if (nestingLevel-- < 1) {
+		    /*
+		     * Unbalanced braces!  Cannot format with brace quoting.
+		     */
 
-		requireEscape = 1;
-	    }
-	    break;
-	case ']':	/* TYPE_CLOSE_BRACK */
-	case '"':	/* TYPE_SPACE */
+		    requireEscape = 1;
+		}
+		break;
+	    case ']':	/* TYPE_CLOSE_BRACK */
+	    case '"':	/* TYPE_SPACE */
 #if COMPAT
-	    forbidNone = 1;
-	    extra++;		/* Escapes all just prepend a backslash */
-	    preferEscape = 1;
-	    break;
+		forbidNone = 1;
+		extra++;	/* Escapes all just prepend a backslash */
+		preferEscape = 1;
+		break;
 #else
-	    /* FLOW THROUGH */
+		/* FLOW THROUGH */
 #endif /* COMPAT */
-	case '[':	/* TYPE_SUBS */
-	case '$':	/* TYPE_SUBS */
-	case ';':	/* TYPE_COMMAND_END */
-	    forbidNone = 1;
-	    extra++;		/* Escape sequences all one byte longer. */
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\\':	/* TYPE_SUBS */
-	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
-		/*
-		 * Final backslash. Cannot format with brace quoting.
-		 */
-
-		requireEscape = 1;
-		break;
-	    }
-	    if (p[1] == '\n') {
-		extra++;	/* Escape newline => '\n', one byte longer */
-
-		/*
-		 * Backslash newline sequence.  Brace quoting not permitted.
-		 */
-
-		requireEscape = 1;
-		length -= (length > 0);
-		p++;
-		break;
-	    }
-	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
-		extra++;	/* Escape sequences all one byte longer. */
-		length -= (length > 0);
-		p++;
-	    }
-	    forbidNone = 1;
-#if COMPAT
-	    preferBrace = 1;
-#endif /* COMPAT */
-	    break;
-	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_INDEX_NONE) {
-		goto endOfString;
-	    }
-	    /* TODO: Panic on improper encoding? */
-	    break;
-	default:
-	    if (TclIsSpaceProcM(*p)) {
+	    case '[':	/* TYPE_SUBS */
+	    case '$':	/* TYPE_SUBS */
+	    case ';':	/* TYPE_COMMAND_END */
 		forbidNone = 1;
 		extra++;	/* Escape sequences all one byte longer. */
 #if COMPAT
 		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\\':	/* TYPE_SUBS */
+		extra++;	/* Escape '\' => '\\' */
+		if ((length == 1) ||
+			((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+		    /*
+		     * Final backslash. Cannot format with brace quoting.
+		     */
+
+		    requireEscape = 1;
+		    break;
+		}
+		if (p[1] == '\n') {
+		    extra++;	/* Escape newline => '\n', one byte longer */
+
+		    /*
+		     * Backslash newline sequence.  Brace quoting not permitted.
+		     */
+
+		    requireEscape = 1;
+		    length -= (length > 0);
+		    p++;
+		    break;
+		}
+		if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
+		    extra++;	/* Escape sequences all one byte longer. */
+		    length -= (length > 0);
+		    p++;
+		}
+		forbidNone = 1;
+#if COMPAT
+		preferBrace = 1;
+#endif /* COMPAT */
+		break;
+	    case '\0':	/* TYPE_SUBS */
+		if (length == TCL_INDEX_NONE) {
+		    goto endOfString;
+		}
+		/* TODO: Panic on improper encoding? */
+		break;
+	    default:
+		if (TclIsSpaceProcM(*p)) {
+		    forbidNone = 1;
+		    extra++;	/* Escape sequences all one byte longer. */
+#if COMPAT
+		    preferBrace = 1;
 #endif
+		}
+		break;
 	    }
-	    break;
 	}
-      }
 	length -= (length > 0);
 	p++;
     }
@@ -1615,7 +1615,7 @@ Tcl_Merge(
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
-	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = (i ? DONT_QUOTE_HASH : 0);
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
@@ -1627,7 +1627,7 @@ Tcl_Merge(
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	flagPtr[i] |= ( i ? DONT_QUOTE_HASH : 0 );
+	flagPtr[i] |= (i ? DONT_QUOTE_HASH : 0);
 	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
@@ -1826,7 +1826,6 @@ TclTrim(
 
     /* Empty strings -> nothing to do */
     if ((numBytes > 0) && (numTrim > 0)) {
-
 	/* When bytes is NUL-terminated, returns 0 <= trimLeft <= numBytes */
 	trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
 	numBytes -= trimLeft;
@@ -2152,7 +2151,9 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*');
+	    while (*(++pattern) == '*') {
+		// empty body
+	    }
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -2627,8 +2628,8 @@ Tcl_DStringAppend(
 
     if (length > (TCL_SIZE_MAX - dsPtr->length - 1)) {
 	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
-		  "d bytes) exceeded",
-		  TCL_SIZE_MAX);
+		"d bytes) exceeded",
+		TCL_SIZE_MAX);
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
@@ -2763,7 +2764,7 @@ Tcl_DStringAppendElement(
      * memcpy, not strcpy, to copy the string to a larger buffer, since there
      * may be embedded NULLs in the string in some cases.
      */
-    newSize += 1; /* For terminating nul */
+    newSize++;		/* For terminating nul */
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
@@ -3234,15 +3235,15 @@ TclNeedSpace(
      *	   first curly brace starts an element, so backtrack over open curly
      *	   braces that are trailing characters of the string; and
      *
-     *  (NOTE: Every character our parser is looking for is a proper
-     *  single-byte encoding of an ASCII value. It does not accept
-     *  overlong encodings.  Given that, there's no benefit using
-     *  Tcl_UtfPrev. If it would find what we seek, so would byte-by-byte
-     *  backward scan. Save routine call overhead and risk of wrong
-     *  results should the behavior of Tcl_UtfPrev change in unexpected ways.
-     *	Reconsider this if we ever start treating non-ASCII Unicode
-     *	characters as meaningful list syntax, expanded Unicode spaces as
-     *	element separators, for example.)
+     * (NOTE: Every character our parser is looking for is a proper
+     * single-byte encoding of an ASCII value. It does not accept
+     * overlong encodings.  Given that, there's no benefit using
+     * Tcl_UtfPrev. If it would find what we seek, so would byte-by-byte
+     * backward scan. Save routine call overhead and risk of wrong
+     * results should the behavior of Tcl_UtfPrev change in unexpected ways.
+     * Reconsider this if we ever start treating non-ASCII Unicode
+     * characters as meaningful list syntax, expanded Unicode spaces as
+     * element separators, for example.)
      *
 
     end = Tcl_UtfPrev(end, start);
@@ -3375,14 +3376,14 @@ TclFormatInt(
 
 static int
 GetWideForIndex(
-    Tcl_Interp *interp,         /* Interpreter to use for error reporting. If
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
+    Tcl_Obj *objPtr,		/* Points to the value to be parsed */
+    Tcl_WideInt endValue,	/* The value to be stored at *widePtr if
 				 * objPtr holds "end".
 				 * NOTE: this value may be TCL_INDEX_NONE. */
-    Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
+    Tcl_WideInt *widePtr)	/* Location filled in with a wide integer
 				 * representing an index. */
 {
     int numType;
@@ -3424,7 +3425,7 @@ GetWideForIndex(
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
  *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
  *	list.
  *
  * Results:
@@ -3466,7 +3467,7 @@ Tcl_GetIntForIndex(
 	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
 	    *indexPtr = (Tcl_Size)wide; /* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
+	    *indexPtr = TCL_SIZE_MAX;	/* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
 	    *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
 	} else if ((wide < 0) && (endValue >= 0)) {
@@ -3495,7 +3496,7 @@ Tcl_GetIntForIndex(
  *	-1:         Index "end"
  *	0:          Index "0"
  *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
- *                  commands like lset.
+ *	            commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3510,10 +3511,10 @@ Tcl_GetIntForIndex(
 static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_WideInt endValue,       /* The value to be stored at "widePtr" if
+    Tcl_Obj *objPtr,		/* Pointer to the object to parse */
+    Tcl_WideInt endValue,	/* The value to be stored at "widePtr" if
 				 * "objPtr" holds "end". */
-    Tcl_WideInt *widePtr)       /* Location filled in with an integer
+    Tcl_WideInt *widePtr)	/* Location filled in with an integer
 				 * representing an index. */
 {
     Tcl_ObjInternalRep *irPtr;
@@ -3752,57 +3753,57 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
+ *	IMPORTANT: function only encodes indices in the range that fits within
+ *	an "int" type. Do NOT change this as the byte code compiler and engine
+ *	which call this function cannot handle wider index types. Indices
+ *	outside the range will result in the function returning an error.
  *
- *      Parse objPtr to determine if it is an index value. Two cases
+ *	Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
+ *	arithmetic expressions.
  *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *	The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *	This means the largest supported character length is also TCL_SIZE_MAX,
+ *	and the index of the last character in a string of length TCL_SIZE_MAX
+ *	is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	This function however can only handle integer indices in the range
+ *	0 : INT_MAX-1.
  *
- *      Any absolute index value parsed outside that range is encoded
- *      using the before and after values passed in by the
- *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_NONE
- *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_NONE is good for
- *      most callers to use for before.  Other values are possible
- *      when the caller knows it is helpful in producing its own behavior
- *      for indices before and after the indexed item.
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the before and after values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. TCL_INDEX_NONE
+ *	is available as a good choice for most callers to use for
+ *	after. Likewise, the value TCL_INDEX_NONE is good for
+ *	most callers to use for before.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
- *      A token can also be parsed as an end-relative index expression.
- *      All end-relative expressions that indicate an index larger
- *      than end (end+2, end--5) point beyond the end of the indexed
- *      collection, and can be encoded as after.  The end-relative
- *      expressions that indicate an index less than or equal to end
- *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
- *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
- *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
- *      they can be encoded with the before value.
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as after.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *	"end-0x7FFFFFFE" for that largest string would be 0.  Thus,
+ *	if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the before value.
  *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *	index does not fit in an int type.
  *
  * Side effects:
- *      When TCL_OK is returned, the encoded index value is written
- *      to *indexPtr.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -3985,8 +3986,8 @@ TclIndexDecode(
  */
 int
 TclCommandWordLimitError(
-    Tcl_Interp *interp,   /* May be NULL */
-    Tcl_Size count)       /* If <= 0, "unknown" */
+    Tcl_Interp *interp,		/* May be NULL */
+    Tcl_Size count)		/* If <= 0, "unknown" */
 {
     if (interp) {
 	if (count > 0) {
@@ -4254,7 +4255,7 @@ TclGetProcessGlobalValue(
 	Tcl_MutexLock(&pgvPtr->mutex);
 	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
 	    pgvPtr->epoch++;
-	    pgvPtr->proc(&pgvPtr->value,&pgvPtr->numBytes,&pgvPtr->encoding);
+	    pgvPtr->proc(&pgvPtr->value, &pgvPtr->numBytes, &pgvPtr->encoding);
 	    if (pgvPtr->value == NULL) {
 		Tcl_Panic("PGV Initializer did not initialize");
 	    }

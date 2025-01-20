@@ -156,7 +156,7 @@ Tcl_Preserve(
     refPtr->refCount = 1;
     refPtr->mustFree = 0;
     refPtr->freeProc = 0;
-    inUse += 1;
+    inUse++;
     Tcl_MutexUnlock(&preserveMutex);
 }
 

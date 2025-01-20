@@ -695,7 +695,6 @@ ClockMCDict(
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
-
 	/* if locale was not yet used */
 	if (!(opts->flags & CLF_LOCALE_USED)) {
 	    opts->localeObj = NormLocaleObj(dataPtr, opts->interp,
@@ -2526,9 +2525,9 @@ GetYearWeekDay(
 
     if (fields->julianDay < temp.julianDay) {
 	if (temp.isBce) {
-	    temp.iso8601Year += 1;
+	    temp.iso8601Year++;
 	} else {
-	    temp.iso8601Year -= 1;
+	    temp.iso8601Year--;
 	}
 	GetJulianDayFromEraYearWeekDay(&temp, changeover);
     }
@@ -3473,7 +3472,7 @@ ClockParseFmtScnArgs(
 	/* extact fields from base */
 	date->seconds = baseVal;
 	if (ClockGetDateFields(dataPtr, interp, date, opts->timezoneObj,
-	      GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    /* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
 	    return TCL_ERROR;
 	}

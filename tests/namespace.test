@@ -197,7 +197,6 @@ test namespace-7.7 {Bug 1655305} -setup {
 } -cleanup {
     interp delete child
 } -result {}
-
 test namespace-7.8 {Bug ba1419303b4c} -setup {
     namespace eval ns1 {
 	namespace ensemble create
@@ -210,8 +209,6 @@ test namespace-7.8 {Bug ba1419303b4c} -setup {
     # No segmentation fault given --enable-symbols.
     namespace delete ns1
 } -result {}
-
-
 test namespace-7.9 {
 	Bug e39cb3f462631a99
 
@@ -219,20 +216,14 @@ test namespace-7.9 {
 	until the contents of the namespace are entirely removed.
 } -setup {
 
-
-
-
 } -body {
-
 	variable res {}
-
 
 	namespace eval ns1 {
 		proc p1 caller {
 			lappend [namespace parent]::res $caller
 		}
 	}
-
 
 	namespace eval ns1a {
 		namespace path [namespace parent]::ns1
@@ -256,7 +247,6 @@ test namespace-7.9 {
 		}
 	}
 
-
 	trace add command ns1::p1 delete ns1a::t1
 	namespace delete ns1
 
@@ -264,14 +254,11 @@ test namespace-7.9 {
 	namespace delete ns2
 
 	return $res
-
 } -cleanup {
 	namespace delete ns1a
 	namespace delete ns2a
 	unset res
 } -result {t1 t2}
-
-
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}

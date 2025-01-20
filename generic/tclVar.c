@@ -236,14 +236,14 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
  *
  * localVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
- *			  or NULL if it is this same obj
- *   twoPtrValue.ptr2: index into locals table
+ *			 or NULL if it is this same obj
+ *   twoPtrValue.ptr2:   index into locals table
  *
  * parsedVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:	pointer to the array name Tcl_Obj, or NULL if it is a
- *			scalar variable
- *   twoPtrValue.ptr2:	pointer to the element name string (owned by this
- *			Tcl_Obj), or NULL if it is a scalar variable
+ *   twoPtrValue.ptr1:	 pointer to the array name Tcl_Obj, or NULL if it is a
+ *			 scalar variable
+ *   twoPtrValue.ptr2:	 pointer to the element name string (owned by this
+ *			 Tcl_Obj), or NULL if it is a scalar variable
  */
 
 static const Tcl_ObjType localVarNameType = {
@@ -1490,7 +1490,7 @@ Tcl_SetObjCmd(
     Tcl_Obj *varValueObj;
 
     if (objc == 2) {
-	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
+	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
 	if (varValueObj == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1949,7 +1949,7 @@ TclPtrSetVarIdx(
      */
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISCONST,index);
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISCONST, index);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (char *)NULL);
 	}
 	goto earlyError;
@@ -1961,7 +1961,7 @@ TclPtrSetVarIdx(
 
     if (TclIsVarArray(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISARRAY,index);
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISARRAY, index);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", (char *)NULL);
 	}
 	goto earlyError;
@@ -2240,7 +2240,7 @@ TclPtrIncrObjVarIdx(
      */
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "incr", ISCONST,index);
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "incr", ISCONST, index);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (char *)NULL);
 	}
 	return NULL;
@@ -2477,7 +2477,7 @@ TclPtrUnsetVarIdx(
      */
     if (TclIsVarConstant(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset", ISCONST,index);
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset", ISCONST, index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "CONST", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2505,7 +2505,8 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-	      ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+		    ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT),
+		    index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", (char *)NULL);
 	}
     }
@@ -2613,7 +2614,6 @@ UnsetVarStruct(
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
-
 	    /*
 	     * Pass the array element name to TclObjCallVarTraces(), because
 	     * it cannot be determined from dummyVar. Alternatively, indicate
@@ -2629,7 +2629,7 @@ UnsetVarStruct(
 
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-	      (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
+		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -2813,7 +2813,7 @@ Tcl_AppendObjCmd(
     }
 
     if (objc == 2) {
-	varValuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
+	varValuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
 	if (varValuePtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4526,8 +4526,8 @@ ObjMakeUpvar(
 
     if (index < 0) {
 	if (!(arrayPtr != NULL
-		     ? (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr))
-		     : (TclIsVarInHash(otherPtr) && TclGetVarNsPtr(otherPtr)))
+		    ? (TclIsVarInHash(arrayPtr) && TclGetVarNsPtr(arrayPtr))
+		    : (TclIsVarInHash(otherPtr) && TclGetVarNsPtr(otherPtr)))
 		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 			|| (varFramePtr == NULL)
 			|| !HasLocalVars(varFramePtr)
@@ -5610,7 +5610,7 @@ DeleteArray(
 
 		elPtr->flags &= ~VAR_TRACE_ACTIVE;
 		TclObjCallVarTraces(iPtr, NULL, elPtr, arrayNamePtr,
-			elNamePtr, flags,/* leaveErrMsg */ 0, index);
+			elNamePtr, flags, /* leaveErrMsg */ 0, index);
 	    }
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, elPtr);
 	    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);

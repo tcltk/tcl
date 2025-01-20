@@ -102,9 +102,9 @@ static void		MyClassDeleted(void *clientData);
  * Note that the core methods don't need clone or free proc callbacks.
  */
 
-#define DCM(name,visibility,proc) \
-    {name,visibility,\
-	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
+#define DCM(name, visibility, proc) \
+    {name, visibility,							\
+	{TCL_OO_METHOD_VERSION_CURRENT, "core method: "#name, proc, NULL, NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
     DCM("destroy", 1,	TclOO_Object_Destroy),
@@ -2841,7 +2841,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL, NULL, NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 

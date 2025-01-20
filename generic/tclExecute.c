@@ -477,7 +477,7 @@ VarHashCreateVar(
  * usage in [incr]: do the first summand and the sum have != signs?
  */
 
-#define Overflowing(a,b,sum) \
+#define Overflowing(a, b, sum) \
     ((((a)^(sum)) < 0) && (((a)^(b)) >= 0))
 
 /*
@@ -2520,7 +2520,6 @@ TEBCresume(
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
-
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
 		/* simulate pop & fast done (like it does continue in loop) */
 		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
@@ -2749,7 +2748,7 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	cleanup = 1;
-	pc += 1;
+	pc++;
 	/* yield next instruction */
 	TEBC_YIELD();
 	/* add TEBCResume for object at top of stack */
@@ -3173,7 +3172,7 @@ TEBCresume(
 	part1Ptr = objPtr;
 #ifdef TCL_COMPILE_DEBUG
 	if (part2Ptr == NULL) {
-	    TRACE(("\"%.30s\" <- \"%.30s\" =>", O2S(part1Ptr),O2S(valuePtr)));
+	    TRACE(("\"%.30s\" <- \"%.30s\" =>", O2S(part1Ptr), O2S(valuePtr)));
 	} else {
 	    TRACE(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
 		    O2S(part1Ptr), O2S(part2Ptr), O2S(valuePtr)));
@@ -5022,9 +5021,9 @@ TEBCresume(
 	    toIdx = objc - 1;
 	}
 
-	assert (toIdx >= 0 && toIdx < objc);
+	assert(toIdx >= 0 && toIdx < objc);
 	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
+	assert(fromIdx != TCL_INDEX_NONE);
 	 *
 	 * Extra safety for legacy bytecodes:
 	 */
@@ -5067,7 +5066,6 @@ TEBCresume(
 		goto gotError;
 	    }
 	} else {
-
 	    if (TclListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -5919,7 +5917,7 @@ TEBCresume(
 		    if ((wResult < 0 || (wResult == 0 &&
 			    ((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
 			    (wResult * w2 != w1)) {
-			wResult -= 1;
+			wResult--;
 		    }
 		    wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 -
 			    (Tcl_WideUInt)w2*(Tcl_WideUInt)wResult);
@@ -6188,7 +6186,7 @@ TEBCresume(
 		if (((wResult < 0) || ((wResult == 0) &&
 			((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
 			((wResult * w2) != w1)) {
-		    wResult -= 1;
+		    wResult--;
 		}
 		goto wideResultOfArithmetic;
 
@@ -6425,7 +6423,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr, &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -8044,7 +8042,7 @@ ExecuteExtendedBinaryMathOp(
 			&& ((w1 < 0 && w2 > 0)
 			|| (w1 > 0 && w2 < 0))))
 			&& (wQuotient * w2 != w1)) {
-		    wQuotient -= 1;
+		    wQuotient--;
 		}
 		wRemainder = (Tcl_WideInt)((Tcl_WideUInt)w1 -
 			(Tcl_WideUInt)w2*(Tcl_WideUInt)wQuotient);
@@ -8358,7 +8356,6 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	}
 	if (negativeExponent) {
-
 	    /*
 	     * Integers with magnitude greater than 1 raise to a negative
 	     * power yield the answer zero (see TIP 123).
@@ -8371,23 +8368,23 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	switch (w1) {
-	    case 0:
-		/*
-		 * Zero to a positive power is zero.
-		 */
+	case 0:
+	    /*
+	     * Zero to a positive power is zero.
+	     */
 
-		return constants[0];
-	    case 1:
-		/*
-		 * 1 to any power is 1.
-		 */
+	    return constants[0];
+	case 1:
+	    /*
+	     * 1 to any power is 1.
+	     */
 
+	    return constants[1];
+	case -1:
+	    if (!oddExponent) {
 		return constants[1];
-	    case -1:
-		if (!oddExponent) {
-		    return constants[1];
-		}
-		WIDE_RESULT(-1);
+	    }
+	    WIDE_RESULT(-1);
 	}
 
 	/*
@@ -8619,7 +8616,7 @@ ExecuteExtendedBinaryMathOp(
 		if (((wResult < 0) || ((wResult == 0) &&
 			((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
 			(wResult*w2 != w1)) {
-		    wResult -= 1;
+		    wResult--;
 		}
 		break;
 
@@ -9202,7 +9199,6 @@ TclGetSrcInfoForPc(
     assert(cfPtr->type == TCL_LOCATION_BC);
 
     if (cfPtr->cmd == NULL) {
-
 	cfPtr->cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
 		&cfPtr->len, NULL, NULL);
@@ -9614,7 +9610,7 @@ EvalStatsCmd(
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
 
-#define Percent(a,b) ((a) * 100.0 / (b))
+#define Percent(a, b)	((a) * 100.0 / (b))
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);

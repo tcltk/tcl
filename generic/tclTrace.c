@@ -252,7 +252,6 @@ Tcl_TraceObjCmd(
 	return traceSubCmds[typeIndex](interp, optionIndex, objc, objv);
 	break;
     }
-
     }
     return TCL_OK;
 }
@@ -383,7 +382,7 @@ TraceExecutionObjCmd(
 	     */
 
 	    name = TclGetString(objv[3]);
-	    if (Tcl_FindCommand(interp,name,NULL,TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (Tcl_FindCommand(interp, name, NULL, TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
 
@@ -616,7 +615,7 @@ TraceCommandObjCmd(
 	     */
 
 	    name = TclGetString(objv[3]);
-	    if (Tcl_FindCommand(interp,name,NULL,TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (Tcl_FindCommand(interp, name, NULL, TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
 
@@ -1794,8 +1793,8 @@ TraceExecutionProc(
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
 	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
-		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
-		   TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
+		    (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
+		    TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
     }
     if (flags & TCL_TRACE_DESTROYED) {
@@ -2679,7 +2678,7 @@ TclCallVarTraces(
 	    Tcl_AppendObjToErrorInfo((Tcl_Interp *)iPtr, Tcl_ObjPrintf(
 		    "\n    (%s trace on \"%s%s%s%s\")", type, part1,
 		    (element ? "(" : ""), (element ? element : ""),
-		    (element ? ")" : "") ));
+		    (element ? ")" : "")));
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, element, verb,
 			TclGetString((Tcl_Obj *) result));
@@ -2691,7 +2690,7 @@ TclCallVarTraces(
 	} else {
 	    Tcl_RestoreInterpState((Tcl_Interp *) iPtr, state);
 	}
-	DisposeTraceResult(disposeFlags,result);
+	DisposeTraceResult(disposeFlags, result);
     } else if (state) {
 	if (code == TCL_OK) {
 	    code = Tcl_RestoreInterpState((Tcl_Interp *) iPtr, state);
@@ -2804,7 +2803,8 @@ Tcl_UntraceVar2(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC |
+	    TCL_TRACE_RESULT_OBJECT;
     flags &= flagMask;
 
     hPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
@@ -3068,7 +3068,8 @@ TraceVarEx(
      */
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+	    TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC |
+	    TCL_TRACE_RESULT_OBJECT;
     tracePtr->flags = tracePtr->flags & flagMask;
 
     hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);

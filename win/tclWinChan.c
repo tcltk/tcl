@@ -451,8 +451,8 @@ FileCloseProc(
 
     if (!TclInThreadExit()
 	    || ((GetStdHandle(STD_INPUT_HANDLE) != fileInfoPtr->handle)
-	    &&  (GetStdHandle(STD_OUTPUT_HANDLE) != fileInfoPtr->handle)
-	    &&  (GetStdHandle(STD_ERROR_HANDLE) != fileInfoPtr->handle))) {
+	    && (GetStdHandle(STD_OUTPUT_HANDLE) != fileInfoPtr->handle)
+	    && (GetStdHandle(STD_ERROR_HANDLE) != fileInfoPtr->handle))) {
 	if (CloseHandle(fileInfoPtr->handle) == FALSE) {
 	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
@@ -474,7 +474,7 @@ FileCloseProc(
 	     * pointer on the thread local list.
 	     */
 
-	    FileThreadActionProc(fileInfoPtr,TCL_CHANNEL_THREAD_REMOVE);
+	    FileThreadActionProc(fileInfoPtr, TCL_CHANNEL_THREAD_REMOVE);
 	    break;
 	}
     }
@@ -771,9 +771,9 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    void *instanceData,	/* The file state. */
+    void *instanceData,		/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
 
@@ -1004,13 +1004,9 @@ TclpOpenFileChannel(
 	     * Note: since paths starting with ~ are relative in 9.0 for windows,
 	     * it doesn't need to consider tilde expansion (in opposite to 8.x).
 	     */
-	    if (
-		(
-		    !TclFSCwdIsNative() &&
-		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
-		) &&
-		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
-	    ) {
+	    if (!TclFSCwdIsNative() &&
+		    Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE &&
+		    Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 		return NULL;
 	    }
 
@@ -1378,7 +1374,9 @@ Tcl_MakeFileChannel(
 	    CloseHandle(dupedHandle);
 	    result = 1;
 #ifndef HAVE_NO_SEH
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	    // Empty body
+	}
 #endif
 #endif
 	if (result == FALSE) {
@@ -1469,8 +1467,8 @@ TclpGetDefaultStdChannel(
      * Set up the normal channel options for stdio handles.
      */
 
-    if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
-	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
+    if (Tcl_SetChannelOption(NULL, channel, "-translation", "auto") != TCL_OK ||
+	    Tcl_SetChannelOption(NULL, channel, "-buffering", bufMode)!=TCL_OK) {
 	Tcl_CloseEx(NULL, channel, 0);
 	return (Tcl_Channel) NULL;
     }

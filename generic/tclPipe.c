@@ -194,7 +194,6 @@ Tcl_DetachPids(
 	detList = detPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
-
 }
 
 /*
@@ -690,7 +689,7 @@ TclCreatePipeline(
 		argv[j - skip] = argv[j];
 	    }
 	    argc -= skip;
-	    i -= 1;
+	    i--;
 	}
     }
 

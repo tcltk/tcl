@@ -162,7 +162,7 @@ enum LexemeCodes {
 				 * FUNCTION or a parse error according to
 				 * context and value. */
     INCOMPLETE = 4,		/* A parse error. Used only when the single
-				 * "=" is encountered.  */
+				 * "=" is encountered. */
     INVALID = 5,		/* A parse error. Used when any punctuation
 				 * appears that's not a supported operator. */
     COMMENT = 6,		/* Comment. Lasts to end of line or end of
@@ -223,7 +223,7 @@ enum LexemeCodes {
 				 * that this operator can only legally appear
 				 * at the right places within a function call
 				 * argument list are hard coded within
-				 * ParseExpr().  */
+				 * ParseExpr(). */
     MULT = BINARY | 4,
     DIVIDE = BINARY | 5,
     MOD = BINARY | 6,
@@ -733,7 +733,7 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
-		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
+		} else if (Tcl_GetBooleanFromObj(NULL, literal, &b) == TCL_OK) {
 		    lexeme = BOOL_LIT;
 		} else {
 		    /*
@@ -1320,7 +1320,7 @@ ParseExpr(
 
 	    /* Commas must appear only in function argument lists. */
 	    if (lexeme == COMMA) {
-		if  ((incompletePtr->lexeme != OPEN_PAREN)
+		if ((incompletePtr->lexeme != OPEN_PAREN)
 			|| (incompletePtr[-1].lexeme != FUNCTION)) {
 		    TclNewLiteralStringObj(msg,
 			    "unexpected \",\" outside function argument list");
@@ -1649,7 +1649,6 @@ ConvertTreeToTokens(
 		break;
 
 	    default: {
-
 		/*
 		 * Remember the index of the last subexpression we were
 		 * working on -- that of our parent. We'll stack it later.
@@ -2078,7 +2077,6 @@ ParseLexeme(
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
 	if (end < start + numBytes && !TclIsBareword(*end)) {
-
 	number:
 	    *lexemePtr = NUMBER;
 	    if (literalPtr) {
@@ -2150,8 +2148,8 @@ ParseLexeme(
     }
     end = start;
     while (numBytes && TclIsBareword(*end)) {
-	end += 1;
-	numBytes -= 1;
+	end++;
+	numBytes--;
     }
     *lexemePtr = BAREWORD;
     if (literalPtr) {
@@ -2382,7 +2380,7 @@ CompileExprTree(
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+			? TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
 	    }
 	} else {

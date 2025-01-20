@@ -95,7 +95,7 @@ static size_t total_frees = 0;
 static size_t current_bytes_malloced = 0;
 static size_t maximum_bytes_malloced = 0;
 static size_t current_malloc_packets = 0;
-static size_t  maximum_malloc_packets = 0;
+static size_t maximum_malloc_packets = 0;
 static size_t break_on_malloc = 0;
 static size_t trace_on_at_malloc = 0;
 static int alloc_tracing = FALSE;
@@ -276,7 +276,6 @@ ValidateMemory(
 	memset(memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
 	memset(hiPtr, 0, HIGH_GUARD_SIZE);
     }
-
 }
 
 /*
@@ -447,7 +446,7 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr, "Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -536,7 +535,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr, "Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -831,7 +830,7 @@ MemoryCmd(
 	}
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"break_on_malloc") == 0) {
+    if (strcmp(TclGetString(objv[1]), "break_on_malloc") == 0) {
 	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
@@ -842,7 +841,7 @@ MemoryCmd(
 	break_on_malloc = value;
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"info") == 0) {
+    if (strcmp(TclGetString(objv[1]), "info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
@@ -856,7 +855,7 @@ MemoryCmd(
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	init_malloced_bodies = (strcmp(TclGetString(objv[2]),"on") == 0);
+	init_malloced_bodies = (strcmp(TclGetString(objv[2]), "on") == 0);
 	return TCL_OK;
     }
     if (strcmp(TclGetString(objv[1]), "objs") == 0) {
@@ -880,7 +879,7 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"onexit") == 0) {
+    if (strcmp(TclGetString(objv[1]), "onexit") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -890,11 +889,11 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	onExitMemDumpFileName = dumpFile;
-	strcpy(onExitMemDumpFileName,fileName);
+	strcpy(onExitMemDumpFileName, fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"tag") == 0) {
+    if (strcmp(TclGetString(objv[1]), "tag") == 0) {
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -908,15 +907,15 @@ MemoryCmd(
 	memcpy(curTagPtr->string, TclGetString(objv[2]), len + 1);
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"trace") == 0) {
+    if (strcmp(TclGetString(objv[1]), "trace") == 0) {
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	alloc_tracing = (strcmp(TclGetString(objv[2]),"on") == 0);
+	alloc_tracing = (strcmp(TclGetString(objv[2]), "on") == 0);
 	return TCL_OK;
     }
 
-    if (strcmp(TclGetString(objv[1]),"trace_on_at_malloc") == 0) {
+    if (strcmp(TclGetString(objv[1]), "trace_on_at_malloc") == 0) {
 	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
@@ -927,11 +926,11 @@ MemoryCmd(
 	trace_on_at_malloc = value;
 	return TCL_OK;
     }
-    if (strcmp(TclGetString(objv[1]),"validate") == 0) {
+    if (strcmp(TclGetString(objv[1]), "validate") == 0) {
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	validate_memory = (strcmp(TclGetString(objv[2]),"on") == 0);
+	validate_memory = (strcmp(TclGetString(objv[2]), "on") == 0);
 	return TCL_OK;
     }
 
@@ -1260,9 +1259,9 @@ TclAllocElemsEx(
 	NULL, elemCount, elemSize, leadSize, capacityPtr);
     if (ptr == NULL) {
 	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
-		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		  elemCount,
-		  elemSize);
+		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		elemCount,
+		elemSize);
     }
     return ptr;
 }
@@ -1366,9 +1365,9 @@ TclReallocElemsEx(
 	oldPtr, elemCount, elemSize, leadSize, capacityPtr);
     if (ptr == NULL) {
 	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER
-		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
-		  elemCount,
-		  elemSize);
+		"d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		elemCount,
+		elemSize);
     }
     return ptr;
 }

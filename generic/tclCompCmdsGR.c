@@ -2025,7 +2025,7 @@ TclCompileRegexpCmd(
 	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
-	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	    PushLiteral(envPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	    Tcl_DStringFree(&ds);
 	}
     }
@@ -2352,7 +2352,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	 CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
+	CompileWord(envPtr, wordTokenPtr, interp, numWords - 1);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.

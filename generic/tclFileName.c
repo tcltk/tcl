@@ -251,7 +251,6 @@ ExtractWinRoot(
 		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
-
 	    } else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
 		/*
 		 * Have match for 'con'.
@@ -259,7 +258,6 @@ ExtractWinRoot(
 
 		abs = 3;
 	    }
-
 	} else if ((path[0] == 'l' || path[0] == 'L')
 		&& (path[1] == 'p' || path[1] == 'P')
 		&& (path[2] == 't' || path[2] == 'T')) {
@@ -274,7 +272,6 @@ ExtractWinRoot(
 		    abs = 5;
 		}
 	    }
-
 	} else if ((path[0] == 'p' || path[0] == 'P')
 		&& (path[1] == 'r' || path[1] == 'R')
 		&& (path[2] == 'n' || path[2] == 'N')
@@ -283,7 +280,6 @@ ExtractWinRoot(
 	     * Have match for 'prn'.
 	     */
 	    abs = 3;
-
 	} else if ((path[0] == 'n' || path[0] == 'N')
 		&& (path[1] == 'u' || path[1] == 'U')
 		&& (path[2] == 'l' || path[2] == 'L')
@@ -293,7 +289,6 @@ ExtractWinRoot(
 	     */
 
 	    abs = 3;
-
 	} else if ((path[0] == 'a' || path[0] == 'A')
 		&& (path[1] == 'u' || path[1] == 'U')
 		&& (path[2] == 'x' || path[2] == 'X')
@@ -348,7 +343,7 @@ Tcl_GetPathType(
     const char *path)
 {
     Tcl_PathType type;
-    Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);
+    Tcl_Obj *tempObj = Tcl_NewStringObj(path, -1);
 
     Tcl_IncrRefCount(tempObj);
     type = Tcl_FSGetPathType(tempObj);
@@ -583,7 +578,9 @@ Tcl_SplitPath(
 
     for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
-	while (*(p++) != '\0');
+	while (*(p++) != '\0') {
+	    // empty body
+	}
     }
     (*argvPtr)[i] = NULL;
 
@@ -980,8 +977,8 @@ Tcl_JoinPath(
  *
  * Results:
  *	The return value is a pointer to a string containing the name.
- *      This may either be the name pointer passed in or space allocated in
- *      bufferPtr. In all cases, if the return value is not NULL, the caller
+ *	This may either be the name pointer passed in or space allocated in
+ *	bufferPtr. In all cases, if the return value is not NULL, the caller
  *	must call Tcl_DStringFree() to free the space. If there was an
  *	error in processing the name, then an error message is left in the
  *	interp's result (if interp was not NULL) and the return value is NULL.
@@ -1259,7 +1256,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	Tcl_Size pathlength;
 	const char *last;
-	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
+	const char *first = TclGetStringFromObj(pathOrDir, &pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1278,7 +1275,6 @@ Tcl_GlobObjCmd(
 	     */
 
 	    dir = PATH_DIR;
-
 	} else {
 	    Tcl_DString pref;
 	    char *search, *find;
@@ -1406,7 +1402,6 @@ Tcl_GlobObjCmd(
 		default:
 		    goto badTypesArg;
 		}
-
 	    } else if (len == 4) {
 		/*
 		 * This is assumed to be a MacOS file type.
@@ -1417,7 +1412,6 @@ Tcl_GlobObjCmd(
 		}
 		globTypes->macType = look;
 		Tcl_IncrRefCount(look);
-
 	    } else {
 		Tcl_Obj *item;
 		Tcl_Size llen;
@@ -1697,7 +1691,6 @@ TclGlob(
 	 */
 
 	separators = "/\\";
-
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
 	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
@@ -2007,7 +2000,6 @@ DoGlob(
     for (p = pattern; *p != '\0'; p++) {
 	if (quoted) {
 	    quoted = 0;
-
 	} else if (*p == '\\') {
 	    quoted = 1;
 	    if (strchr(separators, p[1]) != NULL) {
@@ -2016,13 +2008,11 @@ DoGlob(
 		 */
 		break;
 	    }
-
 	} else if (strchr(separators, *p) != NULL) {
 	    /*
 	     * Unquoted directory separator.
 	     */
 	    break;
-
 	} else if (*p == '{') {
 	    openBrace = p;
 	    p++;
@@ -2039,7 +2029,6 @@ DoGlob(
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    (char *)NULL);
 	    return TCL_ERROR;
-
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched close-brace in file name", -1));
@@ -2255,7 +2244,7 @@ DoGlob(
 		 */
 
 		Tcl_Size len;
-		const char *joined = TclGetStringFromObj(joinedPtr,&len);
+		const char *joined = TclGetStringFromObj(joinedPtr, &len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2292,7 +2281,7 @@ DoGlob(
 	     */
 
 	    Tcl_Size len;
-	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
+	    const char *joined = TclGetStringFromObj(joinedPtr, &len);
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {

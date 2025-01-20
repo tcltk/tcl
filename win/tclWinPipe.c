@@ -133,7 +133,7 @@ typedef struct PipeInfo {
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
 				 * thread. Access is synchronized with the
-				 * readable object.  */
+				 * readable object. */
     char extraByte;		/* Buffer for extra character consumed by
 				 * reader thread. This byte is shared with the
 				 * reader thread so access must be
@@ -679,8 +679,9 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
-	   goto error;
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0,
+		&dstring, NULL) != TCL_OK) {
+	    goto error;
 	}
 	native = Tcl_DStringValue(&dstring);
 
@@ -1805,8 +1806,9 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr,
+			infoPtr->readable),
+		0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1820,8 +1822,9 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
+			infoPtr->writable),
+		0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2018,7 +2021,6 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-
 	    TclPipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
@@ -2032,26 +2034,22 @@ PipeClose2Proc(
     }
     if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
-
 	    /*
 	     * Wait for the  writer thread to finish the  current buffer, then
 	     * terminate the thread  and close the handles. If  the channel is
 	     * nonblocking or may block during exit, bail out since the worker
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
-	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 
+	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
 		/* give it a chance to leave honorably */
 		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
 		}
-
 	    } else {
-
 		WaitForSingleObject(pipePtr->writable, inExit ? 5000 : INFINITE);
-
 	    }
 
 	    TclPipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
@@ -2335,7 +2333,6 @@ PipeOutputProc(
   error:
     *errorCode = errno;
     return -1;
-
 }
 
 /*
@@ -2409,7 +2406,7 @@ PipeEventProc(
 	mask = TCL_WRITABLE;
     }
 
-    if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr,0) >= 0)) {
+    if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr, 0) >= 0)) {
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    mask = TCL_READABLE;
 	} else {
@@ -2443,7 +2440,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2505,9 +2502,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;
@@ -2573,7 +2570,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}

@@ -217,7 +217,7 @@ TclpThreadCreate(
     EnterCriticalSection(&joinLock);
 
     *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned */
+		 * on WIN64 sizeof void* != sizeof unsigned */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,

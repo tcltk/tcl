@@ -9769,8 +9769,6 @@ test io-75.15 {
 
 # ### ### ### ######### ######### #########
 
-
-
 test io-76.0 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]

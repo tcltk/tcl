@@ -3182,7 +3182,7 @@ copyDecompressed:
 	 */
 
 	decBytes = ResultDecompress(chanDataPtr, buf, toRead,
-		(readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH,  errorCodePtr);
+		(readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH, errorCodePtr);
 	if (decBytes == -1) {
 	    return -1;
 	}
@@ -3773,7 +3773,7 @@ ZlibStackChannelTransform(
     }
 
     switch (format) {
-    case  TCL_ZLIB_FORMAT_RAW:
+    case TCL_ZLIB_FORMAT_RAW:
 	wbits = WBITS_RAW;
 	break;
     case TCL_ZLIB_FORMAT_ZLIB:

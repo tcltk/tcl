@@ -588,7 +588,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testdoubledigits", TestdoubledigitsCmd,
-			 NULL, NULL);
+	    NULL, NULL);
     Tcl_DStringInit(&dstring);
     Tcl_CreateObjCommand(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
@@ -1108,10 +1108,10 @@ TestcmdinfoCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])      /* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "call", "call2", "create", "delete", "get", "modify", NULL
+	"call", "call2", "create", "delete", "get", "modify", NULL
     };
     enum options {
 	CMDINFO_CALL, CMDINFO_CALL2, CMDINFO_CREATE,
@@ -2003,7 +2003,6 @@ TestdstringCmd(
 	}
 	Tcl_DStringGetResult(interp, &dstring);
     } else if (strcmp(Tcl_GetString(objv[1]), "length") == 0) {
-
 	if (objc != 2) {
 	    goto wrongNumArgs;
 	}
@@ -2214,10 +2213,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("%s wrote past output buffer",
-				       transformer == Tcl_ExternalToUtf ?
-				       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s wrote past output buffer",
+		transformer == Tcl_ExternalToUtf ?
+			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];
@@ -3370,7 +3369,6 @@ TestlinkCmd(
 		TCL_LINK_WIDE_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-
     } else if (strcmp(Tcl_GetString(objv[1]), "delete") == 0) {
 	Tcl_UnlinkVar(interp, "int");
 	Tcl_UnlinkVar(interp, "real");
@@ -3653,11 +3651,11 @@ TestlinkCmd(
  *
  * TestlinkarrayCmd --
  *
- *      This function is invoked to process the "testlinkarray" Tcl command.
- *      It is used to test the 'Tcl_LinkArray' function.
+ *	This function is invoked to process the "testlinkarray" Tcl command.
+ *	It is used to test the 'Tcl_LinkArray' function.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	Creates, deletes, and invokes variable links.
@@ -3668,9 +3666,9 @@ TestlinkCmd(
 static int
 TestlinkarrayCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	 /* Current interpreter. */
-    int objc,		   /* Number of arguments. */
-    Tcl_Obj *const objv[])      /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *LinkOption[] = {
 	"update", "remove", "create", NULL
@@ -3772,11 +3770,11 @@ TestlinkarrayCmd(
  *
  * TestlistrepCmd --
  *
- *      This function is invoked to generate a list object with a specific
+ *	This function is invoked to generate a list object with a specific
  *	internal representation.
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	None.
@@ -3787,9 +3785,9 @@ TestlinkarrayCmd(
 static int
 TestlistrepCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,         /* Current interpreter. */
-    int objc,                   /* Number of arguments. */
-    Tcl_Obj *const objv[])      /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /* Subcommands supported by this command */
     static const char *const subcommands[] = {
@@ -3848,17 +3846,17 @@ TestlistrepCmd(
 	break;
 
     case LISTREP_DESCRIBE:
-#define APPEND_FIELD(targetObj_, structPtr_, fld_)                        \
-    do {                                                                  \
-	Tcl_ListObjAppendElement(                                         \
-	    interp, (targetObj_), Tcl_NewStringObj(#fld_, -1));           \
-	Tcl_ListObjAppendElement(                                         \
-	    interp, (targetObj_), Tcl_NewWideIntObj((structPtr_)->fld_)); \
-    } while (0)
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "object");
 	    return TCL_ERROR;
 	} else {
+#define APPEND_FIELD(targetObj_, structPtr_, fld_) \
+    do {								\
+	Tcl_ListObjAppendElement(interp,				\
+		(targetObj_), Tcl_NewStringObj(#fld_, -1));		\
+	Tcl_ListObjAppendElement(interp,				\
+		(targetObj_), Tcl_NewWideIntObj((structPtr_)->fld_));	\
+    } while (0)
 	    Tcl_Obj **objs;
 	    Tcl_Size nobjs;
 	    ListRep listRep;
@@ -4958,7 +4956,7 @@ TesttranslatefilenameCmd(
  *
  *	This procedure implements the "testfstildeexpand" command.
  *	It is used to test the Tcl_FSTildeExpand command. It differs
- *      from the script level "file tildeexpand" tests because of a
+ *	from the script level "file tildeexpand" tests because of a
  *	slightly different code path.
  *
  * Results:
@@ -6038,9 +6036,8 @@ TestChannelCmd(
 
 	    chan = (Tcl_Channel) NULL;
 	    for (nextPtrPtr = &firstDetached, curPtr = firstDetached;
-		 curPtr != NULL;
-		 nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
-
+		    curPtr != NULL;
+		    nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
 		if (strcmp(Tcl_GetString(objv[2]), Tcl_GetChannelName(curPtr->chan)) == 0) {
 		    *nextPtrPtr = curPtr->nextPtr;
 		    curPtr->nextPtr = NULL;
@@ -6065,7 +6062,6 @@ TestChannelCmd(
     }
 
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerror", len) == 0)) {
-
 	Tcl_Obj *msg = objv[3];
 
 	Tcl_IncrRefCount(msg);
@@ -6078,7 +6074,6 @@ TestChannelCmd(
 	return TCL_OK;
     }
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerrorinterp", len) == 0)) {
-
 	Tcl_Obj *msg = objv[3];
 
 	Tcl_IncrRefCount(msg);
@@ -6338,8 +6333,8 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
 	}
 	return TCL_OK;
@@ -6376,9 +6371,9 @@ TestChannelCmd(
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    chanPtr  = (Channel *)Tcl_GetHashValue(hPtr);
+		hPtr != NULL;
+		hPtr = Tcl_NextHashEntry(&hSearch)) {
+	    chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
 		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
@@ -6570,8 +6565,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
@@ -6583,9 +6578,8 @@ TestChannelEventCmd(
 	    statePtr->scriptRecordPtr = esPtr->nextPtr;
 	} else {
 	    for (prevEsPtr = statePtr->scriptRecordPtr;
-		 (prevEsPtr != NULL) &&
-		     (prevEsPtr->nextPtr != esPtr);
-		 prevEsPtr = prevEsPtr->nextPtr) {
+		    (prevEsPtr != NULL) && (prevEsPtr->nextPtr != esPtr);
+		    prevEsPtr = prevEsPtr->nextPtr) {
 		/* Empty loop body. */
 	    }
 	    if (prevEsPtr == NULL) {
@@ -6608,8 +6602,8 @@ TestChannelEventCmd(
 	}
 	resultListPtr = Tcl_GetObjResult(interp);
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = esPtr->nextPtr) {
+		esPtr != NULL;
+		esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
@@ -6629,8 +6623,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (esPtr = statePtr->scriptRecordPtr;
-	     esPtr != NULL;
-	     esPtr = nextEsPtr) {
+		esPtr != NULL;
+		esPtr = nextEsPtr) {
 	    nextEsPtr = esPtr->nextPtr;
 	    Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
 		    TclChannelEventScriptInvoker, esPtr);
@@ -6655,8 +6649,8 @@ TestChannelEventCmd(
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
-	     (i < index) && (esPtr != NULL);
-	     i++, esPtr = esPtr->nextPtr) {
+		(i < index) && (esPtr != NULL);
+		i++, esPtr = esPtr->nextPtr) {
 	    /* Empty loop body. */
 	}
 	if (esPtr == NULL) {
@@ -6737,12 +6731,12 @@ TestSocketCmd(
 	    return TCL_ERROR;
 	}
 	hChannel = Tcl_GetChannel(interp, Tcl_GetString(objv[2]), &modePtr);
-	if ( NULL == hChannel ) {
+	if (NULL == hChannel) {
 	    Tcl_AppendResult(interp, "unknown channel:", Tcl_GetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
-	if ( NULL == statePtr) {
+	if (NULL == statePtr) {
 	    Tcl_AppendResult(interp, "No channel instance data:", Tcl_GetString(objv[2]),
 		    (char *)NULL);
 	    return TCL_ERROR;
@@ -6769,10 +6763,10 @@ TestSocketCmd(
  * TestServiceModeCmd --
  *
  *	This procedure implements the "testservicemode" command which gets or
- *      sets the current Tcl ServiceMode.  There are several tests which open
- *      a file and assign various handlers to it.  For these tests to be
- *      deterministic it is important that file events not be processed until
- *      all of the handlers are in place.
+ *	sets the current Tcl ServiceMode.  There are several tests which open
+ *	a file and assign various handlers to it.  For these tests to be
+ *	deterministic it is important that file events not be processed until
+ *	all of the handlers are in place.
  *
  * Results:
  *	A standard Tcl result.
@@ -7611,11 +7605,10 @@ TestGetUniCharCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter */
     int objc,			/* Number of arguments */
-    Tcl_Obj *const objv[]	/* Argument strings */
-    )
+    Tcl_Obj *const objv[])	/* Argument strings */
 {
     int index;
-    int c ;
+    int c;
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
 	return TCL_ERROR;
@@ -7695,8 +7688,6 @@ TestGetIntForIndexCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
-
-
 
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
@@ -7920,7 +7911,6 @@ TestNREUnwind(
 	    INT2PTR(-1), NULL);
     return TCL_OK;
 }
-
 
 static int
 TestNRELevels(
@@ -8351,14 +8341,12 @@ InterpCmdResolver(
      *  A)  when the caller is a proc "x", and the proc is either in "::" or in "::ns2".
      *  B) the caller's namespace is "ctx1" or "ctx2"
      */
-    if ( (name[0] == 'z') && (name[1] == '\0') ) {
+    if ((name[0] == 'z') && (name[1] == '\0')) {
 	Namespace *ns2NsPtr = (Namespace *) Tcl_FindNamespace(interp, "::ns2", NULL, 0);
 
 	if (procPtr != NULL
-	    && ((procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr)
-		|| (ns2NsPtr != NULL && procPtr->cmdPtr->nsPtr == ns2NsPtr)
-		)
-	    ) {
+		&& ((procPtr->cmdPtr->nsPtr == iPtr->globalNsPtr)
+		|| (ns2NsPtr != NULL && procPtr->cmdPtr->nsPtr == ns2NsPtr))) {
 	    /*
 	     * Case A)
 	     *
@@ -8380,7 +8368,7 @@ InterpCmdResolver(
 	    const char *callingCmdName =
 		Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
 
-	    if ( callingCmdName[0] == 'x' && callingCmdName[1] == '\0' ) {
+	    if (callingCmdName[0] == 'x' && callingCmdName[1] == '\0') {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
 	    }
 	} else if (callerNsPtr != NULL) {
@@ -8409,7 +8397,6 @@ InterpCmdResolver(
 	    if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
 		/* fprintf(stderr, "... y ==> %p\n", resolvedCmdPtr);*/
-
 	    } else if (strcmp(context, "ctx2") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "Y", NULL, TCL_GLOBAL_ONLY);
 		/*fprintf(stderr, "... Y ==> %p\n", resolvedCmdPtr);*/
@@ -8604,8 +8591,8 @@ TestInterpResolverCmd(
  */
 int TestApplyLambdaCmd (
     TCL_UNUSED(void*),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    TCL_UNUSED(int),       /* objc. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    TCL_UNUSED(int),		/* objc. */
     TCL_UNUSED(Tcl_Obj *const *)) /* objv. */
 {
     Tcl_Obj *lambdaObjs[2];
@@ -8666,7 +8653,7 @@ int TestApplyLambdaCmd (
  *
  *	This procedure implements the "testlequal" command. It is used to
  *	test compare two lists for equality using the string representation
- *      of each element. Implemented in C because script level loops are
+ *	of each element. Implemented in C because script level loops are
  *	too slow for comparing large (GB count) lists.
  *
  * Results:
@@ -8691,10 +8678,10 @@ TestLutilCmd(
     Tcl_Obj **l1Elems;
     Tcl_Obj **l2Elems;
     static const char *const subcmds[] = {
-	   "equal", "diffindex", NULL
+	"equal", "diffindex", NULL
     };
     enum options {
-	   LUTIL_EQUAL, LUTIL_DIFFINDEX
+	LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
 
     if (objc != 4) {

@@ -770,12 +770,8 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
-	byteArrayPtr =
-	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
-					   needed,
-					   1,
-					   offsetof(ByteArray, bytes),
-					   &newCapacity);
+	byteArrayPtr = (ByteArray *)TclReallocElemsEx(byteArrayPtr,
+		needed, 1, offsetof(ByteArray, bytes), &newCapacity);
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -2489,7 +2485,7 @@ BinaryDecodeHex(
     int i, index, value, pure = 1, strict = 0;
     Tcl_Size size, cut = 0, count = 0;
     int ucs4;
-    enum {OPT_STRICT };
+    enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
@@ -2779,23 +2775,23 @@ BinaryEncodeUu(
 
 		while (numBytes) {
 		    switch (*p) {
-			case '\t':
-			case '\v':
-			case '\f':
-			case '\r':
-			    p++; numBytes--;
-			    continue;
-			case '\n':
-			    numBytes--;
-			    break;
-			default:
-			badwrap:
-			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				    "invalid wrapchar; will defeat decoding",
-				    -1));
-			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", (char *)NULL);
-			    return TCL_ERROR;
+		    case '\t':
+		    case '\v':
+		    case '\f':
+		    case '\r':
+			p++; numBytes--;
+			continue;
+		    case '\n':
+			numBytes--;
+			break;
+		    default:
+		    badwrap:
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"invalid wrapchar; will defeat decoding",
+				-1));
+			Tcl_SetErrorCode(interp, "TCL", "BINARY",
+				"ENCODE", "WRAPCHAR", (char *)NULL);
+			return TCL_ERROR;
 		    }
 		}
 		if (numBytes) {

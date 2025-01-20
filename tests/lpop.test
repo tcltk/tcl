@@ -88,10 +88,6 @@ test lpop-3.3 {nested} -body {
     list [lpop l 1 0] $l
 } -result {a {{x y} b}}
 
-
-
-
-
 test lpop-99.1 {performance} -constraints perf -body {
     set l [lrepeat 10000 x]
     set l2 $l

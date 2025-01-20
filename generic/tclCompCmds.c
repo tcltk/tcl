@@ -1160,7 +1160,7 @@ TclCompileDictIncrCmd(
 
 	incrTokenPtr = TokenAfter(keyTokenPtr);
 	if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	word = incrTokenPtr[1].start;
 	numBytes = incrTokenPtr[1].size;
@@ -1170,7 +1170,7 @@ TclCompileDictIncrCmd(
 	code = TclGetIntFromObj(NULL, intObj, &incrAmount);
 	TclDecrRefCount(intObj);
 	if (code != TCL_OK) {
-	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
     } else {
 	incrAmount = 1;
@@ -1948,7 +1948,7 @@ TclCompileDictUpdateCmd(
 
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitInvoke(envPtr,INST_RETURN_STK);
+    TclEmitInvoke(envPtr, INST_RETURN_STK);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %" TCL_Z_MODIFIER "d",
@@ -1999,7 +1999,7 @@ TclCompileDictAppendCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
     if (dictVarIndex < 0) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -2151,7 +2151,7 @@ TclCompileDictWithCmd(
 		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
-		TclEmitInstInt4(INST_LIST, (int)parsePtr->numWords-3,envPtr);
+		TclEmitInstInt4(INST_LIST, (int)parsePtr->numWords-3, envPtr);
 		Emit14Inst(	INST_LOAD_SCALAR, dictVar,	envPtr);
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
@@ -2178,7 +2178,7 @@ TclCompileDictWithCmd(
 		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
-		TclEmitInstInt4(INST_LIST, (int)parsePtr->numWords-3,envPtr);
+		TclEmitInstInt4(INST_LIST, (int)parsePtr->numWords-3, envPtr);
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitOpcode(	INST_LOAD_STK,			envPtr);
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
@@ -2233,7 +2233,7 @@ TclCompileDictWithCmd(
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
-	TclEmitInstInt4(	INST_LIST, (int)parsePtr->numWords-3,envPtr);
+	TclEmitInstInt4(	INST_LIST, (int)parsePtr->numWords-3, envPtr);
 	Emit14Inst(		INST_STORE_SCALAR, pathTmp,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
@@ -2720,7 +2720,7 @@ TclCompileLmapCmd(
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to the definition of the command
-				 *  being compiled. */
+				 * being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
@@ -3593,37 +3593,38 @@ TclPushVarName(
 	    nameLen = p - varTokenPtr[1].start;
 	    elName = p + 1;
 	    remainingLen = (varTokenPtr[2].start - p) - 1;
-	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
+	    elNameLen = (varTokenPtr[n].start - p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingLen) {
-		/*
-		 * Make a first token with the extra characters in the first
-		 * token.
-		 */
+		if (remainingLen) {
+		    /*
+		     * Make a first token with the extra characters in the first
+		     * token.
+		     */
 
-		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingLen;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = n;
+		    elemTokenPtr = (Tcl_Token *)
+			    TclStackAlloc(interp, n * sizeof(Tcl_Token));
+		    allocedTokens = 1;
+		    elemTokenPtr->type = TCL_TOKEN_TEXT;
+		    elemTokenPtr->start = elName;
+		    elemTokenPtr->size = remainingLen;
+		    elemTokenPtr->numComponents = 0;
+		    elemTokenCount = n;
 
-		/*
-		 * Copy the remaining tokens.
-		 */
+		    /*
+		     * Copy the remaining tokens.
+		     */
 
-		memcpy(elemTokenPtr+1, varTokenPtr+2,
-			(n-1) * sizeof(Tcl_Token));
-	      } else {
-		/*
-		 * Use the already available tokens.
-		 */
+		    memcpy(elemTokenPtr + 1, varTokenPtr + 2,
+			    (n - 1) * sizeof(Tcl_Token));
+		} else {
+		    /*
+		     * Use the already available tokens.
+		     */
 
-		elemTokenPtr = &varTokenPtr[2];
-		elemTokenCount = n - 1;
-	      }
+		    elemTokenPtr = &varTokenPtr[2];
+		    elemTokenCount = n - 1;
+		}
 	    }
 	}
     }

@@ -593,7 +593,6 @@ EncodingConvertfromObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -686,7 +685,6 @@ EncodingConverttoObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -752,9 +750,9 @@ EncodingDirsObjCmd(
 int
 EncodingNamesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj* const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -780,9 +778,9 @@ EncodingNamesObjCmd(
 int
 EncodingProfilesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj* const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -811,9 +809,9 @@ EncodingProfilesObjCmd(
 int
 EncodingSystemObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,     /* Tcl interpreter */
-    int objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Number of command line args */
+    Tcl_Obj* const objv[])	/* Vector of command line args */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?encoding?");
@@ -2346,9 +2344,9 @@ StoreStatData(
     if (varName == NULL) {
 	TclNewObj(result);
 	Tcl_IncrRefCount(result);
-#define DOBJPUT(key, objValue)                  \
-	Tcl_DictObjPut(NULL, result,            \
-	    Tcl_NewStringObj((key), -1),        \
+#define DOBJPUT(key, objValue) \
+	Tcl_DictObjPut(NULL, result,		\
+	    Tcl_NewStringObj((key), -1),	\
 	    (objValue));
 	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
 	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
@@ -2384,7 +2382,8 @@ StoreStatData(
     TclNewLiteralStringObj(field, fieldName);				\
     Tcl_IncrRefCount(field);						\
     value = (object);							\
-    if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
+    if (Tcl_ObjSetVar2(interp, varName, field, value,			\
+	    TCL_LEAVE_ERR_MSG)==NULL) {					\
 	TclDecrRefCount(field);						\
 	return TCL_ERROR;						\
     }									\
@@ -2832,7 +2831,7 @@ EachloopCmd(
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
-	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
+	if (TclObjTypeHasProc(objv[2+i*2], indexProc)) {
 	    /* Special case for AbstractList */
 	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
@@ -2982,13 +2981,14 @@ ForeachAssignments(
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
-		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
+		TclObjTypeHasProc(statePtr->aCopyList[i], indexProc) != NULL;
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k,
+			    &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (setting %s loop variable \"%s\")",
 				(statePtr->resultList != NULL ? "lmap" : "foreach"),

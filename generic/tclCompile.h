@@ -1655,20 +1655,20 @@ TclUpdateStackReqs(
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
     envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
-#define PushVarNameWord(i,v,e,f,l,sc,word) \
+#define PushVarNameWord(i, v, e, f, l, sc, word) \
     SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)
+    TclPushVarName(i, v, e, f, l, sc)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether
  * the argument will fit in a single byte or not. This makes it much clearer.
  */
 
-#define Emit14Inst(nm,idx,envPtr) \
+#define Emit14Inst(nm, idx, envPtr) \
     if (idx <= 255) {							\
-	TclEmitInstInt1(nm##1,idx,envPtr);				\
+	TclEmitInstInt1(nm##1, idx, envPtr);				\
     } else {								\
-	TclEmitInstInt4(nm##4,idx,envPtr);				\
+	TclEmitInstInt4(nm##4, idx, envPtr);				\
     }
 
 /*
@@ -1678,9 +1678,9 @@ TclUpdateStackReqs(
 
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
-#define LocalScalar(chars,len,envPtr) \
+#define LocalScalar(chars, len, envPtr) \
     TclLocalScalar(chars, len, envPtr)
-#define LocalScalarFromToken(tokenPtr,envPtr) \
+#define LocalScalarFromToken(tokenPtr, envPtr) \
     TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*

@@ -1018,7 +1018,7 @@ NRInterpCmd(
 	}
 	switch (limitType) {
 	case LIMIT_TYPE_COMMANDS:
-	    return ChildCommandLimitCmd(interp, childInterp, 4, objc,objv);
+	    return ChildCommandLimitCmd(interp, childInterp, 4, objc, objv);
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 4, objc, objv);
 	default:
@@ -2674,7 +2674,7 @@ NRChildCmd(
 	}
 	switch (limitType) {
 	case LIMIT_TYPE_COMMANDS:
-	    return ChildCommandLimitCmd(interp, childInterp, 3, objc,objv);
+	    return ChildCommandLimitCmd(interp, childInterp, 3, objc, objv);
 	case LIMIT_TYPE_TIME:
 	    return ChildTimeLimitCmd(interp, childInterp, 3, objc, objv);
 	}

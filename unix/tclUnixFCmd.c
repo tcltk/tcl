@@ -731,7 +731,7 @@ TclpObjCopyDirectory(
     int ret;
     Tcl_Obj *transPtr;
 
-    transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
+    transPtr = Tcl_FSGetTranslatedPath(NULL, srcPathPtr);
     ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, 0, &srcString, NULL);
@@ -741,7 +741,7 @@ TclpObjCopyDirectory(
     if (ret != TCL_OK) {
 	*errorPtr = srcPathPtr;
     } else {
-	transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
+	transPtr = Tcl_FSGetTranslatedPath(NULL, destPathPtr);
 	ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
@@ -1223,7 +1223,6 @@ TraversalDelete(
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
-
     switch (type) {
     case DOTREE_F:
 	if (TclpDeleteFile(Tcl_DStringValue(srcPtr)) == 0) {
@@ -1740,14 +1739,14 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     TCL_UNUSED(Tcl_Interp *),
-    const char *modeStringPtr, /* Permissions string */
+    const char *modeStringPtr,	/* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
     mode_t oldMode;		/* Storage for the value of the old mode (that
 				 * is passed in), to allow for the chmod style
 				 * manipulation. */
-    int i,n, who, op, what, op_found, who_found;
+    int i, n, who, op, what, op_found, who_found;
 
     /*
      * We start off checking for an "rwxrwxrwx" style permissions string
@@ -1824,7 +1823,7 @@ GetModeFromPermString(
     for (n = 0 ; modeStringPtr[n] != '\0' ; n += i) {
 	oldMode = *modePtr;
 	who = op = what = op_found = who_found = 0;
-	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++ ) {
+	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++) {
 	    if (!who_found) {
 		/* who */
 		switch (modeStringPtr[n + i]) {
@@ -1933,7 +1932,7 @@ TclpObjNormalizePath(
 				 * be 0 or the offset of a directory separator
 				 * at the end of a path part that is already
 				 * normalized.  I.e. this is not the index of
-				 * the byte just after the separator.  */
+				 * the byte just after the separator. */
 
 {
     const char *currentPathEndPosition;
@@ -2049,7 +2048,8 @@ TclpObjNormalizePath(
 	    return 0;
 	}
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, path,nextCheckpoint, 0, &ds, NULL)) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, path, nextCheckpoint, 0,
+		&ds, NULL)) {
 	    Tcl_DStringFree(&ds);
 	    return -1;
 	}
@@ -2388,7 +2388,7 @@ winPathFromObj(
     Tcl_Obj *fileName)
 {
     size_t size;
-    const char *native =  (const char *)Tcl_FSGetNativePath(fileName);
+    const char *native = (const char *)Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 
     size = cygwin_conv_path(1, native, NULL, 0);
@@ -2462,10 +2462,10 @@ GetUnixFileAttributes(
 
 static int
 SetUnixFileAttributes(
-    Tcl_Interp *interp,	    /* The interp we are using for errors. */
-    int objIndex,           /* The index of the attribute. */
-    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr)  /* The attribute to set. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     int yesNo, fileAttributes, old;
     WCHAR *winPath;

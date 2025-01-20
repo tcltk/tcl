@@ -45,7 +45,7 @@
  * Macros to report errors only if an interp is present.
  */
 
-#define ZIPFS_ERROR(interp,errstr) \
+#define ZIPFS_ERROR(interp, errstr) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(errstr, -1));	\
@@ -59,14 +59,14 @@
 	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);	\
 	}								\
     } while (0)
-#define ZIPFS_POSIX_ERROR(interp,errstr) \
+#define ZIPFS_POSIX_ERROR(interp, errstr) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(			\
 		    "%s: %s", errstr, Tcl_PosixError(interp)));		\
 	}								\
     } while (0)
-#define ZIPFS_ERROR_CODE(interp,errcode) \
+#define ZIPFS_ERROR_CODE(interp, errcode) \
     do {								\
 	if (interp) {							\
 	    Tcl_SetErrorCode(interp,					\
@@ -1476,9 +1476,9 @@ ZipFSCloseArchive(
  *	into the given "interp" if it is not NULL.
  *
  * Side effects:
- *      The given ZipFile struct is filled with information about the ZIP
- *      archive file.  On error, ZipFSCloseArchive is called on zf but
- *      it is not freed.
+ *	The given ZipFile struct is filled with information about the ZIP
+ *	archive file.  On error, ZipFSCloseArchive is called on zf but
+ *	it is not freed.
  *
  *-------------------------------------------------------------------------
  */
@@ -1524,10 +1524,9 @@ ZipFSFindTOC(
 	ZIPFS_ERROR(interp, "archive directory end signature not found");
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
 
-  error:
+    error:
 	ZipFSCloseArchive(interp, zf);
 	return TCL_ERROR;
-
     }
 
     /*
@@ -1677,7 +1676,7 @@ ZipFSFindTOC(
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
  *	into the given "interp" if it is not NULL. On error, ZipFSCloseArchive
- *      is called on zf but it is not freed.
+ *	is called on zf but it is not freed.
  *
  * Side effects:
  *	ZIP archive is memory mapped or read into allocated memory, the given

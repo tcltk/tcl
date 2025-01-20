@@ -2481,19 +2481,19 @@ UtfToUtfProc(
      * by a low surrogate. NOT to be called for strict profile since
      * that should raise an error.
      */
-#define OUTPUT_ISOLATEDSURROGATE                                \
-    do {                                                        \
-	Tcl_UniChar high;                                       \
-	if (PROFILE_REPLACE(profile)) {                         \
-	    high = UNICODE_REPLACE_CHAR;                        \
-	} else {                                                \
-	    high = (Tcl_UniChar)(ptrdiff_t) *statePtr;          \
-	}                                                       \
-	assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */   \
-	assert(HIGH_SURROGATE(high));                           \
-	assert(!PROFILE_STRICT(profile));                       \
-	dst += Tcl_UniCharToUtf(high, dst);                     \
-	*statePtr = 0; /* Reset state */                        \
+#define OUTPUT_ISOLATEDSURROGATE \
+    do {								\
+	Tcl_UniChar high;						\
+	if (PROFILE_REPLACE(profile)) {					\
+	    high = UNICODE_REPLACE_CHAR;				\
+	} else {							\
+	    high = (Tcl_UniChar)(ptrdiff_t) *statePtr;			\
+	}								\
+	assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */		\
+	assert(HIGH_SURROGATE(high));					\
+	assert(!PROFILE_STRICT(profile));				\
+	dst += Tcl_UniCharToUtf(high, dst);				\
+	*statePtr = 0; /* Reset state */				\
     } while (0)
 
     /*
@@ -2501,20 +2501,19 @@ UtfToUtfProc(
      * an error if profile is strict, or output an appropriate
      * character for replace and tcl8 profiles and continue.
      */
-#define CHECK_ISOLATEDSURROGATE                                         \
-    if (*statePtr) {                                                    \
-	if (PROFILE_STRICT(profile)) {                                  \
-	    result = TCL_CONVERT_SYNTAX;                                \
-	    break;                                                      \
-	}                                                               \
-	OUTPUT_ISOLATEDSURROGATE;                                       \
-	continue; /* Rerun loop so length checks etc. repeated */       \
-    } else                                                              \
+#define CHECK_ISOLATEDSURROGATE \
+    if (*statePtr) {							\
+	if (PROFILE_STRICT(profile)) {					\
+	    result = TCL_CONVERT_SYNTAX;				\
+	    break;							\
+	}								\
+	OUTPUT_ISOLATEDSURROGATE;					\
+	continue; /* Rerun loop so length checks etc. repeated */	\
+    } else								\
 	(void) 0
 
     profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
@@ -2529,7 +2528,6 @@ UtfToUtfProc(
 	    break;
 	}
 	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
-
 	    CHECK_ISOLATEDSURROGATE;
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
@@ -2559,7 +2557,6 @@ UtfToUtfProc(
 		*dst++ = 0;
 		src += 2;
 	    }
-
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence not because there are insufficient

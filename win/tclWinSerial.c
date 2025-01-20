@@ -65,7 +65,7 @@ enum SerialFlags {
  */
 enum TclWinCommErrorMasks {
     SERIAL_READ_ERRORS =	/* Errors in the reader side. */
-	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME  | CE_BREAK),
+	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME | CE_BREAK),
     SERIAL_WRITE_ERRORS =	/* Errors in the writer side. */
 	(CE_TXFULL | CE_PTO)
 };
@@ -366,7 +366,7 @@ SerialBlockTime(
  *
  * SerialGetMilliseconds --
  *
- *	Get current time in milliseconds,ignoring integer overruns.
+ *	Get current time in milliseconds, ignoring integer overruns.
  *
  * Results:
  *	The current time.
@@ -1049,7 +1049,6 @@ SerialOutputProc(
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
 	bytesWritten = (DWORD) toWrite;
-
     } else {
 	/*
 	 * In the blocking case, just try to write the buffer directly. This
@@ -1507,7 +1506,8 @@ TclWinOpenSerialChannel(
 	infoPtr->evWritable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr,
-			infoPtr->evWritable), 0, NULL);
+			infoPtr->evWritable),
+		0, NULL);
     }
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
@@ -1587,13 +1587,13 @@ SerialModemStatusStr(
     Tcl_DString *dsPtr)		/* Where to store string. */
 {
     Tcl_DStringAppendElement(dsPtr, "CTS");
-    Tcl_DStringAppendElement(dsPtr, (status & MS_CTS_ON)  ?  "1" : "0");
+    Tcl_DStringAppendElement(dsPtr, (status & MS_CTS_ON)  ? "1" : "0");
     Tcl_DStringAppendElement(dsPtr, "DSR");
-    Tcl_DStringAppendElement(dsPtr, (status & MS_DSR_ON)   ? "1" : "0");
+    Tcl_DStringAppendElement(dsPtr, (status & MS_DSR_ON)  ? "1" : "0");
     Tcl_DStringAppendElement(dsPtr, "RING");
-    Tcl_DStringAppendElement(dsPtr, (status & MS_RING_ON)  ? "1" : "0");
+    Tcl_DStringAppendElement(dsPtr, (status & MS_RING_ON) ? "1" : "0");
     Tcl_DStringAppendElement(dsPtr, "DCD");
-    Tcl_DStringAppendElement(dsPtr, (status & MS_RLSD_ON)  ? "1" : "0");
+    Tcl_DStringAppendElement(dsPtr, (status & MS_RLSD_ON) ? "1" : "0");
 }
 
 /*
@@ -1975,7 +1975,7 @@ SerialSetOptionProc(
 
     if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
 	int msec;
-	COMMTIMEOUTS tout = {0,0,0,0,0};
+	COMMTIMEOUTS tout = {0, 0, 0, 0, 0};
 
 	if (Tcl_GetInt(interp, value, &msec) != TCL_OK) {
 	    return TCL_ERROR;

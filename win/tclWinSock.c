@@ -2654,7 +2654,7 @@ SocketEventProc(
 	     */
 
 	    SetEvent(tsdPtr->socketListLock);
-	    WaitForConnect(statePtr,NULL);
+	    WaitForConnect(statePtr, NULL);
 	} else {
 	    /*
 	     * No async connect reenter pending. Just clear event.
@@ -3097,7 +3097,6 @@ SocketProc(
     switch (message) {
     default:
 	return DefWindowProcW(hwnd, message, wParam, lParam);
-	break;
 
     case WM_CREATE:
 	/*

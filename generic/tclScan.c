@@ -718,7 +718,7 @@ Tcl_ScanObjCmd(
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    unsigned long long ull;
-	    ull  = strtoull(format-1, (char **)&format, 10); /* INTL: "C" locale. */
+	    ull = strtoull(format-1, (char **)&format, 10); /* INTL: "C" locale. */
 	    assert(ull <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
 	    width = (Tcl_Size)ull;
 	    format += TclUtfToUniChar(format, &ch);

@@ -1037,10 +1037,14 @@ FindTokenBegin(
 	    if (!(flags & CLF_STRICT)) {
 		/* should match at least one digit or space */
 		while (!isdigit(UCHAR(*p)) && !isspace(UCHAR(*p)) &&
-			(p = Tcl_UtfNext(p)) < end) {}
+			(p = Tcl_UtfNext(p)) < end) {
+		    // Empty body
+		}
 	    } else {
 		/* should match at least one digit */
-		while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+		while (!isdigit(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {
+		    // Empty body
+		}
 	    }
 	    return p;
 
@@ -1049,7 +1053,9 @@ FindTokenBegin(
 	    goto findChar;
 
 	case CTOKT_SPACE:
-	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {}
+	    while (!isspace(UCHAR(*p)) && (p = Tcl_UtfNext(p)) < end) {
+		// Empty body
+	    }
 	    return p;
 
 	case CTOKT_CHAR:
@@ -1058,10 +1064,14 @@ findChar:
 	    if (!(flags & CLF_STRICT)) {
 		/* should match the char or space */
 		while (*p != c && !isspace(UCHAR(*p)) &&
-			(p = Tcl_UtfNext(p)) < end) {}
+			(p = Tcl_UtfNext(p)) < end) {
+		    // Empty body
+		}
 	    } else {
 		/* should match the char */
-		while (*p != c && (p = Tcl_UtfNext(p)) < end) {}
+		while (*p != c && (p = Tcl_UtfNext(p)) < end) {
+		    // Empty body
+		}
 	    }
 	    return p;
 	}
@@ -1151,11 +1161,10 @@ DetermineGreedySearchLen(
 	}
 	p += tok->lookAhMin;
 	if (laTok->map && p < end) {
-
 	    /* try to find laTok between [lookAhMin, lookAhMax] */
 	    while (minLen < maxLen) {
 		const char *f = FindTokenBegin(p, end, laTok,
-				    TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
+			TCL_CLOCK_FULL_COMPAT ? opts->flags : CLF_STRICT);
 		/* if found (not below lookAhMax) */
 		if (f < end) {
 		    break;
@@ -2300,7 +2309,7 @@ ClockGetOrParseScanFormat(
 		    tokCnt++;
 		    continue;
 		}
-	      word_tok:
+	    word_tok:
 		{
 		/* try continue with previous word token */
 		ClockScanToken *wordTok = tok - 1;
@@ -2593,7 +2602,6 @@ ClockScan(
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
 	if (flags & CLF_DATE) {
-
 	    if (!(flags & CLF_JULIANDAY)) {
 		info->flags |= CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY;
 
@@ -3343,7 +3351,7 @@ ClockGetOrParseFmtFormat(
 		continue;
 	    }
 	    default:
-	      word_tok:
+	    word_tok:
 		{
 		/* try continue with previous word token */
 		ClockFormatToken *wordTok = tok - 1;

@@ -424,7 +424,7 @@ TclpLoadMemory(
 #	define mh_size  sizeof(struct mach_header_64)
 #	define mh_magic MH_MAGIC_64
 #	define arch_abi CPU_ARCH_ABI64
-#endif /*  __LP64__ */
+#endif /* __LP64__ */
 
 	if ((size_t)codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
@@ -466,7 +466,7 @@ TclpLoadMemory(
 	    ms = codeSize;
 	}
 	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
-		 mh->filetype == MH_BUNDLE)) {
+		mh->filetype == MH_BUNDLE)) {
 	    err = NSObjectFileImageInappropriateFile;
 	}
 	if (err == NSObjectFileImageSuccess) {

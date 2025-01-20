@@ -886,14 +886,14 @@ Tcl_SetExitProc(
  *
  * InvokeExitHandlers --
  *
- *      Call the registered exit handlers.
+ *	Call the registered exit handlers.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The exit handlers are invoked, and the ExitHandler struct is
- *      freed.
+ *	freed.
  *
  *----------------------------------------------------------------------
  */
@@ -959,21 +959,15 @@ Tcl_Exit(
      */
 
     if (currentAppExitPtr) {
-
 	currentAppExitPtr(INT2PTR(status));
-
     } else if (subsystemsInitialized) {
-
 	if (TclFullFinalizationRequested()) {
-
 	    /*
 	     * Thorough finalization for Valgrind et al.
 	     */
 
 	    Tcl_Finalize();
-
 	} else {
-
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
@@ -1133,8 +1127,7 @@ Tcl_InitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-
-		/*
+	    /*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1873,7 +1866,7 @@ VwaitChannelReadProc(
     }
     if (itemPtr->donePtr != NULL) {
 	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr[0]++;
 	itemPtr->donePtr = NULL;
     }
 }
@@ -1890,7 +1883,7 @@ VwaitChannelWriteProc(
     }
     if (itemPtr->donePtr != NULL) {
 	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr[0]++;
 	itemPtr->donePtr = NULL;
     }
 }
@@ -1919,7 +1912,7 @@ VwaitVarProc(
 
     if (itemPtr->donePtr != NULL) {
 	itemPtr->sequence = itemPtr->donePtr[0];
-	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr[0]++;
 	itemPtr->donePtr = NULL;
     }
     Tcl_UntraceVar2(interp, name1, name2, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,

@@ -784,7 +784,7 @@ InfoCommandsCmd(
 		cmdName = (const char *)Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
 		if ((simplePattern == NULL)
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
-		    if (Tcl_FindHashEntry(&nsPtr->cmdTable,cmdName) == NULL) {
+		    if (Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr,
 				Tcl_NewStringObj(cmdName, -1));
 		    }
@@ -1304,7 +1304,7 @@ TclInfoFrame(
 	break;
 
     case TCL_LOCATION_PREBC:
-      precompiled:
+    precompiled:
 	/*
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
@@ -2215,7 +2215,6 @@ Tcl_JoinObjCmd(
 	TclNewObj(resObjPtr);
 	for (i = 0;  i < listLen;  i++) {
 	    if (i > 0) {
-
 		/*
 		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
 		 * to shimmer joinObjPtr.  If it did, then the case where
@@ -3007,7 +3006,7 @@ Tcl_LrepeatObjCmd(
      * number of times.
      */
 
-    CLANG_ASSERT(dataArray || totalElems == 0 );
+    CLANG_ASSERT(dataArray || totalElems == 0);
     if (objc == 1) {
 	Tcl_Obj *tmpPtr = objv[0];
 
@@ -3218,7 +3217,6 @@ Tcl_LreverseObjCmd(
 
 	Tcl_SetObjResult(interp, resultObj);
     } else {
-
 	/*
 	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
 	 * returning a pointer to the live array of Tcl_Obj values.
@@ -3873,7 +3871,7 @@ Tcl_LsearchObjCmd(
 		    break;
 
 		case REAL:
-		    result = Tcl_GetDoubleFromObj(interp,itemPtr, &objDouble);
+		    result = Tcl_GetDoubleFromObj(interp, itemPtr, &objDouble);
 		    if (result != TCL_OK) {
 			if (listPtr) {
 			    Tcl_DecrRefCount(listPtr);
@@ -4037,8 +4035,8 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,        /* for error reporting  */
-     Tcl_Obj *argPtr,           /* Argument to decode   */
+     Tcl_Interp *interp,	/* for error reporting  */
+     Tcl_Obj *argPtr,		/* Argument to decode   */
      int allowedArgs,		/* Flags if keyword or numeric allowed. */
      Tcl_Obj **numValuePtr,     /* Return numeric value */
      int *keywordIndexPtr)      /* Return keyword enum  */
@@ -4085,8 +4083,7 @@ SequenceIdentifyArgument(
 	int keyword;
 	/* Determine if result of expression is double or int */
 	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
-		&keyword) != TCL_OK
-	) {
+		&keyword) != TCL_OK) {
 	    return ErrArg;
 	}
 	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
@@ -4167,10 +4164,10 @@ Tcl_LseqObjCmd(
 	arg_key = (arg_key * 10);
 	numValues[value_i] = NULL;
 	decoded = SequenceIdentifyArgument(interp, objv[i],
-			allowedArgs | (i == objc-1 ? LastArg : 0),
-			&numberObj, &keyword);
+		allowedArgs | (i == objc-1 ? LastArg : 0),
+		&numberObj, &keyword);
 	switch (decoded) {
-	  case NoneArg:
+	case NoneArg:
 	    /*
 	     * Unrecognizable argument
 	     * Reproduce operation error message
@@ -4179,7 +4176,7 @@ Tcl_LseqObjCmd(
 			"operation", 0, &opmode);
 	    goto done;
 
-	  case NumericArg:
+	case NumericArg:
 	    remNums--;
 	    arg_key += NumericArg;
 	    allowedArgs = RangeKeywordArg;
@@ -4195,14 +4192,14 @@ Tcl_LseqObjCmd(
 	    value_i++;
 	    break;
 
-	  case RangeKeywordArg:
+	case RangeKeywordArg:
 	    arg_key += RangeKeywordArg;
 	    allowedArgs = NumericArg;   /* after keyword always numeric only */
 	    values[value_i] = keyword;  /* SequenceOperators */
 	    value_i++;
 	    break;
 
-	  default: /* Error state */
+	default: /* Error state */
 	    status = TCL_ERROR;
 	    goto done;
 	}
@@ -4213,7 +4210,6 @@ Tcl_LseqObjCmd(
      * error condition; process the values accordningly.
      */
     switch (arg_key) {
-
 /*    lseq n */
     case 1:
 	start = zero;
@@ -4341,10 +4337,10 @@ Tcl_LseqObjCmd(
 
 /*    All other argument errors */
     default:
-      syntax:
-	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
-	 goto done;
-	 break;
+    syntax:
+	Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	goto done;
+	break;
     }
 
     /* Count needs to be integer, so try to convert if possible */
@@ -4368,12 +4364,11 @@ Tcl_LseqObjCmd(
 	}
     }
 
-
     /*
      * Success!  Now lets create the series object.
      */
     arithSeriesPtr = TclNewArithSeriesObj(interp,
-		  useDoubles, start, end, step, elementCount);
+	    useDoubles, start, end, step, elementCount);
 
     status = TCL_ERROR;
     if (arithSeriesPtr) {
@@ -4458,13 +4453,13 @@ Tcl_LsetObjCmd(
     } else {
 	if (TclObjTypeHasProc(listPtr, setElementProc)) {
 	    finalValuePtr = TclObjTypeSetElement(interp, listPtr,
-						       objc-3, objv+2, objv[objc-1]);
+		    objc - 3, objv + 2, objv[objc - 1]);
 	    if (finalValuePtr) {
 		Tcl_IncrRefCount(finalValuePtr);
 	    }
 	} else {
-	    finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-					objv[objc-1]);
+	    finalValuePtr = TclLsetFlat(interp, listPtr, objc - 3, objv + 2,
+		    objv[objc - 1]);
 	}
     }
 

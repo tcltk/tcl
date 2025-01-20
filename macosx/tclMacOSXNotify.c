@@ -1538,7 +1538,9 @@ Tcl_Sleep(
 
 	waitTime.tv_sec = vdelay.sec;
 	waitTime.tv_nsec = vdelay.usec * 1000;
-	while (nanosleep(&waitTime, &waitTime));
+	while (nanosleep(&waitTime, &waitTime)) {
+	    // empty body
+	}
     }
 }
 

@@ -1385,22 +1385,22 @@ static const struct {int baud; speed_t speed;} speeds[] = {
     {1152000, B1152000},
 #endif
 #ifdef B1500000
-    {1500000,B1500000},
+    {1500000, B1500000},
 #endif
 #ifdef B2000000
     {2000000, B2000000},
 #endif
 #ifdef B2500000
-    {2500000,B2500000},
+    {2500000, B2500000},
 #endif
 #ifdef B3000000
-    {3000000,B3000000},
+    {3000000, B3000000},
 #endif
 #ifdef B3500000
-    {3500000,B3500000},
+    {3500000, B3500000},
 #endif
 #ifdef B4000000
-    {4000000,B4000000},
+    {4000000, B4000000},
 #endif
     {-1, 0}
 };
@@ -1779,22 +1779,17 @@ TclpOpenFileChannel(
 	     * Note: since paths starting with ~ are absolute, it also considers tilde expansion,
 	     * (proper error message of tests *io-40.17 "tilde substitution in open")
 	     */
-	    if (
-		(
-		  (
-		    !TclFSCwdIsNative() &&
-		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
-		  ) ||
-		  (*TclGetString(pathPtr) == '~')  /* possible tilde expansion */
-		) &&
-		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
-	    ) {
+	    if (((!TclFSCwdIsNative() &&
+		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)) ||
+		    (*TclGetString(pathPtr) == '~')) && /* possible tilde expansion */
+		    Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 		return NULL;
 	    }
 
 	    Tcl_AppendResult(interp, "couldn't open \"",
-	    TclGetString(pathPtr), "\": filename is invalid on this platform",
-	    (char *)NULL);
+		    TclGetString(pathPtr),
+		    "\": filename is invalid on this platform",
+		    (char *)NULL);
 	}
 	return NULL;
     }

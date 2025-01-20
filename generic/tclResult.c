@@ -551,7 +551,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- *      Returns the line number associated with the current error.
+ *	Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -568,7 +568,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- *      Sets the line number associated with the current error.
+ *	Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -861,7 +861,6 @@ TclMergeReturnOptions(
 		Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_OPTIONS]);
 		goto nestedOptions;
 	    }
-
 	} else {
 	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
 	}
@@ -909,7 +908,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */

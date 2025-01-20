@@ -472,8 +472,8 @@ TestplatformChmod(
     /*
      * Always include DACL modify rights so we don't get locked out
      */
-    aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+    aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER |
+	    SYNCHRONIZE | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {

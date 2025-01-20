@@ -89,8 +89,10 @@ static DWORD lastType = REG_RESOURCE_LIST;
 
 #if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
 # if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
+#   define Tcl_WCharToUtfDString(a, b, c) \
+	Tcl_WinTCharToUtf((TCHAR *)(a), (b)*sizeof(WCHAR), c)
+#   define Tcl_UtfToWCharDString(a, b, c) \
+	(WCHAR *)Tcl_WinUtfToTChar(a, b, c)
 # else
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
@@ -854,7 +856,9 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0); /* empty loop body */
+	    while (*wp++ != 0) {
+		/* empty loop body */
+	    }
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
@@ -936,7 +940,7 @@ GetValueNames(
      */
 
     size = MAX_KEY_LENGTH;
-    while (RegEnumValueW(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
+    while (RegEnumValueW(key, index, (WCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);

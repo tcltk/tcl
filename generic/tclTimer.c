@@ -864,7 +864,7 @@ Tcl_AfterObjCmd(
 	 */
 
 	afterPtr->id = tsdPtr->afterId;
-	tsdPtr->afterId += 1;
+	tsdPtr->afterId++;
 	Tcl_GetTime(&wakeup);
 	wakeup.sec += ms / 1000;
 	wakeup.usec += ms % 1000 * 1000;
@@ -933,7 +933,7 @@ Tcl_AfterObjCmd(
 	}
 	Tcl_IncrRefCount(afterPtr->commandPtr);
 	afterPtr->id = tsdPtr->afterId;
-	tsdPtr->afterId += 1;
+	tsdPtr->afterId++;
 	afterPtr->token = NULL;
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
@@ -965,7 +965,8 @@ Tcl_AfterObjCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "event \"%s\" doesn't exist", eventStr));
-	    Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "EVENT", eventStr,
+		    (char *)NULL);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultListPtr;

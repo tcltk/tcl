@@ -259,8 +259,6 @@ test trace-2.7 {trace add variable writes on errorInfo} -body {
    unset ::errorInfo
 } -result {::errorInfo {} write}
 
-
-
 # append no longer triggers read traces when fetching the old values of
 # variables before doing the append operation. However, lappend _does_
 # still trigger these read traces. Also lappend triggers only one write

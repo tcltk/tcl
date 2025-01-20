@@ -53,15 +53,15 @@ typedef struct {
 	    int wReserved;
 	};
     };
-    unsigned int     dwPageSize;
+    unsigned int dwPageSize;
     void *lpMinimumApplicationAddress;
     void *lpMaximumApplicationAddress;
     void *dwActiveProcessorMask;
-    unsigned int     dwNumberOfProcessors;
-    unsigned int     dwProcessorType;
-    unsigned int     dwAllocationGranularity;
-    int      wProcessorLevel;
-    int      wProcessorRevision;
+    unsigned int dwNumberOfProcessors;
+    unsigned int dwProcessorType;
+    unsigned int dwAllocationGranularity;
+    int wProcessorLevel;
+    int wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
@@ -572,7 +572,7 @@ SearchKnownEncodings(
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
-	    /* Found it at i == test.  */
+	    /* Found it at i == test. */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
@@ -947,7 +947,8 @@ TclpSetVariables(
 	    user = "";
 	    Tcl_DStringInit(&ds);	/* ensure cleanliness */
 	} else {
-	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, TCL_INDEX_NONE, &ds);
+	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name,
+		    TCL_INDEX_NONE, &ds);
 	}
 
 	Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
@@ -958,7 +959,7 @@ TclpSetVariables(
      * Define what the platform PATH separator is. [TIP #315]
      */
 
-    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ":", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "pathSeparator", ":", TCL_GLOBAL_ONLY);
 }
 
 /*

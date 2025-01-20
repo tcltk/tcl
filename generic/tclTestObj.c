@@ -853,33 +853,33 @@ TestintobjCmd(
  *	test a few possible corner cases in list object manipulation from
  *	C code that cannot occur at the Tcl level.
  *
- *      Following new commands are added for 8.7 as regression tests for
- *      memory leaks and use-after-free. Unlike 8.6, 8.7 has multiple internal
- *      representations for lists.  It has to be ensured that corresponding
- *      implementations obey the invariants of the C list API. The script
- *      level tests do not suffice as Tcl list commands do not execute
- *      the same exact code path as the exported C API.
+ *	Following new commands are added for 8.7 as regression tests for
+ *	memory leaks and use-after-free. Unlike 8.6, 8.7 has multiple internal
+ *	representations for lists.  It has to be ensured that corresponding
+ *	implementations obey the invariants of the C list API. The script
+ *	level tests do not suffice as Tcl list commands do not execute
+ *	the same exact code path as the exported C API.
  *
- *      Note these new commands are only useful when Tcl is compiled with
- *      TCL_MEM_DEBUG defined.
+ *	Note these new commands are only useful when Tcl is compiled with
+ *	TCL_MEM_DEBUG defined.
  *
  *	indexmemcheck - loops calling Tcl_ListObjIndex on each element. This
  *	is to test that abstract lists returning elements do not depend
  *	on caller to free them. The test case should check allocated counts
- *      with the following sequence:
- *            set before <get memory counts>
- *            testobj set VARINDEX [list a b c] (or lseq etc.)
- *            testlistobj indexnoop VARINDEX
- *            testobj unset VARINDEX
- *            set after <get memory counts>
- *      after calling this command AND freeing the passed list. The targeted
- *      bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
- *      resulting in a memory leak. Conversely, the command also checks
- *      that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
- *      count since it is supposed to have at least one reference held
- *      by the list implementation. Returns a message in interp otherwise.
+ *	with the following sequence:
+ *	      set before <get memory counts>
+ *	      testobj set VARINDEX [list a b c] (or lseq etc.)
+ *	      testlistobj indexnoop VARINDEX
+ *	      testobj unset VARINDEX
+ *	      set after <get memory counts>
+ *	after calling this command AND freeing the passed list. The targeted
+ *	bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
+ *	resulting in a memory leak. Conversely, the command also checks
+ *	that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
+ *	count since it is supposed to have at least one reference held
+ *	by the list implementation. Returns a message in interp otherwise.
  *
- *      getelementsmemcheck - as above but for Tcl_ListObjGetElements
+ *	getelementsmemcheck - as above but for Tcl_ListObjGetElements
 
  *
  * Results:
@@ -1088,7 +1088,6 @@ static const Tcl_ObjType v1TestListType = {
     V1TestListObjIndex, /* should never be accessed, because this objType = V1*/
     NULL, NULL, NULL, NULL, NULL, NULL
 };
-
 
 static int
 TestobjCmd(
@@ -1610,15 +1609,15 @@ TeststringobjCmd(
 static int
 TestbigdataCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "string", "bytearray", "list", "dict", NULL
+	"string", "bytearray", "list", "dict", NULL
     };
     enum options {
-	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
+	BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
     } idx;
     char *s;
     unsigned char *p;

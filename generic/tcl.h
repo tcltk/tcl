@@ -69,8 +69,8 @@ extern "C" {
 #  define STRINGIFY1(x) #x
 #endif
 #ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
+#  define JOIN(a, b) JOIN1(a, b)
+#  define JOIN1(a, b) a##b
 #endif
 #endif /* RC_INVOKED */
 
@@ -107,15 +107,15 @@ extern "C" {
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
-#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__MINGW_PRINTF_FORMAT, a, b)))
+#	define TCL_FORMAT_PRINTF(a, b) __attribute__ ((__format__ (__MINGW_PRINTF_FORMAT, a, b)))
 #   else
-#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#	define TCL_FORMAT_PRINTF(a, b) __attribute__ ((__format__ (__printf__, a, b)))
 #   endif
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
 #else
-#   define TCL_FORMAT_PRINTF(a,b)
+#   define TCL_FORMAT_PRINTF(a, b)
 #   if defined(_MSC_VER)
 #	define TCL_NORETURN __declspec(noreturn)
 #	define TCL_NOINLINE __declspec(noinline)
@@ -702,15 +702,15 @@ typedef struct Tcl_ObjType {
 
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_OBJTYPE_V0 0, \
-	   0,0,0,0,0,0,0,0	/* Pre-Tcl 9 */
+	0, 0, 0, 0, 0, 0, 0, 0	/* Pre-Tcl 9 */
 #   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
-	   a,0,0,0,0,0,0,0	/* Tcl 9 Version 1 */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType),  \
-	   a,b,c,d,e,f,g,h	/* Tcl 9 - AbstractLists */
+	a, 0, 0, 0, 0, 0, 0, 0	/* Tcl 9 Version 1 */
+#   define TCL_OBJTYPE_V2(a, b, c, d, e, f, g, h) sizeof(Tcl_ObjType),  \
+	a, b, c, d, e, f, g, h	/* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
 #   define TCL_OBJTYPE_V1(a) /* just empty */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) /* just empty */
+#   define TCL_OBJTYPE_V2(a, b, c, d, e, f, g, h) /* just empty */
 #endif
 
 /*
@@ -2471,8 +2471,8 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   ifdef _MSC_VER
 	/* Silence invalid C4090 warnings */
 #	define ckfree(a) Tcl_Free((void *)(a))
-#	define ckrealloc(a,b) Tcl_Realloc((void *)(a),(b))
-#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((void *)(a),(b))
+#	define ckrealloc(a, b) Tcl_Realloc((void *)(a), (b))
+#	define attemptckrealloc(a, b) Tcl_AttemptRealloc((void *)(a), (b))
 #   else
 #	define ckfree Tcl_Free
 #	define ckrealloc Tcl_Realloc
@@ -2493,7 +2493,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef  Tcl_DumpActiveMemory
 #   define Tcl_DumpActiveMemory(x)
 #   undef  Tcl_ValidateAllMemory
-#   define Tcl_ValidateAllMemory(x,y)
+#   define Tcl_ValidateAllMemory(x, y)
 
 #endif /* !TCL_MEM_DEBUG */
 

@@ -40,8 +40,8 @@
 #endif
 
 #ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
+#  define JOIN(a, b) JOIN1(a, b)
+#  define JOIN1(a, b) a##b
 #endif
 
 #if defined(__cplusplus)
@@ -829,7 +829,7 @@ typedef struct VarInHash {
  * MODULE_SCOPE int	TclIsVarResolved(Var *varPtr);
  */
 
-#define TclVarFindHiddenArray(varPtr,arrayPtr)				\
+#define TclVarFindHiddenArray(varPtr, arrayPtr)				\
     do {								\
 	if ((arrayPtr == NULL) && TclIsVarInHash(varPtr) &&		\
 		(TclVarParentArray(varPtr) != NULL)) {			\
@@ -881,11 +881,11 @@ typedef struct VarInHash {
     ((varPtr)->flags & VAR_DEAD_HASH)
 
 #define TclGetVarNsPtr(varPtr) \
-    (TclIsVarInHash(varPtr) \
+    (TclIsVarInHash(varPtr)						\
 	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
 	: NULL)
 
-#define TclVarParentArray(varPtr)					\
+#define TclVarParentArray(varPtr) \
     ((TclVarHashTable *) ((VarInHash *) (varPtr))->entry.tablePtr)->arrayPtr
 
 #define VarHashRefCount(varPtr) \
@@ -898,36 +898,38 @@ typedef struct VarInHash {
  * Macros for direct variable access by TEBC.
  */
 
-#define TclIsVarTricky(varPtr,trickyFlags)				\
+#define TclIsVarTricky(varPtr, trickyFlags) \
     (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
 	  || (TclIsVarInHash(varPtr)					\
 		&& (TclVarParentArray(varPtr) != NULL)			\
 		&& (TclVarParentArray(varPtr)->flags & (trickyFlags))))
 
 #define TclIsVarDirectReadable(varPtr)					\
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
+    (   (!TclIsVarTricky(varPtr, VAR_TRACED_READ))			\
 	&& (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
+    (!TclIsVarTricky(varPtr, VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
+    (!TclIsVarTricky(varPtr,						\
+	    VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
+    (   (!TclIsVarTricky(varPtr,					\
+	    VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))		\
 	&&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
-    (TclIsVarDirectReadable(varPtr) &&\
+    (TclIsVarDirectReadable(varPtr) &&					\
 	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_READ)))
 
 #define TclIsVarDirectWritable2(varPtr, arrayPtr) \
-    (TclIsVarDirectWritable(varPtr) &&\
+    (TclIsVarDirectWritable(varPtr) &&					\
 	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_WRITE)))
 
 #define TclIsVarDirectModifyable2(varPtr, arrayPtr) \
-    (TclIsVarDirectModifyable(varPtr) &&\
+    (TclIsVarDirectModifyable(varPtr) &&				\
 	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
 
 /*
@@ -2366,14 +2368,14 @@ typedef struct Interp {
  * TclSpliceIn adds to the head of the list.
  */
 
-#define TclSpliceIn(a,b)			\
+#define TclSpliceIn(a, b)			\
     (a)->nextPtr = (b);				\
     if ((b) != NULL) {				\
 	(b)->prevPtr = (a);			\
     }						\
     (a)->prevPtr = NULL, (b) = (a);
 
-#define TclSpliceOut(a,b)			\
+#define TclSpliceOut(a, b)			\
     if ((a)->prevPtr != NULL) {			\
 	(a)->prevPtr->nextPtr = (a)->nextPtr;	\
     } else {					\
@@ -5023,7 +5025,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	_objPtr->refCount = 1;						\
 	TclDecrRefCount(_objPtr);					\
     } while (0)
-#endif   /* TCL_MEM_DEBUG */
+#endif /* TCL_MEM_DEBUG */
 
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
@@ -5072,7 +5074,7 @@ typedef struct NRE_callback {
  * Inline version of Tcl_NRAddCallback.
  */
 
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3) \
     do {								\
 	NRE_callback *_callbackPtr;					\
 	TCLNR_ALLOC((interp), (_callbackPtr));				\

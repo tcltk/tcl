@@ -30,7 +30,8 @@ static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
 static int		NsEnsembleImplementationCmdNR(void *clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -2225,7 +2226,7 @@ TclSpellFix(
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
-    }  else {
+    } else {
 	Tcl_Obj **tmp = (Tcl_Obj **) Tcl_Alloc(3 * sizeof(Tcl_Obj *));
 
 	store = (Tcl_Obj **) Tcl_Alloc(size * sizeof(Tcl_Obj *));
@@ -2820,8 +2821,8 @@ BuildEnsembleConfig(
      * performance problems in qsort(). This makes this code much more opaque,
      * but the naive alternatve:
      *
-     * for (hPtr=Tcl_FirstHashEntry(hash,&search),i=0 ;
-     *	       hPtr!=NULL ; hPtr=Tcl_NextHashEntry(&search),i++) {
+     * for (hPtr=Tcl_FirstHashEntry(hash, &search), i=0 ;
+     *	       hPtr!=NULL ; hPtr=Tcl_NextHashEntry(&search), i++) {
      *     ensemblePtr->subcommandArrayPtr[i] = Tcl_GetHashKey(hash, &hPtr);
      * }
      *
@@ -3074,7 +3075,7 @@ TclCompileEnsemble(
 		 * Exact match! Excellent!
 		 */
 
-		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
+		result = Tcl_DictObjGet(NULL, mapObj, elems[i], &targetCmdObj);
 		if (result != TCL_OK || targetCmdObj == NULL) {
 		    goto tryCompileToInv;
 		}

@@ -96,7 +96,7 @@ TclStrIdxTreeSearch(
     const char *end)		/* End of string */
 {
     TclStrIdxTree *parent = tree, *prevParent = tree;
-    TclStrIdx  *item = tree->firstPtr, *prevItem = NULL;
+    TclStrIdx *item = tree->firstPtr, *prevItem = NULL;
     const char *s = start, *f, *cin, *cinf, *prevf = NULL;
     Tcl_Size offs = 0;
 
@@ -301,8 +301,8 @@ TclStrIdxTreeBuildFromList(
 		    continue;
 		}
 
-		/* split tree (e. g. j->(jan,jun) + jul == j->(jan,ju->(jun,jul)) )
-		 * but don't split by fulfilled child of found item ( ii->iii->iiii ) */
+		/* split tree (e.g. j->(jan,jun) + jul == j->(jan,ju->(jun,jul)) )
+		 * but don't split by fulfilled child of found item (ii->iii->iiii) */
 		if (foundItem->length != (f - s)) {
 		    /* first split found item (insert one between parent and found + new one) */
 		    item = (TclStrIdx *) Tcl_AttemptAlloc(sizeof(TclStrIdx));
@@ -463,7 +463,7 @@ TclStrIdxTreeGetFromObj(
 static void
 TclStrIdxTreePrint(
     Tcl_Interp *interp,
-    TclStrIdx  *tree,
+    TclStrIdx *tree,
     int offs)
 {
     Tcl_Obj *obj[2];
@@ -494,7 +494,7 @@ TclStrIdxTreeTestObjCmd(
 	"findequal", "index", "puts-index", NULL
     };
     enum optionInd {
-	O_FINDEQUAL, O_INDEX,  O_PUTS_INDEX
+	O_FINDEQUAL, O_INDEX, O_PUTS_INDEX
     };
     int optionIndex;
 

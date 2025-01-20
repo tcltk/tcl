@@ -126,7 +126,7 @@ typedef struct RingBuffer {
  */
 typedef struct ConsoleHandleInfo {
     struct ConsoleHandleInfo *nextPtr; /* Process-global list of consoles */
-    HANDLE console;       /* Console handle */
+    HANDLE console;	  /* Console handle */
     HANDLE consoleThread; /* Handle to thread doing actual i/o on the console */
     SRWLOCK lock;	  /* Controls access to this structure.
 			   * Cheaper than CRITICAL_SECTION but note does not
@@ -183,7 +183,7 @@ typedef struct ConsoleChannelInfo {
     Tcl_Channel channel;	/* Pointer to channel structure. */
     DWORD initMode;		/* Initial console mode. */
     int numRefs;		/* See comments above */
-    int permissions;            /* OR'ed combination of TCL_READABLE,
+    int permissions;		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
     int watchMask;		/* OR'ed combination of TCL_READABLE,
@@ -191,7 +191,7 @@ typedef struct ConsoleChannelInfo {
 				 * which events should be reported. */
     int flags;			/* State flags */
 #define CONSOLE_EVENT_QUEUED 0x0001 /* Notification event already queued */
-#define CONSOLE_ASYNC        0x0002 /* Channel is non-blocking. */
+#define CONSOLE_ASYNC	     0x0002 /* Channel is non-blocking. */
 #define CONSOLE_READ_OPS     0x0004 /* Channel supports read-related ops. */
 } ConsoleChannelInfo;
 
@@ -754,8 +754,8 @@ NudgeWatchers(
  *
  *	This procedure is invoked before Tcl_DoOneEvent blocks waiting for an
  *	event. It walks the channel list and if any input channel has data
- *      available or output channel has space for data, sets the event loop
- *      blocking time to 0 so that it will poll immediately.
+ *	available or output channel has space for data, sets the event loop
+ *	blocking time to 0 so that it will poll immediately.
  *
  * Results:
  *	None.
@@ -903,8 +903,8 @@ ConsoleCheckProc(
 
 	    /* See note above loop why this can be accessed without locks */
 	    chanInfoPtr->flags |= CONSOLE_EVENT_QUEUED;
-	    chanInfoPtr->numRefs += 1; /* So it does not go away while event
-					* is in queue */
+	    chanInfoPtr->numRefs++;	/* So it does not go away while event
+					 * is in queue */
 	    evPtr->header.proc = ConsoleEventProc;
 	    evPtr->chanInfoPtr = chanInfoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -1024,7 +1024,7 @@ ConsoleCloseProc(
 	}
 
 	/* Break the thread out of blocking console i/o */
-	handleInfoPtr->numRefs -= 1; /* Remove reference from this channel */
+	handleInfoPtr->numRefs--;	/* Remove reference from this channel */
 	if (handleInfoPtr->numRefs == 1) {
 	    /*
 	     * Abort the i/o if no other threads are listening on it.
@@ -1064,7 +1064,7 @@ ConsoleCloseProc(
      */
     if (chanInfoPtr->numRefs > 1) {
 	/* There may be references already on the event queue */
-	chanInfoPtr->numRefs -= 1;
+	chanInfoPtr->numRefs--;
     } else {
 	Tcl_Free(chanInfoPtr);
     }
@@ -1448,7 +1448,7 @@ ConsoleEventProc(
 
     /* Remove the reference to the channel from event record */
     if (chanInfoPtr->numRefs > 1) {
-	chanInfoPtr->numRefs -= 1;
+	chanInfoPtr->numRefs--;
 	freeChannel = 0;
     } else {
 	assert(chanInfoPtr->channel == NULL);
@@ -1657,7 +1657,6 @@ ConsoleReaderThread(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
 
     while (1) {
-
 	if (handleInfoPtr->numRefs == 1) {
 	    /*
 	     * Sole reference. That's this thread. Exit since no clients
@@ -2000,7 +1999,7 @@ ConsoleWriterThread(
 static ConsoleHandleInfo *
 AllocateConsoleHandleInfo(
     HANDLE consoleHandle,
-    int permissions)   /* TCL_READABLE or TCL_WRITABLE */
+    int permissions)		/* TCL_READABLE or TCL_WRITABLE */
 {
     ConsoleHandleInfo *handleInfoPtr;
     DWORD consoleMode;
@@ -2023,12 +2022,12 @@ AllocateConsoleHandleInfo(
 	SetConsoleMode(consoleHandle, consoleMode);
     }
     handleInfoPtr->consoleThread = CreateThread(
-	NULL, /* default security descriptor */
-	2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
-	permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
-	handleInfoPtr, /* Pass to thread */
-	0,             /* Flags - no special cases */
-	NULL);         /* Don't care about thread id */
+	    NULL,	   /* default security descriptor */
+	    2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
+	    permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
+	    handleInfoPtr, /* Pass to thread */
+	    0,		   /* Flags - no special cases */
+	    NULL);	   /* Don't care about thread id */
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
 	RingBufferClear(&handleInfoPtr->buffer);
@@ -2188,7 +2187,7 @@ TclWinOpenConsoleChannel(
      * gConsoleHandleInfoList but still need to lock the structure itself
      */
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
-    handleInfoPtr->numRefs += 1;
+    handleInfoPtr->numRefs++;
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 
     ReleaseSRWLockExclusive(&gConsoleLock);

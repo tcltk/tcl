@@ -69,7 +69,7 @@ typedef struct GetsState {
     char **dstPtr;		/* Pointer into objPtr's string rep where
 				 * next character should be stored. */
     Tcl_Encoding encoding;	/* The encoding to use to convert raw bytes
-				 * to UTF-8.  */
+				 * to UTF-8. */
     ChannelBuffer *bufPtr;	/* The current buffer of raw bytes being
 				 * emptied. */
     Tcl_EncodingState state;	/* The encoding state just before the last
@@ -231,12 +231,12 @@ static Tcl_Size		Write(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
-static int	      WillRead(Channel *chanPtr);
+static int		WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+    Write(chanPtr, src, srcLen, chanPtr->state->encoding)
 #define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+    Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -616,7 +616,7 @@ TclFinalizeIOSubsystem(void)
 	    if (GotFlag(statePtr, CHANNEL_DEAD)) {
 		continue;
 	    }
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED )
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED)
 		    || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 		ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
@@ -1046,7 +1046,6 @@ DeleteChannelTable(
 		(void) Tcl_CloseEx(interp, (Tcl_Channel) chanPtr, 0);
 	    }
 	}
-
     }
     Tcl_DeleteHashTable(hTblPtr);
     Tcl_Free(hTblPtr);
@@ -1554,7 +1553,6 @@ TclGetChannelFromObj(
     if (resPtr && resPtr->refCount == 1) {
 	/* Re-use the ResolvedCmdName struct */
 	Tcl_Release(resPtr->statePtr);
-
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -1619,7 +1617,7 @@ Tcl_CreateChannel(
     if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
     }
-    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
+    if ((TCL_WRITABLE & mask) && (NULL == typePtr->outputProc)) {
 	Tcl_Panic("channel type %s must define outputProc when used for writer channel", typePtr->typeName);
     }
     if (NULL == typePtr->watchProc) {
@@ -2938,7 +2936,6 @@ FlushChannel(
 		RecycleBuffer(statePtr, bufPtr, 0);
 	    }
 	}
-
     }	/* Closes "while". */
 
     /*
@@ -6466,7 +6463,6 @@ ReadChars(
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
 		    return 1;
 		}
-
 	    } else if (GotFlag(statePtr, CHANNEL_EOF)) {
 		/*
 		 * The bare \r is the only char and we will never read a
@@ -6498,7 +6494,6 @@ ReadChars(
 	numChars -= (dstRead - dstWrote);
 
 	if (charsToRead > 0 && numChars > charsToRead) {
-
 	    /*
 	     * TODO: This cannot happen anymore.
 	     *
@@ -8802,7 +8797,7 @@ ChannelTimerProc(
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
+		    ChannelTimerProc, chanPtr);
 	    Tcl_Preserve(statePtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	    Tcl_Release(statePtr);
@@ -9779,11 +9774,11 @@ CopyData(
 
 	    if (moveBytes) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
-			      !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
+			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
-			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)
-			,0 /* No append */);
+			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING),
+			0 /* No append */);
 		/*
 		 * In case of a recoverable encoding error, any data before
 		 * the error should be written. This data is in the bufObj.
@@ -10114,7 +10109,7 @@ DoRead(
 	 * Don't read more data if we have what we need.
 	 */
 
-	while (!bufPtr ||			/* We got no buffer!   OR */
+	while (!bufPtr ||			/* We got no buffer! ... OR */
 		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
@@ -10142,8 +10137,7 @@ DoRead(
 	}
 
 	if (!bufPtr) {
-	  readErr:
-
+	readErr:
 	    UpdateInterest(chanPtr);
 	    TclChannelRelease((Tcl_Channel)chanPtr);
 	    return -1;
@@ -10223,7 +10217,7 @@ DoRead(
 
 		ChannelBuffer *nextPtr = bufPtr->nextPtr;
 
-		nextPtr->nextRemoved -= 1;
+		nextPtr->nextRemoved--;
 		RemovePoint(nextPtr)[0] = '\r';
 		bufPtr->nextRemoved++;
 	    }
@@ -11499,7 +11493,7 @@ DumpFlags(
     int i = 0;
     char buf[24];
 
-#define ChanFlag(chr, bit)      (buf[i++] = ((flags & (bit)) ? (chr) : '_'))
+#define ChanFlag(chr, bit)	(buf[i++] = ((flags & (bit)) ? (chr) : '_'))
 
     ChanFlag('r', TCL_READABLE);
     ChanFlag('w', TCL_WRITABLE);

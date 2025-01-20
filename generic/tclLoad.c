@@ -373,7 +373,6 @@ Tcl_LoadObjCmd(
 
 	    Tcl_DStringSetLength(&pfx,
 		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
-
 	}
 
 	/*
@@ -419,20 +418,20 @@ Tcl_LoadObjCmd(
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
+	libraryPtr->safeInitProc   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
 	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
+	libraryPtr->safeUnloadProc = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
-	libraryPtr->interpRefCount	   = 0;
+	libraryPtr->interpRefCount = 0;
 	libraryPtr->safeInterpRefCount = 0;
 
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		   = firstLibraryPtr;
+	libraryPtr->nextPtr	   = firstLibraryPtr;
 	firstLibraryPtr		   = libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
 
@@ -1048,7 +1047,6 @@ Tcl_StaticLibrary(
     }
 
     if (interp != NULL) {
-
 	/*
 	 * If we're loading the library into an interpreter, determine whether
 	 * it's already loaded.

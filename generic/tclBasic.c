@@ -83,7 +83,7 @@
 void *
 TclGetCStackPtr(void)
 {
-#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
+#if defined(__GNUC__) || __has_builtin(__builtin_frame_address)
     return __builtin_frame_address(0);
 #elif defined(_MSC_VER)
     return _AddressOfReturnAddress();
@@ -840,8 +840,8 @@ Tcl_CreateInterp(void)
     if (sizeof(time_t) != 8) {
 	Tcl_Panic("<time.h> is not compatible with VS2005+");
     }
-    if ((offsetof(Tcl_StatBuf,st_atime) != 32)
-	    || (offsetof(Tcl_StatBuf,st_ctime) != 48)) {
+    if ((offsetof(Tcl_StatBuf, st_atime) != 32)
+	    || (offsetof(Tcl_StatBuf, st_ctime) != 48)) {
 	Tcl_Panic("<sys/stat.h> is not compatible with VS2005+");
     }
 #endif
@@ -924,11 +924,11 @@ Tcl_CreateInterp(void)
     iPtr->errorStack = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(iPtr->errorStack);
     iPtr->resetErrorStack = 1;
-    TclNewLiteralStringObj(iPtr->upLiteral,"UP");
+    TclNewLiteralStringObj(iPtr->upLiteral, "UP");
     Tcl_IncrRefCount(iPtr->upLiteral);
-    TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
+    TclNewLiteralStringObj(iPtr->callLiteral, "CALL");
     Tcl_IncrRefCount(iPtr->callLiteral);
-    TclNewLiteralStringObj(iPtr->innerLiteral,"INNER");
+    TclNewLiteralStringObj(iPtr->innerLiteral, "INNER");
     Tcl_IncrRefCount(iPtr->innerLiteral);
     iPtr->innerContext = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(iPtr->innerContext);
@@ -1229,7 +1229,7 @@ Tcl_CreateInterp(void)
      * Register the builtin math functions.
      */
 
-    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL,NULL);
+    nsPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL, NULL);
     if (nsPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
@@ -3695,7 +3695,7 @@ Tcl_DeleteCommandFromToken(
 	CommandTrace *tracePtr;
 	/* CallCommandTraces() does not cmdPtr, that's
 	 * done just before Tcl_DeleteCommandFromToken() returns */
-	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
+	CallCommandTraces(iPtr, cmdPtr, NULL, NULL, TCL_TRACE_DELETE);
 
 	/*
 	 * Now delete these traces.
@@ -4475,7 +4475,6 @@ EvalObjvCore(
      */
 
     if (iPtr->lookupNsPtr) {
-
 	/*
 	 * Capture the namespace we should do command name resolution in, as
 	 * instructed by our caller sneaking it in to us in a private interp
@@ -4491,7 +4490,6 @@ EvalObjvCore(
     } else if (flags & TCL_EVAL_INVOKE) {
 	lookupNsPtr = iPtr->globalNsPtr;
     } else {
-
 	/*
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
@@ -5400,7 +5398,6 @@ TclEvalEx(
 		    expand[objectsUsed] = 1;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
-
 		} else {
 		    expand[objectsUsed] = 0;
 		    additionalObjsCount = 1;
@@ -5570,7 +5567,7 @@ TclEvalEx(
 	     * include the terminator character.
 	     */
 
-	    commandLength -= 1;
+	    commandLength--;
 	}
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
@@ -8064,16 +8061,16 @@ DoubleObjClass(
 	return TCL_ERROR;
     }
     switch (type) {
-      case TCL_NUMBER_NAN:
+    case TCL_NUMBER_NAN:
 	*fpClsPtr = FP_NAN;
 	return TCL_OK;
-      case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_DOUBLE:
 	d = *((const double *) ptr);
 	break;
-      case TCL_NUMBER_INT:
+    case TCL_NUMBER_INT:
 	d = (double)*((const Tcl_WideInt *) ptr);
 	break;
-      default:
+    default:
 	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -8179,10 +8176,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (
-	DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK
-    ) {
+    if (    DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
+	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8869,7 +8864,7 @@ TclNRTailcallEval(
      */
 
     TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
+    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL, NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc - 1, objv + 1, 0, NULL);
 }
@@ -9052,7 +9047,7 @@ DeleteCoroutine(
     NRE_callback *rootPtr = TOP_CB(interp);
 
     if (COR_IS_SUSPENDED(corPtr)) {
-	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr);
+	TclNRRunCallbacks(interp, RewindCoroutine(corPtr, TCL_OK), rootPtr);
     }
 }
 
@@ -9708,7 +9703,7 @@ TclNRCoroutineObjCmd(
 	corPtr->lineLABCPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(corPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
-	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
+	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr, &hSearch);
 		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
 	    int isNew;
 	    Tcl_HashEntry *newPtr =

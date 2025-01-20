@@ -1115,7 +1115,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1139,7 +1139,7 @@ TclFileAttrsCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad option \"%s\", there are no file attributes in this"
 		    " filesystem", TclGetString(objv[0])));
-	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR", "NONE", (char *)NULL);
 	    goto end;
 	}
 
@@ -1519,7 +1519,7 @@ TclFileTemporaryCmd(
      */
 
   makeTemporary:
-    chan = TclpOpenTemporaryFile(tempDirObj,tempBaseObj,tempExtObj, nameObj);
+    chan = TclpOpenTemporaryFile(tempDirObj, tempBaseObj, tempExtObj, nameObj);
 
     /*
      * If we created pieces of template, get rid of them now.

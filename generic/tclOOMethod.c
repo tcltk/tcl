@@ -586,7 +586,8 @@ InitCmdFrame(
 	    Tcl_DecrRefCount(context.data.eval.path);
 	    context.data.eval.path = NULL;
 	}
-    }}
+    }
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -1294,7 +1295,7 @@ RenderDeclarerName(
 // TODO: Check whether Tcl_AppendLimitedToObj() can work here.
 
 #define LIMIT 60
-#define ELLIPSIFY(str,len) \
+#define ELLIPSIFY(str, len) \
     ((len) > LIMIT ? LIMIT : (int)(len)), (str), ((len) > LIMIT ? "..." : "")
 
 static void

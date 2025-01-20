@@ -40,7 +40,6 @@
  */
 
 const unsigned char tclCharTypeTable[] = {
-
     /*
      * Positive character values, from 0-127:
      */
@@ -531,7 +530,7 @@ Tcl_ParseCommand(
 
 	/* Parse the whitespace between words. */
 
-	scanned = ParseWhiteSpace(src,numBytes, &parsePtr->incomplete, &type);
+	scanned = ParseWhiteSpace(src, numBytes, &parsePtr->incomplete, &type);
 	src += scanned;
 	numBytes -= scanned;
     }
@@ -1390,15 +1389,20 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	ch = *src;
-	while (numBytes && (braceCount>0 || ch != '}')) {
+	while (numBytes && (braceCount > 0 || ch != '}')) {
 	    switch (ch) {
-	    case '{': braceCount++; break;
-	    case '}': braceCount--; break;
+	    case '{':
+		braceCount++;
+		break;
+	    case '}':
+		braceCount--;
+		break;
 	    case '\\':
 		/* if 2 or more left, consume 2, else consume
 		 * just the \ and let it run into the end */
 		if (numBytes > 1) {
-		   src++; numBytes--;
+		    src++;
+		    numBytes--;
 		}
 	    }
 	    numBytes--;
@@ -1411,7 +1415,7 @@ Tcl_ParseVarName(
 			"missing close-brace for variable name", -1));
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
-	    parsePtr->term = tokenPtr->start-1;
+	    parsePtr->term = tokenPtr->start - 1;
 	    parsePtr->incomplete = 1;
 	    goto error;
 	}
@@ -1426,8 +1430,8 @@ Tcl_ParseVarName(
 
 	while (numBytes) {
 	    if (TclIsBareword(*src)) {
-		src += 1;
-		numBytes -= 1;
+		src++;
+		numBytes--;
 		continue;
 	    }
 	    if ((src[0] == ':') && (numBytes != 1) && (src[1] == ':')) {
@@ -1576,7 +1580,7 @@ Tcl_ParseVar(
      * variable.  Returning the string relies on that to be true.
      */
 
-    assert( Tcl_IsShared(objPtr) );
+    assert(Tcl_IsShared(objPtr));
 
     Tcl_ResetResult(interp);
     return TclGetString(objPtr);

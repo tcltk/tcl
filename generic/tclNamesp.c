@@ -205,7 +205,7 @@ CreateChildEntry(
 #ifndef BREAK_NAMESPACE_COMPAT
     return Tcl_CreateHashEntry(&nsPtr->childTable, name, isNewPtr);
 #else
-    if )nsPtr->childTablePtr == NULL) {
+    if (nsPtr->childTablePtr == NULL) {
 	nsPtr->childTablePtr = (Tcl_HashTable *)
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nsPtr->childTablePtr, TCL_STRING_KEYS);
@@ -2696,7 +2696,6 @@ Tcl_FindCommand(
 	if (result == TCL_OK) {
 	    ((Command *) cmd)->flags |= CMD_VIA_RESOLVER;
 	    return cmd;
-
 	} else if (result != TCL_CONTINUE) {
 	    return NULL;
 	}
@@ -4910,7 +4909,7 @@ SetNsNameFromAny(
 
     name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
-	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+	    &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
 	return TCL_ERROR;

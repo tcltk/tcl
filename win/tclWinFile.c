@@ -16,9 +16,9 @@
 #include "tclFileSystem.h"
 #include <winioctl.h>
 #include <shlobj.h>
-#include <lm.h>		        /* For TclpGetUserHome(). */
+#include <lm.h>			/* For TclpGetUserHome(). */
 #include <userenv.h>		/* For TclpGetUserHome(). */
-#include <aclapi.h>             /* For GetNamedSecurityInfo */
+#include <aclapi.h>		/* For GetNamedSecurityInfo */
 
 #ifdef _MSC_VER
 #   pragma comment(lib, "userenv.lib")
@@ -285,7 +285,6 @@ WinLink(
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    return WinSymLinkDirectory(linkSourcePath, linkTargetPath);
-
 	} else if (linkAction & TCL_CREATE_HARD_LINK) {
 	    /*
 	     * Can't hard link directories.
@@ -343,7 +342,6 @@ WinReadLink(
 
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
-
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	/*
 	 * It is a file - this is not yet supported.
@@ -390,7 +388,7 @@ WinSymLinkDirectory(
 
     memcpy(nativeTarget, L"\\??\\", 4 * sizeof(WCHAR));
     memcpy(nativeTarget + 4, linkTargetPath,
-	   sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
+	    sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
     len = wcslen(nativeTarget);
 
     /*
@@ -497,7 +495,8 @@ TclWinSymLinkDelete(
 
     if (hFile != INVALID_HANDLE_VALUE) {
 	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer,
-		REPARSE_MOUNTPOINT_HEADER_SIZE,NULL,0,&returnedLength,NULL)) {
+		REPARSE_MOUNTPOINT_HEADER_SIZE, NULL, 0, &returnedLength,
+		NULL)) {
 	    /*
 	     * Error setting junction.
 	     */
@@ -536,7 +535,7 @@ TclWinSymLinkDelete(
  *--------------------------------------------------------------------
  */
 
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
@@ -583,7 +582,7 @@ WinReadLinkDirectory(
 	     */
 
 	    if (wcsncmp(reparseBuffer->MountPointReparseBuffer.PathBuffer,
-		    L"\\??\\Volume{",11) == 0) {
+		    L"\\??\\Volume{", 11) == 0) {
 		char drive;
 
 		/*
@@ -606,7 +605,7 @@ WinReadLinkDirectory(
 		    };
 
 		    driveSpec[0] = drive;
-		    retVal = Tcl_NewStringObj(driveSpec,2);
+		    retVal = Tcl_NewStringObj(driveSpec, 2);
 		    Tcl_IncrRefCount(retVal);
 		    return retVal;
 		}
@@ -623,14 +622,14 @@ WinReadLinkDirectory(
 
 		goto invalidError;
 	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\\\?\\",4) == 0) {
+		    .PathBuffer, L"\\\\?\\", 4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
 
 		offset = 4;
 	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\??\\",4) == 0) {
+		    .PathBuffer, L"\\??\\", 4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
@@ -645,9 +644,9 @@ WinReadLinkDirectory(
 		reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength>>1, &ds);
 
-	copy = Tcl_DStringValue(&ds)+offset;
-	len = Tcl_DStringLength(&ds)-offset;
-	retVal = Tcl_NewStringObj(copy,len);
+	copy = Tcl_DStringValue(&ds) + offset;
+	len = Tcl_DStringLength(&ds) - offset;
+	retVal = Tcl_NewStringObj(copy, len);
 	Tcl_IncrRefCount(retVal);
 	Tcl_DStringFree(&ds);
 	return retVal;
@@ -658,7 +657,7 @@ WinReadLinkDirectory(
     return NULL;
 }
 
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic pop
 #endif
 
@@ -1206,7 +1205,7 @@ WinIsDrive(
 
 	    return 1;
 	} else if ((name[1] == ':')
-		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
+		&& (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
 	    /*
 	     * Path is of the form 'x:' or 'x:/' or 'x:\'
 	     */
@@ -1248,7 +1247,6 @@ WinIsReserved(
 
 	    return 3;
 	}
-
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
@@ -1263,7 +1261,6 @@ WinIsReserved(
 		return 4;
 	    }
 	}
-
     } else if (!strcasecmp(path, "prn") || !strcasecmp(path, "nul")
 	    || !strcasecmp(path, "aux")) {
 	/*
@@ -1357,7 +1354,6 @@ NativeMatchType(
 	 */
 
 	return 1;
-
     } else if (types->type != 0) {
 	unsigned short st_mode;
 	int isExec = NativeIsExec(nativeName);
@@ -1747,9 +1743,9 @@ NativeAccess(
 	 * go).
 	 */
 
-	if(!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
-	   memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
-		  sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
+	if (!GetSecurityDescriptorOwner(sdPtr, &pSid, &SidDefaulted) ||
+		memcmp(GetSidIdentifierAuthority(pSid), &samba_unmapped,
+			sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
 	    HeapFree(GetProcessHeap(), 0, sdPtr);
 	    return 0; /* Attrib tests say access allowed. */
 	}
@@ -1830,7 +1826,6 @@ NativeAccess(
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
-
     }
     return 0;
 }
@@ -2051,7 +2046,7 @@ NativeStat(
     if (fileHandle != INVALID_HANDLE_VALUE) {
 	BY_HANDLE_FILE_INFORMATION data;
 
-	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
+	if (GetFileInformationByHandle(fileHandle, &data) != TRUE) {
 	    fileType = GetFileType(fileHandle);
 	    CloseHandle(fileHandle);
 	    if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
@@ -2518,9 +2513,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)	        /* offset to start at in pathPtr */
+    int nextCheckpoint)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -2868,7 +2863,7 @@ TclWinVolumeRelativeNormalize(
 
 	const char *drive = TclGetString(useThisCwd);
 
-	absolutePath = Tcl_NewStringObj(drive,2);
+	absolutePath = Tcl_NewStringObj(drive, 2);
 	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(absolutePath);
 
@@ -2970,10 +2965,10 @@ TclpNativeToNormalized(
      */
 
     if (*copy == '\\') {
-	if (0 == strncmp(copy,"\\??\\",4)) {
+	if (0 == strncmp(copy, "\\??\\", 4)) {
 	    copy += 4;
 	    len -= 4;
-	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
+	} else if (0 == strncmp(copy, "\\\\?\\", 4)) {
 	    copy += 4;
 	    len -= 4;
 	}
@@ -2989,7 +2984,7 @@ TclpNativeToNormalized(
 	}
     }
 
-    objPtr = Tcl_NewStringObj(copy,len);
+    objPtr = Tcl_NewStringObj(copy, len);
     Tcl_DStringFree(&ds);
 
     return objPtr;
@@ -3255,8 +3250,8 @@ TclpUtime(
  * TclWinFileOwned --
  *
  *	Returns 1 if the specified file exists and is owned by the current
- *      user and 0 otherwise. Like the Unix case, the check is made using
- *      the real process SID, not the effective (impersonation) one.
+ *	user and 0 otherwise. Like the Unix case, the check is made using
+ *	the real process SID, not the effective (impersonation) one.
  *
  *---------------------------------------------------------------------------
  */
@@ -3314,13 +3309,13 @@ TclWinFileOwned(
      */
 
     if (secd) {
-	LocalFree(secd);            /* Also frees ownerSid */
+	LocalFree(secd);	/* Also frees ownerSid */
     }
     if (buf) {
 	Tcl_Free(buf);
     }
 
-    return (owned != 0);        /* Convert non-0 to 1 */
+    return (owned != 0);	/* Convert non-0 to 1 */
 }
 
 /*

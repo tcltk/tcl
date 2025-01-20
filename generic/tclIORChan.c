@@ -198,9 +198,9 @@ typedef enum {
 #define RANDW \
 	(TCL_READABLE | TCL_WRITABLE)
 
-#define IMPLIES(a,b)	((!(a)) || (b))
-#define NEGIMPL(a,b)
-#define HAS(x,f)	((x) & FLAG(f))
+#define IMPLIES(a, b)	((!(a)) || (b))
+#define NEGIMPL(a, b)
+#define HAS(x, f)	((x) & FLAG(f))
 
 #if TCL_THREADS
 /*
@@ -391,25 +391,25 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
+	if ((p)->base.mustFree) {					\
+	    Tcl_Free((p)->base.msgStr);					\
 	}
-#define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
+#define PassReceivedErrorInterp(i, p) \
+	if ((i) != NULL) {						\
+	    Tcl_SetChannelErrorInterp((i),				\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+	}								\
 	FreeReceivedError(p)
-#define PassReceivedError(c,p) \
+#define PassReceivedError(c, p) \
 	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
 	FreeReceivedError(p)
-#define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
+#define ForwardSetStaticError(p, emsg) \
+	(p)->base.code = TCL_ERROR;					\
+	(p)->base.mustFree = 0;						\
 	(p)->base.msgStr = (char *) (emsg)
-#define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
+#define ForwardSetDynamicError(p, emsg) \
+	(p)->base.code = TCL_ERROR;					\
+	(p)->base.mustFree = 1;						\
 	(p)->base.msgStr = (char *) (emsg)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
@@ -419,7 +419,7 @@ static Tcl_ExitProc	DeleteThreadReflectedChannelMap;
 
 #endif /* TCL_THREADS */
 
-#define SetChannelErrorStr(c,msgStr) \
+#define SetChannelErrorStr(c, msgStr) \
 	Tcl_SetChannelError((c), Tcl_NewStringObj((msgStr), -1))
 
 static Tcl_Obj *	MarshallError(Tcl_Interp *interp);
@@ -1708,7 +1708,8 @@ ReflectBlock(
 
     Tcl_Preserve(rcPtr);
 
-    if (InvokeTclMethod(rcPtr,METH_BLOCKING,blockObj,NULL,&resObj)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_BLOCKING, blockObj, NULL,
+	    &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	errorNum = EINVAL;
     } else {
@@ -1820,7 +1821,8 @@ ReflectSetOption(
     Tcl_IncrRefCount(optionObj);
     Tcl_IncrRefCount(valueObj);
 
-    result = InvokeTclMethod(rcPtr, METH_CONFIGURE,optionObj,valueObj, &resObj);
+    result = InvokeTclMethod(rcPtr, METH_CONFIGURE, optionObj, valueObj,
+	    &resObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
     }
@@ -2036,10 +2038,11 @@ ReflectTruncate(
 
     Tcl_Preserve(rcPtr);
 
-    lenObj  = Tcl_NewWideIntObj(length);
+    lenObj = Tcl_NewWideIntObj(length);
     Tcl_IncrRefCount(lenObj);
 
-    if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_TRUNCATE, lenObj, NULL,
+	    &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	errorNum = EINVAL;
     } else {
@@ -2336,7 +2339,7 @@ InvokeTclMethod(
 	 */
 
 	if (resultObjPtr != NULL) {
-	    resObj = Tcl_NewStringObj(msg_dstlost,-1);
+	    resObj = Tcl_NewStringObj(msg_dstlost, -1);
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
@@ -2795,7 +2798,7 @@ DeleteThreadReflectedChannelMap(
 	 * Basic crash safety until this routine can get revised [3411310]
 	 */
 
-	if (evPtr == NULL ) {
+	if (evPtr == NULL) {
 	    continue;
 	}
 	paramPtr = evPtr->param;
@@ -3289,7 +3292,8 @@ ForwardProc(
 
 	Tcl_IncrRefCount(lenObj);
 	Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
+	if (InvokeTclMethod(rcPtr, METH_TRUNCATE, lenObj, NULL,
+		&resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
 	Tcl_Release(rcPtr);

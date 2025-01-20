@@ -208,9 +208,6 @@ test uplevel-4.36 {level parsing} -body {
     apply {{} {uplevel #[expr .2] {}}}
 } -returnCodes error -result {bad level "#0.2"}
 
-
-
-
 proc a2 {} {
     uplevel a3
 }

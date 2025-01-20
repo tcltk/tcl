@@ -197,7 +197,8 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 
 #ifdef MAC_OSX_TCL /* MACOSX */
 #undef Tcl_MacOSXOpenBundleResources
-#define Tcl_MacOSXOpenBundleResources(a,b,c,d,e) Tcl_MacOSXOpenVersionedBundleResources(a,b,NULL,c,d,e)
+#define Tcl_MacOSXOpenBundleResources(a, b, c, d, e) \
+    Tcl_MacOSXOpenVersionedBundleResources(a, b, NULL, c, d, e)
 #endif
 
 #undef TCL_STORAGE_CLASS
@@ -218,10 +219,13 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #undef Tcl_WinUtfToTChar
 #undef Tcl_WinTCharToUtf
 #ifdef _WIN32
-#define Tcl_WinUtfToTChar(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
-#define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+#define Tcl_WinUtfToTChar(string, len, dsPtr) \
+    (Tcl_DStringInit(dsPtr),						\
+     (TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
+#define Tcl_WinTCharToUtf(string, len, dsPtr) \
+    (Tcl_DStringInit(dsPtr),						\
+     (char *)Tcl_Char16ToUtfDString((const unsigned short *)(string),	\
+	     ((((len) + 2) >> 1) - 1), (dsPtr)))
 #endif
 #endif
 

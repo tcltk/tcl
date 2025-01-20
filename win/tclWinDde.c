@@ -92,8 +92,10 @@ TCL_DECLARE_MUTEX(ddeMutex)
 
 #if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
 # if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
+#   define Tcl_WCharToUtfDString(a, b, c) \
+	Tcl_WinTCharToUtf((TCHAR *)(a), (b)*sizeof(WCHAR), c)
+#   define Tcl_UtfToWCharDString(a, b, c) \
+	(WCHAR *)Tcl_WinUtfToTChar(a, b, c)
 # else
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
@@ -701,7 +703,7 @@ DdeServerProc(
 
 	len = DdeQueryStringW(ddeInstance, ddeTopic, NULL, 0, CP_WINUNICODE);
 	Tcl_DStringInit(&dString);
-	Tcl_DStringSetLength(&dString,  (len + 1) * sizeof(WCHAR) - 1);
+	Tcl_DStringSetLength(&dString, (len + 1) * sizeof(WCHAR) - 1);
 	utilString = (WCHAR *) Tcl_DStringValue(&dString);
 	DdeQueryStringW(ddeInstance, ddeTopic, utilString, (DWORD) len + 1,
 		CP_WINUNICODE);

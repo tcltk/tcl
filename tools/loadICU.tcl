@@ -293,7 +293,6 @@ proc handleLocaleFile { localeName fileName msgFileName } {
     foreach line [split $data \n] {
 	switch -exact -- $state {
 	    {} {
-
 		# Look for the beginnings of data blocks
 
 		switch -regexp -- $line {
@@ -328,8 +327,6 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 		}
 	    }
 	    data {
-
-
 		# Inside a data block, collect the strings, doing backslash
 		# expansion to pick up the Unicodes
 

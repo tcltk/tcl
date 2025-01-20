@@ -26,7 +26,7 @@
 #define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
 #define SOCK_TEMPLATE           "sock%" TCL_Z_MODIFIER "x"
 
-#undef SOCKET   /* Possible conflict with win32 SOCKET */
+#undef SOCKET			/* Possible conflict with win32 SOCKET */
 
 /*
  * This is needed to comply with the strict aliasing rules of GCC, but it also
@@ -64,7 +64,7 @@ struct TcpState {
      */
 
     Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
-    void *acceptProcData;  /* The data for the accept proc. */
+    void *acceptProcData;	/* The data for the accept proc. */
 
     /*
      * Only needed for client sockets
@@ -74,10 +74,10 @@ struct TcpState {
     struct addrinfo *addr;	/* Iterator over addrlist. */
     struct addrinfo *myaddrlist;/* Local address. */
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
-    int filehandlers;           /* Caches FileHandlers that get set up while
-                                 * an async socket is not yet connected. */
-    int connectError;           /* Cache SO_ERROR of async socket. */
-    int cachedBlocking;         /* Cache blocking mode of async socket. */
+    int filehandlers;		/* Caches FileHandlers that get set up while
+				 * an async socket is not yet connected. */
+    int connectError;		/* Cache SO_ERROR of async socket. */
+    int cachedBlocking;		/* Cache blocking mode of async socket. */
 };
 
 /*
@@ -194,7 +194,7 @@ printaddrinfo(
 	getnameinfo(ai->ai_addr, ai->ai_addrlen,
 		host, sizeof(host), port, sizeof(port),
 		NI_NUMERICHOST|NI_NUMERICSERV);
-	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
+	fprintf(stderr, "%s: %s:%s\n", prefix, host, port);
     }
 }
 #endif
@@ -616,7 +616,6 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -696,7 +695,7 @@ TcpClose2Proc(
  */
 
 #ifndef NEED_FAKE_RFC2553
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
@@ -720,7 +719,7 @@ IPv6AddressNeedsNumericRendering(
     return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
 	    && addr.s6_addr[14] == 0 && addr.s6_addr[15] == 0);
 }
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic pop
 #endif
 #endif /* NEED_FAKE_RFC2553 */
@@ -1107,15 +1106,15 @@ TcpThreadActionProc(
 	 * so the callback will run in the correct thread, bug [f583715154].
 	 */
 	switch (action) {
-	  case TCL_CHANNEL_THREAD_REMOVE:
+	case TCL_CHANNEL_THREAD_REMOVE:
 	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
 	    Tcl_DeleteFileHandler(statePtr->fds.fd);
-	  break;
-	  case TCL_CHANNEL_THREAD_INSERT:
+	    break;
+	case TCL_CHANNEL_THREAD_INSERT:
 	    Tcl_CreateFileHandler(statePtr->fds.fd,
 		TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
 	    SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
-	  break;
+	    break;
 	}
     }
 }
@@ -1193,7 +1192,6 @@ TcpWatchProc(
 
 	statePtr->filehandlers = mask;
     } else if (mask) {
-
 	/*
 	 * Whether it is a bug or feature or otherwise, it is a fact of life
 	 * that on at least some Linux kernels select() fails to report that a
@@ -1279,9 +1277,9 @@ TcpAsyncCallback(
  *	This function opens a new socket in client mode.
  *
  * Results:
- *      TCL_OK, if the socket was successfully connected or an asynchronous
- *      connection is in progress. If an error occurs, TCL_ERROR is returned
- *      and an error message is left in interp.
+ *	TCL_OK, if the socket was successfully connected or an asynchronous
+ *	connection is in progress. If an error occurs, TCL_ERROR is returned
+ *	and an error message is left in interp.
  *
  * Side effects:
  *	Opens a socket.
@@ -1645,7 +1643,7 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
-    int backlog,                /* Length of OS listen backlog queue. */
+    int backlog,		/* Length of OS listen backlog queue. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */

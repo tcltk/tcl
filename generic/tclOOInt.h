@@ -259,9 +259,9 @@ struct Object {
 
 enum ObjectFlags {
     OBJECT_DESTRUCTING = 1,	/* Indicates that an object is being or has
-				 *  been destroyed  */
+				 * been destroyed. */
     DESTRUCTOR_CALLED = 2,	/* Indicates that evaluation of destructor
-				 * script for the object has began */
+				 * script for the object has began. */
     ROOT_OBJECT = 0x1000,	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -655,7 +655,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  * REQUIRES DECLARATION: Tcl_Size i;
  */
 
-#define FOREACH(var,ary) \
+#define FOREACH(var, ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
     } else if ((var) = (ary).list[i], 1)
@@ -667,7 +667,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  * REQUIRES DECLARATION: Tcl_Size i; See [96551aca55] for more FOREACH_STRUCT details.
  */
 
-#define FOREACH_STRUCT(var,ary) \
+#define FOREACH_STRUCT(var, ary) \
     if (i=0, (ary).num>0) for(; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
@@ -700,7 +700,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
-#define DUPLICATE(target,source,type) \
+#define DUPLICATE(target, source, type) \
     do { \
 	size_t len = sizeof(type) * ((target).num=(source).num);\
 	if (len != 0) { \

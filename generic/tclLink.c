@@ -95,7 +95,7 @@ typedef struct {
  * Forward references to functions defined later in this file:
  */
 
-static char *		LinkTraceProc(void *clientData,Tcl_Interp *interp,
+static char *		LinkTraceProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 static void		LinkFree(Link *linkPtr);
@@ -809,7 +809,7 @@ LinkTraceProc(
 		TCL_GLOBAL_ONLY);
 	return (char *) "linked variable is read-only";
     }
-    valueObj = Tcl_ObjGetVar2(interp, linkPtr->varName,NULL, TCL_GLOBAL_ONLY);
+    valueObj = Tcl_ObjGetVar2(interp, linkPtr->varName, NULL, TCL_GLOBAL_ONLY);
     if (valueObj == NULL) {
 	/*
 	 * This shouldn't ever happen.
