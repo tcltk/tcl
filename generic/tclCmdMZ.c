@@ -3992,7 +3992,7 @@ Tcl_TimeRateObjCmd(
 {
     static double measureOverhead = 0;
 				/* global measure-overhead */
-    double overhead = -1;	/* given measure-overhead */
+    double overhead = 0;	/* given measure-overhead */
     register Tcl_Obj *objPtr;
     register int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
@@ -4182,9 +4182,7 @@ Tcl_TimeRateObjCmd(
     if (maxms == WIDE_MIN) {
 	maxms = 1000;
     }
-    if (overhead == -1) {
-	overhead = measureOverhead;
-    }
+    overhead += measureOverhead;
 
     /*
      * Ensure that resetting of result will not smudge the further
