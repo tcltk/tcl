@@ -521,14 +521,14 @@ TclpLoadMemory(
     }
     hInstance = MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree,
 	    MemoryDefaultLoadLibrary, FakeDefaultGetProcAddress, MemoryDefaultFreeLibrary, handlePtr);
-    Tcl_MutexLock(&dllDirectoryNameMutex);
-    Tcl_HashEntry *entry = Tcl_CreateHashEntry(&vfsPathTable, MemoryGetCodeBase(hInstance), &isNew);
-    Tcl_SetHashValue(entry, handlePtr->name);
-    Tcl_MutexLock(&dllDirectoryNameMutex);
     if (hInstance == NULL) {
 	Tcl_Free(handlePtr);
 	return TCL_ERROR;
     }
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_HashEntry *entry = Tcl_CreateHashEntry(&vfsPathTable, MemoryGetCodeBase(hInstance), &isNew);
+    Tcl_SetHashValue(entry, handlePtr->name);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
     handlePtr->base.clientData = hInstance;
     *loadHandle = &handlePtr->base;
     *unloadProcPtr = &UnloadMemory;

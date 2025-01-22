@@ -376,6 +376,11 @@ ExecuteTLS(PMEMORYMODULE module)
             (*callback)((LPVOID) codeBase, DLL_PROCESS_ATTACH, NULL);
             callback++;
         }
+#ifdef TCL_LOAD_FROM_MEMORY
+    } else {
+        /* When used inside Tcl, we don't support dll's using TLS */
+        return FALSE;
+#endif /* TCL_LOAD_FROM_MEMORY */
     }
     return TRUE;
 }

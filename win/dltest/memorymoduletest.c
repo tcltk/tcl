@@ -29,12 +29,14 @@ extern int _tls_index;
 extern int _tls_start;
 extern int _tls_end;
 
+#if 0 /* TLS not supported yet, therefore the "tls_supported" constraint */
 #ifdef _MSC_VER
 __declspec(thread)
 #elif defined __GNUC__
 __thread
 #elif __cplusplus
 thread_local
+#endif
 #endif
 int threadVar = 0;
 
