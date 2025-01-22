@@ -509,6 +509,7 @@ test cmdMZ-6.13 {Tcl_TimeRateObjCmd: stability by O(n**2), avoid long execution 
     }
     set result
 } {2x 10x 100x}
+
 # The tests for Tcl_WhileObjCmd are in while.test
 
 # cleanup
