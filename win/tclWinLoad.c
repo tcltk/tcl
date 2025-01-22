@@ -528,7 +528,7 @@ TclpLoadMemory(
     Tcl_MutexLock(&dllDirectoryNameMutex);
     Tcl_HashEntry *entry = Tcl_CreateHashEntry(&vfsPathTable, MemoryGetCodeBase(hInstance), &isNew);
     Tcl_SetHashValue(entry, handlePtr->name);
-    Tcl_MutexLock(&dllDirectoryNameMutex);
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
     handlePtr->base.clientData = hInstance;
     *loadHandle = &handlePtr->base;
     *unloadProcPtr = &UnloadMemory;
