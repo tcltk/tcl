@@ -2378,6 +2378,12 @@ declare 689 {
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 690 {
+    int Tcl_IsEmpty(Tcl_Obj *obj)
+}
+
+# ----- BASELINE -- FOR -- 9.1.0 ----- #
+
+declare 691 {
     void TclUnusedStubEntry(void)
 }
 
