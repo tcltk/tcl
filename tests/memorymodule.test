@@ -9,8 +9,7 @@ lappend auto_path [file join [zipfs root] memorymoduletest]
 
 testConstraint thread [expr {[catch {package require thread 3.0}] == 0}]
 testConstraint memorymodule [expr {[tcl::build-info memorymodule] != 0}]
-testConstraint nestedexception [expr {[tcl::build-info msvc] != 0}]
-testConstraint tls_supported 0; #For now, TLS in dll's is not supported
+testConstraint msvc [expr {[tcl::build-info msvc] != 0}]
 
 test memorymodule-1.0 {info loaded} memorymoduletest {
     package require memorymoduletest
@@ -27,15 +26,15 @@ test memorymodule-1.2 {GetModuleFileNameW (WIP)} {memorymoduletest memorymodule}
     GetModuleFileNameW
 } //zipfs:/memorymoduletest/tcl9memorymoduletest.dll
 
-test memorymodule-2.0 {LTS, create thread before accessing var} -constraints {memorymoduletest thread tls_supported} -body {
+test memorymodule-2.0 {LTS, create thread before accessing var} -constraints {memorymoduletest thread} -body {
     package require Thread
-    package require memorymoduletest
+    package require threadvartest
     set t1 [thread::create]
     ThreadVar 15; # Set ThreadVar to 15 in the main thread
     thread::preserve $t1
     thread::send $t1 {
 	lappend auto_path [file join [zipfs root] memorymoduletest]
-	package require memorymoduletest
+	package require threadvartest
 	# set ThreadVar to 16 in the subthread
 	ThreadVar 16
 	return [ThreadVar]
@@ -45,15 +44,15 @@ test memorymodule-2.0 {LTS, create thread before accessing var} -constraints {me
     list [ThreadVar] $result
 } -result {15 16}
 
-test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {memorymoduletest thread tls_supported} -body {
+test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {memorymoduletest thread} -body {
     package require Thread
-    package require memorymoduletest
+    package require threadvartest
     ThreadVar 15; # Set ThreadVar to 15 in the main thread
     set t1 [thread::create]; #create thread _before_ setting the variable
     thread::preserve $t1
     thread::send $t1 {
 	lappend auto_path [file join [zipfs root] memorymoduletest]
-	package require memorymoduletest
+	package require threadvartest
 	# set ThreadVar to 16 in the subthread
 	ThreadVar 16
 	return [ThreadVar]
@@ -63,17 +62,17 @@ test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {mem
     list [ThreadVar] $result
 } -result {15 16}
 
-test memorymodule-2.2 {nexted exception} -constraints {memorymoduletest nestedexception} -body {
+test memorymodule-2.2 {nexted exception} -constraints {memorymoduletest msvc} -body {
     NestedException
 } -result 1
 
-test memorymodule-3.0 {_tls_index} -constraints {memorymoduletest thread tls_supported} -body {
+test memorymodule-3.0 {_tls_index} -constraints {memorymoduletest thread msvc} -body {
     set t1 [thread::create];
     ThreadVar 18; # Set ThreadVar to 18 in the main thread
     thread::preserve $t1
     thread::send $t1 {
 	lappend auto_path [file join [zipfs root] memorymoduletest]
-	package require memorymoduletest
+	package require threadvartest
 	ThreadVar 19; # Set ThreadVar to 18 in the main thread
 	return [list [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]]
     } result

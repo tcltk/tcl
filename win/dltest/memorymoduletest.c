@@ -24,22 +24,6 @@ static HMODULE hModule = NULL;
 
 static bool threadAttachCalled = false;
 
-/* read-only thread-specify variables. Cannot be written to. */
-extern int _tls_index;
-extern int _tls_start;
-extern int _tls_end;
-
-#if 0 /* TLS not supported yet, therefore the "tls_supported" constraint */
-#ifdef _MSC_VER
-__declspec(thread)
-#elif defined __GNUC__
-__thread
-#elif __cplusplus
-thread_local
-#endif
-#endif
-int threadVar = 0;
-
 BOOL APIENTRY
 DllMain(
     HINSTANCE hInst,		/* Library instance handle. */
@@ -168,46 +152,6 @@ Mmt_ThreadAttachCalled(
     return TCL_OK;
 }
 
-/* Mmt_ThreadVar access a treaded (integer) variable.  */
-/* Special values -end, -index and -start can access
- * the (read-only) special variables _tls_end, _tls_index
- * and _tls_start */
-static int
-Mmt_ThreadVar(
-    void *dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings. */
-{
-    (void)dummy;
-    static const char *options[] = {
-	    "-end", "-index", "-start", NULL
-    };
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?int? | -end | -index | -start");
-	return TCL_ERROR;
-    }
-    if (objc == 2) {
-	int index;
-	int value = -1;
-	if (Tcl_GetIndexFromObj(NULL, objv[1], options, "options", 0, &index) == TCL_OK) {
-	    switch (index) {
-	    case 0: value = _tls_end; break;
-	    case 1: value = _tls_index; break;
-	    case 2: value = _tls_start; break;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(value));
-	    return TCL_OK;
-	}
-	if (Tcl_GetIntFromObj(interp, objv[1], &threadVar) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(threadVar));
-    return TCL_OK;
-}
-
 #ifdef _MSC_VER
 static void throwException() {
     RaiseException(
@@ -281,7 +225,6 @@ Memorymoduletest_Init(
     Tcl_CreateObjCommand(interp, "GetModuleFileNameA", Mmt_ModuleFileNameACmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "GetModuleFileNameW", Mmt_ModuleFileNameWCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "ThreadAttachCalled", Mmt_ThreadAttachCalled, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "ThreadVar", Mmt_ThreadVar, NULL, NULL);
 #ifdef _MSC_VER
     Tcl_CreateObjCommand(interp, "NestedException", Mmt_NestedException, NULL, NULL);
 #endif /* _MSC_VER */

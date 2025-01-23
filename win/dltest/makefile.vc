@@ -6,6 +6,8 @@ LOC =
 # variables
 SHAREDLIB = tcl9memorymoduletest.dll
 IMPLIB    = memorymoduletest.lib
+SHAREDLIB2 = tcl9threadvartest.dll
+IMPLIB2    = threadvartest.lib
 
 CC = cl
 AS = ml
@@ -17,18 +19,26 @@ LDFLAGS = -nologo -debug -incremental:no -opt:ref
 OBJS = memorymoduletest.obj
 
 # targets
-all: $(SHAREDLIB) $(IMPLIB)
+all: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2)
 
 $(IMPLIB): $(SHAREDLIB)
 
-$(SHAREDLIB): $(OBJS)
+$(IMPLIB2): $(SHAREDLIB2)
+
+$(SHAREDLIB): memorymoduletest.obj
 	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
-	  -out:$@ $(OBJS)
+	  -out:$@ memorymoduletest.obj
+
+$(SHAREDLIB2): threadvartest.obj
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	  -out:$@ threadvartest.obj
 
 {$(TOP)}.c.obj:
 	$(CC) -c $(WFLAGS) $(CFLAGS) $<
 
 memorymoduletest.obj: $(TOP)/memorymoduletest.c
+
+threadvartest.obj: $(TOP)/threadvartest.c
 
 # cleanup
 clean:
