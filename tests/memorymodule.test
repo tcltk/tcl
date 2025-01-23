@@ -62,7 +62,7 @@ test memorymodule-2.1 {LTS, create thread after accessing var} -constraints {mem
     list [ThreadVar] $result
 } -result {15 16}
 
-test memorymodule-2.2 {nexted exception} -constraints {memorymoduletest msvc} -body {
+test memorymodule-2.2 {nexted exception} -constraints memorymoduletest -body {
     NestedException
 } -result 1
 
