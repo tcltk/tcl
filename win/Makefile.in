@@ -1018,13 +1018,10 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: tcltest dltest/memorymoduletest.zip
+test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "$(TEST_LOAD_FACILITIES)"
-
-dltest/memorymoduletest.zip:
-	( cd dltest; make; )
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: tcltest

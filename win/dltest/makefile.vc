@@ -19,7 +19,10 @@ LDFLAGS = -nologo -debug -incremental:no -opt:ref
 OBJS = memorymoduletest.obj
 
 # targets
-all: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2)
+all:	memorymoduletest.zip
+
+memorymoduletest.zip: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2)
+	zip $@ *.dll pkgIndex.tcl
 
 $(IMPLIB): $(SHAREDLIB)
 

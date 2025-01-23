@@ -360,15 +360,20 @@ FinalizeSections(PMEMORYMODULE module)
 static BOOL
 ExecuteTLS(PMEMORYMODULE module)
 {
+#ifndef TCL_LOAD_FROM_MEMORY
     unsigned char *codeBase = module->codeBase;
     PIMAGE_TLS_DIRECTORY tls;
     PIMAGE_TLS_CALLBACK* callback;
+#endif /* !TCL_LOAD_FROM_MEMORY */
 
     PIMAGE_DATA_DIRECTORY directory = GET_HEADER_DICTIONARY(module, IMAGE_DIRECTORY_ENTRY_TLS);
     if (directory->VirtualAddress == 0) {
         return TRUE;
     }
 
+#ifdef TCL_LOAD_FROM_MEMORY
+    return FALSE;
+#else
     tls = (PIMAGE_TLS_DIRECTORY) (codeBase + directory->VirtualAddress);
     callback = (PIMAGE_TLS_CALLBACK *) tls->AddressOfCallBacks;
     if (callback) {
@@ -376,13 +381,9 @@ ExecuteTLS(PMEMORYMODULE module)
             (*callback)((LPVOID) codeBase, DLL_PROCESS_ATTACH, NULL);
             callback++;
         }
-#ifdef TCL_LOAD_FROM_MEMORY
-    } else {
-        /* When used inside Tcl, we don't support dll's using TLS */
-        return FALSE;
-#endif /* TCL_LOAD_FROM_MEMORY */
     }
     return TRUE;
+#endif /* TCL_LOAD_FROM_MEMORY */
 }
 
 static BOOL

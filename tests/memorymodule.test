@@ -68,17 +68,15 @@ test memorymodule-2.2 {nexted exception} -constraints {memorymoduletest msvc} -b
 
 test memorymodule-3.0 {_tls_index} -constraints {memorymoduletest thread msvc} -body {
     set t1 [thread::create];
-    ThreadVar 18; # Set ThreadVar to 18 in the main thread
     thread::preserve $t1
     thread::send $t1 {
 	lappend auto_path [file join [zipfs root] memorymoduletest]
 	package require threadvartest
-	ThreadVar 19; # Set ThreadVar to 18 in the main thread
 	return [list [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]]
     } result
     thread::release $t1
     lappend result [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]
-} -result {6 0 0 6 0 0}
+} -result {4 0 0 4 0 0}
 
 # cleanup
 ::tcltest::cleanupTests
