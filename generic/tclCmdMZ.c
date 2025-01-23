@@ -4307,7 +4307,7 @@ Tcl_TimeRateObjCmd(
     TclWideMUInt lastCount = 0;	/* Repetition count since last calculation. */
     Tcl_WideInt maxms = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
-    TclWideMUInt maxcnt = UWIDE_MAX;
+    TclWideMUInt maxcnt = WIDE_MAX;
 				/* Maximal count of iterations. */
     TclWideMUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
