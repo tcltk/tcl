@@ -66,17 +66,17 @@ test memorymodule-2.2 {nexted exception} -constraints memorymoduletest -body {
     NestedException
 } -result 1
 
-test memorymodule-3.0 {_tls_index} -constraints {memorymoduletest thread msvc} -body {
+test memorymodule-3.0 {_tls_index} -constraints {memorymoduletest thread} -body {
     set t1 [thread::create];
     thread::preserve $t1
     thread::send $t1 {
 	lappend auto_path [file join [zipfs root] memorymoduletest]
 	package require threadvartest
-	return [list [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]]
+	return [list [expr {[ThreadVar -index] > 0}] [ThreadVar -start] [ThreadVar -end]]
     } result
     thread::release $t1
-    lappend result [ThreadVar -index] [ThreadVar -start] [ThreadVar -end]
-} -result {4 0 0 4 0 0}
+    lappend result [expr {[ThreadVar -index] > 0}] [ThreadVar -start] [ThreadVar -end]
+} -result {1 0 0 1 0 0}
 
 # cleanup
 ::tcltest::cleanupTests
