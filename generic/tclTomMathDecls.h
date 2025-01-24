@@ -28,18 +28,20 @@
 #define TCLTOMMATH_EPOCH 0
 #define TCLTOMMATH_REVISION 0
 
-#define Tcl_TomMath_InitStubs(interp,version) \
-    (TclTomMathInitializeStubs((interp),(version),\
-                               TCLTOMMATH_EPOCH,TCLTOMMATH_REVISION))
+#define Tcl_TomMath_InitStubs(interp, version) \
+    (TclTomMathInitializeStubs((interp), (version),			\
+	    TCLTOMMATH_EPOCH, TCLTOMMATH_REVISION))
 
 /* Define custom memory allocation for libtommath */
 
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
 #define TclBNAlloc(s) Tcl_AttemptAlloc((size_t)(s))
 /* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-#define TclBNCalloc(m,s) memset(Tcl_AttemptAlloc((size_t)(m)*(size_t)(s)),0,(size_t)(m)*(size_t)(s))
+#define TclBNCalloc(m, s) \
+    memset(Tcl_AttemptAlloc((size_t)(m)*(size_t)(s)), 0, (size_t)(m)*(size_t)(s))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
-#define TclBNRealloc(x,s) Tcl_AttemptRealloc((x),(size_t)(s))
+#define TclBNRealloc(x, s) \
+    Tcl_AttemptRealloc((x), (size_t)(s))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
 #define TclBNFree(x) Tcl_Free(x)
 

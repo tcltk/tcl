@@ -7687,15 +7687,15 @@ Tcl_InputBuffered(
  *
  * Tcl_OutputBuffered --
  *
- *    Returns the number of bytes of output currently buffered in the common
- *    internal buffer of a channel.
+ *	Returns the number of bytes of output currently buffered in the common
+ *	internal buffer of a channel.
  *
  * Results:
- *    The number of output bytes buffered, or zero if the channel is not open
- *    for writing.
+ *	The number of output bytes buffered, or zero if the channel is not open
+ *	for writing.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */

@@ -4332,15 +4332,15 @@ ClockWeekdaysOffs(
  *	Refer to the user documentation to see what it exactly does.
  *
  * Syntax:
- *   clock add clockval ?count unit?... ?-option value?
+ *	clock add clockval ?count unit?... ?-option value?
  *
  * Parameters:
- *   clockval -- Starting time value
- *   count -- Amount of a unit of time to add
- *   unit -- Unit of time to add, must be one of:
- *	     years year months month weeks week
- *	     days day hours hour minutes minute
- *	     seconds second
+ *	clockval -- Starting time value
+ *	count -- Amount of a unit of time to add
+ *	unit -- Unit of time to add, must be one of:
+ *		years year months month weeks week
+ *		days day hours hour minutes minute
+ *		seconds second
  *
  * Options:
  *   -gmt BOOLEAN
@@ -4356,10 +4356,10 @@ ClockWeekdaysOffs(
  *	by the given offset(s) in order.
  *
  * Notes:
- *   It is possible that adding a number of months or years will adjust the
- *   day of the month as well.	For instance, the time at one month after
- *   31 January is either 28 or 29 February, because February has fewer
- *   than 31 days.
+ *	It is possible that adding a number of months or years will adjust the
+ *	day of the month as well. For instance, the time at one month after
+ *	31 January is either 28 or 29 February, because February has fewer
+ *	than 31 days.
  *
  *----------------------------------------------------------------------
  */

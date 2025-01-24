@@ -405,21 +405,22 @@ TclInitEncodingCmd(
  *
  * EncodingConvertParseOptions --
  *
- *    Common routine for parsing arguments passed to encoding convertfrom
- *    and encoding convertto.
+ *	Common routine for parsing arguments passed to encoding convertfrom
+ *	and encoding convertto.
  *
  * Results:
- *    TCL_OK or TCL_ERROR.
+ *	TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *    On success,
- *    - *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
- *      if non-NULL
- *    - *dataObjPtr is set to the Tcl_Obj containing the data to encode or
- *      decode
- *    - *profilePtr is set to encoding error handling profile
- *    - *failVarPtr is set to -failindex option value or NULL
- *    On error, all of the above are uninitialized.
+ *	On success,
+ *	- *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
+ *	  if non-NULL
+ *	- *dataObjPtr is set to the Tcl_Obj containing the data to encode or
+ *	  decode
+ *	- *profilePtr is set to encoding error handling profile
+ *	- *failVarPtr is set to -failindex option value or NULL
+ *
+ *	On error, all of the above are uninitialized.
  *
  *------------------------------------------------------------------------
  */
@@ -524,7 +525,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;

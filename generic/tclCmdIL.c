@@ -102,10 +102,10 @@ typedef struct {
 static const char *const seq_operations[] = {
     "..", "to", "count", "by", NULL
 };
-typedef enum {
+typedef enum SequenceOperators {
     LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
-typedef enum {
+typedef enum SequenceDecoded {
      NoneArg, NumericArg, RangeKeywordArg, ErrArg, LastArg = 8
 } SequenceDecoded;
 
@@ -4019,18 +4019,21 @@ Tcl_LsearchObjCmd(
  *----------------------------------------------------------------------
  *
  * SequenceIdentifyArgument --
- *   (for [lseq] command)
+ * 	(for [lseq] command)
  *
- *  Given a Tcl_Obj, identify if it is a keyword or a number
+ *	Given a Tcl_Obj, identify if it is a keyword or a number
  *
- *  Return Value
- *    0 - failure, unexpected value
- *    1 - value is a number
- *    2 - value is an operand keyword
- *    3 - value is a by keyword
+ * Returns:
+ *	ErrArg - failure, unexpected value (message in interpreter)
+ *	NumericArg - value is a number
+ *	RangeKeywordArg - value is an operand keyword
+ *	NoneArg - value is not understood
  *
- *  The decoded value will be assigned to the appropriate
- *  pointer, numValuePtr reference count is incremented.
+ * Side Effects:
+ *	The decoded value will be assigned to the appropriate
+ *	pointer, numValuePtr reference count is incremented.
+ *
+ *----------------------------------------------------------------------
  */
 
 static SequenceDecoded
@@ -4039,7 +4042,7 @@ SequenceIdentifyArgument(
      Tcl_Obj *argPtr,		/* Argument to decode   */
      int allowedArgs,		/* Flags if keyword or numeric allowed. */
      Tcl_Obj **numValuePtr,     /* Return numeric value */
-     int *keywordIndexPtr)      /* Return keyword enum  */
+     int *keywordIndexPtr)	/* Return keyword enum  */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;
@@ -4059,7 +4062,7 @@ SequenceIdentifyArgument(
     }
     if (allowedArgs & RangeKeywordArg) {
 	result = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
-			"range operation", 0, &opmode);
+		"range operation", 0, &opmode);
     }
     if (result == TCL_OK) {
 	if (allowedArgs & LastArg) {
@@ -4148,8 +4151,8 @@ Tcl_LseqObjCmd(
     SequenceDecoded decoded;
     int i, arg_key = 0, value_i = 0;
     /* Default constants */
-    #define zero ((Interp *)interp)->execEnvPtr->constants[0];
-    #define one ((Interp *)interp)->execEnvPtr->constants[1];
+#define zero	((Interp *)interp)->execEnvPtr->constants[0];
+#define one	((Interp *)interp)->execEnvPtr->constants[1];
 
     /*
      * Create a decoding key by looping through the arguments and identify
@@ -4173,7 +4176,7 @@ Tcl_LseqObjCmd(
 	     * Reproduce operation error message
 	     */
 	    status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
-			"operation", 0, &opmode);
+		    "operation", 0, &opmode);
 	    goto done;
 
 	case NumericArg:

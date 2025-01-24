@@ -333,13 +333,12 @@ DoRenameFile(
 
     if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
-	TclDIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
 	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
-	    dirPtr = TclOSopendir(dst);			/* INTL: Native. */
+	    TclDIR *dirPtr = TclOSopendir(dst);		/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
 		    dirEntPtr = TclOSreaddir(dirPtr);	/* INTL: Native. */

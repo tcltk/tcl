@@ -520,7 +520,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 	((void*)HeapReAlloc(GetProcessHeap(), 0, (LPVOID)ptr, size))
 
 /* This type is not defined in the Windows headers */
-#define socklen_t       int
+#define socklen_t	int
 
 /*
  * The following macros have trivial definitions, allowing generic code to

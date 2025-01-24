@@ -727,7 +727,7 @@ TclNewArithSeriesObj(
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
     if (len > TCL_SIZE_MAX) {
-      exceeded:
+    exceeded:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);

@@ -1235,15 +1235,15 @@ TclDumpMemoryInfo(
  *
  * TclAllocElemsEx --
  *
- *    See TclAttemptAllocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptAllocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */
@@ -1271,14 +1271,13 @@ TclAllocElemsEx(
  *
  * TclAttemptReallocElemsEx --
  *
- *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
- *    requested size plus some more for future growth. The amount of
- *    reallocation is adjusted depending on failure.
- *
+ *	Attempts to allocate (oldPtr == NULL) or reallocate memory of the
+ *	requested size plus some more for future growth. The amount of
+ *	reallocation is adjusted depending on failure.
  *
  * Results:
- *    Pointer to allocated memory block which is at least as large
- *    as the requested size or NULL if allocation failed.
+ *	Pointer to allocated memory block which is at least as large
+ *	as the requested size or NULL if allocation failed.
  *
  *------------------------------------------------------------------------
  */
@@ -1340,15 +1339,15 @@ TclAttemptReallocElemsEx(
  *
  * TclReallocElemsEx --
  *
- *    See TclAttemptReallocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptReallocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */

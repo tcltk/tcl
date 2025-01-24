@@ -12,10 +12,11 @@
  *
  * -----------------------------------------------------------------------
  *
- * String index tries are prepaired structures used for fast greedy search of the string
- * (index) by unique string prefix as key.
+ * String index tries are prepaired structures used for fast greedy search of
+ * the string (index) by unique string prefix as key.
  *
- * Index tree build for two lists together can be explained in the following datagram
+ * Index tree build for two lists together can be explained in the following
+ * datagram:
  *
  * Lists:
  *
@@ -48,9 +49,8 @@
  * (see for example group "f" above).
  *
  * StrIdxTree's are very fast, so:
- *    build of above-mentioned tree takes about 10 microseconds.
- *    search of string index in this tree takes fewer as 0.1 microseconds.
- *
+ *	build of above-mentioned tree takes about 10 microseconds.
+ *	search of string index in this tree takes fewer as 0.1 microseconds.
  */
 
 #include "tclInt.h"
@@ -89,7 +89,8 @@ static const Tcl_ObjType StrIdxTreeObjType = {
  */
 const char *
 TclStrIdxTreeSearch(
-    TclStrIdxTree **foundParent,/* Return value of found sub tree (used for tree build) */
+    TclStrIdxTree **foundParent,/* Return value of found sub tree (used for
+				 * tree build) */
     TclStrIdx **foundItem,	/* Return value of found item */
     TclStrIdxTree *tree,	/* Index tree will be browsed */
     const char *start,		/* UTF string to find in tree */

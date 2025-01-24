@@ -174,7 +174,7 @@ TSDTableGrow(
  *
  * TclThreadStorageKeyGet --
  *
- *    This procedure gets the value associated with the passed key.
+ *	This procedure gets the value associated with the passed key.
  *
  * Results:
  *	A pointer value associated with the Tcl_ThreadDataKey or NULL.

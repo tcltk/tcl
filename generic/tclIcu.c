@@ -151,7 +151,7 @@ static struct {
      * multiple libraries. For current functionality at most 2 needed.
      * Order of library loading is not guaranteed.
      */
-    Tcl_LoadHandle      libs[2];
+    Tcl_LoadHandle libs[2];
 
     FIELD(u_cleanup);
     FIELD(u_errorName);
@@ -435,13 +435,13 @@ DetectableEncodings(
  *
  * IcuObjToUCharDString --
  *
- *    Encodes a Tcl_Obj value in ICU UChars and stores in dsPtr.
+ *	Encodes a Tcl_Obj value in ICU UChars and stores in dsPtr.
  *
  * Results:
- *    Return TCL_OK / TCL_ERROR.
+ *	Return TCL_OK / TCL_ERROR.
  *
  * Side effects:
- *    *dsPtr should be cleared by caller only if return code is TCL_OK.
+ *	*dsPtr should be cleared by caller only if return code is TCL_OK.
  *
  *------------------------------------------------------------------------
  */
@@ -486,13 +486,13 @@ IcuObjToUCharDString(
  *
  * IcuObjFromUCharDString --
  *
- *    Stores a Tcl_Obj value by decoding ICU UChars in dsPtr.
+ *	Stores a Tcl_Obj value by decoding ICU UChars in dsPtr.
  *
  * Results:
- *    Return Tcl_Obj or NULL on error.
+ *	Return Tcl_Obj or NULL on error.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -691,13 +691,13 @@ IcuConverterAliasesObjCmd(
  *
  * IcuConverttoDString --
  *
- *    Converts a string in ICU default encoding to the specified encoding.
+ *	Converts a string in ICU default encoding to the specified encoding.
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR
  *
  * Side effects:
- *    On success, encoded string is stored in output dsOutPtr
+ *	On success, encoded string is stored in output dsOutPtr
  *
  *------------------------------------------------------------------------
  */
@@ -771,13 +771,13 @@ IcuConverttoDString(
  *
  * IcuBytesToUCharDString --
  *
- *    Converts encoded bytes to ICU UChars in a Tcl_DString
+ *	Converts encoded bytes to ICU UChars in a Tcl_DString
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR
  *
  * Side effects:
- *    On success, encoded string is stored in output dsOutPtr
+ *	On success, encoded string is stored in output dsOutPtr
  *
  *------------------------------------------------------------------------
  */
@@ -852,14 +852,14 @@ IcuBytesToUCharDString(
  *
  * IcuNormalizeUCharDString --
  *
- *    Normalizes the UTF-16 encoded data
+ *	Normalizes the UTF-16 encoded data
  *
  * Results:
- *    TCL_OK / TCL_ERROR
+ *	TCL_OK / TCL_ERROR
  *
  * Side effects:
- *    Normalized data is stored in dsOutPtr which should only be
- *    Tcl_DStringFree-ed if return code is TCL_OK.
+ *	Normalized data is stored in dsOutPtr which should only be
+ *	Tcl_DStringFree-ed if return code is TCL_OK.
  *
  *------------------------------------------------------------------------
  */
