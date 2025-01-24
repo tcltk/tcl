@@ -84,9 +84,11 @@ static int ddeIsServer = 0;
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
 
-#define DDE_FLAG_ASYNC 1
-#define DDE_FLAG_BINARY 2
-#define DDE_FLAG_FORCE 4
+enum TclDdeFlags {
+    DDE_FLAG_ASYNC = 1,
+    DDE_FLAG_BINARY = 2,
+    DDE_FLAG_FORCE = 4
+};
 
 TCL_DECLARE_MUTEX(ddeMutex)
 

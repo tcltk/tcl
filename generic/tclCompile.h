@@ -409,21 +409,24 @@ typedef struct CompileEnv {
  * CmdLocation map, and the compilation AuxData array.
  */
 
-/*
- * A PRECOMPILED bytecode struct is one that was generated from a compiled
- * image rather than implicitly compiled from source
- */
+enum ByteCodeFlags {
+    /*
+     * A PRECOMPILED bytecode struct is one that was generated from a compiled
+     * image rather than implicitly compiled from source
+     */
+    TCL_BYTECODE_PRECOMPILED = 1,
 
-#define TCL_BYTECODE_PRECOMPILED		0x0001
+    /*
+     * When a bytecode is compiled, interp or namespace resolvers have not been
+     * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
+     */
+    TCL_BYTECODE_RESOLVE_VARS = 2,
 
-/*
- * When a bytecode is compiled, interp or namespace resolvers have not been
- * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
- */
-
-#define TCL_BYTECODE_RESOLVE_VARS		0x0002
-
-#define TCL_BYTECODE_RECOMPILE			0x0004
+    /*
+     * Marks this bytecode as needing recompilation on reentry for some reason.
+     */
+    TCL_BYTECODE_RECOMPILE = 4
+};
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -1230,9 +1233,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TclFetchAuxData(envPtr, index) \
     (envPtr)->auxDataArrayPtr[(index)].clientData
 
-#define LITERAL_ON_HEAP		0x01
-#define LITERAL_CMD_NAME	0x02
-#define LITERAL_UNSHARED	0x04
+enum TclLiteralFlags {
+    LITERAL_ON_HEAP = 1,
+    LITERAL_CMD_NAME = 2,
+    LITERAL_UNSHARED = 4
+};
 
 /*
  * Adjust the stack requirements. Manually used in cases where the stack
@@ -1686,15 +1691,18 @@ TclUpdateStackReqs(
 /*
  * Flags bits used by TclPushVarName.
  */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
+enum TclPushVarNameFlags {
+    TCL_NO_LARGE_INDEX = 1,	/* Do not return localIndex value > 255 */
+    TCL_NO_ELEMENT = 2		/* Do not push the array element. */
+};
 
 /*
  * Flags bits used by lreplace4 instruction
  */
-#define TCL_LREPLACE4_END_IS_LAST  1 /* "end" refers to last element */
-#define TCL_LREPLACE4_SINGLE_INDEX 2 /* Second index absent (pure insert) */
+enum TclListReplaceOpcodeFlags {
+    TCL_LREPLACE4_END_IS_LAST = 1,	/* "end" refers to last element */
+    TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
+};
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).

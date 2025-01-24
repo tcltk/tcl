@@ -6703,9 +6703,11 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+enum TcpStateFlags {
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process. */
+};
 
 static int
 TestSocketCmd(
@@ -6715,7 +6717,7 @@ TestSocketCmd(
     Tcl_Obj *const *objv)	/* Additional args. */
 {
     const char *cmdName;	/* Sub command. */
-    Tcl_Size len;			/* Length of subcommand string. */
+    Tcl_Size len;		/* Length of subcommand string. */
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?additional args..?");

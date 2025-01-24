@@ -16,11 +16,12 @@
  * The following constants specify the type of callback when
  * TraverseWinTree() calls the traverseProc()
  */
-
-#define DOTREE_PRED	1	/* pre-order directory  */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
-#define DOTREE_LINK	4	/* symbolic link */
+enum TraverseCallbackTypes {
+    DOTREE_PRED = 1,		/* pre-order directory  */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3,		/* regular file */
+    DOTREE_LINK = 4		/* symbolic link */
+};
 
 /*
  * Callbacks for file attributes code.
@@ -50,8 +51,10 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
+static const int attributeArray[] = {
+	FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
+	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM
+};
 
 const char *const tclpFileAttrStrings[] = {
 	"-archive", "-hidden", "-longname", "-readonly",
