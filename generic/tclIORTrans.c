@@ -467,8 +467,8 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
  * Operation codes for TransformFlush().
  */
 enum TransformFlushOperations {
-    FLUSH_WRITE = 1,
-    FLUSH_DISCARD = 0
+    FLUSH_WRITE = 1,		/* Flush by writing the data through. */
+    FLUSH_DISCARD = 0		/* Flush by discarding the data. */
 };
 
 /*

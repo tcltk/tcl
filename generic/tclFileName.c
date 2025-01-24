@@ -41,8 +41,8 @@ static int		TclGlob(Tcl_Interp *interp, char *pattern,
 
 /* Flag values used by TclGlob() */
 enum GlobModeFlags {
-    TCL_GLOBMODE_DIR = 4,
-    TCL_GLOBMODE_TAILS = 8
+    TCL_GLOBMODE_DIR = 4,	/* Option -directory was specified. */
+    TCL_GLOBMODE_TAILS = 8	/* Option -tails was specified. */
 };
 
 /*

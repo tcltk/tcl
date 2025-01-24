@@ -75,8 +75,8 @@ typedef struct {
 				 * supplied. */
     Tcl_Size indexc;		/* Number of indexes in indexv array. */
     int singleIndex;		/* Static space for common index case. */
-    int unique;
-    int numElements;
+    int unique;			/* Merge adjacent equivalent values in result. */
+    int numElements;		/* Number of items in final list. */
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
 				 * done. */
     int resultCode;		/* Completion code for the lsort command. If
@@ -89,12 +89,12 @@ typedef struct {
  * following values.
  */
 enum SortModes {
-    SORTMODE_ASCII = 0,
-    SORTMODE_INTEGER = 1,
-    SORTMODE_REAL = 2,
-    SORTMODE_COMMAND = 3,
-    SORTMODE_DICTIONARY = 4,
-    SORTMODE_ASCII_NC = 8
+    SORTMODE_ASCII = 0,		/* Sort by Unicode codepoint sequence. */
+    SORTMODE_INTEGER = 1,	/* Sort by integer value. */
+    SORTMODE_REAL = 2,		/* Sort by floating point value. */
+    SORTMODE_COMMAND = 3,	/* Sort using a comparison command. */
+    SORTMODE_DICTIONARY = 4,	/* Sort using "dictionary-style" comparison. */
+    SORTMODE_ASCII_NC = 8	/* SORTMODE_ASCII but mostly ignoring case. */
 };
 
 /*

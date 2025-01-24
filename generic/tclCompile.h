@@ -1234,9 +1234,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
     (envPtr)->auxDataArrayPtr[(index)].clientData
 
 enum TclLiteralFlags {
-    LITERAL_ON_HEAP = 1,
-    LITERAL_CMD_NAME = 2,
-    LITERAL_UNSHARED = 4
+    LITERAL_ON_HEAP = 1,	/* Transfer buffer ownership to literal
+				 * manager. */
+    LITERAL_CMD_NAME = 2,	/* Do not share literal across namespaces. */
+    LITERAL_UNSHARED = 4	/* Do not share literal at all. */
 };
 
 /*

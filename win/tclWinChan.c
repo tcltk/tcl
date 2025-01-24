@@ -23,6 +23,10 @@ enum FileInfoFlags {
     FILE_APPEND = (1<<2)	/* File is in append mode. */
 };
 
+/*
+ * Extra types of channels that we identify beyond the standard ones that
+ * Windows reports by default.
+ */
 enum ExtraFileTypes {
     FILE_TYPE_SERIAL = (FILE_TYPE_PIPE+1),
     FILE_TYPE_CONSOLE = (FILE_TYPE_PIPE+2)

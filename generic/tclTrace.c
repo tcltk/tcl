@@ -63,31 +63,33 @@ typedef struct {
 				 * byte. */
 } TraceCommandInfo;
 
+#define DURING_SHIFT	2	/* Size of shift used to derive DURING values */
+
 /*
- * Used by command execution traces. Note that we assume in the code that
- * TCL_TRACE_ENTER_DURING_EXEC == 4 * TCL_TRACE_ENTER_EXEC and that
- * TCL_TRACE_LEAVE_DURING_EXEC == 4 * TCL_TRACE_LEAVE_EXEC.
- *
- * TCL_TRACE_ENTER_DURING_EXEC  - Trace each command inside the command
- *				  currently being traced, before execution.
- * TCL_TRACE_LEAVE_DURING_EXEC  - Trace each command inside the command
- *				  currently being traced, after execution.
- * TCL_TRACE_ANY_EXEC		- OR'd combination of all EXEC flags.
- * TCL_TRACE_EXEC_IN_PROGRESS   - The callback function on this trace is
- *				  currently executing. Therefore we don't let
- *				  further traces execute.
- * TCL_TRACE_EXEC_DIRECT	- This execution trace is triggered directly
- *				  by the command being traced, not because of
- *				  an internal trace.
- * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
+ * Flags used by command execution traces. The flag 'TCL_TRACE_DESTROYED' may
+ * also be used in command execution traces.
+ * 
+ * The values of TCL_TRACE_ENTER_DURING_EXEC and TCL_TRACE_LEAVE_DURING_EXEC
+ * are defined like that so they can be handled by shifts.
  */
 enum TraceExecutionFlags {
-    TCL_TRACE_ENTER_DURING_EXEC = TCL_TRACE_ENTER_EXEC << 2,
-    TCL_TRACE_LEAVE_DURING_EXEC = TCL_TRACE_LEAVE_EXEC << 2,
+    TCL_TRACE_ENTER_DURING_EXEC = TCL_TRACE_ENTER_EXEC << DURING_SHIFT,
+				/* Trace each command inside the command
+				 * currently being traced, before execution. */
+    TCL_TRACE_LEAVE_DURING_EXEC = TCL_TRACE_LEAVE_EXEC << DURING_SHIFT,
+				/* Trace each command inside the command
+				 * currently being traced, after execution. */
     TCL_TRACE_ANY_EXEC = TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC |
 	    TCL_TRACE_ENTER_DURING_EXEC | TCL_TRACE_LEAVE_DURING_EXEC,
+	    			/* OR'd combination of all EXEC flags. */
     TCL_TRACE_EXEC_IN_PROGRESS = 0x10,
+				/* The callback function on this trace is
+				 * currently executing. Therefore we don't let
+				 * further traces execute. */
     TCL_TRACE_EXEC_DIRECT = 0x20
+				/* This execution trace is triggered directly
+				 * by the command being traced, not because of
+				 * an internal trace. */
 };
 
 /*
@@ -1796,7 +1798,7 @@ TraceExecutionProc(
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
 	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
-		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
+		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> DURING_SHIFT,
 		   TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
     }

@@ -81,8 +81,9 @@ typedef struct {
  * Flag values for FsPath->flags.
  */
 enum FsPathFlags {
-    TCLPATH_APPENDED = 1,
-    TCLPATH_NEEDNORM = 4
+    TCLPATH_APPENDED = 1,	/* Path was generated from another path by
+				 * appending components. */
+    TCLPATH_NEEDNORM = 4	/* Complex normalization required. */
 };
 
 /*
