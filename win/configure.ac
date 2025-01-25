@@ -217,7 +217,7 @@ AC_ARG_ENABLE(memorymodule,
 	[load dll's from a vfs in memory in stead of copying to a temporary directory (default: off)]),
     [tcl_ok=$enableval], [tcl_ok=no])
 if test "$tcl_ok" != "no" ; then
-    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Are we building with MemoryModule enabled?])
+    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 2, [Are we building with MemoryModule enabled?])
 fi
 AC_SUBST(TCL_LOAD_FROM_MEMORY)
 

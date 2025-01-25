@@ -667,7 +667,7 @@ tclTestMain.${OBJEXT}: tclAppInit.c
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
-tclWinLoad.${OBJEXT}: tclWinLoad.c
+tclWinLoad.${OBJEXT}: tclWinLoad.c MemoryModule.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinPipe.${OBJEXT}: tclWinPipe.c

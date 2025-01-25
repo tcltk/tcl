@@ -5280,7 +5280,7 @@ fi
 
 if test "$tcl_ok" != "no" ; then
 
-printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
+printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 2" >>confdefs.h
 
 fi
 

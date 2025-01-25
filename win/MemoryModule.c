@@ -358,9 +358,9 @@ FinalizeSections(PMEMORYMODULE module)
 }
 
 static BOOL
-ExecuteTLS(PMEMORYMODULE module)
+ExecuteTLS(PMEMORYMODULE module, DWORD dwReason, PVOID pv)
 {
-#ifndef TCL_LOAD_FROM_MEMORY
+#if !defined(TCL_LOAD_FROM_MEMORY) || (TCL_LOAD_FROM_MEMORY > 1)
     unsigned char *codeBase = module->codeBase;
     PIMAGE_TLS_DIRECTORY tls;
     PIMAGE_TLS_CALLBACK* callback;
@@ -371,14 +371,14 @@ ExecuteTLS(PMEMORYMODULE module)
         return TRUE;
     }
 
-#ifdef TCL_LOAD_FROM_MEMORY
+#if defined(TCL_LOAD_FROM_MEMORY) && (TCL_LOAD_FROM_MEMORY < 2)
     return FALSE;
 #else
     tls = (PIMAGE_TLS_DIRECTORY) (codeBase + directory->VirtualAddress);
     callback = (PIMAGE_TLS_CALLBACK *) tls->AddressOfCallBacks;
     if (callback) {
         while (*callback) {
-            (*callback)((LPVOID) codeBase, DLL_PROCESS_ATTACH, NULL);
+            (*callback)((LPVOID) codeBase, dwReason, pv);
             callback++;
         }
     }
@@ -761,7 +761,7 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
     }
 
     // TLS callbacks are executed BEFORE the main loading
-    if (!ExecuteTLS(result)) {
+    if (!ExecuteTLS(result, DLL_PROCESS_ATTACH, NULL)) {
         goto error;
     }
 
@@ -896,6 +896,10 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
         // notify library about detaching from process
         DllEntryProc DllEntry = (DllEntryProc)(LPVOID)(module->codeBase + module->headers->OptionalHeader.AddressOfEntryPoint);
         (*DllEntry)((HINSTANCE)module->codeBase, DLL_PROCESS_DETACH, 0);
+    }
+    // notify TLS about detaching from process
+    if (!ExecuteTLS(result, DLL_PROCESS_DETACH, NULL)) {
+        goto error;
     }
 
     free(module->nameExportsTable);
