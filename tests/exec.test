@@ -23,6 +23,12 @@ source [file join [file dirname [info script]] tcltests.tcl]
 # Some skips when running in a macOS CI environment
 testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
+# Need a App Exec Alias for testing exec of reparse points
+if {[info exists ::env(LOCALAPPDATA)] &&
+    [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
+        testConstraint haveWinget 1
+}
+
 unset -nocomplain path
 
 # Utilities that are like Bourne shell stalwarts, but cross-platform.
@@ -740,6 +746,10 @@ test exec-21.2 {exec encoding mismatch on stderr} -setup {
 } -body {
     list [catch {exec [info nameofexecutable] $path(script)} r] $r
 } -result [list 1 a\uFFFDb]
+
+test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {
+    exec winget --info
+} -result "Windows Package Manager*" -match glob
 
 
 # ----------------------------------------------------------------------
