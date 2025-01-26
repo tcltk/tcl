@@ -425,7 +425,9 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * given to Tcl_CreateThread.
  */
 
-#define TCL_THREAD_STACK_DEFAULT (0)    /* Use default size for stack. */
+enum Tcl_ThreadStackSizes {
+    TCL_THREAD_STACK_DEFAULT = 0	/* Use default size for stack. */
+};
 enum Tcl_ThreadFlags {
     TCL_THREAD_NOFLAGS = 0,	/* Standard flags, default behaviour. */
     TCL_THREAD_JOINABLE = 1	/* Mark the thread as joinable. */
@@ -992,12 +994,16 @@ enum Tcl_EvalObjFlags {
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
- * page for details):
+ * page for details).
  */
-
-#define TCL_VOLATILE		((Tcl_FreeProc *) 1)
-#define TCL_STATIC		((Tcl_FreeProc *) 0)
-#define TCL_DYNAMIC		((Tcl_FreeProc *) 3)
+enum Tcl_SpecialFreeProcs {
+    TCL_RESULT_STATIC = 0,	/* String is in static memory. */
+    TCL_RESULT_VOLATILE = 1,	/* String is on the stack. */
+    TCL_RESULT_DYNAMIC = 3	/* String is on the heap, owned by Tcl. */
+};
+#define TCL_VOLATILE		((Tcl_FreeProc *) TCL_RESULT_VOLATILE)
+#define TCL_STATIC		((Tcl_FreeProc *) TCL_RESULT_STATIC)
+#define TCL_DYNAMIC		((Tcl_FreeProc *) TCL_RESULT_DYNAMIC)
 
 /*
  * Flag values passed to variable-related functions.
@@ -1402,8 +1408,12 @@ enum Tcl_ChannelCloseFlags {
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
+enum Tcl_ChannelVersions {
+    TCL_CHANNEL_V5 = 5		/* Current standard channel version. */
+};
 
-#define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
+#define TCL_CHANNEL_VERSION_5 \
+	((Tcl_ChannelTypeVersion) TCL_CHANNEL_V5)
 
 /*
  * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc.
