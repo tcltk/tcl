@@ -254,8 +254,10 @@ MODULE_SCOPE const TclStubs tclStubs;
 #define CORO_ACTIVATE_YIELD	NULL
 #define CORO_ACTIVATE_YIELDM	INT2PTR(1)
 
-#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
-#define COROUTINE_ARGUMENTS_ARBITRARY		(-2)
+enum CoroutineArgumentsSpecial {
+    COROUTINE_ARGUMENTS_SINGLE_OPTIONAL = -1,
+    COROUTINE_ARGUMENTS_ARBITRARY = -2
+};
 
 /*
  * The following structure define the commands in the Tcl core.
