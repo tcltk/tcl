@@ -602,11 +602,17 @@ static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
 /*
  * Markers for ExecuteExtendedBinaryMathOp.
  */
+enum BinaryMathErrors {
+    DividedByZero = -1,
+    ExponentOfZero = -2,
+    GeneralArtihmeticError = -3,
+    OutOfMemory = -4
+};
 
-#define DIVIDED_BY_ZERO		((Tcl_Obj *) -1)
-#define EXPONENT_OF_ZERO	((Tcl_Obj *) -2)
-#define GENERAL_ARITHMETIC_ERROR ((Tcl_Obj *) -3)
-#define OUT_OF_MEMORY ((Tcl_Obj *) -4)
+#define DIVIDED_BY_ZERO		((Tcl_Obj *) DividedByZero)
+#define EXPONENT_OF_ZERO	((Tcl_Obj *) ExponentOfZero)
+#define GENERAL_ARITHMETIC_ERROR ((Tcl_Obj *) GeneralArtihmeticError)
+#define OUT_OF_MEMORY		((Tcl_Obj *) OutOfMemory)
 
 /*
  * Declarations for local procedures to this file:

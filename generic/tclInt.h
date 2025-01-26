@@ -2861,7 +2861,10 @@ enum DictPathFlags {
 				 * on the path. Implies DICT_PATH_UPDATE too. */
 };
 
-#define DICT_PATH_NON_EXISTENT	((Tcl_Obj *) (void *) 1)
+enum DictPathSpecialResults {
+    DictPathNonExistent = 1	/* That path does not exist. */
+};
+#define DICT_PATH_NON_EXISTENT	((Tcl_Obj *) (void *) DictPathNonExistent)
 
 /*
  *----------------------------------------------------------------
@@ -2877,7 +2880,10 @@ enum DictPathFlags {
  * code internally.
  */
 
-#define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) 0x2)
+enum TclInternalFilesystemVersions {
+    TCL_FS_VERSION_2 = 2
+};
+#define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) TCL_FS_VERSION_2)
 typedef void *(TclFSGetCwdProc2)(void *clientData);
 typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr,
