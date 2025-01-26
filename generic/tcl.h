@@ -1145,11 +1145,13 @@ enum Tcl_HashKeyTypeFlags {
 				* rather than pointers. */
 };
 
+enum Tcl_HashKeyTypeVersion {
+    TCL_HASH_KEY_TYPE_VERSION = 1
+};
+
 /*
  * Structure definition for the methods associated with a hash table key type.
  */
-
-#define TCL_HASH_KEY_TYPE_VERSION 1
 struct Tcl_HashKeyType {
     int version;		/* Version of the table. If this structure is
 				 * extended in future then the version can be
@@ -1643,8 +1645,11 @@ typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 /*
  * Filesystem version tag.  This was introduced in 8.4.
  */
-
-#define TCL_FILESYSTEM_VERSION_1	((Tcl_FSVersion) 0x1)
+enum Tcl_FilesystemVersions {
+    TCL_FS_VERSION_1 = 1	/* Current standard virtual FS version. */
+};
+#define TCL_FILESYSTEM_VERSION_1 \
+	((Tcl_FSVersion) TCL_FS_VERSION_1)
 
 /*
  * struct Tcl_Filesystem:
