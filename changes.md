@@ -14,6 +14,8 @@ to the userbase.
  - [$interp eval $lambda] after [eval $lambda] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/98006f)
  - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/67d5f7)
  - [test lseq hangs with -Os](https://core.tcl-lang.org/tcl/tktview/d2a3c5)
+ - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
+     (only when Windows build is configured with "--enable-memorymodule"). See also [TIP #709](https://core.tcl-lang.org/tips/doc/trunk/tip/709.md)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
@@ -195,7 +197,6 @@ writing Tcl scripts.
 # Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
  - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
  - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
 

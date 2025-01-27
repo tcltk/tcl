@@ -1,0 +1,57 @@
+TOP = .
+
+# optional build flags
+LOC =
+
+# variables
+SHAREDLIB = tcl9memorymoduletest.dll
+IMPLIB    = memorymoduletest.lib
+SHAREDLIB2 = tcl9threadvartest.dll
+IMPLIB2    = threadvartest.lib
+
+CC = cl
+AS = ml
+LD = link
+CFLAGS  = -nologo -MD -W3 -O2 -Oy- -Zi $(LOC) -DUSE_TCL_STUBS -I../../generic
+WFLAGS  = -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
+LDFLAGS = -nologo -debug -incremental:no -opt:ref
+
+OBJS = memorymoduletest.obj
+
+# targets
+all:	memorymoduletest.zip
+
+memorymoduletest.zip: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2)
+	zip $@ *.dll pkgIndex.tcl
+
+$(IMPLIB): $(SHAREDLIB)
+
+$(IMPLIB2): $(SHAREDLIB2)
+
+$(SHAREDLIB): memorymoduletest.obj
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	  -out:$@ memorymoduletest.obj
+
+$(SHAREDLIB2): threadvartest.obj
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	  -out:$@ threadvartest.obj
+
+{$(TOP)}.c.obj:
+	$(CC) -c $(WFLAGS) $(CFLAGS) $<
+
+memorymoduletest.obj: $(TOP)/memorymoduletest.c
+
+threadvartest.obj: $(TOP)/threadvartest.c
+
+# cleanup
+clean:
+	-del $(STATICLIB)
+	-del $(SHAREDLIB)
+	-del $(IMPLIB)
+	-del *.obj
+	-del *.res
+	-del *.exp
+	-del *.exe
+	-del *.pdb
+	-del *.manifest
+	-del foo.gz
