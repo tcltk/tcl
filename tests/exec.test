@@ -749,8 +749,10 @@ foreach cmdBuiltin {
 } {
     test auto_execok-$cmdBuiltin-1.0 "auto_execok $cmdBuiltin" \
         -constraints win \
-        -body "auto_execok $cmdBuiltin" \
-        -result "[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
+        -body {
+            string equal [auto_execok $cmdBuiltin] \
+                "[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
+        } -result 1
 }
 unset cmdBuiltin
 
