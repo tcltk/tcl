@@ -1297,220 +1297,266 @@ TclUpdateStackReqs(
 }
 
 /*
- * Macros used to update the flag that indicates if we are at the start of a
+ * Advance to the next token; it is more mnemonic than the address
+ * arithmetic that it replaces.
+ */
+static inline Tcl_Token *
+TokenAfter(
+    Tcl_Token *tokenPtr)
+{
+    return tokenPtr + (tokenPtr->numComponents + 1);
+}
+
+/*
+ * Get the offset to the next instruction to be issued.
+ */
+static inline ptrdiff_t
+CurrentOffset(
+    CompileEnv *envPtr)
+{
+    return envPtr->codeNext - envPtr->codeStart;
+}
+
+/*
+ * Update the flag that indicates if we are at the start of a
  * command, based on whether the opcode is INST_START_COMMAND.
- *
- * void TclUpdateAtCmdStart(unsigned char op, CompileEnv *envPtr);
  */
-
-#define TclUpdateAtCmdStart(op, envPtr) \
-    if ((envPtr)->atCmdStart < 2) {					\
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);	\
+static inline void
+TclUpdateAtCmdStart(
+    unsigned char op,
+    CompileEnv *envPtr)
+{
+    if (envPtr->atCmdStart < 2) {
+	envPtr->atCmdStart = (op == INST_START_CMD ? 1 : 0);
     }
+}
 
 /*
- * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
- * "prototype" for this macro is:
- *
- * void TclEmitOpcode(unsigned char op, CompileEnv *envPtr);
+ * Update a (signed or unsigned) integer starting at a pointer. The
+ * two variants depend on the number of bytes. Four-byte stores are done in
+ * big-endian order.
  */
 
-#define TclEmitOpcode(op, envPtr) \
-    do {								\
-	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, 0, envPtr);				\
-    } while (0)
+static inline void
+TclStoreInt1AtPtr(
+    int i,
+    unsigned char *p)
+{
+    *p = (unsigned char) ((unsigned int) i);
+}
+
+static inline void
+TclStoreInt4AtPtr(
+    int i,
+    unsigned char *p)
+{
+    p[0] = (unsigned char) ((unsigned int) i >> 24);
+    p[1] = (unsigned char) ((unsigned int) i >> 16);
+    p[2] = (unsigned char) ((unsigned int) i >>  8);
+    p[3] = (unsigned char) ((unsigned int) i      );
+}
 
 /*
- * Macros to emit an integer operand. The ANSI C "prototype" for these macros
- * are:
- *
- * void TclEmitInt1(int i, CompileEnv *envPtr);
- * void TclEmitInt4(int i, CompileEnv *envPtr);
+ * Emit an opcode byte into a CompileEnv's code array.
  */
-
-#define TclEmitInt1(i, envPtr) \
-    do {								\
-	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-    } while (0)
-
-#define TclEmitInt4(i, envPtr) \
-    do {								\
-	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 24);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 16);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >>  8);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i)      );		\
-    } while (0)
+static inline void
+TclEmitOpcode(
+    unsigned char op,
+    CompileEnv *envPtr)
+{
+    if (envPtr->codeNext == envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *(envPtr->codeNext++) = op;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, 0, envPtr);
+}
 
 /*
- * Macros to emit an instruction with signed or unsigned integer operands.
+ * Emit an integer operand as a single byte.
+ */
+static inline void
+TclEmitInt1(
+    int i,
+    CompileEnv *envPtr)
+{
+    if (envPtr->codeNext == envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    TclStoreInt1AtPtr(i, envPtr->codeNext++);
+}
+
+/*
+ * Emit an integer operand as four bytes, stored in big-endian order.
+ */
+static inline void
+TclEmitInt4(
+    int i,
+    CompileEnv *envPtr)
+{
+    if (envPtr->codeNext + 4 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    TclStoreInt4AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext += 4;
+}
+
+/*
+ * Emit an instruction with signed or unsigned integer operands.
  * Four byte integers are stored in "big-endian" order with the high order
- * byte stored at the lowest address. The ANSI C "prototypes" for these macros
- * are:
- *
- * void TclEmitInstInt1(unsigned char op, int i, CompileEnv *envPtr);
- * void TclEmitInstInt4(unsigned char op, int i, CompileEnv *envPtr);
+ * byte stored at the lowest address.
  */
 
-#define TclEmitInstInt1(op, i, envPtr) \
-    do {								\
-	if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
-    } while (0)
+static inline void
+TclEmitInstInt1(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 2 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt1AtPtr(i, ptr + 1);
+    envPtr->codeNext += 2;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
 
-#define TclEmitInstInt4(op, i, envPtr) \
-    do {								\
-	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 24);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 16);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >>  8);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i)      );		\
-	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
-    } while (0)
+static inline void
+TclEmitInstInt4(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 5 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt4AtPtr(i, ptr + 1);
+    envPtr->codeNext += 5;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
 
 /*
- * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
+ * Push a Tcl object onto the Tcl evaluation stack. It emits the
  * object's one or four byte array index into the CompileEnv's code array.
  * These support, respectively, a maximum of 256 (2**8) and 2**32 objects in a
- * CompileEnv. The ANSI C "prototype" for this macro is:
- *
- * void	TclEmitPush(int objIndex, CompileEnv *envPtr);
+ * CompileEnv.
  */
 
-#define TclEmitPush(objIndex, envPtr) \
-    do {								\
-	int _objIndexCopy = (objIndex);					\
-	if (_objIndexCopy <= 255) {					\
-	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr));	\
-	} else {							\
-	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr));	\
-	}								\
-    } while (0)
+static inline void
+TclEmitPush(
+    int objIndex,
+    CompileEnv *envPtr)
+{
+    if (objIndex <= 255) {
+	TclEmitInstInt1(INST_PUSH1, objIndex, envPtr);
+    } else {
+	TclEmitInstInt4(INST_PUSH4, objIndex, envPtr);
+    }
+}
 
 /*
- * Macros to update a (signed or unsigned) integer starting at a pointer. The
- * two variants depend on the number of bytes. The ANSI C "prototypes" for
- * these macros are:
- *
- * void TclStoreInt1AtPtr(int i, unsigned char *p);
- * void TclStoreInt4AtPtr(int i, unsigned char *p);
+ * Update instructions at a particular pc with a new op code and a
+ * (signed or unsigned) int operand.
  */
 
-#define TclStoreInt1AtPtr(i, p) \
-    *(p)   = (unsigned char) ((unsigned int) (i))
+static inline void
+TclUpdateInstInt1AtPc(
+    unsigned char op,
+    int i,
+    unsigned char *pc)
+{
+    *pc = op;
+    TclStoreInt1AtPtr(i, pc + 1);
+}
 
-#define TclStoreInt4AtPtr(i, p) \
-    do {								\
-	*(p)   = (unsigned char) ((unsigned int) (i) >> 24);		\
-	*(p+1) = (unsigned char) ((unsigned int) (i) >> 16);		\
-	*(p+2) = (unsigned char) ((unsigned int) (i) >>  8);		\
-	*(p+3) = (unsigned char) ((unsigned int) (i)      );		\
-    } while (0)
+static inline void
+TclUpdateInstInt4AtPc(
+    unsigned char op,
+    int i,
+    unsigned char *pc)
+{
+    *pc = op;
+    TclStoreInt4AtPtr(i, pc + 1);
+}
 
 /*
- * Macros to update instructions at a particular pc with a new op code and a
- * (signed or unsigned) int operand. The ANSI C "prototypes" for these macros
- * are:
- *
- * void TclUpdateInstInt1AtPc(unsigned char op, int i, unsigned char *pc);
- * void TclUpdateInstInt4AtPc(unsigned char op, int i, unsigned char *pc);
+ * Fix up a forward jump to point to the current code-generation
+ * position in the bytecode being created (the most common case).
  */
-
-#define TclUpdateInstInt1AtPc(op, i, pc) \
-    do {								\
-	*(pc) = (unsigned char) (op);					\
-	TclStoreInt1AtPtr((i), ((pc)+1));				\
-    } while (0)
-
-#define TclUpdateInstInt4AtPc(op, i, pc) \
-    do {								\
-	*(pc) = (unsigned char) (op);					\
-	TclStoreInt4AtPtr((i), ((pc)+1));				\
-    } while (0)
+static inline int
+TclFixupForwardJumpToHere(
+    CompileEnv *envPtr,
+    JumpFixup *fixupPtr,
+    int threshold)
+{
+    return TclFixupForwardJump(envPtr, fixupPtr,
+	    CurrentOffset(envPtr) - (int) fixupPtr->codeOffset,
+	    threshold);
+}
 
 /*
- * Macro to fix up a forward jump to point to the current code-generation
- * position in the bytecode being created (the most common case). The ANSI C
- * "prototypes" for this macro is:
- *
- * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ * Get a signed integer (GET_INT{1,4}) or an unsigned int (GET_UINT{1,4}) from
+ * a pointer. There are two variants for each return type that depend on the
+ * number of bytes fetched.
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
-    TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset, \
-	    (threshold))
-
-/*
- * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
- * (GET_UINT{1,2}) from a pointer. There are two variants for each return type
- * that depend on the number of bytes fetched. The ANSI C "prototypes" for
- * these macros are:
- *
- * int TclGetInt1AtPtr(unsigned char *p);
- * int TclGetInt4AtPtr(unsigned char *p);
- * unsigned int TclGetUInt1AtPtr(unsigned char *p);
- * unsigned int TclGetUInt4AtPtr(unsigned char *p);
- */
-
-/*
- * The TclGetInt1AtPtr macro is tricky because we want to do sign extension on
- * the 1-byte value. Unfortunately the "char" type isn't signed on all
- * platforms so sign-extension doesn't always happen automatically. Sometimes
- * we can explicitly declare the pointer to be signed, but other times we have
- * to explicitly sign-extend the value in software.
- */
+static inline int
+TclGetInt1AtPtr(
+    const unsigned char *p)
+{
+    /*
+     * This is tricky because we want to do sign extension on the 1-byte value.
+     * Unfortunately the "char" type isn't signed on all platforms so
+     * sign-extension doesn't always happen automatically. Sometimes we can
+     * explicitly declare the pointer to be signed, but other times we have
+     * to explicitly sign-extend the value in software.
+     */
 
 #ifndef __CHAR_UNSIGNED__
-#   define TclGetInt1AtPtr(p) ((int) *((char *) p))
+    return (int) *((char *) p);
 #elif defined(HAVE_SIGNED_CHAR)
-#   define TclGetInt1AtPtr(p) ((int) *((signed char *) p))
+    return (int) *((signed char *) p);
 #else
-#   define TclGetInt1AtPtr(p) \
-    ((int) ((*((char *) p)) | ((*(p) & 0200) ? (-256) : 0)))
+    return (int) ((*((char *) p)) | ((*(p) & 0200) ? (-256) : 0));
 #endif
+}
 
-#define TclGetInt4AtPtr(p) \
-    ((int) ((TclGetUInt1AtPtr(p) << 24) |				\
-		       (*((p)+1) << 16) |				\
-		       (*((p)+2) <<  8) |				\
-		       (*((p)+3))))
+static inline unsigned int
+TclGetUInt1AtPtr(
+    const unsigned char *p)
+{
+    return (unsigned int) *p;
+}
 
-#define TclGetUInt1AtPtr(p) \
-    ((unsigned int) *(p))
-#define TclGetUInt4AtPtr(p) \
-    ((unsigned int) ((*(p)     << 24) |					\
-		     (*((p)+1) << 16) |					\
-		     (*((p)+2) <<  8) |					\
-		     (*((p)+3))))
+static inline int
+TclGetInt4AtPtr(
+    const unsigned char *p)
+{
+    return (int) (
+	    (TclGetUInt1AtPtr(p) << 24) |
+	    (p[1] << 16) |
+	    (p[2] <<  8) |
+	    (p[3]));
+}
+
+static inline unsigned int
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
+    return (unsigned int) (
+	    (p[0] << 24) |
+	    (p[1] << 16) |
+	    (p[2] <<  8) |
+	    (p[3]));
+}
 
 /*
  * Macros used to compute the minimum and maximum of two values. The ANSI C
@@ -1562,46 +1608,37 @@ TclUpdateStackReqs(
     PushLiteral((envPtr), (string), sizeof(string "") - 1)
 
 /*
- * Macro to advance to the next token; it is more mnemonic than the address
- * arithmetic that it replaces. The ANSI C "prototype" for this macro is:
- *
- * static Tcl_Token *	TokenAfter(Tcl_Token *tokenPtr);
- */
-
-#define TokenAfter(tokenPtr) \
-    ((tokenPtr) + ((tokenPtr)->numComponents + 1))
-
-/*
- * Macro to get the offset to the next instruction to be issued. The ANSI C
- * "prototype" for this macro is:
- *
- * static ptrdiff_t	CurrentOffset(CompileEnv *envPtr);
- */
-
-#define CurrentOffset(envPtr) \
-    ((envPtr)->codeNext - (envPtr)->codeStart)
-
-/*
  * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
  * maximal depth of nested CATCH ranges in order to alloc runtime
  * memory. These macros should compute precisely that? OTOH, the nesting depth
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
- *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
- * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
-#define ExceptionRangeStarts(envPtr, index) \
-    (((envPtr)->exceptDepth++),						\
-    ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
-#define ExceptionRangeEnds(envPtr, index) \
-    (((envPtr)->exceptDepth--),						\
-    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
-	CurrentOffset(envPtr) - (int)(envPtr)->exceptArrayPtr[(index)].codeOffset))
+static inline int
+ExceptionRangeStarts(
+    CompileEnv *envPtr,
+    Tcl_Size index)
+{
+    envPtr->exceptDepth++;
+    envPtr->maxExceptDepth = TclMax(
+	    envPtr->exceptDepth, envPtr->maxExceptDepth);
+    return (envPtr->exceptArrayPtr[index].codeOffset = CurrentOffset(envPtr));
+}
+
+static inline void
+ExceptionRangeEnds(
+    CompileEnv *envPtr,
+    Tcl_Size index)
+{
+    envPtr->exceptDepth--;
+    envPtr->exceptArrayPtr[index].numCodeBytes =
+	CurrentOffset(envPtr) - (int)envPtr->exceptArrayPtr[index].codeOffset;
+}
+
+/*
+ * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
+ */
 #define ExceptionRangeTarget(envPtr, index, targetType) \
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
