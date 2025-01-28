@@ -751,6 +751,20 @@ test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -bod
     exec winget --info
 } -result "Windows Package Manager*" -match glob
 
+foreach cmdBuiltin {
+    assoc call cd cls color copy date del dir echo 
+    erase exit ftype for if md mkdir mklink move path 
+    pause prompt rd ren rename rmdir set start time 
+    title type ver vol
+} {
+    test auto_execok-$cmdBuiltin-1.0 "auto_execok $cmdBuiltin" \
+        -constraints win \
+        -body {
+            string equal [auto_execok $cmdBuiltin] \
+                "[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
+        } -result 1
+}
+unset cmdBuiltin
 
 # ----------------------------------------------------------------------
 # cleanup
