@@ -1332,6 +1332,7 @@ ApplicationType(
 	     * that if it is on the PATH, and it is a reparse point, it is an
 	     * App Execution Alias.
 	     */
+	    CloseHandle(hFile);
 	    applType = APPL_WIN32;
 	    break;
 	}
