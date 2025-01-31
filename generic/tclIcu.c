@@ -1434,7 +1434,7 @@ TclIcuInit(
 	}
 #endif // _WIN32
 
-	/* Symbol may have version (Windows, FreeBSD), or not (Linux) */
+	/* Symbol may have version (Linux), or not (Windows, FreeBSD) */
 
 #define ICUUC_SYM(name)                                                   \
     do {                                                                  \
