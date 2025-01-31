@@ -36,9 +36,9 @@
  *   multiple Tcl channels corresponding to a single console handle.
  *
  * - Even with multiple threads, more than one file event handler is
- * unlikely. It does not make sense for multiple threads to register
- * handlers for stdin because the input would be randomly fragmented amongst
- * the threads.
+ *   unlikely. It does not make sense for multiple threads to register
+ *   handlers for stdin because the input would be randomly fragmented amongst
+ *   the threads.
  *
  * Various design factors are driven by the above, e.g. use of lists instead
  * of hash tables (at most 3 console handles) and use of global instead of
@@ -58,7 +58,7 @@
  *
  * If multiple threads are reading from stdin, the input is sprayed in
  * random fashion. This is not good application design and hence no plan to
- * address this (not clear what should be done even in theory)
+ * address this (not clear what should be done even in theory).
  *
  * For output, we do not restrict all output to the console writer threads.
  * See ConsoleOutputProc for the conditions.
@@ -94,14 +94,18 @@ static int gInitialized = 0;
  * and bufPtr[0]:bufPtr[length - (size-start)].
  */
 typedef struct RingBuffer {
-    char *bufPtr;	/* Pointer to buffer storage */
-    Tcl_Size capacity;	/* Size of the buffer in RingBufferChar */
-    Tcl_Size start;	/* Start of the data within the buffer. */
-    Tcl_Size length;	/* Number of RingBufferChar*/
+    char *bufPtr;		/* Pointer to buffer storage */
+    Tcl_Size capacity;		/* Size of the buffer in RingBufferChar */
+    Tcl_Size start;		/* Start of the data within the buffer. */
+    Tcl_Size length;		/* Number of RingBufferChar*/
 } RingBuffer;
-#define RingBufferLength(ringPtr_) ((ringPtr_)->length)
-#define RingBufferHasFreeSpace(ringPtr_) ((ringPtr_)->length < (ringPtr_)->capacity)
-#define RINGBUFFER_ASSERT(ringPtr_) assert(RingBufferCheck(ringPtr_))
+
+#define RingBufferLength(ringPtr_) \
+	((ringPtr_)->length)
+#define RingBufferHasFreeSpace(ringPtr_) \
+	((ringPtr_)->length < (ringPtr_)->capacity)
+#define RINGBUFFER_ASSERT(ringPtr_) \
+	assert(RingBufferCheck(ringPtr_))
 
 /*
  * The Win32 console API does not support non-blocking I/O in any form. Thus
@@ -126,27 +130,33 @@ typedef struct RingBuffer {
  */
 typedef struct ConsoleHandleInfo {
     struct ConsoleHandleInfo *nextPtr; /* Process-global list of consoles */
-    HANDLE console;       /* Console handle */
-    HANDLE consoleThread; /* Handle to thread doing actual i/o on the console */
-    SRWLOCK lock;	  /* Controls access to this structure.
-			   * Cheaper than CRITICAL_SECTION but note does not
-			   * support recursive locks or Try* style attempts.*/
+    HANDLE console;		/* Console handle */
+    HANDLE consoleThread;	/* Handle to thread doing actual i/o on the
+				 * console */
+    SRWLOCK lock;		/* Controls access to this structure. Cheaper
+				 * than CRITICAL_SECTION but note does not
+				 * support recursive locks or Try* style
+				 * attempts. */
     CONDITION_VARIABLE consoleThreadCV;/* For awakening console thread */
     CONDITION_VARIABLE interpThreadCV; /* For awakening interpthread(s) */
-    RingBuffer buffer;	  /* Buffer for data transferred between console
-			   * threads and Tcl threads. For input consoles,
-			   * written by the console thread and read by Tcl
-			   * threads. The converse for output threads */
-    DWORD initMode;	  /* Initial console mode. */
-    DWORD lastError;	  /* An error caused by the last background
-			   * operation. Set to 0 if no error has been
-			   * detected. */
-    int numRefs;	  /* See comments above */
-    int permissions;	  /* TCL_READABLE for input consoles, TCL_WRITABLE
-			   * for output. Only one or the other can be set. */
-    int flags;
-#define CONSOLE_DATA_AWAITED 0x0001 /* An interpreter is awaiting data */
+    RingBuffer buffer;		/* Buffer for data transferred between console
+				 * threads and Tcl threads. For input consoles,
+				 * written by the console thread and read by Tcl
+				 * threads. The converse for output threads */
+    DWORD initMode;		/* Initial console mode. */
+    DWORD lastError;		/* An error caused by the last background
+				 * operation. Set to 0 if no error has been
+				 * detected. */
+    int numRefs;		/* See comments above */
+    int permissions;		/* TCL_READABLE for input consoles,
+				 * TCL_WRITABLE for output. Only one or the
+				 * other can be set. */
+    int flags;			/* State flags */
 } ConsoleHandleInfo;
+
+enum ConsoleHandleInfoFlags {
+    CONSOLE_DATA_AWAITED = 1	/* An interpreter is awaiting data */
+};
 
 /*
  * This structure describes per-instance data for a console based channel.
@@ -190,10 +200,13 @@ typedef struct ConsoleChannelInfo {
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which events should be reported. */
     int flags;			/* State flags */
-#define CONSOLE_EVENT_QUEUED 0x0001 /* Notification event already queued */
-#define CONSOLE_ASYNC        0x0002 /* Channel is non-blocking. */
-#define CONSOLE_READ_OPS     0x0004 /* Channel supports read-related ops. */
 } ConsoleChannelInfo;
+
+enum ConsoleChannelInfoFlags {
+    CONSOLE_EVENT_QUEUED = 1,	/* Notification event already queued */
+    CONSOLE_ASYNC = 2,		/* Channel is non-blocking. */
+    CONSOLE_READ_OPS = 4	/* Channel supports read-related ops. */
+};
 
 /*
  * The following structure is what is added to the Tcl event queue when
@@ -424,7 +437,7 @@ RingBufferIn(
     } else {
 	/* No room at the back. Existing data wrap to front. */
 	Tcl_Size wrapLen =
-	    ringPtr->start + ringPtr->length - ringPtr->capacity;
+		ringPtr->start + ringPtr->length - ringPtr->capacity;
 	memmove(wrapLen + ringPtr->bufPtr, srcPtr, srcLen);
     }
 
@@ -484,11 +497,8 @@ RingBufferOut(
     } else {
 	Tcl_Size wrapLen = dstCapacity - leadLen;
 	if (dstPtr) {
-	    memmove(dstPtr,
-		    ringPtr->start + ringPtr->bufPtr,
-		    leadLen);
-	    memmove(
-		leadLen + dstPtr, ringPtr->bufPtr, wrapLen);
+	    memmove(dstPtr, ringPtr->start + ringPtr->bufPtr, leadLen);
+	    memmove(leadLen + dstPtr, ringPtr->bufPtr, wrapLen);
 	}
 	ringPtr->start = wrapLen;
     }
@@ -539,7 +549,6 @@ ReadConsoleChars(
     Tcl_Size *nCharsReadPtr)
 {
     DWORD nRead;
-    BOOL result;
 
     /*
      * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return success
@@ -561,17 +570,15 @@ ReadConsoleChars(
      * or https://github.com/microsoft/terminal/issues/12143
      */
     nRead = (DWORD)-1;
-    result = ReadConsoleW(hConsole, lpBuffer, nChars, &nRead, NULL);
-    if (result) {
-	if ((nRead == 0 || nRead == (DWORD)-1)
-		&& GetLastError() == ERROR_OPERATION_ABORTED) {
-	    nRead = 0;
-	}
-	*nCharsReadPtr = nRead;
-	return 0;
-    } else {
+    if (!ReadConsoleW(hConsole, lpBuffer, nChars, &nRead, NULL)) {
 	return GetLastError();
     }
+    if ((nRead == 0 || nRead == (DWORD)-1)
+	    && GetLastError() == ERROR_OPERATION_ABORTED) {
+	nRead = 0;
+    }
+    *nCharsReadPtr = nRead;
+    return 0;
 }
 
 /*
@@ -600,20 +607,17 @@ WriteConsoleChars(
     Tcl_Size *nCharsWrittenPtr)
 {
     DWORD nCharsWritten;
-    BOOL result;
 
     /* See comments in ReadConsoleChars, not sure that applies here */
     nCharsWritten = (DWORD)-1;
-    result = WriteConsoleW(hConsole, lpBuffer, nChars, &nCharsWritten, NULL);
-    if (result) {
-	if (nCharsWritten == (DWORD) -1) {
-	    nCharsWritten = 0;
-	}
-	*nCharsWrittenPtr = nCharsWritten;
-	return 0;
-    } else {
+    if (!WriteConsoleW(hConsole, lpBuffer, nChars, &nCharsWritten, NULL)) {
 	return GetLastError();
     }
+    if (nCharsWritten == (DWORD) -1) {
+	nCharsWritten = 0;
+    }
+    *nCharsWrittenPtr = nCharsWritten;
+    return 0;
 }
 
 /*
@@ -787,8 +791,7 @@ ConsoleSetupProc(
 
     for (chanInfoPtr = gWatchingChannelList; block && chanInfoPtr != NULL;
 	    chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
-	ConsoleHandleInfo *handleInfoPtr;
-	handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+	ConsoleHandleInfo *handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	if (handleInfoPtr != NULL) {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    /* Remember at most one of READABLE, WRITABLE set */
@@ -1562,10 +1565,9 @@ ConsoleGetHandleProc(
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
 	return TCL_ERROR;
-    } else {
-	*handlePtr = chanInfoPtr->handle;
-	return TCL_OK;
     }
+    *handlePtr = chanInfoPtr->handle;
+    return TCL_OK;
 }
 
 /*
@@ -1583,8 +1585,8 @@ ConsoleGetHandleProc(
  *
  *------------------------------------------------------------------------
  */
- static int
- ConsoleDataAvailable(
+static int
+ConsoleDataAvailable(
     HANDLE consoleHandle)
 {
     INPUT_RECORD input[10];
@@ -1617,7 +1619,7 @@ ConsoleGetHandleProc(
     }
     return 0;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1634,7 +1636,6 @@ ConsoleGetHandleProc(
  *
  *----------------------------------------------------------------------
  */
-
 static DWORD WINAPI
 ConsoleReaderThread(
     LPVOID arg)
@@ -1968,7 +1969,6 @@ ConsoleWriterThread(
     ReleaseSRWLockExclusive(&gConsoleLock);
 
     RingBufferClear(&handleInfoPtr->buffer);
-
     Tcl_Free(handleInfoPtr);
 
     return 0;
@@ -2023,12 +2023,12 @@ AllocateConsoleHandleInfo(
 	SetConsoleMode(consoleHandle, consoleMode);
     }
     handleInfoPtr->consoleThread = CreateThread(
-	NULL, /* default security descriptor */
-	2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
-	permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
-	handleInfoPtr, /* Pass to thread */
-	0,             /* Flags - no special cases */
-	NULL);         /* Don't care about thread id */
+	    NULL, /* default security descriptor */
+	    2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
+	    permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
+	    handleInfoPtr, /* Pass to thread */
+	    0,             /* Flags - no special cases */
+	    NULL);         /* Don't care about thread id */
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
 	RingBufferClear(&handleInfoPtr->buffer);
@@ -2071,14 +2071,15 @@ FindConsoleInfo(
     const ConsoleChannelInfo *chanInfoPtr)
 {
     ConsoleHandleInfo *handleInfoPtr;
-    for (handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr; handleInfoPtr = handleInfoPtr->nextPtr) {
+    for (handleInfoPtr = gConsoleHandleInfoList; handleInfoPtr;
+	    handleInfoPtr = handleInfoPtr->nextPtr) {
 	if (handleInfoPtr->console == chanInfoPtr->handle) {
 	    return handleInfoPtr;
 	}
     }
     return NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2258,7 +2259,7 @@ ConsoleThreadActionProc(
  */
 static int
 ConsoleSetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -2347,7 +2348,7 @@ ConsoleSetOptionProc(
 
 static int
 ConsoleGetOptionProc(
-    void *instanceData,	/* File state. */
+    void *instanceData,		/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */

@@ -1327,9 +1327,21 @@ ApplicationType(
 
 	hFile = CreateFileW(nativeFullPath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
+		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 	    continue;
+	}
+
+	if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+	    /*
+	     * But [4f0b5767ac]. Likely a App Execution Alias. This can only
+	     * be a Win32 APP. Attempt to ReadFile below will fail. We assume
+	     * that if it is on the PATH, and it is a reparse point, it is an
+	     * App Execution Alias.
+	     */
+	    CloseHandle(hFile);
+	    applType = APPL_WIN32;
+	    break;
 	}
 
 	header.e_magic = 0;
