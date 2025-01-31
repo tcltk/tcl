@@ -5680,7 +5680,7 @@ CommonGetsCleanup(
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
 			nextPtr->buf + (BUFFER_PADDING - extra),
-			extra);
+			(size_t)extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
 	    }
@@ -6757,7 +6757,7 @@ TranslateInputEOL(
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
-	while ((crFound = (const char *) memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
