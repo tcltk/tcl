@@ -22,7 +22,7 @@ test exit-1.1 {normal, quick exit} {
      fileevent $f readable {after cancel $aft;set done OK}
      vwait done
      if {$done != "OK"} {
-     	fconfigure $f -blocking 0
+	fconfigure $f -blocking 0
 	close $f
      } else {
 	if {[catch {close $f} err]} {
@@ -38,7 +38,7 @@ test exit-1.2 {full-finalized exit} {
      fileevent $f readable {after cancel $aft;set done OK}
      vwait done
      if {$done != "OK"} {
-     	fconfigure $f -blocking 0
+	fconfigure $f -blocking 0
 	close $f
      } else {
 	if {[catch {close $f} err]} {

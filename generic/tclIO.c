@@ -246,7 +246,7 @@ static int	      WillRead(Channel *chanPtr);
  *
  *	Returns the number of bytes of data remaining in the buffer.
  *
- * int SpaceLeft(ChannelBuffer *bufPtr)
+ * Tcl_Size SpaceLeft(ChannelBuffer *bufPtr)
  *
  *	Returns the number of bytes of space remaining at the end of the
  *	buffer.
@@ -1532,8 +1532,8 @@ TclGetChannelFromObj(
     ChanGetInternalRep(objPtr, resPtr);
     if (resPtr) {
 	/*
- 	 * Confirm validity of saved lookup results.
- 	 */
+	 * Confirm validity of saved lookup results.
+	 */
 
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
@@ -1601,7 +1601,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    void *instanceData,	/* Instance specific data. */
+    void *instanceData,		/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1839,7 +1839,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    void *instanceData,	/* Instance specific data for the new
+    void *instanceData,		/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -4490,16 +4490,11 @@ Write(
 	 * current output encoding and strict encoding is active.
 	 */
 
-	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
-	    encodingError = 1;
-	    result = TCL_OK;
-	}
-
-	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
-	    /*
-	     * We're reading from invalid/incomplete UTF-8.
-	     */
-
+	if ((result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) ||
+		/*
+		 * We're reading from invalid/incomplete UTF-8.
+		 */
+		((result != TCL_OK) && (srcRead + dstWrote == 0))) {
 	    encodingError = 1;
 	    result = TCL_OK;
 	}
@@ -4575,15 +4570,15 @@ Write(
 	    flushed += statePtr->bufSize;
 
 	    /*
- 	     * We just flushed.  So if we have needNlFlush set to record that
- 	     * we need to flush because there is a (translated) newline in the
- 	     * buffer, that's likely not true any more.  But there is a tricky
- 	     * exception.  If we have saved bytes that did not really get
- 	     * flushed and those bytes came from a translation of a newline as
- 	     * the last thing taken from the src array, then needNlFlush needs
- 	     * to remain set to flag that the next buffer still needs a
- 	     * newline flush.
- 	     */
+	     * We just flushed.  So if we have needNlFlush set to record that
+	     * we need to flush because there is a (translated) newline in the
+	     * buffer, that's likely not true any more.  But there is a tricky
+	     * exception.  If we have saved bytes that did not really get
+	     * flushed and those bytes came from a translation of a newline as
+	     * the last thing taken from the src array, then needNlFlush needs
+	     * to remain set to flag that the next buffer still needs a
+	     * newline flush.
+	     */
 
 	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
@@ -5750,13 +5745,13 @@ CommonGetsCleanup(
 
 	nextPtr = bufPtr->nextPtr;
 	for ( ; nextPtr != NULL; nextPtr = bufPtr->nextPtr) {
-	    int extra;
+	    Tcl_Size extra;
 
 	    extra = SpaceLeft(bufPtr);
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
 			nextPtr->buf + (BUFFER_PADDING - extra),
-			(size_t) extra);
+			(size_t)extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
 	    }
@@ -6352,7 +6347,9 @@ ReadChars(
     int factor = *factorPtr;
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
-    if (dstLimit <= 0) dstLimit = INT_MAX; /* avoid overflow */
+    if (dstLimit <= 0) {
+	dstLimit = INT_MAX; /* avoid overflow */
+    }
     (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
@@ -6529,10 +6526,21 @@ ReadChars(
 			|| BytesLeft(bufPtr->nextPtr) == 0 || 0 ==
 			(statePtr->inputEncodingFlags & TCL_ENCODING_END));
 
-		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
-		&statePtr->inputEncodingState, buffer, sizeof(buffer),
-		&read, &decoded, &count);
+		/*
+		 * bug 73bb42fb: the result was not checked for an encoding error.
+		 * So, add a check as above for testing.
+		 * Leave eof check out, as typically only two characters are
+		 * handled.
+		 */
+
+		code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+			(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
+			&statePtr->inputEncodingState, buffer, sizeof(buffer),
+			&read, &decoded, &count);
+		if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX) {
+		    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+		    code = TCL_OK;
+		}
 
 		if (count == 2) {
 		    if (buffer[1] == '\n') {
@@ -10198,12 +10206,12 @@ CopyData(
  *
  * Results:
  *	The number of bytes actually stored (<= bytesToRead),
- * 	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
- * 	Tcl_GetErrno() to retrieve the error code for the error
+ *	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
+ *	Tcl_GetErrno() to retrieve the error code for the error
  *	that occurred.
  *
  *	The number of bytes stored can be less than the number
- * 	requested when
+ *	requested when
  *	  - EOF is reached on the channel; or
  *	  - the channel is non-blocking, and we've read all we can
  *	    without blocking.
@@ -10284,7 +10292,7 @@ DoRead(
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
-		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
@@ -10923,7 +10931,8 @@ Tcl_IsChannelExisting(
 
 const char *
 Tcl_ChannelName(
-    const Tcl_ChannelType *chanTypePtr) /* Pointer to channel type. */
+    const Tcl_ChannelType *chanTypePtr)
+				/* Pointer to channel type. */
 {
     return chanTypePtr->typeName;
 }

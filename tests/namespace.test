@@ -3363,7 +3363,7 @@ test namespace-55.2 {compiled ensembles inside safe interpreters (for safe sub-c
     interp create -safe si
     set code {
 	proc test_comp_dict d { dict for {k v} $d {expr $v} }
-    	regexp -inline {Command 1:(?:[^\n]*\n){1,5}} [::tcl::unsupported::disassemble proc test_comp_dict]
+	regexp -inline {Command 1:(?:[^\n]*\n){1,5}} [::tcl::unsupported::disassemble proc test_comp_dict]
     }
 } -body {
     set a [   eval $code]

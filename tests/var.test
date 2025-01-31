@@ -1142,7 +1142,7 @@ test var-23.10 {array enumeration, delete key} -match glob -setup {
     try {
       array set a {a 1 b 2 c 3 d 4}
       array for {k v} a {
-  	lappend reslist $k $v
+	lappend reslist $k $v
           if { $k eq "a" } {
             unset a(c)
           }
@@ -1165,7 +1165,7 @@ test var-23.11 {array enumeration, insert key} -match glob -setup {
     try {
       array set a {a 1 b 2 c 3 d 4}
       array for {k v} a {
-  	lappend reslist $k $v
+	lappend reslist $k $v
           if { $k eq "a" } {
             set a(e) 5
           }

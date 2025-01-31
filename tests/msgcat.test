@@ -1057,7 +1057,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.1 {invocation loadcmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1071,7 +1071,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.2 {invocation failed in loadcmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	} -cleanup {
@@ -1089,7 +1089,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.3 {invocation changecmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    set resultvariable ""
 	} -cleanup {
@@ -1102,7 +1102,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.4 {invocation unknowncmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1117,7 +1117,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.5 {disable global unknowncmd} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""
@@ -1137,7 +1137,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 
 	test msgcat-14.6 {unknowncmd failing} -setup {
 	    mcforgetpackage
-    	    mclocale $locale
+	    mclocale $locale
 	    mclocale ""
 	    mcloadedlocales clear
 	    set resultvariable ""

@@ -549,7 +549,7 @@ test ooUtil-8.1 {TIP 567: call oo::define twice from metaclass constructor} -set
     }
     ::oo::class create B {
 	superclass ::oo::class parent
-    	constructor {{definitionScript ""}} {
+	constructor {{definitionScript ""}} {
 	    next $definitionScript
 	    next {superclass ::A}
 	}

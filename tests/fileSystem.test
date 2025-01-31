@@ -34,8 +34,8 @@ catch {
 }
 
 # Test for commands defined in tcl::test package
-testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
-testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
+testConstraint testfilesystem	    [llength [info commands ::testfilesystem]]
+testConstraint testsetplatform	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
 # Some things fail under all Continuous Integration systems for subtle reasons
 # such as CI often running with elevated privileges in a container.

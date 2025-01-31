@@ -79,7 +79,7 @@ proc testWithLimit args {
     }
     if { ( [info exists in(-warn-on-code)] && $ret in $in(-warn-on-code) )
       || ( $ret && [info exists in(-warn-on-alloc-error)] && $in(-warn-on-alloc-error)
-      	    && [regexp {\munable to (?:re)?alloc\M} $result] )
+	    && [regexp {\munable to (?:re)?alloc\M} $result] )
     } {
 	tcltest::Warn "testWithLimit: wrong limit, result: $result"
 	tcltest::Skip testWithLimit

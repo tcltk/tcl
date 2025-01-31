@@ -4142,7 +4142,7 @@ test iocmd.foreachLine-2.4 "foreachLine procedure: behaviour" -setup {
     set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine24.txt]
 } -body {
     apply {filename {
-    	set lines {}
+	set lines {}
 	foreachLine var $filename {
 	    if {[string length $var] > 2} {
 		return $var

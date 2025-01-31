@@ -149,17 +149,17 @@ test lmap-3.1 {continue tests} {
 test lmap-3.2 {continue tests} {
     set x 0
     list [lmap i {a b c d} {
-    	incr x
-    	if {[string compare $i "b"] != 0} continue
-    	set i
+	incr x
+	if {[string compare $i "b"] != 0} continue
+	set i
     }] $x
 } {b 4}
 test lmap-3.3 {break tests} {
     set x 0
     list [lmap i {a b c d} {
 	incr x
-    	if {[string compare $i "c"] == 0} break
-    	set i
+	if {[string compare $i "c"] == 0} break
+	set i
     }] $x
 } {{a b} 3}
 # Check for bug similar to #406709

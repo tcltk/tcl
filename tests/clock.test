@@ -36776,15 +36776,15 @@ test clock-34.70.1 {check date in DST-hole: daylight switch CET -> CEST} {
     # forwards
     set base 1459033200
     for {set i 0} {$i <= 3} {incr i} {
-    	set d [clock scan "+$i hour" -base $base -timezone CET]
-    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "+$i hour" -base $base -timezone CET]
+	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     lappend res "#--"
     # backwards
     set base 1459044000
     for {set i 0} {$i <= 3} {incr i} {
-    	set d [clock scan "-$i hour" -base $base -timezone CET]
-    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "-$i hour" -base $base -timezone CET]
+	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     set res
 } [split [regsub -all {^\n|\n$} {
@@ -36804,15 +36804,15 @@ test clock-34.70.2 {check date in DST-hole: daylight switch CEST -> CET} {
     # forwards
     set base 1477782000
     for {set i 0} {$i <= 3} {incr i} {
-    	set d [clock scan "+$i hour" -base $base -timezone CET]
-    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "+$i hour" -base $base -timezone CET]
+	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     lappend res "#--"
     # backwards
     set base 1477792800
     for {set i 0} {$i <= 3} {incr i} {
-    	set d [clock scan "-$i hour" -base $base -timezone CET]
-    	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
+	set d [clock scan "-$i hour" -base $base -timezone CET]
+	lappend res "$d = [clock format $d -timezone CET -format {%Y-%m-%d %H:%M:%S %Z}]"
     }
     set res
 } [split [regsub -all {^\n|\n$} {

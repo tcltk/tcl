@@ -1289,15 +1289,15 @@ test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
 }
 test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     -constraints testchmod
-    -setup  	 {testchmod 0o444 $gorpfile}
-    -body   	 {file readable $gorpfile}
-    -result 	 1
+    -setup	 {testchmod 0o444 $gorpfile}
+    -body	 {file readable $gorpfile}
+    -result	 1
 }
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
     -constraints {unix notRoot testchmod notWsl}
-    -setup  	 {testchmod 0o333 $gorpfile}
-    -body   	 {file readable $gorpfile}
-    -result 	 0
+    -setup	 {testchmod 0o333 $gorpfile}
+    -body	 {file readable $gorpfile}
+    -result	 0
 }
 
 # writable
@@ -1308,15 +1308,15 @@ test cmdAH-17.1 {Tcl_FileObjCmd: writable} {
 }
 test cmdAH-17.2 {Tcl_FileObjCmd: writable} {
     -constraints {notRoot testchmod}
-    -setup  	 {testchmod 0o555 $gorpfile}
-    -body   	 {file writable $gorpfile}
-    -result 	 0
+    -setup	 {testchmod 0o555 $gorpfile}
+    -body	 {file writable $gorpfile}
+    -result	 0
 }
 test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
     -constraints testchmod
-    -setup  	 {testchmod 0o222 $gorpfile}
-    -body   	 {file writable $gorpfile}
-    -result 	 1
+    -setup	 {testchmod 0o222 $gorpfile}
+    -body	 {file writable $gorpfile}
+    -result	 1
 }
 
 # executable
