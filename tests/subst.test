@@ -22,10 +22,10 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
-} -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
+} -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? ?-backslashes? ?-commands? ?-variables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -nobackslashes, -nocommands, -novariables, -backslashes, -commands, or -variables}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -123,29 +123,57 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -nobackslashes, -nocommands, -novariables, -backslashes, -commands, or -variables}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, -novariables, -backslashes, -commands, or -variables}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
-test subst-7.4 {switches} {
+} -result {bad option "-bogus": must be -nobackslashes, -nocommands, -novariables, -backslashes, -commands, or -variables}
+test subst-7.4.1 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 3 \\\x41}
-test subst-7.5 {switches} {
+test subst-7.4.2 {switches} {
+    set x 123
+    subst -commands -variables {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 3 \\\x41}
+test subst-7.5.1 {switches} {
     set x 123
     subst -nocommands {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 [expr {1 + 2}] \A}
-test subst-7.6 {switches} {
+test subst-7.5.2 {switches} {
+    set x 123
+    subst -backslashes -variables {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 [expr {1 + 2}] \A}
+test subst-7.6.1 {switches} {
     set x 123
     subst -novariables {abc $x [expr {1 + 2}] \\\x41}
+} {abc $x 3 \A}
+test subst-7.6.2 {switches} {
+    set x 123
+    subst -backslashes -commands {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x 3 \A}
 test subst-7.7 {switches} {
     set x 123
     subst -nov -nob -noc {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x [expr {1 + 2}] \\\x41}
+test subst-7.8 {switches} {
+    set x 123
+    subst -backslashes {abc $x [expr {1 + 2}] \\\x41}
+} {abc $x [expr {1 + 2}] \A}
+test subst-7.9 {switches} {
+    set x 123
+    subst -commands {abc $x [expr {1 + 2}] \\\x41}
+} {abc $x 3 \\\x41}
+test subst-7.10 {switches} {
+    set x 123
+    subst -variables {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 [expr {1 + 2}] \\\x41}
+test subst-7.11 {switches} {
+    set x 123
+    subst -ba -co -va {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 3 \A}
 
 test subst-8.1 {return in a subst} {
     subst {foo [return {x}; bogus code] bar}
