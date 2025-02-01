@@ -1970,7 +1970,7 @@ Tcl_ListObjIndex(
     Tcl_Size numElems;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
-    if (listObj->bytes == &tclEmptyString) {
+    if (Tcl_IsEmpty(listObj)) {
 	*objPtrPtr = NULL;
 	return TCL_OK;
     }
@@ -2024,7 +2024,7 @@ Tcl_ListObjLength(
     ListRep listRep;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
-    if (listObj->bytes == &tclEmptyString) {
+    if (Tcl_IsEmpty(listObj)) {
 	*lenPtr = 0;
 	return TCL_OK;
     }
