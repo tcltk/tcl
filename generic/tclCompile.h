@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     Tcl_Size numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *breakTargets;/* The offsets of the INST_JUMP4 instructions
+    TCL_HASH_TYPE *breakTargets;/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     Tcl_Size numContinueTargets;/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *continueTargets;
+    TCL_HASH_TYPE *continueTargets;
 				/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
@@ -223,7 +223,7 @@ typedef void *	(AuxDataDupProc) (void *clientData);
 typedef void	(AuxDataFreeProc) (void *clientData);
 typedef void	(AuxDataPrintProc) (void *clientData,
 	Tcl_Obj *appendObj, struct ByteCode *codePtr,
-	size_t pcOffset);
+	TCL_HASH_TYPE pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information
@@ -1062,7 +1062,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------
@@ -1181,10 +1181,10 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE Tcl_ObjCmdProc	TclSingleOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclSortingOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclVariadicOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
