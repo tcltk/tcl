@@ -2345,14 +2345,9 @@ void *			TclStubCall(void *arg);
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
 # endif
-#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
-	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0.0"), \
+	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
@@ -2361,14 +2356,10 @@ void *			TclStubCall(void *arg);
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_Panic(((void)interp, (void)version, \
 		(void)exact, "Please define -DUSE_TCL_STUBS"))
-#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#else
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \
 		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
-#else
-#   define Tcl_InitStubs(interp, version, exact) \
-	Tcl_PkgInitStubsCheck(interp, TCL_PATCH_LEVEL, \
-		1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
 #endif
 #endif
 
