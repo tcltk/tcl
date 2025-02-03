@@ -11,5 +11,6 @@
 if {![package vsatisfies [package provide Tcl] 9.0]} {return}
 package ifneeded memorymoduletest 1.0.0 [list load [file join $dir tcl9memorymoduletest.dll]]
 package ifneeded threadvartest 1.0.0 [list load [file join $dir tcl9threadvartest.dll]]
+package ifneeded threadvar2test 1.0.0 [list load [file join $dir tcl9threadvar2test.dll] Threadvar2test]
 if {$::tcl_platform(machine) ne "amd64"} {return}
 package ifneeded thread 3.0.0 [list load [file join $dir tcl9thread300.dll]]

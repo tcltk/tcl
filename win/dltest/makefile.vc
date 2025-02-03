@@ -8,6 +8,8 @@ SHAREDLIB = tcl9memorymoduletest.dll
 IMPLIB    = memorymoduletest.lib
 SHAREDLIB2 = tcl9threadvartest.dll
 IMPLIB2    = threadvartest.lib
+SHAREDLIB3 = tcl9threadvar2test.dll
+IMPLIB3    = threadvar2test.lib
 
 CC = cl
 AS = ml
@@ -21,20 +23,26 @@ OBJS = memorymoduletest.obj
 # targets
 all:	memorymoduletest.zip
 
-memorymoduletest.zip: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2)
+memorymoduletest.zip: $(SHAREDLIB) $(IMPLIB) $(SHAREDLIB2) $(IMPLIB2) $(SHAREDLIB3) $(IMPLIB3)
 	zip $@ *.dll pkgIndex.tcl
 
 $(IMPLIB): $(SHAREDLIB)
 
 $(IMPLIB2): $(SHAREDLIB2)
 
+$(IMPLIB3): $(SHAREDLIB3)
+
 $(SHAREDLIB): memorymoduletest.obj
 	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
 	  -out:$@ memorymoduletest.obj
 
 $(SHAREDLIB2): threadvartest.obj
-	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB2) tclstub.lib \
 	  -out:$@ threadvartest.obj
+
+$(SHAREDLIB3): threadvar2test.obj
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB3) tclstub.lib \
+	  -out:$@ threadvar2test.obj
 
 {$(TOP)}.c.obj:
 	$(CC) -c $(WFLAGS) $(CFLAGS) $<
@@ -42,6 +50,8 @@ $(SHAREDLIB2): threadvartest.obj
 memorymoduletest.obj: $(TOP)/memorymoduletest.c
 
 threadvartest.obj: $(TOP)/threadvartest.c
+
+threadvar2test.obj: $(TOP)/threadvar2test.c
 
 # cleanup
 clean:
