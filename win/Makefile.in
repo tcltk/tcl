@@ -530,7 +530,10 @@ tcltest.cmd: Makefile
 
 tcltest.sh: tcltest.cmd
 
-tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
+thrower.dll:	dltest/thrower.dll
+	cp dltest/thrower.dll .
+
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd thrower.dll
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 

@@ -550,7 +550,10 @@ shell:      libtclzip
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls
+$(OUT_DIR)\thrower.dll:	$(WIN_DIR)\dltest\thrower.dll
+	copy $(WIN_DIR)\dltest\thrower.dll $(OUT_DIR)
+
+tcltest:    setup core $(TCLTEST) dlls $(OUT_DIR)\thrower.dll
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
