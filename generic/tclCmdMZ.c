@@ -3343,29 +3343,25 @@ TclSubstOptions(
     enum {
 	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS,
 	SUBST_BACKSLASHES, SUBST_COMMANDS, SUBST_VARS
-    };
+    } optionIndex;
     int i, flags = TCL_SUBST_ALL;
     int positive = 0, negative = 0;
 
     for (i = 0; i < numOpts; i++) {
-	int optionIndex;
-
 	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (optionIndex >= SUBST_NOBACKSLASHES &&
-	    optionIndex <= SUBST_NOVARS) {
+	if (optionIndex <= SUBST_NOVARS) {
 	    negative = 1;
-	} else if (optionIndex >= SUBST_BACKSLASHES &&
-		   optionIndex <= SUBST_VARS && positive == 0) {
+	} else if (positive == 0) {
 	    positive = 1;
-	    /* Swap the default at the first positive switch */
+	    /* Swap default at the first positive switch only */
 	    flags = 0;
 	}
 	if (positive && negative) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "positive and negative switches cannot be combined", -1));
+		    "cannot combine positive and negative options", -1));
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
