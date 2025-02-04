@@ -130,47 +130,47 @@ test subst-7.2 {switches} -returnCodes error -body {
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
 } -result {bad option "-bogus": must be -nobackslashes, -nocommands, -novariables, -backslashes, -commands, or -variables}
-test subst-7.4.1 {switches} {
+test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 3 \\\x41}
-test subst-7.4.2 {switches} {
-    set x 123
-    subst -commands -variables {abc $x [expr {1 + 2}] \\\x41}
-} {abc 123 3 \\\x41}
-test subst-7.5.1 {switches} {
+test subst-7.5 {switches} {
     set x 123
     subst -nocommands {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 [expr {1 + 2}] \A}
-test subst-7.5.2 {switches} {
-    set x 123
-    subst -backslashes -variables {abc $x [expr {1 + 2}] \\\x41}
-} {abc 123 [expr {1 + 2}] \A}
-test subst-7.6.1 {switches} {
+test subst-7.6 {switches} {
     set x 123
     subst -novariables {abc $x [expr {1 + 2}] \\\x41}
-} {abc $x 3 \A}
-test subst-7.6.2 {switches} {
-    set x 123
-    subst -backslashes -commands {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x 3 \A}
 test subst-7.7 {switches} {
     set x 123
     subst -nov -nob -noc {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x [expr {1 + 2}] \\\x41}
-test subst-7.8 {switches} {
+test subst-7.8 {positive switches} {
     set x 123
     subst -backslashes {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x [expr {1 + 2}] \A}
-test subst-7.9 {switches} {
+test subst-7.9 {positive switches} {
     set x 123
     subst -commands {abc $x [expr {1 + 2}] \\\x41}
 } {abc $x 3 \\\x41}
-test subst-7.10 {switches} {
+test subst-7.10 {positive switches} {
     set x 123
     subst -variables {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 [expr {1 + 2}] \\\x41}
-test subst-7.11 {switches} {
+test subst-7.4.11 {positive switches} {
+    set x 123
+    subst -commands -variables {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 3 \\\x41}
+test subst-7.12 {positive switches} {
+    set x 123
+    subst -backslashes -variables {abc $x [expr {1 + 2}] \\\x41}
+} {abc 123 [expr {1 + 2}] \A}
+test subst-7.13 {positive switches} {
+    set x 123
+    subst -backslashes -commands {abc $x [expr {1 + 2}] \\\x41}
+} {abc $x 3 \A}
+test subst-7.14 {positive switches} {
     set x 123
     subst -ba -co -va {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 3 \A}
