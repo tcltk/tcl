@@ -153,12 +153,8 @@ Mmt_ThreadAttachCalled(
 }
 
 #ifdef _MSC_VER
-static void throwException() {
-    RaiseException(
-        1,                    // exception code
-        0,                    // continuable exception
-        0, NULL);             // no arguments
-}
+
+extern void thrower(); /* This symbol is in thrower.dll */
 
 static int
 Mmt_NestedException(
@@ -176,7 +172,7 @@ Mmt_NestedException(
     }
     __try
     {
-	throwException();
+	thrower();
 	result = 0; /* should not be executed*/
     }
     __except(EXCEPTION_EXECUTE_HANDLER)

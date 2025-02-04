@@ -33,7 +33,7 @@ $(IMPLIB2): $(SHAREDLIB2)
 $(IMPLIB3): $(SHAREDLIB3)
 
 $(SHAREDLIB): memorymoduletest.obj
-	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib \
+	$(LD) $(LDFLAGS) -dll -implib:$(IMPLIB) tclstub.lib thrower.lib \
 	  -out:$@ memorymoduletest.obj
 
 $(SHAREDLIB2): threadvartest.obj
@@ -52,6 +52,12 @@ memorymoduletest.obj: $(TOP)/memorymoduletest.c
 threadvartest.obj: $(TOP)/threadvartest.c
 
 threadvar2test.obj: $(TOP)/threadvar2test.c
+
+thrower.dll:	thrower.obj
+	$(LD) $(LDFLAGS) -dll -out:$@ thrower.obj
+
+thrower.lib:	thrower.def
+	lib -machine:X64 -name:thrower.dll -def:thrower.def -out:thrower.lib
 
 # cleanup
 clean:
