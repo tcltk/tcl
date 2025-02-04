@@ -3360,8 +3360,10 @@ TclSubstOptions(
 	    flags = 0;
 	}
 	if (positive && negative) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot combine positive and negative options", -1));
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot combine positive and negative options", -1));
+	    }
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {

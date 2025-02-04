@@ -174,7 +174,10 @@ test subst-7.14 {positive switches} {
     set x 123
     subst -ba -co -va {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 3 \A}
-
+test subst-7.15 {mixed switches} -returnCodes error -body {
+    set x 123
+    subst -backslashes -novariables {abc $x [expr {1 + 2}] \\\x41}
+} -result {cannot combine positive and negative options}
 test subst-8.1 {return in a subst} {
     subst {foo [return {x}; bogus code] bar}
 } {foo x bar}
