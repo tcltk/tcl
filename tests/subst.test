@@ -174,10 +174,12 @@ test subst-7.14 {positive switches} {
     set x 123
     subst -ba -co -va {abc $x [expr {1 + 2}] \\\x41}
 } {abc 123 3 \A}
-test subst-7.15 {mixed switches} -returnCodes error -body {
+test subst-7.15 {mixing positive/negative switches allowed, following TIP 323 (Do Nothing Gracefully)} -body {
     set x 123
-    subst -backslashes -novariables {abc $x [expr {1 + 2}] \\\x41}
-} -result {cannot combine positive and negative options}
+    set i {-nobackslashes}
+    list [subst -backslashes {*}{} {abc $x [expr {1 + 2}] \\\x41}
+       ] [subst -backslashes {*}$i {abc $x [expr {1 + 2}] \\\x41}]
+} -result {{abc $x [expr {1 + 2}] \A} {abc $x [expr {1 + 2}] \\\x41}}
 test subst-8.1 {return in a subst} {
     subst {foo [return {x}; bogus code] bar}
 } {foo x bar}
