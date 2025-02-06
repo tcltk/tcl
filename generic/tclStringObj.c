@@ -1390,7 +1390,7 @@ Tcl_AppendObjToObj(
     }
 
     if (TclIsPureByteArray(appendObjPtr)
-	    && (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)) {
+	    && (TclIsPureByteArray(objPtr) || Tcl_IsEmpty(objPtr))) {
 	/*
 	 * Both bytearray objects are pure, so the second internal bytearray value
 	 * can be appended to the first, with no need to modify the "bytes" field.
@@ -4359,6 +4359,49 @@ ExtendUnicodeRepWithString(
 	}
     }
     *dst = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsEmpty --
+ *
+ *	Check whether the obj is empty.
+ *
+ * Results:
+ *	-1 if the obj is NULL
+ *	 1 if the obj is ""
+ *   0 otherwise
+ *
+ * Side effects:
+ *	String representation is generated if the obj has no lengthProc
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsEmpty(
+    Tcl_Obj *objPtr)
+{
+    if (objPtr == NULL) {
+	return -1;
+    }
+    if (objPtr->bytes && !objPtr->length) {
+	return 1;
+    }
+    if (TclHasInternalRep(objPtr, &tclDictType)) {
+	/* Since "dict" doesn't have a lengthProc */
+	Tcl_Size size;
+	Tcl_DictObjSize(NULL, objPtr, &size);
+	return !size;
+    }
+
+    Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+    if (proc != NULL) {
+	return !proc(objPtr);
+    }
+    (void)TclGetString(objPtr);
+    return !objPtr->length;
 }
 
 /*
