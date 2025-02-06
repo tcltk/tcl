@@ -4386,21 +4386,20 @@ Tcl_IsEmpty(
     if (objPtr == NULL) {
 	Tcl_Panic("%s: objPtr is NULL", "Tcl_IsEmpty");
     }
-    if (objPtr->bytes) {
-	return !objPtr->length;
-    }
-    if (TclHasInternalRep(objPtr, &tclDictType)) {
-	/* Since "dict" doesn't have a lengthProc */
-	Tcl_Size size;
-	Tcl_DictObjSize(NULL, objPtr, &size);
-	return !size;
-    }
+    if (!objPtr->bytes) {
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* Since "dict" doesn't have a lengthProc */
+	    Tcl_Size size;
+	    Tcl_DictObjSize(NULL, objPtr, &size);
+	    return !size;
+	}
 
-    Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
-    if (proc != NULL) {
-	return !proc(objPtr);
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (proc != NULL) {
+	    return !proc(objPtr);
+	}
+	(void)TclGetString(objPtr);
     }
-    (void)TclGetString(objPtr);
     return !objPtr->length;
 }
 
