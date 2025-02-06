@@ -52,12 +52,16 @@ extern "C" {
 #if TCL_MAJOR_VERSION != 9
 #   error "This header-file is for Tcl 9 only"
 #endif
-#define TCL_MINOR_VERSION   1
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#if !defined(TCL_MINOR_VERSION)
+#   define TCL_MINOR_VERSION   1
+#endif
+#if TCL_MINOR_VERSION == 1
+#   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#   define TCL_RELEASE_SERIAL  0
 
-#define TCL_VERSION	    "9.1"
-#define TCL_PATCH_LEVEL	    "9.1a0"
+#   define TCL_VERSION	    "9.1"
+#   define TCL_PATCH_LEVEL	    "9.1a0"
+#endif
 
 #if defined(RC_INVOKED)
 /*
