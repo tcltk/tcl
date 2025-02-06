@@ -177,14 +177,14 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
     cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.3.7", NULL);
+    return Tcl_PkgProvideEx(interp, "registry", "1.4a0", NULL);
 }
 #if TCL_MAJOR_VERSION < 9
 int
@@ -1207,12 +1207,6 @@ RecursiveDeleteKey(
     Tcl_DString subkey;
     HKEY hKey;
     REGSAM saveMode = mode;
-    static int checkExProc = 0;
-    typedef LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD);
-    static regDeleteKeyExProc regDeleteKeyEx = (regDeleteKeyExProc) NULL;
-				/* Really RegDeleteKeyExW() but that's not
-				 * available on all versions of Windows
-				 * supported by Tcl. */
 
     /*
      * Do not allow NULL or empty key name.
@@ -1241,22 +1235,8 @@ RecursiveDeleteKey(
 	result = RegEnumKeyExW(hKey, 0, (WCHAR *)Tcl_DStringValue(&subkey),
 		&size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
-	    /*
-	     * RegDeleteKeyEx doesn't exist on non-64bit XP platforms, so we
-	     * can't compile with it in. We need to check for it at runtime
-	     * and use it if we find it.
-	     */
-
-	    if (mode && !checkExProc) {
-		HMODULE handle;
-
-		checkExProc = 1;
-		handle = GetModuleHandleW(L"ADVAPI32");
-		regDeleteKeyEx = (regDeleteKeyExProc) (void *)
-			GetProcAddress(handle, "RegDeleteKeyExW");
-	    }
-	    if (mode && regDeleteKeyEx) {
-		result = regDeleteKeyEx(startKey, keyName, mode, 0);
+	    if (mode) {
+		result = RegDeleteKeyExW(startKey, keyName, mode, 0);
 	    } else {
 		result = RegDeleteKeyW(startKey, keyName);
 	    }
