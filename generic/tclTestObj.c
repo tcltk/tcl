@@ -46,6 +46,7 @@ static Tcl_ObjCmdProc	TestlistobjCmd;
 static Tcl_ObjCmdProc	TestobjCmd;
 static Tcl_ObjCmdProc	TeststringobjCmd;
 static Tcl_ObjCmdProc	TestbigdataCmd;
+static Tcl_ObjCmdProc	TestisemptyCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -132,6 +133,8 @@ TclObjTest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testisempty", TestisemptyCmd,
 	    NULL, NULL);
     if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
 	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
@@ -1828,6 +1831,21 @@ CheckIfVarUnset(
     return 0;
 }
 
+/*
+ * Throw-away illustrative case to illustrate Tcl_IsEmpty bug
+ * No error checks etc...
+ */
+static int
+TestisemptyCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_IsEmpty(objv[1])));
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c
