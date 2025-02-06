@@ -1390,7 +1390,7 @@ Tcl_AppendObjToObj(
     }
 
     if (TclIsPureByteArray(appendObjPtr)
-	    && (TclIsPureByteArray(objPtr) || Tcl_IsEmpty(objPtr))) {
+	    && (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)) {
 	/*
 	 * Both bytearray objects are pure, so the second internal bytearray value
 	 * can be appended to the first, with no need to modify the "bytes" field.
@@ -4384,10 +4384,10 @@ Tcl_IsEmpty(
     Tcl_Obj *objPtr)
 {
     if (objPtr == NULL) {
-	return -1;
+	Tcl_Panic("%s: objPtr is NULL", "Tcl_IsEmpty");
     }
-    if (objPtr->bytes && !objPtr->length) {
-	return 1;
+    if (objPtr->bytes) {
+	return !objPtr->length;
     }
     if (TclHasInternalRep(objPtr, &tclDictType)) {
 	/* Since "dict" doesn't have a lengthProc */
