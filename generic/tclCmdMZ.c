@@ -3337,57 +3337,38 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
-	"-nobackslashes", "-nocommands", "-novariables",
-	"-backslashes", "-commands", "-variables", NULL
+	"-backslashes", "-commands", "-variables",
+	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
-    enum {
-	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS,
-	SUBST_BACKSLASHES, SUBST_COMMANDS, SUBST_VARS
-    } optionIndex;
-    int i, flags = TCL_SUBST_ALL;
-    int positive = 0, negative = 0;
+    static const int optionFlags[] = {
+	TCL_SUBST_BACKSLASHES,		/* -backslashes */
+	TCL_SUBST_COMMANDS,		/* -commands */
+	TCL_SUBST_VARIABLES,		/* -variables */
+	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
+	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
+	TCL_SUBST_VARIABLES   << 16	/* -novariables */
+    };
+    int flags = numOpts ? 0 : TCL_SUBST_ALL;
 
-    for (i = 0; i < numOpts; i++) {
+    for (Tcl_Size i = 0; i < numOpts; i++) {
+	int optionIndex;
+
 	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (optionIndex <= SUBST_NOVARS) {
-	    negative = 1;
-	} else if (positive == 0) {
-	    positive = 1;
-	    /* Swap default at the first positive switch only */
-	    flags = 0;
+	flags |= optionFlags[optionIndex];
+    }
+    if ((flags & TCL_SUBST_ALL) && (flags & (TCL_SUBST_ALL << 16))) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"cannot combine positive and negative options", -1));
 	}
-	if (positive && negative) {
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot combine positive and negative options", -1));
-	    }
-	    return TCL_ERROR;
-	}
-	switch (optionIndex) {
-	case SUBST_NOBACKSLASHES:
-	    flags &= ~TCL_SUBST_BACKSLASHES;
-	    break;
-	case SUBST_NOCOMMANDS:
-	    flags &= ~TCL_SUBST_COMMANDS;
-	    break;
-	case SUBST_NOVARS:
-	    flags &= ~TCL_SUBST_VARIABLES;
-	    break;
-	case SUBST_BACKSLASHES:
-	    flags |= TCL_SUBST_BACKSLASHES;
-	    break;
-	case SUBST_COMMANDS:
-	    flags |= TCL_SUBST_COMMANDS;
-	    break;
-	case SUBST_VARS:
-	    flags |= TCL_SUBST_VARIABLES;
-	    break;
-	default:
-	    Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
-	}
+	return TCL_ERROR;
+    }
+    if (flags >> 16) {
+	/* mask default flags using negative options */
+	flags = TCL_SUBST_ALL & ~(flags >> 16);
     }
     *flagPtr = flags;
     return TCL_OK;
@@ -3414,8 +3395,8 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-nobackslashes? ?-nocommands? ?-novariables? "
-		"?-backslashes? ?-commands? ?-variables? string");
+		"?-backslashes? ?-commands? ?-variables? "
+		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
 
