@@ -13,7 +13,7 @@
 package require Tcl 8.5
 package require tcltest 2.5
 namespace import tcltest::*
-configure {*}$argv -testdir [file dir [info script]]
+configure -testdir [file normalize [file dirname [info script]]] {*}$argv
 set ErrorOnFailures [info exists env(ERROR_ON_FAILURES)]
 unset -nocomplain env(ERROR_ON_FAILURES)
 if {[runAllTests] && $ErrorOnFailures} {exit 1}
