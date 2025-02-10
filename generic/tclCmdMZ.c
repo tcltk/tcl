@@ -3359,14 +3359,14 @@ TclSubstOptions(
 	}
 	flags |= optionFlags[optionIndex];
     }
-    if ((flags & TCL_SUBST_ALL) && (flags & (TCL_SUBST_ALL << 16))) {
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot combine positive and negative options", -1));
+    if (flags >> 16) {			/* negative options specified */
+	if (flags & 0xFFFF) {		/* positive options specified too */
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cannot combine positive and negative options", -1));
+	    }
+	    return TCL_ERROR;
 	}
-	return TCL_ERROR;
-    }
-    if (flags >> 16) {
 	/* mask default flags using negative options */
 	flags = TCL_SUBST_ALL & ~(flags >> 16);
     }
