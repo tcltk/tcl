@@ -3337,31 +3337,35 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
-	"-nobackslashes", "-nocommands", "-novariables",
-	"-backslashes", "-commands", "-variables", NULL
+	"-backslashes", "-commands", "-variables",
+	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
-    enum {
-	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS,
-	SUBST_BACKSLASHES, SUBST_COMMANDS, SUBST_VARS
-    } optionIndex;
     static const int optionFlags[] = {
-	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES
+	TCL_SUBST_BACKSLASHES,		/* -backslashes */
+	TCL_SUBST_COMMANDS,		/* -commands */
+	TCL_SUBST_VARIABLES,		/* -variables */
+	TCL_SUBST_BACKSLASHES << 16,	/* -nobackslashes */
+	TCL_SUBST_COMMANDS    << 16,	/* -nocommands */
+	TCL_SUBST_VARIABLES   << 16	/* -novariables */
     };
-    int i, flags = TCL_SUBST_ALL;
+    int flags = numOpts ? 0 : TCL_SUBST_ALL;
 
-    for (i = 0; i < numOpts; i++) {
+    for (Tcl_Size i = 0; i < numOpts; i++) {
+	int optionIndex;
+
 	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (optionIndex <= SUBST_NOVARS) {	/* negative option */
-	    flags &= ~optionFlags[optionIndex];
-	} else {				/* positive option */
-	    /* Swap default at the first positive switch only */
-	    if (!i) {
-		flags = 0;
-	    }
-	    flags |= optionFlags[optionIndex - SUBST_BACKSLASHES];
+	flags |= optionFlags[optionIndex];
+    }
+    if (flags >> 16) {			/* negative options specified */
+	if (flags & 0xFFFF) {		/* positive options specified too */
+	    /* mask positive flags using negative options */
+	    flags &= 0xFFFF & ~(flags >> 16);
+	} else {
+	    /* mask default flags using negative options */
+	    flags = TCL_SUBST_ALL & ~(flags >> 16);
 	}
     }
     *flagPtr = flags;
@@ -3389,8 +3393,8 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-nobackslashes? ?-nocommands? ?-novariables? "
-		"?-backslashes? ?-commands? ?-variables? string");
+		"?-backslashes? ?-commands? ?-variables? "
+		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
 
