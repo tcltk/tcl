@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, writeFile \- standard library of Tcl procedures
+auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_nonwordchars, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, tcl_wordchars, writeFile \- standard library of Tcl procedures
 .SH SYNOPSIS
 .nf
 \fBauto_execok \fIcmd\fR
@@ -473,8 +473,7 @@ These variables are only used in the \fBtcl_endOfWord\fR,
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a non-word character. The default value is
-.QW "\\W" .
+considered to be a non-word character. The default value is \fB\eW\fR.
 .\" VARIABLE: tcl_wordchars
 .TP
 \fBtcl_wordchars\fR
@@ -482,8 +481,7 @@ considered to be a non-word character. The default value is
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a word character. The default value is
-.QW "\\w" .
+considered to be a word character. The default value is \fB\ew\fR.
 .SH "SEE ALSO"
 env(n), info(n), re_syntax(n)
 .SH KEYWORDS
