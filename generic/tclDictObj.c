@@ -150,19 +150,24 @@ const Tcl_ObjType tclDictType = {
     TCL_OBJTYPE_V0
 };
 
-#define DictSetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
-	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
-	ir.twoPtrValue.ptr2 = NULL;                                     \
-	Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);		\
-    } while (0)
+static inline void
+DictSetInternalRep(
+    Tcl_Obj *objPtr,
+    Dict *dictRepPtr)
+{
+    TclSetSinglePtrInternalRep(objPtr, &tclDictType, dictRepPtr);
+}
 
-#define DictGetInternalRep(objPtr, dictRepPtr)				\
-    do {                                                                \
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &tclDictType);		\
-	(dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;	\
+static inline Dict *
+TclDictGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (Dict *) TclGetSinglePtrInternalRep(objPtr, &tclDictType);
+}
+
+#define DictGetInternalRep(objPtr, dictRepPtr) \
+    do {								\
+	(dictRepPtr) = TclDictGetInternalRep(objPtr);			\
     } while (0)
 
 /*

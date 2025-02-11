@@ -211,9 +211,8 @@ static inline ArithSeries *
 ArithSeriesGetInternalRep(
     Tcl_Obj *objPtr)
 {
-    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr,
+    return (ArithSeries *) TclGetSinglePtrInternalRep(objPtr,
 	    &arithSeriesType);
-    return irPtr ? (ArithSeries *) irPtr->twoPtrValue.ptr1 : NULL;
 }
 
 /*
@@ -390,9 +389,7 @@ DupArithSeriesInternalRep(
 	    srcPtr->internalRep.twoPtrValue.ptr1;
 
     srcRepPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = srcRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &arithSeriesType;
+    TclSetSinglePtrInternalRep(copyPtr, &arithSeriesType, srcRepPtr);
 }
 
 /*
@@ -483,9 +480,8 @@ NewArithSeriesInt(
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
-    arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
-    arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &arithSeriesType;
+    TclSetSinglePtrInternalRep(arithSeriesObj, &arithSeriesType,
+	    arithSeriesRepPtr);
     if (length > 0) {
 	Tcl_InvalidateStringRep(arithSeriesObj);
     }
@@ -539,9 +535,8 @@ NewArithSeriesDbl(
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
     arithSeriesRepPtr->precision = precision;
-    arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
-    arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &arithSeriesType;
+    TclSetSinglePtrInternalRep(arithSeriesObj, &arithSeriesType,
+	    arithSeriesRepPtr);
 
     if (length > 0) {
 	Tcl_InvalidateStringRep(arithSeriesObj);

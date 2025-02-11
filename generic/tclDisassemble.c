@@ -45,19 +45,29 @@ static const Tcl_ObjType instNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define InstNameSetInternalRep(objPtr, inst) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	ir.wideValue = (inst);						\
-	Tcl_StoreInternalRep((objPtr), &instNameType, &ir);		\
-    } while (0)
+static inline void
+InstNameSetInternalRep(
+    Tcl_Obj *objPtr,
+    unsigned char inst)
+{
+    Tcl_ObjInternalRep ir;
+    ir.wideValue = inst;
+    Tcl_StoreInternalRep(objPtr, &instNameType, &ir);
+}
+
+static inline unsigned char
+TclInstNameGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr,
+	    &instNameType);
+    assert(irPtr != NULL);
+    return UCHAR(irPtr->wideValue);
+}
 
 #define InstNameGetInternalRep(objPtr, inst) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &instNameType);		\
-	assert(irPtr != NULL);						\
-	(inst) = irPtr->wideValue;					\
+	(inst) = TclInstNameGetInternalRep(objPtr);			\
     } while (0)
 
 /*

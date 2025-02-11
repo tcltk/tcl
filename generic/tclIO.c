@@ -343,20 +343,25 @@ static const Tcl_ObjType chanObjType = {
     TCL_OBJTYPE_V0
 };
 
-#define ChanSetInternalRep(objPtr, resPtr)					\
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	(resPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (resPtr);					\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
-    } while (0)
+static inline void
+ChanSetInternalRep(
+    Tcl_Obj *objPtr,
+    ResolvedChanName *resPtr)
+{
+    resPtr->refCount++;
+    TclSetSinglePtrInternalRep(objPtr, &chanObjType, resPtr);
+}
 
-#define ChanGetInternalRep(objPtr, resPtr)					\
+static inline ResolvedChanName *
+TclChanGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (ResolvedChanName *) TclGetSinglePtrInternalRep(objPtr,
+	    &chanObjType);
+}
+#define ChanGetInternalRep(objPtr, resPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
-	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(resPtr) = TclChanGetInternalRep(objPtr);			\
     } while (0)
 
 #define BUSY_STATE(st, fl) \

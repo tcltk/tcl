@@ -93,22 +93,6 @@ static const Tcl_ObjType ensembleCmdType = {
     TCL_OBJTYPE_V0
 };
 
-#define ECRSetInternalRep(objPtr, ecRepPtr) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
-    } while (0)
-
-#define ECRGetInternalRep(objPtr, ecRepPtr) \
-    do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);	\
-	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)				\
-		irPtr->twoPtrValue.ptr1 : NULL;				\
-    } while (0)
-
 /*
  * The internal rep for caching ensemble subcommand lookups and spelling
  * corrections.
@@ -124,6 +108,30 @@ typedef struct {
     Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand hash
 				 * table. */
 } EnsembleCmdRep;
+
+/* 
+ * How to store an EnsembleCmdRep in a Tcl_Obj and retrieve it.
+ */
+
+static inline void
+ECRSetInternalRep(
+    Tcl_Obj *objPtr,
+    EnsembleCmdRep *ecRepPtr)
+{
+    TclSetSinglePtrInternalRep(objPtr, &ensembleCmdType, ecRepPtr);
+}
+
+static inline EnsembleCmdRep *
+TclECRGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (EnsembleCmdRep *) TclGetSinglePtrInternalRep(objPtr,
+	    &ensembleCmdType);
+}
+#define ECRGetInternalRep(objPtr, ecRepPtr) \
+    do {								\
+	(ecRepPtr) = TclECRGetInternalRep(objPtr);			\
+    } while (0)
 
 /*
  *----------------------------------------------------------------------

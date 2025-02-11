@@ -861,14 +861,14 @@ IsCryptHeaderValid(
      * reported as a corruption error instead of incorrect password.
      */
     int dosTime = ToDosTime(z->timestamp);
-    if (cryptHeader[11] == (unsigned char)(dosTime >> 8)) {
+    if (cryptHeader[11] == UCHAR(dosTime >> 8)) {
 	/* Infozip style - Tested with test-password.zip */
 	return 1;
     }
     /* DOS time did not match, may be CRC does */
     if (z->crc32) {
 	/* Pkware style - Tested with test-password2.zip */
-	return (cryptHeader[11] == (unsigned char)(z->crc32 >> 24));
+	return (cryptHeader[11] == UCHAR(z->crc32 >> 24));
     }
 
     /* No CRC, no way to verify. Assume valid */

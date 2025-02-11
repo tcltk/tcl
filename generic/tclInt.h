@@ -4567,14 +4567,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to grow Tcl_Token arrays. They use the same
- * growth algorithm as used in tclStringObj.c for growing strings. The ANSI C
- * "prototype" for this macro is:
- *
- * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
- *				int available, int append,
- *				Tcl_Token *staticPtr);
- * MODULE_SCOPE void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
- *				int append);
+ * growth algorithm as used in tclStringObj.c for growing strings.
  *----------------------------------------------------------------
  */
 
@@ -4594,36 +4587,33 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #endif
 
 /* TODO - code below does not check for integer overflow */
-#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
-    do {								\
-	Tcl_Size _needed = (used) + (append);				\
-	if (_needed > (available)) {					\
-	    Tcl_Size allocated = 2 * _needed;				\
-	    Tcl_Token *oldPtr = (tokenPtr);				\
-	    Tcl_Token *newPtr;						\
-	    if (oldPtr == (staticPtr)) {				\
-		oldPtr = NULL;						\
-	    }								\
-	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
-		    allocated * sizeof(Tcl_Token));			\
-	    if (newPtr == NULL) {					\
-		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
-		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
-			allocated * sizeof(Tcl_Token));			\
-	    }								\
-	    (available) = allocated;					\
-	    if (oldPtr == NULL) {					\
-		memcpy(newPtr, staticPtr,				\
-			(used) * sizeof(Tcl_Token));			\
-	    }								\
-	    (tokenPtr) = newPtr;					\
-	}								\
-    } while (0)
-
-#define TclGrowParseTokenArray(parsePtr, append)			\
-    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
-	    (parsePtr)->tokensAvailable, (append),			\
-	    (parsePtr)->staticTokens)
+static inline void
+TclGrowParseTokenArray(
+    Tcl_Parse *parsePtr,
+    Tcl_Size append)
+{
+    Tcl_Size needed = parsePtr->numTokens + append;
+    if (needed > parsePtr->tokensAvailable) {
+	Tcl_Size allocated = 2 * needed;
+	Tcl_Token *oldPtr = parsePtr->tokenPtr;
+	if (oldPtr == parsePtr->staticTokens) {
+	    oldPtr = NULL;
+	}
+	Tcl_Token *newPtr = (Tcl_Token *) Tcl_AttemptRealloc((char *) oldPtr,
+		allocated * sizeof(Tcl_Token));
+	if (newPtr == NULL) {
+	    allocated = needed + append + TCL_MIN_TOKEN_GROWTH;
+	    newPtr = (Tcl_Token *) Tcl_Realloc((char *) oldPtr,
+		    allocated * sizeof(Tcl_Token));
+	}
+	parsePtr->tokensAvailable = allocated;
+	if (oldPtr == NULL) {
+	    memcpy(newPtr, parsePtr->staticTokens,
+		    parsePtr->numTokens * sizeof(Tcl_Token));
+	}
+	parsePtr->tokenPtr = newPtr;
+    }
+}
 
 /*
  *----------------------------------------------------------------
@@ -4689,6 +4679,33 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
     ((objPtr)->typePtr == (type))
 #define TclFetchInternalRep(objPtr, type) \
     (TclHasInternalRep((objPtr), (type)) ? &(objPtr)->internalRep : NULL)
+
+/*
+ * Helpers for common case of an object type that has an internal
+ * representation that consists of a single pointer (and with ptr2 NULL).
+ * Doesn't do reference count management; caller should do that if needed.
+ */
+
+static inline void
+TclSetSinglePtrInternalRep(
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr,
+    void *ptr)
+{
+    Tcl_ObjInternalRep ir;
+    ir.twoPtrValue.ptr1 = ptr;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(objPtr, typePtr, &ir);
+}
+
+static inline void *
+TclGetSinglePtrInternalRep(
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr)
+{
+    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, typePtr);
+    return irPtr ? irPtr->twoPtrValue.ptr1 : NULL;
+}
 
 /*
  *----------------------------------------------------------------

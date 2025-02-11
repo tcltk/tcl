@@ -276,19 +276,23 @@ static const Tcl_ObjType encodingType = {
     TCL_OBJTYPE_V0
 };
 
-#define EncodingSetInternalRep(objPtr, encoding) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (encoding);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);		\
-    } while (0)
+static inline void
+EncodingSetInternalRep(
+    Tcl_Obj *objPtr,
+    Tcl_Encoding encoding)
+{
+    TclSetSinglePtrInternalRep(objPtr, &encodingType, encoding);
+}
 
+static inline Tcl_Encoding
+TclEncodingGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (Tcl_Encoding) TclGetSinglePtrInternalRep(objPtr, &encodingType);
+}
 #define EncodingGetInternalRep(objPtr, encoding) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep ((objPtr), &encodingType);		\
-	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL; \
+	(encoding) = TclEncodingGetInternalRep(objPtr);			\
     } while (0)
 
 /*

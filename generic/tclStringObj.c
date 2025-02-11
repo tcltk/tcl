@@ -571,7 +571,7 @@ Tcl_GetUniChar(
 	    return -1;
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    return (unsigned char) objPtr->bytes[index];
+	    return UCHAR(objPtr->bytes[index]);
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);

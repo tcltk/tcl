@@ -1971,13 +1971,12 @@ CompileCmdCompileProc(
     switch (envPtr->atCmdStart) {
     case 0:
 	unwind = tclInstructionTable[INST_START_CMD].numBytes;
-	TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-	incrOffset = envPtr->codeNext - envPtr->codeStart;
-	TclEmitInt4(0, envPtr);
+	incrOffset = CurrentOffset(envPtr) + 5;
+	TclEmitInstInt44(INST_START_CMD, 0, 0, envPtr);
 	break;
     case 1:
 	if (envPtr->codeNext > envPtr->codeStart) {
-	    incrOffset = envPtr->codeNext - 4 - envPtr->codeStart;
+	    incrOffset = CurrentOffset(envPtr) - 4;
 	}
 	break;
     case 2:
@@ -4249,8 +4248,7 @@ TclEmitInvoke(
 	TclEmitOpcode(INST_RETURN_STK, envPtr);
 	break;
     case INST_INVOKE_REPLACE:
-	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
-	TclEmitInt1(arg2, envPtr);
+	TclEmitInstInt41(INST_INVOKE_REPLACE, arg1, arg2, envPtr);
 	TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
 	break;
     }

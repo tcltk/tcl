@@ -82,9 +82,9 @@ const AuxDataType tclJumptableInfoType = {
 #define OP1(name,val)	TclEmitInstInt1(INST_##name,(val),envPtr)
 #define OP4(name,val)	TclEmitInstInt4(INST_##name,(val),envPtr)
 #define OP14(name,val1,val2) \
-    TclEmitInstInt1(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
+    TclEmitInstInt14(INST_##name,(val1),(val2),envPtr)
 #define OP44(name,val1,val2) \
-    TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
+    TclEmitInstInt44(INST_##name,(val1),(val2),envPtr)
 #define PUSH(str) \
     PushStringLiteral(envPtr, str)
 #define JUMP4(name,var) \

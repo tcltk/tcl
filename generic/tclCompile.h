@@ -529,19 +529,19 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (codePtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
-    } while (0)
+static inline void
+ByteCodeSetInternalRep(
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr,
+    ByteCode *codePtr)
+{
+    TclSetSinglePtrInternalRep(objPtr, typePtr, codePtr);
+}
 
 #define ByteCodeGetInternalRep(objPtr, typePtr, codePtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), (typePtr));		\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(codePtr) = (ByteCode *)					\
+		TclGetSinglePtrInternalRep((objPtr), (typePtr));	\
     } while (0)
 
 /*
@@ -1342,7 +1342,7 @@ TclStoreInt1AtPtr(
     int i,
     unsigned char *p)
 {
-    *p = (unsigned char) ((unsigned int) i);
+    *p = UCHAR((unsigned int) i);
 }
 
 static inline void
@@ -1350,10 +1350,10 @@ TclStoreInt4AtPtr(
     int i,
     unsigned char *p)
 {
-    p[0] = (unsigned char) ((unsigned int) i >> 24);
-    p[1] = (unsigned char) ((unsigned int) i >> 16);
-    p[2] = (unsigned char) ((unsigned int) i >>  8);
-    p[3] = (unsigned char) ((unsigned int) i      );
+    p[0] = UCHAR((unsigned int) i >> 24);
+    p[1] = UCHAR((unsigned int) i >> 16);
+    p[2] = UCHAR((unsigned int) i >>  8);
+    p[3] = UCHAR((unsigned int) i      );
 }
 
 /*
@@ -1439,6 +1439,86 @@ TclEmitInstInt4(
     *ptr = op;
     TclStoreInt4AtPtr(i, ptr + 1);
     envPtr->codeNext += 5;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt11(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 3 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt1AtPtr(i, ptr + 1);
+    TclStoreInt1AtPtr(j, ptr + 2);
+    envPtr->codeNext += 3;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt14(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 6 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt1AtPtr(i, ptr + 1);
+    TclStoreInt4AtPtr(j, ptr + 2);
+    envPtr->codeNext += 6;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt41(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 6 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt4AtPtr(i, ptr + 1);
+    TclStoreInt1AtPtr(j, ptr + 5);
+    envPtr->codeNext += 6;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt44(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    unsigned char *ptr;
+    if (envPtr->codeNext + 9 > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    ptr = envPtr->codeNext;
+    *ptr = op;
+    TclStoreInt4AtPtr(i, ptr + 1);
+    TclStoreInt4AtPtr(j, ptr + 5);
+    envPtr->codeNext += 9;
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
 }

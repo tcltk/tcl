@@ -437,8 +437,7 @@ Tcl_ReadObjCmd(
 	Tcl_Obj *returnOptsPtr = NULL;
 	if (TclChannelGetBlockingMode(chan)) {
 	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
-		    resultPtr);
+	    TclDictPut(NULL, returnOptsPtr, "-data", resultPtr);
 	} else {
 	    Tcl_DecrRefCount(resultPtr);
 	}

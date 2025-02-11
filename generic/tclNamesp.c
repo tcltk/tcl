@@ -136,21 +136,21 @@ static const Tcl_ObjType nsNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define NsNameSetInternalRep(objPtr, nnPtr) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	(nnPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (nnPtr);					\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &nsNameType, &ir);		\
-    } while (0)
+static inline void
+NsNameSetInternalRep(
+    Tcl_Obj *objPtr,
+    ResolvedNsName *nnPtr)
+{
+    nnPtr->refCount++;
+    TclSetSinglePtrInternalRep(objPtr, &nsNameType, nnPtr);
+}
 
-#define NsNameGetInternalRep(objPtr, nnPtr) \
-    do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &nsNameType);		\
-	(nnPtr) = irPtr ? (ResolvedNsName *) irPtr->twoPtrValue.ptr1 : NULL; \
-    } while (0)
+static inline ResolvedNsName *
+NsNameGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (ResolvedNsName *) TclGetSinglePtrInternalRep(objPtr, &nsNameType);
+}
 
 /*
  * Array of values describing how to implement each standard subcommand of the
@@ -2994,9 +2994,7 @@ GetNamespaceFromObj(
 				 * namespace. */
     Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
 {
-    ResolvedNsName *resNamePtr;
-
-    NsNameGetInternalRep(objPtr, resNamePtr);
+    ResolvedNsName *resNamePtr = NsNameGetInternalRep(objPtr);
     if (resNamePtr) {
 	Namespace *nsPtr, *refNsPtr;
 
@@ -3016,7 +3014,7 @@ GetNamespaceFromObj(
 	Tcl_StoreInternalRep(objPtr, &nsNameType, NULL);
     }
     if (SetNsNameFromAny(interp, objPtr) == TCL_OK) {
-	NsNameGetInternalRep(objPtr, resNamePtr);
+	resNamePtr = NsNameGetInternalRep(objPtr);
 	assert(resNamePtr != NULL);
 	*nsPtrPtr = (Tcl_Namespace *) resNamePtr->nsPtr;
 	return TCL_OK;
@@ -4817,9 +4815,7 @@ FreeNsNameInternalRep(
     Tcl_Obj *objPtr)		/* nsName object with internal representation
 				 * to free. */
 {
-    ResolvedNsName *resNamePtr;
-
-    NsNameGetInternalRep(objPtr, resNamePtr);
+    ResolvedNsName *resNamePtr = NsNameGetInternalRep(objPtr);
     assert(resNamePtr != NULL);
 
     /*
@@ -4863,9 +4859,7 @@ DupNsNameInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    ResolvedNsName *resNamePtr;
-
-    NsNameGetInternalRep(srcPtr, resNamePtr);
+    ResolvedNsName *resNamePtr = NsNameGetInternalRep(srcPtr);
     assert(resNamePtr != NULL);
     NsNameSetInternalRep(copyPtr, resNamePtr);
 }

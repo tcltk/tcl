@@ -1537,24 +1537,27 @@ TclObjBeingDeleted(
  *----------------------------------------------------------------------
  */
 
-#define SetDuplicateObj(dupPtr, objPtr)					\
-    {									\
-	const Tcl_ObjType *typePtr = (objPtr)->typePtr;			\
-	const char *bytes = (objPtr)->bytes;				\
-	if (bytes) {							\
-	    TclInitStringRep((dupPtr), bytes, (objPtr)->length);	\
-	} else {							\
-	    (dupPtr)->bytes = NULL;					\
-	}								\
-	if (typePtr) {							\
-	    if (typePtr->dupIntRepProc) {				\
-		typePtr->dupIntRepProc((objPtr), (dupPtr));		\
-	    } else {							\
-		(dupPtr)->internalRep = (objPtr)->internalRep;		\
-		(dupPtr)->typePtr = typePtr;				\
-	    }								\
-	}								\
+static inline void
+SetDuplicateObj(
+    Tcl_Obj *dupPtr,
+    Tcl_Obj *objPtr)
+{
+    const Tcl_ObjType *typePtr = objPtr->typePtr;
+    const char *bytes = objPtr->bytes;
+    if (bytes) {
+	TclInitStringRep(dupPtr, bytes, objPtr->length);
+    } else {
+	dupPtr->bytes = NULL;
     }
+    if (typePtr) {
+	if (typePtr->dupIntRepProc) {
+	    typePtr->dupIntRepProc(objPtr, dupPtr);
+	} else {
+	    dupPtr->internalRep = objPtr->internalRep;
+	    dupPtr->typePtr = typePtr;
+	}
+    }
+}
 
 Tcl_Obj *
 Tcl_DuplicateObj(

@@ -89,14 +89,16 @@ typedef struct {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
-#define SETPATHOBJ(pathPtr,fsPathPtr) \
-	do {							\
-		Tcl_ObjInternalRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
-	} while (0)
+static inline void
+SetPathObj(
+    Tcl_Obj *pathPtr,
+    FsPath *fsPathPtr)
+{
+    TclSetSinglePtrInternalRep(pathPtr, &fsPathType, fsPathPtr);
+}
+
+#define PATHOBJ(pathPtr) ((FsPath *) TclGetSinglePtrInternalRep((pathPtr), &fsPathType))
+#define SETPATHOBJ(pathPtr,fsPathPtr) SetPathObj((pathPtr), (fsPathPtr))
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
 
 /*
@@ -1597,8 +1599,6 @@ Tcl_FSGetTranslatedPath(
 
 	    Tcl_Obj *translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
 		    srcFsPathPtr->cwdPtr);
-	    Tcl_ObjInternalRep *translatedCwdIrPtr;
-
 	    if (translatedCwdPtr == NULL) {
 		return NULL;
 	    }
@@ -1606,8 +1606,7 @@ Tcl_FSGetTranslatedPath(
 	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
 		    &srcFsPathPtr->normPathPtr);
 	    Tcl_IncrRefCount(srcFsPathPtr->translatedPathPtr = retObj);
-	    translatedCwdIrPtr = TclFetchInternalRep(translatedCwdPtr, &fsPathType);
-	    if (translatedCwdIrPtr) {
+	    if (TclHasInternalRep(translatedCwdPtr, &fsPathType)) {
 		srcFsPathPtr->filesystemEpoch
 			= PATHOBJ(translatedCwdPtr)->filesystemEpoch;
 	    } else {

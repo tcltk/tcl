@@ -252,20 +252,25 @@ static const Tcl_ObjType localVarNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define LocalSetInternalRep(objPtr, index, namePtr)			\
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	Tcl_Obj *ptr = (namePtr);					\
-	if (ptr) {Tcl_IncrRefCount(ptr);}				\
-	ir.twoPtrValue.ptr1 = ptr;					\
-	ir.twoPtrValue.ptr2 = INT2PTR(index);				\
-	Tcl_StoreInternalRep((objPtr), &localVarNameType, &ir);		\
-    } while (0)
+static inline void
+LocalSetInternalRep(
+    Tcl_Obj *objPtr,
+    Tcl_Size index,
+    Tcl_Obj *namePtr)
+{
+    Tcl_ObjInternalRep ir;
+    if (namePtr) {
+	Tcl_IncrRefCount(namePtr);
+    }
+    ir.twoPtrValue.ptr1 = namePtr;
+    ir.twoPtrValue.ptr2 = INT2PTR(index);
+    Tcl_StoreInternalRep(objPtr, &localVarNameType, &ir);
+}
 
-#define LocalGetInternalRep(objPtr, index, name)			\
+#define LocalGetInternalRep(objPtr, index, name) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);	\
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep((objPtr),	\
+		&localVarNameType);					\
 	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;	\
 	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE; \
     } while (0)
@@ -276,22 +281,28 @@ static const Tcl_ObjType parsedVarNameType = {
     TCL_OBJTYPE_V0
 };
 
-#define ParsedSetInternalRep(objPtr, arrayPtr, elem)			\
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	Tcl_Obj *ptr1 = (arrayPtr);					\
-	Tcl_Obj *ptr2 = (elem);						\
-	if (ptr1) {Tcl_IncrRefCount(ptr1);}				\
-	if (ptr2) {Tcl_IncrRefCount(ptr2);}				\
-	ir.twoPtrValue.ptr1 = ptr1;					\
-	ir.twoPtrValue.ptr2 = ptr2;					\
-	Tcl_StoreInternalRep((objPtr), &parsedVarNameType, &ir);	\
-    } while (0)
+static inline void
+ParsedSetInternalRep(
+    Tcl_Obj *objPtr,
+    Tcl_Obj *arrayPtr,
+    Tcl_Obj *elem)
+{
+    Tcl_ObjInternalRep ir;
+    if (arrayPtr) {
+	Tcl_IncrRefCount(arrayPtr);
+    }
+    if (elem) {
+	Tcl_IncrRefCount(elem);
+    }
+    ir.twoPtrValue.ptr1 = arrayPtr;
+    ir.twoPtrValue.ptr2 = elem;
+    Tcl_StoreInternalRep(objPtr, &parsedVarNameType, &ir);
+}
 
-#define ParsedGetInternalRep(objPtr, parsed, array, elem)		\
+#define ParsedGetInternalRep(objPtr, parsed, array, elem) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &parsedVarNameType);	\
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep((objPtr),	\
+		&parsedVarNameType);					\
 	(parsed) = (irPtr != NULL);					\
 	(array) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;	\
 	(elem) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\

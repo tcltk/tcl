@@ -527,8 +527,8 @@ TclCompileIncrCmd(
     if (isScalar) {	/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
-		TclEmitInt1(immValue, envPtr);
+		TclEmitInstInt11(INST_INCR_SCALAR1_IMM, localIndex, immValue,
+			envPtr);
 	    } else {
 		TclEmitInstInt1(INST_INCR_SCALAR1, localIndex,	envPtr);
 	    }
@@ -542,8 +542,8 @@ TclCompileIncrCmd(
     } else {			/* Simple array variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_ARRAY1_IMM, localIndex, envPtr);
-		TclEmitInt1(immValue, envPtr);
+		TclEmitInstInt11(INST_INCR_ARRAY1_IMM, localIndex, immValue,
+			envPtr);
 	    } else {
 		TclEmitInstInt1(INST_INCR_ARRAY1, localIndex,	envPtr);
 	    }
@@ -1029,8 +1029,7 @@ TclCompileLassignCmd(
      * Generate code to leave the rest of the list on the stack.
      */
 
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
+    TclEmitInstInt44(		INST_LIST_RANGE_IMM, idx, (int)TCL_INDEX_END, envPtr);
 
     return TCL_OK;
 }
@@ -1232,8 +1231,7 @@ TclCompileListCmd(
      */
 
     if (concat && numWords == 2) {
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,	envPtr);
+	TclEmitInstInt44(	INST_LIST_RANGE_IMM, 0, (int)TCL_INDEX_END, envPtr);
     }
     return TCL_OK;
 }
@@ -1332,8 +1330,7 @@ TclCompileLrangeCmd(
      */
 
     CompileWord(envPtr, listTokenPtr, interp, 1);
-    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
-    TclEmitInt4(		idx2,				envPtr);
+    TclEmitInstInt44(		INST_LIST_RANGE_IMM, idx1, idx2, envPtr);
     return TCL_OK;
 }
 
@@ -1376,15 +1373,15 @@ TclCompileLinsertCmd(
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
 
-    /* First operand is count of arguments */
-    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
     /*
-     * Second operand is bitmask
+     * First operand is count of arguments.
+     * Second operand is bitmask:
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
      *     indicating this is a pure insert
      */
-    TclEmitInt1(TCL_LREPLACE4_SINGLE_INDEX, envPtr);
+    TclEmitInstInt41(INST_LREPLACE4, parsePtr->numWords - 1, TCL_LREPLACE4_SINGLE_INDEX,
+	    envPtr);
 
     return TCL_OK;
 }
@@ -1430,13 +1427,12 @@ TclCompileLreplaceCmd(
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
 
-    /* First operand is count of arguments */
-    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
     /*
-     * Second operand is bitmask
+     * First operand is count of arguments.
+     * Second operand is bitmask:
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      */
-    TclEmitInt1(TCL_LREPLACE4_END_IS_LAST, envPtr);
+    TclEmitInstInt41(INST_LREPLACE4, parsePtr->numWords - 1, TCL_LREPLACE4_END_IS_LAST, envPtr);
 
     return TCL_OK;
 }
@@ -2469,8 +2465,7 @@ CompileReturnInternal(
     }
 
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
-    TclEmitInstInt4(op, code, envPtr);
-    TclEmitInt4(level, envPtr);
+    TclEmitInstInt44(op, code, level, envPtr);
 }
 
 void

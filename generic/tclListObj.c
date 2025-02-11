@@ -158,68 +158,103 @@ const Tcl_ObjType tclListType = {
     SetListFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V1(ListLength)
 };
+
+/*
+ *------------------------------------------------------------------------
+ * Functions to manipulate the List internal rep
+ *------------------------------------------------------------------------
+ */
 
-/* Macros to manipulate the List internal rep */
-#define ListRepIncrRefs(repPtr_) \
-    do {					\
-	(repPtr_)->storePtr->refCount++;	\
-	if ((repPtr_)->spanPtr) {		\
-	    (repPtr_)->spanPtr->refCount++;	\
-	}					\
-    } while (0)
+/* Increment the internal reference counts. */
+static inline void
+ListRepIncrRefs(
+    ListRep *repPtr)
+{
+    repPtr->storePtr->refCount++;
+    if (repPtr->spanPtr) {
+	repPtr->spanPtr->refCount++;
+    }
+}
 
 /* Returns number of free unused slots at the back of the ListRep's ListStore */
-#define ListRepNumFreeTail(repPtr_) \
-    ((repPtr_)->storePtr->numAllocated \
-     - ((repPtr_)->storePtr->firstUsed + (repPtr_)->storePtr->numUsed))
+static inline Tcl_Size
+ListRepNumFreeTail(
+    ListRep *repPtr)
+{
+    return repPtr->storePtr->numAllocated
+	     - (repPtr->storePtr->firstUsed + repPtr->storePtr->numUsed);
+}
 
 /* Returns number of free unused slots at the front of the ListRep's ListStore */
-#define ListRepNumFreeHead(repPtr_) ((repPtr_)->storePtr->firstUsed)
+static inline Tcl_Size
+ListRepNumFreeHead(
+    ListRep *repPtr)
+{
+    return repPtr->storePtr->firstUsed;
+}
 
 /* Returns a pointer to the slot corresponding to list index listIdx_ */
-#define ListRepSlotPtr(repPtr_, listIdx_) \
-    (&(repPtr_)->storePtr->slots[ListRepStart(repPtr_) + (listIdx_)])
+static inline Tcl_Obj **
+ListRepSlotPtr(
+    ListRep *repPtr,
+    Tcl_Size listIdx)
+{
+    return &repPtr->storePtr->slots[ListRepStart(repPtr) + listIdx];
+}
 
 /*
- * Macros to replace the internal representation in a Tcl_Obj. There are
- * subtle differences in each so make sure to use the right one to avoid
+ * Inline functions to replace the internal representation in a Tcl_Obj. There
+ * are subtle differences in each so make sure to use the right one to avoid
  * memory leaks, access to freed memory and the like.
- *
- * ListObjStompRep - assumes the Tcl_Obj internal representation can be
- * overwritten AND that the passed ListRep already has reference counts that
- * include the reference from the Tcl_Obj. Basically just copies the pointers
- * and sets the internal Tcl_Obj type to list
- *
- * ListObjOverwriteRep - like ListObjOverwriteRep but additionally
- * increments reference counts on the passed ListRep. Generally used when
- * the string representation of the Tcl_Obj is not to be modified.
- *
- * ListObjReplaceRepAndInvalidate - Like ListObjOverwriteRep but additionally
- * assumes the Tcl_Obj internal rep is valid (and possibly even same as
- * passed ListRep) and frees it first. Additionally invalidates the string
- * representation. Generally used when modifying a Tcl_Obj value.
  */
-#define ListObjStompRep(objPtr_, repPtr_)                              \
-    do {                                                               \
-	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
-	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
-	(objPtr_)->typePtr = &tclListType;                             \
-    } while (0)
 
-#define ListObjOverwriteRep(objPtr_, repPtr_) \
-    do {                                      \
-	ListRepIncrRefs(repPtr_);             \
-	ListObjStompRep(objPtr_, repPtr_);    \
-    } while (0)
+/*
+ * Assumes the Tcl_Obj internal representation can be overwritten AND that the
+ * passed ListRep already has reference counts that include the reference from
+ * the Tcl_Obj. Basically just copies the pointers and sets the internal
+ * Tcl_Obj type to list.
+ */
+static inline void
+ListObjStompRep(
+    Tcl_Obj *objPtr,
+    ListRep *repPtr)
+{
+    objPtr->internalRep.twoPtrValue.ptr1 = repPtr->storePtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = repPtr->spanPtr;
+    objPtr->typePtr = &tclListType;
+}
 
-#define ListObjReplaceRepAndInvalidate(objPtr_, repPtr_)           \
-    do {                                                           \
-	/* Note order important, don't use ListObjOverwriteRep! */ \
-	ListRepIncrRefs(repPtr_);                                  \
-	TclFreeInternalRep(objPtr_);                               \
-	TclInvalidateStringRep(objPtr_);                           \
-	ListObjStompRep(objPtr_, repPtr_);                         \
-    } while (0)
+/*
+ * Like ListObjStompRep() but additionally increments reference counts on the
+ * passed ListRep. Generally used when the string representation of the
+ * Tcl_Obj is not to be modified.
+ */
+static inline void
+ListObjOverwriteRep(
+    Tcl_Obj *objPtr,
+    ListRep *repPtr)
+{
+    ListRepIncrRefs(repPtr);
+    ListObjStompRep(objPtr, repPtr);
+}
+
+/*
+ * Like ListObjOverwriteRep() but additionally assumes the Tcl_Obj internal rep
+ * is valid (and possibly even same as passed ListRep) and frees it first.
+ * Additionally invalidates the string representation. Generally used when
+ * modifying a Tcl_Obj value.
+ */
+static inline void
+ListObjReplaceRepAndInvalidate(
+    Tcl_Obj *objPtr,
+    ListRep *repPtr)
+{
+    /* Note order important, don't use ListObjOverwriteRep()! */
+    ListRepIncrRefs(repPtr);
+    TclFreeInternalRep(objPtr);
+    TclInvalidateStringRep(objPtr);
+    ListObjStompRep(objPtr, repPtr);
+}
 
 /*
  *------------------------------------------------------------------------

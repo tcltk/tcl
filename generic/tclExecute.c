@@ -703,9 +703,8 @@ ReleaseDictIterator(
 {
     Tcl_DictSearch *searchPtr;
     Tcl_Obj *dictPtr;
-    const Tcl_ObjInternalRep *irPtr;
-
-    irPtr = TclFetchInternalRep(objPtr, &dictIteratorType);
+    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr,
+	    &dictIteratorType);
     assert(irPtr != NULL);
 
     /*

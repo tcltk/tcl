@@ -69,20 +69,24 @@ const Tcl_ObjType tclProcBodyType = {
     TCL_OBJTYPE_V0
 };
 
-#define ProcSetInternalRep(objPtr, procPtr) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	(procPtr)->refCount++;						\
-	ir.twoPtrValue.ptr1 = (procPtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
-    } while (0)
+static inline void
+ProcSetInternalRep(
+    Tcl_Obj *objPtr,
+    Proc *procPtr)
+{
+    procPtr->refCount++;
+    TclSetSinglePtrInternalRep(objPtr, &tclProcBodyType, procPtr);
+}
 
+static inline Proc *
+TclProcGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (Proc *) TclGetSinglePtrInternalRep(objPtr, &tclProcBodyType);
+}
 #define ProcGetInternalRep(objPtr, procPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);	\
-	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
+	(procPtr) = TclProcGetInternalRep(objPtr);			\
     } while (0)
 
 /*
@@ -120,19 +124,23 @@ static const Tcl_ObjType lambdaType = {
     TCL_OBJTYPE_V0
 };
 
-#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr) \
-    do {								\
-	Tcl_ObjInternalRep ir;						\
-	ir.twoPtrValue.ptr1 = (procPtr);				\
-	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
-	Tcl_IncrRefCount((nsObjPtr));					\
-	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);		\
-    } while (0)
+static inline void
+LambdaSetInternalRep(
+    Tcl_Obj *objPtr,
+    Proc *procPtr,
+    Tcl_Obj *nsObjPtr)
+{
+    Tcl_ObjInternalRep ir;
+    ir.twoPtrValue.ptr1 = procPtr;
+    ir.twoPtrValue.ptr2 = nsObjPtr;
+    Tcl_IncrRefCount(nsObjPtr);
+    Tcl_StoreInternalRep(objPtr, &lambdaType, &ir);
+}
 
 #define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &lambdaType);		\
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep((objPtr),	\
+		&lambdaType);						\
 	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;	\
 	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
     } while (0)
