@@ -4366,15 +4366,16 @@ ExtendUnicodeRepWithString(
  *
  * Tcl_IsEmpty --
  *
- *	Check whether the obj is empty.
+ *	Check whether the obj is the empty string.
  *
  * Results:
- *	-1 if the obj is NULL
  *	 1 if the obj is ""
  *   0 otherwise
  *
  * Side effects:
- *	String representation is generated if the obj has no lengthProc
+ *	If there is no other way to determine whethere the string
+ *	representation is the empty string, the string representation
+ *	is generated.
  *
  *----------------------------------------------------------------------
  */

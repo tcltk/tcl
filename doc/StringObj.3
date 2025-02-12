@@ -408,8 +408,8 @@ newly-created value whose ref count is zero.
 .PP
 The \fBTcl_IsEmpty\fR function returns 1 if \fIobjPtr\fR is the empty
 string, 0 otherwise.
-It doesn't generate the string representation (unless the
-type is unknown), so it can safely be called on lists with
+It doesn't generate the string representation (unless there
+is no other way to do it), so it can safely be called on lists with
 billions of elements, or any other data structure for which
 it is impossible or expensive to construct the string representation.
 .SH "REFERENCE COUNT MANAGEMENT"
