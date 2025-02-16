@@ -2354,7 +2354,7 @@ StoreStatData(
 	DOBJPUT(gid,	Tcl_NewWideIntObj((long)statPtr->st_gid));
 	DOBJPUT(size,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	DOBJPUT(block,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+	DOBJPUT(blocks,	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	DOBJPUT(blksize, Tcl_NewWideIntObj((long)statPtr->st_blksize));

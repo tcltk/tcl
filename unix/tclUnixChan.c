@@ -617,34 +617,31 @@ StatOpenFile(
      */
 
     TclNewObj(dictObj);
-#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, name, value)
+#define STORE_ELEM(name, value) TclDictPut(NULL, dictObj, #name, value)
 
-    STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));
-    STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
-    STORE_ELEM("nlink",   Tcl_NewWideIntObj((long) statBuf.st_nlink));
-    STORE_ELEM("uid",     Tcl_NewWideIntObj((long) statBuf.st_uid));
-    STORE_ELEM("gid",     Tcl_NewWideIntObj((long) statBuf.st_gid));
-    STORE_ELEM("size",    Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_size));
+    STORE_ELEM(dev,	Tcl_NewWideIntObj((long) statBuf.st_dev));
+    STORE_ELEM(ino,	Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
+    STORE_ELEM(nlink,	Tcl_NewWideIntObj((long) statBuf.st_nlink));
+    STORE_ELEM(uid,	Tcl_NewWideIntObj((long) statBuf.st_uid));
+    STORE_ELEM(gid,	Tcl_NewWideIntObj((long) statBuf.st_gid));
+    STORE_ELEM(size,	Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    STORE_ELEM("blocks",  Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_blocks));
+    STORE_ELEM(blocks,	Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ELEM("blksize", Tcl_NewWideIntObj((long) statBuf.st_blksize));
+    STORE_ELEM(blksize,	Tcl_NewWideIntObj((long) statBuf.st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
     if (S_ISCHR(statBuf.st_mode) || S_ISBLK(statBuf.st_mode)) {
-	STORE_ELEM("rdev", Tcl_NewWideIntObj((long) statBuf.st_rdev));
+	STORE_ELEM(rdev, Tcl_NewWideIntObj((long) statBuf.st_rdev));
     }
 #endif
-    STORE_ELEM("atime",   Tcl_NewWideIntObj(
-	    Tcl_GetAccessTimeFromStat(&statBuf)));
-    STORE_ELEM("mtime",   Tcl_NewWideIntObj(
-	    Tcl_GetModificationTimeFromStat(&statBuf)));
-    STORE_ELEM("ctime",   Tcl_NewWideIntObj(
-	    Tcl_GetChangeTimeFromStat(&statBuf)));
+    STORE_ELEM(atime,	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(&statBuf)));
+    STORE_ELEM(mtime,	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(&statBuf)));
+    STORE_ELEM(ctime,	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(&statBuf)));
     mode = (unsigned short) statBuf.st_mode;
-    STORE_ELEM("mode",    Tcl_NewWideIntObj(mode));
-    STORE_ELEM("type",    Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+    STORE_ELEM(mode,	Tcl_NewWideIntObj(mode));
+    STORE_ELEM(type,	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ELEM
 
     return dictObj;
