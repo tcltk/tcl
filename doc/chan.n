@@ -90,14 +90,12 @@ the Tcl program.
 .PP
 Channels are automatically closed when an interpreter is destroyed and
 when the process exits.
-From 8.6 on (TIP#398), nonblocking channels are no longer switched to
+Nonblocking channels are not switched to
 blocking mode when exiting; this guarantees a timely exit even when the
 peer or a communication channel is stalled. To ensure proper flushing of
-stalled nonblocking channels on exit, one must now either (a) actively
+stalled nonblocking channels on exit, one must either (a) actively
 switch them back to blocking or (b) use the environment variable
-\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR, which when set and not equal to
-.QW \fB0\fR
-restores the previous behavior.
+\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR.
 .RE
 .\" METHOD: configure
 .TP

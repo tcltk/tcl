@@ -17,9 +17,7 @@ msgcat \- Tcl message catalog
 
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
-.VS "TIP 412"
 \fB::msgcat::mcexists\fR ?\fB\-exactnamespace\fR? ?\fB\-exactlocale\fR? \fIsrc-string\fR
-.VE "TIP 412"
 .VS "TIP 490"
 \fB::msgcat::mcpackagenamespaceget\fR
 .VE "TIP 490"
@@ -27,20 +25,16 @@ msgcat \- Tcl message catalog
 .VS "TIP 499"
 \fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
 .VE "TIP 499"
-.VS "TIP 412"
 \fB::msgcat::mcloadedlocales subcommand\fR
-.VE "TIP 412"
 \fB::msgcat::mcload \fIdirname\fR
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
 \fB::msgcat::mcmset \fIlocale src-trans-list\fR
 \fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
 \fB::msgcat::mcflmset \fIsrc-trans-list\fR
 \fB::msgcat::mcunknown \fIlocale src-string\fR ?\fIarg arg ...\fR?
-.VS "TIP 412"
 \fB::msgcat::mcpackagelocale subcommand\fR ?\fIlocale\fR?
 \fB::msgcat::mcpackageconfig subcommand\fI option\fR ?\fIvalue\fR?
 \fB::msgcat::mcforgetpackage\fR
-.VE "TIP 412"
 .VS "TIP 499"
 \fB::msgcat::mcutil subcommand\fR ?\fIlocale\fR?
 .VS "TIP 499"
@@ -122,7 +116,6 @@ fixed width (which will be the width of the widest button).
 .\" COMMAND: mcexists
 .TP
 \fB::msgcat::mcexists\fR ?\fB\-exactnamespace\fR? ?\fB\-exactlocale\fR? ?\fB\-namespace\fI namespace\fR? \fIsrc-string\fR
-.VS "TIP 412"
 Return true, if there is a translation for the given \fIsrc-string\fR.
 .PP
 .RS
@@ -133,7 +126,6 @@ It may also be limited by the option \fB\-exactlocale\fR to only check the
 first prefered locale (e.g. first element returned by
 \fB::msgcat::mcpreferences\fR if global locale is used).
 .PP
-.VE "TIP 412"
 .VS "TIP 490"
 An explicit package namespace may be specified by the option \fB\-namespace\fR.
 The namespace of the caller is used if not explicitly specified.
@@ -192,10 +184,8 @@ The initial locale is determined by the locale specified in
 the user's environment.  See \fBLOCALE SPECIFICATION\fR
 below for a description of the locale string format.
 .PP
-.VS "TIP 412"
 If the locale is set, the preference list of locales is evaluated.
 Locales in this list are loaded now, if not jet loaded.
-.VE "TIP 412"
 .RE
 .\" COMMAND: mcpreferences
 .TP
@@ -237,7 +227,6 @@ the current preference list.
 .\" COMMAND: mcload
 .TP
 \fB::msgcat::mcload \fIdirname\fR
-.VS "TIP 412"
 Searches the specified directory for files that match
 the language specifications returned by \fB::msgcat::mcloadedlocales loaded\fR
 (or \fBmsgcat::mcpackagelocale preferences\fR if a package locale is set)
@@ -255,7 +244,6 @@ and were loaded is returned.
 In addition, the given folder is stored in the \fBmsgcat\fR package
 configuration option \fImcfolder\fR to eventually load message catalog
 files required by a locale change.
-.VE "TIP 412"
 .RE
 .\" COMMAND: mcset
 .TP
@@ -311,7 +299,6 @@ string.  The \fB::msgcat::mcunknown\fR procedure is invoked at the
 same stack context as the call to \fB::msgcat::mc\fR.  The return value
 of \fB::msgcat::mcunknown\fR is used as the return value for the call
 to \fB::msgcat::mc\fR.
-.VS "TIP 412"
 .RS
 .PP
 Note that this routine is only called if the concerned package did not set a
@@ -323,7 +310,6 @@ package locale unknown command name.
 .
 The calling package clears all its state within the \fBmsgcat\fR package
 including all settings and translations.
-.VE "TIP 412"
 .PP
 .\" COMMAND: mcutil
 .\" METHOD: getpreferences
@@ -550,7 +536,6 @@ formatting substitution is done directly.
 # ... where that key is mapped to one of the
 # human-oriented versions by \fBmsgcat::mcset\fR
 .CE
-.VS "TIP 412"
 .SH "PACKAGE PRIVATE LOCALE"
 .PP
 A package using \fBmsgcat\fR may choose to use its own package private
@@ -858,7 +843,6 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
     return $format
 }
 .CE
-.VE "TIP 412"
 .SH CREDITS
 .PP
 The message catalog code was developed by Mark Harrison.

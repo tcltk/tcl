@@ -141,7 +141,6 @@ to the \fBzlib push\fR command:
 .\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
-.VS "TIP 400"
 Sets the compression dictionary to use when working with compressing or
 decompressing the data to be \fIbinData\fR. Not valid for transformations that
 work with gzip-format data.  The dictionary should consist of strings (byte
@@ -149,7 +148,6 @@ sequences) that are likely to be encountered later in the data to be compressed,
 with the most commonly used strings preferably put towards the end of the
 dictionary. Tcl provides no mechanism for choosing a good such dictionary for
 a particular data sequence.
-.VE
 .\" OPTION: -header
 .TP
 \fB\-header\fI dictionary\fR
@@ -193,7 +191,6 @@ compression algorithm depends on what format is being produced or consumed.
 .\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
-.VS "TIP 400"
 This read-write options gets or sets the initial compression dictionary to use
 when working with compressing or decompressing the data to be \fIbinData\fR.
 It is not valid for transformations that work with gzip-format data, and should
@@ -201,7 +198,6 @@ not normally be set on compressing transformations other than at the point where
 the transformation is stacked. Note that this cannot be used to get the
 current active compression dictionary mid-stream, as that information is not
 exposed by the underlying library.
-.VE
 .\" OPTION: -flush
 .TP
 \fB\-flush\fI type\fR
@@ -243,7 +239,6 @@ and \fIoptions\fR are supported:
 The stream will be a compressing stream that produces zlib-format output,
 using compression level \fIlevel\fR (if specified) which will be an integer
 from 0 to 9,
-.VS "TIP 400"
 and the compression dictionary \fIbindata\fR (if specified).
 .VE
 .TP
@@ -251,7 +246,6 @@ and the compression dictionary \fIbindata\fR (if specified).
 .
 The stream will be a decompressing stream that takes zlib-format input and
 produces uncompressed output.
-.VS "TIP 400"
 If \fIbindata\fR is supplied, it is a compression dictionary to use if
 required.
 .VE
@@ -261,11 +255,9 @@ required.
 The stream will be a compressing stream that produces raw output, using
 compression level \fIlevel\fR (if specified) which will be an integer from 0
 to 9,
-.VS "TIP 400"
 and the compression dictionary \fIbindata\fR (if specified). Note that
 the raw compressed data includes no metadata about what compression
 dictionary was used, if any; that is a feature of the zlib-format data.
-.VE
 .TP
 \fBzlib stream gunzip\fR
 .
@@ -283,11 +275,9 @@ for keys see \fBzlib gzip\fR).
 .
 The stream will be a decompressing stream that takes raw compressed input and
 produces uncompressed output.
-.VS "TIP 400"
 If \fIbindata\fR is supplied, it is a compression dictionary to use. Note that
 there are no checks in place to determine whether the compression dictionary
 is correct.
-.VE
 .RE
 .SS "CHECKSUMMING SUBCOMMANDS"
 .\" METHOD: adler32
@@ -380,10 +370,8 @@ way in which the transformation is applied:
 .\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
-.VS "TIP 400"
 Sets the compression dictionary to use when working with compressing or
 decompressing the data to be \fIbinData\fR.
-.VE
 .\" OPTION: -finalize
 .TP
 \fB\-finalize\fR
