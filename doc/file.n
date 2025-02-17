@@ -564,7 +564,6 @@ between platforms:
 .\" METHOD: tempfile
 .TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
-.\" TIP #210
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
