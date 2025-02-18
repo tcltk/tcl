@@ -96,7 +96,7 @@ If a new file is created as part of opening it, \fIpermissions\fR
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
 .PP
-.VS "8.7, TIP 603"
+.VS TIP603
 When the file opened is an ordinary disk file, the \fBchan configure\fR and
 \fBfconfigure\fR commands can be used to query this additional configuration
 option:
@@ -117,7 +117,7 @@ on all platforms; other keys may be present too.
 POSIX platforms, and to a call to \fBGetFileInformationByHandle()\fR on
 Windows; the information reported is what those system calls produce.
 .RE
-.VE "8.7, TIP 603"
+.VE TIP603
 .SH "COMMAND PIPELINES"
 .PP
 If the first character of \fIfileName\fR is
@@ -249,7 +249,7 @@ XON and XOFF characters.
 .\" OPTION: -closemode
 .TP
 \fB\-closemode\fI closeMode\fR
-.VS "8.7, TIP 160"
+.VS TIP160
 (Windows and Unix). This option is used to query or change the close mode of
 the serial channel, which defines how pending output in operating system
 buffers is handled when the channel is closed. The following values for
@@ -266,11 +266,11 @@ interact unexpectedly with handling of \fBstderr\fR.
 indicates that Tcl should wait when closing the channel until all output has
 been consumed. This may slow down \fBclose\fR noticeably.
 .RE
-.VE "8.7, TIP 160"
+.VE TIP160
 .\" OPTION: -inputmode
 .TP
 \fB\-inputmode\fI inputMode\fR
-.VS "8.7, TIP 160"
+.VS TIP160
 (Unix only; Windows has the equivalent option on console channels). This
 option is used to query or change the input mode of the serial channel under
 the assumption that it is talking to a terminal, which controls how interactive
@@ -303,7 +303,7 @@ turn on an automatic reset of the terminal when the channel is closed.
 (Unix only; Windows has the equivalent option on console channels). This
 option is query only. It retrieves a two-element list with the the current
 width and height of the terminal.
-.VE "8.7, TIP 160"
+.VE TIP160
 .\" OPTION: -pollinterval
 .TP
 \fB\-pollinterval\fI msec\fR
@@ -462,7 +462,7 @@ See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for
 additional information not specific to command pipelines about executing
 applications on the various platforms
 .SH "CONSOLE CHANNELS"
-.VS "8.7, TIP 160"
+.VS TIP160
 On Windows only, console channels (usually \fBstdin\fR or \fBstdout\fR)
 support the following options:
 .\" OPTION: -inputmode
@@ -504,7 +504,7 @@ console that this channel is talking to.
 .PP
 Note that the equivalent options exist on Unix, but are on the serial channel
 type.
-.VE "8.7, TIP 160"
+.VE TIP160
 .SH "EXAMPLES"
 Open a file for writing, forcing it to be created and raising an error if it
 already exists.
@@ -542,7 +542,7 @@ set binData [read $fl]
 close $fl
 .CE
 .PP
-.VS "8.7, TIP 160"
+.VS TIP160
 Read a password securely from the user (assuming that the script is being run
 interactively):
 .PP
@@ -556,7 +556,7 @@ try {
     chan configure stdin \fB-inputmode reset\fR
 }
 .CE
-.VE "8.7, TIP 160"
+.VE TIP160
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
 puts(n), exec(n), pid(n), fopen(3)
