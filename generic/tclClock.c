@@ -4664,11 +4664,7 @@ ClockSafeCatchCmd(
 
 typedef struct ClockTzStatic {
     WCHAR *was;			/* Previous value of TZ. */
-#if TCL_MAJOR_VERSION > 8
     long long lastRefresh;	/* Used for latency before next refresh. */
-#else
-    long lastRefresh;		/* Used for latency before next refresh. */
-#endif
     size_t epoch;		/* Epoch, signals that TZ changed. */
     size_t envEpoch;		/* Last env epoch, for faster signaling,
 				 * that TZ changed via TCL */
