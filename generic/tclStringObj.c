@@ -4360,6 +4360,49 @@ ExtendUnicodeRepWithString(
     }
     *dst = 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsEmpty --
+ *
+ *	Check whether the obj is the empty string.
+ *
+ * Results:
+ *	 1 if the obj is ""
+ *   0 otherwise
+ *
+ * Side effects:
+ *	If there is no other way to determine whethere the string
+ *	representation is the empty string, the string representation
+ *	is generated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsEmpty(
+    Tcl_Obj *objPtr)
+{
+    if (objPtr == NULL) {
+	Tcl_Panic("%s: objPtr is NULL", "Tcl_IsEmpty");
+    }
+    if (!objPtr->bytes) {
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* Since "dict" doesn't have a lengthProc */
+	    Tcl_Size size;
+	    Tcl_DictObjSize(NULL, objPtr, &size);
+	    return !size;
+	}
+
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (proc != NULL) {
+	    return !proc(objPtr);
+	}
+	(void)TclGetString(objPtr);
+    }
+    return !objPtr->length;
+}
 
 /*
  *----------------------------------------------------------------------
