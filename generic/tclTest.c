@@ -1984,11 +1984,7 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
-#if TCL_MAJOR_VERSION > 8
     void *blockPtr			/* Block to free. */
-#else
-    char *blockPtr			/* Block to free. */
-#endif
 ) {
     Tcl_Free(((char *)blockPtr) - 16);
 }
