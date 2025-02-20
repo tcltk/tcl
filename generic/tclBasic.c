@@ -1122,7 +1122,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = NULL;
-	    cmdPtr->clientData = cmdPtr;
+	    cmdPtr->clientData = NULL;
 	    cmdPtr->objProc2 = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData2 = NULL;
 	    cmdPtr->deleteProc = NULL;
@@ -2947,7 +2947,7 @@ TclCreateObjCommandInNs(
     cmdPtr->objProc2 = proc;
     cmdPtr->objClientData2 = clientData;
     cmdPtr->proc = NULL;
-    cmdPtr->clientData = cmdPtr;
+    cmdPtr->clientData = NULL;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
     cmdPtr->flags = 0;

@@ -3,7 +3,7 @@ on:
   push:
     branches:
     - "main"
-    - "core-8-branch"
+    - "core-9-0-branch"
     tags:
     - "core-**"
 permissions:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     defaults:
       run:
         shell: bash
@@ -54,7 +54,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   macos:
     name: macOS
-    runs-on: macos-15
+    runs-on: macos-14
     defaults:
       run:
         shell: bash

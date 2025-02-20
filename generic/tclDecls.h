@@ -1872,6 +1872,8 @@ EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
 EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
 				Tcl_WideUInt uwideValue);
 /* 690 */
+EXTERN int		Tcl_IsEmpty(Tcl_Obj *obj);
+/* 691 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2574,7 +2576,8 @@ typedef struct TclStubs {
     int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 688 */
     void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 689 */
-    void (*tclUnusedStubEntry) (void); /* 690 */
+    int (*tcl_IsEmpty) (Tcl_Obj *obj); /* 690 */
+    void (*tclUnusedStubEntry) (void); /* 691 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3903,8 +3906,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NewWideUIntObj) /* 688 */
 #define Tcl_SetWideUIntObj \
 	(tclStubsPtr->tcl_SetWideUIntObj) /* 689 */
+#define Tcl_IsEmpty \
+	(tclStubsPtr->tcl_IsEmpty) /* 690 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 690 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 691 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4259,5 +4264,9 @@ extern const TclStubs *tclStubsPtr;
 #endif /* defined(TCL_8_API) */
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	Tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
+
+#if TCL_MINOR_VERSION < 1
+#   undef Tcl_IsEmpty
+#endif
 
 #endif /* _TCLDECLS */

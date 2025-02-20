@@ -46,6 +46,7 @@ static Tcl_ObjCmdProc2	TestlistobjCmd;
 static Tcl_ObjCmdProc2	TestobjCmd;
 static Tcl_ObjCmdProc2	TeststringobjCmd;
 static Tcl_ObjCmdProc2	TestbigdataCmd;
+static Tcl_ObjCmdProc2	TestisemptyCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -132,6 +133,8 @@ TclObjTest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testisempty", TestisemptyCmd,
 	    NULL, NULL);
     if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
 	Tcl_CreateObjCommand2(interp, "testbigdata", TestbigdataCmd,
@@ -1829,6 +1832,30 @@ CheckIfVarUnset(
     return 0;
 }
 
+static int
+TestisemptyCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    Tcl_Size objc,         /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    Tcl_Obj *result;
+    if (objc != 2) {
+    	Tcl_WrongNumArgs(interp, 1, objv, "value");
+    	return TCL_ERROR;
+    }
+    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    if (!objv[1]->bytes) {
+    Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
+    }
+    if (objv[1]->typePtr) {
+    Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
+    Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
+    }
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

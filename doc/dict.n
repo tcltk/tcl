@@ -129,7 +129,7 @@ present in the dictionary.
 \fBdict getdef \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
 .TP
 \fBdict getwithdefault \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
-.VS "8.7, TIP342"
+.VS TIP342
 This behaves the same as \fBdict get\fR (with at least one \fIkey\fR
 argument), returning the value that the key path maps to in the
 dictionary \fIdictionaryValue\fR, except that instead of producing an
@@ -140,7 +140,7 @@ is absent, it returns the \fIdefault\fR argument instead.
 Note that there must always be at least one \fIkey\fR provided, and that
 \fBdict getdef\fR and \fBdict getwithdefault\fR are aliases for each other.
 .RE
-.VE "8.7, TIP342"
+.VE TIP342
 .\" METHOD: incr
 .TP
 \fBdict incr \fIdictionaryVariable key \fR?\fIincrement\fR?

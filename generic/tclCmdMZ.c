@@ -3338,31 +3338,19 @@ TclSubstOptions(
     static const char *const substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
-    enum {
-	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
+    static const int optionFlags[] = {
+	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES
     };
-    int i, flags = TCL_SUBST_ALL;
+    int flags = TCL_SUBST_ALL;
 
-    for (i = 0; i < numOpts; i++) {
+    for (Tcl_Size i = 0; i < numOpts; i++) {
 	int optionIndex;
 
 	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch (optionIndex) {
-	case SUBST_NOBACKSLASHES:
-	    flags &= ~TCL_SUBST_BACKSLASHES;
-	    break;
-	case SUBST_NOCOMMANDS:
-	    flags &= ~TCL_SUBST_COMMANDS;
-	    break;
-	case SUBST_NOVARS:
-	    flags &= ~TCL_SUBST_VARIABLES;
-	    break;
-	default:
-	    Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
-	}
+	flags &= ~optionFlags[optionIndex];
     }
     *flagPtr = flags;
     return TCL_OK;
