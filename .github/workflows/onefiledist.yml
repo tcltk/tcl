@@ -54,7 +54,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   macos:
     name: macOS
-    runs-on: macos-15
+    runs-on: macos-14
     defaults:
       run:
         shell: bash
