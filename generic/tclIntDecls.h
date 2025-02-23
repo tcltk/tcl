@@ -1268,17 +1268,6 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary)
 #endif /* defined(USE_TCL_STUBS) */
 
-#if (TCL_MAJOR_VERSION < 9) && defined(USE_TCL_STUBS)
-#undef TclpGetClicks
-#define TclpGetClicks() \
-		((unsigned long)tclIntStubsPtr->tclpGetClicks())
-#undef TclpGetSeconds
-#define TclpGetSeconds() \
-		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
-#undef TclGetObjInterpProc2
-#define TclGetObjInterpProc2 TclGetObjInterpProc
-#endif
-
 #undef TclUnusedStubEntry
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
