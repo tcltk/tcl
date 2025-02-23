@@ -87,22 +87,6 @@ static const char *const typeNames[] = {
 
 static DWORD lastType = REG_RESOURCE_LIST;
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
-
 /*
  * Declarations for functions defined in this file.
  */
@@ -146,11 +130,6 @@ extern "C" {
 #endif
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tclregistry13.dll" works without 3th argument */
-DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -186,14 +165,6 @@ Registry_Init(
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
     return Tcl_PkgProvideEx(interp, "registry", "1.4a0", NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Init(
-    Tcl_Interp *interp)
-{
-    return Registry_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -240,15 +211,6 @@ Registry_Unload(
 
     return TCL_OK;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Unload(
-    Tcl_Interp *interp,
-    int flags)
-{
-    return Registry_Unload(interp, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
