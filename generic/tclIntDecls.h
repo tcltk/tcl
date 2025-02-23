@@ -1277,6 +1277,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary)
 #endif /* defined(USE_TCL_STUBS) */
 
+#undef TclUnusedStubEntry
+#define TclObjInterpProc TclGetObjInterpProc()
+#define TclObjInterpProc2 TclGetObjInterpProc2()
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
