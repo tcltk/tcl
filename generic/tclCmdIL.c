@@ -567,7 +567,7 @@ InfoBodyCmd(
      * the object do not invalidate the internal rep.
      */
 
-    bytes = Tcl_GetStringFromObj(procPtr->bodyPtr, &numBytes);
+    bytes = TclGetStringFromObj(procPtr->bodyPtr, &numBytes);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(bytes, numBytes));
     return TCL_OK;
 }
@@ -2205,7 +2205,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) Tcl_GetStringFromObj(joinObjPtr, &length);
+    (void)TclGetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -3660,7 +3660,7 @@ Tcl_LsearchObjCmd(
 	switch (dataType) {
 	case ASCII:
 	case DICTIONARY:
-	    patternBytes = Tcl_GetStringFromObj(patObj, &length);
+	    patternBytes = TclGetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
 	    result = TclGetWideIntFromObj(interp, patObj, &patWide);
@@ -3690,7 +3690,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	}
     } else {
-	patternBytes = Tcl_GetStringFromObj(patObj, &length);
+	patternBytes = TclGetStringFromObj(patObj, &length);
     }
 
     /*
@@ -3842,7 +3842,7 @@ Tcl_LsearchObjCmd(
 	    case EXACT:
 		switch (dataType) {
 		case ASCII:
-		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
+		    bytes = TclGetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
 			/*
 			 * This split allows for more optimal compilation of

@@ -637,7 +637,7 @@ EncodingConverttoObjCmd(
      * Convert the string to a byte array in 'ds'
      */
 
-    stringPtr = Tcl_GetStringFromObj(data, &length);
+    stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
 	    &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */

@@ -637,7 +637,7 @@ TclContinuationsEnterDerived(
      * better way which doesn't shimmer?)
      */
 
-    (void)Tcl_GetStringFromObj(objPtr, &length);
+    (void)TclGetStringFromObj(objPtr, &length);
     end = start + length;       /* First char after the word */
 
     /*

@@ -1981,7 +1981,7 @@ Tcl_ConcatObj(
 		TclObjTypeHasProc(objPtr, indexProc)) {
 	    continue;
 	}
-	(void)Tcl_GetStringFromObj(objPtr, &length);
+	(void)TclGetStringFromObj(objPtr, &length);
 	if (length > 0) {
 	    break;
 	}
@@ -2028,7 +2028,7 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	element = Tcl_GetStringFromObj(objv[i], &elemLength);
+	element = TclGetStringFromObj(objv[i], &elemLength);
 	if (bytesNeeded > (TCL_SIZE_MAX - elemLength)) {
 	    break; /* Overflow. Do not preallocate. See comment below. */
 	}
@@ -2048,7 +2048,7 @@ Tcl_ConcatObj(
     for (i = 0;  i < objc;  i++) {
 	Tcl_Size triml, trimr;
 
-	element = Tcl_GetStringFromObj(objv[i], &elemLength);
+	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading/trailing whitespace. */
 	triml = TclTrim(element, elemLength, CONCAT_TRIM_SET,
@@ -2668,7 +2668,7 @@ TclDStringAppendObj(
     Tcl_Obj *objPtr)
 {
     Tcl_Size length;
-    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+    const char *bytes = TclGetStringFromObj(objPtr, &length);
 
     return Tcl_DStringAppend(dsPtr, bytes, length);
 }
@@ -3508,7 +3508,7 @@ GetEndOffsetFromObj(
     while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
 	Tcl_Size length;
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
 	if (*bytes != 'e') {
 	    int numType;

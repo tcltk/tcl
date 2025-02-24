@@ -919,7 +919,7 @@ TclArithSeriesGetElements(
 	*objcPtr = objc;
     } else {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value is not an arithseries"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("value is not an arithseries", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", (void *)NULL);
 	}
 	return TCL_ERROR;
@@ -1104,7 +1104,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	if (TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i, &eleObj) == TCL_OK) {
 	    Tcl_Size slen;
-	    char *str = Tcl_GetStringFromObj(eleObj, &slen);
+	    char *str = TclGetStringFromObj(eleObj, &slen);
 	    strcpy(p, str);
 	    p[slen] = ' ';
 	    p += slen + 1;
@@ -1157,13 +1157,13 @@ ArithSeriesInOperation(
 	if (status != TCL_OK) {
 	    test = 0;
 	} else {
-	    const char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+	    const char *vstr = TclGetStringFromObj(valueObj, &vlen);
 	    index = (y - dblRepPtr->start) / dblRepPtr->step;
 	    while (incr<2) {
 		Tcl_Obj *elemObj;
 		elen = 0;
 		TclArithSeriesObjIndex(interp, arithSeriesObjPtr, (index+incr), &elemObj);
-		const char *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
+		const char *estr = elemObj ? TclGetStringFromObj(elemObj, &elen) : "";
 		/* "in" operation defined as a string compare */
 		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
 		Tcl_BounceRefCount(elemObj);
@@ -1191,8 +1191,8 @@ ArithSeriesInOperation(
 	    elen = 0;
 	    index = (y - intRepPtr->start) / intRepPtr->step;
 	    TclArithSeriesObjIndex(interp, arithSeriesObjPtr, index, &elemObj);
-	    char const *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
-	    char const *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
+	    char const *vstr = TclGetStringFromObj(valueObj, &vlen);
+	    char const *estr = elemObj ? TclGetStringFromObj(elemObj, &elen) : "";
 	    if (boolResult) {
 		*boolResult = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
 	    }

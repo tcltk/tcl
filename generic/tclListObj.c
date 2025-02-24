@@ -3365,7 +3365,7 @@ SetListFromAny(
 
     } else {
 	Tcl_Size estCount, length;
-	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
 
 	/*
 	 * Allocate enough space to hold a (Tcl_Obj *) for each
@@ -3524,7 +3524,7 @@ UpdateStringOfList(
     }
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	elem = Tcl_GetStringFromObj(elemPtrs[i], &length);
+	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
 	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", SIZE_MAX);
@@ -3540,7 +3540,7 @@ UpdateStringOfList(
     TclOOM(dst, bytesNeeded);
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-	elem = Tcl_GetStringFromObj(elemPtrs[i], &length);
+	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
     }

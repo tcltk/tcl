@@ -346,7 +346,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
@@ -583,7 +583,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
@@ -787,7 +787,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = Tcl_GetStringFromObj(objv[5], &length);
+	command = TclGetStringFromObj(objv[5], &length);
 	if (optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)Tcl_Alloc(
 		    offsetof(CombinedTraceVarInfo, traceCmdInfo.command)

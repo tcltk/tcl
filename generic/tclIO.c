@@ -4255,7 +4255,7 @@ Tcl_WriteObj(
 	}
 	return result;
     } else {
-	src = Tcl_GetStringFromObj(objPtr, &srcLen);
+	src = TclGetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
@@ -4649,7 +4649,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    (void)Tcl_GetStringFromObj(objPtr, &oldLength);
+    (void)TclGetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
@@ -6251,7 +6251,7 @@ ReadChars(
     if (dstLimit <= 0) {
 	dstLimit = INT_MAX; /* avoid overflow */
     }
-    (void) Tcl_GetStringFromObj(objPtr, &numBytes);
+    (void) TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	Tcl_Size size;
@@ -6307,8 +6307,8 @@ ReadChars(
 		flags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
-	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX ||
-		(code == TCL_CONVERT_MULTIBYTE && GotFlag(statePtr, CHANNEL_EOF))) {
+	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX
+		|| (code == TCL_CONVERT_MULTIBYTE && GotFlag(statePtr, CHANNEL_EOF))) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	    code = TCL_OK;
 	}
@@ -9777,7 +9777,7 @@ CopyData(
 		 * - Fail below with a read error
 		 */
 		if (size < 0 && Tcl_GetErrno() == EILSEQ) {
-		    Tcl_GetStringFromObj(bufObj, &sizePart);
+		    TclGetStringFromObj(bufObj, &sizePart);
 		    if (sizePart > 0) {
 			size = sizePart;
 		    }
@@ -9846,7 +9846,7 @@ CopyData(
 	    buffer = csPtr->buffer;
 	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, size);
 	} else {
-	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
+	    buffer = TclGetStringFromObj(bufObj, &sizeb);
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
 

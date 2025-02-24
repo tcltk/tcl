@@ -301,7 +301,7 @@ SetTokensFromAny (
 			 * parsing the string value */
 {
     Tcl_Size numBytes;
-    const char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
+    const char *script = TclGetStringFromObj(objPtr, &numBytes);
     TokenIntRep *tirPtr = (TokenIntRep *)Tcl_Alloc(sizeof(TokenIntRep));
 
     /*
@@ -356,13 +356,13 @@ UpdateStringOfTokens(
     Tcl_Obj *objPtr)
 {
     TokenIntRep *tirPtr = (TokenIntRep *)objPtr->internalRep.otherValuePtr;
-    int length;
+    Tcl_Size length;
     char *bytes;
 
     if (tirPtr->scriptObjPtr == NULL) {
 	Tcl_Panic("Lost scriptObjPtr in tokens value");
     }
-    bytes = Tcl_GetStringFromObj(tirPtr->scriptObjPtr, &length);
+    bytes = TclGetStringFromObj(tirPtr->scriptObjPtr, &length);
     TclInitStringRep(objPtr, bytes, length);
 }
 
@@ -2641,7 +2641,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)Tcl_GetStringFromObj(result, &clPos);
+			(void)TclGetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2966,7 +2966,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     Tcl_Size length;
-    const char *script = Tcl_GetStringFromObj(objPtr, &length);
+    const char *script = TclGetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }
