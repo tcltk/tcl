@@ -690,7 +690,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgetunichar",
-                         TestGetUniCharCmd, NULL, NULL);
+            TestGetUniCharCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindlast",
@@ -1910,9 +1910,9 @@ TestdoubledigitsObjCmd(
 	}
     }
     if (status != TCL_OK
-	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
-	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
-			       TCL_EXACT, &type) != TCL_OK) {
+	    || Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
+	    || Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
+		    TCL_EXACT, &type) != TCL_OK) {
 	fprintf(stderr, "bad value? %g\n", d);
 	return TCL_ERROR;
     }
@@ -2138,10 +2138,8 @@ static int UtfExtWrapper(
     Tcl_WideInt wide;
 
     if (objc < 7 || objc > 10) {
-        Tcl_WrongNumArgs(interp,
-                         2,
-                         objv,
-                         "encoding srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?");
+        Tcl_WrongNumArgs(interp, 2, objv,
+		"encoding srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?");
         return TCL_ERROR;
     }
     if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
@@ -2160,13 +2158,8 @@ static int UtfExtWrapper(
 	    flags |= flag;
 	} else {
 	    int idx;
-	    if (Tcl_GetIndexFromObjStruct(interp,
-					  flagObjs[i],
-					  flagMap,
-					  sizeof(flagMap[0]),
-					  "flag",
-					  0,
-					  &idx) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, flagObjs[i], flagMap, sizeof(flagMap[0]),
+		    "flag", 0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    flags |= flagMap[idx].flag;
@@ -2230,14 +2223,14 @@ static int UtfExtWrapper(
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
     result = (*transformer)(interp, encoding, (const char *)bytes, srcLen, flags,
-                            encStatePtr, (char *) bufPtr, dstLen,
-                            srcReadVar ? &srcRead : NULL,
-                            &dstWrote,
-                            dstCharsVar ? &dstChars : NULL);
+            encStatePtr, (char *) bufPtr, dstLen,
+            srcReadVar ? &srcRead : NULL,
+            &dstWrote,
+            dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
         Tcl_SetResult(interp,
-                      "Tcl_ExternalToUtf wrote past output buffer",
-                      TCL_STATIC);
+                "Tcl_ExternalToUtf wrote past output buffer",
+                TCL_STATIC);
         result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
         Tcl_Obj *resultObjs[3];
@@ -2266,29 +2259,20 @@ static int UtfExtWrapper(
             encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
         resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
         if (srcReadVar) {
-	    if (Tcl_ObjSetVar2(interp,
-			       srcReadVar,
-			       NULL,
-			       Tcl_NewIntObj(srcRead),
-			       TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
         if (dstWroteVar) {
-	    if (Tcl_ObjSetVar2(interp,
-			       dstWroteVar,
-			       NULL,
-			       Tcl_NewIntObj(dstWrote),
-			       TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (Tcl_ObjSetVar2(interp, dstWroteVar, NULL, Tcl_NewIntObj(dstWrote),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
         if (dstCharsVar) {
-	    if (Tcl_ObjSetVar2(interp,
-			       dstCharsVar,
-			       NULL,
-			       Tcl_NewIntObj(dstChars),
-			       TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (Tcl_ObjSetVar2(interp, dstCharsVar, NULL, Tcl_NewIntObj(dstChars),
+		    TCL_LEAVE_ERR_MSG) == NULL) {
 		result = TCL_ERROR;
 	    }
 	}
@@ -2399,7 +2383,7 @@ TestencodingObjCmd(
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp,
-			 Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
+		Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
 	Tcl_FreeEncoding(encoding);
         break;
     case ENC_EXTTOUTF:
@@ -3334,7 +3318,7 @@ TestlinkCmd(
 	}
 	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "wide", &wideVar,
-			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
+		TCL_LINK_WIDE_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetBoolean(interp, argv[7], &writable) != TCL_OK) {
@@ -3931,10 +3915,10 @@ TestlistrepCmd(
 	    ListObjGetRep(objv[2], &listRep);
 	    listRepObjs[0] = Tcl_NewStringObj("store", -1);
 	    listRepObjs[1] = Tcl_NewListObj(12, NULL);
-	    Tcl_ListObjAppendElement(
-		interp, listRepObjs[1], Tcl_NewStringObj("memoryAddress", -1));
-	    Tcl_ListObjAppendElement(
-		interp, listRepObjs[1], Tcl_ObjPrintf("%p", listRep.storePtr));
+	    Tcl_ListObjAppendElement(interp, listRepObjs[1],
+		    Tcl_NewStringObj("memoryAddress", -1));
+	    Tcl_ListObjAppendElement(interp, listRepObjs[1],
+		    Tcl_ObjPrintf("%p", listRep.storePtr));
 	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, firstUsed);
 	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numUsed);
 	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numAllocated);
@@ -3943,14 +3927,12 @@ TestlistrepCmd(
 	    if (listRep.spanPtr) {
 		listRepObjs[2] = Tcl_NewStringObj("span", -1);
 		listRepObjs[3] = Tcl_NewListObj(8, NULL);
-		Tcl_ListObjAppendElement(interp,
-					 listRepObjs[3],
-					 Tcl_NewStringObj("memoryAddress", -1));
-		Tcl_ListObjAppendElement(
-		    interp, listRepObjs[3], Tcl_ObjPrintf("%p", listRep.spanPtr));
+		Tcl_ListObjAppendElement(interp, listRepObjs[3],
+			Tcl_NewStringObj("memoryAddress", -1));
+		Tcl_ListObjAppendElement(interp, listRepObjs[3], 
+			Tcl_ObjPrintf("%p", listRep.spanPtr));
 		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanStart);
-		APPEND_FIELD(
-		    listRepObjs[3], listRep.spanPtr, spanLength);
+		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanLength);
 		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, refCount);
 	    }
 	    resultObj = Tcl_NewListObj(listRep.spanPtr ? 4 : 2, listRepObjs);

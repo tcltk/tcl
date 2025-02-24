@@ -164,10 +164,9 @@ Tcl_AppInit(
 #define INITFILENAME ".tclshrc"
 #endif
 
-    (void)Tcl_EvalEx(interp,
-		     "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
-		     -1,
-		     TCL_EVAL_GLOBAL);
+    (void) Tcl_EvalEx(interp,
+	    "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
+	    -1, TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
 

@@ -325,8 +325,7 @@ ValidateFormat(
 	    objIndex = (int) ull - 1;
 	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
-	    }
-	    else if (numVars == 0) {
+	    } else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special

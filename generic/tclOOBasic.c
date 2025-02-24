@@ -1281,7 +1281,7 @@ TclOOCopyObjectCmd(
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-			 "sourceName ?targetName? ?targetNamespace?");
+		"sourceName ?targetName? ?targetNamespace?");
 	return TCL_ERROR;
     }
 

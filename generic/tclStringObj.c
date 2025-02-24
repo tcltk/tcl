@@ -181,14 +181,11 @@ GrowUnicodeBuffer(
     }
     if (stringPtr->maxChars > 0) {
 	/* Expansion - try allocating extra space */
-	stringPtr = (String *)TclReallocElemsEx(stringPtr,
-						needed + 1, /* +1 for nul */
-						sizeof(Tcl_UniChar),
-						offsetof(String, unicode),
-						&maxChars);
+	stringPtr = (String *) TclReallocElemsEx(stringPtr,
+		needed + 1, /* +1 for nul */
+		sizeof(Tcl_UniChar), offsetof(String, unicode), &maxChars);
 	maxChars -= 1; /* End nul not included */
-    }
-    else {
+    } else {
 	/*
 	 * First allocation - just big enough. Note needed does
 	 * not include terminating nul but STRING_SIZE does

@@ -361,9 +361,9 @@ VarHashCreateVar(
 
 #define OBJ_AT_TOS	*tosPtr
 
-#define OBJ_UNDER_TOS	*(tosPtr-1)
+#define OBJ_UNDER_TOS	tosPtr[-1]
 
-#define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
+#define OBJ_AT_DEPTH(n)	tosPtr[-(n)]
 
 #define CURR_DEPTH	(tosPtr - initTosPtr)
 
@@ -379,8 +379,8 @@ VarHashCreateVar(
 #   define TRACE(a) \
     while (traceInstructions) {					\
 	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_T_MODIFIER "d (%" TCL_T_MODIFIER "d) %s ", iPtr->numLevels,	\
-		CURR_DEPTH,				\
-		(pc - codePtr->codeStart),		\
+		CURR_DEPTH,					\
+		(pc - codePtr->codeStart),			\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	break;							\
@@ -395,8 +395,8 @@ VarHashCreateVar(
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
 	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_T_MODIFIER "d (%" TCL_T_MODIFIER "d) %s ", iPtr->numLevels,	\
-		CURR_DEPTH,				\
-		(pc - codePtr->codeStart),		\
+		CURR_DEPTH,					\
+		(pc - codePtr->codeStart),			\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	TclPrintObject(stdout, objPtr, 30);			\
@@ -450,15 +450,15 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasInternalRep((objPtr), &tclIntType))					\
+    ((TclHasInternalRep((objPtr), &tclIntType))				\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
-		*(ptrPtr) = (void *)				\
+		*(ptrPtr) = (void *)					\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     TclHasInternalRep((objPtr), &tclDoubleType)				\
 	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
-		*(ptrPtr) = (void *)				\
+		*(ptrPtr) = (void *)					\
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
@@ -3123,7 +3123,7 @@ TEBCresume(
 	objResultPtr = OBJ_AT_TOS;
 	varPtr->value.objPtr = objResultPtr;
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+pcAdjustment) == INST_POP) {
+	if (pc[pcAdjustment] == INST_POP) {
 	    tosPtr--;
 	    NEXT_INST_F((pcAdjustment+1), 0, 0);
 	}
@@ -3287,7 +3287,7 @@ TEBCresume(
 	    goto gotError;
 	}
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+pcAdjustment) == INST_POP) {
+	if (pc[pcAdjustment] == INST_POP) {
 	    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
 	}
 #endif
@@ -3686,7 +3686,7 @@ TEBCresume(
     doneIncr:
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+pcAdjustment) == INST_POP) {
+	if (pc[pcAdjustment] == INST_POP) {
 	    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
 	}
 #endif
@@ -5009,7 +5009,7 @@ TEBCresume(
 	 */
 
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+9) == INST_POP) {
+	if (pc[9] == INST_POP) {
 	    NEXT_INST_F(10, 1, 0);
 	}
 #endif
@@ -6993,7 +6993,7 @@ TEBCresume(
 	    }
 	}
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+9) == INST_POP) {
+	if (pc[9] == INST_POP) {
 	    NEXT_INST_V(10, cleanup, 0);
 	}
 #endif
@@ -7132,7 +7132,7 @@ TEBCresume(
 	    }
 	}
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+5) == INST_POP) {
+	if (pc[5] == INST_POP) {
 	    NEXT_INST_F(6, 2, 0);
 	}
 #endif

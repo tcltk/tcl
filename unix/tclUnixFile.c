@@ -131,9 +131,9 @@ TclpFindExecutable(
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
-	if (*p == '\0') {
+	if (p[0] == '\0') {
 	    break;
-	} else if (*(p+1) == 0) {
+	} else if (p[1] == 0) {
 	    p = "./";
 	} else {
 	    p++;
@@ -989,7 +989,7 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = Tcl_GetStringFromObj(transPtr, &length);
+	    target = TclGetStringFromObj(transPtr, &length);
 	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, 0, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 		return NULL;
@@ -1149,7 +1149,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = TclGetStringFromObj(validPathPtr, &len);
     if (Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, 0, &ds, NULL) != TCL_OK) {
 	Tcl_DecrRefCount(validPathPtr);
 	Tcl_DStringFree(&ds);

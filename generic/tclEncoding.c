@@ -1049,30 +1049,30 @@ Tcl_CreateEncoding(
     encodingPtr->refCount	= 1;
     encodingPtr->hPtr		= NULL;
 
-  if (typePtr->encodingName) {
-    Tcl_HashEntry *hPtr;
-    int isNew;
-    char *name;
+    if (typePtr->encodingName) {
+	Tcl_HashEntry *hPtr;
+	int isNew;
+	char *name;
 
-    Tcl_MutexLock(&encodingMutex);
-    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
-    if (isNew == 0) {
-	/*
-	 * Remove old encoding from hash table, but don't delete it until last
-	 * reference goes away.
-	 */
+	Tcl_MutexLock(&encodingMutex);
+	hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
+	if (isNew == 0) {
+	    /*
+	     * Remove old encoding from hash table, but don't delete it until last
+	     * reference goes away.
+	     */
 
-	Encoding *replaceMe = (Encoding *)Tcl_GetHashValue(hPtr);
-	replaceMe->hPtr = NULL;
+	    Encoding *replaceMe = (Encoding *)Tcl_GetHashValue(hPtr);
+	    replaceMe->hPtr = NULL;
+	}
+
+	name = (char *) Tcl_Alloc(strlen(typePtr->encodingName) + 1);
+	encodingPtr->name	= strcpy(name, typePtr->encodingName);
+	encodingPtr->hPtr	= hPtr;
+	Tcl_SetHashValue(hPtr, encodingPtr);
+
+	Tcl_MutexUnlock(&encodingMutex);
     }
-
-    name = (char *)Tcl_Alloc(strlen(typePtr->encodingName) + 1);
-    encodingPtr->name		= strcpy(name, typePtr->encodingName);
-    encodingPtr->hPtr		= hPtr;
-    Tcl_SetHashValue(hPtr, encodingPtr);
-
-    Tcl_MutexUnlock(&encodingMutex);
-  }
     return (Tcl_Encoding) encodingPtr;
 }
 
@@ -1545,8 +1545,8 @@ Tcl_UtfToExternalDStringEx(
 	dstChunkLen = dstLen > INT_MAX ? INT_MAX : dstLen;
 
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-					  srcChunkLen, flags, &state, dst, dstChunkLen,
-					  &srcChunkRead, &dstChunkWrote, &dstChunkChars);
+		srcChunkLen, flags, &state, dst, dstChunkLen,
+		&srcChunkRead, &dstChunkWrote, &dstChunkChars);
 	soFar = dst + dstChunkWrote - Tcl_DStringValue(dstPtr);
 
 	/* Move past the part processed in this go around */

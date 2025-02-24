@@ -1267,7 +1267,7 @@ Tcl_GlobObjCmd(
 
 	last = first + pathlength;
 	for (; last != first; last--) {
-	    if (strchr(separators, *(last-1)) != NULL) {
+	    if (strchr(separators, last[-1]) != NULL) {
 		break;
 	    }
 	}

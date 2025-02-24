@@ -213,7 +213,7 @@ ConvertZeroEffectToNOP(
 
 	size = AddrLength(currentInstPtr);
 	while ((currentInstPtr + size < envPtr->codeNext)
-		&& *(currentInstPtr+size) == INST_NOP) {
+		&& currentInstPtr[size] == INST_NOP) {
 	    if (IsTargetAddress(&targets, currentInstPtr + size)) {
 		break;
 	    }
@@ -222,7 +222,7 @@ ConvertZeroEffectToNOP(
 	if (IsTargetAddress(&targets, currentInstPtr + size)) {
 	    continue;
 	}
-	nextInst = *(currentInstPtr + size);
+	nextInst = currentInstPtr[size];
 	switch (*currentInstPtr) {
 	case INST_PUSH1:
 	    if (nextInst == INST_POP) {
@@ -259,19 +259,19 @@ ConvertZeroEffectToNOP(
 	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
 		blank = size;
-		*(currentInstPtr + size) = INST_JUMP_FALSE1;
+		currentInstPtr[size] = INST_JUMP_FALSE1;
 		break;
 	    case INST_JUMP_FALSE1:
 		blank = size;
-		*(currentInstPtr + size) = INST_JUMP_TRUE1;
+		currentInstPtr[size] = INST_JUMP_TRUE1;
 		break;
 	    case INST_JUMP_TRUE4:
 		blank = size;
-		*(currentInstPtr + size) = INST_JUMP_FALSE4;
+		currentInstPtr[size] = INST_JUMP_FALSE4;
 		break;
 	    case INST_JUMP_FALSE4:
 		blank = size;
-		*(currentInstPtr + size) = INST_JUMP_TRUE4;
+		currentInstPtr[size] = INST_JUMP_TRUE4;
 		break;
 	    }
 	    break;
@@ -317,7 +317,7 @@ ConvertZeroEffectToNOP(
 
 	if (blank > 0) {
 	    for (i=0 ; i<blank ; i++) {
-		*(currentInstPtr + i) = INST_NOP;
+		currentInstPtr[i] = INST_NOP;
 	    }
 	    size = blank;
 	}
@@ -365,7 +365,7 @@ AdvanceJumps(
 		    break;
 		}
 		offset += delta;
-		switch (*(currentInstPtr + offset)) {
+		switch (currentInstPtr[offset]) {
 		case INST_NOP:
 		    delta = InstLength(INST_NOP);
 		    continue;
@@ -393,7 +393,7 @@ AdvanceJumps(
 		    offset = TclGetInt4AtPtr(currentInstPtr + 1);
 		    break;
 		}
-		switch (*(currentInstPtr + offset)) {
+		switch (currentInstPtr[offset]) {
 		case INST_NOP:
 		    offset += InstLength(INST_NOP);
 		    continue;

@@ -706,7 +706,7 @@ FileGetOptionProc(
 	 * general probe.
 	 */
 
-	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	dictContents = TclGetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
 	return TCL_OK;

@@ -2746,7 +2746,7 @@ IndexTailVarIfKnown(
 	 */
 
 	for (p = tailName + len -1; p > tailName; p--) {
-	    if ((*p == ':') && (*(p - 1) == ':')) {
+	    if ((p[0] == ':') && (p[- 1] == ':')) {
 		p++;
 		break;
 	    }

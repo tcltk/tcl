@@ -1818,8 +1818,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	const char *subcmdName; /* Name of the subcommand or unique prefix of
-				 * it (a non-unique prefix produces an error).
-				 */
+				 * it (a non-unique prefix produces an error). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
 	Tcl_Size stringLength, i;
 	Tcl_Size tableLength = ensemblePtr->subcommandTable.numEntries;

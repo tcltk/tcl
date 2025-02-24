@@ -2396,12 +2396,12 @@ TclCompileVarSubst(
      */
 
     for (i = 0, p = name;  i < nameBytes;  i++, p++) {
-	if ((*p == ':') && (i < nameBytes-1) && (*(p+1) == ':')) {
+	if ((p[0] == ':') && (i < nameBytes-1) && (p[1] == ':')) {
 	    localVarName = -1;
 	    break;
-	} else if ((*p == '(')
+	} else if ((p[0] == '(')
 		&& (tokenPtr->numComponents == 1)
-		&& (*(name + nameBytes - 1) == ')')) {
+		&& (name[nameBytes - 1] == ')')) {
 	    localVarName = 0;
 	    break;
 	}
