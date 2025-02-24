@@ -172,7 +172,7 @@ FindSymbol(
     Tcl_DString newName, ds;	/* Buffers for converting the name to
 				 * system encoding and prepending an
 				 * underscore*/
-    void *handle = (void *) loadHandle->clientData;
+    void *handle = loadHandle->clientData;
 				/* Native handle to the loaded library */
     void *proc;			/* Address corresponding to the resolved
 				 * symbol */
@@ -232,7 +232,7 @@ FindSymbol(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "cannot find symbol \"%s\": %s", symbol, errorStr));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		    (void *)NULL);
+		    (char *)NULL);
 	}
     }
     return proc;

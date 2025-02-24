@@ -1535,12 +1535,12 @@ TclpGetUserHome(
 		    result[i] = '/';
 		}
 	    }
-	    NetApiBufferFree((void *) uiPtr);
+	    NetApiBufferFree((void *)uiPtr);
 	}
 	Tcl_DStringFree(&ds);
     }
     if (wDomain != NULL) {
-	NetApiBufferFree((void *) wDomain);
+	NetApiBufferFree((void *)wDomain);
     }
 
     return result;
@@ -2750,27 +2750,25 @@ TclpObjNormalizePath(
 	 * Convert the entire known path to long form.
 	 */
 
-	if (1) {
-	    WCHAR wpath[MAX_PATH];
-	    const WCHAR *nativePath;
-	    DWORD wpathlen;
+	WCHAR wpath[MAX_PATH];
+	const WCHAR *nativePath;
+	DWORD wpathlen;
 
-	    Tcl_DStringInit(&ds);
-	    nativePath =
-		    Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
-	    wpathlen = GetLongPathNameProc(nativePath,
-		    (WCHAR *) wpath, MAX_PATH);
-	    /*
-	     * We have to make the drive letter uppercase.
-	     */
+	Tcl_DStringInit(&ds);
+	nativePath =
+		Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
+	wpathlen = GetLongPathNameProc(nativePath,
+		(WCHAR *) wpath, MAX_PATH);
+	/*
+	 * We have to make the drive letter uppercase.
+	 */
 
-	    if (wpath[0] >= 'a') {
-		wpath[0] -= ('a' - 'A');
-	    }
-	    Tcl_DStringAppend(&dsNorm, (const char *) wpath,
-		    wpathlen * sizeof(WCHAR));
-	    Tcl_DStringFree(&ds);
+	if (wpath[0] >= 'a') {
+	    wpath[0] -= ('a' - 'A');
 	}
+	Tcl_DStringAppend(&dsNorm, (const char *) wpath,
+		wpathlen * sizeof(WCHAR));
+	Tcl_DStringFree(&ds);
 #endif /* TclNORM_LONG_PATH */
     }
 

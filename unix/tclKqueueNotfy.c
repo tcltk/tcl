@@ -740,7 +740,7 @@ TclpWaitForEvent(
 	    i = read(tsdPtr->triggerPipe[0], buf, 1);
 	    if ((i == -1) && (errno != EAGAIN)) {
 		Tcl_Panic("Tcl_WaitForEvent: read from %p->triggerPipe: %s",
-			(void *) tsdPtr, strerror(errno));
+			tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}

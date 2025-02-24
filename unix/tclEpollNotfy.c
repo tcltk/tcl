@@ -731,7 +731,7 @@ TclpWaitForEvent(
 	    i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
 	    if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
 		Tcl_Panic("%s: read from %p->triggerEventFd: %s",
-			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+			"Tcl_WaitForEvent", tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}
@@ -743,7 +743,7 @@ TclpWaitForEvent(
 		    sizeof(triggerPipeVal));
 	    if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
 		Tcl_Panic("%s: read from %p->triggerPipe[0]: %s",
-			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+			"Tcl_WaitForEvent", tsdPtr, strerror(errno));
 	    }
 	    continue;
 	}

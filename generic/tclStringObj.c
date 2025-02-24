@@ -618,8 +618,7 @@ TclGetUniChar(
 	return -1;
     }
     const char *begin = TclUtfAtIndex(objPtr->bytes, index);
-#undef Tcl_UtfToUniChar
-    Tcl_UtfToUniChar(begin, &ch);
+    TclUtfToUniChar(begin, &ch);
     return ch;
 }
 
@@ -4133,7 +4132,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = Tcl_UtfToUniChar(from, &chw);
+		int bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);

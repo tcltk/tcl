@@ -141,12 +141,12 @@ FindSymbol(
      */
 
     if (shl_findsym(&handle, symbol, (short) TYPE_PROCEDURE,
-	    (void *) &proc) != 0) {
+	    (void *)&proc) != 0) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
 	Tcl_DStringAppend(&newName, symbol, TCL_INDEX_NONE);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
-		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
+		(short) TYPE_PROCEDURE, (void *)&proc) != 0) {
 	    proc = NULL;
 	}
 	Tcl_DStringFree(&newName);

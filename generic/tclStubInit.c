@@ -64,10 +64,6 @@
 #undef Tcl_ParseArgsObjv
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
-#undef Tcl_UniCharToUtfDString
-#undef Tcl_UtfToUniCharDString
-#undef Tcl_UtfToUniChar
-#undef Tcl_UniCharLen
 #undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # undef Tcl_WinConvertError

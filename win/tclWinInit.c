@@ -575,7 +575,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    Tcl_Size i, length, result = -1;
+    Tcl_Size i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;
@@ -599,7 +599,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

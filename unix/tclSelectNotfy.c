@@ -336,7 +336,7 @@ TclpInitNotifier(void)
 	clazz.hbrBackground = NULL;
 	clazz.lpszMenuName = NULL;
 	clazz.lpszClassName = className;
-	clazz.lpfnWndProc = (void *) NotifierProc;
+	clazz.lpfnWndProc = (void *)NotifierProc;
 	clazz.hIcon = NULL;
 	clazz.hCursor = NULL;
 
