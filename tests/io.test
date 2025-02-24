@@ -29,6 +29,7 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    set ::tcltestlib {}
     catch {
 	::tcltest::loadTestedCommands
 	package require -exact Tcltest [info patchlevel]
