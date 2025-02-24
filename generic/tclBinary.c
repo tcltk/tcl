@@ -961,7 +961,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjLengthM(interp, objv[arg], &listc
+		if (TclListObjLength(interp, objv[arg], &listc
 			) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -974,7 +974,7 @@ BinaryFormatCmd(
 			    -1));
 		    return TCL_ERROR;
 		}
-		if (TclListObjGetElementsM(interp, objv[arg], &listc,
+		if (TclListObjGetElements(interp, objv[arg], &listc,
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1249,7 +1249,7 @@ BinaryFormatCmd(
 		listc = 1;
 		count = 1;
 	    } else {
-		TclListObjGetElementsM(interp, objv[arg], &listc, &listv);
+		TclListObjGetElements(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
 		    count = listc;
 		}

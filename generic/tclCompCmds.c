@@ -302,7 +302,7 @@ TclCompileArraySetCmd(
     TclNewObj(literalObj);
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
     isDataValid = (isDataLiteral
-	    && TclListObjLengthM(NULL, literalObj, &len) == TCL_OK);
+	    && TclListObjLength(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
@@ -893,7 +893,7 @@ TclCompileConcatCmd(
 	const char *bytes;
 	Tcl_Size len, slen;
 
-	TclListObjGetElementsM(NULL, listObj, &len, &objs);
+	TclListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
 	bytes = Tcl_GetStringFromObj(objPtr, &slen);
@@ -2833,7 +2833,7 @@ CompileEachloopCmd(
 	 */
 
 	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
-		TCL_OK != TclListObjLengthM(NULL, varListObj, &numVars) ||
+		TCL_OK != TclListObjLength(NULL, varListObj, &numVars) ||
 		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;

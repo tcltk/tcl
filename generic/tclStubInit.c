@@ -87,6 +87,8 @@
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
+#undef TclListObjGetElements
+#undef TclListObjLength
 
 #if defined(TCL_NO_DEPRECATED)
 # define TclListObjGetElements 0
@@ -102,7 +104,7 @@ int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -117,7 +119,7 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -132,7 +134,7 @@ int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "Dict too large to be processed", (void *)NULL);
 	    }
@@ -147,7 +149,7 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
@@ -162,7 +164,7 @@ void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (n > INT_MAX)) {
 	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
 	    Tcl_Free((void *)*argvPtr);
 	    *argvPtr = NULL;
@@ -174,7 +176,7 @@ Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && result && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && result && (n > INT_MAX)) {
 	    Tcl_DecrRefCount(result);
 	    return NULL;
 	}

@@ -488,7 +488,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	TclListObjLengthM(NULL, resultPtr, lenPtr);
+	TclListObjLength(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -1225,7 +1225,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (TclListObjLengthM(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLength(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1351,7 +1351,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	TclListObjLengthM(interp, typePtr, &length);
+	TclListObjLength(interp, typePtr, &length);
 	if (length == 0) {
 	    goto skipTypes;
 	}
@@ -1422,7 +1422,7 @@ Tcl_GlobObjCmd(
 		Tcl_Obj *item;
 		Tcl_Size llen;
 
-		if ((TclListObjLengthM(NULL, look, &llen) == TCL_OK)
+		if ((TclListObjLength(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", TclGetString(item))) {
@@ -1825,7 +1825,7 @@ TclGlob(
 	    }
 	}
 
-	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    Tcl_Size len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
@@ -2152,7 +2152,7 @@ DoGlob(
 	    Tcl_Size i, subdirc, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = TclListObjGetElementsM(interp, subdirsPtr,
+	    result = TclListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
@@ -2164,7 +2164,7 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    TclListObjLengthM(NULL, matchesObj, &end);
+		    TclListObjLength(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			Tcl_Size numBytes;

@@ -858,7 +858,7 @@ Tcl_AppendAllObjTypes(
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLengthM(interp, objPtr, &numElems) != TCL_OK) {
+    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
