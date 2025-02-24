@@ -496,8 +496,8 @@ TclCreateProc(
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "u entries, "
-		    "precompiled header expects %" TCL_SIZE_MODIFIER "u", procName, numArgs,
+		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "d entries, "
+		    "precompiled header expects %" TCL_SIZE_MODIFIER "d", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "BYTECODELIES", (void *)NULL);
@@ -591,7 +591,7 @@ TclCreateProc(
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "u is "
+			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", (void *)NULL);
@@ -784,7 +784,7 @@ TclObjGetFrame(
     if (objPtr == NULL) {
 	/* Do nothing */
     } else if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &level)) {
-	Tcl_GetWideIntFromObj(NULL, objPtr, &w);
+	TclGetWideIntFromObj(NULL, objPtr, &w);
 	if (w < 0 || w > INT_MAX || curLevel > w + INT_MAX) {
 	    result = -1;
 	} else {
@@ -1747,7 +1747,7 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; int i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);

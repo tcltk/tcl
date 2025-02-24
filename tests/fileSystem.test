@@ -281,7 +281,7 @@ test filesystem-1.30.3 {file normalization should distinguish between ~ and ~use
     set olduserhome [file home $::tcl_platform(user)]
     set ::env(HOME) [file join $oldhome temp]
 } -cleanup {
-    set env(HOME) $oldhome
+    set ::env(HOME) $oldhome
 } -body {
     list [string equal [file home] $::env(HOME)] \
         [string equal $olduserhome [file home $::tcl_platform(user)]]

@@ -1391,7 +1391,7 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
     if (bytev == NULL) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
@@ -1617,7 +1617,7 @@ ReflectSeekWide(
         goto invalid;
     }
 
-    if (Tcl_GetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
+    if (TclGetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
     }
@@ -2014,7 +2014,7 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %" TCL_SIZE_MODIFIER "u element%s instead", listc,
+		"elements, got %" TCL_SIZE_MODIFIER "d element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
@@ -3129,7 +3129,7 @@ ForwardProc(
 	    Tcl_Size bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    if (bytev == NULL) {
 		ForwardSetStaticError(paramPtr, msg_read_nonbyte);
@@ -3212,7 +3212,7 @@ ForwardProc(
 
 	    Tcl_WideInt newLoc;
 
-	    if (Tcl_GetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
 		if (newLoc < 0) {
 		    ForwardSetStaticError(paramPtr, msg_seek_beforestart);
 		    paramPtr->seek.offset = -1;
@@ -3323,7 +3323,7 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		snprintf(buf, 200,
-			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "u %s instead}",
+			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);

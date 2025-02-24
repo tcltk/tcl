@@ -919,6 +919,84 @@ TclCompileConcatCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileConstCmd --
+ *
+ *	Procedure called to compile the "const" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "const" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileConstCmd(
+    Tcl_Interp *interp,		/* The interpreter. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *varTokenPtr, *valueTokenPtr;
+    int isScalar, localIndex;
+
+    /*
+     * Need exactly two arguments.
+     */
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we need
+     * to emit code to compute and push the name at runtime. We use a frame
+     * slot (entry in the array of local vars) if we are compiling a procedure
+     * body and if the name is simple text that does not include namespace
+     * qualifiers.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &isScalar, 1);
+
+    /*
+     * If the user specified an array element, we don't bother handling
+     * that.
+     */
+    if (!isScalar) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * We are doing an assignment to set the value of the constant. This will
+     * need to be extended to push a value for each argument.
+     */
+
+    valueTokenPtr = TokenAfter(varTokenPtr);
+    CompileWord(envPtr, valueTokenPtr, interp, 2);
+
+    if (localIndex < 0) {
+	TclEmitOpcode(INST_CONST_STK, envPtr);
+    } else {
+	TclEmitInstInt4(INST_CONST_IMM, localIndex, envPtr);
+    }
+
+    /*
+     * The const command's result is an empty string.
+     */
+    PushStringLiteral(envPtr, "");
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileContinueCmd --
  *
  *	Procedure called to compile the "continue" command.

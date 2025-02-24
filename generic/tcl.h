@@ -41,7 +41,7 @@ extern "C" {
  * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
- * README		(sections 0 and 2, with and without separator)
+ * README.md		(sections 0 and 2, with and without separator)
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
@@ -52,11 +52,11 @@ extern "C" {
 #endif
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION   0
-#   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#   define TCL_RELEASE_SERIAL  4
+#   define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#   define TCL_RELEASE_SERIAL  1
 
 #   define TCL_VERSION	    "9.0"
-#   define TCL_PATCH_LEVEL	    "9.0a4"
+#   define TCL_PATCH_LEVEL	    "9.0b1"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
@@ -558,29 +558,21 @@ typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
-#if TCL_MAJOR_VERSION > 8
-typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
-	struct Tcl_Obj *const *objv);
-#else
-#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
-#endif
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
 typedef int (Tcl_EncodingConvertProc) (void *clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-#define Tcl_EncodingFreeProc Tcl_FreeProc
+typedef void (Tcl_EncodingFreeProc) (void *clientData);
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
 typedef void (Tcl_EventCheckProc) (void *clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, void *clientData);
 typedef void (Tcl_EventSetupProc) (void *clientData, int flags);
-#define Tcl_ExitProc Tcl_FreeProc
+typedef void (Tcl_ExitProc) (void *clientData);
 typedef void (Tcl_FileProc) (void *clientData, int mask);
-#define Tcl_FileFreeProc Tcl_FreeProc
+typedef void (Tcl_FileFreeProc) (void *clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
-typedef void (Tcl_FreeProc) (void *blockPtr);
 typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
@@ -590,8 +582,18 @@ typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 #if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
+typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
+	struct Tcl_Obj *const *objv);
+typedef void (Tcl_FreeProc) (void *blockPtr);
+#define Tcl_ExitProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_EncodingFreeProc Tcl_FreeProc
 #else
 #define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
+typedef void (Tcl_FreeProc) (char *blockPtr);
 #endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
@@ -750,6 +752,7 @@ typedef struct Tcl_Obj {
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
+
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
@@ -1033,13 +1036,8 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
-#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
 #define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
 #define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
-#else
-#define TCL_LINK_LONG		11
-#define TCL_LINK_ULONG		12
-#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_CHARS		15
@@ -1429,14 +1427,12 @@ typedef struct Tcl_ChannelType {
 				 * type. */
     Tcl_ChannelTypeVersion version;
 				/* Version of the channel type. */
-    void *closeProc;
-				/* Not used any more. */
+    void *closeProc;		/* Not used any more. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
-    void *seekProc;
-				/* Not used any more. */
+    void *seekProc;		/* Not used any more. */
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;
@@ -2031,14 +2027,9 @@ typedef struct Tcl_EncodingType {
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#if TCL_MAJOR_VERSION < 9
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#endif
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
 /*
  * The following definitions are the error codes returned by the conversion

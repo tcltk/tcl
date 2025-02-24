@@ -19,6 +19,14 @@ package require http 2.10
 # (0) Socket Creation in Thread, which triples the number of tests.
 # ------------------------------------------------------------------------------
 
+# To write a separate summary for each value of ThreadLevel, set constraint ThreadLevelSummary.
+#testConstraint ThreadLevelSummary 0
+
+if 0 {
+    # For debugging: run with a single value of ThreadLevel: 0|1|2
+    set ThreadLevel 0
+    testConstraint ThreadLevelSummary 1
+}
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
         set ValueRange {0 1 2}
@@ -33,6 +41,9 @@ if {![info exists ThreadLevel]} {
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
+    if {![testConstraint ThreadLevelSummary]} {
+        ::tcltest::cleanupTests
+    }
     return
 }
 
@@ -889,4 +900,6 @@ unset header footer delay label suffix match cons name te
 namespace delete ::httpTest
 namespace delete ::httpTestScript
 
-::tcltest::cleanupTests
+if {[testConstraint ThreadLevelSummary]} {
+    ::tcltest::cleanupTests
+}

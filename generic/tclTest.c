@@ -15,6 +15,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define TCL_8_API
+#undef BUILD_tcl
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
@@ -292,8 +294,6 @@ static Tcl_ObjCmdProc	TestFilesystemObjCmd;
 static Tcl_ObjCmdProc	TestSimpleFilesystemObjCmd;
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
 			    Tcl_Obj *arg2);
-static Tcl_ObjCmdProc	TestgetencpathObjCmd;
-static Tcl_ObjCmdProc	TestsetencpathObjCmd;
 static Tcl_Obj *	TestReportGetNativePath(Tcl_Obj *pathPtr);
 static Tcl_FSStatProc TestReportStat;
 static Tcl_FSAccessProc TestReportAccess;
@@ -721,10 +721,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testgetencpath", TestgetencpathObjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testapplylambda", TestApplyLambdaObjCmd,
 	    NULL, NULL);
@@ -2131,7 +2127,6 @@ static int UtfExtWrapper(
     } flagMap[] = {
 	{"start", TCL_ENCODING_START},
 	{"end", TCL_ENCODING_END},
-	{"stoponerror", TCL_ENCODING_STOPONERROR},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
 	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
@@ -3857,7 +3852,7 @@ TestlistrepCmd(
     Tcl_Obj *const objv[])      /* Argument objects. */
 {
     /* Subcommands supported by this command */
-    const char* subcommands[] = {
+    static const char *const subcommands[] = {
 	"new",
 	"describe",
 	"config",
@@ -5819,12 +5814,6 @@ TestbytestringObjCmd(
 {
     struct {
 #if !defined(TCL_NO_DEPRECATED)
-#   if defined(_MSC_VER) && !defined(NDEBUG)
-#	pragma warning(disable:4133)
-#   elif defined(__clang__)
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wincompatible-pointer-types"
-#   endif
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
 	Tcl_Size n;
@@ -5842,9 +5831,6 @@ TestbytestringObjCmd(
     if (p == NULL) {
 	return TCL_ERROR;
     }
-#if !defined(TCL_NO_DEPRECATED) && defined(__clang__)
-#   pragma clang diagnostic pop
-#endif
 
     if (x.m != 1) {
 	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", (void *)NULL);
@@ -8339,72 +8325,6 @@ TestconcatobjCmd(
     return result;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TestgetencpathObjCmd --
- *
- *	This function implements the "testgetencpath" command. It is used to
- *	test Tcl_GetEncodingSearchPath().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestgetencpathObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
-{
-    if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsetencpathCmd --
- *
- *	This function implements the "testsetencpath" command. It is used to
- *	test Tcl_SetDefaultEncodingDir().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestsetencpathObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Argument strings. */
-{
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
-        return TCL_ERROR;
-    }
-
-    Tcl_SetEncodingSearchPath(objv[1]);
-    return TCL_OK;
-}
-
 /*
  *----------------------------------------------------------------------
  *

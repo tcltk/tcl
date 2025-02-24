@@ -85,6 +85,19 @@ Returns 1 if \fIcommand\fR is a complete command, and \fB0\fR otherwise.
 Typically used in line-oriented input environments
 to allow users to type in commands that span multiple lines.
 .TP
+\fBinfo constant \fIvarName\fR
+.VS "TIP 677"
+Returns 1 if \fIvarName\fR is a constant variable (see \fBconst\fR) and 0
+otherwise.
+.VE "TIP 677"
+.TP
+\fBinfo consts\fR ?\fIpattern\fR?
+.VS "TIP 677"
+Returns the list of constant variables (see \fBconst\fR) in the current scope,
+or the list of constant variables matching \fIpattern\fR (if that is provided)
+in a manner similar to \fBinfo vars\fR.
+.VE "TIP 677"
+.TP
 \fBinfo coroutine\fR
 .
 Returns the name of the current \fBcoroutine\fR, or the empty

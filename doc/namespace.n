@@ -14,7 +14,7 @@
 .SH NAME
 namespace \- create and manipulate contexts for commands and variables
 .SH SYNOPSIS
-\fBnamespace \fR?\fIsubcommand\fR? ?\fIarg ...\fR?
+\fBnamespace \fR\fIsubcommand\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

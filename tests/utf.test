@@ -62,11 +62,11 @@ test utf-1.10 {Tcl_UniCharToUtf: 3 byte sequence, high surrogate} testbytestring
 test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring {
     expr {[format %c 0xDC42] eq [testbytestring \xED\xB1\x82]}
 } 1
-test utf-1.12 {Tcl_UniCharToUtf: Invalid surrogate} {
-    expr {"\UD842" eq "\uD842"}
-} 1
-test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} testbytestring {
+test utf-1.12 {Tcl_UniCharToUtf: Invalid surrogate} testbytestring {
     expr {"\UD842" eq [testbytestring \xED\xA1\x82]}
+} 1
+test utf-1.13 {Tcl_UniCharToUtf: Invalid surrogate} {
+    expr {"\UD842" eq "\uD842"}
 } 1
 test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {
     set lo \uDE02
@@ -163,7 +163,7 @@ test utf-4.10 {Tcl_NumUtfChars: #x00, calc len, overcomplete} {testnumutfchars t
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end-1
 } 3
-test utf-4.12.1 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring} {
+test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
 } 1
 test utf-4.13 {Tcl_NumUtfChars: end of string} {testnumutfchars testbytestring} {
@@ -212,7 +212,7 @@ test utf-6.9 {Tcl_UtfNext} {testutfnext testbytestring} {
 test utf-6.10 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xA0]G
 } 1
-test utf-6.11.1 {Tcl_UtfNext} {testutfnext testbytestring} {
+test utf-6.11 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xA0\xA0\x00]
 } 2
 test utf-6.12 {Tcl_UtfNext} {testutfnext testbytestring} {
@@ -531,7 +531,7 @@ test utf-7.9.1 {Tcl_UtfPrev} {testutfprev testbytestring} {
 test utf-7.9.2 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF8\xA0\xF8\xA0] 3
 } 2
-test utf-7.10.0 {Tcl_UtfPrev} {testutfprev testbytestring} {
+test utf-7.10 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF2\xA0]
 } 1
 test utf-7.10.1 {Tcl_UtfPrev} {testutfprev testbytestring} {
@@ -579,7 +579,7 @@ test utf-7.14.1 {Tcl_UtfPrev} {testutfprev testbytestring} {
 test utf-7.14.2 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF8\xA0\xA0\xF8] 4
 } 3
-test utf-7.15.0 {Tcl_UtfPrev} {testutfprev testbytestring} {
+test utf-7.15 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF2\xA0\xA0]
 } 1
 test utf-7.15.1 {Tcl_UtfPrev} {testutfprev testbytestring} {
@@ -714,7 +714,7 @@ test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} tes
 test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {testutfprev testbytestring} {
     testutfprev [testbytestring \xE8\xA0\x00] 2
 } 0
-test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring } {
+test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF]
 } 1
 test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
@@ -1026,7 +1026,7 @@ test utf-19.1 {TclUniCharLen} -body {
 test utf-20.1 {TclUniCharNcmp} {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
-test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
+test utf-20.2 {[4c591fa487] Tcl_UniCharNcmp/Tcl_UtfNcmp} {
     set one [format %c 0xFFFF]
     set two [format %c 0x10000]
     set first [string compare $one $two]

@@ -16,6 +16,9 @@ catch {
 }
 
 testConstraint testevalex [llength [info commands testevalex]]
+testConstraint testobj [llength [info commands testobj]]
+testConstraint lstring [llength [info commands lstring]]
+testConstraint lgen [llength [info commands lgegenn]]
 
 set abstractlisttestvars [info var *]
 
@@ -30,18 +33,18 @@ proc value-cmp {vara varb} {
 set str "If you can keep your head when all about you Are losing theirs and blaming it on you,"
 set str2 "If you can trust yourself when all men doubt you, But make allowance for their doubting, too."
 
-test abstractlist-1.0 {error cases} -body {
+test abstractlist-1.0 {error cases} -constraints lstring -body {
     lstring
 } \
     -returnCodes 1 \
     -result {wrong # args: should be "lstring string"}
 
-test abstractlist-1.1 {error cases} -body {
+test abstractlist-1.1 {error cases} -constraints lstring -body {
     lstring a b c
 } -returnCodes 1 \
     -result {wrong # args: should be "lstring string"}
 
-test abstractlist-2.0 {no shimmer llength} -body {
+test abstractlist-2.0 {no shimmer llength} -constraints {testobj lstring} -body {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set len [llength $l]
@@ -51,7 +54,7 @@ test abstractlist-2.0 {no shimmer llength} -body {
 unset l
 } -result {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring 85 lstring}
 
-test abstractlist-2.1 {no shimmer lindex} {
+test abstractlist-2.1 {no shimmer lindex} {testobj lstring} {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set ele [lindex $l 22]
@@ -59,7 +62,7 @@ test abstractlist-2.1 {no shimmer lindex} {
     list $l ${l-isa} ${ele} ${l-isa2}
 } {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring e lstring}
 
-test abstractlist-2.2 {no shimmer lreverse} {
+test abstractlist-2.2 {no shimmer lreverse} {testobj lstring} {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set r [lreverse $l]
@@ -68,7 +71,7 @@ test abstractlist-2.2 {no shimmer lreverse} {
     list $r ${l-isa} ${r-isa} ${l-isa2}
 } {{, u o y { } n o { } t i { } g n i m a l b { } d n a { } s r i e h t { } g n i s o l { } e r A { } u o y { } t u o b a { } l l a { } n e h w { } d a e h { } r u o y { } p e e k { } n a c { } u o y { } f I} lstring lstring lstring}
 
-test abstractlist-2.3 {no shimmer lrange} {
+test abstractlist-2.3 {no shimmer lrange} {testobj lstring} {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set il [lsearch -all [lstring $str] { }]
@@ -84,7 +87,7 @@ test abstractlist-2.3 {no shimmer lrange} {
     list ${l-isa} $il ${l-isa2} ${l-isa3} $words
 } {lstring {2 6 10 15 20 25 30 34 40 44 48 55 62 66 74 77 80 85} lstring lstring {If you can keep your head when all about you Are losing theirs and blaming it on you,}}
 
-test abstractlist-2.4 {no shimmer foreach} {
+test abstractlist-2.4 {no shimmer foreach} {testobj lstring} {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set word {}
@@ -107,7 +110,7 @@ test abstractlist-2.4 {no shimmer foreach} {
 #
 # The TBCE implements lreplace as a lrange + lappend operation, so, in this case, $m list, not an lstring.
 #
-test abstractlist-2.5 {!no shimmer lreplace} {
+test abstractlist-2.5 {!no shimmer lreplace} {testobj lstring} {
     set l [lstring $str2]
     set l-isa [testobj objtype $l]
     set m [lreplace $l 78 86 { } f a i l i n g]
@@ -116,7 +119,7 @@ test abstractlist-2.5 {!no shimmer lreplace} {
     list ${l-isa} $m ${m-isa} ${l-isa1}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } f a i l i n g , { } t o o .} lstring lstring}
 
-test abstractlist-2.6 {no shimmer ledit} {
+test abstractlist-2.6 {no shimmer ledit} {testobj lstring} {
     # "ledit m 9 8 S"
     set l [lstring $str2]
     set l-isa [testobj objtype $l]
@@ -125,7 +128,7 @@ test abstractlist-2.6 {no shimmer ledit} {
     list ${l-isa} $e ${e-isa}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e s { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
-test abstractlist-2.7 {no shimmer linsert} -body {
+test abstractlist-2.7 {no shimmer linsert} -constraints {testobj lstring} -body {
     # "ledit m 9 8 S"
     set l [lstring $str2]
     set l-isa [testobj objtype $l]
@@ -140,7 +143,7 @@ test abstractlist-2.7 {no shimmer linsert} -body {
 unset l i l-isa i-isa res p p-isa
 } -result {lstring {I f { } y o u { } c a n { } t r u l y { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring y none {I f { } y o u { } c a n { } t r u l y { } t r u s t { } o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
-test abstractlist-2.8 {shimmer lassign} {
+test abstractlist-2.8 {shimmer lassign} {testobj lstring} {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lassign $l i n c]
@@ -149,7 +152,7 @@ test abstractlist-2.8 {shimmer lassign} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {o n c e i v a b l e} lstring lstring}
 
-test abstractlist-2.9 {no shimmer lremove} {
+test abstractlist-2.9 {no shimmer lremove} {testobj lstring} {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lremove $l 0 1]
@@ -158,7 +161,7 @@ test abstractlist-2.9 {no shimmer lremove} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {c o n c e i v a b l e} lstring lstring}
 
-test abstractlist-2.10 {shimmer lreverse} {
+test abstractlist-2.10 {shimmer lreverse} {testobj lstring} {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lreverse $l]
@@ -167,7 +170,7 @@ test abstractlist-2.10 {shimmer lreverse} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {e l b a v i e c n o c n I} lstring lstring}
 
-test abstractlist-2.11 {shimmer lset} {
+test abstractlist-2.11 {shimmer lset} {testobj lstring} {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lset l 2 k]
@@ -176,7 +179,7 @@ test abstractlist-2.11 {shimmer lset} {
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
 
 # lrepeat
-test abstractlist-2.12 {shimmer lrepeat} {
+test abstractlist-2.12 {shimmer lrepeat} {testobj lstring} {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lrepeat 3 $l]
@@ -185,7 +188,7 @@ test abstractlist-2.12 {shimmer lrepeat} {
     list $l ${l-isa} $m ${m-isa} [testobj objtype $n] [value-cmp l n]
 } {{I n c o n c e i v a b l e} lstring {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} list lstring 0}
 
-test abstractlist-2.13 {no shimmer join llength==1} {
+test abstractlist-2.13 {no shimmer join llength==1} {testobj lstring} {
     set l [lstring G]
     set l-isa [testobj objtype $l]
     set j [join $l :]
@@ -193,7 +196,7 @@ test abstractlist-2.13 {no shimmer join llength==1} {
     list ${l-isa} $l ${j-isa} $j
 } {lstring G none G}
 
-test abstractlist-2.14 {error case lset multiple indicies} -body {
+test abstractlist-2.14 {error case lset multiple indicies} -constraints {testobj lstring} -body {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lset l 2 0 1 k]
@@ -204,7 +207,7 @@ test abstractlist-2.14 {error case lset multiple indicies} -body {
 
 # lsort
 
-test abstractlist-3.0 {no shimmer llength} {
+test abstractlist-3.0 {no shimmer llength} {testobj lstring} {
     set l [lstring -not SLICE $str]
     set l-isa [testobj objtype $l]
     set len [llength $l]
@@ -212,7 +215,7 @@ test abstractlist-3.0 {no shimmer llength} {
     list $l ${l-isa} ${len} ${l-isa2}
 } {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring 85 lstring}
 
-test abstractlist-3.1 {no shimmer lindex} {
+test abstractlist-3.1 {no shimmer lindex} {testobj lstring} {
     set l [lstring -not SLICE $str]
     set l-isa [testobj objtype $l]
     set n 22
@@ -221,7 +224,7 @@ test abstractlist-3.1 {no shimmer lindex} {
     list $l ${l-isa} ${ele} ${l-isa2}
 } {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring e lstring}
 
-test abstractlist-3.2 {no shimmer lreverse} {
+test abstractlist-3.2 {no shimmer lreverse} {testobj lstring} {
     set l [lstring -not SLICE $str]
     set l-isa [testobj objtype $l]
     set r [lreverse $l]
@@ -230,7 +233,7 @@ test abstractlist-3.2 {no shimmer lreverse} {
     list $r ${l-isa} ${r-isa} ${l-isa2}
 } {{, u o y { } n o { } t i { } g n i m a l b { } d n a { } s r i e h t { } g n i s o l { } e r A { } u o y { } t u o b a { } l l a { } n e h w { } d a e h { } r u o y { } p e e k { } n a c { } u o y { } f I} lstring lstring lstring}
 
-test abstractlist-3.3 {shimmer lrange} {
+test abstractlist-3.3 {shimmer lrange} {testobj lstring} {
     set l [lstring -not SLICE $str]
     set l-isa [testobj objtype $l]
     set il [lsearch -all [lstring -not SLICE $str] { }]
@@ -246,7 +249,7 @@ test abstractlist-3.3 {shimmer lrange} {
     list ${l-isa} $il ${l-isa2} ${l-isa3} $words
 } {lstring {2 6 10 15 20 25 30 34 40 44 48 55 62 66 74 77 80 85} lstring list {If you can keep your head when all about you Are losing theirs and blaming it on you,}}
 
-test abstractlist-3.4 {no shimmer foreach} {
+test abstractlist-3.4 {no shimmer foreach} {testobj lstring} {
     set l [lstring -not SLICE $str]
     set l-isa [testobj objtype $l]
     set word {}
@@ -269,7 +272,7 @@ test abstractlist-3.4 {no shimmer foreach} {
 #
 # The TBCE implements lreplace as a lrange + lappend operation, so, in this case, $m list, not an lstring.
 #
-test abstractlist-3.5 {!no shimmer lreplace} {
+test abstractlist-3.5 {!no shimmer lreplace} {testobj lstring} {
     set l [lstring -not SLICE $str2]
     set l-isa [testobj objtype $l]
     set m [lreplace $l 79 86 f a i l i n g]
@@ -278,7 +281,7 @@ test abstractlist-3.5 {!no shimmer lreplace} {
     list ${l-isa} $m ${m-isa} ${l-isa1}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } f a i l i n g , { } t o o .} lstring lstring}
 
-test abstractlist-3.6 {no shimmer ledit} {
+test abstractlist-3.6 {no shimmer ledit} {testobj lstring} {
     # "ledit m 9 8 S"
     set l [lstring -not SLICE $str2]
     set l-isa [testobj objtype $l]
@@ -287,7 +290,7 @@ test abstractlist-3.6 {no shimmer ledit} {
     list ${l-isa} $e ${e-isa}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e s { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
-test abstractlist-3.7 {no shimmer linsert} {
+test abstractlist-3.7 {no shimmer linsert} {testobj lstring} {
     # "ledit m 9 8 S"
     set res {}
     set l [lstring -not SLICE $str2]
@@ -301,7 +304,7 @@ test abstractlist-3.7 {no shimmer linsert} {
     lappend res $p ${p-isa} $i ${i-isa2}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring l none {I f { } y o u { } c a n { } t r u s t { } y o u r s e f { } w h e n { } a l l { } w o m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
-test abstractlist-3.8 {shimmer lassign} {
+test abstractlist-3.8 {shimmer lassign} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lassign $l i n c] ;# must be using lrange internally
@@ -310,7 +313,7 @@ test abstractlist-3.8 {shimmer lassign} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {o n c e i v a b l e} list list}
 
-test abstractlist-3.9 {no shimmer lremove} {
+test abstractlist-3.9 {no shimmer lremove} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lremove $l 0 1]
@@ -319,7 +322,7 @@ test abstractlist-3.9 {no shimmer lremove} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {c o n c e i v a b l e} lstring lstring}
 
-test abstractlist-3.10 {shimmer lreverse} {
+test abstractlist-3.10 {shimmer lreverse} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lreverse $l]
@@ -328,7 +331,7 @@ test abstractlist-3.10 {shimmer lreverse} {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {e l b a v i e c n o c n I} lstring lstring}
 
-test abstractlist-3.11 {shimmer lset} {
+test abstractlist-3.11 {shimmer lset} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
     set four 4
@@ -338,7 +341,7 @@ test abstractlist-3.11 {shimmer lset} {
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
 
 # lrepeat
-test abstractlist-3.12 {shimmer lrepeat} {
+test abstractlist-3.12 {shimmer lrepeat} {testobj lstring} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lrepeat 3 $l]
@@ -353,7 +356,7 @@ foreach not {{} REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
     testConstraint [format "%sShimmer" [string totitle $not]] [expr {$not eq ""}]
     set options [expr {$not ne "" ? "-not $not" : ""}]
 
-test abstractlist-$not-4.0 {no shimmer llength} {
+test abstractlist-$not-4.0 {no shimmer llength} {testobj lstring} {
     set l [lstring {*}$options $str]
     set l-isa [testobj objtype $l]
     set len [llength $l]
@@ -361,7 +364,7 @@ test abstractlist-$not-4.0 {no shimmer llength} {
     list $l ${l-isa} ${len} ${l-isa2}
 } {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring 85 lstring}
 
-test abstractlist-$not-4.1 {no shimmer lindex} {
+test abstractlist-$not-4.1 {no shimmer lindex} {testobj lstring} {
     set l [lstring {*}$options $str]
     set l-isa [testobj objtype $l]
     set ele [lindex $l 22]
@@ -369,7 +372,7 @@ test abstractlist-$not-4.1 {no shimmer lindex} {
     list $l ${l-isa} ${ele} ${l-isa2}
 } {{I f { } y o u { } c a n { } k e e p { } y o u r { } h e a d { } w h e n { } a l l { } a b o u t { } y o u { } A r e { } l o s i n g { } t h e i r s { } a n d { } b l a m i n g { } i t { } o n { } y o u ,} lstring e lstring}
 
-test abstractlist-$not-4.2 {lreverse} ReverseShimmer {
+test abstractlist-$not-4.2 {lreverse} {ReverseShimmer testobj lstring} {
     set l [lstring {*}$options $str]
     set l-isa [testobj objtype $l]
     set r [lreverse $l]
@@ -378,7 +381,7 @@ test abstractlist-$not-4.2 {lreverse} ReverseShimmer {
     list $r ${l-isa} ${r-isa} ${l-isa2}
 } {{, u o y { } n o { } t i { } g n i m a l b { } d n a { } s r i e h t { } g n i s o l { } e r A { } u o y { } t u o b a { } l l a { } n e h w { } d a e h { } r u o y { } p e e k { } n a c { } u o y { } f I} lstring lstring lstring}
 
-test abstractlist-$not-4.3 {no shimmer lrange} RangeShimmer {
+test abstractlist-$not-4.3 {no shimmer lrange} {RangeShimmer testobj lstring} {
     set l [lstring {*}$options $str]
     set l-isa [testobj objtype $l]
     set il [lsearch -all [lstring {*}$options $str] { }]
@@ -394,7 +397,7 @@ test abstractlist-$not-4.3 {no shimmer lrange} RangeShimmer {
     list ${l-isa} $il ${l-isa2} ${l-isa3} $words
 } {lstring {2 7 10 16 25 29 36 39 47 55 58 63} lstring lstring {If you can keep your head when all about you Are losing theirs and blaming it on you,}}
 
-test abstractlist-$not-4.4 {no shimmer foreach} {
+test abstractlist-$not-4.4 {no shimmer foreach} {testobj lstring} {
     set l [lstring {*}$options $str]
     set l-isa [testobj objtype $l]
     set word {}
@@ -417,7 +420,7 @@ test abstractlist-$not-4.4 {no shimmer foreach} {
 #
 # The TBCE implements lreplace as a lrange + lappend operation, so, in this case, $m list, not an lstring.
 #
-test abstractlist-$not-4.5 {!no shimmer lreplace} RangeShimmer {
+test abstractlist-$not-4.5 {!no shimmer lreplace} {RangeShimmer testobj lstring} {
     set l [lstring {*}$options $str2]
     set l-isa [testobj objtype $l]
     set m [lreplace $l 18 23 { } f a i l ?]
@@ -426,7 +429,7 @@ test abstractlist-$not-4.5 {!no shimmer lreplace} RangeShimmer {
     list ${l-isa} $m ${m-isa} ${l-isa1}
 } {lstring {} list lstring}
 
-test abstractlist-$not-4.6 {no shimmer ledit} {SetelementShimmer ReplaceShimmer} {
+test abstractlist-$not-4.6 {no shimmer ledit} {SetelementShimmer ReplaceShimmer testobj lstring} {
     set l [lstring {*}$options $str2]
     set l-isa [testobj objtype $l]
     set e [ledit l 68 67 s]
@@ -434,7 +437,7 @@ test abstractlist-$not-4.6 {no shimmer ledit} {SetelementShimmer ReplaceShimmer}
     list ${l-isa} $e ${e-isa}
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e s { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
-test abstractlist-$not-4.7 {no shimmer linsert} {ReplaceShimmer GetelementsShimmer}  {
+test abstractlist-$not-4.7 {no shimmer linsert} {ReplaceShimmer GetelementsShimmer testobj lstring}  {
     set l [lstring {*}$options $str2]
     set l-isa [testobj objtype $l]
     set i [linsert $l 12 {*}[split "almost " {}]]
@@ -447,7 +450,7 @@ test abstractlist-$not-4.7 {no shimmer linsert} {ReplaceShimmer GetelementsShimm
 } {lstring {I f { } y o u { } c a n { } t r u s t { } y o u r s e l f { } w h e n { } a l l { } m e n { } d o u b t { } y o u , { } B u t { } m a k e { } a l l o w a n c e { } f o r { } t h e i r { } d o u b t i n g , { } t o o .} lstring}
 
 # lassign probably uses lrange internally
-test abstractlist-$not-4.8 {shimmer lassign} RangeShimmer {
+test abstractlist-$not-4.8 {shimmer lassign} {RangeShimmer testobj lstring} {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lassign $l i n c]
@@ -456,7 +459,7 @@ test abstractlist-$not-4.8 {shimmer lassign} RangeShimmer {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {o n c e i v a b l e} lstring lstring}
 
-test abstractlist-$not-4.9 {no shimmer lremove} ReplaceShimmer {
+test abstractlist-$not-4.9 {no shimmer lremove} {ReplaceShimmer testobj lstring} {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lremove $l 0 1]
@@ -465,7 +468,7 @@ test abstractlist-$not-4.9 {no shimmer lremove} ReplaceShimmer {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {c o n c e i v a b l e} lstring lstring}
 
-test abstractlist-$not-4.10 {shimmer lreverse} ReverseShimmer {
+test abstractlist-$not-4.10 {shimmer lreverse} {ReverseShimmer testobj lstring} {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set l2 [lreverse $l]
@@ -474,7 +477,7 @@ test abstractlist-$not-4.10 {shimmer lreverse} ReverseShimmer {
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
 } {{I n c o n c e i v a b l e} lstring {e l b a v i e c n o c n I} lstring lstring}
 
-test abstractlist-$not-4.11 {shimmer lset} SetelementShimmer {
+test abstractlist-$not-4.11 {shimmer lset} {SetelementShimmer testobj lstring} {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lset l 2 k]
@@ -482,7 +485,7 @@ test abstractlist-$not-4.11 {shimmer lset} SetelementShimmer {
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
 
-test abstractlist-$not-4.11x {lset not compiled} {SetelementShimmer testevalex} {
+test abstractlist-$not-4.11x {lset not compiled} {SetelementShimmer testobj lstring testevalex} {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set m [testevalex {lset l 2 k}]
@@ -491,7 +494,7 @@ test abstractlist-$not-4.11x {lset not compiled} {SetelementShimmer testevalex} 
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
 
 test abstractlist-$not-4.11e {error case lset multiple indicies} \
-    -constraints {SetelementShimmer testevalex} -body {
+    -constraints {SetelementShimmer testobj lstring testevalex} -body {
     set l [lstring Inconceivable]
     set l-isa [testobj objtype $l]
     set m [testevalex {lset l 2 0 1 k}]
@@ -501,7 +504,7 @@ test abstractlist-$not-4.11e {error case lset multiple indicies} \
     -result {Multiple indicies not supported by lstring.}
 
 # lrepeat
-test abstractlist-$not-4.12 {shimmer lrepeat} -body {
+test abstractlist-$not-4.12 {shimmer lrepeat} -constraints {testobj lstring} -body {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lrepeat 3 $l]
@@ -522,7 +525,7 @@ testConstraint [format "%sShimmer" [string totitle $not]] 1
 # This example abstract list (lgen) causes a rescursive call in TEBC,
 # stack management was not included for these instructions in TEBC.
 #
-test abstractlist-lgen-bug {bug in str concat and list operations} -setup {
+test abstractlist-lgen-bug {bug in str concat and list operations} -constraints lgen -setup {
     set lgenfile [makeFile {
 	# Test TIP 192 - Lazy Lists
 
@@ -583,7 +586,7 @@ test abstractlist-lgen-bug {bug in str concat and list operations} -setup {
     unset res
 } -result {Index*2:0:-- {0 -> 0} {1 -> 6} {2 -> 12} {3 -> 18} {4 -> 24} {5 -> 30} {6 -> 36} {7 -> 42} {8 -> 48} {9 -> 54} {10 -> 60} {11 -> 66} {12 -> 72} {13 -> 78} {14 -> 84} {15 -> 90} {16 -> 96} my_expr(3):3 {7 8 9 10 11 12 13 14 15 16 17 18 19 20 21} {s2:Index+7: {7 8 9 10 11 12 13 14 15 16 17 18 19 20 21} :--} {foo:Index-8: {-8 -7 -6 -5 -4 -3 -2 -1 0 1 2 3 4 5 6} :--} 9len=15 9(3)=10 {bar:Index+7: {7 8 9 10 11 12 13 14 15 16 17 18 19 20 21} :--} {Index+7:7 8 9 10 11 12 13 14 15 16 17 18 19 20 21:--} {Index+7:7 8 9 10 11 12 13 14 15 16 17 18 19 20 21:--} {fib:0 1 1 2 3} {First 20 fibbinacci:0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181} {First 20 fibbinacci from x :0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181} Good-Bye!}
 
-test abstractlist-lgen-bug2 {bug in foreach} -body {
+test abstractlist-lgen-bug2 {bug in foreach} -constraints lgen -body {
 
     set x [lseq 17]
     set y [lgen 17 expr 6*]
@@ -601,7 +604,7 @@ test abstractlist-lgen-bug2 {bug in foreach} -body {
 } -result {{x-value is a arithseries} {y-value is a lgenseries} {0 -> 0} {1 -> 6} {2 -> 12} {3 -> 18} {4 -> 24} {5 -> 30} {6 -> 36} {7 -> 42} {8 -> 48} {9 -> 54} {10 -> 60} {11 -> 66} {12 -> 72} {13 -> 78} {14 -> 84} {15 -> 90} {16 -> 96} {x-value is a arithseries} {y-value is a lgenseries}}
 
 # scalar values
-test abstractlist-int {TclLengthOne: anti-shimmer of boolean, int, double, bignum} {
+test abstractlist-int {TclLengthOne: anti-shimmer of boolean, int, double, bignum} testobj {
     set res {}
     foreach i [list [expr {1+0}] [expr {true}] [expr {3.141592}] [expr {round(double(0x7fffffffffffffff))}]] {
 	lappend res [testobj objtype $i]

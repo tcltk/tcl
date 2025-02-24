@@ -44,10 +44,10 @@ TCL_DECLARE_MUTEX(infoTablesMutex)
  */
 
 static void		InitProcessInfo(ProcessInfo *info, Tcl_Pid pid,
-			    int resolvedPid);
+			    Tcl_Size resolvedPid);
 static void		FreeProcessInfo(ProcessInfo *info);
 static int		RefreshProcessInfo(ProcessInfo *info, int options);
-static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, size_t resolvedPid,
+static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
@@ -76,7 +76,7 @@ void
 InitProcessInfo(
     ProcessInfo *info,		/* Structure to initialize. */
     Tcl_Pid pid,		/* Process id. */
-    int resolvedPid)		/* Resolved process id. */
+    Tcl_Size resolvedPid)		/* Resolved process id. */
 {
     info->pid = pid;
     info->resolvedPid = resolvedPid;
@@ -185,7 +185,7 @@ RefreshProcessInfo(
 TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
-    size_t resolvedPid,		/* Resolved process id. */
+    Tcl_Size resolvedPid,	/* Resolved process id. */
     int options,		/* Options passed to Tcl_WaitPid. */
     int *codePtr,		/* If non-NULL, will receive either:
 				 *  - 0 for normal exit.
@@ -789,7 +789,7 @@ void
 TclProcessCreated(
     Tcl_Pid pid)		/* Process id. */
 {
-    size_t resolvedPid;
+    Tcl_Size resolvedPid;
     Tcl_HashEntry *entry, *entry2;
     int isNew;
     ProcessInfo *info;

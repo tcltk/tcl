@@ -663,6 +663,11 @@ typedef struct VarInHash {
  *				through "upvar" and "global" commands, or
  *				through references to variables in enclosing
  *				namespaces.
+ * VAR_CONSTANT -		1 means this is a constant "variable", and
+ *				cannot be written to by ordinary commands.
+ *				Structurally, it's the same as a scalar when
+ *				being read, but writes are rejected. Constants
+ *				are not supported inside arrays.
  *
  * Flags that indicate the type and status of storage; none is set for
  * compiled local variables (Var structs).
@@ -727,6 +732,7 @@ typedef struct VarInHash {
 /* Type of value (0 is scalar) */
 #define VAR_ARRAY		0x1
 #define VAR_LINK		0x2
+#define VAR_CONSTANT		0x10000
 
 /* Type of storage (0 is compiled local) */
 #define VAR_IN_HASHTABLE	0x4
@@ -761,13 +767,14 @@ typedef struct VarInHash {
  * MODULE_SCOPE void	TclSetVarScalar(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArray(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarLink(Var *varPtr);
+ * MODULE_SCOPE void	TclSetVarConstant(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArrayElement(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarUndefined(Var *varPtr);
  * MODULE_SCOPE void	TclClearVarUndefined(Var *varPtr);
  */
 
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK)
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT)
 
 #define TclSetVarArray(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
@@ -775,11 +782,14 @@ typedef struct VarInHash {
 #define TclSetVarLink(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_LINK
 
+#define TclSetVarConstant(varPtr) \
+    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK)) | VAR_CONSTANT
+
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK);\
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
     (varPtr)->value.objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)
@@ -811,6 +821,7 @@ typedef struct VarInHash {
  * The ANSI C "prototypes" for these macros are:
  *
  * MODULE_SCOPE int	TclIsVarScalar(Var *varPtr);
+ * MODULE_SCOPE int	TclIsVarConstant(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarLink(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarArray(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarUndefined(Var *varPtr);
@@ -836,6 +847,10 @@ typedef struct VarInHash {
 
 #define TclIsVarArray(varPtr) \
     ((varPtr)->flags & VAR_ARRAY)
+
+/* Implies scalar as well. */
+#define TclIsVarConstant(varPtr) \
+    ((varPtr)->flags & VAR_CONSTANT)
 
 #define TclIsVarUndefined(varPtr) \
     ((varPtr)->value.objPtr == NULL)
@@ -896,13 +911,13 @@ typedef struct VarInHash {
           && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
           &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
@@ -2921,6 +2936,12 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
 typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
+#ifdef _WIN32
+#   define TCLFSENCODING tclUtf8Encoding /* On Windows, all Unicode (except surrogates) are valid */
+#else
+#   define TCLFSENCODING NULL /* On Non-Windows, use the system encoding for validation checks */
+#endif
+
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
@@ -2981,10 +3002,10 @@ typedef struct ProcessGlobalValue {
 
 #define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_)  ((flags_) & ENCODING_PROFILE_MASK)
-#define ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                       \
-	(flags_) &= ~ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                  \
+#define ENCODING_PROFILE_SET(flags_, profile_)       \
+    do {                                             \
+	(flags_) &= ~ENCODING_PROFILE_MASK;              \
+	(flags_) |= ((profile_) & ENCODING_PROFILE_MASK);\
     } while (0)
 
 /*
@@ -3079,7 +3100,6 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
-MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
@@ -3311,6 +3331,7 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
+MODULE_SCOPE int	TclChannelGetBlockingMode(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, int index);
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
@@ -3444,6 +3465,8 @@ MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoGlobalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoLocalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoVarsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclInfoConstsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclInfoConstantCmd;
 MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
@@ -3742,6 +3765,7 @@ MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclClockOldscanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CloseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
@@ -3856,6 +3880,7 @@ MODULE_SCOPE CompileProc TclCompileCatchCmd;
 MODULE_SCOPE CompileProc TclCompileClockClicksCmd;
 MODULE_SCOPE CompileProc TclCompileClockReadingCmd;
 MODULE_SCOPE CompileProc TclCompileConcatCmd;
+MODULE_SCOPE CompileProc TclCompileConstCmd;
 MODULE_SCOPE CompileProc TclCompileContinueCmd;
 MODULE_SCOPE CompileProc TclCompileDictAppendCmd;
 MODULE_SCOPE CompileProc TclCompileDictCreateCmd;
@@ -4160,36 +4185,6 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
 #define TCL_INDEX_START         ((Tcl_Size)0)
-
-/*
- *------------------------------------------------------------------------
- *
- * TclGetSizeIntFromObj --
- *
- *    Extract a Tcl_Size from a Tcl_Obj
- *
- * Results:
- *    TCL_OK / TCL_ERROR
- *
- * Side effects:
- *    On success, the integer value is stored in *sizePtr. On error,
- *    an error message in interp it it is not NULL.
- *
- *------------------------------------------------------------------------
- */
-static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-    if (sizeof(Tcl_Size) == sizeof(int)) {
-	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
-    } else {
-	Tcl_WideInt wide;
-	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	*sizePtr = (Tcl_Size)wide;
-	return TCL_OK;
-    }
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -4728,22 +4723,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to compare Unicode strings. On big-endian
- * systems we can use the more efficient memcmp, but this would not be
- * lexically correct on little-endian systems. The ANSI C "prototype" for
- * this macro is:
- *
- * MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *cs,
- *			    const Tcl_UniChar *ct, unsigned long n);
- *----------------------------------------------------------------
- */
-
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
-#   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
-#endif /* WORDS_BIGENDIAN */
 
 /*
  *----------------------------------------------------------------

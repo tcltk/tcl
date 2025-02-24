@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="b1"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -219,7 +219,7 @@ SC_TCL_64BIT_FLAGS
 #	Tcl_UniChar strings to memcmp on big-endian systems.
 #--------------------------------------------------------------------
 
-AC_C_BIGENDIAN
+AC_C_BIGENDIAN(,,,[#])
 
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or

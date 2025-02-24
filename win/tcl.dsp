@@ -232,10 +232,6 @@ SOURCE=..\doc\CallDel.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\case.n
-# End Source File
-# Begin Source File
-
 SOURCE=..\doc\catch.n
 # End Source File
 # Begin Source File

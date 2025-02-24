@@ -283,7 +283,12 @@ Tcl_CdObjCmd(
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
 	result = TCL_ERROR;
     } else {
-	result = Tcl_FSChdir(dir);
+	Tcl_DString ds;
+	result = Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(dir), -1, 0, &ds, NULL);
+	Tcl_DStringFree(&ds);
+	if (result == TCL_OK) {
+	    result = Tcl_FSChdir(dir);
+	}
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't change working directory to \"%s\": %s",
@@ -434,7 +439,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-    int profile = TCL_ENCODING_PROFILE_TCL8;
+    int profile = TCL_ENCODING_PROFILE_STRICT;
 
     /*
      * Possible combinations:
@@ -2074,7 +2079,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], NULL);
+    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
@@ -2249,10 +2254,16 @@ CheckAccess(
 				 * access(). */
 {
     int value;
+    Tcl_DString ds;
 
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	value = 0;
+    } else if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(pathPtr),
+	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	value = 0;
+	Tcl_DStringFree(&ds);
     } else {
+	Tcl_DStringFree(&ds);
 	value = (Tcl_FSAccess(pathPtr, mode) == 0);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
@@ -2290,12 +2301,19 @@ GetStatBuf(
 				 * calling (*statProc)(). */
 {
     int status;
+    Tcl_DString ds;
 
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    status = statProc(pathPtr, statPtr);
+    if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, TclGetString(pathPtr),
+	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	status = -1;
+    } else {
+	status = statProc(pathPtr, statPtr);
+    }
+    Tcl_DStringFree(&ds);
 
     if (status < 0) {
 	if (interp != NULL) {

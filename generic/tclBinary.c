@@ -892,7 +892,7 @@ BinaryFormatCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_ALL) {
-		if (Tcl_GetByteArrayFromObj(objv[arg], &count) == NULL) {
+		if (Tcl_GetBytesFromObj(NULL, objv[arg], &count) == NULL) {
 		    count = Tcl_GetCharLength(objv[arg]);
 		}
 	    } else if (count == BINARY_NOCOUNT) {
@@ -1063,7 +1063,7 @@ BinaryFormatCmd(
 	    unsigned char *bytes;
 	    Tcl_Obj *copy = TclNarrowToBytes(objv[arg++]);
 
-	    bytes = Tcl_GetByteArrayFromObj(copy, &length);
+	    bytes = Tcl_GetBytesFromObj(NULL, copy, &length);
 
 	    if (count == BINARY_ALL) {
 		count = length;
@@ -2508,7 +2508,7 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
@@ -2609,7 +2609,7 @@ BinaryEncode64(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
-    Tcl_Size maxlen = 0;
+    Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
     Tcl_Size wrapcharlen = 1;
     int index, purewrap = 1;
@@ -2629,7 +2629,7 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (TclGetSizeIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
@@ -2641,7 +2641,7 @@ BinaryEncode64(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const char *)Tcl_GetByteArrayFromObj(
+	    wrapchar = (const char *)Tcl_GetBytesFromObj(NULL,
 		    objv[i + 1], &wrapcharlen);
 	    if (wrapchar == NULL) {
 		purewrap = 0;
@@ -2912,7 +2912,7 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
@@ -3087,7 +3087,7 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);

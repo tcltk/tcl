@@ -45,9 +45,12 @@ to the value from which to extract an array of bytes.
 Interpreter to use for error reporting.
 .AP "Tcl_Size \&| int" *numBytesPtr out
 Points to space where the number of bytes in the array may be written.
-Caller may pass NULL when it does not need this information.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+NULL for byte arrays larger than INT_MAX (which should
+trigger proper error-handling), otherwise expect it to crash.
 .BE
-
 .SH DESCRIPTION
 .PP
 These routines are used to create, modify, store, transfer, and retrieve

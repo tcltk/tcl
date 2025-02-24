@@ -3926,6 +3926,77 @@ TEBCresume(
     /*
      *	   End of INST_UNSET instructions.
      * -----------------------------------------------------------------
+     *	   Start of INST_CONST instructions.
+     */
+    {
+	const char *msgPart;
+
+    case INST_CONST_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 1;
+	part1Ptr = NULL;
+	objPtr = OBJ_AT_TOS;
+	TRACE(("%u \"%.30s\" => \n", opnd, O2S(objPtr)));
+	varPtr = LOCAL(opnd);
+	arrayPtr = NULL;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doConst;
+    case INST_CONST_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 2;
+	part1Ptr = OBJ_UNDER_TOS;
+	objPtr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(objPtr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
+    doConst:
+    	if (TclIsVarConstant(varPtr)) {
+	    TRACE_APPEND(("\n"));
+	    NEXT_INST_V(pcAdjustment, cleanup, 0);
+	}
+	if (TclIsVarArray(varPtr)) {
+	    msgPart = "variable is array";
+	    goto constError;
+	} else if (TclIsVarArrayElement(varPtr)) {
+	    msgPart = "name refers to an element in an array";
+	    goto constError;
+	} else if (!TclIsVarUndefined(varPtr)) {
+	    msgPart = "variable already exists";
+	    goto constError;
+	}
+	if (TclIsVarDirectModifyable(varPtr)) {
+	    varPtr->value.objPtr = objPtr;
+	    Tcl_IncrRefCount(objPtr);
+	} else {
+	    Tcl_Obj *resPtr;
+
+	    DECACHE_STACK_INFO();
+	    resPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, NULL,
+		    objPtr, TCL_LEAVE_ERR_MSG, opnd);
+	    CACHE_STACK_INFO();
+	    if (resPtr == NULL) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
+	TclSetVarConstant(varPtr);
+	TRACE_APPEND(("\n"));
+	NEXT_INST_V(pcAdjustment, cleanup, 0);
+
+    constError:
+	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", msgPart, opnd);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
+	TRACE_ERROR(interp);
+	goto gotError;
+    }
+
+    /*
+     *	   End of INST_CONST instructions.
+     * -----------------------------------------------------------------
      *	   Start of INST_ARRAY instructions.
      */
 
@@ -5336,7 +5407,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
+		    Tcl_GetBytesFromObj(NULL, valuePtr, (Tcl_Size *)NULL)+index, 1);
 	} else if (valuePtr->bytes && slength == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5597,8 +5668,8 @@ TEBCresume(
 	    unsigned char *bytes1, *bytes2;
 	    Tcl_Size wlen1 = 0, wlen2 = 0;
 
-	    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, &wlen1);
-	    bytes2 = Tcl_GetByteArrayFromObj(value2Ptr, &wlen2);
+	    bytes1 = Tcl_GetBytesFromObj(NULL, valuePtr, &wlen1);
+	    bytes2 = Tcl_GetBytesFromObj(NULL, value2Ptr, &wlen2);
 	    match = TclByteArrayMatch(bytes1, wlen1, bytes2, wlen2, 0);
 	} else {
 	    match = Tcl_StringCaseMatch(TclGetString(valuePtr),
@@ -9544,9 +9615,9 @@ EvalStatsCmd(
     double strBytesSharedMultX, strBytesSharedOnce;
     double numInstructions, currentHeaderBytes;
     size_t numCurrentByteCodes, numByteCodeLits;
-    size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
+    size_t refCountSum, literalMgmtBytes, sum, decadeHigh;
     size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
-    Tcl_Size i;
+    Tcl_Size i, length;
     size_t ui;
     char *litTableStats;
     LiteralEntry *entryPtr;
