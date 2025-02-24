@@ -853,7 +853,7 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 
-	    while (*wp++ != 0) {/* empty body */}
+	    while (*wp++ != 0); /* empty loop body */
 	    p = (char *) wp;
 	    Tcl_DStringFree(&buf);
 	}
@@ -937,7 +937,6 @@ GetValueNames(
     size = MAX_KEY_LENGTH;
     while (RegEnumValueW(key,index, (WCHAR *)Tcl_DStringValue(&buffer),
 	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
-
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&buffer), size, &ds);
 	name = Tcl_DStringValue(&ds);

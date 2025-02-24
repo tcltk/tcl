@@ -3844,7 +3844,7 @@ DictAsListLength(
 	int literal;
 
 	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
+		&elemStart, &nextElem, &elemSize, &literal)) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
@@ -3854,14 +3854,14 @@ DictAsListLength(
 
 	TclInvalidateStringRep(elemPtr);
 	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
+		elemSize);
 	if (elemSize && check == NULL) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
 	if (!literal) {
 	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
+		    TclCopyAndCollapse(elemSize, elemStart, check));
 	}
 	llen++;
     }
@@ -3916,7 +3916,7 @@ DictAsListIndex(
 	int literal;
 
 	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
+		&elemStart, &nextElem, &elemSize, &literal)) {
 	    Tcl_DecrRefCount(elemPtr);
 	    return 0;
 	}
@@ -3926,7 +3926,7 @@ DictAsListIndex(
 
 	TclInvalidateStringRep(elemPtr);
 	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
+		elemSize);
 	if (elemSize && check == NULL) {
 	    Tcl_DecrRefCount(elemPtr);
 	    if (interp) {
@@ -3936,7 +3936,7 @@ DictAsListIndex(
 	}
 	if (!literal) {
 	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
+		    TclCopyAndCollapse(elemSize, elemStart, check));
 	}
 	if (llen == index) {
 	    *elemObjPtr = elemPtr;

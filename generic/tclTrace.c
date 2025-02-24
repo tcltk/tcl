@@ -1985,7 +1985,8 @@ typedef struct {
     void *clientData;
 } TraceWrapperInfo;
 
-static int traceWrapperProc(
+static int
+traceWrapperProc(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size level,
@@ -2001,7 +2002,9 @@ static int traceWrapperProc(
     return info->proc(info->clientData, interp, (int)level, command, commandInfo, objc, objv);
 }
 
-static void traceWrapperDelProc(void *clientData)
+static void
+traceWrapperDelProc(
+    void *clientData)
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
     clientData = info->clientData;
@@ -2396,7 +2399,7 @@ TclCheckArrayTraces(
     int code = TCL_OK;
 
     if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
-	&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	Interp *iPtr = (Interp *)interp;
 
 	code = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, name, NULL,

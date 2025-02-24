@@ -761,9 +761,8 @@ InvokeProcedureMethod(
      * the next thing in the chain.
      */
 
-    if (TclOOObjectDestroyed(((CallContext *)context)->oPtr) ||
-	Tcl_InterpDeleted(interp)
-    ) {
+    if (TclOOObjectDestroyed(((CallContext *)context)->oPtr)
+	    || Tcl_InterpDeleted(interp)) {
 	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
 		Tcl_ObjectContextSkippedArgs(context));
     }

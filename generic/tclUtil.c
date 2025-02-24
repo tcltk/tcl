@@ -1978,7 +1978,7 @@ Tcl_ConcatObj(
 
 	objPtr = objv[i];
 	if (TclListObjIsCanonical(objPtr) ||
-            TclObjTypeHasProc(objPtr,indexProc)) {
+		TclObjTypeHasProc(objPtr, indexProc)) {
 	    continue;
 	}
 	(void)Tcl_GetStringFromObj(objPtr, &length);
@@ -1991,7 +1991,7 @@ Tcl_ConcatObj(
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    if (!TclListObjIsCanonical(objPtr) &&
-		!TclObjTypeHasProc(objPtr,indexProc)) {
+		    !TclObjTypeHasProc(objPtr, indexProc)) {
 		continue;
 	    }
 	    if (resPtr) {
@@ -2137,7 +2137,7 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*') {}
+	    while (*(++pattern) == '*');
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -2398,7 +2398,7 @@ TclByteArrayMatch(
 		    }
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
-				pattern, patternEnd - pattern, 0)) {
+			pattern, patternEnd - pattern, 0)) {
 		    return 1;
 		}
 		if (string == stringEnd) {
@@ -3531,7 +3531,6 @@ GetEndOffsetFromObj(
 	     * This relies on TclGetString() returning a NUL-terminated string.
 	     */
 	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
-
 		    /* If it's possible, do the full list parse. */
 	            && (TCL_OK == TclListObjLength(NULL, objPtr, &length))
 	            && (length > 1)) {
@@ -3657,7 +3656,7 @@ GetEndOffsetFromObj(
 
 	    /* Parse the integer offset */
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
-			bytes+4, length-4, NULL, TCL_PARSE_INTEGER_ONLY)) {
+		    bytes + 4, length - 4, NULL, TCL_PARSE_INTEGER_ONLY)) {
 		/* Not a recognized integer format */
 		goto parseError;
 	    }
@@ -3866,7 +3865,7 @@ TclIndexEncode(
 	 * the position after the end and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
+		(wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
 	}
@@ -3896,7 +3895,7 @@ TclIndexEncode(
 	 * and so do not raise an error.
 	 */
 	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
+		(wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
 	}
@@ -3976,25 +3975,21 @@ TclIndexDecode(
  *------------------------------------------------------------------------
  */
 int
-TclCommandWordLimitError (
+TclCommandWordLimitError(
     Tcl_Interp *interp,   /* May be NULL */
     Tcl_Size count)       /* If <= 0, "unknown" */
 {
     if (interp) {
 	if (count > 0) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Number of words (%" TCL_SIZE_MODIFIER
-			      "d) in command exceeds limit %" TCL_SIZE_MODIFIER
-			      "d.",
-			      count,
-			      (Tcl_Size)INT_MAX));
-	}
-	else {
-	    Tcl_SetObjResult(interp,
-			     Tcl_ObjPrintf("Number of words in command exceeds "
-					   "limit %" TCL_SIZE_MODIFIER "d.",
-					   (Tcl_Size)INT_MAX));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words (%" TCL_SIZE_MODIFIER
+		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
+		    count, (Tcl_Size)INT_MAX));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Number of words in command exceeds limit %"
+		    TCL_SIZE_MODIFIER "d.",
+		    (Tcl_Size)INT_MAX));
 	}
     }
     return TCL_ERROR; /* Always */

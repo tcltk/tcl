@@ -57,8 +57,8 @@ static CRITICAL_SECTION notifierMutex;
  * Static routines defined in this file.
  */
 
-static LRESULT CALLBACK		NotifierProc(HWND hwnd, UINT message,
-				    WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK	NotifierProc(HWND hwnd, UINT message,
+			    WPARAM wParam, LPARAM lParam);
 
 /*
  *----------------------------------------------------------------------

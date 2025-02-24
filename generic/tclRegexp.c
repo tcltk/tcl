@@ -529,8 +529,8 @@ Tcl_RegExpMatchObj(
      */
 
     if (!(re = Tcl_GetRegExpFromObj(interp, patternObj,
-	    TCL_REG_ADVANCED | TCL_REG_NOSUB))
-     && !(re = Tcl_GetRegExpFromObj(interp, patternObj, TCL_REG_ADVANCED))) {
+	    TCL_REG_ADVANCED | TCL_REG_NOSUB)) &&
+	    !(re = Tcl_GetRegExpFromObj(interp, patternObj, TCL_REG_ADVANCED))) {
 	return -1;
     }
     return Tcl_RegExpExecObj(interp, re, textObj, 0 /* offset */,

@@ -203,27 +203,27 @@ Tcl_GetIndexFromObjStruct(
 
     if (offset < (Tcl_Size)sizeof(char *)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-				"struct offset", offset));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Invalid %s value %" TCL_SIZE_MODIFIER "d.",
+		    "struct offset", offset));
 	}
-    return TCL_ERROR;
+	return TCL_ERROR;
     }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
 
     if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-	if ((indexRep->tablePtr == tablePtr)
-		&& (indexRep->offset == offset)
-		&& (indexRep->index != TCL_INDEX_NONE)) {
-	    index = indexRep->index;
-	    goto uncachedDone;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	    if ((indexRep->tablePtr == tablePtr)
+		    && (indexRep->offset == offset)
+		    && (indexRep->index != TCL_INDEX_NONE)) {
+		index = indexRep->index;
+		goto uncachedDone;
+	    }
 	}
-    }
     }
 
     /*

@@ -30,9 +30,9 @@ static Tcl_NRPostProc	TryPostFinal;
 static Tcl_NRPostProc	TryPostHandler;
 static int		UniCharIsAscii(int character);
 static int		UniCharIsHexDigit(int character);
-static int	StringCmpOpts(Tcl_Interp *interp, int objc,
-		    Tcl_Obj *const objv[], int *nocase,
-		    Tcl_Size *reqlength);
+static int		StringCmpOpts(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int *nocase,
+			    Tcl_Size *reqlength);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -2241,8 +2241,7 @@ StringMatchCmd(
 	Tcl_Size length;
 	const char *string = Tcl_GetStringFromObj(objv[1], &length);
 
-	if ((length > 1) &&
-	    strncmp(string, "-nocase", length) == 0) {
+	if ((length > 1) && strncmp(string, "-nocase", length) == 0) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(

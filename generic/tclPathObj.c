@@ -276,8 +276,7 @@ TclFSNormalizeAbsolutePath(
 			 */
 
 			if (tclPlatform != TCL_PLATFORM_WINDOWS
-				&& Tcl_FSGetPathType(linkObj)
-					== TCL_PATH_RELATIVE) {
+				&& Tcl_FSGetPathType(linkObj) == TCL_PATH_RELATIVE) {
 			    /*
 			     * We need to follow this link which is relative
 			     * to retVal's directory. This means concatenating
@@ -406,8 +405,9 @@ TclFSNormalizeAbsolutePath(
 	Tcl_Size len;
 	const char *path = Tcl_GetStringFromObj(retVal, &len);
 	if (zipVolumeLen) {
-	    if (len == (zipVolumeLen - 1))
+	    if (len == (zipVolumeLen - 1)) {
 		needTrailingSlash = 1;
+	    }
 	} else {
 	    if (len == 2 && path[0] != 0 && path[1] == ':') {
 		needTrailingSlash = 1;
@@ -2593,9 +2593,8 @@ TclResolveTildePath(
 
     if (split == 1) {
         /* No user name specified -> current user */
-	if (MakeTildeRelativePath(
-		interp, NULL, path[1] ? 2 + path : NULL, &resolvedPath)
-	    != TCL_OK) {
+	if (MakeTildeRelativePath(interp, NULL, path[1] ? 2 + path : NULL,
+		&resolvedPath) != TCL_OK) {
 	    return NULL;
 	}
     } else {
@@ -2608,11 +2607,9 @@ TclResolveTildePath(
         expandedUser = Tcl_DStringValue(&userName);
 
 	/* path[split] is / or \0 */
-	if (MakeTildeRelativePath(interp,
-				  expandedUser,
-				  path[split] ? &path[split+1] : NULL,
-				  &resolvedPath)
-	    != TCL_OK) {
+	if (MakeTildeRelativePath(interp, expandedUser,
+		path[split] ? &path[split+1] : NULL,
+		&resolvedPath) != TCL_OK) {
 	    Tcl_DStringFree(&userName);
 	    return NULL;
 	}

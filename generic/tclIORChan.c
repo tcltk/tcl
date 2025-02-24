@@ -44,7 +44,7 @@ static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static long long ReflectSeekWide(void *clientData,
+static long long	 ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -54,8 +54,8 @@ static int		ReflectSetOption(void *clientData,
 			    const char *newValue);
 static int		ReflectTruncate(void *clientData,
 			    long long length);
-static void     TimerRunRead(void *clientData);
-static void     TimerRunWrite(void *clientData);
+static void		TimerRunRead(void *clientData);
+static void		TimerRunWrite(void *clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection.

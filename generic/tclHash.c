@@ -36,7 +36,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t		HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the string hash key methods.
@@ -45,7 +45,7 @@ static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static size_t	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t		HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -286,8 +286,7 @@ CreateHashEntry(
 	    }
 	    /* if keys pointers or values are equal */
 	    if ((key == hPtr->key.oneWordValue)
-		|| compareKeysProc((void *) key, hPtr)
-	    ) {
+		    || compareKeysProc((void *) key, hPtr)) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}

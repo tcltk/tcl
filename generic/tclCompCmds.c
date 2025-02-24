@@ -772,8 +772,8 @@ TclCompileClockClicksCmd(
 	 */
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
-	    || tokenPtr[1].size < 4
-	    || tokenPtr[1].size > 13) {
+		|| tokenPtr[1].size < 4
+		|| tokenPtr[1].size > 13) {
 	    return TCL_ERROR;
 	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
 			    tokenPtr[1].size)) {
@@ -3570,8 +3570,8 @@ TclPushVarName(
 	 */
 
 	simpleVarName = 0;
-	for (p = varTokenPtr[1].start,
-	     last = p + varTokenPtr[1].size;  p < last;  p++) {
+	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
+		p < last;  p++) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;

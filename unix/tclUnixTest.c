@@ -72,7 +72,7 @@ static Tcl_ObjCmdProc TestfindexecutableCmd;
 static Tcl_ObjCmdProc TestforkCmd;
 static Tcl_ObjCmdProc TestgotsigCmd;
 static Tcl_FileProc TestFileHandlerProc;
-static void AlarmHandler(int signum);
+static void		AlarmHandler(int signum);
 
 /*
  *----------------------------------------------------------------------

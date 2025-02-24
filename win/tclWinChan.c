@@ -98,7 +98,7 @@ static int		FileTruncateProc(void *instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
-static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
 /*

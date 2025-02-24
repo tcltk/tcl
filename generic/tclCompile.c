@@ -2263,7 +2263,7 @@ CompileScriptTokens(
      */
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "too many nested compilations (infinite loop?)", -1));
+		"too many nested compilations (infinite loop?)", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
@@ -2528,7 +2528,7 @@ TclCompileTokens(
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
-		(tokenPtr->start[1] == '\n')) {
+		    (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
 		    int clPos = Tcl_DStringLength(&textBuffer);
 

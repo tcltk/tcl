@@ -454,8 +454,8 @@ TestplatformChmod(
     }
 
     /* Get process SID */
-    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
-	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw)
+	    && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
     pTokenUser = (TOKEN_USER *)Tcl_Alloc(dw);
@@ -464,9 +464,8 @@ TestplatformChmod(
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
     aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
-    if (!CopySid(aceEntry[nSids].sidLen,
-		 aceEntry[nSids].pSid,
-		 pTokenUser->User.Sid)) {
+    if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+	    pTokenUser->User.Sid)) {
 	Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }

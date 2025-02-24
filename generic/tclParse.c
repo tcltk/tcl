@@ -135,7 +135,7 @@ static const char *parseErrorMsg[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int	CommandComplete(const char *script, Tcl_Size numBytes);
+static int		CommandComplete(const char *script, Tcl_Size numBytes);
 static int		ParseBraces(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr, int flags,
 			    const char **termPtr);
