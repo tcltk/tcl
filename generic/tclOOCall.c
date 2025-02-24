@@ -322,7 +322,7 @@ TclOOInvokeContext(
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    int objc,			/* The number of arguments. */
+    Tcl_Size objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *) clientData;
@@ -380,10 +380,12 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
+#ifndef TCL_NO_DEPRECATED
     if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		(Tcl_ObjectContext) contextPtr, objc, objv);
     }
+#endif /* TCL_NO_DEPRECATED */
     return (mPtr->type2Ptr->callProc)(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
@@ -800,10 +802,10 @@ AddStandardMethodName(
 	    int isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
 		    ? IN_LIST : 0;
 
-	    isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+	    isWanted |= (mPtr->type2Ptr == NULL ? NO_IMPLEMENTATION : 0);
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
-		&& mPtr->typePtr != NULL) {
+		&& mPtr->type2Ptr != NULL) {
 	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
@@ -986,7 +988,7 @@ AddMethodToCallChain(
      * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
+    if (mPtr == NULL || mPtr->type2Ptr == NULL || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 
@@ -1895,7 +1897,7 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->type2Ptr->name,
 		TCL_AUTO_LENGTH);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);

@@ -496,7 +496,7 @@ int
 TclChanPushObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     ReflectedTransform *rtPtr;	/* Instance data of the new (transform)
@@ -739,7 +739,7 @@ int
 TclChanPopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     /*
