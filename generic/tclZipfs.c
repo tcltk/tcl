@@ -56,7 +56,7 @@
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(			\
 		    "out of memory", -1));				\
-	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (void *)NULL);		\
+	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (char *)NULL);		\
 	}								\
     } while (0)
 #define ZIPFS_POSIX_ERROR(interp,errstr) \
@@ -69,7 +69,7 @@
 #define ZIPFS_ERROR_CODE(interp,errcode) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (void *)NULL);	\
+	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (char *)NULL);	\
 	}								\
     } while (0)
 
@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				   -1 for zip64 */
+    				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -810,11 +810,13 @@ IsCryptHeaderValid(
  *------------------------------------------------------------------------
  */
 static int
-DecodeCryptHeader(Tcl_Interp *interp,
-		  ZipEntry *z,
-		  unsigned long keys[3],/* Updated on success. Must have been
-					   initialized by caller. */
-		  unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN]) /* From zip file content */
+DecodeCryptHeader(
+    Tcl_Interp *interp,
+    ZipEntry *z,
+    unsigned long keys[3],	/* Updated on success. Must have been
+				 * initialized by caller. */
+    unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN])
+				/* From zip file content */
 {
     int i;
     int ch;
@@ -1065,11 +1067,12 @@ errorReturn:
  *------------------------------------------------------------------------
  */
 static char *
-MapPathToZipfs(Tcl_Interp *interp,
-	       const char *mountPath,	/* Must be fully normalized */
-	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
-	                                   by caller */
+MapPathToZipfs(
+    Tcl_Interp *interp,
+    const char *mountPath,	/* Must be fully normalized */
+    const char *path,		/* Archive content path to map */
+    Tcl_DString *dsPtr)		/* Must be initialized and cleared
+				 * by caller */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -2355,7 +2358,7 @@ TclZipfs_Mount(
 	if (normZipPathObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not normalize zip filename \"%s\"", zipname));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (char *)NULL);
 	    ret = TCL_ERROR;
 	} else {
 	    Tcl_IncrRefCount(normZipPathObj);

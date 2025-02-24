@@ -145,7 +145,6 @@ RememberSyncObject(
     void **newList;
     int i, j;
 
-
     /*
      * Reuse any free slot in the list.
      */
@@ -457,7 +456,7 @@ TclFinalizeSynchronization(void)
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 Tcl_ExitThread(
     int status)
 {

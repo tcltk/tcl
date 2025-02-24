@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #include "tclTomMath.h"
 
 /*
@@ -424,7 +425,7 @@ Tcl_ReadObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected non-negative integer but got \"%s\"",
 		    TclGetString(objv[i])));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -604,7 +605,6 @@ Tcl_TellObjCmd(
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result.
      */
-
 
     code  = TclChanCaughtErrorBypass(interp, chan);
     TclChannelRelease(chan);
@@ -1133,7 +1133,7 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, binary;
+	int mode, modeFlags;
 	Tcl_Size cmdObjc;
 	const char **cmdArgv;
 
@@ -1141,13 +1141,13 @@ Tcl_OpenObjCmd(
 	    return TCL_ERROR;
 	}
 
-	mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
+	mode = TclGetOpenMode(interp, modeString, &modeFlags);
 	if (mode == -1) {
 	    chan = NULL;
 	} else {
 	    int flags = TCL_STDERR | TCL_ENFORCE_MODE;
 
-	    switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
+	    switch (mode & O_ACCMODE) {
 	    case O_RDONLY:
 		flags |= TCL_STDOUT;
 		break;
@@ -1162,7 +1162,7 @@ Tcl_OpenObjCmd(
 		break;
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
-	    if (binary && chan) {
+	    if ((modeFlags & CHANNEL_RAW_MODE) && chan) {
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}

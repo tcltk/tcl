@@ -4,7 +4,7 @@
 package require msgcat
 set d [file dirname [file dirname [info script]]]
 puts "getting transition data from [file join $d library tzdata America Detroit]"
-source [file join $d library/tzdata/America/Detroit]
+source -encoding utf-8 [file join $d library/tzdata/America/Detroit]
 
 namespace eval ::tcl::clock {
     ::msgcat::mcmset en_US_roman {

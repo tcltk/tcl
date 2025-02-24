@@ -138,19 +138,19 @@ function will have the following signature:
 .RS
 .PP
 .CS
-typedef int (\fBTcl_ArgvGenFuncProc\fR)(
+typedef Tcl_Size (\fBTcl_ArgvGenFuncProc\fR)(
         void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
-        int \fIobjc\fR,
+        Tcl_Size \fIobjc\fR,
         Tcl_Obj *const *\fIobjv\fR,
         void *\fIdstPtr\fR);
 .CE
 .PP
-The \fIclientData\fR is the value from the table entry, the \fIinterp\fR is
-where to store any error messages, the \fIkeyStr\fR is the name of the
-argument, \fIobjc\fR and \fIobjv\fR describe an array of all the remaining
-arguments, and \fIdstPtr\fR argument to the \fBTcl_ArgvGenFuncProc\fR is the
-location to write the parsed value (or values) to.
+The \fIclientData\fR is the value from the table entry, the \fIinterp\fR
+is where to store any error messages, \fIobjc\fR and \fIobjv\fR describe
+an array of all the remaining arguments, and \fIdstPtr\fR argument to the
+\fBTcl_ArgvGenFuncProc\fR is the location to write the parsed value
+(or values) to.
 .RE
 .IP \fBTCL_ARGV_HELP\fR
 This special argument does not take any following value argument, but instead

@@ -15,6 +15,11 @@ testConstraint debugpurify [
 	&& [testConstraint debug]
 	&& [testConstraint purify]
     }]
+testConstraint bigmem [expr {[
+	info exists ::env(TCL_TESTCONSTRAINT_BIGMEM)]
+		? !!$::env(TCL_TESTCONSTRAINT_BIGMEM)
+		: 1
+}]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]

@@ -293,6 +293,7 @@ GENERIC_OBJS = \
 	tclBrodnik.$(OBJEXT) \
 	tclCkalloc.$(OBJEXT) \
 	tclClock.$(OBJEXT) \
+	tclClockFmt.$(OBJEXT) \
 	tclCmdAH.$(OBJEXT) \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
@@ -358,6 +359,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrIdxTree.$(OBJEXT) \
 	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
@@ -390,9 +392,9 @@ TOMMATH_OBJS = \
 	bn_mp_div_d.${OBJEXT} \
 	bn_mp_div_2.${OBJEXT} \
 	bn_mp_div_2d.${OBJEXT} \
-	bn_mp_div_3.${OBJEXT} \
+	bn_s_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
-	bn_mp_expt_u32.${OBJEXT} \
+	bn_mp_expt_n.${OBJEXT} \
 	bn_mp_get_mag_u64.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
@@ -1021,7 +1023,7 @@ runtest: tcltest
 # `make shell SCRIPT=foo.tcl`
 shell: binaries
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	$(WINE) ./$(TCLSH) -encoding utf-8 $(SCRIPT)
+	$(WINE) ./$(TCLSH) $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: binaries
@@ -1146,6 +1148,16 @@ genstubs:
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
 
+$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
+	@echo "Warning: tclOOScript.h may be out of date."
+	@echo "Developers may want to run \"make genscript\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
+
+genscript:
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/makeHeader.tcl" \
+		"$(ROOT_DIR_NATIVE)/tools/tclOOScript.tcl" \
+		"$(GENERIC_DIR_NATIVE)/tclOOScript.h"
+
 #
 # This target creates the HTML folder for Tcl & Tk and places it in
 # DISTDIR/html. It uses the tcltk-man2html.tcl tool from the Tcl group's tool
@@ -1174,7 +1186,7 @@ html-tk: $(TCLSH)
 .PHONY: install-doc install-private-headers test test-tcl runtest shell
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
-.PHONY: html-tcl html-tk
+.PHONY: html-tcl html-tk genscript
 .PHONY: tclzipfile
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

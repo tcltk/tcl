@@ -1016,7 +1016,6 @@ Tcl_TraceCommand(
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
 
-
     return TCL_OK;
 }
 

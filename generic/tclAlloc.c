@@ -47,17 +47,18 @@ typedef size_t caddr_t;
  */
 
 union overhead {
-    union overhead *next;		/* when free */
-    unsigned char padding[TCL_ALLOCALIGN];	/* align struct to TCL_ALLOCALIGN bytes */
+    union overhead *next;	/* when free */
+    unsigned char padding[TCL_ALLOCALIGN];
+				/* align struct to TCL_ALLOCALIGN bytes */
     struct {
-	unsigned char magic0;		/* magic number */
-	unsigned char index;		/* bucket # */
-	unsigned char unused;		/* unused */
-	unsigned char magic1;		/* other magic number */
+	unsigned char magic0;	/* magic number */
+	unsigned char index;	/* bucket # */
+	unsigned char unused;	/* unused */
+	unsigned char magic1;	/* other magic number */
 #ifndef NDEBUG
-	unsigned short rmagic;		/* range magic number */
+	unsigned short rmagic;	/* range magic number */
 	size_t size;		/* actual block size */
-	unsigned short unused2;		/* padding to 8-byte align */
+	unsigned short unused2;	/* padding to 8-byte align */
 #endif
     } ovu;
 #define overMagic0	ovu.magic0
@@ -66,7 +67,6 @@ union overhead {
 #define rangeCheckMagic	ovu.rmagic
 #define realBlockSize	ovu.size
 };
-
 
 #define MAGIC		0xEF	/* magic # on accounting info */
 #define RMAGIC		0x5555	/* magic # on range info */
@@ -92,7 +92,8 @@ union overhead {
  * precedes the data area returned to the user.
  */
 
-#define MINBLOCK	((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
+#define MINBLOCK \
+    ((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
 #define NBUCKETS	(13 - (MINBLOCK >> 4))
 #define MAXMALLOC	((size_t)1 << (NBUCKETS+2))
 static union overhead *nextf[NBUCKETS];
@@ -251,7 +252,7 @@ TclFinalizeAllocSubsystem(void)
 
 void *
 TclpAlloc(
-    size_t numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)		/* Number of bytes to allocate. */
 {
     union overhead *overPtr;
     size_t bucket;
@@ -385,10 +386,10 @@ TclpAlloc(
 
 static void
 MoreCore(
-    size_t bucket)	/* What bucket to allocate to. */
+    size_t bucket)		/* What bucket to allocate to. */
 {
     union overhead *overPtr;
-    size_t size;	/* size of desired block */
+    size_t size;		/* size of desired block */
     size_t amount;		/* amount to allocate */
     size_t numBlocks;		/* how many blocks we get */
     struct block *blockPtr;
@@ -511,7 +512,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloc'ed block. */
-    size_t numBytes)	/* New size of memory. */
+    size_t numBytes)		/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
@@ -743,7 +744,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloced block. */
-    size_t numBytes)	/* New size of memory. */
+    size_t numBytes)		/* New size of memory. */
 {
     return realloc(oldPtr, numBytes);
 }

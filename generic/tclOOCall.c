@@ -155,7 +155,6 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     TCL_OBJTYPE_V0
 };
-
 
 /*
  * ----------------------------------------------------------------------

@@ -16,89 +16,10 @@ gets \- Read a line from a channel
 .BE
 .SH DESCRIPTION
 .PP
-This command reads the next line from \fIchannelId\fR, returns everything
-in the line up to (but not including) the end-of-line character(s), and
-discards the end-of-line character(s).
-.PP
-\fIChannelId\fR must be an identifier for an open channel such as the
-Tcl standard input channel (\fBstdin\fR), the return value from an
-invocation of \fBopen\fR or \fBsocket\fR, or the result of a channel
-creation command provided by a Tcl extension. The channel must have
-been opened for input.
-.PP
-If \fIvarName\fR is omitted the line is returned as the result of the
-command.
-If \fIvarName\fR is specified then the line is placed in the variable by
-that name and the return value is a count of the number of characters
-returned.
-.PP
-If end of file occurs while scanning for an end of
-line, the command returns whatever input is available up to the end of file.
-If \fIchannelId\fR is in non-blocking mode and there is not a full
-line of input available, the command returns an empty string and
-does not consume any input.
-If \fIvarName\fR is specified and an empty string is returned in
-\fIvarName\fR because of end-of-file or because of insufficient
-data in non-blocking mode, then the return count is -1.
-Note that if \fIvarName\fR is not specified then the end-of-file
-and no-full-line-available cases can
-produce the same results as if there were an input line consisting
-only of the end-of-line character(s).
-The \fBeof\fR and \fBfblocked\fR commands can be used to distinguish
-these three cases.
-.SH "ENCODING ERRORS"
-.PP
-Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
-Encoding errors are special, as an eventual introspection or  recovery is
-possible by changing to an encoding which accepts the data.
-An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
-The file pointer is unchanged in the error case.
-.PP
-Here is an example with an encoding error in UTF-8 encoding, which is then
-introspected by a switch to the binary encoding. The test file contains a not
-continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
-.PP
-File creation for example
-.CS
-% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\\xC3B; close $f
-.CE
-Encoding error example
-.CS
-% set f [open test_A_195_B.txt r]
-file384b6a8
-% fconfigure $f -encoding utf-8 -profile strict
-% catch {gets $f} e d
-1
-% set d
--code 1 -level 0
--errorstack {INNER {invokeStk1 gets file384b6a8}}
--errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
--errorinfo {...} -errorline 1
-% tell $f
-0
-% fconfigure $f -encoding binary -profile strict
-% gets $f
-AÃB
-.CE
-Compared to \fBread\fR, any already decoded data is not consumed.
-The file position is still at 0 and the recovery \fBgets\fR returns also the
-already well decoded leading data.
-.SH "EXAMPLE"
-This example reads a file one line at a time and prints it out with
-the current line number attached to the start of each line.
-.PP
-.CS
-set chan [open "some.file.txt"]
-set lineNumber 0
-while {[\fBgets\fR $chan line] >= 0} {
-    puts "[incr lineNumber]: $line"
-}
-close $chan
-.CE
+The \fBgets\fR command has been superceded by the \fBchan gets\fR
+command which supports the same syntax and options.
 .SH "SEE ALSO"
-file(n), eof(n), fblocked(n), Tcl_StandardChannels(3)
-.SH KEYWORDS
-blocking, channel, end of file, end of line, line, non-blocking, read
+chan(n)
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

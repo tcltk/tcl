@@ -94,6 +94,7 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
+# define TclGetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
@@ -188,6 +189,22 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     *(int *)objcPtr = (int)n;
     return result;
 }
+int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	int *objcPtr, Tcl_Obj ***objv) {
+    Tcl_Size n = TCL_INDEX_NONE;
+    int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
+    if (objcPtr) {
+	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*objcPtr = (int)n;
+    }
+    return result;
+}
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
 #define TclBN_mp_add mp_add
@@ -207,7 +224,6 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_div_2 mp_div_2
 #define TclBN_mp_div_2d mp_div_2d
 #define TclBN_mp_exch mp_exch
-#define TclBN_mp_expt_u32 mp_expt_u32
 #define TclBN_mp_get_mag_u64 mp_get_mag_u64
 #define TclBN_mp_grow mp_grow
 #define TclBN_mp_init mp_init
@@ -247,13 +263,14 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
 #define TclBN_mp_balance_mul s_mp_balance_mul
+#define TclBN_mp_div_3 s_mp_div_3
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
-#define TclBN_s_mp_mul_digs s_mp_mul_digs
-#define TclBN_s_mp_mul_digs_fast s_mp_mul_digs_fast
-#define TclBN_s_mp_reverse s_mp_reverse
+#define TclBN_mp_mul_digs s_mp_mul_digs
+#define TclBN_mp_mul_digs_fast s_mp_mul_digs_fast
+#define TclBN_mp_reverse s_mp_reverse
 #define TclBN_s_mp_sqr s_mp_sqr
-#define TclBN_s_mp_sqr_fast s_mp_sqr_fast
+#define TclBN_mp_sqr_fast s_mp_sqr_fast
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
@@ -381,6 +398,17 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
  */
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+/* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
+ * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
+mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
+   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+      return MP_VAL;
+   }
+    return mp_expt_u32(a, (uint32_t)b, c);;
+}
+#endif /* TCL_WITH_EXTERNAL_TOMMATH */
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -718,7 +746,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_div_2d, /* 16 */
     0, /* 17 */
     TclBN_mp_exch, /* 18 */
-    TclBN_mp_expt_u32, /* 19 */
+    TclBN_mp_expt_n, /* 19 */
     TclBN_mp_grow, /* 20 */
     TclBN_mp_init, /* 21 */
     TclBN_mp_init_copy, /* 22 */
@@ -939,8 +967,8 @@ const TclStubs tclStubs = {
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     0, /* 147 */
-    Tcl_GetAlias, /* 148 */
-    Tcl_GetAliasObj, /* 149 */
+    0, /* 148 */
+    TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */
@@ -1076,7 +1104,7 @@ const TclStubs tclStubs = {
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
     Tcl_SetMainLoop, /* 284 */
-    0, /* 285 */
+    Tcl_GetAliasObj, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
@@ -1479,7 +1507,9 @@ const TclStubs tclStubs = {
     Tcl_DStringToObj, /* 685 */
     Tcl_UtfNcmp, /* 686 */
     Tcl_UtfNcasecmp, /* 687 */
-    TclUnusedStubEntry, /* 688 */
+    Tcl_NewWideUIntObj, /* 688 */
+    Tcl_SetWideUIntObj, /* 689 */
+    TclUnusedStubEntry, /* 690 */
 };
 
 /* !END!: Do not edit above this line. */

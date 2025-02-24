@@ -1616,8 +1616,7 @@ Tcl_Obj *
 TclListObjGetElement(
     Tcl_Obj *objPtr,		/* List object for which an element array is
 				 * to be returned. */
-    Tcl_Size index
-)
+    Tcl_Size index)
 {
     return ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index];
 }
@@ -2017,7 +2016,6 @@ Tcl_ListObjLength(
 	*lenPtr = TclObjTypeLength(listObj);
 	return TCL_OK;
     }
-
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return TCL_ERROR;
@@ -3552,7 +3550,6 @@ UpdateStringOfList(
 	Tcl_Free(flagPtr);
     }
 }
-
 
 /*
  *------------------------------------------------------------------------

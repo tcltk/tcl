@@ -381,7 +381,7 @@ Tcl_WinConvertError(
  *----------------------------------------------------------------------
  */
 
-void
+MODULE_SCOPE void
 tclWinDebugPanic(
     const char *format, ...)
 {

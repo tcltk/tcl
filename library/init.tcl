@@ -109,22 +109,15 @@ if {[interp issafe]} {
 
     # Set up the 'clock' ensemble
 
-    namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
-
-    proc ::tcl::initClock {} {
-	# Auto-loading stubs for 'clock.tcl'
-
-	foreach cmd {add format scan} {
-	    proc ::tcl::clock::$cmd args {
-		variable TclLibDir
-		source [file join $TclLibDir clock.tcl]
-		return [uplevel 1 [info level 0]]
-	    }
+    apply {{} {
+	set cmdmap [dict create]
+	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
+	    dict set cmdmap $cmd ::tcl::clock::$cmd
 	}
-
-	rename ::tcl::initClock {}
-    }
-    ::tcl::initClock
+	namespace inscope ::tcl::clock [list namespace ensemble create -command \
+	    ::clock -map $cmdmap]
+	::tcl::unsupported::clock::configure -init-complete
+    }}
 }
 
 # Conditionalize for presence of exec.

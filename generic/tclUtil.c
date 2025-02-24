@@ -658,7 +658,7 @@ FindElement(
 			    "%s element in braces followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -710,7 +710,7 @@ FindElement(
 			    "%s element in quotes followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -743,7 +743,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open brace in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
@@ -751,7 +751,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open quote in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -902,7 +902,7 @@ Tcl_SplitList(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
-			(void *)NULL);
+			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2001,7 +2001,7 @@ Tcl_ConcatObj(
 		if (elemPtr == NULL) {
 		    continue;
 		}
-		if (Tcl_GetString(elemPtr)[0] == '#' || TCL_OK
+		if (TclGetString(elemPtr)[0] == '#' || TCL_OK
 			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
@@ -2598,10 +2598,11 @@ char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
-				 * TCL_INDEX_NONE then this must be null-terminated. */
+				 * TCL_INDEX_NONE then this must be
+				 * null-terminated. */
     Tcl_Size length)		/* Number of bytes from "bytes" to append. If
-				 * TCL_INDEX_NONE, then append all of bytes, up to null
-				 * at end. */
+				 * TCL_INDEX_NONE, then append all of bytes, up
+				 * to null at end. */
 {
     Tcl_Size newSize;
 
@@ -2616,7 +2617,6 @@ Tcl_DStringAppend(
 	return NULL; /* NOTREACHED */
     }
     newSize = length + dsPtr->length + 1;
-
 
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
@@ -3731,7 +3731,7 @@ GetEndOffsetFromObj(
         if (!strncmp(bytes, "end-", 4)) {
             bytes += 4;
         }
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (void *)NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (char *)NULL);
     }
 
     return TCL_ERROR;
@@ -4586,7 +4586,7 @@ TclReToGlob(
   invalidGlob:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (char *)NULL);
     }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;

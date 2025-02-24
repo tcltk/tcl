@@ -77,7 +77,7 @@ declare 18 {
     void TclBN_mp_exch(mp_int *a, mp_int *b)
 }
 declare 19 {
-    mp_err MP_WUR TclBN_mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
+    mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c)
 }
 declare 20 {
     mp_err MP_WUR TclBN_mp_grow(mp_int *a, int size)

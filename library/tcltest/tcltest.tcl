@@ -2923,7 +2923,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	if {[singleProcess]} {
 	    if {[catch {
 		incr numTestFiles
-		uplevel 1 [list ::source $file]
+		uplevel 1 [list ::source -encoding utf-8 $file]
 	    } msg]} {
 		puts [outputChannel] "Test file error: $msg"
 		# append the name of the test to a list to be reported
@@ -3008,7 +3008,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] [string repeat ~ 44]
 	puts [outputChannel] "$dir test began at [eval $timeCmd]\n"
 
-	uplevel 1 [list ::source [file join $directory all.tcl]]
+	uplevel 1 [list ::source -encoding utf-8 [file join $directory all.tcl]]
 
 	set endTime [eval $timeCmd]
 	puts [outputChannel] "\n$dir test ended at $endTime"

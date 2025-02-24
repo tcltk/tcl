@@ -1110,7 +1110,7 @@ TclNRSourceObjCmd(
     void *names = NULL;
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding name? fileName");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-encoding encoding? fileName");
 	return TCL_ERROR;
     }
 

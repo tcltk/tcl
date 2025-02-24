@@ -1,5 +1,5 @@
 #include "tommath_private.h"
-#ifdef BN_MP_ROOT_U32_C
+#ifdef BN_MP_ROOT_N_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
@@ -12,19 +12,22 @@
  * which will find the root in log(N) time where
  * each step involves a fair bit.
  */
-mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
+mp_err mp_root_n(const mp_int *a, int b, mp_int *c)
 {
    mp_int t1, t2, t3, a_;
-   mp_ord cmp;
    int    ilog2;
    mp_err err;
 
-   /* input must be positive if b is even */
-   if (((b & 1u) == 0u) && (a->sign == MP_NEG)) {
+   if ((unsigned)b > (unsigned)MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
       return MP_VAL;
    }
 
-   if ((err = mp_init_multi(&t1, &t2, &t3, NULL)) != MP_OKAY) {
+   /* input must be positive if b is even */
+   if (((b & 1) == 0) && mp_isneg(a)) {
+      return MP_VAL;
+   }
+
+   if ((err = mp_init_multi(&t1, &t2, &t3, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -40,7 +43,7 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
      log_2(n) because the bit-length of the "n" is measured
      with an int and hence the root is always < 2 (two).
    */
-   if (b > (uint32_t)(INT_MAX/2)) {
+   if (b > INT_MAX/2) {
       mp_set(c, 1uL);
       c->sign = a->sign;
       err = MP_OKAY;
@@ -48,13 +51,13 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
    }
 
    /* "b" is smaller than INT_MAX, we can cast safely */
-   if (ilog2 < (int)b) {
+   if (ilog2 < b) {
       mp_set(c, 1uL);
       c->sign = a->sign;
       err = MP_OKAY;
       goto LBL_ERR;
    }
-   ilog2 =  ilog2 / ((int)b);
+   ilog2 =  ilog2 / b;
    if (ilog2 == 0) {
       mp_set(c, 1uL);
       c->sign = a->sign;
@@ -71,7 +74,7 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
       /* t2 = t1 - ((t1**b - a) / (b * t1**(b-1))) */
 
       /* t3 = t1**(b-1) */
-      if ((err = mp_expt_u32(&t1, b - 1u, &t3)) != MP_OKAY)       goto LBL_ERR;
+      if ((err = mp_expt_n(&t1, b - 1, &t3)) != MP_OKAY)       goto LBL_ERR;
 
       /* numerator */
       /* t2 = t1**b */
@@ -82,7 +85,7 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
 
       /* denominator */
       /* t3 = t1**(b-1) * b  */
-      if ((err = mp_mul_d(&t3, b, &t3)) != MP_OKAY)               goto LBL_ERR;
+      if ((err = mp_mul_d(&t3, (mp_digit)b, &t3)) != MP_OKAY)               goto LBL_ERR;
 
       /* t3 = (t1**b - a)/(b * t1**(b-1)) */
       if ((err = mp_div(&t2, &t3, &t3, NULL)) != MP_OKAY)         goto LBL_ERR;
@@ -101,7 +104,8 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
    /* result can be off by a few so check */
    /* Loop beneath can overshoot by one if found root is smaller than actual root */
    for (;;) {
-      if ((err = mp_expt_u32(&t1, b, &t2)) != MP_OKAY)            goto LBL_ERR;
+      mp_ord cmp;
+      if ((err = mp_expt_n(&t1, b, &t2)) != MP_OKAY)            goto LBL_ERR;
       cmp = mp_cmp(&t2, &a_);
       if (cmp == MP_EQ) {
          err = MP_OKAY;
@@ -115,7 +119,7 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
    }
    /* correct overshoot from above or from recurrence */
    for (;;) {
-      if ((err = mp_expt_u32(&t1, b, &t2)) != MP_OKAY)            goto LBL_ERR;
+      if ((err = mp_expt_n(&t1, b, &t2)) != MP_OKAY)            goto LBL_ERR;
       if (mp_cmp(&t2, &a_) == MP_GT) {
          if ((err = mp_sub_d(&t1, 1uL, &t1)) != MP_OKAY)          goto LBL_ERR;
       } else {
@@ -129,10 +133,8 @@ mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
    /* set the sign of the result */
    c->sign = a->sign;
 
-   err = MP_OKAY;
-
 LBL_ERR:
-   mp_clear_multi(&t1, &t2, &t3, NULL);
+   mp_clear_multi(&t1, &t2, &t3, (void *)NULL);
    return err;
 }
 

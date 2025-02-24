@@ -59,7 +59,7 @@ target are visible.
 .IP \fBimport\fR
 \fIcommandName\fR was created by \fBnamespace import\fR.
 .IP \fBnative\fR
-\fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
+\fIcommandName\fR was created by the \fBTcl_CreateObjCommand\fR
 interface directly without further registration of the type of command.
 .IP \fBobject\fR
 \fIcommandName\fR is the public command that represents an
