@@ -11,14 +11,9 @@ site](https://sourceforge.net/projects/tcl/files/Tcl/).
 [![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Amain)
 <br>
 9.0 (production release, daily build)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=core-9-branch)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Acore-9-branch)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=core-9-branch)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Acore-9-branch)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=core-9-branch)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Acore-9-branch)
-<br>
-8.7 (in development, daily build)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=core-9-0-branch)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Acore-9-0-branch)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=core-9-0-branch)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Acore-9-0-branch)
+[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=core-9-0-branch)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Acore-9-0-branch)
 
 ## Contents
  1. [Introduction](#intro)
