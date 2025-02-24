@@ -110,6 +110,13 @@ typedef struct CopyState {
 } CopyState;
 
 /*
+ * Global flags of previously closed standard channels, what is a combination
+ * of TCL_STDIN (1<<1), TCL_STDOUT (1<<2) and TCL_STDERR (1<<3), and 0 if no
+ * standard channels closed yet.
+ */
+static int stdChanClosed = 0;
+
+/*
  * All static variables used in this file are collected into a single instance
  * of the following structure. For multi-threaded implementations, there is
  * one instance of this structure for each thread.
@@ -126,12 +133,11 @@ typedef struct ThreadSpecificData {
 				 * indexed by ChannelState, as only one
 				 * ChannelState exists per set of stacked
 				 * channels. */
-    Tcl_Channel stdinChannel;	/* Static variable for the stdin channel. */
-    int stdinInitialized;
-    Tcl_Channel stdoutChannel;	/* Static variable for the stdout channel. */
-    int stdoutInitialized;
-    Tcl_Channel stderrChannel;	/* Static variable for the stderr channel. */
-    int stderrInitialized;
+    int stdChanInitialized;	/* Flags of std-channels initialized for this
+				 * thread (TCL_STDIN, TCL_STDOUT, TCL_STDERR) */
+    Tcl_Channel stdinChannel;	/* Instance of stdin channel for the thread. */
+    Tcl_Channel stdoutChannel;	/* Instance of stdout channel for the thread. */
+    Tcl_Channel stderrChannel;	/* Instance of stderr channel for the thread. */
     Tcl_Encoding binaryEncoding;
 } ThreadSpecificData;
 
@@ -712,20 +718,22 @@ Tcl_SetStdChannel(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    int init = channel ? 1 : -1;
     switch (type) {
     case TCL_STDIN:
-	tsdPtr->stdinInitialized = init;
 	tsdPtr->stdinChannel = channel;
 	break;
     case TCL_STDOUT:
-	tsdPtr->stdoutInitialized = init;
 	tsdPtr->stdoutChannel = channel;
 	break;
     case TCL_STDERR:
-	tsdPtr->stderrInitialized = init;
 	tsdPtr->stderrChannel = channel;
 	break;
+    }
+    tsdPtr->stdChanInitialized |= type;
+    if (channel) {
+	stdChanClosed &= ~type;
+    } else {
+	stdChanClosed |= type;
     }
 }
 
@@ -754,13 +762,29 @@ Tcl_GetStdChannel(
 
     /*
      * If the channels were not created yet, create them now and store them in
-     * the static variables.
+     * the static variables. Thereby ensure it was not closed previously
+     * (for instance in other thread, where it was initialized).
      */
 
-    switch (type) {
-    case TCL_STDIN:
-	if (!tsdPtr->stdinInitialized) {
-	    tsdPtr->stdinInitialized = -1;
+    if (tsdPtr->stdChanInitialized & type) {
+	switch (type) {
+	case TCL_STDIN:
+	    channel = tsdPtr->stdinChannel;
+	    break;
+	case TCL_STDOUT:
+	    channel = tsdPtr->stdoutChannel;
+	    break;
+	case TCL_STDERR:
+	    channel = tsdPtr->stderrChannel;
+	    break;
+	}
+    } else if (stdChanClosed & type) {
+	/* Channel was closed previously. */
+	channel = NULL;
+    } else {
+	tsdPtr->stdChanInitialized |= type;
+	switch (type) {
+	case TCL_STDIN:
 	    tsdPtr->stdinChannel = TclpGetDefaultStdChannel(TCL_STDIN);
 
 	    /*
@@ -773,34 +797,28 @@ Tcl_GetStdChannel(
 	     */
 
 	    if (tsdPtr->stdinChannel != NULL) {
-		tsdPtr->stdinInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdinChannel);
+		stdChanClosed &= ~TCL_STDIN;
 	    }
-	}
-	channel = tsdPtr->stdinChannel;
-	break;
-    case TCL_STDOUT:
-	if (!tsdPtr->stdoutInitialized) {
-	    tsdPtr->stdoutInitialized = -1;
+	    channel = tsdPtr->stdinChannel;
+	    break;
+	case TCL_STDOUT:
 	    tsdPtr->stdoutChannel = TclpGetDefaultStdChannel(TCL_STDOUT);
 	    if (tsdPtr->stdoutChannel != NULL) {
-		tsdPtr->stdoutInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdoutChannel);
+		stdChanClosed &= ~TCL_STDOUT;
 	    }
-	}
-	channel = tsdPtr->stdoutChannel;
-	break;
-    case TCL_STDERR:
-	if (!tsdPtr->stderrInitialized) {
-	    tsdPtr->stderrInitialized = -1;
+	    channel = tsdPtr->stdoutChannel;
+	    break;
+	case TCL_STDERR:
 	    tsdPtr->stderrChannel = TclpGetDefaultStdChannel(TCL_STDERR);
 	    if (tsdPtr->stderrChannel != NULL) {
-		tsdPtr->stderrInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stderrChannel);
+		stdChanClosed &= ~TCL_STDERR;
 	    }
+	    channel = tsdPtr->stderrChannel;
+	    break;
 	}
-	channel = tsdPtr->stderrChannel;
-	break;
     }
     return channel;
 }
@@ -1063,28 +1081,31 @@ CheckForStdChannelsBeingClosed(
     ChannelState *statePtr = ((Channel *) chan)->state;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (tsdPtr->stdinInitialized == 1
+    if ((tsdPtr->stdChanInitialized & TCL_STDIN)
 	    && tsdPtr->stdinChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdinChannel = NULL;
+	    stdChanClosed |= TCL_STDIN;
 	    return;
 	}
-    } else if (tsdPtr->stdoutInitialized == 1
+    } else if ((tsdPtr->stdChanInitialized & TCL_STDOUT)
 	    && tsdPtr->stdoutChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdoutChannel = NULL;
+	    stdChanClosed |= TCL_STDOUT;
 	    return;
 	}
-    } else if (tsdPtr->stderrInitialized == 1
+    } else if ((tsdPtr->stdChanInitialized & TCL_STDERR)
 	    && tsdPtr->stderrChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stderrChannel = NULL;
+	    stdChanClosed |= TCL_STDERR;
 	    return;
 	}
     }
@@ -1753,20 +1774,23 @@ Tcl_CreateChannel(
      * channel was previously closed explicitly.
      */
 
-    if ((tsdPtr->stdinChannel == NULL) && (tsdPtr->stdinInitialized == 1)) {
-	strcpy(tmp, "stdin");
-	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDIN);
-	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
-    } else if ((tsdPtr->stdoutChannel == NULL) &&
-	    (tsdPtr->stdoutInitialized == 1)) {
-	strcpy(tmp, "stdout");
-	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDOUT);
-	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
-    } else if ((tsdPtr->stderrChannel == NULL) &&
-	    (tsdPtr->stderrInitialized == 1)) {
-	strcpy(tmp, "stderr");
-	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDERR);
-	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
+    if (stdChanClosed) {
+	if ((tsdPtr->stdinChannel == NULL) &&
+		(stdChanClosed & TCL_STDIN)) {
+	    strcpy(tmp, "stdin");
+	    Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDIN);
+	    Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
+	} else if ((tsdPtr->stdoutChannel == NULL) &&
+		(stdChanClosed & TCL_STDOUT)) {
+	    strcpy(tmp, "stdout");
+	    Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDOUT);
+	    Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
+	} else if ((tsdPtr->stderrChannel == NULL) &&
+		(stdChanClosed & TCL_STDERR)) {
+	    strcpy(tmp, "stderr");
+	    Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDERR);
+	    Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
+	}
     }
     return (Tcl_Channel) chanPtr;
 }
