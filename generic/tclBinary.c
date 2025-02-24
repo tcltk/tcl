@@ -208,7 +208,7 @@ TclIsPureByteArray(
  *	from the given array of bytes.
  *
  * Results:
- *	The newly create object is returned. This object will have no initial
+ *	The newly created object is returned. This object has no initial
  *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
@@ -223,7 +223,8 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    Tcl_Size numBytes)		/* Number of bytes in the array */
+    Tcl_Size numBytes)		/* Number of bytes in the array,
+				 * must be >= 0. */
 {
 #ifdef TCL_MEM_DEBUG
     return Tcl_DbNewByteArrayObj(bytes, numBytes, "unknown", 0);
@@ -266,7 +267,8 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    Tcl_Size numBytes,		/* Number of bytes in the array */
+    Tcl_Size numBytes,		/* Number of bytes in the array,
+				 * must be >= 0. */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -283,7 +285,8 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    Tcl_Size numBytes,		/* Number of bytes in the array */
+    Tcl_Size numBytes,		/* Number of bytes in the array,
+				 * must be >= 0. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -314,8 +317,8 @@ Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new value.
 				 * May be NULL even if numBytes > 0. */
-    Tcl_Size numBytes)		/* Number of bytes in the array.
-				 * Must be >= 0 */
+    Tcl_Size numBytes)		/* Number of bytes in the array,
+				 * must be >= 0 */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
@@ -1405,7 +1408,7 @@ BinaryScanCmd(
 		if (count == BINARY_NOCOUNT) {
 		    count = 1;
 		}
-		if (count > length - offset) {
+		if (count > (length - offset)) {
 		    goto done;
 		}
 	    }
@@ -1603,7 +1606,7 @@ BinaryScanCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_NOCOUNT) {
-		if (length < size + offset) {
+		if (length < (size + offset)) {
 		    goto done;
 		}
 		valuePtr = ScanNumber(buffer+offset, cmd, flags,

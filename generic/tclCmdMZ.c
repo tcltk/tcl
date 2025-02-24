@@ -1534,7 +1534,7 @@ StringIsCmd(
 	"boolean",	"dict",		"digit",	"double",
 	"entier",	"false",	"graph",	"integer",
 	"list",		"lower",	"print",	"punct",
-	"space",	"true",		"upper",	"unicode",
+	"space",	"true",		"upper",
 	"wideinteger", "wordchar",	"xdigit",	NULL
     };
     enum isClassesEnum {
@@ -1542,7 +1542,7 @@ StringIsCmd(
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
 	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
 	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
-	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     } index;
     static const char *const isOptions[] = {
@@ -1870,9 +1870,6 @@ StringIsCmd(
 	break;
     case STR_IS_UPPER:
 	chcomp = Tcl_UniCharIsUpper;
-	break;
-    case STR_IS_UNICODE:
-	chcomp = Tcl_UniCharIsUnicode;
 	break;
     case STR_IS_WORD:
 	chcomp = Tcl_UniCharIsWordChar;

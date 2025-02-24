@@ -56,6 +56,7 @@ int
 .sp
 int
 \fBTcl_GetEnsembleNamespace\fR(\fIinterp, token, namespacePtrPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Namespace **namespacePtrPtr in/out
 .AP Tcl_Interp *interp in/out
@@ -161,6 +162,7 @@ All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
 must be fully qualified.
 .TP
 \fBformal pre-subcommand parameter list\fR (read-write)
+.
 A list of formal parameter names (the names only being used when generating
 error messages) that come at invocation of the ensemble between the name of
 the ensemble and the subcommand argument. NULL (the default) is equivalent to

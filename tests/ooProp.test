@@ -768,7 +768,7 @@ test ooProp-4.1 {TIP 558: properties: error details} -setup {
 "property -x"
     (in definition script for class "::Point" line 1)
     invoked from within
-"oo::define Point {property -x}"} {TCLOO PROPERTY_FORMAT}}
+"oo::define Point {property -x}"} {TCL OO PROPERTY_FORMAT}}
 test ooProp-4.2 {TIP 558: properties: error details} -setup {
     oo::class create parent
     unset -nocomplain msg opt

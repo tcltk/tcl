@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL="b2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -889,13 +889,13 @@ AC_SUBST(TCL_BUILDTIME_LIBRARY)
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_PACKAGE_PATH" && \
-	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl ~/Library/Frameworks /Library/Frameworks"
+	TCL_PACKAGE_PATH="~/Library/Tcl:/Library/Tcl:~/Library/Frameworks:/Library/Frameworks"
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib} ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir}:${prefix}/lib"
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${prefix}/lib} ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
 #--------------------------------------------------------------------

@@ -12,7 +12,6 @@ fblocked \- Test whether the last input operation exhausted all available input
 .SH SYNOPSIS
 \fBfblocked \fIchannelId\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBfblocked\fR command returns 1 if the most recent input operation

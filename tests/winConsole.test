@@ -4,18 +4,17 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright © 1999 Scriptics Corporation.
+# NOTE THIS CANNOT BE RUN VIA nmake/make test since stdin is connected to
+# nmake in that case.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.5
-    namespace import -force ::tcltest::*
-}
+package require tcltest
+namespace import ::tcltest::test
+
 
 catch {package require twapi} ;# Only to bring window to foreground. Not critical
-
 ::tcltest::ConstraintInitializer haveThread { expr {![catch {package require Thread}]} }
 
 # Prompt user for a yes/no response
@@ -155,6 +154,54 @@ test console-input-2.1 {Console file channel: non-blocking read} -constraints {
     set result
 } -result abc
 
+test console-input-3.0 {Console gets blocking - long lines bug-bda99f2393} -constraints {
+    win interactive
+} -body {
+    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    gets stdin line
+    set len [string length $line]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+} -result {1 1 1}
+
+test console-input-3.1 {Console gets blocking, small channel buffer size - long lines bug-bda99f2393} -constraints {
+    win interactive
+} -body {
+    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    set bufSize [fconfigure stdin -buffersize]
+    fconfigure stdin -buffersize 10
+    gets stdin line
+    fconfigure stdin -buffersize $bufSize
+    set len [string length $line]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+} -result {1 1 1}
+
+test console-input-3.2 {Console gets nonblocking - long lines bug-bda99f2393} -constraints {
+    win interactive
+} -body {
+    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    fconfigure stdin -blocking 0
+    while {[gets stdin line] < 0} {
+        after 1000
+    }
+    fconfigure stdin -blocking 1
+    set len [string length $line]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+} -result {1 1 1}
+
+test console-input-3.3 {Console gets nonblocking small channel buffer size - long lines bug-bda99f2393} -constraints {
+    win interactive
+} -body {
+    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    set bufSize [fconfigure stdin -buffersize]
+    fconfigure stdin -blocking 0 -buffersize 10
+    while {[gets stdin line] < 0} {
+        after 1000
+    }
+    fconfigure stdin -blocking 1 -buffersize $bufSize
+    set len [string length $line]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+} -result {1 1 1}
+
 # Output tests
 
 test console-output-1.0 {Console blocking puts stdout} -constraints {win interactive} -body {
@@ -218,7 +265,7 @@ test console-fconfigure-get-1.[incr testnum] {
     Console get stdin option -eofchar
 } -constraints {win interactive} -body {
     fconfigure stdin -eofchar
-} -result \x1A
+} -result ""
 
 test console-fconfigure-get-1.[incr testnum] {
     fconfigure -winsize

@@ -26,7 +26,8 @@ it gives a distance (up the procedure calling stack) to move before
 executing the command.  If \fIlevel\fR consists of \fB#\fR followed by
 a integer then the level gives an absolute level.  If \fIlevel\fR
 is omitted then it defaults to \fB1\fR.  \fILevel\fR cannot be
-defaulted if the first \fIcommand\fR argument is an integer or starts with \fB#\fR.
+defaulted if the first \fIcommand\fR argument is an integer or starts
+with \fB#\fR.
 .PP
 For example, suppose that procedure \fBa\fR was invoked
 from top-level, and that it called \fBb\fR, and that \fBb\fR called \fBc\fR.

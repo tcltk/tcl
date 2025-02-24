@@ -18,6 +18,7 @@ tcl::process \- Subprocess management
 This command provides a way to manage subprocesses created by the \fBopen\fR
 and \fBexec\fR commands, as identified by the process identifiers (PIDs) of
 those subprocesses. The legal \fIoptions\fR (which may be abbreviated) are:
+.\" METHOD: autopurge
 .TP
 \fB::tcl::process autopurge\fR ?\fIflag\fR?
 .
@@ -28,12 +29,14 @@ status as a boolean value. When autopurge is active,
 executed or a pipe channel created by \fBopen\fR is closed. When autopurge is
 inactive, \fB::tcl::process\fR purge must be called explicitly. By default
 autopurge is active.
+.\" METHOD: list
 .TP
 \fB::tcl::process list\fR
 .
 Returns the list of subprocess PIDs. This includes all currently executing
 subprocesses and all terminated subprocesses that have not yet had their
 corresponding process table entries purged.
+.\" METHOD: purge
 .TP
 \fB::tcl::process purge\fR ?\fIpids\fR?
 .
@@ -41,6 +44,7 @@ Cleans up all data associated with terminated subprocesses. If \fIpids\fR is
 specified as a list of PIDs then the command only cleanup data for the matching
 subprocesses if they exist, and raises an error otherwise. If a process listed is
 still active, this command does nothing to that process.
+.\" METHOD: status
 .TP
 \fB::tcl::process status\fR ?\fIswitches\fR? ?\fIpids\fR?
 .
@@ -53,16 +57,16 @@ processes, the status is a list with the following format:
 where:
 .RS
 .TP
-\fIcode\fR\0
+\fIcode\fR
 .
 is a standard Tcl return code, i.e., \fB0\fR for TCL_OK and \fB1\fR
 for TCL_ERROR,
 .TP
-\fImsg\fR\0
+\fImsg\fR
 .
 is the human-readable error message,
 .TP
-\fIerrorCode\fR\0
+\fIerrorCode\fR
 .
 uses the same format as the \fBerrorCode\fR global variable
 .PP
@@ -72,14 +76,16 @@ hood this command calls \fBTcl_WaitPid\fR with the \fBWNOHANG\fR flag set for
 non-blocking behavior, unless the \fB\-wait\fR switch is set (see below).
 .PP
 Additionally, \fB::tcl::process status\fR accepts the following switches:
+.\" OPTION: -wait
 .TP
-\fB\-wait\fR\0
+\fB\-wait\fR
 .
 By default the command returns immediately (the underlying \fBTcl_WaitPid\fR is
 called with the \fBWNOHANG\fR flag set) unless this switch is set. If \fIpids\fR
 is specified as a list of PIDs then the command waits until the status of the
 matching subprocesses are available. If \fIpids\fR was not specified, this
 command will wait for all known subprocesses.
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .

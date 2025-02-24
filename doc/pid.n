@@ -14,7 +14,6 @@ pid \- Retrieve process identifiers
 .SH SYNOPSIS
 \fBpid \fR?\fIfileId\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 If the \fIfileId\fR argument is given then it should normally
@@ -40,7 +39,6 @@ puts [string repeat - 70]
 puts [read $pipeline]
 close $pipeline
 .CE
-
 .SH "SEE ALSO"
 exec(n), open(n)
 .SH KEYWORDS

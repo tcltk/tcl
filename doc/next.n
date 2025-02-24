@@ -34,10 +34,10 @@ chain.
 .PP
 The \fBnextto\fR command is the same as the \fBnext\fR command, except that it
 takes an additional \fIclass\fR argument that identifies a class whose
-implementation of the current method chain (see \fBinfo object\fR \fBcall\fR) should
-be used; the method implementation selected will be the one provided by the
-given class, and it must refer to an existing non-filter invocation that lies
-further along the chain than the current implementation.
+implementation of the current method chain (see \fBinfo object\fR \fBcall\fR)
+should be used; the method implementation selected will be the one provided by
+the given class, and it must refer to an existing non-filter invocation that
+lies further along the chain than the current implementation.
 .SH "THE METHOD CHAIN"
 .PP
 When a method of an object is invoked, things happen in several stages:

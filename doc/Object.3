@@ -28,7 +28,8 @@ Tcl_Obj *
 int
 \fBTcl_IsShared\fR(\fIobjPtr\fR)
 .sp
-\fBTcl_InvalidateStringRep\fR(\fIobjPtr\fR)
+\fBTcl_InvalidateStringRep\fR(\fIobjPtr\fR)3
+.fi
 .SH ARGUMENTS
 .AS Tcl_Obj *objPtr
 .AP Tcl_Obj *objPtr in
@@ -112,7 +113,7 @@ Each Tcl value is represented by a \fBTcl_Obj\fR structure
 which is defined as follows.
 .PP
 .CS
-typedef struct Tcl_Obj {
+typedef struct {
     Tcl_Size \fIrefCount\fR;
     char *\fIbytes\fR;
     Tcl_Size \fIlength\fR;
@@ -293,10 +294,11 @@ that the target list or dictionary be well-formed, but that is
 often easy to arrange when the value is being initially constructed.)
 The macro \fBTcl_IncrRefCount\fR increments the reference count when a
 new reference to the value is created.
-The macro \fBTcl_DecrRefCount\fR decrements the count when a reference is no longer needed.
-If the value's reference count drops to zero, frees
+The macro \fBTcl_DecrRefCount\fR decrements the count when a reference
+is no longer needed. If the value's reference count drops to zero, frees
 its storage.
-The macro \fBTcl_BounceRefCount\fR will check if the value has no references (i.e. in a "new" state) and free the value.
+The macro \fBTcl_BounceRefCount\fR will check if the value has no
+references (i.e. in a "new" state) and free the value.
 A value shared by different code or data structures has
 \fIrefCount\fR greater than 1.  Incrementing a value's reference count
 ensures that it will not be freed too early or have its value change

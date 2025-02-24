@@ -14,7 +14,6 @@ for \- 'For' loop
 .SH SYNOPSIS
 \fBfor \fIstart test next body\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBFor\fR is a looping command, similar in structure to the C
@@ -38,7 +37,7 @@ The operation of \fBbreak\fR and \fBcontinue\fR are similar to the
 corresponding statements in C.
 \fBFor\fR returns an empty string.
 .PP
-Note: \fItest\fR should almost always be enclosed in braces.  If not,
+Note that \fItest\fR should almost always be enclosed in braces.  If not,
 variable substitutions will be made before the \fBfor\fR
 command starts executing, which means that variable changes
 made by the loop body will not be considered in the expression.

@@ -426,10 +426,13 @@ struct NamespacePathEntry {
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
  * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
  * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
+ * TCL_FIND_IF_NOT_SIMPLE       - Retrieve last namespace even if the rest of
+ *                                name is not simple name (contains ::).
  */
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
+#define TCL_FIND_IF_NOT_SIMPLE		0x2000
 
 /*
  * The client data for an ensemble command. This consists of the table of
@@ -3301,12 +3304,14 @@ struct Tcl_LoadHandle_ {
  */
 
 #if TCL_MAJOR_VERSION > 8
-MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
-			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
+MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
+			    const unsigned char *bytes, Tcl_Size len);
+MODULE_SCOPE void	TclAppendUtfToUtf(Tcl_Obj *objPtr,
+			    const char *bytes, Tcl_Size numBytes);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
 MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
@@ -4172,8 +4177,6 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
-MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
-			    const char *idxType, Tcl_Size idx);
 
 /*
  * Error message utility functions
@@ -4499,6 +4502,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
+#define TclGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes \
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+	    : (Tcl_GetStringFromObj)((objPtr), (lenPtr)))
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal
@@ -4690,7 +4698,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 #define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
-	Tcl_Size _count = 0, _i = (numBytes); \
+	Tcl_Size _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \

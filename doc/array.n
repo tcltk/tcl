@@ -23,8 +23,10 @@ Unless otherwise specified for individual commands below,
 The \fIoption\fR argument determines what action is carried
 out by the command.
 The legal \fIoptions\fR (which may be abbreviated) are:
+.\" METHOD: anymore
 .TP
 \fBarray anymore \fIarrayName searchId\fR
+.
 Returns 1 if there are any more elements left to be processed
 in an array search, 0 if all elements have already been
 returned.
@@ -35,6 +37,7 @@ This option is particularly useful if an array has an element
 with an empty name, since the return value from
 \fBarray nextelement\fR will not indicate whether the search
 has been completed.
+.\" METHOD: default
 .TP
 \fBarray default \fIsubcommand arrayName args...\fR
 .VS TIP508
@@ -82,19 +85,25 @@ value. Raises an error if \fIarrayName\fR is an existing variable that is not
 an array.
 .VE TIP508
 .RE
+.\" METHOD: donesearch
 .TP
 \fBarray donesearch \fIarrayName searchId\fR
+.
 This command terminates an array search and destroys all the
 state associated with that search.  \fISearchId\fR indicates
 which search on \fIarrayName\fR to destroy, and must have
 been the return value from a previous invocation of
 \fBarray startsearch\fR.  Returns an empty string.
+.\" METHOD: exists
 .TP
 \fBarray exists \fIarrayName\fR
+.
 Returns 1 if \fIarrayName\fR is an array variable, 0 if there
 is no variable by that name or if it is a scalar variable.
+.\" METHOD: for
 .TP
 \fBarray for {\fIkeyVariable valueVariable\fB} \fIarrayName body\fP
+.
 The first argument is a two element list of variable names for the
 key and value of each entry in the array.  The second argument is the
 array name to iterate over.  The third argument is the body to execute
@@ -102,8 +111,10 @@ for each key and value returned.
 The ordering of the returned keys is undefined.
 If an array element is deleted or a new array element is inserted during
 the \fIarray for\fP process, the command will terminate with an error.
+.\" METHOD: get
 .TP
 \fBarray get \fIarrayName\fR ?\fIpattern\fR?
+.
 Returns a list containing pairs of elements.  The first
 element in each pair is the name of an element in \fIarrayName\fR
 and the second element of each pair is the value of the
@@ -118,8 +129,10 @@ the array contains no elements, then an empty list is returned.
 If traces on the array modify the list of elements, the elements
 returned are those that exist both before and after the call to
 \fBarray get\fR.
+.\" METHOD: names
 .TP
 \fBarray names \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
+.
 Returns a list containing the names of all of the elements in
 the array that match \fIpattern\fR.  \fIMode\fR may be one of
 \fB\-exact\fR, \fB\-glob\fR, or \fB\-regexp\fR.  If specified, \fImode\fR
@@ -132,8 +145,10 @@ If \fIpattern\fR is omitted then the command returns all of
 the element names in the array.  If there are no (matching) elements
 in the array, or if \fIarrayName\fR is not the name of an array
 variable, then an empty string is returned.
+.\" METHOD: nextelement
 .TP
 \fBarray nextelement \fIarrayName searchId\fR
+.
 Returns the name of the next element in \fIarrayName\fR, or
 an empty string if all elements of \fIarrayName\fR have
 already been returned in this search.  The \fIsearchId\fR
@@ -143,8 +158,10 @@ Warning:  if elements are added to or deleted from the array,
 then all searches are automatically terminated just as if
 \fBarray donesearch\fR had been invoked; this will cause
 \fBarray nextelement\fR operations to fail for those searches.
+.\" METHOD: set
 .TP
 \fBarray set \fIarrayName list\fR
+.
 Sets the values of one or more elements in \fIarrayName\fR.
 \fIlist\fR must have a form like that returned by \fBarray get\fR,
 consisting of an even number of elements.
@@ -154,13 +171,17 @@ is used as a new value for that array element.
 If the variable \fIarrayName\fR does not already exist
 and \fIlist\fR is empty,
 \fIarrayName\fR is created with an empty array value.
+.\" METHOD: size
 .TP
 \fBarray size \fIarrayName\fR
+.
 Returns a decimal string giving the number of elements in the
 array.
 If \fIarrayName\fR is not the name of an array then 0 is returned.
+.\" METHOD: startsearch
 .TP
 \fBarray startsearch \fIarrayName\fR
+.
 This command initializes an element-by-element search through the
 array given by \fIarrayName\fR, such that invocations of the
 \fBarray nextelement\fR command will return the names of the
@@ -175,14 +196,18 @@ It is currently more efficient and easier to use either the \fBarray
 get\fR or \fBarray names\fR, together with \fBforeach\fR, to iterate
 over all but very large arrays.  See the examples below for how to do
 this.
+.\" METHOD: statistics
 .TP
 \fBarray statistics \fIarrayName\fR
+.
 Returns statistics about the distribution of data within the hashtable
 that represents the array.  This information includes the number of
 entries in the table, the number of buckets, and the utilization of
 the buckets.
+.\" METHOD: unset
 .TP
 \fBarray unset \fIarrayName\fR ?\fIpattern\fR?
+.
 Unsets all of the elements in the array that match \fIpattern\fR (using the
 matching rules of \fBstring match\fR).  If \fIarrayName\fR is not the name
 of an array variable or there are no matching elements in the array, no

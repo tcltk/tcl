@@ -618,6 +618,8 @@ static const TABLE TimezoneTable[] = {
     { "pdt",	tDAYZONE,  HOUR( 8) },	    /* Pacific Daylight */
     { "yst",	tZONE,	   HOUR( 9) },	    /* Yukon Standard */
     { "ydt",	tDAYZONE,  HOUR( 9) },	    /* Yukon Daylight */
+    { "akst",	tZONE,	   HOUR( 9) },	    /* Alaska Standard */
+    { "akdt",	tDAYZONE,  HOUR( 9) },	    /* Alaska Daylight */
     { "hst",	tZONE,	   HOUR(10) },	    /* Hawaii Standard */
     { "hdt",	tDAYZONE,  HOUR(10) },	    /* Hawaii Daylight */
     { "cat",	tZONE,	   HOUR(10) },	    /* Central Alaska */
@@ -1010,12 +1012,12 @@ TclClockOldscanObjCmd(
     if (status == 1) {
 	Tcl_SetObjResult(interp, dateInfo.messages);
 	Tcl_DecrRefCount(dateInfo.messages);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "PARSE", (char *)NULL);
 	return TCL_ERROR;
     } else if (status == 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("memory exhausted", -1));
 	Tcl_DecrRefCount(dateInfo.messages);
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	return TCL_ERROR;
     } else if (status != 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Unknown status returned "
@@ -1023,7 +1025,7 @@ TclClockOldscanObjCmd(
 						  "report this error as a "
 						  "bug in Tcl.", -1));
 	Tcl_DecrRefCount(dateInfo.messages);
-	Tcl_SetErrorCode(interp, "TCL", "BUG", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "BUG", (char *)NULL);
 	return TCL_ERROR;
     }
     Tcl_DecrRefCount(dateInfo.messages);
@@ -1031,31 +1033,31 @@ TclClockOldscanObjCmd(
     if (yyHaveDate > 1) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("more than one date in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (yyHaveTime > 1) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("more than one time of day in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (yyHaveZone > 1) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("more than one time zone in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (yyHaveDay > 1) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("more than one weekday in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (yyHaveOrdinalMonth > 1) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("more than one ordinal month in string", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DATE", "MULTIPLE", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1075,7 +1077,8 @@ TclClockOldscanObjCmd(
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(
 		ToSeconds(yyHour, yyMinutes, yySeconds, (MERIDIAN)yyMeridian)));
     } else {
-	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
+	TclNewObj(resultElement);
+	Tcl_ListObjAppendElement(interp, result, resultElement);
     }
 
     TclNewObj(resultElement);

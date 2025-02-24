@@ -4483,16 +4483,17 @@ TestprintObjCmd(
 {
     Tcl_WideInt argv1 = 0;
     size_t argv2;
+    long argv3;
 
-    if (objc < 2 || objc > 3) {
+    if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "format wideint");
+	return TCL_OK;
     }
 
-    if (objc > 1) {
-	Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
-    }
+    Tcl_GetWideIntFromObj(interp, objv[2], &argv1);
     argv2 = (size_t)argv1;
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
+    argv3 = (long)argv1;
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv3, argv3));
     return TCL_OK;
 }
 
@@ -8353,7 +8354,7 @@ TestparseargsCmd(
     static int foo = 0;
     Tcl_Size count = objc;
     Tcl_Obj **remObjv, *result[3];
-    Tcl_ArgvInfo argTable[] = {
+    const Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
         TCL_ARGV_AUTO_REST, TCL_ARGV_AUTO_HELP, TCL_ARGV_TABLE_END
     };

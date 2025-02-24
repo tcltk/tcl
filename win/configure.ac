@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL="b2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -365,9 +365,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
+    TCL_PACKAGE_PATH="${libdir};${prefix}\\lib"
 else
-    TCL_PACKAGE_PATH="{${prefix}/lib}"
+    TCL_PACKAGE_PATH="${prefix}\\lib"
 fi
 
 # The tclsh.exe.manifest requires these

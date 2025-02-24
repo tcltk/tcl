@@ -14,7 +14,6 @@ format \- Format a string in the style of sprintf
 .SH SYNOPSIS
 \fBformat \fIformatString \fR?\fIarg arg ...\fR?
 .BE
-
 .SH INTRODUCTION
 .PP
 This command generates a formatted string in a fashion similar to the
@@ -64,25 +63,20 @@ then all of the specifiers must be positional.
 .PP
 The second portion of a conversion specifier may contain any of the
 following flag characters, in any order:
-.TP 10
-\fB\-\fR
+.IP \fB\-\fR 10
 Specifies that the converted argument should be left-justified
 in its field (numbers are normally right-justified with leading
 spaces if needed).
-.TP 10
-\fB+\fR
+.IP \fB+\fR 10
 Specifies that a number should always be printed with a sign,
 even if positive.
-.TP 10
-\fIspace\fR
+.IP \fIspace\fR 10
 Specifies that a space should be added to the beginning of the
 number if the first character is not a sign.
-.TP 10
-\fB0\fR
+.IP \fB0\fR 10
 Specifies that the number should be padded on the left with
 zeroes instead of spaces.
-.TP 10
-\fB#\fR
+.IP \fB#\fR 10
 Requests an alternate output form. For \fBo\fR conversions,
 \fB0o\fR will be added to the beginning of the result unless
 it is zero. For \fBx\fR or \fBX\fR conversions, \fB0x\fR
@@ -126,8 +120,8 @@ be omitted unless the \fB#\fR flag has been specified).
 For integer conversions, it specifies a minimum number of digits
 to print (leading zeroes will be added if necessary).
 For \fBs\fR conversions it specifies the maximum number of characters to be
-printed; if the string is longer than this then the trailing characters will be dropped.
-If the precision is specified with \fB*\fR rather than a number
+printed; if the string is longer than this then the trailing characters will
+be dropped. If the precision is specified with \fB*\fR rather than a number
 then the next argument to the \fBformat\fR command determines the precision;
 it must be a numeric string.
 .SS "OPTIONAL SIZE MODIFIER"
@@ -153,67 +147,53 @@ determined by the value of the \fBwordSize\fR element of the
 The last thing in a conversion specifier is an alphabetic character
 that determines what kind of conversion to perform.
 The following conversion characters are currently supported:
-.TP 10
-\fBd\fR
+.IP \fBd\fR 10
 Convert integer to signed decimal string.
-.TP 10
-\fBu\fR
+.IP \fBu\fR 10
 Convert integer to unsigned decimal string.
-.TP 10
-\fBi\fR
+.IP \fBi\fR 10
 Convert integer to signed decimal string (equivalent to \fBd\fR).
-.TP 10
-\fBo\fR
+.IP \fBo\fR 10
 Convert integer to unsigned octal string.
-.TP 10
-\fBx\fR or \fBX\fR
+.IP "\fBx\fR or \fBX\fR" 10
 Convert integer to unsigned hexadecimal string, using digits
 .QW 0123456789abcdef
 for \fBx\fR and
 .QW 0123456789ABCDEF
 for \fBX\fR).
-.TP 10
-\fBb\fR
+.IP \fBb\fR 10
 Convert integer to unsigned binary string, using digits 0 and 1.
-.TP 10
-\fBc\fR
+.IP \fBc\fR 10
 Convert integer to the Unicode character it represents.
-.TP 10
-\fBs\fR
+.IP \fBs\fR 10
 No conversion; just insert string.
-.TP 10
-\fBf\fR
+.IP \fBf\fR 10
 Convert number to signed decimal string of
 the form \fIxx.yyy\fR, where the number of \fIy\fR's is determined by
 the precision (default: 6).
 If the precision is 0 then no decimal point is output.
-.TP 10
-\fBe\fR or \fBE\fR
+.IP "\fBe\fR or \fBE\fR" 10
 Convert number to scientific notation in the
 form \fIx.yyy\fBe\(+-\fIzz\fR, where the number of \fIy\fR's is determined
 by the precision (default: 6).
 If the precision is 0 then no decimal point is output.
 If the \fBE\fR form is used then \fBE\fR is
 printed instead of \fBe\fR.
-.TP 10
-\fBg\fR or \fBG\fR
+.IP "\fBg\fR or \fBG\fR" 10
 If the exponent is less than \-4 or greater than or equal to the
 precision, then convert number as for \fB%e\fR or
 \fB%E\fR.
 Otherwise convert as for \fB%f\fR.
 Trailing zeroes and a trailing decimal point are omitted.
-.TP 10
-\fBa\fR or \fBA\fR
+.IP "\fBa\fR or \fBA\fR" 10
 Convert double to hexadecimal notation in the form
 \fI0x1.yyy\fBp\(+-\fIzz\fR, where the number of \fIy\fR's is
 determined by the precision (default: 13).
 If the \fBA\fR form is used then the hex characters
 are printed in uppercase.
-.TP 10
-\fB%\fR
+.IP \fB%\fR 10
 No conversion: just insert \fB%\fR.
-.TP 10
-\fBp\fR
+.IP \fBp\fR 10
 Shorthand form for \fB0x%zx\fR, so it outputs the integer in
 hexadecimal form with \fB0x\fR prefix.
 .SH "DIFFERENCES FROM ANSI SPRINTF"

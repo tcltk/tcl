@@ -514,12 +514,12 @@ proc make-man-pages {html args} {
 proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
-	if {[file exists $tcltkdir/$root/README]} {
-	    set f [open $tcltkdir/$root/README]
+	if {[file exists $tcltkdir/$root/README.md]} {
+	    set f [open $tcltkdir/$root/README.md]
 	    fconfigure $f -encoding utf-8
 	    set d [read $f]
 	    close $f
-	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	    if {[regexp {This is the \*\*\w+ (\S+)\*\* source distribution} $d -> version]} {
 	       append name ", version $version"
 	    }
 	}

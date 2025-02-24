@@ -11,11 +11,11 @@
 .SH NAME
 timerate \- Calibrated performance measurements of script execution time
 .SH SYNOPSIS
+.nf
 \fBtimerate \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
-\fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI double\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
+\fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI estimate\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
 \fBtimerate \fR?\fB\-calibrate\fR? ?\fB\-direct\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -32,12 +32,12 @@ application performance.
 The first and second form will evaluate \fIscript\fR until the interval
 \fItime\fR given in milliseconds elapses, or for 1000 milliseconds (1 second)
 if \fItime\fR is not specified.
-.sp
+.PP
 The parameter \fImax-count\fR could additionally impose a further restriction
 by the maximal number of iterations to evaluate the script.
 If \fImax-count\fR is specified, the evaluation will stop either this count of
 iterations is reached or the time is exceeded.
-.sp
+.PP
 It will then return a canonical Tcl-list of the form:
 .PP
 .CS
@@ -46,15 +46,18 @@ It will then return a canonical Tcl-list of the form:
 .PP
 which indicates:
 .IP \(bu 3
-the average amount of time required per iteration, in microseconds ([\fBlindex\fR $result 0])
+the average amount of time required per iteration, in microseconds
+([\fBlindex\fR $result 0])
 .IP \(bu 3
 the count how many times it was executed ([\fBlindex\fR $result 2])
 .IP \(bu 3
 the estimated rate per second ([\fBlindex\fR $result 4])
 .IP \(bu 3
-the estimated real execution time without measurement overhead ([\fBlindex\fR $result 6])
+the estimated real execution time without measurement overhead
+([\fBlindex\fR $result 6])
 .PP
 The following options may be supplied to the \fBtimerate\fR command:
+.\" OPTION: -calibrate
 .TP
 \fB\-calibrate\fR
 .
@@ -66,31 +69,36 @@ for future invocations of the \fBtimerate\fR command. If the \fItime\fR
 parameter is not specified, the calibrate procedure runs for up to 10 seconds.
 .RS
 .PP
-Note that calibration is not thread safe in the current implementation.
+Note that the calibration process is not thread safe in the current
+implementation.
 .RE
+.\" OPTION: -overhead
 .TP
-\fB\-overhead \fIdouble\fR
+\fB\-overhead \fIestimate\fR
 .
-The \fB\-overhead\fR parameter supplies an estimate (in microseconds) of the
+The \fB\-overhead\fR parameter supplies an estimate (in microseconds, which may
+be a floating point number) of the
 measurement overhead of each iteration of the tested script. This quantity
 will be subtracted from the measured time prior to reporting results. This can
 be useful for removing the cost of interpreter state reset commands from the
 script being measured.
+.\" OPTION: -direct
 .TP
 \fB\-direct\fR
 .
-The \fB-direct\fR option causes direct execution of the supplied script,
+The \fB\-direct\fR option causes direct execution of the supplied script,
 without compilation, in a manner similar to the \fBtime\fR command. It can be
 used to measure the cost of \fBTcl_EvalObjEx\fR, of the invocation of canonical
 lists, and of the uncompiled versions of bytecoded commands.
 .PP
-As opposed to the \fBtime\fR commmand, which runs the tested script for a fixed
+As opposed to the \fBtime\fR command, which runs the tested script for a fixed
 number of iterations, the \fBtimerate\fR command runs it for a fixed time.
 Additionally, the compiled variant of the script will be used during the entire
-measurement, as if the script were part of a compiled procedure, if the \fB\-direct\fR
-option is not specified. The fixed time period and possibility of compilation allow
-for more precise results and prevent very long execution times by slow scripts, making
-it practical for measuring scripts with highly uncertain execution times.
+measurement, as if the script were part of a compiled procedure,
+if the \fB\-direct\fR option is not specified. The fixed time period and
+possibility of compilation allow for more precise results and prevent very long
+execution times by slow scripts, making it practical for measuring scripts with
+highly uncertain execution times.
 .SH EXAMPLES
 Estimate how fast it takes for a simple Tcl \fBfor\fR loop (including
 operations on variable \fIi\fR) to count to ten:
@@ -116,9 +124,9 @@ set i 0; \fBtimerate\fR -calibrate {expr {$i<10}; incr i} 1000
 } 5000
 .CE
 .PP
-Estimate the speed of calculating the hour of the day using \fBclock format\fR only,
-ignoring overhead of the portion of the script that prepares the time for it to
-calculate:
+Estimate the speed of calculating the hour of the day using \fBclock format\fR
+only, ignoring overhead of the portion of the script that prepares the time for
+it to calculate:
 .PP
 .CS
 \fI# calibrate\fR

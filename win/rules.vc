@@ -79,10 +79,11 @@ NEED_TK_SOURCE = 0
 # 3. Determine the compiler and linker versions
 # 4. Build the nmakehlp helper application
 # 5. Determine the supported compiler options and features
-# 6. Parse the OPTS macro value for user-specified build configuration
-# 7. Parse the STATS macro value for statistics instrumentation
-# 8. Parse the CHECKS macro for additional compilation checks
-# 9. Extract Tcl, and possibly Tk, version numbers from the headers
+# 6. Extract Tcl, Tk, and possibly extensions, version numbers from the
+#    headers
+# 7. Parse the OPTS macro value for user-specified build configuration
+# 8. Parse the STATS macro value for statistics instrumentation
+# 9. Parse the CHECKS macro for additional compilation checks
 # 10. Based on this selected configuration, construct the output
 #     directory and file paths
 # 11. Construct the paths where the package is to be installed

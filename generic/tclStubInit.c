@@ -73,10 +73,8 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
+#undef TclGetStringFromObj
 #if defined(TCL_NO_DEPRECATED)
-# undef TclGetStringFromObj
-# undef TclGetBytesFromObj
-# undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
@@ -325,6 +323,7 @@ TclpGetPid(Tcl_Pid pid)
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -340,7 +339,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))exprInt
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
 static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
@@ -356,16 +355,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
-
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
@@ -1172,8 +1162,8 @@ const TclStubs tclStubs = {
     Tcl_Chdir, /* 366 */
     Tcl_Access, /* 367 */
     Tcl_Stat, /* 368 */
-    Tcl_UtfNcmp, /* 369 */
-    Tcl_UtfNcasecmp, /* 370 */
+    TclUtfNcmp, /* 369 */
+    TclUtfNcasecmp, /* 370 */
     Tcl_StringCaseMatch, /* 371 */
     Tcl_UniCharIsControl, /* 372 */
     Tcl_UniCharIsGraph, /* 373 */
@@ -1460,7 +1450,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
-    Tcl_UniCharIsUnicode, /* 657 */
+    0, /* 657 */
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
@@ -1489,8 +1479,8 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    0, /* 686 */
-    0, /* 687 */
+    Tcl_UtfNcmp, /* 686 */
+    Tcl_UtfNcasecmp, /* 687 */
     TclUnusedStubEntry, /* 688 */
 };
 

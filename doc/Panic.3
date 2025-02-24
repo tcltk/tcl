@@ -12,15 +12,13 @@ Tcl_Panic, Tcl_SetPanicProc, Tcl_ConsolePanic \- report fatal error and abort
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_Panic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
 .sp
 const char *
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
 .sp
-void
 \fBTcl_ConsolePanic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_PanicProc *panicProc
 .AP "const char*" format in

@@ -1674,7 +1674,7 @@ CheckVersionAndConvert(
     int hasunstable = 0;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
-     * 4+ to have spce for an additional -2 at the end
+     * 4+ to have space for an additional -2 at the end
      */
     char *ibuf = (char *)Tcl_Alloc(4 + 4*strlen(string));
     char *ip = ibuf;

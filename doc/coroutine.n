@@ -13,10 +13,11 @@ coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values fr
 .SH SYNOPSIS
 .nf
 \fBcoroutine \fIname command\fR ?\fIarg...\fR?
+
 \fByield\fR ?\fIvalue\fR?
-\fByieldto\fR \fIcommand\fR ?\fIarg...\fR?
+\fByieldto\fI command\fR ?\fIarg...\fR?
 \fIname\fR ?\fIvalue...\fR?
-.sp
+
 .VS "8.7, TIP383"
 \fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
 \fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?
@@ -198,7 +199,7 @@ proc juggler {name target {value ""}} {
     while {$value ne ""} {
         puts "$name : $value"
         set value [string range $value 0 end-1]
-        lassign [\fByieldto\fR \fI$target\fR $value] value
+        lassign [\fByieldto\fI $target\fR $value] value
     }
 }
 \fBcoroutine\fR j1 juggler Larry [

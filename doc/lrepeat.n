@@ -18,7 +18,9 @@ lrepeat \- Build a list by repeating elements
 The \fBlrepeat\fR command creates a list of size \fIcount * number of
 elements\fR by repeating \fIcount\fR times the sequence of elements
 \fIelement ...\fR.  \fIcount\fR must be a non-negative integer,
-\fIelement\fR can be any Tcl value.  Note that \fBlrepeat 1 element ...\fR
+\fIelement\fR can be any Tcl value.
+.PP
+Note that \fBlrepeat 1 element ...\fR
 is identical to \fBlist element ...\fR.
 .SH EXAMPLES
 .CS

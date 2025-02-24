@@ -15,11 +15,11 @@
 #
 #----------------------------------------------------------------------
 
-# We must have message catalogs that support the root locale, and we need
-# access to the Registry on Windows systems.
+# msgcat 1.7 features are used. We need access to the Registry on Windows
+# systems.
 
 uplevel \#0 {
-    package require msgcat 1.6
+    package require msgcat 1.7
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
 	    namespace eval ::tcl::clock [list variable NoRegistry {}]
@@ -31,7 +31,7 @@ uplevel \#0 {
 # library code can find message catalogs and time zone definition files.
 
 namespace eval ::tcl::clock \
-    [list variable LibDir [file dirname [info script]]]
+    [list variable LibDir [info library]]
 
 #----------------------------------------------------------------------
 #
@@ -60,7 +60,7 @@ namespace eval ::tcl::clock {
 
     namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
-    namespace import ::msgcat::mc
+    proc mc {args} { tailcall ::msgcat::mcn [namespace current] {*}$args }
     namespace import ::msgcat::mcpackagelocale
 
 }
@@ -554,6 +554,8 @@ proc ::tcl::clock::Initialize {} {
 	pdt	-0700 \
 	yst	-0900 \
 	ydt	-0800 \
+	akst	-0900 \
+	akdt	-0800 \
 	hst	-1000 \
 	hdt	-0900 \
 	cat	-1000 \
@@ -1230,8 +1232,8 @@ proc ::tcl::clock::scan { args } {
 	    default {
 		return -code error \
 		    -errorcode [list CLOCK badOption $flag] \
-		    "bad option \"$flag\",\
-		     must be -base, -format, -gmt, -locale or -timezone"
+		    "bad option \"$flag\":\
+		     must be -base, -format, -gmt, -locale, or -timezone"
 	    }
 	}
     }
@@ -4277,7 +4279,7 @@ proc ::tcl::clock::add { clockval args } {
 		}
 		default {
 		    throw [list CLOCK badOption $a] \
-			"bad option \"$a\",\
+			"bad option \"$a\":\
 			 must be -gmt, -locale or -timezone"
 		}
 	    }

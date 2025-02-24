@@ -25,8 +25,8 @@ package require TclOO
 \fB}\fR
 
 \fIobjectName \fBconfigure\fR
-\fIobjectName \fBconfigure\fR \fI\-prop\fR
-\fIobjectName \fBconfigure\fR \fI\-prop value\fR ?\fI\-prop value\fR...
+\fIobjectName \fBconfigure\fI \-prop\fR
+\fIobjectName \fBconfigure\fI \-prop value\fR ?\fI\-prop value\fR...
 .fi
 .SH "CLASS HIERARCHY"
 .nf
@@ -54,6 +54,7 @@ definition command available in definition scripts for the class and instances
 \fBoo::objdefine\fR) and making a \fBconfigure\fR method available within the
 instances.
 .SS "CONFIGURE METHOD"
+.\" METHOD: configure
 .PP
 The behavior of the \fBconfigure\fR method is modelled after the
 \fBfconfigure\fR/\fBchan configure\fR command.
@@ -74,6 +75,7 @@ method fails, the preceding pairs (if any) will continue to have been applied,
 and the succeeding pairs (if any) will be not applied. On success, the result
 of the \fBconfigure\fR method in this mode operation will be an empty string.
 .SS "PROPERTY DEFINITIONS"
+.\" COMMAND: property
 .PP
 When a class has been manufactured by the \fBoo::configurable\fR metaclass (or
 one of its subclasses), it gains an extra definition, \fBproperty\fR. The
@@ -84,6 +86,7 @@ The \fBproperty\fR command takes the name of a property to define first,
 \fIwithout a leading hyphen\fR, followed by a number of option-value pairs
 that modify the basic behavior of the property. This can then be followed by
 an arbitrary number of other property definitions. The supported options are:
+.\" OPTION: -get
 .TP
 \fB\-get \fIgetterScript\fR
 .
@@ -97,6 +100,7 @@ of the instance variable with the same name as the property (e.g.,
 will result in a method
 .QW <ReadProp-xyz>
 being created).
+.\" OPTION: -kind
 .TP
 \fB\-kind \fIpropertyKind\fR
 .
@@ -112,6 +116,7 @@ Note that write-only properties are not particularly discoverable as they are
 never reported by the \fBconfigure\fR method other than by error messages when
 attempting to write to a property that does not exist.
 .RE
+.\" OPTION: -set
 .TP
 \fB\-set \fIsetterScript\fR
 .
@@ -143,11 +148,13 @@ The configurable class system is comprised of several pieces. The
 definition namespaces during object creation that provide the other bits and
 pieces of machinery. The key pieces of the implementation are enumerated here
 so that they can be used by other code:
+.\" COMMAND: configurable
 .TP
 \fBoo::configuresupport::configurable\fR
 .
 This is a class that provides the implementation of the \fBconfigure\fR method
 (described above in \fBCONFIGURE METHOD\fR).
+.\" NAMESPACE: configurableclass
 .TP
 \fBoo::configuresupport::configurableclass\fR
 .
@@ -156,6 +163,7 @@ This is a namespace that contains the definition dialect that provides the
 class constructors under normal circumstances), as described above in
 \fBPROPERTY DEFINITIONS\fR. It \fBnamespace export\fRs its \fBproperty\fR
 command so that it may be used easily in user definition dialects.
+.\" NAMESPACE: configurableobject
 .TP
 \fBoo::configuresupport::configurableobject\fR
 .
@@ -173,24 +181,28 @@ slots mean other than that they have unique names, no important order, can be
 inherited and discovered on classes and instances.
 .PP
 These slots, and their intended semantics, are:
+.\" METHOD: readableproperties
 .TP
 \fBoo::configuresupport::readableproperties\fR
 .
 The set of properties of a class (not including those from its superclasses)
 that may be read from when configuring an instance of the class. This slot can
 also be read with the \fBinfo class properties\fR command.
+.\" METHOD: writableproperties
 .TP
 \fBoo::configuresupport::writableproperties\fR
 .
 The set of properties of a class (not including those from its superclasses)
 that may be written to when configuring an instance of the class. This slot
 can also be read with the \fBinfo class properties\fR command.
+.\" METHOD: objreadableproperties
 .TP
 \fBoo::configuresupport::objreadableproperties\fR
 .
 The set of properties of an object instance (not including those from its
 classes) that may be read from when configuring the object. This slot can
 also be read with the \fBinfo object properties\fR command.
+.\" METHOD: objwritableproperties
 .TP
 \fBoo::configuresupport::objwritableproperties\fR
 .

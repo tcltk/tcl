@@ -36,16 +36,19 @@ interpreter in which the \fBunload\fR command was invoked.
 If the initial arguments to \fBunload\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
 currently supported:
+.\" OPTION: -nocomplain
 .TP
 \fB\-nocomplain\fR
 .
 Suppresses all error messages. If this switch is given, \fBunload\fR will
 never report an error.
+.\" OPTION: -keeplibrary
 .TP
 \fB\-keeplibrary\fR
 .
 This switch will prevent \fBunload\fR from issuing the operating system call
 that will unload the library from the process.
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .
@@ -81,10 +84,10 @@ instead of \fIpkg\fB_Unload\fR.
 If \fBunload\fR determines that a library is not unloadable (or unload
 functionality has been disabled during compilation), an error will be returned.
 If the library is unloadable, then \fBunload\fR will call the unload
-procedure. If the unload procedure returns \fBTCL_OK\fR, \fBunload\fR will proceed
-and decrease the proper reference count (depending on the target interpreter
-type). When both reference counts have reached 0, the library will be
-detached from the process.
+procedure. If the unload procedure returns \fBTCL_OK\fR, \fBunload\fR will
+proceed and decrease the proper reference count (depending on the target
+interpreter type). When both reference counts have reached 0, the library will
+be detached from the process.
 .SS "UNLOAD HOOK PROTOTYPE"
 .PP
 The unload procedure must match the following prototype:
@@ -130,7 +133,7 @@ For example, the command \fBunload libxyz4.2.so\fR uses the prefix
 prefix \fBLast\fR.
 .SH "PORTABILITY ISSUES"
 .TP
-\fBUnix\fR\0\0\0\0\0
+\fBUnix\fR
 .
 Not all unix operating systems support library unloading. Under such
 an operating system \fBunload\fR returns an error (unless \fB\-nocomplain\fR

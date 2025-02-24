@@ -24,6 +24,7 @@ used to allow the method to discover information about how it was called. It
 takes an argument, \fIsubcommand\fR, that tells it what sort of information is
 actually desired; if omitted the result will be the same as if \fBself
 object\fR was invoked. The supported subcommands are:
+.\" METHOD: call
 .TP
 \fBself call\fR
 .
@@ -40,6 +41,7 @@ being a \fBmethod\fR),
 and the second element is an index into the first element's
 list that indicates which actual implementation is currently executing (the
 first implementation to execute is always at index 0).
+.\" METHOD: caller
 .TP
 \fBself caller\fR
 .
@@ -50,6 +52,7 @@ second element is the name of the object on which the containing method was
 invoked, and the third element is the name of the method (with the strings
 \fB<constructor>\fR and \fB<destructor>\fR indicating constructors and
 destructors respectively).
+.\" METHOD: class
 .TP
 \fBself class\fR
 .
@@ -66,6 +69,7 @@ construct:
 info object class [\fBself object\fR]
 .CE
 .RE
+.\" METHOD: filter
 .TP
 \fBself filter\fR
 .
@@ -75,17 +79,20 @@ that declared the filter (note that this may be different from the object or
 class that provided the implementation of the filter), the second element is
 either \fBobject\fR or \fBclass\fR depending on whether the declaring entity
 was an object or class, and the third element is the name of the filter.
+.\" METHOD: method
 .TP
 \fBself method\fR
 .
 This returns the name of the current method (with the strings
 \fB<constructor>\fR and \fB<destructor>\fR indicating constructors and
 destructors respectively).
+.\" METHOD: namespace
 .TP
 \fBself namespace\fR
 .
 This returns the name of the unique namespace of the object that the method
 was invoked upon.
+.\" METHOD: next
 .TP
 \fBself next\fR
 .
@@ -98,10 +105,12 @@ of the method (with the strings \fB<constructor>\fR and \fB<destructor>\fR
 indicating constructors and destructors respectively). If invoked from a
 method that is at the end of a call chain, this subcommand returns the empty
 string.
+.\" METHOD: object
 .TP
 \fBself object\fR
 .
 This returns the name of the object that the method was invoked upon.
+.\" METHOD: target
 .TP
 \fBself target\fR
 .

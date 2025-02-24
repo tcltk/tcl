@@ -109,40 +109,40 @@ set encInvalidBytes {}; # Reset the table
 # 80-9F which is treated as cp1252.
 # This tests the TableToUtfProc code path.
 lappend encInvalidBytes {*}{
-    ascii 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
+    ascii 80 tcl8    \u20AC -1 {} {map to cp1252}
     ascii 80 replace \uFFFD -1 {} {Smallest invalid byte}
     ascii 80 strict  {}      0 {} {Smallest invalid byte}
-    ascii 81 tcl8    \u0081 -1 {knownBug} {map to cp1252}
-    ascii 82 tcl8    \u201A -1 {knownBug} {map to cp1252}
-    ascii 83 tcl8    \u0192 -1 {knownBug} {map to cp1252}
-    ascii 84 tcl8    \u201E -1 {knownBug} {map to cp1252}
-    ascii 85 tcl8    \u2026 -1 {knownBug} {map to cp1252}
-    ascii 86 tcl8    \u2020 -1 {knownBug} {map to cp1252}
-    ascii 87 tcl8    \u2021 -1 {knownBug} {map to cp1252}
-    ascii 88 tcl8    \u0276 -1 {knownBug} {map to cp1252}
-    ascii 89 tcl8    \u2030 -1 {knownBug} {map to cp1252}
-    ascii 8A tcl8    \u0160 -1 {knownBug} {map to cp1252}
-    ascii 8B tcl8    \u2039 -1 {knownBug} {map to cp1252}
-    ascii 8C tcl8    \u0152 -1 {knownBug} {map to cp1252}
-    ascii 8D tcl8    \u008D -1 {knownBug} {map to cp1252}
-    ascii 8E tcl8    \u017D -1 {knownBug} {map to cp1252}
-    ascii 8F tcl8    \u008F -1 {knownBug} {map to cp1252}
-    ascii 90 tcl8    \u0090 -1 {knownBug} {map to cp1252}
-    ascii 91 tcl8    \u2018 -1 {knownBug} {map to cp1252}
-    ascii 92 tcl8    \u2019 -1 {knownBug} {map to cp1252}
-    ascii 93 tcl8    \u201C -1 {knownBug} {map to cp1252}
-    ascii 94 tcl8    \u201D -1 {knownBug} {map to cp1252}
-    ascii 95 tcl8    \u2022 -1 {knownBug} {map to cp1252}
-    ascii 96 tcl8    \u2013 -1 {knownBug} {map to cp1252}
-    ascii 97 tcl8    \u2014 -1 {knownBug} {map to cp1252}
-    ascii 98 tcl8    \u02DC -1 {knownBug} {map to cp1252}
-    ascii 99 tcl8    \u2122 -1 {knownBug} {map to cp1252}
-    ascii 9A tcl8    \u0161 -1 {knownBug} {map to cp1252}
-    ascii 9B tcl8    \u203A -1 {knownBug} {map to cp1252}
-    ascii 9C tcl8    \u0153 -1 {knownBug} {map to cp1252}
-    ascii 9D tcl8    \u009D -1 {knownBug} {map to cp1252}
-    ascii 9E tcl8    \u017E -1 {knownBug} {map to cp1252}
-    ascii 9F tcl8    \u0178 -1 {knownBug} {map to cp1252}
+    ascii 81 tcl8    \u0081 -1 {} {map to cp1252}
+    ascii 82 tcl8    \u201A -1 {} {map to cp1252}
+    ascii 83 tcl8    \u0192 -1 {} {map to cp1252}
+    ascii 84 tcl8    \u201E -1 {} {map to cp1252}
+    ascii 85 tcl8    \u2026 -1 {} {map to cp1252}
+    ascii 86 tcl8    \u2020 -1 {} {map to cp1252}
+    ascii 87 tcl8    \u2021 -1 {} {map to cp1252}
+    ascii 88 tcl8    \u02C6 -1 {} {map to cp1252}
+    ascii 89 tcl8    \u2030 -1 {} {map to cp1252}
+    ascii 8A tcl8    \u0160 -1 {} {map to cp1252}
+    ascii 8B tcl8    \u2039 -1 {} {map to cp1252}
+    ascii 8C tcl8    \u0152 -1 {} {map to cp1252}
+    ascii 8D tcl8    \u008D -1 {} {map to cp1252}
+    ascii 8E tcl8    \u017D -1 {} {map to cp1252}
+    ascii 8F tcl8    \u008F -1 {} {map to cp1252}
+    ascii 90 tcl8    \u0090 -1 {} {map to cp1252}
+    ascii 91 tcl8    \u2018 -1 {} {map to cp1252}
+    ascii 92 tcl8    \u2019 -1 {} {map to cp1252}
+    ascii 93 tcl8    \u201C -1 {} {map to cp1252}
+    ascii 94 tcl8    \u201D -1 {} {map to cp1252}
+    ascii 95 tcl8    \u2022 -1 {} {map to cp1252}
+    ascii 96 tcl8    \u2013 -1 {} {map to cp1252}
+    ascii 97 tcl8    \u2014 -1 {} {map to cp1252}
+    ascii 98 tcl8    \u02DC -1 {} {map to cp1252}
+    ascii 99 tcl8    \u2122 -1 {} {map to cp1252}
+    ascii 9A tcl8    \u0161 -1 {} {map to cp1252}
+    ascii 9B tcl8    \u203A -1 {} {map to cp1252}
+    ascii 9C tcl8    \u0153 -1 {} {map to cp1252}
+    ascii 9D tcl8    \u009D -1 {} {map to cp1252}
+    ascii 9E tcl8    \u017E -1 {} {map to cp1252}
+    ascii 9F tcl8    \u0178 -1 {} {map to cp1252}
 
     ascii FF tcl8    \u00FF -1 {} {Largest invalid byte}
     ascii FF replace \uFFFD -1 {} {Largest invalid byte}
@@ -332,22 +332,22 @@ lappend encInvalidBytes {*}{
     utf-8 ED9F7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
     utf-8 ED9F7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EDA080 tcl8       \uD800          -1 {}  {High surrogate}
-    utf-8 EDA080 replace    \uFFFD          -1 {knownBug}  {High surrogate}
+    utf-8 EDA080 replace    \uFFFD          -1 {}  {High surrogate}
     utf-8 EDA080 strict     {}               0 {}  {High surrogate}
     utf-8 EDAFBF tcl8       \uDBFF          -1 {}  {High surrogate}
-    utf-8 EDAFBF replace    \uFFFD          -1 {knownBug}  {High surrogate}
+    utf-8 EDAFBF replace    \uFFFD          -1 {}  {High surrogate}
     utf-8 EDAFBF strict     {}               0 {}  {High surrogate}
     utf-8 EDB080 tcl8       \uDC00          -1 {}  {Low surrogate}
-    utf-8 EDB080 replace    \uFFFD          -1 {knownBug}  {Low surrogate}
+    utf-8 EDB080 replace    \uFFFD          -1 {}  {Low surrogate}
     utf-8 EDB080 strict     {}               0 {}  {Low surrogate}
-    utf-8 EDBFBF tcl8       \uDFFF          -1 {knownBug}  {Low surrogate}
-    utf-8 EDBFBF replace    \uFFFD          -1 {knownBug}  {Low surrogate}
+    utf-8 EDBFBF tcl8       \uDFFF          -1 {}  {Low surrogate}
+    utf-8 EDBFBF replace    \uFFFD          -1 {}  {Low surrogate}
     utf-8 EDBFBF strict     {}               0 {}  {Low surrogate}
-    utf-8 EDA080EDB080 tcl8 \U00010000      -1 {knownBug}  {High low surrogate pair}
-    utf-8 EDA080EDB080 replace \uFFFD\uFFFD -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDA080EDB080 tcl8 \uD800\uDC00    -1 {}  {High low surrogate pair}
+    utf-8 EDA080EDB080 replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
     utf-8 EDA080EDB080 strict {}             0 {}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF      -1 {knownBug}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF tcl8 \uDBFF\uDFFF    -1 {}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF strict {}             0 {}  {High low surrogate pair}
 
     utf-8 EE tcl8       \u00EE        -1 {} {Missing trail byte}
@@ -554,20 +554,20 @@ lappend encInvalidBytes {*}{
     utf-16le 41      strict    {}      0 {solo tail} {Truncated}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
     utf-16le 00D8    replace   \uFFFD -1 {} {Missing low surrogate}
-    utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
+    utf-16le 00D8    strict    {}      0 {} {Missing low surrogate}
     utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
     utf-16le 00DC    replace   \uFFFD -1 {} {Missing high surrogate}
-    utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
+    utf-16le 00DC    strict    {}      0 {} {Missing high surrogate}
 
     utf-16be 41      tcl8      \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      strict    {}      0 {solo tail} {Truncated}
     utf-16be D800    tcl8      \uD800 -1 {} {Missing low surrogate}
-    utf-16be D800    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
-    utf-16be D800    strict    {}      0 {knownBug} {Missing low surrogate}
+    utf-16be D800    replace   \uFFFD -1 {} {Missing low surrogate}
+    utf-16be D800    strict    {}      0 {} {Missing low surrogate}
     utf-16be DC00    tcl8      \uDC00 -1 {} {Missing high surrogate}
-    utf-16be DC00    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
-    utf-16be DC00    strict    {}      0 {knownBug} {Missing high surrogate}
+    utf-16be DC00    replace   \uFFFD -1 {} {Missing high surrogate}
+    utf-16be DC00    strict    {}      0 {} {Missing high surrogate}
 }
 
 # utf32-le and utf32-be test cases. Note utf32 cases are automatically generated
@@ -641,10 +641,12 @@ lappend encUnencodableStrings {*}{
     iso8859-1 \u0141 tcl8    3f -1 {} unencodable
     iso8859-1 \u0141 strict  {}  0 {} unencodable
 
-    utf-8 \uD800 tcl8    eda080 -1 {} High-surrogate
-    utf-8 \uD800 strict  {}      0 {} High-surrogate
+    utf-8 \uD800 tcl8    eda080 -1 {} Low-surrogate
+    utf-8 \uD800 replace efbfbd -1 {} Low-surrogate
+    utf-8 \uD800 strict  {}      0 {} Low-surrogate
     utf-8 \uDC00 tcl8    edb080 -1 {} High-surrogate
     utf-8 \uDC00 strict  {}      0 {} High-surrogate
+    utf-8 \uDC00 replace efbfbd -1 {} High-surrogate
 }
 
 

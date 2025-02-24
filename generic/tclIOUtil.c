@@ -1801,12 +1801,12 @@ Tcl_FSEvalFileEx(
 
 	Tcl_Size length;
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	unsigned limit = 150;
-	int overflow = ((unsigned)length > limit);
+	int limit = 150;
+	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : (unsigned)length), pathString,
+		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -1954,12 +1954,12 @@ EvalFileCallback(
 
 	Tcl_Size length;
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	const unsigned limit = 150;
-	int overflow = ((unsigned)length > limit);
+	const int limit = 150;
+	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : (unsigned)length), pathString,
+		(overflow ? limit : (int)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -3797,7 +3797,6 @@ FsListMounts(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_FSSplitPath
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */
@@ -3861,8 +3860,8 @@ Tcl_FSSplitPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-            nextElt = Tcl_NewStringObj(elementStart, length);
-            Tcl_ListObjAppendElement(NULL, result, nextElt);
+	    nextElt = Tcl_NewStringObj(elementStart, length);
+	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*p++ == '\0') {
 	    break;

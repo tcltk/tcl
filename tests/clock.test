@@ -35634,7 +35634,7 @@ test clock-34.8 {clock scan tests} {
 } {Oct 23,1992 15:00 GMT}
 test clock-34.9 {clock scan tests} {
     list [catch {clock scan "Jan 12" -bad arg} msg] $msg
-} {1 {bad option "-bad", must be -base, -format, -gmt, -locale or -timezone}}
+} {1 {bad option "-bad": must be -base, -format, -gmt, -locale, or -timezone}}
 # The following two two tests test the two year date policy
 test clock-34.10 {clock scan tests} {
     set time [clock scan "1/1/71" -gmt true]

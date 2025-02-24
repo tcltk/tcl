@@ -18,6 +18,7 @@ Tcl_GetTime, Tcl_SetTimeProc, Tcl_QueryTimeProc \- get date and time
 \fBTcl_SetTimeProc\fR(\fIgetProc, scaleProc, clientData\fR)
 .sp
 \fBTcl_QueryTimeProc\fR(\fIgetProcPtr, scaleProcPtr, clientDataPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_GetTimeProc *getProc in
 .AP Tcl_Time *timePtr out
@@ -43,7 +44,7 @@ The \fBTcl_GetTime\fR function retrieves the current time as a
 structure has the following definition:
 .PP
 .CS
-typedef struct Tcl_Time {
+typedef struct {
     long long \fIsec\fR;
     long \fIusec\fR;
 } \fBTcl_Time\fR;
@@ -52,7 +53,7 @@ typedef struct Tcl_Time {
 On return, the \fIsec\fR member of the structure is filled in with the
 number of seconds that have elapsed since the \fIepoch:\fR the epoch
 is the point in time of 00:00 UTC, 1 January 1970.  This number does
-\fInot\fR count leap seconds \- an interval of one day advances it by
+\fInot\fR count leap seconds; an interval of one day advances it by
 86400 seconds regardless of whether a leap second has been inserted.
 .PP
 The \fIusec\fR member of the structure is filled in with the number of

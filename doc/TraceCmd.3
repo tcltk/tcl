@@ -14,13 +14,13 @@ Tcl_CommandTraceInfo, Tcl_TraceCommand, Tcl_UntraceCommand \- monitor renames an
 \fB#include <tcl.h>\fR
 .sp
 void *
-\fBTcl_CommandTraceInfo(\fIinterp, cmdName, flags, proc, prevClientData\fB)\fR
+\fBTcl_CommandTraceInfo\fR(\fIinterp, cmdName, flags, proc, prevClientData\fR)
 .sp
 int
-\fBTcl_TraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+\fBTcl_TraceCommand\fR(\fIinterp, cmdName, flags, proc, clientData\fR)
 .sp
-void
-\fBTcl_UntraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+\fBTcl_UntraceCommand\fR(\fIinterp, cmdName, flags, proc, clientData\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_CommandTraceProc prevClientData
 .AP Tcl_Interp *interp in
@@ -54,9 +54,11 @@ trace procedure is to be invoked.  It consists of an OR'ed combination
 of any of the following values:
 .TP
 \fBTCL_TRACE_RENAME\fR
+.
 Invoke \fIproc\fR whenever the command is renamed.
 .TP
 \fBTCL_TRACE_DELETE\fR
+.
 Invoke \fIproc\fR when the command is deleted.
 .PP
 Whenever one of the specified operations occurs to the command,

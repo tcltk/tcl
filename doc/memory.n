@@ -18,18 +18,21 @@ debugging capabilities.  The memory command has several suboptions, which are
 described below.  It is only available when Tcl has been compiled with
 memory debugging enabled (when \fBTCL_MEM_DEBUG\fR is defined at
 compile time), and after \fBTcl_InitMemory\fR has been called.
+.\" METHOD: active
 .TP
-\fBmemory active\fR \fIfile\fR
+\fBmemory active\fI file\fR
 .
 Write a list of all currently allocated memory to the specified \fIfile\fR.
+.\" METHOD: break_on_malloc
 .TP
-\fBmemory break_on_malloc\fR \fIcount\fR
+\fBmemory break_on_malloc\fI count\fR
 .
 After the \fIcount\fR allocations have been performed, \fBTcl_Alloc\fR
 outputs a message to this effect and that it is now attempting to enter
 the C debugger.  Tcl will then issue a \fISIGINT\fR signal against itself.
 If you are running Tcl under a C debugger, it should then enter the debugger
 command mode.
+.\" METHOD: info
 .TP
 \fBmemory info\fR
 .
@@ -38,26 +41,30 @@ Tcl began, the current packets allocated (the current
 number of calls to \fBTcl_Alloc\fR not met by a corresponding call
 to \fBTcl_Free\fR), the current bytes allocated, and the maximum number
 of packets and bytes allocated.
+.\" METHOD: init
 .TP
 \fBmemory init \fR[\fBon\fR|\fBoff\fR]
 .
 Turn on or off the preinitialization of all allocated memory
 with bogus bytes.  Useful for detecting the use of uninitialized
 values.
+.\" METHOD: objs
 .TP
 \fBmemory objs \fIfile\fR
 .
 Causes a list of all allocated Tcl_Obj values to be written to the specified
 \fIfile\fR immediately, together with where they were allocated.  Useful for
 checking for leaks of values.
+.\" METHOD: onexit
 .TP
-\fBmemory onexit\fR \fIfile\fR
+\fBmemory onexit\fI file\fR
 .
 Causes a list of all allocated memory to be written to the specified \fIfile\fR
 during the finalization of Tcl's memory subsystem.  Useful for checking
 that memory is properly cleaned up during process exit.
+.\" METHOD: tag
 .TP
-\fBmemory tag\fR \fIstring\fR
+\fBmemory tag\fI string\fR
 .
 Each packet of memory allocated by \fBTcl_Alloc\fR can have associated
 with it a string-valued tag.  In the lists of allocated memory generated
@@ -65,6 +72,7 @@ by \fBmemory active\fR and \fBmemory onexit\fR, the tag for each packet
 is printed along with other information about the packet.  The
 \fBmemory tag\fR command sets the tag value for subsequent calls
 to \fBTcl_Alloc\fR to be \fIstring\fR.
+.\" METHOD: trace
 .TP
 \fBmemory trace \fR[\fBon\fR|\fBoff\fR]
 .
@@ -81,8 +89,9 @@ Tcl_Alloc 40e478 98 tclProc.c 1406
 .PP
 Calls to \fBTcl_Free\fR are traced in the same manner.
 .RE
+.\" METHOD: trace_on_at_malloc
 .TP
-\fBmemory trace_on_at_malloc\fR \fIcount\fR
+\fBmemory trace_on_at_malloc\fI count\fR
 .
 Enable memory tracing after \fIcount\fR \fBTcl_Alloc\fRs have been performed.
 For example, if you enter \fBmemory trace_on_at_malloc 100\fR,
@@ -93,6 +102,7 @@ can reduce the slowdown caused by tracing (and the amount of trace information
 produced), if you can identify a number of allocations that occur before
 the problem sets in.  The current number of memory allocations that have
 occurred since Tcl started is printed on a guard zone failure.
+.\" METHOD: validate
 .TP
 \fBmemory validate \fR[\fBon\fR|\fBoff\fR]
 .

@@ -15,7 +15,7 @@ classvariable \- create link from local variable to variable in class
 .nf
 package require tcl::oo
 
-\fBclassvariable\fR \fIvariableName\fR ?\fI...\fR?
+\fBclassvariable\fI variableName\fR ?\fI...\fR?
 .fi
 .BE
 .SH DESCRIPTION
@@ -26,8 +26,8 @@ elements. The originating scope for the variables is the namespace of the
 class that the method was defined by. In other words, the referenced variables
 are shared between all instances of that class.
 .PP
-Note: This command is equivalent to the command \fBtypevariable\fR provided by
-the snit package in tcllib for approximately the same purpose. If used in a
+Note that this command is equivalent to the command \fBtypevariable\fR provided
+by the snit package in tcllib for approximately the same purpose. If used in a
 method defined directly on a class instance (e.g., through the
 \fBoo::objdefine\fR \fBmethod\fR definition) this is very much like just
 using:

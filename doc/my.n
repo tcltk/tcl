@@ -35,9 +35,9 @@ defined by that object or class.
 .VE TIP500
 .PP
 The object upon which the method is invoked via \fBmy\fR is the one that owns
-the namespace that the \fBmy\fR command is contained in initially (\fBNB:\fR the link
-remains if the command is renamed), which is the currently invoked object by
-default.
+the namespace that the \fBmy\fR command is contained in initially (\fBNB:\fR the
+link remains if the command is renamed), which is the currently invoked object
+by default.
 .VS TIP478
 Similarly, the object on which the method is invoked via \fBmyclass\fR is the
 object that is the current class of the object that owns the namespace that

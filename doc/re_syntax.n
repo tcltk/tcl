@@ -57,29 +57,17 @@ Without a quantifier, it matches a single match for the atom.
 The quantifiers,
 and what a so-quantified atom matches, are:
 .RS 2
-.TP 6
-\fB*\fR
-.
+.IP \fB*\fR 6
 a sequence of 0 or more matches of the atom
-.TP
-\fB+\fR
-.
+.IP \fB+\fR 6
 a sequence of 1 or more matches of the atom
-.TP
-\fB?\fR
-.
+.IP \fB?\fR 6
 a sequence of 0 or 1 matches of the atom
-.TP
-\fB{\fIm\fB}\fR
-.
+.IP \fB{\fIm\fB}\fR 6
 a sequence of exactly \fIm\fR matches of the atom
-.TP
-\fB{\fIm\fB,}\fR
-.
+.IP \fB{\fIm\fB,}\fR 6
 a sequence of \fIm\fR or more matches of the atom
-.TP
-\fB{\fIm\fB,\fIn\fB}\fR
-.
+.IP \fB{\fIm\fB,\fIn\fB}\fR 6
 a sequence of \fIm\fR through \fIn\fR (inclusive) matches of the atom;
 \fIm\fR may not exceed \fIn\fR
 .TP
@@ -99,32 +87,32 @@ An atom is one of:
 .IP \fB(\fIre\fB)\fR 6
 matches a match for \fIre\fR (\fIre\fR is any regular expression) with
 the match noted for possible reporting
-.IP \fB(?:\fIre\fB)\fR
+.IP \fB(?:\fIre\fB)\fR 6
 as previous, but does no reporting (a
 .QW non-capturing
 set of parentheses)
-.IP \fB()\fR
+.IP \fB()\fR 6
 matches an empty string, noted for possible reporting
-.IP \fB(?:)\fR
+.IP \fB(?:)\fR 6
 matches an empty string, without reporting
-.IP \fB[\fIchars\fB]\fR
+.IP \fB[\fIchars\fB]\fR 6
 a \fIbracket expression\fR, matching any one of the \fIchars\fR (see
 \fBBRACKET EXPRESSIONS\fR for more detail)
-.IP \fB.\fR
+.IP \fB.\fR 6
 matches any single character
-.IP \fB\e\fIk\fR
+.IP \fB\e\fIk\fR 6
 matches the non-alphanumeric character \fIk\fR
 taken as an ordinary character, e.g. \fB\e\e\fR matches a backslash
 character
-.IP \fB\e\fIc\fR
+.IP \fB\e\fIc\fR 6
 where \fIc\fR is alphanumeric (possibly followed by other characters),
 an \fIescape\fR (AREs only), see \fBESCAPES\fR below
-.IP \fB{\fR
+.IP \fB{\fR 6
 when followed by a character other than a digit, matches the
 left-brace character
 .QW \fB{\fR ;
 when followed by a digit, it is the beginning of a \fIbound\fR (see above)
-.IP \fIx\fR
+.IP \fIx\fR 6
 where \fIx\fR is a single character with no other significance,
 matches that character.
 .RE
@@ -334,82 +322,50 @@ is the one actual incompatibility between EREs and AREs.)
 Character-entry escapes (AREs only) exist to make it easier to specify
 non-printing and otherwise inconvenient characters in REs:
 .RS 2
-.TP 5
-\fB\ea\fR
-.
+.IP \fB\ea\fR 5
 alert (bell) character, as in C
-.TP
-\fB\eb\fR
-.
+.IP \fB\eb\fR 5
 backspace, as in C
-.TP
-\fB\eB\fR
-.
+.IP \fB\eB\fR 5
 synonym for \fB\e\fR to help reduce backslash doubling in some
 applications where there are multiple levels of backslash processing
-.TP
-\fB\ec\fIX\fR
-.
+.IP \fB\ec\fIX\fR 5
 (where \fIX\fR is any character) the character whose low-order 5 bits
 are the same as those of \fIX\fR, and whose other bits are all zero
-.TP
-\fB\ee\fR
-.
+.IP \fB\ee\fR 5
 the character whose collating-sequence name is
 .QW \fBESC\fR ,
 or failing that, the character with octal value 033
-.TP
-\fB\ef\fR
-.
+.IP \fB\ef\fR 5
 formfeed, as in C
-.TP
-\fB\en\fR
-.
+.IP \fB\en\fR 5
 newline, as in C
-.TP
-\fB\er\fR
-.
+.IP \fB\er\fR 5
 carriage return, as in C
-.TP
-\fB\et\fR
-.
+.IP \fB\et\fR 5
 horizontal tab, as in C
-.TP
-\fB\eu\fIwxyz\fR
-.
+.IP \fB\eu\fIwxyz\fR 5
 (where \fIwxyz\fR is one up to four hexadecimal digits) the Unicode
 character \fBU+\fIwxyz\fR in the local byte ordering
-.TP
-\fB\eU\fIstuvwxyz\fR
-.
+.IP \fB\eU\fIstuvwxyz\fR 5
 (where \fIstuvwxyz\fR is one up to eight hexadecimal digits) reserved
 for a Unicode extension up to 21 bits. The digits are parsed until the
-first non-hexadecimal character is encountered, the maximun of eight
+first non-hexadecimal character is encountered, the maximum of eight
 hexadecimal digits are reached, or an overflow would occur in the maximum
 value of \fBU+\fI10ffff\fR.
-.TP
-\fB\ev\fR
-.
+.IP \fB\ev\fR 5
 vertical tab, as in C
-.TP
-\fB\ex\fIhh\fR
-.
+.IP \fB\ex\fIhh\fR 5
 (where \fIhh\fR is one or two hexadecimal digits) the character
 whose hexadecimal value is \fB0x\fIhh\fR.
-.TP
-\fB\e0\fR
-.
+.IP \fB\e0\fR 5
 the character whose value is \fB0\fR
-.TP
-\fB\e\fIxyz\fR
-.
+.IP \fB\e\fIxyz\fR 5
 (where \fIxyz\fR is exactly three octal digits, and is not a \fIback
 reference\fR (see below)) the character whose octal value is
 \fB0\fIxyz\fR. The first digit must be in the range 0-3, otherwise
 the two-digit form is assumed.
-.TP
-\fB\e\fIxy\fR
-.
+.IP \fB\e\fIxy\fR 5
 (where \fIxy\fR is exactly two octal digits, and is not a \fIback
 reference\fR (see below)) the character whose octal value is
 \fB0\fIxy\fR
@@ -446,7 +402,8 @@ commonly-used character classes:
 .TP
 \fB\ew\fR
 .
-\fB[[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR (including punctuation connector characters)
+\fB[[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR
+(including punctuation connector characters)
 .TP
 \fB\eD\fR
 .
@@ -458,7 +415,8 @@ commonly-used character classes:
 .TP
 \fB\eW\fR
 .
-\fB[^[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR (including punctuation connector characters)
+\fB[^[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR
+(including punctuation connector characters)
 .RE
 .PP
 Within bracket expressions,
@@ -484,41 +442,25 @@ is illegal.)
 A constraint escape (AREs only) is a constraint, matching the empty
 string if specific conditions are met, written as an escape:
 .RS 2
-.TP 6
-\fB\eA\fR
-.
+.IP \fB\eA\fR 6
 matches only at the beginning of the string (see \fBMATCHING\fR,
 below, for how this differs from
 .QW \fB^\fR )
-.TP
-\fB\em\fR
-.
+.IP \fB\em\fR 6
 matches only at the beginning of a word
-.TP
-\fB\eM\fR
-.
+.IP \fB\eM\fR 6
 matches only at the end of a word
-.TP
-\fB\ey\fR
-.
+.IP \fB\ey\fR 6
 matches only at the beginning or end of a word
-.TP
-\fB\eY\fR
-.
+.IP \fB\eY\fR 6
 matches only at a point that is not the beginning or end of a word
-.TP
-\fB\eZ\fR
-.
+.IP \fB\eZ\fR 6
 matches only at the end of the string (see \fBMATCHING\fR, below, for
 how this differs from
 .QW \fB$\fR )
-.TP
-\fB\e\fIm\fR
-.
+.IP \fB\e\fIm\fR 6
 (where \fIm\fR is a nonzero digit) a \fIback reference\fR, see below
-.TP
-\fB\e\fImnn\fR
-.
+.IP \fB\e\fImnn\fR 6
 (where \fIm\fR is a nonzero digit, and \fInn\fR is some more digits,
 and the decimal value \fImnn\fR is not greater than the number of
 closing capturing parentheses seen so far) a \fIback reference\fR, see

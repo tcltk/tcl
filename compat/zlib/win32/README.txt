@@ -6,7 +6,7 @@ What's here
 
 Source
 ======
-  zlib version 1.3.0
+  zlib version 1.3.1
   available at http://www.gzip.org/zlib/
 
 

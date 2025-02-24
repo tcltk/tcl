@@ -43,6 +43,7 @@ int
 .sp
 int
 \fBTcl_UnsetVar2\fR(\fIinterp, name1, name2, flags\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp *newValuePtr
 .AP Tcl_Interp *interp in
@@ -168,6 +169,7 @@ options to the procedures.
 It consists of an OR-ed combination of the following bits.
 .TP
 \fBTCL_GLOBAL_ONLY\fR
+.
 Under normal circumstances the procedures look up variables as follows.
 If a procedure call is active in \fIinterp\fR,
 the variable is looked up at the current level of procedure call.
@@ -180,12 +182,14 @@ If both \fBTCL_GLOBAL_ONLY\fR and \fBTCL_NAMESPACE_ONLY\fR are given,
 \fBTCL_GLOBAL_ONLY\fR is ignored.
 .TP
 \fBTCL_NAMESPACE_ONLY\fR
+.
 If this bit is set in \fIflags\fR then the variable
 is looked up only in the current namespace; if a procedure is active
 its variables are ignored, and the global namespace is also ignored unless
 it is the current namespace.
 .TP
 \fBTCL_LEAVE_ERR_MSG\fR
+.
 If an error is returned and this bit is set in \fIflags\fR, then
 an error message will be left in the interpreter's result,
 where it can be retrieved with \fBTcl_GetObjResult\fR
@@ -194,12 +198,14 @@ If this flag bit is not set then no error message is left
 and the interpreter's result will not be modified.
 .TP
 \fBTCL_APPEND_VALUE\fR
+.
 If this bit is set then \fInewValuePtr\fR or \fInewValue\fR is
 appended to the current value instead of replacing it.
 If the variable is currently undefined, then the bit is ignored.
 This bit is only used by the \fBTcl_Set*\fR procedures.
 .TP
 \fBTCL_LIST_ELEMENT\fR
+.
 If this bit is set, then \fInewValue\fR is converted to a valid
 Tcl list element before setting (or appending to) the variable.
 A separator space is appended before the new list element unless

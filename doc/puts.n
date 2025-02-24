@@ -67,7 +67,6 @@ via a file event that the channel is ready for more output data).
 Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
 \fBputs\fR writes out data until an encoding error occurs and fails with
 POSIX error code \fBEILSEQ\fR.
-
 .SH EXAMPLES
 .PP
 Write a short message to the console (or wherever \fBstdout\fR is

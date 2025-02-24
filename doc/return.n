@@ -13,11 +13,11 @@
 .SH NAME
 return \- Return from a procedure, or set return code of a script
 .SH SYNOPSIS
+.nf
 \fBreturn \fR?\fIresult\fR?
-.sp
 \fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
-.sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -54,7 +54,7 @@ of the procedure is 0 (\fBTCL_OK\fR).
 .
 Error return: the return code of the procedure is 1 (\fBTCL_ERROR\fR).
 The procedure command behaves in its calling context as if it
-were the command \fBerror\fR \fIresult\fR.  See below for additional
+were the command \fBerror\fI result\fR.  See below for additional
 options.
 .TP 13
 \fBreturn\fR (or \fB2\fR)
@@ -105,6 +105,7 @@ script.
 As documented above, the \fB\-code\fR entry in the return options dictionary
 receives special treatment by Tcl.  There are other return options also
 recognized and treated specially by Tcl.  They are:
+.\" OPTION: -errorcode
 .TP
 \fB\-errorcode \fIlist\fR
 .
@@ -117,6 +118,7 @@ the \fB\-code error\fR option is provided, Tcl will set the value
 of the \fB\-errorcode\fR entry in the return options dictionary
 to the default value of \fBNONE\fR.  The \fB\-errorcode\fR return
 option will also be stored in the global variable \fBerrorCode\fR.
+.\" OPTION: -errorinfo
 .TP
 \fB\-errorinfo \fIinfo\fR
 .
@@ -135,11 +137,14 @@ the procedure.  Typically the \fIinfo\fR value is supplied from
 the value of \fB\-errorinfo\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information
 stored in the global variable \fBerrorInfo\fR).
+.\" OPTION: -errorstack
 .TP
 \fB\-errorstack \fIlist\fR
+.
 The \fB\-errorstack\fR option receives special treatment only when the value
 of the \fB\-code\fR option is \fBTCL_ERROR\fR.  Then \fIlist\fR is the initial
-error stack, recording actual argument values passed to each proc level.  The error stack will
+error stack, recording actual argument values passed to each proc level.
+The error stack will
 also be reachable through \fBinfo errorstack\fR.
 If no \fB\-errorstack\fR option is provided to \fBreturn\fR when
 the \fB\-code error\fR option is provided, Tcl will provide its own
@@ -151,6 +156,7 @@ the procedure.  Typically the \fIlist\fR value is supplied from
 the value of \fB\-errorstack\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information from
 \fBinfo errorstack\fR).
+.\" OPTION: -level
 .TP
 \fB\-level \fIlevel\fR
 .
@@ -163,6 +169,7 @@ be \fIcode\fR.  If no \fB\-level\fR option is provided, the default value
 of \fIlevel\fR is 1, so that \fBreturn\fR sets the return code that the
 current procedure returns to its caller, 1 level up the call stack.  The
 mechanism by which these options work is described in more detail below.
+.\" OPTION: -options
 .TP
 \fB\-options \fIoptions\fR
 .
