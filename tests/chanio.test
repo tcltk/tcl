@@ -4535,7 +4535,7 @@ test chan-io-34.20 {Tcl_Tell combined with writing} -setup {
 test chan-io-34.21 {Tcl_Seek and Tcl_Tell on large files} -setup {
     file delete $path(test3)
     set l ""
-} -constraints {largefileSupport} -body {
+} -constraints {largefileSupport extensive} -body {
     set f [open $path(test3) w]
     chan configure $f -encoding binary
     lappend l [chan tell $f]

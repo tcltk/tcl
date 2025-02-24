@@ -367,7 +367,7 @@ proc MakeFiles {dirname} {
     while {1} {
         # upped to 50K for 64bit Server 2008
         if {$ndx > 50000} {
-            return -code error "limit reached without finding a collistion."
+            tcltest::Skip "limit-reached:no-collistion"
         }
         set filename [file join $dirname Test[incr ndx]]
         set f [open $filename w]
@@ -383,7 +383,7 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes knownMsvcBug notInCIenv} -body {
+} -constraints {win winNonZeroInodes knownMsvcBug notInCIenv extensive} -body {
     file mkdir td1
     lassign [MakeFiles td1] a b
     file rename -force $a $b

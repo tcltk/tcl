@@ -577,7 +577,14 @@ test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
 } -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname $::ddelib]
+    if {[file dirname $::ddelib] ne "."} {
+	cd [file dirname $::ddelib]
+    } else {
+	cd [file dirname [info nameofexecutable]]
+    }
+    if {![file exists [file tail $::ddelib]]} {
+	::tcltest::Skip "no-ddelib"
+    }
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
     load simplefs:/[file tail $::ddelib] Dde
@@ -591,7 +598,14 @@ test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
     set dir [pwd]
 } -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname $::reglib]
+    if {[file dirname $::reglib] ne "."} {
+	cd [file dirname $::reglib]
+    } else {
+	cd [file dirname [info nameofexecutable]]
+    }
+    if {![file exists [file tail $::reglib]]} {
+	::tcltest::Skip "no-reglib"
+    }
     testsimplefilesystem 1
     # This loads reg via a complex copy-to-temp operation
     load simplefs:/[file tail $::reglib] Registry

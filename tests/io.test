@@ -4996,7 +4996,7 @@ test io-34.20 {Tcl_Tell combined with writing} {
     close $f
     set l
 } {29 39 40 447}
-test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
+test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport extensive} {
     file delete $path(test3)
     set f [open $path(test3) w]
     fconfigure $f -encoding binary

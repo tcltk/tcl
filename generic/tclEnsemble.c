@@ -330,7 +330,7 @@ TclNamespaceEnsembleCmd(
 		}
 		continue;
 	    }
-	    case CRT_PREFIX:
+	    case CRT_PREFIX: {
 		if (Tcl_GetBooleanFromObj(interp, objv[1],
 			&permitPrefix) != TCL_OK) {
 		    if (allocatedMapFlag) {
@@ -339,6 +339,7 @@ TclNamespaceEnsembleCmd(
 		    return TCL_ERROR;
 		}
 		continue;
+	    }
 	    case CRT_UNKNOWN:
 		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
@@ -2891,14 +2892,14 @@ TclCompileEnsemble(
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords <= depth) {
-	goto failed;
+	goto tryCompileToInv;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	/*
 	 * Too hard.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -2923,7 +2924,7 @@ TclCompileEnsemble(
 	 * to proceed.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -2937,7 +2938,7 @@ TclCompileEnsemble(
 	 * Figuring out how to compile this has become too much. Bail out.
 	 */
 
-	goto failed;
+	goto tryCompileToInv;
     }
 
     /*
@@ -2960,7 +2961,7 @@ TclCompileEnsemble(
 	Tcl_Obj *matchObj = NULL;
 
 	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
@@ -2971,7 +2972,7 @@ TclCompileEnsemble(
 
 		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
 		if (result != TCL_OK || targetCmdObj == NULL) {
-		    goto failed;
+		    goto tryCompileToInv;
 		}
 		replacement = elems[i];
 		goto doneMapLookup;
@@ -2989,17 +2990,17 @@ TclCompileEnsemble(
 	    if ((flags & TCL_ENSEMBLE_PREFIX)
 		    && strncmp(word, str, numBytes) == 0) {
 		if (matchObj != NULL) {
-		    goto failed;
+		    goto tryCompileToInv;
 		}
 		matchObj = elems[i];
 	    }
 	}
 	if (matchObj == NULL) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
 	if (result != TCL_OK || targetCmdObj == NULL) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 	replacement = matchObj;
     } else {
@@ -3029,7 +3030,7 @@ TclCompileEnsemble(
 	 */
 
 	if (!(flags & TCL_ENSEMBLE_PREFIX)) {
-	    goto failed;
+	    goto tryCompileToInv;
 	}
 
 	/*
@@ -3064,7 +3065,7 @@ TclCompileEnsemble(
 
 	if (matched != 1) {
 	    invokeAnyway = 1;
-	    goto failed;
+	    goto tryCompileToInv;
 	}
     }
 
@@ -3080,7 +3081,7 @@ TclCompileEnsemble(
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
     if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
-	goto failed;
+	goto tryCompileToInv;
     } else if (len != 1) {
 	/*
 	 * Note that at this point we know we can't issue any special
@@ -3168,7 +3169,7 @@ TclCompileEnsemble(
      * instead of going through the ensemble lookup process again.
      */
 
-  failed:
+  tryCompileToInv:
     if (depth < 250) {
 	if (depth > 1) {
 	    if (!invokeAnyway) {
