@@ -3541,7 +3541,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	}
     } else if (strcmp(argv[1], "update") == 0) {
 	int v;
@@ -3658,7 +3658,7 @@ TestlinkCmd(
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideVar = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt)w;
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
@@ -6361,7 +6361,7 @@ TestChannelCmd(
 	}
 
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
-		(Tcl_WideInt) (size_t) Tcl_GetChannelThread(chan)));
+		(Tcl_WideInt)(size_t)Tcl_GetChannelThread(chan)));
 	return TCL_OK;
     }
 

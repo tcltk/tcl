@@ -339,7 +339,7 @@ prior to 8.5, integer calculations were performed using one of the C types
 \fIlong int\fR or \fITcl_WideInt\fR, causing implicit range truncation
 in those calculations where values overflowed the range of those types.
 Any code that relied on these implicit truncations should instead call
-\fBint()\fR or \fBwide()\fR, which do truncate.
+\fBwide()\fR, which does truncate.
 .PP
 Internal floating-point computations are
 performed using the \fIdouble\fR C type.

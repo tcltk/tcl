@@ -1148,7 +1148,7 @@ int
 Tcl_ZlibStreamChecksum(
     Tcl_ZlibStream zshandle)	/* As obtained from Tcl_ZlibStreamInit */
 {
-    ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
+    ZlibStreamHandle *zshPtr = (ZlibStreamHandle *)zshandle;
 
     return zshPtr->stream.adler;
 }
@@ -2018,8 +2018,8 @@ ZlibCmd(
 	if (objc < 4) {
 	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		(uLong) Tcl_ZlibAdler32(start, data, dlen)));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		Tcl_ZlibAdler32(start, data, dlen)));
 	return TCL_OK;
     case CMD_CRC:		/* crc32 str ?startvalue?
 				 *	-> checksum */
@@ -2038,8 +2038,8 @@ ZlibCmd(
 	if (objc < 4) {
 	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		(uLong) Tcl_ZlibCRC32(start, data, dlen)));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		Tcl_ZlibCRC32(start, data, dlen)));
 	return TCL_OK;
     case CMD_DEFLATE:		/* deflate data ?level?
 				 *	-> rawCompressedData */
@@ -2700,8 +2700,8 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-		(uLong) Tcl_ZlibStreamChecksum(zstream)));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		Tcl_ZlibStreamChecksum(zstream)));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {

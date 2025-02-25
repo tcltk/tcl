@@ -76,9 +76,9 @@ case, in a position in the result list.
 The syntactically valid values for the size modifier are \fBh\fR, \fBL\fR,
 \fBl\fR, and \fBll\fR.  The \fBh\fR size modifier value is equivalent
 to the absence of a size modifier in the the conversion specifier.
-Either one indicates the integer range to be stored is limited to
-the same range produced by the \fBint()\fR function of the \fBexpr\fR
-command.  The \fBL\fR size modifier is equivalent to the \fBl\fR size
+Either one indicates the integer range to be stored is limited to the range
+determined by the value of the \fBwordSize\fR element of the \fBtcl_platform\fR
+array).  The \fBL\fR size modifier is equivalent to the \fBl\fR size
 modifier. Either one indicates the integer range to be stored is
 limited to the same range produced by the \fBwide()\fR function of
 the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
