@@ -57,7 +57,7 @@ This takes the name of a file, \fIfilename\fR, and produces where it would be
 mapped into a zipfs mount as its result. If specified, \fImountpoint\fR says
 within which mount the mapping will be done; if omitted, the main root of the
 zipfs system is used. The \fIinZipfs\fR argument is a an optional boolean
-which controls whether to fully canonicalise the name; it defaults to true.
+which controls whether to fully canonicalize the name; it defaults to true.
 .\" METHOD: exists
 .TP
 \fBzipfs exists\fI filename\fR
@@ -202,6 +202,18 @@ archive and the image file that the archive is attached to is a \fBtclsh\fR
 then the resulting image is an executable that will \fBsource\fR the script in
 that \fBmain.tcl\fR after mounting the ZIP archive, and will \fBexit\fR once
 that script has been executed.
+.PP
+\fBNote:\fR \fBtclsh\fR and \fBwish\fR can be built using either
+dynamic binding or static binding of the core implementation
+libraries. With a dynamic binding, the base application Tcl_Library
+contents are attached to the \fBlibtcl\fR and \fBlibtk\fR shared
+library, respectively. With a static binding, the Tcl_Library
+contents, etc., are attached to the application, \fBtclsh\fR or
+\fBwish\fR. When using \fBmkimg\fR with a statically built tclsh, it is
+the user's responsibility to preserve the attached archive by first
+extracting it to a temporary location, and then add whatever
+additional files desired, before creating and attaching the new
+archive to the new application.
 .PP
 \fBCaution:\fR highly experimental, not usable on Android, only partially
 tested on Linux and Windows.

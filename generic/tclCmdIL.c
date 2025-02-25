@@ -2638,8 +2638,7 @@ Tcl_LpopObjCmd(
 	    /* empty list, throw the same error as with index "end" */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"index \"end\" out of range", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-		"OUTOFRANGE", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -3497,8 +3496,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" out of range",
 			    TclGetString(indices[j])));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-			    "OUTOFRANGE", (char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {
@@ -4640,8 +4638,7 @@ Tcl_LsortObjCmd(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "index \"%s\" out of range",
 			    TclGetString(indexv[j])));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
-			    "OUTOFRANGE", (char *)NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
 		if (result == TCL_ERROR) {

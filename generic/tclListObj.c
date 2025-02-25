@@ -2970,10 +2970,8 @@ TclLsetFlat(
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%s\" out of range",
-		        Tcl_GetString(indexArray[-1])));
-		Tcl_SetErrorCode(interp,
-			"TCL", "VALUE", "INDEX" "OUTOFRANGE", (void *)NULL);
+			"index \"%s\" out of range", TclGetString(indexArray[-1])));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -3163,8 +3161,7 @@ TclListObjSetElement(
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
-		    "OUTOFRANGE", (void *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
