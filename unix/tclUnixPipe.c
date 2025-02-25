@@ -78,23 +78,23 @@ static int		SetupStdFile(TclFile file, int type);
  */
 
 static const Tcl_ChannelType pipeChannelType = {
-    "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,		/* Close proc. */
-    PipeInputProc,		/* Input proc. */
-    PipeOutputProc,		/* Output proc. */
-    NULL,			/* Seek proc. */
+    "pipe",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    PipeInputProc,
+    PipeOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
-    PipeWatchProc,		/* Initialize notifier. */
-    PipeGetHandleProc,		/* Get OS handles out of channel. */
-    PipeClose2Proc,		/* close2proc. */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    NULL,			/* wide seek proc */
-    NULL,			/* thread action proc */
-    NULL			/* truncation */
+    PipeWatchProc,
+    PipeGetHandleProc,
+    PipeClose2Proc,
+    PipeBlockModeProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncation proc. */
 };
 
 /*

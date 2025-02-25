@@ -7865,8 +7865,10 @@ FinalizeOONextFilter(
  * Helper to calculate small powers of integers whose result is wide.
  */
 static inline Tcl_WideInt
-WidePwrSmallExpon(Tcl_WideInt w1, long exponent) {
-
+WidePwrSmallExpon(
+    Tcl_WideInt w1,
+    long exponent)
+{
     Tcl_WideInt wResult;
 
     wResult = w1 * w1;		/* b**2 */

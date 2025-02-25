@@ -59,28 +59,28 @@ static int		ReflectTruncate(void *clientData,
  * The C layer channel type/driver definition used by the reflection.
  */
 
-static const Tcl_ChannelType tclRChannelType = {
-    "tclrchannel",	   /* Type name. */
-    TCL_CHANNEL_VERSION_5, /* v5 channel */
-    NULL,		   /* Old close	API */
-    ReflectInput,	   /* Handle read request */
-    ReflectOutput,	   /* Handle write request */
-    NULL,
-    ReflectSetOption,	   /* Set options. */
-    ReflectGetOption,	   /* Get options. */
-    ReflectWatch,	   /* Initialize notifier */
-    NULL,		   /* Get OS handle from the channel. */
-    ReflectClose,	   /* Close channel. Clean instance data */
-    ReflectBlock,	   /* Set blocking/nonblocking. */
-    NULL,		   /* Flush channel. */
-    NULL,		   /* Handle events. */
-    ReflectSeekWide,	   /* Move access point (64 bit). */
+static const Tcl_ChannelType reflectedChannelType = {
+    "tclrchannel",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated */
+    ReflectInput,
+    ReflectOutput,
+    NULL,			/* Deprecated */
+    ReflectSetOption,
+    ReflectGetOption,
+    ReflectWatch,
+    NULL,			/* Get OS handle from the channel. */
+    ReflectClose,
+    ReflectBlock,
+    NULL,			/* Flush channel. */
+    NULL,			/* Handle bubbled events. */
+    ReflectSeekWide,
 #if TCL_THREADS
-    ReflectThread,	   /* thread action, tracking owner */
+    ReflectThread,
 #else
-    NULL,		   /* thread action */
+    NULL,			/* Thread action proc */
 #endif
-    ReflectTruncate	   /* Truncate. */
+    ReflectTruncate		/* Truncate proc. */
 };
 
 /*
@@ -667,7 +667,7 @@ TclChanCreateObjCmd(
      * Everything is fine now.
      */
 
-    chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
+    chan = Tcl_CreateChannel(&reflectedChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
     TclChannelPreserve(chan);
@@ -682,7 +682,7 @@ TclChanCreateObjCmd(
 
 	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)Tcl_Alloc(sizeof(Tcl_ChannelType));
 
-	memcpy(clonePtr, &tclRChannelType, sizeof(Tcl_ChannelType));
+	memcpy(clonePtr, &reflectedChannelType, sizeof(Tcl_ChannelType));
 
 	if (!(methods & FLAG(METH_CONFIGURE))) {
 	    clonePtr->setOptionProc = NULL;
@@ -1179,7 +1179,7 @@ ReflectClose(
 #endif
 
 	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-	if (tctPtr && tctPtr != &tclRChannelType) {
+	if (tctPtr && tctPtr != &reflectedChannelType) {
 	    Tcl_Free((void *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
 	}
@@ -1248,7 +1248,7 @@ ReflectClose(
     }
 #endif
     tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-    if (tctPtr && tctPtr != &tclRChannelType) {
+    if (tctPtr && tctPtr != &reflectedChannelType) {
 	Tcl_Free((void *)tctPtr);
 	((Channel *)rcPtr->chan)->typePtr = NULL;
     }

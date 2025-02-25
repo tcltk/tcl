@@ -57,7 +57,7 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-# 		noembed   = Without this option, the Tcl core library scripts
+#		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
 #			    specified in OPTS, or into the DLL otherwise. If
 #			    "noembed" is specified, the scripts are not embedded

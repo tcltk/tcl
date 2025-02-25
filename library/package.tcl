@@ -504,7 +504,7 @@ proc tclPkgUnknown {name args} {
 			    # In case of version conflict, silently ignore
 			    continue
 			}
-    			tclLog "error reading package index file $file: $msg"
+			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
 			set procdDirs($dir) 1
 		    }
@@ -612,7 +612,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 		    continue
 		} on error msg {
 		    if {[regexp {version conflict for package} $msg]} {
-		 	# In case of version conflict, silently ignore
+			# In case of version conflict, silently ignore
 			continue
 		    }
 		    tclLog "error reading package index file $file: $msg"

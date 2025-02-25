@@ -106,23 +106,23 @@ static Tcl_Channel	OpenFileChannel(HANDLE handle, char *channelName,
  */
 
 static const Tcl_ChannelType fileChannelType = {
-    "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    NULL,			/* Close proc. */
-    FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
-    NULL,
+    "file",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    FileInputProc,
+    FileOutputProc,
+    NULL,			/* Deprecated. */
     NULL,			/* Set option proc. */
-    FileGetOptionProc,		/* Get option proc. */
-    FileWatchProc,		/* Set up the notifier to watch the channel. */
-    FileGetHandleProc,		/* Get an OS handle from channel. */
-    FileCloseProc,		/* close2proc. */
-    FileBlockProc,		/* Set blocking or non-blocking mode.*/
-    NULL,			/* flush proc. */
-    NULL,			/* handler proc. */
-    FileWideSeekProc,		/* Wide seek proc. */
-    FileThreadActionProc,	/* Thread action proc. */
-    FileTruncateProc		/* Truncate proc. */
+    FileGetOptionProc,
+    FileWatchProc,
+    FileGetHandleProc,
+    FileCloseProc,
+    FileBlockProc,
+    NULL,			/* Flush proc. */
+    NULL,			/* Bubbled event handler proc. */
+    FileWideSeekProc,
+    FileThreadActionProc,
+    FileTruncateProc
 };
 
 /*

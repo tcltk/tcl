@@ -1599,7 +1599,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    void *instanceData,	/* Instance specific data. */
+    void *instanceData,		/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1809,7 +1809,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    void *instanceData,	/* Instance specific data for the new
+    void *instanceData,		/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -10762,7 +10762,8 @@ Tcl_IsChannelExisting(
 
 const char *
 Tcl_ChannelName(
-    const Tcl_ChannelType *chanTypePtr) /* Pointer to channel type. */
+    const Tcl_ChannelType *chanTypePtr)
+				/* Pointer to channel type. */
 {
     return chanTypePtr->typeName;
 }
