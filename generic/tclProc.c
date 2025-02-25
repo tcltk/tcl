@@ -2106,7 +2106,7 @@ MakeProcError(
 
 void
 TclProcDeleteProc(
-    void *clientData)	/* Procedure to be deleted. */
+    void *clientData)		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
 
