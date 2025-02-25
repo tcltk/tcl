@@ -204,8 +204,8 @@ printaddrinfo(
  *
  * InitializeHostName --
  *
- * 	This routine sets the process global value of the name of the local
- * 	host on which the process is running.
+ *	This routine sets the process global value of the name of the local
+ *	host on which the process is running.
  *
  * Results:
  *	None.
@@ -400,8 +400,8 @@ TcpBlockModeProc(
  *	    return any error code.
  *
  * Results:
- * 	0 if the connection has completed, -1 if still in progress or there is
- * 	an error.
+ *	0 if the connection has completed, -1 if still in progress or there is
+ *	an error.
  *
  * Side effects:
  *	Processes socket events off the system queue. May process
@@ -1183,7 +1183,7 @@ TcpWatchProc(
          * from interfering with the -accept behavior (bug #3394732).
          */
 
-    	return;
+	return;
     }
 
     if (GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {

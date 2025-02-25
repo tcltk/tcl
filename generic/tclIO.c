@@ -1530,8 +1530,8 @@ TclGetChannelFromObj(
     ChanGetInternalRep(objPtr, resPtr);
     if (resPtr) {
 	/*
- 	 * Confirm validity of saved lookup results.
- 	 */
+	 * Confirm validity of saved lookup results.
+	 */
 
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
@@ -4514,15 +4514,15 @@ Write(
 	    flushed += statePtr->bufSize;
 
 	    /*
- 	     * We just flushed.  So if we have needNlFlush set to record that
- 	     * we need to flush because there is a (translated) newline in the
- 	     * buffer, that's likely not true any more.  But there is a tricky
- 	     * exception.  If we have saved bytes that did not really get
- 	     * flushed and those bytes came from a translation of a newline as
- 	     * the last thing taken from the src array, then needNlFlush needs
- 	     * to remain set to flag that the next buffer still needs a
- 	     * newline flush.
- 	     */
+	     * We just flushed.  So if we have needNlFlush set to record that
+	     * we need to flush because there is a (translated) newline in the
+	     * buffer, that's likely not true any more.  But there is a tricky
+	     * exception.  If we have saved bytes that did not really get
+	     * flushed and those bytes came from a translation of a newline as
+	     * the last thing taken from the src array, then needNlFlush needs
+	     * to remain set to flag that the next buffer still needs a
+	     * newline flush.
+	     */
 
 	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
@@ -10006,12 +10006,12 @@ CopyData(
  *
  * Results:
  *	The number of bytes actually stored (<= bytesToRead),
- * 	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
- * 	Tcl_GetErrno() to retrieve the error code for the error
+ *	or TCL_INDEX_NONE if there is an error in reading the channel.  Use
+ *	Tcl_GetErrno() to retrieve the error code for the error
  *	that occurred.
  *
  *	The number of bytes stored can be less than the number
- * 	requested when
+ *	requested when
  *	  - EOF is reached on the channel; or
  *	  - the channel is non-blocking, and we've read all we can
  *	    without blocking.
@@ -10090,7 +10090,7 @@ DoRead(
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
-		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */

@@ -620,7 +620,7 @@ SerialCloseProc(
     serialPtr->validMask &= ~TCL_READABLE;
 
     if (serialPtr->writeThread) {
-    	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
+	TclPipeThreadStop(&serialPtr->writeTI, serialPtr->writeThread);
 
 	CloseHandle(serialPtr->osWrite.hEvent);
 	CloseHandle(serialPtr->evWritable);

@@ -39,7 +39,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static Tcl_ExitProc		FinalizeIOCmdTSD;
-static Tcl_TcpAcceptProc 	AcceptCallbackProc;
+static Tcl_TcpAcceptProc	AcceptCallbackProc;
 static Tcl_ObjCmdProc		ChanPendingObjCmd;
 static Tcl_ObjCmdProc		ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(

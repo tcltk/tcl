@@ -809,7 +809,7 @@ TclpObjCopyDirectory(
  *	EEXIST:	    path is a non-empty directory.
  *	EINVAL:	    path is a root directory.
  *	ENOENT:	    path doesn't exist or is "".
- * 	ENOTDIR:    path is not a directory.
+ *	ENOTDIR:    path is not a directory.
  *
  * Side effects:
  *	Directory removed. If an error occurs, the error will be returned
@@ -953,12 +953,12 @@ TraverseUnixTree(
 				 * filled with UTF-8 name of file causing
 				 * error. */
     int doRewind)		/* Flag indicating that to ensure complete
-    				 * traversal of source hierarchy, the readdir
-    				 * loop should be rewound whenever
-    				 * traverseProc has returned TCL_OK; this is
-    				 * required when traverseProc modifies the
-    				 * source hierarchy, e.g. by deleting
-    				 * files. */
+				 * traversal of source hierarchy, the readdir
+				 * loop should be rewound whenever
+				 * traverseProc has returned TCL_OK; this is
+				 * required when traverseProc modifies the
+				 * source hierarchy, e.g. by deleting
+				 * files. */
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;

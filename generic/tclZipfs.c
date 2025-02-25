@@ -217,9 +217,9 @@ typedef struct ZipEntry {
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int numCompressedBytes;	/* Compressed size of the virtual file.
-    				 * -1 for zip64 */
+				 * -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -258,7 +258,7 @@ typedef struct ZipChannel {
     Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
-    				   need freeing. Else memory to free (ubuf
+				   need freeing. Else memory to free (ubuf
 				   may point *inside* the block) */
     Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */

@@ -4291,7 +4291,7 @@ int
 TclEncodingProfileNameToId(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     const char *profileName,	/* Name of profile */
-    int *profilePtr)  		/* Output */
+    int *profilePtr)		/* Output */
 {
     size_t i;
     size_t numProfiles = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);

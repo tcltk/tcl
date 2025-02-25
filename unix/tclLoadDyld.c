@@ -197,14 +197,14 @@ TclpDlopen(
      */
 
     if (flags & TCL_LOAD_GLOBAL) {
-    	dlopenflags |= RTLD_GLOBAL;
+	dlopenflags |= RTLD_GLOBAL;
     } else {
-    	dlopenflags |= RTLD_LOCAL;
+	dlopenflags |= RTLD_LOCAL;
     }
     if (flags & TCL_LOAD_LAZY) {
-    	dlopenflags |= RTLD_LAZY;
+	dlopenflags |= RTLD_LAZY;
     } else {
-    	dlopenflags |= RTLD_NOW;
+	dlopenflags |= RTLD_NOW;
     }
     dlHandle = dlopen(nativePath, dlopenflags);
     if (!dlHandle) {

@@ -3111,7 +3111,7 @@ ZlibTransformInput(
     gotBytes = 0;
     readBytes = chanDataPtr->inStream.avail_in; /* how many bytes in buffer now */
     while (!HaveFlag(chanDataPtr, STREAM_DONE) && toRead > 0) {
-    	unsigned int n;
+	unsigned int n;
 	int decBytes;
 
 	/* if starting from scratch or continuation after full decompression */

@@ -34,7 +34,7 @@ struct ByteCode;		/* Forward declaration. */
  * This variable is linked to the Tcl variable "tcl_traceCompile".
  */
 
-MODULE_SCOPE int 	tclTraceCompile;
+MODULE_SCOPE int	tclTraceCompile;
 
 /*
  * Variable that controls whether execution tracing is enabled and, if so,
@@ -46,7 +46,7 @@ MODULE_SCOPE int 	tclTraceCompile;
  * This variable is linked to the Tcl variable "tcl_traceExec".
  */
 
-MODULE_SCOPE int 	tclTraceExec;
+MODULE_SCOPE int	tclTraceExec;
 #endif
 
 /*
@@ -309,14 +309,13 @@ typedef struct CompileEnv {
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
 #endif
-    Tcl_Obj **literalArrayPtr;
-    				/* Points of array of literal values. */
+    Tcl_Obj **literalArrayPtr;	/* Points to array of literal values. */
     Tcl_Size literalArrayNext;	/* Index of next free object array entry. */
     Tcl_Size literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
 				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
-    				/* Points to start of the ExceptionRange
+				/* Points to start of the ExceptionRange
 				 * array. */
     Tcl_Size exceptArrayNext;	/* Next free ExceptionRange array index.
 				 * exceptArrayNext is the number of ranges and
@@ -450,7 +449,7 @@ typedef struct ByteCode {
 				 * array. This is just after the last code
 				 * byte. */
     ExceptionRange *exceptArrayPtr;
-    				/* Points to the start of the ExceptionRange
+				/* Points to the start of the ExceptionRange
 				 * array. This is just after the last object
 				 * in the object array. */
     BA_AuxData *auxData;	/* Array of auxiliary data. */
