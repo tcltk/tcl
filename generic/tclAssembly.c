@@ -922,12 +922,7 @@ CompileAssembleObj(
      * Report on what the assembler did.
      */
 
-#ifdef TCL_COMPILE_DEBUG
-    if (tclTraceCompile >= 2) {
-	TclPrintByteCodeObj(interp, objPtr);
-	fflush(stdout);
-    }
-#endif /* TCL_COMPILE_DEBUG */
+    TclDebugPrintByteCodeObj(objPtr);
 
     return codePtr;
 }
