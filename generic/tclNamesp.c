@@ -1573,7 +1573,8 @@ TclFillTableWithExports(
 #if 1
 		    TclNewObj(cmdObj);
 		    Tcl_AppendStringsToObj(cmdObj, nsPtr->fullName,
-			    (nsPtr->parentPtr ? "::" : ""), nsCmdName, NULL);
+			    (nsPtr->parentPtr ? "::" : ""), nsCmdName,
+			    (char *)NULL);
 #else
 		    cmdObj = Tcl_NewStringObj(nsCmdName, -1);
 #endif

@@ -858,7 +858,7 @@ FindOrCreateFmtScnStorage(
 
     if (fss == NULL && interp != NULL) {
 	Tcl_AppendResult(interp, "retrieve clock format failed \"",
-		strFmt ? strFmt : "", "\"", NULL);
+		strFmt ? strFmt : "", "\"", (char *)NULL);
 	Tcl_SetErrorCode(interp, "TCL", "EINVAL", (char *)NULL);
     }
 
