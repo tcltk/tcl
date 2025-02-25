@@ -237,7 +237,6 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
-static Tcl_ObjCmdProc NRInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
 static Tcl_ObjCmdProc CoroTypeObjCmd;
 static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
@@ -1197,10 +1196,12 @@ Tcl_CreateInterp(void)
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     /* Coroutine monkeybusiness */
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
-	    NRInjectObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
 	    CoroTypeObjCmd, NULL, NULL);
+
+    /* Load and intialize ICU */
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::loadIcu",
+	    TclLoadIcuObjCmd, NULL, NULL);
 
     /* Export unsupported commands */
     nsPtr = Tcl_FindNamespace(interp, "::tcl::unsupported", NULL, 0);
@@ -2795,7 +2796,7 @@ Tcl_CreateObjCommand(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *)interp;
     Namespace *nsPtr;
     const char *tail;
 
@@ -2804,7 +2805,7 @@ Tcl_CreateObjCommand(
 	 * The interpreter is being deleted. Don't create any new commands;
 	 * it's not safe to muck with the interpreter anymore.
 	 */
-	return (Tcl_Command) NULL;
+	return NULL;
     }
 
     /*
@@ -9277,35 +9278,6 @@ TclNRCoroutineActivateCallback(
 /*
  *----------------------------------------------------------------------
  *
- * TclNREvalList --
- *
- *	Callback to invoke command as list, used in order to delayed
- *	processing of canonical list command in sane environment.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TclNREvalList(
-    void *data[],
-    Tcl_Interp *interp,
-    TCL_UNUSED(int) /*result*/)
-{
-    Tcl_Size objc;
-    Tcl_Obj **objv;
-    Tcl_Obj *listPtr = (Tcl_Obj *)data[0];
-
-    Tcl_IncrRefCount(listPtr);
-
-    TclMarkTailcall(interp);
-    TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
-    return TclNREvalObjv(interp, objc, objv, 0, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CoroTypeObjCmd --
  *
  *	Implementation of [::tcl::unsupported::corotype] command.
@@ -9627,61 +9599,6 @@ InjectHandlerPostCall(
 	iPtr->execEnvPtr = corPtr->callerEEPtr;
     }
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NRInjectObjCmd --
- *
- *	Implementation of [::tcl::unsupported::inject] command.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-NRInjectObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    CoroutineData *corPtr;
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-
-    /*
-     * Usage more or less like tailcall:
-     *   inject coroName cmd ?arg1 arg2 ...?
-     */
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
-	return TCL_ERROR;
-    }
-
-    corPtr = GetCoroutineFromObj(interp, objv[1],
-	    "can only inject a command into a coroutine");
-    if (!corPtr) {
-	return TCL_ERROR;
-    }
-    if (!COR_IS_SUSPENDED(corPtr)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"can only inject a command into a suspended coroutine", TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (char *)NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Add the callback to the coro's execEnv, so that it is the first thing
-     * to happen when the coro is resumed.
-     */
-
-    iPtr->execEnvPtr = corPtr->eePtr;
-    TclNRAddCallback(interp, TclNREvalList, Tcl_NewListObj(objc - 2, objv + 2),
-	    NULL, NULL, NULL);
-    iPtr->execEnvPtr = savedEEPtr;
-
-    return TCL_OK;
 }
 
 int

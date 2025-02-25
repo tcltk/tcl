@@ -1150,9 +1150,9 @@ InfoFrameCmd(
 	}
 	corPtr = corPtr->callerEEPtr->corPtr;
     }
-    topLevel += (*cmdFramePtrPtr)->level;
+    topLevel += *cmdFramePtrPtr ? (*cmdFramePtrPtr)->level : 1;
 
-    if (topLevel != iPtr->cmdFramePtr->level) {
+    if (iPtr->cmdFramePtr && topLevel != iPtr->cmdFramePtr->level) {
 	framePtr = iPtr->cmdFramePtr;
 	while (framePtr) {
 	    framePtr->level = topLevel--;
@@ -1269,8 +1269,13 @@ TclInfoFrame(
     static const char *const typeString[TCL_LOCATION_LAST] = {
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
-    Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+    Proc *procPtr = NULL;
     int needsFree = -1;
+
+    if (!framePtr) {
+	goto precompiled;
+    }
+    procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
 
     /*
      * Pull the information and construct the dictionary to return, as list.
@@ -1299,11 +1304,11 @@ TclInfoFrame(
 	break;
 
     case TCL_LOCATION_PREBC:
+      precompiled:
 	/*
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[TCL_LOCATION_PREBC], -1));
 	break;
 
     case TCL_LOCATION_BC: {
@@ -1418,7 +1423,7 @@ TclInfoFrame(
      * _visible_ CallFrame.
      */
 
-    if ((framePtr->framePtr != NULL) && (iPtr->varFramePtr != NULL)) {
+    if (framePtr && (framePtr->framePtr != NULL) && (iPtr->varFramePtr != NULL)) {
 	CallFrame *current = framePtr->framePtr;
 	CallFrame *top = iPtr->varFramePtr;
 	CallFrame *idx;

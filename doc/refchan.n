@@ -14,16 +14,16 @@ refchan \- command handler API of reflected channels
 .nf
 \fBchan create \fImode cmdPrefix\fR
 
-\fIcmdPrefix \fBblocking\fI channelId mode\fR
-\fIcmdPrefix \fBcget\fI channelId option\fR
-\fIcmdPrefix \fBcgetall\fI channelId\fR
-\fIcmdPrefix \fBconfigure\fI channelId option value\fR
-\fIcmdPrefix \fBfinalize\fI channelId\fR
-\fIcmdPrefix \fBinitialize\fI channelId mode\fR
-\fIcmdPrefix \fBread\fI channelId count\fR
-\fIcmdPrefix \fBseek\fI channelId offset base\fR
-\fIcmdPrefix \fBwatch\fI channelId eventspec\fR
-\fIcmdPrefix \fBwrite\fI channelId data\fR
+\fIcmdPrefix \fBblocking\fI channel mode\fR
+\fIcmdPrefix \fBcget\fI channel option\fR
+\fIcmdPrefix \fBcgetall\fI channel\fR
+\fIcmdPrefix \fBconfigure\fI channel option value\fR
+\fIcmdPrefix \fBfinalize\fI channel\fR
+\fIcmdPrefix \fBinitialize\fI channel mode\fR
+\fIcmdPrefix \fBread\fI channel count\fR
+\fIcmdPrefix \fBseek\fI channel offset base\fR
+\fIcmdPrefix \fBwatch\fI channel eventspec\fR
+\fIcmdPrefix \fBwrite\fI channel data\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -44,10 +44,10 @@ other subcommands is optional.
 .SS "MANDATORY SUBCOMMANDS"
 .\" METHOD: initialize
 .TP
-\fIcmdPrefix \fBinitialize \fIchannelId mode\fR
+\fIcmdPrefix \fBinitialize \fIchannel mode\fR
 .
 An invocation of this subcommand will be the first call the
-\fIcmdPrefix\fR will receive for the specified new \fIchannelId\fR. It
+\fIcmdPrefix\fR will receive for the specified new \fIchannel\fR. It
 is the responsibility of this subcommand to set up any internal data
 structures required to keep track of the channel and its state.
 .RS
@@ -75,13 +75,13 @@ supported by the \fIcmdPrefix\fR.
 .RE
 .\" METHOD: finalize
 .TP
-\fIcmdPrefix \fBfinalize \fIchannelId\fR
+\fIcmdPrefix \fBfinalize \fIchannel\fR
 .
 An invocation of this subcommand will be the last call the
-\fIcmdPrefix\fR will receive for the specified \fIchannelId\fR. It will
+\fIcmdPrefix\fR will receive for the specified \fIchannel\fR. It will
 be generated just before the destruction of the data structures of the
 channel held by the Tcl core. The command handler \fImust not\fR
-access the \fIchannelId\fR anymore in no way. Upon this subcommand being
+access the \fIchannel\fR anymore in no way. Upon this subcommand being
 called, any internal resources allocated to this channel must be
 cleaned up.
 .RS
@@ -98,10 +98,10 @@ aborted during \fBinitialize\fR (See above).
 .RE
 .\" METHOD: watch
 .TP
-\fIcmdPrefix \fBwatch \fIchannelId eventspec\fR
+\fIcmdPrefix \fBwatch \fIchannel eventspec\fR
 .
 This subcommand notifies the \fIcmdPrefix\fR that the specified
-\fIchannelId\fR is interested in the events listed in the
+\fIchannel\fR is interested in the events listed in the
 \fIeventspec\fR. This argument is a list containing any of \fBread\fR
 and \fBwrite\fR. The list may be empty, which signals that the
 channel does not wish to be notified of any events. In that situation,
@@ -119,10 +119,10 @@ event which was not listed in the last call to \fBwatch\fR will cause
 .SS "OPTIONAL SUBCOMMANDS"
 .\" METHOD: read
 .TP
-\fIcmdPrefix \fBread \fIchannelId count\fR
+\fIcmdPrefix \fBread \fIchannel count\fR
 .
 This \fIoptional\fR subcommand is called when the user requests data from the
-channel \fIchannelId\fR. \fIcount\fR specifies how many \fIbytes\fR have been
+channel \fIchannel\fR. \fIcount\fR specifies how many \fIbytes\fR have been
 requested. If the subcommand is not supported then it is not possible to read
 from the channel handled by the command.
 .RS
@@ -176,10 +176,10 @@ etc.) is treated as and converted to an error.
 .RE
 .\" METHOD: write
 .TP
-\fIcmdPrefix \fBwrite \fIchannelId data\fR
+\fIcmdPrefix \fBwrite \fIchannel data\fR
 .
 This \fIoptional\fR subcommand is called when the user writes data to
-the channel \fIchannelId\fR. The \fIdata\fR argument contains \fIbytes\fR, not
+the channel \fIchannel\fR. The \fIdata\fR argument contains \fIbytes\fR, not
 characters. Any type of transformation (EOL, encoding) configured for
 the channel has already been applied at this point. If this subcommand
 is not supported then it is not possible to write to the channel
@@ -234,11 +234,11 @@ as and converted to an error.
 .RE
 .\" METHOD: seek
 .TP
-\fIcmdPrefix \fBseek \fIchannelId offset base\fR
+\fIcmdPrefix \fBseek \fIchannel offset base\fR
 .
 This \fIoptional\fR subcommand is responsible for the handling of
 \fBchan seek\fR and \fBchan tell\fR requests on the channel
-\fIchannelId\fR. If it is not supported then seeking will not be possible for
+\fIchannel\fR. If it is not supported then seeking will not be possible for
 the channel.
 .RS
 .PP
@@ -271,10 +271,10 @@ the new location identical to the current one, which is then returned.
 .RE
 .\" METHOD: configure
 .TP
-\fIcmdPrefix \fBconfigure \fIchannelId option value\fR
+\fIcmdPrefix \fBconfigure \fIchannel option value\fR
 .
 This \fIoptional\fR subcommand is for setting the type-specific options of
-channel \fIchannelId\fR. The \fIoption\fR argument indicates the option to be
+channel \fIchannel\fR. The \fIoption\fR argument indicates the option to be
 written, and the \fIvalue\fR argument indicates the value to set the option to.
 .RS
 .PP
@@ -291,10 +291,10 @@ converted to an error.
 .RE
 .\" METHOD: cget
 .TP
-\fIcmdPrefix \fBcget \fIchannelId option\fR
+\fIcmdPrefix \fBcget \fIchannel option\fR
 .
 This \fIoptional\fR subcommand is used when reading a single type-specific
-option of channel \fIchannelId\fR. If this subcommand is supported then the
+option of channel \fIchannel\fR. If this subcommand is supported then the
 subcommand \fBcgetall\fR must be supported as well.
 .RS
 .PP
@@ -307,10 +307,10 @@ will appear to have thrown this error. Any exception beyond \fIerror\fR
 .RE
 .\" METHOD: cgetall
 .TP
-\fIcmdPrefix \fBcgetall \fIchannelId\fR
+\fIcmdPrefix \fBcgetall \fIchannel\fR
 .
 This \fIoptional\fR subcommand is used for reading all type-specific options
-of channel \fIchannelId\fR. If this subcommand is supported then the
+of channel \fIchannel\fR. If this subcommand is supported then the
 subcommand \fBcget\fR has to be supported as well.
 .RS
 .PP
@@ -324,10 +324,10 @@ will appear to have thrown this error. Any exception beyond \fBerror\fR
 .RE
 .\" METHOD: blocking
 .TP
-\fIcmdPrefix \fBblocking \fIchannelId mode\fR
+\fIcmdPrefix \fBblocking \fIchannel mode\fR
 .
 This \fIoptional\fR subcommand handles changes to the blocking mode of the
-channel \fIchannelId\fR. The \fImode\fR is a boolean flag. A true value means
+channel \fIchannel\fR. The \fImode\fR is a boolean flag. A true value means
 that the channel has to be set to blocking, and a false value means that the
 channel should be non-blocking.
 .RS
@@ -341,10 +341,10 @@ etc.) is treated as and converted to an error.
 .RE
 .\" METHOD: truncate
 .TP
-\fIcmdPrefix \fBtruncate\fI channelId length\fR
+\fIcmdPrefix \fBtruncate\fI channel length\fR
 .
 This \fIoptional\fR subcommand handles changing the length of the
-underlying data stream for the channel \fIchannelId\fR. Its length
+underlying data stream for the channel \fIchannel\fR. Its length
 gets set to \fIlength\fR.
 .RS
 .PP

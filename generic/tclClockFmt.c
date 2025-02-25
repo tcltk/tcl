@@ -1793,7 +1793,7 @@ ClockScnToken_JDN_Proc(
 
     fractJD = (int)tok->map->offs /* 0 for calendar or 43200 for astro JD */
 	    + (int)((Tcl_WideInt)SECONDS_PER_DAY * fractJD / fractJDDiv);
-    if (fractJD > SECONDS_PER_DAY) {
+    if (fractJD >= SECONDS_PER_DAY) {
 	fractJD %= SECONDS_PER_DAY;
 	intJD += 1;
     }

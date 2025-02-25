@@ -343,9 +343,6 @@ static const Tcl_ObjType chanObjType = {
     TCL_OBJTYPE_V0
 };
 
-#define GetIso88591() \
-    (binaryEncoding ? Tcl_GetEncoding(NULL, "iso8859-1") : binaryEncoding)
-
 #define ChanSetInternalRep(objPtr, resPtr)					\
     do {								\
 	Tcl_ObjInternalRep ir;						\
@@ -1666,12 +1663,6 @@ Tcl_CreateChannel(
 
     /*
      * Set the channel to system default encoding.
-     *
-     * Note the strange bit of protection taking place here. If the system
-     * encoding name is reported back as "binary", something weird is
-     * happening. Tcl provides no "binary" encoding, so someone else has
-     * provided one. We ignore it so as not to interfere with the "magic"
-     * interpretation that Tcl_Channels give to the "-encoding binary" option.
      */
 
     name = Tcl_GetEncodingName(NULL);
@@ -7546,6 +7537,34 @@ CheckChannelErrors(
 /*
  *----------------------------------------------------------------------
  *
+ * TclChanIsBinary --
+ *
+ *	Returns 1 if the channel is a binary channel, 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChanIsBinary(
+    Tcl_Channel chan)		/* Does this channel have EOF? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return ((statePtr->encoding == GetBinaryEncoding()) && !statePtr->inEofChar
+	    && (!GotFlag(statePtr, TCL_READABLE) || (statePtr->inputTranslation == TCL_TRANSLATE_LF))
+	    && (!GotFlag(statePtr, TCL_WRITABLE) || (statePtr->outputTranslation == TCL_TRANSLATE_LF)));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Eof --
  *
  *	Returns 1 if the channel is at EOF, 0 otherwise.
@@ -8234,8 +8253,14 @@ Tcl_SetChannelOption(
 	Tcl_Encoding encoding;
 	int profile;
 
-	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
-	    encoding = Tcl_GetEncoding(NULL, "iso8859-1");
+	if ((newValue[0] == '\0') || !strcmp(newValue, "binary")) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown encoding \"%s\": No longer supported.\n"
+			"\tplease use either \"-translation binary\" "
+			"or \"-encoding iso8859-1\"", newValue));
+	    }
+	    return TCL_ERROR;
 	} else {
 	    encoding = Tcl_GetEncoding(interp, newValue);
 	    if (encoding == NULL) {
@@ -9195,7 +9220,7 @@ Tcl_FileEventObjCmd(
     static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
     if ((objc != 3) && (objc != 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channel event ?script?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], modeOptions, "event name", 0,

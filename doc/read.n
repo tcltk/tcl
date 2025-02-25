@@ -12,9 +12,9 @@
 .SH NAME
 read \- Read from a channel
 .SH SYNOPSIS
-\fBread \fR?\fB\-nonewline\fR? \fIchannelId\fR
+\fBread \fR?\fB\-nonewline\fR? \fIchannel\fR
 .sp
-\fBread \fIchannelId numChars\fR
+\fBread \fIchannel numChars\fR
 .BE
 .SH DESCRIPTION
 .PP

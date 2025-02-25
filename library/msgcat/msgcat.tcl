@@ -1226,28 +1226,29 @@ proc ::msgcat::PackageNamespaceGet {} {
 	# Not in object environment
 	return $ns
     }
-
-    # Check self namespace to determine environment
-    switch -exact -- [uplevel 2 { namespace which -command self }] {
-	{::oo::define::self} {
-	    # We are within a class definition
-	    return [namespace qualifiers [uplevel 2 { self }]]
-	}
-	{::oo::Helpers::self} {
-	    # We are within an object
-	    set Class [info object class [uplevel 2 { self }]]
-	    # Check for classless defined object
-	    if {$Class eq {::oo::object}} {
+    # Ticket 91b3a5bb14: call to self may fail if namespace is stored
+    # so catch all this
+    try {
+	# Check self namespace to determine environment
+	switch -exact -- [uplevel 2 { namespace which -command self }] {
+	    {::oo::define::self} {
+		# We are within a class definition
 		return [namespace qualifiers [uplevel 2 { self }]]
 	    }
-	    # Class defined object
-	    return [namespace qualifiers $Class]
+	    {::oo::Helpers::self} {
+		# We are within an object
+		set Class [info object class [uplevel 2 { self }]]
+		# Check for classless defined object
+		if {$Class eq {::oo::object}} {
+		    return [namespace qualifiers [uplevel 2 { self }]]
+		}
+		# Class defined object
+		return [namespace qualifiers $Class]
+	    }
 	}
-	default {
-	    # Not in object environment
-	    return $ns
-	}
+    } on error {} {
     }
+    return $ns
 }
 
 # Initialize the default locale

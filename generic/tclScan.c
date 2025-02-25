@@ -378,6 +378,17 @@ ValidateFormat(
 	 */
 
 	switch (ch) {
+	case 'z':
+	case 't':
+	    if (sizeof(void *) > sizeof(int)) {
+		flags |= SCAN_LONGER;
+	    }
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
+	case 'L':
+	    flags |= SCAN_BIG;
+	    format += TclUtfToUniChar(format, &ch);
+	    break;
 	case 'l':
 	    if (*format == 'l') {
 		flags |= SCAN_BIG;
@@ -386,7 +397,8 @@ ValidateFormat(
 		break;
 	    }
 	    /* FALLTHRU */
-	case 'L':
+	case 'j':
+	case 'q':
 	    flags |= SCAN_LONGER;
 	    /* FALLTHRU */
 	case 'h':
@@ -592,7 +604,7 @@ Tcl_ScanObjCmd(
     const char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
-    long value;
+    int value;
     const char *string, *end, *baseString;
     char op = 0;
     int underflow = 0;
@@ -985,11 +997,11 @@ Tcl_ScanObjCmd(
 		    }
 		}
 	    } else {
-		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		if (TclGetIntFromObj(NULL, objPtr, &value) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
-			value = LONG_MIN;
+			value = INT_MIN;
 		    } else {
-			value = LONG_MAX;
+			value = INT_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
@@ -1095,9 +1107,7 @@ Tcl_ScanObjCmd(
 	 * We create an empty Tcl_Obj to fill missing values rather than
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-	Tcl_Obj *emptyObj;
-	TclNewObj(emptyObj);
-	Tcl_IncrRefCount(emptyObj);
+	Tcl_Obj *emptyObj = NULL;
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
@@ -1108,11 +1118,12 @@ Tcl_ScanObjCmd(
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
-
+		if (!emptyObj) {
+		    TclNewObj(emptyObj);
+		}
 		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
 	}
-	Tcl_DecrRefCount(emptyObj);
 	if (code != TCL_OK) {
 	    /* If error'ed out, free up remaining. i contains last index freed */
 	    while (++i < totalVars) {

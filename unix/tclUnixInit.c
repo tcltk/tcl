@@ -54,11 +54,11 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-        unsigned int  dwOemId;
-        struct {
-            int wProcessorArchitecture;
-            int wReserved;
-        };
+	unsigned int  dwOemId;
+	struct {
+	    int wProcessorArchitecture;
+	    int wReserved;
+	};
     };
     unsigned int     dwPageSize;
     void *lpMinimumApplicationAddress;
@@ -597,17 +597,21 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
+    /* Here, search for i in the interval left <= i < right. */
     while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
+	    /* Found it at i == test.  */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
+	    /* Restrict the search to the interval test < i < right. */
 	    left = test+1;
 	} else {
-	    right = test-1;
+	    /* Restrict the search to the interval left <= i < test. */
+	    right = test;
 	}
     }
     return NULL;
@@ -860,15 +864,15 @@ TclpSetVariables(
     }
     Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
-        /* Some platforms build configure scripts expect ~ expansion so do that */
-        Tcl_Obj *origPaths;
-        Tcl_Obj *resolvedPaths;
+	/* Some platforms build configure scripts expect ~ expansion so do that */
+	Tcl_Obj *origPaths;
+	Tcl_Obj *resolvedPaths;
 
-        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
-        resolvedPaths = TclResolveTildePathList(origPaths);
-        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
-            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
-        }
+	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+	resolvedPaths = TclResolveTildePathList(origPaths);
+	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+	}
     }
 
 #ifdef DJGPP

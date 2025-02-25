@@ -428,8 +428,8 @@ TclpCreateProcess(
     TclFile errPipeIn, errPipeOut;
     int count, status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
-    Tcl_DString *dsArray;
-    char **newArgv;
+    Tcl_DString *volatile dsArray;
+    char **volatile newArgv;
     int pid;
     size_t i;
 #if defined(HAVE_POSIX_SPAWNP)
@@ -1380,7 +1380,7 @@ Tcl_PidObjCmd(
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?channel?");
 	return TCL_ERROR;
     }
 

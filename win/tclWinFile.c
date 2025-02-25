@@ -1438,23 +1438,23 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-        /*
-         * Treat the current user as a special case because the general case
-         * below does not properly retrieve the path. The NetUserGetInfo
-         * call returns an empty path and the code defaults to the user's
-         * name in the profiles directory. On modern Windows systems, this
-         * is generally wrong as when the account is a Microsoft account,
-         * for example abcdefghi@outlook.com, the directory name is
-         * abcde and not abcdefghi.
-         *
-         * Note we could have just used env(USERPROFILE) here but
-         * the intent is to retrieve (as on Unix) the system's view
-         * of the home irrespective of environment settings of HOME
-         * and USERPROFILE.
-         *
-         * Fixing this for the general user needs more investigating but
-         * at least for the current user we can use a direct call.
-         */
+	/*
+	 * Treat the current user as a special case because the general case
+	 * below does not properly retrieve the path. The NetUserGetInfo
+	 * call returns an empty path and the code defaults to the user's
+	 * name in the profiles directory. On modern Windows systems, this
+	 * is generally wrong as when the account is a Microsoft account,
+	 * for example abcdefghi@outlook.com, the directory name is
+	 * abcde and not abcdefghi.
+	 *
+	 * Note we could have just used env(USERPROFILE) here but
+	 * the intent is to retrieve (as on Unix) the system's view
+	 * of the home irrespective of environment settings of HOME
+	 * and USERPROFILE.
+	 *
+	 * Fixing this for the general user needs more investigating but
+	 * at least for the current user we can use a direct call.
+	 */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
 	    HANDLE hProcess;
@@ -2054,27 +2054,27 @@ NativeStat(
 	BY_HANDLE_FILE_INFORMATION data;
 
 	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
-            fileType = GetFileType(fileHandle);
-            CloseHandle(fileHandle);
-            if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
-                Tcl_SetErrno(ENOENT);
-                return -1;
-            }
+	    fileType = GetFileType(fileHandle);
+	    CloseHandle(fileHandle);
+	    if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
+		Tcl_SetErrno(ENOENT);
+		return -1;
+	    }
 
-            /*
+	    /*
 	     * Mock up the expected structure
 	     */
 
-            memset(&data, 0, sizeof(data));
-            statPtr->st_atime = 0;
-            statPtr->st_mtime = 0;
-            statPtr->st_ctime = 0;
-        } else {
-            CloseHandle(fileHandle);
-            statPtr->st_atime = ToCTime(data.ftLastAccessTime);
-            statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
-            statPtr->st_ctime = ToCTime(data.ftCreationTime);
-        }
+	    memset(&data, 0, sizeof(data));
+	    statPtr->st_atime = 0;
+	    statPtr->st_mtime = 0;
+	    statPtr->st_ctime = 0;
+	} else {
+	    CloseHandle(fileHandle);
+	    statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+	    statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+	    statPtr->st_ctime = ToCTime(data.ftCreationTime);
+	}
 	attr = data.dwFileAttributes;
 	statPtr->st_size = ((long long) data.nFileSizeLow) |
 		(((long long) data.nFileSizeHigh) << 32);
@@ -2134,11 +2134,11 @@ NativeStat(
     dev = NativeDev(nativePath);
     mode = NativeStatMode(attr, checkLinks, NativeIsExec(nativePath));
     if (fileType == FILE_TYPE_CHAR) {
-        mode &= ~S_IFMT;
-        mode |= S_IFCHR;
+	mode &= ~S_IFMT;
+	mode |= S_IFCHR;
     } else if (fileType == FILE_TYPE_DISK) {
-        mode &= ~S_IFMT;
-        mode |= S_IFBLK;
+	mode &= ~S_IFMT;
+	mode |= S_IFBLK;
     }
 
     statPtr->st_dev	= (dev_t) dev;
@@ -3280,12 +3280,12 @@ TclWinFileOwned(
     if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
 	    &secd) != ERROR_SUCCESS) {
-        /*
+	/*
 	 * Either not a file, or we do not have access to it in which case we
 	 * are in all likelihood not the owner.
 	 */
 
-        return 0;
+	return 0;
     }
 
     /*
@@ -3296,19 +3296,19 @@ TclWinFileOwned(
      */
 
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-        /*
+	/*
 	 * Find out how big the buffer needs to be.
 	 */
 
-        bufsz = 0;
-        GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
-        if (bufsz) {
-            buf = (LPBYTE)Tcl_Alloc(bufsz);
-            if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
-                owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
-            }
-        }
-        CloseHandle(token);
+	bufsz = 0;
+	GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
+	if (bufsz) {
+	    buf = (LPBYTE)Tcl_Alloc(bufsz);
+	    if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
+		owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
+	    }
+	}
+	CloseHandle(token);
     }
 
     /*
@@ -3316,10 +3316,10 @@ TclWinFileOwned(
      */
 
     if (secd) {
-        LocalFree(secd);            /* Also frees ownerSid */
+	LocalFree(secd);            /* Also frees ownerSid */
     }
     if (buf) {
-        Tcl_Free(buf);
+	Tcl_Free(buf);
     }
 
     return (owned != 0);        /* Convert non-0 to 1 */

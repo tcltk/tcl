@@ -2505,7 +2505,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-              ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+	      ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", (char *)NULL);
 	}
     }
@@ -2614,22 +2614,22 @@ UnsetVarStruct(
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
 
-            /*
-             * Pass the array element name to TclObjCallVarTraces(), because
-             * it cannot be determined from dummyVar. Alternatively, indicate
-             * via flags whether the variable involved in the code that caused
-             * the trace to be triggered was an array element, for the correct
-             * formatting of error messages.
-             */
-            if (part2Ptr) {
-                flags |= VAR_ARRAY_ELEMENT;
-            } else if (TclIsVarArrayElement(varPtr)) {
-                part2Ptr = VarHashGetKey(varPtr);
-            }
+	    /*
+	     * Pass the array element name to TclObjCallVarTraces(), because
+	     * it cannot be determined from dummyVar. Alternatively, indicate
+	     * via flags whether the variable involved in the code that caused
+	     * the trace to be triggered was an array element, for the correct
+	     * formatting of error messages.
+	     */
+	    if (part2Ptr) {
+		flags |= VAR_ARRAY_ELEMENT;
+	    } else if (TclIsVarArrayElement(varPtr)) {
+		part2Ptr = VarHashGetKey(varPtr);
+	    }
 
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-              (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
+	      (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -5998,7 +5998,6 @@ TclInfoVarsCmd(
     Tcl_HashSearch search;
     Var *varPtr;
     Namespace *nsPtr;
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr, *varNamePtr;
     int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
@@ -6079,16 +6078,6 @@ TclInfoVarsCmd(
 		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
-	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		varPtr = VarHashFindVar(&globalNsPtr->varTable,
-			simplePatternPtr);
-		if (varPtr) {
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				VarHashGetKey(varPtr));
-		    }
-		}
 	    }
 	} else {
 	    /*
@@ -6114,35 +6103,6 @@ TclInfoVarsCmd(
 		    }
 		}
 		varPtr = VarHashNextVar(&search);
-	    }
-
-	    /*
-	     * If the effective namespace isn't the global :: namespace, and a
-	     * specific namespace wasn't requested in the pattern (i.e., the
-	     * pattern only specifies variable names), then add in all global
-	     * :: variables that match the simple pattern. Of course, add in
-	     * only those variables that aren't hidden by a variable in the
-	     * effective namespace.
-	     */
-
-	    if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		varPtr = VarHashFirstVar(&globalNsPtr->varTable, &search);
-		while (varPtr) {
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			varNamePtr = VarHashGetKey(varPtr);
-			varName = TclGetString(varNamePtr);
-			if ((simplePattern == NULL)
-				|| Tcl_StringMatch(varName, simplePattern)) {
-			    if (VarHashFindVar(&nsPtr->varTable,
-				    varNamePtr) == NULL) {
-				Tcl_ListObjAppendElement(interp, listPtr,
-					varNamePtr);
-			    }
-			}
-		    }
-		    varPtr = VarHashNextVar(&search);
-		}
 	    }
 	}
     } else if (iPtr->varFramePtr->procPtr != NULL) {
@@ -7086,13 +7046,13 @@ SetArrayDefault(
      */
 
     if (tablePtr->defaultObj) {
-        Tcl_DecrRefCount(tablePtr->defaultObj);
-        Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
+	Tcl_DecrRefCount(tablePtr->defaultObj);
     }
     tablePtr->defaultObj = defaultObj;
     if (tablePtr->defaultObj) {
-        Tcl_IncrRefCount(tablePtr->defaultObj);
-        Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
+	Tcl_IncrRefCount(tablePtr->defaultObj);
     }
 }
 

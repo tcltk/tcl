@@ -512,7 +512,7 @@ assignNumber(
     void *clientData;
     int tcl_number_type;
 
-    if (Tcl_GetNumberFromObj(interp, numberObj, &clientData, 
+    if (Tcl_GetNumberFromObj(interp, numberObj, &clientData,
 		&tcl_number_type) != TCL_OK) {
     	return TCL_ERROR;
     }

@@ -104,7 +104,7 @@ test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoo
     close [open foo.test w]
     catch {
 	set f [open foo.test/..namedfork/rsrc w]
-	fconfigure $f -translation lf -eofchar {}
+	fconfigure $f -translation lf
 	puts -nonewline $f "foo"
 	close $f
     }
@@ -121,7 +121,7 @@ test macOSXFCmd-3.1 {MacOSXCopyFileAttributes} {macosxFileAttr notRoot} {
     catch {
 	file attributes foo.test -creator FOOC -type FOOT -hidden 1
 	set f [open foo.test/..namedfork/rsrc w]
-	fconfigure $f -translation lf -eofchar {}
+	fconfigure $f -translation lf
 	puts -nonewline $f "foo"
 	close $f
 	file copy foo.test bar.test

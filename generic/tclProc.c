@@ -95,7 +95,11 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 /*

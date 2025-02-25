@@ -454,7 +454,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * Flags values passed to Tcl_RegExpExecObj.
  */
 
-#define	TCL_REG_NOTBOL	0001	/* Beginning of string does not match ^.  */
+#define	TCL_REG_NOTBOL	0001	/* Beginning of string does not match ^. */
 #define	TCL_REG_NOTEOL	0002	/* End of string does not match $. */
 
 /*
@@ -515,6 +515,8 @@ typedef struct stat *Tcl_OldStat_;
  *			exited; the interpreter's result is meaningless.
  * TCL_CONTINUE		Go on to the next iteration of the current loop; the
  *			interpreter's result is meaningless.
+ * Integer return codes in the range TCL_CODE_USER_MIN to TCL_CODE_USER_MAX are
+ * reserved for the use of packages.
  */
 
 #define TCL_OK			0
@@ -522,6 +524,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_RETURN		2
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
+#define TCL_CODE_USER_MIN	5
+#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
 
 /*
  *----------------------------------------------------------------------------
@@ -665,7 +669,7 @@ typedef struct Tcl_ObjType {
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
 #if TCL_MAJOR_VERSION > 8
-    size_t version;
+    size_t version;		/* Version field for future-proofing. */
 
     /* List emulation functions - ObjType Version 1 */
     Tcl_ObjTypeLengthProc *lengthProc;
@@ -803,7 +807,7 @@ typedef struct Tcl_Namespace {
  */
 
 typedef struct Tcl_CallFrame {
-    Tcl_Namespace *nsPtr;
+    Tcl_Namespace *nsPtr;	/* Current namespace for the call frame. */
     int dummy1;
     Tcl_Size dummy2;
     void *dummy3;
@@ -1288,7 +1292,7 @@ struct Tcl_Event {
 
 typedef enum {
     TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
-	    TCL_QUEUE_ALERT_IF_EMPTY=4
+    TCL_QUEUE_ALERT_IF_EMPTY=4
 } Tcl_QueuePosition;
 
 /*
@@ -1684,7 +1688,7 @@ typedef struct Tcl_Filesystem {
 				 * 'file attributes'. */
     Tcl_FSFileAttrsSetProc *fileAttrsSetProc;
 				/* Called by 'Tcl_FSFileAttrsSet()' and by
-				 * 'file attributes'.  */
+				 * 'file attributes'. */
     Tcl_FSCreateDirectoryProc *createDirectoryProc;
 				/* Called by 'Tcl_FSCreateDirectory()'.  May be
 				 * NULL if the filesystem is read-only. */
@@ -1965,8 +1969,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *fromUtfProc;
 				/* Function to convert from UTF-8 into
 				 * external encoding. */
-    Tcl_FreeProc *freeProc;
-				/* If non-NULL, function to call when this
+    Tcl_FreeProc *freeProc;	/* If non-NULL, function to call when this
 				 * encoding is deleted. */
     void *clientData;		/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
@@ -2510,8 +2513,8 @@ TclBounceRefCount(
     int line)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DbDecrRefCount(objPtr, fn, line);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DbDecrRefCount(objPtr, fn, line);
 	}
     }
 }
@@ -2548,8 +2551,8 @@ TclBounceRefCount(
     Tcl_Obj* objPtr)
 {
     if (objPtr) {
-        if ((objPtr)->refCount == 0) {
-            Tcl_DecrRefCount(objPtr);
+	if ((objPtr)->refCount == 0) {
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
 }

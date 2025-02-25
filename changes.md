@@ -30,12 +30,14 @@ writing Tcl scripts.
  - I/O malencoding default response: raise error (-profile strict)
  - Windows platform needs Windows 7 or Windows Server 2008 R2 or later
  - Ended interpretation of ~ as home directory in pathnames
- - Removed the "identity" encoding
+ - Removed the "identity" encoding.
+ - Removed the encoding alias "binary" to "iso8859-1".
  - $::tcl_precision no longer controls string generation of doubles
  - Removed Tcl 7 legacies: [case], [puts] [read] variant syntaxes
  - Removed subcommands [trace variable|vdelete|vinfo]
  - No -eofchar option for channels anymore for writing.
  - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
+ - Removed command ::tcl::unsupported::inject.
 
 ## Incompatibilities in C public interface
  - Many arguments expanded type from int to Tcl_Size
@@ -50,10 +52,11 @@ writing Tcl scripts.
 
 ## New commands
  - `array default`, `array for`
+ - `chan isbinary`
  - `coroinject`, `coroprobe`
  - `clock add weekdays`
  - `const`, `info const*`
- - `dict getdefault`
+ - `dict getwithdefault`
  - `file tempdir`, `file home`, `file tildeexpand`
  - `info commandtype`
  - `ledit`
@@ -64,6 +67,7 @@ writing Tcl scripts.
  - `string insert`, `string is dict`
  - `tcl::process`
  - `*::build-info`
+ - `readFile`, `writeFile`, `foreachLine`
 
 ## New command options
  - `regsub ... -command ...`

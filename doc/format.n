@@ -141,8 +141,7 @@ element of the \fBtcl_platform\fR array.
 If it is \fBL\fR it specifies that an integer or double value is taken
 without truncation for conversion to a formatted substring.
 If neither of those are present, the integer value is
-truncated to the range determined by the value of the
-\fBwordSize\fR element of the \fBtcl_platform\fR array).
+truncated to a 32-bit range.
 .SS "MANDATORY CONVERSION TYPE"
 .PP
 The last thing in a conversion specifier is an alphabetic character
