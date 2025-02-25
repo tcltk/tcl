@@ -165,6 +165,7 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
+  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 

@@ -1239,12 +1239,14 @@ PipeOutputProc(
  * so do not pass it to directly to Tcl_CreateFileHandler.
  * Instead, pass a wrapper which is a Tcl_FileProc.
  */
+
 static void
 PipeWatchNotifyChannelWrapper(
     void *clientData,
     int mask)
 {
     Tcl_Channel channel = (Tcl_Channel)clientData;
+
     Tcl_NotifyChannel(channel, mask);
 }
 
