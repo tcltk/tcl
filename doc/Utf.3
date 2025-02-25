@@ -45,13 +45,13 @@ unsigned short *
 wchar_t *
 \fBTcl_UtfToWCharDString\fR(\fIsrc, numBytes, dsPtr\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_Char16Len\fR(\fIutf16\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_WCharLen\fR(\fIwcharStr\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
 .sp
 int
@@ -72,7 +72,7 @@ int
 int
 \fBTcl_UtfCharComplete\fR(\fIsrc, numBytes\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_NumUtfChars\fR(\fIsrc, numBytes\fR)
 .sp
 const char *
@@ -214,7 +214,7 @@ operate on sequences of \fBUTF-16\fR units instead of \fBTcl_UniChar\fR.
 characters.  It accepts a null-terminated UTF-16 sequence and returns
 the number of UTF-16 units until the null.
 .PP
-\fBTcl_WCharLen\fR corresponds to \fBstrlen\fR for wchar_t
+\fBTcl_WCharLen\fR corresponds to \fBstrlen\fR for \fBwchar_t\fR
 characters.  It accepts a null-terminated \fBwchar_t\fR sequence and returns
 the number of \fBwchar_t\fR units until the null.
 .PP
