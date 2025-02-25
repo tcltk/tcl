@@ -530,7 +530,7 @@ for {set i 0} {$i < 290} {incr i} {
 }
 for {set i 290} {$i < 400} {incr i} {
     test format-16.[expr {$i -289}] {testing MAX_FLOAT_SIZE} {
-        format {%s} $b
+	format {%s} $b
     } $b
     append b "x"
 }

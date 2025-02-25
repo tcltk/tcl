@@ -4,6 +4,12 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
+
+The changes since Tcl 9.0.0 include...
+
+
+
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
 Highlighted differences between Tcl 9.0 and Tcl 8.6 are summarized below,
@@ -30,7 +36,7 @@ writing Tcl scripts.
    core Tcl feature.
 
 ## Unix notifiers available using `epoll()` or `kqueue()`
- - This relieves limits on file descriptors imposed by legacy `select()` and fixes a performance bottleneck. 
+ - This relieves limits on file descriptors imposed by legacy `select()` and fixes a performance bottleneck.
 
 # Incompatibilities
 
@@ -143,4 +149,4 @@ writing Tcl scripts.
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
  - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
- 
+

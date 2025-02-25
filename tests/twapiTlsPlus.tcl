@@ -29,8 +29,8 @@ proc twapiTlsPlus::socket {args} {
 
     set targ [lsearch -exact $args -type]
     if {$targ != -1} {
-        set token [lindex $args $targ+1]
-        set args [lreplace $args $targ $targ+1 -socketcmd [list {*}$socketCmd -type $token]]
+	set token [lindex $args $targ+1]
+	set args [lreplace $args $targ $targ+1 -socketcmd [list {*}$socketCmd -type $token]]
     }
     ::twapi::tls_socket {*}$args
 }

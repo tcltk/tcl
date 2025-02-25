@@ -112,12 +112,12 @@ main(int argc, char **argv)
 
     fp = fopen(argv[argc - 1], "r");
     if (fp == NULL) {
-        perror(argv[argc - 1]);
+	perror(argv[argc - 1]);
 	return 1;
     }
 
     for (i = 0; i < 256; i++) {
-        toUnicode[i] = NULL;
+	toUnicode[i] = NULL;
     }
 
     maxEnc = 0;
@@ -240,10 +240,10 @@ main(int argc, char **argv)
     }
 
     for (hi = 0; hi < 256; hi++) {
-        if (toUnicode[hi] != NULL) {
-            free(toUnicode[hi]);
-            toUnicode[hi] = NULL;
-        }
+	if (toUnicode[hi] != NULL) {
+	    free(toUnicode[hi]);
+	    toUnicode[hi] = NULL;
+	}
     }
     return 0;
 }

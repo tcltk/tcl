@@ -53,10 +53,10 @@ extern "C" {
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION	0
 #   define TCL_RELEASE_LEVEL	TCL_FINAL_RELEASE
-#   define TCL_RELEASE_SERIAL	0
+#   define TCL_RELEASE_SERIAL	1
 
 #   define TCL_VERSION		"9.0"
-#   define TCL_PATCH_LEVEL	"9.0.0"
+#   define TCL_PATCH_LEVEL	"9.0.1"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
@@ -2343,7 +2343,7 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b3"), \
+	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0.0"), \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
@@ -2544,8 +2544,7 @@ TclBounceRefCount(
 
 /*
  * Declare that obj will no longer be used or referenced.
- * This will release the obj if there is no referece count,
- * otherwise let it be.
+ * This will free the obj if there are no references to the obj.
  */
 #   define Tcl_BounceRefCount(objPtr) \
     TclBounceRefCount(objPtr);

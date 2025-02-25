@@ -85,7 +85,7 @@ test incr-old-2.9 {incr errors} {
 test incr-old-2.10 {incr errors} {
     set x {20 x}
     list [catch {incr x 1} msg] $msg
-} {1 {expected integer but got "20 x"}}
+} {1 {expected integer but got a list}}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -2221,10 +2221,10 @@ static int UtfExtWrapper(
 	    &dstWrote,
 	    dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
-        Tcl_SetObjResult(interp,
-                         Tcl_ObjPrintf("%s wrote past output buffer",
-                                       transformer == Tcl_ExternalToUtf ?
-                                       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
+	Tcl_SetObjResult(interp,
+			 Tcl_ObjPrintf("%s wrote past output buffer",
+				       transformer == Tcl_ExternalToUtf ?
+				       "Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
 	Tcl_Obj *resultObjs[3];

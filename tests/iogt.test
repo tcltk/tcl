@@ -653,19 +653,19 @@ test iogt-4.0 {fileevent readable, after transform} -setup {
 	variable stop 1
     }
     proc Get {sock} {
-        variable trail
-        variable got
-        if {[eof $sock]} {
-            Done
-            lappend trail "xxxxxxxxxxxxx"
-            close $sock
-            return
-        }
-        lappend trail "vvvvvvvvvvvvv"
-        lappend trail "\tgot: [lappend got "\[\[[read $sock]\]\]"]"
-        lappend trail "============="
-        #puts stdout $__ ; flush stdout
-        #read $sock
+	variable trail
+	variable got
+	if {[eof $sock]} {
+	    Done
+	    lappend trail "xxxxxxxxxxxxx"
+	    close $sock
+	    return
+	}
+	lappend trail "vvvvvvvvvvvvv"
+	lappend trail "\tgot: [lappend got "\[\[[read $sock]\]\]"]"
+	lappend trail "============="
+	#puts stdout $__ ; flush stdout
+	#read $sock
     }
 
 } -constraints {testchannel knownBug} -body {
@@ -875,42 +875,42 @@ test iogt-6.1 {Push back and up} -constraints {testchannel knownBug} -body {
 # Driver for a base channel that emits several short "files"
 # with each terminated by a fleeting EOF
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) .....
-                return {initialize finalize watch read}
-            }
-            finalize {
-                if {![info exists index($chan)]} {return}
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                if {![info exists index($chan)]} {
-                    driver initialize $chan
-                }
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                if {[string length $result] == 0} {
-                    driver finalize $chan
-                }
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) .....
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		if {![info exists index($chan)]} {return}
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		if {![info exists index($chan)]} {
+		    driver initialize $chan
+		}
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		if {[string length $result] == 0} {
+		    driver finalize $chan
+		}
+		return $result
+	    }
+	}
     }
 
 test iogt-7.0 {Handle fleeting EOF} -constraints {testchannel} -body {
     set chan [chan create read [namespace which driver]]
     identity -attach $chan
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -937,7 +937,7 @@ test iogt-7.1 {Handle fleeting EOF} -constraints {testchannel} -body {
     set chan [chan create read [namespace which driver]]
     testchannel transform $chan -command [namespace code delay]
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}

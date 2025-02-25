@@ -109,11 +109,11 @@ ReadProperty(
     Tcl_DecrRefCount(args[1]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property getter for %s did a continue", propName));
 	return TCL_ERROR;
     default:
@@ -144,11 +144,11 @@ WriteProperty(
     Tcl_DecrRefCount(args[2]);
     switch (code) {
     case TCL_BREAK:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a break", propName));
 	return TCL_ERROR;
     case TCL_CONTINUE:
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"property setter for %s did a continue", propName));
 	return TCL_ERROR;
     default:
@@ -637,7 +637,6 @@ GetAllClassProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -665,7 +664,7 @@ GetAllClassProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
@@ -752,7 +751,6 @@ TclOOGetAllObjectProperties(
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
     Tcl_Obj *propName, *result;
-    void *dummy;
 
     /*
      * Look in the cache.
@@ -777,7 +775,7 @@ TclOOGetAllObjectProperties(
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
     TclNewObj(result);
-    FOREACH_HASH(propName, dummy, &hashTable) {
+    FOREACH_HASH_KEY(propName, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
@@ -1053,7 +1051,7 @@ TclOODefinePropertyCmd(
     }
     if (!useInstance && !oPtr->classPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", -1));
+		"attempt to misuse API", TCL_AUTO_LENGTH));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", (char *)NULL);
 	return TCL_ERROR;
     }

@@ -4214,10 +4214,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
-        useDoubles = 0; // Can only have Integer value. If a fractional value
-                        // is given, this will fail later. In other words,
-                        // "3.0" is allowed and used as Integer, but "3.1"
-                        // will be flagged as an error. (bug f4a4bd7f1070)
+	useDoubles = 0; // Can only have Integer value. If a fractional value
+			// is given, this will fail later. In other words,
+			// "3.0" is allowed and used as Integer, but "3.1"
+			// will be flagged as an error. (bug f4a4bd7f1070)
 	break;
 
 /*    lseq n n */
@@ -4344,8 +4344,8 @@ Tcl_LseqObjCmd(
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
 	double d;
-        // Don't consider Count type to indicate using double values in seqence
-        useDoubles -= (useDoubles > 0) ? 1 : 0;
+	// Don't consider Count type to indicate using double values in seqence
+	useDoubles -= (useDoubles > 0) ? 1 : 0;
 	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
 	if (floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {

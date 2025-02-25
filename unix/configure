@@ -2710,7 +2710,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".0"
+TCL_PATCH_LEVEL=".1"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -11022,11 +11022,11 @@ main (void)
 
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
-                 "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t"
-                 "mov %%edi, %%ebx  \n\t"
-                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+		 "cpuid            \n\t"
+		 "mov %%ebx, %%esi   \n\t"
+		 "mov %%edi, %%ebx  \n\t"
+		 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+		 : "a"(index) : "edi");
 
   ;
   return 0;
@@ -11138,13 +11138,13 @@ printf "%s\n" "#define TCL_FRAMEWORK 1" >>confdefs.h
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     # default install directory for bundled packages
     if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
-        PACKAGE_DIR="/Library/Tcl"
+	PACKAGE_DIR="/Library/Tcl"
     else
-        PACKAGE_DIR="$libdir"
+	PACKAGE_DIR="$libdir"
     fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
-        # override libdir default
-        libdir="/Library/Frameworks"
+	# override libdir default
+	libdir="/Library/Frameworks"
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
@@ -11171,9 +11171,9 @@ else
     # default install directory for bundled packages
     PACKAGE_DIR="$libdir"
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
+	TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
+	TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
@@ -12622,11 +12622,11 @@ printf "%s\n" "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "Tcl.framework":C) n=Tcl &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
+	f=$n.framework && v=Versions/$VERSION &&
+	rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
      ;;
 
   esac

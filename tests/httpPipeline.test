@@ -29,20 +29,20 @@ if 0 {
 }
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
-        set ValueRange {0 1 2}
+	set ValueRange {0 1 2}
     } else {
-        set ValueRange {0 1}
+	set ValueRange {0 1}
     }
 
     # For each value of ThreadLevel, source this file recursively in the
     # same interpreter.
     foreach ThreadLevel $ValueRange {
-        source [info script]
+	source [info script]
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     if {![testConstraint ThreadLevelSummary]} {
-        ::tcltest::cleanupTests
+	::tcltest::cleanupTests
     }
     return
 }
@@ -483,20 +483,20 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 
     if {$ca < 3} {
 	# Not Keep-Alive.
-        set result "Passed all sanity checks."
+	set result "Passed all sanity checks."
 
     } elseif {$ca == 3} {
-        # Keep-Alive, not pipelined.
-        set result {}
-        append result "Passed all sanity checks.\n"
-        append result "Have overlaps including response body:\n"
+	# Keep-Alive, not pipelined.
+	set result {}
+	append result "Passed all sanity checks.\n"
+	append result "Have overlaps including response body:\n"
 
     } else {
-        # Keep-Alive, pipelined: ($ca == 4)
-        set result {}
-        append result "Passed all sanity checks.\n"
-        append result "Overlap-free without response body:\n"
-        append result "$resShort"
+	# Keep-Alive, pipelined: ($ca == 4)
+	set result {}
+	append result "Passed all sanity checks.\n"
+	append result "Overlap-free without response body:\n"
+	append result "$resShort"
     }
 
     # - The special case of test *.18*-testEof needs test results to be
@@ -504,13 +504,13 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
     # - These test -repost 0 when there is a POST to apply it to, and the server
     #   timeout has not been detected.
     if {($cb == 18) && ($te == 1)} {
-        if {$ca < 3} {
+	if {$ca < 3} {
 	    # Not Keep-Alive.
 	    set result "Passed all sanity checks."
 
 	} elseif {$ca == 3 && $delay == 0} {
 	    # Keep-Alive, not pipelined.
-            set result [MakeMessage {
+	    set result [MakeMessage {
 		|Problems with sanity checks:
 		|Wrong sequence for token ::http::2 - {A B C D X X X}
 		|- and error(s) X
@@ -525,7 +525,7 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 
 	} elseif {$ca == 3} {
 	    # Keep-Alive, not pipelined.
-            set result [MakeMessage {
+	    set result [MakeMessage {
 		|Problems with sanity checks:
 		|Wrong sequence for token ::http::2 - {A B C D X X X}
 		|- and error(s) X
@@ -536,7 +536,7 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 
 	} elseif {$delay == 0} {
 	    # Keep-Alive, pipelined: ($ca == 4)
-            set result [MakeMessage {
+	    set result [MakeMessage {
 		|Problems with sanity checks:
 		|Wrong sequence for token ::http::2 - {A B C D X X X}
 		|- and error(s) X
@@ -550,7 +550,7 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 	    }]
 
 	} else {
-            set result [MakeMessage {
+	    set result [MakeMessage {
 		|Problems with sanity checks:
 		|Wrong sequence for token ::http::2 - {A B C D X X X}
 		|- and error(s) X
@@ -559,7 +559,7 @@ proc ReturnTestScriptAndResult {ca cb delay te} {
 		|
 	    }]
 
-        }
+	}
     }
 
     return [list "$start$middle$end" $result]
@@ -617,18 +617,18 @@ proc RunTest {header footer delay te} {
     # Custom code for specific tests
     # --------------------------------------------------------------------------
     if {$header < 3} {
-        set skipOverlaps 1
-        for {set i 1} {$i <= $num} {incr i} {
+	set skipOverlaps 1
+	for {set i 1} {$i <= $num} {incr i} {
 	    lappend notPiped $i
-        }
+	}
     } elseif {$header > 2 && $footer == 18 && $te == 1} {
-        set skipOverlaps 1
-        if {$delay == 0} {
+	set skipOverlaps 1
+	if {$delay == 0} {
 	    # Transaction 1 is conventional.
 	    # Check that transactions 2,3,4 are cancelled.
 	    set notPiped {1}
 	    set notIncluded $notPiped
-        } else {
+	} else {
 	    # Transaction 1 is conventional.
 	    # Check that transaction 2 is cancelled.
 	    # The timing of transactions 3 and 4 is uncertain.
@@ -649,29 +649,29 @@ proc RunTest {header footer delay te} {
     set Results [logAnalyse $num $skipOverlaps $notIncluded $notPiped]
     lassign $Results msg cleanE cleanF dirtyE dirtyF
     if {$msg eq {}} {
-        set msg "Passed all sanity checks."
+	set msg "Passed all sanity checks."
     } else {
-        set msg "Problems with sanity checks:\n$msg"
+	set msg "Problems with sanity checks:\n$msg"
     }
 
     if 0 {
-        puts $msg
-        puts "Overlap-free including response body:\n$cleanF"
-        puts "Have overlaps including response body:\n$dirtyF"
-        puts "Overlap-free without response body:\n$cleanE"
-        puts "Have overlaps without response body:\n$dirtyE"
+	puts $msg
+	puts "Overlap-free including response body:\n$cleanF"
+	puts "Have overlaps including response body:\n$dirtyF"
+	puts "Overlap-free without response body:\n$cleanE"
+	puts "Have overlaps without response body:\n$dirtyE"
     }
 
     if {$header < 3} {
-        # No ordering, just check that transactions all finish
-        set result $msg
+	# No ordering, just check that transactions all finish
+	set result $msg
     } elseif {$header == 3} {
-        # Not pipelined - check overlaps with response body.
-        set result "$msg\nHave overlaps including response body:\n$dirtyF"
+	# Not pipelined - check overlaps with response body.
+	set result "$msg\nHave overlaps including response body:\n$dirtyF"
     } else {
-        # Pipelined - check overlaps without response body.  Check that the
-        # first request, the first requests after replay, and POSTs are clean.
-        set result "$msg\nOverlap-free without response body:\n$cleanE"
+	# Pipelined - check overlaps without response body.  Check that the
+	# first request, the first requests after replay, and POSTs are clean.
+	set result "$msg\nOverlap-free without response body:\n$cleanE"
     }
     set ::nTokens $num
     return $result
@@ -710,9 +710,9 @@ setHttpTestOptions -verbose 0
 namespace eval ::httpTestScript {
     variable URL
     array set URL {
-        a  http://test-tcl-http.kerlin.org/index.html?page=privacy
-        b  http://test-tcl-http.kerlin.org/index.html?page=conditions
-        c  http://test-tcl-http.kerlin.org/index.html?page=welcome
+	a  http://test-tcl-http.kerlin.org/index.html?page=privacy
+	b  http://test-tcl-http.kerlin.org/index.html?page=conditions
+	c  http://test-tcl-http.kerlin.org/index.html?page=welcome
     }
 }
 
@@ -759,7 +759,7 @@ proc SetTestEof {test} {
     set subs "    set TEST_EOF $test"
     set count [regsub -line -all -- {^\s*set TEST_EOF .*$} $body $subs newBody]
     if {$count != 1} {
-        return -code error {proc ::http::KeepSocket has unexpected form}
+	return -code error {proc ::http::KeepSocket has unexpected form}
     }
     proc ::http::KeepSocket {token} $newBody
     return
@@ -775,13 +775,13 @@ for {set header 1} {$header <= 4} {incr header} {
     }
 
     if {$header == 2} {
-        set cons0 {serverNeeded duplicate}
+	set cons0 {serverNeeded duplicate}
     } else {
-        set cons0 serverNeeded
+	set cons0 serverNeeded
     }
 
     for {set footer 1} {$footer <= 25} {incr footer} {
-        foreach {delay label} {
+	foreach {delay label} {
 	       0 a
 	       1 b
 	       2 c
@@ -795,9 +795,9 @@ for {set header 1} {$header <= 4} {incr header} {
 	} {
 	  foreach te {0 1} {
 	    if {$te} {
-	        set tag testEof
+		set tag testEof
 	    } else {
-	        set tag normal
+		set tag normal
 	    }
 	    set suffix {}
 	    set cons $cons0
@@ -846,17 +846,17 @@ for {set header 1} {$header <= 4} {incr header} {
 	    # End of custom code.
 	    # ------------------------------------------------------------------
 
-            set name "pipeline test header $header footer $footer delay $delay $tag$suffix"
+	    set name "pipeline test header $header footer $footer delay $delay $tag$suffix"
 
 
 	    # Here's the test:
-            test httpPipeline-${header}.${footer}${label}-${tag}-$ThreadLevel $name \
-            -constraints $cons \
-            -setup [string map [list TE $te] {
+	    test httpPipeline-${header}.${footer}${label}-${tag}-$ThreadLevel $name \
+	    -constraints $cons \
+	    -setup [string map [list TE $te] {
 		# Restore default values for tests:
 		http::config -pipeline 1 -postfresh 0 -repost 1
-                http::init
-                set http::http(uid) 0
+		http::init
+		set http::http(uid) 0
 		SetTestEof {TE}
 	    }] -body [list RunTest $header $footer $delay $te] -cleanup {
 		# Restore default values for tests:

@@ -39,7 +39,7 @@ if {[testConstraint win]} {
 	}
 	testConstraint reg 1
     } regError]} {
-        catch {package require registry; testConstraint reg 1}
+	catch {package require registry; testConstraint reg 1}
     }
 }
 
@@ -104,10 +104,10 @@ if {[testConstraint unix]} {
 }
 if {[testConstraint win]} {
     catch {
-        set user $::env(USERNAME)
+	set user $::env(USERNAME)
     }
     if {$user eq ""} {
-        set user Administrator
+	set user Administrator
     }
 }
 
@@ -120,29 +120,29 @@ if {[testConstraint win]} {
 # the user name.
 proc gethomedirglob {user} {
     if {[testConstraint unix]} {
-        if {![catch {
-            exec {*}[auto_execok sh] -c "echo ~$user"
-        } home]} {
-            set home [string trim $home]
-            if {$home ne ""} {
-                # Expect exact match (except case), no glob * added
-                return [string tolower $home]
-            }
-        }
+	if {![catch {
+	    exec {*}[auto_execok sh] -c "echo ~$user"
+	} home]} {
+	    set home [string trim $home]
+	    if {$home ne ""} {
+		# Expect exact match (except case), no glob * added
+		return [string tolower $home]
+	    }
+	}
     } elseif {[testConstraint reg]} {
-        # Windows with registry extension loaded
-        if {![catch {
-            set sid [exec {*}[auto_execok powershell] -Command "(Get-LocalUser -Name '$user')\[0\].sid.Value"]
-            set sid [string trim $sid]
-            # Get path from the Windows registry
-            set home [registry get "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid" ProfileImagePath]
-            set home [string trim [string tolower $home]]
-        } result]} {
-            if {$home ne ""} {
-                # file join for \ -> /
-                return [file join [string tolower $home]]
-            }
-        }
+	# Windows with registry extension loaded
+	if {![catch {
+	    set sid [exec {*}[auto_execok powershell] -Command "(Get-LocalUser -Name '$user')\[0\].sid.Value"]
+	    set sid [string trim $sid]
+	    # Get path from the Windows registry
+	    set home [registry get "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid" ProfileImagePath]
+	    set home [string trim [string tolower $home]]
+	} result]} {
+	    if {$home ne ""} {
+		# file join for \ -> /
+		return [file join [string tolower $home]]
+	    }
+	}
     }
 
     # Caller will need to use glob matching and hope user
@@ -177,7 +177,7 @@ proc checkcontent {file matchString} {
 proc openup {path} {
     # Double check for inadvertent ~ -> home directory mapping
     if {[string match ~* $path]} {
-        set file ./$path
+	set file ./$path
     }
     testchmod 0o777 $path
     if {[file isdirectory $path]} {
@@ -197,10 +197,10 @@ proc cleanup {args} {
 	    set x [glob -directory $p tf* td* ~*]
 	}
 	foreach file $x {
-            # Double check for inadvertent ~ -> home directory mapping
-            if {[string match ~* $file]} {
-                set file ./$file
-            }
+	    # Double check for inadvertent ~ -> home directory mapping
+	    if {[string match ~* $file]} {
+		set file ./$file
+	    }
 	    if {
 		[catch {file delete -force -- $file}]
 		&& [testConstraint testchmod]
@@ -1184,17 +1184,17 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     createfile tfd3
     createfile tfd4
     if {$::tcl_platform(platform) eq "windows"} {
-        # On Windows testchmode will attach an ACL which file copy cannot handle
-        # so use good old attributes which file copy does understand
-        file attribute tfs3 -readonly 1
-        file attribute tfs4 -readonly 1
-        file attribute tfd2 -readonly 1
-        file attribute tfd4 -readonly 1
+	# On Windows testchmode will attach an ACL which file copy cannot handle
+	# so use good old attributes which file copy does understand
+	file attribute tfs3 -readonly 1
+	file attribute tfs4 -readonly 1
+	file attribute tfd2 -readonly 1
+	file attribute tfd4 -readonly 1
     } else {
-        testchmod 0o444 tfs3
-        testchmod 0o444 tfs4
-        testchmod 0o444 tfd2
-        testchmod 0o444 tfd4
+	testchmod 0o444 tfs3
+	testchmod 0o444 tfs4
+	testchmod 0o444 tfd2
+	testchmod 0o444 tfd4
     }
     set msg [list [catch {file copy tf1 tf2} msg] $msg]
     file copy -force tfs1 tfd1
@@ -2695,18 +2695,18 @@ test fCmd-30.1 {file writable on 'My Documents'} -setup {
 } -result 1
 test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body {
     expr {[info exists env(USERPROFILE)]
-          && [file exists $env(USERPROFILE)/NTUSER.DAT]
-          && [file readable $env(USERPROFILE)/NTUSER.DAT]}
+	  && [file exists $env(USERPROFILE)/NTUSER.DAT]
+	  && [file readable $env(USERPROFILE)/NTUSER.DAT]}
 } -result 1
 # At least one CI environment (GitHub Actions) is set up with the page file in
 # an unusual location; skip the test if that is so.
 test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -body {
     set r {}
     if {[info exists env(SystemDrive)]} {
-        set path $env(SystemDrive)/pagefile.sys
-        lappend r exists [file exists $path]
-        lappend r readable [file readable $path]
-        lappend r stat [catch {file stat $path a} e] $e
+	set path $env(SystemDrive)/pagefile.sys
+	lappend r exists [file exists $path]
+	lappend r readable [file readable $path]
+	lappend r stat [catch {file stat $path a} e] $e
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}

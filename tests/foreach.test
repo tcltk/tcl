@@ -132,17 +132,17 @@ test foreach-2.7 {parallel foreach tests} {
 } {1111 2222334}
 test foreach-2.8 {foreach only sets vars if repeating loop} {
     proc foo {} {
-        set rgb {65535 0 0}
-        foreach {r g b} [set rgb] {}
-        return "r=$r, g=$g, b=$b"
+	set rgb {65535 0 0}
+	foreach {r g b} [set rgb] {}
+	return "r=$r, g=$g, b=$b"
     }
     foo
 } {r=65535, g=0, b=0}
 test foreach-2.9 {foreach only supports local scalar variables} {
     proc foo {} {
-        set x {}
-        foreach {a(3)} {1 2 3 4} {lappend x [set {a(3)}]}
-        set x
+	set x {}
+	foreach {a(3)} {1 2 3 4} {lappend x [set {a(3)}]}
+	set x
     }
     foo
 } {1 2 3 4}
@@ -150,12 +150,12 @@ test foreach-2.9 {foreach only supports local scalar variables} {
 test foreach-3.1 {compiled foreach backward jump works correctly} {
     catch {unset x}
     proc foo {arrayName} {
-        upvar 1 $arrayName a
-        set l {}
-        foreach member [array names a] {
-            lappend l [list $member [set a($member)]]
-        }
-        return $l
+	upvar 1 $arrayName a
+	set l {}
+	foreach member [array names a] {
+	    lappend l [list $member [set a($member)]]
+	}
+	return $l
     }
     array set x {0 zero 1 one 2 two 3 three}
     lsort [foo x]
@@ -164,8 +164,8 @@ test foreach-3.1 {compiled foreach backward jump works correctly} {
 test foreach-4.1 {noncompiled foreach and shared variable or value list objects that are converted to another type} {
     catch {unset x}
     foreach {12.0} {a b c} {
-        set x 12.0
-        set x [expr {$x + 1}]
+	set x 12.0
+	set x [expr {$x + 1}]
     }
     set x
 } 13.0
@@ -228,7 +228,7 @@ test foreach-7.1 {delayed substitution of body} {
     proc foo {} {
        set a 0
        foreach a [list 1 2 3] "
-           set x $a
+	   set x $a
        "
        set x
     }
@@ -260,8 +260,8 @@ test foreach-9.2 {line numbers} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        foreach x y {*}{
-        } {return [incr n -[linenumber]]}
+	foreach x y {*}{
+	} {return [incr n -[linenumber]]}
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
