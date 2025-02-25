@@ -95,11 +95,47 @@ proc test-lsearch-nf-non-opti-slow {{reptime 1000}} {
   }
 }
 
+proc test-lseq {{reptime 1000}} {
+  _test_run $reptime {
+    setup   { set i 0 }
+    { lseq 10 }
+    { lseq 0 count 10 }
+    { lseq 0 count 10 by 1 }
+    { lseq 0 9 }
+    { lseq 0 to 9 }
+    { lseq 0 9 1 }
+    { lseq 0 to 9 by 1 }
+  }
+}
+
+proc test-lseq-expr {{reptime 1000}} {
+  _test_run $reptime {
+    setup   { set i 0 }
+    { lseq [expr {$i+10}] }
+    { lseq {$i+10} }
+    { lseq [expr {$i+0}] count [expr {$i+10}] }
+    { lseq {$i+0} count {$i+10} }
+    { lseq [expr {$i+0}] count [expr {$i+10}] by [expr {$i+1}] }
+    { lseq {$i+0} count {$i+10} by {$i+1} }
+    { lseq [expr {$i+0}] [expr {$i+9}] }
+    { lseq {$i+0} {$i+9} }
+    { lseq [expr {$i+0}] to [expr {$i+9}] }
+    { lseq {$i+0} to {$i+9} }
+    { lseq [expr {$i+0}] [expr {$i+9}] [expr {$i+1}] }
+    { lseq {$i+0} {$i+9} {$i+1} }
+    { lseq [expr {$i+0}] to [expr {$i+9}] by [expr {$i+1}] }
+    { lseq {$i+0} to {$i+9} by {$i+1} }
+  }
+}
+
 proc test {{reptime 1000}} {
   test-lsearch-regress $reptime
   test-lsearch-nf-regress $reptime
   test-lsearch-nf-non-opti-fast $reptime
   test-lsearch-nf-non-opti-slow $reptime
+
+  test-lseq [expr {$reptime/2}]
+  test-lseq-expr [expr {$reptime/2}]
 
   puts \n**OK**
 }

@@ -511,32 +511,32 @@ own value is also specified:
 .PP
 .CS
 safe::interpCreate foo -accessPath {
-    /usr/local/TclHome/lib/tcl8.6
-    /usr/local/TclHome/lib/tcl8.6/http1.0
-    /usr/local/TclHome/lib/tcl8.6/opt0.4
-    /usr/local/TclHome/lib/tcl8.6/msgs
-    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib/tcl9.0
+    /usr/local/TclHome/lib/tcl9.0/http1.0
+    /usr/local/TclHome/lib/tcl9.0/opt0.4
+    /usr/local/TclHome/lib/tcl9.0/msgs
+    /usr/local/TclHome/lib/tcl9.0/encoding
     /usr/local/TclHome/lib
 }
 
 # The child's ::auto_path must be given a suitable value:
 
 safe::interpConfigure foo -autoPath {
-    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl9.0
     /usr/local/TclHome/lib
 }
 
 # The two commands can be combined:
 
 safe::interpCreate foo -accessPath {
-    /usr/local/TclHome/lib/tcl8.6
-    /usr/local/TclHome/lib/tcl8.6/http1.0
-    /usr/local/TclHome/lib/tcl8.6/opt0.4
-    /usr/local/TclHome/lib/tcl8.6/msgs
-    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib/tcl9.0
+    /usr/local/TclHome/lib/tcl9.0/http1.0
+    /usr/local/TclHome/lib/tcl9.0/opt0.4
+    /usr/local/TclHome/lib/tcl9.0/msgs
+    /usr/local/TclHome/lib/tcl9.0/encoding
     /usr/local/TclHome/lib
 } -autoPath {
-    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl9.0
     /usr/local/TclHome/lib
 }
 .CE

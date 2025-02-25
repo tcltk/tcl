@@ -109,7 +109,7 @@ static int		SetInvalidRealFromAny(Tcl_Interp *interp,
  * A marker type used to flag weirdnesses so we can pass them around right.
  */
 
-static Tcl_ObjType invalidRealType = {
+static const Tcl_ObjType invalidRealType = {
     "invalidReal",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */

@@ -554,12 +554,12 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index $pattern] {
-            if {([namespace which -command $name] eq "")
+	foreach name [array names auto_index $pattern] {
+	    if {([namespace which -command $name] eq "")
 		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
-                namespace inscope :: $auto_index($name)
-            }
-        }
+		namespace inscope :: $auto_index($name)
+	    }
+	}
     }
 }
 
