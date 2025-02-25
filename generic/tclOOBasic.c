@@ -1130,8 +1130,8 @@ TclOOSelfObjCmd(
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->oPtr->namespacePtr->fullName, -1));
+	Tcl_SetObjResult(interp,
+		TclNewNamespaceObj(contextPtr->oPtr->namespacePtr));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;

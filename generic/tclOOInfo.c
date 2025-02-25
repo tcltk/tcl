@@ -850,8 +850,7 @@ InfoObjectNsCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1));
+    Tcl_SetObjResult(interp, TclNewNamespaceObj(oPtr->namespacePtr));
     return TCL_OK;
 }
 

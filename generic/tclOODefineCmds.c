@@ -1732,7 +1732,7 @@ TclOODefineDefnNsObjCmd(
 	if (nsPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	nsNamePtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+	nsNamePtr = TclNewNamespaceObj(nsPtr);
 	Tcl_IncrRefCount(nsNamePtr);
     }
 
