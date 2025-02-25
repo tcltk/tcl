@@ -3480,7 +3480,7 @@ oo::class create WorkerSupport {
 	    return [uplevel 1 $script]
 	} finally {
 	    foreach worker $workers {$worker destroy}
-	} 
+	}
     }
     method run {nworkers} {
 	set result {}
@@ -4541,7 +4541,112 @@ test oo-35.6 {
 } -cleanup {
     rename obj {}
 } -result done
-
+test oo-35.7.1 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {}
+test oo-35.7.2 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    MkObjectRpc create cfg [self] 111
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result {Destroyed}
+test oo-35.7.3 {Bug 7842f33a5c: destructor cascading in stereotypes} -setup {
+    oo::class create base
+    oo::class create RpcClient {
+	superclass base
+	variable interiorObjects
+	method write name {
+	    lappend ::result "RpcClient -> $name"
+	}
+	method create_bug {} {
+	    set obj [MkObjectRpc create cfg [self] 111]
+	    lappend interiorObjects $obj
+	    return $obj
+	}
+	destructor {
+	    lappend ::result "Destroyed"
+	    # Explicit destroy of interior objects
+	    foreach obj $interiorObjects {
+		$obj destroy
+	    }
+	}
+    }
+    oo::class create MkObjectRpc {
+	superclass base
+	variable hdl
+	constructor {rpcHdl mqHdl} {
+	    set hdl $mqHdl
+	    oo::objdefine [self] forward rpc $rpcHdl
+	}
+	destructor {
+	    my rpc write otto-$hdl
+	}
+    }
+    set ::result {}
+} -body {
+    set FH [RpcClient new]
+    $FH create_bug
+    $FH destroy
+    join $result \n
+} -cleanup {
+    base destroy
+} -result "Destroyed\nRpcClient -> otto-111"
 test oo-36.1 {TIP #470: introspection within oo::define} {
     oo::define oo::object self
 } ::oo::object
