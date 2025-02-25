@@ -4850,16 +4850,13 @@ During(
 				 * release, or NULL if nothing is to be added.
 				 * Designed to be used with Tcl_ObjPrintf. */
 {
-    Tcl_Obj *during, *options;
+    Tcl_Obj *options;
 
     if (errorInfo != NULL) {
 	Tcl_AppendObjToErrorInfo(interp, errorInfo);
     }
     options = Tcl_GetReturnOptions(interp, resultCode);
-    TclNewLiteralStringObj(during, "-during");
-    Tcl_IncrRefCount(during);
-    Tcl_DictObjPut(interp, options, during, oldOptions);
-    Tcl_DecrRefCount(during);
+    TclDictPut(interp, options, "-during", oldOptions);
     Tcl_IncrRefCount(options);
     Tcl_DecrRefCount(oldOptions);
     return options;
@@ -4951,12 +4948,10 @@ TryPostBody(
 		 */
 
 		if (code == TCL_ERROR) {
-		    Tcl_Obj *errorCodeName, *errcode, **bits1, **bits2;
+		    Tcl_Obj *errcode, **bits1, **bits2;
 		    Tcl_Size len1, len2, j;
 
-		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
-		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
-		    Tcl_DecrRefCount(errorCodeName);
+		    TclDictGet(NULL, options, "-errorcode", &errcode);
 		    TclListObjGetElements(NULL, info[2], &len1, &bits1);
 		    if (TclListObjGetElements(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
