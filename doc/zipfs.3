@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tclzipfs 3 8.7 Tcl "Tcl Library Procedures"
+.TH Tclzipfs 3 9.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -78,8 +78,8 @@ mount, the system will then search for it as either a VFS attached to the
 application dynamic library, or as a zip archive named
 \fBlibtcl_\fImajor\fB_\fIminor\fB_\fIpatchlevel\fB.zip\fR either in the
 present working directory or in the standard Tcl install location. (For
-example, the Tcl 8.7.2 release would be searched for in a file
-\fBlibtcl_8_7_2.zip\fR.) That archive, if located, is also mounted read-only.
+example, the Tcl 9.0.2 release would be searched for in a file
+\fBlibtcl_9_0_2.zip\fR.) That archive, if located, is also mounted read-only.
 .PP
 On Windows, \fBTclZipfs_AppHook\fR has a slightly different signature, since
 it uses WCHAR instead of char. As a result, it requires the application to

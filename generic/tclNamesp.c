@@ -1206,7 +1206,7 @@ TclDeleteNamespaceChildren(
 
     unchecked = (NumChildEntries(nsPtr) > 0);
     while (NumChildEntries(nsPtr) > 0 && unchecked) {
-	size_t length = NumChildEntries(nsPtr);
+	Tcl_Size length = NumChildEntries(nsPtr);
 	Namespace **children = (Namespace **)
 		TclStackAlloc(interp, sizeof(Namespace *) * length);
 

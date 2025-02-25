@@ -644,7 +644,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	[ac_cv_enable_auto_image_base=no])
     )
     CFLAGS=$hold_cflags
-    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+    if test "$ac_cv_enable_auto_image_base" = "yes" ; then
 	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 

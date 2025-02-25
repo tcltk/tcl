@@ -11,6 +11,7 @@
  */
 
 #include "tclWinInt.h"
+#include "tclFileSystem.h"
 #include "tclIO.h"
 
 /*
@@ -996,6 +997,23 @@ TclpOpenFileChannel(
     nativeName = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
 	if (interp) {
+	    /*
+	     * We need this just to ensure we return the correct error messages under
+	     * some circumstances (relative paths only), so because the normalization 
+	     * is very expensive, don't invoke it for native or absolute paths.
+	     * Note: since paths starting with ~ are relative in 9.0 for windows,
+	     * it doesn't need to consider tilde expansion (in opposite to 8.x).
+	     */
+	    if (
+		(
+		    !TclFSCwdIsNative() &&
+		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
+		) &&
+		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
+	    ) {
+		return NULL;
+	    }
+
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": filename is invalid on this platform",
 		    TclGetString(pathPtr)));

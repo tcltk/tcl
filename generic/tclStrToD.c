@@ -3182,7 +3182,7 @@ ShorteningInt64Conversion(
 
 	/*
 	 * Does the current digit put us on the low side of the exact value
-	 * but within within roundoff of being exact?
+	 * but within roundoff of being exact?
 	 */
 
 	if (b < mplus || (b == mplus
@@ -3580,7 +3580,7 @@ ShorteningBignumConversionPowD(
 
 	/*
 	 * Does the current digit put us on the low side of the exact value
-	 * but within within roundoff of being exact?
+	 * but within roundoff of being exact?
 	 */
 
 	r1 = mp_cmp_mag(&b, (m2plus > m2minus)? &mplus : &mminus);

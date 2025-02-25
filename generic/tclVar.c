@@ -745,7 +745,7 @@ TclObjLookupVarEx(
 	    TclFreeInternalRep(cachedNamePtr);
 
 	    /*
-	     * Now go ahead and convert it the the "localVarName" type,
+	     * Now go ahead and convert it to the "localVarName" type,
 	     * since we suspect at least some use of the value as a
 	     * varname and we want to resolve it quickly.
 	     */
@@ -2990,7 +2990,7 @@ Tcl_LappendObjCmd(
  *
  *	These functions implement the "array for" Tcl command.
  *	    array for {k v} a {}
- *	The array for command iterates over the array, setting the the
+ *	The array for command iterates over the array, setting the
  *	specified loop variables, and executing the body each iteration.
  *
  *	ArrayForObjCmd() is the standard wrapper around ArrayForNRCmd().

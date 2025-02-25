@@ -3725,7 +3725,7 @@ Tcl_GetNumberFromObj(
     /* Don't try to convert index or boolean's to a list */
     if (!TclHasInternalRep(objPtr, &tclIndexType)
 	    && !TclHasInternalRep(objPtr, &tclBooleanType)
-	    && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length)) && (length > 1)) {
+	    && (TclMaxListLength(TclGetString(objPtr), TCL_INDEX_NONE, NULL) > 1)) {
 	goto listRep;
     }
     return TCL_ERROR;

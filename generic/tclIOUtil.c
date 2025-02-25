@@ -450,6 +450,11 @@ TclFSCwdIsNative(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
+    /* if not yet initialized - ensure we'll once obtain cwd */
+    if (!tsdPtr->cwdPathEpoch) {
+	Tcl_FSGetCwd(NULL);
+    }
+
     if (tsdPtr->cwdClientData != NULL) {
 	return 1;
     } else {
@@ -1218,7 +1223,7 @@ FsAddMountsToGlobResult(
  *
  *	The reason for the exception in 2,3 for the native filesystem is that
  *	the native filesystem claims every file without determining whether
- *	whether the file exists, or even whether the pathname makes sense.
+ *	the file exists, or even whether the pathname makes sense.
  *
  *----------------------------------------------------------------------
  */
@@ -2012,7 +2017,7 @@ Tcl_GetErrno(void)
  *	None.
  *
  * Side effects:
- *	Modifies the the Tcl error code value.
+ *	Modifies the Tcl error code value.
  *
  *----------------------------------------------------------------------
  */
@@ -2194,14 +2199,6 @@ Tcl_FSOpenFileChannel(
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
-
-    if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
-	/*
-	 * Return the correct error message.
-	 */
-	return NULL;
-    }
-
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL && fsPtr->openFileChannelProc != NULL) {
 	int mode, modeFlags;
@@ -2771,7 +2768,7 @@ Tcl_FSGetCwd(
 
 	if (retVal == NULL) {
 	    /*
-	     * The current directory could not not determined.  Reset the
+	     * The current directory could not be determined.  Reset the
 	     * current direcory to ensure, for example, that 'pwd' does actually
 	     * throw the correct error in Tcl.  This is tested for in the test
 	     * suite on unix.
@@ -2946,7 +2943,7 @@ Tcl_FSChdir(
 	    if (cd != oldcd) {
 		/*
 		 * Call getCwdProc() and store the resulting internal handle to
-		 * compare things with it later.  This might might not be
+		 * compare things with it later.  This might not be
 		 * exactly the same string as that of the fully normalized
 		 * pathname.  For example, for the Windows internal handle the
 		 * separator is the backslash character.  On Unix it might well
@@ -3514,7 +3511,7 @@ DivertUnloadFile(
 
     if (tvdlPtr->divertedFilesystem == NULL) {
 	/*
-	 * Use the function for the native filsystem, which works works even at
+	 * Use the function for the native filsystem, which works even at
 	 * this late stage.
 	 */
 
@@ -3577,7 +3574,7 @@ void *
 Tcl_FindSymbol(
     Tcl_Interp *interp,		/* The relevant interpreter. */
     Tcl_LoadHandle loadHandle,	/* A handle for the loaded object. */
-    const char *symbol)		/* The name name of the symbol to resolve. */
+    const char *symbol)		/* The name of the symbol to resolve. */
 {
     return loadHandle->findSymbolProcPtr(interp, loadHandle, symbol);
 }
@@ -3956,7 +3953,7 @@ TclFSNonnativePathType(
 				/* If not NULL, a place to store the length of
 				 * the volume name if the pathname is absolute. */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
-				 * an object having its its refCount already
+				 * an object having its refCount already
 				 * incremented, and contining the name of the
 				 * volume if the pathname is absolute. */
 {
@@ -3972,7 +3969,7 @@ TclFSNonnativePathType(
     Claim();
     while (fsRecPtr != NULL) {
 	/*
-	 * Skip the the native filesystem because otherwise some of the tests
+	 * Skip the native filesystem because otherwise some of the tests
 	 * in the Tcl testsuite might fail because some of the tests
 	 * artificially change the current platform (between win, unix) but the
 	 * list of volumes obtained by calling fsRecPtr->fsPtr->listVolumesProc
@@ -4035,7 +4032,7 @@ TclFSNonnativePathType(
 		Tcl_DecrRefCount(thisFsVolumes);
 		if (type == TCL_PATH_ABSOLUTE) {
 		    /*
-		     * No need to to examine additional filesystems.
+		     * No need to examine additional filesystems.
 		     */
 
 		    break;
@@ -4286,7 +4283,7 @@ Tcl_FSCreateDirectory(
  *
  * Tcl_FSCopyDirectory --
  *
- *	If both pathnames correspond to the the same filesystem, calls
+ *	If both pathnames correspond to the same filesystem, calls
  *	'copyDirectoryProc' of that filesystem.
  *
  * Results:
@@ -4350,7 +4347,7 @@ Tcl_FSRemoveDirectory(
 				 * Otherwise, removes the directory and all its
 				 * contents.  */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
-				 * place to store a a pointer to a new
+				 * place to store a pointer to a new
 				 * object having a refCount of 1 and containing
 				 * the name of the file that produced an error. */
 {

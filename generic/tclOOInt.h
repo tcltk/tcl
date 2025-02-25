@@ -409,7 +409,7 @@ struct Foundation {
 
 /*
  * The number of MInvoke records in the CallChain before we allocate
- * separately. 
+ * separately.
  */
 #define CALL_CHAIN_STATIC_SIZE 4
 

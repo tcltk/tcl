@@ -463,7 +463,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
     {"process", "status"},
     {"process", "purge"},
     {"process", "autopurge"},
-    /* 
+    /*
      * [zipfs] perhaps has some safe commands. But like file make it inaccessible
      * until they are analyzed to be safe.
      */
@@ -9727,7 +9727,7 @@ TclNRCoroutineObjCmd(
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
-     * hashtable for literal command arguments in bytecode. Note that that
+     * hashtable for literal command arguments in bytecode. Note that
      * CFWordBC chains are not duplicated, only the entrypoints to them. This
      * means that in the presence of coroutines each chain is potentially a
      * tree. Like the chain -> tree conversion of the CmdFrame stack.
