@@ -339,7 +339,7 @@ namespace import RETest::*
 # test the code->message expansion at least once.
 ::tcltest::test reg-0.1 "regexp error reporting" {
     list [catch {regexp (*) ign} msg] $msg
-} {1 {couldn't compile regular expression pattern: quantifier operand invalid}}
+} {1 {cannot compile regular expression pattern: invalid quantifier operand}}
 
 
 doing 1 "basic sanity checks"

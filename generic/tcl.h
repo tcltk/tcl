@@ -53,10 +53,10 @@ extern "C" {
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION	0
 #   define TCL_RELEASE_LEVEL	TCL_BETA_RELEASE
-#   define TCL_RELEASE_SERIAL	3
+#   define TCL_RELEASE_SERIAL	4
 
 #   define TCL_VERSION		"9.0"
-#   define TCL_PATCH_LEVEL	"9.0b3"
+#   define TCL_PATCH_LEVEL	"9.0b4"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
@@ -704,6 +704,8 @@ typedef struct Tcl_ObjType {
 	   a,b,c,d,e,f,g,h	/* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
+#   define TCL_OBJTYPE_V1(a) /* just empty */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) /* just empty */
 #endif
 
 /*
@@ -2330,7 +2332,7 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 # else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, "8.7.0", \
+	(Tcl_InitStubs)(interp, "8.7b1", \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
 # endif
@@ -2341,13 +2343,15 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b2"), \
+	(Tcl_InitStubs)(interp, (((exact)&1) ? (version) : "9.0b3"), \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 #endif
 #else
 #if TCL_MAJOR_VERSION < 9
-#   error "Please define -DUSE_TCL_STUBS"
+#   define Tcl_InitStubs(interp, version, exact) \
+	Tcl_Panic(((void)interp, (void)version, \
+		(void)exact, "Please define -DUSE_TCL_STUBS"))
 #elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \

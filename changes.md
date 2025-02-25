@@ -4,7 +4,7 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.0b3 arises from the check-in with tag core-9-0-b3.
+Release Tcl 9.0b4 arises from the check-in with tag core-9-0-b4.
 
 Highlighted differences between Tcl 9.0 and Tcl 8.6 are summarized below,
 with focus on changes important to programmers using the Tcl library and
@@ -37,6 +37,9 @@ writing Tcl scripts.
  - Removed subcommands [trace variable|vdelete|vinfo]
  - No -eofchar option for channels anymore for writing.
  - On Windows 10+ (Version 1903 or higher), system encoding is always utf-8.
+ - %b/%d/%o/%x format modifiers (without size modifier) for "format"
+   and "scan" always truncate to 32-bits on all platforms.
+ - %L size modifier for "scan" no longer truncates to 64-bit.
  - Removed command ::tcl::unsupported::inject.
 
 ## Incompatibilities in C public interface

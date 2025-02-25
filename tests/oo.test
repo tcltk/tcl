@@ -1753,6 +1753,19 @@ test oo-11.6.4 {OO: cleanup ReleaseClassContents() where class is mixed into one
     rename obj1 {}
 }
 
+test oo-11.7 {Bug 154f0982f2: createWithNamespace and an existing namespace} -setup {
+    oo::class create Aclass {
+	self export createWithNamespace
+	method ns {} {namespace current}
+    }
+} -body {
+    namespace eval test_oo117 {variable name [namespace current]}
+    list [Aclass createWithNamespace aInstance $test_oo117::name] [aInstance ns]
+} -returnCodes error -cleanup {
+    Aclass destroy
+    catch {namespace delete test_oo117}
+} -result {can't create namespace "::test_oo117": already exists}
+
 test oo-12.1 {OO: filters} {
     oo::class create Aclass
     Aclass create Aobject
@@ -3103,6 +3116,18 @@ test oo-19.4 {OO: varname ghosts [Bug 74b6110204]} -setup {
 } -cleanup {
     testClass destroy
 } -result {::testoo19_4::foo 0 ::testoo19_4::foo}
+test oo-19.5 {OO: varname array elements [Bug 2da1cb0c80]} -setup {
+    set obj [oo::object new]
+    oo::objdefine $obj export eval varname
+} -body {
+    $obj eval {
+	namespace upvar :: tcl_platform(platform) foo
+    }
+    $obj varname foo
+} -cleanup {
+    $obj destroy
+} -result ::tcl_platform(platform)
+# Test oo-19.5.1 is no longer relevant
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
@@ -3620,6 +3645,76 @@ test oo-22.6 {OO and coroutines and info frame: Bug 87271f7cd6} -body {
     catch {B destroy}
 } -match glob -result {{* method Work class ::A *} {* method Work class ::A *}}
 WorkerBase destroy
+test oo-22.7 {oo::define and info frame: correct argument line} -setup {
+    oo::class create C {
+	variable base
+	constructor {info} {set base [dict get $info line]}
+	method Relative {} {
+	    set info [next]
+	    if {![dict exists $info file]} {
+		error "no file-relative line info: $info"
+	    }
+	    expr {[dict get $info line] - $base}
+	}
+	filter Relative
+    }
+} -body {
+    C create o [info frame 0]
+    oo::define C {
+	method line1 {} {info frame 0}
+	method line2 {
+	} {info frame 0}
+	method line3 {
+	} {
+	    info frame 0
+	}
+    }
+    oo::define C method line4 {} {info frame 0}
+    oo::define C method line5 {
+    } {info frame 0}
+    oo::define C method line6 {
+    } {
+	info frame 0
+    }
+    list [o line1] [o line2] [o line3] [o line4] [o line5] [o line6]
+} -cleanup {
+    C destroy
+} -result {2 4 7 10 12 15}
+test oo-22.8 {oo::objdefine and info frame: correct argument line} -setup {
+    oo::class create C {
+	variable base
+	constructor {info} {set base [dict get $info line]}
+	method Relative {} {
+	    set info [next]
+	    if {![dict exists $info file]} {
+		error "no file-relative line info: $info"
+	    }
+	    expr {[dict get $info line] - $base}
+	}
+	filter Relative
+    }
+} -body {
+    C create o [info frame 0]
+    oo::objdefine o {
+	method line1 {} {info frame 0}
+	method line2 {
+	} {info frame 0}
+	method line3 {
+	} {
+	    info frame 0
+	}
+    }
+    oo::objdefine o method line4 {} {info frame 0}
+    oo::objdefine o method line5 {
+    } {info frame 0}
+    oo::objdefine o method line6 {
+    } {
+	info frame 0
+    }
+    list [o line1] [o line2] [o line3] [o line4] [o line5] [o line6]
+} -cleanup {
+    C destroy
+} -result {2 4 7 10 12 15}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

@@ -355,7 +355,7 @@ Tcl_LoadObjCmd(
 	    if (p == pkgGuess) {
 		Tcl_DecrRefCount(splitPtr);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't figure out prefix for %s",
+			"cannot figure out prefix for %s",
 			fullFileName));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
 			"WHATLIBRARY", (char *)NULL);
@@ -452,7 +452,7 @@ Tcl_LoadObjCmd(
     if (Tcl_IsSafe(target)) {
 	if (libraryPtr->safeInitProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't use library in a safe interpreter: no"
+		    "cannot use library in a safe interpreter: no"
 		    " %s_SafeInit procedure", libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
 		    (char *)NULL);
@@ -463,7 +463,7 @@ Tcl_LoadObjCmd(
     } else {
 	if (libraryPtr->initProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't attach library to interpreter: no %s_Init procedure",
+		    "cannot attach library to interpreter: no %s_Init procedure",
 		    libraryPtr->prefix));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
 		    (char *)NULL);

@@ -1370,7 +1370,7 @@ test safe-10.1 {testing statics loading} -constraints tcl::test -setup {
     interp eval $i {load {} Safepfx1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure}
+} -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure}
 test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
     set i [safe::interpCreate]
 } -body {
@@ -1379,7 +1379,7 @@ test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
 } -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
+} -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
     invoked from within
 "load {} Safepfx1"
     invoked from within
@@ -1402,7 +1402,7 @@ test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints tcl
     interp eval $i {interp create x; load {} Safepfx1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure}
+} -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure}
 test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
     catch {interp eval $i {interp create x; load {} Safepfx1 x}} m o
@@ -1410,7 +1410,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints t
 } -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
+} -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
     invoked from within
 "load {} Safepfx1 x"
     invoked from within
