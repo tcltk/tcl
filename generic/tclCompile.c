@@ -1173,7 +1173,7 @@ CleanupByteCode(
 
     if (iPtr) {
 	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
-		(char *) codePtr);
+		codePtr);
 
 	if (hePtr) {
 	    ReleaseCmdWordData((ExtCmdLoc *)Tcl_GetHashValue(hePtr));

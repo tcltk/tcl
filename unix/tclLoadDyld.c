@@ -496,8 +496,7 @@ UnloadFile(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    TCL_UNUSED(Tcl_Interp *),
-    int size)			/* Size of desired buffer. */
+    size_t size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
 
@@ -541,11 +540,10 @@ TclpLoadMemoryGetBuffer(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
-    int size,			/* Allocation size of buffer. */
-    int codeSize,		/* Size of code data read into buffer or -1 if
+    size_t size,		/* Allocation size of buffer. */
+    Tcl_Size codeSize,	/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
     Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
@@ -585,7 +583,7 @@ TclpLoadMemory(
 #	define arch_abi CPU_ARCH_ABI64
 #endif /*  __LP64__ */
 
-	if ((size_t) codeSize >= sizeof(struct fat_header)
+	if ((size_t)codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
 	    uint32_t fh_nfat_arch = OSSwapBigToHostInt32(fh->nfat_arch);
 
@@ -593,7 +591,7 @@ TclpLoadMemory(
 	     * Fat binary, try to find mach_header for our architecture
 	     */
 
-	    if ((size_t) codeSize >= sizeof(struct fat_header) +
+	    if ((size_t)codeSize >= sizeof(struct fat_header) +
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
 		void *fatarchs = (char *)buffer + sizeof(struct fat_header);
 		const NXArchInfo *arch = NXGetLocalArchInfo();
@@ -641,16 +639,11 @@ TclpLoadMemory(
 
     /*
      * If it went wrong (or we were asked to just deallocate), get rid of the
-     * memory block and create an error message.
+     * memory block.
      */
 
     if (dyldObjFileImage == NULL) {
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
-	if (objFileImageErrMsg != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "NSCreateObjectFileImageFromMemory() error: %s",
-		    objFileImageErrMsg));
-	}
 	return TCL_ERROR;
     }
 
@@ -672,7 +665,6 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 

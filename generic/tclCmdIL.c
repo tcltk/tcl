@@ -870,7 +870,7 @@ InfoCommandsCmd(
 			|| Tcl_StringMatch(cmdName, simplePattern)) {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		    if (Tcl_FindHashEntry(&addedCommandsTable,
-			    (char *) elemObjPtr) == NULL) {
+			    elemObjPtr) == NULL) {
 			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		    } else {
 			TclDecrRefCount(elemObjPtr);
@@ -3926,6 +3926,10 @@ Tcl_LsearchObjCmd(
 		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
+		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
+		    Tcl_BounceRefCount(itemPtr); 
+		    itemPtr = listv[i + groupOffset];
+			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);

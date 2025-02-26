@@ -245,7 +245,7 @@ The same thing for a flattened list:
 .PP
 .CS
 \fBlsearch\fR -stride 2 -index 1 -all -inline {abc abc abc bcd abc cde} *bc*
-      \fI\(-> {abc abc abc bcd}\fR
+      \fI\(-> abc abc abc bcd\fR
 .CE
 .SH "SEE ALSO"
 foreach(n),

@@ -2029,7 +2029,7 @@ TclProcCompileProc(
 	 * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
 	 */
 
-	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
+	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
 
 	/*
 	 * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
@@ -2189,7 +2189,7 @@ TclProcCleanupProc(
 	return;
     }
 
-    hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
+    hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, procPtr);
     if (!hePtr) {
 	return;
     }

@@ -366,12 +366,14 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->clonedName, "<cloned>");
     TclNewLiteralStringObj(fPtr->defineName, "::oo::define");
     TclNewLiteralStringObj(fPtr->myName, "my");
+    TclNewLiteralStringObj(fPtr->mcdName, "::oo::MixinClassDelegates");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
     Tcl_IncrRefCount(fPtr->myName);
+    Tcl_IncrRefCount(fPtr->mcdName);
 
     TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -610,6 +612,7 @@ KillFoundation(
     TclDecrRefCount(fPtr->clonedName);
     TclDecrRefCount(fPtr->defineName);
     TclDecrRefCount(fPtr->myName);
+    TclDecrRefCount(fPtr->mcdName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
@@ -864,7 +867,7 @@ MyClassDeleted(
 static void
 ObjectRenamedTrace(
     void *clientData,		/* The object being deleted. */
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
     int flags)			/* Why was the object deleted? */
@@ -887,44 +890,10 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
-	/*
-	 * Ensure that we don't recurse very deeply and blow out the C stack.
-	 * [Bug 02977e0004]
-	 */
-	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
-	if (oPtr->classPtr) {
-	    /*
-	     * Classes currently need the recursion to get destructor calling
-	     * right. This is a bug, but it requires a major rewrite of things
-	     * to fix. 
-	     */
-	    Tcl_DeleteNamespace(oPtr->namespacePtr);
-	    oPtr->command = NULL;
-	    TclOODecrRefCount(oPtr);
-	} else if (!tsdPtr->delQueueTail) {
-	    /*
-	     * Process a queue of objects to delete.
-	     */
-	    Object *currPtr, *tmp;
-	    tsdPtr->delQueueTail = oPtr;
-	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
-		Tcl_DeleteNamespace(currPtr->namespacePtr);
-		currPtr->command = NULL;
-		tmp = currPtr->delNext;
-		TclOODecrRefCount(currPtr);
-	    }
-	    tsdPtr->delQueueTail = NULL;
-	} else {
-	    /*
-	     * Enqueue the object.
-	     */
-	    tsdPtr->delQueueTail->delNext = oPtr;
-	    tsdPtr->delQueueTail = oPtr;
-	}
-    } else {
-	oPtr->command = NULL;
-	TclOODecrRefCount(oPtr);
+	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
+    oPtr->command = NULL;
+    TclOODecrRefCount(oPtr);
     return;
 }
 

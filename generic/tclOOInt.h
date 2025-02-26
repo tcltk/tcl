@@ -255,8 +255,6 @@ struct Object {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this object *claims* to
 				 * support. */
-    Object *delNext;		/* If non-NULL, the next object to have its
-				 * namespace deleted. */
 };
 
 enum ObjectFlags {
@@ -376,8 +374,6 @@ typedef struct ThreadLocalData {
 				 * because Tcl_Objs can cross interpreter
 				 * boundaries within a thread (objects don't
 				 * generally cross threads). */
-    Object *delQueueTail;	/* The tail object in the deletion queue. If
-				 * NULL, there is no deletion queue. */
 } ThreadLocalData;
 
 /*
@@ -409,6 +405,8 @@ struct Foundation {
 				 * "<cloned>" pseudo-constructor. */
     Tcl_Obj *defineName;	/* Fully qualified name of oo::define. */
     Tcl_Obj *myName;		/* The "my" shared object. */
+    Tcl_Obj *mcdName;		/* The shared object for calling the helper to
+				 * mix in class delegates. */
 };
 
 /*

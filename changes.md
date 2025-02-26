@@ -6,8 +6,17 @@ changes to the Tcl source code at
 
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
 
-## Changes since Tk 9.0.0
+## Changes since Tcl 9.0.0
  - [zlib-8.8, zlib-8.16 fail on Fedora 40, gcc 14.1.1](https://core.tcl-lang.org/tcl/tktview/73d5cb)
+ - [regression in tzdata, %z instead of offset TZ-name](https://core.tcl-lang.org/tcl/tktview/2c237b)
+ - [Tcl will not start properly if there is an init.tcl file in the current dir](https://core.tcl-lang.org/tcl/tktview/43c94f)
+ - [clock scan "24:00", ISO-8601 compatibility](https://core.tcl-lang.org/tcl/tktview/aee9f2)
+ - [install registry and dde in $INSTALL_DIR\lib always](https://core.tcl-lang.org/tcl/tktview/364bd9)
+ - [cannot build .chm help file (Windows)](https://core.tcl-lang.org/tcl/tktview/bb110c)
+ - [TIP 701 - Tcl_FSTildeExpand C API](https://core.tcl-lang.org/tips/doc/trunk/tip/701.md)
+ - [buffer overwrite for non-BMP characters in utf-16](https://core.tcl-lang.org/tcl/tktview/66da4d)
+ - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
+ - [Wrong result by "lsearch -stride -subindices -inline -all"](https://core.tcl-lang.org/tcl/info/5a1aaa20)
 
 Release Tcl 9.0.0 arises from the check-in with tag `core-9-0-0`.
 
@@ -146,5 +155,8 @@ writing Tcl scripts.
 # Known bugs
  - [changed behaviour wrt command names, namespaces and resolution](https://core.tcl-lang.org/tcl/tktview/f14b33)
  - [windows dos device paths inconsistencies and missing functionality](https://core.tcl-lang.org/tcl/tktview/d8f121)
- - [Temporary folder with file "tcl9registry13.dll" remains after "exit"](https://core.tcl-lang.org/tcl/tktview/6ce3c0)
+ - [load library (dll) from zipfs-library causes a leak in temporary folder](https://core.tcl-lang.org/tcl/tktview/a8e4f7)
+ - [lsearch -stride with -subindices and -inline -all gives unexpected result](https://core.tcl-lang.org/tcl/tktview/5a1aaa)
+ - [lsearch -sorted -inline -subindices incorrect result](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
+ - ["No error" when load fails due to a missing secondary DLL](https://core.tcl-lang.org/tcl/tktview/bc4ac0)
 
