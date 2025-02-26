@@ -7322,29 +7322,30 @@ foreach {v r} {
                  -Inf	infinite
                   NaN	nan
 } {
-    if {[regexp {[/\*]} $v]} { set v [expr $v] }
-    test expr-58.1($v)=$r "float classification: fpclassify($v) eq $r" {
+    set changed 0
+    if {[regexp {[/\*]} $v]} { set v [expr $v]; set changed 1 }
+    test expr-58.1($v)=$r-$changed "float classification: fpclassify($v) eq $r" {
 	fpclassify $v
     } $r
-    test expr-58.2($v) "float classification: isfinite($v)" {
+    test expr-58.2($v)-$changed "float classification: isfinite($v)" {
 	expr {isfinite($v)}
     } [expr {$r ni {"infinite" "nan"}}]
-    test expr-58.3($v) "float classification: isinf($v)" {
+    test expr-58.3($v)-$changed "float classification: isinf($v)" {
 	expr {isinf($v)}
     } [expr {$r eq "infinite"}]
-    test expr-58.4($v) "float classification: isnan($v)" {
+    test expr-58.4($v)-$changed "float classification: isnan($v)" {
 	expr {isnan($v)}
     } [expr {$r eq "nan"}]
-    test expr-58.5($v) "float classification: isnormal($v)" {
+    test expr-58.5($v)-$changed "float classification: isnormal($v)" {
 	expr {isnormal($v)}
     } [expr {$r eq "normal"}]
-    test expr-58.6($v) "float classification: issubnormal($v)" {
+    test expr-58.6($v)-$changed "float classification: issubnormal($v)" {
 	expr {issubnormal($v)}
     } [expr {$r eq "subnormal"}]
-    test expr-58.7($v) "float classification: isunordered(0 and $v)" {
+    test expr-58.7($v)-$changed "float classification: isunordered(0 and $v)" {
 	expr {isunordered(0,$v) + isunordered($v,0)}
     } [expr {$r eq "nan" ? 2 : 0}]
-    test expr-58.9($v) "float classification: isunordered(NaN and $v)" {
+    test expr-58.8($v)-$changed "float classification: isunordered(NaN and $v)" {
 	expr {isunordered(NaN,$v) + isunordered($v,NaN)}
     } 2
 }
