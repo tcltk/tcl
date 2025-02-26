@@ -494,8 +494,7 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *entryPtr;
     const char *bytes;
-    size_t globalHash;
-    Tcl_Size length;
+    Tcl_Size globalHash, length;
 
     bytes = TclGetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
