@@ -850,9 +850,9 @@ const TclStubs tclStubs = {
     Tcl_DbNewStringObj, /* 28 */
     Tcl_DuplicateObj, /* 29 */
     TclFreeObj, /* 30 */
-    Tcl_GetBoolean, /* 31 */
-    Tcl_GetBooleanFromObj, /* 32 */
-    Tcl_GetByteArrayFromObj, /* 33 */
+    0, /* 31 */
+    0, /* 32 */
+    0, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -900,7 +900,7 @@ const TclStubs tclStubs = {
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
-    Tcl_Close, /* 81 */
+    0, /* 81 */
     Tcl_CommandComplete, /* 82 */
     Tcl_Concat, /* 83 */
     Tcl_ConvertElement, /* 84 */
@@ -1509,7 +1509,8 @@ const TclStubs tclStubs = {
     Tcl_UtfNcasecmp, /* 687 */
     Tcl_NewWideUIntObj, /* 688 */
     Tcl_SetWideUIntObj, /* 689 */
-    TclUnusedStubEntry, /* 690 */
+    Tcl_IsEmpty, /* 690 */
+    TclUnusedStubEntry, /* 691 */
 };
 
 /* !END!: Do not edit above this line. */

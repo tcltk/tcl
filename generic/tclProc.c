@@ -2622,7 +2622,7 @@ TclGetLambdaFromObj(
 
     LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
 
-    if (procPtr == NULL) {
+    if (!procPtr || (procPtr->iPtr != (Interp *)interp)) {
 	if (SetLambdaFromAny(interp, objPtr) != TCL_OK) {
 	    return NULL;
 	}

@@ -79,7 +79,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.4.5"
+#define TCL_DDE_VERSION		"1.5a0"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
@@ -89,22 +89,6 @@ static int ddeIsServer = 0;
 #define DDE_FLAG_FORCE 4
 
 TCL_DECLARE_MUTEX(ddeMutex)
-
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
 
 /*
  * Declarations for functions defined in this file.
@@ -138,11 +122,6 @@ extern "C" {
 #endif
 DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tcldde14.dll" works without 3th argument */
-DLLEXPORT int		Tcldde_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcldde_SafeInit(Tcl_Interp *interp);
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -175,14 +154,6 @@ Dde_Init(
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_Init(
-    Tcl_Interp *interp)
-{
-    return Dde_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -210,14 +181,6 @@ Dde_SafeInit(
     }
     return result;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_SafeInit(
-    Tcl_Interp *interp)
-{
-    return Dde_SafeInit(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

@@ -61,47 +61,6 @@ static void		UnloadFile(Tcl_LoadHandle handle);
 /*
  *----------------------------------------------------------------------
  *
- * DyldOFIErrorMsg --
- *
- *	Converts a numerical NSObjectFileImage error into an error message
- *	string.
- *
- * Results:
- *	Error message string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#if defined(TCL_LOAD_FROM_MEMORY)
-static const char *
-DyldOFIErrorMsg(
-    int err)
-{
-    switch (err) {
-    case NSObjectFileImageSuccess:
-	return NULL;
-    case NSObjectFileImageFailure:
-	return "object file setup failure";
-    case NSObjectFileImageInappropriateFile:
-	return "not a Mach-O MH_BUNDLE file";
-    case NSObjectFileImageArch:
-	return "no object for this architecture";
-    case NSObjectFileImageFormat:
-	return "bad object file format";
-    case NSObjectFileImageAccess:
-	return "cannot read object file";
-    default:
-	return "unknown error";
-    }
-}
-#endif /* TCL_LOAD_FROM_MEMORY */
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpDlopen --
  *
  *	Dynamically loads a binary code file into memory and returns a handle
@@ -445,7 +404,6 @@ TclpLoadMemory(
     NSObjectFileImage dyldObjFileImage = NULL;
     Tcl_DyldModuleHandle *modulePtr;
     NSModule module;
-    const char *objFileImageErrMsg = NULL;
     int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
 
     /*
@@ -514,11 +472,6 @@ TclpLoadMemory(
 	if (err == NSObjectFileImageSuccess) {
 	    err = NSCreateObjectFileImageFromMemory(buffer, codeSize,
 		    &dyldObjFileImage);
-	    if (err != NSObjectFileImageSuccess) {
-		objFileImageErrMsg = DyldOFIErrorMsg(err);
-	    }
-	} else {
-	    objFileImageErrMsg = DyldOFIErrorMsg(err);
 	}
     }
 

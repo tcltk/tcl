@@ -55,7 +55,7 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     file delete -force $foodir
     file mkdir $foodir
     cd $foodir
-} -constraints {Unix nonPortable} -body {
+} -constraints {unix nonPortable} -body {
     # This test fails on various Unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
@@ -485,6 +485,26 @@ test cmdMZ-6.12 {Tcl_TimeRateObjCmd: done optimization: nested call of self insi
     }
     list [lindex [timerate $m1 1000 5] 2] $x
 } {5 20}
+test cmdMZ-6.13 {Tcl_TimeRateObjCmd: stability by O(n**2), avoid long execution time on growing iteration time} {
+    set result {}
+    # test the function with quadratic complexity (iteration growth 2x, 10x, 100x):
+    foreach e {2 10 100} {
+	set x 1
+	set m1 [timerate {
+	    apply {x {
+		while {[incr x -1]} {}
+	    }} [set x [expr {$x*$e}]]
+	} 50]
+	lappend result "${e}x"
+	# check it was too slow (it is OK to use factor 2 to prevent sporadic
+	# errors on some slow systems or time issues, because if it is not fixed,
+	# the execution time may grow hundreds and thousand times):
+	if {[lindex $m1 6] > 50 * 2} {
+	    lappend result "unexpected long: $m1"
+	}
+    }
+    set result
+} {2x 10x 100x}
 
 test cmdMZ-try-1.0 {
 

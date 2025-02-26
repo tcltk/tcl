@@ -95,7 +95,7 @@ length of the string then this command returns an empty string.
 .\" METHOD: insert
 .TP
 \fBstring insert \fIstring index insertString\fR
-.VS "TIP 504"
+.VS TIP504
 Returns a copy of \fIstring\fR with \fIinsertString\fR inserted at the
 \fIindex\fR'th character.  The \fIindex\fR may be specified as described in the
 \fBSTRING INDICES\fR section.
@@ -110,7 +110,7 @@ If \fIindex\fR is at or before the start of \fIstring\fR (e.g., \fIindex\fR is
 or after the end of \fIstring\fR (e.g., \fIindex\fR is \fBend\fR),
 \fIinsertString\fR is appended to \fIstring\fR.
 .RE
-.VE "TIP 504"
+.VE TIP504
 .\" METHOD: is
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR

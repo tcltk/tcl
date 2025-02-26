@@ -483,6 +483,9 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #ifdef USE_NMAKE
 	    ".nmake"
 #endif
+#ifdef TCL_NO_DEPRECATED
+	    ".no-deprecate"
+#endif
 #if !TCL_THREADS
 	    ".no-thread"
 #endif

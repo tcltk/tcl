@@ -29,6 +29,7 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
+    set ::tcltestlib {}
     catch {
 	::tcltest::loadTestedCommands
 	package require -exact tcl::test [info patchlevel]
@@ -1855,6 +1856,32 @@ test io-13.12 {TranslateInputEOL: find EOF char in src} {
     close $f
     set x
 } "\n\n\nab\n\nd"
+test io-13.13 {Translation crlf: \r followed by encoding error before buffer boundary - TCL bug 73bb42fb}\
+-setup {
+    set buffersize 8
+    writeFile $path(test1) binary\
+	[string repeat x [expr $buffersize-1]]\r\xe9XXXXXXXXXXXXXXXXXXXXXXXX
+} -body {
+    set fd [open $path(test1)]
+    fconfigure $fd -encoding utf-8 -buffersize [expr {$buffersize+1}] -translation crlf
+    catch {read $fd $buffersize} e d
+    list [dict get $d -data] [dict get $d -code] [dict get $d -errorcode]
+} -cleanup {
+    close $fd
+} -result {xxxxxxx 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}}
+test io-13.14 {Translation crlf: \r followed by encoding error after buffer boundary - TCL bug 73bb42fb (crash)}\
+-setup {
+    set buffersize 8
+    writeFile $path(test1) binary\
+	[string repeat x [expr $buffersize-1]]\r\xe9XXXXXXXXXXXXXXXXXXXXXXXX
+} -body {
+    set fd [open $path(test1)]
+    fconfigure $fd -encoding utf-8 -buffersize $buffersize -translation crlf
+    catch {read $fd $buffersize} e d
+    list [dict get $d -data] [dict get $d -code] [dict get $d -errorcode]
+} -cleanup {
+    close $fd
+} -result {xxxxxxx 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}}
 
 # Test standard handle management. The functions tested are
 # Tcl_SetStdChannel and Tcl_GetStdChannel. Incidentally we are

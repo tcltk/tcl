@@ -18,10 +18,10 @@ coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values fr
 \fByieldto\fI command\fR ?\fIarg...\fR?
 \fIname\fR ?\fIvalue...\fR?
 
-.VS "8.7, TIP383"
+.VS TIP383
 \fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
 \fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?
-.VE "8.7, TIP383"
+.VE TIP383
 .fi
 .BE
 .SH DESCRIPTION
@@ -78,7 +78,7 @@ global namespace and there will be no stack frames above it (in the sense of
 \fBupvar\fR and \fBuplevel\fR). However, which command to call will be
 determined in the namespace that the \fBcoroutine\fR command was called from.
 .PP
-.VS "8.7, TIP383"
+.VS TIP383
 A suspended coroutine (i.e., one that has \fByield\fRed or \fByieldto\fR-d)
 may have its state inspected (or modified) at that point by using
 \fBcoroprobe\fR to run a command at the point where the coroutine is at. The
@@ -93,24 +93,24 @@ Similarly, the \fBcoroinject\fR command may be used to place a command to be
 run inside a suspended coroutine (when it is resumed) to process arguments,
 with quite a bit of similarity to \fBcoroprobe\fR. However, with
 \fBcoroinject\fR there are several key differences:
-.VE "8.7, TIP383"
+.VE TIP383
 .IP \(bu
-.VS "8.7, TIP383"
+.VS TIP383
 The coroutine is not immediately resumed after the injection has been done.  A
 consequence of this is that multiple injections may be done before the
 coroutine is resumed. The injected commands are performed in \fIreverse
 order of definition\fR (that is, they are internally stored on a stack).
-.VE "8.7, TIP383"
+.VE TIP383
 .IP \(bu
-.VS "8.7, TIP383"
+.VS TIP383
 An additional two arguments are appended to the list of arguments to be run
 (that is, the \fIcommand\fR and its \fIargs\fR are extended by two elements).
 The first is the name of the command that suspended the coroutine (\fByield\fR
 or \fByieldto\fR), and the second is the argument (or list of arguments, in
 the case of \fByieldto\fR) that is the current resumption value.
-.VE "8.7, TIP383"
+.VE TIP383
 .IP \(bu
-.VS "8.7, TIP383"
+.VS TIP383
 The result of the injected command is used as the result of the \fByield\fR or
 \fByieldto\fR that caused the coroutine to become suspended. Where there are
 multiple injected commands, the result of one becomes the resumption value
@@ -124,7 +124,7 @@ operations may only be applied to coroutines that are suspended. (If a
 coroutine is running then any introspection code would be merely inspecting
 the state of where it is currently running; \fBcoroinject\fR/\fBcoroprobe\fR
 are unnecessary in that case.)
-.VE "8.7, TIP383"
+.VE TIP383
 .SH EXAMPLES
 .PP
 This example shows a coroutine that will produce an infinite sequence of
@@ -207,7 +207,7 @@ proc juggler {name target {value ""}} {
         \fBcoroutine\fR j3 juggler Moe j1]] "Nyuck!Nyuck!Nyuck!"
 .CE
 .PP
-.VS "8.7, TIP383"
+.VS TIP383
 This example shows a simple coroutine that collects non-empty values and
 returns a list of them when not given an argument. It also shows how we can
 look inside the coroutine to find out what it is doing, and how we can modify
@@ -245,7 +245,7 @@ puts [\fBcoroprobe \fIcollect\fR set accumulator]
 puts [\fIcollect\fR]
 # ==> 123 {abc def} 456 pqr RST xyz
 .CE
-.VE "8.7, TIP383"
+.VE TIP383
 .SS "DETAILED SEMANTICS"
 .PP
 This example demonstrates that coroutines start from the global namespace, and

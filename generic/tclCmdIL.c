@@ -3927,7 +3927,7 @@ Tcl_LsearchObjCmd(
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
-		    Tcl_BounceRefCount(itemPtr); 
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i + groupOffset];
 			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
@@ -4189,7 +4189,9 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles += (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    if ((keyword == TCL_NUMBER_DOUBLE || keyword == TCL_NUMBER_NAN)) {
+		useDoubles++;
+	    }
 	    value_i++;
 	    break;
 
@@ -4218,10 +4220,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
-	useDoubles = 0; // Can only have Integer value. If a fractional value
-			// is given, this will fail later. In other words,
-			// "3.0" is allowed and used as Integer, but "3.1"
-			// will be flagged as an error. (bug f4a4bd7f1070)
+	useDoubles = 0; /* Can only have Integer value. If a fractional value
+			 * is given, this will fail later. In other words,
+			 * "3.0" is allowed and used as Integer, but "3.1"
+			 * will be flagged as an error. (bug f4a4bd7f1070) */
 	break;
 
 /*    lseq n n */
@@ -4259,7 +4261,7 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	}
 	break;
 
@@ -4281,10 +4283,10 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    goto done;
+	    goto syntax;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4302,7 +4304,7 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4317,7 +4319,7 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	opmode = (SequenceOperators)values[1];
@@ -4332,7 +4334,7 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4347,11 +4349,10 @@ Tcl_LseqObjCmd(
 
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
-	double d;
-	// Don't consider Count type to indicate using double values in seqence
+	double d = elementCount->internalRep.doubleValue;
+	/* Don't consider Count type to indicate using double values in seqence */
 	useDoubles -= (useDoubles > 0) ? 1 : 0;
-	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
-	if (floor(d) == d) {
+	if (!isinf(d) && !isnan(d) && floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 		mp_int big;
 

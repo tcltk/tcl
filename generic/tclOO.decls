@@ -233,6 +233,18 @@ declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
 	    Tcl_Size numMixins, Class *const *mixins)
 }
+declare 16 {
+    Tcl_Method TclOOMakeProcInstanceMethod2(Tcl_Interp *interp, Object *oPtr,
+	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+	    const Tcl_MethodType2 *typePtr, void *clientData,
+	    Proc **procPtrPtr)
+}
+declare 17 {
+    Tcl_Method TclOOMakeProcMethod2(Tcl_Interp *interp, Class *clsPtr,
+	    int flags, Tcl_Obj *nameObj, const char *namePtr,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr,
+	    void *clientData, Proc **procPtrPtr)
+}
 
 return
 

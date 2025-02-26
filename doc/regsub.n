@@ -71,7 +71,7 @@ from the corresponding match.
 .\" OPTION: -command
 .TP
 \fB\-command\fR
-.VS 8.7
+.VS TIP463
 Changes the handling of \fIsubSpec\fR so that it is not treated
 as a template for a substitution string and the substrings
 .QW &
@@ -95,7 +95,7 @@ The exact location indices that matched are not made available to the script.
 .PP
 See \fBEXAMPLES\fR below for illustrative cases.
 .RE
-.VE 8.7
+.VE TIP463
 .\" OPTION: -expanded
 .TP
 \fB\-expanded\fR
@@ -220,7 +220,7 @@ set quoted [subst [string map {\en {\e\eu000a}} \e
         [\fBregsub\fR -all $RE $string $substitution]]]
 .CE
 .PP
-.VS 8.7
+.VS TIP463
 The above operation can be done using \fBregsub \-command\fR instead, which is
 often faster. (A full pre-computed \fBstring map\fR would be faster still, but
 the cost of computing the map for a transformation as complex as this can be
@@ -274,7 +274,7 @@ set message "the quIck broWn fOX JUmped oVer the laZy dogS..."
 puts [\fBregsub\fR -all -command {\ew+} $message {string totitle}]
 # \(-> \fIThe Quick Brown Fox Jumped Over The Lazy Dogs..\fR
 .CE
-.VE 8.7
+.VE TIP463
 .SH "SEE ALSO"
 regexp(n), re_syntax(n), subst(n), string(n)
 .SH KEYWORDS

@@ -30,16 +30,16 @@ Performs one of several encoding related operations, depending on
 .\" METHOD: convertfrom
 .TP
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
-.VS "TCL8.7 TIP607, TIP656"
+.VS "TIP607, TIP656"
 .TP
 \fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
-.VE "TCL8.7 TIP607, TIP656"
+.VE "TIP607, TIP656"
 .
 Converts \fIdata\fR, which should be in binary string encoded as per
 \fIencoding\fR, to a Tcl string. If \fIencoding\fR is not specified, the current
 system encoding is used.
 .PP
-.VS "TCL8.7 TIP607, TIP656"
+.VS "TIP607, TIP656"
 The \fB-profile\fR option determines the command behavior in the presence
 of conversion errors. See the \fBPROFILES\fR section below for details. Any premature
 termination of processing due to errors is reported through an exception if
@@ -51,7 +51,7 @@ error is returned as the result of the command. In addition, the index
 of the source byte triggering the error is stored in \fBvar\fR. If no
 errors are encountered, the entire result of the conversion is returned and
 the value \fB-1\fR is stored in \fBvar\fR.
-.VE "TCL8.7 TIP607, TIP656"
+.VE "TIP607, TIP656"
 .\" METHOD: convertto
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
@@ -63,10 +63,10 @@ string that contains the sequence of bytes representing the converted string in
 the specified encoding. If \fIencoding\fR is not specified, the current system
 encoding is used.
 .PP
-.VS "TCL8.7 TIP607, TIP656"
+.VS "TIP607, TIP656"
 The \fB-profile\fR and \fB-failindex\fR options have the same effect as
 described for the \fBencoding convertfrom\fR command.
-.VE "TCL8.7 TIP607, TIP656"
+.VE "TIP607, TIP656"
 .\" METHOD: dirs
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
@@ -94,9 +94,9 @@ are guaranteed to be present in the list.
 .\" METHOD: profiles
 .TP
 \fBencoding profiles\fR
-.VS "TCL8.7 TIP656"
+.VS TIP656
 Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .\" METHOD: system
 .TP
 \fBencoding system\fR ?\fIencoding\fR?
@@ -107,30 +107,30 @@ system encoding is used whenever Tcl passes strings to system calls.
 .\" Do not put .VS on whole section as that messes up the bullet list alignment
 .SH PROFILES
 .PP
-.VS "TCL8.7 TIP656"
+.VS TIP656
 Operations involving encoding transforms may encounter several types of
 errors such as invalid sequences in the source data, characters that
 cannot be encoded in the target encoding and so on.
 A \fIprofile\fR prescribes the strategy for dealing with such errors
 in one of two ways:
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .
 .IP \(bu
-.VS "TCL8.7 TIP656"
+.VS TIP656
 Terminating further processing of the source data. The profile does not
 determine how this premature termination is conveyed to the caller. By default,
 this is signalled by raising an exception. If the \fB-failindex\fR option
 is specified, errors are reported through that mechanism.
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .IP \(bu
-.VS "TCL8.7 TIP656"
+.VS TIP656
 Continue further processing of the source data using a fallback strategy such
 as replacing or discarding the offending bytes in a profile-defined manner.
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .PP
 The following profiles are currently implemented with \fBstrict\fR being
 the default if the \fB-profile\fR is not specified.
-.VS "TCL8.7 TIP656"
+.VS TIP656
 .TP
 \fBstrict\fR
 .
@@ -173,7 +173,7 @@ code points that cannot be represented in the
 target encoding are transformed to an encoding-specific fallback character,
 U+FFFD REPLACEMENT CHARACTER for UTF targets and generally `?` for other
 encodings.
-.VE "TCL8.7 TIP656"
+.VE TIP656
 .SH EXAMPLES
 .PP
 These examples use the utility proc below that prints the Unicode code points
@@ -195,7 +195,7 @@ U+00306F
 The result is the unicode codepoint
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
-.VS "TCL8.7 TIP607, TIP656"
+.VS "TIP607, TIP656"
 .PP
 Example 2: Error handling based on profiles:
 .PP
@@ -232,7 +232,7 @@ A
 % set idx
 1
 .CE
-.VE "TCL8.7 TIP607, TIP656"
+.VE "TIP607, TIP656"
 .PP
 .SH "SEE ALSO"
 Tcl_GetEncoding(3), fconfigure(n)

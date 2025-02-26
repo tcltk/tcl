@@ -388,14 +388,14 @@ Tcl_GetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object;
+     * Optimize the case where we're really dealing with a byte-array object;
      * we don't need to convert to a string to perform the get-length operation.
      *
-     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
-     * machinery behind that test is using a proper bytearray ObjType.  We
-     * could also compute length of an improper bytearray without shimmering
-     * but there's no value in that. We *want* to shimmer an improper bytearray
-     * because improper bytearrays have worthless internal reps.
+     * Starting in Tcl 8.7, we check for a "pure" byte-array, because the
+     * machinery behind that test is using a proper byte-array ObjType.  We
+     * could also compute length of an improper byte-array without shimmering
+     * but there's no value in that. We *want* to shimmer an improper byte-array
+     * because improper byte-arrays have worthless internal reps.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -439,14 +439,14 @@ TclGetCharLength(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object;
+     * Optimize the case where we're really dealing with a byte-array object;
      * we don't need to convert to a string to perform the get-length operation.
      *
-     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
-     * machinery behind that test is using a proper bytearray ObjType.  We
-     * could also compute length of an improper bytearray without shimmering
-     * but there's no value in that. We *want* to shimmer an improper bytearray
-     * because improper bytearrays have worthless internal reps.
+     * Starting in Tcl 8.7, we check for a "pure" byte-array, because the
+     * machinery behind that test is using a proper byte-array ObjType.  We
+     * could also compute length of an improper byte-array without shimmering
+     * but there's no value in that. We *want* to shimmer an improper byte-array
+     * because improper byte-arrays have worthless internal reps.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -700,14 +700,16 @@ Tcl_GetUnicodeFromObj(
  *
  * Tcl_GetRange --
  *
- *	Create a Tcl Object that contains the chars between first and last of
- *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one.  If first is TCL_INDEX_NONE, the
- *	returned string start at the beginning of objPtr.  If last is
- *	TCL_INDEX_NONE, the returned string ends at the end of objPtr.
+ *	Create a Tcl Object that contains the chars between first
+ *	and last of the object indicated by "objPtr". If the object
+ *	is not a byte-array object, and not already a String object,
+ *	convert it to a String object. If first is TCL_INDEX_NONE,
+ *	the returned string start at the beginning of objPtr. If
+ *	last is TCL_INDEX_NONE, the returned string ends at the
+ *	end of objPtr.
  *
  * Results:
- *	Returns a new Tcl Object of the String type.
+ *	Returns a new Tcl Object of the String or byte-array type.
  *
  * Side effects:
  *	Changes the internal rep of "objPtr" to the String type.
@@ -721,7 +723,8 @@ Tcl_GetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
+    Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
+					 * range. */
     String *stringPtr;
     Tcl_Size length = 0;
 
@@ -730,7 +733,7 @@ Tcl_GetRange(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
+     * Optimize the case where we're really dealing with a byte-array object
      * we don't need to convert to a string to perform the substring operation.
      */
 
@@ -800,7 +803,8 @@ TclGetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
+    Tcl_Obj *newObjPtr;	 	/* The Tcl object to return that is the new
+					 * range. */
     Tcl_Size length = 0;
 
     if (first < 0) {
@@ -808,7 +812,7 @@ TclGetRange(
     }
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
+     * Optimize the case where we're really dealing with a byte-array object
      * we don't need to convert to a string to perform the substring operation.
      */
 
@@ -1392,7 +1396,7 @@ Tcl_AppendObjToObj(
     if (TclIsPureByteArray(appendObjPtr)
 	    && (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)) {
 	/*
-	 * Both bytearray objects are pure, so the second internal bytearray value
+	 * Both byte-array objects are pure, so the second internal byte-array value
 	 * can be appended to the first, with no need to modify the "bytes" field.
 	 */
 
@@ -3004,7 +3008,7 @@ TclStringRepeat(
     /*
      * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
-     *		Produce pure bytearray when possible.
+     *		Produce pure byte-array when possible.
      *		Error on overflow.
      */
 
@@ -3170,7 +3174,7 @@ TclStringCat(
     /*
      * Analyze to determine what representation result should be.
      * GOALS:	Avoid shimmering & string rep generation.
-     *		Produce pure bytearray when possible.
+     *		Produce pure byte-array when possible.
      *		Error on overflow.
      */
 
@@ -3184,8 +3188,8 @@ TclStringCat(
 	    /* Value has a string rep. */
 	    if (objPtr->length) {
 		/*
-		 * Non-empty string rep. Not a pure bytearray, so we won't
-		 * create a pure bytearray.
+		 * Non-empty string rep. Not a pure byte-array, so we won't
+		 * create a pure byte-array.
 		 */
 
 		binary = 0;
@@ -3220,7 +3224,7 @@ TclStringCat(
 	    Tcl_Obj *objPtr = *ov++;
 
 	    /*
-	     * Every argument is either a bytearray with a ("pure")
+	     * Every argument is either a byte-array with a ("pure")
 	     * value we know we can safely use, or it is an empty string.
 	     * We don't need to count bytes for the empty strings.
 	     */
@@ -3378,7 +3382,7 @@ TclStringCat(
 	    Tcl_Obj *objPtr = *objv++;
 
 	    /*
-	     * Every argument is either a bytearray with a ("pure")
+	     * Every argument is either a byte-array with a ("pure")
 	     * value we know we can safely use, or it is an empty string.
 	     * We don't need to copy bytes from the empty strings.
 	     */
@@ -4200,7 +4204,7 @@ TclStringReplace(
     /*
      * The caller very likely had to call Tcl_GetCharLength() or similar
      * to be able to process index values.  This means it is likely that
-     * objPtr is either a proper "bytearray" or a "string" or else it has
+     * objPtr is either a proper "byte-array" or a "string" or else it has
      * a known and short string rep.
      */
 
@@ -4359,6 +4363,49 @@ ExtendUnicodeRepWithString(
 	}
     }
     *dst = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsEmpty --
+ *
+ *	Check whether the obj is the empty string.
+ *
+ * Results:
+ *	 1 if the obj is ""
+ *   0 otherwise
+ *
+ * Side effects:
+ *	If there is no other way to determine whethere the string
+ *	representation is the empty string, the string representation
+ *	is generated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsEmpty(
+    Tcl_Obj *objPtr)
+{
+    if (objPtr == NULL) {
+	Tcl_Panic("%s: objPtr is NULL", "Tcl_IsEmpty");
+    }
+    if (!objPtr->bytes) {
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* Since "dict" doesn't have a lengthProc */
+	    Tcl_Size size;
+	    Tcl_DictObjSize(NULL, objPtr, &size);
+	    return !size;
+	}
+
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (proc != NULL) {
+	    return !proc(objPtr);
+	}
+	(void)TclGetString(objPtr);
+    }
+    return !objPtr->length;
 }
 
 /*

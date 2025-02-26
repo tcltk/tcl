@@ -3847,8 +3847,8 @@ SerializeCentralDirectoryEntry(
     unsigned char *buf,		/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
     size_t nameLength,		/* The length of the name. */
-    long long dataStartOffset)	/* The overall file offset of the start of the 
-    				 * data section of the file. */
+    long long dataStartOffset)	/* The overall file offset of the start of the
+				 * data section of the file. */
 {
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_SIG_OFFS,
 	    ZIP_CENTRAL_HEADER_SIG);

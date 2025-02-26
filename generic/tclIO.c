@@ -5680,7 +5680,7 @@ CommonGetsCleanup(
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
 			nextPtr->buf + (BUFFER_PADDING - extra),
-			extra);
+			(size_t)extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
 	    }
@@ -6446,10 +6446,21 @@ ReadChars(
 			|| BytesLeft(bufPtr->nextPtr) == 0 || 0 ==
 			(statePtr->inputEncodingFlags & TCL_ENCODING_END));
 
-		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
-		&statePtr->inputEncodingState, buffer, sizeof(buffer),
-		&read, &decoded, &count);
+		/*
+		 * bug 73bb42fb: the result was not checked for an encoding error.
+		 * So, add a check as above for testing.
+		 * Leave eof check out, as typically only two characters are
+		 * handled.
+		 */
+
+		code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+			(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
+			&statePtr->inputEncodingState, buffer, sizeof(buffer),
+			&read, &decoded, &count);
+		if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX) {
+		    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+		    code = TCL_OK;
+		}
 
 		if (count == 2) {
 		    if (buffer[1] == '\n') {
@@ -6746,7 +6757,7 @@ TranslateInputEOL(
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
-	while ((crFound = (const char *) memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 

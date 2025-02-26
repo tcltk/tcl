@@ -227,10 +227,8 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 typedef struct TclVarHashTable {
     Tcl_HashTable table;	/* "Inherit" from Tcl_HashTable. */
     struct Namespace *nsPtr;	/* The namespace containing the variables. */
-#if TCL_MAJOR_VERSION > 8
     struct Var *arrayPtr;	/* The array containing the variables, if they
 				 * are variables in an array at all. */
-#endif /* TCL_MAJOR_VERSION > 8 */
 } TclVarHashTable;
 
 /*
@@ -280,11 +278,7 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
-#if TCL_MAJOR_VERSION > 8
     size_t nsId;		/* Unique id for the namespace. */
-#else
-    unsigned long nsId;
-#endif
     Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -976,9 +970,6 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     Tcl_Size frameIndex;	/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_MAJOR_VERSION < 9
-    int flags;
-#endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -989,12 +980,10 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
 				 * and VAR_RESOLVED make sense. */
-#endif
     char name[TCLFLEXARRAY];	/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
@@ -1052,11 +1041,7 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
 typedef struct Trace {
     Tcl_Size level;		/* Only trace commands at nesting level less
 				 * than or equal to this. */
-#if TCL_MAJOR_VERSION > 8
     Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */
-#else
-    Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
-#endif
     void *clientData;		/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
@@ -1100,7 +1085,6 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
-#if TCL_MAJOR_VERSION > 8
 #define TclObjTypeHasProc(objPtr, proc) (((objPtr)->typePtr \
 	&& ((offsetof(Tcl_ObjType, proc) < offsetof(Tcl_ObjType, version)) \
 	|| (offsetof(Tcl_ObjType, proc) < (objPtr)->typePtr->version))) ? \
@@ -1202,7 +1186,6 @@ TclObjTypeInOperator(
     Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
     return proc(interp, valueObj, listObj, boolResult);
 }
-#endif /* TCL_MAJOR_VERSION > 8 */
 
 /*
  * The structure below defines an entry in the assocData hash table which is
@@ -1697,13 +1680,13 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    TCL_HASH_TYPE numBuckets;	/* Total number of buckets allocated at
+    size_t numBuckets;	/* Total number of buckets allocated at
 				 * **buckets. */
-    TCL_HASH_TYPE numEntries;	/* Total number of entries present in
+    size_t numEntries;	/* Total number of entries present in
 				 * table. */
-    TCL_HASH_TYPE rebuildSize;	/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;	/* Enlarge table when numEntries gets to be
 				 * this large. */
-    TCL_HASH_TYPE mask;		/* Mask value used in hashing function. */
+    size_t mask;		/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
@@ -1997,20 +1980,9 @@ typedef struct Interp {
     void *interpInfo;		/* Information used by tclInterp.c to keep
 				 * track of parent/child interps on a
 				 * per-interp basis. */
-#if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
 				/* Reference to the bytecode optimizer, if one
 				 * is set. */
-#else
-    union {
-	void (*optimizer)(void *envPtr);
-	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
-				 * unused space in interp was repurposed for
-				 * pluggable bytecode optimizers. The core
-				 * contains one optimizer, which can be
-				 * selectively overridden by extensions. */
-    } extra;
-#endif
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.
@@ -2039,11 +2011,6 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
-#if TCL_MAJOR_VERSION < 9
-    char *appendResultDontUse;
-    int appendAvlDontUse;
-    int appendUsedDontUse;
-#endif
 
     /*
      * Information about packages. Used only in tclPkg.c.
@@ -2067,9 +2034,6 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
-#if TCL_MAJOR_VERSION < 9
-    int unused1;		/* No longer used (was termOffset) */
-#endif
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by the
@@ -2106,9 +2070,6 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
-#if TCL_MAJOR_VERSION < 9
-    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
-#endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
@@ -2772,20 +2733,11 @@ typedef struct ListRep {
  * WARNING: these macros eval their args more than once.
  */
 
-#if TCL_MAJOR_VERSION > 8
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     ((TclHasInternalRep((objPtr), &tclIntType)				\
 	    || TclHasInternalRep((objPtr), &tclBooleanType))		\
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
-#else
-#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
-    ((TclHasInternalRep((objPtr), &tclIntType))				\
-	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
-	: (TclHasInternalRep((objPtr), &tclBooleanType))		\
-	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
-#endif
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
@@ -2963,7 +2915,7 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
  */
 
 typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
-	TCL_HASH_TYPE *lengthPtr,
+	size_t *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
 #ifdef _WIN32
@@ -2985,7 +2937,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
 typedef struct ProcessGlobalValue {
     Tcl_Size epoch;		/* Epoch counter to detect changes in the
 				 * global value. */
-    TCL_HASH_TYPE numBytes;	/* Length of the global string. */
+    size_t numBytes;	/* Length of the global string. */
     char *value;		/* The global string value. */
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
@@ -3361,7 +3313,6 @@ struct Tcl_LoadHandle_ {
  *----------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8
 MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
@@ -3662,10 +3613,10 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    TCL_HASH_TYPE stackSize, int flags);
+			    size_t stackSize, int flags);
 MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
-			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
+			    size_t *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void *	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
@@ -3729,7 +3680,7 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    TCL_HASH_TYPE numBytes);
+			    size_t numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
@@ -4180,7 +4131,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
-MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+MODULE_SCOPE size_t TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 
@@ -4256,7 +4207,6 @@ MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 MODULE_SCOPE int	TclCommandWordLimitError(Tcl_Interp *interp,
 			    Tcl_Size count);
 
-#endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)

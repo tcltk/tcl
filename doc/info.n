@@ -94,18 +94,18 @@ to allow users to type in commands that span multiple lines.
 .\" METHOD: constant
 .TP
 \fBinfo constant \fIvarName\fR
-.VS "TIP 677"
+.VS TIP677
 Returns 1 if \fIvarName\fR is a constant variable (see \fBconst\fR) and 0
 otherwise.
-.VE "TIP 677"
+.VE TIP677
 .\" METHOD: consts
 .TP
 \fBinfo consts\fR ?\fIpattern\fR?
-.VS "TIP 677"
+.VS TIP677
 Returns the list of constant variables (see \fBconst\fR) in the current scope,
 or the list of constant variables matching \fIpattern\fR (if that is provided)
 in a manner similar to \fBinfo vars\fR.
-.VE "TIP 677"
+.VE TIP677
 .\" METHOD: coroutine
 .TP
 \fBinfo coroutine\fR
@@ -529,7 +529,7 @@ class named \fIclass\fR.
 .\" METHOD: properties
 .TP
 \fBinfo class properties\fI class\fR ?\fIoptions...\fR
-.VS "TIP 558"
+.VS TIP558
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
 .RS
@@ -552,7 +552,7 @@ returned. Only readable or writable properties are returned, not both.
 This option asks for the writable properties to be returned.  Only readable or
 writable properties are returned, not both.
 .RE
-.VE "TIP 558"
+.VE TIP558
 .\" METHOD: subclasses
 .TP
 \fBinfo class subclasses\fI class\fR ?\fIpattern\fR?
@@ -762,7 +762,7 @@ This subcommand returns the name of the internal namespace of the object named
 .\" METHOD: properties
 .TP
 \fBinfo object properties\fI object\fR ?\fIoptions...\fR
-.VS "TIP 558"
+.VS TIP558
 This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are
 returned:
@@ -786,7 +786,7 @@ returned. Only readable or writable properties are returned, not both.
 This option asks for the writable properties to be returned. Only readable or
 writable properties are returned, not both.
 .RE
-.VE "TIP 558"
+.VE TIP558
 .\" METHOD: variables
 .TP
 \fBinfo object variables\fI object\fR ?\fB\-private\fR?

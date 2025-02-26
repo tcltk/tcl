@@ -3,7 +3,7 @@ on:
   push:
     branches:
     - "main"
-    - "core-8-branch"
+    - "core-9-0-branch"
     tags:
     - "core-**"
 permissions:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     defaults:
       run:
         shell: bash
@@ -205,7 +205,7 @@ jobs:
         working-directory: data
       - name: Transfer built files
         # https://github.com/marketplace/actions/rsync-deployments-action
-        uses: burnett01/rsync-deployments@7.0.1
+        uses: burnett01/rsync-deployments@7.0.2
         id: rsync
         if: false  # Disabled... for now
         with:

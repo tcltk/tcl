@@ -710,6 +710,12 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 	} \
     } while(0)
 
+/*
+ * Convenience macro for generating error codes.
+ */
+#define OO_ERROR(interp, code) \
+    Tcl_SetErrorCode((interp), "TCL", "OO", #code, (char *)NULL)
+
 #endif /* TCL_OO_INTERNAL_H */
 
 /*
