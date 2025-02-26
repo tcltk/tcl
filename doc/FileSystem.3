@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSEvalFileEx, Tcl_FSLoadFile, Tcl_FSUnloadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_GetAccessTimeFromStat, Tcl_GetBlockSizeFromStat, Tcl_GetBlocksFromStat, Tcl_GetChangeTimeFromStat, Tcl_GetDeviceTypeFromStat, Tcl_GetFSDeviceFromStat, Tcl_GetFSInodeFromStat, Tcl_GetGroupIdFromStat, Tcl_GetLinkCountFromStat, Tcl_GetModeFromStat, Tcl_GetModificationTimeFromStat, Tcl_GetSizeFromStat, Tcl_GetUserIdFromStat, Tcl_AllocStatBuf \- procedures to interact with any filesystem
+Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSEvalFileEx, Tcl_FSLoadFile, Tcl_FSUnloadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_GetAccessTimeFromStat, Tcl_GetBlockSizeFromStat, Tcl_GetBlocksFromStat, Tcl_GetChangeTimeFromStat, Tcl_GetDeviceTypeFromStat, Tcl_GetFSDeviceFromStat, Tcl_GetFSInodeFromStat, Tcl_GetGroupIdFromStat, Tcl_GetLinkCountFromStat, Tcl_GetModeFromStat, Tcl_GetModificationTimeFromStat, Tcl_GetSizeFromStat, Tcl_GetUserIdFromStat, Tcl_AllocStatBuf, Tcl_FSTildeExpand \- procedures to interact with any filesystem
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -140,6 +140,9 @@ const void *
 Tcl_Obj *
 \fBTcl_FSFileSystemInfo\fR(\fIpathPtr\fR)
 .sp
+int
+\fBTcl_FSTildeExpand\fR(\fIinterp, pathStr, dsPtr\fR)
+.sp
 Tcl_StatBuf *
 \fBTcl_AllocStatBuf\fR()
 .sp
@@ -187,6 +190,8 @@ int
 .AP "const Tcl_Filesystem" *fsPtr in
 Points to a structure containing the addresses of procedures that
 can be called to perform the various filesystem operations.
+.AP "const char" *pathStr in
+Pointer to a NUL terminated string representing a file system path.
 .AP Tcl_Obj *pathPtr in
 The path represented by this value is used for the operation in
 question. If the value does not already have an internal \fBpath\fR
@@ -293,6 +298,8 @@ created (will be ignored if \fItoPtr\fR is NULL). Valid bits to set
 are \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
 When both flags are set and the underlying filesystem can do either,
 symbolic links are preferred.
+.AP Tcl_DString *dsPtr out
+Pointer to a \fBTcl_DString\fR to hold an output string result.
 .BE
 .SH DESCRIPTION
 .PP
@@ -779,6 +786,17 @@ absolute.
 .PP
 It returns one of \fBTCL_PATH_ABSOLUTE\fR, \fBTCL_PATH_RELATIVE\fR, or
 \fBTCL_PATH_VOLUME_RELATIVE\fR
+.PP
+\fBTcl_FSTildeExpand\fR performs tilde substitution on the input path passed via
+\fBpathStr\fR as described in the documentation for the \fBfile tildeexpand\fR
+Tcl command. On success, the function returns \fBTCL_OK\fR with the result of
+the substitution in \fBdsPtr\fR which must be subsequently freed by the caller.
+The \fBdsPtr\fR structure is initialized by the function. No guarantees are made
+about the form of the returned path such as the path separators used. The
+returned result should be passed to other Tcl C API functions such as
+\fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR if necessary. On
+error, the function returns \fBTCL_ERROR\fR with an error message in
+\fBinterp\fR which may be passed as NULL if error messages are not of interest.
 .SS "PORTABLE STAT RESULT API"
 .PP
 \fBTcl_AllocStatBuf\fR allocates a \fITcl_StatBuf\fR on the system heap (which

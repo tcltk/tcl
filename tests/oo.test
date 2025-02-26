@@ -417,7 +417,7 @@ test oo-1.22 {basic test of OO functionality: nested ownership destruction order
 } -result {1 2 3 4 0}
 test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
     oo::class create parent
-} -constraints knownBug -body {
+} -body {
     oo::class create abc {
 	superclass parent
 	method make {} {[self class] create xyz}
@@ -433,6 +433,35 @@ test oo-1.23 {basic test of OO functionality: deep nested ownership} -setup {
 	# Kill them all in one go; should not crash!
 	$base destroy
 	return [expr {$n - $::count}]
+    }} 10000
+} -cleanup {
+    parent destroy
+} -result 0
+test oo-1.24 {basic test of OO functionality: deep nested ownership} -setup {
+    oo::class create parent
+} -constraints knownBug -body {
+    oo::class create abc {
+	superclass parent
+	self method make {} {oo::copy [self] xyz}
+    }
+    apply {n {
+	# Make a lot of "nested" objects
+	set base abc
+	lappend lst $base [info object namespace $base]
+	for {set i 1; set obj $base} {$i < $n} {incr i} {
+	     set obj [$obj make]
+	     lappend lst $obj [info object namespace $obj]
+	}
+	# Kill them all in one go; should not crash!
+	$base destroy
+	# How many classes still there (cnt must remain 0)
+	set cnt 0
+	foreach {obj ns} $lst {
+	    if {[namespace which -command $obj] ne "" || [namespace exists $ns]} {
+		incr cnt
+	    }
+	}
+	return $cnt
     }} 10000
 } -cleanup {
     parent destroy

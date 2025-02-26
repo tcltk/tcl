@@ -405,12 +405,8 @@ InitFoundation(
      * Basic method declarations for the core classes.
      */
 
-    for (i = 0 ; objMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->objectCls, &objMethods[i]);
-    }
-    for (i = 0 ; clsMethods[i].name ; i++) {
-	TclOONewBasicMethod(fPtr->classCls, &clsMethods[i]);
-    }
+    TclOODefineBasicMethods(fPtr->objectCls, objMethods);
+    TclOODefineBasicMethods(fPtr->classCls, clsMethods);
 
     /*
      * Finish setting up the class of classes by marking the 'new' method as
@@ -458,9 +454,7 @@ InitFoundation(
     Tcl_Object cfgCls = Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) fPtr->classCls, "::oo::configuresupport::configurable",
 	    NULL, TCL_INDEX_NONE, NULL, 0);
-    for (i = 0 ; cfgMethods[i].name ; i++) {
-	TclOONewBasicMethod(((Object *) cfgCls)->classPtr, &cfgMethods[i]);
-    }
+    TclOODefineBasicMethods(((Object *) cfgCls)->classPtr, cfgMethods);
 
     /*
      * Don't have handles to these namespaces, so use Tcl_CreateObjCommand.
@@ -870,7 +864,7 @@ MyClassDeleted(
 static void
 ObjectRenamedTrace(
     void *clientData,		/* The object being deleted. */
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
     int flags)			/* Why was the object deleted? */
@@ -893,10 +887,44 @@ ObjectRenamedTrace(
      */
 
     if (!Destructing(oPtr)) {
-	Tcl_DeleteNamespace(oPtr->namespacePtr);
+	/*
+	 * Ensure that we don't recurse very deeply and blow out the C stack.
+	 * [Bug 02977e0004]
+	 */
+	ThreadLocalData *tsdPtr = GetFoundation(interp)->tsdPtr;
+	if (oPtr->classPtr) {
+	    /*
+	     * Classes currently need the recursion to get destructor calling
+	     * right. This is a bug, but it requires a major rewrite of things
+	     * to fix. 
+	     */
+	    Tcl_DeleteNamespace(oPtr->namespacePtr);
+	    oPtr->command = NULL;
+	    TclOODecrRefCount(oPtr);
+	} else if (!tsdPtr->delQueueTail) {
+	    /*
+	     * Process a queue of objects to delete.
+	     */
+	    Object *currPtr, *tmp;
+	    tsdPtr->delQueueTail = oPtr;
+	    for (currPtr = oPtr; currPtr; currPtr = tmp) {
+		Tcl_DeleteNamespace(currPtr->namespacePtr);
+		currPtr->command = NULL;
+		tmp = currPtr->delNext;
+		TclOODecrRefCount(currPtr);
+	    }
+	    tsdPtr->delQueueTail = NULL;
+	} else {
+	    /*
+	     * Enqueue the object.
+	     */
+	    tsdPtr->delQueueTail->delNext = oPtr;
+	    tsdPtr->delQueueTail = oPtr;
+	}
+    } else {
+	oPtr->command = NULL;
+	TclOODecrRefCount(oPtr);
     }
-    oPtr->command = NULL;
-    TclOODecrRefCount(oPtr);
     return;
 }
 
@@ -1175,7 +1203,7 @@ ObjectNamespaceDeleted(
     Method *mPtr;
     Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
-    Tcl_Interp *interp = oPtr->fPtr->interp;
+    Tcl_Interp *interp = fPtr->interp;
     Tcl_Size i;
 
     if (Destructing(oPtr)) {
@@ -1213,12 +1241,12 @@ ObjectNamespaceDeleted(
     if (!Tcl_InterpDeleted(interp) && !(oPtr->flags & DESTRUCTOR_CALLED)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL, NULL, NULL);
-	int result;
-	Tcl_InterpState state;
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
-
 	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);

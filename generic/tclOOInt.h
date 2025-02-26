@@ -255,6 +255,8 @@ struct Object {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this object *claims* to
 				 * support. */
+    Object *delNext;		/* If non-NULL, the next object to have its
+				 * namespace deleted. */
 };
 
 enum ObjectFlags {
@@ -374,6 +376,8 @@ typedef struct ThreadLocalData {
 				 * because Tcl_Objs can cross interpreter
 				 * boundaries within a thread (objects don't
 				 * generally cross threads). */
+    Object *delQueueTail;	/* The tail object in the deletion queue. If
+				 * NULL, there is no deletion queue. */
 } ThreadLocalData;
 
 /*
@@ -603,7 +607,7 @@ MODULE_SCOPE Tcl_Var	TclOOLookupObjectVar(Tcl_Interp *interp,
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 			    Tcl_ObjectContext context, Tcl_Size objc,
 			    Tcl_Obj *const *objv, Tcl_Size skip);
-MODULE_SCOPE void	TclOONewBasicMethod(Class *clsPtr,
+MODULE_SCOPE void	TclOODefineBasicMethods(Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,

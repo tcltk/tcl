@@ -999,24 +999,29 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		    LoadTimeZoneFile [string range $timezone 1 end]
 		}] && [catch {
 		    LoadZoneinfoFile [string range $timezone 1 end]
-		}]
+		} ret opts]
 	    } then {
+		dict unset opts -errorinfo
+		if {[lindex [dict get $opts -errorcode] 0] ne "CLOCK"} {
+		    dict set opts -errorcode [list CLOCK badTimeZone $timezone]
+		    set ret "time zone \"$timezone\" not found: $ret"
+		}
 		dict set TimeZoneBad $timezone 1
-		return -code error \
-		    -errorcode [list CLOCK badTimeZone $timezone] \
-		    "time zone \"$timezone\" not found"
+		return -options $opts $ret
 	    }
 	} elseif { ![catch {ParsePosixTimeZone $timezone} tzfields] } {
 	    # This looks like a POSIX time zone - try to process it
 
-	    if { [catch {ProcessPosixTimeZone $tzfields} data opts] } {
-		if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
-		    dict unset opts -errorinfo
+	    if { [catch {ProcessPosixTimeZone $tzfields} ret opts] } {
+		dict unset opts -errorinfo
+		if {[lindex [dict get $opts -errorcode] 0] ne "CLOCK"} {
+		    dict set opts -errorcode [list CLOCK badTimeZone $timezone]
+		    set ret "time zone \"$timezone\" not found: $ret"
 		}
 		dict set TimeZoneBad $timezone 1
-		return -options $opts $data
+		return -options $opts $ret
 	    } else {
-		set TZData($timezone) $data
+		set TZData($timezone) $ret
 	    }
 
 	} else {
@@ -1027,7 +1032,7 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 	    # time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
-		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
+		 && [catch { LoadZoneinfoFile $timezone } ret opts] } {
 
 		# Check may be a legacy zone:
 
@@ -1041,8 +1046,12 @@ proc ::tcl::clock::SetupTimeZone { timezone {alias {}} } {
 		}
 
 		dict unset opts -errorinfo
+		if {[lindex [dict get $opts -errorcode] 0] ne "CLOCK"} {
+		    dict set opts -errorcode [list CLOCK badTimeZone $timezone]
+		    set ret "time zone \"$timezone\" not found: $ret"
+		}
 		dict set TimeZoneBad $timezone 1
-		return -options $opts "time zone $timezone not found"
+		return -options $opts $ret
 	    }
 	    set TZData($timezone) $TZData(:$timezone)
 	}
@@ -1222,9 +1231,9 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
-    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
+    if { [regexp {^[/\\]|^[a-zA-Z]+:|(?:^|[/\\])\.\.} $fileName] } {
 	return -code error \
-	    -errorcode [list CLOCK badTimeZone $:fileName] \
+	    -errorcode [list CLOCK badTimeZone :$fileName] \
 	    "time zone \":$fileName\" not valid"
     }
     try {
@@ -1262,17 +1271,23 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
-    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
+    if { [regexp {^[/\\]|^[a-zA-Z]+:|(?:^|[/\\])\.\.} $fileName] } {
 	return -code error \
-	    -errorcode [list CLOCK badTimeZone $:fileName] \
+	    -errorcode [list CLOCK badTimeZone :$fileName] \
 	    "time zone \":$fileName\" not valid"
     }
+    set fname ""
     foreach d $ZoneinfoPaths {
 	set fname [file join $d $fileName]
 	if { [file readable $fname] && [file isfile $fname] } {
 	    break
 	}
-	unset fname
+	set fname ""
+    }
+    if {$fname eq ""} {
+	return -code error \
+	    -errorcode [list CLOCK badTimeZone :$fileName] \
+	    "time zone \":$fileName\" not found"
     }
     ReadZoneinfoFile $fileName $fname
 }
