@@ -121,7 +121,7 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-static Tcl_ObjCmdProc ThreadObjCmd;
+static Tcl_ObjCmdProc ThreadCmd;
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
 static int		ThreadList(Tcl_Interp *interp);
@@ -171,14 +171,14 @@ TclThread_Init(
     }
     Tcl_MutexUnlock(&threadMutex);
 
-    Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testthread", ThreadCmd, NULL, NULL);
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * ThreadObjCmd --
+ * ThreadCmd --
  *
  *	This procedure is invoked to process the "testthread" Tcl command. See
  *	the user documentation for details on what it does.
@@ -204,7 +204,7 @@ TclThread_Init(
  */
 
 static int
-ThreadObjCmd(
+ThreadCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */

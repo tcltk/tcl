@@ -47,8 +47,8 @@ typedef struct {
  * Declarations for functions defined in this file.
  */
 
-static Tcl_ObjCmdProc ProcBodyTestProcObjCmd;
-static Tcl_ObjCmdProc ProcBodyTestCheckObjCmd;
+static Tcl_ObjCmdProc ProcBodyTestProcCmd;
+static Tcl_ObjCmdProc ProcBodyTestCheckCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -59,14 +59,14 @@ static int	RegisterCommand(Tcl_Interp* interp,
  */
 
 static const CmdTable commands[] = {
-    { procCommand,	ProcBodyTestProcObjCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
+    { procCommand,	ProcBodyTestProcCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckCmd,	1 },
     { 0, 0, 0 }
 };
 
 static const CmdTable safeCommands[] = {
-    { procCommand,	ProcBodyTestProcObjCmd,	1 },
-    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
+    { procCommand,	ProcBodyTestProcCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckCmd,	1 },
     { 0, 0, 0 }
 };
 
@@ -196,7 +196,7 @@ ProcBodyTestInitInternal(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestProcObjCmd --
+ * ProcBodyTestProcCmd --
  *
  *  Implements the "procbodytest::proc" command. Here is the command
  *  description:
@@ -227,7 +227,7 @@ ProcBodyTestInitInternal(
  */
 
 static int
-ProcBodyTestProcObjCmd(
+ProcBodyTestProcCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
@@ -308,7 +308,7 @@ ProcBodyTestProcObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * ProcBodyTestCheckObjCmd --
+ * ProcBodyTestCheckCmd --
  *
  *  Implements the "procbodytest::check" command. Here is the command
  *  description:
@@ -326,7 +326,7 @@ ProcBodyTestProcObjCmd(
  */
 
 static int
-ProcBodyTestCheckObjCmd(
+ProcBodyTestCheckCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
