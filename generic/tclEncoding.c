@@ -127,14 +127,16 @@ typedef struct {
 } EscapeEncodingData;
 
 /*
- * Constants used when loading an encoding file to identify the type of the
+ * Values used when loading an encoding file to identify the type of the
  * file.
  */
-
-#define ENCODING_SINGLEBYTE	0
-#define ENCODING_DOUBLEBYTE	1
-#define ENCODING_MULTIBYTE	2
-#define ENCODING_ESCAPE		3
+enum EncodingTypes {
+    ENCODING_SINGLEBYTE = 0,	/* Encoding is single byte per character. */
+    ENCODING_DOUBLEBYTE = 1,	/* Encoding is two bytes per character. */
+    ENCODING_MULTIBYTE = 2,	/* Encoding is variable bytes per character. */
+    ENCODING_ESCAPE = 3		/* Encoding has modes with escapes to move
+				 * between them. */
+};
 
 /*
  * A list of directories in which Tcl should look for *.enc files. This list

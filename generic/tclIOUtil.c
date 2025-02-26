@@ -452,7 +452,8 @@ TclFSCwdIsNative(void)
 
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
-	Tcl_FSGetCwd(NULL);
+	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
+	if (temp) { Tcl_DecrRefCount(temp); }
     }
 
     if (tsdPtr->cwdClientData != NULL) {
@@ -3254,7 +3255,7 @@ Tcl_LoadFile(
 	}
 	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_CloseEx(interp, data, 0);
-	ret = TclpLoadMemory(buffer, size, ret, handlePtr,
+	ret = TclpLoadMemory(buffer, size, ret, TclGetString(pathPtr), handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;

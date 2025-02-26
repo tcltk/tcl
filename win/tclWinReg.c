@@ -1208,7 +1208,11 @@ RecursiveDeleteKey(
     HKEY hKey;
     REGSAM saveMode = mode;
     static int checkExProc = 0;
-    static LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
+    typedef LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD); 
+    static regDeleteKeyExProc regDeleteKeyEx = (regDeleteKeyExProc) NULL;
+				/* Really RegDeleteKeyExW() but that's not
+				 * available on all versions of Windows
+				 * supported by Tcl. */
 
     /*
      * Do not allow NULL or empty key name.
@@ -1248,11 +1252,11 @@ RecursiveDeleteKey(
 
 		checkExProc = 1;
 		handle = GetModuleHandleW(L"ADVAPI32");
-		regDeleteKeyExProc = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD))
-			(void *)GetProcAddress(handle, "RegDeleteKeyExW");
+		regDeleteKeyEx = (regDeleteKeyExProc) (void *)
+			GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
-	    if (mode && regDeleteKeyExProc) {
-		result = regDeleteKeyExProc(startKey, keyName, mode, 0);
+	    if (mode && regDeleteKeyEx) {
+		result = regDeleteKeyEx(startKey, keyName, mode, 0);
 	    } else {
 		result = RegDeleteKeyW(startKey, keyName);
 	    }

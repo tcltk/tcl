@@ -3972,9 +3972,9 @@ extern const TclStubs *tclStubsPtr;
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
-		    Tcl_Free((char *)__result); \
+		    Tcl_Free((void *)__result); \
 		} else { \
-		    (*__freeProc)((char *)__result); \
+		    (*__freeProc)((void *)__result); \
 		} \
 	    } \
 	} while(0)

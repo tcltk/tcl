@@ -1121,6 +1121,10 @@ TclOOReleaseClassContents(
     }
 
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
+	/* instance gets deleted, so if method remains, reset it there */
+	if (mPtr->refCount > 1 && mPtr->declaringClassPtr == clsPtr) {
+	    mPtr->declaringClassPtr = NULL;
+	}
 	TclOODelMethodRef(mPtr);
     }
     Tcl_DeleteHashTable(&clsPtr->classMethods);
@@ -1284,6 +1288,10 @@ ObjectNamespaceDeleted(
 
     if (oPtr->methodsPtr) {
 	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
+	    /* instance gets deleted, so if method remains, reset it there */
+	    if (mPtr->refCount > 1 && mPtr->declaringObjectPtr == oPtr) {
+		mPtr->declaringObjectPtr = NULL;
+	    }
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
