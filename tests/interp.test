@@ -2221,6 +2221,22 @@ test interp-26.8 {errorInfo transmission: safe interps--bug 1637} -setup {
 } -result {msg
     while executing
 "test"}
+test interp-26.9 {error transmission: body line number in info similar to eval-cmd, bug [ba68d1e9484a3a92]} -setup {
+    set interp [interp create]
+} -body {
+    # eval body with multiline code (error in line 3):
+    catch {
+	$interp eval "#1st line\n#2nd line\nexpr {1/0}"
+    } msg res
+    dict get $res -errorinfo
+} -cleanup {
+    interp delete $interp
+} -result {divide by zero
+    invoked from within
+"expr {1/0}"
+    ("interp eval" body line 3)
+    invoked from within
+"$interp eval "#1st line\n#2nd line\nexpr {1/0}""}
 
 # Interps & Namespaces
 test interp-27.1 {interp aliases & namespaces} -setup {
