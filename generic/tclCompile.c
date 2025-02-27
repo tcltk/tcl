@@ -878,18 +878,6 @@ TclSetByteCodeFromAny(
     }
 
     /*
-     * After optimization is all done, check that byte code length limits
-     * are not exceeded. Bug [27b3ce2997].
-     */
-    if ((compEnv.codeNext - compEnv.codeStart) > INT_MAX) {
-	/*
-	 * Cannot just return TCL_ERROR as callers ignore return value.
-	 * TODO - May be use TclCompileSyntaxError here?
-	 */
-	Tcl_Panic("Maximum byte code length %d exceeded.", INT_MAX);
-    }
-
-    /*
      * Change the object into a ByteCode object. Ownership of the literal
      * objects and aux data items passes to the ByteCode object.
      */
@@ -2185,19 +2173,6 @@ TclCompileScript(
     /* Each iteration compiles one command from the script. */
 
     if (numBytes > 0) {
-	if (numBytes >= INT_MAX) {
-	    /*
-	     * Note this gets -errorline as 1. Not worth figuring out which line
-	     * crosses the limit to get -errorline for this error case.
-	     */
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Script length %" TCL_SIZE_MODIFIER
-		    "d exceeds max permitted length %d.",
-		    numBytes, INT_MAX-1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (char *)NULL);
-	    TclCompileSyntaxError(interp, envPtr);
-	    return;
-	}
 	/*
 	 * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
 	 * many nested compilations (body enclosed in body) can cause abnormal
