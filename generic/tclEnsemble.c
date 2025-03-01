@@ -122,16 +122,12 @@ ECRSetInternalRep(
 }
 
 static inline EnsembleCmdRep *
-TclECRGetInternalRep(
+ECRGetInternalRep(
     Tcl_Obj *objPtr)
 {
     return (EnsembleCmdRep *) TclGetSinglePtrInternalRep(objPtr,
 	    &ensembleCmdType);
 }
-#define ECRGetInternalRep(objPtr, ecRepPtr) \
-    do {								\
-	(ecRepPtr) = TclECRGetInternalRep(objPtr);			\
-    } while (0)
 
 /*
  *----------------------------------------------------------------------
@@ -1820,9 +1816,7 @@ NsEnsembleImplementationCmdNR(
 	 * Table of subcommands is still valid so if the internal representtion
 	 * is an ensembleCmd, just call it.
 	 */
-	EnsembleCmdRep *ensembleCmd;
-
-	ECRGetInternalRep(subObj, ensembleCmd);
+	EnsembleCmdRep *ensembleCmd = ECRGetInternalRep(subObj);
 	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *) ensemblePtr->token) {
@@ -2494,9 +2488,7 @@ MakeCachedEnsembleCommand(
     Tcl_Obj *fix)		/* Spelling correction for later error, or NULL
 				 * if no correction. */
 {
-    EnsembleCmdRep *ensembleCmd;
-
-    ECRGetInternalRep(objPtr, ensembleCmd);
+    EnsembleCmdRep *ensembleCmd = ECRGetInternalRep(objPtr);
     if (ensembleCmd) {
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
@@ -2910,9 +2902,7 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd;
-
-    ECRGetInternalRep(objPtr, ensembleCmd);
+    EnsembleCmdRep *ensembleCmd = ECRGetInternalRep(objPtr);
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2943,11 +2933,10 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd;
+    EnsembleCmdRep *ensembleCmd = ECRGetInternalRep(objPtr);
     EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)
 	    Tcl_Alloc(sizeof(EnsembleCmdRep));
 
-    ECRGetInternalRep(objPtr, ensembleCmd);
     ECRSetInternalRep(copyPtr, ensembleCopy);
 
     ensembleCopy->epoch = ensembleCmd->epoch;

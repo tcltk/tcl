@@ -732,7 +732,7 @@ const Tcl_ObjType tclByteCodeType = {
  * substcode type, which represents substitution within a Tcl value.
  */
 
-static const Tcl_ObjType substCodeType = {
+const Tcl_ObjType tclSubstCodeType = {
     "substcode",		/* name */
     FreeSubstCodeInternalRep,	/* freeIntRepProc */
     DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
@@ -748,6 +748,13 @@ static const Tcl_ObjType substCodeType = {
 
 #define TclIncrUInt4AtPtr(ptr, delta) \
     TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr))
+
+static inline ByteCode *
+SubstCodeGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (ByteCode *) TclGetSinglePtrInternalRep(objPtr, &tclSubstCodeType);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -993,11 +1000,9 @@ static void
 FreeByteCodeInternalRep(
     Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    ByteCode *codePtr;
+    ByteCode *codePtr = ByteCodeGetInternalRep(objPtr);
 
-    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
     assert(codePtr != NULL);
-
     TclReleaseByteCode(codePtr);
 }
 
@@ -1323,9 +1328,7 @@ CompileSubstObj(
     int flags)
 {
     Interp *iPtr = (Interp *) interp;
-    ByteCode *codePtr = NULL;
-
-    ByteCodeGetInternalRep(objPtr, &substCodeType, codePtr);
+    ByteCode *codePtr = SubstCodeGetInternalRep(objPtr);
 
     if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
@@ -1337,7 +1340,7 @@ CompileSubstObj(
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
-	    Tcl_StoreInternalRep(objPtr, &substCodeType, NULL);
+	    TclSetSinglePtrInternalRep(objPtr, &tclSubstCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
@@ -1352,7 +1355,7 @@ CompileSubstObj(
 	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
+	codePtr = TclInitByteCodeObj(objPtr, &tclSubstCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
 	SubstFlags(objPtr) = INT2PTR(flags);
@@ -1389,11 +1392,9 @@ static void
 FreeSubstCodeInternalRep(
     Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    ByteCode *codePtr;
+    ByteCode *codePtr = SubstCodeGetInternalRep(objPtr);
 
-    ByteCodeGetInternalRep(objPtr, &substCodeType, codePtr);
     assert(codePtr != NULL);
-
     TclReleaseByteCode(codePtr);
 }
 
@@ -2977,7 +2978,7 @@ TclInitByteCodeObj(
 				 * and whose string rep contains the source
 				 * code. */
     const Tcl_ObjType *typePtr,
-    CompileEnv *envPtr)/* Points to the CompileEnv structure from
+    CompileEnv *envPtr)		/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
     ByteCode *codePtr;
@@ -2991,7 +2992,7 @@ TclInitByteCodeObj(
      * by making its internal rep point to the just compiled ByteCode.
      */
 
-    ByteCodeSetInternalRep(objPtr, typePtr, codePtr);
+    TclSetSinglePtrInternalRep(objPtr, typePtr, codePtr);
     return codePtr;
 }
 

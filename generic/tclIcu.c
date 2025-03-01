@@ -168,7 +168,7 @@ typedef int32_t (*fn_unorm2_normalize)(const UNormalizer2 *,
 				       int32_t,
 				       UErrorCodex *);
 
-#define FIELD(name) fn_ ## name _ ## name
+#define FIELD(name)	fn_ ## name _ ## name
 
 static struct {
     size_t nopen;		/* Total number of references to ALL libraries */
@@ -1436,10 +1436,10 @@ TclIcuInit(
 
 	/* Symbol may have version (Linux), or not (Windows, FreeBSD) */
 
-#define ICUUC_SYM(name)                                                   \
-    do {                                                                  \
-	icu_fns._##name =                                                 \
-	    (fn_##name)IcuFindSymbol(icu_fns.libs[0], #name, icuversion); \
+#define ICUUC_SYM(name) \
+    do {								\
+	icu_fns._##name = (fn_##name)					\
+		IcuFindSymbol(icu_fns.libs[0], #name, icuversion);	\
     } while (0)
 
 	if (icu_fns.libs[0] != NULL) {
@@ -1483,10 +1483,10 @@ TclIcuInit(
 #undef ICUUC_SYM
 	}
 
-#define ICUIN_SYM(name)                                                   \
-    do {                                                                  \
-	icu_fns._##name =                                                 \
-	    (fn_##name)IcuFindSymbol(icu_fns.libs[1], #name, icuversion); \
+#define ICUIN_SYM(name) \
+    do {								\
+	icu_fns._##name = (fn_##name)					\
+		IcuFindSymbol(icu_fns.libs[1], #name, icuversion);	\
     } while (0)
 
 	if (icu_fns.libs[1] != NULL) {

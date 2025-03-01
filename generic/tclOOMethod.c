@@ -987,7 +987,7 @@ PushMethodCallFrame(
      */
 
     pmPtr->procPtr->cmdPtr = &pmPtr->cmd;
-    ByteCodeGetInternalRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    codePtr = ByteCodeGetInternalRep(pmPtr->procPtr->bodyPtr);
     if (codePtr) {
 	codePtr->nsPtr = nsPtr;
     }

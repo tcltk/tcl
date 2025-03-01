@@ -121,15 +121,11 @@ RegexpSetInternalRep(
 }
 
 static inline TclRegexp *
-TclRegexpGetInternalRep(
+RegexpGetInternalRep(
     Tcl_Obj *objPtr)
 {
     return (TclRegexp *) TclGetSinglePtrInternalRep(objPtr, &tclRegexpType);
 }
-#define RegexpGetInternalRep(objPtr, rePtr) \
-    do {								\
-	(rePtr) = TclRegexpGetInternalRep(objPtr);			\
-    } while (0)
 
 /*
  *----------------------------------------------------------------------
@@ -599,10 +595,8 @@ Tcl_GetRegExpFromObj(
     int flags)			/* Regular expression compilation flags. */
 {
     Tcl_Size length;
-    TclRegexp *regexpPtr;
+    TclRegexp *regexpPtr = RegexpGetInternalRep(objPtr);
     const char *pattern;
-
-    RegexpGetInternalRep(objPtr, regexpPtr);
 
     if ((regexpPtr == NULL) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
@@ -759,9 +753,7 @@ static void
 FreeRegexpInternalRep(
     Tcl_Obj *objPtr)		/* Regexp object with internal rep to free. */
 {
-    TclRegexp *regexpRepPtr;
-
-    RegexpGetInternalRep(objPtr, regexpRepPtr);
+    TclRegexp *regexpRepPtr = RegexpGetInternalRep(objPtr);
 
     assert(regexpRepPtr != NULL);
 
@@ -796,9 +788,7 @@ DupRegexpInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    TclRegexp *regexpPtr;
-
-    RegexpGetInternalRep(srcPtr, regexpPtr);
+    TclRegexp *regexpPtr = RegexpGetInternalRep(srcPtr);
 
     assert(regexpPtr != NULL);
 

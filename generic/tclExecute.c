@@ -1400,6 +1400,13 @@ ExprObjCallback(
  *----------------------------------------------------------------------
  */
 
+static inline ByteCode *
+ExprCodeGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (ByteCode *) TclGetSinglePtrInternalRep(objPtr, &tclExprCodeType);
+}
+
 static ByteCode *
 CompileExprObj(
     Tcl_Interp *interp,
@@ -1408,16 +1415,14 @@ CompileExprObj(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    ByteCode *codePtr = NULL;	/* Tcl Internal type of bytecode. Initialized
-				 * to avoid compiler warning. */
+    ByteCode *codePtr;		/* Tcl Internal type of bytecode. */
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
      * is valid in the current context.
      */
 
-    ByteCodeGetInternalRep(objPtr, &tclExprCodeType, codePtr);
-
+    codePtr = ExprCodeGetInternalRep(objPtr);
     if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
@@ -1527,10 +1532,9 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr;
-    ByteCodeGetInternalRep(objPtr, &tclExprCodeType, codePtr);
-    assert(codePtr != NULL);
+    ByteCode *codePtr = ExprCodeGetInternalRep(objPtr);
 
+    assert(codePtr != NULL);
     TclReleaseByteCode(codePtr);
 }
 
@@ -1567,7 +1571,7 @@ TclCompileObj(
      * compilation). Otherwise, check that it is "fresh" enough.
      */
 
-    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
+    codePtr = ByteCodeGetInternalRep(objPtr);
     if (codePtr != NULL) {
 	/*
 	 * Make sure the Bytecode hasn't been invalidated by, e.g., someone
@@ -1713,7 +1717,7 @@ TclCompileObj(
     iPtr->invokeWord = word;
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
-    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
+    codePtr = ByteCodeGetInternalRep(objPtr);
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;

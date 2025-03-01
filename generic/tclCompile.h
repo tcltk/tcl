@@ -529,20 +529,16 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-static inline void
-ByteCodeSetInternalRep(
-    Tcl_Obj *objPtr,
-    const Tcl_ObjType *typePtr,
-    ByteCode *codePtr)
+/*
+ * Shorthand for fetching the most common form of bytecode from a Tcl_Obj.
+ * There are others, used when the syntax of the source material is different.
+ */
+static inline ByteCode *
+ByteCodeGetInternalRep(
+    Tcl_Obj *objPtr)
 {
-    TclSetSinglePtrInternalRep(objPtr, typePtr, codePtr);
+    return (ByteCode *) TclGetSinglePtrInternalRep(objPtr, &tclByteCodeType);
 }
-
-#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr) \
-    do {								\
-	(codePtr) = (ByteCode *)					\
-		TclGetSinglePtrInternalRep((objPtr), (typePtr));	\
-    } while (0)
 
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to the

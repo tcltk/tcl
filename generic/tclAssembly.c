@@ -320,7 +320,7 @@ static void		UnstackExpiredCatches(CompileEnv*, BasicBlock*, int,
 static Tcl_FreeInternalRepProc	FreeAssembleCodeInternalRep;
 static Tcl_DupInternalRepProc	DupAssembleCodeInternalRep;
 
-static const Tcl_ObjType assembleCodeType = {
+const Tcl_ObjType tclAssembleCodeType = {
     "assemblecode",
     FreeAssembleCodeInternalRep, /* freeIntRepProc */
     DupAssembleCodeInternalRep,	 /* dupIntRepProc */
@@ -549,6 +549,21 @@ static const unsigned char NonThrowingByteCodes[] = {
 #else
 #define DEBUG_PRINT		/* nothing */
 #endif
+
+static inline ByteCode *
+AssembleGetInternalRep(
+    Tcl_Obj *objPtr)
+{
+    return (ByteCode *) TclGetSinglePtrInternalRep(objPtr, &tclAssembleCodeType);
+}
+
+static inline void
+AssembleSetInternalRep(
+    Tcl_Obj *objPtr,
+    ByteCode *codePtr)
+{
+    TclSetSinglePtrInternalRep(objPtr, &tclAssembleCodeType, codePtr);
+}
 
 /*
  *-----------------------------------------------------------------------------
@@ -864,8 +879,7 @@ CompileAssembleObj(
      * is valid in the current context.
      */
 
-    ByteCodeGetInternalRep(objPtr, &assembleCodeType, codePtr);
-
+    codePtr = AssembleGetInternalRep(objPtr);
     if (codePtr) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
@@ -881,7 +895,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	Tcl_StoreInternalRep(objPtr, &assembleCodeType, NULL);
+	 AssembleSetInternalRep(objPtr, NULL);
     }
 
     /*
@@ -906,7 +920,7 @@ CompileAssembleObj(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
-    codePtr = TclInitByteCodeObj(objPtr, &assembleCodeType, &compEnv);
+    codePtr = TclInitByteCodeObj(objPtr, &tclAssembleCodeType, &compEnv);
     TclFreeCompileEnv(&compEnv);
 
     /*
@@ -4336,11 +4350,9 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr;
+    ByteCode *codePtr = AssembleGetInternalRep(objPtr);
 
-    ByteCodeGetInternalRep(objPtr, &assembleCodeType, codePtr);
     assert(codePtr != NULL);
-
     TclReleaseByteCode(codePtr);
 }
 

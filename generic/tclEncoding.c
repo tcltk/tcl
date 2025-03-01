@@ -285,15 +285,11 @@ EncodingSetInternalRep(
 }
 
 static inline Tcl_Encoding
-TclEncodingGetInternalRep(
+EncodingGetInternalRep(
     Tcl_Obj *objPtr)
 {
     return (Tcl_Encoding) TclGetSinglePtrInternalRep(objPtr, &encodingType);
 }
-#define EncodingGetInternalRep(objPtr, encoding) \
-    do {								\
-	(encoding) = TclEncodingGetInternalRep(objPtr);			\
-    } while (0)
 
 /*
  *----------------------------------------------------------------------
@@ -320,10 +316,9 @@ Tcl_GetEncodingFromObj(
     Tcl_Obj *objPtr,
     Tcl_Encoding *encodingPtr)
 {
-    Tcl_Encoding encoding;
+    Tcl_Encoding encoding = EncodingGetInternalRep(objPtr);
     const char *name = TclGetString(objPtr);
 
-    EncodingGetInternalRep(objPtr, encoding);
     if (encoding == NULL) {
 	encoding = Tcl_GetEncoding(interp, name);
 	if (encoding == NULL) {
@@ -349,9 +344,7 @@ static void
 FreeEncodingInternalRep(
     Tcl_Obj *objPtr)
 {
-    Tcl_Encoding encoding;
-
-    EncodingGetInternalRep(objPtr, encoding);
+    Tcl_Encoding encoding = EncodingGetInternalRep(objPtr);
     Tcl_FreeEncoding(encoding);
 }
 

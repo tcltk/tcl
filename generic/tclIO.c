@@ -234,9 +234,9 @@ static void		CutChannel(Tcl_Channel chan);
 static int	      WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+	Write(chanPtr, src, srcLen, chanPtr->state->encoding)
 #define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+	Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -353,16 +353,12 @@ ChanSetInternalRep(
 }
 
 static inline ResolvedChanName *
-TclChanGetInternalRep(
+ChanGetInternalRep(
     Tcl_Obj *objPtr)
 {
     return (ResolvedChanName *) TclGetSinglePtrInternalRep(objPtr,
 	    &chanObjType);
 }
-#define ChanGetInternalRep(objPtr, resPtr) \
-    do {								\
-	(resPtr) = TclChanGetInternalRep(objPtr);			\
-    } while (0)
 
 #define BUSY_STATE(st, fl) \
      ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
@@ -1529,7 +1525,7 @@ TclGetChannelFromObj(
 	return TCL_ERROR;
     }
 
-    ChanGetInternalRep(objPtr, resPtr);
+    resPtr = ChanGetInternalRep(objPtr);
     if (resPtr) {
 	/*
 	 * Confirm validity of saved lookup results.
@@ -11447,14 +11443,12 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelInternalRep(
-    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ResolvedChanName *resPtr;
-
-    ChanGetInternalRep(srcPtr, resPtr);
+    ResolvedChanName *resPtr = ChanGetInternalRep(srcPtr);
     assert(resPtr);
     ChanSetInternalRep(copyPtr, resPtr);
 }
@@ -11479,9 +11473,7 @@ static void
 FreeChannelInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ResolvedChanName *resPtr;
-
-    ChanGetInternalRep(objPtr, resPtr);
+    ResolvedChanName *resPtr = ChanGetInternalRep(objPtr);
     assert(resPtr);
     if (resPtr->refCount-- > 1) {
 	return;

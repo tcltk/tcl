@@ -56,7 +56,7 @@ InstNameSetInternalRep(
 }
 
 static inline unsigned char
-TclInstNameGetInternalRep(
+InstNameGetInternalRep(
     Tcl_Obj *objPtr)
 {
     const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr,
@@ -64,11 +64,6 @@ TclInstNameGetInternalRep(
     assert(irPtr != NULL);
     return UCHAR(irPtr->wideValue);
 }
-
-#define InstNameGetInternalRep(objPtr, inst) \
-    do {								\
-	(inst) = TclInstNameGetInternalRep(objPtr);			\
-    } while (0)
 
 /*
  *----------------------------------------------------------------------
@@ -250,6 +245,49 @@ TclPrintSource(
 /*
  *----------------------------------------------------------------------
  *
+ * GetByteCodeFromObjInternalRep --
+ *
+ *	Given an object which is holding a bytecode type, return the bytecode
+ *	it holds. Thisis a bit tricky because there are multiple such types:
+ *
+ *	- tclByteCodeType (a Tcl script, proc body, etc)
+ *	- tclExprCodeType (an expression)
+ *	- tclAssembleCodeType (a piece of bytecode assembly code)
+ *	- tclSubstCodeType (a [subst] string)
+ *
+ *	All of them can use TclGetSinglePtrInternalRep (or a simple wrapper of
+ *	it) to retrieve the codePtr, if set. Lambdas do something different.
+ *
+ *----------------------------------------------------------------------
+ */
+static ByteCode *
+GetByteCodeFromObjInternalRep(
+    Tcl_Obj *objPtr)
+{
+    ByteCode *codePtr = ByteCodeGetInternalRep(objPtr);
+    if (codePtr == NULL) {
+	codePtr = (ByteCode *) TclGetSinglePtrInternalRep(objPtr,
+		&tclExprCodeType);
+    }
+    if (codePtr == NULL) {
+	codePtr = (ByteCode *) TclGetSinglePtrInternalRep(objPtr,
+		&tclAssembleCodeType);
+    }
+    if (codePtr == NULL) {
+	codePtr = (ByteCode *) TclGetSinglePtrInternalRep(objPtr,
+		&tclSubstCodeType);
+    }
+    if (codePtr == NULL) {
+	Tcl_Panic("failed to get bytecode from %s object",
+		(objPtr && objPtr->typePtr) ? objPtr->typePtr->name
+			: "basic string");
+    }
+    return codePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DisassembleByteCodeObj --
  *
  *	Given an object which is of bytecode type, return a disassembled
@@ -263,7 +301,7 @@ static Tcl_Obj *
 DisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr;
+    ByteCode *codePtr = GetByteCodeFromObjInternalRep(objPtr);
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -271,8 +309,6 @@ DisassembleByteCodeObj(
     Tcl_Size i;
     Interp *iPtr;
     Tcl_Obj *bufferObj, *fileObj;
-
-    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
     iPtr = (Interp *) *codePtr->interpHandle;
 
@@ -843,7 +879,7 @@ UpdateStringOfInstName(
     size_t inst;	/* NOTE: We know this is really an unsigned char */
     char *dst;
 
-    InstNameGetInternalRep(objPtr, inst);
+    inst = InstNameGetInternalRep(objPtr);
 
     if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
@@ -951,14 +987,12 @@ static Tcl_Obj *
 DisassembleByteCodeAsDicts(
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
-    ByteCode *codePtr;
+    ByteCode *codePtr = ByteCodeGetInternalRep(objPtr);
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength, val, line;
     Tcl_Size i;
-
-    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
     /*
      * Get the literals from the bytecode.
@@ -1601,8 +1635,7 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    ByteCodeGetInternalRep(codeObjPtr, &tclByteCodeType, codePtr);
-
+    codePtr = ByteCodeGetInternalRep(codeObjPtr);
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", -1));

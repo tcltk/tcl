@@ -772,7 +772,7 @@ typedef struct VarInHash {
  */
 
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT)
+    (varPtr)->flags &= ~(VAR_ARRAY | VAR_LINK | VAR_CONSTANT)
 
 #define TclSetVarArray(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
@@ -786,9 +786,13 @@ typedef struct VarInHash {
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
-#define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
-    (varPtr)->value.objPtr = NULL
+static inline void
+TclSetVarUndefined(
+    Var *varPtr)
+{
+    varPtr->flags &= ~(VAR_ARRAY | VAR_LINK | VAR_CONSTANT);
+    varPtr->value.objPtr = NULL;
+}
 
 #define TclClearVarUndefined(varPtr)
 
@@ -797,22 +801,6 @@ typedef struct VarInHash {
 
 #define TclClearVarTraceActive(varPtr) \
     (varPtr)->flags &= ~VAR_TRACE_ACTIVE
-
-#define TclSetVarNamespaceVar(varPtr) \
-    if (!TclIsVarNamespaceVar(varPtr)) {\
-	(varPtr)->flags |= VAR_NAMESPACE_VAR;\
-	if (TclIsVarInHash(varPtr)) {\
-	    ((VarInHash *)(varPtr))->refCount++;\
-	}\
-    }
-
-#define TclClearVarNamespaceVar(varPtr) \
-    if (TclIsVarNamespaceVar(varPtr)) {\
-	(varPtr)->flags &= ~VAR_NAMESPACE_VAR;\
-	if (TclIsVarInHash(varPtr)) {\
-	    ((VarInHash *)(varPtr))->refCount--;\
-	}\
-    }
 
 /*
  * Macros to read various flag bits of variables.
@@ -829,7 +817,120 @@ typedef struct VarInHash {
  * MODULE_SCOPE int	TclIsVarResolved(Var *varPtr);
  */
 
-#define TclVarFindHiddenArray(varPtr,arrayPtr)				\
+static inline int
+TclIsVarScalar(Var *varPtr) {
+    return !(varPtr->flags & (VAR_ARRAY | VAR_LINK));
+}
+
+static inline int
+TclIsVarLink(Var *varPtr) {
+    return (varPtr->flags & VAR_LINK);
+}
+
+static inline int
+TclIsVarArray(Var *varPtr) {
+    return (varPtr->flags & VAR_ARRAY);
+}
+
+/* Implies scalar as well. */
+static inline int
+TclIsVarConstant(Var  *varPtr) {
+    return (varPtr->flags & VAR_CONSTANT);
+}
+
+static inline int
+TclIsVarUndefined(Var *varPtr) {
+    return (varPtr->value.objPtr == NULL);
+}
+
+static inline int
+TclIsVarArrayElement(Var *varPtr) {
+    return (varPtr->flags & VAR_ARRAY_ELEMENT);
+}
+
+static inline int
+TclIsVarNamespaceVar(Var *varPtr) {
+    return (varPtr->flags & VAR_NAMESPACE_VAR);
+}
+
+static inline int
+TclIsVarTemporary(Var *varPtr) {
+    return (varPtr->flags & VAR_TEMPORARY);
+}
+
+static inline int
+TclIsVarArgument(Var *varPtr) {
+    return (varPtr->flags & VAR_ARGUMENT);
+}
+
+static inline int
+TclIsVarResolved(Var *varPtr) {
+    return (varPtr->flags & VAR_RESOLVED);
+}
+
+static inline int
+TclIsVarTraceActive(Var *varPtr) {
+    return (varPtr->flags & VAR_TRACE_ACTIVE);
+}
+
+static inline int
+TclIsVarTraced(Var *varPtr) {
+    return (varPtr->flags & VAR_ALL_TRACES);
+}
+
+static inline int
+TclIsVarInHash(Var *varPtr) {
+    return (varPtr->flags & VAR_IN_HASHTABLE);
+}
+
+static inline int
+TclIsVarDeadHash(Var *varPtr) {
+    return (varPtr->flags & VAR_DEAD_HASH);
+}
+
+static inline Namespace *
+TclGetVarNsPtr(Var *varPtr) {
+    return TclIsVarInHash(varPtr)
+	? ((TclVarHashTable *) ((VarInHash *) varPtr)->entry.tablePtr)->nsPtr
+	: NULL;
+}
+
+static inline Var *
+TclVarParentArray(Var *varPtr) {
+    return ((TclVarHashTable *) ((VarInHash *) varPtr)->entry.tablePtr)->arrayPtr;
+}
+
+#define VarHashRefCount(varPtr) \
+    (((VarInHash *) (varPtr))->refCount)
+
+static inline Tcl_Obj *
+VarHashGetKey(Var *varPtr) {
+    return ((VarInHash *) varPtr)->entry.key.objPtr;
+}
+
+static inline void
+TclSetVarNamespaceVar(
+    Var *varPtr)
+{
+    if (!TclIsVarNamespaceVar(varPtr)) {
+	varPtr->flags |= VAR_NAMESPACE_VAR;
+	if (TclIsVarInHash(varPtr)) {
+	    ((VarInHash *) varPtr)->refCount++;
+	}
+    }
+}
+
+static inline void
+TclClearVarNamespaceVar(Var *varPtr) {
+    if (TclIsVarNamespaceVar(varPtr)) {
+	varPtr->flags &= ~VAR_NAMESPACE_VAR;
+	if (TclIsVarInHash(varPtr)) {
+	    ((VarInHash *) varPtr)->refCount--;
+	}
+    }
+}
+
+#define TclVarFindHiddenArray(varPtr, arrayPtr) \
     do {								\
 	if ((arrayPtr == NULL) && TclIsVarInHash(varPtr) &&		\
 		(TclVarParentArray(varPtr) != NULL)) {			\
@@ -837,98 +938,60 @@ typedef struct VarInHash {
 	}								\
     } while(0)
 
-#define TclIsVarScalar(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK))
-
-#define TclIsVarLink(varPtr) \
-    ((varPtr)->flags & VAR_LINK)
-
-#define TclIsVarArray(varPtr) \
-    ((varPtr)->flags & VAR_ARRAY)
-
-/* Implies scalar as well. */
-#define TclIsVarConstant(varPtr) \
-    ((varPtr)->flags & VAR_CONSTANT)
-
-#define TclIsVarUndefined(varPtr) \
-    ((varPtr)->value.objPtr == NULL)
-
-#define TclIsVarArrayElement(varPtr) \
-    ((varPtr)->flags & VAR_ARRAY_ELEMENT)
-
-#define TclIsVarNamespaceVar(varPtr) \
-    ((varPtr)->flags & VAR_NAMESPACE_VAR)
-
-#define TclIsVarTemporary(varPtr) \
-    ((varPtr)->flags & VAR_TEMPORARY)
-
-#define TclIsVarArgument(varPtr) \
-    ((varPtr)->flags & VAR_ARGUMENT)
-
-#define TclIsVarResolved(varPtr) \
-    ((varPtr)->flags & VAR_RESOLVED)
-
-#define TclIsVarTraceActive(varPtr) \
-    ((varPtr)->flags & VAR_TRACE_ACTIVE)
-
-#define TclIsVarTraced(varPtr) \
-    ((varPtr)->flags & VAR_ALL_TRACES)
-
-#define TclIsVarInHash(varPtr) \
-    ((varPtr)->flags & VAR_IN_HASHTABLE)
-
-#define TclIsVarDeadHash(varPtr) \
-    ((varPtr)->flags & VAR_DEAD_HASH)
-
-#define TclGetVarNsPtr(varPtr) \
-    (TclIsVarInHash(varPtr) \
-	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
-	: NULL)
-
-#define TclVarParentArray(varPtr)					\
-    ((TclVarHashTable *) ((VarInHash *) (varPtr))->entry.tablePtr)->arrayPtr
-
-#define VarHashRefCount(varPtr) \
-    ((VarInHash *) (varPtr))->refCount
-
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 /*
  * Macros for direct variable access by TEBC.
  */
 
-#define TclIsVarTricky(varPtr,trickyFlags)				\
-    (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
-	  || (TclIsVarInHash(varPtr)					\
-		&& (TclVarParentArray(varPtr) != NULL)			\
-		&& (TclVarParentArray(varPtr)->flags & (trickyFlags))))
+static inline int
+TclIsVarTricky(
+    const Var *varPtr,
+    int trickyFlags)
+{
+    return ((varPtr->flags & (VAR_ARRAY | VAR_LINK | trickyFlags))
+	    || (TclIsVarInHash(varPtr)
+		&& (TclVarParentArray(varPtr) != NULL)
+		&& (TclVarParentArray(varPtr)->flags & trickyFlags)));
+}
 
-#define TclIsVarDirectReadable(varPtr)					\
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
-	&& (varPtr)->value.objPtr)
+static inline int
+TclIsVarDirectReadable(Var *varPtr) {
+    return !TclIsVarTricky(varPtr, VAR_TRACED_READ) && varPtr->value.objPtr;
+}
 
-#define TclIsVarDirectWritable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
+static inline int
+TclIsVarDirectWritable(Var *varPtr) {
+    return !TclIsVarTricky(varPtr, VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT);
+}
 
-#define TclIsVarDirectUnsettable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
+static inline int
+TclIsVarDirectUnsettable(Var *varPtr) {
+    return !TclIsVarTricky(varPtr,
+	    VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT);
+}
 
-#define TclIsVarDirectModifyable(varPtr) \
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
-	&&  (varPtr)->value.objPtr)
+static inline int
+TclIsVarDirectModifyable(Var *varPtr) {
+    return !TclIsVarTricky(varPtr, VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT)
+	    && varPtr->value.objPtr;
+}
 
-#define TclIsVarDirectReadable2(varPtr, arrayPtr) \
-    (TclIsVarDirectReadable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_READ)))
+static inline int
+TclIsVarDirectReadable2(Var *varPtr, Var *arrayPtr) {
+    return TclIsVarDirectReadable(varPtr)
+	    && (!arrayPtr || !(arrayPtr->flags & VAR_TRACED_READ));
+}
 
-#define TclIsVarDirectWritable2(varPtr, arrayPtr) \
-    (TclIsVarDirectWritable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & VAR_TRACED_WRITE)))
+static inline int
+TclIsVarDirectWritable2(Var *varPtr, Var *arrayPtr) {
+    return TclIsVarDirectWritable(varPtr)
+	    && (!arrayPtr || !(arrayPtr->flags & VAR_TRACED_WRITE));
+}
 
-#define TclIsVarDirectModifyable2(varPtr, arrayPtr) \
-    (TclIsVarDirectModifyable(varPtr) &&\
-	(!(arrayPtr) || !((arrayPtr)->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))))
+static inline int
+TclIsVarDirectModifyable2(Var *varPtr, Var *arrayPtr) {
+    return TclIsVarDirectModifyable(varPtr)
+	    && (!arrayPtr || !(arrayPtr->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE)));
+}
 
 /*
  *----------------------------------------------------------------
@@ -2721,10 +2784,14 @@ typedef struct ListRep {
  * and never from strings (see SetListFromAny) and thus their string
  * representation will always be canonical.
  */
-#define ListObjIsCanonical(listObj_) \
-    (((listObj_)->bytes == NULL)					\
-	|| (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL)	\
-	|| ListObjSpanPtr(listObj_) != NULL)
+static inline int
+ListObjIsCanonical(
+    Tcl_Obj *listObj)
+{
+    return ((listObj->bytes == NULL)
+	    || (ListObjStorePtr(listObj)->flags & LISTSTORE_CANONICAL)
+	    || ListObjSpanPtr(listObj) != NULL);
+}
 
 /*
  * Converts the Tcl_Obj to a list if it isn't one and stores the element
@@ -3136,6 +3203,7 @@ MODULE_SCOPE void *tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
+MODULE_SCOPE const Tcl_ObjType tclAssembleCodeType;
 MODULE_SCOPE const Tcl_ObjType tclBignumType;
 MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
@@ -3147,6 +3215,7 @@ MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
+MODULE_SCOPE const Tcl_ObjType tclSubstCodeType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
