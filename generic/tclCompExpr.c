@@ -162,7 +162,7 @@ enum LexemeCodes {
 				 * FUNCTION or a parse error according to
 				 * context and value. */
     INCOMPLETE = 4,		/* A parse error. Used only when the single
-				 * "=" is encountered.  */
+				 * "=" is encountered. */
     INVALID = 5,		/* A parse error. Used when any punctuation
 				 * appears that's not a supported operator. */
     COMMENT = 6,		/* Comment. Lasts to end of line or end of
@@ -223,7 +223,7 @@ enum LexemeCodes {
 				 * that this operator can only legally appear
 				 * at the right places within a function call
 				 * argument list are hard coded within
-				 * ParseExpr().  */
+				 * ParseExpr(). */
     MULT = BINARY | 4,
     DIVIDE = BINARY | 5,
     MOD = BINARY | 6,

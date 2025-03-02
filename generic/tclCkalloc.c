@@ -276,7 +276,6 @@ ValidateMemory(
 	memset(memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
 	memset(hiPtr, 0, HIGH_GUARD_SIZE);
     }
-
 }
 
 /*

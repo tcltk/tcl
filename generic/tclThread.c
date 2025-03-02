@@ -23,9 +23,9 @@
  */
 
 typedef struct {
-    int num;		/* Number of objects remembered */
-    int max;		/* Max size of the array */
-    void **list;	/* List of pointers */
+    int num;			/* Number of objects remembered */
+    int max;			/* Max size of the array */
+    void **list;		/* List of pointers */
 } SyncObjRecord;
 
 static SyncObjRecord keyRecord = {0, 0, NULL};
@@ -109,7 +109,6 @@ Tcl_GetThreadData(
 void *
 TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
-
 {
 #if TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);

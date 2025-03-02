@@ -2716,9 +2716,9 @@ Tcl_CreateCommand(
 #ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_ObjCmdProc *proc;
-    void *clientData; /* Arbitrary value to pass to proc function. */
+    void *clientData;	/* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
-    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    void *deleteData;	/* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc *nreProc;
 } CmdWrapperInfo;
 
@@ -3007,9 +3007,9 @@ TclCreateObjCommandInNs(
 
 int
 InvokeStringCommand(
-    void *clientData,	/* Points to command's Command structure. */
+    void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
@@ -3570,7 +3570,6 @@ Tcl_GetCommandFullName(
 				 * not have been deleted. */
     Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */
-
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = (Command *) command;
@@ -3968,7 +3967,7 @@ CallCommandTraces(
 
 static int
 CancelEvalProc(
-    void *clientData,	/* Interp to cancel the script in progress. */
+    void *clientData,		/* Interp to cancel the script in progress. */
     TCL_UNUSED(Tcl_Interp *),
     int code)			/* Current return code from command. */
 {
@@ -8096,7 +8095,7 @@ DoubleObjIsClass(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv,	/* Actual parameter list */
     int cmpCls,			/* FP class to compare. */
-    int positive)		/* 1 if compare positive, 0 - otherwise  */
+    int positive)		/* 1 if compare positive, 0 - otherwise */
 {
     int dCls;
 
@@ -8187,10 +8186,8 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (
-	DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
-	DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK
-    ) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
+	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
 

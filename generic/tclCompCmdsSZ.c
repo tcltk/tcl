@@ -2115,7 +2115,7 @@ IssueSwitchChainedTests(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
@@ -2363,7 +2363,7 @@ IssueSwitchJumpTable(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {

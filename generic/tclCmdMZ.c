@@ -5340,7 +5340,7 @@ TclListLines(
     Tcl_Size line,		/* Line the list as a whole starts on. */
     Tcl_Size n,			/* #elements in lines */
     Tcl_Size *lines,		/* Array of line numbers, to fill. */
-    Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
+    Tcl_Obj *const *elems)	/* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = TclGetString(listObj);

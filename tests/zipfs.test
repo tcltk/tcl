@@ -669,7 +669,7 @@ namespace eval test_ns_zipfs {
 	mount [zippath test.zip]
 	set newmount [file join [zipfs root] test testdir]
 	mount [zippath test-overlay.zip] $newmount
-    } -constraints bug-4ae42446ab -cleanup {
+    } -constraints bug_4ae42446ab -cleanup {
 	cleanup
     } -body {
 	# KNOWN BUG. The test2 file is also present in parent mount.

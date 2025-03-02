@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     Tcl_Size numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    TCL_HASH_TYPE *breakTargets;/* The offsets of the INST_JUMP4 instructions
+    size_t *breakTargets;/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     Tcl_Size numContinueTargets;/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    TCL_HASH_TYPE *continueTargets;
+    size_t *continueTargets;
 				/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
@@ -223,7 +223,7 @@ typedef void *	(AuxDataDupProc) (void *clientData);
 typedef void	(AuxDataFreeProc) (void *clientData);
 typedef void	(AuxDataPrintProc) (void *clientData,
 	Tcl_Obj *appendObj, struct ByteCode *codePtr,
-	TCL_HASH_TYPE pcOffset);
+	size_t pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information

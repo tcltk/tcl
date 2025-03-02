@@ -133,7 +133,7 @@ typedef struct PipeInfo {
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
 				 * thread. Access is synchronized with the
-				 * readable object.  */
+				 * readable object. */
     char extraByte;		/* Buffer for extra character consumed by
 				 * reader thread. This byte is shared with the
 				 * reader thread so access must be
@@ -1969,7 +1969,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -2008,7 +2008,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,	/* Pointer to PipeInfo structure. */
+    void *instanceData,		/* Pointer to PipeInfo structure. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -2179,7 +2179,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -2273,7 +2273,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -2347,7 +2347,6 @@ PipeOutputProc(
   error:
     *errorCode = errno;
     return -1;
-
 }
 
 /*
@@ -2455,7 +2454,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2517,9 +2516,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;
@@ -2943,7 +2942,7 @@ PipeReaderThread(
     LPVOID arg)
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *) arg;
-    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    PipeInfo *infoPtr = NULL;	/* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, err;
     int done = 0;
@@ -3066,7 +3065,7 @@ PipeWriterThread(
     LPVOID arg)
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
-    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    PipeInfo *infoPtr = NULL;	/* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, toWrite;
     char *buf;
