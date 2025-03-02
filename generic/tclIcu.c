@@ -743,10 +743,10 @@ IcuConverterAliasesObjCmd(
 static int
 IcuConverttoDString(
     Tcl_Interp *interp,
-    Tcl_DString *dsInPtr,  /* Input UTF16 */
+    Tcl_DString *dsInPtr,	/* Input UTF16 */
     const char *icuEncName,
     int strict,
-    Tcl_DString *dsOutPtr) /* Output encoded string. */
+    Tcl_DString *dsOutPtr)	/* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
 	ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
@@ -827,7 +827,7 @@ IcuBytesToUCharDString(
     Tcl_Size nbytes,
     const char *icuEncName,
     int strict,
-    Tcl_DString *dsOutPtr) /* Output UChar string. */
+    Tcl_DString *dsOutPtr)	/* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
 	ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
@@ -855,7 +855,7 @@ IcuBytesToUCharDString(
     }
 
     int dstLen;
-    int dstCapacity = (int) nbytes; /* In UChar's  */
+    int dstCapacity = (int) nbytes; /* In UChar's */
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
@@ -905,9 +905,9 @@ IcuBytesToUCharDString(
 static int
 IcuNormalizeUCharDString(
     Tcl_Interp *interp,
-    Tcl_DString *dsInPtr, /* Input UTF16 */
+    Tcl_DString *dsInPtr,	/* Input UTF16 */
     NormalizationMode mode,
-    Tcl_DString *dsOutPtr) /* Output normalized UTF16. */
+    Tcl_DString *dsOutPtr)	/* Output normalized UTF16. */
 {
     typedef UNormalizer2 *(*normFn)(UErrorCodex *);
     normFn fn = NULL;
@@ -1060,9 +1060,9 @@ static int IcuParseConvertOptions(
 static int
 IcuConvertfromObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
     Tcl_Obj *failindexVar;
@@ -1111,9 +1111,9 @@ IcuConvertfromObjCmd(
 static int
 IcuConverttoObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
     Tcl_Obj *failindexVar;
@@ -1156,9 +1156,9 @@ IcuConverttoObjCmd(
 static int
 IcuNormalizeObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *optNames[] = {"-profile", "-mode", NULL};
     enum { OPT_PROFILE, OPT_MODE } opt;
@@ -1271,10 +1271,9 @@ TclIcuCleanup(
  */
 static void *
 IcuFindSymbol(
-    Tcl_LoadHandle loadH, /* Handle to shared library containing symbol */
-    const char *name,     /* Name of function */
-    const char *suffix    /* Suffix that may be present */
-)
+    Tcl_LoadHandle loadH,	/* Handle to shared library containing symbol */
+    const char *name,		/* Name of function */
+    const char *suffix)		/* Suffix that may be present */
 {
     /*
      * ICU symbols may have a version suffix depending on how it was built.

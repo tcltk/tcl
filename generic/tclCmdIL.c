@@ -4037,11 +4037,11 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,        /* for error reporting  */
-     Tcl_Obj *argPtr,           /* Argument to decode   */
+     Tcl_Interp *interp,	/* for error reporting */
+     Tcl_Obj *argPtr,		/* Argument to decode */
      int allowedArgs,		/* Flags if keyword or numeric allowed. */
-     Tcl_Obj **numValuePtr,     /* Return numeric value */
-     int *keywordIndexPtr)      /* Return keyword enum  */
+     Tcl_Obj **numValuePtr,	/* Return numeric value */
+     int *keywordIndexPtr)	/* Return keyword enum */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;
@@ -4085,8 +4085,7 @@ SequenceIdentifyArgument(
 	int keyword;
 	/* Determine if result of expression is double or int */
 	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
-		&keyword) != TCL_OK
-	) {
+		&keyword) != TCL_OK) {
 	    return ErrArg;
 	}
 	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
@@ -4134,9 +4133,9 @@ SequenceIdentifyArgument(
 int
 Tcl_LseqObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	   /* Current interpreter. */
-    int objc,		   /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* The argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Obj *elementCount = NULL;
     Tcl_Obj *start = NULL, *end = NULL, *step = NULL;

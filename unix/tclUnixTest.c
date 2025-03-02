@@ -312,7 +312,7 @@ TestfilehandlerCmd(
 
 static void
 TestFileHandlerProc(
-    void *clientData,	/* Points to a Pipe structure. */
+    void *clientData,		/* Points to a Pipe structure. */
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
