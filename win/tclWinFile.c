@@ -2518,9 +2518,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)	        /* offset to start at in pathPtr */
+    int nextCheckpoint)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */

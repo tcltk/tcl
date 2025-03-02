@@ -1422,7 +1422,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     Tcl_Size num;		/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    Tcl_Size loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
+    Tcl_Size loc[TCLFLEXARRAY];	/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -1678,13 +1678,13 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    TCL_HASH_TYPE numBuckets;	/* Total number of buckets allocated at
+    size_t numBuckets;	/* Total number of buckets allocated at
 				 * **buckets. */
-    TCL_HASH_TYPE numEntries;	/* Total number of entries present in
+    size_t numEntries;	/* Total number of entries present in
 				 * table. */
-    TCL_HASH_TYPE rebuildSize;	/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;	/* Enlarge table when numEntries gets to be
 				 * this large. */
-    TCL_HASH_TYPE mask;		/* Mask value used in hashing function. */
+    size_t mask;		/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
@@ -2871,7 +2871,7 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
  */
 
 typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
-	TCL_HASH_TYPE *lengthPtr,
+	size_t *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
 #ifdef _WIN32
@@ -2893,7 +2893,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
 typedef struct ProcessGlobalValue {
     Tcl_Size epoch;		/* Epoch counter to detect changes in the
 				 * global value. */
-    TCL_HASH_TYPE numBytes;	/* Length of the global string. */
+    size_t numBytes;		/* Length of the global string. */
     char *value;		/* The global string value. */
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
@@ -3513,10 +3513,10 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    TCL_HASH_TYPE stackSize, int flags);
+			    size_t stackSize, int flags);
 MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
-			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
+			    size_t *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void *	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
@@ -3580,7 +3580,7 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    TCL_HASH_TYPE numBytes);
+			    size_t numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
@@ -4026,7 +4026,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 
 MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
-MODULE_SCOPE TCL_HASH_TYPE TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
+MODULE_SCOPE size_t TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 MODULE_SCOPE int	TclFullFinalizationRequested(void);
 

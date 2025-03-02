@@ -194,7 +194,6 @@ Tcl_DetachPids(
 	detList = detPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
-
 }
 
 /*

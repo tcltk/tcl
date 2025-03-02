@@ -5634,7 +5634,7 @@ ZipFSMatchInDirectoryProc(
     Tcl_DString dsPref, *prefixBuf = NULL;
     int foundInHash, notDuplicate;
     ZipEntry *z;
-    int wanted; /* TCL_GLOB_TYPE* */
+    int wanted;			/* TCL_GLOB_TYPE* */
 
     if (!normPathPtr) {
 	return -1;

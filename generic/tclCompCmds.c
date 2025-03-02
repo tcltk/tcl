@@ -2964,7 +2964,7 @@ CompileEachloopCmd(
 
 static void *
 DupForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -3013,7 +3013,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;

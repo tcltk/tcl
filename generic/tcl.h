@@ -408,7 +408,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * given to Tcl_CreateThread.
  */
 
-#define TCL_THREAD_STACK_DEFAULT (0)    /* Use default size for stack. */
+#define TCL_THREAD_STACK_DEFAULT (0)	/* Use default size for stack. */
 #define TCL_THREAD_NOFLAGS	 (0000) /* Standard flags, default
 					 * behaviour. */
 #define TCL_THREAD_JOINABLE	 (0001) /* Mark the thread as joinable. */
@@ -683,7 +683,7 @@ typedef struct Tcl_ObjType {
  * the handling of the internalrep.
  */
 
-typedef union Tcl_ObjInternalRep {	/* The internal representation: */
+typedef union Tcl_ObjInternalRep {/* The internal representation: */
     long longValue;		/*   - an long integer value. */
     double doubleValue;		/*   - a double-precision floating value. */
     void *otherValuePtr;	/*   - another, type-specific value, */
@@ -1029,7 +1029,7 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
-#ifndef TCL_HASH_TYPE
+#if !defined(TCL_HASH_TYPE) && !defined (TCL_NO_DEPRECATED)
 #   define TCL_HASH_TYPE size_t
 #endif
 
@@ -1037,7 +1037,7 @@ typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef TCL_HASH_TYPE (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef size_t (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
 typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
 typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 	void *keyPtr);
@@ -1220,7 +1220,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    TCL_HASH_TYPE epoch;	/* Epoch marker for dictionary being searched,
+    size_t epoch;	/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;

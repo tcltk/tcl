@@ -162,7 +162,7 @@ typedef enum {
 static const char *const methodNames[] = {
     "blocking",		/* OPT */
     "cget",		/* OPT \/ Together or none */
-    "cgetall",		/* OPT /\ of these two     */
+    "cgetall",		/* OPT /\ of these two. */
     "configure",	/* OPT */
     "finalize",		/*     */
     "initialize",	/*     */
@@ -1778,7 +1778,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1850,7 +1850,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -2003,7 +2003,7 @@ ReflectGetOption(
 
 static int
 ReflectTruncate(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     long long length)		/* Length to truncate to. */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -2086,7 +2086,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    Tcl_Size listc;			/* #elements in eventspec list */
+    Tcl_Size listc;		/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2563,13 +2563,13 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
 #if TCL_THREADS

@@ -525,7 +525,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;	/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -594,7 +594,6 @@ EncodingConvertfromObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -687,7 +686,6 @@ EncodingConverttoObjCmd(
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
-
 }
 
 /*
@@ -753,9 +751,9 @@ EncodingDirsObjCmd(
 int
 EncodingNamesObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,	    /* Tcl interpreter */
-    Tcl_Size objc,		    /* Number of command line args */
-    Tcl_Obj* const objv[])  /* Vector of command line args */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Size objc,			/* Number of command line args */
+    Tcl_Obj* const objv[])	/* Vector of command line args */
 {
     if (objc > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);

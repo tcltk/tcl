@@ -1779,22 +1779,16 @@ TclpOpenFileChannel(
 	     * Note: since paths starting with ~ are absolute, it also considers tilde expansion,
 	     * (proper error message of tests *io-40.17 "tilde substitution in open")
 	     */
-	    if (
-		(
-		  (
-		    !TclFSCwdIsNative() &&
-		    (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE)
-		  ) ||
-		  (*TclGetString(pathPtr) == '~')  /* possible tilde expansion */
-		) &&
-		Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL
-	    ) {
+	    if (((!TclFSCwdIsNative()
+		    && (Tcl_FSGetPathType(pathPtr) != TCL_PATH_ABSOLUTE))
+		    || (*TclGetString(pathPtr) == '~'))  /* possible tilde expansion */
+		    && Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 		return NULL;
 	    }
 
 	    Tcl_AppendResult(interp, "couldn't open \"",
-	    TclGetString(pathPtr), "\": filename is invalid on this platform",
-	    (char *)NULL);
+		    TclGetString(pathPtr),
+		    "\": filename is invalid on this platform", (char *)NULL);
 	}
 	return NULL;
     }

@@ -21,7 +21,7 @@
 typedef struct TimerHandler {
     Tcl_Time time;		/* When timer is to fire. */
     Tcl_TimerProc *proc;	/* Function to call. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
     struct TimerHandler *nextPtr;
 				/* Next event in queue, or NULL for end of
@@ -73,7 +73,7 @@ typedef struct AfterAssocData {
 
 typedef struct IdleHandler {
     Tcl_IdleProc *proc;		/* Function to call. */
-    void *clientData;	/* Value to pass to proc. */
+    void *clientData;		/* Value to pass to proc. */
     int generation;		/* Used to distinguish older handlers from
 				 * recently-created ones. */
     struct IdleHandler *nextPtr;/* Next in list of active handlers. */
@@ -251,7 +251,7 @@ Tcl_CreateTimerHandler(
     int milliseconds,		/* How many milliseconds to wait before
 				 * invoking proc. */
     Tcl_TimerProc *proc,	/* Function to invoke. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
 
@@ -619,7 +619,7 @@ TimerHandlerEventProc(
 void
 Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr;
     Tcl_Time blockTime;
@@ -663,7 +663,7 @@ Tcl_DoWhenIdle(
 void
 Tcl_CancelIdleCall(
     Tcl_IdleProc *proc,		/* Function that was previously registered. */
-    void *clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr, *prevPtr;
     IdleHandler *nextPtr;
@@ -1149,7 +1149,7 @@ GetAfterEvent(
 
 static void
 AfterProc(
-    void *clientData)	/* Describes command to execute. */
+    void *clientData)		/* Describes command to execute. */
 {
     AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
@@ -1251,7 +1251,7 @@ FreeAfterPtr(
 
 static void
 AfterCleanupProc(
-    void *clientData,	/* Points to AfterAssocData for the
+    void *clientData,		/* Points to AfterAssocData for the
 				 * interpreter. */
     TCL_UNUSED(Tcl_Interp *))
 {

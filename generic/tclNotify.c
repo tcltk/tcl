@@ -74,7 +74,7 @@ typedef struct ThreadSpecificData {
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
-    void *clientData;	/* Opaque handle for platform specific
+    void *clientData;		/* Opaque handle for platform specific
 				 * notifier. */
     struct ThreadSpecificData *nextPtr;
 				/* Next notifier in global list of notifiers.
@@ -308,7 +308,7 @@ Tcl_CreateEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    void *clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)		/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -347,7 +347,7 @@ Tcl_DeleteEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    void *clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)		/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -394,7 +394,7 @@ Tcl_QueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -426,7 +426,7 @@ Tcl_ThreadQueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr;
@@ -486,7 +486,7 @@ QueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
     int wasEmpty = 0;
@@ -562,7 +562,7 @@ QueueEvent(
 void
 Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
-    void *clientData)	/* The type-specific data. */
+    void *clientData)		/* The type-specific data. */
 {
     Tcl_Event *evPtr;		/* Pointer to the event being examined */
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
@@ -1270,7 +1270,7 @@ Tcl_FinalizeNotifier(
 
 void
 Tcl_AlertNotifier(
-    void *clientData)	/* Pointer to thread data. */
+    void *clientData)		/* Pointer to thread data. */
 {
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
@@ -1397,7 +1397,7 @@ Tcl_CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);

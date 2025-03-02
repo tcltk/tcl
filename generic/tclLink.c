@@ -36,7 +36,7 @@ typedef struct {
     Tcl_Size bytes;		/* Size of C variable array. This is 0 when
 				 * single variables, and >0 used for array
 				 * variables. */
-    Tcl_Size numElems;	/* Number of elements in C variable array.
+    Tcl_Size numElems;		/* Number of elements in C variable array.
 				 * Zero for single variables. */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
@@ -680,7 +680,7 @@ GetInvalidDoubleFromObj(
 
 static char *
 LinkTraceProc(
-    void *clientData,	/* Contains information about the link. */
+    void *clientData,		/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,

@@ -594,7 +594,7 @@ TestindexobjCmd(
      */
     struct IndexRep {
 	void *tablePtr;		/* Pointer to the table of strings. */
-	Tcl_Size offset;		/* Offset between table entries. */
+	Tcl_Size offset;	/* Offset between table entries. */
 	Tcl_Size index;		/* Selected index into table. */
     } *indexRep;
 
@@ -922,8 +922,8 @@ TestlistobjCmd(
     } cmdIndex;
 
     Tcl_Size varIndex;		/* Variable number converted to binary */
-    Tcl_Size first;			/* First index in the list */
-    Tcl_Size count;			/* Count of elements in a list */
+    Tcl_Size first;		/* First index in the list */
+    Tcl_Size count;		/* Count of elements in a list */
     Tcl_Obj **varPtr;
     Tcl_Size i, len;
 
@@ -1615,7 +1615,7 @@ static int
 TestbigdataCmd (
     TCL_UNUSED(void *),
     Tcl_Interp *interp,    /* Current interpreter. */
-    Tcl_Size objc,              /* Number of arguments. */
+    Tcl_Size objc,         /* Number of arguments. */
     Tcl_Obj *const objv[]) /* Argument objects. */
 {
     static const char *const subcmds[] = {

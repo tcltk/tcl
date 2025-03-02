@@ -17,7 +17,7 @@
  * TraverseWinTree() calls the traverseProc()
  */
 
-#define DOTREE_PRED	1	/* pre-order directory  */
+#define DOTREE_PRED	1	/* pre-order directory */
 #define DOTREE_POSTD	2	/* post-order directory */
 #define DOTREE_F	3	/* regular file */
 #define DOTREE_LINK	4	/* symbolic link */
@@ -1121,7 +1121,6 @@ DoRemoveJustDirectory(
 	}
     }
     return TCL_ERROR;
-
 }
 
 static int

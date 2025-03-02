@@ -801,9 +801,9 @@ Tcl_UtfCharComplete(
 
 Tcl_Size
 Tcl_NumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative value for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative value for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     Tcl_Size i = 0;
@@ -853,9 +853,9 @@ Tcl_NumUtfChars(
 
 Tcl_Size
 TclNumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative for strlen(src). */
 {
     unsigned short ch = 0;
     Tcl_Size i = 0;
@@ -1177,8 +1177,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1213,8 +1213,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
@@ -1226,8 +1226,8 @@ Tcl_UtfAtIndex(
 
 const char *
 TclUtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
     Tcl_Size len = 0;
