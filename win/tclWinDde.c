@@ -273,10 +273,10 @@ Initialize(void)
 static const WCHAR *
 DdeSetServerName(
     Tcl_Interp *interp,
-    const WCHAR *name, /* The name that will be used to refer to the
+    const WCHAR *name,		/* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int flags,		/* DDE_FLAG_FORCE or 0 */
+    int flags,			/* DDE_FLAG_FORCE or 0 */
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
@@ -478,7 +478,7 @@ DdeGetRegistrationPtr(
 
 static void
 DeleteProc(
-    void *clientData)	/* The interp we are deleting. */
+    void *clientData)		/* The interp we are deleting. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
     RegisteredInterp *searchPtr, *prevPtr;
@@ -531,8 +531,8 @@ DeleteProc(
 
 static Tcl_Obj *
 ExecuteRemoteObject(
-    RegisteredInterp *riPtr,	    /* Info about this server. */
-    Tcl_Obj *ddeObjectPtr)	    /* The object to execute. */
+    RegisteredInterp *riPtr,	/* Info about this server. */
+    Tcl_Obj *ddeObjectPtr)	/* The object to execute. */
 {
     Tcl_Obj *returnPackagePtr;
     int result = TCL_OK;
@@ -1219,7 +1219,7 @@ DdeGetServicesList(
 
 static void
 SetDdeError(
-    Tcl_Interp *interp)	    /* The interp to put the message in. */
+    Tcl_Interp *interp)		/* The interp to put the message in. */
 {
     const char *errorMessage, *errorCode;
 
@@ -1266,9 +1266,9 @@ SetDdeError(
 
 static int
 DdeObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
-    Tcl_Size objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {

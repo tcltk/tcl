@@ -148,7 +148,7 @@ TclpInitNotifier(void)
 
 void
 TclpFinalizeNotifier(
-    void *clientData)	/* Pointer to notifier data. */
+    void *clientData)		/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -218,7 +218,7 @@ TclpFinalizeNotifier(
 
 void
 TclpAlertNotifier(
-    void *clientData)	/* Pointer to thread data. */
+    void *clientData)		/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 

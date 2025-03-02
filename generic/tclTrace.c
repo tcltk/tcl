@@ -22,7 +22,7 @@ typedef struct {
     int flags;			/* Operations for which Tcl command is to be
 				 * invoked. */
     Tcl_Size length;		/* Number of non-NUL chars. in command. */
-    char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
+    char command[TCLFLEXARRAY];	/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
 				 * structure, so that it can be larger than 1
@@ -44,7 +44,7 @@ typedef struct {
     Tcl_Size length;		/* Number of non-NUL chars. in command. */
     Tcl_Trace stepTrace;	/* Used for execution traces, when tracing
 				 * inside the given command */
-    Tcl_Size startLevel;		/* Used for bookkeeping with step execution
+    Tcl_Size startLevel;	/* Used for bookkeeping with step execution
 				 * traces, store the level at which the step
 				 * trace was invoked */
     char *startCmd;		/* Used for bookkeeping with step execution
@@ -56,7 +56,7 @@ typedef struct {
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
-    char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
+    char command[TCLFLEXARRAY];	/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
 				 * structure, so that it can be larger than 1
@@ -146,7 +146,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  */
 
 typedef struct {
-    void *clientData;	/* Client data from Tcl_CreateTrace */
+    void *clientData;		/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
 
@@ -279,8 +279,8 @@ Tcl_TraceObjCmd(
 static int
 TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
-    Tcl_Size objc,			/* Number of arguments. */
+    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *name, *command;
@@ -526,8 +526,8 @@ TraceExecutionObjCmd(
 static int
 TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
-    Tcl_Size objc,			/* Number of arguments. */
+    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *name, *command;
@@ -720,8 +720,8 @@ TraceCommandObjCmd(
 static int
 TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
-    Tcl_Size objc,			/* Number of arguments. */
+    enum traceOptionsEnum optionIndex, /* Add, info or remove */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *name, *command;
@@ -981,7 +981,7 @@ Tcl_TraceCommand(
 				 * of the TRACE_*_EXEC flags */
     Tcl_CommandTraceProc *proc,	/* Function to call when specified ops are
 				 * invoked upon cmdName. */
-    void *clientData)	/* Arbitrary argument to pass to proc. */
+    void *clientData)		/* Arbitrary argument to pass to proc. */
 {
     Command *cmdPtr;
     CommandTrace *tracePtr;
@@ -1044,7 +1044,7 @@ Tcl_UntraceCommand(
 				 * TCL_TRACE_RENAME, TCL_TRACE_DELETE, and any
 				 * of the TRACE_*_EXEC flags */
     Tcl_CommandTraceProc *proc,	/* Function assocated with trace. */
-    void *clientData)	/* Arbitrary argument to pass to proc. */
+    void *clientData)		/* Arbitrary argument to pass to proc. */
 {
     CommandTrace *tracePtr;
     CommandTrace *prevPtr;
@@ -1149,7 +1149,7 @@ Tcl_UntraceCommand(
 
 static void
 TraceCommandProc(
-    void *clientData,	/* Information about the command trace. */
+    void *clientData,		/* Information about the command trace. */
     Tcl_Interp *interp,		/* Interpreter containing command. */
     const char *oldName,	/* Name of command being changed. */
     const char *newName,	/* New name of command. Empty string or NULL
@@ -1294,7 +1294,7 @@ TclCheckExecutionTraces(
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
-    Tcl_Size objc,			/* Number of arguments for the command. */
+    Tcl_Size objc,		/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1400,7 +1400,7 @@ TclCheckInterpTraces(
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
-    Tcl_Size objc,			/* Number of arguments for the command. */
+    Tcl_Size objc,		/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1538,7 +1538,7 @@ TclCheckInterpTraces(
 static int
 CallTraceFunction(
     Tcl_Interp *interp,		/* The current interpreter. */
-    Trace *tracePtr,	/* Describes the trace function to call. */
+    Trace *tracePtr,		/* Describes the trace function to call. */
     Command *cmdPtr,		/* Points to command's Command struct. */
     const char *command,	/* Points to the first character of the
 				 * command's source before substitutions. */
@@ -1833,7 +1833,7 @@ TraceExecutionProc(
 
 static char *
 TraceVarProc(
-    void *clientData,	/* Information about the variable trace. */
+    void *clientData,		/* Information about the variable trace. */
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable or array. */
     const char *name2,		/* Name of element within array; NULL means
@@ -2016,10 +2016,10 @@ traceWrapperDelProc(
 Tcl_Trace
 Tcl_CreateObjTrace(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size level,			/* Maximum nesting level */
+    Tcl_Size level,		/* Maximum nesting level */
     int flags,			/* Flags, see above */
     Tcl_CmdObjTraceProc *proc,	/* Trace callback */
-    void *clientData,	/* Client data for the callback */
+    void *clientData,		/* Client data for the callback */
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
@@ -2035,10 +2035,10 @@ Tcl_CreateObjTrace(
 Tcl_Trace
 Tcl_CreateObjTrace2(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size level,			/* Maximum nesting level */
+    Tcl_Size level,		/* Maximum nesting level */
     int flags,			/* Flags, see above */
     Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
-    void *clientData,	/* Client data for the callback */
+    void *clientData,		/* Client data for the callback */
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
@@ -2124,11 +2124,11 @@ Tcl_CreateObjTrace2(
 Tcl_Trace
 Tcl_CreateTrace(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
-    Tcl_Size level,			/* Only call proc for commands at nesting
+    Tcl_Size level,		/* Only call proc for commands at nesting
 				 * level<=argument level (1=>top level). */
     Tcl_CmdTraceProc *proc,	/* Function to call before executing each
 				 * command. */
-    void *clientData)	/* Arbitrary value word to pass to proc. */
+    void *clientData)		/* Arbitrary value word to pass to proc. */
 {
     StringTraceData *data = (StringTraceData *)Tcl_Alloc(sizeof(StringTraceData));
 
@@ -2776,7 +2776,7 @@ Tcl_UntraceVar2(
 				 * TCL_TRACE_WRITES, TCL_TRACE_UNSETS,
 				 * TCL_GLOBAL_ONLY, and TCL_NAMESPACE_ONLY. */
     Tcl_VarTraceProc *proc,	/* Function associated with trace. */
-    void *clientData)	/* Arbitrary argument to pass to proc. */
+    void *clientData)		/* Arbitrary argument to pass to proc. */
 {
     VarTrace *tracePtr;
     VarTrace *prevPtr, *nextPtr;
@@ -2979,7 +2979,7 @@ Tcl_TraceVar2(
 				 * TCL_NAMESPACE_ONLY. */
     Tcl_VarTraceProc *proc,	/* Function to call when specified ops are
 				 * invoked upon varName. */
-    void *clientData)	/* Arbitrary argument to pass to proc. */
+    void *clientData)		/* Arbitrary argument to pass to proc. */
 {
     VarTrace *tracePtr;
     int result;

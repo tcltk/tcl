@@ -176,11 +176,11 @@ TclDeleteLiteralTable(
 Tcl_Obj *
 TclCreateLiteral(
     Interp *iPtr,
-    const char *bytes,	/* The start of the string. Note that this is
+    const char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    Tcl_Size length,	/* Number of bytes in the string. */
-    size_t hash, /* The string's hash. If the value is
-					 * TCL_INDEX_NONE, it will be computed here. */
+    Tcl_Size length,		/* Number of bytes in the string. */
+    size_t hash,		/* The string's hash. If the value is
+				 * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -389,12 +389,12 @@ TclFetchLiteral(
 
 int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
-    void *ePtr,		/* Points to the CompileEnv in whose object
+    void *ePtr,			/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
-    const char *bytes,	/* Points to string for which to find or
+    const char *bytes,		/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    Tcl_Size length,			/* Number of bytes in the string. If -1, the
+    Tcl_Size length,		/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already

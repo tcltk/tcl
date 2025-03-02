@@ -1432,10 +1432,10 @@ GetOwnerAttribute(
 
 static int
 GetPermissionsAttribute(
-    Tcl_Interp *interp,		    /* The interp we are using for errors. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
     TCL_UNUSED(int) /*objIndex*/,
-    Tcl_Obj *fileName,		    /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	    /* A pointer to return the object with. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -1740,7 +1740,7 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     TCL_UNUSED(Tcl_Interp *),
-    const char *modeStringPtr, /* Permissions string */
+    const char *modeStringPtr,	/* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
@@ -1933,8 +1933,7 @@ TclpObjNormalizePath(
 				 * be 0 or the offset of a directory separator
 				 * at the end of a path part that is already
 				 * normalized.  I.e. this is not the index of
-				 * the byte just after the separator.  */
-
+				 * the byte just after the separator. */
 {
     const char *currentPathEndPosition;
     char cur;
@@ -2462,10 +2461,10 @@ GetUnixFileAttributes(
 
 static int
 SetUnixFileAttributes(
-    Tcl_Interp *interp,	    /* The interp we are using for errors. */
-    int objIndex,           /* The index of the attribute. */
-    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr)  /* The attribute to set. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     int yesNo, fileAttributes, old;
     WCHAR *winPath;

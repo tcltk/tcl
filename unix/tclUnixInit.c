@@ -572,7 +572,7 @@ SearchKnownEncodings(
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
-	    /* Found it at i == test.  */
+	    /* Found it at i == test. */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
