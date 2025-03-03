@@ -1034,9 +1034,9 @@ TclDbDumpActiveObjects(
 void
 TclDbInitNewObj(
     Tcl_Obj *objPtr,
-    const char *file,	/* The name of the source file calling this
+    const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
-    int line)		/* Line number in the source file; used for
+    int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
     objPtr->refCount = 0;
@@ -1162,9 +1162,9 @@ Tcl_NewObj(void)
 
 Tcl_Obj *
 Tcl_DbNewObj(
-    const char *file,	/* The name of the source file calling this
+    const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
-    int line)		/* Line number in the source file; used for
+    int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
     Tcl_Obj *objPtr;
@@ -2353,7 +2353,7 @@ Tcl_NewDoubleObj(
 
 Tcl_Obj *
 Tcl_DbNewDoubleObj(
-    double dblValue,	/* Double used to initialize the object. */
+    double dblValue,		/* Double used to initialize the object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -2852,8 +2852,7 @@ Tcl_NewWideIntObj(
 
 Tcl_Obj *
 Tcl_NewWideUIntObj(
-    Tcl_WideUInt uwideValue)
-				/* Wide integer used to initialize the new
+    Tcl_WideUInt uwideValue)	/* Wide integer used to initialize the new
 				 * object. */
 {
     Tcl_Obj *objPtr;
@@ -2898,8 +2897,7 @@ Tcl_NewWideUIntObj(
 
 Tcl_Obj *
 Tcl_DbNewWideIntObj(
-    Tcl_WideInt wideValue,
-				/* Wide integer used to initialize the new
+    Tcl_WideInt wideValue,	/* Wide integer used to initialize the new
 				 * object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -2917,8 +2915,7 @@ Tcl_DbNewWideIntObj(
 
 Tcl_Obj *
 Tcl_DbNewWideIntObj(
-    Tcl_WideInt wideValue,
-				/* Long integer used to initialize the new
+    Tcl_WideInt wideValue,	/* Long integer used to initialize the new
 				 * object. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
@@ -2947,9 +2944,8 @@ Tcl_DbNewWideIntObj(
 
 void
 Tcl_SetWideIntObj(
-    Tcl_Obj *objPtr,	/* Object w. internal rep to init. */
-    Tcl_WideInt wideValue)
-				/* Wide integer used to initialize the
+    Tcl_Obj *objPtr,		/* Object w. internal rep to init. */
+    Tcl_WideInt wideValue)	/* Wide integer used to initialize the
 				 * object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
@@ -2979,9 +2975,8 @@ Tcl_SetWideIntObj(
 
 void
 Tcl_SetWideUIntObj(
-    Tcl_Obj *objPtr,	/* Object w. internal rep to init. */
-    Tcl_WideUInt uwideValue)
-				/* Wide integer used to initialize the
+    Tcl_Obj *objPtr,		/* Object w. internal rep to init. */
+    Tcl_WideUInt uwideValue)	/* Wide integer used to initialize the
 				 * object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
@@ -2994,7 +2989,7 @@ Tcl_SetWideUIntObj(
 	    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
 	}
 	TclSetBignumInternalRep(objPtr, &bignumValue);
-    } {
+    } else {
 	TclSetIntObj(objPtr, (Tcl_WideInt)uwideValue);
     }
 }
@@ -3934,7 +3929,7 @@ Tcl_IsShared(
 #ifdef TCL_MEM_DEBUG
 void
 Tcl_DbIncrRefCount(
-    Tcl_Obj *objPtr,	/* The object we are registering a reference
+    Tcl_Obj *objPtr,		/* The object we are registering a reference
 				 * to. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -4007,7 +4002,7 @@ Tcl_DbIncrRefCount(
 #ifdef TCL_MEM_DEBUG
 void
 Tcl_DbDecrRefCount(
-    Tcl_Obj *objPtr,	/* The object we are releasing a reference
+    Tcl_Obj *objPtr,		/* The object we are releasing a reference
 				 * to. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -4084,16 +4079,17 @@ Tcl_DbDecrRefCount(
 
 int
 Tcl_DbIsShared(
-    Tcl_Obj *objPtr,	/* The object to test for being shared. */
+    Tcl_Obj *objPtr,		/* The object to test for being shared. */
 #ifdef TCL_MEM_DEBUG
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
+    int line			/* Line number in the source file; used for
 				 * debugging. */
 #else
     TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
+    TCL_UNUSED(int) /*line*/
 #endif
+    )
 {
 #ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == FREEDREFCOUNTFILLER) {
@@ -4161,8 +4157,7 @@ Tcl_DbIsShared(
 
 void
 Tcl_InitObjHashTable(
-    Tcl_HashTable *tablePtr)
-				/* Pointer to table record, which is supplied
+    Tcl_HashTable *tablePtr)	/* Pointer to table record, which is supplied
 				 * by the caller. */
 {
     Tcl_InitCustomHashTable(tablePtr, TCL_CUSTOM_PTR_KEYS,

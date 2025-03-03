@@ -1082,13 +1082,13 @@ static int V1TestListObjIndex(
 
 static const Tcl_ObjType v1TestListType = {
     "testlist",			/* name */
-    NULL,		/* freeIntRepProc */
-    NULL,		/* dupIntRepProc */
-    NULL,		/* updateStringProc */
-    NULL,		/* setFromAnyProc */
-    offsetof(Tcl_ObjType, indexProc),			/* This is a V1 objType, which doesn't have an indexProc */
-    V1TestListObjLength, /* always return 100, doesn't really matter */
-    V1TestListObjIndex, /* should never be accessed, because this objType = V1*/
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    NULL,			/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+    offsetof(Tcl_ObjType, indexProc), /* This is a V1 objType, which doesn't have an indexProc */
+    V1TestListObjLength,	/* always return 100, doesn't really matter */
+    V1TestListObjIndex,		/* should never be accessed, because this objType = V1*/
     NULL, NULL, NULL, NULL, NULL, NULL
 };
 
@@ -1493,7 +1493,7 @@ TeststringobjCmd(
 	    }
 	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
-	case 10: {				/* range */
+	case 10: {			/* range */
 	    Tcl_Size first, last;
 	    if (objc != 5) {
 		goto wrongNumArgs;
@@ -1567,7 +1567,7 @@ TeststringobjCmd(
 	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
-	case 13: /* newunicode*/
+	case 13:			/* newunicode*/
 	    unicode = (Tcl_UniChar *)Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;

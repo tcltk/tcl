@@ -205,8 +205,7 @@ Tcl_ParseCommand(
 				 * close bracket should be considered a
 				 * command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    Tcl_Parse *parsePtr)
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr)	/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
@@ -1619,8 +1618,7 @@ Tcl_ParseBraces(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
@@ -1820,8 +1818,7 @@ Tcl_ParseQuotedString(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore

@@ -58,8 +58,7 @@ static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 void
 TclInitLiteralTable(
-    LiteralTable *tablePtr)
-				/* Pointer to table structure, which is
+    LiteralTable *tablePtr)	/* Pointer to table structure, which is
 				 * supplied by the caller. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4)
@@ -911,8 +910,8 @@ TclReleaseLiteral(
 
 static size_t
 HashString(
-    const char *string,	/* String for which to compute hash value. */
-    size_t length)			/* Number of bytes in the string. */
+    const char *string,		/* String for which to compute hash value. */
+    size_t length)		/* Number of bytes in the string. */
 {
     size_t result = 0;
 
@@ -975,8 +974,7 @@ HashString(
 
 static void
 RebuildLiteralTable(
-    LiteralTable *tablePtr)
-				/* Local or global table to enlarge. */
+    LiteralTable *tablePtr)	/* Local or global table to enlarge. */
 {
     LiteralEntry **oldBuckets;
     LiteralEntry **oldChainPtr, **newChainPtr;

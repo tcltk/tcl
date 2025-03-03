@@ -611,9 +611,9 @@ TestgotsigCmd(
 static int
 TestchmodCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,			/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int i, mode;
 

@@ -1327,7 +1327,7 @@ Tcl_ServiceModeHook(
 
 void
 Tcl_SetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
     if (tclNotifierHooks.setTimerProc) {
 	tclNotifierHooks.setTimerProc(timePtr);
@@ -1358,7 +1358,7 @@ Tcl_SetTimer(
 
 int
 Tcl_WaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);

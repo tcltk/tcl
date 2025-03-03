@@ -317,7 +317,7 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = TclOSopendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);			/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {

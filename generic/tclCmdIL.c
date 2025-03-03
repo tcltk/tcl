@@ -1259,7 +1259,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};	/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
@@ -2427,7 +2427,7 @@ int
 Tcl_LinsertObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
@@ -2520,9 +2520,8 @@ int
 Tcl_ListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     /*
      * If there are no list elements, the result is an empty object.
@@ -2557,8 +2556,7 @@ Tcl_LlengthObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int result;
@@ -2606,8 +2604,7 @@ Tcl_LpopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int copied = 0, result;
@@ -2725,8 +2722,7 @@ Tcl_LrangeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     Tcl_Size listLen, first, last;
@@ -2937,9 +2933,8 @@ int
 Tcl_LrepeatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_WideInt elementCount, i;
     Tcl_Size totalElems;
@@ -5361,7 +5356,7 @@ DictionaryCompare(
     int secondaryDiff = 0;
 
     while (1) {
-		if (isdigit(UCHAR(*right))		/* INTL: digit */
+	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
 	     * There are decimal numbers embedded in the two strings. Compare

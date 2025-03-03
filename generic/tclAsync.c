@@ -190,7 +190,7 @@ Tcl_AsyncCreate(
 
 void
 Tcl_AsyncMark(
-    Tcl_AsyncHandler async)		/* Token for handler. */
+    Tcl_AsyncHandler async)	/* Token for handler. */
 {
     AsyncHandler *token = (AsyncHandler *) async;
 
@@ -223,8 +223,8 @@ Tcl_AsyncMark(
 
 int
 Tcl_AsyncMarkFromSignal(
-    Tcl_AsyncHandler async,		/* Token for handler. */
-    int sigNumber)			/* Signal number. */
+    Tcl_AsyncHandler async,	/* Token for handler. */
+    int sigNumber)		/* Signal number. */
 {
 #if TCL_THREADS
     AsyncHandler *token = (AsyncHandler *) async;
@@ -377,7 +377,7 @@ Tcl_AsyncInvoke(
 
 void
 Tcl_AsyncDelete(
-    Tcl_AsyncHandler async)		/* Token for handler to delete. */
+    Tcl_AsyncHandler async)	/* Token for handler to delete. */
 {
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
 

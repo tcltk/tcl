@@ -2639,7 +2639,7 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
