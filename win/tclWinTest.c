@@ -336,9 +336,9 @@ TestwinsleepCmd(
 static int
 TestExceptionCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,			/* Tcl interpreter */
-    int objc,				/* Argument count */
-    Tcl_Obj *const objv[])		/* Argument vector */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Argument count */
+    Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const char *const cmds[] = {
 	"access_violation", "datatype_misalignment", "array_bounds",

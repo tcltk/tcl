@@ -263,7 +263,7 @@ NotifierExitHandler(
 
 static void
 SetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
     unsigned long timeout;
 
@@ -627,7 +627,7 @@ FileHandlerEventProc(
 
 static int
 WaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     int timeout;
 

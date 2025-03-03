@@ -9560,7 +9560,7 @@ TclExprFloatError(
 
 int
 TclLog2(
-    int value)		/* The integer for which to compute the log
+    int value)			/* The integer for which to compute the log
 				 * base 2. */
 {
     int n = value;

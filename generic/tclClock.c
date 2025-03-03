@@ -4583,11 +4583,11 @@ ClockSafeCatchCmd(
     Tcl_Obj *const objv[])
 {
     typedef struct {
-	int status;			/* return code status */
-	int flags;			/* Each remaining field saves the */
-	int returnLevel;		/* corresponding field of the Interp */
-	int returnCode;			/* struct. These fields taken together are */
-	Tcl_Obj *errorInfo;		/* the "state" of the interp. */
+	int status;		/* return code status */
+	int flags;		/* Each remaining field saves the */
+	int returnLevel;	/* corresponding field of the Interp */
+	int returnCode;		/* struct. These fields taken together are */
+	Tcl_Obj *errorInfo;	/* the "state" of the interp. */
 	Tcl_Obj *errorCode;
 	Tcl_Obj *returnOpts;
 	Tcl_Obj *objResult;

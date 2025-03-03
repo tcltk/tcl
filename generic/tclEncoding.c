@@ -3057,7 +3057,7 @@ Utf16ToUtfProc(
 		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_SYNTAX;
 		    src -= 2;	/* Go back to beginning of high surrogate */
-		    dst--;		/* Also undo writing a single byte too much */
+		    dst--;	/* Also undo writing a single byte too much */
 		    break;
 		}
 		if (PROFILE_REPLACE(flags)) {

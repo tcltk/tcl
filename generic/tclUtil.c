@@ -1338,9 +1338,9 @@ TclScanElement(
 
 Tcl_Size
 Tcl_ConvertElement(
-    const char *src,	/* Source information for list element. */
-    char *dst,		/* Place to put list-ified element. */
-    int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,		/* Source information for list element. */
+    char *dst,			/* Place to put list-ified element. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, TCL_INDEX_NONE, dst, flags);
 }

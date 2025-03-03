@@ -1265,7 +1265,7 @@ Tcl_DictObjNext(
 
 void
 Tcl_DictObjDone(
-    Tcl_DictSearch *searchPtr)		/* Pointer to a hash search context. */
+    Tcl_DictSearch *searchPtr)	/* Pointer to a hash search context. */
 {
     Dict *dict;
 

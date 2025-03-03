@@ -643,7 +643,7 @@ NotifierProc(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     int mask;
