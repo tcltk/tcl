@@ -219,7 +219,7 @@ jobs:
           # MUST be a literal passwordless key
       - name: Publish files
         # https://github.com/marketplace/actions/ssh-remote-commands
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.1
         id: ssh
         if: steps.rsync.outcome == 'success'
         with:
