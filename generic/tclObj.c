@@ -3334,7 +3334,7 @@ Tcl_SetWideUIntObj(
 	    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
 	}
 	TclSetBignumInternalRep(objPtr, &bignumValue);
-    } {
+    } else {
 	TclSetIntObj(objPtr, (Tcl_WideInt)uwideValue);
     }
 }
