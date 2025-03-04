@@ -701,7 +701,7 @@ UpdateStringOfOSType(
 	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
     Tcl_FreeEncoding(encoding);
 
-    (void)Tcl_InitStringRep(objPtr, NULL, written);
+    (void)Tcl_InitStringRep(objPtr, NULL, (size_t)written);
 }
 
 /*
