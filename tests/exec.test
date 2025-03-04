@@ -752,9 +752,9 @@ test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -bod
 } -result "Windows Package Manager*" -match glob
 
 foreach cmdBuiltin {
-    assoc call cd cls color copy date del dir echo 
-    erase exit ftype for if md mkdir mklink move path 
-    pause prompt rd ren rename rmdir set start time 
+    assoc call cd cls color copy date del dir echo
+    erase exit ftype for if md mkdir mklink move path
+    pause prompt rd ren rename rmdir set start time
     title type ver vol
 } {
     test auto_execok-$cmdBuiltin-1.0 "auto_execok $cmdBuiltin" \
