@@ -408,7 +408,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * given to Tcl_CreateThread.
  */
 
-#define TCL_THREAD_STACK_DEFAULT (0)    /* Use default size for stack. */
+#define TCL_THREAD_STACK_DEFAULT (0)	/* Use default size for stack. */
 #define TCL_THREAD_NOFLAGS	 (0000) /* Standard flags, default
 					 * behaviour. */
 #define TCL_THREAD_JOINABLE	 (0001) /* Mark the thread as joinable. */
@@ -679,7 +679,7 @@ typedef struct Tcl_ObjType {
  * the handling of the internalrep.
  */
 
-typedef union Tcl_ObjInternalRep {	/* The internal representation: */
+typedef union Tcl_ObjInternalRep {/* The internal representation: */
     long longValue;		/*   - an long integer value. */
     double doubleValue;		/*   - a double-precision floating value. */
     void *otherValuePtr;	/*   - another, type-specific value, */

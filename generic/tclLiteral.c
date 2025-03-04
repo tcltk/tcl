@@ -176,7 +176,7 @@ TclDeleteLiteralTable(
 Tcl_Obj *
 TclCreateLiteral(
     Interp *iPtr,
-    const char *bytes,	/* The start of the string. Note that this is
+    const char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     Tcl_Size length)		/* Number of bytes in the string. */
 {
@@ -422,9 +422,9 @@ TclFetchLiteral(
 
 int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
-    void *ePtr,		/* Points to the CompileEnv in whose object
+    void *ePtr,			/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
-    const char *bytes,	/* Points to string for which to find or
+    const char *bytes,		/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
     Tcl_Size length,		/* Number of bytes in the string. If -1, the

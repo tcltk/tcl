@@ -583,7 +583,7 @@ TclParseNumber(
 	    const char *before, *after;
 
 	    if (p==bytes) {
-		/* Not allowed at beginning  */
+		/* Not allowed at beginning */
 		goto endgame;
 	    }
 	    /*

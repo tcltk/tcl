@@ -118,10 +118,10 @@ typedef struct {
 
 int
 TclMacOSXGetFileAttribute(
-    Tcl_Interp *interp,		 /* The interp we are using for errors. */
-    int objIndex,		 /* The index of the attribute. */
-    Tcl_Obj *fileName,		 /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	 /* A pointer to return the object with. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
 #ifdef HAVE_GETATTRLIST
     int result;

@@ -47,7 +47,7 @@ size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 static struct {
     BA_pchar *cachePtr;		/* Cache of the env strings we alloc'd */
 #ifndef USE_PUTENV
-    techar **ourEnviron;		/* Cache of the array that we allocate. We
+    techar **ourEnviron;	/* Cache of the array that we allocate. We
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */

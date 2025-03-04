@@ -55,17 +55,17 @@ static const Tcl_ObjType fsPathType = {
  */
 
 typedef struct {
-    Tcl_Obj *translatedPathPtr; /*  If the path has been normalized (flags ==
-				 *  0), this is NULL.  Otherwise it is a path
-				 *  in which any ~user sequences have been
-				 *  translated away. */
-    Tcl_Obj *normPathPtr;	/*  If the path has been normalized (flags ==
-				 *  0), this is an absolute path without ., ..
-				 *  or ~user components.  Otherwise it is a
-				 *  path, possibly absolute, to normalize
-				 *  relative to cwdPtr. */
-    Tcl_Obj *cwdPtr;		/*  If NULL, either translatedPtr exists or
-				 *  normPathPtr exists and is absolute. */
+    Tcl_Obj *translatedPathPtr;	/* If the path has been normalized (flags ==
+				 * 0), this is NULL.  Otherwise it is a path
+				 * in which any ~user sequences have been
+				 * translated away. */
+    Tcl_Obj *normPathPtr;	/* If the path has been normalized (flags ==
+				 * 0), this is an absolute path without ., ..
+				 * or ~user components.  Otherwise it is a
+				 * path, possibly absolute, to normalize
+				 * relative to cwdPtr. */
+    Tcl_Obj *cwdPtr;		/* If NULL, either translatedPtr exists or
+				 * normPathPtr exists and is absolute. */
     int flags;			/* Flags to describe interpretation - see
 				 * below. */
     void *nativePathPtr;	/* Native representation of this path, which
@@ -2566,11 +2566,11 @@ TclGetHomeDirObj(
  *
  *----------------------------------------------------------------------
  */
-int Tcl_FSTildeExpand(
-    Tcl_Interp *interp,	/* May be NULL. Only used for error messages */
-    const char *path,	/* Path to resolve tilde */
-    Tcl_DString *dsPtr) /* Output DString for resolved path. */
-
+int
+Tcl_FSTildeExpand(
+    Tcl_Interp *interp,		/* May be NULL. Only used for error messages */
+    const char *path,		/* Path to resolve tilde */
+    Tcl_DString *dsPtr)		/* Output DString for resolved path. */
 {
     Tcl_Size split;
     int result;

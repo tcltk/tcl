@@ -1424,7 +1424,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     Tcl_Size num;		/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    Tcl_Size loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
+    Tcl_Size loc[TCLFLEXARRAY];	/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -2937,7 +2937,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr,
 typedef struct ProcessGlobalValue {
     Tcl_Size epoch;		/* Epoch counter to detect changes in the
 				 * global value. */
-    size_t numBytes;	/* Length of the global string. */
+    size_t numBytes;		/* Length of the global string. */
     char *value;		/* The global string value. */
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */

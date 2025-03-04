@@ -193,7 +193,7 @@ typedef struct ConsoleChannelInfo {
     Tcl_Channel channel;	/* Pointer to channel structure. */
     DWORD initMode;		/* Initial console mode. */
     int numRefs;		/* See comments above */
-    int permissions;            /* OR'ed combination of TCL_READABLE,
+    int permissions;		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
     int watchMask;		/* OR'ed combination of TCL_READABLE,
@@ -276,7 +276,7 @@ static int		RingBufferCheck(const RingBuffer *ringPtr);
 
 typedef struct {
     /* Currently this struct is only used to detect thread initialization */
-    int notUsed; /* Dummy field */
+    int notUsed;		/* Dummy field */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -2000,7 +2000,7 @@ ConsoleWriterThread(
 static ConsoleHandleInfo *
 AllocateConsoleHandleInfo(
     HANDLE consoleHandle,
-    int permissions)   /* TCL_READABLE or TCL_WRITABLE */
+    int permissions)		/* TCL_READABLE or TCL_WRITABLE */
 {
     ConsoleHandleInfo *handleInfoPtr;
     DWORD consoleMode;

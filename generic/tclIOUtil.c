@@ -208,8 +208,8 @@ TCL_DECLARE_MUTEX(filesystemMutex)
  * A files-system indepent sense of the current directory.
  */
 
-static Tcl_Obj *cwdPathPtr = NULL;
-static size_t cwdPathEpoch = 0;	    /* The pathname of the current directory */
+static Tcl_Obj *cwdPathPtr = NULL; /* The pathname of the current directory */
+static size_t cwdPathEpoch = 0;
 static void *cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
@@ -1323,8 +1323,8 @@ TclFSNormalizeToUniquePath(
     int startAt)		/* Offset the string of pathPtr to start at.
 				 * Must either be 0 or offset of a directory
 				 * separator at the end of a pathname part that
-				 * is already normalized, I.e. not the index of
-				 * the byte just after the separator.  */
+				 * is already normalized, i.e. not the index of
+				 * the byte just after the separator. */
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
@@ -2911,7 +2911,7 @@ Tcl_FSChdir(
     if (retVal == 0) {
 
 	 /* Assume that the cwd was actually changed to the normalized value
-	  * just calculated, and cache that information.  */
+	  * just calculated, and cache that information. */
 
 	/*
 	 * If the filesystem epoch changed recently, the normalized pathname or
@@ -3376,7 +3376,7 @@ Tcl_LoadFile(
     tvdlPtr->unloadProcPtr = newUnloadProcPtr;
 
     if (copyFsPtr != &tclNativeFilesystem) {
-	/* refCount of copyToPtr is already incremented.  */
+	/* refCount of copyToPtr is already incremented. */
 	tvdlPtr->divertedFile = copyToPtr;
 
 	/*
@@ -4340,7 +4340,7 @@ Tcl_FSRemoveDirectory(
     Tcl_Obj *pathPtr,		/* The pathname of the directory to be removed. */
     int recursive,		/* If zero, removes only an empty directory.
 				 * Otherwise, removes the directory and all its
-				 * contents.  */
+				 * contents. */
     Tcl_Obj **errorPtr)		/* If not NULL and an error occurs, stores a
 				 * place to store a pointer to a new
 				 * object having a refCount of 1 and containing
@@ -4459,7 +4459,7 @@ Tcl_FSGetFileSystemForPath(
 	    /* This is the filesystem for pathPtr.  Assume the type of pathPtr
 	     * hasn't been changed by the above call to the
 	     * pathInFilesystemProc, and cache this result in the internal
-	     * representation of pathPtr.  */
+	     * representation of pathPtr. */
 
 	    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
 	    Disclaim();

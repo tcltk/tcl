@@ -431,10 +431,10 @@ TclpMatchInDirectory(
 
 static int
 NativeMatchType(
-    Tcl_Interp *interp,       /* Interpreter to receive errors. */
-    const char *nativeEntry,  /* Native path to check. */
-    const char *nativeName,   /* Native filename to check. */
-    Tcl_GlobTypeData *types)  /* Type description to match against. */
+    Tcl_Interp *interp,		/* Interpreter to receive errors. */
+    const char *nativeEntry,	/* Native path to check. */
+    const char *nativeName,	/* Native filename to check. */
+    Tcl_GlobTypeData *types)	/* Type description to match against. */
 {
     Tcl_StatBuf buf;
 

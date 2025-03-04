@@ -593,7 +593,7 @@ TestindexobjCmd(
      */
     struct IndexRep {
 	void *tablePtr;		/* Pointer to the table of strings. */
-	Tcl_Size offset;		/* Offset between table entries. */
+	Tcl_Size offset;	/* Offset between table entries. */
 	Tcl_Size index;		/* Selected index into table. */
     } *indexRep;
 
@@ -921,8 +921,8 @@ TestlistobjCmd(
     } cmdIndex;
 
     Tcl_Size varIndex;		/* Variable number converted to binary */
-    Tcl_Size first;			/* First index in the list */
-    Tcl_Size count;			/* Count of elements in a list */
+    Tcl_Size first;		/* First index in the list */
+    Tcl_Size count;		/* Count of elements in a list */
     Tcl_Obj **varPtr;
     Tcl_Size i, len;
 
@@ -1613,9 +1613,9 @@ TeststringobjCmd(
 static int
 TestbigdataCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
 	   "string", "bytearray", "list", "dict", NULL
@@ -1834,9 +1834,9 @@ CheckIfVarUnset(
 static int
 TestisemptyCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *result;
     if (objc != 2) {
