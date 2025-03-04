@@ -104,8 +104,7 @@ const Tcl_HashKeyType tclStringHashKeyType = {
 
 void
 Tcl_InitHashTable(
-    Tcl_HashTable *tablePtr,
-				/* Pointer to table record, which is supplied
+    Tcl_HashTable *tablePtr,	/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType)		/* Type of keys to use in table:
 				 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, or an
@@ -142,8 +141,7 @@ Tcl_InitHashTable(
 
 void
 Tcl_InitCustomHashTable(
-    Tcl_HashTable *tablePtr,
-				/* Pointer to table record, which is supplied
+    Tcl_HashTable *tablePtr,	/* Pointer to table record, which is supplied
 				 * by the caller. */
     int keyType,		/* Type of keys to use in table:
 				 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,

@@ -681,8 +681,7 @@ TclParseCommand(
     int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_NESTED flag has an effect
 				 * here.  Other flags are passed along. */
-    Tcl_Parse *parsePtr)
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr)	/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
@@ -2199,8 +2198,7 @@ ParseBraces(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
@@ -2420,8 +2418,7 @@ TclParseQuotedString(
     Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr,
-				/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the string. */
     int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect

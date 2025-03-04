@@ -434,8 +434,8 @@ TclWinDriveLetterForVolMountPoint(
 
 int
 TclWinCPUID(
-    int index,		/* Which CPUID value to retrieve. */
-    int *regsPtr)	/* Registers after the CPUID. */
+    int index,			/* Which CPUID value to retrieve. */
+    int *regsPtr)		/* Registers after the CPUID. */
 {
     int status = TCL_ERROR;
 

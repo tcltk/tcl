@@ -336,27 +336,27 @@ static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
-    FreeChannelInternalRep,		/* freeIntRepProc */
-    DupChannelInternalRep,		/* dupIntRepProc */
+    FreeChannelInternalRep,	/* freeIntRepProc */
+    DupChannelInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
 
-#define ChanSetInternalRep(objPtr, resPtr)					\
+#define ChanSetInternalRep(objPtr, resPtr) \
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(resPtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (resPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);		\
     } while (0)
 
-#define ChanGetInternalRep(objPtr, resPtr)					\
+#define ChanGetInternalRep(objPtr, resPtr) \
     do {								\
-	const Tcl_ObjInternalRep *irPtr;					\
+	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
-	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL; \
     } while (0)
 
 #define BUSY_STATE(st, fl) \

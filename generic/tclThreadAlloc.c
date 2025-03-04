@@ -92,7 +92,7 @@ typedef struct {
     size_t numRemoves;		/* Number of removes from bucket */
     size_t numInserts;		/* Number of inserts into bucket */
     size_t numLocks;		/* Number of locks acquired */
-    size_t totalAssigned;		/* Total space assigned to bucket */
+    size_t totalAssigned;	/* Total space assigned to bucket */
 } Bucket;
 
 /*

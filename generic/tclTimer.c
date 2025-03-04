@@ -1214,7 +1214,7 @@ AfterProc(
 
 static void
 FreeAfterPtr(
-    AfterInfo *afterPtr)		/* Command to be deleted. */
+    AfterInfo *afterPtr)	/* Command to be deleted. */
 {
     AfterInfo *prevPtr;
     AfterAssocData *assocPtr = afterPtr->assocPtr;

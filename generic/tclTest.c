@@ -838,9 +838,9 @@ Tcltest_SafeInit(
 static int
 TestasyncCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Arguments. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
 {
     TestAsyncHandler *asyncPtr, *prevPtr;
     int id, code;
@@ -1592,7 +1592,7 @@ TestcreatecommandCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument strings. */
+    Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option");
@@ -2997,7 +2997,7 @@ TestexprstringCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "expression");
@@ -4690,8 +4690,8 @@ TestregexpCmd(
 
 static void
 TestregexpXflags(
-    const char *string,	/* The string of flags. */
-    size_t length,			/* The length of the string in bytes. */
+    const char *string,		/* The string of flags. */
+    size_t length,		/* The length of the string in bytes. */
     int *cflagsPtr,		/* compile flags word */
     int *eflagsPtr)		/* exec flags word */
 {
@@ -5934,7 +5934,7 @@ Testset2Cmd(
 static int
 TestmainthreadCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)
 {

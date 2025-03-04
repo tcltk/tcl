@@ -3883,8 +3883,7 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
-    long long dataStartOffset,
-				/* The overall file offset of the start of the
+    long long dataStartOffset,	/* The overall file offset of the start of the
 				 * data file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the

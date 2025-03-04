@@ -59,8 +59,7 @@ static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 void
 TclInitLiteralTable(
-    LiteralTable *tablePtr)
-				/* Pointer to table structure, which is
+    LiteralTable *tablePtr)	/* Pointer to table structure, which is
 				 * supplied by the caller. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4)
@@ -836,8 +835,7 @@ HashString(
 
 static void
 RebuildLiteralTable(
-    LiteralTable *tablePtr)
-				/* Local or global table to enlarge. */
+    LiteralTable *tablePtr)	/* Local or global table to enlarge. */
 {
     LiteralEntry **oldBuckets;
     LiteralEntry **oldChainPtr, **newChainPtr;
