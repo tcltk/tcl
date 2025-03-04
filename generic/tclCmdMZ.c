@@ -4507,7 +4507,7 @@ Tcl_TimeRateObjCmd(
 	     * considering last known iteration growth factor.
 	     */
 	    threshold = (Tcl_WideUInt)(stop - middle) * TR_SCALE;
-	     /* 
+	     /*
 	      * Estimated count of iteration til the end of execution.
 	      * Thereby 2.5% longer execution time would be OK.
 	      */
