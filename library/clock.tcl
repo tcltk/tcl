@@ -570,6 +570,12 @@ proc ::tcl::clock::mcMerge {locales} {
 	if {[dict exists $Msgs $ns $loc]} {
 	    set mrgcat [dict merge $mrgcat [dict get $Msgs $ns $loc]]
 	    dict set mrgcat L $loc
+	    # remove any previously localized formats (merged from parent
+	    # locale and possibly cached in parent-mc by ClockLocalizeFormat),
+	    # because they may depend on values which may vary in derivate:
+	    foreach k [dict keys $mrgcat] {
+		if {[string match FMT_* $k]} { dict unset mrgcat $k }
+	    }
 	} else {
 	    # be sure a duplicate is created, don't overwrite {} (common) locale:
 	    set mrgcat [dict merge $mrgcat [dict create L $loc]]
