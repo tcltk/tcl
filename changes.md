@@ -14,12 +14,17 @@ to the userbase.
  - [$interp eval $lambda] after [eval $lambda] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/98006f)
  - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/67d5f7)
  - [test lseq hangs with -Os](https://core.tcl-lang.org/tcl/tktview/d2a3c5)
+ - [exec does not handle app execution aliases on Windows](https://core.tcl-lang.org/tcl/tktview/4f0b57)
+ - [auto_execok does not find several built-in cmd commands](https://core.tcl-lang.org/tcl/tktview/4e2c8b)
+ - [Panic "Buffer Underflow, BUFFER_PADDING not enough"](https://core.tcl-lang.org/tcl/tktview/73bb42)
+ - [MS-VS build system: pckIndex.tcl when building for 9 misses "t" for TCL 8.6 part](https://core.tcl-lang.org/tcl/tktview/a77029)
+ - [clock format -locale does not look up locale children if parent locale used first](https://core.tcl-lang.org/tcl/tktview/2c0f49)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
 
 # Updated bundled packages, libraries, standards, data
- - sqlite3 3.48.0
+ - sqlite3 3.49.1
  - tzdata 2025a
 
 Release Tcl 9.0.1 arises from the check-in with tag `core-9-0-1`.
