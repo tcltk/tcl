@@ -9950,7 +9950,7 @@ test io-77.2 {open pipe encoding mismatch - use replace profile} -setup {
     read $fd
 } -result a\uFFFDb
 
-test bug-73bb42fb-1 {
+test io-bug-73bb42fb-1 {
     Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
     Verify error at offset 0.
 } -setup {
@@ -9963,7 +9963,7 @@ test bug-73bb42fb-1 {
     close $fd
 } -result {1 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 0}
 
-test bug-73bb42fb-2 {
+test io-bug-73bb42fb-2 {
     Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
     Verify single char valid read does not fail.
 } -setup {
@@ -9976,7 +9976,7 @@ test bug-73bb42fb-2 {
     close $fd
 } -result X
 
-test bug-73bb43fb-3 {
+test io-bug-73bb43fb-3 {
     Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
     Verify valid data returned before error generated.
 } -setup {
@@ -9992,16 +9992,28 @@ test bug-73bb43fb-3 {
     close $fd
 } -result {X 1 1 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 1}
 
-test bug-73bb43fb-4 {
+test io-bug-73bb43fb-4 {
     Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
     Original Sergey's repro script from ticket. Only check no crash.
+} -setup {
+    set e ""
+    set timer [after 10000 {set d timeout}]
+    set f ""
 } -body {
     set f [open [list | [info nameofexecutable] << {fconfigure stdout -translation binary; puts \xD6[string repeat _ 20]}]]
     fconfigure $f -blocking 0 -buffersize 10 -translation lf -eofchar {}
-    catch {while {![string length [set d [read $f]]]} {after 10}} e d
-    close $f
-    list [dict get $d -code] [dict get $d -errorcode]
-} -result {1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}}
+    set x {}
+    catch {
+	while {$e eq "" && ![string length [set e [read $f]]]} {
+	    after 10; update
+	}
+	set e
+    } e d
+    list $e [dict getd $d -code ""] [dict getd $d -errorcode ""]
+} -cleanup {
+    if {$f ne ""} {close $f}
+    after cancel $timer
+} -match glob -result {{error reading *} 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}}
 
 # cleanup
 foreach file [list fooBar longfile script2 output test1 pipe my_script \
