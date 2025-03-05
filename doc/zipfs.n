@@ -190,7 +190,7 @@ be silently overwritten.
 .PP
 If the \fIinfile\fR parameter is specified, this file is prepended in front of
 the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
-<(i.e., the executable file of the running process,
+(i.e., the executable file of the running process,
 typically \fBwish\fR or \fBtclsh\fR) is used. If the
 \fIpassword\fR parameter is not the empty string, an obfuscated version of that password
 (see \fBzipfs mkkey\fR) is placed between the image and ZIP chunks of the
