@@ -2420,7 +2420,7 @@ TclCompileTokens(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    size_t count1,		/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
@@ -2428,14 +2428,13 @@ TclCompileTokens(
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
     Tcl_Size i, numObjsToConcat, adjust;
-    size_t length;
+    int length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral;
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
-    int count = count1;
 
     /*
      * If this is actually a literal, handle continuation lines by
@@ -2639,11 +2638,10 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
-    int count = count1;
 
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
