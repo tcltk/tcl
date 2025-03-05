@@ -9951,7 +9951,8 @@ test io-77.2 {open pipe encoding mismatch - use replace profile} -setup {
 } -result a\uFFFDb
 
 test bug-73bb42fb-1 {
-    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Verify error at offset 0.
 } -setup {
     writeFile $path(test1) binary \xD6[string repeat _ 20]
 } -body {
@@ -9963,11 +9964,11 @@ test bug-73bb42fb-1 {
 } -result {1 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 0}
 
 test bug-73bb42fb-2 {
-    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Verify single char valid read does not fail.
 } -setup {
     writeFile $path(test1) binary X\xD6[string repeat _ 20]
 } -body {
-    # Verify single char read does not fail
     set fd [open $path(test1)]
     fconfigure $fd -blocking 0 -buffersize 10 -translation lf -eofchar {}
     read $fd 1
@@ -9976,11 +9977,11 @@ test bug-73bb42fb-2 {
 } -result X
 
 test bug-73bb43fb-3 {
-    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Verify valid data returned before error generated.
 } -setup {
     writeFile $path(test1) binary X\xD6[string repeat _ 20]
 } -body {
-    # Verify valid data returned before error generated
     set fd [open $path(test1)]
     fconfigure $fd -blocking 0 -buffersize 10 -translation lf -eofchar {}
     set result {}
@@ -9992,9 +9993,9 @@ test bug-73bb43fb-3 {
 } -result {X 1 1 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 1}
 
 test bug-73bb43fb-4 {
-    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Original Sergey's repro script from ticket. Only check no crash.
 } -body {
-    # Original Sergey's repro script from ticket. Only check no crash
     set f [open [list | [info nameofexecutable] << {fconfigure stdout -translation binary; puts \xD6[string repeat _ 20]}]]
     fconfigure $f -blocking 0 -buffersize 10 -translation lf -eofchar {}
     catch {while {![string length [set d [read $f]]]} {after 10}} e d
