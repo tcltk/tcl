@@ -9951,7 +9951,8 @@ test io-77.2 {open pipe encoding mismatch - use replace profile} -setup {
 } -result a\uFFFDb
 
 proc read_blocked {args} {
-    set timer [after 10000 {set e timeout}]
+    global e
+    set timer [after 10000 {set ::e timeout}]
     set e ""
     set l 1; if {[llength $args] > 1} {set l [lindex $args 1]}
     try {
@@ -9962,6 +9963,7 @@ proc read_blocked {args} {
 	set e
     } finally {
 	after cancel $timer
+	unset -nocomplain e
     }
 }
 test io-bug-73bb42fb-1 {
