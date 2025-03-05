@@ -1636,7 +1636,7 @@ TclUnixWaitForFile(
     while (1) {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = (int)(abortTime.usec - now.usec);
+	    blockTime.tv_usec = abortTime.usec - now.usec;
 	    if (blockTime.tv_usec < 0) {
 		blockTime.tv_sec -= 1;
 		blockTime.tv_usec += 1000000;
@@ -1935,7 +1935,7 @@ NotifierThreadProc(
 	 */
 
 	if (FD_ISSET(receivePipe, &readableMask)) {
-	    i = (int)read(receivePipe, buf, 1);
+	    i = read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
 		/*
