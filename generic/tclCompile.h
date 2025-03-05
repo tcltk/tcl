@@ -1099,7 +1099,7 @@ MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
@@ -1115,7 +1115,7 @@ MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
