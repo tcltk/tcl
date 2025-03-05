@@ -3496,11 +3496,12 @@ TclPushVarName(
 {
     const char *p;
     const char *last, *name, *elName;
-    size_t n;
+    Tcl_Size n;
     Tcl_Token *elemTokenPtr = NULL;
 	size_t nameLen, elNameLen;
     int simpleVarName, localIndex;
-    int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
+    Tcl_Size elemTokenCount = 0, removedParen = 0;
+    int allocedTokens = 0;
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we need
