@@ -1618,6 +1618,15 @@ Tcl_GetReturnOptions(
     }
 
     if (result == TCL_ERROR) {
+	if (!iPtr->errorInfo) {
+	    /* 
+	     * No errorLine without errorInfo, e. g. (re)thrown only message,
+	     * this shall also avoid transfer of errorLine (if goes to child
+	     * interp), because we have anyway nothing excepting message
+	     * in the backtrace.
+	     */
+	    iPtr->errorLine = 0;
+	}
 	Tcl_AddErrorInfo(interp, "");
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     }
@@ -1626,8 +1635,10 @@ Tcl_GetReturnOptions(
     }
     if (iPtr->errorInfo) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
-	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
-		Tcl_NewWideIntObj(iPtr->errorLine));
+	if (iPtr->errorLine) {
+	    Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
+		    Tcl_NewWideIntObj(iPtr->errorLine));
+	}
     }
     return options;
 }
@@ -1763,12 +1774,12 @@ Tcl_TransferResult(
 	 * Add line number if needed: not in line 1 and info contains no number
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting
 	 */
-	if (siPtr->errorLine > 1 && tiPtr->errorInfo &&
+	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
 	    tiPtr->errorInfo->length &&
 	    tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')'
 	) {
 	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
-		    "\n    (\"interp eval\" body line %d)", siPtr->errorLine));
+		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
 	}
 	tiPtr->flags &= ~(ERR_ALREADY_LOGGED);
     }
