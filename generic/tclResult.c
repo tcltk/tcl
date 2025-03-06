@@ -1040,7 +1040,7 @@ Tcl_GetReturnOptions(
 	     * interp), because we have anyway nothing excepting message
 	     * in the backtrace.
 	     */
-	    iPtr->errorLine = 0;
+	    iPtr->errorLine = 1;
 	}
 	Tcl_AddErrorInfo(interp, "");
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
@@ -1050,10 +1050,8 @@ Tcl_GetReturnOptions(
     }
     if (iPtr->errorInfo) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
-	if (iPtr->errorLine) {
-	    Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
-		    Tcl_NewWideIntObj(iPtr->errorLine));
-	}
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
+		Tcl_NewWideIntObj(iPtr->errorLine));
     }
     return options;
 }
