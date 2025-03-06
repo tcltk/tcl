@@ -1177,7 +1177,6 @@ test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
-    ("interp eval" body line 59)
     invoked from within
 "load {} Safepkg1"
     invoked from within
@@ -1209,7 +1208,6 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints T
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
-    ("interp eval" body line 59)
     invoked from within
 "load {} Safepkg1 x"
     invoked from within
