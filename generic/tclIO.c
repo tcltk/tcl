@@ -6063,7 +6063,8 @@ DoReadChars(
 	}
 
 	if (copiedNow < 0) {
-	    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	    if (GotFlag(statePtr, CHANNEL_EOF) || 
+	        GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 		break;
 	    }
 	    if ((GotFlag(statePtr, CHANNEL_NONBLOCKING) || allowShortReads)
