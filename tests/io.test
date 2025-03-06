@@ -9950,6 +9950,85 @@ test io-77.2 {open pipe encoding mismatch - use replace profile} -setup {
     read $fd
 } -result a\uFFFDb
 
+proc read_blocked {args} {
+    global e
+    set timer [after 10000 {set ::e timeout}]
+    set e ""
+    set l 1; if {[llength $args] > 1} {set l [lindex $args 1]}
+    try {
+	while {[string length $e] < $l} {
+	    append e [read {*}$args]
+	    after 10; update
+	}
+	set e
+    } finally {
+	after cancel $timer
+	unset -nocomplain e
+    }
+}
+test io-bug-73bb42fb-1 {
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Verify error at offset 0.
+} -setup {
+    writeFile $path(test1) binary \xD6[string repeat _ 20]
+} -body {
+    set fd [open $path(test1)]
+    fconfigure $fd -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    list [catch {read_blocked $fd 1} e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""] [tell $fd]
+} -cleanup {
+    close $fd
+} -match glob -result {1 {error reading *} 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 0}
+
+test io-bug-73bb43fb-2 {
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Verify valid data returned before error generated.
+} -setup {
+    writeFile $path(test1) binary X\xD6[string repeat _ 20]
+} -body {
+    set fd [open $path(test1)]
+    fconfigure $fd -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    set result {}
+    lappend result [read_blocked $fd]
+    lappend result [tell $fd]
+    lappend result [catch {read_blocked $fd} e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""] [tell $fd]
+} -cleanup {
+    close $fd
+} -match glob -result {X 1 1 {error reading *} 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}} 1}
+
+test io-bug-73bb43fb-3 {
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    Modified Sergey's repro script from ticket. Check no crash / error.
+} -setup {
+    set f ""
+} -body {
+    set f [open [list | [info nameofexecutable] << {fconfigure stdout -translation binary; puts \xD6[string repeat _ 20]}]]
+    fconfigure $f -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    list [catch { read_blocked $f } e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""]
+} -cleanup {
+    if {$f ne ""} {close $f}
+} -match glob -result {1 {error reading *} 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}}
+
+test io-bug-73bb43fb-4 {
+    Non-blocking+buffer size+encoding error panic - TCL bug 73bb42fb.
+    (PoC) Delay between bytes of single utf-8 char doesn't cause encoding error with profile strict.
+} -setup {
+    set f ""
+} -body {
+    set f [open [list | [info nameofexecutable] << {
+      fconfigure stdout -translation binary
+      puts -nonewline "START-"; flush stdout
+      foreach {ch} [split [encoding convertto utf-8 \u30B3] ""] {; # 3 bytes E3 82 B3
+        puts -nonewline $ch; flush stdout; if {$ch ne "\xB3"} {after 100}
+      }
+      puts -nonewline "-DONE"; flush stdout
+    }]]
+    fconfigure $f -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    list [catch { read_blocked $f 12 } e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""]
+} -cleanup {
+    if {$f ne ""} {close $f}
+} -result "0 START-\u30B3-DONE 0 {}"
+
+rename read_blocked {}
 
 # cleanup
 foreach file [list fooBar longfile script2 output test1 pipe my_script \
