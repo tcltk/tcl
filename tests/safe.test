@@ -1380,6 +1380,7 @@ test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
+    ("interp eval" body line 59)
     invoked from within
 "load {} Safepfx1"
     invoked from within
@@ -1411,6 +1412,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints t
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
+    ("interp eval" body line 59)
     invoked from within
 "load {} Safepfx1 x"
     invoked from within
