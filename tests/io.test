@@ -9973,7 +9973,7 @@ test io-bug-73bb42fb-1 {
     writeFile $path(test1) binary \xD6[string repeat _ 20]
 } -body {
     set fd [open $path(test1)]
-    fconfigure $fd -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    fconfigure $fd -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
     list [catch {read_blocked $fd 1} e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""] [tell $fd]
 } -cleanup {
     close $fd
@@ -9986,7 +9986,7 @@ test io-bug-73bb43fb-2 {
     writeFile $path(test1) binary X\xD6[string repeat _ 20]
 } -body {
     set fd [open $path(test1)]
-    fconfigure $fd -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    fconfigure $fd -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
     set result {}
     lappend result [read_blocked $fd]
     lappend result [tell $fd]
@@ -10002,7 +10002,7 @@ test io-bug-73bb43fb-3 {
     set f ""
 } -body {
     set f [open [list | [info nameofexecutable] << {fconfigure stdout -translation binary; puts \xD6[string repeat _ 20]}]]
-    fconfigure $f -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    fconfigure $f -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
     list [catch { read_blocked $f } e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""]
 } -cleanup {
     if {$f ne ""} {close $f}
@@ -10017,12 +10017,12 @@ test io-bug-73bb43fb-4 {
     set f [open [list | [info nameofexecutable] << {
       fconfigure stdout -translation binary
       puts -nonewline "START-"; flush stdout
-      foreach {ch} [split [encoding convertto \u30B3] ""] {; # 3 bytes E3 82 B3
+      foreach {ch} [split [encoding convertto utf-8 \u30B3] ""] {; # 3 bytes E3 82 B3
         puts -nonewline $ch; flush stdout; if {$ch ne "\xB3"} {after 100}
       }
       puts -nonewline "-DONE"; flush stdout
     }]]
-    fconfigure $f -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
+    fconfigure $f -encoding utf-8 -profile strict -blocking 0 -buffersize 10 -translation lf -eofchar {}
     list [catch { read_blocked $f 12 } e d] $e [dict getd $d -code ""] [dict getd $d -errorcode ""]
 } -cleanup {
     if {$f ne ""} {close $f}
