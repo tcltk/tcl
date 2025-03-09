@@ -354,14 +354,14 @@ TclCompileArraySetCmd(
     if (isDataEven && len == 0) {
 	if (localIndex >= 0) {
 	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+	    TclEmitInstInt4(INST_JUMP_TRUE4, 10,		envPtr);
 	    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
 	} else {
 	    TclEmitOpcode(  INST_DUP,				envPtr);
 	    TclEmitOpcode(  INST_ARRAY_EXISTS_STK,		envPtr);
-	    TclEmitInstInt1(INST_JUMP_TRUE1, 5,			envPtr);
+	    TclEmitInstInt4(INST_JUMP_TRUE4, 11,		envPtr);
 	    TclEmitOpcode(  INST_ARRAY_MAKE_STK,		envPtr);
-	    TclEmitInstInt1(INST_JUMP1, 3,			envPtr);
+	    TclEmitInstInt4(INST_JUMP4, 6,			envPtr);
 	    /* Each branch decrements stack depth, but we only take one. */
 	    TclAdjustStackDepth(1, envPtr);
 	    TclEmitOpcode(  INST_POP,				envPtr);
@@ -404,7 +404,7 @@ TclCompileArraySetCmd(
      */
 
     TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_JUMP_TRUE4, 10,		envPtr);
     TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
 
     CompileWord(envPtr, dataTokenPtr, interp, 2);
@@ -421,14 +421,14 @@ TclCompileArraySetCmd(
 	PushStringLiteral(envPtr, "1");
 	TclEmitOpcode(	INST_BITAND,				envPtr);
 	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
+	TclEmitInstInt4(INST_JUMP_FALSE4, 0,			envPtr);
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	TclAdjustStackDepth(-1, envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+	TclStoreInt4AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
 
     TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
@@ -473,15 +473,15 @@ TclCompileArrayUnsetCmd(
 
     if (localIndex >= 0) {
 	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 8,			envPtr);
+	TclEmitInstInt4(INST_JUMP_FALSE4, 11,			envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 1,			envPtr);
 	TclEmitInt4(		localIndex,			envPtr);
     } else {
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 6,			envPtr);
+	TclEmitInstInt4(INST_JUMP_FALSE4, 12,			envPtr);
 	TclEmitInstInt1(INST_UNSET_STK, 1,			envPtr);
-	TclEmitInstInt1(INST_JUMP1, 3,				envPtr);
+	TclEmitInstInt4(INST_JUMP4, 6,				envPtr);
 	/* Each branch decrements stack depth, but we only take one. */
 	TclAdjustStackDepth(1, envPtr);
 	TclEmitOpcode(	INST_POP,				envPtr);
@@ -684,10 +684,7 @@ TclCompileCatchCmd(
 
     /* Stack at this point on both branches: result returnCode */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %" TCL_Z_MODIFIER "d",
-		(CurrentOffset(envPtr) - jumpFixup.codeOffset));
-    }
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
 
     /*
      * Push the return options if the caller wants them. This needs to happen
@@ -1761,7 +1758,7 @@ CompileDictEachCmd(
     jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
     endTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP1, 0,				envPtr);
+    TclEmitInstInt4(	INST_JUMP4, 0,				envPtr);
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
@@ -1791,7 +1788,7 @@ CompileDictEachCmd(
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
     jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
-    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDisplacement,
+    TclUpdateInstInt4AtPc(INST_JUMP4, jumpDisplacement,
 	    envPtr->codeStart + endTargetOffset);
     TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
@@ -1950,10 +1947,7 @@ TclCompileDictUpdateCmd(
     TclEmitInt4(		infoIndex,			envPtr);
     TclEmitInvoke(envPtr,INST_RETURN_STK);
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %" TCL_Z_MODIFIER "d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
-    }
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
 
@@ -2312,10 +2306,7 @@ TclCompileDictWithCmd(
      * Prepare for the start of the next command.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %" TCL_Z_MODIFIER "d",
-		CurrentOffset(envPtr) - jumpFixup.codeOffset);
-    }
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
     return TCL_OK;
 }
 
@@ -2626,20 +2617,12 @@ TclCompileForCmd(
      * terminates the for.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup, 127)) {
-	bodyCodeOffset += 3;
-	nextCodeOffset += 3;
-    }
-
+    TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup);
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
-    if (jumpDist > 127) {
-	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
-    }
+    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
 
     /*
      * Fix the starting points of the exception ranges (may have moved due to

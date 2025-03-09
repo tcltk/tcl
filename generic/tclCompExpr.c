@@ -2432,14 +2432,12 @@ CompileExprTree(
 		    convert = 1;
 		}
 		target = jumpPtr->jump.codeOffset + 2;
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    target += 3;
-		}
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset, 127);
+			target - jumpPtr->jump.codeOffset);
 
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
@@ -2449,21 +2447,19 @@ CompileExprTree(
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
-		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
-			: INST_JUMP_TRUE1, 0, envPtr);
+		TclEmitInstInt4((nodePtr->lexeme == AND) ? INST_JUMP_FALSE4
+			: INST_JUMP_TRUE4, 0, envPtr);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
 		pc2 = CurrentOffset(envPtr);
-		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
+		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    pc2 += 3;
-		}
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1, 0), envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
 		freePtr = jumpPtr;
