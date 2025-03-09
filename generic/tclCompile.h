@@ -732,7 +732,7 @@ enum TclInstruction {
 
     /* For [subst] compilation */
     INST_NOP,
-    INST_RETURN_CODE_BRANCH,
+    INST_RETURN_CODE_BRANCH1,
 
     /* For [unset] compilation */
     INST_UNSET_SCALAR,
@@ -832,6 +832,9 @@ enum TclInstruction {
     /* TIP 667: const */
     INST_CONST_IMM,
     INST_CONST_STK,
+
+    /* Updated [subst] compilation */
+    INST_RETURN_CODE_BRANCH4,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -1129,9 +1132,8 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
-MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+MODULE_SCOPE void	TclFixupForwardJump(CompileEnv *envPtr,
+			    JumpFixup *jumpFixupPtr, int jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
@@ -1448,14 +1450,12 @@ TclUpdateStackReqs(
  * position in the bytecode being created (the most common case). The ANSI C
  * "prototypes" for this macro is:
  *
- * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
+#define TclFixupForwardJumpToHere(envPtr, fixupPtr) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset, \
-	    (threshold))
+	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset)
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int

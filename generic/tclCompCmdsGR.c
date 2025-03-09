@@ -322,23 +322,12 @@ TclCompileIfCmd(
 		    jumpEndFixupArray.fixup + jumpIndex);
 
 	    /*
-	     * Fix the target of the jumpFalse after the test. Generate a 4
-	     * byte jump if the distance is > 120 bytes. This is conservative,
-	     * and ensures that we won't have to replace this jump if we later
-	     * also need to replace the proceeding jump to the end of the "if"
-	     * with a 4 byte jump.
+	     * Fix the target of the jumpFalse after the test.
 	     */
 
 	    TclAdjustStackDepth(-1, envPtr);
-	    if (TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup + jumpIndex, 120)) {
-		/*
-		 * Adjust the code offset for the proceeding jump to the end
-		 * of the "if" command.
-		 */
-
-		jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
-	    }
+	    TclFixupForwardJumpToHere(envPtr,
+		    jumpFalseFixupArray.fixup + jumpIndex);
 	} else if (boolVal) {
 	    /*
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
@@ -413,29 +402,8 @@ TclCompileIfCmd(
 
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
-	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup + jumpIndex, 127)) {
-	    /*
-	     * Adjust the immediately preceding "ifFalse" jump. We moved it's
-	     * target (just after this jump) down three bytes.
-	     */
-
-	    unsigned char *ifFalsePc = envPtr->codeStart
-		    + jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
-	    unsigned char opCode = *ifFalsePc;
-
-	    if (opCode == INST_JUMP_FALSE1) {
-		jumpFalseDist = TclGetInt1AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt1AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else if (opCode == INST_JUMP_FALSE4) {
-		jumpFalseDist = TclGetInt4AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", opCode);
-	    }
-	}
+	TclFixupForwardJumpToHere(envPtr,
+		jumpEndFixupArray.fixup + jumpIndex);
     }
 
     /*
@@ -629,7 +597,7 @@ TclCompileInfoCommandsCmd(
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
     TclEmitOpcode(	INST_STR_LEN,		envPtr);
-    TclEmitInstInt1(	INST_JUMP_FALSE1, 7,	envPtr);
+    TclEmitInstInt4(	INST_JUMP_FALSE4, 10,	envPtr);
     TclEmitInstInt4(	INST_LIST, 1,		envPtr);
     return TCL_OK;
 
@@ -1751,7 +1719,7 @@ TclCompileNamespaceQualifiersCmd(
     PushStringLiteral(envPtr, ":");
     TclEmitOpcode(	INST_STR_EQ,			envPtr);
     off = off - CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, off,		envPtr);
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
 }
@@ -1786,7 +1754,7 @@ TclCompileNamespaceTailCmd(
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
     PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
     PushStringLiteral(envPtr, "end");
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;

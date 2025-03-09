@@ -25,7 +25,7 @@
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
  *-   syntax (?)
- *-   returnCodeBranch
+ *-   returnCodeBranch1, returnCodeBranch4
  *-   tclooNext, tclooNextClass
  */
 

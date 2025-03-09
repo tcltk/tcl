@@ -6736,7 +6736,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
 
-    case INST_RETURN_CODE_BRANCH: {
+    case INST_RETURN_CODE_BRANCH1: {
 	int code;
 
 	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
@@ -6750,6 +6750,22 @@ TEBCresume(
 	}
 	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 2*code-1));
 	NEXT_INST_F(2*code-1, 1, 0);
+    }
+
+    case INST_RETURN_CODE_BRANCH4: {
+	int code;
+
+	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
+	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
+	}
+	if (code == TCL_OK) {
+	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
+	}
+	if (code < TCL_ERROR || code > TCL_CONTINUE) {
+	    code = TCL_CONTINUE + 1;
+	}
+	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 2*code-1));
+	NEXT_INST_F(5*code-4, 1, 0);
     }
 
     /*

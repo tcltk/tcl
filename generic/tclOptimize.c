@@ -106,9 +106,14 @@ LocateTargetAddresses(
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;
-	case INST_RETURN_CODE_BRANCH:
+	case INST_RETURN_CODE_BRANCH1:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
+	    }
+	    break;
+	case INST_RETURN_CODE_BRANCH4:
+	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
+		DefineTargetAddress(tablePtr, currentInstPtr + 5*i - 4);
 	    }
 	    break;
 	}
