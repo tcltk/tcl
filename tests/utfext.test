@@ -220,7 +220,7 @@ namespace eval utftest {
 			     {start end charlimit} 0 $dstlen nread nwritten charlimit] \
 		    status state buf
 		list $status $nwritten [string range $buf 0 $nwritten-1]
-	    } -result [list [expr {$nchars == $maxchars ? "ok" : "nospace"}] $expected_nwritten $expected_bytes]
+	    } -result [list ok $expected_nwritten $expected_bytes]
 	}
     }
 

@@ -1391,6 +1391,7 @@ Tcl_ExternalToUtf(
 	if (*dstCharsPtr <= maxChars) {
 	    break;
 	}
+        //__debugbreak();
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
 	*statePtr = savedState;
     } while (1);
@@ -2513,7 +2514,7 @@ UtfToUtfProc(
 	(void) 0
 
     profile = ENCODING_PROFILE_GET(flags);
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -2787,7 +2788,7 @@ Utf32ToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3030,7 +3031,7 @@ Utf16ToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; src += 2, numChars++) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; src += 2, numChars++) {
 	if (dst > dstEnd && !HIGH_SURROGATE(ch)) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3469,7 +3470,7 @@ TableToUtfProc(
     pageZero = toUnicode[0];
 
     result = TCL_OK;
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3701,7 +3702,7 @@ Iso88591ToUtfProc(
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     result = TCL_OK;
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
 	Tcl_UniChar ch = 0;
 
 	if (dst > dstEnd) {
@@ -3933,7 +3934,7 @@ EscapeToUtfProc(
 	state = 0;
     }
 
-    for (numChars = 0; src < srcEnd && numChars <= charLimit; ) {
+    for (numChars = 0; src < srcEnd && numChars < charLimit; ) {
 	int byte, hi, lo, ch;
 
 	if (dst > dstEnd) {
