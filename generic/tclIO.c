@@ -6442,7 +6442,7 @@ ReadChars(
 	     * we only have the one decoded char?
 	     */
 
-	    if (code != TCL_OK) {
+	    if (1 || code != TCL_OK) {
 		int read, decoded, count;
 		char buffer[TCL_UTF_MAX + 1];
 
@@ -6474,7 +6474,16 @@ ReadChars(
 		    code = TCL_OK;
 		}
 
-		if (count == 2) {
+		assert(count <= 2);
+		if (count == 1) {
+		    assert(buffer[0] == '\r');
+		    if (GotFlag(statePtr, CHANNEL_EOF)) {
+			dst[0] = '\r';
+			bufPtr->nextRemoved = bufPtr->nextAdded;
+			Tcl_SetObjLength(objPtr, numBytes + 1);
+			return 1;
+		    }
+		} else if (count == 2) {
 		    if (buffer[1] == '\n') {
 			/* \r\n translate to \n */
 			dst[0] = '\n';
@@ -6489,7 +6498,6 @@ ReadChars(
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
 		    return 1;
 		}
-
 	    } else if (GotFlag(statePtr, CHANNEL_EOF)) {
 		/*
 		 * The bare \r is the only char and we will never read a

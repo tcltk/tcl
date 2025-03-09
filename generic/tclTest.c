@@ -8795,7 +8795,7 @@ static int
 TestChanSourceInput(
     ClientData instanceData,
     char *outPtr,      /* Where to store data. Assumed aligned */
-    int maxReadCount,  /* Maximum number of bytes to read. */
+    const int maxReadCount, /* Maximum number of bytes to read. */
     int *errorCodePtr) /* Where to store error codes. */
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
@@ -8810,34 +8810,68 @@ TestChanSourceInput(
      */
     if (chanPtr->len == 1) {
 	memset(outPtr, chanPtr->data[0], maxReadCount);
-    } else if (chanPtr->len == sizeof(unsigned short)) {
-	unsigned short val = *(unsigned short *)chanPtr->data;
+    } else if (chanPtr->len == sizeof(unsigned short) &&
+	       sizeof(unsigned short) == 2) {
+	union {
+	    unsigned short val;
+	    unsigned char bytes[sizeof(unsigned short)];
+	} u;
+	if (chanPtr->numSourced & 1) {
+	    u.bytes[0] = chanPtr->data[1];
+	    u.bytes[1] = chanPtr->data[0];
+	} else {
+	    u.bytes[0] = chanPtr->data[0];
+	    u.bytes[1] = chanPtr->data[1];
+	}
 	unsigned short *to = (unsigned short *)outPtr;
 	unsigned short *end = to + (maxReadCount / sizeof(unsigned short));
 	while (to < end)
-	    *to++ = val;
-	if (maxReadCount - (sizeof(short) * (end-to))) {
-	    *(unsigned char *)chanPtr->data[0];
+	    *to++ = u.val;
+	if (maxReadCount - (sizeof(unsigned short) * (end-to))) {
+	    *to = u.bytes[0];
 	}
-    } else if (chanPtr->len == sizeof(unsigned int)) {
-	unsigned int val = *(unsigned int *)chanPtr->data;
+    } else if (chanPtr->len == sizeof(unsigned int) &&
+	       sizeof(unsigned int) == 4) {
+	union {
+	    unsigned int val;
+	    unsigned char bytes[sizeof(unsigned int)];
+	} u;
+	int offset = chanPtr->numSourced & 3;
+	u.bytes[0] = chanPtr->data[(offset + 0) & 3];
+	u.bytes[1] = chanPtr->data[(offset + 1) & 3];
+	u.bytes[2] = chanPtr->data[(offset + 2) & 3];
+	u.bytes[3] = chanPtr->data[(offset + 3) & 3];
+
 	unsigned int *to = (unsigned int *)outPtr;
 	unsigned int *end = to + (maxReadCount / sizeof(unsigned int));
-	int nremain = maxReadCount - (sizeof(int) * (end - to));
+	int nremain = maxReadCount - (sizeof(unsigned int) * (end - to));
 	while (to < end)
-	    *to++ = val;
+	    *to++ = u.val;
 	assert(nremain < chanPtr->len);
 	while (nremain--)
-	    *(nremain + (char *)to) = chanPtr->data[nremain];
-    }
-    else {
+	    *(nremain + (char *)to) = u.bytes[nremain];
+    } else {
 	char *to = outPtr;
-	char *end = to + (maxReadCount / chanPtr->len);
-	int nremain = maxReadCount - (chanPtr->len * (end - to));
+	int ncopied = 0;
+	int offset = chanPtr->numSourced % chanPtr->len;
+	if (offset) {
+	    int nbytes = (chanPtr->len - offset);
+	    if (maxReadCount <= nbytes) {
+		nbytes = maxReadCount;
+	    }
+	    memmove(to, chanPtr->data + offset, nbytes);
+	    to += nbytes;
+	    ncopied += nbytes;
+	}
+        int nchunks = (maxReadCount-ncopied)/chanPtr->len;
+	char *end = to + (nchunks * chanPtr->len);
+	int nremain = (maxReadCount-ncopied) - (end - to);
+	/* Copy the data in chunks */
 	while (to < end) {
 	    memmove(to, chanPtr->data, chanPtr->len);
 	    to += chanPtr->len;
 	}
+        assert(to == end);
 	if (nremain) {
 	    assert(nremain < chanPtr->len);
 	    memmove(outPtr + maxReadCount - nremain, chanPtr->data, nremain);
@@ -9025,7 +9059,6 @@ TestChanCreateCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(channelName, -1));
     return TCL_OK;
 }
-
 
 /*
  * Local Variables:
