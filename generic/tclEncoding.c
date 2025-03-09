@@ -127,14 +127,16 @@ typedef struct {
 } EscapeEncodingData;
 
 /*
- * Constants used when loading an encoding file to identify the type of the
+ * Values used when loading an encoding file to identify the type of the
  * file.
  */
-
-#define ENCODING_SINGLEBYTE	0
-#define ENCODING_DOUBLEBYTE	1
-#define ENCODING_MULTIBYTE	2
-#define ENCODING_ESCAPE		3
+enum EncodingTypes {
+    ENCODING_SINGLEBYTE = 0,	/* Encoding is single byte per character. */
+    ENCODING_DOUBLEBYTE = 1,	/* Encoding is two bytes per character. */
+    ENCODING_MULTIBYTE = 2,	/* Encoding is variable bytes per character. */
+    ENCODING_ESCAPE = 3		/* Encoding has modes with escapes to move
+				 * between them. */
+};
 
 /*
  * A list of directories in which Tcl should look for *.enc files. This list
@@ -3055,7 +3057,7 @@ Utf16ToUtfProc(
 		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_SYNTAX;
 		    src -= 2;	/* Go back to beginning of high surrogate */
-		    dst--;		/* Also undo writing a single byte too much */
+		    dst--;	/* Also undo writing a single byte too much */
 		    break;
 		}
 		if (PROFILE_REPLACE(flags)) {

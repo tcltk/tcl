@@ -265,16 +265,8 @@ proc factorial {n} {
     if {$n < 2} {
         \fBreturn\fR 1
     }
-    set m [expr {$n - 1}]
-    set code [catch {factorial $m} factor]
-    if {$code != 0} {
-        \fBreturn\fR -code $code $factor
-    }
+    set factor [factorial [expr {$n - 1}]]
     set product [expr {$n * $factor}]
-    if {$product < 0} {
-        \fBreturn\fR -code error \e
-                "overflow computing factorial of $n"
-    }
     \fBreturn\fR $product
 }
 .CE

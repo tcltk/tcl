@@ -101,7 +101,6 @@ typedef struct ThreadEventResult {
     struct ThreadEvent *eventPtr;	/* Back pointer */
     struct ThreadEventResult *nextPtr;	/* List for cleanup */
     struct ThreadEventResult *prevPtr;
-
 } ThreadEventResult;
 
 static ThreadEventResult *resultList;

@@ -18,34 +18,36 @@
 #include "tclUniData.c"
 
 /*
- * The following macros are used for fast character category tests. The x_BITS
+ * The following masks are used for fast character category tests. The x_BITS
  * values are shifted right by the category value to determine whether the
  * given category is included in the set.
  */
+enum UnicodeCharacterCategoryMasks {
+    ALPHA_BITS = (1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) |
+	(1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) |
+	(1 << OTHER_LETTER),
 
-#define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
-	| (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1<<OTHER_LETTER))
+    CONTROL_BITS = (1 << CONTROL) | (1 << FORMAT),
 
-#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT))
+    DIGIT_BITS = (1 << DECIMAL_DIGIT_NUMBER),
 
-#define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
+    SPACE_BITS = (1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) |
+	(1 << PARAGRAPH_SEPARATOR),
 
-#define SPACE_BITS ((1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) \
-	| (1 << PARAGRAPH_SEPARATOR))
+    WORD_BITS = ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION),
 
-#define WORD_BITS (ALPHA_BITS | DIGIT_BITS | (1 << CONNECTOR_PUNCTUATION))
+    PUNCT_BITS = (1 << CONNECTOR_PUNCTUATION) |
+	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) |
+	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) |
+	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION),
 
-#define PUNCT_BITS ((1 << CONNECTOR_PUNCTUATION) | \
-	(1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
-	(1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
-	(1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION))
-
-#define GRAPH_BITS (WORD_BITS | PUNCT_BITS | \
-	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
-	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
-	(1 << OTHER_NUMBER) | \
-	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
-	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
+    GRAPH_BITS = WORD_BITS | PUNCT_BITS |
+	(1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) |
+	(1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) |
+	(1 << OTHER_NUMBER) |
+	(1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) |
+	(1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL)
+};
 
 /*
  * Unicode characters less than this value are represented by themselves in
@@ -799,9 +801,9 @@ Tcl_UtfCharComplete(
 
 Tcl_Size
 Tcl_NumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative value for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative value for strlen(src). */
 {
     Tcl_UniChar ch = 0;
     Tcl_Size i = 0;
@@ -851,9 +853,9 @@ Tcl_NumUtfChars(
 
 Tcl_Size
 TclNumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
-			 * negative for strlen(src). */
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
+				 * negative for strlen(src). */
 {
     unsigned short ch = 0;
     Tcl_Size i = 0;
@@ -1175,8 +1177,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1211,8 +1213,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
@@ -1224,8 +1226,8 @@ Tcl_UtfAtIndex(
 
 const char *
 TclUtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
     Tcl_Size len = 0;

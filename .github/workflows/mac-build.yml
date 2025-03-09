@@ -3,15 +3,14 @@ on:
   push:
     branches:
     - "main"
-    - "core-8-branch"
-    - "core-8-6-branch"
+    - "core-9-0-branch"
     tags:
     - "core-**"
 permissions:
   contents: read
 jobs:
   xcode:
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: bash
@@ -36,7 +35,7 @@ jobs:
           MAC_CI: 1
         timeout-minutes: 15
   clang:
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         config:

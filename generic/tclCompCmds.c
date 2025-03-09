@@ -2964,7 +2964,7 @@ CompileEachloopCmd(
 
 static void *
 DupForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -3013,7 +3013,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    void *clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)		/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
@@ -3346,7 +3346,7 @@ TclCompileFormatCmd(
     start = TclGetString(formatObj);
 				/* The start of the currently-scanned literal
 				 * in the format string. */
-    TclNewObj(tmpObj);	/* The buffer used to accumulate the literal
+    TclNewObj(tmpObj);		/* The buffer used to accumulate the literal
 				 * being built. */
     for (bytes = start ; *bytes ; bytes++) {
 	if (*bytes == '%') {
@@ -3496,11 +3496,12 @@ TclPushVarName(
 {
     const char *p;
     const char *last, *name, *elName;
-    size_t n;
+    Tcl_Size n;
     Tcl_Token *elemTokenPtr = NULL;
 	size_t nameLen, elNameLen;
     int simpleVarName, localIndex;
-    int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
+    Tcl_Size elemTokenCount = 0, removedParen = 0;
+    int allocedTokens = 0;
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we need

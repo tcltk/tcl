@@ -218,7 +218,7 @@ element of \fIname\fR then returns the empty string.
 .\" METHOD: home
 .TP
 \fBfile home ?\fIusername\fR?
-.VS "8.7, TIP 602"
+.VS TIP602
 If no argument is specified, the command returns the home directory
 of the current user. This is generally the value of the \fB$HOME\fR
 environment variable except that on Windows platforms backslashes
@@ -233,7 +233,7 @@ even when \fIusername\fR corresponds to the current user. An error is
 raised if the \fIusername\fR does not correspond to a user account
 on the system.
 .RE
-.VE "8.7, TIP 602"
+.VE TIP602
 .\" METHOD: isdirectory
 .TP
 \fBfile isdirectory \fIname\fR
@@ -500,7 +500,7 @@ return \fBb\fR.
 .\" METHOD: tempdir
 .TP
 \fBfile tempdir\fR ?\fItemplate\fR?
-.VS "8.7, TIP 431"
+.VS TIP431
 Creates a temporary directory (guaranteed to be newly created and writable by
 the current script) and returns its name. If \fItemplate\fR is given, it
 specifies one of or both of the existing directory (on a filesystem controlled
@@ -527,11 +527,10 @@ between platforms:
 /var/tmp/myapp_0ihS0n
 .CE
 .RE
-.VE "8.7, TIP 431"
+.VE TIP431
 .\" METHOD: tempfile
 .TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
-.\" TIP #210
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
@@ -549,7 +548,7 @@ native APIs and external programs that require a filename.
 .\" METHOD: tildeexpand
 .TP
 \fBfile tildeexpand \fIname\fR
-.VS "8.7, TIP 602"
+.VS TIP602
 Returns the result of performing tilde substitution on \fIname\fR. If the name
 begins with a tilde, then the file name will be interpreted as if the first
 element is replaced with the location of the home directory for the given user.
@@ -562,7 +561,7 @@ retrieve the user's home directory for substitution.  An error is raised if the
 .PP
 If the file name does not begin with a tilde, it is returned unmodified.
 .RE
-.VE "8.7, TIP 602"
+.VE TIP602
 .\" METHOD: type
 .TP
 \fBfile type \fIname\fR

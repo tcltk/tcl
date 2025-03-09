@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, writeFile \- standard library of Tcl procedures
+auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, foreachLine, parray, readFile, tcl_findLibrary, tcl_endOfWord, tcl_nonwordchars, tcl_startOfNextWord, tcl_startOfPreviousWord, tcl_wordBreakAfter, tcl_wordBreakBefore, tcl_wordchars, writeFile \- standard library of Tcl procedures
 .SH SYNOPSIS
 .nf
 \fBauto_execok \fIcmd\fR
@@ -25,11 +25,11 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, for
 \fBtcl_startOfPreviousWord \fIstr start\fR
 \fBtcl_wordBreakAfter \fIstr start\fR
 \fBtcl_wordBreakBefore \fIstr start\fR
-.VS "Tcl 8.7, TIP 670"
+.VS TIP670
 \fBforeachLine \fIfilename varName body\fR
 \fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
 \fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
-.VE "Tcl 8.7, TIP 670"
+.VE TIP670
 .fi
 .BE
 .SH INTRODUCTION
@@ -329,7 +329,7 @@ boundary.
 .\" COMMAND: foreachLine
 .TP
 \fBforeachLine \fIvarName filename body\fR
-.VS "Tcl 8.7, TIP 670"
+.VS TIP670
 This reads in the text file named \fIfilename\fR one line at a time
 (using system defaults for reading text files). It writes that line to the
 variable named by \fIvarName\fR and then executes \fIbody\fR for that line.
@@ -340,22 +340,22 @@ respectively.
 The overall result of \fBforeachLine\fR is the empty string (assuming no
 errors from I/O or from evaluating the body of the loop); the file will be
 closed prior to the procedure returning.
-.VE "Tcl 8.7, TIP 670"
+.VE TIP670
 .\" COMMAND: readFile
 .TP
 \fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
-.VS "Tcl 8.7, TIP 670"
+.VS TIP670
 Reads in the file named in \fIfilename\fR and returns its contents.
 The second argument says how to read in the file, either as \fBtext\fR
 (using the system defaults for reading text files) or as \fBbinary\fR
 (as uninterpreted bytes). The default is \fBtext\fR. When read as text, this
 will include any trailing newline.
 The file will be closed prior to the procedure returning.
-.VE "Tcl 8.7, TIP 670"
+.VE TIP670
 .\" COMMAND: writeFile
 .TP
 \fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
-.VS "Tcl 8.7, TIP 670"
+.VS TIP670
 Writes the \fIcontents\fR to the file named in \fIfilename\fR.
 The optional second argument says how to write to the file, either as
 \fBtext\fR (using the system defaults for writing text files) or as
@@ -363,7 +363,7 @@ The optional second argument says how to write to the file, either as
 If a trailing newline is required, it will need to be provided in
 \fIcontents\fR. The result of this command is the empty string; the file will
 be closed prior to the procedure returning.
-.VE "Tcl 8.7, TIP 670"
+.VE TIP670
 .SH "VARIABLES"
 .PP
 The following global variables are defined or used by the procedures in
@@ -473,8 +473,7 @@ These variables are only used in the \fBtcl_endOfWord\fR,
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a non-word character. The default value is
-.QW "\\W" .
+considered to be a non-word character. The default value is \fB\eW\fR.
 .\" VARIABLE: tcl_wordchars
 .TP
 \fBtcl_wordchars\fR
@@ -482,8 +481,7 @@ considered to be a non-word character. The default value is
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a word character. The default value is
-.QW "\\w" .
+considered to be a word character. The default value is \fB\ew\fR.
 .SH "SEE ALSO"
 env(n), info(n), re_syntax(n)
 .SH KEYWORDS

@@ -91,6 +91,19 @@ TCLAPI void		TclOOObjectSetMixins(Object *oPtr,
 TCLAPI void		TclOOClassSetMixins(Tcl_Interp *interp,
 				Class *classPtr, Tcl_Size numMixins,
 				Class *const *mixins);
+/* 16 */
+TCLAPI Tcl_Method	TclOOMakeProcInstanceMethod2(Tcl_Interp *interp,
+				Object *oPtr, int flags, Tcl_Obj *nameObj,
+				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+				const Tcl_MethodType2 *typePtr,
+				void *clientData, Proc **procPtrPtr);
+/* 17 */
+TCLAPI Tcl_Method	TclOOMakeProcMethod2(Tcl_Interp *interp,
+				Class *clsPtr, int flags, Tcl_Obj *nameObj,
+				const char *namePtr, Tcl_Obj *argsObj,
+				Tcl_Obj *bodyObj,
+				const Tcl_MethodType2 *typePtr,
+				void *clientData, Proc **procPtrPtr);
 
 typedef struct TclOOIntStubs {
     int magic;
@@ -112,6 +125,8 @@ typedef struct TclOOIntStubs {
     void (*tclOOClassSetFilters) (Tcl_Interp *interp, Class *classPtr, Tcl_Size numFilters, Tcl_Obj *const *filters); /* 13 */
     void (*tclOOObjectSetMixins) (Object *oPtr, Tcl_Size numMixins, Class *const *mixins); /* 14 */
     void (*tclOOClassSetMixins) (Tcl_Interp *interp, Class *classPtr, Tcl_Size numMixins, Class *const *mixins); /* 15 */
+    Tcl_Method (*tclOOMakeProcInstanceMethod2) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr, void *clientData, Proc **procPtrPtr); /* 16 */
+    Tcl_Method (*tclOOMakeProcMethod2) (Tcl_Interp *interp, Class *clsPtr, int flags, Tcl_Obj *nameObj, const char *namePtr, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr, void *clientData, Proc **procPtrPtr); /* 17 */
 } TclOOIntStubs;
 
 extern const TclOOIntStubs *tclOOIntStubsPtr;
@@ -158,6 +173,10 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 	(tclOOIntStubsPtr->tclOOObjectSetMixins) /* 14 */
 #define TclOOClassSetMixins \
 	(tclOOIntStubsPtr->tclOOClassSetMixins) /* 15 */
+#define TclOOMakeProcInstanceMethod2 \
+	(tclOOIntStubsPtr->tclOOMakeProcInstanceMethod2) /* 16 */
+#define TclOOMakeProcMethod2 \
+	(tclOOIntStubsPtr->tclOOMakeProcMethod2) /* 17 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 

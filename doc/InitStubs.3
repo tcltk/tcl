@@ -21,14 +21,16 @@ const char *
 .AP Tcl_Interp *interp in
 Tcl interpreter handle.
 .AP "const char" *version in
-A version string consisting of one or more decimal numbers
-separated by dots.
+A version string, indicating which minimal version of Tcl is accepted.
+Normally just \fB"9.0"\fR. Or \fB"8.6-"\fR if both 8.6 and 9.0 are accepted.
 .AP int exact in
 1 means that only the particular version specified by
-\fIversion\fR is acceptable.
+\fIversion\fR is accepted.
 0 means that versions newer than \fIversion\fR are also
-acceptable as long as they have the same major version number
-as \fIversion\fR. Other bits have no effect.
+accepted. If the\fIversion\fR ends with \fB-\fR,
+higher major versions are accepted as well, otherwise
+the major version must be the same as in \fIversion\fR.
+Other bits have no effect.
 .BE
 .SH INTRODUCTION
 .PP
@@ -38,7 +40,7 @@ This provides two significant benefits to Tcl users:
 .IP 1) 5
 Extensions that use the stubs mechanism can be loaded into
 multiple versions of Tcl without being recompiled or
-relinked.
+relinked, as long as the major Tcl version is the same.
 .IP 2) 5
 Extensions that use the stubs mechanism can be dynamically
 loaded into statically-linked Tcl applications.
@@ -77,14 +79,20 @@ more information.
 and ensure that the correct version of Tcl is loaded.  In addition
 to an interpreter handle, it accepts as arguments a version number
 and a Boolean flag indicating whether the extension requires
-an exact version match or not.  If \fIexact\fR is 0, then the
-extension is indicating that newer versions of Tcl are acceptable
-as long as they have the same major version number as \fIversion\fR;
-non-zero means that only the specified \fIversion\fR is acceptable.
+an exact version match or not.  If \fIexact\fR is 0, then versions
+newer than \fIversion\fR are also accepted. If the\fIversion\fR
+ends with \fB-\fR, higher major versions are accepted as well,
+otherwise the major version must be the same as in \fIversion\fR.
+1 means that only the specified \fIversion\fR is accepted.
+\fIversion\fR can be any construct as described for \fBpackage require\fR
+(\fBPACKAGE\fR manual page in the section \fBREQUIREMENT\fR).
+Multiple requirement strings like with \fBpackage require\fR are not supported.
+
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
-acceptable, does not support stubs, or any other error condition occurred.
+accepted, does not support stubs, or any other error condition occurred.
 .SH "SEE ALSO"
 Tk_InitStubs
+package
 .SH KEYWORDS
 stubs

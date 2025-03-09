@@ -467,6 +467,37 @@ test oo-1.24 {basic test of OO functionality: deep nested ownership} -setup {
     parent destroy
 } -result 0
 
+test oo-1.25 {basic test of OO functionality: touch method after instance deletion, bug [0b809cd3fc8b6e5e]} -body {
+    set ::result {}
+    # test for eval and deletion of coro, in both cases the coroutine shall be deleted
+    foreach v {"eval" "del"} {
+	# 1st (deleted class)
+	oo::class create A
+	oo::define A method retard-it {} {yield}
+	coroutine tcoro [A new] retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	A destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+	# 2nd (deleted object of class)
+	oo::class create A
+	oo::define A method retard-it {} {yield}
+	set obj [A new]
+	coroutine tcoro $obj retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	$obj destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+	A destroy
+	# 3rd  (deleted object)
+	set obj [oo::object new]
+	oo::objdefine $obj method retard-it {} {yield}
+	coroutine tcoro $obj retard-it
+	trace add command tcoro delete {apply {{args} {lappend ::result D}}}
+	$obj destroy
+	if {$v eq "eval"} { tcoro } else { rename tcoro {} }
+    }
+    set ::result
+} -result [lrepeat 6 D]
+
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
     # we're modifying the root object class's constructor
@@ -4035,7 +4066,7 @@ test oo-27.6 {variables declaration - non-interference of levels} -setup {
     foo create bar
     oo::objdefine bar {
 	variable y!
-	method y {} {list [next] [incr y!] [info var] [info local]}
+	method y {} {list [next] [incr y!] [info var] [info locals]}
 	export eval
     }
     bar y

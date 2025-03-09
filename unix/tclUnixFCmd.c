@@ -244,39 +244,13 @@ Realpath(
 #endif /* PURIFY */
 
 #ifndef NO_REALPATH
-#if defined(__APPLE__) && TCL_THREADS && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
-/*
- * Prior to Darwin 7, realpath is not thread-safe, c.f. Bug 711232; if we
- * might potentially be running on pre-10.3 OSX, check Darwin release at
- * runtime before using realpath.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define haveRealpath	(tclMacOSXDarwinRelease >= 7)
-#else
 #   define haveRealpath	1
-#endif
-#else /* NO_REALPATH */
-/*
- * At least TclpObjNormalizedPath now requires REALPATH
-*/
-#error NO_REALPATH is not supported
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#if defined(__APPLE__) && defined(__LP64__) && \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-/*
- * Prior to Darwin 9, 64bit fts_open() without FTS_NOSTAT may crash (due to a
- * 64bit-unsafe ALIGN macro); if we could be running on pre-10.5 OSX, check
- * Darwin release at runtime and do a separate stat() if necessary.
- */
-
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#   define noFtsStat	(tclMacOSXDarwinRelease < 9)
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+/* fts doesn't do stat64 */
+#   define noFtsStat	1
 #else
 #   define noFtsStat	0
 #endif
@@ -1458,10 +1432,10 @@ GetOwnerAttribute(
 
 static int
 GetPermissionsAttribute(
-    Tcl_Interp *interp,		    /* The interp we are using for errors. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
     TCL_UNUSED(int) /*objIndex*/,
-    Tcl_Obj *fileName,		    /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr)	    /* A pointer to return the object with. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -1766,7 +1740,7 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     TCL_UNUSED(Tcl_Interp *),
-    const char *modeStringPtr, /* Permissions string */
+    const char *modeStringPtr,	/* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
@@ -1959,8 +1933,7 @@ TclpObjNormalizePath(
 				 * be 0 or the offset of a directory separator
 				 * at the end of a path part that is already
 				 * normalized.  I.e. this is not the index of
-				 * the byte just after the separator.  */
-
+				 * the byte just after the separator. */
 {
     const char *currentPathEndPosition;
     char cur;
@@ -2488,10 +2461,10 @@ GetUnixFileAttributes(
 
 static int
 SetUnixFileAttributes(
-    Tcl_Interp *interp,	    /* The interp we are using for errors. */
-    int objIndex,           /* The index of the attribute. */
-    Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr)  /* The attribute to set. */
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     int yesNo, fileAttributes, old;
     WCHAR *winPath;

@@ -151,17 +151,15 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcl9dde$(DDEVER)${DLLSUFFIX}
-DDE_DLL_FILE8		= tcldde$(DDEVER)${DLLSUFFIX}
 DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
 REG_DLL_FILE		= tcl9registry$(REGVER)${DLLSUFFIX}
-REG_DLL_FILE8		= tclregistry$(REGVER)${DLLSUFFIX}
 REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.5 [list load ${DDE_DLL_FILE}];\
-			  package ifneeded registry 1.3.7 [list load ${REG_DLL_FILE}]
+			  package ifneeded dde 1.5a0 [list load ${DDE_DLL_FILE}];\
+			  package ifneeded registry 1.4a0 [list load ${REG_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
@@ -534,7 +532,7 @@ tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
-winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE} ${DDE_DLL_FILE8} ${REG_DLL_FILE8}
+winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE}
 
 libraries:
 
@@ -566,8 +564,6 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_
 	@VC_MANIFEST_EMBED_EXE@
 	@if test "${ZIPFS_BUILD}" = "2" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
-		${NATIVE_ZIP} -A ${TCLSH} \
-		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 cat32.$(OBJEXT): cat.c
@@ -591,8 +587,6 @@ ${TCL_DLL_FILE}: ${TCL_LIB_FILE} ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH
 	@VC_MANIFEST_EMBED_DLL@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
-		${NATIVE_ZIP} -A ${TCL_DLL_FILE} \
-		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
 ifeq (,$(findstring --disable-shared,$(PKG_CFG_ARGS)))
@@ -612,14 +606,6 @@ ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 ${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
-
-${DDE_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinDde.$(OBJEXT)
-	@MAKE_DLL@ tcl8WinDde.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE8}.manifest
-
-${REG_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinReg.$(OBJEXT)
-	@MAKE_DLL@ -DTCL_MAJOR_VERSION=8 tcl8WinReg.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE8}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
@@ -884,10 +870,6 @@ install-binaries: binaries
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
 		"$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
-	@if [ -f $(DDE_DLL_FILE8) ]; then \
-	    echo Installing $(DDE_DLL_FILE8); \
-	    $(COPY) $(DDE_DLL_FILE8) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
-	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
 	    $(COPY) $(DDE_LIB_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
@@ -897,10 +879,6 @@ install-binaries: binaries
 	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
 		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    fi
-	@if [ -f $(REG_DLL_FILE8) ]; then \
-	    echo Installing $(REG_DLL_FILE8); \
-	    $(COPY) $(REG_DLL_FILE8) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
@@ -1061,6 +1039,9 @@ cleanhelp:
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
+	# remaining binaries (inclusive manifests) by version/branch switch, but retain tclsh.exe.manifest (that created on configure phase)
+	find . -maxdepth 1 -type f -regex '\./tcl\(sh[^.]+\|test\|[^.]+.dll\)\.[^.]*\(\.manifest\)?' \
+		-a -not -name 'tclsh.exe.manifest' -exec rm {} \;
 	$(RM) *.pch *.ilk *.pdb *.zip
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
 	$(RMDIR) *.vfs

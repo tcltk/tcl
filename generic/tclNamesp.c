@@ -2303,7 +2303,7 @@ TclGetNamespaceForQualName(
 				 * namespace if TCL_GLOBAL_ONLY was specified,
 				 * or the current namespace if cxtNsPtr was
 				 * NULL. */
-    const char **simpleNamePtr) /* Address where function stores the simple
+    const char **simpleNamePtr)	/* Address where function stores the simple
 				 * name at end of the qualName, or NULL if
 				 * qualName is "::" or the flag
 				 * TCL_FIND_ONLY_NS was specified. */
@@ -3192,7 +3192,10 @@ NamespaceChildrenCmd(
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
 	}
-	if (FindChildEntry(nsPtr, pattern+length) != NULL) {
+	/*
+	 * Global namespace members are prefixed with "::", others not. Ticket [63449c0514]
+	 */
+	if (FindChildEntry(nsPtr, (nsPtr != globalNsPtr ? 2 : 0) + pattern+length) != NULL) {
 	    Tcl_ListObjAppendElement(NULL, listPtr,
 		    Tcl_NewStringObj(pattern, -1));
 	}
@@ -5018,7 +5021,7 @@ TclLogCommandInfo(
 				 * the error. */
     Tcl_Size length,		/* Number of bytes in command (< 0 means use
 				 * all bytes up to first null byte). */
-    const unsigned char *pc,    /* Current pc of bytecode execution context */
+    const unsigned char *pc,	/* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
 				 * context */
 {
