@@ -133,7 +133,7 @@ typedef struct PipeInfo {
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
 				 * thread. Access is synchronized with the
-				 * readable object.  */
+				 * readable object. */
     char extraByte;		/* Buffer for extra character consumed by
 				 * reader thread. This byte is shared with the
 				 * reader thread so access must be
@@ -916,7 +916,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc,			/* Number of arguments in following array. */
+    size_t argc,		/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1327,9 +1327,21 @@ ApplicationType(
 
 	hFile = CreateFileW(nativeFullPath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
+		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 	    continue;
+	}
+
+	if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+	    /*
+	     * But [4f0b5767ac]. Likely a App Execution Alias. This can only
+	     * be a Win32 APP. Attempt to ReadFile below will fail. We assume
+	     * that if it is on the PATH, and it is a reparse point, it is an
+	     * App Execution Alias.
+	     */
+	    CloseHandle(hFile);
+	    applType = APPL_WIN32;
+	    break;
 	}
 
 	header.e_magic = 0;
@@ -1540,7 +1552,7 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    size_t argc,			/* Number of arguments. */
+    size_t argc,		/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
@@ -1957,7 +1969,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    void *instanceData,	/* Instance data for channel. */
+    void *instanceData,		/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -1996,7 +2008,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    void *instanceData,	/* Pointer to PipeInfo structure. */
+    void *instanceData,		/* Pointer to PipeInfo structure. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -2167,7 +2179,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -2261,7 +2273,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -2335,7 +2347,6 @@ PipeOutputProc(
   error:
     *errorCode = errno;
     return -1;
-
 }
 
 /*
@@ -2443,7 +2454,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    void *instanceData,	/* Pipe state. */
+    void *instanceData,		/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2505,9 +2516,9 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    void *instanceData,	/* The pipe state. */
+    void *instanceData,		/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    void **handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)		/* Where to store the handle. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;
@@ -2931,7 +2942,7 @@ PipeReaderThread(
     LPVOID arg)
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *) arg;
-    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    PipeInfo *infoPtr = NULL;	/* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, err;
     int done = 0;
@@ -3054,7 +3065,7 @@ PipeWriterThread(
     LPVOID arg)
 {
     TclPipeThreadInfo *pipeTI = (TclPipeThreadInfo *)arg;
-    PipeInfo *infoPtr = NULL; /* access info only after success init/wait */
+    PipeInfo *infoPtr = NULL;	/* access info only after success init/wait */
     HANDLE handle = NULL;
     DWORD count, toWrite;
     char *buf;

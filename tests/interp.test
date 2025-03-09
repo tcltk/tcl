@@ -2058,6 +2058,27 @@ test interp-25.1 {testing aliasing of string commands} -setup {
     interp delete a
 } -result ""
 
+test interp-25.2 {lambda on different interpreters, bug [67d5f75c36cbada6]} -setup {
+    catch {interp delete a}
+    interp create a
+} -body {
+    set res {}
+    set lambda {{} { list OK from lambda }}
+    lappend res [apply $lambda]
+    lappend res [a eval [list apply $lambda]]
+    set lambda [list apply {{} { list OK from lambda }}]
+    lappend res [eval $lambda]
+    lappend res [a eval $lambda]
+    # cover also epoch change (command list is replaced):
+    a eval {proc list args {return {NO LIST}}}
+    lappend res [a eval $lambda]
+    lappend res [eval $lambda]
+    set res
+} -cleanup {
+    interp delete a
+    unset -nocomplain res lambda
+} -result [list {*}[lrepeat 4 {OK from lambda}] {NO LIST} {OK from lambda}]
+
 #
 # Interps result transmission
 #
@@ -2200,6 +2221,22 @@ test interp-26.8 {errorInfo transmission: safe interps--bug 1637} -setup {
 } -result {msg
     while executing
 "test"}
+test interp-26.9 {error transmission: body line number in info similar to eval-cmd, bug [ba68d1e9484a3a92]} -setup {
+    set interp [interp create]
+} -body {
+    # eval body with multiline code (error in line 3):
+    catch {
+	$interp eval "#1st line\n#2nd line\nexpr {1/0}"
+    } msg res
+    dict get $res -errorinfo
+} -cleanup {
+    interp delete $interp
+} -result {divide by zero
+    invoked from within
+"expr {1/0}"
+    ("interp eval" body line 3)
+    invoked from within
+"$interp eval "#1st line\n#2nd line\nexpr {1/0}""}
 
 # Interps & Namespaces
 test interp-27.1 {interp aliases & namespaces} -setup {

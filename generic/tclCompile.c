@@ -779,7 +779,7 @@ TclSetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
-    void *clientData)	/* Hook procedure private data. */
+    void *clientData)		/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
@@ -2420,7 +2420,7 @@ TclCompileTokens(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    size_t count1,		/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
@@ -2428,14 +2428,13 @@ TclCompileTokens(
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
     Tcl_Size i, numObjsToConcat, adjust;
-    size_t length;
+    int length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral;
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
-    int count = count1;
 
     /*
      * If this is actually a literal, handle continuation lines by
@@ -2639,11 +2638,10 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
-    int count = count1;
 
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
@@ -2833,7 +2831,7 @@ PreventCycle(
 
 ByteCode *
 TclInitByteCode(
-    CompileEnv *envPtr)/* Points to the CompileEnv structure from
+    CompileEnv *envPtr)		/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
     ByteCode *codePtr;
@@ -2978,7 +2976,7 @@ TclInitByteCodeObj(
 				 * and whose string rep contains the source
 				 * code. */
     const Tcl_ObjType *typePtr,
-    CompileEnv *envPtr)/* Points to the CompileEnv structure from
+    CompileEnv *envPtr)		/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
     ByteCode *codePtr;
@@ -3023,7 +3021,7 @@ TclInitByteCodeObj(
 
 Tcl_Size
 TclFindCompiledLocal(
-    const char *name,	/* Points to first character of the name of a
+    const char *name,		/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     Tcl_Size nameBytes,		/* Number of bytes in the name. */
@@ -3202,7 +3200,7 @@ EnterCmdStartData(
     Tcl_Size cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
     Tcl_Size srcOffset,		/* Offset of first char of the command. */
-    Tcl_Size codeOffset)		/* Offset of first byte of command code. */
+    Tcl_Size codeOffset)	/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3280,8 +3278,8 @@ EnterCmdExtentData(
 				 * location information. */
     Tcl_Size cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    Tcl_Size numSrcBytes,		/* Number of command source chars. */
-    Tcl_Size numCodeBytes)		/* Offset of last byte of command code. */
+    Tcl_Size numSrcBytes,	/* Number of command source chars. */
+    Tcl_Size numCodeBytes)	/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -3764,11 +3762,11 @@ TclFinalizeLoopExceptionRange(
 
 Tcl_Size
 TclCreateAuxData(
-    void *clientData,	/* The compilation auxiliary data to store in
+    void *clientData,		/* The compilation auxiliary data to store in
 				 * the new aux data record. */
     const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
-    CompileEnv *envPtr)/* Points to the CompileEnv for which a new
+    CompileEnv *envPtr)		/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
     Tcl_Size index;		/* Index for the new AuxData structure. */

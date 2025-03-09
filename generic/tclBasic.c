@@ -68,7 +68,7 @@
  * compatible with AddressSanitizer (ASan) use-after-return detection.
  */
 
-#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#if defined(_MSC_VER)
 #include <intrin.h> /* for _AddressOfReturnAddress() */
 #endif
 
@@ -85,7 +85,7 @@ TclGetCStackPtr(void)
 {
 #if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
     return __builtin_frame_address(0);
-#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#elif defined(_MSC_VER)
     return _AddressOfReturnAddress();
 #else
     ptrdiff_t unused = 0;
@@ -1131,7 +1131,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = NULL;
-	    cmdPtr->clientData = cmdPtr;
+	    cmdPtr->clientData = NULL;
 	    cmdPtr->objProc = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData = NULL;
 	    cmdPtr->deleteProc = NULL;
@@ -2717,9 +2717,9 @@ Tcl_CreateCommand(
 
 typedef struct {
     Tcl_ObjCmdProc2 *proc;
-    void *clientData; /* Arbitrary value to pass to proc function. */
+    void *clientData;	/* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
-    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    void *deleteData;	/* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc2 *nreProc;
 } CmdWrapperInfo;
 
@@ -2946,7 +2946,7 @@ TclCreateObjCommandInNs(
     cmdPtr->objProc = proc;
     cmdPtr->objClientData = clientData;
     cmdPtr->proc = NULL;
-    cmdPtr->clientData = cmdPtr;
+    cmdPtr->clientData = NULL;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
     cmdPtr->flags = 0;
@@ -3006,9 +3006,9 @@ TclCreateObjCommandInNs(
 
 int
 InvokeStringCommand(
-    void *clientData,	/* Points to command's Command structure. */
+    void *clientData,		/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
@@ -3550,7 +3550,6 @@ Tcl_GetCommandFullName(
 				 * not have been deleted. */
     Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */
-
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = (Command *) command;
@@ -3948,7 +3947,7 @@ CallCommandTraces(
 
 static int
 CancelEvalProc(
-    void *clientData,	/* Interp to cancel the script in progress. */
+    void *clientData,		/* Interp to cancel the script in progress. */
     TCL_UNUSED(Tcl_Interp *),
     int code)			/* Current return code from command. */
 {
@@ -8050,6 +8049,65 @@ ClassifyDouble(
 #endif /* !fpclassify */
 }
 
+static inline int
+DoubleObjClass(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,		/* Object with double to get its class. */
+    int *fpClsPtr)		/* FP class retrieved for double in object. */
+{
+    double d;
+    void *ptr;
+    int type;
+
+    if (Tcl_GetNumberFromObj(interp, objPtr, &ptr, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (type) {
+      case TCL_NUMBER_NAN:
+	*fpClsPtr = FP_NAN;
+	return TCL_OK;
+      case TCL_NUMBER_DOUBLE:
+	d = *((const double *) ptr);
+	break;
+      case TCL_NUMBER_INT:
+	d = (double)*((const Tcl_WideInt *) ptr);
+	break;
+      default:
+	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    }
+    *fpClsPtr = ClassifyDouble(d);
+    return TCL_OK;
+}
+static inline int
+DoubleObjIsClass(
+    Tcl_Interp *interp,
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv,	/* Actual parameter list */
+    int cmpCls,			/* FP class to compare. */
+    int positive)		/* 1 if compare positive, 0 - otherwise */
+{
+    int dCls;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    dCls = (
+	positive
+	    ? (dCls == cmpCls)
+	    : (dCls != cmpCls && dCls != FP_NAN)
+    ) ? 1 : 0;
+    Tcl_SetObjResult(interp, ((Interp *)interp)->execEnvPtr->constants[dCls]);
+    return TCL_OK;
+}
+
 static int
 ExprIsFiniteFunc(
     TCL_UNUSED(void *),
@@ -8058,27 +8116,7 @@ ExprIsFiniteFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	type = ClassifyDouble(d);
-	result = (type != FP_INFINITE && type != FP_NAN);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 0);
 }
 
 static int
@@ -8089,26 +8127,7 @@ ExprIsInfinityFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_INFINITE);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_INFINITE, 1);
 }
 
 static int
@@ -8119,26 +8138,7 @@ ExprIsNaNFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 1;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_NAN);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_NAN, 1);
 }
 
 static int
@@ -8149,26 +8149,7 @@ ExprIsNormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_NORMAL);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_NORMAL, 1);
 }
 
 static int
@@ -8179,26 +8160,7 @@ ExprIsSubnormalFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type != TCL_NUMBER_NAN) {
-	if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	result = (ClassifyDouble(d) == FP_SUBNORMAL);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
-    return TCL_OK;
+    return DoubleObjIsClass(interp, objc, objv, FP_SUBNORMAL, 1);
 }
 
 static int
@@ -8209,36 +8171,20 @@ ExprIsUnorderedFunc(
     int objc,			/* Actual parameter count */
     Tcl_Obj *const *objv)	/* Actual parameter list */
 {
-    double d;
-    void *ptr;
-    int type, result = 0;
+    int dCls, dCls2;
 
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (DoubleObjClass(interp, objv[1], &dCls) != TCL_OK ||
+	    DoubleObjClass(interp, objv[2], &dCls2) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (type == TCL_NUMBER_NAN) {
-	result = 1;
-    } else {
-	d = *((const double *) ptr);
-	result = (ClassifyDouble(d) == FP_NAN);
-    }
 
-    if (Tcl_GetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (type == TCL_NUMBER_NAN) {
-	result |= 1;
-    } else {
-	d = *((const double *) ptr);
-	result |= (ClassifyDouble(d) == FP_NAN);
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    dCls = ((dCls == FP_NAN) || (dCls2 == FP_NAN)) ? 1 : 0;
+    Tcl_SetObjResult(interp, ((Interp *)interp)->execEnvPtr->constants[dCls]);
     return TCL_OK;
 }
 

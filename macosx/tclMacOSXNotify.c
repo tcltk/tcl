@@ -23,15 +23,12 @@
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
 #define USE_OS_UNFAIR_LOCK
 #include <os/lock.h>
-#undef TCL_MAC_DEBUG_NOTIFIER
 #endif
 
 #ifdef HAVE_COREFOUNDATION	/* Traditional unix select-based notifier is
 				 * in tclUnixNotfy.c */
 #include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
-
-/* #define TCL_MAC_DEBUG_NOTIFIER 1 */
 
 #if  !defined(USE_OS_UNFAIR_LOCK)
 
@@ -53,75 +50,6 @@
  */
 
 #include <libkern/OSAtomic.h>
-
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-/*
- * Support for weakly importing spinlock API.
- */
-#define WEAK_IMPORT_SPINLOCKLOCK
-
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-#define VOLATILE volatile
-#else
-#define VOLATILE
-#endif /* MAC_OS_X_VERSION_MAX_ALLOWED >= 1050 */
-
-#ifndef bool
-#define bool int
-#endif
-
-extern void		OSSpinLockLock(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern void		OSSpinLockUnlock(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern bool		OSSpinLockTry(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern void		_spin_lock(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern void		_spin_unlock(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern bool		_spin_lock_try(VOLATILE OSSpinLock *lock)
-			    WEAK_IMPORT_ATTRIBUTE;
-static void (* lockLock)(VOLATILE OSSpinLock *lock) = NULL;
-static void (* lockUnlock)(VOLATILE OSSpinLock *lock) = NULL;
-static bool (* lockTry)(VOLATILE OSSpinLock *lock) = NULL;
-#undef VOLATILE
-static pthread_once_t spinLockLockInitControl = PTHREAD_ONCE_INIT;
-static void
-SpinLockLockInit(void)
-{
-    lockLock   = OSSpinLockLock   != NULL ? OSSpinLockLock   : _spin_lock;
-    lockUnlock = OSSpinLockUnlock != NULL ? OSSpinLockUnlock : _spin_unlock;
-    lockTry    = OSSpinLockTry    != NULL ? OSSpinLockTry    : _spin_lock_try;
-    if (lockLock == NULL || lockUnlock == NULL) {
-	Tcl_Panic("SpinLockLockInit: no spinlock API available");
-    }
-}
-
-/*
- * Wrappers so that we get warnings in just one small part of this file.
- */
-
-static inline void
-SpinLockLock(
-    VOLATILE OSSpinLock *lock)
-{
-    lockLock(lock);
-}
-static inline void
-SpinLockUnlock(
-    VOLATILE OSSpinLock *lock)
-{
-    lockUnlock(lock);
-}
-static inline bool
-SpinLockTry(
-    VOLATILE OSSpinLock *lock)
-{
-    return lockTry(lock);
-}
-
-#else /* !HAVE_WEAK_IMPORT */
 
 /*
  * Wrappers so that we get warnings in just one small part of this file.
@@ -145,7 +73,6 @@ SpinLockTry(
 {
     return OSSpinLockTry(lock);
 }
-#endif /* HAVE_WEAK_IMPORT */
 #define SPINLOCK_INIT		OS_SPINLOCK_INIT
 
 #else
@@ -221,83 +148,6 @@ static OSSpinLock notifierLock     = SPINLOCK_INIT;
 #endif
 
 /*
- * The debug version of the Notifier only works if using OSSpinLock.
- */
-
-#if defined(TCL_MAC_DEBUG_NOTIFIER) && !defined(USE_OS_UNFAIR_LOCK)
-#define TclMacOSXNotifierDbgMsg(m, ...) \
-    do {								\
-	fprintf(notifierLog?notifierLog:stderr, "tclMacOSXNotify.c:%d: " \
-		"%s() pid %5d thread %10p: " m "\n", __LINE__, __func__, \
-		getpid(), pthread_self(), ##__VA_ARGS__);		\
-	fflush(notifierLog?notifierLog:stderr);				\
-    } while (0)
-
-/*
- * Debug version of SpinLockLock that logs the time spent waiting for the lock
- */
-
-#define SpinLockLockDbg(p) \
-    if (!SpinLockTry(p)) {						\
-	long long s = TclpGetWideClicks(), e;				\
-									\
-	SpinLockLock(p);						\
-	e = TclpGetWideClicks();					\
-	TclMacOSXNotifierDbgMsg("waited on %s for %8.0f ns",		\
-		#p, TclpWideClicksToNanoseconds(e-s));			\
-    }
-#undef LOCK_NOTIFIER_INIT
-#define LOCK_NOTIFIER_INIT	SpinLockLockDbg(&notifierInitLock)
-#undef LOCK_NOTIFIER
-#define LOCK_NOTIFIER		SpinLockLockDbg(&notifierLock)
-#undef LOCK_NOTIFIER_TSD
-#define LOCK_NOTIFIER_TSD	SpinLockLockDbg(tsdPtr->tsdLock)
-#include <asl.h>
-static FILE *notifierLog = NULL;
-#ifndef NOTIFIER_LOG
-#define NOTIFIER_LOG "/tmp/tclMacOSXNotify.log"
-#endif
-#define OPEN_NOTIFIER_LOG \
-    if (!notifierLog) {							\
-	notifierLog = fopen(NOTIFIER_LOG, "a");				\
-	/*TclMacOSXNotifierDbgMsg("open log");				\
-	 *asl_set_filter(NULL,						\
-	 *	ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG));			\
-	 *asl_add_log_file(NULL, fileno(notifierLog));*/		\
-    }
-#define CLOSE_NOTIFIER_LOG \
-    if (notifierLog) {							\
-	/*asl_remove_log_file(NULL, fileno(notifierLog));		\
-	 *TclMacOSXNotifierDbgMsg("close log");*/			\
-	fclose(notifierLog);						\
-	notifierLog = NULL;						\
-    }
-#define ENABLE_ASL \
-    if (notifierLog) {							\
-	/*tsdPtr->asl = asl_open(NULL, "com.apple.console",		\
-	 *	ASL_OPT_NO_REMOTE);					\
-	 *asl_set_filter(tsdPtr->asl,					\
-	 *	ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG));			\
-	 *asl_add_log_file(tsdPtr->asl, fileno(notifierLog));*/		\
-    }
-#define DISABLE_ASL \
-    /*if (tsdPtr->asl) {						\
-     *	if (notifierLog) {						\
-     *	    asl_remove_log_file(tsdPtr->asl, fileno(notifierLog));	\
-     *	}								\
-     *	asl_close(tsdPtr->asl);						\
-     *}*/
-#define ASLCLIENT_DECL		/*aslclient asl*/
-#else
-#define TclMacOSXNotifierDbgMsg(m, ...)
-#define OPEN_NOTIFIER_LOG
-#define CLOSE_NOTIFIER_LOG
-#define ENABLE_ASL
-#define DISABLE_ASL
-#define ASLCLIENT_DECL
-#endif /* TCL_MAC_DEBUG_NOTIFIER */
-
-/*
  * This structure is used to keep track of the notifier info for a registered
  * file.
  */
@@ -311,7 +161,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -408,7 +258,6 @@ typedef struct ThreadSpecificData {
 
     CFTimeInterval waitTime;	/* runLoopTimer wait time when running
 				 * embedded. */
-    ASLCLIENT_DECL;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -447,7 +296,7 @@ static ThreadSpecificData *waitingListPtr = NULL;
  */
 
 static int triggerPipe = -1;
-static int receivePipe = -1; /* Output end of triggerPipe */
+static int receivePipe = -1;	/* Output end of triggerPipe */
 
 /*
  * The following static indicates if the notifier thread is running.
@@ -520,29 +369,7 @@ static int atForkInit = 0;
 static void		AtForkPrepare(void);
 static void		AtForkParent(void);
 static void		AtForkChild(void);
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-/* Support for weakly importing pthread_atfork. */
-#define WEAK_IMPORT_PTHREAD_ATFORK
-extern int		pthread_atfork(void (*prepare)(void),
-			    void (*parent)(void), void (*child)(void))
-			    WEAK_IMPORT_ATTRIBUTE;
-#define MayUsePthreadAtfork()	(pthread_atfork != NULL)
-#else
-#define MayUsePthreadAtfork()	(1)
-#endif /* HAVE_WEAK_IMPORT */
 
-/*
- * On Darwin 9 and later, it is not possible to call CoreFoundation after
- * a fork.
- */
-
-#if !defined(MAC_OS_X_VERSION_MIN_REQUIRED) || \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-#define noCFafterFork	(tclMacOSXDarwinRelease >= 9)
-#else /* MAC_OS_X_VERSION_MIN_REQUIRED */
-#define noCFafterFork	1
-#endif /* MAC_OS_X_VERSION_MIN_REQUIRED */
 #endif /* HAVE_PTHREAD_ATFORK */
 
 /*
@@ -706,7 +533,7 @@ TclpInitNotifier(void)
      * child of a fork.
      */
 
-    if (MayUsePthreadAtfork() && !atForkInit) {
+    if (!atForkInit) {
 	int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
 
 	if (result) {
@@ -749,9 +576,7 @@ TclpInitNotifier(void)
 	 */
 
 	notifierThreadRunning = 0;
-	OPEN_NOTIFIER_LOG;
     }
-    ENABLE_ASL;
     notifierCount++;
     UNLOCK_NOTIFIER_INIT;
     return tsdPtr;
@@ -873,7 +698,6 @@ TclpFinalizeNotifier(
 
     LOCK_NOTIFIER_INIT;
     notifierCount--;
-    DISABLE_ASL;
 
     /*
      * If this is the last thread to use the notifier, close the notifier pipe
@@ -917,7 +741,6 @@ TclpFinalizeNotifier(
 	    close(receivePipe);
 	    triggerPipe = -1;
 	}
-	CLOSE_NOTIFIER_LOG;
     }
     UNLOCK_NOTIFIER_INIT;
 
@@ -999,7 +822,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
     ThreadSpecificData *tsdPtr;
     CFRunLoopTimerRef runLoopTimer;
@@ -1113,7 +936,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -1360,7 +1183,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     int result, polling, runLoopRunning;
     CFTimeInterval waitTime;
@@ -1606,11 +1429,6 @@ OnOffWaitingList(
 {
     int changeWaitingList;
 
-#if defined(TCL_MAC_DEBUG_NOTIFIER) && !defined(USE_OS_UNFAIR_LOCK)
-    if (SpinLockTry(&notifierLock)) {
-	Tcl_Panic("OnOffWaitingList: notifierLock unlocked");
-    }
-#endif
     changeWaitingList = (!onList ^ !tsdPtr->onList);
     if (changeWaitingList) {
 	if (onList) {
@@ -1704,7 +1522,6 @@ Tcl_Sleep(
 		Tcl_Panic("Tcl_Sleep: CFRunLoop finished");
 		break;
 	    case kCFRunLoopRunStopped:
-		TclMacOSXNotifierDbgMsg("CFRunLoop stopped");
 		waitTime = waitEnd - CFAbsoluteTimeGetCurrent();
 		break;
 	    case kCFRunLoopRunTimedOut:
@@ -2233,33 +2050,12 @@ AtForkChild(void)
 
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
-	if (!noCFafterFork) {
-	    CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
-	    CFRelease(tsdPtr->runLoopSource);
-	    if (tsdPtr->runLoopTimer) {
-		CFRunLoopTimerInvalidate(tsdPtr->runLoopTimer);
-		CFRelease(tsdPtr->runLoopTimer);
-	    }
-	}
 	tsdPtr->runLoopSource = NULL;
 	tsdPtr->runLoopTimer = NULL;
     }
     if (notifierCount > 0) {
 	notifierCount = 1;
 	notifierThreadRunning = 0;
-
-	/*
-	 * Assume that the return value of Tcl_InitNotifier in the child will
-	 * be identical to the one stored as clientData in tclNotify.c's
-	 * ThreadSpecificData by the parent's TclInitNotifier, so discard the
-	 * return value here. This assumption may require the fork() to be
-	 * executed in the main thread of the parent, otherwise
-	 * Tcl_AlertNotifier may break in the child.
-	 */
-
-	if (!noCFafterFork) {
-	    Tcl_InitNotifier();
-	}
 
 	/*
 	 * Restart the notifier thread for signal handling.

@@ -87,22 +87,6 @@ static const char *const typeNames[] = {
 
 static DWORD lastType = REG_RESOURCE_LIST;
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#ifndef Tcl_Size
-#   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
-#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-#endif
-
 /*
  * Declarations for functions defined in this file.
  */
@@ -146,11 +130,6 @@ extern "C" {
 #endif
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load tclregistry13.dll" works without 3th argument */
-DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -177,23 +156,15 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
     cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.3.7", NULL);
+    return Tcl_PkgProvideEx(interp, "registry", "1.4a0", NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Init(
-    Tcl_Interp *interp)
-{
-    return Registry_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -240,15 +211,6 @@ Registry_Unload(
 
     return TCL_OK;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Unload(
-    Tcl_Interp *interp,
-    int flags)
-{
-    return Registry_Unload(interp, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -294,9 +256,9 @@ DeleteCmd(
 
 static int
 RegistryObjCmd(
-    void *dummy,	/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
@@ -1207,8 +1169,6 @@ RecursiveDeleteKey(
     Tcl_DString subkey;
     HKEY hKey;
     REGSAM saveMode = mode;
-    static int checkExProc = 0;
-    static LONG (* regDeleteKeyExProc) (HKEY, LPCWSTR, REGSAM, DWORD) = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD)) NULL;
 
     /*
      * Do not allow NULL or empty key name.
@@ -1237,22 +1197,8 @@ RecursiveDeleteKey(
 	result = RegEnumKeyExW(hKey, 0, (WCHAR *)Tcl_DStringValue(&subkey),
 		&size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
-	    /*
-	     * RegDeleteKeyEx doesn't exist on non-64bit XP platforms, so we
-	     * can't compile with it in. We need to check for it at runtime
-	     * and use it if we find it.
-	     */
-
-	    if (mode && !checkExProc) {
-		HMODULE handle;
-
-		checkExProc = 1;
-		handle = GetModuleHandleW(L"ADVAPI32");
-		regDeleteKeyExProc = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD))
-			(void *)GetProcAddress(handle, "RegDeleteKeyExW");
-	    }
-	    if (mode && regDeleteKeyExProc) {
-		result = regDeleteKeyExProc(startKey, keyName, mode, 0);
+	    if (mode) {
+		result = RegDeleteKeyExW(startKey, keyName, mode, 0);
 	    } else {
 		result = RegDeleteKeyW(startKey, keyName);
 	    }
@@ -1430,7 +1376,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

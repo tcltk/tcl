@@ -259,7 +259,7 @@ struct Object {
 
 enum ObjectFlags {
     OBJECT_DESTRUCTING = 1,	/* Indicates that an object is being or has
-				 *  been destroyed  */
+				 * been destroyed. */
     DESTRUCTOR_CALLED = 2,	/* Indicates that evaluation of destructor
 				 * script for the object has began */
     ROOT_OBJECT = 0x1000,	/* Flag to say that this object is the root of
@@ -709,6 +709,12 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 	    (target).list = NULL; \
 	} \
     } while(0)
+
+/*
+ * Convenience macro for generating error codes.
+ */
+#define OO_ERROR(interp, code) \
+    Tcl_SetErrorCode((interp), "TCL", "OO", #code, (char *)NULL)
 
 #endif /* TCL_OO_INTERNAL_H */
 

@@ -2106,8 +2106,8 @@ DeleteReflectedTransformMap(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedTransform *rtPtr;
 #if TCL_THREADS
     ForwardingResult *resultPtr;
@@ -2268,8 +2268,8 @@ static void
 DeleteThreadReflectedTransformMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	   /* Search variable. */
+    Tcl_HashEntry *hPtr;	   /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
     ForwardingResult *resultPtr;

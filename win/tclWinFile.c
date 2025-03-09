@@ -859,12 +859,10 @@ tclWinDebugPanic(
 
 void
 TclpFindExecutable(
-    const char *argv0)		/* If NULL, install PanicMessageBox, otherwise
-				 * ignore. */
+    TCL_UNUSED(const char *))
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * 3];
-    (void)argv0;
 
     GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
@@ -2520,9 +2518,9 @@ TclpFilesystemPathType(
 int
 TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
+    Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)	        /* offset to start at in pathPtr */
+    int nextCheckpoint)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */

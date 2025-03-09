@@ -1121,6 +1121,10 @@ TclOOReleaseClassContents(
     }
 
     FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
+	/* instance gets deleted, so if method remains, reset it there */
+	if (mPtr->refCount > 1 && mPtr->declaringClassPtr == clsPtr) {
+	    mPtr->declaringClassPtr = NULL;
+	}
 	TclOODelMethodRef(mPtr);
     }
     Tcl_DeleteHashTable(&clsPtr->classMethods);
@@ -1284,6 +1288,10 @@ ObjectNamespaceDeleted(
 
     if (oPtr->methodsPtr) {
 	FOREACH_HASH_VALUE(mPtr, oPtr->methodsPtr) {
+	    /* instance gets deleted, so if method remains, reset it there */
+	    if (mPtr->refCount > 1 && mPtr->declaringObjectPtr == oPtr) {
+		mPtr->declaringObjectPtr = NULL;
+	    }
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
@@ -1884,7 +1892,7 @@ TclNewObjectInstanceCommon(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't create object \"%s\": command already exists with"
 		    " that name", nameStr));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", (char *)NULL);
+	    OO_ERROR(interp, OVERWRITE_OBJECT);
 	    return NULL;
 	}
     }
@@ -1941,7 +1949,7 @@ FinalizeAlloc(
     if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"object deleted in constructor", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", (char *)NULL);
+	OO_ERROR(interp, STILLBORN);
 	result = TCL_ERROR;
     }
     if (result != TCL_OK) {
@@ -2012,7 +2020,7 @@ Tcl_CopyObjectInstance(
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not clone the class of classes", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", (char *)NULL);
+	OO_ERROR(interp, CLONING_CLASS);
 	return NULL;
     }
 
@@ -2903,7 +2911,7 @@ Tcl_ObjectContextInvokeNext(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"no next %s implementation", methodType));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
+	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
 
@@ -2972,7 +2980,7 @@ TclNRObjectContextInvokeNext(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"no next %s implementation", methodType));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (char *)NULL);
+	OO_ERROR(interp, NOTHING_NEXT);
 	return TCL_ERROR;
     }
 

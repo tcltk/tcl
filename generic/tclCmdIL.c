@@ -1259,7 +1259,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};	/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
@@ -2427,7 +2427,7 @@ int
 Tcl_LinsertObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
@@ -2520,9 +2520,8 @@ int
 Tcl_ListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     /*
      * If there are no list elements, the result is an empty object.
@@ -2557,8 +2556,7 @@ Tcl_LlengthObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int result;
@@ -2606,8 +2604,7 @@ Tcl_LpopObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size listLen;
     int copied = 0, result;
@@ -2725,8 +2722,7 @@ Tcl_LrangeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     Tcl_Size listLen, first, last;
@@ -2937,9 +2933,8 @@ int
 Tcl_LrepeatObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])
-				/* The argument objects. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_WideInt elementCount, i;
     Tcl_Size totalElems;
@@ -3927,7 +3922,7 @@ Tcl_LsearchObjCmd(
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (returnSubindices && (sortInfo.indexc == 0) && (groupSize > 1)) {
-		    Tcl_BounceRefCount(itemPtr); 
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i + groupOffset];
 			Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
@@ -4037,11 +4032,11 @@ Tcl_LsearchObjCmd(
 
 static SequenceDecoded
 SequenceIdentifyArgument(
-     Tcl_Interp *interp,        /* for error reporting  */
-     Tcl_Obj *argPtr,           /* Argument to decode   */
+     Tcl_Interp *interp,	/* for error reporting */
+     Tcl_Obj *argPtr,		/* Argument to decode */
      int allowedArgs,		/* Flags if keyword or numeric allowed. */
-     Tcl_Obj **numValuePtr,     /* Return numeric value */
-     int *keywordIndexPtr)      /* Return keyword enum  */
+     Tcl_Obj **numValuePtr,	/* Return numeric value */
+     int *keywordIndexPtr)	/* Return keyword enum */
 {
     int result = TCL_ERROR;
     SequenceOperators opmode;
@@ -4085,8 +4080,7 @@ SequenceIdentifyArgument(
 	int keyword;
 	/* Determine if result of expression is double or int */
 	if (Tcl_GetNumberFromObj(interp, exprValueObj, &internalPtr,
-		&keyword) != TCL_OK
-	) {
+		&keyword) != TCL_OK) {
 	    return ErrArg;
 	}
 	*numValuePtr = exprValueObj; /* incremented in Tcl_ExprObj */
@@ -4134,9 +4128,9 @@ SequenceIdentifyArgument(
 int
 Tcl_LseqObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	   /* Current interpreter. */
-    int objc,		   /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* The argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Tcl_Obj *elementCount = NULL;
     Tcl_Obj *start = NULL, *end = NULL, *step = NULL;
@@ -4189,7 +4183,9 @@ Tcl_LseqObjCmd(
 	    }
 	    numValues[value_i] = numberObj;
 	    values[value_i] = keyword;  /* TCL_NUMBER_* */
-	    useDoubles += (keyword == TCL_NUMBER_DOUBLE) ? 1 : 0;
+	    if ((keyword == TCL_NUMBER_DOUBLE || keyword == TCL_NUMBER_NAN)) {
+		useDoubles++;
+	    }
 	    value_i++;
 	    break;
 
@@ -4218,10 +4214,10 @@ Tcl_LseqObjCmd(
 	elementCount = numValues[0];
 	end = NULL;
 	step = one;
-	useDoubles = 0; // Can only have Integer value. If a fractional value
-			// is given, this will fail later. In other words,
-			// "3.0" is allowed and used as Integer, but "3.1"
-			// will be flagged as an error. (bug f4a4bd7f1070)
+	useDoubles = 0; /* Can only have Integer value. If a fractional value
+			 * is given, this will fail later. In other words,
+			 * "3.0" is allowed and used as Integer, but "3.1"
+			 * will be flagged as an error. (bug f4a4bd7f1070) */
 	break;
 
 /*    lseq n n */
@@ -4259,7 +4255,7 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	}
 	break;
 
@@ -4281,10 +4277,10 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    goto done;
+	    goto syntax;
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4302,7 +4298,7 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4317,7 +4313,7 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	opmode = (SequenceOperators)values[1];
@@ -4332,7 +4328,7 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    goto done;
+	    goto syntax;
 	    break;
 	}
 	break;
@@ -4347,11 +4343,10 @@ Tcl_LseqObjCmd(
 
     /* Count needs to be integer, so try to convert if possible */
     if (elementCount && TclHasInternalRep(elementCount, &tclDoubleType)) {
-	double d;
-	// Don't consider Count type to indicate using double values in seqence
+	double d = elementCount->internalRep.doubleValue;
+	/* Don't consider Count type to indicate using double values in seqence */
 	useDoubles -= (useDoubles > 0) ? 1 : 0;
-	(void)Tcl_GetDoubleFromObj(NULL, elementCount, &d);
-	if (floor(d) == d) {
+	if (!isinf(d) && !isnan(d) && floor(d) == d) {
 	    if ((d >= (double)WIDE_MAX) || (d <= (double)WIDE_MIN)) {
 		mp_int big;
 
@@ -5361,7 +5356,7 @@ DictionaryCompare(
     int secondaryDiff = 0;
 
     while (1) {
-		if (isdigit(UCHAR(*right))		/* INTL: digit */
+	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
 	     * There are decimal numbers embedded in the two strings. Compare

@@ -239,8 +239,8 @@ const Tcl_ObjType tclListType = {
  */
 static inline ListSpan *
 ListSpanNew(
-    Tcl_Size firstSlot, /* Starting slot index of the span */
-    Tcl_Size numSlots)  /* Number of slots covered by the span */
+    Tcl_Size firstSlot,		/* Starting slot index of the span */
+    Tcl_Size numSlots)		/* Number of slots covered by the span */
 {
     ListSpan *spanPtr = (ListSpan *) Tcl_Alloc(sizeof(*spanPtr));
     spanPtr->refCount = 0;
@@ -298,8 +298,8 @@ ListSpanDecrRefs(
  */
 static inline int
 ListSpanMerited(
-    Tcl_Size length,                 /* Length of the proposed span */
-    Tcl_Size usedStorageLength,      /* Number of slots currently in used */
+    Tcl_Size length,		/* Length of the proposed span */
+    Tcl_Size usedStorageLength,	/* Number of slots currently in used */
     Tcl_Size allocatedStorageLength) /* Length of the currently allocation */
 {
     /*
@@ -370,9 +370,9 @@ ListRepFreeUnreferenced(
  */
 static inline void
 ObjArrayIncrRefs(
-    Tcl_Obj * const *objv,  /* Pointer to the array */
-    Tcl_Size startIdx,     /* Starting index of subarray within objv */
-    Tcl_Size count)        /* Number of elements in the subarray */
+    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -402,9 +402,9 @@ ObjArrayIncrRefs(
  */
 static inline void
 ObjArrayDecrRefs(
-    Tcl_Obj * const *objv, /* Pointer to the array */
-    Tcl_Size startIdx,    /* Starting index of subarray within objv */
-    Tcl_Size count)       /* Number of elements in the subarray */
+    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Size startIdx,		/* Starting index of subarray within objv */
+    Tcl_Size count)		/* Number of elements in the subarray */
 {
     Tcl_Obj * const *end;
     LIST_INDEX_ASSERT(startIdx);
@@ -434,9 +434,9 @@ ObjArrayDecrRefs(
  */
 static inline void
 ObjArrayCopy(
-    Tcl_Obj **to,          /* Destination */
-    Tcl_Size count,       /* Number of pointers to copy */
-    Tcl_Obj *const from[]) /* Source array of Tcl_Obj* */
+    Tcl_Obj **to,		/* Destination */
+    Tcl_Size count,		/* Number of pointers to copy */
+    Tcl_Obj *const from[])	/* Source array of Tcl_Obj* */
 {
     Tcl_Obj **end;
     LIST_COUNT_ASSERT(count);
@@ -465,8 +465,8 @@ ObjArrayCopy(
  */
 static int
 MemoryAllocationError(
-    Tcl_Interp *interp, /* Interpreter for error message. May be NULL */
-    size_t size)        /* Size of attempted allocation that failed */
+    Tcl_Interp *interp,		/* Interpreter for error message. May be NULL */
+    size_t size)		/* Size of attempted allocation that failed */
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1258,10 +1258,10 @@ TclNewListObj2(
 
 static int
 TclListObjGetRep(
-    Tcl_Interp *interp, /* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,   /* List object for which an element array is
-			 * to be returned. */
-    ListRep *repPtr)	/* Location to store descriptor */
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listObj,		/* List object for which an element array is
+				 * to be returned. */
+    ListRep *repPtr)		/* Location to store descriptor */
 {
     if (!TclHasInternalRep(listObj, &tclListType)) {
 	int result;
@@ -1460,7 +1460,7 @@ ListRepRange(
 	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	    && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
-	/* Option 1 - Special case unshared, exclude end elements, no span  */
+	/* Option 1 - Special case unshared, exclude end elements, no span */
 	LIST_ASSERT(srcRepPtr->storePtr->firstUsed == 0); /* If no span */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
@@ -2017,9 +2017,9 @@ Tcl_ListObjIndex(
 #undef Tcl_ListObjLength
 int
 Tcl_ListObjLength(
-    Tcl_Interp *interp,	/* Used to report errors if not NULL. */
-    Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listObj,		/* List object whose #elements to return. */
+    Tcl_Size *lenPtr)		/* The resulting length is stored here. */
 {
     ListRep listRep;
 
@@ -2727,7 +2727,7 @@ TclLindexFlat(
 		if (!TclHasInternalRep(listObj, &tclListType)) {
 		    status = SetListFromAny(interp, listObj);
 		    if (status != TCL_OK) {
-			/* The list is not a list at all => error.  */
+			/* The list is not a list at all => error. */
 			Tcl_DecrRefCount(listObj);
 			return NULL;
 		    }
@@ -2784,10 +2784,10 @@ TclLsetList(
     Tcl_Obj *indexArgObj,	/* Index or index-list arg to 'lset'. */
     Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
-    Tcl_Size indexCount = 0;   /* Number of indices in the index list. */
+    Tcl_Size indexCount = 0;	/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
     Tcl_Obj *retValueObj;	/* Pointer to the list to be returned. */
-    Tcl_Size index;            /* Current index in the list - discarded. */
+    Tcl_Size index;		/* Current index in the list - discarded. */
     Tcl_Obj *indexListCopy;
 
     /*
@@ -3157,7 +3157,7 @@ TclListObjSetElement(
 				 * element. */
 {
     ListRep listRep;
-    Tcl_Obj **elemPtrs;         /* Pointers to elements of the list. */
+    Tcl_Obj **elemPtrs;		/* Pointers to elements of the list. */
     Tcl_Size elemCount;		/* Number of elements in the list. */
 
     /* Ensure that the listObj parameter designates an unshared list. */

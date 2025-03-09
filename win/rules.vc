@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 13
+RULES_VERSION_MINOR = 14
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -697,7 +697,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
    && [nmakehlp -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
+   && [nmakehlp -V "$(_TCL_H)" "define TCL_MINOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
@@ -1297,7 +1297,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+# Even when building against Tcl 9, PRJLIBNAME8 must have "t"
+PRJLIBNAME8	= $(PROJECT)$(VERSION)t$(SUFX:t=).$(EXT)
 # Even when building against Tcl 8, PRJLIBNAME9 must not have "t"
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 !if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"

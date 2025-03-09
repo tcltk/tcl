@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_wordchars, tcl_version \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP
@@ -322,7 +322,6 @@ On UNIX machines, this is the value returned by \fBuname -s\fR.
 The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.
 .IP \fBpathSeparator\fR
-'\" Defined by TIP #315
 The character that should be used to \fBsplit\fR PATH-like environment
 variables into their corresponding list of directory names.
 .IP \fBplatform\fR
@@ -343,6 +342,16 @@ and the value from the GetUserName() system call on Windows.
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .RE
+.\" VARIABLE: tcl_rcFileName
+.TP
+\fBtcl_rcFileName\fR
+.
+This variable is used during initialization to indicate the name of a
+user-specific startup file.  If it is set by application-specific
+initialization, then the Tcl startup code will check for the existence
+of this file and \fBsource\fR it if it exists.  For example, for \fBwish\fR
+the variable is set to \fB~/.wishrc\fR for Unix and \fB~/wishrc.tcl\fR
+for Windows.
 .\" VARIABLE: tcl_traceCompile
 .TP
 \fBtcl_traceCompile\fR
@@ -390,24 +399,6 @@ and interpreter.
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .RE
-.\" VARIABLE: tcl_wordchars
-.TP
-\fBtcl_wordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW word
-characters.  It defaults to \fB\ew\fR, which is any Unicode
-word character (number, letter, or underscore).
-.\" VARIABLE: tcl_nonwordchars
-.TP
-\fBtcl_nonwordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW non-word
-characters.  It defaults to \fB\eW\fR, which is anything but a
-Unicode word character (number, letter, or underscore).
 .\" VARIABLE: tcl_version
 .TP
 \fBtcl_version\fR

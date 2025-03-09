@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_SetWideUIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_SetWideUIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetSizeIntFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -124,6 +124,11 @@ typedef defined to be whatever signed integral type covers at least the
 64-bit integer range (-9223372036854775808 to 9223372036854775807).  Depending
 on the platform and the C compiler, the actual type might be
 \fBlong long int\fR, or something else.
+The \fBTcl_Size\fR typedef is a signed integer type
+capable of holding the maximum permitted lengths of Tcl values like
+strings and lists. Correspondingly, the preprocessor constant
+\fBTCL_SIZE_MAX\fR defines the maximum value that can be stored
+in a variable of this type.
 The \fBmp_int\fR type is a multiple-precision integer type defined
 by the LibTomMath multiple-precision integer library.
 .PP
@@ -193,7 +198,8 @@ integer value in the \fBmp_int\fR value \fIbigValue\fR.
 arguments, but do require that the object be unshared.
 .PP
 \fBTcl_GetIntFromObj\fR, \fBTcl_GetIntForIndex\fR, \fBTcl_GetLongFromObj\fR,
-\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetSizeIntFromObj\fR,
+\fBTcl_GetBignumFromObj\fR, and
 \fBTcl_TakeBignumFromObj\fR do not modify the reference count of their
 \fIobjPtr\fR arguments; they only read. Note however that this function may
 set the interpreter result; if that is the only place that is holding a
