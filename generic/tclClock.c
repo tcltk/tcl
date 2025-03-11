@@ -4087,6 +4087,9 @@ ClockFreeScan(
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else {
 	yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+	if (yySecondOfDay < 0) { /* compiler fix for signed-mod */
+	    yySecondOfDay += SECONDS_PER_DAY;
+	}
     }
 
     /*
@@ -4151,10 +4154,10 @@ ClockCalcRelTime(
 	    yyMonth += yyRelMonth - 1;
 	    yyYear += yyMonth / 12;
 	    m = yyMonth % 12;
-	    /* compiler fix for negative offs - wrap y, m = (0, -1) -> (-1, 11) */
+	    /* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
 	    if (m < 0) {
+		m += 12;
 		yyYear--;
-		m = 12 + m;
 	    }
 	    yyMonth = m + 1;
 
@@ -4190,10 +4193,14 @@ ClockCalcRelTime(
 	    Tcl_WideInt newSecs = yySecondOfDay + yyRelSeconds;
 
 	    /* if seconds increment outside of current date, increment day */
-	    if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
+            if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
 		yyRelDay += newSecs / SECONDS_PER_DAY;
 		yySecondOfDay = 0;
-		yyRelSeconds = newSecs % SECONDS_PER_DAY;
+		yyRelSeconds = (newSecs %= SECONDS_PER_DAY);
+		if (newSecs < 0) { /* compiler fix for signed-mod */
+		    yyRelSeconds += SECONDS_PER_DAY;
+		    yyRelDay--;
+		}
 
 		goto repeat_rel;
 	    }
@@ -4292,8 +4299,8 @@ ClockWeekdaysOffs(
     offs = offs % 5;
     /* compiler fix for negative offs - wrap (0, -1) -> (-1, 4) */
     if (offs < 0) {
+	offs += 5;
 	weeks--;
-	offs = 5 + offs;
     }
     offs += 7 * weeks;
 
@@ -4303,7 +4310,7 @@ ClockWeekdaysOffs(
 
 	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
 	if (day < 0) {
-	    day = 7 + day;
+	    day += 7;
 	}
 	resDayOfWeek = dayOfWeek + day;
     }
@@ -4418,7 +4425,11 @@ ClockAddObjCmd(
     }
 
     /* time together as seconds of the day */
-    yySecondOfDay = yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+    yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+    if (yySecondOfDay < 0) { /* compiler fix for signed-mod */
+	yySecondOfDay += SECONDS_PER_DAY;
+    }
+    yySeconds = yySecondOfDay;
     /* seconds are in localSeconds (relative base date), so reset time here */
     yyHour = 0;
     yyMinutes = 0;
