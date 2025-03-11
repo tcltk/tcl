@@ -4418,7 +4418,11 @@ ClockAddObjCmd(
     }
 
     /* time together as seconds of the day */
-    yySecondOfDay = yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+    yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+    if (yySecondOfDay < 0) { /* to positive result of mod */
+	yySecondOfDay += SECONDS_PER_DAY;
+    }
+    yySeconds = yySecondOfDay;
     /* seconds are in localSeconds (relative base date), so reset time here */
     yyHour = 0;
     yyMinutes = 0;
