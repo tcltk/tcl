@@ -35869,6 +35869,25 @@ test clock-30.32 {regression test - add no int overflow} {
 	[clock add 2177452800 -0x7fffffff seconds -gmt 1]
       ]
 } [lrepeat 2 {29894400 34214400 0 29966400 29969100 29969153}]
+test clock-30.33 {regression test - add with negative base (local seconds of the day, bug [482db1d796540e68])} {
+    list \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 902 months 10 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 75 years 69 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 659112 hours 3000 seconds -timezone :CET] \
+	[clock add -631152000 39546720 minutes 3000 seconds -timezone :CET] \
+	[clock add -631152000 2372806200 seconds -timezone :CET]
+      ] \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -gmt 1] \
+	[clock add -631152000 902 months 10 days 3000 seconds -gmt 1] \
+	[clock add -631152000 75 years 69 days 3000 seconds -gmt 1] \
+	[clock add -631152000 659112 hours 3000 seconds -gmt 1] \
+	[clock add -631152000 39546720 minutes 3000 seconds -gmt 1] \
+	[clock add -631152000 2372806200 seconds -gmt 1]
+      ]
+} [lrepeat 2 [lrepeat 6 [expr {-631152000 + 2372806200}]]]
 
 # END testcases30
 
