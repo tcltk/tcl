@@ -3310,14 +3310,11 @@ invokeObj2Command(
     int result;
     Command *cmdPtr = (Command *)clientData;
 
-    if (objc < 0) {
-	objc = TCL_INDEX_NONE;
-    }
     if (cmdPtr->objProc2 != NULL) {
-	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, (size_t)objc, objv);
+	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
     } else {
 	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
-		cmdPtr->objClientData2, (size_t)objc, objv);
+		cmdPtr->objClientData2, objc, objv);
     }
     return result;
 }
@@ -3330,10 +3327,7 @@ cmdWrapper2Proc(
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *) clientData;
-    if (objc < 0) {
-	objc = -1;
-    }
-    return cmdPtr->objProc2(cmdPtr->objClientData2, interp, (size_t)objc, objv);
+    return cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
 }
 #endif
 
