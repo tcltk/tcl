@@ -35246,6 +35246,66 @@ test clock-30.25 {clock add seconds at DST conversion} {
 		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
 
+# the tests clock-30.26..-30.30 are missing in 8.6 (no weekday unit in clock add),
+# don't renumerate following tests to hold the numeration equal to 8.7+:
+test clock-30.31 {regression test - add no int overflow} {
+    list \
+      [list \
+	[clock add 0 1600000000 seconds 24856 days -gmt 1] \
+	[clock add 0 1600000000 seconds 815 months -gmt 1] \
+	[clock add 0 1600000000 seconds 69 years -gmt 1] \
+	[clock add 0 1600000000 seconds 596524 hours -gmt 1] \
+	[clock add 0 1600000000 seconds 35791395 minutes -gmt 1] \
+	[clock add 0 1600000000 seconds 0x7fffffff seconds -gmt 1]
+      ] \
+      [list \
+	[clock add 1600000000 24856 days -gmt 1] \
+	[clock add 1600000000 815 months -gmt 1] \
+	[clock add 1600000000 69 years -gmt 1] \
+	[clock add 1600000000 596524 hours -gmt 1] \
+	[clock add 1600000000 35791395 minutes -gmt 1] \
+	[clock add 1600000000 0x7fffffff seconds -gmt 1]
+      ]
+} [lrepeat 2 {3747558400 3743238400 3777452800 3747486400 3747483700 3747483647}]
+test clock-30.32 {regression test - add no int overflow} {
+    list \
+      [list \
+	[clock add 3777452800 -1600000000 seconds -24856 days -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -815 months -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -69 years -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -596524 hours -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -35791395 minutes -gmt 1] \
+	[clock add 3777452800 -1600000000 seconds -0x7fffffff seconds -gmt 1]
+      ] \
+      [list \
+	[clock add 2177452800 -24856 days -gmt 1] \
+	[clock add 2177452800 -815 months -gmt 1] \
+	[clock add 2177452800 -69 years -gmt 1] \
+	[clock add 2177452800 -596524 hours -gmt 1] \
+	[clock add 2177452800 -35791395 minutes -gmt 1] \
+	[clock add 2177452800 -0x7fffffff seconds -gmt 1]
+      ]
+} [lrepeat 2 {29894400 34214400 0 29966400 29969100 29969153}]
+test clock-30.33 {regression test - add with negative base (local seconds of the day, bug [482db1d796540e68])} {
+    list \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 902 months 10 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 75 years 69 days 3000 seconds -timezone :CET] \
+	[clock add -631152000 659112 hours 3000 seconds -timezone :CET] \
+	[clock add -631152000 39546720 minutes 3000 seconds -timezone :CET] \
+	[clock add -631152000 2372806200 seconds -timezone :CET]
+      ] \
+      [list \
+	[clock add -631152000 27463 days 3000 seconds -gmt 1] \
+	[clock add -631152000 902 months 10 days 3000 seconds -gmt 1] \
+	[clock add -631152000 75 years 69 days 3000 seconds -gmt 1] \
+	[clock add -631152000 659112 hours 3000 seconds -gmt 1] \
+	[clock add -631152000 39546720 minutes 3000 seconds -gmt 1] \
+	[clock add -631152000 2372806200 seconds -gmt 1]
+      ]
+} [lrepeat 2 [lrepeat 6 [expr {-631152000 + 2372806200}]]]
+
 test clock-31.1 {system locale} \
     -constraints win \
     -setup {
