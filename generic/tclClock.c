@@ -4255,7 +4255,7 @@ ClockCalcRelTime(
 	 * and hereafter convert back to TZ, otherwise apply it direct here.
 	 */
 	if (opts->timezoneObj != opts->dataPtr->literals[LIT_GMT]) {
-	    /* 
+	    /*
 	     * Convert date info structure into UTC seconds and add relative
 	     * seconds (happens in commit).
 	     */
@@ -4277,7 +4277,7 @@ ClockCalcRelTime(
 	    /* restore scanned day of week */
 	    yyDayOfWeek = prevDayOfWeek;
 	} else {
-	    /* 
+	    /*
 	     * GMT/UTC zone, so no DST and no offsets - apply it here, so that
 	     * if time exceeds current date, do the day conversion and leave the
 	     * rest of increment in yyRelSeconds (add it later in UTC by commit)

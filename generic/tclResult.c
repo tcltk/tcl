@@ -1034,7 +1034,7 @@ Tcl_GetReturnOptions(
 
     if (result == TCL_ERROR) {
 	if (!iPtr->errorInfo) {
-	    /* 
+	    /*
 	     * No errorLine without errorInfo, e. g. (re)thrown only message,
 	     * this shall also avoid transfer of errorLine (if goes to child
 	     * interp), because we have anyway nothing excepting message

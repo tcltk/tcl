@@ -1747,9 +1747,9 @@ NativeAccess(
 	 * go).
 	 */
 
-	if(!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
-	   memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
-		  sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
+	if (!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
+	    memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
+		    sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
 	    HeapFree(GetProcessHeap(), 0, sdPtr);
 	    return 0; /* Attrib tests say access allowed. */
 	}

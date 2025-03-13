@@ -605,17 +605,17 @@ my_LStringReplace(
     }
 
     // move front elements to keep
-    for(x=0, kx=0; x<newLen && kx<first; kx++, x++) {
+    for (x=0, kx=0; x<newLen && kx<first; kx++, x++) {
 	newStr[x] = oldStr[kx];
     }
     // Insert new elements into new string
-    for(x=first, ix=0; ix<numToInsert; x++, ix++) {
+    for (x=first, ix=0; ix<numToInsert; x++, ix++) {
 	char const *svalue = Tcl_GetString(insertObjs[ix]);
 	newStr[x] = svalue[0];
     }
     // Move remaining elements
     if ((first+numToDelete) < newLen) {
-	for(/*x,*/ kx=first+numToDelete; (kx <lstringRep->strlen && x<newLen); x++, kx++) {
+	for (/*x,*/ kx=first+numToDelete; (kx <lstringRep->strlen && x<newLen); x++, kx++) {
 	    newStr[x] = oldStr[kx];
 	}
     }
