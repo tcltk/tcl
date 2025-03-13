@@ -4538,13 +4538,13 @@ ClockAddObjCmd(
 	    yyRelSeconds += offs;
 	    break;
 	}
-	if (unitIndex != CLC_ADD_SECONDS) {
+	if (unitIndex < CLC_ADD_HOURS) { /* date units only */
 	    info->flags |= CLF_RELCONV;
 	}
     }
 
     /*
-     * Do relative times (if not yet already processed interim),
+     * Do relative units (if not yet already processed interim),
      * thereby ignore relative time (it can be processed within commit).
      */
 
