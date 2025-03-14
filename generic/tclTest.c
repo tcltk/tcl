@@ -597,10 +597,10 @@ Tcltest_Init(
 	if (info.isNativeObjectProc == 2) {
 	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		    info.objProc2, (void *)version, NULL);
-    } else
+	} else
 #endif
-	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
+	    Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
+		    info.objProc, (void *)version, NULL);
     }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -865,10 +865,10 @@ Tcltest_SafeInit(
 	if (info.isNativeObjectProc == 2) {
 	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		    info.objProc2, (void *)version, NULL);
-    } else
+	} else
 #endif
-	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
+	    Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
+		    info.objProc, (void *)version, NULL);
     }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
