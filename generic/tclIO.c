@@ -6063,10 +6063,21 @@ DoReadChars(
 	}
 
 	if (copiedNow < 0) {
-	    if (GotFlag(statePtr, CHANNEL_EOF) || 
+	    /*
+	     * copiedNow < 0 => no characters decoded in this iteration *AND*
+	     * no source bytes consumed.  This can happen if additional data
+	     * needed to decode the next character or an invalid byte sequence
+	     * is encountered before any data was successfully decoded.
+	     * If at EOF, no additional data is available. If an encoding
+	     * error is present, no progress can be made even if more data
+	     * is available (Bug 73bb42fb3f). Either way need to break out
+	     * of the loop.
+	     */
+	    if (GotFlag(statePtr, CHANNEL_EOF) ||
 	        GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 		break;
 	    }
+
 	    if ((GotFlag(statePtr, CHANNEL_NONBLOCKING) || allowShortReads)
 		    && GotFlag(statePtr, CHANNEL_BLOCKED)) {
 		break;

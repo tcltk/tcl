@@ -533,12 +533,10 @@ Tcltest_Init(
     }
 
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
 	if (info.isNativeObjectProc == 2) {
 	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		    info.objProc2, (void *)version, NULL);
     } else
-#endif
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
     }
@@ -803,12 +801,10 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
 	if (info.isNativeObjectProc == 2) {
 	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		    info.objProc2, (void *)version, NULL);
     } else
-#endif
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
     }
@@ -2048,12 +2044,8 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
-#if TCL_MAJOR_VERSION > 8
-    void *blockPtr		/* Block to free. */
-#else
-    char *blockPtr		/* Block to free. */
-#endif
-) {
+    void *blockPtr)		/* Block to free. */
+{
     Tcl_Free(((char *)blockPtr) - 16);
 }
 

@@ -98,7 +98,8 @@ static int		ClockScanCommit(DateInfo *info,
 			    ClockFmtScnCmdArgs *opts);
 static int		ClockFreeScan(DateInfo *info,
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
-static int		ClockCalcRelTime(DateInfo *info);
+static int		ClockCalcRelTime(DateInfo *info,
+			    ClockFmtScnCmdArgs *opts);
 static Tcl_ObjCmdProc	ClockAddObjCmd;
 static int		ClockValidDate(DateInfo *,
 			    ClockFmtScnCmdArgs *, int stage);
@@ -3649,19 +3650,6 @@ ClockScanObjCmd(
 	goto done;
     }
 
-    /*
-     * If no GMT and not free-scan (where valid stage 1 is done in-between),
-     * validate with stage 1 before local time conversion, otherwise it may
-     * adjust date/time tokens to valid values
-     */
-    if ((opts.flags & CLF_VALIDATE_S1)
-	    && info->flags & (CLF_ASSEMBLE_SECONDS|CLF_LOCALSEC)) {
-	ret = ClockValidDate(&yy, &opts, CLF_VALIDATE_S1);
-	if (ret != TCL_OK) {
-	    goto done;
-	}
-    }
-
     /* Convert date info structure into UTC seconds */
 
     ret = ClockScanCommit(&yy, &opts);
@@ -3706,6 +3694,18 @@ ClockScanCommit(
     DateInfo *info,		/* Clock scan info structure */
     ClockFmtScnCmdArgs *opts)	/* Format, locale, timezone and base */
 {
+    /*
+     * If no GMT and not free-scan (where valid stage 1 is done in-between),
+     * validate with stage 1 before local time conversion, otherwise it may
+     * adjust date/time tokens to valid values
+     */
+    if ((opts->flags & CLF_VALIDATE_S1)
+	    && info->flags & (CLF_ASSEMBLE_SECONDS|CLF_LOCALSEC)) {
+	if (ClockValidDate(info, opts, CLF_VALIDATE_S1) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
     /* If needed assemble julianDay using year, month, etc. */
     if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
 	if (info->flags & CLF_ISO8601WEEK) {
@@ -3990,7 +3990,6 @@ ClockFreeScan(
 {
     Tcl_Interp *interp = opts->interp;
     ClockClientData *dataPtr = opts->dataPtr;
-    int ret = TCL_ERROR;
 
     /*
      * Parse the date. The parser will fill a structure "info" with date,
@@ -4006,7 +4005,7 @@ ClockFreeScan(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to convert date-time string \"%s\": %s",
 		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp))));
-	goto done;
+	return TCL_ERROR;
     }
 
     /*
@@ -4051,7 +4050,7 @@ ClockFreeScan(
 		    dataPtr->literals[LIT_GMT]);
 	}
 	if (opts->timezoneObj == NULL) {
-	    goto done;
+	    return TCL_ERROR;
 	}
 
 	// TclSetObjRef(yydate.tzName, opts->timezoneObj);
@@ -4065,7 +4064,7 @@ ClockFreeScan(
      */
     if (opts->flags & CLF_VALIDATE) {
 	if (ClockValidDate(info, opts, CLF_VALIDATE_S1) != TCL_OK) {
-	    goto done;
+	    return TCL_ERROR;
 	}
     }
 
@@ -4087,18 +4086,23 @@ ClockFreeScan(
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else {
 	yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+	if (yySecondOfDay < 0) { /* compiler fix for signed-mod */
+	    yySecondOfDay += SECONDS_PER_DAY;
+	}
     }
 
     /*
-     * Do relative times
+     * Do relative times if needed.
      */
 
-    ret = ClockCalcRelTime(info);
+    if (info->flags & CLF_RELCONV) {
+	if (ClockCalcRelTime(info, opts) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
 
     /* Free scanning completed - date ready */
-
-  done:
-    return ret;
+    return TCL_OK;
 }
 
 /*----------------------------------------------------------------------
@@ -4117,94 +4121,76 @@ ClockFreeScan(
  */
 int
 ClockCalcRelTime(
-    DateInfo *info)		/* Date fields used for converting */
+    DateInfo *info,		/* Date fields used for converting */
+    ClockFmtScnCmdArgs *opts)	/* Command options */
 {
     int prevDayOfWeek = yyDayOfWeek;	/* preserve unchanged day of week */
 
     /*
      * Because some calculations require in-between conversion of the
-     * julian day, we can repeat this processing multiple times
+     * julian day, and fixed order due to tokens precedence,
+     * we can repeat this processing multiple times
      */
   repeat_rel:
-    if (info->flags & CLF_RELCONV) {
-	/*
-	 * Relative conversion normally possible in UTC time only, because
-	 * of possible wrong local time increment if ignores in-between DST-hole.
-	 * (see test-cases clock-34.53, clock-34.54).
-	 * So increment date in julianDay, but time inside day in UTC (seconds).
-	 */
-
-	/* add months (or years in months) */
-
-	if (yyRelMonth != 0) {
-	    int m, h;
-
-	    /* if needed extract year, month, etc. again */
-	    if (info->flags & CLF_ASSEMBLE_DATE) {
-		GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
-		GetMonthDay(&yydate);
-		GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
-		info->flags &= ~CLF_ASSEMBLE_DATE;
-	    }
-
-	    /* add the requisite number of months */
-	    yyMonth += yyRelMonth - 1;
-	    yyYear += yyMonth / 12;
-	    m = yyMonth % 12;
-	    /* compiler fix for negative offs - wrap y, m = (0, -1) -> (-1, 11) */
-	    if (m < 0) {
-		yyYear--;
-		m = 12 + m;
-	    }
-	    yyMonth = m + 1;
-
-	    /* if the day doesn't exist in the current month, repair it */
-	    h = hath[IsGregorianLeapYear(&yydate)][m];
-	    if (yyDay > h) {
-		yyDay = h;
-	    }
-
-	    /* on demand (lazy) assemble julianDay using new year, month, etc. */
-	    info->flags |= CLF_ASSEMBLE_JULIANDAY | CLF_ASSEMBLE_SECONDS;
-
-	    yyRelMonth = 0;
-	}
-
-	/* add days (or other parts aligned to days) */
-	if (yyRelDay) {
-	    /* assemble julianDay using new year, month, etc. */
-	    if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
-		GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
-		info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
-	    }
-	    yydate.julianDay += yyRelDay;
-
-	    /* julianDay was changed, on demand (lazy) extract year, month, etc. again */
-	    info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
-	    yyRelDay = 0;
-	}
-
-	/* relative time (seconds), if exceeds current date, do the day conversion and
-	 * leave rest of the increment in yyRelSeconds to add it hereafter in UTC seconds */
-	if (yyRelSeconds) {
-	    Tcl_WideInt newSecs = yySecondOfDay + yyRelSeconds;
-
-	    /* if seconds increment outside of current date, increment day */
-	    if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
-		yyRelDay += newSecs / SECONDS_PER_DAY;
-		yySecondOfDay = 0;
-		yyRelSeconds = newSecs % SECONDS_PER_DAY;
-
-		goto repeat_rel;
-	    }
-	}
-
-	info->flags &= ~CLF_RELCONV;
-    }
 
     /*
-     * Do relative (ordinal) month
+     * Relative conversion normally possible in UTC time only, because
+     * of possible wrong local time increment if ignores in-between DST-hole.
+     * (see tests clock-34.53, clock-34.54) or by jump across TZ (CET/CEST).
+     * So increment date in julianDay, but time inside day in UTC (seconds).
      */
+
+    /* add relative months (or years in months) */
+
+    if (yyRelMonth != 0) {
+	int m, h;
+
+	/* if needed extract year, month, etc. again */
+	if (info->flags & CLF_ASSEMBLE_DATE) {
+	    GetGregorianEraYearDay(&yydate, GREGORIAN_CHANGE_DATE);
+	    GetMonthDay(&yydate);
+	    GetYearWeekDay(&yydate, GREGORIAN_CHANGE_DATE);
+	    info->flags &= ~CLF_ASSEMBLE_DATE;
+	}
+
+	/* add the requisite number of months */
+	yyMonth += yyRelMonth - 1;
+	yyYear += yyMonth / 12;
+	m = yyMonth % 12;
+	/* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
+	if (m < 0) {
+	    m += 12;
+	    yyYear--;
+	}
+	yyMonth = m + 1;
+
+	/* if the day doesn't exist in the current month, repair it */
+	h = hath[IsGregorianLeapYear(&yydate)][m];
+	if (yyDay > h) {
+	    yyDay = h;
+	}
+
+	/* on demand (lazy) assemble julianDay using new year, month, etc. */
+	info->flags |= CLF_ASSEMBLE_JULIANDAY | CLF_ASSEMBLE_SECONDS;
+
+	yyRelMonth = 0;
+    }
+
+    /* add relative days (or other parts aligned to days) */
+    if (yyRelDay) {
+	/* assemble julianDay using new year, month, etc. */
+	if (info->flags & CLF_ASSEMBLE_JULIANDAY) {
+	    GetJulianDayFromEraYearMonthDay(&yydate, GREGORIAN_CHANGE_DATE);
+	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
+	}
+	yydate.julianDay += yyRelDay;
+
+	/* julianDay was changed, on demand (lazy) extract year, month, etc. again */
+	info->flags |= CLF_ASSEMBLE_DATE | CLF_ASSEMBLE_SECONDS;
+	yyRelDay = 0;
+    }
+
+    /* do relative (ordinal) month */
 
     if (info->flags & CLF_ORDINALMONTH) {
 	int monthDiff;
@@ -4235,14 +4221,12 @@ ClockCalcRelTime(
 	yyYear += yyMonthOrdinalIncr;
 	yyRelMonth += monthDiff;
 	info->flags &= ~CLF_ORDINALMONTH;
-	info->flags |= CLF_RELCONV|CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
+	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
 
 	goto repeat_rel;
     }
 
-    /*
-     * Do relative weekday
-     */
+    /* do relative weekday */
 
     if ((info->flags & (CLF_DAYOFWEEK|CLF_HAVEDATE)) == CLF_DAYOFWEEK) {
 	/* restore scanned day of week */
@@ -4262,6 +4246,61 @@ ClockCalcRelTime(
 	}
 	info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
     }
+
+    /* If relative time is there, adjust it in UTC as mentioned above. */
+    if (yyRelSeconds) {
+	/*
+	 * If timezone is not GMT/UTC (due to DST-hole, local time offset),
+	 * we shall do in-between conversion to UTC to append seconds there
+	 * and hereafter convert back to TZ, otherwise apply it direct here.
+	 */
+	if (opts->timezoneObj != opts->dataPtr->literals[LIT_GMT]) {
+	    /*
+	     * Convert date info structure into UTC seconds and add relative
+	     * seconds (happens in commit).
+	     */
+	    if (ClockScanCommit(info, opts) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    yyRelSeconds = 0;
+	    /* Convert it back */
+	    if (ClockGetDateFields(opts->dataPtr, opts->interp, &yydate,
+		  opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
+		/* TODO - GREGORIAN_CHANGE_DATE should be locale-dependent */
+		return TCL_ERROR;
+	    }
+	    /* time together as seconds of the day */
+	    yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+	    if (yySecondOfDay < 0) { /* compiler fix for signed-mod */
+		yySecondOfDay += SECONDS_PER_DAY;
+	    }
+	    /* restore scanned day of week */
+	    yyDayOfWeek = prevDayOfWeek;
+	} else {
+	    /*
+	     * GMT/UTC zone, so no DST and no offsets - apply it here, so that
+	     * if time exceeds current date, do the day conversion and leave the
+	     * rest of increment in yyRelSeconds (add it later in UTC by commit)
+	     */
+	    Tcl_WideInt newSecs = yySecondOfDay + yyRelSeconds;
+
+	    /* if seconds increment outside of current date, increment day */
+	    if (newSecs / SECONDS_PER_DAY != yySecondOfDay / SECONDS_PER_DAY) {
+		yyRelDay += newSecs / SECONDS_PER_DAY;
+		yySecondOfDay = 0;
+		yyRelSeconds = (newSecs %= SECONDS_PER_DAY);
+		if (newSecs < 0) { /* compiler fix for signed-mod */
+		    yyRelSeconds += SECONDS_PER_DAY;
+		    yyRelDay--;
+		}
+
+		goto repeat_rel;
+	    }
+	}
+    }
+
+    /* done, reset flag */
+    info->flags &= ~CLF_RELCONV;
 
     return TCL_OK;
 }
@@ -4292,8 +4331,8 @@ ClockWeekdaysOffs(
     offs = offs % 5;
     /* compiler fix for negative offs - wrap (0, -1) -> (-1, 4) */
     if (offs < 0) {
+	offs += 5;
 	weeks--;
-	offs = 5 + offs;
     }
     offs += 7 * weeks;
 
@@ -4303,7 +4342,7 @@ ClockWeekdaysOffs(
 
 	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
 	if (day < 0) {
-	    day = 7 + day;
+	    day += 7;
 	}
 	resDayOfWeek = dayOfWeek + day;
     }
@@ -4393,7 +4432,7 @@ ClockAddObjCmd(
 	CLC_ADD_DAYS,	CLC_ADD_WEEKDAYS,
 	CLC_ADD_HOURS,	CLC_ADD_MINUTES,    CLC_ADD_SECONDS
     };
-    int unitIndex;		/* Index of an option. */
+    int unitIndex = CLC_ADD_SECONDS;	/* Index of an option. */
     Tcl_Size i;
     Tcl_WideInt offs;
 
@@ -4418,7 +4457,11 @@ ClockAddObjCmd(
     }
 
     /* time together as seconds of the day */
-    yySecondOfDay = yySeconds = yydate.localSeconds % SECONDS_PER_DAY;
+    yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
+    if (yySecondOfDay < 0) { /* compiler fix for signed-mod */
+	yySecondOfDay += SECONDS_PER_DAY;
+    }
+    yySeconds = yySecondOfDay;
     /* seconds are in localSeconds (relative base date), so reset time here */
     yyHour = 0;
     yyMinutes = 0;
@@ -4453,23 +4496,18 @@ ClockAddObjCmd(
 	}
 
 	/* if in-between conversion needed (already have relative date/time),
-	 * correct date info, because the date may be changed,
-	 * so refresh it now */
+	 * correct date info, because the local date/time may be changed, so
+	 * refresh it now (see test clock-30.34 "clock add jump over DST hole") */
 
-	if ((info->flags & CLF_RELCONV)
-		&& (unitIndex == CLC_ADD_WEEKDAYS
-		/* some months can be shorter as another */
-		|| yyRelMonth || yyRelDay
-		/* day changed */
-		|| yySeconds + yyRelSeconds > SECONDS_PER_DAY
-		|| yySeconds + yyRelSeconds < 0)) {
-	    if (ClockCalcRelTime(info) != TCL_OK) {
+	if ((info->flags & CLF_RELCONV) ||
+	    (yyRelSeconds && unitIndex < CLC_ADD_HOURS)
+	) {
+	    if (ClockCalcRelTime(info, &opts) != TCL_OK) {
 		goto done;
 	    }
 	}
 
 	/* process increment by offset + unit */
-	info->flags |= CLF_RELCONV;
 	switch (unitIndex) {
 	case CLC_ADD_YEARS:
 	    yyRelMonth += offs * 12;
@@ -4500,14 +4538,18 @@ ClockAddObjCmd(
 	    yyRelSeconds += offs;
 	    break;
 	}
+	if (unitIndex < CLC_ADD_HOURS) { /* date units only */
+	    info->flags |= CLF_RELCONV;
+	}
     }
 
     /*
-     * Do relative times (if not yet already processed interim):
+     * Do relative units (if not yet already processed interim),
+     * thereby ignore relative time (it can be processed within commit).
      */
 
     if (info->flags & CLF_RELCONV) {
-	if (ClockCalcRelTime(info) != TCL_OK) {
+	if (ClockCalcRelTime(info, &opts) != TCL_OK) {
 	    goto done;
 	}
     }
