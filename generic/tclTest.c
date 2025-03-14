@@ -511,7 +511,7 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #endif
 ;
 
-int
+static int
 TestCommonInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
