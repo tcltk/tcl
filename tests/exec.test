@@ -23,8 +23,11 @@ source [file join [file dirname [info script]] tcltests.tcl]
 # Some skips when running in a macOS CI environment
 testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
-# Need a App Exec Alias for testing exec of reparse points
-if {[info exists ::env(LOCALAPPDATA)] &&
+# Need a App Exec Alias for testing exec of reparse points,
+# according to MS, winget can only be used on servers with an installed desktop interface,
+# no idea how to check it in GHA programmatically, so simply disable it (todo: rewrite with better check later)
+if {[testConstraint win] && ![info exists ::env(CI)] &&
+    [info exists ::env(LOCALAPPDATA)] &&
     [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
         testConstraint haveWinget 1
 }
