@@ -771,8 +771,8 @@ TclReleaseLiteral(
 
 static size_t
 HashString(
-    const char *string,	/* String for which to compute hash value. */
-    Tcl_Size length)			/* Number of bytes in the string. */
+    const char *string,		/* String for which to compute hash value. */
+    Tcl_Size length)		/* Number of bytes in the string. */
 {
     size_t result = 0;
 

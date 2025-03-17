@@ -2291,11 +2291,10 @@ BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
-	cd $(UNIX_DIR); autoconf
-$(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoconf
-$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoheader; touch $@
+	@cd $(UNIX_DIR); autoconf || \
+		echo "WARNING: Unable to rebuild $(UNIX_DIR)/configure. Please upgrade autoconf."
+$(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure.ac
+	@cd $(MAC_OSX_DIR); autoheader || touch $@
 
 tclUuid.h: $(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
@@ -2310,7 +2309,7 @@ $(TOP_DIR)/manifest.uuid:
 	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
-		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
+		$(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
@@ -2416,7 +2415,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
 		$(MAC_OSX_DIR)/*.ac \
 		$(DISTDIR)/macosx
-	$(DIST_INSTALL_SCRIPT) $(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/macosx
 	$(INSTALL_DATA_DIR) $(DISTDIR)/unix/dltest
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
