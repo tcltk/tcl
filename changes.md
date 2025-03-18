@@ -19,6 +19,7 @@ to the userbase.
  - [Panic "Buffer Underflow, BUFFER_PADDING not enough"](https://core.tcl-lang.org/tcl/tktview/73bb42)
  - [MS-VS build system: pckIndex.tcl when building for 9 misses "t" for TCL 8.6 part](https://core.tcl-lang.org/tcl/tktview/a77029)
  - [clock format -locale does not look up locale children if parent locale used first](https://core.tcl-lang.org/tcl/tktview/2c0f49)
+ - [Missing libtcl?.?.dll.a in Cygwin](https://core.tcl-lang.org/tcl/tktview/dcedba)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
