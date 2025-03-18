@@ -159,7 +159,6 @@ typedef enum {
 				 * strictly positive, consumes N, produces
 				 * 1. */
     ASSEM_JUMP,			/* Jump instructions */
-    ASSEM_JUMP4,		/* Jump instructions forcing a 4-byte offset */
     ASSEM_JUMPTABLE,		/* Jumptable (switch -exact) */
     ASSEM_LABEL,		/* The assembly directive that defines a
 				 * label */
@@ -171,9 +170,7 @@ typedef enum {
 				 * consumes N, produces 1 */
     ASSEM_LVT,			/* One operand that references a local
 				 * variable */
-    ASSEM_LVT1,			/* One 1-byte operand that references a local
-				 * variable */
-    ASSEM_LVT1_SINT1,		/* One 1-byte operand that references a local
+    ASSEM_LVT4_SINT1,		/* One 4-byte operand that references a local
 				 * variable, one signed-integer 1-byte
 				 * operand */
     ASSEM_LVT4,			/* One 4-byte operand that references a local
@@ -388,27 +385,30 @@ static const TalInstDesc TalInstructionTable[] = {
     {"exprStk",		ASSEM_1BYTE,	INST_EXPR_STK,		1,	1},
     {"ge",		ASSEM_1BYTE,	INST_GE,		2,	1},
     {"gt",		ASSEM_1BYTE,	INST_GT,		2,	1},
-    {"incr",		ASSEM_LVT1,	INST_INCR_SCALAR1,	1,	1},
-    {"incrArray",	ASSEM_LVT1,	INST_INCR_ARRAY1,	2,	1},
-    {"incrArrayImm",	ASSEM_LVT1_SINT1,
-					INST_INCR_ARRAY1_IMM,	1,	1},
+    {"incr",		ASSEM_LVT4,	INST_INCR_SCALAR4,	1,	1},
+    {"incrArray",	ASSEM_LVT4,	INST_INCR_ARRAY4,	2,	1},
+    {"incrArrayImm",	ASSEM_LVT4_SINT1,
+					INST_INCR_ARRAY4_IMM,	1,	1},
     {"incrArrayStk",	ASSEM_1BYTE,	INST_INCR_ARRAY_STK,	3,	1},
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
-    {"incrImm",		ASSEM_LVT1_SINT1,
-					INST_INCR_SCALAR1_IMM,	0,	1},
+    {"incrImm",		ASSEM_LVT4_SINT1,
+					INST_INCR_SCALAR4_IMM,	0,	1},
     {"incrStk",		ASSEM_1BYTE,	INST_INCR_STK,		2,	1},
     {"incrStkImm",	ASSEM_SINT1,	INST_INCR_STK_IMM,	1,	1},
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
 					 | INST_INVOKE_STK4),	INT_MIN,1},
-    {"jump",		ASSEM_JUMP,	INST_JUMP1,		0,	0},
-    {"jump4",		ASSEM_JUMP4,	INST_JUMP4,		0,	0},
-    {"jumpFalse",	ASSEM_JUMP,	INST_JUMP_FALSE1,	1,	0},
-    {"jumpFalse4",	ASSEM_JUMP4,	INST_JUMP_FALSE4,	1,	0},
+    {"jump",		ASSEM_JUMP,	INST_JUMP4,		0,	0},
+    // For legacy code
+    {"jump4",		ASSEM_JUMP,	INST_JUMP4,		0,	0},
+    {"jumpFalse",	ASSEM_JUMP,	INST_JUMP_FALSE4,	1,	0},
+    // For legacy code
+    {"jumpFalse4",	ASSEM_JUMP,	INST_JUMP_FALSE4,	1,	0},
     {"jumpTable",	ASSEM_JUMPTABLE,INST_JUMP_TABLE,	1,	0},
-    {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE1,	1,	0},
-    {"jumpTrue4",	ASSEM_JUMP4,	INST_JUMP_TRUE4,	1,	0},
+    {"jumpTrue",	ASSEM_JUMP,	INST_JUMP_TRUE4,	1,	0},
+    // For legacy code
+    {"jumpTrue4",	ASSEM_JUMP,	INST_JUMP_TRUE4,	1,	0},
     {"label",		ASSEM_LABEL,	0,			0,	0},
     {"lappend",		ASSEM_LVT,	(INST_LAPPEND_SCALAR1<<8
 					 | INST_LAPPEND_SCALAR4),
@@ -504,7 +504,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"variable",	ASSEM_LVT4,	INST_VARIABLE,		1,	0},
     {"verifyDict",	ASSEM_1BYTE,	INST_DICT_VERIFY,	1,	0},
     {"yield",		ASSEM_1BYTE,	INST_YIELD,		1,	1},
-    {NULL,		ASSEM_1BYTE,		0,			0,	0}
+    {NULL,		ASSEM_1BYTE,	0,			0,	0}
 };
 
 /*
@@ -1499,7 +1499,6 @@ AssembleOneLine(
 	break;
 
     case ASSEM_JUMP:
-    case ASSEM_JUMP4:
 	if (parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
 	    goto cleanup;
@@ -1508,13 +1507,8 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	assemEnvPtr->curr_bb->jumpOffset = envPtr->codeNext-envPtr->codeStart;
-	if (instType == ASSEM_JUMP) {
-	    flags = BB_JUMP1;
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, 0, 0);
-	} else {
-	    flags = 0;
-	    BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
-	}
+	flags = 0;
+	BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
 
 	/*
 	 * Start a new basic block at the instruction following the jump.
@@ -1639,30 +1633,18 @@ AssembleOneLine(
 	BBEmitInst1or4(assemEnvPtr, tblIdx, localVar, 0);
 	break;
 
-    case ASSEM_LVT1:
-	if (parsePtr->numWords != 2) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
-	    goto cleanup;
-	}
-	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)) {
-	    goto cleanup;
-	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
-	break;
-
-    case ASSEM_LVT1_SINT1:
+    case ASSEM_LVT4_SINT1:
 	if (parsePtr->numWords != 3) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname imm8");
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)
+	if (localVar < 0
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckSignedOneByte(interp, opnd)) {
 	    goto cleanup;
 	}
-	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
 	TclEmitInt1(opnd, envPtr);
 	break;
 
@@ -1698,9 +1680,7 @@ AssembleOneLine(
 	if (GetBooleanOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK) {
 	    goto cleanup;
 	}
-	{
-	    BBEmitInstInt1(assemEnvPtr, tblIdx, TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
-	}
+	BBEmitInstInt1(assemEnvPtr, tblIdx, TCL_REG_ADVANCED | (opnd ? TCL_REG_NOCASE : 0), 0);
 	break;
 
     case ASSEM_REVERSE:
@@ -2379,10 +2359,6 @@ CheckNamespaceQualifiers(
  *	On success, returns TCL_OK. On failure, returns TCL_ERROR and stores
  *	an error message in the interpreter result.
  *
- * This code is here primarily to verify that instructions like INCR_SCALAR1
- * are possible on a given local variable. The fact that there is no
- * INCR_SCALAR4 is puzzling.
- *
  *-----------------------------------------------------------------------------
  */
 
@@ -2415,8 +2391,7 @@ CheckOneByte(
  *	an error message in the interpreter result.
  *
  * This code is here primarily to verify that instructions like INCR_SCALAR1
- * are possible on a given local variable. The fact that there is no
- * INCR_SCALAR4 is puzzling.
+ * are possible on a given local variable.
  *
  *-----------------------------------------------------------------------------
  */

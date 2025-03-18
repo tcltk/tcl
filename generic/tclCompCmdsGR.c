@@ -453,7 +453,7 @@ TclCompileIncrCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
 	    &localIndex, &isScalar, 1);
 
     /*
@@ -495,14 +495,14 @@ TclCompileIncrCmd(
     if (isScalar) {	/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
+		TclEmitInstInt4(INST_INCR_SCALAR4_IMM, localIndex, envPtr);
 		TclEmitInt1(immValue, envPtr);
 	    } else {
-		TclEmitInstInt1(INST_INCR_SCALAR1, localIndex,	envPtr);
+		TclEmitInstInt1(INST_INCR_SCALAR4, localIndex,	envPtr);
 	    }
 	} else {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_STK_IMM, immValue, envPtr);
+		TclEmitInstInt4(INST_INCR_STK_IMM, immValue, envPtr);
 	    } else {
 		TclEmitOpcode(	INST_INCR_STK,		envPtr);
 	    }
@@ -510,10 +510,10 @@ TclCompileIncrCmd(
     } else {			/* Simple array variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_ARRAY1_IMM, localIndex, envPtr);
+		TclEmitInstInt4(INST_INCR_ARRAY4_IMM, localIndex, envPtr);
 		TclEmitInt1(immValue, envPtr);
 	    } else {
-		TclEmitInstInt1(INST_INCR_ARRAY1, localIndex,	envPtr);
+		TclEmitInstInt4(INST_INCR_ARRAY4, localIndex,	envPtr);
 	    }
 	} else {
 	    if (haveImmValue) {
@@ -558,6 +558,7 @@ TclCompileInfoCommandsCmd(
     Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
     const char *bytes;
+    JumpFixup isList;
 
     /*
      * We require one compile-time known argument for the case we can compile.
@@ -597,8 +598,9 @@ TclCompileInfoCommandsCmd(
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
     TclEmitOpcode(	INST_STR_LEN,		envPtr);
-    TclEmitInstInt4(	INST_JUMP_FALSE4, 10,	envPtr);
+    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &isList);
     TclEmitInstInt4(	INST_LIST, 1,		envPtr);
+    TclFixupForwardJumpToHere(envPtr, &isList);
     return TCL_OK;
 
   notCompilable:
@@ -862,13 +864,13 @@ TclCompileLappendCmd(
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_LAPPEND_STK,		envPtr);
 	} else {
-	    Emit14Inst(		INST_LAPPEND_SCALAR, localIndex, envPtr);
+	    TclEmitInstInt4(	INST_LAPPEND_SCALAR4, localIndex, envPtr);
 	}
     } else {
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_LAPPEND_ARRAY_STK,		envPtr);
 	} else {
-	    Emit14Inst(		INST_LAPPEND_ARRAY, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_LAPPEND_ARRAY4, localIndex,envPtr);
 	}
     }
 
@@ -970,7 +972,7 @@ TclCompileLassignCmd(
 	    if (localIndex >= 0) {
 		TclEmitOpcode(	INST_DUP,			envPtr);
 		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
-		Emit14Inst(	INST_STORE_SCALAR, localIndex,	envPtr);
+		TclEmitInstInt4(INST_STORE_SCALAR4, localIndex,	envPtr);
 		TclEmitOpcode(	INST_POP,			envPtr);
 	    } else {
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
@@ -982,7 +984,7 @@ TclCompileLassignCmd(
 	    if (localIndex >= 0) {
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
-		Emit14Inst(	INST_STORE_ARRAY, localIndex,	envPtr);
+		TclEmitInstInt4(INST_STORE_ARRAY4, localIndex,	envPtr);
 		TclEmitOpcode(	INST_POP,			envPtr);
 	    } else {
 		TclEmitInstInt4(INST_OVER, 2,			envPtr);
@@ -1534,13 +1536,13 @@ TclCompileLsetCmd(
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_LOAD_STK,			envPtr);
 	} else {
-	    Emit14Inst(		INST_LOAD_SCALAR, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_LOAD_SCALAR4, localIndex,	envPtr);
 	}
     } else {
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_LOAD_ARRAY_STK,		envPtr);
 	} else {
-	    Emit14Inst(		INST_LOAD_ARRAY, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_LOAD_ARRAY4, localIndex,	envPtr);
 	}
     }
 
@@ -1562,13 +1564,13 @@ TclCompileLsetCmd(
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_STORE_STK,			envPtr);
 	} else {
-	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_STORE_SCALAR4, localIndex,	envPtr);
 	}
     } else {
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_STORE_ARRAY_STK,		envPtr);
 	} else {
-	    Emit14Inst(		INST_STORE_ARRAY, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_STORE_ARRAY4, localIndex,	envPtr);
 	}
     }
 
@@ -2633,7 +2635,7 @@ TclCompileVariableCmd(
 	     */
 
 	    CompileWord(envPtr, valueTokenPtr, interp, i + 1);
-	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
+	    TclEmitInstInt4(	INST_STORE_SCALAR4, localIndex,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
     }

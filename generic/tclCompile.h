@@ -534,6 +534,20 @@ typedef struct ByteCode {
 	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
+#ifdef ALLOW_DEPRECATED_OPCODES
+#define DEPRECATED_OPCODE(name) \
+    name
+#elif defined(_MSC_VER)
+#define DEPRECATED_OPCODE(name) \
+    name [[deprecated]]
+#elif defined(__GNUC__) || defined(__clang__)
+#define DEPRECATED_OPCODE(name) \
+    name __attribute__((deprecated ("use 4-byte operand version instead")))
+#else
+#define DEPRECATED_OPCODE(name) \
+    name
+#endif
+
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to the
  * entries in the table of instruction descriptions, tclInstructionTable, in
@@ -545,50 +559,50 @@ typedef struct ByteCode {
 enum TclInstruction {
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
-    INST_PUSH1,
+    DEPRECATED_OPCODE(INST_PUSH1),
     INST_PUSH4,
     INST_POP,
     INST_DUP,
     INST_STR_CONCAT1,
-    INST_INVOKE_STK1,
+    DEPRECATED_OPCODE(INST_INVOKE_STK1),
     INST_INVOKE_STK4,
     INST_EVAL_STK,
     INST_EXPR_STK,
 
     /* Opcodes 10 to 23 */
-    INST_LOAD_SCALAR1,
+    DEPRECATED_OPCODE(INST_LOAD_SCALAR1),
     INST_LOAD_SCALAR4,
     INST_LOAD_SCALAR_STK,
-    INST_LOAD_ARRAY1,
+    DEPRECATED_OPCODE(INST_LOAD_ARRAY1),
     INST_LOAD_ARRAY4,
     INST_LOAD_ARRAY_STK,
     INST_LOAD_STK,
-    INST_STORE_SCALAR1,
+    DEPRECATED_OPCODE(INST_STORE_SCALAR1),
     INST_STORE_SCALAR4,
     INST_STORE_SCALAR_STK,
-    INST_STORE_ARRAY1,
+    DEPRECATED_OPCODE(INST_STORE_ARRAY1),
     INST_STORE_ARRAY4,
     INST_STORE_ARRAY_STK,
     INST_STORE_STK,
 
     /* Opcodes 24 to 33 */
-    INST_INCR_SCALAR1,
+    DEPRECATED_OPCODE(INST_INCR_SCALAR1),
     INST_INCR_SCALAR_STK,
-    INST_INCR_ARRAY1,
+    DEPRECATED_OPCODE(INST_INCR_ARRAY1),
     INST_INCR_ARRAY_STK,
     INST_INCR_STK,
-    INST_INCR_SCALAR1_IMM,
+    DEPRECATED_OPCODE(INST_INCR_SCALAR1_IMM),
     INST_INCR_SCALAR_STK_IMM,
-    INST_INCR_ARRAY1_IMM,
+    DEPRECATED_OPCODE(INST_INCR_ARRAY1_IMM),
     INST_INCR_ARRAY_STK_IMM,
     INST_INCR_STK_IMM,
 
     /* Opcodes 34 to 39 */
-    INST_JUMP1,
+    DEPRECATED_OPCODE(INST_JUMP1),
     INST_JUMP4,
-    INST_JUMP_TRUE1,
+    DEPRECATED_OPCODE(INST_JUMP_TRUE1),
     INST_JUMP_TRUE4,
-    INST_JUMP_FALSE1,
+    DEPRECATED_OPCODE(INST_JUMP_FALSE1),
     INST_JUMP_FALSE4,
 
     /* Opcodes 42 to 64 */
@@ -638,17 +652,17 @@ enum TclInstruction {
     INST_LIST_LENGTH,
 
     /* Opcodes 82 to 87 */
-    INST_APPEND_SCALAR1,
+    DEPRECATED_OPCODE(INST_APPEND_SCALAR1),
     INST_APPEND_SCALAR4,
-    INST_APPEND_ARRAY1,
+    DEPRECATED_OPCODE(INST_APPEND_ARRAY1),
     INST_APPEND_ARRAY4,
     INST_APPEND_ARRAY_STK,
     INST_APPEND_STK,
 
     /* Opcodes 88 to 93 */
-    INST_LAPPEND_SCALAR1,
+    DEPRECATED_OPCODE(INST_LAPPEND_SCALAR1),
     INST_LAPPEND_SCALAR4,
-    INST_LAPPEND_ARRAY1,
+    DEPRECATED_OPCODE(INST_LAPPEND_ARRAY1),
     INST_LAPPEND_ARRAY4,
     INST_LAPPEND_ARRAY_STK,
     INST_LAPPEND_STK,
@@ -732,7 +746,7 @@ enum TclInstruction {
 
     /* For [subst] compilation */
     INST_NOP,
-    INST_RETURN_CODE_BRANCH1,
+    DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH1),
 
     /* For [unset] compilation */
     INST_UNSET_SCALAR,
@@ -833,8 +847,12 @@ enum TclInstruction {
     INST_CONST_IMM,
     INST_CONST_STK,
 
-    /* Updated [subst] compilation */
+    /* Updated [subst] and [incr] compilation */
     INST_RETURN_CODE_BRANCH4,
+    INST_INCR_SCALAR4,
+    INST_INCR_ARRAY4,
+    INST_INCR_SCALAR4_IMM,
+    INST_INCR_ARRAY4_IMM,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -1646,18 +1664,6 @@ TclUpdateStackReqs(
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
     SetLineInformation(word);						\
     TclPushVarName(i,v,e,f,l,sc)
-
-/*
- * Often want to issue one of two versions of an instruction based on whether
- * the argument will fit in a single byte or not. This makes it much clearer.
- */
-
-#define Emit14Inst(nm,idx,envPtr) \
-    if (idx <= 255) {							\
-	TclEmitInstInt1(nm##1,idx,envPtr);				\
-    } else {								\
-	TclEmitInstInt4(nm##4,idx,envPtr);				\
-    }
 
 /*
  * How to get an anonymous local variable (used for holding temporary values

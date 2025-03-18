@@ -2386,7 +2386,8 @@ CompileExprTree(
 		break;
 	    }
 	} else {
-	    int pc1, pc2, target;
+	    int target;
+	    JumpFixup pc1, pc2;
 
 	    switch (nodePtr->lexeme) {
 	    case START:
@@ -2405,11 +2406,7 @@ CompileExprTree(
 		 * command with the correct number of arguments.
 		 */
 
-		if (numWords < 255) {
-		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, numWords);
-		} else {
-		    TclEmitInvoke(envPtr, INST_INVOKE_STK4, numWords);
-		}
+		TclEmitInvoke(envPtr, INST_INVOKE_STK4, numWords);
 
 		/*
 		 * Restore any saved numWords value.
@@ -2446,21 +2443,18 @@ CompileExprTree(
 	    case AND:
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
-		pc1 = CurrentOffset(envPtr);
-		TclEmitInstInt4((nodePtr->lexeme == AND) ? INST_JUMP_FALSE4
-			: INST_JUMP_TRUE4, 0, envPtr);
+		TclEmitForwardJump(envPtr,
+			(nodePtr->lexeme == AND) ? TCL_FALSE_JUMP
+				: TCL_TRUE_JUMP, &pc1);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
-		pc2 = CurrentOffset(envPtr);
-		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &pc2);
 		TclAdjustStackDepth(-1, envPtr);
-		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc1,
-			envPtr->codeStart + pc1 + 1);
+		TclFixupForwardJumpToHere(envPtr, &pc1);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1, 0), envPtr);
-		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc2,
-			envPtr->codeStart + pc2 + 1);
+		TclFixupForwardJumpToHere(envPtr, &pc2);
 		convert = 0;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;

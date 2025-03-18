@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
@@ -414,6 +415,13 @@ VarHashCreateVar(
 #   define TRACE_WITH_OBJ(a, objPtr)
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
+
+#ifdef PANIC_ON_DEPRECATED_OPCODES
+#define DEPRECATED_OPCODE_MARK(opcode) \
+	Tcl_Panic("%s deprecated for removal", #name)
+#else
+#define DEPRECATED_OPCODE_MARK(opcode) /* Do nothing. */
+#endif
 
 /*
  * DTrace instruction probe macros.
@@ -2273,12 +2281,12 @@ TEBCresume(
 
     TCL_DTRACE_INST_NEXT();
 
-    if (inst == INST_LOAD_SCALAR1) {
-	goto instLoadScalar1;
-    } else if (inst == INST_PUSH1) {
-	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc + 1)), OBJ_AT_TOS);
-	inst = *(pc += 2);
+    if (inst == INST_LOAD_SCALAR4) {
+	goto instLoadScalar4;
+    } else if (inst == INST_PUSH4) {
+	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt4AtPtr(pc + 1)]);
+	TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc + 1)), OBJ_AT_TOS);
+	inst = *(pc += 5);
 	goto peepholeStart;
     } else if (inst == INST_START_CMD) {
 	/*
@@ -2548,6 +2556,13 @@ TEBCresume(
 	(void) POP_OBJECT();
 	goto abnormalReturn;
 
+    case INST_PUSH1:
+	DEPRECATED_OPCODE_MARK(INST_PUSH1);
+	objResultPtr = codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)];
+	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc+1)), objResultPtr);
+	NEXT_INST_F(2, 0, 1);
+    break;
+
     case INST_PUSH4:
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
 	TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc+1)), objResultPtr);
@@ -2779,6 +2794,7 @@ TEBCresume(
 	goto doInvocation;
 
     case INST_INVOKE_STK1:
+	DEPRECATED_OPCODE_MARK(INST_INVOKE_STK1);
 	objc = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 
@@ -2903,7 +2919,7 @@ TEBCresume(
      */
 
     case INST_LOAD_SCALAR1:
-    instLoadScalar1:
+	DEPRECATED_OPCODE_MARK(INST_LOAD_SCALAR1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	varPtr = LOCAL(opnd);
 	while (TclIsVarLink(varPtr)) {
@@ -2926,6 +2942,7 @@ TEBCresume(
 	goto doCallPtrGetVar;
 
     case INST_LOAD_SCALAR4:
+    instLoadScalar4:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	varPtr = LOCAL(opnd);
 	while (TclIsVarLink(varPtr)) {
@@ -2953,6 +2970,7 @@ TEBCresume(
 	goto doLoadArray;
 
     case INST_LOAD_ARRAY1:
+	DEPRECATED_OPCODE_MARK(INST_LOAD_ARRAY1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 
@@ -3058,6 +3076,7 @@ TEBCresume(
 	goto doStoreArrayDirect;
 
     case INST_STORE_ARRAY1:
+	DEPRECATED_OPCODE_MARK(INST_STORE_ARRAY1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 
@@ -3090,6 +3109,7 @@ TEBCresume(
 	goto doStoreScalarDirect;
 
     case INST_STORE_SCALAR1:
+	DEPRECATED_OPCODE_MARK(INST_STORE_SCALAR1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 
@@ -3198,6 +3218,7 @@ TEBCresume(
 	goto doStoreArray;
 
     case INST_LAPPEND_ARRAY1:
+	DEPRECATED_OPCODE_MARK(INST_LAPPEND_ARRAY1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
@@ -3211,6 +3232,7 @@ TEBCresume(
 	goto doStoreArray;
 
     case INST_APPEND_ARRAY1:
+	DEPRECATED_OPCODE_MARK(INST_APPEND_ARRAY1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
@@ -3245,6 +3267,7 @@ TEBCresume(
 	goto doStoreScalar;
 
     case INST_LAPPEND_SCALAR1:
+	DEPRECATED_OPCODE_MARK(INST_LAPPEND_SCALAR1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
@@ -3258,6 +3281,7 @@ TEBCresume(
 	goto doStoreScalar;
 
     case INST_APPEND_SCALAR1:
+	DEPRECATED_OPCODE_MARK(INST_APPEND_ARRAY1);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
@@ -3486,14 +3510,30 @@ TEBCresume(
 	incrPtr = POP_OBJECT();
 	switch (*pc) {
 	case INST_INCR_SCALAR1:
+	    DEPRECATED_OPCODE_MARK(INST_INCR_SCALAR1);
 	    pcAdjustment = 2;
 	    goto doIncrScalar;
 	case INST_INCR_ARRAY1:
+	    DEPRECATED_OPCODE_MARK(INST_INCR_ARRAY1);
 	    pcAdjustment = 2;
 	    goto doIncrArray;
 	default:
 	    pcAdjustment = 1;
 	    goto doIncrStk;
+	}
+
+    case INST_INCR_SCALAR4:
+    case INST_INCR_ARRAY4:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	incrPtr = POP_OBJECT();
+	pcAdjustment = 5;
+	switch (*pc) {
+	case INST_INCR_SCALAR4:
+	    goto doIncrScalar;
+	case INST_INCR_ARRAY4:
+	    goto doIncrArray;
+	default:
+	    Tcl_Panic("unknown instruction");
 	}
 
     case INST_INCR_ARRAY_STK_IMM:
@@ -3532,7 +3572,16 @@ TEBCresume(
 	cleanup = ((part2Ptr == NULL)? 1 : 2);
 	goto doIncrVar;
 
+    case INST_INCR_ARRAY4_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	increment = TclGetInt1AtPtr(pc+5);
+	TclNewIntObj(incrPtr, increment);
+	Tcl_IncrRefCount(incrPtr);
+	pcAdjustment = 6;
+        goto doIncrArray;
+
     case INST_INCR_ARRAY1_IMM:
+	DEPRECATED_OPCODE_MARK(INST_INCR_ARRAY1_IMM);
 	opnd = TclGetUInt1AtPtr(pc+1);
 	increment = TclGetInt1AtPtr(pc+2);
 	TclNewIntObj(incrPtr, increment);
@@ -3557,10 +3606,16 @@ TEBCresume(
 	}
 	goto doIncrVar;
 
+    case INST_INCR_SCALAR4_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	increment = TclGetInt1AtPtr(pc+5);
+	pcAdjustment = 6;
+	goto doIncrScalarImm;
     case INST_INCR_SCALAR1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	increment = TclGetInt1AtPtr(pc+2);
 	pcAdjustment = 3;
+    doIncrScalarImm:
 	cleanup = 0;
 	varPtr = LOCAL(opnd);
 	while (TclIsVarLink(varPtr)) {
@@ -4215,11 +4270,11 @@ TEBCresume(
      */
 
     case INST_JUMP1:
+	DEPRECATED_OPCODE_MARK(INST_JUMP1);
 	opnd = TclGetInt1AtPtr(pc+1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
 		(size_t)(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
-    break;
 
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
@@ -4243,11 +4298,13 @@ TEBCresume(
 	goto doCondJump;
 
     case INST_JUMP_FALSE1:
+	DEPRECATED_OPCODE_MARK(INST_JUMP_FALSE1);
 	jmpOffset[0] = TclGetInt1AtPtr(pc+1);
 	jmpOffset[1] = 2;
 	goto doCondJump;
 
     case INST_JUMP_TRUE1:
+	DEPRECATED_OPCODE_MARK(INST_JUMP_TRUE1);
 	jmpOffset[0] = 2;
 	jmpOffset[1] = TclGetInt1AtPtr(pc+1);
 
@@ -6739,6 +6796,7 @@ TEBCresume(
     case INST_RETURN_CODE_BRANCH1: {
 	int code;
 
+	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH1);
 	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
 	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
 	}

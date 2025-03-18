@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include <assert.h>
 
@@ -289,7 +290,9 @@ ConvertZeroEffectToNOP(
 	    case INST_JUMP_FALSE1:
 	    case INST_JUMP_FALSE4:
 	    case INST_INCR_SCALAR1:
+	    case INST_INCR_SCALAR4:
 	    case INST_INCR_ARRAY1:
+	    case INST_INCR_ARRAY4:
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
 	    case INST_INCR_STK:
