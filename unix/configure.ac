@@ -717,7 +717,12 @@ fi
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+if test "$ac_cv_cygwin" = "yes" -a "$SHARED_BUILD" != "0"; then
+eval "TCL_LIB_FILE=cygtcl${LIB_SUFFIX}"
+EXTRA_INSTALL_BINARIES='$(INSTALL_LIBRARY) $(patsubst cyg%.dll,lib%.dll.a,${LIB_FILE}) "$(LIB_INSTALL_DIR)"'
+else
 eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
+fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.
