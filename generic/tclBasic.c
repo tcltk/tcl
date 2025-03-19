@@ -826,6 +826,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->importRefPtr = NULL;
 	    cmdPtr->tracePtr = NULL;
 	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
+	    cmdPtr->nreTrRefCount = 0;
 	    Tcl_SetHashValue(hPtr, cmdPtr);
 	}
     }
@@ -2228,6 +2229,7 @@ Tcl_CreateCommand(
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
     cmdPtr->nreProc = NULL;
+    cmdPtr->nreTrRefCount = 0;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2472,6 +2474,7 @@ TclCreateObjCommandInNs(
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
     cmdPtr->nreProc = NULL;
+    cmdPtr->nreTrRefCount = 0;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -3196,30 +3199,14 @@ Tcl_DeleteCommandFromToken(
     cmdPtr->flags |= CMD_IS_DELETED;
 
     /*
-     * Call trace functions for the command being deleted. Then delete its
-     * traces.
+     * Call trace functions for the command being deleted.
+     * Then it will also delete the traces.
      */
 
     cmdPtr->nsPtr->refCount++;
 
     if (cmdPtr->tracePtr != NULL) {
-	CommandTrace *tracePtr;
-	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
-
-	/*
-	 * Now delete these traces.
-	 */
-
-	tracePtr = cmdPtr->tracePtr;
-	while (tracePtr != NULL) {
-	    CommandTrace *nextPtr = tracePtr->nextPtr;
-
-	    if (tracePtr->refCount-- <= 1) {
-		ckfree(tracePtr);
-	    }
-	    tracePtr = nextPtr;
-	}
-	cmdPtr->tracePtr = NULL;
+	CallCommandTraces(iPtr, cmdPtr, NULL, NULL, TCL_TRACE_DELETE);
     }
 
     /*
@@ -3392,6 +3379,13 @@ CallCommandTraces(
 	if (!(tracePtr->flags & flags)) {
 	    continue;
 	}
+	if ((tracePtr->flags & TCL_TRACE_LEAVE_EXEC) && cmdPtr->nreTrRefCount &&
+	    (cmdPtr->flags & CMD_IS_DELETED)
+	) {
+	    /* retard trace deletion till TEOV_RunLeaveTraces */
+	    tracePtr->flags |= TCL_TRACE_DESTROYED;
+	    continue;
+	}
 	cmdPtr->flags |= tracePtr->flags;
 	if (oldName == NULL) {
 	    TclNewObj(oldNamePtr);
@@ -3410,6 +3404,21 @@ CallCommandTraces(
 	if (tracePtr->refCount-- <= 1) {
 	    ckfree(tracePtr);
 	}
+    }
+
+    if ((flags & TCL_TRACE_DESTROYED) && cmdPtr->tracePtr && !cmdPtr->nreTrRefCount) {
+	/*
+	 * Now delete these traces (but only if not retarded above).
+	 */
+	while (tracePtr != NULL) {
+	    CommandTrace *nextPtr = tracePtr->nextPtr;
+
+	    if (tracePtr->refCount-- <= 1) {
+		ckfree(tracePtr);
+	    }
+	    tracePtr = nextPtr;
+	}
+	cmdPtr->tracePtr = NULL;
     }
 
     if (state) {
@@ -4450,6 +4459,7 @@ EvalObjvCore(
 	 */
 
 	cmdPtr->refCount++;
+	cmdPtr->nreTrRefCount++;
 	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(objc),
 		commandPtr, cmdPtr, objv);
     }
@@ -4904,17 +4914,21 @@ TEOV_RunLeaveTraces(
     int length;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
-    if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
-	    traceCode = TclCheckExecutionTraces(interp, command, length,
-		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	}
-	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-	    traceCode = TclCheckInterpTraces(interp, command, length,
-		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	}
+    cmdPtr->nreTrRefCount--;
+
+    if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
+	traceCode = TclCheckExecutionTraces(interp, command, length,
+		cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
+    }
+    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+	traceCode = TclCheckInterpTraces(interp, command, length,
+		cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
     }
 
+    /* If retarded trace deletion, ensure to remove them here */
+    if (!cmdPtr->nreTrRefCount && cmdPtr->tracePtr && (cmdPtr->flags & CMD_IS_DELETED)) {
+	CallCommandTraces(iPtr, cmdPtr, NULL, NULL, TCL_TRACE_DELETE);
+    }
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
      * Prevent that by resetting the cmdPtr field and dealing right here with

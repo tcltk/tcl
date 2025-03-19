@@ -1646,6 +1646,7 @@ typedef struct Command {
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
     Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    int nreTrRefCount;		/* Number of added NRE-callbacks for command. */
 } Command;
 
 /*
