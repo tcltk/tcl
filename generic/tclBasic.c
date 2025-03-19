@@ -3406,7 +3406,9 @@ CallCommandTraces(
 	}
     }
 
-    if ((flags & TCL_TRACE_DESTROYED) && cmdPtr->tracePtr && !cmdPtr->nreTrRefCount) {
+    if ((flags & TCL_TRACE_DESTROYED) && !cmdPtr->nreTrRefCount &&
+    	(tracePtr = cmdPtr->tracePtr)
+    ) {
 	/*
 	 * Now delete these traces (but only if not retarded above).
 	 */
