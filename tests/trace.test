@@ -1977,9 +1977,13 @@ proc foo {a} {
 }
 
 proc traceDelete {cmd args} {
-    rename $cmd {}
+    if { [namespace which -command $cmd] ne "" } { rename $cmd {} }
     global info
-    set info $args
+    if {$info eq {}} {
+	lset info $args
+    } else {
+	lappend info | {*}$args
+    }
 }
 
 test trace-25.8 {delete command during enter leave and enter/leave-step traces} {
@@ -2015,7 +2019,7 @@ test trace-25.10 {delete command during leave and leavestep traces} {
     trace add execution foo leavestep [list traceDelete foo]
     catch {foo 1} err
     list $err $info [catch {trace info execution foo} res] $res
-} {1 {{set b 1} 0 1 leavestep} 1 {unknown command "foo"}}
+} {1 {{set b 1} 0 1 leavestep | {foo 1} 0 1 leave} 1 {unknown command "foo"}}
 
 proc foo {a} {
     set b $a
@@ -2670,6 +2674,97 @@ test trace-40.1 {execution trace errors become command errors} {
     catch foo m
     return -level 0 $m[unset m]
 } bar
+
+test trace-41.1 {missing last leavestep for coro (unpaired to enterstep), bug [5bd41844e62aceb2]} -body {
+    set ::res {}
+    proc B {} { lappend ::res **1st**; yield; lappend ::res **2nd**; yield; lappend ::res **3rd**; yield; lappend ::res **end** }
+    proc A {} { coroutine C B; C; C; C }
+    proc report {n args} {
+	if {[regexp {^(coroutine|lappend)\s+} $n]} return; # bypass uninteresting here commands
+	lappend ::res [list $n [lindex $args end]]
+    }
+    trace add execution A {enterstep leavestep} report
+    A
+    join $::res \n
+} -cleanup {
+    catch {rename B {}}; catch {rename A {}}
+    unset ::res
+} -result [join {
+    {B enterstep}
+    **1st**
+    {yield enterstep}
+    {C enterstep}
+    {yield leavestep}
+    **2nd**
+    {yield enterstep}
+    {C leavestep}
+    {C enterstep}
+    {yield leavestep}
+    **3rd**
+    {yield enterstep}
+    {C leavestep}
+    {C enterstep}
+    {yield leavestep}
+    **end**
+    {B leavestep}
+    {C leavestep}
+} \n]
+
+test trace-41.2 {missing last leavestep for deleted proc (unpaired to enterstep), bug [5bd41844e62aceb2]} -body {
+    set ::res {}
+    proc B {{del 0}} { if {$del} {rename B {}; lappend ::res ..deleted..; return}; lappend ::res **before**; B 1; lappend ::res **after** }
+    proc A {} { B }
+    proc report {n args} {
+	if {[regexp {^(if|lappend|rename|return)\M} $n]} return; # bypass uninteresting here commands
+	lappend ::res [list $n [lindex $args end]]
+    }
+    trace add execution A {enterstep leavestep} report
+    A
+    join $::res \n
+} -cleanup {
+    catch {rename B {}}; catch {rename A {}}
+    unset ::res
+} -result [join {
+    {B enterstep}
+    **before**
+    {{B 1} enterstep}
+    ..deleted..
+    {{B 1} leavestep}
+    **after**
+    {B leavestep}
+} \n]
+
+test trace-41.3 {missing last leave/leavestep for deleted proc (unpaired to enter/enterstep), bug [5bd41844e62aceb2]} -body {
+    set ::res {}
+    proc B {{del 0}} { if {$del} {rename A {}; lappend ::res ..deleted..; return}; lappend ::res **before**; B 1; lappend ::res **after** }
+    proc A {{deep 1}} { if {$deep} {A 0; return}; B }
+    proc X {} {}
+    proc report {n args} {
+	if {[regexp {^(if|lappend|rename|return)\M} $n]} return; # bypass uninteresting here commands
+	lappend ::res [list $n [lindex $args end]]
+    }
+    trace add execution A {enter leave enterstep leavestep} report
+    A
+    X; # this shall be not in result, since deletion of A must disable tracing
+    join $::res \n
+} -cleanup {
+    catch {rename X {}}; catch {rename B {}}; catch {rename A {}}
+    unset ::res
+} -result [join {
+    {A enter}
+    {{A 0} enterstep}
+    {{A 0} enter}
+    {B enterstep}
+    **before**
+    {{B 1} enterstep}
+    ..deleted..
+    {{B 1} leavestep}
+    **after**
+    {B leavestep}
+    {{A 0} leave}
+    {{A 0} leavestep}
+    {A leave}
+} \n]
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
