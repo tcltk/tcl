@@ -17,7 +17,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
-          install: git base-devel msys2-devel zlib
+          install: git base-devel msys2-devel mingw-w64-cross-zlib mingw-w64-libtommath
           update: true
       - name: Checkout
         uses: actions/checkout@v4
