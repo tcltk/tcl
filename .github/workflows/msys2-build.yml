@@ -5,7 +5,7 @@ on:
 
 jobs:
   msys2:
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     defaults:
       run:
