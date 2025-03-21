@@ -4096,12 +4096,6 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 
-/*
- * Error message utility functions
- */
-MODULE_SCOPE int	TclCommandWordLimitError(Tcl_Interp *interp,
-			    Tcl_Size count);
-
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END	((Tcl_Size)-2)
 #define TCL_INDEX_START	((Tcl_Size)0)
