@@ -9388,3 +9388,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2025-01-06 (bug) [63449c] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)
 
 2025-01-19 tzdata updated to Olson's tzdata2025a (nijtmans)
+
+2025-03-23 tzdata updated to Olson's tzdata2025b (nijtmans)
