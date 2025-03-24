@@ -1174,11 +1174,6 @@ Tcl_ParseArgsObjv(
 	}
 	case TCL_ARGV_GENFUNC: {
 
-	    if (objc > INT_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC", objc));
-		goto error;
-	    }
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 

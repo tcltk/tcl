@@ -3581,7 +3581,7 @@ TclNRSwitchObjCmd(
 	 * Ensure that the list is non-empty.
 	 */
 
-	if (listc < 1 || listc > INT_MAX) {
+	if (listc < 1) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
 		    "?-option ...? string {?pattern body ...? ?default body?}");
 	    return TCL_ERROR;
