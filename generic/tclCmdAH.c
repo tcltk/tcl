@@ -926,7 +926,7 @@ TclNREvalObjCmd(
     Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
-    int word = 0;
+    Tcl_Size word = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");

@@ -18,7 +18,7 @@
  */
 
 static Tcl_Command	InitEnsembleFromOptions(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ReadOneEnsembleOption(Tcl_Interp *interp,
 			    Tcl_Command token, Tcl_Obj *optionObj);
 static int		ReadAllEnsembleOptions(Tcl_Interp *interp,
@@ -259,7 +259,7 @@ TclNamespaceEnsembleCmd(
 static Tcl_Command
 InitEnsembleFromOptions(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);

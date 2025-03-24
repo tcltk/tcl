@@ -1443,7 +1443,7 @@ TclInitCompileEnv(
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
-    int word)			/* Index of the word in that context getting
+    Tcl_Size word)			/* Index of the word in that context getting
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;

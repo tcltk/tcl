@@ -208,7 +208,7 @@ static Tcl_ObjCmdProc2	ExprUnaryFunc;
 static Tcl_ObjCmdProc2	ExprWideFunc;
 static Tcl_ObjCmdProc2	FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
-			    int actual, Tcl_Obj *const *objv);
+			    Tcl_Size actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
@@ -5193,7 +5193,7 @@ TclEvalEx(
     const char *p, *next;
     const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
-    int *expand;
+    char *expand;
     Tcl_Size *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int expandRequested, code = TCL_OK;
@@ -5210,7 +5210,7 @@ TclEvalEx(
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     CmdFrame *eeFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     Tcl_Obj **stackObjArray = (Tcl_Obj **)TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
+    char *expandStack = (char *)TclStackAlloc(interp, minObjs * sizeof(char));
     Tcl_Size *linesStack = (Tcl_Size *)TclStackAlloc(interp, minObjs * sizeof(Tcl_Size));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
@@ -5347,7 +5347,7 @@ TclEvalEx(
 	     */
 
 	    if (numWords > minObjs) {
-		expand = (int *)Tcl_Alloc(numWords * sizeof(int));
+		expand = (char *)Tcl_Alloc(numWords * sizeof(char));
 		objvSpace = (Tcl_Obj **)
 			Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
 		lineSpace = (Tcl_Size *)
@@ -5673,7 +5673,7 @@ void
 TclAdvanceContinuations(
     Tcl_Size *line,
     Tcl_Size **clNextPtrPtr,
-    int loc)
+    Tcl_Size loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if any.
@@ -6007,7 +6007,7 @@ TclArgumentGet(
     Tcl_Interp *interp,
     Tcl_Obj *obj,
     CmdFrame **cfPtrPtr,
-    int *wordPtr)
+    Tcl_Size *wordPtr)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
@@ -6107,7 +6107,7 @@ TclEvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    Tcl_Size word)		/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -6126,7 +6126,7 @@ TclNREvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    Tcl_Size word)		/* Index of the word which is in objPtr. */
 {
     Interp *iPtr = (Interp *) interp;
     int result;
@@ -8086,7 +8086,7 @@ DoubleObjClass(
 static inline int
 DoubleObjIsClass(
     Tcl_Interp *interp,
-    int objc,			/* Actual parameter count */
+    Tcl_Size objc,		/* Actual parameter count */
     Tcl_Obj *const *objv,	/* Actual parameter list */
     int cmpCls,			/* FP class to compare. */
     int positive)		/* 1 if compare positive, 0 - otherwise */
@@ -8263,7 +8263,7 @@ static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
     int expected,		/* Formal parameter count. */
-    int found,			/* Actual parameter count. */
+    Tcl_Size found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     const char *name = TclGetString(objv[0]);

@@ -2862,7 +2862,7 @@ ChildEval(
 
 	Interp *iPtr = (Interp *) interp;
 	CmdFrame *invoker = iPtr->cmdFramePtr;
-	int word = 0;
+	Tcl_Size word = 0;
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 

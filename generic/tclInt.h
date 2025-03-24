@@ -2173,7 +2173,7 @@ typedef struct Interp {
 				 * invoking context of the bytecode compiler.
 				 * NULL when the byte code compiler is not
 				 * active. */
-    int invokeWord;		/* Index of the word in the command which
+    Tcl_Size invokeWord;		/* Index of the word in the command which
 				 * is getting compiled. */
     Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
 				 * defined procedure the location information
@@ -3234,7 +3234,7 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
-			    int loc);
+			    Tcl_Size loc);
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
@@ -3252,7 +3252,7 @@ MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
-			    CmdFrame **cfPtrPtr, int *wordPtr);
+			    CmdFrame **cfPtrPtr, Tcl_Size *wordPtr);
 MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    void *clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
