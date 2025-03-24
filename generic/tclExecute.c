@@ -1556,7 +1556,7 @@ TclCompileObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     const CmdFrame *invoker,
-    int word)
+    Tcl_Size word)
 {
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr;		/* Tcl Internal type of bytecode. */

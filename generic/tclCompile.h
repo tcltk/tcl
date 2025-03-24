@@ -1071,7 +1071,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
  */
 
 MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    const CmdFrame *invoker, int word);
+			    const CmdFrame *invoker, Tcl_Size word);
 
 /*
  *----------------------------------------------------------------
@@ -1141,7 +1141,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    size_t numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, Tcl_Size word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1515,7 +1515,7 @@ TclUpdateStackReqs(
  * Convenience macros for use when compiling bodies of commands. The ANSI C
  * "prototype" for these macros are:
  *
- * static void		BODY(Tcl_Token *tokenPtr, int word);
+ * static void		BODY(Tcl_Token *tokenPtr, Tcl_Size word);
  */
 
 #define BODY(tokenPtr, word) \
@@ -1615,7 +1615,7 @@ TclUpdateStackReqs(
  * the simplest of compiles. The ANSI C "prototype" for this macro is:
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp, int word);
+ *			    Tcl_Interp *interp, Tcl_Size word);
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \

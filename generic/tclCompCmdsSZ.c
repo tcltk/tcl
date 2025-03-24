@@ -1451,7 +1451,7 @@ TclCompileSubstCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int numArgs = parsePtr->numWords - 1;
+    Tcl_Size numArgs = parsePtr->numWords - 1;
     Tcl_Size objc, numOpts = numArgs - 1;
     int flags = TCL_SUBST_ALL;
     Tcl_Obj **objv/*, *toSubst = NULL*/;
@@ -1787,7 +1787,7 @@ TclCompileSwitchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command. */
-    int numWords;		/* Number of words in command. */
+    Tcl_Size numWords;		/* Number of words in command. */
 
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
     enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;

@@ -3475,7 +3475,7 @@ NRNamespaceEvalCmd(
 {
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker;
-    int word;
+    Tcl_Size word;
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;

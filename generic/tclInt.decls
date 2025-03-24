@@ -523,7 +523,7 @@ declare 231 {
 # Bits and pieces of TIP#280's guts
 declare 232 {
     int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, Tcl_Size word)
 }
 declare 233 {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
@@ -559,7 +559,7 @@ declare 240 {
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, Tcl_Size word)
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,
