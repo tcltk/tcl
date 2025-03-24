@@ -223,10 +223,8 @@ PlatformEventsControl(
      */
 
     if (TclOSfstat(filePtr->fd, &fdStat) == -1) {
-	Tcl_Panic("fstat: %s", strerror(errno));
-    }
-
-   if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
+	    return;
+    } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
        switch (errno) {
 	    case EPERM:
 		switch (op) {
