@@ -545,7 +545,8 @@ static Tcl_Obj *
 WinReadLinkDirectory(
     const WCHAR *linkDirPath)
 {
-    int attr, len, offset;
+    int attr, offset;
+    Tcl_Size len;
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
     Tcl_Obj *retVal;
@@ -1424,7 +1425,7 @@ TclpGetUserHome(
     char *result = NULL;
     USER_INFO_1 *uiPtr;
     Tcl_DString ds;
-    int nameLen = -1;
+    Tcl_Size nameLen = -1;
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
@@ -2520,7 +2521,7 @@ TclpObjNormalizePath(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize */
-    int nextCheckpoint)		/* offset to start at in pathPtr */
+    int nextCheckpoint1)		/* offset to start at in pathPtr */
 {
     char *lastValidPathEnd = NULL;
     Tcl_DString dsNorm;		/* This will hold the normalized string. */
@@ -2528,6 +2529,7 @@ TclpObjNormalizePath(
     Tcl_Obj *temp = NULL;
     int isDrive = 1;
     Tcl_DString ds;		/* Some workspace. */
+    Tcl_Size nextCheckpoint = nextCheckpoint1;
 
     Tcl_DStringInit(&dsNorm);
     path = TclGetString(pathPtr);
@@ -2681,7 +2683,7 @@ TclpObjNormalizePath(
 		    }
 		}
 		if (checkDots != NULL) {
-		    int dotLen = currentPathEndPosition-lastValidPathEnd;
+		    Tcl_Size dotLen = currentPathEndPosition-lastValidPathEnd;
 
 		    /*
 		     * Path is just dots. We shouldn't really ever see a path
@@ -2820,7 +2822,7 @@ TclpObjNormalizePath(
 	Tcl_DecrRefCount(temp);
     }
 
-    return nextCheckpoint;
+    return (int)nextCheckpoint;
 }
 
 /*
@@ -3091,7 +3093,7 @@ TclNativeCreateNativeRep(
 	goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
-	    len + 2);
+	    (DWORD)len + 2);
     nativePathPtr[len] = 0;
 
     /*
