@@ -128,11 +128,12 @@ TclCompileAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int isScalar;
+    Tcl_Size i, numWords, localIndex;
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords == 1 || numWords > INT_MAX) {
 	return TCL_ERROR;
     } else if (numWords == 2) {
 	/*
@@ -179,13 +180,13 @@ TclCompileAppendCmd(
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_STK, envPtr);
 	    } else {
-		Emit14Inst(INST_APPEND_SCALAR, localIndex, envPtr);
+		Emit14Inst(INST_APPEND_SCALAR, (int)localIndex, envPtr);
 	    }
 	} else {
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_ARRAY_STK, envPtr);
 	    } else {
-		Emit14Inst(INST_APPEND_ARRAY, localIndex, envPtr);
+		Emit14Inst(INST_APPEND_ARRAY, (int)localIndex, envPtr);
 	    }
 	}
 
@@ -214,9 +215,9 @@ TclCompileAppendCmd(
 	CompileWord(envPtr, valueTokenPtr, interp, i);
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	  INST_REVERSE, numWords-2,		envPtr);
+    TclEmitInstInt4(	  INST_REVERSE, (int)numWords-2,		envPtr);
     for (i = 2 ; i < numWords ;) {
-	Emit14Inst(	  INST_APPEND_SCALAR, localIndex,	envPtr);
+	Emit14Inst(	  INST_APPEND_SCALAR, (int)localIndex,	envPtr);
 	if (++i < numWords) {
 	    TclEmitOpcode(INST_POP,				envPtr);
 	}
@@ -253,7 +254,8 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar, localIndex;
+    int isScalar;
+    Tcl_Size localIndex;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -262,12 +264,12 @@ TclCompileArrayExistsCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &isScalar, 1);
-    if (!isScalar) {
+    if (!isScalar || localIndex > INT_MAX) {
 	return TCL_ERROR;
     }
 
     if (localIndex >= 0) {
-	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, (int)localIndex,	envPtr);
     } else {
 	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
     }
@@ -285,11 +287,11 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int isScalar, localIndex, code = TCL_OK;
+    int isScalar, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven;
-    Tcl_Size len;
-    int keyVar, valVar, infoIndex;
-    int fwd, offsetBack, offsetFwd;
+    Tcl_Size localIndex, len;
+    Tcl_Size keyVar, valVar, infoIndex;
+    Tcl_Size fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
@@ -341,7 +343,7 @@ TclCompileArraySetCmd(
 
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &isScalar, 1);
-    if (!isScalar) {
+    if (!isScalar || localIndex > INT_MAX) {
 	code = TCL_ERROR;
 	goto done;
     }
@@ -353,9 +355,9 @@ TclCompileArraySetCmd(
 
     if (isDataEven && len == 0) {
 	if (localIndex >= 0) {
-	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, (int)localIndex,	envPtr);
 	    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-	    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+	    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, (int)localIndex,	envPtr);
 	} else {
 	    TclEmitOpcode(  INST_DUP,				envPtr);
 	    TclEmitOpcode(  INST_ARRAY_EXISTS_STK,		envPtr);
@@ -380,7 +382,7 @@ TclCompileArraySetCmd(
 		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
 	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
-	TclEmitInstInt4(INST_UPVAR, localIndex,			envPtr);
+	TclEmitInstInt4(INST_UPVAR, (int)localIndex,			envPtr);
 	TclEmitOpcode(INST_POP,					envPtr);
     }
 
@@ -403,9 +405,9 @@ TclCompileArraySetCmd(
      * Start issuing instructions to write to the array.
      */
 
-    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, (int)localIndex,	envPtr);
     TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, (int)localIndex,	envPtr);
 
     CompileWord(envPtr, dataTokenPtr, interp, 2);
     if (!isDataLiteral || !isDataValid) {
@@ -431,11 +433,11 @@ TclCompileArraySetCmd(
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
 
-    TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
+    TclEmitInstInt4(INST_FOREACH_START, (int)infoIndex,	envPtr);
     offsetBack = CurrentOffset(envPtr);
-    Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
-    Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
-    Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, (int)keyVar,		envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, (int)valVar,		envPtr);
+    Emit14Inst(	INST_STORE_ARRAY, (int)localIndex,		envPtr);
     TclEmitOpcode(	INST_POP,			envPtr);
     infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
     TclEmitOpcode( INST_FOREACH_STEP,			envPtr);
@@ -459,7 +461,8 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int isScalar, localIndex;
+    int isScalar;
+    Tcl_Size localIndex;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -472,7 +475,7 @@ TclCompileArrayUnsetCmd(
     }
 
     if (localIndex >= 0) {
-	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, (int)localIndex,	envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 8,			envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 1,			envPtr);
 	TclEmitInt4(		localIndex,			envPtr);
@@ -576,15 +579,15 @@ TclCompileCatchCmd(
     DefineLineInformation;	/* TIP #280 */
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range, dropScript = 0;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size resultIndex, optsIndex, range, dropScript = 0;
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
     /*
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
      */
 
-    if (((int)parsePtr->numWords < 2) || ((int)parsePtr->numWords > 4)) {
+    if ((parsePtr->numWords < 2) || (parsePtr->numWords > 4)) {
 	return TCL_ERROR;
     }
 
@@ -593,7 +596,7 @@ TclCompileCatchCmd(
      * (not in a procedure), don't compile it inline: the payoff is too small.
      */
 
-    if (((int)parsePtr->numWords >= 3) && !EnvHasLVT(envPtr)) {
+    if ((parsePtr->numWords >= 3) && !EnvHasLVT(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -604,7 +607,7 @@ TclCompileCatchCmd(
 
     resultIndex = optsIndex = -1;
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if ((int)parsePtr->numWords >= 3) {
+    if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
 	/* DGP */
 	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
@@ -640,13 +643,13 @@ TclCompileCatchCmd(
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
+	TclEmitInstInt4(	INST_BEGIN_CATCH4, (int)range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	BODY(cmdTokenPtr, 1);
     } else {
 	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
-	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
+	TclEmitInstInt4(	INST_BEGIN_CATCH4, (int)range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
@@ -710,7 +713,7 @@ TclCompileCatchCmd(
      */
 
     if (optsIndex != -1) {
-	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, (int)optsIndex,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
@@ -722,7 +725,7 @@ TclCompileCatchCmd(
 
     TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     if (resultIndex != -1) {
-	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+	Emit14Inst(	INST_STORE_SCALAR, (int)resultIndex,	envPtr);
     }
     TclEmitOpcode(	INST_POP,			envPtr);
 
@@ -822,7 +825,7 @@ TclCompileClockReadingCmd(
 	return TCL_ERROR;
     }
 
-    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData2), envPtr);
+    TclEmitInstInt1(INST_CLOCK_READ, (int)PTR2INT(cmdPtr->objClientData2), envPtr);
 
     return TCL_OK;
 }
@@ -856,7 +859,7 @@ TclCompileConcatCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr, *listObj;
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     /* TODO: Consider compiling expansion case. */
     if (parsePtr->numWords == 1) {
@@ -874,7 +877,7 @@ TclCompileConcatCmd(
      */
 
     TclNewObj(listObj);
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords; i++) {
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
@@ -903,12 +906,15 @@ TclCompileConcatCmd(
      * General case: runtime concat.
      */
 
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords; i++) {
+    if (parsePtr->numWords > 256) {
+	return TCL_ERROR;
+    }
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
 
-    TclEmitInstInt4(	INST_CONCAT_STK, i-1,		envPtr);
+    TclEmitInstInt4(	INST_CONCAT_STK, (int)i-1,		envPtr);
 
     return TCL_OK;
 }
@@ -941,7 +947,8 @@ TclCompileConstCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex;
+    int isScalar;
+    Tcl_Size localIndex;
 
     /*
      * Need exactly two arguments.
@@ -966,7 +973,7 @@ TclCompileConstCmd(
      * If the user specified an array element, we don't bother handling
      * that.
      */
-    if (!isScalar) {
+    if (!isScalar || localIndex > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -981,7 +988,7 @@ TclCompileConstCmd(
     if (localIndex < 0) {
 	TclEmitOpcode(INST_CONST_STK, envPtr);
     } else {
-	TclEmitInstInt4(INST_CONST_IMM, localIndex, envPtr);
+	TclEmitInstInt4(INST_CONST_IMM, (int)localIndex, envPtr);
     }
 
     /*
@@ -1081,14 +1088,14 @@ TclCompileDictSetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, dictVarIndex;
+    Tcl_Size i, dictVarIndex;
     Tcl_Token *varTokenPtr;
 
     /*
      * There must be at least one argument after the command.
      */
 
-    if ((int)parsePtr->numWords < 4) {
+    if (parsePtr->numWords < 4 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1109,7 +1116,7 @@ TclCompileDictSetCmd(
      */
 
     tokenPtr = TokenAfter(varTokenPtr);
-    for (i=2 ; i< (int)parsePtr->numWords ; i++) {
+    for (i=2 ; i< parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -1135,13 +1142,14 @@ TclCompileDictIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr;
-    int dictVarIndex, incrAmount;
+    Tcl_Size dictVarIndex;
+    int incrAmount;
 
     /*
      * There must be at least two arguments after the command.
      */
 
-    if ((int)parsePtr->numWords < 3 || (int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1207,7 +1215,7 @@ TclCompileDictGetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1215,7 +1223,7 @@ TclCompileDictGetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1224,7 +1232,7 @@ TclCompileDictGetCmd(
      * Only compile this because we need INST_DICT_GET anyway.
      */
 
-    for (i=1 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -1243,19 +1251,19 @@ TclCompileDictGetWithDefaultCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     /*
      * There must be at least three arguments after the command.
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords < 4) {
+    if (parsePtr->numWords < 4 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    for (i=1 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -1274,7 +1282,7 @@ TclCompileDictExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1282,7 +1290,7 @@ TclCompileDictExistsCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1291,7 +1299,7 @@ TclCompileDictExistsCmd(
      * Now we do the code generation.
      */
 
-    for (i=1 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -1311,7 +1319,7 @@ TclCompileDictUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, dictVarIndex;
+    Tcl_Size i, dictVarIndex;
 
     /*
      * There must be at least one argument after the variable name for us to
@@ -1319,7 +1327,7 @@ TclCompileDictUnsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1339,7 +1347,7 @@ TclCompileDictUnsetCmd(
      * Remaining words (the key path) can be handled normally.
      */
 
-    for (i=2 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=2 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
@@ -1363,14 +1371,13 @@ TclCompileDictCreateCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int worker;			/* Temp var for building the value in. */
+    Tcl_Size worker;		/* Temp var for building the value in. */
     Tcl_Token *tokenPtr;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     const char *bytes;
-    int i;
-    Tcl_Size len;
+    Tcl_Size i, len;
 
-    if ((parsePtr->numWords & 1) == 0) {
+    if ((parsePtr->numWords & 1) == 0 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1381,7 +1388,7 @@ TclCompileDictCreateCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     TclNewObj(dictObj);
     Tcl_IncrRefCount(dictObj);
-    for (i=1 ; i<(int)parsePtr->numWords ; i+=2) {
+    for (i=1 ; i<parsePtr->numWords ; i+=2) {
 	TclNewObj(keyObj);
 	Tcl_IncrRefCount(keyObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, keyObj)) {
@@ -1428,10 +1435,10 @@ TclCompileDictCreateCmd(
     }
 
     PushStringLiteral(envPtr,		"");
-    Emit14Inst(			INST_STORE_SCALAR, worker,	envPtr);
+    Emit14Inst(			INST_STORE_SCALAR, (int)worker,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=1 ; i<(int)parsePtr->numWords ; i+=2) {
+    for (i=1 ; i<parsePtr->numWords ; i+=2) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i+1);
@@ -1441,7 +1448,7 @@ TclCompileDictCreateCmd(
 	TclAdjustStackDepth(-1, envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-    Emit14Inst(			INST_LOAD_SCALAR, worker,	envPtr);
+    Emit14Inst(			INST_LOAD_SCALAR, (int)worker,	envPtr);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			worker,			envPtr);
     return TCL_OK;
@@ -1458,7 +1465,8 @@ TclCompileDictMergeCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, workerIndex, infoIndex, outLoop;
+    Tcl_Size i;
+    Tcl_Size workerIndex, infoIndex, outLoop;
 
     /*
      * Deal with some special edge cases. Note that in the case with one
@@ -1466,7 +1474,7 @@ TclCompileDictMergeCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. (less likely) */
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords < 2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     } else if (parsePtr->numWords == 2) {
@@ -1498,7 +1506,7 @@ TclCompileDictMergeCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
-    Emit14Inst(			INST_STORE_SCALAR, workerIndex,	envPtr);
+    Emit14Inst(			INST_STORE_SCALAR, (int)workerIndex,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
@@ -1506,9 +1514,9 @@ TclCompileDictMergeCmd(
      */
 
     outLoop = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(		INST_BEGIN_CATCH4, outLoop,	envPtr);
+    TclEmitInstInt4(		INST_BEGIN_CATCH4, (int)outLoop,	envPtr);
     ExceptionRangeStarts(envPtr, outLoop);
-    for (i=2 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=2 ; i<parsePtr->numWords ; i++) {
 	/*
 	 * Get the dictionary, and merge its pairs into the first dict (using
 	 * a small loop).
@@ -1516,14 +1524,14 @@ TclCompileDictMergeCmd(
 
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
-	TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,	envPtr);
+	TclEmitInstInt4(	INST_DICT_FIRST, (int)infoIndex,	envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 24,		envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitInstInt4(	INST_DICT_SET, 1,		envPtr);
 	TclEmitInt4(			workerIndex,		envPtr);
 	TclAdjustStackDepth(-1, envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
-	TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,	envPtr);
+	TclEmitInstInt4(	INST_DICT_NEXT, (int)infoIndex,	envPtr);
 	TclEmitInstInt1(	INST_JUMP_FALSE1, -20,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
@@ -1537,7 +1545,7 @@ TclCompileDictMergeCmd(
      * Clean up any state left over.
      */
 
-    Emit14Inst(			INST_LOAD_SCALAR, workerIndex,	envPtr);
+    Emit14Inst(			INST_LOAD_SCALAR, (int)workerIndex,	envPtr);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			workerIndex,		envPtr);
     TclEmitInstInt1(		INST_JUMP1, 18,			envPtr);
@@ -1601,11 +1609,11 @@ CompileDictEachCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
-    int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
-    int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
+    Tcl_Size keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
+    Tcl_Size infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
     Tcl_Size numVars;
-    int endTargetOffset;
-    int collectVar = -1;	/* Index of temp var holding the result
+    Tcl_Size endTargetOffset;
+    Tcl_Size collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
     const char **argv;
     Tcl_DString buffer;
@@ -1687,7 +1695,7 @@ CompileDictEachCmd(
 
     if (collect == TCL_EACH_COLLECT) {
 	PushStringLiteral(envPtr, "");
-	Emit14Inst(	INST_STORE_SCALAR, collectVar,		envPtr);
+	Emit14Inst(	INST_STORE_SCALAR, (int)collectVar,		envPtr);
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
 
@@ -1704,10 +1712,10 @@ CompileDictEachCmd(
      */
 
     catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, (int)catchRange,		envPtr);
     ExceptionRangeStarts(envPtr, catchRange);
 
-    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
+    TclEmitInstInt4(	INST_DICT_FIRST, (int)infoIndex,		envPtr);
     emptyTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
 
@@ -1716,9 +1724,9 @@ CompileDictEachCmd(
      */
 
     bodyTargetOffset = CurrentOffset(envPtr);
-    Emit14Inst(		INST_STORE_SCALAR, keyVarIndex,		envPtr);
+    Emit14Inst(		INST_STORE_SCALAR, (int)keyVarIndex,		envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
-    Emit14Inst(		INST_STORE_SCALAR, valueVarIndex,	envPtr);
+    Emit14Inst(		INST_STORE_SCALAR, (int)valueVarIndex,	envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
 
     /*
@@ -1734,7 +1742,7 @@ CompileDictEachCmd(
 
     BODY(bodyTokenPtr, 3);
     if (collect == TCL_EACH_COLLECT) {
-	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
+	Emit14Inst(	INST_LOAD_SCALAR, (int)keyVarIndex,		envPtr);
 	TclEmitInstInt4(INST_OVER, 1,				envPtr);
 	TclEmitInstInt4(INST_DICT_SET, 1,			envPtr);
 	TclEmitInt4(		collectVar,			envPtr);
@@ -1757,9 +1765,9 @@ CompileDictEachCmd(
      */
 
     ExceptionRangeTarget(envPtr, loopRange, continueOffset);
-    TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,		envPtr);
+    TclEmitInstInt4(	INST_DICT_NEXT, (int)infoIndex,		envPtr);
     jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
-    TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
+    TclEmitInstInt4(	INST_JUMP_FALSE4, (int)jumpDisplacement,	envPtr);
     endTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt1(	INST_JUMP1, 0,				envPtr);
 
@@ -1808,7 +1816,7 @@ CompileDictEachCmd(
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
     if (collect == TCL_EACH_COLLECT) {
-	Emit14Inst(	INST_LOAD_SCALAR, collectVar,		envPtr);
+	Emit14Inst(	INST_LOAD_SCALAR, (int)collectVar,		envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
 	TclEmitInt4(		collectVar,			envPtr);
     } else {
@@ -1827,7 +1835,7 @@ TclCompileDictUpdateCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, dictIndex, numVars, range, infoIndex;
+    Tcl_Size i, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
     DictUpdateInfo *duiPtr;
     JumpFixup jumpFixup;
@@ -1836,7 +1844,7 @@ TclCompileDictUpdateCmd(
      * There must be at least one argument after the command.
      */
 
-    if ((int)parsePtr->numWords < 5) {
+    if (parsePtr->numWords < 5) {
 	return TCL_ERROR;
     }
 
@@ -1845,7 +1853,7 @@ TclCompileDictUpdateCmd(
      *   dict update <lit(eral)> <any> <lit> ?<any> <lit> ...? <lit>
      */
 
-    if (((int)parsePtr->numWords - 1) & 1) {
+    if (!(parsePtr->numWords & 1) || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
     numVars = (parsePtr->numWords - 3) / 2;
@@ -1907,12 +1915,12 @@ TclCompileDictUpdateCmd(
     for (i=0 ; i<numVars ; i++) {
 	CompileWord(envPtr, keyTokenPtrs[i], interp, 2*i+2);
     }
-    TclEmitInstInt4(	INST_LIST, numVars,			envPtr);
-    TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
+    TclEmitInstInt4(	INST_LIST, (int)numVars,			envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_START, (int)dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
+    TclEmitInstInt4(	INST_BEGIN_CATCH4, (int)range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
     BODY(bodyTokenPtr, parsePtr->numWords - 1);
@@ -1925,7 +1933,7 @@ TclCompileDictUpdateCmd(
 
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
     TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
-    TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_END, (int)dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
 
     /*
@@ -1946,7 +1954,7 @@ TclCompileDictUpdateCmd(
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
     TclEmitInstInt4(	INST_REVERSE, 3,			envPtr);
 
-    TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
+    TclEmitInstInt4(	INST_DICT_UPDATE_END, (int)dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
     TclEmitInvoke(envPtr,INST_RETURN_STK);
 
@@ -1979,7 +1987,8 @@ TclCompileDictAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, dictVarIndex;
+    Tcl_Size i;
+    Tcl_Size dictVarIndex;
 
     /*
      * There must be at least two argument after the command. And we impose an
@@ -1988,7 +1997,7 @@ TclCompileDictAppendCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords<4 || (int)parsePtr->numWords>100) {
+    if (parsePtr->numWords<4 || parsePtr->numWords>100) {
 	return TCL_ERROR;
     }
 
@@ -2007,11 +2016,11 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    for (i=2 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=2 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    if ((int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords > 4) {
 	TclEmitInstInt1(INST_STR_CONCAT1, (int)parsePtr->numWords-3, envPtr);
     }
 
@@ -2019,7 +2028,7 @@ TclCompileDictAppendCmd(
      * Do the concatenation.
      */
 
-    TclEmitInstInt4(INST_DICT_APPEND, dictVarIndex, envPtr);
+    TclEmitInstInt4(INST_DICT_APPEND, (int)dictVarIndex, envPtr);
     return TCL_OK;
 }
 
@@ -2034,7 +2043,7 @@ TclCompileDictLappendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
-    int dictVarIndex;
+    Tcl_Size dictVarIndex;
 
     /*
      * There must be three arguments after the command.
@@ -2064,7 +2073,7 @@ TclCompileDictLappendCmd(
 
     CompileWord(envPtr, keyTokenPtr, interp, 2);
     CompileWord(envPtr, valueTokenPtr, interp, 3);
-    TclEmitInstInt4(	INST_DICT_LAPPEND, dictVarIndex,	envPtr);
+    TclEmitInstInt4(	INST_DICT_LAPPEND, (int)dictVarIndex,	envPtr);
     return TCL_OK;
 }
 
@@ -2078,8 +2087,9 @@ TclCompileDictWithCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, range, varNameTmp = -1, pathTmp = -1, keysTmp, gotPath;
-    int dictVar, bodyIsEmpty = 1;
+    Tcl_Size dictVar, i;
+    Tcl_Size range, varNameTmp = -1, pathTmp = -1, keysTmp;
+    int bodyIsEmpty = 1, gotPath;
     Tcl_Token *varTokenPtr, *tokenPtr;
     JumpFixup jumpFixup;
     const char *ptr, *end;
@@ -2089,7 +2099,7 @@ TclCompileDictWithCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2100,7 +2110,7 @@ TclCompileDictWithCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     tokenPtr = TokenAfter(varTokenPtr);
-    for (i=3 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=3 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -2128,7 +2138,7 @@ TclCompileDictWithCmd(
      * Determine if we're manipulating a dict in a simple local variable.
      */
 
-    gotPath = ((int)parsePtr->numWords > 3);
+    gotPath = (parsePtr->numWords > 3);
     dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
 
     /*
@@ -2147,25 +2157,25 @@ TclCompileDictWithCmd(
 		 */
 
 		tokenPtr = TokenAfter(varTokenPtr);
-		for (i=2 ; i<(int)parsePtr->numWords-1 ; i++) {
+		for (i=2 ; i<parsePtr->numWords-1 ; i++) {
 		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
 		TclEmitInstInt4(INST_LIST, (int)parsePtr->numWords-3,envPtr);
-		Emit14Inst(	INST_LOAD_SCALAR, dictVar,	envPtr);
+		Emit14Inst(	INST_LOAD_SCALAR, (int)dictVar,	envPtr);
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
-		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, (int)dictVar, envPtr);
 	    } else {
 		/*
 		 * Case: Direct dict in LVT with empty body.
 		 */
 
 		PushStringLiteral(envPtr, "");
-		Emit14Inst(	INST_LOAD_SCALAR, dictVar,	envPtr);
+		Emit14Inst(	INST_LOAD_SCALAR, (int)dictVar,	envPtr);
 		PushStringLiteral(envPtr, "");
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
-		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, (int)dictVar, envPtr);
 	    }
 	} else {
 	    if (gotPath) {
@@ -2174,7 +2184,7 @@ TclCompileDictWithCmd(
 		 */
 
 		tokenPtr = varTokenPtr;
-		for (i=1 ; i<(int)parsePtr->numWords-1 ; i++) {
+		for (i=1 ; i<parsePtr->numWords-1 ; i++) {
 		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
@@ -2225,30 +2235,30 @@ TclCompileDictWithCmd(
 
     if (dictVar == -1) {
 	CompileWord(envPtr, varTokenPtr, interp, 1);
-	Emit14Inst(		INST_STORE_SCALAR, varNameTmp,	envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, (int)varNameTmp,	envPtr);
     }
     tokenPtr = TokenAfter(varTokenPtr);
     if (gotPath) {
-	for (i=2 ; i<(int)parsePtr->numWords-1 ; i++) {
+	for (i=2 ; i<parsePtr->numWords-1 ; i++) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
 	TclEmitInstInt4(	INST_LIST, (int)parsePtr->numWords-3,envPtr);
-	Emit14Inst(		INST_STORE_SCALAR, pathTmp,	envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, (int)pathTmp,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
     if (dictVar == -1) {
 	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
     } else {
-	Emit14Inst(		INST_LOAD_SCALAR, dictVar,	envPtr);
+	Emit14Inst(		INST_LOAD_SCALAR, (int)dictVar,	envPtr);
     }
     if (gotPath) {
-	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+	Emit14Inst(		INST_LOAD_SCALAR, (int)pathTmp,	envPtr);
     } else {
 	PushStringLiteral(envPtr, "");
     }
     TclEmitOpcode(		INST_DICT_EXPAND,		envPtr);
-    Emit14Inst(			INST_STORE_SCALAR, keysTmp,	envPtr);
+    Emit14Inst(			INST_STORE_SCALAR, (int)keysTmp,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
@@ -2256,7 +2266,7 @@ TclCompileDictWithCmd(
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
+    TclEmitInstInt4(		INST_BEGIN_CATCH4, (int)range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
     BODY(tokenPtr, parsePtr->numWords - 1);
@@ -2268,18 +2278,18 @@ TclCompileDictWithCmd(
 
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
     if (dictVar == -1) {
-	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
+	Emit14Inst(		INST_LOAD_SCALAR, (int)varNameTmp,	envPtr);
     }
     if (gotPath) {
-	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+	Emit14Inst(		INST_LOAD_SCALAR, (int)pathTmp,	envPtr);
     } else {
 	PushStringLiteral(envPtr, "");
     }
-    Emit14Inst(			INST_LOAD_SCALAR, keysTmp,	envPtr);
+    Emit14Inst(			INST_LOAD_SCALAR, (int)keysTmp,	envPtr);
     if (dictVar == -1) {
 	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
     } else {
-	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, (int)dictVar, envPtr);
     }
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
@@ -2293,18 +2303,18 @@ TclCompileDictWithCmd(
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
     if (dictVar == -1) {
-	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
+	Emit14Inst(		INST_LOAD_SCALAR, (int)varNameTmp,	envPtr);
     }
-    if ((int)parsePtr->numWords > 3) {
-	Emit14Inst(		INST_LOAD_SCALAR, pathTmp,	envPtr);
+    if (parsePtr->numWords > 3) {
+	Emit14Inst(		INST_LOAD_SCALAR, (int)pathTmp,	envPtr);
     } else {
 	PushStringLiteral(envPtr, "");
     }
-    Emit14Inst(			INST_LOAD_SCALAR, keysTmp,	envPtr);
+    Emit14Inst(			INST_LOAD_SCALAR, (int)keysTmp,	envPtr);
     if (dictVar == -1) {
 	TclEmitOpcode(		INST_DICT_RECOMBINE_STK,	envPtr);
     } else {
-	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
+	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, (int)dictVar, envPtr);
     }
     TclEmitInvoke(envPtr,	INST_RETURN_STK);
 
@@ -2433,7 +2443,7 @@ TclCompileErrorCmd(
      * General syntax: [error message ?errorInfo? ?errorCode?]
      */
 
-    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
 
@@ -2513,7 +2523,7 @@ TclCompileExprCmd(
 	    envPtr->extCmdMapPtr->nuloc-1].line[1];
 
     firstWordPtr = TokenAfter(parsePtr->tokenPtr);
-    TclCompileExprWords(interp, firstWordPtr, (int)parsePtr->numWords-1, envPtr);
+    TclCompileExprWords(interp, firstWordPtr, parsePtr->numWords-1, envPtr);
     return TCL_OK;
 }
 
@@ -2546,8 +2556,8 @@ TclCompileForCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int bodyCodeOffset, nextCodeOffset, jumpDist;
-    int bodyRange, nextRange;
+    Tcl_Size bodyCodeOffset, nextCodeOffset, jumpDist;
+    Tcl_Size bodyRange, nextRange;
 
     if (parsePtr->numWords != 5) {
 	return TCL_ERROR;
@@ -2636,9 +2646,9 @@ TclCompileForCmd(
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
-	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
+	TclEmitInstInt4(INST_JUMP_TRUE4, (int)-jumpDist, envPtr);
     } else {
-	TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
+	TclEmitInstInt1(INST_JUMP_TRUE1, (int)-jumpDist, envPtr);
     }
 
     /*
@@ -2762,8 +2772,9 @@ CompileEachloopCmd(
 				 * record in the ByteCode. */
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    int jumpBackOffset, infoIndex, range;
-    int numWords, numLists, i, code = TCL_OK;
+    Tcl_Size jumpBackOffset, infoIndex, range;
+    Tcl_Size numWords, numLists, i;
+    int code = TCL_OK;
     Tcl_Size j;
     Tcl_Obj *varListObj = NULL;
 
@@ -2776,8 +2787,8 @@ CompileEachloopCmd(
 	return TCL_ERROR;
     }
 
-    numWords = (int)parsePtr->numWords;
-    if ((numWords < 4) || (numWords%2 != 0)) {
+    numWords = parsePtr->numWords;
+    if ((numWords < 4) || (numWords > INT_MAX) || (numWords%2 != 0)) {
 	return TCL_ERROR;
     }
 
@@ -2844,7 +2855,7 @@ CompileEachloopCmd(
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
 	    const char *bytes;
-	    int varIndex;
+	    Tcl_Size varIndex;
 	    Tcl_Size length;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
@@ -2885,7 +2896,7 @@ CompileEachloopCmd(
 	}
     }
 
-    TclEmitInstInt4(INST_FOREACH_START, infoIndex, envPtr);
+    TclEmitInstInt4(INST_FOREACH_START, (int)infoIndex, envPtr);
 
     /*
      * Inline compile the loop body.
@@ -2970,7 +2981,7 @@ DupForeachInfo(
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
     ForeachVarList *srcListPtr, *dupListPtr;
-    int numVars, i, j, numLists = srcPtr->numLists;
+    Tcl_Size numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
@@ -3227,14 +3238,13 @@ TclCompileFormatCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
-    int i, j;
-    Tcl_Size len;
+    Tcl_Size i, j, len;
 
     /*
      * Don't handle any guaranteed-error cases.
      */
 
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -3251,8 +3261,8 @@ TclCompileFormatCmd(
 	return TCL_ERROR;
     }
 
-    objv = (Tcl_Obj **)Tcl_Alloc(((int)parsePtr->numWords-2) * sizeof(Tcl_Obj *));
-    for (i=0 ; i+2 < (int)parsePtr->numWords ; i++) {
+    objv = (Tcl_Obj **)Tcl_Alloc((parsePtr->numWords-2) * sizeof(Tcl_Obj *));
+    for (i=0 ; i+2 < parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objv[i]);
 	Tcl_IncrRefCount(objv[i]);
@@ -3267,7 +3277,7 @@ TclCompileFormatCmd(
      */
 
     tmpObj = Tcl_Format(interp, TclGetString(formatObj),
-	    (int)parsePtr->numWords-2, objv);
+	    parsePtr->numWords-2, objv);
     for (; --i>=0 ;) {
 	Tcl_DecrRefCount(objv[i]);
     }
@@ -3328,7 +3338,7 @@ TclCompileFormatCmd(
      * Check if the number of things to concatenate will fit in a byte.
      */
 
-    if (i+2 != (int)parsePtr->numWords || i > 125) {
+    if (i+2 != parsePtr->numWords || i > 125) {
 	Tcl_DecrRefCount(formatObj);
 	return TCL_ERROR;
     }
@@ -3401,7 +3411,7 @@ TclCompileFormatCmd(
 	 * Do the concatenation, which produces the result.
 	 */
 
-	TclEmitInstInt1(INST_STR_CONCAT1, i, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, (int)i, envPtr);
     }
     return TCL_OK;
 }
@@ -3426,12 +3436,13 @@ TclCompileFormatCmd(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
 {
-    int isScalar, index;
+    Tcl_Size index;
+    int isScalar;
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
     if (!isScalar) {
@@ -3440,7 +3451,7 @@ TclLocalScalarFromToken(
     return index;
 }
 
-size_t
+Tcl_Size
 TclLocalScalar(
     const char *bytes,
     size_t numBytes,
@@ -3491,15 +3502,15 @@ TclPushVarName(
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
-    int *localIndexPtr,		/* Must not be NULL. */
+    Tcl_Size *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
     const char *p;
     const char *last, *name, *elName;
     Tcl_Size n;
     Tcl_Token *elemTokenPtr = NULL;
-	Tcl_Size nameLen, elNameLen;
-    int simpleVarName, localIndex;
+	Tcl_Size nameLen, elNameLen, localIndex;
+    int simpleVarName;
     Tcl_Size elemTokenCount = 0, removedParen = 0;
     int allocedTokens = 0;
 

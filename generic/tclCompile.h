@@ -873,7 +873,7 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     const char *name;		/* Name of instruction. */
-    Tcl_Size numBytes;		/* Total number of bytes for instruction. */
+    int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
@@ -1127,11 +1127,11 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
-MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
+MODULE_SCOPE Tcl_Size TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist,
+			    Tcl_Size distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
@@ -1151,14 +1151,14 @@ MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
-			    int range);
+			    Tcl_Size range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
+MODULE_SCOPE Tcl_Size	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE Tcl_Size	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -1174,7 +1174,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, Tcl_Size maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
-			    int flags, int *localIndexPtr,
+			    int flags, Tcl_Size *localIndexPtr,
 			    int *isScalarPtr);
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
@@ -1229,11 +1229,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 static inline void
 TclAdjustStackDepth(
-    int delta,
+    Tcl_Size delta,
     CompileEnv *envPtr)
 {
     if (delta < 0) {
-	if ((int) envPtr->maxStackDepth < (int) envPtr->currStackDepth) {
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
 	    envPtr->maxStackDepth = envPtr->currStackDepth;
 	}
     }
@@ -1449,12 +1449,12 @@ TclUpdateStackReqs(
  * "prototypes" for this macro is:
  *
  * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ *				 Tcl_Size threshold);
  */
 
 #define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset, \
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
 	    (threshold))
 
 /*

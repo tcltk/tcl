@@ -3221,7 +3221,7 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
-	if ((int)parsePtr->numWords < depth + 1
+	if (parsePtr->numWords < depth + 1
 		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
 	     * Too hard because the user has done something unpleasant like
@@ -3540,6 +3540,10 @@ CompileBasicNArgCommand(
 {
     Tcl_Obj *objPtr;
 
+    if (parsePtr->numWords > INT_MAX) {
+	return TCL_ERROR;
+    }
+
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
@@ -3762,7 +3766,7 @@ TclCompileBasicMin0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 1) {
+    if (parsePtr->numWords < 1) {
 	return TCL_ERROR;
     }
 
@@ -3784,7 +3788,7 @@ TclCompileBasicMin1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
 
@@ -3806,7 +3810,7 @@ TclCompileBasicMin2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
 
