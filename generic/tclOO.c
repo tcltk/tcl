@@ -75,9 +75,7 @@ static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
 static void		MyDeleted(ClientData clientData);
 static void		ObjectNamespaceDeleted(ClientData clientData);
-static void		ObjectRenamedTrace(ClientData clientData,
-			    Tcl_Interp *interp, const char *oldName,
-			    const char *newName, int flags);
+static void		ObjectDeleteCmd(ClientData clientData);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicObjectCmd(ClientData clientData,
@@ -636,7 +634,6 @@ AllocObject(
     Foundation *fPtr = GetFoundation(interp);
     Object *oPtr;
     Command *cmdPtr;
-    CommandTrace *tracePtr;
     int creationEpoch;
 
     oPtr = ckalloc(sizeof(Object));
@@ -725,7 +722,7 @@ AllocObject(
 
     /*
      * An object starts life with a refCount of 2 to mark the two stages of
-     * destruction it occur:  A call to ObjectRenamedTrace(), and a call to
+     * destruction it occur:  A call to ObjectDeleteCmd(), and a call to
      * ObjectNamespaceDeleted().
      */
     oPtr->refCount = 2;
@@ -747,7 +744,7 @@ AllocObject(
 
     }
     oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
-	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, NULL);
+	(Tcl_Namespace *)nsPtr, PublicObjectCmd, oPtr, ObjectDeleteCmd);
 
     /*
      * Add the NRE command and trace directly. While this breaks a number of
@@ -756,12 +753,6 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
-    tracePtr->traceProc = ObjectRenamedTrace;
-    tracePtr->clientData = oPtr;
-    tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
-    tracePtr->nextPtr = NULL;
-    tracePtr->refCount = 1;
 
     oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
 	PrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
@@ -815,7 +806,7 @@ MyDeleted(
 /*
  * ----------------------------------------------------------------------
  *
- * ObjectRenamedTrace --
+ * ObjectDeleteCmd --
  *
  *	This callback is triggered when the object is deleted by any
  *	mechanism. It runs the destructors and arranges for the actual cleanup
@@ -826,23 +817,11 @@ MyDeleted(
  */
 
 static void
-ObjectRenamedTrace(
-    void *clientData,		/* The object being deleted. */
-    Tcl_Interp *interp,		/* The interpreter containing the object. */
-    const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* What it's getting renamed to. (unused) */
-    int flags)			/* Why was the object deleted? */
+ObjectDeleteCmd(
+    ClientData clientData)	/* Reference to the object whose [my] has been
+				 * squelched. */
 {
     Object *oPtr = clientData;
-    /*
-     * If this is a rename and not a delete of the object, we just flush the
-     * cache of the object name.
-     */
-
-    if (flags & TCL_TRACE_RENAME) {
-	SquelchCachedName(oPtr);
-	return;
-    }
 
     /*
      * The namespace is only deleted if it hasn't already been deleted. [Bug
@@ -1168,22 +1147,19 @@ ObjectNamespaceDeleted(
      * freed memory.
      */
 
-    if (((Command *) oPtr->command)->flags && CMD_IS_DELETED) {
+    if (oPtr->command) {
 	/*
-	 * Something has already started the command deletion process. We can
-	 * go ahead and clean up the namespace,
+	 * If nothing has already started the command deletion process.
 	 */
-    } else {
-	/*
-	 * The namespace must have been deleted directly.  Delete the command
-	 * as well.
-	 */
-
-	Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	if (!(((Command *) oPtr->command)->flags && CMD_IS_DELETED)) {
+	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	    oPtr->command = NULL;
+	}
     }
 
     if (oPtr->myCommand) {
 	Tcl_DeleteCommandFromToken(interp, oPtr->myCommand);
+	oPtr->myCommand = NULL;
     }
 
     /*
@@ -1861,6 +1837,7 @@ FinalizeAlloc(
 	if (!Destructing(oPtr)) {
 	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	    oPtr->command = NULL;
 	}
 
 	/*
@@ -2943,10 +2920,19 @@ TclOOObjectName(
     Tcl_Obj *namePtr;
 
     if (oPtr->cachedNameObj) {
-	return oPtr->cachedNameObj;
+	/* check epoch of command (if changed by rename - retrieve new ) */
+	Command *cmdPtr = (Command *)Tcl_GetCommandFromObj(interp,
+					oPtr->cachedNameObj);
+	if (cmdPtr && cmdPtr == (Command *)oPtr->command) {
+	    return oPtr->cachedNameObj;
+	}
+	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	oPtr->cachedNameObj = NULL;
     }
     TclNewObj(namePtr);
-    Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
+    if (oPtr->command) {
+	Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
+    }
     Tcl_IncrRefCount(namePtr);
     oPtr->cachedNameObj = namePtr;
     return namePtr;
