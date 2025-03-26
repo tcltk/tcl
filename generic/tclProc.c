@@ -829,7 +829,7 @@ TclObjGetFrame(
 		name = "1";
 		goto badLevel;
 	    }
-	    level = curLevel - 1;
+	    level = (int)curLevel - 1;
 	}
 	if (level >= 0) {
 	    CallFrame *framePtr;

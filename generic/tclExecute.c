@@ -2031,7 +2031,7 @@ TEBCresume(
      * executing an instruction.
      */
 
-    int cleanup = PTR2INT(data[2]);
+    Tcl_Size cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
     int checkInterp = 0;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
@@ -2658,7 +2658,7 @@ TEBCresume(
 	starting = 1;
 #endif
 	TRACE(("=> drop %" TCL_SIZE_MODIFIER "d items\n", objc));
-	NEXT_INST_V(1, objc, 0);
+	NEXT_INST_V(1, (int)objc, 0);
 
     case INST_EXPAND_STKTOP: {
 	Tcl_Size i;
@@ -4294,10 +4294,10 @@ TEBCresume(
 	TRACE(("%d \"%.20s\" => ", opnd, O2S(OBJ_AT_TOS)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
 	if (hPtr != NULL) {
-	    int jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
+	    Tcl_Size jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    TRACE_APPEND(("found in table, new pc %" TCL_Z_MODIFIER "u\n",
-		    (size_t)(pc - codePtr->codeStart + jumpOffset)));
+		    (pc - codePtr->codeStart + jumpOffset)));
 	    NEXT_INST_F(jumpOffset, 1, 0);
 	} else {
 	    TRACE_APPEND(("not found in table\n"));
@@ -4334,12 +4334,12 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
     case INST_INFO_LEVEL_ARGS: {
-	int level;
+	Tcl_WideInt level;
 	CallFrame *framePtr = iPtr->varFramePtr;
 	CallFrame *rootFramePtr = iPtr->rootFramePtr;
 
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
-	if (TclGetIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -5017,7 +5017,7 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
-	toIdx = TclIndexDecode(toIdx, objc - 1);
+	toIdx = TclIndexDecode((int)toIdx, objc - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
 	} else if (toIdx >= objc) {
@@ -5034,7 +5034,7 @@ TEBCresume(
 	    fromIdx = TCL_INDEX_START;
 	}
 
-	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	fromIdx = TclIndexDecode((int)fromIdx, objc - 1);
 
 	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
@@ -5440,8 +5440,8 @@ TEBCresume(
 
 	/* Decode index operands. */
 
-	toIdx = TclIndexDecode(toIdx, slength - 1);
-	fromIdx = TclIndexDecode(fromIdx, slength - 1);
+	toIdx = TclIndexDecode((int)toIdx, slength - 1);
+	fromIdx = TclIndexDecode((int)fromIdx, slength - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    TclNewObj(objResultPtr);
 	} else {
@@ -9343,7 +9343,7 @@ GetSrcInfoForPc(
 	    break;
 	}
 	if (pcOffset <= codeEnd) {	/* This cmd's code encloses pc */
-	    int dist = (pcOffset - codeOffset);
+	    Tcl_Size dist = (pcOffset - codeOffset);
 
 	    if (dist <= bestDist) {
 		bestDist = dist;
