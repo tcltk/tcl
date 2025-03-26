@@ -656,7 +656,7 @@ InfoObjectMethodsCmd(
     TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
-	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
+	Tcl_Size i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
 		&names);
 
 	for (i=0 ; i<numNames ; i++) {

@@ -1883,7 +1883,7 @@ Tcl_AppendFormatToObj(
 	int newXpg, allocSegment = 0;
 	Tcl_Size numChars, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
-	int step = TclUtfToUniChar(format, &ch);
+	Tcl_Size step = TclUtfToUniChar(format, &ch);
 
 	format += step;
 	if (ch != '%') {
@@ -2027,7 +2027,7 @@ Tcl_AppendFormatToObj(
 	 * Step 4. Precision.
 	 */
 
-	gotPrecision = precision = 0;
+	gotPrecision = (int)(precision = 0);
 	if (ch == '.') {
 	    gotPrecision = 1;
 	    format += step;
@@ -2148,8 +2148,9 @@ Tcl_AppendFormatToObj(
 	    }
 	    break;
 	case 'c': {
+	    Tcl_Size length;
+	    int code;
 	    char buf[4] = "";
-	    int code, length;
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
@@ -2484,7 +2485,7 @@ Tcl_AppendFormatToObj(
 #define MAX_FLOAT_SIZE 320
 	    char spec[2*TCL_INTEGER_SPACE + 9], *p = spec;
 	    double d;
-	    int length = MAX_FLOAT_SIZE;
+	    Tcl_WideInt length = MAX_FLOAT_SIZE;
 	    char *bytes;
 
 	    if (Tcl_GetDoubleFromObj(interp, segment, &d) != TCL_OK) {
@@ -3803,9 +3804,10 @@ TclStringCmp(
 	    match = memCmpFn(s1, s2, length);
 	}
 	if ((match == 0) && (reqlength > length)) {
-	    match = s1len - s2len;
+	    match = (s1len > s2len) ? 1 : (s1len < s2len) ? -1 : 0;
+	} else {
+	    match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
 	}
-	match = (match > 0) ? 1 : (match < 0) ? -1 : 0;
     }
   matchdone:
     return match;
@@ -4133,7 +4135,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUniChar(from, &chw);
+		Tcl_Size bytesInChar = TclUtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
@@ -4446,7 +4448,7 @@ DupStringInternalRep(
     }
 
     if (srcStringPtr->hasUnicode) {
-	int copyMaxChars;
+	Tcl_Size copyMaxChars;
 
 	if (srcStringPtr->maxChars / 2 >= srcStringPtr->numChars) {
 	    copyMaxChars = 2 * srcStringPtr->numChars;

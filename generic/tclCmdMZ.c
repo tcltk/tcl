@@ -4357,7 +4357,7 @@ Tcl_TimeRateObjCmd(
      * Time to stop execution (in wide clicks).
      */
 
-    stop = start + (maxms * 1000 / TclpWideClickInMicrosec());
+    stop = start + (Tcl_WideInt)((double)maxms * 1000.0 / TclpWideClickInMicrosec());
 #else
     Tcl_GetTime(&now);
     start = now.sec;
@@ -4515,7 +4515,7 @@ Tcl_TimeRateObjCmd(
 		/* estimated time for next iteration is too large */
 		break;
 	    }
-	    threshold /= estIterTm;
+	    threshold = (Tcl_WideUInt)((double)threshold / estIterTm);
 	    /*
 	     * Don't use threshold by few iterations, because sometimes
 	     * first iteration(s) can be too fast or slow (cached, delayed
@@ -4560,7 +4560,7 @@ Tcl_TimeRateObjCmd(
 	 * convert execution time (in wide clicks) to microsecs.
 	 */
 
-	usec *= TclpWideClickInMicrosec();
+	usec = (Tcl_WideUInt)((double)usec * TclpWideClickInMicrosec());
 #endif /* TCL_WIDE_CLICKS */
 
 	if (!count) {		/* no iterations - avoid divide by zero */
@@ -4583,7 +4583,7 @@ Tcl_TimeRateObjCmd(
 		 * Estimate the time of overhead (microsecs).
 		 */
 
-		Tcl_WideUInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = (Tcl_WideUInt)(overhead * (double)count);
 
 		if (usec > curOverhead) {
 		    usec -= curOverhead;
