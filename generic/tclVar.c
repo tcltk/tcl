@@ -201,7 +201,7 @@ static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 static int		ObjMakeUpvar(Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *otherP1Ptr,
 			    const char *otherP2, int otherFlags,
-			    Tcl_Obj *myNamePtr, int myFlags, int index);
+			    Tcl_Obj *myNamePtr, int myFlags, Tcl_Size index);
 static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 			    Tcl_Obj *varNamePtr, Tcl_Obj *handleObj);
 static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
@@ -4488,7 +4488,7 @@ ObjMakeUpvar(
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index)			/* If the variable to be linked is an indexed
+    Tcl_Size index)			/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
@@ -4575,7 +4575,7 @@ TclPtrMakeUpvar(
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index)			/* If the variable to be linked is an indexed
+    Tcl_Size index)			/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Tcl_Obj *myNamePtr = NULL;

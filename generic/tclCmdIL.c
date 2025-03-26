@@ -76,7 +76,7 @@ typedef struct {
     Tcl_Size indexc;		/* Number of indexes in indexv array. */
     int singleIndex;		/* Static space for common index case. */
     int unique;
-    int numElements;
+    Tcl_Size numElements;
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
 				 * done. */
     int resultCode;		/* Completion code for the lsort command. If
@@ -251,7 +251,8 @@ IfConditionCallback(
     Tcl_Obj *const *objv = (Tcl_Obj *const *)data[1];
     Tcl_Size i = PTR2INT(data[2]);
     Tcl_Obj *boolObj = (Tcl_Obj *)data[3];
-    int value, thenScriptIndex = 0;
+    int value;
+    Tcl_Size thenScriptIndex = 0;
     const char *clause;
 
     if (result != TCL_OK) {
@@ -1430,8 +1431,8 @@ TclInfoFrame(
 
 	for (idx=top ; idx!=NULL ; idx=idx->callerVarPtr) {
 	    if (idx == current) {
-		int c = framePtr->framePtr->level;
-		int t = iPtr->varFramePtr->level;
+		Tcl_Size c = framePtr->framePtr->level;
+		Tcl_Size t = iPtr->varFramePtr->level;
 
 		ADD_PAIR("level", Tcl_NewWideIntObj(t - c));
 		break;
@@ -1603,7 +1604,7 @@ InfoLevelCmd(
 	    if (iPtr->varFramePtr == rootFramePtr) {
 		goto levelError;
 	    }
-	    level += iPtr->varFramePtr->level;
+	    level += (int)iPtr->varFramePtr->level;
 	}
 	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
 		framePtr=framePtr->callerVarPtr) {
@@ -4514,10 +4515,10 @@ Tcl_LsortObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int indices, nocase = 0, indexc;
+    int indices, nocase = 0;
     int sortMode = SORTMODE_ASCII;
     int group, allocatedIndexVector = 0;
-    Tcl_Size j, idx, groupOffset, length;
+    Tcl_Size j, idx, groupOffset, length, indexc;
     Tcl_WideInt wide, groupSize;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     Tcl_Size i, elmArrSize;
@@ -5502,7 +5503,7 @@ SelectObjFromSublist(
 
     for (i=0 ; i<infoPtr->indexc ; i++) {
 	Tcl_Size listLen;
-	int index;
+	Tcl_Size index;
 	Tcl_Obj *currentObj, *lastObj=NULL;
 
 	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
@@ -5521,11 +5522,11 @@ SelectObjFromSublist(
 	    if (index == TCL_INDEX_NONE) {
 		index = TCL_INDEX_END - infoPtr->indexv[i];
 		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-			"element end-%d missing from sublist \"%s\"",
+			"element end-%" TCL_SIZE_MODIFIER "d missing from sublist \"%s\"",
 			index, TclGetString(objPtr)));
 	    } else {
 		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
-			"element %d missing from sublist \"%s\"",
+			"element %" TCL_SIZE_MODIFIER "d missing from sublist \"%s\"",
 			index, TclGetString(objPtr)));
 	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",

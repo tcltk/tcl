@@ -765,7 +765,8 @@ TclObjGetFrame(
 				 * global frame indicated). */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel, level, result;
+    Tcl_Size curLevel;
+    int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
@@ -786,14 +787,14 @@ TclObjGetFrame(
 	/* Do nothing */
     } else if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &level)) {
 	TclGetWideIntFromObj(NULL, objPtr, &w);
-	if (w < 0 || w > INT_MAX || curLevel > w + INT_MAX) {
+	if (w < 0 || w > INT_MAX || curLevel > INT_MAX) {
 	    result = -1;
 	} else {
-	    level = curLevel - level;
+	    level = (int)curLevel - level;
 	    result = 1;
 	}
     } else if ((irPtr = TclFetchInternalRep(objPtr, &levelReferenceType))) {
-	level = irPtr->wideValue;
+	level = (int)irPtr->wideValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -1149,7 +1150,7 @@ InitResolvedLocals(
     Interp *iPtr = (Interp *) interp;
     int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
     CompiledLocal *firstLocalPtr, *localPtr;
-    int varNum;
+    Tcl_Size varNum;
     Tcl_ResolvedVarInfo *resVarInfo;
 
     /*
@@ -1997,7 +1998,7 @@ TclProcCompileProc(
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
-	    int i, numArgs = procPtr->numArgs;
+	    Tcl_Size i, numArgs = procPtr->numArgs;
 
 	    for (i = 0; i < numArgs; i++) {
 		lastPtr = clPtr;

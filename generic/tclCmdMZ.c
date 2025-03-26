@@ -131,8 +131,8 @@ Tcl_RegexpObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Size i, about, all, offset, stringLength, matchLength, cflags, eflags;
-    int indices, match, doinline, numMatchesSaved;
+    Tcl_Size i, about, all, offset, stringLength, matchLength, numMatchesSaved;
+    int indices, match, doinline, cflags, eflags;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -1055,7 +1055,7 @@ Tcl_ReturnObjCmd(
      */
 
     int explicitResult = (0 == (objc % 2));
-    int numOptionWords = objc - 1 - explicitResult;
+    Tcl_Size numOptionWords = objc - 1 - explicitResult;
 
     if (TCL_ERROR == TclMergeReturnOptions(interp, numOptionWords, objv+1,
 	    &returnOpts, &code, &level)) {
@@ -1178,7 +1178,7 @@ Tcl_SplitObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int ch = 0;
-    int len;
+    Tcl_Size len;
     const char *splitChars;
     const char *stringPtr;
     const char *end;
@@ -3186,7 +3186,7 @@ StringTrimLCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *string2;
-    int trim;
+    Tcl_Size trim;
     Tcl_Size length1, length2;
 
     if (objc == 3) {
@@ -3233,7 +3233,7 @@ StringTrimRCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *string2;
-    int trim;
+    Tcl_Size trim;
     Tcl_Size length1, length2;
 
     if (objc == 3) {
@@ -3429,7 +3429,7 @@ TclNRSwitchObjCmd(
     Tcl_RegExp regExpr = NULL;
     Interp *iPtr = (Interp *) interp;
     int pc = 0;
-    int bidx = 0;		/* Index of body argument. */
+    Tcl_Size bidx = 0;		/* Index of body argument. */
     Tcl_Obj *blist = NULL;	/* List obj which is the body */
     CmdFrame *ctxPtr;		/* Copy of the topmost cmdframe, to allow us
 				 * to mess with the line information */
@@ -3837,7 +3837,7 @@ TclNRSwitchObjCmd(
 	}
 
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
-	    int bline = ctxPtr->line[bidx];
+	    Tcl_Size bline = ctxPtr->line[bidx];
 
 	    ctxPtr->line = (Tcl_Size *)Tcl_Alloc(objc * sizeof(Tcl_Size));
 	    ctxPtr->nline = objc;
@@ -3892,9 +3892,9 @@ SwitchPostProc(
 {
     /* Unpack the preserved data */
 
-    int splitObjs = PTR2INT(data[0]);
+    int splitObjs = PTR2INT(data[0]) != 0;
     CmdFrame *ctxPtr = (CmdFrame *)data[1];
-    int pc = PTR2INT(data[2]);
+    Tcl_Size pc = PTR2INT(data[2]);
     const char *pattern = (const char *)data[3];
     Tcl_Size patternLength = strlen(pattern);
 
@@ -4916,8 +4916,8 @@ TryPostBody(
     int result)
 {
     Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, *cmdObj, **objv;
-    int code, objc;
-    Tcl_Size i, numHandlers = 0;
+    int code;
+    Tcl_Size i, numHandlers = 0, objc;
 
     handlersObj = (Tcl_Obj *)data[0];
     finallyObj = (Tcl_Obj *)data[1];
@@ -5131,7 +5131,7 @@ TryPostHandler(
 {
     Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
-    int finallyIndex;
+    Tcl_Size finallyIndex;
 
     objv = (Tcl_Obj **)data[0];
     options = (Tcl_Obj *)data[1];

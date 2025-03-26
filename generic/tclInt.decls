@@ -508,7 +508,7 @@ declare 227 {
 }
 declare 229 {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
-	    const char *myName, int myFlags, int index)
+	    const char *myName, int myFlags, Tcl_Size index)
 }
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
