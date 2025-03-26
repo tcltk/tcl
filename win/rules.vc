@@ -1589,7 +1589,7 @@ ldebug= $(ldebug) -profile
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
-lflags	= $(lflags) -nodefaultlib:libucrt.lib
+lflags	= $(lflags) -nodefaultlib:ucrt.lib
 !endif
 
 dlllflags = $(lflags) -dll
