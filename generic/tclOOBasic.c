@@ -111,7 +111,7 @@ TclOO_Class_Constructor(
      * If there's nothing else to do, we're done.
      */
 
-    if ((size_t) objc == skip) {
+    if (objc == skip) {
 	return TCL_OK;
     }
 
