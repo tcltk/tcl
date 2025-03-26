@@ -2401,7 +2401,7 @@ TclCheckArrayTraces(
     Var *varPtr,
     Var *arrayPtr,
     Tcl_Obj *name,
-    int index)
+    Tcl_Size index)
 {
     int code = TCL_OK;
 
@@ -2454,7 +2454,7 @@ TclObjCallVarTraces(
     int leaveErrMsg,		/* If true, and one of the traces indicates an
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {

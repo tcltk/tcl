@@ -1297,8 +1297,8 @@ DdeObjCmd(
     };
 
     int index, argIndex;
-    Tcl_Size length, i;
-    int flags = 0, result = TCL_OK, firstArg = 0;
+    Tcl_Size length, i, firstArg = 0;
+    int flags = 0, result = TCL_OK;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
     HCONV hConv = NULL;
