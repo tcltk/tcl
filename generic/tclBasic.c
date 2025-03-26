@@ -3032,7 +3032,7 @@ InvokeStringCommand(
      * Invoke the command's string-based Tcl_CmdProc.
      */
 
-    result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
+    result = cmdPtr->proc(cmdPtr->clientData, interp, (int)objc, argv);
 
     TclStackFree(interp, (void *) argv);
     return result;
@@ -4451,7 +4451,7 @@ EvalObjvCore(
     TCL_UNUSED(int) /*result*/)
 {
     Command *cmdPtr = NULL, *preCmdPtr = (Command *)data[0];
-    int flags = PTR2INT(data[1]);
+    int flags = (int)PTR2INT(data[1]);
     Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
@@ -6295,7 +6295,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = PTR2INT(data[2]);
+    int allowExceptions = (int)PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -8537,7 +8537,7 @@ cmdWrapperNreProc(
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *) clientData;
 
-    return info->nreProc(info->clientData, interp, objc, objv);
+    return info->nreProc(info->clientData, interp, (int)objc, objv);
 }
 
 Tcl_Command

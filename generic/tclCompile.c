@@ -2428,7 +2428,7 @@ TclCompileTokens(
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
     Tcl_Size i, numObjsToConcat, adjust;
-    int length;
+    Tcl_Size length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral;

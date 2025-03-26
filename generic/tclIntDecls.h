@@ -480,7 +480,8 @@ EXTERN void		TclSetNsPath(Namespace *nsPtr, Tcl_Size pathLength,
 /* Slot 228 is reserved */
 /* 229 */
 EXTERN int		TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
-				const char *myName, int myFlags, int index);
+				const char *myName, int myFlags,
+				Tcl_Size index);
 /* 230 */
 EXTERN Var *		TclObjLookupVar(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, const char *part2,
@@ -814,7 +815,7 @@ typedef struct TclIntStubs {
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
     void (*tclSetNsPath) (Namespace *nsPtr, Tcl_Size pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
-    int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
+    int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, Tcl_Size index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, int createPart1, int createPart2, Var **arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
     int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, Tcl_Size word); /* 232 */

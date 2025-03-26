@@ -1212,7 +1212,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 /*
  * Simplified form to access AuxData.
  *
- * void *TclFetchAuxData(CompileEng *envPtr, int index);
+ * void *TclFetchAuxData(CompileEng *envPtr, Tcl_Size index);
  */
 
 #define TclFetchAuxData(envPtr, index) \

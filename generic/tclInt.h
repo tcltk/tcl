@@ -3466,7 +3466,7 @@ MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
-MODULE_SCOPE int	TclParseBackslash(const char *src,
+MODULE_SCOPE Tcl_Size TclParseBackslash(const char *src,
 			    Tcl_Size numBytes, Tcl_Size *readPtr, char *dst);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
@@ -3597,7 +3597,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    Tcl_Size numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    Tcl_Size count, int *tokensLeftPtr, Tcl_Size line,
+			    Tcl_Size count, Tcl_Size *tokensLeftPtr, Tcl_Size line,
 			    Tcl_Size *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Size	TclTrim(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim,
@@ -4497,7 +4497,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
     do {								\
 	Tcl_Obj *bignumObj = (objPtr);					\
 	int bignumPayload =						\
-		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
+		(int)PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
 	} else {							\

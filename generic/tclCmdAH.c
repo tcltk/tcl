@@ -2749,9 +2749,9 @@ EachloopCmd(
     Tcl_Size objc,			/* The arguments being passed in... */
     Tcl_Obj *const objv[])
 {
-    int numLists = (objc-2) / 2;
+    Tcl_Size i, numLists = (objc-2) / 2;
     struct ForeachState *statePtr;
-    int i, result;
+    int result;
     Tcl_Size j;
 
     if (objc < 4 || (objc%2 != 0)) {
