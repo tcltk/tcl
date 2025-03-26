@@ -833,7 +833,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    EXESUFFIX="\${DBGX}.exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[[4-9]]*)
-		    lflags="${lflags} -nodefaultlib:libucrt.lib"
+		    lflags="${lflags} -nodefaultlib:ucrt.lib"
 		    ;;
 		*)
 		    ;;
