@@ -671,9 +671,10 @@ TclpCreateTempFile(
      */
 
     if (contents != NULL) {
-	DWORD result, length;
+	DWORD result;
+	Tcl_Size length;
 	const char *p;
-	int toCopy;
+	Tcl_Size toCopy;
 
 	/*
 	 * Convert the contents from UTF to native encoding
@@ -689,7 +690,7 @@ TclpCreateTempFile(
 	    if (*p == '\n') {
 		length = p - native;
 		if (length > 0) {
-		    if (!WriteFile(handle, native, length, &result, NULL)) {
+		    if (!WriteFile(handle, native, (DWORD)length, &result, NULL)) {
 			goto error;
 		    }
 		}
@@ -701,7 +702,7 @@ TclpCreateTempFile(
 	}
 	length = p - native;
 	if (length > 0) {
-	    if (!WriteFile(handle, native, length, &result, NULL)) {
+	    if (!WriteFile(handle, native, (DWORD)length, &result, NULL)) {
 		goto error;
 	    }
 	}
@@ -1262,7 +1263,8 @@ ApplicationType(
     char fullName[])		/* Filled with complete path to
 				 * application. */
 {
-    int applType, i, nameLen, found;
+    int applType, i, found;
+    Tcl_Size nameLen;
     HANDLE hFile;
     WCHAR *rest;
     char *ext;
@@ -2735,7 +2737,7 @@ TclWinAddProcess(
     PipeInit();
 
     procPtr->hProcess = hProcess;
-    procPtr->dwProcessId = id;
+    procPtr->dwProcessId = (int)id;
     Tcl_MutexLock(&pipeMutex);
     procPtr->nextPtr = procList;
     procList = procPtr;
