@@ -1055,7 +1055,7 @@ CleanupByteCode(
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
-	int lifetimeSec, lifetimeMicroSec, log2;
+	long long lifetimeSec, lifetimeMicroSec;
 
 	statsPtr = &iPtr->stats;
 
@@ -1074,17 +1074,9 @@ CleanupByteCode(
 
 	Tcl_GetTime(&destroyTime);
 	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
-	if (lifetimeSec > 2000) {	/* avoid overflow */
-	    lifetimeSec = 2000;
-	}
 	lifetimeMicroSec = 1000000 * lifetimeSec +
 		(destroyTime.usec - codePtr->createTime.usec);
-
-	log2 = TclLog2(lifetimeMicroSec);
-	if (log2 > 31) {
-	    log2 = 31;
-	}
-	statsPtr->lifetimeCount[log2]++;
+	statsPtr->lifetimeCount[TclLog2(lifetimeMicroSec)]++;
     }
 #endif /* TCL_COMPILE_STATS */
 
@@ -1911,7 +1903,7 @@ CompileExpanded(
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		TclEmitInstInt4(INST_EXPAND_STKTOP,
-			(int)envPtr->currStackDepth, envPtr);
+			envPtr->currStackDepth, envPtr);
 	    }
 	    continue;
 	}
@@ -2399,18 +2391,18 @@ TclCompileVarSubst(
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_STK, envPtr);
 	} else if (localVar <= 255) {
-	    TclEmitInstInt1(INST_LOAD_SCALAR1, (int)localVar, envPtr);
+	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, (int)localVar, envPtr);
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, localVar, envPtr);
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
 	} else if (localVar <= 255) {
-	    TclEmitInstInt1(INST_LOAD_ARRAY1, (int)localVar, envPtr);
+	    TclEmitInstInt1(INST_LOAD_ARRAY1, localVar, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_ARRAY4, (int)localVar, envPtr);
+	    TclEmitInstInt4(INST_LOAD_ARRAY4, localVar, envPtr);
 	}
     }
 }
@@ -2589,7 +2581,7 @@ TclCompileTokens(
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_STR_CONCAT1, (int)numObjsToConcat, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, numObjsToConcat, envPtr);
     }
 
     /*
@@ -3494,9 +3486,9 @@ TclGetInnermostExceptionRange(
     while (i > 0) {
 	rangePtr--; i--;
 
-	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
+	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
-			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
+			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
 
@@ -3599,7 +3591,7 @@ TclCleanupStackForBreakContinue(
 	while (toPop --> 0) {
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	}
-	TclAdjustStackDepth((int)(auxPtr->expandTargetDepth - envPtr->currStackDepth),
+	TclAdjustStackDepth((auxPtr->expandTargetDepth - envPtr->currStackDepth),
 		envPtr);
 	envPtr->currStackDepth = auxPtr->expandTargetDepth;
     }
@@ -4229,10 +4221,10 @@ TclEmitInvoke(
 
     switch (opcode) {
     case INST_INVOKE_STK1:
-	TclEmitInstInt1(INST_INVOKE_STK1, (int)arg1, envPtr);
+	TclEmitInstInt1(INST_INVOKE_STK1, arg1, envPtr);
 	break;
     case INST_INVOKE_STK4:
-	TclEmitInstInt4(INST_INVOKE_STK4, (int)arg1, envPtr);
+	TclEmitInstInt4(INST_INVOKE_STK4, arg1, envPtr);
 	break;
     case INST_INVOKE_EXPANDED:
 	TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
@@ -4246,7 +4238,7 @@ TclEmitInvoke(
 	TclEmitOpcode(INST_RETURN_STK, envPtr);
 	break;
     case INST_INVOKE_REPLACE:
-	TclEmitInstInt4(INST_INVOKE_REPLACE, (int)arg1, envPtr);
+	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
 	TclEmitInt1(arg2, envPtr);
 	TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
 	break;
@@ -4572,8 +4564,8 @@ RecordByteCodeStats(
     statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
-    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes += (double)

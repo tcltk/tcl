@@ -171,11 +171,11 @@ TclCompileSetCmd(
 	    } else if (localIndex <= 255) {
 		TclEmitInstInt1((isAssignment?
 			INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
-			(int)localIndex, envPtr);
+			localIndex, envPtr);
 	    } else {
 		TclEmitInstInt4((isAssignment?
 			INST_STORE_SCALAR4 : INST_LOAD_SCALAR4),
-			(int)localIndex, envPtr);
+			localIndex, envPtr);
 	    }
 	} else {
 	    if (localIndex < 0) {
@@ -184,11 +184,11 @@ TclCompileSetCmd(
 	    } else if (localIndex <= 255) {
 		TclEmitInstInt1((isAssignment?
 			INST_STORE_ARRAY1 : INST_LOAD_ARRAY1),
-			(int)localIndex, envPtr);
+			localIndex, envPtr);
 	    } else {
 		TclEmitInstInt4((isAssignment?
 			INST_STORE_ARRAY4 : INST_LOAD_ARRAY4),
-			(int)localIndex, envPtr);
+			localIndex, envPtr);
 	    }
 	}
 
@@ -263,7 +263,7 @@ TclCompileStringCatCmd(
 	    CompileWord(envPtr, wordTokenPtr, interp, i);
 	    numArgs ++;
 	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
-		TclEmitInstInt1(INST_STR_CONCAT1, (int)numArgs, envPtr);
+		TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
 		numArgs = 1;	/* concat pushes 1 obj, the result */
 	    }
 	}
@@ -279,7 +279,7 @@ TclCompileStringCatCmd(
 	numArgs ++;
     }
     if (numArgs > 1) {
-	TclEmitInstInt1(INST_STR_CONCAT1, (int)numArgs, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
     }
 
     return TCL_OK;
@@ -755,7 +755,7 @@ TclCompileStringIsCmd(
 	return TCL_OK;
     case STR_IS_DICT:
 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	OP4(		BEGIN_CATCH4, (int)range);
+	OP4(		BEGIN_CATCH4, range);
 	ExceptionRangeStarts(envPtr, range);
 	OP(		DUP);
 	OP(		DICT_VERIFY);
@@ -768,7 +768,7 @@ TclCompileStringIsCmd(
 	return TCL_OK;
     case STR_IS_LIST:
 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	OP4(		BEGIN_CATCH4, (int)range);
+	OP4(		BEGIN_CATCH4, range);
 	ExceptionRangeStarts(envPtr, range);
 	OP(		DUP);
 	OP(		LIST_LENGTH);
@@ -1178,7 +1178,7 @@ TclCompileStringReplaceCmd(
 	if (last == INT_MAX) {
 	    OP(		POP);		/* Pop  original */
 	} else {
-	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	}
 	return TCL_OK;
@@ -1210,7 +1210,7 @@ TclCompileStringReplaceCmd(
 		PUSH	(	"");
 		return TCL_OK;
 	    }
-	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
 	    return TCL_OK;
 	} else {
 	    if (last == (int)TCL_INDEX_END) {
@@ -1221,7 +1221,7 @@ TclCompileStringReplaceCmd(
 	    OP(		DUP);
 	    OP44(	STR_RANGE_IMM, 0, first-1);
 	    OP4(	REVERSE, 2);
-	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
+	    OP44(	STR_RANGE_IMM, last + 1, TCL_INDEX_END);
 	    OP1(	STR_CONCAT1, 2);
 	    return TCL_OK;
 	}
@@ -1605,7 +1605,7 @@ TclSubstCompile(
 	    count -= 254;
 	}
 	if (count > 1) {
-	    OP1(		STR_CONCAT1, (int)count);
+	    OP1(		STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -1626,7 +1626,7 @@ TclSubstCompile(
 
 	envPtr->line = bline;
 	catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	OP4(	BEGIN_CATCH4, (int)catchRange);
+	OP4(	BEGIN_CATCH4, catchRange);
 	ExceptionRangeStarts(envPtr, catchRange);
 
 	switch (tokenPtr->type) {
@@ -1686,9 +1686,9 @@ TclSubstCompile(
 
 	breakJump = CurrentOffset(envPtr) - breakOffset;
 	if (breakJump > 127) {
-	    OP4(JUMP4, (int)-breakJump);
+	    OP4(JUMP4, -breakJump);
 	} else {
-	    OP1(JUMP1, (int)-breakJump);
+	    OP1(JUMP1, -breakJump);
 	}
 
 	TclAdjustStackDepth(2, envPtr);
@@ -1725,7 +1725,7 @@ TclSubstCompile(
 		    CurrentOffset(envPtr) - okFixup.codeOffset);
 	}
 	if (count > 1) {
-	    OP1(STR_CONCAT1, (int)count);
+	    OP1(STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -1742,7 +1742,7 @@ TclSubstCompile(
 	count -= 254;
     }
     if (count > 1) {
-	OP1(	STR_CONCAT1, (int)count);
+	OP1(	STR_CONCAT1, count);
     }
 
     Tcl_FreeParse(&parse);
@@ -2404,7 +2404,7 @@ IssueSwitchJumpTable(
      */
 
     jumpLocation = CurrentOffset(envPtr);
-    OP4(	JUMP_TABLE, (int)infoIndex);
+    OP4(	JUMP_TABLE, infoIndex);
     jumpToDefault = CurrentOffset(envPtr);
     OP4(	JUMP4, 0);
 
@@ -2679,7 +2679,7 @@ TclCompileTailcallCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt1(	INST_TAILCALL, (int)parsePtr->numWords,	envPtr);
+    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords,	envPtr);
     return TCL_OK;
 }
 
@@ -3086,7 +3086,7 @@ IssueTryClausesInstructions(
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(				BEGIN_CATCH4, (int)range);
+    OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
@@ -3105,9 +3105,9 @@ IssueTryClausesInstructions(
     OP(					PUSH_RESULT);
     OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
-    STORE(				(int)optionsVar);
+    STORE(				optionsVar);
     OP(					POP);
-    STORE(				(int)resultVar);
+    STORE(				resultVar);
     OP(					POP);
 
     /*
@@ -3136,7 +3136,7 @@ IssueTryClausesInstructions(
 	     * Match the errorcode according to try/trap rules.
 	     */
 
-	    LOAD(			(int)optionsVar);
+	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
@@ -3157,12 +3157,12 @@ IssueTryClausesInstructions(
 	 */
 
 	if (resultVars[i] >= 0) {
-	    LOAD(			(int)resultVar);
-	    STORE(			(int)resultVars[i]);
+	    LOAD(			resultVar);
+	    STORE(			resultVars[i]);
 	    OP(				POP);
 	    if (optionVars[i] >= 0) {
-		LOAD(			(int)optionsVar);
-		STORE(			(int)optionVars[i]);
+		LOAD(			optionsVar);
+		STORE(			optionVars[i]);
 		OP(			POP);
 	    }
 	}
@@ -3185,7 +3185,7 @@ IssueTryClausesInstructions(
 		}
 	    }
 	    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	    OP4(			BEGIN_CATCH4, (int)range);
+	    OP4(			BEGIN_CATCH4, range);
 	    ExceptionRangeStarts(envPtr, range);
 	    BODY(			handlerTokens[i], 5+i*4);
 	    ExceptionRangeEnds(envPtr, range);
@@ -3200,9 +3200,9 @@ IssueTryClausesInstructions(
 	    PUSH(			"1");
 	    OP(				EQ);
 	    JUMP1(			JUMP_FALSE, dontChangeOptions);
-	    LOAD(			(int)optionsVar);
+	    LOAD(			optionsVar);
 	    OP4(			REVERSE, 2);
-	    STORE(			(int)optionsVar);
+	    STORE(			optionsVar);
 	    OP(				POP);
 	    PUSH(			"-during");
 	    OP4(			REVERSE, 2);
@@ -3227,8 +3227,8 @@ IssueTryClausesInstructions(
      */
 
     OP(					POP);
-    LOAD(				(int)optionsVar);
-    LOAD(				(int)resultVar);
+    LOAD(				optionsVar);
+    LOAD(				resultVar);
     INVOKE(				RETURN_STK);
 
     /*
@@ -3297,16 +3297,16 @@ IssueTryClausesFinallyInstructions(
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(				BEGIN_CATCH4, (int)range);
+    OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     if (!trapZero) {
 	OP(				END_CATCH);
-	STORE(				(int)resultVar);
+	STORE(				resultVar);
 	OP(				POP);
 	PUSH(				"-level 0 -code 0");
-	STORE(				(int)optionsVar);
+	STORE(				optionsVar);
 	OP(				POP);
 	JUMP4(				JUMP, afterBody);
     } else {
@@ -3320,9 +3320,9 @@ IssueTryClausesFinallyInstructions(
     OP(					PUSH_RESULT);
     OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
-    STORE(				(int)optionsVar);
+    STORE(				optionsVar);
     OP(					POP);
-    STORE(				(int)resultVar);
+    STORE(				resultVar);
     OP(					POP);
 
     /*
@@ -3350,7 +3350,7 @@ IssueTryClausesFinallyInstructions(
 	     * Match the errorcode according to try/trap rules.
 	     */
 
-	    LOAD(			(int)optionsVar);
+	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
@@ -3373,16 +3373,16 @@ IssueTryClausesFinallyInstructions(
 
 	if (resultVars[i] >= 0 || handlerTokens[i]) {
 	    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	    OP4(			BEGIN_CATCH4, (int)range);
+	    OP4(			BEGIN_CATCH4, range);
 	    ExceptionRangeStarts(envPtr, range);
 	}
 	if (resultVars[i] >= 0) {
-	    LOAD(			(int)resultVar);
-	    STORE(			(int)resultVars[i]);
+	    LOAD(			resultVar);
+	    STORE(			resultVars[i]);
 	    OP(				POP);
 	    if (optionVars[i] >= 0) {
-		LOAD(			(int)optionsVar);
-		STORE(			(int)optionVars[i]);
+		LOAD(			optionsVar);
+		STORE(			optionVars[i]);
 		OP(			POP);
 	    }
 
@@ -3426,7 +3426,7 @@ IssueTryClausesFinallyInstructions(
 		FIXJUMP4(	forwardsToFix[j]);
 		forwardsToFix[j] = -1;
 	    }
-	    OP4(			BEGIN_CATCH4, (int)range);
+	    OP4(			BEGIN_CATCH4, range);
 	}
 	BODY(				handlerTokens[i], 5+i*4);
 	ExceptionRangeEnds(envPtr, range);
@@ -3450,21 +3450,21 @@ IssueTryClausesFinallyInstructions(
 	OP(				PUSH_RETURN_CODE);
 	OP(				PUSH_RESULT);
 	OP(				END_CATCH);
-	STORE(				(int)resultVar);
+	STORE(				resultVar);
 	OP(				POP);
 	PUSH(				"1");
 	OP(				EQ);
 	JUMP1(				JUMP_FALSE, noTrapError);
-	LOAD(				(int)optionsVar);
+	LOAD(				optionsVar);
 	PUSH(				"-during");
 	OP4(				REVERSE, 3);
-	STORE(				(int)optionsVar);
+	STORE(				optionsVar);
 	OP(				POP);
 	OP44(				DICT_SET, 1, optionsVar);
 	TclAdjustStackDepth(-1, envPtr);
 	JUMP1(				JUMP, trapError);
 	FIXJUMP1(		noTrapError);
-	STORE(				(int)optionsVar);
+	STORE(				optionsVar);
 	FIXJUMP1(		trapError);
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
@@ -3507,7 +3507,7 @@ IssueTryClausesFinallyInstructions(
 	FIXJUMP4(		afterBody);
     }
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(				BEGIN_CATCH4, (int)range);
+    OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				finallyToken, 3 + 4*numHandlers);
     ExceptionRangeEnds(envPtr, range);
@@ -3522,10 +3522,10 @@ IssueTryClausesFinallyInstructions(
     PUSH(				"1");
     OP(					EQ);
     JUMP1(				JUMP_FALSE, noFinalError);
-    LOAD(				(int)optionsVar);
+    LOAD(				optionsVar);
     PUSH(				"-during");
     OP4(				REVERSE, 3);
-    STORE(				(int)optionsVar);
+    STORE(				optionsVar);
     OP(					POP);
     OP44(				DICT_SET, 1, optionsVar);
     TclAdjustStackDepth(-1, envPtr);
@@ -3533,14 +3533,14 @@ IssueTryClausesFinallyInstructions(
     JUMP1(				JUMP, finalError);
     TclAdjustStackDepth(1, envPtr);
     FIXJUMP1(			noFinalError);
-    STORE(				(int)optionsVar);
+    STORE(				optionsVar);
     OP(					POP);
     FIXJUMP1(			finalError);
-    STORE(				(int)resultVar);
+    STORE(				resultVar);
     OP(					POP);
     FIXJUMP1(			finalOK);
-    LOAD(				(int)optionsVar);
-    LOAD(				(int)resultVar);
+    LOAD(				optionsVar);
+    LOAD(				resultVar);
     INVOKE(				RETURN_STK);
 
     return TCL_OK;
@@ -3563,7 +3563,7 @@ IssueTryFinallyInstructions(
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(				BEGIN_CATCH4, (int)range);
+    OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
@@ -3575,7 +3575,7 @@ IssueTryFinallyInstructions(
     OP(					END_CATCH);
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(				BEGIN_CATCH4, (int)range);
+    OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				finallyToken, 3);
     ExceptionRangeEnds(envPtr, range);
@@ -3891,16 +3891,16 @@ TclCompileWhileCmd(
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP_TRUE4, (int)-jumpDist, envPtr);
+	    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
 	} else {
-	    TclEmitInstInt1(INST_JUMP_TRUE1, (int)-jumpDist, envPtr);
+	    TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
 	}
     } else {
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP4, (int)-jumpDist, envPtr);
+	    TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
 	} else {
-	    TclEmitInstInt1(INST_JUMP1, (int)-jumpDist, envPtr);
+	    TclEmitInstInt1(INST_JUMP1, -jumpDist, envPtr);
 	}
     }
 
@@ -4003,7 +4003,7 @@ TclCompileYieldToCmd(
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    OP4(	LIST, (int)i);
+    OP4(	LIST, i);
     OP(		YIELD_TO_INVOKE);
     return TCL_OK;
 }
@@ -4094,7 +4094,7 @@ CompileAssociativeBinaryOpCmd(
 	 * calculations, including roundoff errors.
 	 */
 
-	OP4(	REVERSE, (int)words-1);
+	OP4(	REVERSE, words-1);
     }
     while (--words > 1) {
 	TclEmitOpcode(instruction, envPtr);
@@ -4186,14 +4186,14 @@ CompileComparisonOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, 1);
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 2);
-	STORE((int)tmpIndex);
+	STORE(tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
 	for (words=3 ; words<parsePtr->numWords ;) {
-	    LOAD((int)tmpIndex);
+	    LOAD(tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);
 	    CompileWord(envPtr, tokenPtr, interp, words);
 	    if (++words < parsePtr->numWords) {
-		STORE((int)tmpIndex);
+		STORE(tmpIndex);
 	    }
 	    TclEmitOpcode(instruction, envPtr);
 	}
@@ -4545,7 +4545,7 @@ TclCompileMinusOpCmd(
      * calculations, including roundoff errors.
      */
 
-    TclEmitInstInt4(INST_REVERSE, (int)words-1, envPtr);
+    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
     while (--words > 1) {
 	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_SUB, envPtr);
@@ -4589,7 +4589,7 @@ TclCompileDivOpCmd(
      * calculations, including roundoff errors.
      */
 
-    TclEmitInstInt4(INST_REVERSE, (int)words-1, envPtr);
+    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
     while (--words > 1) {
 	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_DIV, envPtr);
