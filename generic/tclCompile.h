@@ -1154,7 +1154,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 			    Tcl_Size range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
-MODULE_SCOPE int	TclLog2(int value);
+MODULE_SCOPE int	TclLog2(long long value);
 #endif
 MODULE_SCOPE Tcl_Size	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
@@ -1309,7 +1309,7 @@ TclUpdateStackReqs(
 	    TclExpandCodeArray(envPtr);					\
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateAtCmdStart((unsigned char)op, envPtr);				\
 	TclUpdateStackReqs(op, 0, envPtr);				\
     } while (0)
 
@@ -1362,7 +1362,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 #define TclEmitInstInt4(op, i, envPtr) \
@@ -1380,7 +1380,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ =						\
 		(unsigned char) ((unsigned int) (i)      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 /*

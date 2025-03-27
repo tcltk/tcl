@@ -378,8 +378,8 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
     while (traceInstructions) {						\
-	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_T_MODIFIER	\
-		"d (%" TCL_T_MODIFIER "d) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_SIZE_MODIFIER	\
+		"d (%" TCL_SIZE_MODIFIER "d) %s ", iPtr->numLevels,	\
 		CURR_DEPTH,						\
 		(pc - codePtr->codeStart),				\
 		GetOpcodeName(pc));					\
@@ -395,8 +395,8 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {						\
-	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_T_MODIFIER	\
-		"d (%" TCL_T_MODIFIER "d) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_SIZE_MODIFIER	\
+		"d (%" TCL_SIZE_MODIFIER "d) %s ", iPtr->numLevels,	\
 		CURR_DEPTH,						\
 		(pc - codePtr->codeStart),				\
 		GetOpcodeName(pc));					\
@@ -423,23 +423,23 @@ VarHashCreateVar(
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED()) {				\
 	    if (curInstName) {						\
-		TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH,	\
+		TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH,	\
 			tosPtr);					\
 	    }								\
 	    curInstName = tclInstructionTable[*pc].name;		\
 	    if (TCL_DTRACE_INST_START_ENABLED()) {			\
-		TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH,	\
+		TCL_DTRACE_INST_START(curInstName, CURR_DEPTH,	\
 			tosPtr);					\
 	    }								\
 	} else if (TCL_DTRACE_INST_START_ENABLED()) {			\
 	    TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,	\
-			(int) CURR_DEPTH, tosPtr);			\
+			CURR_DEPTH, tosPtr);			\
 	}								\
     } while (0)
 #define TCL_DTRACE_INST_LAST() \
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {		\
-	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
+	    TCL_DTRACE_INST_DONE(curInstName, CURR_DEPTH, tosPtr);\
 	}								\
     } while (0)
 
@@ -2061,7 +2061,7 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
     if (!pc && (tclTraceExec >= 2)) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%" TCL_T_MODIFIER "d\n", CURR_DEPTH);
+	fprintf(stdout, "  Starting stack top=%" TCL_SIZE_MODIFIER "d\n", CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -2265,7 +2265,7 @@ TEBCresume(
 
     CHECK_STACK();
     if (traceInstructions) {
-	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_T_MODIFIER "d ", iPtr->numLevels, CURR_DEPTH);
+	fprintf(stdout, "%2" TCL_SIZE_MODIFIER "d: %2" TCL_SIZE_MODIFIER "d ", iPtr->numLevels, CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
     }
@@ -2639,7 +2639,7 @@ TEBCresume(
 	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(CURR_DEPTH);
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
-	TRACE(("=> mark depth as %" TCL_T_MODIFIER "d\n", CURR_DEPTH));
+	TRACE(("=> mark depth as %" TCL_SIZE_MODIFIER "d\n", CURR_DEPTH));
 	NEXT_INST_F(1, 0, 0);
     break;
 
@@ -2658,7 +2658,7 @@ TEBCresume(
 	starting = 1;
 #endif
 	TRACE(("=> drop %" TCL_SIZE_MODIFIER "d items\n", objc));
-	NEXT_INST_V(1, (int)objc, 0);
+	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
 	Tcl_Size i;
@@ -2839,10 +2839,10 @@ TEBCresume(
 
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
-		TRACE(("%" TCL_Z_MODIFIER "u => call (implementation %s) ", objc, O2S(objPtr)));
+		TRACE(("%" TCL_SIZE_MODIFIER "u => call (implementation %s) ", objc, O2S(objPtr)));
 	    } else {
 		fprintf(stdout,
-			"%" TCL_Z_MODIFIER "d: (%" TCL_T_MODIFIER "u) invoking (using implementation %s) ",
+			"%" TCL_SIZE_MODIFIER "d: (%" TCL_T_MODIFIER "u) invoking (using implementation %s) ",
 			iPtr->numLevels, (pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
@@ -4220,7 +4220,7 @@ TEBCresume(
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
-		(size_t)(pc + opnd - codePtr->codeStart)));
+		(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
 
     {
@@ -4262,8 +4262,8 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
-		TRACE_APPEND(("%.20s true, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[1] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s true, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
+			(pc + jmpOffset[1] - codePtr->codeStart)));
 	    } else {
 		TRACE_APPEND(("%.20s true\n", O2S(valuePtr)));
 	    }
@@ -4271,8 +4271,8 @@ TEBCresume(
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE_APPEND(("%.20s false\n", O2S(valuePtr)));
 	    } else {
-		TRACE_APPEND(("%.20s false, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[0] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s false, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
+			(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -4491,7 +4491,7 @@ TEBCresume(
 			} else {
 			    fprintf(stdout, "%" TCL_SIZE_MODIFIER "d: (%" TCL_T_MODIFIER "d) invoking ",
 				    iPtr->numLevels,
-				    (size_t)(pc - codePtr->codeStart));
+				    (pc - codePtr->codeStart));
 			}
 			for (i = 0;  i < opnd;  i++) {
 			    TclPrintObject(stdout, objv[i], 15);
@@ -6694,7 +6694,7 @@ TEBCresume(
 	 */
 
 	*(++catchTop) = (Tcl_Obj *)INT2PTR(CURR_DEPTH);
-	TRACE(("%u => catchTop=%" TCL_T_MODIFIER "d, stackTop=%" TCL_T_MODIFIER "d\n",
+	TRACE(("%u => catchTop=%" TCL_T_MODIFIER "d, stackTop=%" TCL_SIZE_MODIFIER "d\n",
 		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
 		CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
@@ -7729,7 +7729,7 @@ TEBCresume(
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
 		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_T_MODIFIER "d: "
-		    "stack top %" TCL_T_MODIFIER "d < entry stack top %d\n",
+		    "stack top %" TCL_SIZE_MODIFIER "d < entry stack top %d\n",
 		    (pc - codePtr->codeStart),
 		    CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
@@ -9562,14 +9562,32 @@ TclExprFloatError(
 
 int
 TclLog2(
-    int value)			/* The integer for which to compute the log
-				 * base 2. */
+    long long value)			/* The integer for which to compute the log
+				 * base 2. The maximum output is 31*/
 {
-    int n = value;
     int result = 0;
 
-    while (n > 1) {
-	n = n >> 1;
+    if (value > 0x7FFFFF) {
+	return 31;
+    }
+    if (value > 0xFFFF) {
+	value >>= 16;
+	result += 16;
+    }
+    if (value > 0xFF) {
+	value >>= 8;
+	result += 8;
+    }
+    if (value > 0xF) {
+	value >>= 4;
+	result += 4;
+    }
+    if (value > 0x3) {
+	value >>= 2;
+	result += 2;
+    }
+    if (value > 0x1) {
+	value >>= 1;
 	result++;
     }
     return result;
