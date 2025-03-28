@@ -2268,7 +2268,7 @@ ExecConstantExprTree(
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
-    TclEmitOpcode(INST_DONE, envPtr);
+    TclEmitOpcode(		INST_DONE,			envPtr);
     byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
@@ -2393,7 +2393,7 @@ CompileExprTree(
 	    case START:
 	    case QUESTION:
 		if (convert && (nodePtr == rootPtr)) {
-		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
+		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC,	envPtr);
 		}
 		break;
 	    case OPEN_PAREN:
@@ -2406,7 +2406,7 @@ CompileExprTree(
 		 * command with the correct number of arguments.
 		 */
 
-		TclEmitInvoke(envPtr, INST_INVOKE_STK4, numWords);
+		TclEmitInvoke(envPtr, INST_INVOKE_STK, numWords);
 
 		/*
 		 * Restore any saved numWords value.
@@ -2428,7 +2428,7 @@ CompileExprTree(
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 2;
+		target = jumpPtr->jump.codeOffset + 5;
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;

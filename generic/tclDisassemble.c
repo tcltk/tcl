@@ -647,6 +647,46 @@ FormatInstruction(
 	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
 		    tclStringClassTable[opnd].name);
 	    break;
+	case OPERAND_UNSF1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    Tcl_AppendPrintfToObj(bufferObj, "silent=%s ", opnd?"no":"yes");
+	    break;
+	case OPERAND_CLK1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    switch (opnd) {
+	    case 0:
+		Tcl_AppendPrintfToObj(bufferObj, "clicks " );
+		break;
+	    case 1:
+		Tcl_AppendPrintfToObj(bufferObj, "micros " );
+		break;
+	    case 2:
+		Tcl_AppendPrintfToObj(bufferObj, "millis " );
+		break;
+	    case 3:
+		Tcl_AppendPrintfToObj(bufferObj, "secs " );
+		break;
+	    default:
+		Tcl_Panic("unknown clock type");
+	    }
+	    break;
+	case OPERAND_LRPL1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    switch (opnd) {
+	    case 0:
+		Tcl_AppendPrintfToObj(bufferObj, "0 ");
+		break;
+	    case TCL_LREPLACE4_END_IS_LAST:
+		Tcl_AppendPrintfToObj(bufferObj, "endLast ");
+		break;
+	    case TCL_LREPLACE4_SINGLE_INDEX:
+		Tcl_AppendPrintfToObj(bufferObj, "singleIdx ");
+		break;
+	    default:
+		Tcl_AppendPrintfToObj(bufferObj, "endLast,singleIdx ");
+		break;
+	    }
+	    break;
 	case OPERAND_NONE:
 	default:
 	    break;
@@ -746,7 +786,7 @@ TclGetInnerContext(
 	objc = 2;
 	break;
 
-    case INST_INVOKE_STK4:
+    case INST_INVOKE_STK:
 	objc = TclGetUInt4AtPtr(pc+1);
 	break;
 
@@ -1026,6 +1066,9 @@ DisassembleByteCodeAsDicts(
 		val = TclGetInt1AtPtr(opnd);
 		opnd += 1;
 		goto formatNumber;
+	    case OPERAND_UNSF1: // TODO: decode
+	    case OPERAND_CLK1: // TODO: decode
+	    case OPERAND_LRPL1: // TODO: decode
 	    case OPERAND_UINT1:
 		val = TclGetUInt1AtPtr(opnd);
 		opnd += 1;
