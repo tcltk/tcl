@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     Tcl_Size numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *breakTargets;/* The offsets of the INST_JUMP4 instructions
+    size_t *breakTargets;	/* The offsets of the INST_JUMP instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,8 +145,7 @@ typedef struct ExceptionAux {
     Tcl_Size numContinueTargets;/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *continueTargets;
-				/* The offsets of the INST_JUMP4 instructions
+    size_t *continueTargets;	/* The offsets of the INST_JUMP instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -560,28 +559,28 @@ enum TclInstruction {
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
     DEPRECATED_OPCODE(INST_PUSH1),
-    INST_PUSH4,
+    INST_PUSH,
     INST_POP,
     INST_DUP,
     INST_STR_CONCAT1,
     DEPRECATED_OPCODE(INST_INVOKE_STK1),
-    INST_INVOKE_STK4,
+    INST_INVOKE_STK,
     INST_EVAL_STK,
     INST_EXPR_STK,
 
     /* Opcodes 10 to 23 */
     DEPRECATED_OPCODE(INST_LOAD_SCALAR1),
-    INST_LOAD_SCALAR4,
+    INST_LOAD_SCALAR,
     INST_LOAD_SCALAR_STK,
     DEPRECATED_OPCODE(INST_LOAD_ARRAY1),
-    INST_LOAD_ARRAY4,
+    INST_LOAD_ARRAY,
     INST_LOAD_ARRAY_STK,
     INST_LOAD_STK,
     DEPRECATED_OPCODE(INST_STORE_SCALAR1),
-    INST_STORE_SCALAR4,
+    INST_STORE_SCALAR,
     INST_STORE_SCALAR_STK,
     DEPRECATED_OPCODE(INST_STORE_ARRAY1),
-    INST_STORE_ARRAY4,
+    INST_STORE_ARRAY,
     INST_STORE_ARRAY_STK,
     INST_STORE_STK,
 
@@ -599,11 +598,11 @@ enum TclInstruction {
 
     /* Opcodes 34 to 39 */
     DEPRECATED_OPCODE(INST_JUMP1),
-    INST_JUMP4,
+    INST_JUMP,
     DEPRECATED_OPCODE(INST_JUMP_TRUE1),
-    INST_JUMP_TRUE4,
+    INST_JUMP_TRUE,
     DEPRECATED_OPCODE(INST_JUMP_FALSE1),
-    INST_JUMP_FALSE4,
+    INST_JUMP_FALSE,
 
     /* Opcodes 42 to 64 */
     INST_BITOR,
@@ -633,7 +632,7 @@ enum TclInstruction {
     INST_CONTINUE,
 
     /* Opcodes 69 to 72 */
-    INST_BEGIN_CATCH4,
+    INST_BEGIN_CATCH,
     INST_END_CATCH,
     INST_PUSH_RESULT,
     INST_PUSH_RETURN_CODE,
@@ -653,17 +652,17 @@ enum TclInstruction {
 
     /* Opcodes 82 to 87 */
     DEPRECATED_OPCODE(INST_APPEND_SCALAR1),
-    INST_APPEND_SCALAR4,
+    INST_APPEND_SCALAR,
     DEPRECATED_OPCODE(INST_APPEND_ARRAY1),
-    INST_APPEND_ARRAY4,
+    INST_APPEND_ARRAY,
     INST_APPEND_ARRAY_STK,
     INST_APPEND_STK,
 
     /* Opcodes 88 to 93 */
     DEPRECATED_OPCODE(INST_LAPPEND_SCALAR1),
-    INST_LAPPEND_SCALAR4,
+    INST_LAPPEND_SCALAR,
     DEPRECATED_OPCODE(INST_LAPPEND_ARRAY1),
-    INST_LAPPEND_ARRAY4,
+    INST_LAPPEND_ARRAY,
     INST_LAPPEND_ARRAY_STK,
     INST_LAPPEND_STK,
 
@@ -771,7 +770,7 @@ enum TclInstruction {
     /* For operations to do with coroutines and other NRE-manipulators */
     INST_YIELD,
     INST_COROUTINE_NAME,
-    INST_TAILCALL,
+    DEPRECATED_OPCODE(INST_TAILCALL1),
 
     /* For compilation of basic information operations */
     INST_NS_CURRENT,
@@ -817,8 +816,8 @@ enum TclInstruction {
 
     INST_ORIGIN_COMMAND,
 
-    INST_TCLOO_NEXT,
-    INST_TCLOO_NEXT_CLASS,
+    DEPRECATED_OPCODE(INST_TCLOO_NEXT1),
+    DEPRECATED_OPCODE(INST_TCLOO_NEXT_CLASS1),
 
     INST_YIELD_TO_INVOKE,
 
@@ -841,18 +840,21 @@ enum TclInstruction {
     INST_STR_LE,
     INST_STR_GE,
 
-    INST_LREPLACE4,
+    INST_LREPLACE,
 
     /* TIP 667: const */
     INST_CONST_IMM,
     INST_CONST_STK,
 
-    /* Updated [subst] and [incr] compilation */
-    INST_RETURN_CODE_BRANCH4,
-    INST_INCR_SCALAR4,
-    INST_INCR_ARRAY4,
-    INST_INCR_SCALAR4_IMM,
-    INST_INCR_ARRAY4_IMM,
+    /* Updated compilations with fewer arg size constraints */
+    INST_RETURN_CODE_BRANCH,
+    INST_INCR_SCALAR,
+    INST_INCR_ARRAY,
+    INST_INCR_SCALAR_IMM,
+    INST_INCR_ARRAY_IMM,
+    INST_TAILCALL,
+    INST_TCLOO_NEXT,
+    INST_TCLOO_NEXT_CLASS,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -889,7 +891,10 @@ typedef enum InstOperandType {
 				 * literals. */
     OPERAND_LIT4,		/* Four byte unsigned index into table of
 				 * literals. */
-    OPERAND_SCLS1		/* Index into tclStringClassTable. */
+    OPERAND_SCLS1,		/* Index into tclStringClassTable. */
+    OPERAND_UNSF1,		/* Flags for [unset] */
+    OPERAND_CLK1,		/* Index into [clock] types. */
+    OPERAND_LRPL1		/* Combination of TCL_LREPLACE4_* flags. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -1343,25 +1348,23 @@ TclUpdateStackReqs(
 
 #define TclEmitInt1(i, envPtr) \
     do {								\
+	unsigned tcl_i = (unsigned) (i);				\
 	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
 	    TclExpandCodeArray(envPtr);					\
 	}								\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
+	*(envPtr)->codeNext++ = (unsigned char) tcl_i;			\
     } while (0)
 
 #define TclEmitInt4(i, envPtr) \
     do {								\
+	unsigned tcl_i = (unsigned) (i);				\
 	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\
 	    TclExpandCodeArray(envPtr);					\
 	}								\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 24);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 16);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >>  8);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i)      );		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i      );		\
     } while (0)
 
 /*
@@ -1376,31 +1379,80 @@ TclUpdateStackReqs(
 
 #define TclEmitInstInt1(op, i, envPtr) \
     do {								\
+	unsigned tcl_i = (unsigned) (i);				\
 	if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) {		\
 	    TclExpandCodeArray(envPtr);					\
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
+	*(envPtr)->codeNext++ = (unsigned char) tcl_i;			\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, tcl_i, envPtr);				\
     } while (0)
 
 #define TclEmitInstInt4(op, i, envPtr) \
     do {								\
+	unsigned tcl_i = (unsigned) (i);				\
 	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {		\
 	    TclExpandCodeArray(envPtr);					\
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 24);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 16);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >>  8);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i)      );		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, tcl_i, envPtr);				\
+    } while (0)
+
+#define TclEmitInstInt14(op, i, j, envPtr) \
+    do {								\
+	unsigned tcl_i = (unsigned) (i), tcl_j = (unsigned) (j);	\
+	if (((envPtr)->codeNext + 6) > (envPtr)->codeEnd) {		\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) (op);			\
+	*(envPtr)->codeNext++ = (unsigned char) tcl_i;			\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j      );		\
+	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateStackReqs(op, tcl_i, envPtr);				\
+    } while (0)
+
+#define TclEmitInstInt41(op, i, j, envPtr) \
+    do {								\
+	unsigned tcl_i = (unsigned) (i), tcl_j = (unsigned) (j);	\
+	if (((envPtr)->codeNext + 6) > (envPtr)->codeEnd) {		\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) (op);			\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i      );		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j      );		\
+	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateStackReqs(op, tcl_i, envPtr);				\
+    } while (0)
+
+#define TclEmitInstInt44(op, i, j, envPtr) \
+    do {								\
+	unsigned tcl_i = (unsigned) (i), tcl_j = (unsigned) (j);	\
+	if (((envPtr)->codeNext + 9) > (envPtr)->codeEnd) {		\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) (op);			\
+	*(envPtr)->codeNext++ =	(unsigned char) (tcl_i >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_i      );		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >> 24);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >> 16);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j >>  8);		\
+	*(envPtr)->codeNext++ = (unsigned char) (tcl_j      );		\
+	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateStackReqs(op, tcl_i, envPtr);				\
     } while (0)
 
 /*
@@ -1415,11 +1467,7 @@ TclUpdateStackReqs(
 #define TclEmitPush(objIndex, envPtr) \
     do {								\
 	int _objIndexCopy = (objIndex);					\
-	if (_objIndexCopy <= 255) {					\
-	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr));	\
-	} else {							\
-	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr));	\
-	}								\
+	TclEmitInstInt4(INST_PUSH, _objIndexCopy, (envPtr));		\
     } while (0)
 
 /*
@@ -1679,9 +1727,12 @@ TclUpdateStackReqs(
 
 /*
  * Flags bits used by TclPushVarName.
+ *
+ * TCL_NO_LARGE_INDEX is deprecated entirely; variable indices are always large
+ * in bytecodes we now issue.
  */
 
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+// #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 #define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*

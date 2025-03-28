@@ -85,13 +85,13 @@ LocateTargetAddresses(
 	case INST_JUMP_FALSE1:
 	    targetInstPtr = currentInstPtr+TclGetInt1AtPtr(currentInstPtr+1);
 	    goto storeTarget;
-	case INST_JUMP4:
-	case INST_JUMP_TRUE4:
-	case INST_JUMP_FALSE4:
+	case INST_JUMP:
+	case INST_JUMP_TRUE:
+	case INST_JUMP_FALSE:
 	case INST_START_CMD:
 	    targetInstPtr = currentInstPtr+TclGetInt4AtPtr(currentInstPtr+1);
 	    goto storeTarget;
-	case INST_BEGIN_CATCH4:
+	case INST_BEGIN_CATCH:
 	    targetInstPtr = envPtr->codeStart + envPtr->exceptArrayPtr[
 		    TclGetUInt4AtPtr(currentInstPtr+1)].codeOffset;
 	storeTarget:
@@ -112,7 +112,7 @@ LocateTargetAddresses(
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
-	case INST_RETURN_CODE_BRANCH4:
+	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 5*i - 4);
 	    }
@@ -246,7 +246,7 @@ ConvertZeroEffectToNOP(
 		}
 	    }
 	    break;
-	case INST_PUSH4:
+	case INST_PUSH:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
 	    } else if (nextInst == INST_STR_CONCAT1
@@ -272,13 +272,13 @@ ConvertZeroEffectToNOP(
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_TRUE1;
 		break;
-	    case INST_JUMP_TRUE4:
+	    case INST_JUMP_TRUE:
 		blank = size;
-		currentInstPtr[size] = INST_JUMP_FALSE4;
+		currentInstPtr[size] = INST_JUMP_FALSE;
 		break;
-	    case INST_JUMP_FALSE4:
+	    case INST_JUMP_FALSE:
 		blank = size;
-		currentInstPtr[size] = INST_JUMP_TRUE4;
+		currentInstPtr[size] = INST_JUMP_TRUE;
 		break;
 	    }
 	    break;
@@ -286,13 +286,13 @@ ConvertZeroEffectToNOP(
 	case INST_TRY_CVT_TO_NUMERIC:
 	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_TRUE4:
+	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE1:
-	    case INST_JUMP_FALSE4:
+	    case INST_JUMP_FALSE:
 	    case INST_INCR_SCALAR1:
-	    case INST_INCR_SCALAR4:
+	    case INST_INCR_SCALAR:
 	    case INST_INCR_ARRAY1:
-	    case INST_INCR_ARRAY4:
+	    case INST_INCR_ARRAY:
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
 	    case INST_INCR_STK:
@@ -381,7 +381,7 @@ AdvanceJumps(
 		case INST_JUMP1:
 		    delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
 		    continue;
-		case INST_JUMP4:
+		case INST_JUMP:
 		    delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;
 		}
@@ -391,9 +391,9 @@ AdvanceJumps(
 	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
 	    continue;
 
-	case INST_JUMP4:
-	case INST_JUMP_TRUE4:
-	case INST_JUMP_FALSE4:
+	case INST_JUMP:
+	case INST_JUMP_TRUE:
+	case INST_JUMP_FALSE:
 	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
 	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), &isNew);
 	    for (offset = TclGetInt4AtPtr(currentInstPtr + 1); offset!=0 ;) {
@@ -409,7 +409,7 @@ AdvanceJumps(
 		case INST_JUMP1:
 		    offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
 		    continue;
-		case INST_JUMP4:
+		case INST_JUMP:
 		    offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;
 		}

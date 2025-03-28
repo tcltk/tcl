@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include <assert.h>
 
@@ -383,16 +384,16 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Other non-OK: +9
 	 */
 
-    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},
+    {"unsetScalar",	 6,    0,         2,	{OPERAND_UNSF1, OPERAND_LVT4}},
 	/* Make scalar variable at index op2 in call frame cease to exist;
 	 * op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetArray",	 6,    -1,        2,	{OPERAND_UINT1, OPERAND_LVT4}},
+    {"unsetArray",	 6,    -1,        2,	{OPERAND_UNSF1, OPERAND_LVT4}},
 	/* Make array element cease to exist; array at slot op2, element is
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UINT1}},
+    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UNSF1}},
 	/* Make array element cease to exist; element is stktop, array name is
 	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
-    {"unsetStk",	 2,    -1,        1,	{OPERAND_UINT1}},
+    {"unsetStk",	 2,    -1,        1,	{OPERAND_UNSF1}},
 	/* Make general variable cease to exist; unparsed variable name is
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
@@ -507,7 +508,7 @@ InstructionDesc const tclInstructionTable[] = {
 
     {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
 	/* Invoke command named objv[0], replacing the first two words with
-	 * the word at the top of the stack;
+	 * the op1 words at the top of the stack;
 	 * <objc,objv> = <op4,top op4 after popping 1> */
 
     {"listConcat",	 1,	-1,	  0,	{OPERAND_NONE}},
@@ -636,7 +637,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Lappend list to general variable.
 	 * Stack:  ... varName list => ... listVarContents */
 
-    {"clockRead",	 2,	+1,	1,	{OPERAND_UINT1}},
+    {"clockRead",	 2,	+1,	1,	{OPERAND_CLK1}},
 	/* Read clock out to the stack. Operand is which clock to read
 	 * 0=clicks, 1=microseconds, 2=milliseconds, 3=seconds.
 	 * Stack: ... => ... time */
@@ -657,7 +658,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* String Less or equal:	push (stknext <= stktop) */
     {"strge",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* String Greater or equal:	push (stknext >= stktop) */
-    {"lreplace",	  6,   INT_MIN,    2,	{OPERAND_UINT4, OPERAND_UINT1}},
+    {"lreplace",	  6,   INT_MIN,    2,	{OPERAND_UINT4, OPERAND_LRPL1}},
 	/* Operands: number of arguments, flags
 	 * flags: Combination of TCL_LREPLACE4_* flags
 	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj
@@ -672,7 +673,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create constant. Variable name and value on stack.
 	 * Stack: ... varName value => ... */
 
-    {"returnCodeBranch", 1,   -1,	  0,	{OPERAND_NONE}},
+    {"returnCodeBranch",  1,   -1,	   0,	{OPERAND_NONE}},
 	/* Jump to next instruction based on the return code on top of stack
 	 * ERROR: +1;	RETURN: +6;	BREAK: +11;	CONTINUE: +16;
 	 * Other non-OK: +21
@@ -686,6 +687,23 @@ InstructionDesc const tclInstructionTable[] = {
     {"incrArrayImm",	  6,   0,          2,	{OPERAND_LVT4, OPERAND_INT1}},
 	/* Incr array elem; array at slot op1, elem is stktop,
 	 * amount is 2nd operand byte */
+    {"tailcall",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},
+	/* Do a tailcall with the opnd items on the stack as the thing to
+	 * tailcall to; opnd must be greater than 0 for the semantics to work
+	 * right. */
+    {"tclooNext",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},
+	/* Call the next item on the TclOO call chain, passing opnd arguments
+	 * (min 1, *includes* "next").  The result of the invoked
+	 * method implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
+    {"tclooNextClass",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing opnd arguments (min 2, *includes*
+	 * "nextto" and the class name). The result of the invoked method
+	 * implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
      {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -848,7 +866,7 @@ TclSetByteCodeFromAny(
      * Compilation succeeded. Add a "done" instruction at the end.
      */
 
-    TclEmitOpcode(INST_DONE, &compEnv);
+    TclEmitOpcode(		INST_DONE,			&compEnv);
 
     /*
      * Check for optimizations!
@@ -871,7 +889,7 @@ TclSetByteCodeFromAny(
 	compEnv.atCmdStart = 2;		/* The disabling magic. */
 	TclCompileScript(interp, stringPtr, length, &compEnv);
 	assert (compEnv.atCmdStart > 1);
-	TclEmitOpcode(INST_DONE, &compEnv);
+	TclEmitOpcode(		INST_DONE,			&compEnv);
 	assert (compEnv.atCmdStart > 1);
     }
 
@@ -896,7 +914,7 @@ TclSetByteCodeFromAny(
      * After optimization is all done, check that byte code length limits
      * are not exceeded. Bug [27b3ce2997].
      */
-    if ((compEnv.codeNext - compEnv.codeStart) > INT_MAX) {
+    if (CurrentOffset(&compEnv) > INT_MAX) {
 	/*
 	 * Cannot just return TCL_ERROR as callers ignore return value.
 	 * TODO - May be use TclCompileSyntaxError here?
@@ -1223,7 +1241,7 @@ IsCompactibleCompileEnv(
 	switch (*pc) {
 	    /* Invokes */
 	case INST_INVOKE_STK1:
-	case INST_INVOKE_STK4:
+	case INST_INVOKE_STK:
 	case INST_INVOKE_EXPANDED:
 	case INST_INVOKE_REPLACE:
 	    return 0;
@@ -1366,7 +1384,7 @@ CompileSubstObj(
 
 	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
 
-	TclEmitOpcode(INST_DONE, &compEnv);
+	TclEmitOpcode(		INST_DONE,			&compEnv);
 	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
@@ -1890,7 +1908,7 @@ TclCompileInvocation(
 	TclEmitPush(objIdx, envPtr);
     }
 
-    TclEmitInvoke(envPtr, INST_INVOKE_STK4, wordIdx);
+    TclEmitInvoke(envPtr, INST_INVOKE_STK, wordIdx);
     TclCheckStackDepth(depth+1, envPtr);
 }
 
@@ -1921,8 +1939,8 @@ CompileExpanded(
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		TclEmitInstInt4(INST_EXPAND_STKTOP,
-			envPtr->currStackDepth, envPtr);
+		TclEmitInstInt4(INST_EXPAND_STKTOP, envPtr->currStackDepth,
+			envPtr);
 	    }
 	    continue;
 	}
@@ -1982,13 +2000,12 @@ CompileCmdCompileProc(
     switch (envPtr->atCmdStart) {
     case 0:
 	unwind = tclInstructionTable[INST_START_CMD].numBytes;
-	TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-	incrOffset = envPtr->codeNext - envPtr->codeStart;
-	TclEmitInt4(0, envPtr);
+	incrOffset = CurrentOffset(envPtr) + 5;
+	TclEmitInstInt44(	INST_START_CMD, 0, 0,		envPtr);
 	break;
     case 1:
 	if (envPtr->codeNext > envPtr->codeStart) {
-	    incrOffset = envPtr->codeNext - 4 - envPtr->codeStart;
+	    incrOffset = CurrentOffset(envPtr) - 4;
 	}
 	break;
     case 2:
@@ -2054,7 +2071,7 @@ CompileCommandTokens(
     Tcl_Size cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size cmdIdx = envPtr->numCommands;
-    Tcl_Size startCodeOffset = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size startCodeOffset = CurrentOffset(envPtr);
     int depth = TclGetStackDepth(envPtr);
 
     assert ((int)parsePtr->numWords > 0);
@@ -2131,10 +2148,10 @@ CompileCommandTokens(
 
     Tcl_DecrRefCount(cmdObj);
 
-    TclEmitOpcode(INST_POP, envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
     EnterCmdExtentData(envPtr, cmdIdx,
 	    parsePtr->term - parsePtr->commandStart,
-	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
+	    CurrentOffset(envPtr) - startCodeOffset);
 
     /*
      * TIP #280: Free the full form of per-word line data and insert the
@@ -2408,16 +2425,16 @@ TclCompileVarSubst(
 
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
-	    TclEmitOpcode(INST_LOAD_STK, envPtr);
+	    TclEmitOpcode(	INST_LOAD_STK,			envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, localVar, envPtr);
+	    TclEmitInstInt4(	INST_LOAD_SCALAR, localVar,	envPtr);
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
 	if (localVar < 0) {
-	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
+	    TclEmitOpcode(	INST_LOAD_ARRAY_STK,		envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_ARRAY4, localVar, envPtr);
+	    TclEmitInstInt4(	INST_LOAD_ARRAY, localVar,	envPtr);
 	}
     }
 }
@@ -2592,11 +2609,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(	INST_STR_CONCAT1, 255,		envPtr);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_STR_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt1(	INST_STR_CONCAT1, numObjsToConcat, envPtr);
     }
 
     /*
@@ -2728,13 +2745,13 @@ TclCompileExprWords(
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(	INST_STR_CONCAT1, 255,		envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_STR_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt1(	INST_STR_CONCAT1, concatItems,	envPtr);
     }
-    TclEmitOpcode(INST_EXPR_STK, envPtr);
+    TclEmitOpcode(		INST_EXPR_STK,			envPtr);
 }
 
 /*
@@ -2772,7 +2789,7 @@ TclCompileNoOp(
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
-	    TclEmitOpcode(INST_POP, envPtr);
+	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
     }
     PushStringLiteral(envPtr, "");
@@ -2859,7 +2876,7 @@ TclInitByteCode(
 
     iPtr = envPtr->iPtr;
 
-    codeBytes = envPtr->codeNext - envPtr->codeStart;
+    codeBytes = CurrentOffset(envPtr);
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
     auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
@@ -3157,7 +3174,7 @@ TclExpandCodeArray(
      * [inclusive].
      */
 
-    size_t currBytes = envPtr->codeNext - envPtr->codeStart;
+    size_t currBytes = CurrentOffset(envPtr);
     size_t newBytes = 2 * (envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
@@ -3524,7 +3541,7 @@ TclGetInnermostExceptionRange(
  *
  *	Adds a place that wants to break/continue to the loop exception range
  *	tracking that will be fixed up once the loop can be finalized. These
- *	functions generate an INST_JUMP4 that is fixed up during the
+ *	functions generate an INST_JUMP that is fixed up during the
  *	loop finalization.
  *
  * ---------------------------------------------------------------------
@@ -3553,7 +3570,7 @@ TclAddLoopBreakFixup(
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
-    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+    TclEmitInstInt4(		INST_JUMP, 0,			envPtr);
 }
 
 void
@@ -3580,7 +3597,7 @@ TclAddLoopContinueFixup(
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
 	    CurrentOffset(envPtr);
-    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+    TclEmitInstInt4(		INST_JUMP, 0,			envPtr);
 }
 
 /*
@@ -3605,7 +3622,7 @@ TclCleanupStackForBreakContinue(
 
     if (toPop > 0) {
 	while (toPop --> 0) {
-	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
+	    TclEmitOpcode(	INST_EXPAND_DROP,		envPtr);
 	}
 	TclAdjustStackDepth((int)(auxPtr->expandTargetDepth - envPtr->currStackDepth),
 		envPtr);
@@ -3613,7 +3630,7 @@ TclCleanupStackForBreakContinue(
     }
     toPop = envPtr->currStackDepth - auxPtr->stackDepth;
     while (toPop --> 0) {
-	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
     envPtr->currStackDepth = savedStackDepth;
 }
@@ -3636,7 +3653,7 @@ StartExpanding(
 {
     int i;
 
-    TclEmitOpcode(INST_EXPAND_START, envPtr);
+    TclEmitOpcode(		INST_EXPAND_START,		envPtr);
 
     /*
      * Update inner exception ranges with information about the environment
@@ -3703,14 +3720,14 @@ TclFinalizeLoopExceptionRange(
     }
 
     /*
-     * Do the jump fixups. Note that these are always issued as INST_JUMP4 so
+     * Do the jump fixups. Note that these are always issued as INST_JUMP so
      * there is no need to fuss around with updating code offsets.
      */
 
     for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->breakTargets[i];
 	offset = rangePtr->breakOffset - auxPtr->breakTargets[i];
-	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
+	TclUpdateInstInt4AtPc(INST_JUMP, offset, site);
     }
     for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
@@ -3728,7 +3745,7 @@ TclFinalizeLoopExceptionRange(
 	    }
 	} else {
 	    offset = rangePtr->continueOffset - auxPtr->continueTargets[i];
-	    TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
+	    TclUpdateInstInt4AtPc(INST_JUMP, offset, site);
 	}
     }
 
@@ -3964,19 +3981,19 @@ TclEmitForwardJump(
      */
 
     jumpFixupPtr->jumpType = jumpType;
-    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
+    jumpFixupPtr->codeOffset = CurrentOffset(envPtr);
     jumpFixupPtr->cmdIndex = envPtr->numCommands;
     jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	TclEmitInstInt4(	INST_JUMP, 0,			envPtr);
 	break;
     case TCL_TRUE_JUMP:
-	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
+	TclEmitInstInt4(	INST_JUMP_TRUE, 0,		envPtr);
 	break;
     default: // TCL_FALSE_JUMP
-	TclEmitInstInt4(INST_JUMP_FALSE4, 0, envPtr);
+	TclEmitInstInt4(	INST_JUMP_FALSE, 0,		envPtr);
 	break;
     }
 }
@@ -3991,7 +4008,7 @@ TclEmitForwardJump(
  *	previously initialized by TclEmitForwardJump.
  *
  * Results:
- *	Always 0.
+ *	None
  *
  * Side effects:
  *	None
@@ -4011,16 +4028,15 @@ TclFixupForwardJump(
 
     switch (jumpFixupPtr->jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(	INST_JUMP, jumpDist, jumpPc);
 	break;
     case TCL_TRUE_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(	INST_JUMP_TRUE, jumpDist, jumpPc);
 	break;
     default: // TCL_FALSE_JUMP
-	TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
+	TclUpdateInstInt4AtPc(	INST_JUMP_FALSE, jumpDist, jumpPc);
 	break;
     }
-    return 0;
 }
 
 /*
@@ -4032,6 +4048,8 @@ TclFixupForwardJump(
  *	in code that ensures that any break or continue operation passing
  *	through it gets the stack unwinding correct, converting it into an
  *	internal jump if in an appropriate context.
+ *
+ *	Handles the instructions that can generate TCL_BREAK or TCL_CONTINUE.
  *
  * Results:
  *	None
@@ -4063,11 +4081,15 @@ TclEmitInvoke(
 
     va_start(argList, opcode);
     switch (opcode) {
+    case INST_TCLOO_NEXT1:
+    case INST_TCLOO_NEXT_CLASS1:
     case INST_INVOKE_STK1:
 	wordCount = arg1 = cleanup = va_arg(argList, int);
 	arg2 = 0;
 	break;
-    case INST_INVOKE_STK4:
+    case INST_TCLOO_NEXT:
+    case INST_TCLOO_NEXT_CLASS:
+    case INST_INVOKE_STK:
 	wordCount = arg1 = cleanup = va_arg(argList, int);
 	arg2 = 0;
 	break;
@@ -4077,8 +4099,8 @@ TclEmitInvoke(
 	wordCount = arg1 + arg2 - 1;
 	cleanup = arg1 + 1;
 	break;
-    default:
-	Tcl_Panic("unexpected opcode");
+    case INST_YIELD:
+    case INST_YIELD_TO_INVOKE:
     case INST_EVAL_STK:
 	wordCount = cleanup = 1;
 	arg1 = arg2 = 0;
@@ -4092,6 +4114,9 @@ TclEmitInvoke(
 	arg2 = 0;
 	expandCount = 1;
 	break;
+    default:
+	Tcl_Panic("opcode %s not handled by TclEmitInvoke()",
+		tclInstructionTable[opcode].name);
     }
     va_end(argList);
 
@@ -4136,27 +4161,47 @@ TclEmitInvoke(
 
     switch (opcode) {
     case INST_INVOKE_STK1:
-	TclEmitInstInt1(INST_INVOKE_STK1, arg1, envPtr);
+	TclEmitInstInt1(	INST_INVOKE_STK1, arg1,		envPtr);
 	break;
-    case INST_INVOKE_STK4:
-	TclEmitInstInt4(INST_INVOKE_STK4, arg1, envPtr);
+    case INST_INVOKE_STK:
+	TclEmitInstInt4(	INST_INVOKE_STK, arg1,		envPtr);
 	break;
     case INST_INVOKE_EXPANDED:
-	TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+	TclEmitOpcode(		INST_INVOKE_EXPANDED,		envPtr);
 	envPtr->expandCount--;
 	TclAdjustStackDepth(1 - arg1, envPtr);
 	break;
     case INST_EVAL_STK:
-	TclEmitOpcode(INST_EVAL_STK, envPtr);
+	TclEmitOpcode(		INST_EVAL_STK,			envPtr);
 	break;
     case INST_RETURN_STK:
-	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	TclEmitOpcode(		INST_RETURN_STK,		envPtr);
 	break;
     case INST_INVOKE_REPLACE:
-	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
-	TclEmitInt1(arg2, envPtr);
+	TclEmitInstInt41(	INST_INVOKE_REPLACE, arg1, arg2, envPtr);
 	TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
 	break;
+    case INST_TCLOO_NEXT1:
+	TclEmitInstInt1(	INST_TCLOO_NEXT1, arg1,		envPtr);
+	break;
+    case INST_TCLOO_NEXT_CLASS1:
+	TclEmitInstInt1(	INST_TCLOO_NEXT_CLASS1, arg1,	envPtr);
+	break;
+    case INST_TCLOO_NEXT:
+	TclEmitInstInt4(	INST_TCLOO_NEXT, arg1,		envPtr);
+	break;
+    case INST_TCLOO_NEXT_CLASS:
+	TclEmitInstInt4(	INST_TCLOO_NEXT_CLASS, arg1,	envPtr);
+	break;
+    case INST_YIELD:
+	TclEmitOpcode(		INST_YIELD,			envPtr);
+	break;
+    case INST_YIELD_TO_INVOKE:
+	TclEmitOpcode(		INST_YIELD_TO_INVOKE,		envPtr);
+	break;
+    default:
+	Tcl_Panic("opcode %s not handled by TclEmitInvoke()",
+		tclInstructionTable[opcode].name);
     }
 
     /*
