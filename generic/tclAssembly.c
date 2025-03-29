@@ -1569,7 +1569,7 @@ AssembleOneLine(
 
     case ASSEM_LVT_SINT1:
 	if (parsePtr->numWords != 3) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname imm8");
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
@@ -1584,7 +1584,7 @@ AssembleOneLine(
 
     case ASSEM_LVT:
 	if (parsePtr->numWords != 2) {
-	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
+	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName");
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
