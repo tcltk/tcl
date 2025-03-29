@@ -3701,7 +3701,7 @@ TclCompileWhileCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
-    int jumpEvalCond, testCodeOffset, bodyCodeOffset, range, code, boolVal;
+    int jumpEvalCond, testCodeOffset = 0, bodyCodeOffset, range, code, boolVal;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;
@@ -3776,7 +3776,6 @@ TclCompileWhileCmd(
 
     if (loopMayEnd) {
 	FWDJUMP(		JUMP, jumpEvalCond);
-	testCodeOffset = 0;	/* Avoid compiler warning. */
     } else {
 	/*
 	 * Make sure that the first command in the body is preceded by an
@@ -3792,10 +3791,6 @@ TclCompileWhileCmd(
      */
 
     BACKLABEL(		bodyCodeOffset);
-    if (!loopMayEnd) {
-	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
-	envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
-    }
     CATCH_RANGE(range) {
 	BODY(			bodyTokenPtr, 2);
     }
@@ -3808,6 +3803,7 @@ TclCompileWhileCmd(
 
     if (loopMayEnd) {
 	FWDLABEL(	jumpEvalCond);
+	BACKLABEL(	testCodeOffset);
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
