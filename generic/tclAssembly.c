@@ -906,6 +906,7 @@ TclCompileAssembleCmd(
     size_t numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     size_t depth = envPtr->currStackDepth;
+    size_t numExnRanges = envPtr->exceptArrayNext;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -932,6 +933,7 @@ TclCompileAssembleCmd(
 	envPtr->numCommands = numCommands;
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
+	envPtr->exceptArrayNext = numExnRanges;
 	TclCompileSyntaxError(interp, envPtr);
     }
     return TCL_OK;
