@@ -668,7 +668,7 @@ TclCompileStringIsCmd(
 	    FWDJUMP(		JUMP_TRUE, satisfied);
 	    PUSH(		"0");
 	    FWDJUMP(		JUMP, end);
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 	    FWDLABEL(	satisfied);
 	}
 	PUSH(			"1");
@@ -690,7 +690,7 @@ TclCompileStringIsCmd(
 	    PUSH(		"");
 	    OP(			STR_EQ);
 	    FWDJUMP(		JUMP, end);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(+1);
 	    FWDLABEL(	testNumType);
 	    OP4(		REVERSE, 2);
 	    OP(			POP);
@@ -1604,7 +1604,7 @@ TclSubstCompile(
 	/* Substitution produced TCL_OK */
 	OP(			END_CATCH);
 	FWDJUMP(		JUMP, haveOk);
-	TclAdjustStackDepth(-1, envPtr);
+	STKDELTA(-1);
 
 	/* Exceptional return codes processed here */
 	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
@@ -1633,7 +1633,7 @@ TclSubstCompile(
 	/* OTHER */
 	FWDJUMP(		JUMP, haveOther);
 
-	TclAdjustStackDepth(1, envPtr);
+	STKDELTA(+1);
 	/* BREAK destination */
 	FWDLABEL(	haveBreak);
 	OP(			POP);
@@ -1641,14 +1641,14 @@ TclSubstCompile(
 
 	BACKJUMP(		JUMP, breakOffset);
 
-	TclAdjustStackDepth(2, envPtr);
+	STKDELTA(+2);
 	/* CONTINUE destination */
 	FWDLABEL(	haveContinue);
 	OP(			POP);
 	OP(			POP);
 	FWDJUMP(		JUMP, end);
 
-	TclAdjustStackDepth(2, envPtr);
+	STKDELTA(+2);
 	/* RETURN + other destination */
 	FWDLABEL(	haveReturn);
 	FWDLABEL(	haveOther);
@@ -1685,7 +1685,7 @@ TclSubstCompile(
     if (state != NULL) {
 	Tcl_RestoreInterpState(interp, state);
 	TclCompileSyntaxError(interp, envPtr);
-	TclAdjustStackDepth(-1, envPtr);
+	STKDELTA(-1);
     }
 
     /* Final target of the multi-jump from all BREAKs */
@@ -2059,31 +2059,30 @@ IssueSwitchChainedTests(
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
-    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    unsigned int *fixupTargetArray; /* Array of places for fixups to point at. */
-    int fixupCount;		/* Number of places to fix up. */
-    int contFixIndex;		/* Where the first of the jumps due to a group
+    int *fwdJumps;		/* Array of forward-jump fixup locations. */
+    int jumpCount;		/* Number of places to fix up. */
+    int contJumpIdx;		/* Where the first of the jumps due to a group
 				 * of continuation bodies starts, or -1 if
 				 * there aren't any. */
-    int contFixCount;		/* Number of continuation bodies pointing to
+    int contJumpCount;		/* Number of continuation bodies pointing to
 				 * the current (or next) real body. */
     int nextArmFixupIndex;
     int simple, exact;		/* For extracting the type of regexp. */
     int i;
 
+#define NO_PENDING_JUMP -1
+
     /*
      * Generate a test for each arm.
      */
 
-    contFixIndex = -1;
-    contFixCount = 0;
-    fixupArray = (JumpFixup *)TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
-    fixupTargetArray = (unsigned int *)TclStackAlloc(interp, sizeof(int) * numBodyTokens);
-    memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
-    fixupCount = 0;
+    contJumpIdx = NO_PENDING_JUMP;
+    contJumpCount = 0;
+    fwdJumps = (int *)TclStackAlloc(interp, sizeof(int) * numBodyTokens);
+    jumpCount = 0;
     foundDefault = 0;
     for (i=0 ; i<numBodyTokens ; i+=2) {
-	nextArmFixupIndex = -1;
+	nextArmFixupIndex = NO_PENDING_JUMP;
 	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
 		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
 	    /*
@@ -2129,8 +2128,7 @@ IssueSwitchChainedTests(
 		    if (TclReToGlob(NULL, bodyToken[i]->start,
 			    bodyToken[i]->size, &ds, &exact, NULL) == TCL_OK){
 			simple = 1;
-			PushLiteral(envPtr, Tcl_DStringValue(&ds),
-				Tcl_DStringLength(&ds));
+			TclPushDString(envPtr, &ds);
 			Tcl_DStringFree(&ds);
 		    }
 		}
@@ -2168,21 +2166,19 @@ IssueSwitchChainedTests(
 	     */
 
 	    if (bodyToken[i+1]->size==1 && bodyToken[i+1]->start[0]=='-') {
-		if (contFixIndex == -1) {
-		    contFixIndex = fixupCount;
-		    contFixCount = 0;
+		if (contJumpIdx == NO_PENDING_JUMP) {
+		    contJumpIdx = jumpCount;
+		    contJumpCount = 0;
 		}
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			&fixupArray[contFixIndex+contFixCount]);
-		fixupCount++;
-		contFixCount++;
+		FWDJUMP(	JUMP_TRUE, fwdJumps[contJumpIdx+contJumpCount]);
+		jumpCount++;
+		contJumpCount++;
 		continue;
 	    }
 
-	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-		    &fixupArray[fixupCount]);
-	    nextArmFixupIndex = fixupCount;
-	    fixupCount++;
+	    FWDJUMP(		JUMP_FALSE, fwdJumps[jumpCount]);
+	    nextArmFixupIndex = jumpCount;
+	    jumpCount++;
 	} else {
 	    /*
 	     * Got a default clause; set a flag to inhibit the generation of
@@ -2204,13 +2200,14 @@ IssueSwitchChainedTests(
 	 * so we must process those first.
 	 */
 
-	if (contFixIndex != -1) {
+	if (contJumpIdx != NO_PENDING_JUMP) {
 	    int j;
 
-	    for (j=0 ; j<contFixCount ; j++) {
-		fixupTargetArray[contFixIndex+j] = CurrentOffset(envPtr);
+	    for (j=0 ; j<contJumpCount ; j++) {
+		FWDLABEL(fwdJumps[contJumpIdx+j]);
+		fwdJumps[contJumpIdx+j] = 0;
 	    }
-	    contFixIndex = -1;
+	    contJumpIdx = NO_PENDING_JUMP;
 	}
 
 	/*
@@ -2225,10 +2222,10 @@ IssueSwitchChainedTests(
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
 
 	if (!foundDefault) {
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    &fixupArray[fixupCount]);
-	    fixupCount++;
-	    fixupTargetArray[nextArmFixupIndex] = CurrentOffset(envPtr);
+	    FWDJUMP(		JUMP, fwdJumps[jumpCount]);
+	    jumpCount++;
+	    FWDLABEL(	fwdJumps[nextArmFixupIndex]);
+	    fwdJumps[nextArmFixupIndex] = 0;
 	}
     }
 
@@ -2245,30 +2242,17 @@ IssueSwitchChainedTests(
     }
 
     /*
-     * Do jump fixups for arms that were executed. First, fill in the jumps of
-     * all jumps that don't point elsewhere to point to here.
+     * Do jump fixups for arms that were executed and that haven't already
+     * been fixed.
      */
 
-    for (i=0 ; i<fixupCount ; i++) {
-	if (fixupTargetArray[i] == 0) {
-	    fixupTargetArray[i] = CurrentOffset(envPtr);
+    for (i=0 ; i<jumpCount ; i++) {
+	if (fwdJumps[i] != 0) {
+	    FWDLABEL(	fwdJumps[i]);
 	}
     }
 
-    /*
-     * Now scan backwards over all the jumps (all of which are forward jumps)
-     * doing each one. When we do one and there is a size changes, we must
-     * scan back over all the previous ones and see if they need adjusting
-     * before proceeding with further jump fixups (the interleaved nature of
-     * all the jumps makes this impossible to do without nested loops).
-     */
-
-    for (i=fixupCount-1 ; i>=0 ; i--) {
-	TclFixupForwardJump(envPtr, &fixupArray[i],
-		fixupTargetArray[i] - fixupArray[i].codeOffset);
-    }
-    TclStackFree(interp, fixupTargetArray);
-    TclStackFree(interp, fixupArray);
+    TclStackFree(interp, fwdJumps);
 }
 
 /*
@@ -2419,7 +2403,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    FWDJUMP(		JUMP, finalFixups[numRealBodies++]);
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 	}
     }
 
@@ -2597,7 +2581,7 @@ TclCompileTailcallCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    OP4(		TAILCALL, (int)parsePtr->numWords);
+    OP4(			TAILCALL, (int)parsePtr->numWords);
     return TCL_OK;
 }
 
@@ -2693,7 +2677,8 @@ TclCompileThrowCmd(
 	FWDJUMP(		JUMP_FALSE, popForError);
 	OP4(			LIST, 2);
 	OP44(			RETURN_IMM, TCL_ERROR, 0);
-	TclAdjustStackDepth(2, envPtr);
+
+	STKDELTA(+2);
 	FWDLABEL(		popForError);
 	OP(			POP);
 	OP(			POP);
@@ -3012,12 +2997,12 @@ IssueTryClausesInstructions(
     if (!trapZero) {
 	OP(			END_CATCH);
 	FWDJUMP(		JUMP, afterBody);
-	TclAdjustStackDepth(-1, envPtr);
+	STKDELTA(-1);
     } else {
 	PUSH(			"0");
 	OP4(			REVERSE, 2);
 	FWDJUMP(		JUMP, pushReturnOptions);
-	TclAdjustStackDepth(-2, envPtr);
+	STKDELTA(-2);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(				PUSH_RETURN_CODE);
@@ -3061,7 +3046,6 @@ IssueTryClausesInstructions(
 	    OP4(		LOAD_SCALAR, optionsVar);
 	    PUSH(		"-errorcode");
 	    OP4(		DICT_GET, 1);
-	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(		LIST_RANGE_IMM, 0, len-1);
 	    p = TclGetStringFromObj(matchClauses[i], &slen);
 	    PushLiteral(envPtr, p, slen);
@@ -3091,7 +3075,7 @@ IssueTryClausesInstructions(
 	if (!handlerTokens[i]) {
 	    forwardsNeedFixing = 1;
 	    FWDJUMP(		JUMP, forwardsToFix[i]);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(+1);
 	} else {
 	    int dontChangeOptions;
 
@@ -3113,8 +3097,9 @@ IssueTryClausesInstructions(
 	    }
 	    OP(			END_CATCH);
 	    FWDJUMP(		JUMP, noError[i]);
+
 	    ExceptionRangeTarget(envPtr, range, catchOffset);
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 	    OP(			PUSH_RESULT);
 	    OP(			PUSH_RETURN_OPTIONS);
 	    OP(			PUSH_RETURN_CODE);
@@ -3122,6 +3107,7 @@ IssueTryClausesInstructions(
 	    PUSH(		"1");
 	    OP(			EQ);
 	    FWDJUMP(		JUMP_FALSE, dontChangeOptions);
+
 	    OP4(		LOAD_SCALAR, optionsVar);
 	    OP4(		REVERSE, 2);
 	    OP4(		STORE_SCALAR, optionsVar);
@@ -3129,7 +3115,7 @@ IssueTryClausesInstructions(
 	    PUSH(		"-during");
 	    OP4(		REVERSE, 2);
 	    OP44(		DICT_SET, 1, optionsVar);
-	    TclAdjustStackDepth(-1, envPtr);
+
 	    FWDLABEL(	dontChangeOptions);
 	    OP4(		REVERSE, 2);
 	    INVOKE(		RETURN_STK);
@@ -3237,7 +3223,7 @@ IssueTryClausesFinallyInstructions(
 	PUSH(			"0");
 	OP4(			REVERSE, 2);
 	FWDJUMP(		JUMP, pushReturnOptions);
-	TclAdjustStackDepth(-2, envPtr);
+	STKDELTA(-2);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(				PUSH_RETURN_CODE);
@@ -3280,7 +3266,6 @@ IssueTryClausesFinallyInstructions(
 	    OP4(		LOAD_SCALAR, optionsVar);
 	    PUSH(		"-errorcode");
 	    OP4(		DICT_GET, 1);
-	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(		LIST_RANGE_IMM, 0, len-1);
 	    p = TclGetStringFromObj(matchClauses[i], &slen);
 	    PushLiteral(envPtr, p, slen);
@@ -3363,7 +3348,7 @@ IssueTryClausesFinallyInstructions(
 	OP(			PUSH_RETURN_OPTIONS);
 	OP4(			REVERSE, 3);
 	FWDJUMP(		JUMP, endCatch);
-	TclAdjustStackDepth(-3, envPtr);
+	STKDELTA(-3);
 	forwardsToFix[i] = -1;
 
 	/*
@@ -3387,16 +3372,18 @@ IssueTryClausesFinallyInstructions(
 	PUSH(			"1");
 	OP(			EQ);
 	FWDJUMP(		JUMP_FALSE, noTrapError);
+
 	OP4(			LOAD_SCALAR, optionsVar);
 	PUSH(			"-during");
 	OP4(			REVERSE, 3);
 	OP4(			STORE_SCALAR, optionsVar);
 	OP(			POP);
 	OP44(			DICT_SET, 1, optionsVar);
-	TclAdjustStackDepth(-1, envPtr);
 	FWDJUMP(		JUMP, trapError);
+
 	FWDLABEL(	noTrapError);
 	OP4(			STORE_SCALAR, optionsVar);
+
 	FWDLABEL(	trapError);
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
@@ -3406,7 +3393,7 @@ IssueTryClausesFinallyInstructions(
     endOfThisArm:
 	if (i+1 < numHandlers) {
 	    FWDJUMP(		JUMP, addrsToFix[i]);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(+1);
 	}
 	if (matchClauses[i]) {
 	    FWDLABEL(	notECJumpSource);
@@ -3461,16 +3448,18 @@ IssueTryClausesFinallyInstructions(
     OP4(			STORE_SCALAR, optionsVar);
     OP(				POP);
     OP44(			DICT_SET, 1, optionsVar);
-    TclAdjustStackDepth(-1, envPtr);
     OP(				POP);
     FWDJUMP(			JUMP, finalError);
-    TclAdjustStackDepth(1, envPtr);
+
+    STKDELTA(+1);
     FWDLABEL(		noFinalError);
     OP4(			STORE_SCALAR, optionsVar);
     OP(				POP);
+
     FWDLABEL(		finalError);
     OP4(			STORE_SCALAR, resultVar);
     OP(				POP);
+
     FWDLABEL(		finalOK);
     OP4(			LOAD_SCALAR, optionsVar);
     OP4(			LOAD_SCALAR, resultVar);
@@ -3502,11 +3491,11 @@ IssueTryFinallyInstructions(
 	BODY(			bodyToken, 1);
     }
     FWDJUMP(			JUMP, endCatch);
-    TclAdjustStackDepth(-1, envPtr);
+    STKDELTA(-1);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(				PUSH_RESULT);
-    OP(				PUSH_RETURN_OPTIONS);
     FWDLABEL(		endCatch);
+    OP(				PUSH_RETURN_OPTIONS);
     OP(				END_CATCH);
 
     // Finally

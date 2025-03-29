@@ -325,7 +325,7 @@ TclCompileIfCmd(
 	     * Fix the target of the jumpFalse after the test.
 	     */
 
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 	    TclFixupForwardJumpToHere(envPtr,
 		    jumpFalseFixupArray.fixup + jumpIndex);
 	} else if (boolVal) {
@@ -2356,7 +2356,7 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    OP(			DONE);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(+1);
 	    return TCL_OK;
 	}
     }

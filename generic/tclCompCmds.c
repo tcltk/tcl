@@ -365,8 +365,9 @@ TclCompileArraySetCmd(
 	    FWDJUMP(		JUMP_TRUE, haveArray);
 	    OP(			ARRAY_MAKE_STK);
 	    FWDJUMP(		JUMP, arrayMade);
+
 	    /* Each branch decrements stack depth, but we only take one. */
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(+1);
 	    FWDLABEL(	haveArray);
 	    OP(			POP);
 	    FWDLABEL(	arrayMade);
@@ -433,7 +434,7 @@ TclCompileArraySetCmd(
 	PUSH(			"list must have an even number of elements");
 	PUSH(			"-errorcode {TCL ARGUMENT FORMAT}");
 	OP44(			RETURN_IMM, TCL_ERROR, 0);
-	TclAdjustStackDepth(-1, envPtr);
+	STKDELTA(-1);
 	FWDLABEL(	ok);
     }
 
@@ -446,7 +447,7 @@ TclCompileArraySetCmd(
     infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
     OP( 			FOREACH_STEP);
     OP( 			FOREACH_END);
-    TclAdjustStackDepth(-3, envPtr);
+    STKDELTA(-3);
     PUSH(			"");
 
   done:
@@ -489,8 +490,9 @@ TclCompileArrayUnsetCmd(
 	FWDJUMP(		JUMP_FALSE, noSuchArray);
 	OP1(			UNSET_STK, 1);
 	FWDJUMP(		JUMP, end);
+
 	/* Each branch decrements stack depth, but we only take one. */
-	TclAdjustStackDepth(1, envPtr);
+	STKDELTA(+1);
 	FWDLABEL(	noSuchArray);
 	OP(			POP);
 	FWDLABEL(	end);
@@ -551,7 +553,7 @@ TclCompileBreakCmd(
 
 	OP(			BREAK);
     }
-    TclAdjustStackDepth(1, envPtr);
+    STKDELTA(+1);
 
     return TCL_OK;
 }
@@ -1051,7 +1053,7 @@ TclCompileContinueCmd(
 
 	OP(			CONTINUE);
     }
-    TclAdjustStackDepth(1, envPtr);
+    STKDELTA(+1);
 
     return TCL_OK;
 }
@@ -1122,7 +1124,6 @@ TclCompileDictSetCmd(
      */
 
     OP44(			DICT_SET, numWords - 3, dictVarIndex);
-    TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
 
@@ -1230,7 +1231,6 @@ TclCompileDictGetCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     OP4(			DICT_GET, numWords - 2);
-    TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
 
@@ -1261,7 +1261,6 @@ TclCompileDictGetWithDefaultCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     OP4(			DICT_GET_DEF, numWords - 3);
-    TclAdjustStackDepth(-2, envPtr);
     return TCL_OK;
 }
 
@@ -1297,7 +1296,6 @@ TclCompileDictExistsCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     OP4(			DICT_EXISTS, numWords - 2);
-    TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
 
@@ -1437,7 +1435,6 @@ TclCompileDictCreateCmd(
 	CompileWord(envPtr, tokenPtr, interp, i+1);
 	tokenPtr = TokenAfter(tokenPtr);
 	OP44(			DICT_SET, 1, worker);
-	TclAdjustStackDepth(-1, envPtr);
 	OP(			POP);
     }
     OP4(			LOAD_SCALAR, worker);
@@ -1520,7 +1517,6 @@ TclCompileDictMergeCmd(
 	    BACKLABEL(	haveNext);
 	    OP4(		REVERSE, 2);
 	    OP44(		DICT_SET, 1, workerIndex);
-	    TclAdjustStackDepth(-1, envPtr);
 	    OP(			POP);
 	    OP4(		DICT_NEXT, infoIndex);
 	    BACKJUMP(		JUMP_FALSE, haveNext);
@@ -1545,7 +1541,7 @@ TclCompileDictMergeCmd(
      * subsequent) dicts. This is strictly not necessary, but it is nice.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
+    STKDELTA(-1);
     ExceptionRangeTarget(envPtr, outLoop, catchOffset);
     OP(				PUSH_RETURN_OPTIONS);
     OP(				PUSH_RESULT);
@@ -1731,7 +1727,6 @@ CompileDictEachCmd(
 	    OP4(		LOAD_SCALAR, keyVarIndex);
 	    OP4(		OVER, 1);
 	    OP44(		DICT_SET, 1, collectVar);
-	    TclAdjustStackDepth(-1, envPtr);
 	    OP(			POP);
 	}
 	OP(			POP);
@@ -1759,7 +1754,7 @@ CompileDictEachCmd(
      * and re-throws the error.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
+    STKDELTA(-1);
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
     OP(				PUSH_RETURN_OPTIONS);
     OP(				PUSH_RESULT);
@@ -2264,7 +2259,7 @@ TclCompileDictWithCmd(
      * Now fold the results back into the dictionary in the exception case.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
+    STKDELTA(-1);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(				PUSH_RETURN_OPTIONS);
     OP(				PUSH_RESULT);
@@ -2876,7 +2871,7 @@ CompileEachloopCmd(
     ExceptionRangeTarget(envPtr, range, breakOffset);
     TclFinalizeLoopExceptionRange(envPtr, range);
     OP(				FOREACH_END);
-    TclAdjustStackDepth(-(numLists+2), envPtr);
+    STKDELTA(-(numLists+2));
 
     /*
      * Set the jumpback distance from INST_FOREACH_STEP to the start of the

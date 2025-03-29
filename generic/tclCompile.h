@@ -1402,6 +1402,14 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ = (unsigned char) (tcl_i      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
 	TclUpdateStackReqs(op, tcl_i, envPtr);				\
+	/* Apply stack depth corrections. */				\
+	switch(op) {							\
+	case INST_DICT_GET: case INST_DICT_EXISTS:			\
+	    TclAdjustStackDepth(-1, envPtr); break;			\
+	case INST_DICT_GET_DEF:						\
+	    TclAdjustStackDepth(-2, envPtr); break;			\
+	default: /* Do nothing special*/ break;				\
+	}								\
     } while (0)
 
 #define TclEmitInstInt14(op, i, j, envPtr) \
@@ -1453,6 +1461,12 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ = (unsigned char) (tcl_j      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
 	TclUpdateStackReqs(op, tcl_i, envPtr);				\
+	/* Apply stack depth corrections. */				\
+	switch(op) {							\
+	case INST_DICT_SET:						\
+	    TclAdjustStackDepth(-1, envPtr); break;			\
+	default: /* Do nothing special*/ break;				\
+	}								\
     } while (0)
 
 /*
@@ -1675,6 +1689,8 @@ TclUpdateStackReqs(
 #define TclRegisterDStringLiteral(envPtr, dsPtr) \
     TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
 	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
+#define TclPushDString(envPtr, dsPtr) \
+    TclEmitPush(TclRegisterDStringLiteral((envPtr), (dsPtr)), (envPtr))
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
