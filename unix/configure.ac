@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[9.1])
-AC_PREREQ([2.69])
+AC_PREREQ([2.72])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -717,7 +717,12 @@ fi
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+if test "$ac_cv_cygwin" = "yes" -a "$SHARED_BUILD" != "0"; then
+eval "TCL_LIB_FILE=cygtcl${LIB_SUFFIX}"
+EXTRA_INSTALL_BINARIES='$(INSTALL_LIBRARY) $(patsubst cyg%.dll,lib%.dll.a,${LIB_FILE}) "$(LIB_INSTALL_DIR)"'
+else
 eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
+fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.

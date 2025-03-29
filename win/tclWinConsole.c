@@ -570,7 +570,7 @@ ReadConsoleChars(
      * or https://github.com/microsoft/terminal/issues/12143
      */
     nRead = (DWORD)-1;
-    if (!ReadConsoleW(hConsole, lpBuffer, nChars, &nRead, NULL)) {
+    if (!ReadConsoleW(hConsole, lpBuffer, (DWORD)nChars, &nRead, NULL)) {
 	return GetLastError();
     }
     if ((nRead == 0 || nRead == (DWORD)-1)
@@ -610,7 +610,7 @@ WriteConsoleChars(
 
     /* See comments in ReadConsoleChars, not sure that applies here */
     nCharsWritten = (DWORD)-1;
-    if (!WriteConsoleW(hConsole, lpBuffer, nChars, &nCharsWritten, NULL)) {
+    if (!WriteConsoleW(hConsole, lpBuffer, (DWORD)nChars, &nCharsWritten, NULL)) {
 	return GetLastError();
     }
     if (nCharsWritten == (DWORD) -1) {
@@ -1228,7 +1228,7 @@ ConsoleInputProc(
     }
 
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-    return numRead;
+    return (int)numRead;
 }
 
 /*
@@ -1354,7 +1354,7 @@ ConsoleOutputProc(
     }
     WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-    return numWritten;
+    return (int)numWritten;
 }
 
 /*

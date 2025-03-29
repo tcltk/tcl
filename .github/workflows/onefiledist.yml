@@ -11,7 +11,7 @@ permissions:
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -124,7 +124,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   win:
     name: Windows
-    runs-on: windows-2019
+    runs-on: windows-2025
     defaults:
       run:
         shell: msys2 {0}
@@ -219,7 +219,7 @@ jobs:
           # MUST be a literal passwordless key
       - name: Publish files
         # https://github.com/marketplace/actions/ssh-remote-commands
-        uses: appleboy/ssh-action@v1.2.1
+        uses: appleboy/ssh-action@v1.2.2
         id: ssh
         if: steps.rsync.outcome == 'success'
         with:

@@ -730,7 +730,7 @@ GetValue(
     HKEY key;
     const char *valueName;
     const WCHAR *nativeValue;
-    DWORD result, length, type;
+    DWORD result, type, length;
     Tcl_DString data, buf;
     Tcl_Size len;
 
@@ -770,7 +770,7 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length = Tcl_DStringLength(&data) * (2 / sizeof(WCHAR));
+	length = (DWORD)(Tcl_DStringLength(&data) * (2 / sizeof(WCHAR)));
 	Tcl_DStringSetLength(&data, length * sizeof(WCHAR));
 	result = RegQueryValueExW(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
@@ -1443,7 +1443,7 @@ AppendSystemError(
     Tcl_Interp *interp,		/* Current interpreter. */
     DWORD error)		/* Result code from error. */
 {
-    int length;
+    Tcl_Size length;
     WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
     const char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
