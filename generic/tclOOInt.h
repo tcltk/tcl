@@ -656,7 +656,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #define FOREACH(var,ary) \
-    for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
+    for (i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
     } else if ((var) = (ary).list[i], 1)
 
@@ -668,7 +668,7 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 
 #define FOREACH_STRUCT(var,ary) \
-    if (i=0, (ary).num>0) for(; var=&((ary).list[i]), i<(ary).num; i++)
+    if (i=0, (ary).num>0) for (; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
@@ -681,16 +681,16 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
 #define FOREACH_HASH_DECLS \
     Tcl_HashEntry *hPtr;Tcl_HashSearch search
 #define FOREACH_HASH(key, val, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), \
 	    *(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_KEY(key, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(key) = Tcl_GetHashKey((tablePtr), hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_VALUE(val, tablePtr) \
-    for(hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
+    for (hPtr = Tcl_FirstHashEntry((tablePtr), &search); hPtr != NULL ? \
 	    (*(void **)&(val) = Tcl_GetHashValue(hPtr), 1) : 0; \
 	    hPtr = Tcl_NextHashEntry(&search))
 

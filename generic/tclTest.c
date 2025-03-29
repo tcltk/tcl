@@ -511,11 +511,34 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #endif
 ;
 
+static int
+TestCommonInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
+{
+    Tcl_CmdInfo info;
+
+    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
+	if (info.isNativeObjectProc == 2) {
+	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
+		    info.objProc2, (void *)version, NULL);
+	} else {
+	    Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
+		    info.objProc, (void *)version, NULL);
+	}
+    }
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
     Tcl_Size objc;
     int index;
@@ -524,27 +547,12 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+    if (TestCommonInit(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
-
-    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
-	if (info.isNativeObjectProc == 2) {
-	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-		    info.objProc2, (void *)version, NULL);
-    } else
-#endif
-	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
-    }
-    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-
     /*
      * Create additional commands and math functions for testing Tcl.
      */
@@ -795,22 +803,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_CmdInfo info;
-
-    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
-	if (info.isNativeObjectProc == 2) {
-	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-		    info.objProc2, (void *)version, NULL);
-    } else
-#endif
-	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
-    }
-    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+    if (TestCommonInit(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
@@ -2046,12 +2039,8 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
-#if TCL_MAJOR_VERSION > 8
-    void *blockPtr		/* Block to free. */
-#else
-    char *blockPtr		/* Block to free. */
-#endif
-) {
+    void *blockPtr)		/* Block to free. */
+{
     Tcl_Free(((char *)blockPtr) - 16);
 }
 

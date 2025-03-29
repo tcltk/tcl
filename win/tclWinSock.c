@@ -392,7 +392,7 @@ InitializeHostName(
 
 	Tcl_DStringInit(&ds);
 	Tcl_DStringSetLength(&ds, 256);
-	gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	gethostname(Tcl_DStringValue(&ds), (int)Tcl_DStringLength(&ds));
 	Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
     }
 
@@ -3054,7 +3054,7 @@ SocketThread(
 
     SetEvent(tsdPtr->readyEvent);
 
-    return msg.wParam;
+    return (DWORD)msg.wParam;
 }
 
 /*

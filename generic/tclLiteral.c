@@ -31,7 +31,7 @@
 static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static size_t		HashString(const char *string, size_t length);
+static size_t		HashString(const char *string, Tcl_Size length);
 #ifdef TCL_COMPILE_DEBUG
 static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -911,7 +911,7 @@ TclReleaseLiteral(
 static size_t
 HashString(
     const char *string,		/* String for which to compute hash value. */
-    size_t length)		/* Number of bytes in the string. */
+    Tcl_Size length)		/* Number of bytes in the string. */
 {
     size_t result = 0;
 
