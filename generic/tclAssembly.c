@@ -736,8 +736,6 @@ TclNRAssembleObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
-    Tcl_Obj* backtrace;		/* Object where extra error information is
-				 * constructed. */
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytecodeList");
@@ -755,12 +753,9 @@ TclNRAssembleObjCmd(
      */
 
     if (codePtr == NULL) {
-	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AppendObjToErrorInfo(interp, objv[0]);
-	Tcl_AddErrorInfo(interp, "\" body, line ");
-	TclNewIntObj(backtrace, Tcl_GetErrorLine(interp));
-	Tcl_AppendObjToErrorInfo(interp, backtrace);
-	Tcl_AddErrorInfo(interp, ")");
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%s\" body, line %d)",
+		Tcl_GetString(objv[0]), Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
@@ -902,11 +897,13 @@ TclCompileAssembleCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
-
     size_t numCommands = envPtr->numCommands;
-    int offset = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size offset = envPtr->codeNext - envPtr->codeStart;
     size_t depth = envPtr->currStackDepth;
     size_t numExnRanges = envPtr->exceptArrayNext;
+    size_t numAuxRanges = envPtr->auxDataArrayNext;
+    size_t exceptDepth = envPtr->exceptDepth;
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -934,6 +931,8 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	envPtr->exceptArrayNext = numExnRanges;
+	envPtr->auxDataArrayNext = numAuxRanges;
+	envPtr->exceptDepth = exceptDepth;
 	TclCompileSyntaxError(interp, envPtr);
     }
     return TCL_OK;
