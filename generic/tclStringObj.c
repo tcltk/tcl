@@ -2485,7 +2485,7 @@ Tcl_AppendFormatToObj(
 #define MAX_FLOAT_SIZE 320
 	    char spec[2*TCL_INTEGER_SPACE + 9], *p = spec;
 	    double d;
-	    Tcl_WideInt length = MAX_FLOAT_SIZE;
+	    int length = MAX_FLOAT_SIZE;
 	    char *bytes;
 
 	    if (Tcl_GetDoubleFromObj(interp, segment, &d) != TCL_OK) {
