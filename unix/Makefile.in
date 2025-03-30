@@ -1253,6 +1253,7 @@ REGHDRS		= $(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
 	$(GENERIC_DIR)/regcustom.h
 TCLREHDRS	= $(GENERIC_DIR)/tclRegexp.h
 COMPILEHDR	= $(GENERIC_DIR)/tclCompile.h
+COMPUTILHDR	= $(GENERIC_DIR)/tclCompUtils.h
 FSHDR		= $(GENERIC_DIR)/tclFileSystem.h
 IOHDR		= $(GENERIC_DIR)/tclIO.h
 MATHHDRS	= $(GENERIC_DIR)/tclTomMath.h $(GENERIC_DIR)/tclTomMathDecls.h
@@ -1320,13 +1321,13 @@ tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS) $(TRIMHDR)
 tclDate.o: $(GENERIC_DIR)/tclDate.c $(TCLDATEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
-tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
+tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR) $(COMPUTILHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
 
-tclCompCmdsGR.o: $(GENERIC_DIR)/tclCompCmdsGR.c $(COMPILEHDR)
+tclCompCmdsGR.o: $(GENERIC_DIR)/tclCompCmdsGR.c $(COMPILEHDR) $(COMPUTILHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsGR.c
 
-tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR) $(TRIMHDR)
+tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR) $(COMPUTILHDR) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
 
 tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR)
