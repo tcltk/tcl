@@ -508,7 +508,7 @@ TcpInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    int bytesRead;
+    ssize_t bytesRead;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
@@ -516,7 +516,7 @@ TcpInputProc(
     }
     bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead >= 0) {
-	return bytesRead;
+	return (int)bytesRead;
     }
     if (errno == ECONNRESET) {
 	/*
@@ -558,7 +558,7 @@ TcpOutputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
@@ -567,7 +567,7 @@ TcpOutputProc(
     written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
-	return written;
+	return (int)written;
     }
     *errorCodePtr = errno;
     return -1;
@@ -1607,7 +1607,7 @@ TclpMakeTcpClientChannelMode(
 
     statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
-    statePtr->fds.fd = PTR2INT(sock);
+    statePtr->fds.fd = (int)PTR2INT(sock);
     statePtr->flags = 0;
 
     snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
@@ -1768,8 +1768,8 @@ Tcl_OpenTcpServerEx(
 	 */
 
 	if (port == 0 && chosenport != 0) {
-	    ((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
-		    htons(chosenport);
+	    ((struct sockaddr_in *)addrPtr->ai_addr)->sin_port =
+		    htons((uint16_t)chosenport);
 	}
 
 #ifdef IPV6_V6ONLY

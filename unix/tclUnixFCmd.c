@@ -452,11 +452,11 @@ DoCopyFile(
 	}
     }
 
-    switch ((int) (statBufPtr->st_mode & S_IFMT)) {
+    switch ((int)(statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
     case S_IFLNK: {
 	char linkBuf[MAXPATHLEN+1];
-	int length;
+	ssize_t length;
 
 	length = readlink(src, linkBuf, MAXPATHLEN);	/* INTL: Native. */
 	if (length == -1) {
@@ -1069,7 +1069,7 @@ TraverseUnixTree(
     while ((ent = fts_read(fts)) != NULL) {
 	unsigned short info = ent->fts_info;
 	char *path = ent->fts_path + sourceLen;
-	unsigned short pathlen = ent->fts_pathlen - sourceLen;
+	Tcl_Size pathlen = ent->fts_pathlen - sourceLen;
 	int type;
 	Tcl_StatBuf *statBufPtr = NULL;
 
@@ -1626,7 +1626,7 @@ SetPermissionsAttribute(
     int result = TCL_ERROR;
     const char *native;
     const char *modeStringPtr = TclGetString(attributePtr);
-    int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
+    Tcl_Size scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
 
     /*
      * First supply support for octal number format
@@ -1977,7 +1977,7 @@ TclpObjNormalizePath(
 		     * routine should be reviewed and cleaed up.
 		     */
 		} else {
-		    nextCheckpoint = lastDir - path;
+		    nextCheckpoint = (int)(lastDir - path);
 		    goto wholeStringOk;
 		}
 	    }
@@ -2020,7 +2020,7 @@ TclpObjNormalizePath(
 	     * Assign the end of the current component to nextCheckpoint
 	     */
 
-	    nextCheckpoint = currentPathEndPosition - path;
+	    nextCheckpoint = (int)(currentPathEndPosition - path);
 	} else if (cur == 0) {
 	    /*
 	     * The end of the string.
@@ -2095,7 +2095,7 @@ TclpObjNormalizePath(
 		 * Append the remaining path components.
 		 */
 
-		int normLen = Tcl_DStringLength(&ds);
+		Tcl_Size normLen = Tcl_DStringLength(&ds);
 
 		Tcl_DStringAppend(&ds, path + nextCheckpoint,
 			pathLen - nextCheckpoint);
@@ -2105,13 +2105,13 @@ TclpObjNormalizePath(
 		 * been processed
 		 */
 
-		nextCheckpoint = normLen + 1;
+		nextCheckpoint = (int)normLen + 1;
 	    } else {
 		/*
 		 * We recognise the whole string.
 		 */
 
-		nextCheckpoint = Tcl_DStringLength(&ds);
+		nextCheckpoint = (int)Tcl_DStringLength(&ds);
 	    }
 
 	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
@@ -2213,7 +2213,7 @@ TclUnixOpenTemporaryFile(
 	    return -1;
 	}
 	TclDStringAppendDString(&templ, &tmp);
-	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));
+	fd = mkstemps(Tcl_DStringValue(&templ), (int)Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
     } else
 #endif
@@ -2386,7 +2386,7 @@ static WCHAR *
 winPathFromObj(
     Tcl_Obj *fileName)
 {
-    size_t size;
+    int size;
     const char *native =  (const char *)Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 
