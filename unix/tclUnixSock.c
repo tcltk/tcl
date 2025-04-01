@@ -64,7 +64,7 @@ struct TcpState {
      */
 
     Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
-    void *acceptProcData;  /* The data for the accept proc. */
+    void *acceptProcData;	/* The data for the accept proc. */
 
     /*
      * Only needed for client sockets
@@ -74,10 +74,10 @@ struct TcpState {
     struct addrinfo *addr;	/* Iterator over addrlist. */
     struct addrinfo *myaddrlist;/* Local address. */
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
-    int filehandlers;           /* Caches FileHandlers that get set up while
-                                 * an async socket is not yet connected. */
-    int connectError;           /* Cache SO_ERROR of async socket. */
-    int cachedBlocking;         /* Cache blocking mode of async socket. */
+    int filehandlers;		/* Caches FileHandlers that get set up while
+				 * an async socket is not yet connected. */
+    int connectError;		/* Cache SO_ERROR of async socket. */
+    int cachedBlocking;		/* Cache blocking mode of async socket. */
 };
 
 /*
@@ -356,7 +356,7 @@ TclpFinalizeSockets(void)
 
 static int
 TcpBlockModeProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
@@ -501,14 +501,14 @@ WaitForConnect(
 
 static int
 TcpInputProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    int bytesRead;
+    ssize_t bytesRead;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
@@ -516,7 +516,7 @@ TcpInputProc(
     }
     bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead >= 0) {
-	return bytesRead;
+	return (int)bytesRead;
     }
     if (errno == ECONNRESET) {
 	/*
@@ -552,13 +552,13 @@ TcpInputProc(
 
 static int
 TcpOutputProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
@@ -567,7 +567,7 @@ TcpOutputProc(
     written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
-	return written;
+	return (int)written;
     }
     *errorCodePtr = errno;
     return -1;
@@ -593,7 +593,7 @@ TcpOutputProc(
 
 static int
 TcpCloseProc(
-    void *instanceData,	/* The socket to close. */
+    void *instanceData,		/* The socket to close. */
     TCL_UNUSED(Tcl_Interp *))
 {
     TcpState *statePtr = (TcpState *)instanceData;
@@ -654,7 +654,7 @@ TcpCloseProc(
 
 static int
 TcpClose2Proc(
-    void *instanceData,	/* The socket to close. */
+    void *instanceData,		/* The socket to close. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -1168,7 +1168,7 @@ WrapNotify(
 
 static void
 TcpWatchProc(
-    void *instanceData,	/* The socket state. */
+    void *instanceData,		/* The socket state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1241,9 +1241,9 @@ TcpWatchProc(
 
 static int
 TcpGetHandleProc(
-    void *instanceData,	/* The socket state. */
+    void *instanceData,		/* The socket state. */
     TCL_UNUSED(int) /*direction*/,
-    void **handlePtr)	/* Where to store the handle. */
+    void **handlePtr)		/* Where to store the handle. */
 {
     TcpState *statePtr = (TcpState *)instanceData;
 
@@ -1265,7 +1265,7 @@ TcpGetHandleProc(
 
 static void
 TcpAsyncCallback(
-    void *clientData,	/* The socket state. */
+    void *clientData,		/* The socket state. */
     TCL_UNUSED(int) /*mask*/)
 {
     TcpConnect(NULL, (TcpState *)clientData);
@@ -1573,7 +1573,7 @@ Tcl_OpenTcpClient(
 
 Tcl_Channel
 Tcl_MakeTcpClientChannel(
-    void *sock)		/* The socket to wrap up into a channel. */
+    void *sock)			/* The socket to wrap up into a channel. */
 {
     return (Tcl_Channel) TclpMakeTcpClientChannelMode(sock,
 	    TCL_READABLE | TCL_WRITABLE);
@@ -1598,7 +1598,7 @@ Tcl_MakeTcpClientChannel(
 
 void *
 TclpMakeTcpClientChannelMode(
-    void *sock,		/* The socket to wrap up into a channel. */
+    void *sock,			/* The socket to wrap up into a channel. */
     int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
@@ -1607,7 +1607,7 @@ TclpMakeTcpClientChannelMode(
 
     statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
-    statePtr->fds.fd = PTR2INT(sock);
+    statePtr->fds.fd = (int)PTR2INT(sock);
     statePtr->flags = 0;
 
     snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
@@ -1645,7 +1645,7 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
-    int backlog,                /* Length of OS listen backlog queue. */
+    int backlog,		/* Length of OS listen backlog queue. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1768,8 +1768,8 @@ Tcl_OpenTcpServerEx(
 	 */
 
 	if (port == 0 && chosenport != 0) {
-	    ((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
-		    htons(chosenport);
+	    ((struct sockaddr_in *)addrPtr->ai_addr)->sin_port =
+		    htons((uint16_t)chosenport);
 	}
 
 #ifdef IPV6_V6ONLY
@@ -1899,7 +1899,7 @@ Tcl_OpenTcpServerEx(
 
 static void
 TcpAccept(
-    void *data,		/* Callback token. */
+    void *data,			/* Callback token. */
     TCL_UNUSED(int) /*mask*/)
 {
     TcpFdList *fds = (TcpFdList *)data;	/* Client data of server socket. */
