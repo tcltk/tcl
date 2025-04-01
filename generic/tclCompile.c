@@ -1045,8 +1045,8 @@ CleanupByteCode(
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
-    int numLitObjects = codePtr->numLitObjects;
-    int numAuxDataItems = codePtr->numAuxDataItems;
+    Tcl_Size numLitObjects = codePtr->numLitObjects;
+    Tcl_Size numAuxDataItems = codePtr->numAuxDataItems;
     Tcl_Obj **objArrayPtr, *objPtr;
     const AuxData *auxDataPtr;
     int i;
@@ -1055,7 +1055,7 @@ CleanupByteCode(
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
-	int lifetimeSec, lifetimeMicroSec, log2;
+	long long lifetimeSec, lifetimeMicroSec;
 
 	statsPtr = &iPtr->stats;
 
@@ -1074,17 +1074,9 @@ CleanupByteCode(
 
 	Tcl_GetTime(&destroyTime);
 	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
-	if (lifetimeSec > 2000) {	/* avoid overflow */
-	    lifetimeSec = 2000;
-	}
 	lifetimeMicroSec = 1000000 * lifetimeSec +
 		(destroyTime.usec - codePtr->createTime.usec);
-
-	log2 = TclLog2(lifetimeMicroSec);
-	if (log2 > 31) {
-	    log2 = 31;
-	}
-	statsPtr->lifetimeCount[log2]++;
+	statsPtr->lifetimeCount[TclLog2(lifetimeMicroSec)]++;
     }
 #endif /* TCL_COMPILE_STATS */
 
@@ -1443,7 +1435,7 @@ TclInitCompileEnv(
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
-    int word)			/* Index of the word in that context getting
+    Tcl_Size word)			/* Index of the word in that context getting
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1730,7 +1722,7 @@ TclWordKnownAtCompileTime(
 				 * to which we should append the known value
 				 * of the word. */
 {
-    int numComponents = tokenPtr->numComponents;
+    Tcl_Size numComponents = tokenPtr->numComponents;
     Tcl_Obj *tempPtr = NULL;
 
     if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -1801,7 +1793,7 @@ TclWordKnownAtCompileTime(
 static int
 ExpandRequested(
     Tcl_Token *tokenPtr,
-    size_t numWords)
+    Tcl_Size numWords)
 {
     /* Determine whether any words of the command require expansion */
     while (numWords--) {
@@ -1848,7 +1840,7 @@ TclCompileInvocation(
 {
     DefineLineInformation;
     size_t wordIdx = 0;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1888,12 +1880,12 @@ CompileExpanded(
     Tcl_Interp *interp,
     Tcl_Token *tokenPtr,
     Tcl_Obj *cmdObj,
-    int numWords,
+    Tcl_Size numWords,
     CompileEnv *envPtr)
 {
     DefineLineInformation;
-    int wordIdx = 0;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size wordIdx = 0;
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
     StartExpanding(envPtr);
     if (cmdObj) {
@@ -1953,7 +1945,7 @@ CompileCmdCompileProc(
     DefineLineInformation;
     int unwind = 0;
     Tcl_Size incrOffset = -1;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
     /*
      * Emission of the INST_START_CMD instruction is controlled by the value of
@@ -2026,7 +2018,7 @@ CompileCmdCompileProc(
     return TCL_ERROR;
 }
 
-static int
+static Tcl_Size
 CompileCommandTokens(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -2044,9 +2036,9 @@ CompileCommandTokens(
     Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size cmdIdx = envPtr->numCommands;
     Tcl_Size startCodeOffset = envPtr->codeNext - envPtr->codeStart;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
-    assert ((int)parsePtr->numWords > 0);
+    assert (parsePtr->numWords > 0);
 
     /* Precompile */
 
@@ -2091,7 +2083,7 @@ CompileCommandTokens(
 	    }
 	}
 	if (cmdPtr && !(cmdPtr->flags & CMD_COMPILES_EXPANDED)) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
 	    if (expand) {
 		/* We need to expand, but compileProc cannot. */
 		cmdPtr = NULL;
@@ -2106,15 +2098,15 @@ CompileCommandTokens(
 
     if (code == TCL_ERROR) {
 	if (expand < 0) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
 	}
 
 	if (expand) {
 	    CompileExpanded(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	} else {
 	    TclCompileInvocation(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	}
     }
 
@@ -2152,12 +2144,12 @@ TclCompileScript(
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int lastCmdIdx = -1;	/* Index into envPtr->cmdMapPtr of the last
+    Tcl_Size lastCmdIdx = -1;	/* Index into envPtr->cmdMapPtr of the last
 				 * command this routine compiles into bytecode.
 				 * Initial value of -1 indicates this routine
 				 * has not yet generated any bytecode. */
     const char *p = script;	/* Where we are in our compile. */
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr);
     Interp *iPtr = (Interp *) interp;
 
     if (envPtr->iPtr == NULL) {
@@ -2266,7 +2258,7 @@ TclCompileScript(
 		 * Tcl_FreeParse() to do.
 		 *
 		 * The advantage of this shortcut is that CompileCommandTokens()
-		 * can be written with an assumption that (int)parsePtr->numWords > 0, with
+		 * can be written with an assumption that parsePtr->numWords > 0, with
 		 * the implication the CCT() always generates bytecode.
 		 */
 		continue;
@@ -2428,13 +2420,13 @@ TclCompileTokens(
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
     Tcl_Size i, numObjsToConcat, adjust;
-    int length;
+    Tcl_Size length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral;
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr);
 
     /*
      * If this is actually a literal, handle continuation lines by
@@ -2498,7 +2490,7 @@ TclCompileTokens(
 	    if ((length == 1) && (buffer[0] == ' ') &&
 		    (tokenPtr->start[1] == '\n')) {
 		if (isLiteral) {
-		    int clPos = Tcl_DStringLength(&textBuffer);
+		    Tcl_Size clPos = Tcl_DStringLength(&textBuffer);
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
@@ -2687,14 +2679,13 @@ TclCompileExprWords(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Points to first in an array of word tokens
 				 * for the expression to compile inline. */
-    size_t numWords1,		/* Number of word tokens starting at tokenPtr.
+    size_t numWords,		/* Number of word tokens starting at tokenPtr.
 				 * Must be at least 1. Each word token
 				 * contains one or more subtokens. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *wordPtr;
-    int i, concatItems;
-    int numWords = numWords1;
+    size_t i, concatItems;
 
     /*
      * If the expression is a single word that doesn't require substitutions,
@@ -2714,7 +2705,7 @@ TclCompileExprWords(
     wordPtr = tokenPtr;
     for (i = 0;  i < numWords;  i++) {
 	CompileTokens(envPtr, wordPtr, interp);
-	if (i < (numWords - 1)) {
+	if (i + 1 < numWords) {
 	    PushStringLiteral(envPtr, " ");
 	}
 	wordPtr += wordPtr->numComponents + 1;
@@ -2757,10 +2748,10 @@ TclCompileNoOp(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     tokenPtr = parsePtr->tokenPtr;
-    for (i = 1; i < (int)parsePtr->numWords; i++) {
+    for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -2841,9 +2832,9 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
-    int numLitObjects = envPtr->literalArrayNext;
+    Tcl_Size i, numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int isNew;
     Interp *iPtr;
 
     if (envPtr->iPtr == NULL) {
@@ -3495,9 +3486,9 @@ TclGetInnermostExceptionRange(
     while (i > 0) {
 	rangePtr--; i--;
 
-	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
+	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
-			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
+			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
 
@@ -3528,7 +3519,7 @@ TclAddLoopBreakFixup(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+    Tcl_Size range = auxPtr - envPtr->exceptAuxArrayPtr;
 
     if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
 	Tcl_Panic("trying to add 'break' fixup to full exception range");
@@ -3554,7 +3545,7 @@ TclAddLoopContinueFixup(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+    Tcl_Size range = auxPtr - envPtr->exceptAuxArrayPtr;
 
     if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
 	Tcl_Panic("trying to add 'continue' fixup to full exception range");
@@ -3594,13 +3585,13 @@ TclCleanupStackForBreakContinue(
     ExceptionAux *auxPtr)
 {
     size_t savedStackDepth = envPtr->currStackDepth;
-    int toPop = envPtr->expandCount - auxPtr->expandTarget;
+    Tcl_Size toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
 	while (toPop --> 0) {
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	}
-	TclAdjustStackDepth((int)(auxPtr->expandTargetDepth - envPtr->currStackDepth),
+	TclAdjustStackDepth((auxPtr->expandTargetDepth - envPtr->currStackDepth),
 		envPtr);
 	envPtr->currStackDepth = auxPtr->expandTargetDepth;
     }
@@ -3627,7 +3618,7 @@ static void
 StartExpanding(
     CompileEnv *envPtr)
 {
-    int i;
+    Tcl_Size i;
 
     TclEmitOpcode(INST_EXPAND_START, envPtr);
 
@@ -3636,7 +3627,7 @@ StartExpanding(
      * where this expansion started.
      */
 
-    for (i=0 ; i<(int)envPtr->exceptArrayNext ; i++) {
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[i];
 
@@ -3684,11 +3675,11 @@ StartExpanding(
 void
 TclFinalizeLoopExceptionRange(
     CompileEnv *envPtr,
-    int range)
+    Tcl_Size range)
 {
     ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[range];
     ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[range];
-    int i, offset;
+    Tcl_Size i, offset;
     unsigned char *site;
 
     if (rangePtr->type != LOOP_EXCEPTION_RANGE) {
@@ -3700,7 +3691,7 @@ TclFinalizeLoopExceptionRange(
      * there is no need to fuss around with updating code offsets.
      */
 
-    for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
+    for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->breakTargets[i];
 	offset = rangePtr->breakOffset - auxPtr->breakTargets[i];
 	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
@@ -3960,9 +3951,9 @@ TclEmitForwardJump(
      */
 
     jumpFixupPtr->jumpType = jumpType;
-    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
-    jumpFixupPtr->cmdIndex = envPtr->numCommands;
-    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
+    jumpFixupPtr->codeOffset = (unsigned int)(envPtr->codeNext - envPtr->codeStart);
+    jumpFixupPtr->cmdIndex = (int)envPtr->numCommands;
+    jumpFixupPtr->exceptIndex = (int)envPtr->exceptArrayNext;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
@@ -4010,12 +4001,12 @@ TclFixupForwardJump(
 				 * holds the resulting instruction. */
     JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
 				 * describes the forward jump. */
-    int jumpDist,		/* Jump distance to set in jump instr. */
-    int distThreshold)		/* Maximum distance before the two byte jump
+    Tcl_Size jumpDist,		/* Jump distance to set in jump instr. */
+    Tcl_Size distThreshold)		/* Maximum distance before the two byte jump
 				 * is grown to five bytes. */
 {
     unsigned char *jumpPc, *p;
-    int firstCmd, lastCmd, firstRange, lastRange, k;
+    Tcl_Size firstCmd, lastCmd, firstRange, lastRange, k;
     size_t numBytes;
 
     if (jumpDist <= distThreshold) {
@@ -4100,14 +4091,14 @@ TclFixupForwardJump(
 
     for (k = 0 ; k < (int)envPtr->exceptArrayNext ; k++) {
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
-	int i;
+	Tcl_Size i;
 
-	for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
+	for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
 	    if (jumpFixupPtr->codeOffset < auxPtr->breakTargets[i]) {
 		auxPtr->breakTargets[i] += 3;
 	    }
 	}
-	for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
+	for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
 	    if (jumpFixupPtr->codeOffset < auxPtr->continueTargets[i]) {
 		auxPtr->continueTargets[i] += 3;
 	    }
@@ -4147,9 +4138,9 @@ TclEmitInvoke(
     va_list argList;
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
-    int arg1, arg2, wordCount = 0, expandCount = 0;
-    int loopRange = 0, breakRange = 0, continueRange = 0;
-    int cleanup, depth = TclGetStackDepth(envPtr);
+    Tcl_Size arg1, arg2, wordCount = 0, expandCount = 0;
+    Tcl_Size loopRange = 0, breakRange = 0, continueRange = 0;
+    Tcl_Size cleanup, depth = TclGetStackDepth(envPtr);
 
     /*
      * Parse the arguments.
@@ -4358,13 +4349,13 @@ GetCmdLocEncodingSize(
 				 * encode. */
 {
     CmdLocation *mapPtr = envPtr->cmdMapPtr;
-    int numCmds = envPtr->numCommands;
-    int codeDelta, codeLen, srcDelta, srcLen;
+    Tcl_Size numCmds = envPtr->numCommands;
+    Tcl_Size codeDelta, codeLen, srcDelta, srcLen;
     int codeDeltaNext, codeLengthNext, srcDeltaNext, srcLengthNext;
 				/* The offsets in their respective byte
 				 * sequences where the next encoded offset or
 				 * length should go. */
-    int prevCodeOffset, prevSrcOffset, i;
+    Tcl_Size prevCodeOffset, prevSrcOffset, i;
 
     codeDeltaNext = codeLengthNext = srcDeltaNext = srcLengthNext = 0;
     prevCodeOffset = prevSrcOffset = 0;
@@ -4445,7 +4436,7 @@ EncodeCmdLocMap(
     Tcl_Size i, codeDelta, codeLen, srcLen, prevOffset;
     Tcl_Size numCmds = envPtr->numCommands;
     unsigned char *p = startPtr;
-    int srcDelta;
+    Tcl_Size srcDelta;
 
     /*
      * Encode the code offset for each command as a sequence of deltas.
@@ -4573,8 +4564,8 @@ RecordByteCodeStats(
     statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
-    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes += (double)
