@@ -7772,7 +7772,7 @@ ExprRandFunc(
      * dividing by RAND_IM yields a double in the range (0, 1).
      */
 
-    dResult = iPtr->randSeed * (1.0/RAND_IM);
+    dResult = (double)iPtr->randSeed * (1.0/RAND_IM);
 
     /*
      * Push a Tcl object with the result.

@@ -2433,7 +2433,7 @@ typedef struct Interp {
 #if defined(__APPLE__)
 #define TCL_ALLOCALIGN	16
 #else
-#define TCL_ALLOCALIGN	(2*sizeof(void *))
+#define TCL_ALLOCALIGN	(2*(int)sizeof(void *))
 #endif
 
 /*
