@@ -18,6 +18,10 @@
 #   define USE_TCLOO_STUBS
 #endif
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_MethodType void
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -269,5 +273,12 @@ extern const TclOOStubs *tclOOStubsPtr;
 #endif /* defined(USE_TCLOO_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodType
+#   undef Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod
+#endif
 
 #endif /* _TCLOODECLS */

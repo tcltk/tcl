@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    size_t refCount;		/* Used to ensure this structure is not
+    Tcl_Size refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -131,11 +131,13 @@ static void		TraceCommandProc(void *clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static Tcl_CmdObjTraceProc2 TraceExecutionProc;
+#ifndef TCL_NO_DEPRECATED
 static int		StringTraceProc(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size level,
 			    const char *command, Tcl_Command commandInfo,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static void		StringTraceDeleteProc(void *clientData);
+#endif /* TCL_NO_DEPRECATED */
 static void		DisposeTraceResult(int flags, char *result);
 static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
 			    const char *part2, VarTrace *tracePtr);
@@ -145,10 +147,12 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     void *clientData;		/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Convenience macros for iterating over the list of traces. Note that each of
@@ -188,7 +192,7 @@ int
 Tcl_TraceObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /* Main sub commands to 'trace' */
@@ -1978,6 +1982,7 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
@@ -1995,10 +2000,10 @@ traceWrapperProc(
     Tcl_Obj *const objv[])
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
-    if (objc > INT_MAX) {
+    if (objc > INT_MAX || objc < 0) {
 	objc = -1; /* Signal Tcl_CmdObjTraceProc that objc is out of range */
     }
-    return info->proc(info->clientData, interp, (int)level, command, commandInfo, objc, objv);
+    return info->proc(info->clientData, interp, (int)level, command, commandInfo, (int)objc, objv);
 }
 
 static void
@@ -2031,6 +2036,7 @@ Tcl_CreateObjTrace(
 	    (proc ? traceWrapperProc : NULL),
 	    info, traceWrapperDelProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Trace
 Tcl_CreateObjTrace2(
@@ -2121,6 +2127,7 @@ Tcl_CreateObjTrace2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Trace
 Tcl_CreateTrace(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
@@ -2187,8 +2194,8 @@ StringTraceProc(
      * either command or argv.
      */
 
-    data->proc(data->clientData, interp, level, (char *) command,
-	    cmdPtr->proc, cmdPtr->clientData, objc, argv);
+    data->proc(data->clientData, interp, (int)level, (char *) command,
+	    cmdPtr->proc, cmdPtr->clientData, (int)objc, argv);
     TclStackFree(interp, (void *) argv);
 
     return TCL_OK;
@@ -2216,6 +2223,7 @@ StringTraceDeleteProc(
 {
     Tcl_Free(clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2393,7 +2401,7 @@ TclCheckArrayTraces(
     Var *varPtr,
     Var *arrayPtr,
     Tcl_Obj *name,
-    int index)
+    Tcl_Size index)
 {
     int code = TCL_OK;
 
@@ -2446,7 +2454,7 @@ TclObjCallVarTraces(
     int leaveErrMsg,		/* If true, and one of the traces indicates an
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -2528,7 +2536,7 @@ TclCallVarTraces(
 		} while (*p != '\0');
 		p--;
 		if (*p == ')') {
-		    int offset = (openParen - part1);
+		    Tcl_Size offset = (openParen - part1);
 		    char *newPart1;
 
 		    Tcl_DStringInit(&nameCopy);

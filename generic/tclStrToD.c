@@ -3604,7 +3604,7 @@ ShorteningBignumConversionPowD(
 	     * Stash the last digit.
 	     */
 
-	    *s++ = '0' + digit;
+	    *s++ = '0' + (char)digit;
 	    break;
 	}
 
@@ -3621,7 +3621,7 @@ ShorteningBignumConversionPowD(
 		break;
 	    }
 	    ++digit;
-	    *s++ = '0' + digit;
+	    *s++ = '0' + (char)digit;
 	    break;
 	}
 
@@ -3629,7 +3629,7 @@ ShorteningBignumConversionPowD(
 	 * Have we converted all the requested digits?
 	 */
 
-	*s++ = '0' + digit;
+	*s++ = '0' + (char)digit;
 	if (i == ilim) {
 	    if (ShouldBankerRoundUpPowD(&b, sd, digit&1)) {
 		s = BumpUp(s, retval, &k);
@@ -3760,7 +3760,7 @@ StrictBignumConversionPowD(
 	 * Have we converted all the requested digits?
 	 */
 
-	*s++ = '0' + digit;
+	*s++ = '0' + (char)digit;
 	if (i == ilim) {
 	    if (ShouldBankerRoundUpPowD(&b, sd, digit&1)) {
 		s = BumpUp(s, retval, &k);
@@ -3977,7 +3977,7 @@ ShorteningBignumConversion(
 	if (dig.used > 1 || dig.dp[0] >= 10) {
 	    Tcl_Panic("wrong digit!");
 	}
-	digit = dig.dp[0];
+	digit = (int)dig.dp[0];
 
 	/*
 	 * Does the current digit leave us with a remainder small enough to
@@ -4189,7 +4189,7 @@ StrictBignumConversion(
     if (dig.used > 1 || dig.dp[0] >= 10) {
 	Tcl_Panic("wrong digit!");
     }
-    digit = dig.dp[0];
+    digit = (int)dig.dp[0];
 
     /*
      * Is a single digit all that was requested?
@@ -4241,7 +4241,7 @@ StrictBignumConversion(
 	    if ((err != MP_OKAY) || (mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
 	    }
-	    digit = dig.dp[0];
+	    digit = (int)dig.dp[0];
 	    for (j = g-1; j >= 0; --j) {
 		int t = itens[j];
 
