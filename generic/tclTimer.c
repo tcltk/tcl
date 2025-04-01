@@ -1115,7 +1115,7 @@ GetAfterEvent(
 	return NULL;
     }
     cmdString += 6;
-    id = strtoul(cmdString, &end, 10);
+    id = (int)strtoul(cmdString, &end, 10);
     if ((end == cmdString) || (*end != 0)) {
 	return NULL;
     }

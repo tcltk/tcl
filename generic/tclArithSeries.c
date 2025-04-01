@@ -168,7 +168,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -191,7 +191,7 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += (index * dblRepPtr->step);
+	d += ((double)index * dblRepPtr->step);
     }
 
     return ArithRound(d, dblRepPtr->precision);
@@ -234,7 +234,7 @@ ObjPrecision(
 
 	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
 	    str = strchr(str, '.');
-	    return (str ? strlen(str + 1) : 0);
+	    return (str ? (unsigned)strlen(str + 1) : 0);
 	}
 	/* don't calculate precision for e-notation */
     }
@@ -712,13 +712,13 @@ TclNewArithSeriesObj(
 	    // Compute precision based on given command argument values
 	    precision = maxObjPrecision(startObj, NULL, stepObj);
 
-	    dend = dstart + (dstep * (len-1));
+	    dend = dstart + (dstep * (double)(len-1));
 	    // Make computed end value match argument(s) precision
 	    dend = ArithRound(dend, precision);
 	    end = dend;
 	} else {
 	    end = start + (step * (len - 1));
-	    dend = end;
+	    dend = (double)end;
 	}
     }
 
@@ -738,7 +738,7 @@ TclNewArithSeriesObj(
     if (useDoubles) {
 	/* ensure we'll not get NaN somewhere in the arith-series,
 	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
-	double d = dstart + (len - 1) * dstep;
+	double d = dstart + (double)(len - 1) * dstep;
 	if (isnan(d)) {
 	    const char *s = "domain error: argument not in valid range";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
