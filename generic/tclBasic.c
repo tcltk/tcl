@@ -207,7 +207,7 @@ static Tcl_ObjCmdProc2	ExprSrandFunc;
 static Tcl_ObjCmdProc2	ExprUnaryFunc;
 static Tcl_ObjCmdProc2	ExprWideFunc;
 static Tcl_ObjCmdProc2	FloatClassifyObjCmd;
-static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
+static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
 			    Tcl_Size actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
@@ -8262,7 +8262,7 @@ FloatClassifyObjCmd(
 static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int expected,		/* Formal parameter count. */
+    Tcl_Size expected,		/* Formal parameter count. */
     Tcl_Size found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
