@@ -29,7 +29,7 @@
  */
 
 static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
-			    Tcl_Obj *objPtr, int localHash);
+			    Tcl_Obj *objPtr, size_t localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static size_t		HashString(const char *string, Tcl_Size length);
 #ifdef TCL_COMPILE_DEBUG
@@ -439,7 +439,7 @@ TclRegisterLiteral(
 	    if (objIndex > INT_MAX) {
 		Tcl_Panic("Literal table index too large. Cannot be handled by TclEmitPush");
 	    }
-	    return objIndex;
+	    return (int)objIndex;
 	}
     }
 
@@ -481,7 +481,7 @@ TclRegisterLiteral(
 	Tcl_Panic(
 	    "Literal table index too large. Cannot be handled by TclEmitPush");
     }
-    return objIndex;
+    return (int)objIndex;
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -646,7 +646,7 @@ TclAddLiteralObj(
 	*litPtrPtr = lPtr;
     }
 
-    return objIndex;
+    return (int)objIndex;
 }
 
 /*
@@ -672,7 +672,7 @@ AddLocalLiteralEntry(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The literal to add to the CompileEnv. */
-    int localHash)		/* Hash value for the literal's string. */
+    size_t localHash)		/* Hash value for the literal's string. */
 {
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;

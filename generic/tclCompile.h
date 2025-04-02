@@ -1310,7 +1310,7 @@ TclUpdateStackReqs(
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, 0, envPtr);				\
+	TclUpdateStackReqs((unsigned char)op, 0, envPtr);				\
     } while (0)
 
 /*
