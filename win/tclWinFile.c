@@ -380,7 +380,7 @@ WinSymLinkDirectory(
 {
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
-    int len;
+    size_t len;
     WCHAR nativeTarget[MAX_PATH];
     WCHAR *loop;
 
@@ -415,7 +415,7 @@ WinSymLinkDirectory(
     memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
     reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
-	    wcslen(nativeTarget) * sizeof(WCHAR);
+	    (WORD)(wcslen(nativeTarget) * sizeof(WCHAR));
     reparseBuffer->Reserved = 0;
     reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
     reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
@@ -1854,7 +1854,7 @@ static int
 NativeIsExec(
     const WCHAR *path)
 {
-    int len = wcslen(path);
+    size_t len = wcslen(path);
 
     if (len < 5) {
 	return 0;
@@ -2024,7 +2024,7 @@ NativeStat(
 {
     DWORD attr;
     int dev, nlink = 1;
-    unsigned short mode;
+    int mode;
     unsigned int inode = 0;
     HANDLE fileHandle;
     DWORD fileType = FILE_TYPE_UNKNOWN;
@@ -2141,9 +2141,9 @@ NativeStat(
     }
 
     statPtr->st_dev	= (dev_t) dev;
-    statPtr->st_ino	= inode;
-    statPtr->st_mode	= mode;
-    statPtr->st_nlink	= nlink;
+    statPtr->st_ino	= (_ino_t)inode;
+    statPtr->st_mode	= (unsigned short)mode;
+    statPtr->st_nlink	= (short)nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
     statPtr->st_rdev	= (dev_t) dev;

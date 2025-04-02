@@ -833,8 +833,8 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
     int localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Tcl_ObjType const *typePtr = objPtr->typePtr;
     char *p;
-    int bytesNeeded = 0;
-    int llen, i;
+    Tcl_Size bytesNeeded = 0;
+    Tcl_Size llen, i;
 
 
     /*

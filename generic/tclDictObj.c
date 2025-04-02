@@ -546,7 +546,9 @@ UpdateStringOfDict(
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
     TclOOM(dst, bytesNeeded);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);

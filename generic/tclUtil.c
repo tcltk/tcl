@@ -1627,7 +1627,9 @@ Tcl_Merge(
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	flagPtr[i] |= ( i ? DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= DONT_QUOTE_HASH;
+	}
 	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;

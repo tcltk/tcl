@@ -2971,11 +2971,11 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (unsigned char)(((d[0] - 0x20) & 0x3F) << 2)
-		    | (((d[1] - 0x20) & 0x3F) >> 4);
+	    *cursor++ = (unsigned char)((((d[0] - 0x20) & 0x3F) << 2)
+		    | (((d[1] - 0x20) & 0x3F) >> 4));
 	    if (--lineLen > 0) {
-		*cursor++ = (unsigned char)(((d[1] - 0x20) & 0x3F) << 4)
-			| (((d[2] - 0x20) & 0x3F) >> 2);
+		*cursor++ = (unsigned char)((((d[1] - 0x20) & 0x3F) << 4)
+			| (((d[2] - 0x20) & 0x3F) >> 2));
 		if (--lineLen > 0) {
 		    *cursor++ = (unsigned char)((((d[2] - 0x20) & 0x3F) << 6)
 			    | (((d[3] - 0x20) & 0x3F)));
