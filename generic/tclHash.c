@@ -621,9 +621,9 @@ Tcl_HashStats(
 	} else {
 	    overflow++;
 	}
-	tmp = j;
+	tmp = (double)j;
 	if (tablePtr->numEntries != 0) {
-	    average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
+	    average += (tmp+1.0)*(tmp/(double)tablePtr->numEntries)/2.0;
 	}
     }
 

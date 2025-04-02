@@ -943,8 +943,8 @@ wordSkip(
     void *ptr)
 {
     int mask = TCL_ALLOCALIGN-1;
-    int base = PTR2INT(ptr) & mask;
-    return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj *);
+    int base = (int)PTR2INT(ptr) & mask;
+    return (TCL_ALLOCALIGN - base)/(int)sizeof(Tcl_Obj *);
 }
 
 /*

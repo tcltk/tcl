@@ -1689,7 +1689,7 @@ declare 531 {
     void Tcl_LimitTypeReset(Tcl_Interp *interp, int type)
 }
 declare 532 {
-    int Tcl_LimitGetCommands(Tcl_Interp *interp)
+    Tcl_Size Tcl_LimitGetCommands(Tcl_Interp *interp)
 }
 declare 533 {
     void Tcl_LimitGetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
