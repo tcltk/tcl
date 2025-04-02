@@ -2491,7 +2491,7 @@ TclFSFileAttrIndex(
 	for (i=0 ; i<objc ; i++) {
 	    if (!strcmp(attributeName, TclGetString(objv[i]))) {
 		TclDecrRefCount(listObj);
-		*indexPtr = i;
+		*indexPtr = (int)i;
 		return TCL_OK;
 	    }
 	}

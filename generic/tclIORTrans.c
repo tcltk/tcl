@@ -3214,7 +3214,7 @@ TransformFlush(
     Tcl_Obj *resObj;
     Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
-    int res;
+    Tcl_Size res;
 
     /*
      * Are we in the correct thread?

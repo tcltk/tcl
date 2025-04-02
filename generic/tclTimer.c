@@ -867,7 +867,7 @@ Tcl_AfterObjCmd(
 	tsdPtr->afterId += 1;
 	Tcl_GetTime(&wakeup);
 	wakeup.sec += ms / 1000;
-	wakeup.usec += ms % 1000 * 1000;
+	wakeup.usec += (long)ms % 1000 * 1000;
 	if (wakeup.usec > 1000000) {
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
@@ -1015,7 +1015,7 @@ AfterDelay(
     Tcl_GetTime(&now);
     endTime = now;
     endTime.sec += (ms / 1000);
-    endTime.usec += (ms % 1000) * 1000;
+    endTime.usec += ((long)ms % 1000) * 1000;
     if (endTime.usec >= 1000000) {
 	endTime.sec++;
 	endTime.usec -= 1000000;

@@ -908,8 +908,8 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, i, index, keepNewline, result, ignoreStderr;
-    Tcl_Size length, skip;
+    int background, i, index, keepNewline, result, ignoreStderr;
+    Tcl_Size argc, length, skip;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1137,7 +1137,7 @@ Tcl_OpenObjCmd(
 	if (objc == 4) {
 	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
-	    int scanned = TclParseAllWhiteSpace(permString, -1);
+	    Tcl_Size scanned = TclParseAllWhiteSpace(permString, -1);
 
 	    /*
 	     * Support legacy octal numbers.
