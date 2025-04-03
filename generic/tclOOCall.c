@@ -148,7 +148,7 @@ static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 			    int flags, int reuseMask);
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
-static size_t		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
+static Tcl_Size	SortMethodNames(Tcl_HashTable *namesPtr, int flags,
 			    const char ***stringsPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
@@ -322,7 +322,7 @@ TclOOInvokeContext(
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    int objc,			/* The number of arguments. */
+    Tcl_Size objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *) clientData;
@@ -380,10 +380,12 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
+#ifndef TCL_NO_DEPRECATED
     if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
-		(Tcl_ObjectContext) contextPtr, objc, objv);
+		(Tcl_ObjectContext) contextPtr, (int)objc, objv);
     }
+#endif /* TCL_NO_DEPRECATED */
     return (mPtr->type2Ptr->callProc)(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
@@ -437,7 +439,7 @@ FinalizeMethodRefs(
  * ----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
     Object *contextObj,		/* From what context object we are inquiring.
@@ -530,7 +532,7 @@ TclOOGetSortedMethodList(
     return numStrings;
 }
 
-size_t
+Tcl_Size
 TclOOGetSortedClassMethodList(
     Class *clsPtr,		/* The class to get the method names for. */
     int flags,			/* Whether we just want the public method
@@ -544,7 +546,7 @@ TclOOGetSortedClassMethodList(
 				/* Used to track what classes have been looked
 				 * at. Is set-like in nature and keyed by
 				 * pointer to class. */
-    size_t numStrings;
+    Tcl_Size numStrings;
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
@@ -589,7 +591,7 @@ TclOOGetSortedClassMethodList(
  * ----------------------------------------------------------------------
  */
 
-static size_t
+static Tcl_Size
 SortMethodNames(
     Tcl_HashTable *namesPtr,	/* The table of names; unsorted, but contains
 				 * whether the names are wanted and under what
@@ -604,7 +606,7 @@ SortMethodNames(
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
-    size_t i = 0;
+    Tcl_Size i = 0;
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
@@ -622,7 +624,7 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    strings = (const char **) Tcl_Alloc(sizeof(char *) * namesPtr->numEntries);
+    strings = (const char **)Tcl_Alloc(sizeof(char *) * namesPtr->numEntries);
     FOREACH_HASH(namePtr, isWanted, namesPtr) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -640,7 +642,7 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, i, sizeof(char *), CmpStr);
+	    qsort((void *)strings, i, sizeof(char *), CmpStr);
 	}
 	*stringsPtr = strings;
     } else {
@@ -800,11 +802,11 @@ AddStandardMethodName(
 	    int isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
 		    ? IN_LIST : 0;
 
-	    isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+	    isWanted |= (mPtr->type2Ptr == NULL ? NO_IMPLEMENTATION : 0);
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
-		&& mPtr->typePtr != NULL) {
-	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
+		&& mPtr->type2Ptr != NULL) {
+	    int isWanted = (int)PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
@@ -986,7 +988,7 @@ AddMethodToCallChain(
      * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
+    if (mPtr == NULL || mPtr->type2Ptr == NULL || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 
@@ -1895,7 +1897,7 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->type2Ptr->name,
 		TCL_AUTO_LENGTH);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
