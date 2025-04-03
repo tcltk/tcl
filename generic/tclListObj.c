@@ -3550,7 +3550,9 @@ UpdateStringOfList(
     start = dst = Tcl_InitStringRep(listObj, NULL, bytesNeeded);
     TclOOM(dst, bytesNeeded);
     for (i = 0; i < numElems; i++) {
-	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';

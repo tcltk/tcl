@@ -863,7 +863,8 @@ CompileRegexp(
 {
     TclRegexp *regexpPtr;
     const Tcl_UniChar *uniString;
-    int numChars, status, i, exact;
+    Tcl_Size numChars;
+    int status, i, exact;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -935,7 +936,7 @@ CompileRegexp(
      */
 
     regexpPtr->flags = flags;
-    status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
+    status = TclReComp(&regexpPtr->re, uniString, (size_t)numChars, flags);
     Tcl_DStringFree(&stringBuf);
 
     if (status != REG_OKAY) {

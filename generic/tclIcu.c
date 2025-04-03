@@ -349,9 +349,12 @@ DetectEncoding(
 	return FunctionNotAvailableError(interp);
     }
 
-    bytes = (char *) Tcl_GetBytesFromObj(interp, objPtr, &len);
+    bytes = (char *)Tcl_GetBytesFromObj(interp, objPtr, &len);
     if (bytes == NULL) {
 	return TCL_ERROR;
+    }
+    if (len > INT_MAX) {
+	return IcuError(interp, "Input string too big", U_BUFFER_OVERFLOW_ERROR);
     }
     UErrorCodex status = U_ZERO_ERRORZ;
 
@@ -360,7 +363,7 @@ DetectEncoding(
 	return IcuError(interp, "Could not open charset detector", status);
     }
 
-    ucsdet_setText(csd, bytes, len, &status);
+    ucsdet_setText(csd, bytes, (int)len, &status);
     if (U_FAILURE(status)) {
 	IcuError(interp, "Could not set detection text", status);
 	ucsdet_close(csd);
@@ -588,7 +591,7 @@ static int
 IcuDetectObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (objc > 3) {
@@ -634,7 +637,7 @@ static int
 IcuConverterNamesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
@@ -684,7 +687,7 @@ static int
 IcuConverterAliasesObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
@@ -779,17 +782,17 @@ IcuConverttoDString(
     dstCapacity = utf16len;
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
-    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstCapacity,
-			     utf16, utf16len, &status);
+    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstCapacity,
+			     utf16, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
 	    break; /* We don't care */
 	case U_BUFFER_OVERFLOW_ERROR:
-	    Tcl_DStringSetLength(dsOutPtr, dstLen);
+	    Tcl_DStringSetLength(dsOutPtr, (int)dstLen);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
-	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
-				     utf16, utf16len, &status);
+	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstLen,
+				     utf16, (int)utf16len, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -855,11 +858,11 @@ IcuBytesToUCharDString(
     }
 
     int dstLen;
-    int dstCapacity = (int) nbytes; /* In UChar's */
+    int dstCapacity = (int)nbytes; /* In UChar's */
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-			   (const char *)bytes, nbytes, &status);
+			   (const char *)bytes, (int)nbytes, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -869,7 +872,7 @@ IcuBytesToUCharDString(
 	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
 	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-				   (const char *)bytes, nbytes, &status);
+				   (const char *)bytes, (int)nbytes, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -953,7 +956,7 @@ IcuNormalizeUCharDString(
     normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 
     normLen = unorm2_normalize(
-	normalizer, utf16, utf16len, normPtr, utf16len, &status);
+	normalizer, utf16, (int)utf16len, normPtr, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -965,7 +968,7 @@ IcuNormalizeUCharDString(
 	    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 	    status = U_ZERO_ERRORZ; /* Need to clear error! */
 	    normLen = unorm2_normalize(
-		normalizer, utf16, utf16len, normPtr, normLen, &status);
+		normalizer, utf16, (int)utf16len, normPtr, normLen, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -985,7 +988,7 @@ IcuNormalizeUCharDString(
  */
 static int IcuParseConvertOptions(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[],
     int *strictPtr,
     Tcl_Obj **failindexVarPtr)
@@ -1061,7 +1064,7 @@ static int
 IcuConvertfromObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
@@ -1112,7 +1115,7 @@ static int
 IcuConverttoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
@@ -1157,7 +1160,7 @@ static int
 IcuNormalizeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *optNames[] = {"-profile", "-mode", NULL};
@@ -1510,11 +1513,11 @@ TclIcuInit(
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertto",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertto",
 				 IcuConverttoObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::convertfrom",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertfrom",
 				 IcuConvertfromObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand(interp,  "::tcl::unsupported::icu::detect",
+	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
 
@@ -1522,11 +1525,11 @@ TclIcuInit(
 
 	/* Ref count number of commands */
 	icu_fns.nopen += 3; /* UPDATE AS CMDS ADDED/DELETED BELOW */
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::converters",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::converters",
 		IcuConverterNamesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::aliases",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::aliases",
 		IcuConverterAliasesObjCmd, 0, TclIcuCleanup);
-	Tcl_CreateObjCommand(interp, "::tcl::unsupported::icu::normalize",
+	Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::normalize",
 		IcuNormalizeObjCmd, 0, TclIcuCleanup);
     }
 
@@ -1553,7 +1556,7 @@ int
 TclLoadIcuObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {

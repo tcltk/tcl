@@ -10,5 +10,6 @@ Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
 writing Tcl scripts.
 
+## Continued 64-bit capacity: Command line arguments larger than 2Gb
 
 

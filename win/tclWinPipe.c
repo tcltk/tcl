@@ -2765,7 +2765,7 @@ int
 Tcl_PidObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;
@@ -3247,7 +3247,7 @@ TclpOpenTemporaryFile(
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;
     }
-    counter = TclpGetClicks() % 65533;
+    counter = (int)(TclpGetClicks() % 65533);
     counter2 = 1024;			/* Only try this many times! Prevents
 					 * an infinite loop. */
 

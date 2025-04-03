@@ -124,7 +124,7 @@ int
 Tcl_LoadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *target;
@@ -132,7 +132,8 @@ Tcl_LoadObjCmd(
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int code, namesMatch, filesMatch, offset;
+    int code, namesMatch, filesMatch;
+    Tcl_Size offset;
     const char *symbols[2];
     Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;
@@ -550,14 +551,15 @@ int
 Tcl_UnloadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int i, code, complain = 1, keepLibrary = 0;
+    Tcl_Size i;
+    int code, complain = 1, keepLibrary = 0;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
