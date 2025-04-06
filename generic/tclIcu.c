@@ -349,7 +349,7 @@ DetectEncoding(
 	return FunctionNotAvailableError(interp);
     }
 
-    bytes = (char *) Tcl_GetBytesFromObj(interp, objPtr, &len);
+    bytes = (char *)Tcl_GetBytesFromObj(interp, objPtr, &len);
     if (bytes == NULL) {
 	return TCL_ERROR;
     }
@@ -360,7 +360,7 @@ DetectEncoding(
 	return IcuError(interp, "Could not open charset detector", status);
     }
 
-    ucsdet_setText(csd, bytes, len, &status);
+    ucsdet_setText(csd, bytes, (int)len, &status);
     if (U_FAILURE(status)) {
 	IcuError(interp, "Could not set detection text", status);
 	ucsdet_close(csd);
@@ -569,11 +569,11 @@ IcuObjFromUCharDString(
 /*
  *------------------------------------------------------------------------
  *
- * EncodingDetectObjCmd --
+ * IcuDetectObjCmd --
  *
- *	Implements the Tcl command EncodingDetect.
- *	  encdetect - returns names of all detectable encodings
- *	  encdetect BYTES ?-all? - return detected encoding(s)
+ *	Implements the Tcl command ::tcl::unsupported::icu::detect.
+ *	  ::tcl::unsupported::icu::detect - returns names of all detectable encodings
+ *	  ::tcl::unsupported::icu::detect BYTES ?-all? - return detected encoding(s)
  *
  * Results:
  *	TCL_OK    - Success.
@@ -743,10 +743,10 @@ IcuConverterAliasesObjCmd(
 static int
 IcuConverttoDString(
     Tcl_Interp *interp,
-    Tcl_DString *dsInPtr,  /* Input UTF16 */
+    Tcl_DString *dsInPtr,	/* Input UTF16 */
     const char *icuEncName,
     int strict,
-    Tcl_DString *dsOutPtr) /* Output encoded string. */
+    Tcl_DString *dsOutPtr)	/* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
 	ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
@@ -779,17 +779,17 @@ IcuConverttoDString(
     dstCapacity = utf16len;
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
-    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstCapacity,
-			     utf16, utf16len, &status);
+    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstCapacity,
+			     utf16, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
 	    break; /* We don't care */
 	case U_BUFFER_OVERFLOW_ERROR:
-	    Tcl_DStringSetLength(dsOutPtr, dstLen);
+	    Tcl_DStringSetLength(dsOutPtr, (int)dstLen);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
-	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
-				     utf16, utf16len, &status);
+	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstLen,
+				     utf16, (int)utf16len, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -827,7 +827,7 @@ IcuBytesToUCharDString(
     Tcl_Size nbytes,
     const char *icuEncName,
     int strict,
-    Tcl_DString *dsOutPtr) /* Output UChar string. */
+    Tcl_DString *dsOutPtr)	/* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
 	ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
@@ -855,11 +855,11 @@ IcuBytesToUCharDString(
     }
 
     int dstLen;
-    int dstCapacity = (int) nbytes; /* In UChar's  */
+    int dstCapacity = (int)nbytes; /* In UChar's */
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-			   (const char *)bytes, nbytes, &status);
+			   (const char *)bytes, (int)nbytes, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -869,7 +869,7 @@ IcuBytesToUCharDString(
 	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
 	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-				   (const char *)bytes, nbytes, &status);
+				   (const char *)bytes, (int)nbytes, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -905,9 +905,9 @@ IcuBytesToUCharDString(
 static int
 IcuNormalizeUCharDString(
     Tcl_Interp *interp,
-    Tcl_DString *dsInPtr, /* Input UTF16 */
+    Tcl_DString *dsInPtr,	/* Input UTF16 */
     NormalizationMode mode,
-    Tcl_DString *dsOutPtr) /* Output normalized UTF16. */
+    Tcl_DString *dsOutPtr)	/* Output normalized UTF16. */
 {
     typedef UNormalizer2 *(*normFn)(UErrorCodex *);
     normFn fn = NULL;
@@ -953,7 +953,7 @@ IcuNormalizeUCharDString(
     normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 
     normLen = unorm2_normalize(
-	normalizer, utf16, utf16len, normPtr, utf16len, &status);
+	normalizer, utf16, (int)utf16len, normPtr, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -965,7 +965,7 @@ IcuNormalizeUCharDString(
 	    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 	    status = U_ZERO_ERRORZ; /* Need to clear error! */
 	    normLen = unorm2_normalize(
-		normalizer, utf16, utf16len, normPtr, normLen, &status);
+		normalizer, utf16, (int)utf16len, normPtr, normLen, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -1060,9 +1060,9 @@ static int IcuParseConvertOptions(
 static int
 IcuConvertfromObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
     Tcl_Obj *failindexVar;
@@ -1111,9 +1111,9 @@ IcuConvertfromObjCmd(
 static int
 IcuConverttoObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int strict;
     Tcl_Obj *failindexVar;
@@ -1156,9 +1156,9 @@ IcuConverttoObjCmd(
 static int
 IcuNormalizeObjCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *optNames[] = {"-profile", "-mode", NULL};
     enum { OPT_PROFILE, OPT_MODE } opt;
@@ -1271,10 +1271,9 @@ TclIcuCleanup(
  */
 static void *
 IcuFindSymbol(
-    Tcl_LoadHandle loadH, /* Handle to shared library containing symbol */
-    const char *name,     /* Name of function */
-    const char *suffix    /* Suffix that may be present */
-)
+    Tcl_LoadHandle loadH,	/* Handle to shared library containing symbol */
+    const char *name,		/* Name of function */
+    const char *suffix)		/* Suffix that may be present */
 {
     /*
      * ICU symbols may have a version suffix depending on how it was built.
