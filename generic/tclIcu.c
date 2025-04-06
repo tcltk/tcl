@@ -353,6 +353,11 @@ DetectEncoding(
     if (bytes == NULL) {
 	return TCL_ERROR;
     }
+    if (len > INT_MAX) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	return TCL_ERROR;
+    }
     UErrorCodex status = U_ZERO_ERRORZ;
 
     UCharsetDetector* csd = ucsdet_open(&status);
@@ -771,7 +776,7 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult( interp,
+	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
@@ -1020,8 +1025,7 @@ static int IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
+		Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
 			 " \"-profile\". Must be \"strict\" or \"replace\".",
 			 s));
@@ -1189,8 +1193,7 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
+		Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option \"-profile\". Must be "
 				  "\"strict\" or \"replace\".",
 				  s));
