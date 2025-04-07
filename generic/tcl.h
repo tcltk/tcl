@@ -147,7 +147,7 @@ extern "C" {
 #   else
 #	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   endif
-#   define TCL_NORETURN __attribute__ ((noreturn))
+#   define TCL_NORETURN __attribute__ ((__noreturn__))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER) && (_MSC_VER >= 1310)
