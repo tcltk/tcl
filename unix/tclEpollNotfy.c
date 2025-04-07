@@ -42,7 +42,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    void *clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
     LIST_ENTRY(FileHandler) readyNode;
 				/* Next/previous in list of FileHandlers asso-
@@ -223,10 +223,16 @@ PlatformEventsControl(
      */
 
     if (TclOSfstat(filePtr->fd, &fdStat) == -1) {
-	Tcl_Panic("fstat: %s", strerror(errno));
-    }
-
-   if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
+		/*
+		 * The tclEpollNotfy PlatformEventsControl function panics if the TclOSfstat
+		 * call returns -1, which occurs when using a websocket to a browser and the
+		 * browser page is refreshed. It seems the fstat call isn't doing anything
+		 * useful, in particular the contents of the statbuf aren't examined afterwards
+		 * on success and at best it changes the panic message. Instead we avoid the
+		 * panic at the cost of a memory leak.
+		 */
+	    return;
+    } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
        switch (errno) {
 	    case EPERM:
 		switch (op) {
@@ -513,7 +519,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -791,7 +797,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
-    void *clientData,	/* Notifier data. */
+    void *clientData,		/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
