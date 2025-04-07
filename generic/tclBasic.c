@@ -207,8 +207,8 @@ static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
 static Tcl_ObjCmdProc	FloatClassifyObjCmd;
-static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
-			    int actual, Tcl_Obj *const *objv);
+static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
+			    Tcl_Size actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
@@ -4438,7 +4438,7 @@ EvalObjvCore(
     TCL_UNUSED(int) /*result*/)
 {
     Command *cmdPtr = NULL, *preCmdPtr = (Command *)data[0];
-    int flags = PTR2INT(data[1]);
+    int flags = (int)PTR2INT(data[1]);
     Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
@@ -5154,7 +5154,7 @@ TclEvalScriptTokens(
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
     Tcl_Size objLength = 20;
-    int *expand, *expandStack; 
+    char *expand, *expandStack; 
     Tcl_Size *lines, *lineSpace, *linesStack;
     Tcl_Obj **objvSpace, **stackObjArray;
     const char *cmdString = scriptTokenPtr->start;
@@ -5258,8 +5258,8 @@ TclEvalScriptTokens(
     iPtr->evalFlags = 0;
     objvSpace = stackObjArray = (Tcl_Obj **)
 	    TclStackAlloc(interp, objLength * sizeof(Tcl_Obj *));
-    expand = expandStack = (int *)
-	    TclStackAlloc(interp, objLength * sizeof(int));
+    expand = expandStack = (char *)
+	    TclStackAlloc(interp, objLength * sizeof(char));
     lineSpace = linesStack = (Tcl_Size *)
 	    TclStackAlloc(interp, objLength * sizeof(Tcl_Size));
     while (numCommands-- && (code == TCL_OK)) {
@@ -5292,7 +5292,7 @@ TclEvalScriptTokens(
 	    if (expand != expandStack) {
 		Tcl_Free(expand);
 	    }
-            expand = (int *)Tcl_Alloc(numWords * sizeof(int));
+            expand = (char *)Tcl_Alloc(numWords * sizeof(char));
 	    if (objvSpace != stackObjArray) {
 		Tcl_Free(objvSpace);
 	    }
@@ -6266,7 +6266,7 @@ TEOEx_ByteCodeCallback(
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedVarFramePtr = (CallFrame *)data[0];
     Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-    int allowExceptions = PTR2INT(data[2]);
+    int allowExceptions = (int)PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
@@ -7741,7 +7741,7 @@ ExprRandFunc(
      * dividing by RAND_IM yields a double in the range (0, 1).
      */
 
-    dResult = iPtr->randSeed * (1.0/RAND_IM);
+    dResult = (double)iPtr->randSeed * (1.0/RAND_IM);
 
     /*
      * Push a Tcl object with the result.
@@ -8231,8 +8231,8 @@ FloatClassifyObjCmd(
 static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int expected,		/* Formal parameter count. */
-    int found,			/* Actual parameter count. */
+    Tcl_Size expected,		/* Formal parameter count. */
+    Tcl_Size found,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     const char *name = TclGetString(objv[0]);

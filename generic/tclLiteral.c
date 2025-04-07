@@ -460,7 +460,7 @@ TclRegisterLiteral(
 	Tcl_Panic(
 	    "Literal table index too large. Cannot be handled by TclEmitPush");
     }
-    return objIndex;
+    return (int)objIndex;
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -603,7 +603,7 @@ TclAddLiteralObj(
     envPtr->literalArrayPtr[objIndex] = objPtr;
     Tcl_IncrRefCount(objPtr);
 
-    return objIndex;
+    return (int)objIndex;
 
     (void)litPtrPtr;
 }

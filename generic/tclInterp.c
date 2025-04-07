@@ -3962,7 +3962,7 @@ Tcl_LimitSetCommands(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 Tcl_LimitGetCommands(
     Tcl_Interp *interp)
 {
@@ -4329,7 +4329,7 @@ TclRemoveScriptLimitCallbacks(
     while (hashPtr != NULL) {
 	keyPtr = (ScriptLimitCallbackKey *)
 		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
-	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
+	Tcl_LimitRemoveHandler(keyPtr->interp, (int)keyPtr->type,
 		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
 	hashPtr = Tcl_NextHashEntry(&search);
     }

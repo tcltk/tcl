@@ -1401,7 +1401,7 @@ EXTERN void		Tcl_LimitTypeSet(Tcl_Interp *interp, int type);
 /* 531 */
 EXTERN void		Tcl_LimitTypeReset(Tcl_Interp *interp, int type);
 /* 532 */
-EXTERN int		Tcl_LimitGetCommands(Tcl_Interp *interp);
+EXTERN Tcl_Size		Tcl_LimitGetCommands(Tcl_Interp *interp);
 /* 533 */
 EXTERN void		Tcl_LimitGetTime(Tcl_Interp *interp,
 				Tcl_Time *timeLimitPtr);
@@ -2413,7 +2413,7 @@ typedef struct TclStubs {
     int (*tcl_LimitTypeExceeded) (Tcl_Interp *interp, int type); /* 529 */
     void (*tcl_LimitTypeSet) (Tcl_Interp *interp, int type); /* 530 */
     void (*tcl_LimitTypeReset) (Tcl_Interp *interp, int type); /* 531 */
-    int (*tcl_LimitGetCommands) (Tcl_Interp *interp); /* 532 */
+    Tcl_Size (*tcl_LimitGetCommands) (Tcl_Interp *interp); /* 532 */
     void (*tcl_LimitGetTime) (Tcl_Interp *interp, Tcl_Time *timeLimitPtr); /* 533 */
     int (*tcl_LimitGetGranularity) (Tcl_Interp *interp, int type); /* 534 */
     Tcl_InterpState (*tcl_SaveInterpState) (Tcl_Interp *interp, int status); /* 535 */

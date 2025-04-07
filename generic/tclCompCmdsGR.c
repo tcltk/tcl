@@ -59,7 +59,7 @@ TclGetIndexFromToken(
 
     TclNewObj(tmpObj);
     if (TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
-	result = TclIndexEncode(NULL, tmpObj, before, after, indexPtr);
+	result = TclIndexEncode(NULL, tmpObj, (int)before, (int)after, indexPtr);
     }
     Tcl_DecrRefCount(tmpObj);
     return result;

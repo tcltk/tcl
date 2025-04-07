@@ -24,7 +24,7 @@ static int		ReadOneEnsembleOption(Tcl_Interp *interp,
 static int		ReadAllEnsembleOptions(Tcl_Interp *interp,
 			    Tcl_Command token);
 static int		SetEnsembleConfigOptions(Tcl_Interp *interp,
-			    Tcl_Command token, int objc,
+			    Tcl_Command token, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
@@ -585,7 +585,7 @@ static int
 SetEnsembleConfigOptions(
     Tcl_Interp *interp,
     Tcl_Command token,		/* The ensemble to configure. */
-    int objc,			/* The count of option-related arguments. */
+    Tcl_Size objc,			/* The count of option-related arguments. */
     Tcl_Obj *const objv[])	/* Option-related arguments. */
 {
     Tcl_Size len;
@@ -1578,7 +1578,8 @@ TclMakeEnsemble(
     const char **nameParts = NULL;
     const char *cmdName = NULL;
     Tcl_Size i, nameCount = 0;
-    int ensembleFlags = 0, hiddenLen;
+    int ensembleFlags = 0;
+    Tcl_Size hiddenLen;
 
     /*
      * Construct the path for the ensemble namespace and create it.
