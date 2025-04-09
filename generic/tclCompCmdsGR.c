@@ -1076,7 +1076,7 @@ TclCompileLindexCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords <= 1) {
+    if (numWords <= 1 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1163,13 +1163,16 @@ TclCompileListCmd(
     int concat, build;
     Tcl_Obj *listObj, *objPtr;
 
-    if (parsePtr->numWords == 1) {
+    numWords = parsePtr->numWords;
+    if (numWords == 1) {
 	/*
 	 * [list] without arguments just pushes an empty object.
 	 */
 
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -1177,7 +1180,6 @@ TclCompileListCmd(
      * implement with a simple push.
      */
 
-    numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     TclNewObj(listObj);
     for (i = 1; i < numWords && listObj != NULL; i++) {
@@ -1200,7 +1202,6 @@ TclCompileListCmd(
      * Push the all values onto the stack.
      */
 
-    numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     concat = build = 0;
     for (i = 1; i < numWords; i++) {
@@ -2294,7 +2295,9 @@ TclCompileReturnCmd(
      * ('finally' clause processing) this piece of code would not be present.
      */
 
-    if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
+    if (numWords > INT_MAX) {
+	return TCL_ERROR;
+    } else if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
 	    && (wordTokenPtr[1].size == 8)
 	    && (strncmp(wordTokenPtr[1].start, "-options", 8) == 0)) {
 	Tcl_Token *optsTokenPtr = TokenAfter(wordTokenPtr);
