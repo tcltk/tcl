@@ -133,7 +133,7 @@ void
 TclDebugPrintByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    if (tclTraceCompile >= 2) {
+    if (tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_DETAIL) {
 	Tcl_Obj *bufPtr = DisassembleByteCodeObj(objPtr);
 
 	fprintf(stdout, "\n%s", TclGetString(bufPtr));

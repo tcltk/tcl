@@ -616,7 +616,7 @@ TclHideLiteral(
 
 int
 TclAddLiteralObj(
-    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The object to insert into the array. */
     LiteralEntry **litPtrPtr)	/* The location where the pointer to the new

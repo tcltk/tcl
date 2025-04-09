@@ -471,6 +471,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strtrimLeft",	ASSEM_1BYTE,	INST_STR_TRIM_LEFT,	2,	1},
     {"strtrimRight",	ASSEM_1BYTE,	INST_STR_TRIM_RIGHT,	2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
+    {"swap",		ASSEM_1BYTE,	INST_SWAP,		2,	2},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
     {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
     {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
@@ -501,24 +502,23 @@ static const TalInstDesc TalInstructionTable[] = {
 static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP,					/* 34-35 */
-    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
-    INST_STR_EQ, INST_STR_NEQ, INST_STR_CMP, INST_STR_LEN,	/* 73-76 */
-    INST_LIST,							/* 79 */
-    INST_OVER,							/* 95 */
-    INST_PUSH_RETURN_OPTIONS,					/* 108 */
-    INST_REVERSE,						/* 126 */
-    INST_NOP,							/* 132 */
-    INST_STR_MAP,						/* 143 */
-    INST_STR_FIND,						/* 144 */
-    INST_COROUTINE_NAME,					/* 149 */
-    INST_NS_CURRENT,						/* 151 */
-    INST_INFO_LEVEL_NUM,					/* 152 */
-    INST_RESOLVE_COMMAND,					/* 154 */
-    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 166-168 */
-    INST_CONCAT_STK,						/* 169 */
-    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 170-172 */
-    INST_NUM_TYPE,						/* 180 */
-    INST_STR_LT, INST_STR_GT, INST_STR_LE, INST_STR_GE		/* 191-194 */
+    INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64-66 */
+    INST_STR_EQ, INST_STR_NEQ, INST_STR_CMP, INST_STR_LEN,	/* 67-70 */
+    INST_LIST,							/* 73 */
+    INST_OVER,							/* 89 */
+    INST_PUSH_RETURN_OPTIONS,					/* 102 */
+    INST_REVERSE,						/* 119 */
+    INST_NOP,							/* 125 */
+    INST_STR_MAP, INST_STR_FIND, INST_STR_FIND_LAST,		/* 136-138 */
+    INST_COROUTINE_NAME,					/* 142 */
+    INST_NS_CURRENT, INST_INFO_LEVEL_NUM,			/* 144-145 */
+    INST_RESOLVE_COMMAND,					/* 147 */
+    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 163-165 */
+    INST_CONCAT_STK,						/* 166 */
+    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 167-169 */
+    INST_NUM_TYPE,						/* 175 */
+    INST_STR_LT, INST_STR_GT, INST_STR_LE, INST_STR_GE,		/* 184-187 */
+    INST_SWAP							/* 199 */
 };
 
 /*
@@ -665,7 +665,7 @@ BBEmitOpcode(
      * number.
      */
 
-    if (bbPtr->startOffset == envPtr->codeNext - envPtr->codeStart) {
+    if (bbPtr->startOffset == CurrentOffset(envPtr)) {
 	bbPtr->startLine = assemEnvPtr->cmdLine;
     }
 
@@ -898,7 +898,7 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
     size_t numCommands = envPtr->numCommands;
-    Tcl_Size offset = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size offset = CurrentOffset(envPtr);
     size_t depth = envPtr->currStackDepth;
     size_t numExnRanges = envPtr->exceptArrayNext;
     size_t numAuxRanges = envPtr->auxDataArrayNext;
@@ -1027,9 +1027,10 @@ TclAssembleCode(
 	     */
 
 #ifdef TCL_COMPILE_DEBUG
-	    if ((tclTraceCompile >= 2) && (envPtr->procPtr == NULL)) {
+	    if ((tclTraceCompile >= TCL_TRACE_BYTECODE_COMPILE_DETAIL)
+		    && (envPtr->procPtr == NULL)) {
 		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
-			envPtr->codeNext - envPtr->codeStart);
+			CurrentOffset(envPtr));
 		TclPrintSource(stdout, parsePtr->commandStart,
 			TclMin(instLen, 55));
 		printf("\n");
@@ -1280,7 +1281,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
-	assemEnvPtr->curr_bb->jumpOffset = envPtr->codeNext-envPtr->codeStart;
+	assemEnvPtr->curr_bb->jumpOffset = CurrentOffset(envPtr);
 	BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
 	assemEnvPtr->curr_bb->flags |= BB_BEGINCATCH;
 	StartBasicBlock(assemEnvPtr, BB_FALLTHRU, operand1Obj);
@@ -1451,7 +1452,7 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	assemEnvPtr->curr_bb->jumpOffset = envPtr->codeNext-envPtr->codeStart;
+	assemEnvPtr->curr_bb->jumpOffset = CurrentOffset(envPtr);
 	flags = 0;
 	BBEmitInstInt4(assemEnvPtr, tblIdx, 0, 0);
 
@@ -1479,10 +1480,10 @@ AssembleOneLine(
 
 	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
 	assemEnvPtr->curr_bb->jumpLine = assemEnvPtr->cmdLine;
-	assemEnvPtr->curr_bb->jumpOffset = envPtr->codeNext-envPtr->codeStart;
+	assemEnvPtr->curr_bb->jumpOffset = CurrentOffset(envPtr);
 	DEBUG_PRINT("bb %p jumpLine %d jumpOffset %d\n",
 		assemEnvPtr->curr_bb, assemEnvPtr->cmdLine,
-		envPtr->codeNext - envPtr->codeStart);
+		CurrentOffset(envPtr));
 
 	infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
 	DEBUG_PRINT("auxdata index=%d\n", infoIndex);
@@ -2501,7 +2502,7 @@ StartBasicBlock(
      * Coalesce zero-length blocks.
      */
 
-    if (currBB->startOffset == envPtr->codeNext - envPtr->codeStart) {
+    if (currBB->startOffset == CurrentOffset(envPtr)) {
 	currBB->startLine = assemEnvPtr->cmdLine;
 	return currBB;
     }
@@ -2558,7 +2559,7 @@ AllocBB(
     BasicBlock *bb = (BasicBlock*)Tcl_Alloc(sizeof(BasicBlock));
 
     bb->originalStartOffset =
-	    bb->startOffset = envPtr->codeNext - envPtr->codeStart;
+	    bb->startOffset = CurrentOffset(envPtr);
     bb->startLine = assemEnvPtr->cmdLine + 1;
     bb->jumpOffset = -1;
     bb->jumpLine = -1;
@@ -2899,7 +2900,7 @@ MoveCodeForJumps(
      * their new homes.
      */
 
-    topOffset = envPtr->codeNext - envPtr->codeStart;
+    topOffset = CurrentOffset(envPtr);
     for (bbPtr = assemEnvPtr->curr_bb; bbPtr != NULL; bbPtr = bbPtr->prevPtr) {
 	DEBUG_PRINT("move code from %d to %d\n",
 		bbPtr->originalStartOffset, bbPtr->startOffset);
@@ -3116,7 +3117,7 @@ CheckNonThrowingBlock(
 
     nextPtr = blockPtr->successor1;
     if (nextPtr == NULL) {
-	bound = envPtr->codeNext - envPtr->codeStart;
+	bound = CurrentOffset(envPtr);
     } else {
 	bound = nextPtr->startOffset;
     }

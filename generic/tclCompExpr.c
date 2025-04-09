@@ -2334,14 +2334,11 @@ CompileExprTree(
 	    switch (nodePtr->lexeme) {
 	    case FUNCTION: {
 		Tcl_DString cmdName;
-		const char *p;
-		Tcl_Size length;
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
-		p = TclGetStringFromObj(*funcObjv, &length);
+		TclDStringAppendObj(&cmdName, *funcObjv);
 		funcObjv++;
-		Tcl_DStringAppend(&cmdName, p, length);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
 			Tcl_DStringLength(&cmdName), LITERAL_CMD_NAME), envPtr);
