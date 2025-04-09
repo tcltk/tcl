@@ -3635,7 +3635,7 @@ StartExpanding(
 	 * Ignore loops unless they're still being built.
 	 */
 
-	if ((int)rangePtr->codeOffset > CurrentOffset(envPtr)) {
+	if (rangePtr->codeOffset > CurrentOffset(envPtr)) {
 	    continue;
 	}
 	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
