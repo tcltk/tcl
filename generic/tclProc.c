@@ -637,8 +637,17 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)Tcl_Alloc(
+	    localPtr = (CompiledLocal *)Tcl_AttemptAlloc(
 		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
+	    if (!localPtr) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"procedure \"%s\": arg list contains too many (%"
+			TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"TOOMANYARGS", (char *)NULL);
+		goto procError;
+	    }
+
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
