@@ -80,14 +80,12 @@ typedef int Tcl_AuxDataRef;
     TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr)
 #define MAKE_LOOP_RANGE() \
     TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr)
-#define CATCH_RANGE0(range,var) \
+#define CATCH_RANGE_VAR(range,var) \
     for(int var=(ExceptionRangeStarts(envPtr,(range)), 0);		\
 	    !var;							\
 	    var=(ExceptionRangeEnds(envPtr,(range)), 1))
-#define CATCH_RANGE_VAR0(x, y) x ## y
-#define CATCH_RANGE_VAR(line) CATCH_RANGE_VAR0(catchRange_, line)
 #define CATCH_RANGE(range) \
-    CATCH_RANGE0((range), CATCH_RANGE_VAR(__LINE__))
+    CATCH_RANGE_VAR((range), JOIN(catchRange_, __LINE__))
 #define CATCH_TARGET(range) \
     ExceptionRangeTarget(envPtr, (range), catchOffset)
 #define BREAK_TARGET(range) \
