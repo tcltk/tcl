@@ -414,7 +414,7 @@ TclCreateProc(
     Tcl_Size i, numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
-    int precompiled = 0, result;
+    int precompiled = 0, memoryerror = 0, result;
 
     ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -640,11 +640,9 @@ TclCreateProc(
 	    localPtr = (CompiledLocal *)Tcl_AttemptAlloc(
 		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
 	    if (!localPtr) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": arg list contains too many (%"
-			TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"TOOMANYARGS", (char *)NULL);
+		/* Don't set the interp result here. Since a malloc just failed,
+		 * first clean up some memory before doing that */
+		memoryerror = 1;
 		goto procError;
 	    }
 
@@ -695,6 +693,13 @@ TclCreateProc(
 	    Tcl_Free(localPtr);
 	}
 	Tcl_Free(procPtr);
+    }
+    if (memoryerror) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "procedure \"%s\": arg list contains too many (%"
+		    TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		    "TOOMANYARGS", (char *)NULL);
     }
     return TCL_ERROR;
 }
