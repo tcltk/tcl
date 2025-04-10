@@ -20,6 +20,17 @@
 #include "tclStringTrim.h"
 
 /*
+ * Information about a single arm for [switch]. Used in an array to pass
+ * information to the code-issuer functions.
+ */
+typedef struct SwitchArmInfo {
+    Tcl_Token *valueToken;	// The value to match for the arm.
+    Tcl_Token *bodyToken;	// The body of an arm.
+    Tcl_Size bodyLine;		// The line that the body starts on.
+    Tcl_Size *bodyContLines;	// Continuations within the body.
+} SwitchArmInfo;
+
+/*
  * Information about a single handler for [try]. Used in an array to pass
  * information to the code-issuer functions.
  */
@@ -53,12 +64,10 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
-			    Tcl_Size numWords, Tcl_Token **bodyToken,
-			    Tcl_Size *bodyLines, Tcl_Size **bodyNext);
+			    Tcl_Size numArms, SwitchArmInfo *arms);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int numWords,
-			    Tcl_Token **bodyToken, Tcl_Size *bodyLines,
-			    Tcl_Size **bodyContLines);
+			    CompileEnv *envPtr, Tcl_Size numArms,
+			    SwitchArmInfo *arms);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, TryHandlerInfo *handlers);
@@ -1700,6 +1709,41 @@ TclSubstCompile(
 /*
  *----------------------------------------------------------------------
  *
+ * HasDefaultClause, IsFallthroughArm, SetSwitchLineInformation --
+ *
+ *	Support utilities for [switch] compilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+HasDefaultClause(
+    Tcl_Size numArms,		/* Number of arms describing things the
+				 * switch can match against and bodies to
+				 * execute when the match succeeds. */
+    const SwitchArmInfo *arms)	/* Array of body information. */
+{
+    const Tcl_Token *finalValue = arms[numArms - 1].valueToken;
+    return (finalValue->size == 7) || !memcmp(finalValue->start, "default", 7);
+}
+
+static inline int
+IsFallthroughArm(
+    const SwitchArmInfo *arm)	/* Which arm to check. */
+{
+    return (arm->bodyToken->size == 1) && (arm->bodyToken->start[0] == '-');
+}
+
+// SetLineInformation() for [switch] bodies
+#define SetSwitchLineInformation(arm) \
+    do {								\
+	envPtr->line = (arm)->bodyLine;		/* TIP #280 */		\
+	envPtr->clNext = (arm)->bodyContLines;	/* TIP #280 */		\
+    } while (0)
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileSwitchCmd --
  *
  *	Procedure called to compile the "switch" command.
@@ -1734,10 +1778,7 @@ TclCompileSwitchCmd(
 				/* What kind of switch are we doing? */
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
-    Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines;	/* Array of line numbers for body list
-				 * items. */
-    Tcl_Size **bodyContLines;	/* Array of continuation line info. */
+    SwitchArmInfo *arms;	/* Array of information about switch arms. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
     int i, valueIndex;
@@ -1897,40 +1938,56 @@ TclCompileSwitchCmd(
 	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	bodyTokenArray = (Tcl_Token *)TclStackAlloc(interp, sizeof(Tcl_Token) * maxLen);
-	bodyContLines = (Tcl_Size **)TclStackAlloc(interp, sizeof(Tcl_Size*) * maxLen);
-	bodyLines = (Tcl_Size *)TclStackAlloc(interp, sizeof(Tcl_Size) * maxLen);
-	bodyToken = (Tcl_Token **)TclStackAlloc(interp, sizeof(Tcl_Token *) * maxLen);
+	bodyTokenArray = (Tcl_Token *) TclStackAlloc(interp,
+		sizeof(Tcl_Token) * maxLen);
+	arms = (SwitchArmInfo *) TclStackAlloc(interp,
+		sizeof(SwitchArmInfo) * maxLen / 2);
 
 	bline = ExtCmdLocation.line[valueIndex + 1];
 	numWords = 0;
 
+	/*
+	 * Need to be slightly careful; we're iterating over the words of the
+	 * list, not the arms of the [switch]. This means we go round this loop
+	 * twice per arm. 
+	 */
+
 	while (numBytes > 0) {
 	    const char *prevBytes = bytes;
-	    int literal;
+	    int literal, isProcessingBody = numWords & 1;
+	    SwitchArmInfo *arm = &arms[numWords >> 1];
+	    Tcl_Token *fakeToken = &bodyTokenArray[numWords];
 
 	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
-		    &(bodyTokenArray[numWords].start), &bytes,
-		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
+		    &fakeToken->start, &bytes, &fakeToken->size, &literal)
+		    || !literal) {
 		goto freeTemporaries;
 	    }
 
-	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
-	    bodyTokenArray[numWords].numComponents = 0;
-	    bodyToken[numWords] = bodyTokenArray + numWords;
+	    fakeToken->type = TCL_TOKEN_TEXT;
+	    fakeToken->numComponents = 0;
+	    if (isProcessingBody) {
+		arm->bodyToken = fakeToken;
+	    } else {
+		arm->valueToken = fakeToken;
+	    }
 
 	    /*
 	     * TIP #280: Now determine the line the list element starts on
 	     * (there is no need to do it earlier, due to the possibility of
 	     * aborting, see above).
+	     * Don't need to record the information for the values; they're
+	     * known to be compile-time literals.
 	     */
 
-	    TclAdvanceLines(&bline, prevBytes, bodyTokenArray[numWords].start);
+	    TclAdvanceLines(&bline, prevBytes, fakeToken->start);
 	    TclAdvanceContinuations(&bline, &clNext,
-		    bodyTokenArray[numWords].start - envPtr->source);
-	    bodyLines[numWords] = bline;
-	    bodyContLines[numWords] = clNext;
-	    TclAdvanceLines(&bline, bodyTokenArray[numWords].start, bytes);
+		    fakeToken->start - envPtr->source);
+	    if (isProcessingBody) {
+		arm->bodyLine = bline;
+		arm->bodyContLines = clNext;
+	    }
+	    TclAdvanceLines(&bline, fakeToken->start, bytes);
 	    TclAdvanceContinuations(&bline, &clNext, bytes - envPtr->source);
 
 	    numBytes -= (bytes - prevBytes);
@@ -1955,9 +2012,8 @@ TclCompileSwitchCmd(
 	 */
 
 	bodyTokenArray = NULL;
-	bodyContLines = (Tcl_Size **)TclStackAlloc(interp, sizeof(Tcl_Size*) * numWords);
-	bodyLines = (Tcl_Size *)TclStackAlloc(interp, sizeof(Tcl_Size) * numWords);
-	bodyToken = (Tcl_Token **)TclStackAlloc(interp, sizeof(Tcl_Token *) * numWords);
+	arms = (SwitchArmInfo *) TclStackAlloc(interp,
+		sizeof(SwitchArmInfo) * numWords / 2);
 	for (i=0 ; i<numWords ; i++) {
 	    /*
 	     * We only handle the very simplest case. Anything more complex is
@@ -1965,17 +2021,20 @@ TclCompileSwitchCmd(
 	     * traces, etc.
 	     */
 
+	    int isProcessingBody = i & 1;
+	    SwitchArmInfo *arm = &arms[i >> 1];
+
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto freeTemporaries;
 	    }
-	    bodyToken[i] = tokenPtr+1;
 
-	    /*
-	     * TIP #280: Copy line information from regular cmd info.
-	     */
-
-	    bodyLines[i] = ExtCmdLocation.line[valueIndex + 1 + i];
-	    bodyContLines[i] = ExtCmdLocation.next[valueIndex + 1 + i];
+	    if (isProcessingBody) {
+		arm->bodyToken = tokenPtr + 1;
+		arm->bodyLine = ExtCmdLocation.line[valueIndex + 1 + i];
+		arm->bodyContLines = ExtCmdLocation.next[valueIndex + 1 + i];
+	    } else {
+		arm->valueToken = tokenPtr + 1;
+	    }
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
     }
@@ -1985,8 +2044,7 @@ TclCompileSwitchCmd(
      * illegal, but this makes the error happen at the right time).
      */
 
-    if (bodyToken[numWords-1]->size == 1 &&
-	    bodyToken[numWords-1]->start[0] == '-') {
+    if (IsFallthroughArm(&arms[numWords / 2 - 1])) {
 	goto freeTemporaries;
     }
 
@@ -2002,11 +2060,9 @@ TclCompileSwitchCmd(
     PUSH_TOKEN(			valueTokenPtr, valueIndex);
 
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, numWords, bodyToken,
-		bodyLines, bodyContLines);
+	IssueSwitchJumpTable(interp, envPtr, numWords/2, arms);
     } else {
-	IssueSwitchChainedTests(interp, envPtr, mode, noCase,
-		numWords, bodyToken, bodyLines, bodyContLines);
+	IssueSwitchChainedTests(interp, envPtr, mode, noCase, numWords/2, arms);
     }
     result = TCL_OK;
 
@@ -2015,9 +2071,7 @@ TclCompileSwitchCmd(
      */
 
   freeTemporaries:
-    TclStackFree(interp, bodyToken);
-    TclStackFree(interp, bodyLines);
-    TclStackFree(interp, bodyContLines);
+    TclStackFree(interp, arms);
     if (bodyTokenArray != NULL) {
 	TclStackFree(interp, bodyTokenArray);
     }
@@ -2037,6 +2091,10 @@ TclCompileSwitchCmd(
  *	wild-and-wooly end of regexp matching (i.e., capture of match results)
  *	so that's when we spill to the interpreted version.
  *
+ *	We assume (because it was checked by our caller) that there's at least
+ *	one body, all tokens are literals, and all fallthroughs eventually hit
+ *	something real.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -2046,27 +2104,23 @@ IssueSwitchChainedTests(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
-    Tcl_Size numBodyTokens,	/* Number of tokens describing things the
-				 * switch can match against and bodies to
-				 * execute when the match succeeds. */
-    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
-				 * items. */
-    Tcl_Size **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Size numArms,		/* Number of arms of the switch. */
+    SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     Tcl_BytecodeLabel *fwdJumps;/* Array of forward-jump fixup locations. */
-    int jumpCount;		/* Number of places to fix up. */
+    int jumpCount;		/* Next cell to use in fwdJumps array. */
     int contJumpIdx;		/* Where the first of the jumps due to a group
 				 * of continuation bodies starts, or -1 if
 				 * there aren't any. */
     int contJumpCount;		/* Number of continuation bodies pointing to
 				 * the current (or next) real body. */
-    int nextArmFixupIndex;
+    int nextArmFixupIndex;	/* Index of next issued arm to fix the jump to
+				 * the next test for, or -1 if no fix pending. */
     int simple, exact;		/* For extracting the type of regexp. */
-    int i;
+    int i, j;
 
 #define NO_PENDING_JUMP -1
 
@@ -2077,13 +2131,14 @@ IssueSwitchChainedTests(
     contJumpIdx = NO_PENDING_JUMP;
     contJumpCount = 0;
     fwdJumps = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
-	    sizeof(Tcl_BytecodeLabel) * numBodyTokens);
+	    sizeof(Tcl_BytecodeLabel) * numArms * 2);
     jumpCount = 0;
     foundDefault = 0;
-    for (i=0 ; i<numBodyTokens ; i+=2) {
+    for (i=0 ; i<numArms ; i++) {
+	SwitchArmInfo *arm = &arms[i];
+
 	nextArmFixupIndex = NO_PENDING_JUMP;
-	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
-		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
+	if (i != numArms - 1 || !HasDefaultClause(numArms, arms)) {
 	    /*
 	     * Generate the test for the arm.
 	     */
@@ -2091,11 +2146,11 @@ IssueSwitchChainedTests(
 	    switch (mode) {
 	    case Switch_Exact:
 		OP(		DUP);
-		TclCompileTokens(interp, bodyToken[i], 1,	envPtr);
+		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
 		OP(		STR_EQ);
 		break;
 	    case Switch_Glob:
-		TclCompileTokens(interp, bodyToken[i], 1,	envPtr);
+		TclCompileTokens(interp, arm->valueToken, 1,	envPtr);
 		OP4(		OVER, 1);
 		OP1(		STR_MATCH, noCase);
 		break;
@@ -2106,10 +2161,10 @@ IssueSwitchChainedTests(
 		 * Keep in sync with TclCompileRegexpCmd.
 		 */
 
-		if (bodyToken[i]->type == TCL_TOKEN_TEXT) {
+		if (arms[i].valueToken->type == TCL_TOKEN_TEXT) {
 		    Tcl_DString ds;
 
-		    if (bodyToken[i]->size == 0) {
+		    if (arms[i].valueToken->size == 0) {
 			/*
 			 * The semantics of regexps are that they always match
 			 * when the RE == "".
@@ -2124,15 +2179,15 @@ IssueSwitchChainedTests(
 		     * the converted pattern.
 		     */
 
-		    if (TclReToGlob(NULL, bodyToken[i]->start,
-			    bodyToken[i]->size, &ds, &exact, NULL) == TCL_OK){
+		    if (TclReToGlob(NULL, arm->valueToken->start,
+			    arm->valueToken->size, &ds, &exact, NULL) == TCL_OK) {
 			simple = 1;
 			TclPushDString(envPtr, &ds);
 			Tcl_DStringFree(&ds);
 		    }
 		}
 		if (!simple) {
-		    TclCompileTokens(interp, bodyToken[i], 1, envPtr);
+		    TclCompileTokens(interp, arm->valueToken, 1, envPtr);
 		}
 
 		OP4(		OVER, 1);
@@ -2144,8 +2199,7 @@ IssueSwitchChainedTests(
 		     * or capture vars.
 		     */
 
-		    int cflags = TCL_REG_ADVANCED
-			    | (noCase ? TCL_REG_NOCASE : 0);
+		    int cflags = TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0);
 
 		    OP1(	REGEXP, cflags);
 		} else if (exact && !noCase) {
@@ -2164,20 +2218,19 @@ IssueSwitchChainedTests(
 	     * ensured earlier; the final body is never a fall-through).
 	     */
 
-	    if (bodyToken[i+1]->size==1 && bodyToken[i+1]->start[0]=='-') {
+	    if (IsFallthroughArm(arm)) {
 		if (contJumpIdx == NO_PENDING_JUMP) {
 		    contJumpIdx = jumpCount;
 		    contJumpCount = 0;
 		}
-		FWDJUMP(	JUMP_TRUE, fwdJumps[contJumpIdx+contJumpCount]);
+		FWDJUMP(	JUMP_TRUE, fwdJumps[contJumpIdx + contJumpCount]);
 		jumpCount++;
 		contJumpCount++;
 		continue;
 	    }
 
 	    FWDJUMP(		JUMP_FALSE, fwdJumps[jumpCount]);
-	    nextArmFixupIndex = jumpCount;
-	    jumpCount++;
+	    nextArmFixupIndex = jumpCount++;
 	} else {
 	    /*
 	     * Got a default clause; set a flag to inhibit the generation of
@@ -2200,11 +2253,9 @@ IssueSwitchChainedTests(
 	 */
 
 	if (contJumpIdx != NO_PENDING_JUMP) {
-	    int j;
-
 	    for (j=0 ; j<contJumpCount ; j++) {
-		FWDLABEL(fwdJumps[contJumpIdx+j]);
-		fwdJumps[contJumpIdx+j] = 0;
+		FWDLABEL(   fwdJumps[contJumpIdx + j]);
+		fwdJumps[contJumpIdx + j] = 0;
 	    }
 	    contJumpIdx = NO_PENDING_JUMP;
 	}
@@ -2216,9 +2267,8 @@ IssueSwitchChainedTests(
 	 */
 
 	OP(			POP);
-	envPtr->line = bodyLines[i+1];		/* TIP #280 */
-	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
-	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
+	SetSwitchLineInformation(arm);
+	TclCompileCmdWord(interp, arm->bodyToken, 1, envPtr);
 
 	if (!foundDefault) {
 	    FWDJUMP(		JUMP, fwdJumps[jumpCount]);
@@ -2245,9 +2295,9 @@ IssueSwitchChainedTests(
      * been fixed.
      */
 
-    for (i=0 ; i<jumpCount ; i++) {
-	if (fwdJumps[i] != 0) {
-	    FWDLABEL(	fwdJumps[i]);
+    for (j=0 ; j<jumpCount ; j++) {
+	if (fwdJumps[j] != 0) {
+	    FWDLABEL(	fwdJumps[j]);
 	}
     }
 
@@ -2264,6 +2314,10 @@ IssueSwitchChainedTests(
  *	exact matching is used, but this is actually the most common case in
  *	real code.
  *
+ *	We assume (because it was checked by our caller) that there's at least
+ *	one body, all tokens are literals, and all fallthroughs eventually hit
+ *	something real.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -2271,13 +2325,8 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int numBodyTokens,		/* Number of tokens describing things the
-				 * switch can match against and bodies to
-				 * execute when the match succeeds. */
-    Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
-				 * items. */
-    Tcl_Size **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Size numArms,		/* Number of arms of the switch. */
+    SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
     JumptableInfo *jtPtr;
     Tcl_AuxDataRef infoIndex;
@@ -2300,7 +2349,7 @@ IssueSwitchJumpTable(
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
     finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
-	    sizeof(Tcl_BytecodeLabel) * (numBodyTokens/2));
+	    sizeof(Tcl_BytecodeLabel) * numArms);
     foundDefault = 0;
     mustGenerate = 1;
 
@@ -2317,14 +2366,15 @@ IssueSwitchJumpTable(
     OP4(			JUMP_TABLE, infoIndex);
     FWDJUMP(			JUMP, jumpToDefault);
 
-    for (i=0 ; i<numBodyTokens ; i+=2) {
+    for (i=0 ; i<numArms ; i++) {
+	SwitchArmInfo *arm = &arms[i];
+
 	/*
 	 * For each arm, we must first work out what to do with the match
 	 * term.
 	 */
 
-	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
-		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
+	if (i!=numArms-1 || !HasDefaultClause(numArms, arms)) {
 	    /*
 	     * This is not a default clause, so insert the current location as
 	     * a target in the jump table (assuming it isn't already there,
@@ -2334,7 +2384,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    Tcl_DStringInit(&buffer);
-	    TclDStringAppendToken(&buffer, bodyToken[i]);
+	    TclDStringAppendToken(&buffer, arm->valueToken);
 	    hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
 		    Tcl_DStringValue(&buffer), &isNew);
 	    if (isNew) {
@@ -2365,7 +2415,7 @@ IssueSwitchJumpTable(
 	 * will also point here, so we advance to the next clause.
 	 */
 
-	if (bodyToken[i+1]->size == 1 && bodyToken[i+1]->start[0] == '-') {
+	if (IsFallthroughArm(arm)) {
 	    mustGenerate = 1;
 	    continue;
 	}
@@ -2385,9 +2435,8 @@ IssueSwitchJumpTable(
 	 * Compile the body of the arm.
 	 */
 
-	envPtr->line = bodyLines[i+1];		/* TIP #280 */
-	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
-	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
+	SetSwitchLineInformation(arm);
+	TclCompileCmdWord(interp, arm->bodyToken, 1, envPtr);
 
 	/*
 	 * Compile a jump in to the end of the command if this body is
@@ -2396,7 +2445,7 @@ IssueSwitchJumpTable(
 	 * result).
 	 */
 
-	if (i+2 < numBodyTokens || !foundDefault) {
+	if (i < numArms-1 || !foundDefault) {
 	    FWDJUMP(		JUMP, finalFixups[numRealBodies++]);
 	    STKDELTA(-1);
 	}
