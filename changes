@@ -9390,3 +9390,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2025-01-19 tzdata updated to Olson's tzdata2025a (nijtmans)
 
 2025-03-23 tzdata updated to Olson's tzdata2025b (nijtmans)
+
+2025-04-1 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
