@@ -20,6 +20,7 @@ to the userbase.
  - [MS-VS build system: pckIndex.tcl when building for 9 misses "t" for TCL 8.6 part](https://core.tcl-lang.org/tcl/tktview/a77029)
  - [clock format -locale does not look up locale children if parent locale used first](https://core.tcl-lang.org/tcl/tktview/2c0f49)
  - [Missing libtcl?.?.dll.a in Cygwin](https://core.tcl-lang.org/tcl/tktview/dcedba)
+ - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.

@@ -223,15 +223,15 @@ PlatformEventsControl(
      */
 
     if (TclOSfstat(filePtr->fd, &fdStat) == -1) {
-		/*
-		 * The tclEpollNotfy PlatformEventsControl function panics if the TclOSfstat
-		 * call returns -1, which occurs when using a websocket to a browser and the
-		 * browser page is refreshed. It seems the fstat call isn't doing anything
-		 * useful, in particular the contents of the statbuf aren't examined afterwards
-		 * on success and at best it changes the panic message. Instead we avoid the
-		 * panic at the cost of a memory leak.
-		 */
-	    return;
+	/*
+	 * The tclEpollNotfy PlatformEventsControl function panics if the TclOSfstat
+	 * call returns -1, which occurs when using a websocket to a browser and the
+	 * browser page is refreshed. It seems the fstat call isn't doing anything
+	 * useful, in particular the contents of the statbuf aren't examined afterwards
+	 * on success and at best it changes the panic message. Instead we avoid the
+	 * panic at the cost of a memory leak. See [010d8f38]
+	 */
+	return;
     } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
        switch (errno) {
 	    case EPERM:
