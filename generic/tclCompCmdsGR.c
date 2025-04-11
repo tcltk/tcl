@@ -122,7 +122,7 @@ TclCompileGlobalCmd(
     for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
-	if (localIndex < 0) {
+	if (localIndex < 0 || localIndex > INT_MAX) {
 	    return TCL_ERROR;
 	}
 
@@ -199,6 +199,9 @@ TclCompileIfCmd(
     wordIdx = 0;
     numWords = parsePtr->numWords;
 
+    if (numWords > INT_MAX) {
+	return TCL_ERROR;
+    }
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
@@ -853,7 +856,7 @@ TclCompileLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -973,7 +976,7 @@ TclCompileLassignCmd(
      * Check for command syntax error, but we'll punt that to runtime.
      */
 
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2537,7 +2540,7 @@ TclCompileUpvarCmd(
     }
 
     numWords = parsePtr->numWords;
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2638,7 +2641,7 @@ TclCompileVariableCmd(
     Tcl_Size localIndex, numWords, i;
 
     numWords = parsePtr->numWords;
-    if (numWords < 2) {
+    if (numWords < 2 || numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 

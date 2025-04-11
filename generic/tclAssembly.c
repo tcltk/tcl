@@ -960,7 +960,7 @@ TclCompileAssembleCmd(
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
     size_t numCommands = envPtr->numCommands;
-    int offset = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size offset = envPtr->codeNext - envPtr->codeStart;
     size_t depth = envPtr->currStackDepth;
     /*
      * Make sure that the command has a single arg that is a simple word.
