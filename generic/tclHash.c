@@ -49,7 +49,6 @@ static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
  * Function prototypes for static functions in this file:
  */
 
-static Tcl_HashEntry *	BogusFind(Tcl_HashTable *tablePtr, const char *key);
 static Tcl_HashEntry *	BogusCreate(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
 static Tcl_HashEntry *	CreateHashEntry(Tcl_HashTable *tablePtr, const char *key,
@@ -164,7 +163,9 @@ Tcl_InitCustomHashTable(
     tablePtr->downShift = 28;
     tablePtr->mask = 3;
     tablePtr->keyType = keyType;
+#ifndef TCL_NO_DEPRECATED
     tablePtr->findProc = FindHashEntry;
+#endif
     tablePtr->createProc = CreateHashEntry;
 
     if (typePtr == NULL) {
@@ -208,7 +209,7 @@ FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const char *key)		/* Key to use to find matching entry. */
 {
-    return CreateHashEntry(tablePtr, key, NULL);
+    return tablePtr->createProc(tablePtr, key, NULL);
 }
 
 /*
@@ -495,7 +496,9 @@ Tcl_DeleteHashTable(
      * re-initialization.
      */
 
-    tablePtr->findProc = BogusFind;
+#ifndef TCL_NO_DEPRECATED
+    tablePtr->findProc = FindHashEntry;
+#endif
     tablePtr->createProc = BogusCreate;
 }
 
@@ -874,32 +877,6 @@ TclHashStringKey(
 /*
  *----------------------------------------------------------------------
  *
- * BogusFind --
- *
- *	This function is invoked when Tcl_FindHashEntry is called on a
- *	table that has been deleted.
- *
- * Results:
- *	If Tcl_Panic returns (which it shouldn't) this function returns NULL.
- *
- * Side effects:
- *	Generates a panic.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_HashEntry *
-BogusFind(
-    TCL_UNUSED(Tcl_HashTable *),
-    TCL_UNUSED(const char *))
-{
-    Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * BogusCreate --
  *
  *	This function is invoked when Tcl_CreateHashEntry is called on a
@@ -918,9 +895,10 @@ static Tcl_HashEntry *
 BogusCreate(
     TCL_UNUSED(Tcl_HashTable *),
     TCL_UNUSED(const char *),
-    TCL_UNUSED(int *))
+    int *isNew)
 {
-    Tcl_Panic("called %s on deleted table", "Tcl_CreateHashEntry");
+    Tcl_Panic("called %s on deleted table",
+	    isNew ? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
     return NULL;
 }
 

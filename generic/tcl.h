@@ -1155,7 +1155,11 @@ struct Tcl_HashTable {
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
+#ifndef TCL_NO_DEPRECATED
     Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, const char *key);
+#else
+    void *unUsed;
+#endif
     Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, const char *key,
 	    int *newPtr);
     const Tcl_HashKeyType *typePtr;
@@ -2511,7 +2515,7 @@ TclBounceRefCount(
 
 #undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
+	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), NULL)
 #undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
