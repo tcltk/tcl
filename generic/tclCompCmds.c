@@ -869,6 +869,8 @@ TclCompileConcatCmd(
 
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
+    } else if (parsePtr->numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -2511,7 +2513,7 @@ TclCompileExprCmd(
 {
     Tcl_Token *firstWordPtr;
 
-    if (parsePtr->numWords == 1) {
+    if (parsePtr->numWords == 1 || parsePtr->numWords > INT_MAX) {
 	return TCL_ERROR;
     }
 

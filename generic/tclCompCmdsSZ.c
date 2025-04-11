@@ -232,6 +232,8 @@ TclCompileStringCatCmd(
     if (numWords<2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
@@ -1460,7 +1462,7 @@ TclCompileSubstCmd(
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;
 
-    if (numArgs == 0) {
+    if (numArgs == 0 || numArgs > INT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1841,6 +1843,8 @@ TclCompileSwitchCmd(
 	 */
 
 	goto finishedOptionParse;
+    } else if (numWords > INT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -4323,6 +4327,9 @@ TclCompilePowOpCmd(
      * one with right associativity.
      */
 
+    if (parsePtr->numWords > INT_MAX) {
+	return TCL_ERROR;
+    }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
@@ -4520,7 +4527,7 @@ TclCompileMinusOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1) {
+    if (parsePtr->numWords == 1 || parsePtr->numWords > INT_MAX) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */
