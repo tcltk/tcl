@@ -209,7 +209,7 @@ FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const char *key)		/* Key to use to find matching entry. */
 {
-    return tablePtr->createProc(tablePtr, key, NULL);
+    return tablePtr->createProc(tablePtr, key, (int *)-1);
 }
 
 /*
@@ -244,6 +244,9 @@ CreateHashEntry(
     Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
     size_t hash, index;
+    if (newPtr == NULL) {
+    	Tcl_Panic("newPtr == NULL");
+    }
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -283,7 +286,7 @@ CreateHashEntry(
 		/* if keys pointers or values are equal */
 		if ((key == hPtr->key.oneWordValue)
 		    || compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr) {
+		    if (newPtr && (newPtr != (int *)-1)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -298,7 +301,7 @@ CreateHashEntry(
 		/* if needle pointer equals content pointer or values equal */
 		if ((key == hPtr->key.string)
 			|| compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr) {
+		    if (newPtr && (newPtr != (int *)-1)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -312,7 +315,7 @@ CreateHashEntry(
 		continue;
 	    }
 	    if (key == hPtr->key.oneWordValue) {
-		if (newPtr) {
+		if (newPtr && (newPtr != (int *)-1)) {
 		    *newPtr = 0;
 		}
 		return hPtr;
@@ -320,7 +323,8 @@ CreateHashEntry(
 	}
     }
 
-    if (!newPtr) {
+    if (newPtr == (int *)-1) {
+	/* This is the findProc functionality, so we are done. */
 	return NULL;
     }
 
@@ -328,7 +332,9 @@ CreateHashEntry(
      * Entry not found. Add a new one to the bucket.
      */
 
-    *newPtr = 1;
+    if (newPtr) {
+	*newPtr = 1;
+    }
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
@@ -898,7 +904,7 @@ BogusCreate(
     int *isNew)
 {
     Tcl_Panic("called %s on deleted table",
-	    isNew ? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
+	    (isNew && isNew == (int *)-1)? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
     return NULL;
 }
 
