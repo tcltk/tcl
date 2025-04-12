@@ -63,6 +63,62 @@ static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
 static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
+
+
+/*
+ * TclpGetWindowsVersionOnce --
+ *
+ *	Callback to retrieve Windows version information. To be invoked only
+ *	through InitOnceExecuteOnce for thread safety.
+ *
+ * Results:
+ *	None.
+ */
+static BOOL CALLBACK TclpGetWindowsVersionOnce(
+    TCL_UNUSED(PINIT_ONCE),
+    TCL_UNUSED(PVOID),
+    PVOID *lpContext)
+{
+    typedef int(__stdcall getVersionProc)(void *);
+    static OSVERSIONINFOW osInfo;
+
+    /*
+     * GetVersionExW will not return the "real" Windows version so use
+     * RtlGetVersion if available and falling back.
+     */
+    HMODULE handle = GetModuleHandleW(L"NTDLL");
+    getVersionProc *getVersion =
+	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
+
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    if (getVersion == NULL || getVersion(&osInfo)) {
+	if (!GetVersionExW(&osInfo)) {
+	    /* Should never happen but ...*/
+	    return FALSE;
+	}
+    }
+    *lpContext = (LPVOID)&osInfo;
+    return TRUE;
+}
+
+/*
+ * TclpGetWindowsVersion --
+ *
+ *	Returns a pointer to the OSVERSIONINFOW structure containing the
+ *	version information for the current Windows version.
+ *
+ * Results:
+ *	Pointer to OSVERSIONINFOW structure.
+ */
+static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
+{
+    static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
+    OSVERSIONINFOW *osInfoPtr = NULL;
+    BOOL result = InitOnceExecuteOnce(
+	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, &osInfoPtr);
+    return result ? osInfoPtr : NULL;
+}
+
 
 /*
  *---------------------------------------------------------------------------
@@ -398,7 +454,7 @@ TclpSetInitialEncodings(void)
 }
 
 const char *
-Tcl_GetEncodingNameFromEnvironment(
+Tcl_GetEncodingNameForUser(
     Tcl_DString *bufPtr)
 {
     UINT acp = GetACP();
@@ -414,7 +470,24 @@ Tcl_GetEncodingNameFromEnvironment(
     }
     return Tcl_DStringValue(bufPtr);
 }
-
+
+const char *
+Tcl_GetEncodingNameFromEnvironment(
+    Tcl_DString *bufPtr)
+{
+    OSVERSIONINFOW *osInfoPtr = TclpGetWindowsVersion();
+    /*
+     * TIP 716 - for Build 18362 or higher, force utf-8. Note Windows build
+     * numbers always increase, so no need to check major / minor versions.
+     */
+    if (osInfoPtr && osInfoPtr->dwBuildNumber >= 18362) {
+	Tcl_DStringInit(bufPtr);
+	Tcl_DStringAppend(bufPtr, "utf-8", 5);
+	return Tcl_DStringValue(bufPtr);
+    }
+    return Tcl_GetEncodingNameForUser(bufPtr);
+}
+
 const char *
 TclpGetUserName(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
@@ -435,7 +508,7 @@ TclpGetUserName(
     }
     return Tcl_DStringValue(bufferPtr);
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
