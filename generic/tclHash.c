@@ -904,7 +904,7 @@ BogusCreate(
     int *isNew)
 {
     Tcl_Panic("called %s on deleted table",
-	    (isNew && isNew == (int *)-1)? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
+	    (isNew && (isNew != (int *)-1))? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
     return NULL;
 }
 
