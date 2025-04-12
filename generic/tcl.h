@@ -2515,7 +2515,7 @@ TclBounceRefCount(
 
 #undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), NULL)
+	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), (int *)-1)
 #undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
