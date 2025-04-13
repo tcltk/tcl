@@ -98,6 +98,23 @@ typedef int Tcl_AuxDataRef;
 #define STKDELTA(delta) \
     TclAdjustStackDepth((delta), envPtr)
 
+#define TokenToObj(tokenPtr) \
+    Tcl_NewStringObj((tokenPtr)[1].start, (tokenPtr)[1].size)
+#define LENGTH_OF(str) \
+    ((Tcl_Size) sizeof(str "") - 1)
+#define IS_TOKEN_LITERALLY(tokenPtr, str) \
+    (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
+        && ((tokenPtr)[1].size == LENGTH_OF(str))			\
+	&& strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
+#define IS_TOKEN_PREFIX(tokenPtr, minLength, str) \
+    (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
+        && ((tokenPtr)[1].size >= (Tcl_Size)(minLength))		\
+        && ((tokenPtr)[1].size <= LENGTH_OF(str))			\
+	&& strncmp((tokenPtr)[1].start, str, (tokenPtr)[1].size) == 0)
+#define IS_TOKEN_PREFIXED_BY(tokenPtr, str) \
+    (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
+        && ((tokenPtr)[1].size > LENGTH_OF(str))			\
+	&& strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
 #endif
 
 /*

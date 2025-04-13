@@ -182,9 +182,8 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    size_t numBytes, j;
+    size_t j;
     int numWords, wordIdx, code;
-    const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
@@ -221,10 +220,8 @@ TclCompileIfCmd(
 	 * Stop looping if the token isn't "if" or "elseif".
 	 */
 
-	word = tokenPtr[1].start;
-	numBytes = tokenPtr[1].size;
 	if ((tokenPtr == parsePtr->tokenPtr)
-		|| ((numBytes == 6) && (strncmp(word, "elseif", 6) == 0))) {
+		|| IS_TOKEN_LITERALLY(tokenPtr, "elseif")) {
 	    tokenPtr = TokenAfter(tokenPtr);
 	    wordIdx++;
 	} else {
@@ -247,12 +244,9 @@ TclCompileIfCmd(
 	     * Find out if the condition is a constant.
 	     */
 
-	    Tcl_Obj *boolObj = Tcl_NewStringObj(testTokenPtr[1].start,
-		    testTokenPtr[1].size);
-
-	    Tcl_IncrRefCount(boolObj);
+	    Tcl_Obj *boolObj = TokenToObj(testTokenPtr);
 	    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
-	    TclDecrRefCount(boolObj);
+	    Tcl_BounceRefCount(boolObj);
 	    if (code == TCL_OK) {
 		/*
 		 * A static condition.
@@ -268,8 +262,7 @@ TclCompileIfCmd(
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
-		jumpIndex = jumpFalseFixupArray.next;
-		jumpFalseFixupArray.next++;
+		jumpIndex = jumpFalseFixupArray.next++;
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
 			jumpFalseFixupArray.fixup + jumpIndex);
 	    }
@@ -287,9 +280,7 @@ TclCompileIfCmd(
 	    goto done;
 	}
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    word = tokenPtr[1].start;
-	    numBytes = tokenPtr[1].size;
-	    if ((numBytes == 4) && (strncmp(word, "then", 4) == 0)) {
+	    if (IS_TOKEN_LITERALLY(tokenPtr, "then")) {
 		tokenPtr = TokenAfter(tokenPtr);
 		wordIdx++;
 		if (wordIdx >= numWords) {
@@ -357,9 +348,7 @@ TclCompileIfCmd(
 	 * There is an else clause. Skip over the optional "else" word.
 	 */
 
-	word = tokenPtr[1].start;
-	numBytes = tokenPtr[1].size;
-	if ((numBytes == 4) && (strncmp(word, "else", 4) == 0)) {
+	if (IS_TOKEN_LITERALLY(tokenPtr, "else")) {
 	    tokenPtr = TokenAfter(tokenPtr);
 	    wordIdx++;
 	    if (wordIdx >= numWords) {
@@ -464,22 +453,17 @@ TclCompileIncrCmd(
     haveImmValue = 0;
     immValue = 1;
     if (parsePtr->numWords == 3) {
+	Tcl_Obj *intObj;
 	incrTokenPtr = TokenAfter(varTokenPtr);
-	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    const char *word = incrTokenPtr[1].start;
-	    size_t numBytes = incrTokenPtr[1].size;
-	    int code;
-	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
-
-	    code = TclGetWideIntFromObj(NULL, intObj, &immValue);
+	TclNewObj(intObj);
+	if (TclWordKnownAtCompileTime(incrTokenPtr, intObj)) {
+	    int code = TclGetWideIntFromObj(NULL, intObj, &immValue);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
 	    }
-	    Tcl_BounceRefCount(intObj);
-	    if (!haveImmValue) {
-		PUSH_SIMPLE_TOKEN(incrTokenPtr);
-	    }
-	} else {
+	}
+	Tcl_BounceRefCount(intObj);
+	if (!haveImmValue) {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
@@ -751,8 +735,7 @@ TclCompileInfoObjectIsACmd(
     if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size < 1
-	    || strncmp(tokenPtr[1].start, "object", tokenPtr[1].size)) {
+    if (!IS_TOKEN_PREFIX(tokenPtr, 2, "object")) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(tokenPtr);
@@ -1640,8 +1623,8 @@ TclCompileNamespaceCodeCmd(
      * but what the test suite checks for.
      */
 
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || (tokenPtr[1].size > 20
-	    && strncmp(tokenPtr[1].start, "::namespace inscope ", 20) == 0)) {
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
+	    IS_TOKEN_PREFIXED_BY(tokenPtr, "::namespace inscope ")) {
 	/*
 	 * Technically, we could just pass a literal '::namespace inscope '
 	 * term through, but that's something which really shouldn't be
@@ -1920,24 +1903,15 @@ TclCompileRegexpCmd(
 
     for (i = 1; i < (int)parsePtr->numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
-	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    /*
-	     * Not a simple string, so punt to runtime.
-	     */
-
-	    return TCL_ERROR;
-	}
-	str = varTokenPtr[1].start;
-	len = varTokenPtr[1].size;
-	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
+	if (IS_TOKEN_LITERALLY(varTokenPtr, "--")) {
 	    sawLast++;
 	    i++;
 	    break;
-	} else if ((len > 1) && (strncmp(str, "-nocase", len) == 0)) {
+	} else if (IS_TOKEN_PREFIX(varTokenPtr, 2, "-nocase")) {
 	    nocase = 1;
 	} else {
 	    /*
-	     * Not an option we recognize.
+	     * Not an option we recognize or something the compiler can't see.
 	     */
 
 	    return TCL_ERROR;
@@ -1988,8 +1962,7 @@ TclCompileRegexpCmd(
 	 * converted pattern as a literal.
 	 */
 
-	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
-		== TCL_OK) {
+	if (TclReToGlob(NULL, str, len, &ds, &exact, NULL) == TCL_OK) {
 	    simple = 1;
 	    TclPushDString(envPtr, &ds);
 	    Tcl_DStringFree(&ds);
@@ -2092,8 +2065,7 @@ TclCompileRegsubCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size != 4
-	    || strncmp(tokenPtr[1].start, "-all", 4)) {
+    if (!IS_TOKEN_LITERALLY(tokenPtr, "-all")) {
 	return TCL_ERROR;
     }
 
@@ -2250,9 +2222,7 @@ TclCompileReturnCmd(
      * ('finally' clause processing) this piece of code would not be present.
      */
 
-    if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
-	    && (wordTokenPtr[1].size == 8)
-	    && (strncmp(wordTokenPtr[1].start, "-options", 8) == 0)) {
+    if ((numWords == 4) && IS_TOKEN_LITERALLY(wordTokenPtr, "-options")) {
 	Tcl_Token *optsTokenPtr = TokenAfter(wordTokenPtr);
 	Tcl_Token *msgTokenPtr = TokenAfter(optsTokenPtr);
 
@@ -2807,24 +2777,20 @@ TclCompileObjectSelfCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
-     * We only handle [self] and [self object] (which is the same operation).
-     * These are the only very common operations on [self] for which
-     * bytecoding is at all reasonable.
+     * We only handle [self], [self object] (which is the same operation) and
+     * [self namespace]. These are the only very common operations on [self]
+     * for which bytecoding is at all reasonable, with [self namespace] being
+     * just because it is convenient with ops we already have.
      */
 
     if (parsePtr->numWords == 1) {
 	goto compileSelfObject;
     } else if (parsePtr->numWords == 2) {
-	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr), *subcmd;
+	const Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size==0) {
-	    return TCL_ERROR;
-	}
-
-	subcmd = tokenPtr + 1;
-	if (strncmp(subcmd->start, "object", subcmd->size) == 0) {
+	if (IS_TOKEN_PREFIX(tokenPtr, 1, "object")) {
 	    goto compileSelfObject;
-	} else if (strncmp(subcmd->start, "namespace", subcmd->size) == 0) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 1, "namespace")) {
 	    goto compileSelfNamespace;
 	}
     }

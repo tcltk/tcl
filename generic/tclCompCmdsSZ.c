@@ -25,7 +25,7 @@
  */
 typedef struct SwitchArmInfo {
     Tcl_Token *valueToken;	// The value to match for the arm.
-    Tcl_Token *bodyToken;	// The body of an arm.
+    Tcl_Token *bodyToken;	// The body of an arm; NULL if fall-through.
     Tcl_Size bodyLine;		// The line that the body starts on.
     Tcl_Size *bodyContLines;	// Continuations within the body.
 } SwitchArmInfo;
@@ -521,12 +521,6 @@ TclCompileStringIsCmd(
     }
     Tcl_DecrRefCount(isClass);
 
-#define GotLiteral(tokenPtr, word) \
-    ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD &&			\
-     (tokenPtr)[1].size > 1 &&						\
-     (tokenPtr)[1].start[0] == word[0] &&				\
-     strncmp((tokenPtr)[1].start, (word), (tokenPtr)[1].size) == 0)
-
     /*
      * Cannot handle the -failindex option at all, and that's the only legal
      * way to have more than 4 arguments.
@@ -540,12 +534,11 @@ TclCompileStringIsCmd(
     if (parsePtr->numWords == 3) {
 	allowEmpty = 1;
     } else {
-	if (!GotLiteral(tokenPtr, "-strict")) {
+	if (!IS_TOKEN_PREFIX(tokenPtr, 2, "-strict")) {
 	    return TCL_ERROR;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-#undef GotLiteral
 
     /*
      * Compile the code. There are several main classes of check here.
@@ -790,12 +783,7 @@ TclCompileStringMatchCmd(
      */
 
     if (parsePtr->numWords == 4) {
-	size_t length;
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-	}
-	length = tokenPtr[1].size;
-	if ((length <= 1) || strncmp(tokenPtr[1].start, "-nocase", length)) {
+	if (!IS_TOKEN_PREFIX(tokenPtr, 2, "-nocase")) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */
@@ -811,25 +799,18 @@ TclCompileStringMatchCmd(
      */
 
     for (i = 0; i < 2; i++) {
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    if (!nocase && (i == 0)) {
-		/*
-		 * Trivial matches can be done by 'string equal'. If -nocase
-		 * was specified, we can't do this because INST_STR_EQ has no
-		 * support for nocase.
-		 */
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD && !nocase && (i == 0)) {
+	    /*
+	     * Trivial matches can be done by 'string equal'. If -nocase was
+	     * specified, we can't do this because INST_STR_EQ has no support
+	     * for nocase.
+	     */
 
-		Tcl_Obj *copy = Tcl_NewStringObj(tokenPtr[1].start,
-			tokenPtr[1].size);
-
-		exactMatch = TclMatchIsTrivial(TclGetString(copy));
-		Tcl_BounceRefCount(copy);
-	    }
-	    PUSH_SIMPLE_TOKEN(	tokenPtr);
-	} else {
-	    SetLineInformation(i+1+nocase);
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    Tcl_Obj *copy = TokenToObj(tokenPtr);
+	    exactMatch = TclMatchIsTrivial(TclGetString(copy));
+	    Tcl_BounceRefCount(copy);
 	}
+	PUSH_TOKEN(		tokenPtr, i + 1 + nocase);
 	tokenPtr = TokenAfter(tokenPtr);
     }
 
@@ -1709,7 +1690,7 @@ TclSubstCompile(
 /*
  *----------------------------------------------------------------------
  *
- * HasDefaultClause, IsFallthroughArm, SetSwitchLineInformation --
+ * HasDefaultClause, IsFallthroughToken, IsFallthroughArm, SetSwitchLineInformation --
  *
  *	Support utilities for [switch] compilation.
  *
@@ -1724,14 +1705,21 @@ HasDefaultClause(
     const SwitchArmInfo *arms)	/* Array of body information. */
 {
     const Tcl_Token *finalValue = arms[numArms - 1].valueToken;
-    return (finalValue->size == 7) || !memcmp(finalValue->start, "default", 7);
+    return (finalValue->size == 7) && !memcmp(finalValue->start, "default", 7);
+}
+
+static inline int
+IsFallthroughToken(
+    const Tcl_Token *tokenPtr)	/* The token to check. */
+{
+    return (tokenPtr->size == 1) && (tokenPtr->start[0] == '-');
 }
 
 static inline int
 IsFallthroughArm(
     const SwitchArmInfo *arm)	/* Which arm to check. */
 {
-    return (arm->bodyToken->size == 1) && (arm->bodyToken->start[0] == '-');
+    return arm->bodyToken == NULL;
 }
 
 // SetLineInformation() for [switch] bodies
@@ -1803,7 +1791,7 @@ TclCompileSwitchCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     valueIndex = 1;
-    numWords = parsePtr->numWords-1;
+    numWords = parsePtr->numWords - 1;
 
     /*
      * Check for options.
@@ -1830,9 +1818,6 @@ TclCompileSwitchCmd(
      */
 
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
-	size_t size = tokenPtr[1].size;
-	const char *chrs = tokenPtr[1].start;
-
 	/*
 	 * We only process literal options, and we assume that -e, -g and -n
 	 * are unique prefixes of -exact, -glob and -nocase respectively (true
@@ -1840,11 +1825,7 @@ TclCompileSwitchCmd(
 	 * at most once or we bail out (error case).
 	 */
 
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || size < 2) {
-	    return TCL_ERROR;
-	}
-
-	if ((size <= 6) && !memcmp(chrs, "-exact", size)) {
+	if (IS_TOKEN_PREFIX(tokenPtr, 2, "-exact")) {
 	    if (foundMode) {
 		return TCL_ERROR;
 	    }
@@ -1852,7 +1833,7 @@ TclCompileSwitchCmd(
 	    foundMode = 1;
 	    valueIndex++;
 	    continue;
-	} else if ((size <= 5) && !memcmp(chrs, "-glob", size)) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-glob")) {
 	    if (foundMode) {
 		return TCL_ERROR;
 	    }
@@ -1860,7 +1841,7 @@ TclCompileSwitchCmd(
 	    foundMode = 1;
 	    valueIndex++;
 	    continue;
-	} else if ((size <= 7) && !memcmp(chrs, "-regexp", size)) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-regexp")) {
 	    if (foundMode) {
 		return TCL_ERROR;
 	    }
@@ -1868,11 +1849,11 @@ TclCompileSwitchCmd(
 	    foundMode = 1;
 	    valueIndex++;
 	    continue;
-	} else if ((size <= 7) && !memcmp(chrs, "-nocase", size)) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "-nocase")) {
 	    noCase = 1;
 	    valueIndex++;
 	    continue;
-	} else if ((size == 2) && !memcmp(chrs, "--", 2)) {
+	} else if (IS_TOKEN_LITERALLY(tokenPtr, "--")) {
 	    valueIndex++;
 	    break;
 	}
@@ -1967,7 +1948,11 @@ TclCompileSwitchCmd(
 	    fakeToken->type = TCL_TOKEN_TEXT;
 	    fakeToken->numComponents = 0;
 	    if (isProcessingBody) {
-		arm->bodyToken = fakeToken;
+		if (IsFallthroughToken(fakeToken)) {
+		    arm->bodyToken = NULL;
+		} else {
+		    arm->bodyToken = fakeToken;
+		}
 	    } else {
 		arm->valueToken = fakeToken;
 	    }
@@ -2029,7 +2014,11 @@ TclCompileSwitchCmd(
 	    }
 
 	    if (isProcessingBody) {
-		arm->bodyToken = tokenPtr + 1;
+		if (IsFallthroughToken(tokenPtr)) {
+		    arm->bodyToken = NULL;
+		} else {
+		    arm->bodyToken = tokenPtr + 1;
+		}
 		arm->bodyLine = ExtCmdLocation.line[valueIndex + 1 + i];
 		arm->bodyContLines = ExtCmdLocation.next[valueIndex + 1 + i];
 	    } else {
@@ -2803,11 +2792,7 @@ TclCompileTryCmd(
 	    Tcl_Obj *tmpObj, **objv;
 	    Tcl_Size objc;
 
-	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		goto failedToCompile;
-	    }
-	    if (tokenPtr[1].size == 4
-		    && !strncmp(tokenPtr[1].start, "trap", 4)) {
+	    if (IS_TOKEN_LITERALLY(tokenPtr, "trap")) {
 		/*
 		 * Parse the list of errorCode words to match against.
 		 */
@@ -2824,8 +2809,7 @@ TclCompileTryCmd(
 		Tcl_ListObjReplace(NULL, tmpObj, 0, 0, 0, NULL);
 		Tcl_IncrRefCount(tmpObj);
 		handlers[handlerIdx].matchClause = tmpObj;
-	    } else if (tokenPtr[1].size == 2
-		    && !strncmp(tokenPtr[1].start, "on", 2)) {
+	    } else if (IS_TOKEN_LITERALLY(tokenPtr, "on")) {
 		int code;
 
 		/*
@@ -2898,7 +2882,7 @@ TclCompileTryCmd(
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;
 	    }
-	    if (tokenPtr[1].size == 1 && tokenPtr[1].start[0] == '-') {
+	    if (IS_TOKEN_LITERALLY(tokenPtr, "-")) {
 		handlers[handlerIdx].tokenPtr = NULL;
 	    } else {
 		handlers[handlerIdx].tokenPtr = tokenPtr;
@@ -2919,8 +2903,7 @@ TclCompileTryCmd(
     if (numWords == 0) {
 	finallyToken = NULL;
     } else if (numWords == 2) {
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size != 7
-		|| strncmp(tokenPtr[1].start, "finally", 7)) {
+	if (!IS_TOKEN_LITERALLY(tokenPtr, "finally")) {
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);
@@ -3746,8 +3729,12 @@ TclCompileWhileCmd(
     testTokenPtr = TokenAfter(parsePtr->tokenPtr);
     bodyTokenPtr = TokenAfter(testTokenPtr);
 
-    if ((testTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
-	    || (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
+    if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+    TclNewObj(boolObj);
+    if (!TclWordKnownAtCompileTime(testTokenPtr, boolObj)) {
+	Tcl_BounceRefCount(boolObj);
 	return TCL_ERROR;
     }
 
@@ -3755,10 +3742,8 @@ TclCompileWhileCmd(
      * Find out if the condition is a constant.
      */
 
-    boolObj = Tcl_NewStringObj(testTokenPtr[1].start, testTokenPtr[1].size);
-    Tcl_IncrRefCount(boolObj);
     code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
-    TclDecrRefCount(boolObj);
+    Tcl_BounceRefCount(boolObj);
     if (code == TCL_OK) {
 	if (boolVal) {
 	    /*
