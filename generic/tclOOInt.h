@@ -202,7 +202,7 @@ struct PropertyStorage {
 				 * exposed by this object or class (in its
 				 * stereotypical instances). Contains a sorted
 				 * unique list if not NULL. */
-    int epoch;			/* The epoch that the caches are valid for. */
+    Tcl_Size epoch;			/* The epoch that the caches are valid for. */
 };
 
 /*

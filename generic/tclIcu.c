@@ -349,8 +349,13 @@ DetectEncoding(
 	return FunctionNotAvailableError(interp);
     }
 
-    bytes = (char *) Tcl_GetBytesFromObj(interp, objPtr, &len);
+    bytes = (char *)Tcl_GetBytesFromObj(interp, objPtr, &len);
     if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+    if (len > INT_MAX) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
     UErrorCodex status = U_ZERO_ERRORZ;
@@ -360,7 +365,7 @@ DetectEncoding(
 	return IcuError(interp, "Could not open charset detector", status);
     }
 
-    ucsdet_setText(csd, bytes, len, &status);
+    ucsdet_setText(csd, bytes, (int)len, &status);
     if (U_FAILURE(status)) {
 	IcuError(interp, "Could not set detection text", status);
 	ucsdet_close(csd);
@@ -569,11 +574,11 @@ IcuObjFromUCharDString(
 /*
  *------------------------------------------------------------------------
  *
- * EncodingDetectObjCmd --
+ * IcuDetectObjCmd --
  *
- *	Implements the Tcl command EncodingDetect.
- *	  encdetect - returns names of all detectable encodings
- *	  encdetect BYTES ?-all? - return detected encoding(s)
+ *	Implements the Tcl command ::tcl::unsupported::icu::detect.
+ *	  ::tcl::unsupported::icu::detect - returns names of all detectable encodings
+ *	  ::tcl::unsupported::icu::detect BYTES ?-all? - return detected encoding(s)
  *
  * Results:
  *	TCL_OK    - Success.
@@ -771,7 +776,7 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult( interp,
+	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("Max length supported by ICU exceeded.", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
@@ -779,17 +784,17 @@ IcuConverttoDString(
     dstCapacity = utf16len;
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
-    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstCapacity,
-			     utf16, utf16len, &status);
+    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstCapacity,
+			     utf16, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
 	    break; /* We don't care */
 	case U_BUFFER_OVERFLOW_ERROR:
-	    Tcl_DStringSetLength(dsOutPtr, dstLen);
+	    Tcl_DStringSetLength(dsOutPtr, (int)dstLen);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
-	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), dstLen,
-				     utf16, utf16len, &status);
+	    dstLen = ucnv_fromUChars(ucnvPtr, Tcl_DStringValue(dsOutPtr), (int)dstLen,
+				     utf16, (int)utf16len, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -855,11 +860,11 @@ IcuBytesToUCharDString(
     }
 
     int dstLen;
-    int dstCapacity = (int) nbytes; /* In UChar's */
+    int dstCapacity = (int)nbytes; /* In UChar's */
     Tcl_DStringInit(dsOutPtr);
     Tcl_DStringSetLength(dsOutPtr, dstCapacity);
     dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-			   (const char *)bytes, nbytes, &status);
+			   (const char *)bytes, (int)nbytes, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -869,7 +874,7 @@ IcuBytesToUCharDString(
 	    Tcl_DStringSetLength(dsOutPtr, dstCapacity);
 	    status = U_ZERO_ERRORZ; /* Reset before call */
 	    dstLen = ucnv_toUChars(ucnvPtr, (UCharx *)Tcl_DStringValue(dsOutPtr), dstCapacity,
-				   (const char *)bytes, nbytes, &status);
+				   (const char *)bytes, (int)nbytes, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -953,7 +958,7 @@ IcuNormalizeUCharDString(
     normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 
     normLen = unorm2_normalize(
-	normalizer, utf16, utf16len, normPtr, utf16len, &status);
+	normalizer, utf16, (int)utf16len, normPtr, (int)utf16len, &status);
     if (U_FAILURE(status)) {
 	switch (status) {
 	case U_STRING_NOT_TERMINATED_WARNING:
@@ -965,7 +970,7 @@ IcuNormalizeUCharDString(
 	    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 	    status = U_ZERO_ERRORZ; /* Need to clear error! */
 	    normLen = unorm2_normalize(
-		normalizer, utf16, utf16len, normPtr, normLen, &status);
+		normalizer, utf16, (int)utf16len, normPtr, normLen, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -1020,8 +1025,7 @@ static int IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
+		Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option"
 			 " \"-profile\". Must be \"strict\" or \"replace\".",
 			 s));
@@ -1189,8 +1193,7 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(
-		    interp,
+		Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("Invalid value \"%s\" supplied for option \"-profile\". Must be "
 				  "\"strict\" or \"replace\".",
 				  s));

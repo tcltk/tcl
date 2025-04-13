@@ -31,6 +31,14 @@
  *----------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
+/* Those are deprecated in Cygwin, but still might be used by Cygwin applications */
+# undef ENOSHARE
+# define ENOSHARE 136
+# undef ECASECLASH
+# define ECASECLASH 137
+#endif
+
 const char *
 Tcl_ErrnoId(void)
 {
