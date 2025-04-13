@@ -1045,8 +1045,8 @@ CleanupByteCode(
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
-    int numLitObjects = codePtr->numLitObjects;
-    int numAuxDataItems = codePtr->numAuxDataItems;
+    Tcl_Size numLitObjects = codePtr->numLitObjects;
+    Tcl_Size numAuxDataItems = codePtr->numAuxDataItems;
     Tcl_Obj **objArrayPtr, *objPtr;
     const AuxData *auxDataPtr;
     int i;
@@ -1055,7 +1055,7 @@ CleanupByteCode(
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
-	int lifetimeSec, lifetimeMicroSec, log2;
+	long long lifetimeSec, lifetimeMicroSec;
 
 	statsPtr = &iPtr->stats;
 
@@ -1065,7 +1065,7 @@ CleanupByteCode(
 
 	statsPtr->currentInstBytes -= (double) codePtr->numCodeBytes;
 	statsPtr->currentLitBytes -= (double)
-		codePtr->numLitObjects * sizeof(Tcl_Obj *);
+		numLitObjects * sizeof(Tcl_Obj *);
 	statsPtr->currentExceptBytes -= (double)
 		codePtr->numExceptRanges * sizeof(ExceptionRange);
 	statsPtr->currentAuxBytes -= (double)
@@ -1074,17 +1074,9 @@ CleanupByteCode(
 
 	Tcl_GetTime(&destroyTime);
 	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
-	if (lifetimeSec > 2000) {	/* avoid overflow */
-	    lifetimeSec = 2000;
-	}
 	lifetimeMicroSec = 1000000 * lifetimeSec +
 		(destroyTime.usec - codePtr->createTime.usec);
-
-	log2 = TclLog2(lifetimeMicroSec);
-	if (log2 > 31) {
-	    log2 = 31;
-	}
-	statsPtr->lifetimeCount[log2]++;
+	statsPtr->lifetimeCount[TclLog2(lifetimeMicroSec)]++;
     }
 #endif /* TCL_COMPILE_STATS */
 
@@ -2757,10 +2749,10 @@ TclCompileNoOp(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int i;
+    Tcl_Size i;
 
     tokenPtr = parsePtr->tokenPtr;
-    for (i = 1; i < (int)parsePtr->numWords; i++) {
+    for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -2841,9 +2833,8 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
-    int numLitObjects = envPtr->literalArrayNext;
+    Tcl_Size i, numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
     Interp *iPtr;
 
     if (envPtr->iPtr == NULL) {
@@ -2960,7 +2951,7 @@ TclInitByteCode(
      */
 
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
-	    &isNew), envPtr->extCmdMapPtr);
+	    NULL), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
 
     /* We've used up the CompileEnv.  Mark as uninitialized. */
@@ -4573,8 +4564,8 @@ RecordByteCodeStats(
     statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
-    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes += (double)

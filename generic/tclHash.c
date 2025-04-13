@@ -209,7 +209,7 @@ FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     const char *key)		/* Key to use to find matching entry. */
 {
-    return tablePtr->createProc(tablePtr, key, (int *)-1);
+    return tablePtr->createProc(tablePtr, key, TCL_HASH_FIND);
 }
 
 /*
@@ -244,9 +244,6 @@ CreateHashEntry(
     Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
     size_t hash, index;
-    if (newPtr == NULL) {
-    	Tcl_Panic("newPtr == NULL");
-    }
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -286,7 +283,7 @@ CreateHashEntry(
 		/* if keys pointers or values are equal */
 		if ((key == hPtr->key.oneWordValue)
 		    || compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr && (newPtr != (int *)-1)) {
+		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -301,7 +298,7 @@ CreateHashEntry(
 		/* if needle pointer equals content pointer or values equal */
 		if ((key == hPtr->key.string)
 			|| compareKeysProc((void *) key, hPtr)) {
-		    if (newPtr && (newPtr != (int *)-1)) {
+		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
 			*newPtr = 0;
 		    }
 		    return hPtr;
@@ -315,7 +312,7 @@ CreateHashEntry(
 		continue;
 	    }
 	    if (key == hPtr->key.oneWordValue) {
-		if (newPtr && (newPtr != (int *)-1)) {
+		if (newPtr && (newPtr != TCL_HASH_FIND)) {
 		    *newPtr = 0;
 		}
 		return hPtr;
@@ -323,7 +320,7 @@ CreateHashEntry(
 	}
     }
 
-    if (newPtr == (int *)-1) {
+    if (newPtr == TCL_HASH_FIND) {
 	/* This is the findProc functionality, so we are done. */
 	return NULL;
     }
@@ -904,7 +901,7 @@ BogusCreate(
     int *isNew)
 {
     Tcl_Panic("called %s on deleted table",
-	    (isNew && (isNew != (int *)-1))? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
+	    (isNew != TCL_HASH_FIND)? "Tcl_CreateHashEntry" : "Tcl_FindHashEntry");
     return NULL;
 }
 
