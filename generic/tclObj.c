@@ -4184,11 +4184,13 @@ AllocObjEntry(
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    Tcl_HashEntry *hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
+    Tcl_HashEntry *hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(sizeof(Tcl_HashEntry));
 
-    hPtr->key.objPtr = objPtr;
-    Tcl_IncrRefCount(objPtr);
-    hPtr->clientData = NULL;
+    if (hPtr) {
+	hPtr->key.objPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);
+	hPtr->clientData = NULL;
+    }
 
     return hPtr;
 }

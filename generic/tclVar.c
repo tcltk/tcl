@@ -6730,7 +6730,10 @@ AllocVarEntry(
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
-    varPtr = (Var *)Tcl_Alloc(sizeof(VarInHash));
+    varPtr = (Var *)Tcl_AttemptAlloc(sizeof(VarInHash));
+    if (!varPtr) {
+	return NULL;
+    }
     varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;

@@ -335,7 +335,10 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(sizeof(Tcl_HashEntry));
+	if (!hPtr) {
+	    return NULL;
+	}
 	hPtr->key.oneWordValue = (char *) key;
 	Tcl_SetHashValue(hPtr, NULL);
     }
@@ -681,10 +684,12 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *)Tcl_Alloc(size);
+    hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(size);
 
-    memcpy(hPtr->key.string, keyPtr, count);
-    Tcl_SetHashValue(hPtr, NULL);
+    if (hPtr) {
+	memcpy(hPtr->key.string, keyPtr, count);
+	Tcl_SetHashValue(hPtr, NULL);
+    }
 
     return hPtr;
 }
@@ -779,10 +784,12 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *)Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
-    memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
-    memcpy(hPtr->key.string, string, size);
-    Tcl_SetHashValue(hPtr, NULL);
+    hPtr = (Tcl_HashEntry *)Tcl_AttemptAlloc(offsetof(Tcl_HashEntry, key) + allocsize);
+    if (hPtr) {
+	memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
+	memcpy(hPtr->key.string, string, size);
+	Tcl_SetHashValue(hPtr, NULL);
+    }
     return hPtr;
 }
 

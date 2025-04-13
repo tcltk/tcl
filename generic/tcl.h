@@ -2513,11 +2513,40 @@ TclBounceRefCount(
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), (int *)-1)
-#undef  Tcl_CreateHashEntry
+
+#ifdef TCL_MEM_DEBUG
+static inline Tcl_HashEntry *
+TclDbPanicIfNull(
+    Tcl_HashEntry *entry,
+	int *newPtr,
+	const char *file,
+	const char *line)
+{
+    if (!entry && newPtr != (int *)-1) {
+	Tcl_Panic("%s: Memory overflow in file %s:%d", "Tcl_CreateHashEntry", file, line);
+    }
+    return entry;
+}
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+	TclDbPanicIfNull((*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)), (newPtr), __FILE__, __LINE__)
+#else
+static inline Tcl_HashEntry *
+TclPanicIfNull(
+    Tcl_HashEntry *entry,
+	int *newPtr)
+{
+    if (!entry && newPtr != (int *)-1) {
+	Tcl_Panic("%s: Memory overflow", "Tcl_CreateHashEntry");
+    }
+    return entry;
+}
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+	TclPanicIfNull((*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)), (newPtr))
+#endif
+
+#define Tcl_AttemptCreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
 #endif /* RC_INVOKED */
