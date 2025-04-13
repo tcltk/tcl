@@ -1237,13 +1237,13 @@ TclOSfstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = fstat(fd, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;
@@ -1260,13 +1260,13 @@ TclOSstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = stat(name, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;
@@ -1283,13 +1283,13 @@ TclOSlstat(
     Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = lstat(name, &buf);
 
-    statBuf->st_mode = buf.st_mode;
-    statBuf->st_ino = buf.st_ino;
+    statBuf->st_mode = (unsigned short)buf.st_mode;
+    statBuf->st_ino = (unsigned short)buf.st_ino;
     statBuf->st_dev = buf.st_dev;
     statBuf->st_rdev = buf.st_rdev;
     statBuf->st_nlink = buf.st_nlink;
-    statBuf->st_uid = buf.st_uid;
-    statBuf->st_gid = buf.st_gid;
+    statBuf->st_uid = (short)buf.st_uid;
+    statBuf->st_gid = (short)buf.st_gid;
     statBuf->st_size = buf.st_size;
     statBuf->st_atime = buf.st_atime;
     statBuf->st_mtime = buf.st_mtime;

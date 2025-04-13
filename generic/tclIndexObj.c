@@ -303,20 +303,20 @@ Tcl_GetIndexFromObjStruct(
 	flags &= (30-(int)(sizeof(int)<<1));
 	if (flags) {
 	    if (flags == sizeof(uint16_t)<<1) {
-		*(uint16_t *)indexPtr = index;
+		*(uint16_t *)indexPtr = (uint16_t)index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(uint8_t)<<1)) {
-		*(uint8_t *)indexPtr = index;
+		*(uint8_t *)indexPtr = (uint8_t)index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(int64_t)<<1)) {
 		*(int64_t *)indexPtr = index;
 		return TCL_OK;
 	    } else if (flags == (int)(sizeof(int32_t)<<1)) {
-		*(int32_t *)indexPtr = index;
+		*(int32_t *)indexPtr = (int32_t)index;
 		return TCL_OK;
 	    }
 	}
-	*(int *)indexPtr = index;
+	*(int *)indexPtr = (int)index;
     }
     return TCL_OK;
 
@@ -1107,7 +1107,7 @@ Tcl_ParseArgsObjv(
 	infoPtr = matchPtr;
 	switch (infoPtr->type) {
 	case TCL_ARGV_CONSTANT:
-	    *((int *) infoPtr->dstPtr) = PTR2INT(infoPtr->srcPtr);
+	    *((int *)infoPtr->dstPtr) = (int)PTR2INT(infoPtr->srcPtr);
 	    break;
 	case TCL_ARGV_INT:
 	    if (objc == 0) {
@@ -1139,7 +1139,7 @@ Tcl_ParseArgsObjv(
 	     */
 
 	    if (infoPtr->dstPtr != NULL) {
-		*((int *) infoPtr->dstPtr) = dstIndex;
+		*((int *)infoPtr->dstPtr) = (int)dstIndex;
 	    }
 	    goto argsDone;
 	case TCL_ARGV_FLOAT:
@@ -1147,7 +1147,7 @@ Tcl_ParseArgsObjv(
 		goto missingArg;
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
-		    (double *) infoPtr->dstPtr) == TCL_ERROR) {
+		    (double *)infoPtr->dstPtr) == TCL_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected floating-point argument for \"%s\" but got \"%s\"",
 			infoPtr->keyStr, TclGetString(objv[srcIndex])));
@@ -1268,7 +1268,7 @@ PrintUsage(
 				 * descriptions. */
 {
     const Tcl_ArgvInfo *infoPtr;
-    int width, numSpaces;
+    Tcl_Size width, numSpaces;
 #define NUM_SPACES 20
     static const char spaces[] = "                    ";
     Tcl_Obj *msg;

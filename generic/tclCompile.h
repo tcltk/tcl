@@ -934,7 +934,7 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     const char *name;		/* Name of instruction. */
-    Tcl_Size numBytes;		/* Total number of bytes for instruction. */
+    int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
@@ -1216,7 +1216,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 			    int range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
-MODULE_SCOPE int	TclLog2(int value);
+MODULE_SCOPE int	TclLog2(long long value);
 #endif
 MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
@@ -1328,7 +1328,7 @@ TclCheckStackDepth(
 
 /*
  * Update the stack requirements based on the instruction definition. It is
- * called by the macros TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
+ * called by the functions TclEmitOpCode, TclEmitInst1, TclEmitInst4, et al.
  * Remark that the very last instruction of a bytecode always reduces the
  * stack level: INST_DONE or INST_POP, so that the maxStackdepth is always
  * updated.
@@ -1345,6 +1345,26 @@ TclUpdateStackReqs(
 	    delta = 1 - i;
 	}
 	TclAdjustStackDepth(delta, envPtr);
+    }
+
+    /*
+     * Apply stack depth corrections.
+     * These instructions are encoded wrongly because they're cases the
+     * original instruction table design wasn't designed to handle.
+     */
+    switch (op) {
+    case INST_DICT_GET:
+    case INST_DICT_SET:
+    case INST_DICT_EXISTS:
+    case INST_INVOKE_REPLACE:
+	TclAdjustStackDepth(-1, envPtr);
+	break;
+    case INST_DICT_GET_DEF:
+	TclAdjustStackDepth(-2, envPtr);
+	break;
+    default:
+	/* Do nothing special */
+	break;
     }
 }
 
@@ -1439,6 +1459,7 @@ TclEmitInstInt1Impl(
     *envPtr->codeNext++ = UCHAR(i);
 
     TclUpdateAtCmdStart(op, envPtr);
+    // Emit 1-byte argument
     TclUpdateStackReqs(op, i, envPtr);
 }
 #define TclEmitInstInt1(op, i, envPtr) \
@@ -1455,6 +1476,7 @@ TclEmitInstInt4Impl(
     }
 
     *envPtr->codeNext++ = UCHAR(op);
+    // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(i >> 24);
     *envPtr->codeNext++ = UCHAR(i >> 16);
     *envPtr->codeNext++ = UCHAR(i >>  8);
@@ -1462,20 +1484,6 @@ TclEmitInstInt4Impl(
 
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
-
-    /* Apply stack depth corrections. */
-    switch(op) {
-    case INST_DICT_GET:
-    case INST_DICT_EXISTS:
-	TclAdjustStackDepth(-1, envPtr);
-	break;
-    case INST_DICT_GET_DEF:
-	TclAdjustStackDepth(-2, envPtr);
-	break;
-    default:
-        /* Do nothing special */
-	break;
-    }
 }
 #define TclEmitInstInt4(op, i, envPtr) \
     TclEmitInstInt4Impl((op), (unsigned)(i), (envPtr))
@@ -1492,7 +1500,9 @@ TclEmitInstInt14Impl(
     }
 
     *envPtr->codeNext++ = UCHAR(op);
+    // Emit 1-byte argument
     *envPtr->codeNext++ = UCHAR(i      );
+    // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(j >> 24);
     *envPtr->codeNext++ = UCHAR(j >> 16);
     *envPtr->codeNext++ = UCHAR(j >>  8);
@@ -1516,24 +1526,16 @@ TclEmitInstInt41Impl(
     }
 
     *envPtr->codeNext++ = UCHAR(op);
+    // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(i >> 24);
     *envPtr->codeNext++ = UCHAR(i >> 16);
     *envPtr->codeNext++ = UCHAR(i >>  8);
     *envPtr->codeNext++ = UCHAR(i      );
+    // Emit 1-byte argument
     *envPtr->codeNext++ = UCHAR(j      );
  
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
-
-    /* Apply stack depth corrections. */
-    switch(op) {
-    case INST_INVOKE_REPLACE:
-	TclAdjustStackDepth(-1, envPtr);
-	break;
-    default:
-	/* Do nothing special */
-	break;
-    }
 }
 #define TclEmitInstInt41(op, i, j, envPtr) \
     TclEmitInstInt41Impl((op), (unsigned)(i), (unsigned)(j), (envPtr))
@@ -1550,10 +1552,12 @@ TclEmitInstInt44Impl(
     }
  
     *envPtr->codeNext++ = UCHAR(op);
+    // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(i >> 24);
     *envPtr->codeNext++ = UCHAR(i >> 16);
     *envPtr->codeNext++ = UCHAR(i >>  8);
     *envPtr->codeNext++ = UCHAR(i      );
+    // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(j >> 24);
     *envPtr->codeNext++ = UCHAR(j >> 16);
     *envPtr->codeNext++ = UCHAR(j >>  8);
@@ -1561,16 +1565,6 @@ TclEmitInstInt44Impl(
  
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
-
-    /* Apply stack depth corrections. */
-    switch(op) {
-    case INST_DICT_SET:
-	TclAdjustStackDepth(-1, envPtr);
-	break;
-    default:
-	/* Do nothing special */
-	break;
-    }
 }
 #define TclEmitInstInt44(op, i, j, envPtr) \
     TclEmitInstInt44Impl((op), (unsigned)(i), (unsigned)(j), (envPtr))

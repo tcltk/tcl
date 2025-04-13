@@ -100,6 +100,9 @@ Tcl_InitStubs(
 
     actualVersion = stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 0, &pkgData);
     if (actualVersion == NULL) {
+	/* Even when the Tcl version does not match, the caller should at least be
+	 * able to use Tcl_GetObjResult/Tcl_GetString/Tcl_Panic for error-handling */
+	tclStubsPtr = stubsPtr; /* See: [fd8341e496] */
 	return NULL;
     }
     if (exact&1) {

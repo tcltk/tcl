@@ -266,7 +266,7 @@ FileInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    int bytesRead;		/* How many bytes were actually read from the
+    ssize_t bytesRead;	/* How many bytes were actually read from the
 				 * input device? */
 
     *errorCodePtr = 0;
@@ -286,7 +286,7 @@ FileInputProc(
 	*errorCodePtr = errno;
 	return -1;
     }
-    return bytesRead;
+    return (int)bytesRead;
 }
 
 /*
@@ -315,7 +315,7 @@ FileOutputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    int written;
+    ssize_t written;
 
     *errorCodePtr = 0;
 
@@ -330,7 +330,7 @@ FileOutputProc(
     }
     written = write(fsPtr->fd, buf, toWrite);
     if (written >= 0) {
-	return written;
+	return (int)written;
     }
     *errorCodePtr = errno;
     return -1;
@@ -659,7 +659,7 @@ FileGetOptionProc(
 {
     FileState *fsPtr = (FileState *)instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
-    int len;
+    size_t len;
 
     if (optionName == NULL) {
 	len = 0;
@@ -860,18 +860,18 @@ TtySetOptionProc(
 	iostate.c_cc[VSTOP] = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
 	    Tcl_UniChar character = 0;
-	    int charLen;
+	    Tcl_Size charLen;
 
 	    charLen = TclUtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
 		goto badXchar;
 	    }
-	    iostate.c_cc[VSTART] = character;
+	    iostate.c_cc[VSTART] = (cc_t)character;
 	    charLen = TclUtfToUniChar(argv[1], &character);
 	    if ((character > 0xFF) || argv[1][charLen]) {
 		goto badXchar;
 	    }
-	    iostate.c_cc[VSTOP] = character;
+	    iostate.c_cc[VSTOP] = (cc_t)character;
 	}
 	Tcl_Free(argv);
 
@@ -891,7 +891,7 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 	iostate.c_cc[VMIN] = 0;
-	iostate.c_cc[VTIME] = (msec==0) ? 0 : (msec<100) ? 1 : (msec+50)/100;
+	iostate.c_cc[VTIME] = (msec==0) ? 0 : (msec<100) ? 1 : (cc_t)((msec+50)/100);
 	tcsetattr(fsPtr->fileState.fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
@@ -1900,7 +1900,7 @@ Tcl_MakeFileChannel(
 {
     TtyState *fsPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
-    int fd = PTR2INT(handle);
+    int fd = (int)PTR2INT(handle);
     const Tcl_ChannelType *channelTypePtr;
     Tcl_StatBuf buf;
 
@@ -2106,7 +2106,7 @@ Tcl_GetOpenFile(
 	    || (strcmp(chanTypePtr->typeName, "pipe") == 0)) {
 	if (Tcl_GetChannelHandle(chan,
 		(forWriting ? TCL_WRITABLE : TCL_READABLE), &data) == TCL_OK) {
-	    fd = PTR2INT(data);
+	    fd = (int)PTR2INT(data);
 
 	    /*
 	     * The call to fdopen below is probably dangerous, since it will
