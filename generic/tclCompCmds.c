@@ -778,15 +778,9 @@ TclCompileClockClicksCmd(
 	 * -milliseconds or -microseconds
 	 */
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD
-		|| tokenPtr[1].size < 4
-		|| tokenPtr[1].size > 13) {
-	    return TCL_ERROR;
-	} else if (!strncmp(tokenPtr[1].start, "-microseconds",
-		tokenPtr[1].size)) {
+	if (IS_TOKEN_PREFIX(tokenPtr, 3, "-microseconds")) {
 	    OP1(		CLOCK_READ, 1);
-	} else if (!strncmp(tokenPtr[1].start, "-milliseconds",
-		tokenPtr[1].size)) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 3, "-milliseconds")) {
 	    OP1(		CLOCK_READ, 2);
 	} else {
 	    return TCL_ERROR;
@@ -861,9 +855,9 @@ TclCompileConcatCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *objPtr, *listObj;
+    Tcl_Obj *objPtr, *listObj, **objs;
+    Tcl_Size len, i;
     Tcl_Token *tokenPtr;
-    int i;
 
     /* TODO: Consider compiling expansion case. */
     if (parsePtr->numWords == 1) {
@@ -877,41 +871,35 @@ TclCompileConcatCmd(
 
     /*
      * Test if all arguments are compile-time known. If they are, we can
-     * implement with a simple push.
+     * implement with a simple push of a literal.
      */
 
     TclNewObj(listObj);
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords; i++) {
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	    Tcl_BounceRefCount(objPtr);
 	    Tcl_BounceRefCount(listObj);
-	    listObj = NULL;
-	    break;
+	    goto runtimeConcat;
 	}
 	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
     }
-    if (listObj != NULL) {
-	Tcl_Obj **objs;
-	Tcl_Size len;
 
-	TclListObjGetElements(NULL, listObj, &len, &objs);
-	objPtr = Tcl_ConcatObj(len, objs);
-	Tcl_BounceRefCount(listObj);
-	PUSH_OBJ(		objPtr);
-	return TCL_OK;
-    }
+    TclListObjGetElements(NULL, listObj, &len, &objs);
+    PUSH_OBJ(			Tcl_ConcatObj(len, objs));
+    Tcl_BounceRefCount(listObj);
+    return TCL_OK;
 
     /*
-     * General case: runtime concat.
+     * General case: do the concatenation at runtime.
      */
 
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords; i++) {
+  runtimeConcat:
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, i);
     }
-
     OP4(			CONCAT_STK, i - 1);
     return TCL_OK;
 }
@@ -1156,23 +1144,17 @@ TclCompileDictIncrCmd(
      */
 
     if (parsePtr->numWords == 4) {
-	const char *word;
-	Tcl_Size numBytes;
-	int code;
-	Tcl_Token *incrTokenPtr;
+	Tcl_Token *incrTokenPtr = TokenAfter(keyTokenPtr);
 	Tcl_Obj *intObj;
+	int code;
 
-	incrTokenPtr = TokenAfter(keyTokenPtr);
-	if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	TclNewObj(intObj);
+	if (!TclWordKnownAtCompileTime(incrTokenPtr, intObj)) {
+	    Tcl_BounceRefCount(intObj);
 	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
-	word = incrTokenPtr[1].start;
-	numBytes = incrTokenPtr[1].size;
-
-	intObj = Tcl_NewStringObj(word, numBytes);
-	Tcl_IncrRefCount(intObj);
 	code = TclGetIntFromObj(NULL, intObj, &incrAmount);
-	TclDecrRefCount(intObj);
+	Tcl_BounceRefCount(intObj);
 	if (code != TCL_OK) {
 	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
@@ -3584,7 +3566,7 @@ TclPushVarName(
     } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (*(varTokenPtr[n].start + varTokenPtr[n].size - 1) == ')')) {
+	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
 	/*
 	 * Check for parentheses inside first token.
 	 */
@@ -3620,34 +3602,35 @@ TclPushVarName(
 	    elNameLen = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (!(flags & TCL_NO_ELEMENT)) {
-	      if (remainingLen) {
-		/*
-		 * Make a first token with the extra characters in the first
-		 * token.
-		 */
+		if (remainingLen) {
+		    /*
+		     * Make a first token with the extra characters in the
+		     * first token.
+		     */
 
-		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingLen;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = n;
+		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp,
+			    n * sizeof(Tcl_Token));
+		    allocedTokens = 1;
+		    elemTokenPtr->type = TCL_TOKEN_TEXT;
+		    elemTokenPtr->start = elName;
+		    elemTokenPtr->size = remainingLen;
+		    elemTokenPtr->numComponents = 0;
+		    elemTokenCount = n;
 
-		/*
-		 * Copy the remaining tokens.
-		 */
+		    /*
+		     * Copy the remaining tokens.
+		     */
 
-		memcpy(elemTokenPtr+1, varTokenPtr+2,
-			(n-1) * sizeof(Tcl_Token));
-	      } else {
-		/*
-		 * Use the already available tokens.
-		 */
+		    memcpy(elemTokenPtr+1, varTokenPtr+2,
+			    (n-1) * sizeof(Tcl_Token));
+		} else {
+		    /*
+		     * Use the already available tokens.
+		     */
 
-		elemTokenPtr = &varTokenPtr[2];
-		elemTokenCount = n - 1;
-	      }
+		    elemTokenPtr = &varTokenPtr[2];
+		    elemTokenCount = n - 1;
+		}
 	    }
 	}
     }
