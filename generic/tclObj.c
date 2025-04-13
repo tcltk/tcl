@@ -810,11 +810,9 @@ Tcl_RegisterObjType(
 				 * be statically allocated (must live
 				 * forever). */
 {
-    int isNew;
-
     Tcl_MutexLock(&tableMutex);
     Tcl_SetHashValue(
-	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &isNew), typePtr);
+	    Tcl_CreateHashEntry(&typeTable, typePtr->name, NULL), typePtr);
     Tcl_MutexUnlock(&tableMutex);
 }
 

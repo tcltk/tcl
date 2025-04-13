@@ -222,20 +222,6 @@ typedef struct TclVarHashTable {
 				 * are variables in an array at all. */
 } TclVarHashTable;
 
-/*
- * This is for itcl - it likes to search our varTables directly :(
- */
-
-#define TclVarHashFindVar(tablePtr, key) \
-    TclVarHashCreateVar((tablePtr), (key), NULL)
-
-/*
- * Define this to reduce the amount of space that the average namespace
- * consumes by only allocating the table of child namespaces when necessary.
- * Defining it breaks compatibility for Tcl extensions (e.g., itcl) which
- * reach directly into the Namespace structure.
- */
-
 #undef BREAK_NAMESPACE_COMPAT
 
 /*
@@ -751,6 +737,8 @@ typedef struct VarInHash {
 #define VAR_TEMPORARY		0x200	/* KEEP OLD VALUE! See tclProc.c */
 #define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
+
+#define TCL_HASH_FIND	((int *)-1)
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.

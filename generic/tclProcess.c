@@ -858,7 +858,7 @@ TclProcessCreated(
 
     Tcl_SetHashValue(entry, info);
     entry = Tcl_CreateHashEntry(&infoTablePerResolvedPid, INT2PTR(resolvedPid),
-	    &isNew);
+	    NULL);
     Tcl_SetHashValue(entry, info);
 
     Tcl_MutexUnlock(&infoTablesMutex);
