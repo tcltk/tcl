@@ -3525,6 +3525,7 @@ IssueTryFinallyInstructions(
     FWDJUMP(			JUMP_FALSE, jumpSplice);
     PUSH(			"-during");
     OP4(			OVER, 3);
+    // TODO: add [dict replace] support
     OP4(			LIST, 2);
     OP(				LIST_CONCAT);
     FWDLABEL(		jumpSplice);
