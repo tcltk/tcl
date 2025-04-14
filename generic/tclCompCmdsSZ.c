@@ -3478,7 +3478,7 @@ IssueTryFinallyInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_ExceptionRange bodyRange, finallyRange;
-    Tcl_BytecodeLabel jumpOK, jumpSplice, doReturn, endCatch;
+    Tcl_BytecodeLabel jumpOK, jumpSplice, endCatch;
 
     /*
      * Note that this one is simple enough that we can issue it without
@@ -3498,6 +3498,7 @@ IssueTryFinallyInstructions(
     CATCH_TARGET(	bodyRange);
     OP(				PUSH_RESULT);
     FWDLABEL(		endCatch);
+    // Cannot avoid this next op: test-case error-15.9.0.0.2
     OP(				PUSH_RETURN_OPTIONS);
     OP(				END_CATCH);
 
@@ -3509,6 +3510,7 @@ IssueTryFinallyInstructions(
     }
     OP(				END_CATCH);
     OP(				POP);
+    OP(				SWAP);
     FWDJUMP(			JUMP, jumpOK);
 
     CATCH_TARGET(	finallyRange);
@@ -3529,12 +3531,10 @@ IssueTryFinallyInstructions(
     OP4(			REVERSE, 4);
     OP(				POP);
     OP(				POP);
-    FWDJUMP(			JUMP, doReturn);
 
     // Re-raise
     FWDLABEL(		jumpOK);
-    OP(				SWAP);
-    FWDLABEL(		doReturn);
+    // Cannot avoid this next op: test-case error-15.9.0.0.2
     INVOKE(			RETURN_STK);
     return TCL_OK;
 }

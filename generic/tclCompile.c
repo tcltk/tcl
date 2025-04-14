@@ -399,10 +399,10 @@ InstructionDesc const tclInstructionTable[] = {
 
     TCL_INSTRUCTION_ENTRY(
 	"listIn",	  1,	-1),
-	/* List containment: push [lsearch stktop stknext]>=0) */
+	/* List containment: push [lsearch stktop stknext]>=0 */
     TCL_INSTRUCTION_ENTRY(
 	"listNotIn",	  1,	-1),
-	/* List negated containment: push [lsearch stktop stknext]<0) */
+	/* List negated containment: push [lsearch stktop stknext]<0 */
 
     TCL_INSTRUCTION_ENTRY(
 	"pushReturnOpts", 1,	+1),
