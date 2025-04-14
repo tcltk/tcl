@@ -542,18 +542,18 @@ FindClassProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i, dummy;
+    int i;
     Tcl_Obj *propName;
     Class *mixin, *sup;
 
   tailRecurse:
     if (writable) {
 	FOREACH(propName, clsPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     } else {
 	FOREACH(propName, clsPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     }
     if (clsPtr->thisPtr->flags & ROOT_OBJECT) {
@@ -593,17 +593,17 @@ FindObjectProps(
 				 * property set. */
     Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
-    int i, dummy;
+    int i;
     Tcl_Obj *propName;
     Class *mixin;
 
     if (writable) {
 	FOREACH(propName, oPtr->properties.writable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     } else {
 	FOREACH(propName, oPtr->properties.readable) {
-	    Tcl_CreateHashEntry(accumulator, (void *) propName, &dummy);
+	    Tcl_CreateHashEntry(accumulator, (void *) propName, NULL);
 	}
     }
     FOREACH(mixin, oPtr->mixins) {
