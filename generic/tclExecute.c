@@ -170,7 +170,7 @@ VarHashCreateVar(
 }
 
 #define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
+    VarHashCreateVar((tablePtr), (key), TCL_HASH_FIND)
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser

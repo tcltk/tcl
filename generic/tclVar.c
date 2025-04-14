@@ -69,7 +69,7 @@ VarHashCreateVar(
 }
 
 #define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
+    VarHashCreateVar((tablePtr), (key), TCL_HASH_FIND)
 
 #define VarHashInvalidateEntry(varPtr) \
     ((varPtr)->flags |= VAR_DEAD_HASH)
@@ -2598,15 +2598,13 @@ UnsetVarStruct(
 	     * Otherwise just delete them.
 	     */
 
-	    int isNew;
-
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
 	    if (dummyVar.flags & VAR_TRACED_UNSET) {
 		tPtr = Tcl_CreateHashEntry(&iPtr->varTraces,
-			&dummyVar, &isNew);
+			&dummyVar, NULL);
 		Tcl_SetHashValue(tPtr, tracePtr);
 	    }
 	}
@@ -3965,13 +3963,12 @@ TclFindArrayPtrElements(
 	    varPtr!=NULL ; varPtr=VarHashNextVar(&search)) {
 	Tcl_HashEntry *hPtr;
 	Tcl_Obj *nameObj;
-	int dummy;
 
 	if (TclIsVarUndefined(varPtr)) {
 	    continue;
 	}
 	nameObj = VarHashGetKey(varPtr);
-	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, &dummy);
+	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, NULL);
 	Tcl_SetHashValue(hPtr, nameObj);
     }
 }
@@ -6733,7 +6730,10 @@ AllocVarEntry(
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
-    varPtr = (Var *)Tcl_Alloc(sizeof(VarInHash));
+    varPtr = (Var *)Tcl_AttemptAlloc(sizeof(VarInHash));
+    if (!varPtr) {
+	return NULL;
+    }
     varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;

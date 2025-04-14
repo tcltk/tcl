@@ -565,7 +565,10 @@ ClockFmtScnStorageAllocProc(
 	allocsize -= sizeof(hPtr->key);
     }
 
-    fss = (ClockFmtScnStorage *)Tcl_Alloc(allocsize);
+    fss = (ClockFmtScnStorage *)Tcl_AttemptAlloc(allocsize);
+    if (!fss) {
+	return NULL;
+    }
 
     /* initialize */
     memset(fss, 0, sizeof(*fss));

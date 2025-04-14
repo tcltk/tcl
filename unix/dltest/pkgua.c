@@ -71,7 +71,7 @@ PkguaInterpToTokens(
     Tcl_Command *cmdTokens;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)Tcl_GetThreadData((&dataKey), sizeof(ThreadSpecificData));
     Tcl_HashEntry *entryPtr =
-	    Tcl_CreateHashEntry(&tsdPtr->interpTokenMap, (char *) interp, &newEntry);
+	    Tcl_CreateHashEntry(&tsdPtr->interpTokenMap, interp, &newEntry);
 
     if (newEntry) {
 	cmdTokens = (Tcl_Command *)

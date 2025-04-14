@@ -2744,7 +2744,7 @@ BuildEnsembleConfig(
 	while (!done) {
 	    const char *name = TclGetString(keyObj);
 
-	    hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
+	    hPtr = Tcl_CreateHashEntry(hash, name, NULL);
 	    Tcl_SetHashValue(hPtr, valueObj);
 	    Tcl_IncrRefCount(valueObj);
 	    Tcl_DictObjNext(&dictSearch, &keyObj, &valueObj, &done);
