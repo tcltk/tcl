@@ -934,6 +934,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Push the global ID of the TclOO object named at the top of the
 	 * stack onto the stack.
 	 * Stack:  ... object => ... id */
+    TCL_INSTRUCTION_ENTRY(
+	"dictPut",		-2),
+	/* Modify the dict by replacing/creating the key/value pair given,
+	 * pushing the result on the stack.
+	 * Stack:  ... dict key value => ... updatedDict */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

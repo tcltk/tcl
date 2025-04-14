@@ -891,6 +891,7 @@ enum TclInstruction {
     INST_SWAP,
     INST_ERROR_PREFIX_EQ,
     INST_TCLOO_ID,
+    INST_DICT_PUT,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -1733,18 +1734,6 @@ TclGetUInt4AtPtr(const unsigned char *p) {
 #define TclMax(i, j)	((((size_t) i) + 1 > ((size_t) j) + 1) ? (i) : (j))
 
 /*
- * Convenience macros for use when compiling bodies of commands. The ANSI C
- * "prototype" for these macros are:
- *
- * static void		BODY(Tcl_Token *tokenPtr, int word);
- */
-
-#define BODY(tokenPtr, word) \
-    SetLineInformation((word));						\
-    TclCompileCmdWord(interp, (tokenPtr)+1, (tokenPtr)->numComponents,	\
-	    envPtr)
-
-/*
  * Convenience macro for use when compiling tokens to be pushed. The ANSI C
  * "prototype" for this macro is:
  *
@@ -1834,7 +1823,7 @@ ExceptionRangeEnds(
 #define TclDStringAppendToken(dsPtr, tokenPtr) \
     Tcl_DStringAppend((dsPtr), (tokenPtr)->start, (tokenPtr)->size)
 #define TclRegisterDStringLiteral(envPtr, dsPtr) \
-    TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
+    TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr),			\
 	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
 #define TclPushDString(envPtr, dsPtr) \
     TclEmitPush(TclRegisterDStringLiteral((envPtr), (dsPtr)), (envPtr))
@@ -1880,9 +1869,9 @@ ExceptionRangeEnds(
 	envPtr->clNext = eclPtr->next[(word)];				\
     } while (0)
 
-#define PushVarNameWord(i,v,e,f,l,sc,word) \
-    SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)
+#define PushVarNameWord(varTokenPtr,flags,localIndexPtr,isScalarPtr,wordIndex) \
+    SetLineInformation(wordIndex);						\
+    TclPushVarName(interp,varTokenPtr,envPtr,flags,localIndexPtr,isScalarPtr)
 
 #define ClearFailedCompile(envPtr) \
     TclClearFailedCompile((envPtr), &lineInfo)
