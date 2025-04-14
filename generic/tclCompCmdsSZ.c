@@ -137,8 +137,7 @@ TclCompileSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &isScalar, 1);
+    PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
 
     /*
      * If we are doing an assignment, push the new value.
@@ -3118,13 +3117,11 @@ IssueTryClausesInstructions(
 	    OP(			EQ);
 	    FWDJUMP(		JUMP_FALSE, dontChangeOptions);
 
-	    OP4(		LOAD_SCALAR, optionsVar);
-	    OP(			SWAP);
-	    OP4(		STORE_SCALAR, optionsVar);
-	    OP(			POP);
+	    // Next bit isn't DICT_SET; alter which dict is in optionsVar
 	    PUSH(		"-during");
-	    OP(			SWAP);
-	    OP44(		DICT_SET, 1, optionsVar);
+	    OP4(		LOAD_SCALAR, optionsVar);
+	    OP(			DICT_PUT);
+	    OP4(		STORE_SCALAR, optionsVar);
 
 	    FWDLABEL(	dontChangeOptions);
 	    OP(			SWAP);
@@ -3374,12 +3371,11 @@ IssueTryClausesFinallyInstructions(
 	OP(			EQ);
 	FWDJUMP(		JUMP_FALSE, noTrapError);
 
-	OP4(			LOAD_SCALAR, optionsLocal);
+	// Next bit isn't DICT_SET; alter which dict is in optionsLocal
 	PUSH(			"-during");
-	OP4(			REVERSE, 3);
+	OP4(			LOAD_SCALAR, optionsLocal);
+	OP(			DICT_PUT);
 	OP4(			STORE_SCALAR, optionsLocal);
-	OP(			POP);
-	OP44(			DICT_SET, 1, optionsLocal);
 	FWDJUMP(		JUMP, trapError);
 
 	FWDLABEL(	noTrapError);
@@ -3443,13 +3439,14 @@ IssueTryClausesFinallyInstructions(
     PUSH(			"1");
     OP(				EQ);
     FWDJUMP(			JUMP_FALSE, noFinalError);
-    OP4(			LOAD_SCALAR, optionsLocal);
+
+    // Next bit isn't DICT_SET; alter which dict is in optionsLocal
     PUSH(			"-during");
-    OP4(			REVERSE, 3);
+    OP4(			LOAD_SCALAR, optionsLocal);
+    OP(				DICT_PUT);
     OP4(			STORE_SCALAR, optionsLocal);
     OP(				POP);
-    OP44(			DICT_SET, 1, optionsLocal);
-    OP(				POP);
+    // result
     FWDJUMP(			JUMP, finalError);
 
     STKDELTA(+1);
@@ -3525,9 +3522,7 @@ IssueTryFinallyInstructions(
     FWDJUMP(			JUMP_FALSE, jumpSplice);
     PUSH(			"-during");
     OP4(			OVER, 3);
-    // TODO: add [dict replace] support
-    OP4(			LIST, 2);
-    OP(				LIST_CONCAT);
+    OP(				DICT_PUT);
     FWDLABEL(		jumpSplice);
     OP4(			REVERSE, 4);
     OP(				POP);
@@ -3652,8 +3647,7 @@ TclCompileUnsetCmd(
 	 * namespace qualifiers.
 	 */
 
-	PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i);
+	PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, i);
 
 	/*
 	 * Emit instructions to unset the variable.

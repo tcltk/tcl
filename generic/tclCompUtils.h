@@ -64,6 +64,13 @@ typedef int Tcl_AuxDataRef;
 	SetLineInformation(index);					\
 	TclCompileExprWords(interp, (tokenPtr), 1, envPtr);		\
     } while (0)
+#define BODY(tokenPtr, index) \
+    do {								\
+	SetLineInformation((index));					\
+	TclCompileCmdWord(interp,					\
+		(tokenPtr)+1, (tokenPtr)->numComponents,		\
+		envPtr);						\
+    } while (0)
 
 #define BACKLABEL(var) \
     (var)=CurrentOffset(envPtr)
