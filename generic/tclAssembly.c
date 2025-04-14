@@ -25,7 +25,7 @@
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
  *-   syntax (?)
- *-   returnCodeBranch1, returnCodeBranch4
+ *-   returnCodeBranch1, returnCodeBranch
  *-   tclooNext, tclooNextClass
  */
 
@@ -4172,20 +4172,16 @@ AddBasicBlockRangeToErrorInfo(
 				/* Compilation environment */
     Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
 				/* Tcl interpreter */
-    Tcl_Obj* lineNo;		/* Line number in the source */
 
-    Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    TclNewIntObj(lineNo, bbPtr->startLine);
-    Tcl_IncrRefCount(lineNo);
-    Tcl_AppendObjToErrorInfo(interp, lineNo);
-    Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
-	TclSetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AppendObjToErrorInfo(interp, lineNo);
-    } else {
-	Tcl_AddErrorInfo(interp, "end of assembly code");
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    in assembly code between lines %d and %d",
+		bbPtr->startLine, bbPtr->successor1->startLine));
+	return;
     }
-    Tcl_DecrRefCount(lineNo);
+    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    in assembly code between line %d and end of assembly code",
+	    bbPtr->startLine));
 }
 
 /*

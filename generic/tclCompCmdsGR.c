@@ -716,6 +716,25 @@ TclCompileInfoObjectClassCmd(
 }
 
 int
+TclCompileInfoObjectCreationIdCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    PUSH_TOKEN(			tokenPtr, 1);
+    OP(				TCLOO_ID);
+    return TCL_OK;
+}
+
+int
 TclCompileInfoObjectIsACmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command

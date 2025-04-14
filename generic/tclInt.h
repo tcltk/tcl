@@ -3825,6 +3825,7 @@ MODULE_SCOPE CompileProc TclCompileInfoCoroutineCmd;
 MODULE_SCOPE CompileProc TclCompileInfoExistsCmd;
 MODULE_SCOPE CompileProc TclCompileInfoLevelCmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectClassCmd;
+MODULE_SCOPE CompileProc TclCompileInfoObjectCreationIdCmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectIsACmd;
 MODULE_SCOPE CompileProc TclCompileInfoObjectNamespaceCmd;
 MODULE_SCOPE CompileProc TclCompileIncrCmd;

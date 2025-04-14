@@ -4760,22 +4760,24 @@ TEBCresume(
 	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     case INST_TCLOO_CLASS:
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
-	if (oPtr == NULL) {
-	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
-	    goto gotError;
-	}
-	objResultPtr = TclOOObjectName(interp, oPtr->selfCls->thisPtr);
-	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
-	NEXT_INST_F(1, 1, 1);
     case INST_TCLOO_NS:
+    case INST_TCLOO_ID:
 	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
 	if (oPtr == NULL) {
 	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
 	    goto gotError;
 	}
-
-	objResultPtr = TclNewNamespaceObj(oPtr->namespacePtr);
+	switch (inst) {
+	case INST_TCLOO_CLASS:
+	    objResultPtr = TclOOObjectName(interp, oPtr->selfCls->thisPtr);
+	    break;
+	case INST_TCLOO_NS:
+	    objResultPtr = TclNewNamespaceObj(oPtr->namespacePtr);
+	    break;
+	case INST_TCLOO_ID:
+	    objResultPtr = Tcl_NewWideIntObj(oPtr->creationEpoch);
+	    break;
+	}
 	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
 	NEXT_INST_F(1, 1, 1);
     }

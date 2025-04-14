@@ -36,15 +36,15 @@ static int traceInitialized = 0;
  * the deprecation here; that's not possible.
  */
 
-#define TCL_INSTRUCTION_ENTRY(name,size,stack) \
-    {name,size,stack,0,{OPERAND_NONE,OPERAND_NONE}}
+#define TCL_INSTRUCTION_ENTRY(name,stack) \
+    {name,1,stack,0,{OPERAND_NONE,OPERAND_NONE}}
 #define TCL_INSTRUCTION_ENTRY1(name,size,stack,type1) \
     {name,size,stack,1,{type1,OPERAND_NONE}}
 #define TCL_INSTRUCTION_ENTRY2(name,size,stack,type1,type2) \
     {name,size,stack,2,{type1,type2}}
 
-#define DEPRECATED_INSTRUCTION_ENTRY(name,size,stack) \
-    {name,size,stack,0,{OPERAND_NONE,OPERAND_NONE}}
+#define DEPRECATED_INSTRUCTION_ENTRY(name,stack) \
+    {name,1,stack,0,{OPERAND_NONE,OPERAND_NONE}}
 #define DEPRECATED_INSTRUCTION_ENTRY1(name,size,stack,type1) \
     {name,size,stack,1,{type1,OPERAND_NONE}}
 #define DEPRECATED_INSTRUCTION_ENTRY2(name,size,stack,type1,type2) \
@@ -65,307 +65,307 @@ static int traceInitialized = 0;
 InstructionDesc const tclInstructionTable[] = {
     /*  Name	      Bytes stackEffect Operand types */
     TCL_INSTRUCTION_ENTRY(
-	"done",		  1,   -1),
+	"done",			-1),
 	/* Finish ByteCode execution and return stktop (top stack item) */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"push1",	  2,   +1,	  OPERAND_LIT1),
+	"push1",	  2,	+1,	  OPERAND_LIT1),
 	/* Push object at ByteCode objArray[op1] */
     TCL_INSTRUCTION_ENTRY1(
-	"push",		  5,   +1,	  OPERAND_LIT4),
+	"push",		  5,	+1,	  OPERAND_LIT4),
 	/* Push object at ByteCode objArray[op4] */
     TCL_INSTRUCTION_ENTRY(
-	"pop",		  1,   -1),
+	"pop",			-1),
 	/* Pop the topmost stack object */
     TCL_INSTRUCTION_ENTRY(
-	"dup",		  1,   +1),
+	"dup",			+1),
 	/* Duplicate the topmost stack object and push the result */
     TCL_INSTRUCTION_ENTRY1(
-	"strcat",	  2,   INT_MIN,	  OPERAND_UINT1),
+	"strcat",	  2,	INT_MIN,  OPERAND_UINT1),
 	/* Concatenate the top op1 items and push result */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"invokeStk1",	  2,   INT_MIN,	  OPERAND_UINT1),
+	"invokeStk1",	  2,	INT_MIN,  OPERAND_UINT1),
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
     TCL_INSTRUCTION_ENTRY1(
-	"invokeStk",	  5,   INT_MIN,	  OPERAND_UINT4),
+	"invokeStk",	  5,	INT_MIN,  OPERAND_UINT4),
 	/* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
     TCL_INSTRUCTION_ENTRY(
-	"evalStk",	  1,   0),
+	"evalStk",		0),
 	/* Evaluate command in stktop using Tcl_EvalObj. */
     TCL_INSTRUCTION_ENTRY(
-	"exprStk",	  1,   0),
+	"exprStk",		0),
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
 
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"loadScalar1",	  2,   1,	  OPERAND_LVT1),
+	"loadScalar1",	  2,	1,	  OPERAND_LVT1),
 	/* Load scalar variable at index op1 <= 255 in call frame */
     TCL_INSTRUCTION_ENTRY1(
-	"loadScalar",	  5,   1,	  OPERAND_LVT4),
+	"loadScalar",	  5,	1,	  OPERAND_LVT4),
 	/* Load scalar variable at index op1 >= 256 in call frame */
     TCL_INSTRUCTION_ENTRY(
-	"loadScalarStk",  1,   0),
+	"loadScalarStk",	0),
 	/* Load scalar variable; scalar's name is stktop */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"loadArray1",	  2,   0,	  OPERAND_LVT1),
+	"loadArray1",	  2,	0,	  OPERAND_LVT1),
 	/* Load array element; array at slot op1<=255, element is stktop */
     TCL_INSTRUCTION_ENTRY1(
-	"loadArray",	  5,   0,	  OPERAND_LVT4),
+	"loadArray",	  5,	0,	  OPERAND_LVT4),
 	/* Load array element; array at slot op1 > 255, element is stktop */
     TCL_INSTRUCTION_ENTRY(
-	"loadArrayStk",	  1,   -1),
+	"loadArrayStk",		-1),
 	/* Load array element; element is stktop, array name is stknext */
     TCL_INSTRUCTION_ENTRY(
-	"loadStk",	  1,   0),
+	"loadStk",		0),
 	/* Load general variable; unparsed variable name is stktop */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"storeScalar1",	  2,   0,	  OPERAND_LVT1),
+	"storeScalar1",	  2,	0,	  OPERAND_LVT1),
 	/* Store scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
-	"storeScalar",	  5,   0,	  OPERAND_LVT4),
+	"storeScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Store scalar variable at op1 > 255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY(
-	"storeScalarStk", 1,   -1),
+	"storeScalarStk",	-1),
 	/* Store scalar; value is stktop, scalar name is stknext */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"storeArray1",	  2,   -1,	  OPERAND_LVT1),
+	"storeArray1",	  2,	-1,	  OPERAND_LVT1),
 	/* Store array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
-	"storeArray",	  5,   -1,	  OPERAND_LVT4),
+	"storeArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Store array element; array at op1>=256, value is top then elem */
     TCL_INSTRUCTION_ENTRY(
-	"storeArrayStk",  1,   -2),
+	"storeArrayStk",	-2),
 	/* Store array element; value is stktop, then elem, array names */
     TCL_INSTRUCTION_ENTRY(
-	"storeStk",	  1,   -1),
+	"storeStk",		-1),
 	/* Store general variable; value is stktop, then unparsed name */
 
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"incrScalar1",	  2,   0,	  OPERAND_LVT1),
+	"incrScalar1",	  2,	0,	  OPERAND_LVT1),
 	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
     TCL_INSTRUCTION_ENTRY(
-	"incrScalarStk",  1,   -1),
+	"incrScalarStk",	-1),
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"incrArray1",	  2,   -1,	  OPERAND_LVT1),
+	"incrArray1",	  2,	-1,	  OPERAND_LVT1),
 	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
     TCL_INSTRUCTION_ENTRY(
-	"incrArrayStk",	  1,   -2),
+	"incrArrayStk",		-2),
 	/* Incr array element; amount is top then elem then array names */
     TCL_INSTRUCTION_ENTRY(
-	"incrStk",	  1,   -1),
+	"incrStk",		-1),
 	/* Incr general variable; amount is stktop then unparsed var name */
     DEPRECATED_INSTRUCTION_ENTRY2(
-	"incrScalar1Imm", 3,   +1,	  OPERAND_LVT1, OPERAND_INT1),
+	"incrScalar1Imm", 3,	+1,	  OPERAND_LVT1, OPERAND_INT1),
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
-	"incrScalarStkImm",2,   0,	  OPERAND_INT1),
+	"incrScalarStkImm",2,	0,	  OPERAND_INT1),
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
     DEPRECATED_INSTRUCTION_ENTRY2(
- 	"incrArray1Imm",  3,   0,	  OPERAND_LVT1, OPERAND_INT1),
+ 	"incrArray1Imm",  3,	0,	  OPERAND_LVT1, OPERAND_INT1),
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
-	"incrArrayStkImm",2,   -1,	  OPERAND_INT1),
+	"incrArrayStkImm",2,	-1,	  OPERAND_INT1),
 	/* Incr array element; elem is top then array name, amount is op1 */
     TCL_INSTRUCTION_ENTRY1(
-	"incrStkImm",	  2,   0,	  OPERAND_INT1),
+	"incrStkImm",	  2,	0,	  OPERAND_INT1),
 	/* Incr general variable; unparsed name is top, amount is op1 */
 
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"jump1",	  2,   0,	  OPERAND_OFFSET1),
+	"jump1",	  2,	0,	  OPERAND_OFFSET1),
 	/* Jump relative to (pc + op1) */
     TCL_INSTRUCTION_ENTRY1(
-	"jump",		  5,   0,	  OPERAND_OFFSET4),
+	"jump",		  5,	0,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"jumpTrue1",	  2,   -1,	  OPERAND_OFFSET1),
+	"jumpTrue1",	  2,	-1,	  OPERAND_OFFSET1),
 	/* Jump relative to (pc + op1) if stktop expr object is true */
     TCL_INSTRUCTION_ENTRY1(
-	"jumpTrue",	  5,   -1,	  OPERAND_OFFSET4),
+	"jumpTrue",	  5,	-1,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) if stktop expr object is true */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"jumpFalse1",	  2,   -1,	  OPERAND_OFFSET1),
+	"jumpFalse1",	  2,	-1,	  OPERAND_OFFSET1),
 	/* Jump relative to (pc + op1) if stktop expr object is false */
     TCL_INSTRUCTION_ENTRY1(
-	"jumpFalse",	  5,   -1,	  OPERAND_OFFSET4),
+	"jumpFalse",	  5,	-1,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) if stktop expr object is false */
 
     TCL_INSTRUCTION_ENTRY(
-	"bitor",	  1,   -1),
+	"bitor",		-1),
 	/* Bitwise or:	push (stknext | stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"bitxor",	  1,   -1),
+	"bitxor",		-1),
 	/* Bitwise xor	push (stknext ^ stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"bitand",	  1,   -1),
+	"bitand",		-1),
 	/* Bitwise and:	push (stknext & stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"eq",		  1,   -1),
+	"eq",			-1),
 	/* Equal:	push (stknext == stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"neq",		  1,   -1),
+	"neq",			-1),
 	/* Not equal:	push (stknext != stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"lt",		  1,   -1),
+	"lt",			-1),
 	/* Less:	push (stknext < stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"gt",		  1,   -1),
+	"gt",			-1),
 	/* Greater:	push (stknext > stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"le",		  1,   -1),
+	"le",			-1),
 	/* Less or equal: push (stknext <= stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"ge",		  1,   -1),
+	"ge",			-1),
 	/* Greater or equal: push (stknext >= stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"lshift",	  1,   -1),
+	"lshift",		-1),
 	/* Left shift:	push (stknext << stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"rshift",	  1,   -1),
+	"rshift",		-1),
 	/* Right shift:	push (stknext >> stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"add",		  1,   -1),
+	"add",			-1),
 	/* Add:		push (stknext + stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"sub",		  1,   -1),
+	"sub",			-1),
 	/* Sub:		push (stkext - stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"mult",		  1,   -1),
+	"mult",			-1),
 	/* Multiply:	push (stknext * stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"div",		  1,   -1),
+	"div",			-1),
 	/* Divide:	push (stknext / stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"mod",		  1,   -1),
+	"mod",			-1),
 	/* Mod:		push (stknext % stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"uplus",	  1,   0),
+	"uplus",		0),
 	/* Unary plus:	push +stktop */
     TCL_INSTRUCTION_ENTRY(
-	"uminus",	  1,   0),
+	"uminus",		0),
 	/* Unary minus:	push -stktop */
     TCL_INSTRUCTION_ENTRY(
-	"bitnot",	  1,   0),
+	"bitnot",		0),
 	/* Bitwise not:	push ~stktop */
     TCL_INSTRUCTION_ENTRY(
-	"not",		  1,   0),
+	"not",			0),
 	/* Logical not:	push !stktop */
     TCL_INSTRUCTION_ENTRY(
-	"tryCvtToNumeric",1,   0),
+	"tryCvtToNumeric",	0),
 	/* Try converting stktop to first int then double if possible. */
 
     TCL_INSTRUCTION_ENTRY(
-	"break",	  1,   0),
+	"break",		0),
 	/* Abort closest enclosing loop; if none, return TCL_BREAK code. */
     TCL_INSTRUCTION_ENTRY(
-	"continue",	  1,   0),
+	"continue",		0),
 	/* Skip to next iteration of closest enclosing loop; if none, return
 	 * TCL_CONTINUE code. */
 
     TCL_INSTRUCTION_ENTRY1(
-	"beginCatch",	  5,   0,	  OPERAND_UINT4),
+	"beginCatch",	  5,	0,	  OPERAND_UINT4),
 	/* Record start of catch with the operand's exception index. Push the
 	 * current stack depth onto a special catch stack. */
     TCL_INSTRUCTION_ENTRY(
-	"endCatch",	  1,   0),
+	"endCatch",		0),
 	/* End of last catch. Pop the bytecode interpreter's catch stack. */
     TCL_INSTRUCTION_ENTRY(
-	"pushResult",	  1,   +1),
+	"pushResult",		+1),
 	/* Push the interpreter's object result onto the stack. */
     TCL_INSTRUCTION_ENTRY(
-	"pushReturnCode", 1,   +1),
+	"pushReturnCode",	+1),
 	/* Push interpreter's return code (e.g. TCL_OK or TCL_ERROR) as a new
 	 * object onto the stack. */
 
     TCL_INSTRUCTION_ENTRY(
-	"streq",	  1,   -1),
+	"streq",		-1),
 	/* Str Equal:	push (stknext eq stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strneq",	  1,   -1),
+	"strneq",		-1),
 	/* Str !Equal:	push (stknext neq stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strcmp",	  1,   -1),
+	"strcmp",		-1),
 	/* Str Compare:	push (stknext cmp stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strlen",	  1,   0),
+	"strlen",		0),
 	/* Str Length:	push (strlen stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strindex",	  1,   -1),
+	"strindex",		-1),
 	/* Str Index:	push (strindex stknext stktop) */
     TCL_INSTRUCTION_ENTRY1(
-	"strmatch",	  2,   -1,	  OPERAND_INT1),
+	"strmatch",	  2,	-1,	  OPERAND_INT1),
 	/* Str Match:	push (strmatch stknext stktop) opnd == nocase */
 
     TCL_INSTRUCTION_ENTRY1(
-	"list",		  5,   INT_MIN,	  OPERAND_UINT4),
+	"list",		  5,	INT_MIN,  OPERAND_UINT4),
 	/* List:	push (stk1 stk2 ... stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"listIndex",	  1,   -1),
+	"listIndex",		-1),
 	/* List Index:	push (listindex stknext stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"listLength",	  1,   0),
+	"listLength",		0),
 	/* List Len:	push (listlength stktop) */
 
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"appendScalar1",  2,   0,	  OPERAND_LVT1),
+	"appendScalar1",  2,	0,	  OPERAND_LVT1),
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
-	"appendScalar",	  5,   0,	  OPERAND_LVT4),
+	"appendScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Append scalar variable at op1 > 255 in frame; value is stktop */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"appendArray1",	  2,   -1,	  OPERAND_LVT1),
+	"appendArray1",	  2,	-1,	  OPERAND_LVT1),
 	/* Append array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
-	"appendArray",	  5,   -1,	  OPERAND_LVT4),
+	"appendArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Append array element; array at op1>=256, value is top then elem */
     TCL_INSTRUCTION_ENTRY(
-	"appendArrayStk", 1,   -2),
+	"appendArrayStk",	-2),
 	/* Append array element; value is stktop, then elem, array names */
     TCL_INSTRUCTION_ENTRY(
-	"appendStk",	  1,   -1),
+	"appendStk",		-1),
 	/* Append general variable; value is stktop, then unparsed name */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"lappendScalar1", 2,   0,	  OPERAND_LVT1),
+	"lappendScalar1", 2,	0,	  OPERAND_LVT1),
 	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
-	"lappendScalar",  5,   0,	  OPERAND_LVT4),
+	"lappendScalar",  5,	0,	  OPERAND_LVT4),
 	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"lappendArray1",  2,   -1,	  OPERAND_LVT1),
+	"lappendArray1",  2,	-1,	  OPERAND_LVT1),
 	/* Lappend array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
-	"lappendArray",	  5,   -1,	  OPERAND_LVT4),
+	"lappendArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Lappend array element; array at op1>=256, value is top then elem */
     TCL_INSTRUCTION_ENTRY(
-	"lappendArrayStk",1,   -2),
+	"lappendArrayStk",	-2),
 	/* Lappend array element; value is stktop, then elem, array names */
     TCL_INSTRUCTION_ENTRY(
-	"lappendStk",	  1,   -1),
+	"lappendStk",		-1),
 	/* Lappend general variable; value is stktop, then unparsed name */
 
     TCL_INSTRUCTION_ENTRY1(
-	"lindexMulti",	  5,   INT_MIN,	  OPERAND_UINT4),
+	"lindexMulti",	  5,	INT_MIN,  OPERAND_UINT4),
 	/* Lindex with generalized args, operand is number of stacked objs
 	 * used: (operand-1) entries from stktop are the indices; then list to
 	 * process. */
     TCL_INSTRUCTION_ENTRY1(
-	"over",		  5,   +1,	  OPERAND_UINT4),
+	"over",		  5,	+1,	  OPERAND_UINT4),
 	/* Duplicate the arg-th element from top of stack (TOS=0) */
     TCL_INSTRUCTION_ENTRY(
-	"lsetList",	  1,   -2),
+	"lsetList",		-2),
 	/* Four-arg version of 'lset'. stktop is old value; next is new
 	 * element value, next is the index list; pushes new value */
     TCL_INSTRUCTION_ENTRY1(
-	"lsetFlat",	 5, INT_MIN,	  OPERAND_UINT4),
+	"lsetFlat",	 5,	INT_MIN,  OPERAND_UINT4),
 	/* Three- or >=5-arg version of 'lset', operand is number of stacked
 	 * objs: stktop is old value, next is new element value, next come
 	 * (operand-2) indices; pushes the new value. */
 
     TCL_INSTRUCTION_ENTRY2(
-	"returnImm",	  9,   -1,	  OPERAND_INT4, OPERAND_UINT4),
+	"returnImm",	  9,	-1,	  OPERAND_INT4, OPERAND_UINT4),
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
     TCL_INSTRUCTION_ENTRY(
-	"expon",	  1,   -1),
+	"expon",		-1),
 	/* Binary exponentiation operator: push (stknext ** stktop) */
 
     /*
@@ -377,13 +377,13 @@ InstructionDesc const tclInstructionTable[] = {
      * is emitted.
      */
     TCL_INSTRUCTION_ENTRY(
-	"expandStart",	  1,    0),
+	"expandStart",		0),
 	/* Start of command with {*} (expanded) arguments */
     TCL_INSTRUCTION_ENTRY1(
-	"expandStkTop",	  5,    0,	  OPERAND_UINT4),
+	"expandStkTop",	  5,	0,	  OPERAND_UINT4),
 	/* Expand the list at stacktop: push its elements on the stack */
     TCL_INSTRUCTION_ENTRY(
-	"invokeExpanded", 1,    0),
+	"invokeExpanded",	0),
 	/* Invoke the command marked by the last 'expandStart' */
 
     TCL_INSTRUCTION_ENTRY1(
@@ -398,34 +398,34 @@ InstructionDesc const tclInstructionTable[] = {
 	 * is number of commands here */
 
     TCL_INSTRUCTION_ENTRY(
-	"listIn",	  1,	-1),
+	"listIn",		-1),
 	/* List containment: push [lsearch stktop stknext]>=0 */
     TCL_INSTRUCTION_ENTRY(
-	"listNotIn",	  1,	-1),
+	"listNotIn",		-1),
 	/* List negated containment: push [lsearch stktop stknext]<0 */
 
     TCL_INSTRUCTION_ENTRY(
-	"pushReturnOpts", 1,	+1),
+	"pushReturnOpts",	+1),
 	/* Push the interpreter's return option dictionary as an object on the
 	 * stack. */
     TCL_INSTRUCTION_ENTRY(
-	"returnStk",	  1,	-1),
+	"returnStk",		-1),
 	/* Compiled [return]; options and result are on the stack, code and
 	 * level are in the options. */
 
     TCL_INSTRUCTION_ENTRY1(
-	"dictGet",	 5, INT_MIN,	  OPERAND_UINT4),
+	"dictGet",	 5,	INT_MIN,  OPERAND_UINT4),
 	/* The top op4 words (min 1) are a key path into the dictionary just
 	 * below the keys on the stack, and all those values are replaced by
 	 * the value read out of that key-path (like [dict get]).
 	 * Stack:  ... dict key1 ... keyN => ... value */
     TCL_INSTRUCTION_ENTRY2(
-	"dictSet",	 9, INT_MIN,	  OPERAND_UINT4, OPERAND_LVT4),
+	"dictSet",	 9,	INT_MIN,  OPERAND_UINT4, OPERAND_LVT4),
 	/* Update a dictionary value such that the keys are a path pointing to
 	 * the value. op4#1 = numKeys, op4#2 = LVTindex
 	 * Stack:  ... key1 ... keyN value => ... newDict */
     TCL_INSTRUCTION_ENTRY2(
-	"dictUnset",	 9, INT_MIN,	  OPERAND_UINT4, OPERAND_LVT4),
+	"dictUnset",	 9,	INT_MIN,  OPERAND_UINT4, OPERAND_LVT4),
 	/* Update a dictionary value such that the keys are not a path pointing
 	 * to any value. op4#1 = numKeys, op4#2 = LVTindex
 	 * Stack:  ... key1 ... keyN => ... newDict */
@@ -436,28 +436,28 @@ InstructionDesc const tclInstructionTable[] = {
 	 * dictionary at all). op4#1 = incrAmount, op4#2 = LVTindex
 	 * Stack:  ... key => ... newDict */
     TCL_INSTRUCTION_ENTRY1(
-	"dictAppend",	  5,	-1,	  OPERAND_LVT4),
+	"dictAppend",	 5,	-1,	  OPERAND_LVT4),
 	/* Update a dictionary value such that the value pointed to by key has
 	 * some value string-concatenated onto it. op4 = LVTindex
 	 * Stack:  ... key valueToAppend => ... newDict */
     TCL_INSTRUCTION_ENTRY1(
-	"dictLappend",	  5,	-1,	  OPERAND_LVT4),
+	"dictLappend",	 5,	-1,	  OPERAND_LVT4),
 	/* Update a dictionary value such that the value pointed to by key has
 	 * some value list-appended onto it. op4 = LVTindex
 	 * Stack:  ... key valueToAppend => ... newDict */
     TCL_INSTRUCTION_ENTRY1(
-	"dictFirst",	  5,	+2,	  OPERAND_LVT4),
+	"dictFirst",	 5,	+2,	  OPERAND_LVT4),
 	/* Begin iterating over the dictionary, using the local scalar
 	 * indicated by op4 to hold the iterator state. The local scalar
 	 * should not refer to a named variable as the value is not wholly
 	 * managed correctly.
 	 * Stack:  ... dict => ... value key doneBool */
     TCL_INSTRUCTION_ENTRY1(
-	"dictNext",	  5,	+3,	  OPERAND_LVT4),
+	"dictNext",	 5,	+3,	  OPERAND_LVT4),
 	/* Get the next iteration from the iterator in op4's local scalar.
 	 * Stack:  ... => ... value key doneBool */
     TCL_INSTRUCTION_ENTRY2(
-	"dictUpdateStart", 9,    0,	  OPERAND_LVT4, OPERAND_AUX4),
+	"dictUpdateStart", 9,	0,	  OPERAND_LVT4, OPERAND_AUX4),
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
@@ -465,7 +465,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * the list of variables.
 	 * Stack:  ... keyList => ... keyList */
     TCL_INSTRUCTION_ENTRY2(
-	"dictUpdateEnd", 9,    -1,	  OPERAND_LVT4, OPERAND_AUX4),
+	"dictUpdateEnd", 9,	-1,	  OPERAND_LVT4, OPERAND_AUX4),
 	/* Reflect the state of local variables (described in the aux data
 	 * referred to by the second immediate argument) back to the state of
 	 * the dictionary in the variable referred to by the first immediate
@@ -481,111 +481,111 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
     TCL_INSTRUCTION_ENTRY1(
-	"upvar",	 5,    -1,	  OPERAND_LVT4),
+	"upvar",	 5,	-1,	  OPERAND_LVT4),
 	/* finds level and otherName in stack, links to local variable at
 	 * index op1. Leaves the level on stack. */
     TCL_INSTRUCTION_ENTRY1(
-	"nsupvar",	 5,    -1,	  OPERAND_LVT4),
+	"nsupvar",	 5,	-1,	  OPERAND_LVT4),
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
     TCL_INSTRUCTION_ENTRY1(
-	"variable",	 5,   -1,	  OPERAND_LVT4),
+	"variable",	 5,	-1,	  OPERAND_LVT4),
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
     TCL_INSTRUCTION_ENTRY2(
-	"syntax",	 9,   -1,	  OPERAND_INT4, OPERAND_UINT4),
+	"syntax",	 9,	-1,	  OPERAND_INT4, OPERAND_UINT4),
 	/* Compiled bytecodes to signal syntax error. Equivalent to returnImm
 	 * except for the ERR_ALREADY_LOGGED flag in the interpreter. */
     TCL_INSTRUCTION_ENTRY1(
-	"reverse",	 5,    0,	  OPERAND_UINT4),
+	"reverse",	 5,	0,	  OPERAND_UINT4),
 	/* Reverse the order of the arg elements at the top of stack */
 
     TCL_INSTRUCTION_ENTRY1(
-	"regexp",	 2,   -1,	  OPERAND_INT1),
+	"regexp",	 2,	-1,	  OPERAND_INT1),
 	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
 
     TCL_INSTRUCTION_ENTRY1(
-	"existScalar",	 5,    1,	  OPERAND_LVT4),
+	"existScalar",	 5,	1,	  OPERAND_LVT4),
 	/* Test if scalar variable at index op1 in call frame exists */
     TCL_INSTRUCTION_ENTRY1(
-	"existArray",	 5,    0,	  OPERAND_LVT4),
+	"existArray",	 5,	0,	  OPERAND_LVT4),
 	/* Test if array element exists; array at slot op1, element is
 	 * stktop */
     TCL_INSTRUCTION_ENTRY(
-	"existArrayStk", 1,    -1),
+	"existArrayStk",	-1),
 	/* Test if array element exists; element is stktop, array name is
 	 * stknext */
     TCL_INSTRUCTION_ENTRY(
-	"existStk",	 1,    0),
+	"existStk",		0),
 	/* Test if general variable exists; unparsed variable name is stktop*/
 
     TCL_INSTRUCTION_ENTRY(
-	"nop",		 1,    0),
+	"nop",			0),
 	/* Do nothing */
     DEPRECATED_INSTRUCTION_ENTRY(
-	"returnCodeBranch1", 1,-1),
+	"returnCodeBranch1",	-1),
 	/* Jump to next instruction based on the return code on top of stack
 	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
 	 * Other non-OK: +9 */
 
     TCL_INSTRUCTION_ENTRY2(
-	"unsetScalar",	 6,    0,	  OPERAND_UNSF1, OPERAND_LVT4),
+	"unsetScalar",	 6,	0,	  OPERAND_UNSF1, OPERAND_LVT4),
 	/* Make scalar variable at index op2 in call frame cease to exist;
 	 * op1 is 1 for errors on problems, 0 otherwise */
     TCL_INSTRUCTION_ENTRY2(
-	"unsetArray",	 6,    -1,	  OPERAND_UNSF1, OPERAND_LVT4),
+	"unsetArray",	 6,	-1,	  OPERAND_UNSF1, OPERAND_LVT4),
 	/* Make array element cease to exist; array at slot op2, element is
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
     TCL_INSTRUCTION_ENTRY1(
-	"unsetArrayStk", 2,    -2,	  OPERAND_UNSF1),
+	"unsetArrayStk", 2,	-2,	  OPERAND_UNSF1),
 	/* Make array element cease to exist; element is stktop, array name is
 	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
     TCL_INSTRUCTION_ENTRY1(
-	"unsetStk",	 2,    -1,	  OPERAND_UNSF1),
+	"unsetStk",	 2,	-1,	  OPERAND_UNSF1),
 	/* Make general variable cease to exist; unparsed variable name is
 	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
 
     TCL_INSTRUCTION_ENTRY(
-	"dictExpand",	  1,    -1),
+	"dictExpand",		-1),
 	/* Probe into a dict and extract it (or a subdict of it) into
 	 * variables with matched names. Produces list of keys bound as
 	 * result. Part of [dict with].
 	 * Stack:  ... dict path => ... keyList */
     TCL_INSTRUCTION_ENTRY(
-	"dictRecombineStk", 1,    -3),
+	"dictRecombineStk",	-3),
 	/* Map variable contents back into a dictionary in a variable. Part of
 	 * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
     TCL_INSTRUCTION_ENTRY1(
-	"dictRecombineImm", 5,    -2,	  OPERAND_LVT4),
+	"dictRecombineImm", 5,	-2,	  OPERAND_LVT4),
 	/* Map variable contents back into a dictionary in the local variable
 	 * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
     TCL_INSTRUCTION_ENTRY1(
-	"dictExists",	 5, INT_MIN,	  OPERAND_UINT4),
+	"dictExists",	 5,	INT_MIN,  OPERAND_UINT4),
 	/* The top op4 words (min 1) are a key path into the dictionary just
 	 * below the keys on the stack, and all those values are replaced by a
 	 * boolean indicating whether it is possible to read out a value from
 	 * that key-path (like [dict exists]).
 	 * Stack:  ... dict key1 ... keyN => ... boolean */
     TCL_INSTRUCTION_ENTRY(
-	"verifyDict",	 1,    -1),
+	"verifyDict",		-1),
 	/* Verifies that the word on the top of the stack is a dictionary,
 	 * popping it if it is and throwing an error if it is not.
 	 * Stack:  ... value => ... */
 
     TCL_INSTRUCTION_ENTRY(
-	"strmap",	 1,    -2),
+	"strmap",		-2),
 	/* Simplified version of [string map] that only applies one change
 	 * string, and only case-sensitively.
 	 * Stack:  ... from to string => ... changedString */
     TCL_INSTRUCTION_ENTRY(
-	"strfind",	 1,    -1),
+	"strfind",		-1),
 	/* Find the first index of a needle string in a haystack string,
 	 * producing the index (integer) or -1 if nothing found.
 	 * Stack:  ... needle haystack => ... index */
     TCL_INSTRUCTION_ENTRY(
-	"strrfind",	 1,    -1),
+	"strrfind",		-1),
 	/* Find the last index of a needle string in a haystack string,
 	 * producing the index (integer) or -1 if nothing found.
 	 * Stack:  ... needle haystack => ... index */
@@ -593,62 +593,62 @@ InstructionDesc const tclInstructionTable[] = {
 	"strrangeImm",	 9,	0,	  OPERAND_IDX4, OPERAND_IDX4),
 	/* String Range: push (string range stktop op4 op4) */
     TCL_INSTRUCTION_ENTRY(
-	"strrange",	 1,    -2),
+	"strrange",		-2),
 	/* String Range with non-constant arguments.
 	 * Stack:  ... string idxA idxB => ... substring */
 
     TCL_INSTRUCTION_ENTRY(
-	"yield",	 1,	0),
+	"yield",		0),
 	/* Makes the current coroutine yield the value at the top of the
 	 * stack, and places the response back on top of the stack when it
 	 * resumes.
 	 * Stack:  ... valueToYield => ... resumeValue */
     TCL_INSTRUCTION_ENTRY(
-	"coroName",	 1,    +1),
+	"coroName",		+1),
 	/* Push the name of the interpreter's current coroutine as an object
 	 * on the stack. */
     DEPRECATED_INSTRUCTION_ENTRY1(
-	"tailcall",	 2,  INT_MIN,	  OPERAND_UINT1),
+	"tailcall",	 2,	INT_MIN,  OPERAND_UINT1),
 	/* Do a tailcall with the opnd items on the stack as the thing to
 	 * tailcall to; opnd must be greater than 0 for the semantics to work
 	 * right. */
 
     TCL_INSTRUCTION_ENTRY(
-	"currentNamespace", 1,    +1),
+	"currentNamespace",	+1),
 	/* Push the name of the interpreter's current namespace as an object
 	 * on the stack. */
     TCL_INSTRUCTION_ENTRY(
-	"infoLevelNumber",  1,    +1),
+	"infoLevelNumber",	+1),
 	/* Push the stack depth (i.e., [info level]) of the interpreter as an
 	 * object on the stack. */
     TCL_INSTRUCTION_ENTRY(
-	"infoLevelArgs", 1,	0),
+	"infoLevelArgs",	0),
 	/* Push the argument words to a stack depth (i.e., [info level <n>])
 	 * of the interpreter as an object on the stack.
 	 * Stack:  ... depth => ... argList */
     TCL_INSTRUCTION_ENTRY(
-	"resolveCmd",	 1,	0),
+	"resolveCmd",		0),
 	/* Resolves the command named on the top of the stack to its fully
 	 * qualified version, or produces the empty string if no such command
 	 * exists. Never generates errors.
 	 * Stack:  ... cmdName => ... fullCmdName */
 
     TCL_INSTRUCTION_ENTRY(
-	"tclooSelf",	 1,	+1),
+	"tclooSelf",		+1),
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */
     TCL_INSTRUCTION_ENTRY(
-	"tclooClass",	 1,	0),
+	"tclooClass",		0),
 	/* Push the class of the TclOO object named at the top of the stack
 	 * onto the stack.
 	 * Stack:  ... object => ... class */
     TCL_INSTRUCTION_ENTRY(
-	"tclooNamespace",1,	0),
+	"tclooNamespace",	0),
 	/* Push the namespace of the TclOO object named at the top of the
 	 * stack onto the stack.
 	 * Stack:  ... object => ... namespace */
     TCL_INSTRUCTION_ENTRY(
-	"tclooIsObject", 1,	0),
+	"tclooIsObject",	0),
 	/* Push whether the value named at the top of the stack is a TclOO
 	 * object (i.e., a boolean). Can corrupt the interpreter result
 	 * despite not throwing, so not safe for use in a post-exception
@@ -656,21 +656,21 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ... boolean */
 
     TCL_INSTRUCTION_ENTRY(
-	"arrayExistsStk",1,	0),
+	"arrayExistsStk",	0),
 	/* Looks up the element on the top of the stack and tests whether it
 	 * is an array. Pushes a boolean describing whether this is the
 	 * case. Also runs the whole-array trace on the named variable, so can
 	 * throw anything.
 	 * Stack:  ... varName => ... boolean */
     TCL_INSTRUCTION_ENTRY1(
-	"arrayExistsImm",5,	+1,	  OPERAND_LVT4),
+	"arrayExistsImm", 5,	+1,	  OPERAND_LVT4),
 	/* Looks up the variable indexed by opnd and tests whether it is an
 	 * array. Pushes a boolean describing whether this is the case. Also
 	 * runs the whole-array trace on the named variable, so can throw
 	 * anything.
 	 * Stack:  ... => ... boolean */
     TCL_INSTRUCTION_ENTRY(
-	"arrayMakeStk",	 1,	-1),
+	"arrayMakeStk",		-1),
 	/* Forces the element on the top of the stack to be the name of an
 	 * array.
 	 * Stack:  ... varName => ... */
@@ -686,13 +686,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * <objc,objv> = <op4,top op4 after popping 1> */
 
     TCL_INSTRUCTION_ENTRY(
-	"listConcat",	 1,	-1),
+	"listConcat",		-1),
 	/* Concatenates the two lists at the top of the stack into a single
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
 
     TCL_INSTRUCTION_ENTRY(
-	"expandDrop",	 1,    0),
+	"expandDrop",		0),
 	/* Drops an element from the auxiliary stack, popping stack elements
 	 * until the matching stack depth is reached. */
 
@@ -709,7 +709,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * is only nominal.
 	 * Stack: ... listObjs... => ... listObjs... iterTracker info */
     TCL_INSTRUCTION_ENTRY(
-	"foreach_step",	 1,	 0),
+	"foreach_step",		0),
 	/* "Step" or begin next iteration of foreach loop. Assigns to foreach
 	 * iteration variables. May jump to straight after the foreach_start
 	 * that pushed the iterTracker and info values. MUST be followed
@@ -717,65 +717,65 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack: ... listObjs... iterTracker info =>
 	 *				... listObjs... iterTracker info */
     TCL_INSTRUCTION_ENTRY(
-	"foreach_end",	 1,	 0),
+	"foreach_end",		0),
 	/* Clean up a foreach loop by dropping the info value, the tracker
 	 * value and the lists that were being iterated over.
 	 * Stack: ... listObjs... iterTracker info => ... */
     TCL_INSTRUCTION_ENTRY(
-	"lmap_collect",	 1,	-1),
+	"lmap_collect",		-1),
 	/* Appends the value at the top of the stack to the list located on
 	 * the stack the "other side" of the foreach-related values.
 	 * Stack: ... collector listObjs... iterTracker info value =>
 	 *			... collector listObjs... iterTracker info */
 
     TCL_INSTRUCTION_ENTRY(
-	"strtrim",	 1,	-1),
+	"strtrim",		-1),
 	/* [string trim] core: removes the characters (designated by the value
 	 * at the top of the stack) from both ends of the string and pushes
 	 * the resulting string.
 	 * Stack: ... string charset => ... trimmedString */
     TCL_INSTRUCTION_ENTRY(
-	"strtrimLeft",	 1,	-1),
+	"strtrimLeft",		-1),
 	/* [string trimleft] core: removes the characters (designated by the
 	 * value at the top of the stack) from the left of the string and
 	 * pushes the resulting string.
 	 * Stack: ... string charset => ... trimmedString */
     TCL_INSTRUCTION_ENTRY(
-	"strtrimRight",	 1,	-1),
+	"strtrimRight",		-1),
 	/* [string trimright] core: removes the characters (designated by the
 	 * value at the top of the stack) from the right of the string and
 	 * pushes the resulting string.
 	 * Stack: ... string charset => ... trimmedString */
 
     TCL_INSTRUCTION_ENTRY1(
-	"concatStk",	 5, INT_MIN,	  OPERAND_UINT4),
+	"concatStk",	 5,	INT_MIN,  OPERAND_UINT4),
 	/* Wrapper round Tcl_ConcatObj(), used for [concat] and [eval]. opnd
 	 * is number of values to concatenate.
 	 * Operation:	push concat(stk1 stk2 ... stktop) */
 
     TCL_INSTRUCTION_ENTRY(
-	"strcaseUpper",	 1,	0),
+	"strcaseUpper",		0),
 	/* [string toupper] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
     TCL_INSTRUCTION_ENTRY(
-	"strcaseLower",	 1,	0),
+	"strcaseLower",		0),
 	/* [string tolower] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
     TCL_INSTRUCTION_ENTRY(
-	"strcaseTitle",	 1,	0),
+	"strcaseTitle",		0),
 	/* [string totitle] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
     TCL_INSTRUCTION_ENTRY(
-	"strreplace",	 1,	-3),
+	"strreplace",		-3),
 	/* [string replace] core: replaces a non-empty range of one string
 	 * with the contents of another.
 	 * Stack: ... string fromIdx toIdx replacement => ... newString */
 
     TCL_INSTRUCTION_ENTRY(
-	"originCmd",	 1,	0),
+	"originCmd",		0),
 	/* Reports which command was the origin (via namespace import chain)
 	 * of the command named on the top of the stack.
 	 * Stack:  ... cmdName => ... fullOriginalCmdName */
@@ -797,7 +797,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
     TCL_INSTRUCTION_ENTRY(
-	"yieldToInvoke", 1,	0),
+	"yieldToInvoke",	0),
 	/* Makes the current coroutine yield the value at the top of the
 	 * stack, invoking the given command/args with resolution in the given
 	 * namespace (all packed into a list), and places the list of values
@@ -805,11 +805,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... [list ns cmd arg1 ... argN] => ... resumeList */
 
     TCL_INSTRUCTION_ENTRY(
-	"numericType",	 1,	0),
+	"numericType",		0),
 	/* Pushes the numeric type code of the word at the top of the stack.
 	 * Stack:  ... value => ... typeCode */
     TCL_INSTRUCTION_ENTRY(
-	"tryCvtToBoolean",	 1,	+1),
+	"tryCvtToBoolean",	+1),
 	/* Try converting stktop to boolean if possible. No errors.
 	 * Stack:  ... value => ... value isStrictBool */
     TCL_INSTRUCTION_ENTRY1(
@@ -828,11 +828,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Lappend list to array element; array at op4.
 	 * Stack:  ... elem list => ... listVarContents */
     TCL_INSTRUCTION_ENTRY(
-	"lappendListArrayStk", 1, -2),
+	"lappendListArrayStk",	-2),
 	/* Lappend list to array element.
 	 * Stack:  ... arrayName elem list => ... listVarContents */
     TCL_INSTRUCTION_ENTRY(
-	"lappendListStk", 1,	-1),
+	"lappendListStk",	-1),
 	/* Lappend list to general variable.
 	 * Stack:  ... varName list => ... listVarContents */
 
@@ -843,7 +843,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack: ... => ... time */
 
     TCL_INSTRUCTION_ENTRY1(
-	"dictGetDef",	 5, INT_MIN,	  OPERAND_UINT4),
+	"dictGetDef",	 5,	INT_MIN,  OPERAND_UINT4),
 	/* The top word is the default, the next op4 words (min 1) are a key
 	 * path into the dictionary just below the keys on the stack, and all
 	 * those values are replaced by the value read out of that key-path
@@ -852,19 +852,19 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... dict key1 ... keyN default => ... value */
 
     TCL_INSTRUCTION_ENTRY(
-	"strlt",	  1,   -1),
+	"strlt",		-1),
 	/* String Less:			push (stknext < stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strgt",	  1,   -1),
+	"strgt",		-1),
 	/* String Greater:		push (stknext > stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strle",	  1,   -1),
+	"strle",		-1),
 	/* String Less or equal:	push (stknext <= stktop) */
     TCL_INSTRUCTION_ENTRY(
-	"strge",	  1,   -1),
+	"strge",		-1),
 	/* String Greater or equal:	push (stknext >= stktop) */
     TCL_INSTRUCTION_ENTRY2(
-	"lreplace",	  6,   INT_MIN,	  OPERAND_UINT4, OPERAND_LRPL1),
+	"lreplace",	  6,	INT_MIN,  OPERAND_UINT4, OPERAND_LRPL1),
 	/* Operands: number of arguments, flags
 	 * flags: Combination of TCL_LREPLACE4_* flags
 	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj
@@ -872,46 +872,46 @@ InstructionDesc const tclInstructionTable[] = {
 	 * set in flags. */
 
     TCL_INSTRUCTION_ENTRY1(
-	"constImm",	  5,   -1,	  OPERAND_LVT4),
+	"constImm",	  5,	-1,	  OPERAND_LVT4),
 	/* Create constant. Index into LVT is immediate, value is on stack.
 	 * Stack: ... value => ... */
     TCL_INSTRUCTION_ENTRY(
-	"constStk",	  1,   -2),
+	"constStk",		-2),
 	/* Create constant. Variable name and value on stack.
 	 * Stack: ... varName value => ... */
 
     TCL_INSTRUCTION_ENTRY(
-	"returnCodeBranch", 1, -1),
+	"returnCodeBranch",	-1),
 	/* Jump to next instruction based on the return code on top of stack
 	 * ERROR: +1;	RETURN: +6;	BREAK: +11;	CONTINUE: +16;
 	 * Other non-OK: +21 */
     TCL_INSTRUCTION_ENTRY1(
-	"incrScalar",	  5,   0,	  OPERAND_LVT4),
+	"incrScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Incr scalar at index op1 in frame; incr amount is stktop */
     TCL_INSTRUCTION_ENTRY1(
-	"incrArray",	  5,   -1,	  OPERAND_LVT4),
+	"incrArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Incr array elem; arr at slot op1, amount is top then elem */
     TCL_INSTRUCTION_ENTRY2(
-	"incrScalarImm",  6,   +1,	  OPERAND_LVT4, OPERAND_INT1),
+	"incrScalarImm",  6,	+1,	  OPERAND_LVT4, OPERAND_INT1),
 	/* Incr scalar at slot op1; amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY2(
-	"incrArrayImm",	  6,   0,	  OPERAND_LVT4, OPERAND_INT1),
+	"incrArrayImm",	  6,	0,	  OPERAND_LVT4, OPERAND_INT1),
 	/* Incr array elem; array at slot op1, elem is stktop,
 	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
-	"tailcall",	  5,   INT_MIN,	  OPERAND_UINT4),
+	"tailcall",	  5,	INT_MIN,  OPERAND_UINT4),
 	/* Do a tailcall with the opnd items on the stack as the thing to
 	 * tailcall to; opnd must be greater than 0 for the semantics to work
 	 * right. */
     TCL_INSTRUCTION_ENTRY1(
-	"tclooNext",	  5,   INT_MIN,	  OPERAND_UINT4),
+	"tclooNext",	  5,	INT_MIN,  OPERAND_UINT4),
 	/* Call the next item on the TclOO call chain, passing opnd arguments
 	 * (min 1, *includes* "next").  The result of the invoked
 	 * method implementation will be pushed on the stack in place of the
 	 * arguments (similar to invokeStk).
 	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
     TCL_INSTRUCTION_ENTRY1(
-	"tclooNextClass", 5,   INT_MIN,	  OPERAND_UINT4),
+	"tclooNextClass", 5,	INT_MIN,  OPERAND_UINT4),
 	/* Call the following item on the TclOO call chain defined by class
 	 * className, passing opnd arguments (min 2, *includes*
 	 * "nextto" and the class name). The result of the invoked method
@@ -920,7 +920,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
     TCL_INSTRUCTION_ENTRY(
-	"swap",		  1,	0),
+	"swap",			0),
 	/* Exchanges the top two items on the stack.
 	 * Stack:  ... val1 val2 => ... val2 val1 */
     TCL_INSTRUCTION_ENTRY1(
@@ -929,6 +929,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * words. The words are themselves compared using string equality.
 	 * As: [string equal [lrange list1 0 opnd] [lrange list2 0 opnd]]
 	 * Stack:  ... list1 list2 => isEqual */
+    TCL_INSTRUCTION_ENTRY(
+	"tclooId",		0),
+	/* Push the global ID of the TclOO object named at the top of the
+	 * stack onto the stack.
+	 * Stack:  ... object => ... id */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

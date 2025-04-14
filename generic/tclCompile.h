@@ -890,6 +890,7 @@ enum TclInstruction {
 
     INST_SWAP,
     INST_ERROR_PREFIX_EQ,
+    INST_TCLOO_ID,
 
     /* The last opcode */
     LAST_INST_OPCODE
