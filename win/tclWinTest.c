@@ -606,12 +606,10 @@ TestplatformChmod(
 	Tcl_Free(aceEntry[i].pSid);
     }
 
-    if (res != 0) {
-	return res;
+    if (res == 0) {
+	/* Run normal chmod command */
+	res = _chmod(Tcl_DStringValue(&ds), pmode);
     }
-
-    /* Run normal chmod command */
-    res = _chmod(Tcl_DStringValue(&ds), pmode);
     Tcl_DStringFree(&ds);
     return res;
 }
