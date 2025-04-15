@@ -439,10 +439,14 @@ TestplatformChmod(
     DWORD dw;
     int isDir;
     TOKEN_USER *pTokenUser = NULL;
+    Tcl_DString ds;
 
     res = -1; /* Assume failure */
 
-    attr = GetFileAttributesA(nativePath);
+    Tcl_DStringInit(&ds);
+    Tcl_UtfToExternalDString(NULL, nativePath, -1, &ds);
+
+    attr = GetFileAttributesA(Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
 	goto done; /* Not found */
     }
@@ -582,7 +586,7 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+    if (SetNamedSecurityInfoA((LPSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
@@ -607,7 +611,9 @@ TestplatformChmod(
     }
 
     /* Run normal chmod command */
-    return chmod(nativePath, pmode);
+    res = _chmod(Tcl_DStringValue(&ds), pmode);
+    Tcl_DStringFree(&ds);
+    return res;
 }
 
 /*
