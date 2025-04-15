@@ -2521,8 +2521,8 @@ static inline void *
 TclDbPanicIfNull(
     void *entry,
     const char *fn,
-	const char *file,
-	int line)
+    const char *file,
+    int line)
 {
     if (!entry) {
 	Tcl_Panic("%s: Memory overflow in file %s:%d", fn, file, line);
@@ -2537,7 +2537,7 @@ TclDbPanicIfNull(
 static inline void *
 TclPanicIfNull(
     void *entry,
-	const char *fn)
+    const char *fn)
 {
     if (!entry) {
 	Tcl_Panic("%s: Memory overflow", fn);

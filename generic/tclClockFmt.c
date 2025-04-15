@@ -844,7 +844,7 @@ FindOrCreateFmtScnStorage(
     }
 
     /* get or create entry (and alocate storage) */
-    hPtr = Tcl_CreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
+    hPtr = Tcl_AttemptCreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
     if (hPtr != NULL) {
 	fss = FmtScn4HashEntry(hPtr);
 
