@@ -53,7 +53,9 @@ static Tcl_HashEntry *	BogusCreate(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
 static Tcl_HashEntry *	CreateHashEntry(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
+#ifndef TCL_NO_DEPRECATED
 static Tcl_HashEntry *	FindHashEntry(Tcl_HashTable *tablePtr, const char *key);
+#endif
 static void		RebuildTable(Tcl_HashTable *tablePtr);
 
 const Tcl_HashKeyType tclArrayHashKeyType = {
@@ -204,6 +206,7 @@ Tcl_InitCustomHashTable(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -211,6 +214,7 @@ FindHashEntry(
 {
     return tablePtr->createProc(tablePtr, key, TCL_HASH_FIND);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
