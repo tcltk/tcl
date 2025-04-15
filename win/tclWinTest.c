@@ -94,7 +94,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -146,7 +146,7 @@ TesteventloopCmd(
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", NULL);
+		"\": must be done or wait", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -171,7 +171,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    ClientData clientData,	/* Not used. */
+    void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -180,6 +180,7 @@ TestvolumetypeCmd(
     int found;
     char volType[VOL_BUF_SIZE];
     const char *path;
+    (void)clientData;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
@@ -200,11 +201,11 @@ TestvolumetypeCmd(
 
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", NULL);
+		(path?path:""), "\"", (char *)NULL);
 	TclWinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_AppendResult(interp, volType, NULL);
+    Tcl_AppendResult(interp, volType, (char *)NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }
@@ -237,7 +238,7 @@ TestvolumetypeCmd(
 
 static int
 TestwinclockCmd(
-    ClientData dummy,		/* Unused */
+    void *dummy,		/* Unused */
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -250,6 +251,7 @@ TestwinclockCmd(
     Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
+    (void)dummy;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -286,7 +288,7 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    ClientData clientData,	/* Unused */
+    void *clientData,	/* Unused */
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -330,7 +332,7 @@ TestwinsleepCmd(
 
 static int
 TestExceptionCmd(
-    ClientData dummy,			/* Unused */
+    void *dummy,			/* Unused */
     Tcl_Interp* interp,			/* Tcl interpreter */
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
@@ -435,10 +437,14 @@ TestplatformChmod(
     DWORD dw;
     int isDir;
     TOKEN_USER *pTokenUser = NULL;
+    Tcl_DString ds;
 
     res = -1; /* Assume failure */
 
-    attr = GetFileAttributesA(nativePath);
+    Tcl_DStringInit(&ds);
+    Tcl_UtfToExternalDString(NULL, nativePath, -1, &ds);
+
+    attr = GetFileAttributesA(Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
 	goto done; /* Not found */
     }
@@ -450,8 +456,8 @@ TestplatformChmod(
     }
 
     /* Get process SID */
-    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
-	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+    if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw)
+	    && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
     pTokenUser = (TOKEN_USER *)ckalloc(dw);
@@ -459,10 +465,9 @@ TestplatformChmod(
 	goto done;
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
-    aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
-    if (!CopySid(aceEntry[nSids].sidLen,
-		 aceEntry[nSids].pSid,
-		 pTokenUser->User.Sid)) {
+    aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
+    if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+	    pTokenUser->User.Sid)) {
 	ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }
@@ -502,7 +507,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
 	    ckfree(pTokenGroup);
 	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -532,7 +537,7 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
 	    LocalFree(pWorldSid);
 	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
@@ -579,14 +584,9 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath,
-			      SE_FILE_OBJECT,
-			      DACL_SECURITY_INFORMATION |
-				  PROTECTED_DACL_SECURITY_INFORMATION,
-			      NULL,
-			      NULL,
-			      newAcl,
-			      NULL) == ERROR_SUCCESS) {
+    if (SetNamedSecurityInfoA((LPSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
+	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
     }
 
@@ -604,12 +604,12 @@ TestplatformChmod(
 	ckfree(aceEntry[i].pSid);
     }
 
-    if (res != 0) {
-	return res;
+    if (res == 0) {
+	/* Run normal chmod command */
+	res = _chmod(Tcl_DStringValue(&ds), pmode);
     }
-
-    /* Run normal chmod command */
-    return chmod(nativePath, pmode);
+    Tcl_DStringFree(&ds);
+    return res;
 }
 
 /*
@@ -633,7 +633,7 @@ TestplatformChmod(
 
 static int
 TestchmodCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -660,7 +660,7 @@ TestchmodCmd(
 	}
 	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);
