@@ -2096,7 +2096,7 @@ TclSubstTokens(
 				 * evaluate and concatenate. */
     Tcl_Size count,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    int *tokensLeftPtr,		/* If not NULL, points to memory where an
+    Tcl_Size *tokensLeftPtr,	/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
     Tcl_Size line,		/* The line the script starts on. */

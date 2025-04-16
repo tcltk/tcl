@@ -608,7 +608,7 @@ static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
  */
 
 #ifdef TCL_COMPILE_STATS
-static Tcl_ObjCmdProc EvalStatsCmd;
+static Tcl_ObjCmdProc2 EvalStatsCmd;
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
 static const char *	GetOpcodeName(const unsigned char *pc);
@@ -751,7 +751,7 @@ InitByteCodeExecution(
     }
 #endif
 #ifdef TCL_COMPILE_STATS
-    Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
 }
 
@@ -1551,7 +1551,7 @@ TclCompileObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     const CmdFrame *invoker,
-    int word)
+    Tcl_Size word)
 {
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr;		/* Tcl Internal type of bytecode. */
@@ -2026,7 +2026,7 @@ TEBCresume(
      * executing an instruction.
      */
 
-    int cleanup = PTR2INT(data[2]);
+    Tcl_Size cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
     int checkInterp = 0;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
@@ -2819,12 +2819,8 @@ TEBCresume(
 
 	pc += pcAdjustment;
 	TEBC_YIELD();
-	if (objc > INT_MAX) {
-	    return TclCommandWordLimitError(interp, objc);
-	} else {
-	    return TclNREvalObjv(interp, objc, objv,
+	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
-	}
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -4219,7 +4215,7 @@ TEBCresume(
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
-		(size_t)(pc + opnd - codePtr->codeStart)));
+		(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
 
     {
@@ -4261,8 +4257,8 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
-		TRACE_APPEND(("%.20s true, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[1] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s true, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
+			(pc + jmpOffset[1] - codePtr->codeStart)));
 	    } else {
 		TRACE_APPEND(("%.20s true\n", O2S(valuePtr)));
 	    }
@@ -4270,8 +4266,8 @@ TEBCresume(
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE_APPEND(("%.20s false\n", O2S(valuePtr)));
 	    } else {
-		TRACE_APPEND(("%.20s false, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[0] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s false, new pc %" TCL_T_MODIFIER "u\n", O2S(valuePtr),
+			(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -4296,7 +4292,7 @@ TEBCresume(
 	    Tcl_Size jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    TRACE_APPEND(("found in table, new pc %" TCL_Z_MODIFIER "u\n",
-		    (size_t)(pc - codePtr->codeStart + jumpOffset)));
+		    (pc - codePtr->codeStart + jumpOffset)));
 	    NEXT_INST_F(jumpOffset, 1, 0);
 	} else {
 	    TRACE_APPEND(("not found in table\n"));
@@ -4333,12 +4329,12 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
     case INST_INFO_LEVEL_ARGS: {
-	int level;
+	Tcl_WideInt level;
 	CallFrame *framePtr = iPtr->varFramePtr;
 	CallFrame *rootFramePtr = iPtr->rootFramePtr;
 
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
-	if (TclGetIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4490,7 +4486,7 @@ TEBCresume(
 			} else {
 			    fprintf(stdout, "%" TCL_SIZE_MODIFIER "d: (%" TCL_T_MODIFIER "d) invoking ",
 				    iPtr->numLevels,
-				    (size_t)(pc - codePtr->codeStart));
+				    (pc - codePtr->codeStart));
 			}
 			for (i = 0;  i < opnd;  i++) {
 			    TclPrintObject(stdout, objv[i], 15);
@@ -4640,11 +4636,17 @@ TEBCresume(
 	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
-	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
+#ifndef TCL_NO_DEPRECATED
+	    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+		if (objc > INT_MAX) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 		return mPtr->typePtr->callProc(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, opnd, objv);
 	    }
-	    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+#endif /* TCL_NO_DEPRECATED */
+	    return mPtr->type2Ptr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
@@ -5010,7 +5012,7 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
-	toIdx = TclIndexDecode(toIdx, objc - 1);
+	toIdx = TclIndexDecode((int)toIdx, objc - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
 	} else if (toIdx >= objc) {
@@ -5027,7 +5029,7 @@ TEBCresume(
 	    fromIdx = TCL_INDEX_START;
 	}
 
-	fromIdx = TclIndexDecode(fromIdx, objc - 1);
+	fromIdx = TclIndexDecode((int)fromIdx, objc - 1);
 
 	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
@@ -5433,8 +5435,8 @@ TEBCresume(
 
 	/* Decode index operands. */
 
-	toIdx = TclIndexDecode(toIdx, slength - 1);
-	fromIdx = TclIndexDecode(fromIdx, slength - 1);
+	toIdx = TclIndexDecode((int)toIdx, slength - 1);
+	fromIdx = TclIndexDecode((int)fromIdx, slength - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    TclNewObj(objResultPtr);
 	} else {
@@ -9336,7 +9338,7 @@ GetSrcInfoForPc(
 	    break;
 	}
 	if (pcOffset <= codeEnd) {	/* This cmd's code encloses pc */
-	    int dist = (pcOffset - codeOffset);
+	    Tcl_Size dist = (pcOffset - codeOffset);
 
 	    if (dist <= bestDist) {
 		bestDist = dist;
@@ -9607,7 +9609,7 @@ static int
 EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    int objc,			/* The number of arguments. */
+    Tcl_Size objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;
