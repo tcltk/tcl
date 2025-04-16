@@ -2313,6 +2313,13 @@ RequiredPrecision(
     int rv;
     unsigned int wi;
 
+    if (sizeof(Tcl_WideUInt) <= sizeof(long long)) {
+	return 1 + ( w ? TclLog2((long long) w) : 0);
+    }
+
+   /* TODO: Are there any circumstances where we will continue
+    * to the alternative below? */
+
     if (w & ((Tcl_WideUInt)0xFFFFFFFF << 32)) {
 	wi = (unsigned int)(w >> 32); rv = 32;
     } else {
