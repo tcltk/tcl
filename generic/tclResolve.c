@@ -273,7 +273,7 @@ BumpCmdRefEpochs(
     if (nsPtr->childTablePtr != NULL) {
 	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	    Namespace *childNsPtr = Tcl_GetHashValue(entry);
+	    Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
 	    BumpCmdRefEpochs(childNsPtr);
 	}

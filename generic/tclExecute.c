@@ -9563,7 +9563,7 @@ TclExprFloatError(
 int
 TclLog2(
     long long value)			/* The integer for which to compute the log
-				 * base 2. The maximum output is 31*/
+				 * base 2. The maximum output is 31 */
 {
     int result = 0;
 
