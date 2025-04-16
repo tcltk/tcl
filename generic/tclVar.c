@@ -1385,7 +1385,7 @@ TclPtrGetVarIdx(
 				 * in the array part1. */
     int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
-    Tcl_Size index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -1913,7 +1913,7 @@ TclPtrSetVarIdx(
     Tcl_Obj *newValuePtr,	/* New value for variable. */
     int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
-    Tcl_Size index)			/* Index of local var where part1 is to be
+    Tcl_Size index)		/* Index of local var where part1 is to be
 				 * found. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -2230,7 +2230,7 @@ TclPtrIncrObjVarIdx(
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
-    Tcl_Size index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -4488,7 +4488,7 @@ ObjMakeUpvar(
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    Tcl_Size index)			/* If the variable to be linked is an indexed
+    Tcl_Size index)		/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
@@ -5698,7 +5698,7 @@ TclObjVarErrMsg(
     const char *operation,	/* String describing operation that failed,
 				 * e.g. "read", "set", or "unset". */
     const char *reason,		/* String describing why operation failed. */
-    Tcl_Size index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {

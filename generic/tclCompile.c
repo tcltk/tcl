@@ -1065,7 +1065,7 @@ CleanupByteCode(
 
 	statsPtr->currentInstBytes -= (double) codePtr->numCodeBytes;
 	statsPtr->currentLitBytes -= (double)
-		codePtr->numLitObjects * sizeof(Tcl_Obj *);
+		numLitObjects * sizeof(Tcl_Obj *);
 	statsPtr->currentExceptBytes -= (double)
 		codePtr->numExceptRanges * sizeof(ExceptionRange);
 	statsPtr->currentAuxBytes -= (double)

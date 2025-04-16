@@ -112,9 +112,9 @@ extern "C" {
 #   else
 #	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #   endif
-#   define TCL_NORETURN __attribute__ ((noreturn))
-#   define TCL_NOINLINE __attribute__ ((noinline))
-#   define TCL_NORETURN1 __attribute__ ((noreturn))
+#   define TCL_NORETURN __attribute__ ((__noreturn__))
+#   define TCL_NOINLINE __attribute__ ((__noinline__))
+#   define TCL_NORETURN1 __attribute__ ((__noreturn__))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
 #   if defined(_MSC_VER)
@@ -2518,10 +2518,8 @@ TclBounceRefCount(
  * hash tables:
  */
 
-#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 

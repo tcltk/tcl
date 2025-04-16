@@ -223,13 +223,6 @@ typedef struct TclVarHashTable {
 } TclVarHashTable;
 
 /*
- * This is for itcl - it likes to search our varTables directly :(
- */
-
-#define TclVarHashFindVar(tablePtr, key) \
-    TclVarHashCreateVar((tablePtr), (key), NULL)
-
-/*
  * Define this to reduce the amount of space that the average namespace
  * consumes by only allocating the table of child namespaces when necessary.
  * Defining it breaks compatibility for Tcl extensions (e.g., itcl) which
@@ -2173,7 +2166,7 @@ typedef struct Interp {
 				 * invoking context of the bytecode compiler.
 				 * NULL when the byte code compiler is not
 				 * active. */
-    Tcl_Size invokeWord;		/* Index of the word in the command which
+    Tcl_Size invokeWord;	/* Index of the word in the command which
 				 * is getting compiled. */
     Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
 				 * defined procedure the location information
