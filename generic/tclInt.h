@@ -3965,9 +3965,10 @@ MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 /* Flag values for the [string] ensemble functions. */
-
-#define TCL_STRING_MATCH_NOCASE TCL_MATCH_NOCASE /* (1<<0) in tcl.h */
-#define TCL_STRING_IN_PLACE (1<<1)
+enum StringOpFlags {
+    TCL_STRING_MATCH_NOCASE = TCL_MATCH_NOCASE, /* (1<<0) in tcl.h */
+    TCL_STRING_IN_PLACE = (1<<1)	/* Do in-place surgery on Tcl_Obj */
+};
 
 /*
  * Functions defined in generic/tclVar.c and currently exported only for use

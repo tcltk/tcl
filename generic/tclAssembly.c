@@ -30,7 +30,6 @@
  */
 
 #include "tclInt.h"
-#define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include <assert.h>
@@ -116,8 +115,6 @@ enum BasicBlockFlags {
 				 * traversal */
     BB_FALLTHRU = (1 << 1),	/* Control may pass from this block to a
 				 * successor */
-    BB_JUMP1 = (1 << 2),	/* Basic block ends with a 1-byte-offset jump
-				 * and may need expansion */
     BB_JUMPTABLE = (1 << 3),	/* Basic block ends with a jump table */
     BB_BEGINCATCH = (1 << 4),	/* Block ends with a 'beginCatch' instruction,
 				 * marking it as the start of a 'catch'
@@ -249,7 +246,7 @@ static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
 static void		BBEmitOpcode(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int count);
 static int		BuildExceptionRanges(AssemblyEnv* assemEnvPtr);
-static int		CalculateJumpRelocations(AssemblyEnv*, int*);
+static int		ValidateJumpTargets(AssemblyEnv*);
 static int		CheckForUnclosedCatches(AssemblyEnv*);
 static int		CheckForThrowInWrongContext(AssemblyEnv*);
 static int		CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
@@ -280,7 +277,6 @@ static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetIntegerOperand(AssemblyEnv*, Tcl_Token**, int*);
 static int		GetNextOperand(AssemblyEnv*, Tcl_Token**, Tcl_Obj**);
 static void		LookForFreshCatches(BasicBlock*, BasicBlock**);
-static void		MoveCodeForJumps(AssemblyEnv*, int);
 static void		MoveExceptionRangesToBasicBlock(AssemblyEnv*, int);
 static AssemblyEnv*	NewAssemblyEnv(CompileEnv*, int);
 static int		ProcessCatches(AssemblyEnv*);
@@ -501,8 +497,8 @@ static const TalInstDesc TalInstructionTable[] = {
  */
 
 static const unsigned char NonThrowingByteCodes[] = {
-    INST_PUSH1, INST_PUSH, INST_POP, INST_DUP,			/* 1-4 */
-    INST_JUMP1, INST_JUMP,					/* 34-35 */
+    INST_PUSH, INST_POP, INST_DUP,				/* 2-4 */
+    INST_JUMP,							/* 35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 64-66 */
     INST_STR_EQ, INST_STR_NEQ, INST_STR_CMP, INST_STR_LEN,	/* 67-70 */
     INST_LIST,							/* 73 */
@@ -2608,24 +2604,12 @@ static int
 FinishAssembly(
     AssemblyEnv* assemEnvPtr)	/* Assembly environment */
 {
-    int mustMove;		/* Amount by which the code needs to be grown
-				 * because of expanding jumps */
-
     /*
-     * Resolve the targets of all jumps and determine whether code needs to be
-     * moved around.
+     * Resolve the targets of all jumps.
      */
 
-    if (CalculateJumpRelocations(assemEnvPtr, &mustMove)) {
+    if (ValidateJumpTargets(assemEnvPtr)) {
 	return TCL_ERROR;
-    }
-
-    /*
-     * Move the code if necessary.
-     */
-
-    if (mustMove) {
-	MoveCodeForJumps(assemEnvPtr, mustMove);
     }
 
     /*
@@ -2670,114 +2654,62 @@ FinishAssembly(
 /*
  *-----------------------------------------------------------------------------
  *
- * CalculateJumpRelocations --
+ * ValidateJumpTargets --
  *
- *	Calculate any movement that has to be done in the assembly code to
- *	expand JUMP1 instructions to JUMP4 (because they jump more than a
- *	1-byte range).
+ *	Checks for undefined labels and reports them.
  *
  * Results:
  *	Returns a standard Tcl result, with an appropriate error message if
  *	anything fails.
  *
  * Side effects:
- *	Sets the 'startOffset' pointer in every basic block to the new origin
- *	of the block, and turns off JUMP1 flags on instructions that must be
- *	expanded (and adjusts them to the corresponding JUMP4's).  Does *not*
- *	store the jump offsets at this point.
- *
- *	Sets *mustMove to 1 if and only if at least one instruction changed
- *	size so the code must be moved.
- *
- *	As a side effect, also checks for undefined labels and reports them.
+ *	None.
  *
  *-----------------------------------------------------------------------------
  */
 
 static int
-CalculateJumpRelocations(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    int* mustMove)		/* OUTPUT: Number of bytes that have been
-				 * added to the code */
+ValidateJumpTargets(
+    AssemblyEnv* assemEnvPtr)	/* Assembly environment */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
     BasicBlock* bbPtr;		/* Pointer to a basic block being checked */
     Tcl_HashEntry* entry;	/* Exit label's entry in the symbol table */
-    BasicBlock* jumpTarget;	/* Basic block where the jump goes */
-    int motion;			/* Amount by which the code has expanded */
-    int offset;			/* Offset in the bytecode from a jump
-				 * instruction to its target */
-    unsigned opcode;		/* Opcode in the bytecode being adjusted */
 
     /*
-     * Iterate through basic blocks as long as a change results in code
-     * expansion.
+     * Iterate through basic blocks.
      */
 
-    *mustMove = 0;
-    do {
-	motion = 0;
-	for (bbPtr = assemEnvPtr->head_bb;
-		bbPtr != NULL;
-		bbPtr = bbPtr->successor1) {
-	    /*
-	     * Advance the basic block start offset by however many bytes we
-	     * have inserted in the code up to this point
-	     */
+    for (bbPtr = assemEnvPtr->head_bb;
+	    bbPtr != NULL;
+	    bbPtr = bbPtr->successor1) {
+	/*
+	 * If the basic block references a label (and hence performs a
+	 * jump), find the location of the label. Report an error if the
+	 * label is missing.
+	 */
 
-	    bbPtr->startOffset += motion;
-
-	    /*
-	     * If the basic block references a label (and hence performs a
-	     * jump), find the location of the label. Report an error if the
-	     * label is missing.
-	     */
-
-	    if (bbPtr->jumpTarget != NULL) {
-		entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
-			TclGetString(bbPtr->jumpTarget));
-		if (entry == NULL) {
-		    ReportUndefinedLabel(assemEnvPtr, bbPtr,
-			    bbPtr->jumpTarget);
-		    return TCL_ERROR;
-		}
-
-		/*
-		 * If the instruction is a JUMP1, turn it into a JUMP4 if its
-		 * target is out of range.
-		 */
-
-		jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);
-		if (bbPtr->flags & BB_JUMP1) {
-		    offset = jumpTarget->startOffset
-			    - (bbPtr->jumpOffset + motion);
-		    if (offset < -0x80 || offset > 0x7F) {
-			opcode = TclGetUInt1AtPtr(envPtr->codeStart
-				+ bbPtr->jumpOffset);
-			++opcode;
-			TclStoreInt1AtPtr(opcode,
-				envPtr->codeStart + bbPtr->jumpOffset);
-			motion += 3;
-			bbPtr->flags &= ~BB_JUMP1;
-		    }
-		}
-	    }
-
-	    /*
-	     * If the basic block references a jump table, that doesn't affect
-	     * the code locations, but resolve the labels now, and store basic
-	     * block pointers in the jumptable hash.
-	     */
-
-	    if (bbPtr->flags & BB_JUMPTABLE) {
-		if (CheckJumpTableLabels(assemEnvPtr, bbPtr) != TCL_OK) {
-		    return TCL_ERROR;
-		}
+	if (bbPtr->jumpTarget != NULL) {
+	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
+		    TclGetString(bbPtr->jumpTarget));
+	    if (entry == NULL) {
+		ReportUndefinedLabel(assemEnvPtr, bbPtr,
+			bbPtr->jumpTarget);
+		return TCL_ERROR;
 	    }
 	}
-	*mustMove += motion;
-    } while (motion != 0);
+
+	/*
+	 * If the basic block references a jump table, that doesn't affect
+	 * the code locations, but resolve the labels now, and store basic
+	 * block pointers in the jumptable hash.
+	 */
+
+	if (bbPtr->flags & BB_JUMPTABLE) {
+	    if (CheckJumpTableLabels(assemEnvPtr, bbPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+    }
 
     return TCL_OK;
 }
@@ -2868,55 +2800,6 @@ ReportUndefinedLabel(
 /*
  *-----------------------------------------------------------------------------
  *
- * MoveCodeForJumps --
- *
- *	Move bytecodes in memory to accommodate JUMP1 instructions that have
- *	expanded to become JUMP4's.
- *
- *-----------------------------------------------------------------------------
- */
-
-static void
-MoveCodeForJumps(
-    AssemblyEnv* assemEnvPtr,	/* Assembler environment */
-    int mustMove)		/* Number of bytes of added code */
-{
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
-				/* Compilation environment */
-    BasicBlock* bbPtr;		/* Pointer to a basic block being checked */
-    int topOffset;		/* Bytecode offset of the following basic
-				 * block before code motion */
-
-    /*
-     * Make sure that there is enough space in the bytecode array to
-     * accommodate the expanded code.
-     */
-
-    while (envPtr->codeEnd < envPtr->codeNext + mustMove) {
-	TclExpandCodeArray(envPtr);
-    }
-
-    /*
-     * Iterate through the bytecodes in reverse order, and move them upward to
-     * their new homes.
-     */
-
-    topOffset = CurrentOffset(envPtr);
-    for (bbPtr = assemEnvPtr->curr_bb; bbPtr != NULL; bbPtr = bbPtr->prevPtr) {
-	DEBUG_PRINT("move code from %d to %d\n",
-		bbPtr->originalStartOffset, bbPtr->startOffset);
-	memmove(envPtr->codeStart + bbPtr->startOffset,
-		envPtr->codeStart + bbPtr->originalStartOffset,
-		topOffset - bbPtr->originalStartOffset);
-	topOffset = bbPtr->originalStartOffset;
-	bbPtr->jumpOffset += (bbPtr->startOffset - bbPtr->originalStartOffset);
-    }
-    envPtr->codeNext += mustMove;
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
  * FillInJumpOffsets --
  *
  *	Fill in the final offsets of all jump instructions once bytecode
@@ -2947,13 +2830,8 @@ FillInJumpOffsets(
 	    jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);
 	    fromOffset = bbPtr->jumpOffset;
 	    targetOffset = jumpTarget->startOffset;
-	    if (bbPtr->flags & BB_JUMP1) {
-		TclStoreInt1AtPtr(targetOffset - fromOffset,
-			envPtr->codeStart + fromOffset + 1);
-	    } else {
-		TclStoreInt4AtPtr(targetOffset - fromOffset,
-			envPtr->codeStart + fromOffset + 1);
-	    }
+	    TclStoreInt4AtPtr(targetOffset - fromOffset,
+		    envPtr->codeStart + fromOffset + 1);
 	}
 	if (bbPtr->flags & BB_JUMPTABLE) {
 	    ResolveJumpTableTargets(assemEnvPtr, bbPtr);

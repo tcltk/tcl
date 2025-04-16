@@ -80,11 +80,13 @@ LocateTargetAddresses(
 	    currentInstPtr < envPtr->codeNext ;
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	switch (*currentInstPtr) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
 	    targetInstPtr = currentInstPtr+TclGetInt1AtPtr(currentInstPtr+1);
 	    goto storeTarget;
+#endif
 	case INST_JUMP:
 	case INST_JUMP_TRUE:
 	case INST_JUMP_FALSE:
@@ -107,11 +109,13 @@ LocateTargetAddresses(
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_RETURN_CODE_BRANCH1:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
+#endif
 	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 5*i - 4);
@@ -264,6 +268,7 @@ ConvertZeroEffectToNOP(
 
 	case INST_LNOT:
 	    switch (nextInst) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	    case INST_JUMP_TRUE1:
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_FALSE1;
@@ -272,6 +277,7 @@ ConvertZeroEffectToNOP(
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_TRUE1;
 		break;
+#endif
 	    case INST_JUMP_TRUE:
 		blank = size;
 		currentInstPtr[size] = INST_JUMP_FALSE;
@@ -285,9 +291,11 @@ ConvertZeroEffectToNOP(
 
 	case INST_TRY_CVT_TO_NUMERIC:
 	    switch (nextInst) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE1:
+#endif
+	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE:
 	    case INST_INCR_SCALAR1:
 	    case INST_INCR_SCALAR:
@@ -359,6 +367,7 @@ AdvanceJumps(
 	int offset, delta, isNew;
 
 	switch (*currentInstPtr) {
+#ifndef REMOVE_DEPRECATED_OPCODES
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
@@ -390,6 +399,7 @@ AdvanceJumps(
 	    Tcl_DeleteHashTable(&jumps);
 	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
 	    continue;
+#endif
 
 	case INST_JUMP:
 	case INST_JUMP_TRUE:
@@ -406,9 +416,11 @@ AdvanceJumps(
 		case INST_NOP:
 		    offset += InstLength(INST_NOP);
 		    continue;
+#ifndef REMOVE_DEPRECATED_OPCODES
 		case INST_JUMP1:
 		    offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
 		    continue;
+#endif
 		case INST_JUMP:
 		    offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
 		    continue;

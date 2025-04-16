@@ -1070,6 +1070,7 @@ TclCompileDictSetCmd(
     int i, numWords = (int) parsePtr->numWords;
     Tcl_LVTIndex dictVarIndex;
     Tcl_Token *varTokenPtr;
+    /* TODO: Consider support for compiling expanded args. */
 
     /*
      * There must be at least one argument after the command.
@@ -1287,6 +1288,7 @@ TclCompileDictReplaceCmd(
     DefineLineInformation;	/* TIP #280 */
     int i, numWords = (int) parsePtr->numWords;
     Tcl_Token *tokenPtr;
+    /* TODO: Consider support for compiling expanded args. */
 
     /*
      * Don't compile [dict replace $dict]; it's an edge case.
@@ -1378,6 +1380,7 @@ TclCompileDictCreateCmd(
     Tcl_Token *keyToken, *valueToken;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     int i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if ((numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -1719,9 +1722,8 @@ CompileDictEachCmd(
 	    BODY(		bodyTokenPtr, 3);
 	    if (collect == TCL_EACH_COLLECT) {
 		OP4(		LOAD_SCALAR, keyVarIndex);
-		OP4(		OVER, 1);
+		OP(		SWAP);
 		OP44(		DICT_SET, 1, collectVar);
-		OP(		POP);
 	    }
 	    OP(			POP);
 	}
@@ -3246,6 +3248,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     int i, j, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     /*
      * Don't handle any guaranteed-error cases.

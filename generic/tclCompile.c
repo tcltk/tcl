@@ -2196,7 +2196,7 @@ CompileExpanded(
      */
 
     TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED, wordIdx);
-    TclCheckStackDepth(depth+1, envPtr);
+    TclCheckStackDepth(depth + 1, envPtr);
 }
 
 static int
@@ -2306,8 +2306,8 @@ CompileCommandTokens(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
-    int code = TCL_ERROR;
-    int cmdKnown, expand = -1;
+    int code = TCL_ERROR, expand = -1;
+    int cmdKnown, numWords = (int) parsePtr->numWords;
     Tcl_Size *wlines, wlineat;
     Tcl_Size cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
@@ -2315,7 +2315,7 @@ CompileCommandTokens(
     Tcl_Size startCodeOffset = CurrentOffset(envPtr);
     int depth = TclGetStackDepth(envPtr);
 
-    assert ((int)parsePtr->numWords > 0);
+    assert (numWords > 0);
 
     /* Precompile */
 
@@ -2360,7 +2360,7 @@ CompileCommandTokens(
 	    }
 	}
 	if (cmdPtr && !(cmdPtr->flags & CMD_COMPILES_EXPANDED)) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, numWords);
 	    if (expand) {
 		/* We need to expand, but compileProc cannot. */
 		cmdPtr = NULL;
@@ -2374,16 +2374,21 @@ CompileCommandTokens(
     }
 
     if (code == TCL_ERROR) {
+	/*
+	 * We might have a failure to compile an expansion-aware command. If
+	 * that's happened, expand will still be -1 and should be determined
+	 * to be its true value now.
+	 */
 	if (expand < 0) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, numWords);
 	}
 
 	if (expand) {
 	    CompileExpanded(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, numWords, envPtr);
 	} else {
 	    TclCompileInvocation(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, numWords, envPtr);
 	}
     }
 
