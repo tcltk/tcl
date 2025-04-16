@@ -230,7 +230,7 @@ static int		AliasDelete(Tcl_Interp *interp,
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *childInterp);
-static Tcl_ObjCmdProc	AliasNRCmd;
+static Tcl_ObjCmdProc2	AliasNRCmd;
 static Tcl_CmdDeleteProc AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, Tcl_Size objc,
@@ -283,8 +283,8 @@ static void		TimeLimitCallback(void *clientData);
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
-static Tcl_ObjCmdProc	NRInterpCmd;
-static Tcl_ObjCmdProc	NRChildCmd;
+static Tcl_ObjCmdProc2	NRInterpCmd;
+static Tcl_ObjCmdProc2	NRChildCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -340,8 +340,8 @@ Tcl_Init(
      * pre-init and init scripts are running. The real version of this struct
      * is in tclPkg.c.
      */
-    typedef struct PkgName {
-	struct PkgName *nextPtr;/* Next in list of package names being
+    typedef struct PkgNameStruct {
+	struct PkgNameStruct *nextPtr;/* Next in list of package names being
 				 * initialized. */
 	char name[4];		/* Enough space for "tcl". The *real* version
 				 * of this structure uses a flex array. */
@@ -513,7 +513,7 @@ TclInterpInit(
     childPtr->interpCmd		= NULL;
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
 
-    Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
+    Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
@@ -619,17 +619,17 @@ int
 Tcl_InterpObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, NRInterpCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRInterpCmd, clientData, objc, objv);
 }
 
 static int
 NRInterpCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp;
@@ -1385,8 +1385,8 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != TclAliasObjCmd
-	    && cmdPtr->objProc != TclLocalAliasObjCmd) {
+    if (cmdPtr->objProc2 != TclAliasObjCmd
+	    && cmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	return TCL_OK;
     }
 
@@ -1396,7 +1396,7 @@ TclPreventAliasLoop(
      * chain then we have a loop.
      */
 
-    aliasPtr = (Alias *) cmdPtr->objClientData;
+    aliasPtr = (Alias *)cmdPtr->objClientData2;
     nextAliasPtr = aliasPtr;
     while (1) {
 	Tcl_Obj *cmdNamePtr;
@@ -1441,11 +1441,11 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != TclAliasObjCmd
-		&& aliasCmdPtr->objProc != TclLocalAliasObjCmd) {
+	if (aliasCmdPtr->objProc2 != TclAliasObjCmd
+		&& aliasCmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	    return TCL_OK;
 	}
-	nextAliasPtr = (Alias *) aliasCmdPtr->objClientData;
+	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData2;
     }
 }
 
@@ -1506,11 +1506,11 @@ AliasCreate(
     Tcl_Preserve(parentInterp);
 
     if (childInterp == parentInterp) {
-	aliasPtr->childCmd = Tcl_NRCreateCommand(childInterp,
+	aliasPtr->childCmd = Tcl_NRCreateCommand2(childInterp,
 		TclGetString(namePtr), TclLocalAliasObjCmd, AliasNRCmd,
 		aliasPtr, AliasObjCmdDeleteProc);
     } else {
-	aliasPtr->childCmd = Tcl_CreateObjCommand(childInterp,
+	aliasPtr->childCmd = Tcl_CreateObjCommand2(childInterp,
 		TclGetString(namePtr), TclAliasObjCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     }
@@ -1777,7 +1777,7 @@ static int
 AliasNRCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *) clientData;
@@ -1830,7 +1830,7 @@ int
 TclAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -1921,7 +1921,7 @@ int
 TclLocalAliasObjCmd(
     void *clientData,		/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -2422,7 +2422,7 @@ ChildCreate(
     childPtr->parentInterp = parentInterp;
     childPtr->childEntryPtr = hPtr;
     childPtr->childInterp = childInterp;
-    childPtr->interpCmd = Tcl_NRCreateCommand(parentInterp, path,
+    childPtr->interpCmd = Tcl_NRCreateCommand2(parentInterp, path,
 	    TclChildObjCmd, NRChildCmd, childInterp, ChildObjCmdDeleteProc);
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, childPtr);
@@ -2507,17 +2507,17 @@ int
 TclChildObjCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, NRChildCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRChildCmd, clientData, objc, objv);
 }
 
 static int
 NRChildCmd(
     void *clientData,		/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp = (Tcl_Interp *) clientData;
@@ -2862,7 +2862,7 @@ ChildEval(
 
 	Interp *iPtr = (Interp *) interp;
 	CmdFrame *invoker = iPtr->cmdFramePtr;
-	int word = 0;
+	Tcl_Size word = 0;
 
 	TclArgumentGet(interp, objv[0], &invoker, &word);
 

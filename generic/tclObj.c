@@ -1050,7 +1050,6 @@ TclDbInitNewObj(
     if (!TclInExit()) {
 	Tcl_HashEntry *hPtr;
 	Tcl_HashTable *tablePtr;
-	int isNew;
 	ObjData *objData;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -1059,9 +1058,12 @@ TclDbInitNewObj(
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
-	hPtr = Tcl_CreateHashEntry(tablePtr, objPtr, &isNew);
-	if (!isNew) {
-	    Tcl_Panic("expected to create new entry for object map");
+	hPtr = Tcl_AttemptCreateHashEntry(tablePtr, objPtr, NULL);
+	if (!hPtr) {
+	    /* This is just for debugging, in case of memory problem just remove it */
+	    Tcl_DeleteHashTable(tsdPtr->objThreadMap);
+	    Tcl_Free(tsdPtr->objThreadMap);
+	    tsdPtr->objThreadMap = NULL;
 	}
 
 	/*
@@ -1072,7 +1074,9 @@ TclDbInitNewObj(
 	objData->objPtr = objPtr;
 	objData->file = file;
 	objData->line = line;
-	Tcl_SetHashValue(hPtr, objData);
+	if (hPtr) {
+	    Tcl_SetHashValue(hPtr, objData);
+	}
     }
 #endif /* TCL_THREADS */
 }
@@ -1291,7 +1295,7 @@ TclFreeObj(
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
-	    Tcl_Panic("TclFreeObj: object table not initialized");
+	    Tcl_Panic("%s: object table not initialized", "TclFreeObj");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (hPtr) {
@@ -2905,7 +2909,9 @@ Tcl_DbNewWideIntObj(
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    TclSetIntObj(objPtr, wideValue);
+    if (objPtr) {
+	TclSetIntObj(objPtr, wideValue);
+    }
     return objPtr;
 }
 
@@ -3953,12 +3959,12 @@ Tcl_DbIncrRefCount(
 	Tcl_HashEntry *hPtr;
 
 	if (!tablePtr) {
-	    Tcl_Panic("object table not initialized");
+	    Tcl_Panic("%s: object table not initialized", "Tcl_DbIncrRefCount");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-		    "incr ref count");
+	    Tcl_Panic("%s: Tcl_Obj allocated in another thread",
+		    "Tcl_DbIncrRefCount");
 	}
     }
 # endif /* TCL_THREADS */
@@ -4026,12 +4032,12 @@ Tcl_DbDecrRefCount(
 	Tcl_HashEntry *hPtr;
 
 	if (!tablePtr) {
-	    Tcl_Panic("object table not initialized");
+	    Tcl_Panic("%s: object table not initialized", "Tcl_DbDecrRefCount");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-		    "decr ref count");
+	    Tcl_Panic("%s: Tcl_Obj allocated in another thread",
+		    "Tcl_DbDecrRefCount");
 	}
     }
 # endif /* TCL_THREADS */
@@ -4109,12 +4115,12 @@ Tcl_DbIsShared(
 	Tcl_HashEntry *hPtr;
 
 	if (!tablePtr) {
-	    Tcl_Panic("object table not initialized");
+	    Tcl_Panic("%s: object table not initialized", "Tcl_DbIsShared");
 	}
 	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (!hPtr) {
-	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
-		    "check shared status");
+	    Tcl_Panic("%s: Tcl_Obj allocated in another thread",
+		    "Tcl_DbIsShared");
 	}
     }
 # endif /* TCL_THREADS */
@@ -4708,7 +4714,7 @@ int
 Tcl_RepresentationCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *descObj;

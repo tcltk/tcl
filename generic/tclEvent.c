@@ -58,8 +58,8 @@ typedef struct {
  */
 
 typedef struct {
-    int *donePtr;		/* Pointer to flag to signal or NULL. */
-    int sequence;		/* Order of occurrence. */
+    Tcl_Size *donePtr;		/* Pointer to flag to signal or NULL. */
+    Tcl_Size sequence;		/* Order of occurrence. */
     int mask;			/* 0, or TCL_READABLE/TCL_WRITABLE. */
     Tcl_Obj *sourceObj;		/* Name of the event source, either a
 				 * variable name or channel name. */
@@ -325,7 +325,7 @@ int
 TclDefaultBgErrorHandlerObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *valuePtr;
@@ -1495,11 +1495,12 @@ int
 Tcl_VwaitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
-    int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
+    Tcl_Size i, done = 0, numItems = 0, timedOut = 0;
+    int foundEvent, any = 1, timeout = 0;
+    int extended = 0, result, mode, mask = TCL_ALL_EVENTS;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
     Tcl_Time before, after;
@@ -1597,7 +1598,7 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = 0;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
@@ -1621,7 +1622,7 @@ Tcl_VwaitObjCmd(
 	    Tcl_CreateChannelHandler(chan, TCL_READABLE,
 		    VwaitChannelReadProc, &vwaitItems[numItems]);
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = TCL_READABLE;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
@@ -1645,7 +1646,7 @@ Tcl_VwaitObjCmd(
 	    Tcl_CreateChannelHandler(chan, TCL_WRITABLE,
 		    VwaitChannelWriteProc, &vwaitItems[numItems]);
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = TCL_WRITABLE;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
@@ -1679,7 +1680,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
 	vwaitItems[numItems].donePtr = &done;
-	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = objv[i];
 	numItems++;
@@ -1703,7 +1704,7 @@ Tcl_VwaitObjCmd(
 
     if (timeout > 0) {
 	vwaitItems[numItems].donePtr = &timedOut;
-	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
@@ -1821,7 +1822,7 @@ Tcl_VwaitObjCmd(
 
     if (result == TCL_OK) {
 	if (extended) {
-	    int k;
+	    Tcl_Size k;
 	    Tcl_Obj *listObj, *keyObj;
 
 	    TclNewObj(listObj);
@@ -1948,7 +1949,7 @@ int
 Tcl_UpdateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0;		/* Initialized to avoid compiler warning. */

@@ -40,8 +40,8 @@ static Tcl_ThreadDataKey dataKey;
 
 static Tcl_ExitProc		FinalizeIOCmdTSD;
 static Tcl_TcpAcceptProc	AcceptCallbackProc;
-static Tcl_ObjCmdProc		ChanPendingObjCmd;
-static Tcl_ObjCmdProc		ChanTruncateObjCmd;
+static Tcl_ObjCmdProc2		ChanPendingObjCmd;
+static Tcl_ObjCmdProc2		ChanTruncateObjCmd;
 static void		RegisterTcpServerInterpCleanup(
 			    Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
@@ -101,7 +101,7 @@ int
 Tcl_PutsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to puts on. */
@@ -214,7 +214,7 @@ int
 Tcl_FlushObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *chanObjPtr;
@@ -278,7 +278,7 @@ int
 Tcl_GetsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
@@ -364,14 +364,15 @@ int
 Tcl_ReadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    int newline, i;		/* Discard newline at end? */
+    int newline;		/* Discard newline at end? */
     Tcl_WideInt toRead;		/* How many bytes to read? */
     Tcl_Size charactersRead;	/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
+    Tcl_Size i;
     Tcl_Obj *resultPtr, *chanObjPtr;
 
     if ((objc != 2) && (objc != 3)) {
@@ -501,7 +502,7 @@ int
 Tcl_SeekObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to tell on. */
@@ -576,7 +577,7 @@ int
 Tcl_TellObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to tell on. */
@@ -637,7 +638,7 @@ int
 Tcl_CloseObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to close. */
@@ -745,12 +746,12 @@ int
 Tcl_FconfigureObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *optionName, *valueName;
     Tcl_Channel chan;		/* The channel to set a mode on. */
-    int i;			/* Iterate over arg-value pairs. */
+    Tcl_Size i;			/* Iterate over arg-value pairs. */
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channel ?-option value ...?");
@@ -820,7 +821,7 @@ int
 Tcl_EofObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -860,7 +861,7 @@ static int
 ChanIsBinaryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -899,7 +900,7 @@ int
 Tcl_ExecObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr;
@@ -907,8 +908,8 @@ Tcl_ExecObjCmd(
 				 * on the _Tcl_ stack. */
     const char *string;
     Tcl_Channel chan;
-    int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
-    Tcl_Size length;
+    int background, i, index, keepNewline, result, ignoreStderr;
+    Tcl_Size argc, length, skip;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1071,7 +1072,7 @@ int
 Tcl_FblockedObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1117,7 +1118,7 @@ int
 Tcl_OpenObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int pipeline, prot;
@@ -1136,7 +1137,7 @@ Tcl_OpenObjCmd(
 	if (objc == 4) {
 	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
-	    int scanned = TclParseAllWhiteSpace(permString, -1);
+	    Tcl_Size scanned = TclParseAllWhiteSpace(permString, -1);
 
 	    /*
 	     * Support legacy octal numbers.
@@ -1493,7 +1494,7 @@ int
 Tcl_SocketObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
@@ -1504,8 +1505,8 @@ Tcl_SocketObjCmd(
 	SKT_ASYNC, SKT_BACKLOG, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR,
 	SKT_REUSEPORT, SKT_SERVER
     } optionIndex;
-    int a, server = 0, myport = 0, async = 0, reusep = -1,
-	reusea = -1, backlog = -1;
+    int server = 0, myport = 0, async = 0, reusep = -1, reusea = -1, backlog = -1;
+	Tcl_Size a;
     unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
     Tcl_Obj *script = NULL;
@@ -1744,11 +1745,12 @@ int
 Tcl_FcopyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
-    int mode, i, index;
+    int mode, index;
+    Tcl_Size i;
     Tcl_WideInt toRead;
     Tcl_Obj *cmdPtr;
     static const char *const switches[] = { "-size", "-command", NULL };
@@ -1839,7 +1841,7 @@ static int
 ChanPendingObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1901,7 +1903,7 @@ static int
 ChanTruncateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
@@ -1974,7 +1976,7 @@ static int
 ChanPipeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel rchan, wchan;
@@ -2025,7 +2027,7 @@ int
 TclChannelNamesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (objc < 1 || objc > 2) {

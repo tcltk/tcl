@@ -1062,7 +1062,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------
@@ -1071,7 +1071,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
  */
 
 MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    const CmdFrame *invoker, int word);
+			    const CmdFrame *invoker, Tcl_Size word);
 
 /*
  *----------------------------------------------------------------
@@ -1127,11 +1127,11 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
-MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
+MODULE_SCOPE Tcl_Size TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist,
+			    Tcl_Size distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
@@ -1141,7 +1141,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    size_t numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, Tcl_Size word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1151,14 +1151,14 @@ MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
-			    int range);
+			    Tcl_Size range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(long long value);
 #endif
-MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
+MODULE_SCOPE Tcl_Size	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE Tcl_Size	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -1174,17 +1174,17 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, Tcl_Size maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
-			    int flags, int *localIndexPtr,
+			    int flags, Tcl_Size *localIndexPtr,
 			    int *isScalarPtr);
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE Tcl_ObjCmdProc	TclSingleOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclSortingOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclVariadicOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -1212,7 +1212,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 /*
  * Simplified form to access AuxData.
  *
- * void *TclFetchAuxData(CompileEng *envPtr, int index);
+ * void *TclFetchAuxData(CompileEng *envPtr, Tcl_Size index);
  */
 
 #define TclFetchAuxData(envPtr, index) \
@@ -1229,11 +1229,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 static inline void
 TclAdjustStackDepth(
-    int delta,
+    Tcl_Size delta,
     CompileEnv *envPtr)
 {
     if (delta < 0) {
-	if ((int) envPtr->maxStackDepth < (int) envPtr->currStackDepth) {
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
 	    envPtr->maxStackDepth = envPtr->currStackDepth;
 	}
     }
@@ -1309,7 +1309,7 @@ TclUpdateStackReqs(
 	    TclExpandCodeArray(envPtr);					\
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateAtCmdStart((unsigned char)op, envPtr);				\
 	TclUpdateStackReqs((unsigned char)op, 0, envPtr);				\
     } while (0)
 
@@ -1362,7 +1362,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 #define TclEmitInstInt4(op, i, envPtr) \
@@ -1380,7 +1380,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ =						\
 		(unsigned char) ((unsigned int) (i)      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 /*
@@ -1449,12 +1449,12 @@ TclUpdateStackReqs(
  * "prototypes" for this macro is:
  *
  * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ *				 Tcl_Size threshold);
  */
 
 #define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset, \
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
 	    (threshold))
 
 /*
@@ -1515,7 +1515,7 @@ TclUpdateStackReqs(
  * Convenience macros for use when compiling bodies of commands. The ANSI C
  * "prototype" for these macros are:
  *
- * static void		BODY(Tcl_Token *tokenPtr, int word);
+ * static void		BODY(Tcl_Token *tokenPtr, Tcl_Size word);
  */
 
 #define BODY(tokenPtr, word) \
@@ -1615,7 +1615,7 @@ TclUpdateStackReqs(
  * the simplest of compiles. The ANSI C "prototype" for this macro is:
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp, int word);
+ *			    Tcl_Interp *interp, Tcl_Size word);
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
