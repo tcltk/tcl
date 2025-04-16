@@ -1154,7 +1154,6 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 			    int range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
-MODULE_SCOPE int	TclLog2(long long value);
 #endif
 MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
