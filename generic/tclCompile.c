@@ -1064,7 +1064,7 @@ CleanupByteCode(
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
-    int numLitObjects = codePtr->numLitObjects;
+    Tcl_Size numLitObjects = codePtr->numLitObjects;
     Tcl_Obj **objArrayPtr, *objPtr;
     const AuxData *auxDataPtr;
     int i;
@@ -1073,7 +1073,7 @@ CleanupByteCode(
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
-	int lifetimeSec, lifetimeMicroSec, log2;
+	long long lifetimeSec, lifetimeMicroSec;
 
 	statsPtr = &iPtr->stats;
 
@@ -1083,7 +1083,7 @@ CleanupByteCode(
 
 	statsPtr->currentInstBytes -= (double) codePtr->numCodeBytes;
 	statsPtr->currentLitBytes -= (double)
-		codePtr->numLitObjects * sizeof(Tcl_Obj *);
+		numLitObjects * sizeof(Tcl_Obj *);
 	statsPtr->currentExceptBytes -= (double)
 		codePtr->numExceptRanges * sizeof(ExceptionRange);
 	statsPtr->currentAuxBytes -= (double)
@@ -1092,17 +1092,9 @@ CleanupByteCode(
 
 	Tcl_GetTime(&destroyTime);
 	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
-	if (lifetimeSec > 2000) {	/* avoid overflow */
-	    lifetimeSec = 2000;
-	}
 	lifetimeMicroSec = 1000000 * lifetimeSec +
 		(destroyTime.usec - codePtr->createTime.usec);
-
-	log2 = TclLog2(lifetimeMicroSec);
-	if (log2 > 31) {
-	    log2 = 31;
-	}
-	statsPtr->lifetimeCount[log2]++;
+	statsPtr->lifetimeCount[TclLog2(lifetimeMicroSec)]++;
     }
 #endif /* TCL_COMPILE_STATS */
 
@@ -2867,7 +2859,7 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
-    int numLitObjects = envPtr->literalArrayNext;
+    Tcl_Size i, numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
     int isNew;
     Interp *iPtr;
@@ -4430,8 +4422,8 @@ RecordByteCodeStats(
     statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
-    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes += (double)

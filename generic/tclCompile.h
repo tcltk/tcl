@@ -843,7 +843,7 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     const char *name;		/* Name of instruction. */
-    Tcl_Size numBytes;		/* Total number of bytes for instruction. */
+    int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
@@ -1114,7 +1114,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 			    int range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
-MODULE_SCOPE int	TclLog2(int value);
+MODULE_SCOPE int	TclLog2(long long value);
 #endif
 MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
