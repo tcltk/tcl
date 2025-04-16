@@ -399,6 +399,8 @@ Tcl_ProcObjCmd(
  *----------------------------------------------------------------------
  */
 
+static const char TOOMANYARGS[] = "TOOMANYARGS";
+
 int
 TclCreateProc(
     Tcl_Interp *interp,		/* Interpreter containing proc. */
@@ -415,6 +417,7 @@ TclCreateProc(
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0, result;
+    const char *errorCode = NULL;
 
     ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -502,8 +505,7 @@ TclCreateProc(
 		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "d entries, "
 		    "precompiled header expects %" TCL_SIZE_MODIFIER "d", procName, numArgs,
 		    procPtr->numArgs));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "BYTECODELIES", (char *)NULL);
+	    errorCode = "BYTECODELIES";
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -532,15 +534,13 @@ TclCreateProc(
 	    Tcl_AppendObjToObj(errorObj, argArray[i]);
 	    Tcl_AppendToObj(errorObj, "\"", -1);
 	    Tcl_SetObjResult(interp, errorObj);
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (char *)NULL);
+	    errorCode = "FORMALARGUMENTFORMAT";
 	    goto procError;
 	}
 	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-		    "FORMALARGUMENTFORMAT", (char *)NULL);
+	    errorCode = "FORMALARGUMENTFORMAT";
 	    goto procError;
 	}
 
@@ -558,8 +558,7 @@ TclCreateProc(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "formal parameter \"%s\" is an array element",
 			    TclGetString(fieldValues[0])));
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "FORMALARGUMENTFORMAT", (char *)NULL);
+		    errorCode = "FORMALARGUMENTFORMAT";
 		    goto procError;
 		}
 	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
@@ -568,8 +567,7 @@ TclCreateProc(
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
 		Tcl_SetObjResult(interp, errorObj);
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"FORMALARGUMENTFORMAT", (char *)NULL);
+		errorCode = "FORMALARGUMENTFORMAT";
 		goto procError;
 	    }
 	    argnamei++;
@@ -596,8 +594,7 @@ TclCreateProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			"BYTECODELIES", (char *)NULL);
+		errorCode = "BYTECODELIES";
 		goto procError;
 	    }
 
@@ -618,8 +615,7 @@ TclCreateProc(
 		    Tcl_AppendToObj(errorObj, "\" has "
 			"default value inconsistent with precompiled body", -1);
 		    Tcl_SetObjResult(interp, errorObj);
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
-			    "BYTECODELIES", (char *)NULL);
+		    errorCode = "BYTECODELIES";
 		    goto procError;
 		}
 	    }
@@ -637,8 +633,14 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)Tcl_Alloc(
+	    localPtr = (CompiledLocal *)Tcl_AttemptAlloc(
 		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
+	    if (!localPtr) {
+		/* Don't set the interp result here. Since a malloc just failed,
+		 * first clean up some memory before doing that */
+		errorCode = TOOMANYARGS;
+		goto procError;
+	    }
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -686,6 +688,15 @@ TclCreateProc(
 	    Tcl_Free(localPtr);
 	}
 	Tcl_Free(procPtr);
+    }
+    if (errorCode) {
+	if (errorCode == TOOMANYARGS) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "procedure \"%s\": arg list contains too many (%"
+		    TCL_SIZE_MODIFIER "d) entries", procName, numArgs));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+		errorCode, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -766,7 +777,8 @@ TclObjGetFrame(
 				 * global frame indicated). */
 {
     Interp *iPtr = (Interp *) interp;
-    int curLevel, level, result;
+    int curLevel;
+    int result, level;
     const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
@@ -1632,7 +1644,7 @@ TclNRInterpProc(
     }
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
-
+
 static int
 NRInterpProc(
     void *clientData,		/* Record describing procedure to be

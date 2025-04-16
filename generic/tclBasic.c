@@ -2735,7 +2735,7 @@ cmdWrapperProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return info->proc(info->clientData, interp, objc, objv);
+    return info->proc(info->clientData, interp, (int)objc, objv);
 }
 
 static void
@@ -5642,7 +5642,7 @@ void
 TclAdvanceContinuations(
     Tcl_Size *line,
     Tcl_Size **clNextPtrPtr,
-    int loc)
+    Tcl_Size loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if any.
@@ -7686,7 +7686,7 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
+	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.

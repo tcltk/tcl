@@ -232,13 +232,6 @@ typedef struct TclVarHashTable {
 } TclVarHashTable;
 
 /*
- * This is for itcl - it likes to search our varTables directly :(
- */
-
-#define TclVarHashFindVar(tablePtr, key) \
-    TclVarHashCreateVar((tablePtr), (key), NULL)
-
-/*
  * Define this to reduce the amount of space that the average namespace
  * consumes by only allocating the table of child namespaces when necessary.
  * Defining it breaks compatibility for Tcl extensions (e.g., itcl) which
@@ -2177,7 +2170,7 @@ typedef struct Interp {
 				 * invoking context of the bytecode compiler.
 				 * NULL when the byte code compiler is not
 				 * active. */
-    int invokeWord;		/* Index of the word in the command which
+    Tcl_Size invokeWord;	/* Index of the word in the command which
 				 * is getting compiled. */
     Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
 				 * defined procedure the location information
@@ -3314,7 +3307,7 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
-			    int loc);
+			    Tcl_Size loc);
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
@@ -3348,7 +3341,7 @@ MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
 MODULE_SCOPE int	TclChannelGetBlockingMode(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
-			    Var *arrayPtr, Tcl_Obj *name, int index);
+			    Var *arrayPtr, Tcl_Obj *name, Tcl_Size index);
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
@@ -3536,7 +3529,7 @@ MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
 MODULE_SCOPE Tcl_Size	TclMaxListLength(const char *bytes, Tcl_Size numBytes,
 			    const char **endPtr);
-MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
+MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE Tcl_Obj *	TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
@@ -3545,13 +3538,13 @@ MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
-			    const char *reason, int index);
+			    const char *reason, Tcl_Size index);
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const objv[],
 			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
-MODULE_SCOPE int	TclParseBackslash(const char *src,
+MODULE_SCOPE Tcl_Size TclParseBackslash(const char *src,
 			    Tcl_Size numBytes, Tcl_Size *readPtr, char *dst);
 MODULE_SCOPE int	TclParseCommand(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, int flags, Tcl_Parse *parsePtr);
@@ -3803,7 +3796,7 @@ MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Command TclInitHamtCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, int index, int pathc,
+			    Tcl_Obj *part2Ptr, Tcl_Size index, Tcl_Size pathc,
 			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
@@ -4094,25 +4087,25 @@ MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
 			    int flags, const char *msg,
 			    int createPart1, int createPart2,
-			    Var *arrayPtr, int index);
+			    Var *arrayPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, int flags, int index);
+			    Tcl_Obj *part2Ptr, int flags, Tcl_Size index);
 MODULE_SCOPE Tcl_Obj *	TclPtrSetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-			    int flags, int index);
+			    int flags, Tcl_Size index);
 MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-			    int flags, int index);
+			    int flags, Tcl_Size index);
 MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
 			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
 			    int index);
 MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, int flags,
-			    int index);
+			    Tcl_Size index);
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,
 			    Tcl_HashTable *tablePtr);
@@ -4123,7 +4116,7 @@ MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,
 
 MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 			    Var *varPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-			    int flags, int leaveErrMsg, int index);
+			    int flags, int leaveErrMsg, Tcl_Size index);
 
 /*
  * So tclObj.c and tclDictObj.c can share these implementations.
@@ -4609,7 +4602,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
     do {								\
 	Tcl_Obj *bignumObj = (objPtr);					\
 	int bignumPayload =						\
-		PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
+		(int)PTR2INT(bignumObj->internalRep.twoPtrValue.ptr2);	\
 	if (bignumPayload == -1) {					\
 	    (bignum) = *((mp_int *) bignumObj->internalRep.twoPtrValue.ptr1); \
 	} else {							\

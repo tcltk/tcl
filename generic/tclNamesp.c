@@ -199,18 +199,18 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
 static inline Tcl_HashEntry *
 CreateChildEntry(
     Namespace *nsPtr,		/* Parent namespace. */
-    const char *name,		/* Simple name to look for. */
-    int *isNewPtr)		/* Pointer to var with whether this is new. */
+    const char *name)		/* Simple name to look for. */
 {
+    int newEntry;
 #ifndef BREAK_NAMESPACE_COMPAT
-    return Tcl_CreateHashEntry(&nsPtr->childTable, name, isNewPtr);
+    return Tcl_CreateHashEntry(&nsPtr->childTable, name, &newEntry);
 #else
-    if )nsPtr->childTablePtr == NULL) {
+    if (nsPtr->childTablePtr == NULL) {
 	nsPtr->childTablePtr = (Tcl_HashTable *)
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nsPtr->childTablePtr, TCL_STRING_KEYS);
     }
-    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, isNewPtr);
+    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, &newEntry);
 #endif
 }
 
@@ -786,7 +786,6 @@ Tcl_CreateNamespace(
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     Tcl_DString *namePtr, *buffPtr;
-    int newEntry;
     Tcl_Size nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     const char *nameStr;
@@ -914,7 +913,7 @@ Tcl_CreateNamespace(
     nsPtr->earlyDeleteProc = NULL;
 
     if (parentPtr != NULL) {
-	entryPtr = CreateChildEntry(parentPtr, simpleName, &newEntry);
+	entryPtr = CreateChildEntry(parentPtr, simpleName);
 	Tcl_SetHashValue(entryPtr, nsPtr);
     } else {
 	/*
@@ -2074,8 +2073,7 @@ Tcl_ForgetImport(
 	     */
 
 	    Command *cmdPtr = (Command *) token;
-	    ImportedCmdData *dataPtr = (ImportedCmdData *)
-		    cmdPtr->objClientData;
+	    ImportedCmdData *dataPtr = (ImportedCmdData *)cmdPtr->objClientData;
 	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
 
 	    if (firstToken == origin) {
@@ -3852,7 +3850,8 @@ NamespaceForgetCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *pattern;
-    int i, result;
+    int i;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern pattern...?");
@@ -3918,8 +3917,8 @@ NamespaceImportCmd(
 {
     int allowOverwrite = 0;
     const char *string, *pattern;
-    int i, result;
-    int firstArg;
+    int i, firstArg;
+    int result;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-force? ?pattern pattern...?");
