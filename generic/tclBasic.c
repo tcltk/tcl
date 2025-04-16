@@ -9707,11 +9707,10 @@ TclNRCoroutineObjCmd(
 
 	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
 		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
-	    int isNew;
 	    Tcl_HashEntry *newPtr =
 		    Tcl_CreateHashEntry(corPtr->lineLABCPtr,
 		    Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
-		    &isNew);
+		    NULL);
 
 	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));
 	}

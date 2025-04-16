@@ -387,7 +387,7 @@ AdvanceJumps(
 	case INST_JUMP_TRUE4:
 	case INST_JUMP_FALSE4:
 	    Tcl_InitHashTable(&jumps, TCL_ONE_WORD_KEYS);
-	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), &isNew);
+	    Tcl_CreateHashEntry(&jumps, INT2PTR(0), NULL);
 	    for (offset = TclGetInt4AtPtr(currentInstPtr + 1); offset!=0 ;) {
 		Tcl_CreateHashEntry(&jumps, INT2PTR(offset), &isNew);
 		if (!isNew) {

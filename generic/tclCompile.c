@@ -2835,7 +2835,6 @@ TclInitByteCode(
 #endif
     Tcl_Size i, numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int isNew;
     Interp *iPtr;
 
     if (envPtr->iPtr == NULL) {
@@ -2952,7 +2951,7 @@ TclInitByteCode(
      */
 
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
-	    &isNew), envPtr->extCmdMapPtr);
+	    NULL), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
 
     /* We've used up the CompileEnv.  Mark as uninitialized. */

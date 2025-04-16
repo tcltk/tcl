@@ -818,7 +818,7 @@ InfoCommandsCmd(
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		(void) Tcl_CreateHashEntry(&addedCommandsTable,
-			elemObjPtr, &isNew);
+			elemObjPtr, NULL);
 	    }
 	    entryPtr = Tcl_NextHashEntry(&search);
 	}
