@@ -191,7 +191,7 @@ static Tcl_NRPostProc   ArrayForLoopCallback;
 static Tcl_ObjCmdProc	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
-			    Var *varPtr, int flags, int index);
+			    Var *varPtr, int flags, Tcl_Size index);
 static int		LocateArray(Tcl_Interp *interp, Tcl_Obj *name,
 			    Var **varPtrPtr, int *isArrayPtr);
 static int		NotArrayError(Tcl_Interp *interp, Tcl_Obj *name);
@@ -201,12 +201,12 @@ static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 static int		ObjMakeUpvar(Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *otherP1Ptr,
 			    const char *otherP2, int otherFlags,
-			    Tcl_Obj *myNamePtr, int myFlags, int index);
+			    Tcl_Obj *myNamePtr, int myFlags, Tcl_Size index);
 static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 			    Tcl_Obj *varNamePtr, Tcl_Obj *handleObj);
 static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Interp *iPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, int flags, int index);
+			    Tcl_Obj *part2Ptr, int flags, Tcl_Size index);
 
 /*
  * TIP #508: [array default]
@@ -607,7 +607,8 @@ TclObjLookupVarEx(
     Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     const char *errMsg = NULL;
-    int index, parsed = 0;
+    int index;
+    int parsed = 0;
 
     Tcl_Size localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
@@ -1072,7 +1073,7 @@ TclLookupArrayElement(
 				 * element, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var *arrayPtr,		/* Pointer to the array's Var structure. */
-    int index)			/* If >=0, the index of the local array. */
+    Tcl_Size index)		/* If >=0, the index of the local array. */
 {
     int isNew;
     Var *varPtr;
@@ -1384,7 +1385,7 @@ TclPtrGetVarIdx(
 				 * in the array part1. */
     int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -1912,7 +1913,7 @@ TclPtrSetVarIdx(
     Tcl_Obj *newValuePtr,	/* New value for variable. */
     int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
-    int index)			/* Index of local var where part1 is to be
+    Tcl_Size index)		/* Index of local var where part1 is to be
 				 * found. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -2229,7 +2230,7 @@ TclPtrIncrObjVarIdx(
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -2464,7 +2465,7 @@ TclPtrUnsetVarIdx(
     int flags,			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
@@ -2550,7 +2551,7 @@ UnsetVarStruct(
     Tcl_Obj *part1Ptr,
     Tcl_Obj *part2Ptr,
     int flags,
-    int index)
+    Tcl_Size index)
 {
     Var dummyVar;
     int traced = TclIsVarTraced(varPtr)
@@ -2735,7 +2736,8 @@ Tcl_UnsetObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, flags = TCL_LEAVE_ERR_MSG;
+    int i;
+    int flags = TCL_LEAVE_ERR_MSG;
     const char *name;
 
     if (objc == 1) {
@@ -4486,7 +4488,7 @@ ObjMakeUpvar(
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index)			/* If the variable to be linked is an indexed
+    Tcl_Size index)		/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
@@ -4944,7 +4946,8 @@ Tcl_GlobalObjCmd(
     Tcl_Obj *objPtr, *tailPtr;
     const char *varName;
     const char *tail;
-    int result, i;
+    int result;
+    int i;
 
     /*
      * If we are not executing inside a Tcl procedure, just return.
@@ -5048,7 +5051,8 @@ Tcl_VariableObjCmd(
     const char *varName, *tail, *cp;
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varValuePtr;
-    int i, result;
+    int i;
+    int result;
     Tcl_Obj *varNamePtr, *tailPtr;
 
     for (i=1 ; i<objc ; i+=2) {
@@ -5577,7 +5581,7 @@ DeleteArray(
     int flags,			/* Flags to pass to TclCallVarTraces:
 				 * TCL_TRACE_UNSETS and sometimes
 				 * TCL_NAMESPACE_ONLY or TCL_GLOBAL_ONLY. */
-    int index)
+    Tcl_Size index)
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *tPtr;
@@ -5694,7 +5698,7 @@ TclObjVarErrMsg(
     const char *operation,	/* String describing operation that failed,
 				 * e.g. "read", "set", or "unset". */
     const char *reason,		/* String describing why operation failed. */
-    int index)			/* Index into the local variable table of the
+    Tcl_Size index)		/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {

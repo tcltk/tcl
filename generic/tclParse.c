@@ -129,7 +129,7 @@ static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr, char *typePtr);
 static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr);
-static int		ParseHex(const char *src, Tcl_Size numBytes,
+static Tcl_Size		ParseHex(const char *src, Tcl_Size numBytes,
 			    int *resultPtr);
 
 /*
@@ -724,7 +724,7 @@ TclParseAllWhiteSpace(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 ParseHex(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */
@@ -779,7 +779,7 @@ ParseHex(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclParseBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
@@ -1329,7 +1329,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     const char *src;
-    int varIndex;
+    Tcl_Size varIndex;
     unsigned array;
 
     if (numBytes < 0 && start) {
@@ -2166,7 +2166,7 @@ TclSubstTokens(
     for (; count>0 && code==TCL_OK ; count--, tokenPtr++) {
 	Tcl_Obj *appendObj = NULL;
 	const char *append = NULL;
-	int appendByteLength = 0;
+	Tcl_Size appendByteLength = 0;
 	char utfCharBytes[4] = "";
 
 	switch (tokenPtr->type) {
