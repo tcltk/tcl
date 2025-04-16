@@ -95,7 +95,6 @@ TclCompileGlobalCmd(
     Tcl_LVTIndex localIndex;
     int numWords, i;
 
-    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
@@ -926,6 +925,7 @@ TclCompileLassignCmd(
     Tcl_Token *tokenPtr;
     int isScalar, numWords = (int) parsePtr->numWords, idx;
     Tcl_LVTIndex localIndex;
+    /* TODO: Consider support for compiling expanded args. */
 
     /*
      * Check for command syntax error, but we'll punt that to runtime.
@@ -1091,6 +1091,7 @@ TclCompileLindexCmd(
  * TclCompileListCmd --
  *
  *	Procedure called to compile the "list" command.
+ *	Handles argument expansion directly.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -2727,6 +2728,7 @@ TclCompileObjectNextCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
+    /* TODO: Consider support for compiling expanded args. */
 
     for (i=0 ; i<(int)parsePtr->numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
@@ -2747,6 +2749,7 @@ TclCompileObjectNextToCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
+    /* TODO: Consider support for compiling expanded args. */
 
     if ((int)parsePtr->numWords < 2) {
 	return TCL_ERROR;

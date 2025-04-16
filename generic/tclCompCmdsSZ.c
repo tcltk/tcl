@@ -216,6 +216,7 @@ TclCompileStringCatCmd(
     int i, numWords = parsePtr->numWords, numArgs;
     Tcl_Token *wordTokenPtr;
     Tcl_Obj *obj, *folded;
+    /* TODO: Consider support for compiling expanded args. */
 
     /* Trivial case, no arg */
 
@@ -3902,6 +3903,7 @@ TclCompileYieldToCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     int i;
 
+    /* TODO: Consider support for compiling expanded args. */
     if ((int)parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
