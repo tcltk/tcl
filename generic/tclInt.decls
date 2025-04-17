@@ -636,6 +636,10 @@ declare 257 {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
+declare 259 {
+    int TclMSB(unsigned long long n)
+}
+
 declare 261 {
     void TclUnusedStubEntry(void)
 }
