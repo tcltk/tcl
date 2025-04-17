@@ -2314,7 +2314,7 @@ RequiredPrecision(
     unsigned int wi;
 
     if (sizeof(Tcl_WideUInt) <= sizeof(long long)) {
-	return 1 + ( w ? TclLog2((long long) w) : 0);
+	return  w ? 1 + TclLog2((long long) w) : 0;
     }
 
    /* TODO: Are there any circumstances where we will continue
