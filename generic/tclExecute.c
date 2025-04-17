@@ -9565,7 +9565,7 @@ TclLog2(
 {
     int result = 0;
 
-    if (value > 0x7FFFFF) {
+    if (value > 0x7FFFFFFF) {
 	return 31;
     }
     if (value > 0xFFFF) {
