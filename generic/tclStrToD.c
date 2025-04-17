@@ -2310,40 +2310,9 @@ static int
 RequiredPrecision(
     Tcl_WideUInt w)		/* Number to interrogate. */
 {
-    int rv;
-    unsigned int wi;
+    /* assert(sizeof(Tcl_WideUInt) <= sizeof(long long)) */
 
-    if (sizeof(Tcl_WideUInt) <= sizeof(long long)) {
-	return  w ? 1 + TclLog2((long long) w) : 0;
-    }
-
-   /* TODO: Are there any circumstances where we will continue
-    * to the alternative below? */
-
-    if (w & ((Tcl_WideUInt)0xFFFFFFFF << 32)) {
-	wi = (unsigned int)(w >> 32); rv = 32;
-    } else {
-	wi = (unsigned int)w; rv = 0;
-    }
-    if (wi & 0xFFFF0000) {
-	wi >>= 16; rv += 16;
-    }
-    if (wi & 0xFF00) {
-	wi >>= 8; rv += 8;
-    }
-    if (wi & 0xF0) {
-	wi >>= 4; rv += 4;
-    }
-    if (wi & 0xC) {
-	wi >>= 2; rv += 2;
-    }
-    if (wi & 0x2) {
-	wi >>= 1; ++rv;
-    }
-    if (wi & 0x1) {
-	++rv;
-    }
-    return rv;
+    return  w ? 1 + TclLog2((long long) w) : 0;
 }
 
 /*
