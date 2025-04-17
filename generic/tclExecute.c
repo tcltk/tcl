@@ -9585,7 +9585,6 @@ TclLog2(
 	result += 2;
     }
     if (value > 0x1) {
-	value >>= 1;
 	result++;
     }
     return result;
@@ -9938,7 +9937,7 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (ui = minSizeDecade;  ui <= maxSizeDecade;  i++) {
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
 	decadeHigh = (1 << (ui+1)) - 1;
 	sum += statsPtr->byteCodeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
