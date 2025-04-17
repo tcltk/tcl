@@ -64,8 +64,8 @@ static void markst(struct subre *);
 static void cleanst(struct vars *);
 static long nfatree(struct vars *, struct subre *, FILE *);
 static long nfanode(struct vars *, struct subre *, FILE *);
-static int newlacon(struct vars *, struct state *, struct state *, int);
-static void freelacons(struct subre *, int);
+static size_t newlacon(struct vars *, struct state *, struct state *, size_t);
+static void freelacons(struct subre *, size_t);
 static void rfree(regex_t *);
 static void dump(regex_t *, FILE *);
 static void dumpst(struct subre *, FILE *, int);
@@ -789,11 +789,11 @@ parseqatom(
     struct state *s;		/* temporaries for new states */
     struct state *s2;
 #define	ARCV(t, val)	newarc(v->nfa, t, val, lp, rp)
-    int m, n;
+    size_t m, n;
     struct subre *atom;		/* atom's subtree */
     struct subre *t;
     int cap;			/* capturing parens? */
-    int pos;			/* positive lookahead? */
+    size_t pos;			/* positive lookahead? */
     size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
@@ -1944,16 +1944,16 @@ nfanode(
 
 /*
  - newlacon - allocate a lookahead-constraint subRE
- ^ static int newlacon(struct vars *, struct state *, struct state *, int);
+ ^ static size_t newlacon(struct vars *, struct state *, struct state *, size_t);
  */
-static int			/* lacon number */
+static size_t		/* lacon number */
 newlacon(
     struct vars *v,
     struct state *begin,
     struct state *end,
-    int pos)
+    size_t pos)
 {
-    int n;
+    size_t n;
     struct subre *newlacons;
     struct subre *sub;
 
@@ -1988,10 +1988,10 @@ newlacon(
 static void
 freelacons(
     struct subre *subs,
-    int n)
+    size_t n)
 {
     struct subre *sub;
-    int i;
+    size_t i;
 
     assert(n > 0);
     for (sub=subs+1, i=n-1; i>0; sub++, i--) {	/* no 0th */
@@ -2135,7 +2135,7 @@ stdump(
 	fprintf(f, " UNUSED");
     }
     if (t->subno != 0) {
-	fprintf(f, " (#%d)", t->subno);
+	fprintf(f, " (#%" TCL_Z_MODIFIER "d)", t->subno);
     }
     if (t->min != 1 || t->max != 1) {
 	fprintf(f, " {%d,", t->min);

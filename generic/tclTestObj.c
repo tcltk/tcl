@@ -1670,7 +1670,7 @@ TestbigdataCmd (
 	Tcl_DStringSetLength(&ds, len);/* Also stores \0 at index len+1 */
 	s = Tcl_DStringValue(&ds);
 	for (i = 0; i < len; ++i) {
-	    s[i] = '0' + (i % PATTERN_LEN);
+	    s[i] = '0' + (char)(i % PATTERN_LEN);
 	}
 	if (split >= 0) {
 	    assert(split < len);
@@ -1682,7 +1682,7 @@ TestbigdataCmd (
 	objPtr = Tcl_NewByteArrayObj(NULL, len);
 	p = Tcl_GetByteArrayFromObj(objPtr, &len);
 	for (i = 0; i < len; ++i) {
-	    p[i] = '0' + (i % PATTERN_LEN);
+	    p[i] = (char)('0' + (i % PATTERN_LEN));
 	}
 	if (split >= 0) {
 	    assert(split < len);
@@ -1840,8 +1840,8 @@ TestisemptyCmd (
 {
     Tcl_Obj *result;
     if (objc != 2) {
-    	Tcl_WrongNumArgs(interp, 1, objv, "value");
-    	return TCL_ERROR;
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
     }
     result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
