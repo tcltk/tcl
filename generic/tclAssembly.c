@@ -470,6 +470,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
     {"swap",		ASSEM_1BYTE,	INST_SWAP,		2,	2},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
+    {"tclooId",		ASSEM_1BYTE,	INST_TCLOO_ID,		1,	1},
     {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
     {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
