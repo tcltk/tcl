@@ -62,8 +62,6 @@ typedef enum BasicBlockCatchState {
  */
 
 typedef struct BasicBlock {
-    int originalStartOffset;	/* Instruction offset before JUMP1s were
-				 * substituted with JUMP4's */
     int startOffset;		/* Instruction offset of the start of the
 				 * block */
     int startLine;		/* Line number in the input script of the
@@ -2556,8 +2554,7 @@ AllocBB(
     CompileEnv* envPtr = assemEnvPtr->envPtr;
     BasicBlock *bb = (BasicBlock*)Tcl_Alloc(sizeof(BasicBlock));
 
-    bb->originalStartOffset =
-	    bb->startOffset = CurrentOffset(envPtr);
+    bb->startOffset = CurrentOffset(envPtr);
     bb->startLine = assemEnvPtr->cmdLine + 1;
     bb->jumpOffset = -1;
     bb->jumpLine = -1;
