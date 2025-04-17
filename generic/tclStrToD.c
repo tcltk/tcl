@@ -2312,7 +2312,7 @@ RequiredPrecision(
 {
     /* assert(sizeof(Tcl_WideUInt) <= sizeof(long long)) */
 
-    return  w ? 1 + TclLog2((long long) w) : 0;
+    return  w ? 1 + TclMSB((unsigned long long) w) : 0;
 }
 
 /*

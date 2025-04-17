@@ -4611,6 +4611,40 @@ TclReToGlob(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclMSB --
+ *
+ *	Given a unsigned long long non-zero value n, return the index of
+ *	the most significant bit in n that is set.  This is equivalent to
+ *	returning trunc(log2(n)).  It's also equivalent to the largest
+ *	integer k such that 2^k <= n.
+ *
+ * Results:
+ *	The index of the most significant set bit in n, a value between
+ *	0 and CHAR_BIT*sizeof(unsigned long long) - 1, inclusive.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMSB(
+    unsigned long long n)
+{
+    int k = 0;
+
+    assert( n > 0);
+
+    while (n >>= 1) {
+	k++;
+    }
+    return k;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
