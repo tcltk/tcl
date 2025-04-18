@@ -6105,7 +6105,7 @@ TclEvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)		/* Index of the word which is in objPtr. */
+    int word)			/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);

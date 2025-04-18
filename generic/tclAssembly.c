@@ -66,7 +66,7 @@ typedef struct BasicBlock {
 				 * substituted with JUMP4's */
     int startOffset;		/* Instruction offset of the start of the
 				 * block */
-    int startLine;		/* Line number in the input script of the
+    Tcl_Size startLine;		/* Line number in the input script of the
 				 * instruction at the start of the block */
     int jumpOffset;		/* Bytecode offset of the 'jump' instruction
 				 * that ends the block, or -1 if there is no
