@@ -273,7 +273,7 @@ typedef void *ClientData;
  *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
  */
 
-#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
@@ -284,12 +284,8 @@ typedef void *ClientData;
 #   endif
 #endif
 
-#ifndef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE		long long
-#endif /* !TCL_WIDE_INT_TYPE */
-
-typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
-typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
+typedef long long		Tcl_WideInt;
+typedef unsigned long long	Tcl_WideUInt;
 
 #ifndef TCL_LL_MODIFIER
 #   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
