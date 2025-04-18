@@ -22,6 +22,7 @@ to the userbase.
  - [Missing libtcl?.?.dll.a in Cygwin](https://core.tcl-lang.org/tcl/tktview/dcedba)
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f)
  - [Tcl_InitStubs compatibility for 9.1](https://core.tcl-lang.org/tcl/tktview/fd8341)
+ - [proc with more than 2**31 variables](https://core.tcl-lang.org/tcl/tktview/92aeb8)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
