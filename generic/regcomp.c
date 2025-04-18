@@ -48,7 +48,7 @@ static void parseqatom(struct vars *, int, int, struct state *, struct state *, 
 static void nonword(struct vars *, int, struct state *, struct state *);
 static void word(struct vars *, int, struct state *, struct state *);
 static int scannum(struct vars *);
-static void repeat(struct vars *, struct state *, struct state *, int, int);
+static void repeat(struct vars *, struct state *, struct state *, size_t, size_t);
 static void bracket(struct vars *, struct state *, struct state *);
 static void cbracket(struct vars *, struct state *, struct state *);
 static void brackpart(struct vars *, struct state *, struct state *);
@@ -205,7 +205,7 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    size_t nextvalue;		/* value (if any) of next token */
+    chr nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
     size_t nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
@@ -792,7 +792,7 @@ parseqatom(
     size_t m, n;
     struct subre *atom;		/* atom's subtree */
     struct subre *t;
-    int cap;			/* capturing parens? */
+    size_t cap;			/* capturing parens? */
     size_t pos;			/* positive lookahead? */
     size_t subno;		/* capturing-parens or backref number */
     int atomtype;
@@ -1094,7 +1094,7 @@ parseqatom(
 	if (atom != NULL) {
 	    freesubre(v, atom);
 	}
-	top->flags = f;
+	top->flags = (char)f;
 	return;
     }
 
@@ -1346,13 +1346,13 @@ repeat(
     struct vars *v,
     struct state *lp,
     struct state *rp,
-    int m,
-    int n)
+    size_t m,
+    size_t n)
 {
 #define	SOME		2
 #define	INF		3
 #define	PAIR(x, y)	((x)*4 + (y))
-#define	REDUCE(x)	( ((x) == DUPINF) ? INF : (((x) > 1) ? SOME : (x)) )
+#define	REDUCE(x)	( ((x) == DUPINF) ? INF : (((x) > 1) ? SOME : (int)(x)) )
     const int rm = REDUCE(m);
     const int rn = REDUCE(n);
     struct state *s, *s2;
@@ -1660,7 +1660,7 @@ dovec(
 {
     chr ch, from, to;
     const chr *p;
-    int i;
+    size_t i;
 
     for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
 	ch = *p;
@@ -1744,8 +1744,8 @@ sub_re(
 
     assert(strchr("=b|.*(", op) != NULL);
 
-    ret->op = op;
-    ret->flags = flags;
+    ret->op = (char)op;
+    ret->flags = (char)flags;
     ret->id = 0;		/* will be assigned later */
     ret->subno = 0;
     ret->min = ret->max = 1;

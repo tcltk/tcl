@@ -171,8 +171,8 @@ exec(
 {
     AllocVars(v);
     int st, backref;
-    int n;
-    int i;
+    size_t n;
+    size_t i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define LOCALDFAS	40
