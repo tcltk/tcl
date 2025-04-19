@@ -42,10 +42,10 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    Tcl_Size numWords, Tcl_Token **bodyToken,
-			    Tcl_Size *bodyLines, Tcl_Size **bodyNext);
+			    int *bodyLines, Tcl_Size **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Size numWords,
-			    Tcl_Token **bodyToken, Tcl_Size *bodyLines,
+			    Tcl_Token **bodyToken, int *bodyLines,
 			    Tcl_Size **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
@@ -1516,12 +1516,12 @@ TclSubstCompile(
     const char *bytes,
     Tcl_Size numBytes,
     int flags,
-    Tcl_Size line,
+    int line,
     CompileEnv *envPtr)
 {
     Tcl_Token *endTokenPtr, *tokenPtr;
     Tcl_Size breakOffset = 0, count = 0;
-    Tcl_Size bline = line;
+    int bline = line;
     Tcl_Parse parse;
     Tcl_InterpState state = NULL;
 
@@ -1798,7 +1798,7 @@ TclCompileSwitchCmd(
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines;	/* Array of line numbers for body list
+    int *bodyLines;	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
@@ -1944,7 +1944,7 @@ TclCompileSwitchCmd(
     if (numWords == 1) {
 	const char *bytes;
 	Tcl_Size maxLen, numBytes;
-	Tcl_Size bline;		/* TIP #280: line of the pattern/action list,
+	int bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
 				 * the value we switch on. */
@@ -1962,7 +1962,7 @@ TclCompileSwitchCmd(
 	}
 	bodyTokenArray = (Tcl_Token *)Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
 	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size) * maxLen);
+	bodyLines = (int *)Tcl_Alloc(sizeof(int) * maxLen);
 	bodyContLines = (Tcl_Size **)Tcl_Alloc(sizeof(Tcl_Size*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
@@ -2023,7 +2023,7 @@ TclCompileSwitchCmd(
 	 */
 
 	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size) * numWords);
+	bodyLines = (int *)Tcl_Alloc(sizeof(int) * numWords);
 	bodyContLines = (Tcl_Size **)Tcl_Alloc(sizeof(Tcl_Size*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
@@ -2118,7 +2118,7 @@ IssueSwitchChainedTests(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
+    int *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
@@ -2366,7 +2366,7 @@ IssueSwitchJumpTable(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    Tcl_Size *bodyLines,	/* Array of line numbers for body list
+    int *bodyLines,	/* Array of line numbers for body list
 				 * items. */
     Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
