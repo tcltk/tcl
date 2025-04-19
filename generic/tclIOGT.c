@@ -56,7 +56,7 @@ typedef struct TransformChannelData TransformChannelData;
 
 static int		ExecuteCallback(TransformChannelData *ctrl,
 			    Tcl_Interp *interp, unsigned char *op,
-			    unsigned char *buf, int bufLen, int transmit,
+			    unsigned char *buf, Tcl_Size bufLen, int transmit,
 			    int preserve);
 
 /*
@@ -366,7 +366,7 @@ ExecuteCallback(
     Tcl_Interp *interp,		/* Current interpreter, possibly NULL. */
     unsigned char *op,		/* Operation invoking the callback. */
     unsigned char *buf,		/* Buffer to give to the script. */
-    int bufLen,			/* And its length. */
+    Tcl_Size bufLen,		/* And its length. */
     int transmit,		/* Flag, determines whether the result of the
 				 * callback is sent to the underlying channel
 				 * or not. */
@@ -637,7 +637,8 @@ TransformInputProc(
     int *errorCodePtr)
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
-    int gotBytes, read, copied;
+    int gotBytes, copied;
+    Tcl_Size read;
     Tcl_Channel downChan;
 
     /*

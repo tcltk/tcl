@@ -1130,8 +1130,8 @@ MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
 MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist,
+			    Tcl_Size distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
@@ -1151,14 +1151,14 @@ MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
-			    int range);
+			    Tcl_Size range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(long long value);
 #endif
-MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
+MODULE_SCOPE Tcl_Size	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE Tcl_Size	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -1174,7 +1174,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, Tcl_Size maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
-			    int flags, int *localIndexPtr,
+			    int flags, Tcl_Size *localIndexPtr,
 			    int *isScalarPtr);
 MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
@@ -1212,7 +1212,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 /*
  * Simplified form to access AuxData.
  *
- * void *TclFetchAuxData(CompileEng *envPtr, int index);
+ * void *TclFetchAuxData(CompileEng *envPtr, Tcl_Size index);
  */
 
 #define TclFetchAuxData(envPtr, index) \
@@ -1229,11 +1229,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  */
 static inline void
 TclAdjustStackDepth(
-    int delta,
+    Tcl_Size delta,
     CompileEnv *envPtr)
 {
     if (delta < 0) {
-	if ((int) envPtr->maxStackDepth < (int) envPtr->currStackDepth) {
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
 	    envPtr->maxStackDepth = envPtr->currStackDepth;
 	}
     }
@@ -1272,13 +1272,16 @@ TclCheckStackDepth(
 static inline void
 TclUpdateStackReqs(
     unsigned char op,
-    int i,
+    Tcl_Size i,
     CompileEnv *envPtr)
 {
     int delta = tclInstructionTable[op].stackEffect;
     if (delta) {
 	if (delta == INT_MIN) {
-	    delta = 1 - i;
+	    if (i > INT_MAX || i < INT_MIN+2) {
+		Tcl_Panic("%s: stack effect too big", "TclUpdateStackReqs");
+	    }
+	    delta = 1 - (int)i;
 	}
 	TclAdjustStackDepth(delta, envPtr);
     }
@@ -1309,7 +1312,7 @@ TclUpdateStackReqs(
 	    TclExpandCodeArray(envPtr);					\
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	TclUpdateAtCmdStart(op, envPtr);				\
+	TclUpdateAtCmdStart((unsigned char)op, envPtr);				\
 	TclUpdateStackReqs((unsigned char)op, 0, envPtr);				\
     } while (0)
 

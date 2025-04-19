@@ -3586,7 +3586,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    Tcl_Size numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    Tcl_Size count, int *tokensLeftPtr, Tcl_Size line,
+			    Tcl_Size count, Tcl_Size *tokensLeftPtr, int line,
 			    Tcl_Size *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Size	TclTrim(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim,
@@ -3995,7 +3995,7 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    int flags, Tcl_Size index);
 MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
 			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
-			    int index);
+			    Tcl_Size index);
 MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, int flags,
