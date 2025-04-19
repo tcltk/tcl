@@ -1193,6 +1193,11 @@ TclObjTypeInOperator(
     Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
     return proc(interp, valueObj, listObj, boolResult);
 }
+
+/* Function related to abstract list implementations */
+MODULE_SCOPE int
+Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **reversedPtrPtr);
+
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 /*
