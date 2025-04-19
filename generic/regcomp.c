@@ -685,7 +685,7 @@ parse(
 	NOERRN();
 	branch->left = parsebranch(v, stopper, type, left, right, 0);
 	NOERRN();
-	branch->flags |= UP(branch->flags | branch->left->flags);
+	branch->flags |= (char)(UP(branch->flags | branch->left->flags));
 	if ((branch->flags &~ branches->flags) != 0) {	/* new flags */
 	    for (t = branches; t != branch; t = t->right) {
 		t->flags |= branch->flags;
@@ -788,7 +788,7 @@ parseqatom(
 {
     struct state *s;		/* temporaries for new states */
     struct state *s2;
-#define	ARCV(t, val)	newarc(v->nfa, t, val, lp, rp)
+#define	ARCV(t, val)	newarc(v->nfa, (t), (pcolor)(val), lp, rp)
     size_t m, n;
     struct subre *atom;		/* atom's subtree */
     struct subre *t;
@@ -990,7 +990,7 @@ parseqatom(
 	break;
     case BACKREF:		/* the Feature From The Black Lagoon */
 	INSIST(type != LACON, REG_ESUBREG);
-	INSIST(v->nextvalue < v->nsubs, REG_ESUBREG);
+	INSIST((size_t)v->nextvalue < v->nsubs, REG_ESUBREG);
 	INSIST(v->subs[v->nextvalue] != NULL, REG_ESUBREG);
 	NOERR();
 	assert(v->nextvalue > 0);
@@ -1204,7 +1204,7 @@ parseqatom(
 	repeat(v, atom->begin, atom->end, m, n);
 	atom->min = (short) m;
 	atom->max = (short) n;
-	atom->flags |= COMBINE(qprefer, atom->flags);
+	atom->flags |= (char)COMBINE(qprefer, atom->flags);
 	/* rest of branch can be strung starting from atom->end */
 	s2 = atom->end;
     } else if (m == 1 && n == 1) {
@@ -1268,8 +1268,8 @@ parseqatom(
     }
     NOERR();
     assert(SEE('|') || SEE(stopper) || SEE(EOS));
-    t->flags |= COMBINE(t->flags, t->right->flags);
-    top->flags |= COMBINE(top->flags, t->flags);
+    t->flags |= (char)COMBINE(t->flags, t->right->flags);
+    top->flags |= (char)COMBINE(top->flags, t->flags);
 }
 
 /*
