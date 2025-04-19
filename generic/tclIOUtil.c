@@ -2447,7 +2447,7 @@ int
 TclFSFileAttrIndex(
     Tcl_Obj *pathPtr,		/* Pathname of the file. */
     const char *attributeName,	/* The name of the attribute. */
-    int *indexPtr)		/* A place to store the result. */
+    Tcl_Size *indexPtr)		/* A place to store the result. */
 {
     Tcl_Obj *listObj = NULL;
     const char *const *attrTable;
@@ -3311,7 +3311,7 @@ Tcl_LoadFile(
      */
 
     {
-	int index;
+	Tcl_Size index;
 	Tcl_Obj *perm;
 
 	TclNewLiteralStringObj(perm, "0700");
