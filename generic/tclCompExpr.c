@@ -740,7 +740,7 @@ ParseExpr(
 		     * Tricky case: see test expr-62.10
 		     */
 
-		    int scanned2 = scanned;
+		    Tcl_Size scanned2 = scanned;
 		    do {
 			scanned2 += TclParseAllWhiteSpace(
 				start + scanned2, numBytes - scanned2);
@@ -842,7 +842,7 @@ ParseExpr(
 
 	    Tcl_Token *tokenPtr;
 	    const char *end = start;
-	    int wordIndex;
+	    Tcl_Size wordIndex;
 	    int code = TCL_OK;
 
 	    /*
@@ -1504,13 +1504,13 @@ ConvertTreeToTokens(
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
 {
-    int subExprTokenIdx = 0;
+    Tcl_Size subExprTokenIdx = 0;
     OpNode *nodePtr = nodes;
     int next = nodePtr->right;
 
     while (1) {
 	Tcl_Token *subExprTokenPtr;
-	int scanned, parentIdx;
+	Tcl_Size scanned, parentIdx;
 	unsigned char lexeme;
 
 	/*
@@ -1577,7 +1577,7 @@ ConvertTreeToTokens(
 	     * do better.
 	     */
 
-	    int toCopy = tokenPtr->numComponents + 1;
+	    Tcl_Size toCopy = tokenPtr->numComponents + 1;
 
 	    if (tokenPtr->numComponents == tokenPtr[1].numComponents + 1) {
 		/*
@@ -2386,7 +2386,7 @@ CompileExprTree(
 		break;
 	    }
 	} else {
-	    int pc1, pc2, target;
+	    Tcl_Size pc1, pc2, target;
 
 	    switch (nodePtr->lexeme) {
 	    case START:

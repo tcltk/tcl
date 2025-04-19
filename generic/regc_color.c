@@ -412,7 +412,7 @@ newsub(
     sco = cm->cd[co].sub;
     if (sco == NOSUB) {		/* color has no open subcolor */
 	if (cm->cd[co].nchrs == 1) {	/* optimization */
-	    return co;
+	    return (color)co;
 	}
 	sco = newcolor(cm);	/* must create subcolor */
 	if (sco == COLORLESS) {
