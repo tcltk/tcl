@@ -3157,82 +3157,16 @@ Tcl_LreverseObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    Tcl_Obj **elemv;
-    Tcl_Size elemc, i, j;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
 
-    /*
-     *  Handle AbstractList special case - do not shimmer into a list, if it
-     *  supports a private Reverse function, just to reverse it.
-     */
-    if (TclObjTypeHasProc(objv[1], reverseProc)) {
-	Tcl_Obj *resultObj;
-
-	if (TclObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObj);
-	    return TCL_OK;
-	}
-    } /* end Abstract List */
-
-    if (TclListObjLength(interp, objv[1], &elemc) != TCL_OK) {
+    Tcl_Obj *resultObj = NULL;
+    if (Tcl_ListObjReverse(interp, objv[1], &resultObj) != TCL_OK) {
 	return TCL_ERROR;
     }
-
-    /*
-     * If the list is empty, just return it. [Bug 1876793]
-     */
-
-    if (!elemc) {
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
-    }
-    if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (Tcl_IsShared(objv[1])
-	    || ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
-	Tcl_Obj *resultObj, **dataArray;
-	ListRep listRep;
-
-	resultObj = Tcl_NewListObj(elemc, NULL);
-
-	/* Modify the internal rep in-place */
-	ListObjGetRep(resultObj, &listRep);
-	listRep.storePtr->numUsed = elemc;
-	dataArray = ListRepElementsBase(&listRep);
-	if (listRep.spanPtr) {
-	    /* Future proofing */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
-
-	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
-	    dataArray[j] = elemv[i];
-	    Tcl_IncrRefCount(elemv[i]);
-	}
-
-	Tcl_SetObjResult(interp, resultObj);
-    } else {
-
-	/*
-	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
-	 * returning a pointer to the live array of Tcl_Obj values.
-	 */
-
-	for (i=0,j=elemc-1 ; i<j ; i++,j--) {
-	    Tcl_Obj *tmp = elemv[i];
-
-	    elemv[i] = elemv[j];
-	    elemv[j] = tmp;
-	}
-	TclInvalidateStringRep(objv[1]);
-	Tcl_SetObjResult(interp, objv[1]);
-    }
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 
