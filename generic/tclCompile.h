@@ -185,7 +185,7 @@ typedef struct {
 typedef struct {
     Tcl_Size srcOffset;		/* Command location to find the entry. */
     Tcl_Size nline;		/* Number of words in the command */
-    Tcl_Size *line;		/* Line information for all words in the
+    int *line;		/* Line information for all words in the
 				 * command. */
     Tcl_Size **next;		/* Transient information used by the compiler
 				 * for tracking of hidden continuation
@@ -373,7 +373,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    Tcl_Size line;		/* First line of the script, based on the
+    int line;		/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -1071,7 +1071,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
  */
 
 MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    const CmdFrame *invoker, int word);
+			    const CmdFrame *invoker, Tcl_Size word);
 
 /*
  *----------------------------------------------------------------
@@ -1141,7 +1141,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    size_t numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, Tcl_Size word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1452,12 +1452,12 @@ TclUpdateStackReqs(
  * "prototypes" for this macro is:
  *
  * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ *				 Tcl_Size threshold);
  */
 
 #define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(int)(fixupPtr)->codeOffset, \
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
 	    (threshold))
 
 /*
@@ -1518,7 +1518,7 @@ TclUpdateStackReqs(
  * Convenience macros for use when compiling bodies of commands. The ANSI C
  * "prototype" for these macros are:
  *
- * static void		BODY(Tcl_Token *tokenPtr, int word);
+ * static void		BODY(Tcl_Token *tokenPtr, Tcl_Size word);
  */
 
 #define BODY(tokenPtr, word) \
@@ -1618,7 +1618,7 @@ TclUpdateStackReqs(
  * the simplest of compiles. The ANSI C "prototype" for this macro is:
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp, int word);
+ *			    Tcl_Interp *interp, Tcl_Size word);
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \

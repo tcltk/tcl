@@ -708,8 +708,8 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, Tcl_Size srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    Tcl_Size numWords, Tcl_Size line,
-			    Tcl_Size *clNext, Tcl_Size **lines,
+			    Tcl_Size numWords, int line,
+			    Tcl_Size *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -1435,7 +1435,7 @@ TclInitCompileEnv(
     const char *stringPtr,	/* The source string to be compiled. */
     size_t numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
-    int word)			/* Index of the word in that context getting
+    Tcl_Size word)			/* Index of the word in that context getting
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;
@@ -2031,7 +2031,8 @@ CompileCommandTokens(
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
-    Tcl_Size *wlines, wlineat;
+    int *wlines;
+    Tcl_Size wlineat;
     Tcl_Size cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size cmdIdx = envPtr->numCommands;
@@ -3317,15 +3318,17 @@ EnterCmdWordData(
     Tcl_Token *tokenPtr,
     const char *cmd,
     Tcl_Size numWords,
-    Tcl_Size line,
+    int line,
     Tcl_Size *clNext,
-    Tcl_Size **wlines,
+    int **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
-    Tcl_Size wordIdx, wordLine;
-    Tcl_Size *wwlines, *wordNext;
+    Tcl_Size wordIdx;
+    int wordLine;
+    int *wwlines;
+    Tcl_Size *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
@@ -3344,10 +3347,10 @@ EnterCmdWordData(
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
-    ePtr->line = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
+    ePtr->line = (int *)Tcl_Alloc(numWords * sizeof(int));
     ePtr->next = (Tcl_Size **)Tcl_Alloc(numWords * sizeof(Tcl_Size *));
     ePtr->nline = numWords;
-    wwlines = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
+    wwlines = (int *)Tcl_Alloc(numWords * sizeof(int));
 
     last = cmd;
     wordLine = line;

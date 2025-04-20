@@ -1627,7 +1627,9 @@ Tcl_Merge(
     result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
-	flagPtr[i] |= ( i ? DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= DONT_QUOTE_HASH;
+	}
 	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
@@ -2121,8 +2123,8 @@ Tcl_StringCaseMatch(
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    int p, charLen;
-    int ch1 = 0, ch2 = 0;
+    Tcl_Size charLen;
+    int p, ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2770,7 +2772,7 @@ Tcl_DStringAppendElement(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    int offset = -1;
+	    Tcl_Size offset = -1;
 
 	    /* See [16896d49fd] */
 	    if (element >= dsPtr->string
