@@ -2099,7 +2099,7 @@ TclSubstTokens(
     Tcl_Size *tokensLeftPtr,	/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,		/* The line the script starts on. */
+    Tcl_Size line,		/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
