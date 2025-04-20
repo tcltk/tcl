@@ -3586,7 +3586,8 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    Tcl_Size numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    Tcl_Size count, Tcl_Size *tokensLeftPtr, int line,
+			    Tcl_Size count, Tcl_Size *tokensLeftPtr,
+			    Tcl_Size line,
 			    Tcl_Size *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Size	TclTrim(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim,
