@@ -2941,92 +2941,24 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    Tcl_WideInt elementCount, i;
-    Tcl_Size totalElems;
-    Tcl_Obj *listPtr, **dataArray = NULL;
-
-    /*
-     * Check arguments for legality:
-     *		lrepeat count ?value ...?
-     */
+    Tcl_Size repeatCount;
+    Tcl_Obj *resultPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetWideIntFromObj(interp, objv[1], &elementCount)) {
-	return TCL_ERROR;
-    }
-    if (elementCount < 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%" TCL_LL_MODIFIER "d\": must be integer >= 0", elementCount));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
-		(char *)NULL);
+
+    if (Tcl_GetSizeIntFromObj(interp, objv[1], &repeatCount) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Skip forward to the interesting arguments now we've finished parsing.
-     */
-
-    objc -= 2;
-    objv += 2;
-
-    /* Final sanity check. Do not exceed limits on max list length. */
-
-    if (elementCount && objc > LIST_MAX/elementCount) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%" TCL_SIZE_MODIFIER "d elements) exceeded", LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    if (Tcl_ListObjRepeat(
+	    interp, repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    totalElems = objc * elementCount;
 
-    /*
-     * Get an empty list object that is allocated large enough to hold each
-     * init value elementCount times.
-     */
-
-    listPtr = Tcl_NewListObj(totalElems, NULL);
-    if (totalElems) {
-	ListRep listRep;
-	ListObjGetRep(listPtr, &listRep);
-	dataArray = ListRepElementsBase(&listRep);
-	listRep.storePtr->numUsed = totalElems;
-	if (listRep.spanPtr) {
-	    /* Future proofing in case Tcl_NewListObj returns a span */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
-    }
-
-    /*
-     * Set the elements. Note that we handle the common degenerate case of a
-     * single value being repeated separately to permit the compiler as much
-     * room as possible to optimize a loop that might be run a very large
-     * number of times.
-     */
-
-    CLANG_ASSERT(dataArray || totalElems == 0 );
-    if (objc == 1) {
-	Tcl_Obj *tmpPtr = objv[0];
-
-	tmpPtr->refCount += elementCount;
-	for (i=0 ; i<elementCount ; i++) {
-	    dataArray[i] = tmpPtr;
-	}
-    } else {
-	Tcl_Size j, k = 0;
-
-	for (i=0 ; i<elementCount ; i++) {
-	    for (j=0 ; j<objc ; j++) {
-		Tcl_IncrRefCount(objv[j]);
-		dataArray[k++] = objv[j];
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, listPtr);
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
