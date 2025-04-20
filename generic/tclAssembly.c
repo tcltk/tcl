@@ -3088,7 +3088,6 @@ ResolveJumpTableTargets(
 				 * the actual code */
     BasicBlock* jumpTargetBBPtr;
 				/* Basic block that the jump proceeds to */
-    int junk;
 
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
@@ -3112,7 +3111,7 @@ ResolveJumpTableTargets(
 	jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
 
 	realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
-		Tcl_GetHashKey(symHash, symEntryPtr), &junk);
+		Tcl_GetHashKey(symHash, symEntryPtr), NULL);
 	DEBUG_PRINT("  %s -> %s -> bb %p (pc %d)    hash entry %p\n",
 		(char *)Tcl_GetHashKey(symHash, symEntryPtr),
 		TclGetString(symbolObj), jumpTargetBBPtr,

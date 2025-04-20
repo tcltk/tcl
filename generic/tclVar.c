@@ -60,7 +60,7 @@ VarHashCreateVar(
     Tcl_Obj *key,
     int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table, key, newPtr);
+    Tcl_HashEntry *hPtr = Tcl_AttemptCreateHashEntry(&tablePtr->table, key, newPtr);
 
     if (!hPtr) {
 	return NULL;
@@ -69,7 +69,7 @@ VarHashCreateVar(
 }
 
 #define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
+    VarHashCreateVar((tablePtr), (key), TCL_HASH_FIND)
 
 #define VarHashInvalidateEntry(varPtr) \
     ((varPtr)->flags |= VAR_DEAD_HASH)
@@ -117,6 +117,7 @@ VarHashNextVar(
  */
 
 static const char NOSUCHVAR[] =		"no such variable";
+static const char MEMERROR[] =		"memory error";
 static const char ISARRAY[] =		"variable is array";
 static const char NEEDARRAY[] =		"variable isn't array";
 static const char NOSUCHELEMENT[] =	"no such element in array";
@@ -847,7 +848,7 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, result;
+    int result;
     Tcl_Size i, varLen;
     const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
@@ -959,7 +960,11 @@ TclLookupSimpleVar(
 	    } else {
 		tailPtr = varNamePtr;
 	    }
-	    varPtr = VarHashCreateVar(&varNsPtr->varTable, tailPtr, &isNew);
+	    varPtr = VarHashCreateVar(&varNsPtr->varTable, tailPtr, NULL);
+	    if (varPtr == NULL) {
+		*errMsgPtr = MEMERROR;
+		return NULL;
+	    }
 	    if (lookGlobal) {
 		/*
 		 * The variable was created starting from the global
@@ -1002,7 +1007,10 @@ TclLookupSimpleVar(
 		tablePtr->arrayPtr = varPtr;
 		varFramePtr->varTablePtr = tablePtr;
 	    }
-	    varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
+	    varPtr = VarHashCreateVar(tablePtr, varNamePtr, NULL);
+	    if (varPtr == NULL) {
+		*errMsgPtr = MEMERROR;
+	    }
 	} else {
 	    varPtr = NULL;
 	    if (tablePtr != NULL) {
@@ -1123,7 +1131,14 @@ TclLookupArrayElement(
     if (createElem) {
 	varPtr = VarHashCreateVar(arrayPtr->value.tablePtr, elNamePtr,
 		&isNew);
-	if (isNew) {
+	if (varPtr == NULL) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
+			NOSUCHELEMENT, index);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT",
+			TclGetString(elNamePtr), (char *)NULL);
+	    }
+	} else if (isNew) {
 	    if (arrayPtr->flags & VAR_SEARCH_ACTIVE) {
 		DeleteSearches((Interp *) interp, arrayPtr);
 	    }
@@ -2599,15 +2614,13 @@ UnsetVarStruct(
 	     * Otherwise just delete them.
 	     */
 
-	    int isNew;
-
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    tracePtr = (VarTrace *)Tcl_GetHashValue(tPtr);
 	    varPtr->flags &= ~VAR_ALL_TRACES;
 	    Tcl_DeleteHashEntry(tPtr);
 	    if (dummyVar.flags & VAR_TRACED_UNSET) {
 		tPtr = Tcl_CreateHashEntry(&iPtr->varTraces,
-			&dummyVar, &isNew);
+			&dummyVar, NULL);
 		Tcl_SetHashValue(tPtr, tracePtr);
 	    }
 	}
@@ -3967,13 +3980,12 @@ TclFindArrayPtrElements(
 	    varPtr!=NULL ; varPtr=VarHashNextVar(&search)) {
 	Tcl_HashEntry *hPtr;
 	Tcl_Obj *nameObj;
-	int dummy;
 
 	if (TclIsVarUndefined(varPtr)) {
 	    continue;
 	}
 	nameObj = VarHashGetKey(varPtr);
-	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, &dummy);
+	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, NULL);
 	Tcl_SetHashValue(hPtr, nameObj);
     }
 }
@@ -6737,7 +6749,10 @@ AllocVarEntry(
     Tcl_HashEntry *hPtr;
     Var *varPtr;
 
-    varPtr = (Var *)Tcl_Alloc(sizeof(VarInHash));
+    varPtr = (Var *)Tcl_AttemptAlloc(sizeof(VarInHash));
+    if (!varPtr) {
+	return NULL;
+    }
     varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     VarHashRefCount(varPtr) = 1;

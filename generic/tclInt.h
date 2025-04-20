@@ -745,6 +745,8 @@ typedef struct VarInHash {
 #define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
 
+#define TCL_HASH_FIND	((int *)-1)
+
 /*
  * Macros to ensure that various flag bits are set properly for variables.
  * The ANSI C "prototypes" for these macros are:
