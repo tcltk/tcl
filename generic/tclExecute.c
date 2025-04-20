@@ -159,22 +159,17 @@ typedef struct {
     ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 static inline Var *
-VarHashCreateVar(
+VarHashFindVar(
     TclVarHashTable *tablePtr,
-    Tcl_Obj *key,
-    int *newPtr)
+    Tcl_Obj *key)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
-	    key, newPtr);
-
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&tablePtr->table,
+	    key);
     if (!hPtr) {
 	return NULL;
     }
     return VarHashGetValue(hPtr);
 }
-
-#define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
