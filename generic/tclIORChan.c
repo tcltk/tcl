@@ -490,7 +490,7 @@ int
 TclChanCreateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
@@ -810,7 +810,7 @@ int
 TclChanPostEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -1310,7 +1310,7 @@ ReflectInput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.input.toRead;
+	return (int)p.input.toRead;
     }
 #endif
 
@@ -1354,7 +1354,7 @@ ReflectInput(
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
-    return bytec;
+    return (int)bytec;
  invalid:
     *errorCodePtr = EINVAL;
  error:
@@ -1419,7 +1419,7 @@ ReflectOutput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.output.toWrite;
+	return (int)p.output.toWrite;
     }
 #endif
 

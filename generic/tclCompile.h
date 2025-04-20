@@ -1062,7 +1062,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------
@@ -1127,7 +1127,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
-MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
+MODULE_SCOPE Tcl_Size TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, Tcl_Size jumpDist,
@@ -1181,10 +1181,10 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE Tcl_ObjCmdProc	TclSingleOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclSortingOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclVariadicOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -1365,7 +1365,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 #define TclEmitInstInt4(op, i, envPtr) \
@@ -1383,7 +1383,7 @@ TclUpdateStackReqs(
 	*(envPtr)->codeNext++ =						\
 		(unsigned char) ((unsigned int) (i)      );		\
 	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
+	TclUpdateStackReqs(op, (int)i, envPtr);				\
     } while (0)
 
 /*
