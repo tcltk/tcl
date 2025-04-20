@@ -1194,9 +1194,15 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
-/* Function related to abstract list implementations */
+/* Functions related to abstract list implementations */
 MODULE_SCOPE int
-Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **reversedPtrPtr);
+Tcl_ListObjReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr);
+MODULE_SCOPE int Tcl_ListObjRepeat(
+    Tcl_Interp *interp,
+    Tcl_Size repeatCount,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[],
+    Tcl_Obj **resultPtrPtr);
 
 #endif /* TCL_MAJOR_VERSION > 8 */
 
