@@ -93,10 +93,9 @@ TclCompileGlobalCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
     Tcl_LVTIndex localIndex;
-    int numWords, i;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
-    numWords = parsePtr->numWords;
-    if (numWords < 2) {
+    if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -122,7 +121,7 @@ TclCompileGlobalCmd(
     for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
-	if (localIndex < 0) {
+	if (localIndex < 0 || localIndex > INT_MAX) {
 	    return TCL_ERROR;
 	}
 
@@ -180,9 +179,9 @@ TclCompileIfCmd(
 				 * to the end of the "if" when that PC is
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpIndex = 0;		/* Avoid compiler warning. */
-    size_t j;
-    int numWords, wordIdx, code;
+    Tcl_Size jumpIndex = 0;	/* Avoid compiler warning. */
+    Tcl_Size j, numWords, wordIdx;
+    int code;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
@@ -190,11 +189,14 @@ TclCompileIfCmd(
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
-     * order to insure correct substitution [Bug 219166]
+     * order to ensure correct substitution [Bug 219166]
      */
 
     tokenPtr = parsePtr->tokenPtr;
     numWords = parsePtr->numWords;
+    if (numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
 
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -812,11 +814,12 @@ TclCompileLappendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, numWords = (int) parsePtr->numWords, i;
+    Tcl_Size numWords = parsePtr->numWords, i;
+    int isScalar;
     Tcl_LVTIndex localIndex;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -923,7 +926,8 @@ TclCompileLassignCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar, numWords = (int) parsePtr->numWords, idx;
+    int isScalar;
+    Tcl_Size numWords = parsePtr->numWords, idx;
     Tcl_LVTIndex localIndex;
     /* TODO: Consider support for compiling expanded args. */
 
@@ -931,7 +935,7 @@ TclCompileLassignCmd(
      * Check for command syntax error, but we'll punt that to runtime.
      */
 
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1023,14 +1027,15 @@ TclCompileLindexCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *idxTokenPtr, *valTokenPtr;
-    int i, idx, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
+    int idx;
 
     /*
      * Quit if not enough args.
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords <= 1) {
+    if (numWords <= 1 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1114,9 +1119,13 @@ TclCompileListCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
-    int i, numWords = (int) parsePtr->numWords, concat, build;
+    Tcl_Size i, numWords = parsePtr->numWords;
+    int concat, build;
     Tcl_Obj *listObj, *objPtr;
 
+    if (numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
     if (numWords == 1) {
 	/*
 	 * [list] without arguments just pushes an empty object.
@@ -1317,7 +1326,7 @@ TclCompileLinsertCmd(
     Tcl_Token *listToken, *indexToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (numWords < 3 || numWords > 0x7FFFFFFF) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1369,7 +1378,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *listToken, *firstToken, *lastToken, *tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (numWords < 4 || numWords > 0x7FFFFFFF) {
+    if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1447,21 +1456,20 @@ TclCompileLsetCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int tempDepth;		/* Depth used for emitting one part of the
+    Tcl_Size tempDepth;		/* Depth used for emitting one part of the
 				 * code burst. */
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the variable name. */
     Tcl_LVTIndex localIndex;	/* Index of var in local var table. */
     int isScalar;		/* Flag == 1 if scalar, 0 if array. */
-    int numWords = (int) parsePtr->numWords;
-    int i;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
      * Check argument count.
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -1751,7 +1759,7 @@ TclCompileNamespaceUpvarCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
     Tcl_LVTIndex localIndex;
-    int numWords = (int) parsePtr->numWords, i;
+    Tcl_Size numWords = parsePtr->numWords, i;
 
     if (envPtr->procPtr == NULL) {
 	return TCL_ERROR;
@@ -1761,7 +1769,7 @@ TclCompileNamespaceUpvarCmd(
      * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
-    if ((numWords % 2) || (numWords < 4)) {
+    if ((numWords % 2) || numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1810,7 +1818,7 @@ TclCompileNamespaceWhichCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int numWords = (int) parsePtr->numWords, idx;
+    Tcl_Size numWords = parsePtr->numWords, idx;
 
     if (numWords < 2 || numWords > 3) {
 	return TCL_ERROR;
@@ -1870,8 +1878,8 @@ TclCompileRegexpCmd(
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
     size_t len;
-    int numWords = (int) parsePtr->numWords;
-    int i, nocase, exact, sawLast, simple;
+    Tcl_Size i, numWords = parsePtr->numWords;
+    int nocase, exact, sawLast, simple;
     const char *str;
 
     /*
@@ -1881,7 +1889,7 @@ TclCompileRegexpCmd(
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
 
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2043,7 +2051,7 @@ TclCompileRegsubCmd(
      */
 
     DefineLineInformation;	/* TIP #280 */
-    int numWords = (int) parsePtr->numWords;
+    Tcl_Size numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr, *stringTokenPtr;
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
@@ -2202,11 +2210,15 @@ TclCompileReturnCmd(
      */
     int level, code, objc, status = TCL_OK;
     Tcl_Size size;
-    int numWords = (int) parsePtr->numWords;
+    Tcl_Size numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
-    int numOptionWords = numWords - 1 - explicitResult;
+    Tcl_Size numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    if (numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
 
     /*
      * Check for special case which can always be compiled:
@@ -2447,14 +2459,14 @@ TclCompileUpvarCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
     Tcl_LVTIndex localIndex;
-    int numWords = (int) parsePtr->numWords, i;
+    Tcl_Size numWords = parsePtr->numWords, i;
     Tcl_Obj *objPtr;
 
     if (envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
 
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2553,9 +2565,9 @@ TclCompileVariableCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     Tcl_LVTIndex localIndex;
-    int numWords = (int) parsePtr->numWords, i;
+    Tcl_Size numWords = parsePtr->numWords, i;
 
-    if (numWords < 2) {
+    if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2634,8 +2646,7 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int n = varTokenPtr->numComponents;
-    Tcl_Size len;
+    Tcl_Size n = varTokenPtr->numComponents, len;
     Tcl_Token *lastTokenPtr;
     int full;
     Tcl_LVTIndex localIndex;
@@ -2727,10 +2738,14 @@ TclCompileObjectNextCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int i;
+    Tcl_Size i;
     /* TODO: Consider support for compiling expanded args. */
 
-    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
+    if (parsePtr->numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<parsePtr->numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -2748,14 +2763,14 @@ TclCompileObjectNextToCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int i;
+    Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if ((int)parsePtr->numWords < 2) {
+    if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=0 ; i<numWords ; i++) {
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }

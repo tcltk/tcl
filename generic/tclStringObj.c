@@ -803,7 +803,7 @@ TclGetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;	 	/* The Tcl object to return that is the new
+    Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
 				 * range. */
     Tcl_Size length = 0;
 
