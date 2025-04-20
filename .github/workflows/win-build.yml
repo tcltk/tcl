@@ -55,6 +55,50 @@ jobs:
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 30
+  msvc-arm:
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: powershell
+        working-directory: win
+    strategy:
+      matrix:
+        config:
+          - ""
+          - "CHECKS=nodep"
+          - "OPTS=static"
+          - "OPTS=noembed"
+          - "OPTS=symbols"
+          - "OPTS=symbols STATS=compdbg,memdbg"
+    # Using powershell means we need to explicitly stop on failure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        timeout-minutes: 5
+      - name: Init MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        timeout-minutes: 5
+      - name: Build ${{ matrix.config }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.config }} all
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+        timeout-minutes: 5
+      - name: Build Test Harness ${{ matrix.config }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.config }} tcltest
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+        timeout-minutes: 5
+      - name: Run Tests ${{ matrix.config }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.config }} test
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+        timeout-minutes: 30
   gcc:
     runs-on: windows-2025
     defaults:
