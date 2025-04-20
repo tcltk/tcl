@@ -437,7 +437,7 @@ FinalizeMethodRefs(
  * ----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
     Object *contextObj,		/* From what context object we are inquiring.
@@ -804,7 +804,7 @@ AddStandardMethodName(
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
 		&& mPtr->typePtr != NULL) {
-	    int isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
+	    Tcl_Size isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));

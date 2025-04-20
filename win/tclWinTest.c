@@ -110,8 +110,8 @@ TesteventloopCmd(
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "done|wait");
 	return TCL_ERROR;
     }
     if (strcmp(Tcl_GetString(objv[1]), "done") == 0) {
@@ -439,10 +439,14 @@ TestplatformChmod(
     DWORD dw;
     int isDir;
     TOKEN_USER *pTokenUser = NULL;
+    Tcl_DString ds;
 
     res = -1; /* Assume failure */
 
-    attr = GetFileAttributesA(nativePath);
+    Tcl_DStringInit(&ds);
+    Tcl_UtfToExternalDString(NULL, nativePath, -1, &ds);
+
+    attr = GetFileAttributesA(Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
 	goto done; /* Not found */
     }
@@ -564,7 +568,7 @@ TestplatformChmod(
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
 	newAclSize +=
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+	    (DWORD)offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -582,7 +586,7 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)nativePath, SE_FILE_OBJECT,
+    if (SetNamedSecurityInfoA((LPSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
@@ -602,12 +606,12 @@ TestplatformChmod(
 	Tcl_Free(aceEntry[i].pSid);
     }
 
-    if (res != 0) {
-	return res;
+    if (res == 0) {
+	/* Run normal chmod command */
+	res = _chmod(Tcl_DStringValue(&ds), pmode);
     }
-
-    /* Run normal chmod command */
-    return chmod(nativePath, pmode);
+    Tcl_DStringFree(&ds);
+    return res;
 }
 
 /*

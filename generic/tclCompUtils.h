@@ -17,22 +17,22 @@
 /*
  * The type of "labels" used in FWDLABEL() and BACKLABEL(). 
  */
-typedef int Tcl_BytecodeLabel;
+typedef Tcl_Size Tcl_BytecodeLabel;
 
 /*
  * The type of "catch ranges" used in CATCH_RANGE(), etc.
  */
-typedef int Tcl_ExceptionRange;
+typedef Tcl_Size Tcl_ExceptionRange;
 
 /*
  * The type of indices into the local variable table.
  */
-typedef int Tcl_LVTIndex;
+typedef Tcl_Size Tcl_LVTIndex;
 
 /*
  * The type of handles made by TclCreateAuxData()
  */
-typedef int Tcl_AuxDataRef;
+typedef Tcl_Size Tcl_AuxDataRef;
 
 /*
  * Shorthand macros for instruction issuing.

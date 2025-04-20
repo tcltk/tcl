@@ -37,10 +37,12 @@ static int		CompileEachloopCmd(Tcl_Interp *interp,
 static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr, int collect);
-static inline void	IssueDictWithEmpty(Tcl_Interp *interp, int numWords,
-			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-static inline void	IssueDictWithBodied(Tcl_Interp *interp, int numWords,
-			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+static inline void	IssueDictWithEmpty(Tcl_Interp *interp,
+			    Tcl_Size numWords, Tcl_Token *varTokenPtr,
+			    CompileEnv *envPtr);
+static inline void	IssueDictWithBodied(Tcl_Interp *interp,
+			    Tcl_Size numWords, Tcl_Token *varTokenPtr,
+			    CompileEnv *envPtr);
 			    
 
 /*
@@ -133,12 +135,12 @@ TclCompileAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, numWords, i;
+    int isScalar;
     Tcl_LVTIndex localIndex;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords == 1 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     } else if (numWords == 2) {
 	/*
@@ -266,7 +268,7 @@ TclCompileArrayExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(tokenPtr, TCL_NO_ELEMENT, &localIndex, &isScalar, 1);
-    if (!isScalar) {
+    if (!isScalar || localIndex > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -343,7 +345,7 @@ TclCompileArraySetCmd(
     }
 
     PushVarNameWord(varTokenPtr, TCL_NO_ELEMENT, &localIndex, &isScalar, 1);
-    if (!isScalar) {
+    if (!isScalar || localIndex > UINT_MAX) {
 	code = TCL_ERROR;
 	goto done;
     }
@@ -587,11 +589,11 @@ TclCompileCatchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int dropScript = 0, numWords = parsePtr->numWords;
+    int dropScript = 0;
     Tcl_LVTIndex resultIndex, optsIndex;
     Tcl_BytecodeLabel haveResultAndCode;
     Tcl_ExceptionRange range;
-    int depth = TclGetStackDepth(envPtr);
+    Tcl_Size depth = TclGetStackDepth(envPtr), numWords = parsePtr->numWords;
 
     /*
      * If syntax does not match what we expect for [catch], do not compile.
@@ -851,17 +853,19 @@ TclCompileConcatCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr, *listObj, **objs;
-    Tcl_Size len, i;
+    Tcl_Size len, i, numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
 
     /* TODO: Consider compiling expansion case. */
-    if (parsePtr->numWords == 1) {
+    if (numWords == 1) {
 	/*
 	 * [concat] without arguments just pushes an empty object.
 	 */
 
 	PUSH(			"");
 	return TCL_OK;
+    } else if (numWords > UINT_MAX) {
+	return TCL_ERROR;
     }
 
     /*
@@ -870,7 +874,7 @@ TclCompileConcatCmd(
      */
 
     TclNewObj(listObj);
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
@@ -891,7 +895,7 @@ TclCompileConcatCmd(
      */
 
   runtimeConcat:
-    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, i);
     }
@@ -952,7 +956,7 @@ TclCompileConstCmd(
      * If the user specified an array element, we don't bother handling
      * that.
      */
-    if (!isScalar) {
+    if (!isScalar || localIndex > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1067,7 +1071,7 @@ TclCompileDictSetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_LVTIndex dictVarIndex;
     Tcl_Token *varTokenPtr;
     /* TODO: Consider support for compiling expanded args. */
@@ -1076,7 +1080,7 @@ TclCompileDictSetCmd(
      * There must be at least one argument after the command.
      */
 
-    if (numWords < 4) {
+    if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1128,7 +1132,7 @@ TclCompileDictIncrCmd(
      * There must be at least two arguments after the command.
      */
 
-    if ((int)parsePtr->numWords < 3 || (int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1187,7 +1191,7 @@ TclCompileDictGetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1195,7 +1199,7 @@ TclCompileDictGetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1222,14 +1226,14 @@ TclCompileDictGetWithDefaultCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
      * There must be at least three arguments after the command.
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 4) {
+    if (numWords < 4 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1252,7 +1256,7 @@ TclCompileDictExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1260,7 +1264,7 @@ TclCompileDictExistsCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1286,14 +1290,14 @@ TclCompileDictReplaceCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_Token *tokenPtr;
     /* TODO: Consider support for compiling expanded args. */
 
     /*
      * Don't compile [dict replace $dict]; it's an edge case.
      */
-    if (numWords <= 3 || (numWords % 1)) {
+    if (numWords <= 3 || numWords > UINT_MAX || (numWords % 1)) {
 	return TCL_ERROR;
     }
 
@@ -1326,7 +1330,7 @@ TclCompileDictUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = (int) parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_LVTIndex dictVarIndex;
 
     /*
@@ -1335,7 +1339,7 @@ TclCompileDictUnsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1379,10 +1383,10 @@ TclCompileDictCreateCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *keyToken, *valueToken;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
-    int i, numWords = parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if ((numWords & 1) == 0) {
+    if ((numWords & 1) == 0 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1452,7 +1456,7 @@ TclCompileDictMergeCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_LVTIndex infoIndex;
     Tcl_ExceptionRange outLoop;
     Tcl_BytecodeLabel end;
@@ -1526,6 +1530,7 @@ TclCompileDictMergeCmd(
     }
     OP(				END_CATCH);
 
+
     /*
      * Clean up any state left over.
      */
@@ -1589,10 +1594,9 @@ CompileDictEachCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     Tcl_LVTIndex keyVarIndex, valueVarIndex, infoIndex, collectVar = -1;
-    int nameChars;
+    Tcl_Size nameChars, numVars;
     Tcl_ExceptionRange loopRange, catchRange;
     Tcl_BytecodeLabel bodyTarget, emptyTarget, endTarget;
-    Tcl_Size numVars;
     const char **argv;
     Tcl_DString buffer;
 
@@ -1796,7 +1800,7 @@ TclCompileDictUpdateCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, numVars, numWords = parsePtr->numWords;
+    Tcl_Size i, numVars, numWords = parsePtr->numWords;
     Tcl_AuxDataRef infoIndex;
     Tcl_LVTIndex dictIndex;
     Tcl_ExceptionRange range;
@@ -1808,7 +1812,7 @@ TclCompileDictUpdateCmd(
      * There must be at least one argument after the command.
      */
 
-    if (numWords < 5) {
+    if (numWords < 5 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -1946,13 +1950,14 @@ TclCompileDictAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, numWords = parsePtr->numWords;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_LVTIndex dictVarIndex;
 
     /*
      * There must be at least two argument after the command. And we impose an
      * (arbitrary) safe limit; anyone exceeding it should stop worrying about
      * speed quite so much. ;-)
+     * TODO: Raise the limit...
      */
 
     /* TODO: Consider support for compiling expanded args. */
@@ -2036,6 +2041,23 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
+static inline int
+IsEmptyToken(
+    const Tcl_Token *tokenPtr)
+{
+    const char *ptr, *end;
+    int ucs4, chLen = 0;
+ 
+    end = tokenPtr[1].start + tokenPtr[1].size;
+    for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
+	chLen = TclUtfToUniChar(ptr, &ucs4);
+	if (!Tcl_UniCharIsSpace(ucs4)) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
 /* Compile [dict with]. Delegates code issuing to IssueDictWithEmpty() and
  * IssueDictWithBodied(). */
 int
@@ -2047,16 +2069,16 @@ TclCompileDictWithCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int i, bodyIsEmpty = 1, numWords = (int) parsePtr->numWords, chLen;
+    int bodyIsEmpty = 1;
+    Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_Token *varTokenPtr, *tokenPtr;
-    const char *ptr, *end;
 
     /*
      * There must be at least one argument after the command.
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3) {
+    if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2082,19 +2104,12 @@ TclCompileDictWithCmd(
      * We don't test if it's just comments. Fixes please, if you care.
      */
 
-    end = tokenPtr[1].start + tokenPtr[1].size;
-    for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
-	int ucs4;
-	chLen = TclUtfToUniChar(ptr, &ucs4);
-
-	if (!Tcl_UniCharIsSpace(ucs4)) {
-	    if (!EnvHasLVT(envPtr)) {
-		return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
-			envPtr);
-	    }
-	    bodyIsEmpty = 0;
-	    break;
+    if (!IsEmptyToken(tokenPtr)) {
+	if (!EnvHasLVT(envPtr)) {
+	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
+		    envPtr);
 	}
+	bodyIsEmpty = 0;
     }
 
     /* Now we commit to issuing code. */
@@ -2125,7 +2140,7 @@ TclCompileDictWithCmd(
 static inline void
 IssueDictWithEmpty(
     Tcl_Interp *interp,
-    int numWords,
+    Tcl_Size numWords,
     Tcl_Token *varTokenPtr,
     CompileEnv *envPtr)
 {
@@ -2139,7 +2154,8 @@ IssueDictWithEmpty(
 
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int i, gotPath;
+    int gotPath;
+    Tcl_Size i;
     Tcl_LVTIndex dictVar;
 
     /*
@@ -2215,7 +2231,7 @@ IssueDictWithEmpty(
 static inline void
 IssueDictWithBodied(
     Tcl_Interp *interp,
-    int numWords,
+    Tcl_Size numWords,
     Tcl_Token *varTokenPtr,
     CompileEnv *envPtr)
 {
@@ -2228,7 +2244,8 @@ IssueDictWithBodied(
      */
 
     Tcl_LVTIndex dictVar, varNameTmp = -1, pathTmp = -1, keysTmp;
-    int i, gotPath;
+    int gotPath;
+    Tcl_Size i;
     Tcl_BytecodeLabel done;
     Tcl_ExceptionRange range;
     Tcl_Token *tokenPtr;
@@ -2464,7 +2481,7 @@ TclCompileErrorCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int numWords = parsePtr->numWords;
+    Tcl_Size numWords = parsePtr->numWords;
 
     /*
      * General syntax: [error message ?errorInfo? ?errorCode?]
@@ -2537,7 +2554,7 @@ TclCompileExprCmd(
 {
     Tcl_Token *firstWordPtr;
 
-    if (parsePtr->numWords == 1) {
+    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -2549,7 +2566,7 @@ TclCompileExprCmd(
 	    envPtr->extCmdMapPtr->nuloc-1].line[1];
 
     firstWordPtr = TokenAfter(parsePtr->tokenPtr);
-    TclCompileExprWords(interp, firstWordPtr, (int)parsePtr->numWords-1, envPtr);
+    TclCompileExprWords(interp, firstWordPtr, parsePtr->numWords-1, envPtr);
     return TCL_OK;
 }
 
@@ -2781,10 +2798,10 @@ CompileEachloopCmd(
 				 * record in the ByteCode. */
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    int jumpBackOffset, numWords, numLists, i, code = TCL_OK;
+    Tcl_Size jumpBackOffset, numWords, numLists, i, j;
     Tcl_AuxDataRef infoIndex;
     Tcl_ExceptionRange range;
-    Tcl_Size j;
+    int code = TCL_OK;
     Tcl_Obj *varListObj = NULL;
 
     /*
@@ -2796,8 +2813,8 @@ CompileEachloopCmd(
 	return TCL_ERROR;
     }
 
-    numWords = (int)parsePtr->numWords;
-    if ((numWords < 4) || (numWords%2 != 0)) {
+    numWords = parsePtr->numWords;
+    if ((numWords < 4) || (numWords > UINT_MAX) || (numWords%2 != 0)) {
 	return TCL_ERROR;
     }
 
@@ -2990,7 +3007,7 @@ DupForeachInfo(
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
     ForeachVarList *srcListPtr, *dupListPtr;
-    int numVars, i, j, numLists = srcPtr->numLists;
+    Tcl_Size numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
@@ -3038,7 +3055,7 @@ FreeForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *listPtr;
-    size_t i, numLists = infoPtr->numLists;
+    Tcl_Size i, numLists = infoPtr->numLists;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -3247,14 +3264,14 @@ TclCompileFormatCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
-    int i, j, numWords = parsePtr->numWords;
+    Tcl_Size i, j, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
     /*
      * Don't handle any guaranteed-error cases.
      */
 
-    if (numWords < 2) {
+    if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
@@ -3439,7 +3456,7 @@ TclCompileFormatCmd(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
@@ -3454,7 +3471,7 @@ TclLocalScalarFromToken(
     return index;
 }
 
-size_t
+Tcl_Size
 TclLocalScalar(
     const char *bytes,
     size_t numBytes,
@@ -3505,15 +3522,14 @@ TclPushVarName(
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_ELEMENT. */
-    int *localIndexPtr,		/* Must not be NULL. */
+    Tcl_Size *localIndexPtr,		/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
     const char *p;
     const char *last, *name, *elName;
-    Tcl_Size n;
     Tcl_Token *elemTokenPtr = NULL;
-    size_t nameLen, elNameLen;
-    int simpleVarName, allocedTokens = 0;
+    Tcl_Size nameLen, elNameLen, n;
+    int simpleVarName = 0, allocedTokens = 0;
     Tcl_Size elemTokenCount = 0, removedParen = 0;
     Tcl_LVTIndex localIndex;
 
@@ -3525,7 +3541,6 @@ TclPushVarName(
      * qualifiers.
      */
 
-    simpleVarName = 0;
     name = elName = NULL;
     nameLen = elNameLen = 0;
     localIndex = -1;

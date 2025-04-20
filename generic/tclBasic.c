@@ -2734,7 +2734,7 @@ cmdWrapperProc(
     if (objc < 0) {
 	objc = -1;
     }
-    return info->proc(info->clientData, interp, objc, objv);
+    return info->proc(info->clientData, interp, (int)objc, objv);
 }
 
 static void
@@ -5156,7 +5156,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    Tcl_Size line,		/* The line the script starts on. */
+    int line,		/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5180,7 +5180,7 @@ TclEvalEx(
     const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
     char *expand;
-    Tcl_Size *lines, *lineSpace;
+    int *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int expandRequested, code = TCL_OK;
     Tcl_Size bytesLeft, commandLength;
@@ -5197,7 +5197,7 @@ TclEvalEx(
     CmdFrame *eeFramePtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     Tcl_Obj **stackObjArray = (Tcl_Obj **)TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
     char *expandStack = (char *)TclStackAlloc(interp, minObjs * sizeof(char));
-    Tcl_Size *linesStack = (Tcl_Size *)TclStackAlloc(interp, minObjs * sizeof(Tcl_Size));
+    int *linesStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
     Tcl_Size *clNext = NULL;	/* Pointer for the tracking of invisible
@@ -5322,7 +5322,7 @@ TclEvalEx(
 	     * per-command parsing.
 	     */
 
-	    Tcl_Size wordLine = line;
+	    int wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    Tcl_Size *wordCLNext = clNext;
 	    Tcl_Size objectsNeeded = 0;
@@ -5336,8 +5336,8 @@ TclEvalEx(
 		expand = (char *)Tcl_Alloc(numWords * sizeof(char));
 		objvSpace = (Tcl_Obj **)
 			Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
-		lineSpace = (Tcl_Size *)
-			Tcl_Alloc(numWords * sizeof(Tcl_Size));
+		lineSpace = (int *)
+			Tcl_Alloc(numWords * sizeof(int));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
@@ -5429,13 +5429,13 @@ TclEvalEx(
 		 */
 
 		Tcl_Obj **copy = objvSpace;
-		Tcl_Size *lcopy = lineSpace;
+		int *lcopy = lineSpace;
 		Tcl_Size wordIdx = numWords;
 		Tcl_Size objIdx = objectsNeeded - 1;
 
 		if ((numWords > minObjs) || (objectsNeeded > minObjs)) {
 		    objv = objvSpace = (Tcl_Obj **)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Obj *));
-		    lines = lineSpace = (Tcl_Size *)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Size));
+		    lines = lineSpace = (int *)Tcl_Alloc(objectsNeeded * sizeof(int));
 		}
 
 		objectsUsed = 0;
@@ -5634,7 +5634,7 @@ TclEvalEx(
 
 void
 TclAdvanceLines(
-    Tcl_Size *line,
+    int *line,
     const char *start,
     const char *end)
 {
@@ -5669,9 +5669,9 @@ TclAdvanceLines(
 
 void
 TclAdvanceContinuations(
-    Tcl_Size *line,
+    int *line,
     Tcl_Size **clNextPtrPtr,
-    int loc)
+    Tcl_Size loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if any.
@@ -5852,7 +5852,7 @@ TclArgumentBCEnter(
     Tcl_Size pc)
 {
     ExtCmdLoc *eclPtr;
-    Tcl_Size word;
+    int word;
     ECL *ePtr;
     CFWordBC *lastPtr = NULL;
     Interp *iPtr = (Interp *) interp;
@@ -6124,7 +6124,7 @@ TclNREvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)			/* Index of the word which is in objPtr. */
+    int word)		/* Index of the word which is in objPtr. */
 {
     Interp *iPtr = (Interp *) interp;
     int result;
@@ -7715,7 +7715,7 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
+	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.

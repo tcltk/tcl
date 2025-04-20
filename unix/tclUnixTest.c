@@ -616,6 +616,7 @@ TestchmodCmd(
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int i, mode;
+    Tcl_DString ds;
 
     if (objc < 2) {
     Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
@@ -626,21 +627,27 @@ TestchmodCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_DStringInit(&ds);
     for (i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
 
 	translated = Tcl_TranslateFileName(interp, Tcl_GetString(objv[i]), &buffer);
 	if (translated == NULL) {
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
-	if (chmod(translated, mode) != 0) {
+	Tcl_UtfToExternalDString(NULL, translated, -1, &ds);
+	if (chmod(Tcl_DStringValue(&ds), mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    (char *)NULL);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);
+	Tcl_DStringSetLength(&ds, 0);
     }
+    Tcl_DStringFree(&ds);
     return TCL_OK;
 }
 

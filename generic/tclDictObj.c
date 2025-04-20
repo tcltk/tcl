@@ -546,7 +546,9 @@ UpdateStringOfDict(
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
     TclOOM(dst, bytesNeeded);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
-	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
@@ -1967,8 +1969,8 @@ DictMergeCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
-    int allocatedDict = 0;
-    int i, done;
+    int done, allocatedDict = 0;
+    int i;
     Tcl_DictSearch search;
 
     if (objc == 1) {
@@ -2493,7 +2495,8 @@ DictLappendCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0, allocatedValue = 0;
+    int allocatedDict = 0, allocatedValue = 0;
+    int i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -3855,10 +3858,10 @@ TclDictWithFinish(
 				 * parameter is >= 0 */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int index,			/* Index into the local variable table of the
+    Tcl_Size index,			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
-    int pathc,			/* The number of elements in the path into the
+    Tcl_Size pathc,			/* The number of elements in the path into the
 				 * dictionary. */
     Tcl_Obj *const pathv[],	/* The elements of the path to the subdict. */
     Tcl_Obj *keysPtr)		/* List of keys to be synchronized. This is

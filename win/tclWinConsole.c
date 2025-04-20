@@ -1190,7 +1190,7 @@ ConsoleInputProc(
 		return -1;
 	    } else if (numChars > 0) {
 		/* Successfully read something. */
-		return numChars * sizeof(WCHAR);
+		return (int)(numChars * sizeof(WCHAR));
 	    } else {
 		/*
 		 * Ctrl-C/Ctrl-Brk interrupt. Loop around to retry.
@@ -1342,7 +1342,7 @@ ConsoleOutputProc(
 	    winStatus = WriteConsoleChars(consoleHandle,
 		    (WCHAR *)buf, toWrite / sizeof(WCHAR), &numWritten);
 	    if (winStatus == ERROR_SUCCESS) {
-		return numWritten * sizeof(WCHAR);
+		return (int)(numWritten * sizeof(WCHAR));
 	    } else {
 		Tcl_WinConvertError(winStatus);
 		*errorCode = Tcl_GetErrno();
@@ -1867,7 +1867,7 @@ ConsoleWriterThread(
     while (1) {
 	/* handleInfoPtr->lock must be held on entry to loop */
 
-	int offset;
+	Tcl_Size offset;
 	HANDLE consoleHandle;
 
 	/*
@@ -2265,8 +2265,8 @@ ConsoleSetOptionProc(
     const char *value)		/* New value for option. */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
-    int len = strlen(optionName);
-    int vlen = strlen(value);
+    size_t len = strlen(optionName);
+    size_t vlen = strlen(value);
 
     /*
      * Option -inputmode normal|password|raw
@@ -2355,7 +2355,7 @@ ConsoleGetOptionProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
-    unsigned int len;
+    size_t len;
     char buf[TCL_INTEGER_SPACE];
 
     if (optionName == NULL) {
