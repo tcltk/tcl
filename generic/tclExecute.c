@@ -2579,10 +2579,14 @@ TEBCresume(
 	 */
 
     {
-	Tcl_Obj *listPtr;
-	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd - 1));
-	TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
-		(Tcl_Namespace *) iPtr->varFramePtr->nsPtr));
+	Tcl_Obj *listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd - 1));
+#ifndef REMOVE_DEPRECATED_OPCODES
+	/* New instruction sequence just gets this right. */
+	if (inst == INST_TAILCALL1) {
+	    TclListObjSetElement(NULL, listPtr, 0, TclNewNamespaceObj(
+		    TclGetCurrentNamespace(interp)));
+	}
+#endif
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
 	}
