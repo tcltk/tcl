@@ -2612,9 +2612,7 @@ TclCompileTailcallCmd(
 	return TCL_ERROR;
     }
 
-    /* make room for the nsObjPtr */
-    /* TODO: Doesn't this have to be a known value? */
-    PUSH_TOKEN(			tokenPtr, 0);
+    OP(				NS_CURRENT);
     for (i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, i);
