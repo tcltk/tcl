@@ -43,7 +43,6 @@ static inline void	IssueDictWithEmpty(Tcl_Interp *interp,
 static inline void	IssueDictWithBodied(Tcl_Interp *interp,
 			    Tcl_Size numWords, Tcl_Token *varTokenPtr,
 			    CompileEnv *envPtr);
-			    
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -2047,7 +2046,7 @@ IsEmptyToken(
 {
     const char *ptr, *end;
     int ucs4, chLen = 0;
- 
+
     end = tokenPtr[1].start + tokenPtr[1].size;
     for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
 	chLen = TclUtfToUniChar(ptr, &ucs4);
@@ -2164,13 +2163,13 @@ IssueDictWithEmpty(
 
     gotPath = (numWords > 3);
     dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
- 
+
     if (dictVar >= 0) {
 	if (gotPath) {
 	    /*
 	     * Case: Path into dict in LVT with empty body.
 	     */
-    
+
 	    tokenPtr = TokenAfter(varTokenPtr);
 	    for (i=2 ; i<numWords-1 ; i++) {
 		PUSH_TOKEN(	tokenPtr, i);
@@ -2185,7 +2184,7 @@ IssueDictWithEmpty(
 	    /*
 	     * Case: Direct dict in LVT with empty body.
 	     */
-    
+
 	    PUSH(		"");
 	    OP4(		LOAD_SCALAR, dictVar);
 	    PUSH(		"");
@@ -2197,7 +2196,7 @@ IssueDictWithEmpty(
 	    /*
 	     * Case: Path into dict in non-simple var with empty body.
 	     */
-    
+
 	    tokenPtr = varTokenPtr;
 	    for (i=1 ; i<numWords-1 ; i++) {
 		PUSH_TOKEN(	tokenPtr, i);
@@ -2213,7 +2212,7 @@ IssueDictWithEmpty(
 	    /*
 	     * Case: Direct dict in non-simple var with empty body.
 	     */
-    
+
 	    PUSH_TOKEN(		varTokenPtr, 1);
 	    OP(			DUP);
 	    OP(			LOAD_STK);
@@ -2257,7 +2256,7 @@ IssueDictWithBodied(
 
     gotPath = (numWords > 3);
     dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
-  
+
     if (dictVar == -1) {
 	varNameTmp = AnonymousLocal(envPtr);
     }

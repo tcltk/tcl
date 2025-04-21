@@ -11,7 +11,7 @@
 
 #ifndef _TCLCOMPUTILS
 #define _TCLCOMPUTILS 1
- 
+
 #include "tclCompile.h"
 
 /*
