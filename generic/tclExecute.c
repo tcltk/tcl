@@ -7703,22 +7703,22 @@ TEBCresume(
 	Tcl_WideInt wval;
 	Tcl_Time now;
 	switch (TclGetUInt1AtPtr(pc + 1)) {
-	case 0:			/* clicks */
+	case CLOCK_READ_CLICKS:	/* clicks */
 #ifdef TCL_WIDE_CLICKS
 	    wval = TclpGetWideClicks();
 #else
 	    wval = (Tcl_WideInt)TclpGetClicks();
 #endif
 	    break;
-	case 1:			/* microseconds */
+	case CLOCK_READ_MICROS:	/* microseconds */
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
 	    break;
-	case 2:			/* milliseconds */
+	case CLOCK_READ_MILLIS:	/* milliseconds */
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
 	    break;
-	case 3:			/* seconds */
+	case CLOCK_READ_SECS:	/* seconds */
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec;
 	    break;

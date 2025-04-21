@@ -3223,6 +3223,17 @@ struct Tcl_LoadHandle_ {
 				/* Mask to isolate the conversion type */
 
 /*
+ * Clock operations, communicated from command definitions to the bytecode
+ * compiler.
+ */
+enum ClockOps {
+    CLOCK_READ_CLICKS = 0,	/* Read the click counter. */
+    CLOCK_READ_MICROS = 1,	/* Time in microseconds. */
+    CLOCK_READ_MILLIS = 2,	/* Time in milliseconds. */
+    CLOCK_READ_SECS = 3		/* Time in seconds. */
+};
+
+/*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world:
  *----------------------------------------------------------------
