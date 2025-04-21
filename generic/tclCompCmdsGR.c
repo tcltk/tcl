@@ -1333,7 +1333,7 @@ TclCompileLinsertCmd(
     /* Push list, insertion index onto the stack */
     listToken = TokenAfter(parsePtr->tokenPtr);
     indexToken = TokenAfter(listToken);
-    
+
     PUSH_TOKEN(			listToken, 1);
     PUSH_TOKEN(			indexToken, 2);
 
@@ -1386,11 +1386,11 @@ TclCompileLreplaceCmd(
     listToken = TokenAfter(parsePtr->tokenPtr);
     firstToken = TokenAfter(listToken);
     lastToken = TokenAfter(firstToken);
-    
+
     PUSH_TOKEN(			listToken, 1);
     PUSH_TOKEN(			firstToken, 2);
     PUSH_TOKEN(			lastToken, 3);
-    
+
     /* Push new elements to be inserted */
     tokenPtr = TokenAfter(lastToken);
     for (i=4; i<numWords; i++,tokenPtr=TokenAfter(tokenPtr)) {

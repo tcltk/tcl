@@ -1538,7 +1538,7 @@ TclEmitInstInt41Impl(
     *envPtr->codeNext++ = UCHAR(i      );
     // Emit 1-byte argument
     *envPtr->codeNext++ = UCHAR(j      );
- 
+
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
 }
@@ -1555,7 +1555,7 @@ TclEmitInstInt44Impl(
     if (envPtr->codeNext + 9 > envPtr->codeEnd) {
 	TclExpandCodeArray(envPtr);
     }
- 
+
     *envPtr->codeNext++ = UCHAR(op);
     // Emit 4-byte argument
     *envPtr->codeNext++ = UCHAR(i >> 24);
@@ -1567,7 +1567,7 @@ TclEmitInstInt44Impl(
     *envPtr->codeNext++ = UCHAR(j >> 16);
     *envPtr->codeNext++ = UCHAR(j >>  8);
     *envPtr->codeNext++ = UCHAR(j      );
- 
+
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);
 }
