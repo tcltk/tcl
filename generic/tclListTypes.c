@@ -13,6 +13,14 @@
 #include <assert.h>
 #include "tclInt.h"
 
+/*
+ * Since iterating is a little slower for abstract lists, we use a
+ * threshold to decide when to use the abstract list type. This is
+ * a tradeoff between memory usage and speed.
+ */
+#define LREVERSE_LENGTH_THRESHOLD 100
+#define LREPEAT_LENGTH_THRESHOLD 100
+
 static inline int
 TclAbstractListLength(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 {
@@ -323,13 +331,43 @@ Tcl_ListObjReverse(
 	return TCL_OK;
     }
 
-    Tcl_Obj *resultPtr = Tcl_NewObj();
-    Tcl_InvalidateStringRep(resultPtr);
+    Tcl_Obj *resultPtr;
+    if (elemc >= LREVERSE_LENGTH_THRESHOLD || objPtr->typePtr != &tclListType) {
+	resultPtr = Tcl_NewObj();
+	TclInvalidateStringRep(resultPtr);
 
-    Tcl_IncrRefCount(objPtr);
-    resultPtr->internalRep.ptrAndSize.ptr = objPtr;
-    resultPtr->internalRep.ptrAndSize.size = elemc;
-    resultPtr->typePtr = &lreverseType;
+	Tcl_IncrRefCount(objPtr);
+	resultPtr->internalRep.ptrAndSize.ptr = objPtr;
+	resultPtr->internalRep.ptrAndSize.size = elemc;
+	resultPtr->typePtr = &lreverseType;
+	*reversedPtrPtr = resultPtr;
+	return TCL_OK;
+    }
+
+    /* Non-abstract list small enough to copy. */
+
+    Tcl_Obj **elemv;
+
+    if (TclListObjGetElements(interp, objPtr, &elemc, &elemv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    resultPtr = Tcl_NewListObj(elemc, NULL);
+    Tcl_Obj **dataArray = NULL;
+    ListRep listRep;
+    ListObjGetRep(resultPtr, &listRep);
+    dataArray = ListRepElementsBase(&listRep);
+    CLANG_ASSERT(dataArray);
+    listRep.storePtr->numUsed = elemc;
+    if (listRep.spanPtr) {
+	/* Future proofing in case Tcl_NewListObj returns a span */
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+    }
+    for (Tcl_Size i = 0; i < elemc; i++) {
+        Tcl_IncrRefCount(elemv[i]);
+        dataArray[elemc - i - 1] = elemv[i];
+    }
+
     *reversedPtrPtr = resultPtr;
     return TCL_OK;
 }
@@ -451,7 +489,8 @@ Tcl_ListObjRepeat(
 	return TCL_ERROR;
     }
 
-    if (repeatCount == 0) {
+    Tcl_Size totalElems = objc * repeatCount;
+    if (totalElems == 0) {
 	*resultPtrPtr = Tcl_NewObj();
 	return TCL_OK;
     }
@@ -464,13 +503,57 @@ Tcl_ListObjRepeat(
 	return TCL_ERROR;
     }
 
-    TclObjArray *arrayPtr = TclObjArrayNew(objc, objv);
-    Tcl_Obj *resultPtr = Tcl_NewObj();
-    arrayPtr->refCount++;
-    Tcl_InvalidateStringRep(resultPtr);
-    resultPtr->internalRep.ptrAndSize.ptr = arrayPtr;
-    resultPtr->internalRep.ptrAndSize.size = repeatCount*objc;
-    resultPtr->typePtr = &lrepeatType;
+    Tcl_Obj *resultPtr;
+    if (totalElems >= LREPEAT_LENGTH_THRESHOLD) {
+	TclObjArray *arrayPtr = TclObjArrayNew(objc, objv);
+	resultPtr = Tcl_NewObj();
+	arrayPtr->refCount++;
+	TclInvalidateStringRep(resultPtr);
+	resultPtr->internalRep.ptrAndSize.ptr = arrayPtr;
+	resultPtr->internalRep.ptrAndSize.size = totalElems;
+	resultPtr->typePtr = &lrepeatType;
+	*resultPtrPtr = resultPtr;
+	return TCL_OK;
+    }
+
+    /* For small lists, create a copy as indexing is slightly faster */
+    resultPtr = Tcl_NewListObj(totalElems, NULL);
+    Tcl_Obj **dataArray = NULL;
+    if (totalElems) {
+	ListRep listRep;
+	ListObjGetRep(resultPtr, &listRep);
+	dataArray = ListRepElementsBase(&listRep);
+	listRep.storePtr->numUsed = totalElems;
+	if (listRep.spanPtr) {
+	    /* Future proofing in case Tcl_NewListObj returns a span */
+	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+	}
+    }
+
+    /*
+     * Set the elements. Note that we handle the common degenerate case of a
+     * single value being repeated separately to permit the compiler as much
+     * room as possible to optimize a loop that might be run a very large
+     * number of times.
+     */
+
+    CLANG_ASSERT(dataArray || totalElems == 0 );
+    if (objc == 1) {
+	Tcl_Obj *tmpPtr = objv[0];
+
+	tmpPtr->refCount += repeatCount;
+	for (Tcl_Size i=0 ; i<totalElems ; i++) {
+	    dataArray[i] = tmpPtr;
+	}
+    } else {
+	for (Tcl_Size i = 0, k = 0; i < repeatCount; i++) {
+	    for (Tcl_Size j=0 ; j<objc ; j++) {
+		Tcl_IncrRefCount(objv[j]);
+		dataArray[k++] = objv[j];
+	    }
+	}
+    }
     *resultPtrPtr = resultPtr;
     return TCL_OK;
 }
