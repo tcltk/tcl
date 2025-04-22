@@ -4016,7 +4016,7 @@ CleanupTestSetassocdataTests(
 
 static int
 TestmsbObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -4027,21 +4027,11 @@ TestmsbObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "integer");
 	return TCL_ERROR;
     }
-    if (sizeof(Tcl_WideUInt) <= sizeof(size_t)) {
-	if (TCL_OK != Tcl_GetWideIntFromObj(interp, objv[1], &w)) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(w)));
-    } else {
-	int i;
-	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[1], &i)) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(i)));
+    if (TCL_OK != Tcl_GetWideIntFromObj(interp, objv[1], &w)) {
+	return TCL_ERROR;
     }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB((unsigned long long)w)));
     return TCL_OK;
-
-    (void)clientData;
 }
 
 /*

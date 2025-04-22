@@ -1,5 +1,5 @@
-# This file contains a collection of tests for the procedures in the
-# file tclBrodnik.c.
+# This file contains a collection of tests for the routine TclMSB() in the
+# file tclUtil.c.
 #
 # Contributions from Don Porter, NIST, 2013. (not subject to US copyright)
 #
