@@ -2135,7 +2135,13 @@ TclCompileDictWithCmd(
     return TCL_OK;
 }
 
-/* Issue code for a [dict with] that has an entirely trivial body. */
+/*
+ * Issue code for a special case of [dict with]: an empty body means we
+ * definitely have no need to issue try-finally style code or to allocate local
+ * variable table entries for storing temporaries. Still need to do both
+ * INST_DICT_EXPAND and INST_DICT_RECOMBINE_* though, because we can't
+ * determine if we're free of traces.
+ */
 static inline void
 IssueDictWithEmpty(
     Tcl_Interp *interp,
@@ -2143,14 +2149,6 @@ IssueDictWithEmpty(
     Tcl_Token *varTokenPtr,
     CompileEnv *envPtr)
 {
-    /*
-     * Special case: an empty body means we definitely have no need to issue
-     * try-finally style code or to allocate local variable table entries for
-     * storing temporaries. Still need to do both INST_DICT_EXPAND and
-     * INST_DICT_RECOMBINE_* though, because we can't determine if we're free
-     * of traces.
-     */
-
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
     int gotPath;
@@ -2226,7 +2224,11 @@ IssueDictWithEmpty(
     PUSH(			"");
 }
 
-/* Issue code for a [dict with] that has a non-trivial body. */
+/*
+ * Issue code for a [dict with] that has a non-trivial body. The focus is on
+ * generating a try-finally structure where the INST_DICT_RECOMBINE_* goes
+ * in the 'finally' clause.
+ */
 static inline void
 IssueDictWithBodied(
     Tcl_Interp *interp,
@@ -2235,10 +2237,6 @@ IssueDictWithBodied(
     CompileEnv *envPtr)
 {
     /*
-     * OK, we have a non-trivial body. This means that the focus is on
-     * generating a try-finally structure where the INST_DICT_RECOMBINE_* goes
-     * in the 'finally' clause.
-     *
      * Start by allocating local (unnamed, untraced) working variables.
      */
 
