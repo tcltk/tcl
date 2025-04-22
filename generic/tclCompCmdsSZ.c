@@ -66,7 +66,7 @@ static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    Tcl_Size numArms, SwitchArmInfo *arms);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, Tcl_Size numArms,
+			    CompileEnv *envPtr, int noCase, Tcl_Size numArms,
 			    SwitchArmInfo *arms);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
@@ -1876,13 +1876,6 @@ TclCompileSwitchCmd(
     }
     tokenPtr = TokenAfter(tokenPtr);
     numWords--;
-    if (noCase && (mode == Switch_Exact)) {
-	/*
-	 * Can't compile this case; no opcode for case-insensitive equality!
-	 */
-
-	return TCL_ERROR;
-    }
 
     /*
      * The value to test against is going to always get pushed on the stack.
@@ -2053,7 +2046,7 @@ TclCompileSwitchCmd(
     PUSH_TOKEN(			valueTokenPtr, valueIndex);
 
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, numWords/2, arms);
+	IssueSwitchJumpTable(interp, envPtr, noCase, numWords/2, arms);
     } else {
 	IssueSwitchChainedTests(interp, envPtr, mode, noCase, numWords/2, arms);
     }
@@ -2318,6 +2311,7 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int noCase,			/* Whether to do case-insensitive matches. */
     Tcl_Size numArms,		/* Number of arms of the switch. */
     SwitchArmInfo *arms)	/* Array of arm descriptors. */
 {
@@ -2328,6 +2322,14 @@ IssueSwitchJumpTable(
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
     Tcl_DString buffer;
     Tcl_HashEntry *hPtr;
+
+    /*
+     * If doing case-insensitive matching, convert to lower case and then do
+     * exact string matching.
+     */
+    if (noCase) {
+	OP(			STR_LOWER);
+    }
 
     /*
      * Compile the switch by using a jump table, which is basically a
@@ -2375,10 +2377,17 @@ IssueSwitchJumpTable(
 	     * which would indicate that this clause is probably masked by an
 	     * earlier one). Note that we use a Tcl_DString here simply
 	     * because the hash API does not let us specify the string length.
+	     *
+	     * If we're doing case-insensitive matching, we construct the table
+	     * with all keys being lower case strings.
 	     */
 
 	    Tcl_DStringInit(&buffer);
 	    TclDStringAppendToken(&buffer, arm->valueToken);
+	    if (noCase) {
+		Tcl_Size slength = Tcl_UtfToLower(Tcl_DStringValue(&buffer));
+		Tcl_DStringSetLength(&buffer, slength);
+	    }
 	    hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
 		    Tcl_DStringValue(&buffer), &isNew);
 	    if (isNew) {
