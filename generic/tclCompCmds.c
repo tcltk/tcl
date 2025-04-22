@@ -134,7 +134,7 @@ TclCompileAppendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_Size i, numWords = parsePtr->numWords;
 
@@ -258,7 +258,7 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (parsePtr->numWords != 2) {
@@ -290,7 +290,8 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int isScalar, code = TCL_OK, isDataLiteral, isDataValid, isDataEven;
+    bool isScalar, isDataLiteral, isDataValid, isDataEven;
+    int code = TCL_OK;
     Tcl_Size len;
     Tcl_LVTIndex keyVar, valVar, localIndex;
     Tcl_AuxDataRef infoIndex;
@@ -386,7 +387,7 @@ TclCompileArraySetCmd(
 	 */
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
-		varTokenPtr->size, 1, envPtr);
+		varTokenPtr->size, true, envPtr);
 	PUSH(			"0");
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);
@@ -469,7 +470,7 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
     Tcl_BytecodeLabel noSuchArray, end;
 
@@ -930,7 +931,7 @@ TclCompileConstCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     /*
@@ -2040,7 +2041,7 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
-static inline int
+static inline bool
 IsEmptyToken(
     const Tcl_Token *tokenPtr)
 {
@@ -2051,10 +2052,10 @@ IsEmptyToken(
     for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
 	chLen = TclUtfToUniChar(ptr, &ucs4);
 	if (!Tcl_UniCharIsSpace(ucs4)) {
-	    return 0;
+	    return false;
 	}
     }
-    return 1;
+    return true;
 }
 
 /* Compile [dict with]. Delegates code issuing to IssueDictWithEmpty() and
@@ -2068,7 +2069,7 @@ TclCompileDictWithCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int bodyIsEmpty = 1;
+    bool bodyIsEmpty = true;
     Tcl_Size i, numWords = parsePtr->numWords;
     Tcl_Token *varTokenPtr, *tokenPtr;
 
@@ -2108,7 +2109,7 @@ TclCompileDictWithCmd(
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
 	}
-	bodyIsEmpty = 0;
+	bodyIsEmpty = false;
     }
 
     /* Now we commit to issuing code. */
@@ -2153,7 +2154,7 @@ IssueDictWithEmpty(
 
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int gotPath;
+    bool gotPath;
     Tcl_Size i;
     Tcl_LVTIndex dictVar;
 
@@ -2243,7 +2244,7 @@ IssueDictWithBodied(
      */
 
     Tcl_LVTIndex dictVar, varNameTmp = -1, pathTmp = -1, keysTmp;
-    int gotPath;
+    bool gotPath;
     Tcl_Size i;
     Tcl_BytecodeLabel done;
     Tcl_ExceptionRange range;
@@ -2604,6 +2605,8 @@ TclCompileForCmd(
 	return TCL_ERROR;
     }
 
+    // TODO: Handle trivial condition expressions; not that they're common...
+
     /*
      * If the test expression requires substitutions, don't compile the for
      * command inline. E.g., the expression might cause the loop to never
@@ -2632,7 +2635,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    BODY(startTokenPtr, 1);
+    BODY(			startTokenPtr, 1);
     OP(				POP);
 
     /*
@@ -2667,7 +2670,7 @@ TclCompileForCmd(
      */
 
     nextRange = MAKE_LOOP_RANGE();
-    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = false;
     CONTINUE_TARGET(	bodyRange);
     CATCH_RANGE(nextRange) {
 	BODY(			nextTokenPtr, 3);
@@ -3460,7 +3463,7 @@ TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
 {
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex index;
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
@@ -3521,14 +3524,14 @@ TclPushVarName(
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_ELEMENT. */
-    Tcl_Size *localIndexPtr,		/* Must not be NULL. */
-    int *isScalarPtr)		/* Must not be NULL. */
+    Tcl_Size *localIndexPtr,	/* Must not be NULL. */
+    bool *isScalarPtr)		/* Must not be NULL. */
 {
     const char *p;
     const char *last, *name, *elName;
     Tcl_Token *elemTokenPtr = NULL;
     Tcl_Size nameLen, elNameLen, n;
-    int simpleVarName = 0, allocedTokens = 0;
+    bool simpleVarName = false, allocedTokens = false;
     Tcl_Size elemTokenCount = 0, removedParen = 0;
     Tcl_LVTIndex localIndex;
 
@@ -3550,7 +3553,7 @@ TclPushVarName(
 	 * strings. If it is not a local variable, look it up at runtime.
 	 */
 
-	simpleVarName = 1;
+	simpleVarName = true;
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
@@ -3578,7 +3581,7 @@ TclPushVarName(
 		 */
 
 		elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp, sizeof(Tcl_Token));
-		allocedTokens = 1;
+		allocedTokens = true;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
 		elemTokenPtr->size = elNameLen;
@@ -3594,11 +3597,11 @@ TclPushVarName(
 	 * Check for parentheses inside first token.
 	 */
 
-	simpleVarName = 0;
+	simpleVarName = false;
 	for (p = varTokenPtr[1].start, last = p + varTokenPtr[1].size;
 		p < last;  p++) {
 	    if (*p == '(') {
-		simpleVarName = 1;
+		simpleVarName = true;
 		break;
 	    }
 	}
@@ -3633,7 +3636,7 @@ TclPushVarName(
 
 		    elemTokenPtr = (Tcl_Token *)TclStackAlloc(interp,
 			    n * sizeof(Tcl_Token));
-		    allocedTokens = 1;
+		    allocedTokens = true;
 		    elemTokenPtr->type = TCL_TOKEN_TEXT;
 		    elemTokenPtr->start = elName;
 		    elemTokenPtr->size = remainingLen;
@@ -3663,11 +3666,11 @@ TclPushVarName(
 	 * See whether name has any namespace separators (::'s).
 	 */
 
-	int hasNsQualifiers = 0;
+	bool hasNsQualifiers = false;
 
 	for (p = name, last = p + nameLen-1;  p < last;  p++) {
 	    if ((p[0] == ':') && (p[1] == ':')) {
-		hasNsQualifiers = 1;
+		hasNsQualifiers = true;
 		break;
 	    }
 	}
@@ -3679,7 +3682,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameLen, 1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameLen, true, envPtr);
 	}
 	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameLen);

@@ -182,10 +182,10 @@ TclCompileIfCmd(
     Tcl_Size jumpIndex = 0;	/* Avoid compiler warning. */
     Tcl_Size j, numWords, wordIdx;
     int code;
-    int realCond = 1;		/* Set to 0 for static conditions:
+    bool realCond = true;	/* Set to false for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
-    int compileScripts = 1;
+    bool compileScripts = true;
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
@@ -253,9 +253,9 @@ TclCompileIfCmd(
 		 * A static condition.
 		 */
 
-		realCond = 0;
+		realCond = false;
 		if (!boolVal) {
-		    compileScripts = 0;
+		    compileScripts = false;
 		}
 	    } else {
 		Tcl_ResetResult(interp);
@@ -324,15 +324,15 @@ TclCompileIfCmd(
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
 	     */
 
-	    compileScripts = 0;
+	    compileScripts = false;
 	} else {
 	    /*
 	     * We were processing an "if 0 {...}"; reset so that the rest
 	     * (elseif, else) is compiled correctly.
 	     */
 
-	    realCond = 1;
-	    compileScripts = 1;
+	    realCond = true;
+	    compileScripts = true;
 	}
 
 	tokenPtr = TokenAfter(tokenPtr);
@@ -433,7 +433,7 @@ TclCompileIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int isScalar, haveImmValue;
+    bool isScalar, haveImmValue;
     Tcl_LVTIndex localIndex;
     Tcl_WideInt immValue;
 
@@ -449,7 +449,7 @@ TclCompileIncrCmd(
      * integer.
      */
 
-    haveImmValue = 0;
+    haveImmValue = false;
     immValue = 1;
     if (parsePtr->numWords == 3) {
 	Tcl_Obj *intObj;
@@ -458,7 +458,7 @@ TclCompileIncrCmd(
 	if (TclWordKnownAtCompileTime(incrTokenPtr, intObj)) {
 	    int code = TclGetWideIntFromObj(NULL, intObj, &immValue);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
-		haveImmValue = 1;
+		haveImmValue = true;
 	    }
 	}
 	Tcl_BounceRefCount(intObj);
@@ -467,7 +467,7 @@ TclCompileIncrCmd(
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
     } else {			/* No incr amount given so use 1. */
-	haveImmValue = 1;
+	haveImmValue = true;
     }
 
     /*
@@ -622,7 +622,7 @@ TclCompileInfoExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     if (parsePtr->numWords != 2) {
@@ -815,7 +815,7 @@ TclCompileLappendCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     Tcl_Size numWords = parsePtr->numWords, i;
-    int isScalar;
+    bool isScalar;
     Tcl_LVTIndex localIndex;
 
     /* TODO: Consider support for compiling expanded args. */
@@ -926,7 +926,7 @@ TclCompileLassignCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int isScalar;
+    bool isScalar;
     Tcl_Size numWords = parsePtr->numWords, idx;
     Tcl_LVTIndex localIndex;
     /* TODO: Consider support for compiling expanded args. */
@@ -1120,7 +1120,8 @@ TclCompileListCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
-    int concat, build;
+    bool concat;
+    int build;
     Tcl_Obj *listObj, *objPtr;
 
     if (numWords > UINT_MAX) {
@@ -1163,7 +1164,8 @@ TclCompileListCmd(
      */
 
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    concat = build = 0;
+    concat = false;
+    build = 0;
     for (i = 1; i < numWords; i++) {
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
 	    OP4(		LIST, build);
@@ -1171,14 +1173,14 @@ TclCompileListCmd(
 		OP(		LIST_CONCAT);
 	    }
 	    build = 0;
-	    concat = 1;
+	    concat = true;
 	}
 	PUSH_TOKEN(		valueTokenPtr, i);
 	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    if (concat) {
 		OP(		LIST_CONCAT);
 	    } else {
-		concat = 1;
+		concat = true;
 	    }
 	} else {
 	    build++;
@@ -1461,7 +1463,7 @@ TclCompileLsetCmd(
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the variable name. */
     Tcl_LVTIndex localIndex;	/* Index of var in local var table. */
-    int isScalar;		/* Flag == 1 if scalar, 0 if array. */
+    bool isScalar;		/* Flag == true if scalar, false if array. */
     Tcl_Size i, numWords = parsePtr->numWords;
 
     /*
@@ -1879,7 +1881,8 @@ TclCompileRegexpCmd(
 				 * parse of the RE or string. */
     size_t len;
     Tcl_Size i, numWords = parsePtr->numWords;
-    int nocase, exact, sawLast, simple;
+    int nocase, exact;
+    bool sawLast, simple;
     const char *str;
 
     /*
@@ -1893,9 +1896,9 @@ TclCompileRegexpCmd(
 	return TCL_ERROR;
     }
 
-    simple = 0;
+    simple = false;
     nocase = 0;
-    sawLast = 0;
+    sawLast = false;
     varTokenPtr = parsePtr->tokenPtr;
 
     /*
@@ -1907,7 +1910,7 @@ TclCompileRegexpCmd(
     for (i = 1; i < numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (IS_TOKEN_LITERALLY(varTokenPtr, "--")) {
-	    sawLast++;
+	    sawLast = true;
 	    i++;
 	    break;
 	} else if (IS_TOKEN_PREFIX(varTokenPtr, 2, "-nocase")) {
@@ -1966,7 +1969,7 @@ TclCompileRegexpCmd(
 	 */
 
 	if (TclReToGlob(NULL, str, len, &ds, &exact, NULL) == TCL_OK) {
-	    simple = 1;
+	    simple = true;
 	    TclPushDString(envPtr, &ds);
 	    Tcl_DStringFree(&ds);
 	}
@@ -2648,7 +2651,7 @@ IndexTailVarIfKnown(
     const char *tailName, *p;
     Tcl_Size n = varTokenPtr->numComponents, len;
     Tcl_Token *lastTokenPtr;
-    int full;
+    bool full;
     Tcl_LVTIndex localIndex;
 
     /*
@@ -2666,10 +2669,10 @@ IndexTailVarIfKnown(
 
     TclNewObj(tailPtr);
     if (TclWordKnownAtCompileTime(varTokenPtr, tailPtr)) {
-	full = 1;
+	full = true;
 	lastTokenPtr = varTokenPtr;
     } else {
-	full = 0;
+	full = false;
 	lastTokenPtr = varTokenPtr + n;
 
 	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
@@ -2713,7 +2716,7 @@ IndexTailVarIfKnown(
 	tailName = p;
     }
 
-    localIndex = TclFindCompiledLocal(tailName, len, 1, envPtr);
+    localIndex = TclFindCompiledLocal(tailName, len, true, envPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }

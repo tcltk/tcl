@@ -250,7 +250,7 @@ static int		ValidateJumpTargets(AssemblyEnv*);
 static int		CheckForUnclosedCatches(AssemblyEnv*);
 static int		CheckForThrowInWrongContext(AssemblyEnv*);
 static int		CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
-static int		BytecodeMightThrow(unsigned char);
+static bool		BytecodeMightThrow(unsigned char);
 static int		CheckJumpTableLabels(AssemblyEnv*, BasicBlock*);
 static int		CheckNamespaceQualifiers(Tcl_Interp*, const char*,
 			    Tcl_Size);
@@ -1585,7 +1585,7 @@ AssembleOneLine(
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
 	if (localVar < 0
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
-		|| CheckSignedOneByte(interp, opnd)) {
+		|| CheckSignedOneByte(interp, opnd) != TCL_OK) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1744,7 +1744,7 @@ CompileEmbeddedScript(
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	break;
     case INST_EXPR_STK:
-	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, true);
 	break;
     default:
 	Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
@@ -2244,7 +2244,7 @@ FindLocalVar(
 	Tcl_DecrRefCount(varNameObj);
 	return TCL_INDEX_NONE;
     }
-    localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
+    localVar = TclFindCompiledLocal(varNameStr, varNameLen, true, envPtr);
     Tcl_DecrRefCount(varNameObj);
     if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
@@ -2311,7 +2311,7 @@ CheckNamespaceQualifiers(
 static int
 CheckOneByte(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Size value)			/* Value to check */
+    Tcl_Size value)		/* Value to check */
 {
     Tcl_Obj* result;		/* Error message */
 
@@ -2345,7 +2345,7 @@ CheckOneByte(
 static int
 CheckSignedOneByte(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Size value)			/* Value to check */
+    Tcl_Size value)		/* Value to check */
 {
     Tcl_Obj* result;		/* Error message */
 
@@ -2378,7 +2378,7 @@ CheckSignedOneByte(
 static int
 CheckNonNegative(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Size value)			/* Value to check */
+    Tcl_Size value)		/* Value to check */
 {
     Tcl_Obj* result;		/* Error message */
 
@@ -2411,7 +2411,7 @@ CheckNonNegative(
 static int
 CheckStrictlyPositive(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Size value)			/* Value to check */
+    Tcl_Size value)		/* Value to check */
 {
     Tcl_Obj* result;		/* Error message */
 
@@ -3055,13 +3055,13 @@ CheckNonThrowingBlock(
  *	Tests if a given bytecode instruction might throw an exception.
  *
  * Results:
- *	Returns 1 if the bytecode might throw an exception, 0 if the
+ *	Returns true if the bytecode might throw an exception, false if the
  *	instruction is known never to throw.
  *
  *-----------------------------------------------------------------------------
  */
 
-static int
+static bool
 BytecodeMightThrow(
     unsigned char opcode)
 {
@@ -3078,19 +3078,19 @@ BytecodeMightThrow(
 	mid = (min + max) / 2;
 	c = NonThrowingByteCodes[mid];
 	if (opcode < c) {
-	    max = mid-1;
+	    max = mid - 1;
 	} else if (opcode > c) {
-	    min = mid+1;
+	    min = mid + 1;
 	} else {
 	    /*
 	     * Opcode is nonthrowing.
 	     */
 
-	    return 0;
+	    return false;
 	}
     }
 
-    return 1;
+    return true;
 }
 
 /*
@@ -3509,7 +3509,7 @@ ProcessCatchesInBasicBlock(
 				 * target */
     enum BasicBlockCatchState jumpState;
 				/* Catch state of the jump target */
-    int changed = 0;		/* Flag == 1 iff successor blocks need to be
+    bool changed = false;	/* Flag == 1 iff successor blocks need to be
 				 * checked because the state of this block has
 				 * changed. */
     BasicBlock* jumpTarget;	/* Basic block where a jump goes */
@@ -3520,7 +3520,7 @@ ProcessCatchesInBasicBlock(
 
     /*
      * Update the state of the current block, checking for consistency.  Set
-     * 'changed' to 1 if the state changes and successor blocks need to be
+     * 'changed' to true if the state changes and successor blocks need to be
      * rechecked.
      */
 
@@ -3538,7 +3538,7 @@ ProcessCatchesInBasicBlock(
     }
     if (state > bbPtr->catchState) {
 	bbPtr->catchState = state;
-	changed = 1;
+	changed = true;
     }
 
     /*
@@ -3708,7 +3708,7 @@ BuildExceptionRanges(
     int catchDepth = 0;		/* Current catch depth */
     int maxCatchDepth = 0;	/* Maximum catch depth in the program */
     BasicBlock** catches;	/* Stack of catches in progress */
-    Tcl_Size* catchIndices;		/* Indices of the exception ranges of catches
+    Tcl_Size* catchIndices;	/* Indices of the exception ranges of catches
 				 * in progress */
     int i;
 
@@ -3792,7 +3792,7 @@ UnstackExpiredCatches(
     int catchDepth,		/* Depth of nesting of catches prior to entry
 				 * to this block */
     BasicBlock **catches,	/* Array of catch contexts */
-    Tcl_Size *catchIndices)		/* Indices of the exception ranges
+    Tcl_Size *catchIndices)	/* Indices of the exception ranges
 				 * corresponding to the catch contexts */
 {
     ExceptionRange* range;	/* Exception range for a specific catch */
@@ -3898,7 +3898,7 @@ StackFreshCatches(
     int catchDepth,		/* Depth of nesting of catches prior to entry
 				 * to this block */
     BasicBlock** catches,	/* Array of catch contexts */
-    Tcl_Size* catchIndices)		/* Indices of the exception ranges
+    Tcl_Size* catchIndices)	/* Indices of the exception ranges
 				 * corresponding to the catch contexts */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;

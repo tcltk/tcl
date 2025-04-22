@@ -1362,7 +1362,7 @@ Tcl_DisassembleObjCmd(
 	}
 	cmd.nsPtr = (Namespace *) nsPtr;
 	procPtr->cmdPtr = &cmd;
-	result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
+	result = TclPushProcCallFrame(procPtr, interp, objc, objv, true);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1389,7 +1389,7 @@ Tcl_DisassembleObjCmd(
 	 * Compile (if uncompiled) and disassemble a procedure.
 	 */
 
-	result = TclPushProcCallFrame(procPtr, interp, 2, objv+1, 1);
+	result = TclPushProcCallFrame(procPtr, interp, 2, objv+1, true);
 	if (result != TCL_OK) {
 	    return result;
 	}

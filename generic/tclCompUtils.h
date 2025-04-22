@@ -63,14 +63,14 @@ typedef Tcl_Size Tcl_AuxDataRef;
     do {								\
 	SetLineInformation(index);					\
 	TclCompileExprWords(interp, (tokenPtr), 1, envPtr);		\
-    } while (0)
+    } while (false)
 #define BODY(tokenPtr, index) \
     do {								\
 	SetLineInformation((index));					\
 	TclCompileCmdWord(interp,					\
 		(tokenPtr)+1, (tokenPtr)->numComponents,		\
 		envPtr);						\
-    } while (0)
+    } while (false)
 
 #define BACKLABEL(var) \
     (var)=CurrentOffset(envPtr)
@@ -88,9 +88,9 @@ typedef Tcl_Size Tcl_AuxDataRef;
 #define MAKE_LOOP_RANGE() \
     TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr)
 #define CATCH_RANGE_VAR(range,var) \
-    for(int var=(ExceptionRangeStarts(envPtr,(range)), 0);		\
+    for(bool var=(ExceptionRangeStarts(envPtr,(range)), false);		\
 	    !var;							\
-	    var=(ExceptionRangeEnds(envPtr,(range)), 1))
+	    var=(ExceptionRangeEnds(envPtr,(range)), true))
 #define CATCH_RANGE(range) \
     CATCH_RANGE_VAR((range), JOIN(catchRange_, __LINE__))
 #define CATCH_TARGET(range) \

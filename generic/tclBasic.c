@@ -251,7 +251,7 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD	NULL
+#define CORO_ACTIVATE_YIELD	INT2PTR(0)
 #define CORO_ACTIVATE_YIELDM	INT2PTR(1)
 
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL	(-1)
@@ -2539,7 +2539,8 @@ Tcl_CreateCommand(
     Command *cmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int isNew = 0, deleted = 0;
+    int isNew = 0;
+    bool deleted = false;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -2558,7 +2559,7 @@ Tcl_CreateCommand(
      * until we've deleted one command and that didn't finish the job.
      */
 
-    while (1) {
+    while (true) {
 	/*
 	 * Determine where the command should reside. If its name contains
 	 * namespace qualifiers, we put it in the specified namespace;
@@ -2612,7 +2613,7 @@ Tcl_CreateCommand(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
 
     if (!isNew) {
@@ -2843,7 +2844,8 @@ TclCreateObjCommandInNs(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    int deleted = 0, isNew = 0;
+    bool deleted = false;
+    int isNew = 0;
     Command *cmdPtr;
     ImportRef *oldRefPtr = NULL;
     ImportedCmdData *dataPtr;
@@ -2857,7 +2859,7 @@ TclCreateObjCommandInNs(
      * one command and that didn't finish the job.
      */
 
-    while (1) {
+    while (true) {
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
 
 	if (isNew || deleted) {
@@ -2902,7 +2904,7 @@ TclCreateObjCommandInNs(
 	    cmdPtr->importRefPtr = NULL;
 	}
 	TclCleanupCommandMacro(cmdPtr);
-	deleted = 1;
+	deleted = true;
     }
     if (!isNew) {
 	/*
@@ -3265,9 +3267,8 @@ Tcl_SetCommandInfo(
     const Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
 				 * command. */
 {
-    Tcl_Command cmd;
+    Tcl_Command cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
 
-    cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
     return Tcl_SetCommandInfoFromToken(cmd, infoPtr);
 }
 
@@ -4442,7 +4443,7 @@ EvalObjvCore(
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
     Namespace *lookupNsPtr = NULL;
-    int enterTracesDone = 0;
+    bool enterTracesDone = false;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4571,7 +4572,7 @@ EvalObjvCore(
 	     */
 
 	    if (cmdPtr == NULL) {
-		enterTracesDone = 1;
+		enterTracesDone = true;
 		Tcl_DecrRefCount(commandPtr);
 		goto reresolve;
 	    }
@@ -5156,7 +5157,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    int line,		/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5182,12 +5183,12 @@ TclEvalEx(
     char *expand;
     int *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int expandRequested, code = TCL_OK;
+    bool expandRequested, gotParse = false;
+    int code = TCL_OK;
     Tcl_Size bytesLeft, commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    int gotParse = 0;
     Tcl_Size i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
@@ -5313,7 +5314,7 @@ TclEvalEx(
 	TclAdvanceContinuations(&line, &clNext,
 		parsePtr->commandStart - outerScript);
 
-	gotParse = 1;
+	gotParse = true;
 	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
@@ -5339,7 +5340,7 @@ TclEvalEx(
 		lineSpace = (int *)
 			Tcl_Alloc(numWords * sizeof(int));
 	    }
-	    expandRequested = 0;
+	    expandRequested = false;
 	    objv = objvSpace;
 	    lines = lineSpace;
 
@@ -5395,7 +5396,7 @@ TclEvalEx(
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
-		    expandRequested = 1;
+		    expandRequested = true;
 		    expand[objectsUsed] = 1;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
@@ -5539,7 +5540,7 @@ TclEvalEx(
 	p = next;
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
 	Tcl_FreeParse(parsePtr);
-	gotParse = 0;
+	gotParse = false;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
     code = TCL_OK;
@@ -5574,7 +5575,7 @@ TclEvalEx(
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
     }
- posterror:
+  posterror:
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
@@ -5596,7 +5597,7 @@ TclEvalEx(
     }
     iPtr->varFramePtr = savedVarFramePtr;
 
- cleanup_return:
+  cleanup_return:
     /*
      * TIP #280. Release the local CmdFrame, and its contents.
      */
@@ -6124,7 +6125,7 @@ TclNREvalObjEx(
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
-    int word)		/* Index of the word which is in objPtr. */
+    int word)			/* Index of the word which is in objPtr. */
 {
     Interp *iPtr = (Interp *) interp;
     int result;
@@ -6237,9 +6238,7 @@ TclNREvalObjEx(
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		objPtr, INT2PTR(allowExceptions), NULL);
 	return TclNRExecuteByteCode(interp, codePtr);
-    }
-
-    {
+    } else {
 	/*
 	 * We're not supposed to use the compiler or byte-code
 	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
@@ -7129,7 +7128,7 @@ ExprIsqrtFunc(
     double d;
     Tcl_WideInt w;
     mp_int big;
-    int exact = 0;		/* Flag ==1 if the argument can be represented
+    bool exact = false;		/* Flag if the argument can be represented
 				 * in a double as an exact integer. */
 
     /*
@@ -7160,7 +7159,7 @@ ExprIsqrtFunc(
 	}
 #ifdef IEEE_FLOATING_POINT
 	if (d <= MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7188,7 +7187,7 @@ ExprIsqrtFunc(
 	d = (double) w;
 #ifdef IEEE_FLOATING_POINT
 	if (d < MAX_EXACT) {
-	    exact = 1;
+	    exact = true;
 	}
 #endif
 	if (!exact) {
@@ -7978,7 +7977,7 @@ ClassifyDouble(
 				 * untested). */
     unsigned int exponent, mantissaLow, mantissaHigh;
 				/* The pieces extracted from the double. */
-    int zeroMantissa;		/* Was the mantissa zero? That's special. */
+    bool zeroMantissa;		/* Was the mantissa zero? That's special. */
 
     /*
      * Shifts and masks to use with the doubleMeaning variable above.
@@ -8261,7 +8260,7 @@ static void
 MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Size expected,		/* Formal parameter count. */
-    Tcl_Size found,			/* Actual parameter count. */
+    Tcl_Size found,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     const char *name = TclGetString(objv[0]);
