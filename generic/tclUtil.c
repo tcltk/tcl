@@ -4630,7 +4630,7 @@ TclReToGlob(
  *
  * Results:
  *	The index of the most significant set bit in n, a value between
- *	0 and CHAR_BIT*sizeof(unsigned long long) - 1, inclusive.
+ *	0 and 63, inclusive.
  *
  * Side effects:
  *	None.
@@ -4642,10 +4642,7 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* Bits in an unsigned long long */
-    const int M = CHAR_BIT * sizeof(unsigned long long);
-
-    if (M == 64) {
+    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long); */
 
 	/*
 	 * For a byte, consider two masks, C1 = 10000000 selecting just
@@ -4654,20 +4651,20 @@ TclMSB(
 	 *	LEAD(n) = C1 & (n | (C2 + (n & C2)))
 	 * will leave all bits but the high bit unset, and will have the
 	 * high bit set iff n!=0.  The whole thing is an 8-bit test
-	 * for being non-zero.  For an 8-byte size_t, each byte can have
+	 * for being non-zero.  For an 8-byte n, each byte can have
 	 * the test applied all at once, with combined masks.
 	 */
-	const size_t C1 = 0x8080808080808080;
-	const size_t C2 = 0x7F7F7F7F7F7F7F7F;
+	const unsigned long long C1 = 0x8080808080808080;
+	const unsigned long long C2 = 0x7F7F7F7F7F7F7F7F;
 #define LEAD(n) (C1 & (n | (C2 + (n & C2))))
 
 	/*
 	 * To shift a bit to a new place, multiplication by 2^k will do.
 	 * To shift the top 7 bits produced by the LEAD test to the high
-	 * 7 bits of the entire size_t, multiply by the right sum of
+	 * 7 bits of the entire long long, multiply by the right sum of
 	 * powers of 2.  In this case
 	 * Q = 1 + 2^7 + 2^14 + 2^21 + 2^28 + 2^35 + 2^42
-	 * Then shift those 7 bits down to the low 7 bits of the size_t.
+	 * Then shift those 7 bits down to the low 7 bits of the long long.
 	 * The key to making this work is that none of the shifted bits
 	 * collide with each other in the top 7-bit destination.
 	 * Note that we lose the bit that indicates whether the low byte
@@ -4676,16 +4673,16 @@ TclMSB(
 	 * we know the low byte is non-zero, and if one of the other bytes
 	 * signals non-zero, we just don't care what the low byte is.
 	 */
-	const size_t  Q = 0x0000040810204081;
+	const unsigned long long Q = 0x0000040810204081;
 
 	/*
 	 * To place a copy of a 7-bit value in each of 7 bytes in
-	 * a size_t, just multply by the right value.  In this case
+	 * a long long, just multply by the right value.  In this case
 	 *  P = 0x00 01 01 01 01 01 01 01
 	 * We don't put a copy in the high byte since analysis of the
 	 * remaining steps in the algorithm indicates we do not need it.
 	 */
-	const size_t  P = 0x0001010101010101;
+	const unsigned long long P = 0x0001010101010101;
 
 	/*
 	 * With 7 copies of the LEAD value, we can now apply 7 masks
@@ -4695,8 +4692,8 @@ TclMSB(
 	 * The higher the MSB of the copied value is, the more of the
 	 * B-masked bytes stored in t will be non-zero.
 	 */
-	const size_t  B = 0x007F7E7C78706040;
-	size_t t = B & P * (LEAD(n) * Q >> 57);
+	const unsigned long long B = 0x007F7E7C78706040;
+	unsigned long long t = B & P * (LEAD(n) * Q >> 57);
 
 	/*
 	 * We want to get a count of the non-zero bytes stored in t.
@@ -4709,7 +4706,7 @@ TclMSB(
 	 * P*X = x0*2^7 + (x0 + x1)*2^15 + ...
 	 *       ... + (x0 + x1 + x2 + x3 + x4 + x5 + x6) * 2^55 + ...
 	 *	 ... + (x5 + x6)*2^95 + x6*2^103
-	 * The high terms of this product are going to overflow the size_t
+	 * The high terms of this product are going to overflow the long long
 	 * and get lost, but we don't care about them.  What we care is that
 	 * the 2^55 term is exactly the sum we seek.  We shift the product
 	 * down by 55 bits and then mask away all but the bottom 3 bits
@@ -4753,42 +4750,7 @@ TclMSB(
 	 */
 
 #undef SUM
-    } else if (M == 32) {
-
-	/* Same scheme as above, with adjustments to the 32-bit size */
-	const size_t C1 = 0xA0820820;
-	const size_t C2 = 0x5F7DF7DF;
-	const size_t C3 = 0xC0820820;
-	const size_t C4 = 0x20000000;
-	const size_t Q  = 0x00010841;
-	const size_t P = 0x01041041;
-	const size_t B = 0x1F79C610;
-
-#define SUM(t) (0x7 & (LEAD(t) * P >> 29));
-
-	size_t t = B & P * ((C3 & (LEAD(n) + C4)) * Q >> 27);
-	int k = 6 * SUM(t);
-
-	t = B & P * (n >> k >> 1);
-	return k + SUM(t);
-
-	/* Total operations: 33
-	 * 11 bit-ands, 6 multiplies, 5 adds, 5 rightshifts,
-	 * 3 assignments, 3 bit-ors.
-	 */
-
-#undef SUM
 #undef LEAD
-
-    } else {
-	/* Simple and slow fallback for cases we haven't done yet. */
-	int k = 0;
-
-	while (n >>= 1) {
-	    k++;
-	}
-	return k;
-    }
 }
 
 /*
