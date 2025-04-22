@@ -251,6 +251,7 @@ static Tcl_ObjCmdProc	TestlinkarrayCmd;
 static Tcl_ObjCmdProc	TestlistrepCmd;
 static Tcl_ObjCmdProc	TestlocaleCmd;
 static Tcl_ObjCmdProc	TestmainthreadCmd;
+static Tcl_ObjCmdProc	TestmsbObjCmd;
 static Tcl_ObjCmdProc	TestsetmainloopCmd;
 static Tcl_ObjCmdProc	TestexitmainloopCmd;
 static Tcl_ObjCmdProc	TestpanicCmd;
@@ -647,6 +648,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlistrep", TestlistrepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand(interp, "testmsb", TestmsbObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserCmd,
@@ -3993,6 +3995,53 @@ CleanupTestSetassocdataTests(
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_Free(clientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestmsbObjCmd --
+ *
+ *	This procedure implements the "testmsb" command.  It is
+ *	used for testing the TclMSB() routine.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestmsbObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_WideInt w = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "integer");
+	return TCL_ERROR;
+    }
+    if (sizeof(Tcl_WideUInt) <= sizeof(size_t)) {
+	if (TCL_OK != Tcl_GetWideIntFromObj(interp, objv[1], &w)) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(w)));
+    } else {
+	int i;
+	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[1], &i)) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(i)));
+    }
+    return TCL_OK;
+
+    (void)clientData;
 }
 
 /*
