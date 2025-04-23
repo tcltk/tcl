@@ -878,7 +878,7 @@ enum TclInstruction {
     INST_CONST_IMM,
     INST_CONST_STK,
 
-    /* Updated compilations with fewer arg size constraints */
+    /* Updated compilations with fewer arg size constraints for 9.1 */
     INST_RETURN_CODE_BRANCH,
     INST_INCR_SCALAR,
     INST_INCR_ARRAY,
@@ -888,10 +888,12 @@ enum TclInstruction {
     INST_TCLOO_NEXT,
     INST_TCLOO_NEXT_CLASS,
 
+    /* Really new opcodes for 9.1 */
     INST_SWAP,
     INST_ERROR_PREFIX_EQ,
     INST_TCLOO_ID,
     INST_DICT_PUT,
+    INST_JUMP_TABLE_NUM,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -1074,7 +1076,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 /*
- * Structure used to hold information about a switch command that is needed
+ * Structures used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
  * ByteCode structures as auxiliary data.
  */
@@ -1088,6 +1090,33 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 #define JUMPTABLEINFO(envPtr, index) \
     ((JumptableInfo *) TclFetchAuxData((envPtr), TclGetUInt4AtPtr(index)))
+
+static inline JumptableInfo *
+AllocJumptable(void)
+{
+    JumptableInfo *jtPtr = (JumptableInfo *) Tcl_Alloc(sizeof(JumptableInfo));
+    Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
+    return jtPtr;
+}
+
+typedef struct JumptableNumInfo {
+    Tcl_HashTable hashTable;	/* Hash that maps Tcl_WideInt to signed ints
+				 * (PC offsets). */
+} JumptableNumInfo;
+
+MODULE_SCOPE const AuxDataType tclJumptableNumInfoType;
+
+#define JUMPTABLENUMINFO(envPtr, index) \
+    ((JumptableNumInfo *) TclFetchAuxData((envPtr), TclGetUInt4AtPtr(index)))
+
+static inline JumptableNumInfo *
+AllocJumptableNum(void)
+{
+    JumptableNumInfo *jtnPtr = (JumptableNumInfo *)
+	    Tcl_Alloc(sizeof(JumptableNumInfo));
+    Tcl_InitHashTable(&jtnPtr->hashTable, TCL_ONE_WORD_KEYS);
+    return jtnPtr;
+}
 
 /*
  * Structure used to hold information about a [dict update] command that is

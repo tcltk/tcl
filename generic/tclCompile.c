@@ -477,6 +477,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Jump according to the jump-table (in AuxData as indicated by the
 	 * operand) and the argument popped from the list. Always executes the
 	 * next instruction if no match against the table's entries was found.
+	 * Keys are strings.
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
@@ -939,6 +940,15 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Modify the dict by replacing/creating the key/value pair given,
 	 * pushing the result on the stack.
 	 * Stack:  ... dict key value => ... updatedDict */
+    TCL_INSTRUCTION_ENTRY1(
+	"jumpTableNum",	 5,	-1,	  OPERAND_AUX4),
+	/* Jump according to the jump-table (in AuxData as indicated by the
+	 * operand) and the argument popped from the list. Always executes the
+	 * next instruction if no match against the table's entries was found.
+	 * Keys are Tcl_WideInt.
+	 * Stack:  ... value => ...
+	 * Note that the jump table contains offsets relative to the PC when
+	 * it points to this instruction; the code is relocatable. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
