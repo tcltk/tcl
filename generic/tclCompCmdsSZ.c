@@ -50,6 +50,9 @@ static AuxDataDupProc	DupJumptableInfo;
 static AuxDataFreeProc	FreeJumptableInfo;
 static AuxDataPrintProc	PrintJumptableInfo;
 static AuxDataPrintProc	DisassembleJumptableInfo;
+static AuxDataDupProc	DupJumptableNumInfo;
+static AuxDataPrintProc	PrintJumptableNumInfo;
+static AuxDataPrintProc	DisassembleJumptableNumInfo;
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -89,6 +92,14 @@ const AuxDataType tclJumptableInfoType = {
     FreeJumptableInfo,		/* freeProc */
     PrintJumptableInfo,		/* printProc */
     DisassembleJumptableInfo	/* disassembleProc */
+};
+
+const AuxDataType tclJumptableNumericInfoType = {
+    "JumptableNumInfo",		/* name */
+    DupJumptableNumInfo,	/* dupProc */
+    FreeJumptableInfo,		/* freeProc */
+    PrintJumptableNumInfo,	/* printProc */
+    DisassembleJumptableNumInfo	/* disassembleProc */
 };
 
 /*
@@ -2341,8 +2352,7 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
-    Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
+    jtPtr = AllocJumptable();
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
     finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms);
@@ -2385,6 +2395,10 @@ IssueSwitchJumpTable(
 	    Tcl_DStringInit(&buffer);
 	    TclDStringAppendToken(&buffer, arm->valueToken);
 	    if (noCase) {
+		/*
+		 * We do case-insensitive matching by conversion to lower case.
+		 */
+
 		Tcl_Size slength = Tcl_UtfToLower(Tcl_DStringValue(&buffer));
 		Tcl_DStringSetLength(&buffer, slength);
 	    }
@@ -2484,22 +2498,28 @@ IssueSwitchJumpTable(
 /*
  *----------------------------------------------------------------------
  *
- * DupJumptableInfo, FreeJumptableInfo --
+ * DupJumptableInfo, FreeJumptableInfo, etc --
  *
- *	Functions to duplicate, release and print a jump-table created for use
- *	with the INST_JUMP_TABLE instruction.
+ *	Functions to duplicate, release and print jump-tables created for use
+ *	with the INST_JUMP_TABLE or INST_JUMP_TABLE_NUM instructions.
  *
  * Results:
  *	DupJumptableInfo: a copy of the jump-table
  *	FreeJumptableInfo: none
  *	PrintJumptableInfo: none
  *	DisassembleJumptableInfo: none
+ *	DupJumptableNumInfo: a copy of the jump-table
+ *	PrintJumptableNumInfo: none
+ *	DisassembleJumptableNumInfo: none
  *
  * Side effects:
  *	DupJumptableInfo: allocates memory
  *	FreeJumptableInfo: releases memory
  *	PrintJumptableInfo: none
  *	DisassembleJumptableInfo: none
+ *	DupJumptableNumInfo: allocates memory
+ *	PrintJumptableNumInfo: none
+ *	DisassembleJumptableNumInfo: none
  *
  *----------------------------------------------------------------------
  */
@@ -2509,12 +2529,11 @@ DupJumptableInfo(
     void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
-    JumptableInfo *newJtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
+    JumptableInfo *newJtPtr = AllocJumptable();
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
 
-    Tcl_InitHashTable(&newJtPtr->hashTable, TCL_STRING_KEYS);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	newHPtr = Tcl_CreateHashEntry(&newJtPtr->hashTable,
@@ -2583,6 +2602,82 @@ DisassembleJumptableInfo(
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	TclDictPut(NULL, mapping, keyPtr, Tcl_NewWideIntObj(offset));
+    }
+    TclDictPut(NULL, dictObj, "mapping", mapping);
+}
+
+static void *
+DupJumptableNumInfo(
+    void *clientData)
+{
+    JumptableNumInfo *jtnPtr = (JumptableNumInfo *) clientData;
+    JumptableNumInfo *newJtnPtr = AllocJumptableNum();
+    Tcl_HashEntry *hPtr, *newHPtr;
+    Tcl_HashSearch search;
+    int isNew;
+
+    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	newHPtr = Tcl_CreateHashEntry(&newJtnPtr->hashTable,
+		Tcl_GetHashKey(&jtnPtr->hashTable, hPtr), &isNew);
+	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
+    }
+    return newJtnPtr;
+}
+
+// No FreeJumptableNumInfo; same as FreeJumptableInfo
+
+static void
+PrintJumptableNumInfo(
+    void *clientData,
+    Tcl_Obj *appendObj,
+    TCL_UNUSED(ByteCode *),
+    size_t pcOffset)
+{
+    JumptableNumInfo *jtnPtr = (JumptableNumInfo *)clientData;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    Tcl_Size key;
+    size_t offset, i = 0;
+
+    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
+	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+
+	if (i++) {
+	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
+	    if (i%4==0) {
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_AUTO_LENGTH);
+	    }
+	}
+	Tcl_AppendPrintfToObj(appendObj,
+		"\"%"TCL_SIZE_MODIFIER"d\"->pc %" TCL_Z_MODIFIER "u",
+		key, pcOffset + offset);
+    }
+}
+
+static void
+DisassembleJumptableNumInfo(
+    void *clientData,
+    Tcl_Obj *dictObj,
+    TCL_UNUSED(ByteCode *),
+    TCL_UNUSED(size_t))
+{
+    JumptableNumInfo *jtnPtr = (JumptableNumInfo *)clientData;
+    Tcl_Obj *mapping;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    Tcl_Size key;
+    size_t offset;
+
+    TclNewObj(mapping);
+    hPtr = Tcl_FirstHashEntry(&jtnPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
+	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	TclDictPut(NULL, mapping, Tcl_NewWideIntObj(key),
+		Tcl_NewWideIntObj(offset));
     }
     TclDictPut(NULL, dictObj, "mapping", mapping);
 }
