@@ -4647,7 +4647,8 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long); */
+    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long) ); */
+    /* assert ( n != 0 ); */
 
     /*
      * Many platforms offer access to this functionality through
@@ -4665,6 +4666,18 @@ TclMSB(
 
 	(void) _BitScanReverse64(&result, (unsigned __int64)n);
 	return (int)result;
+
+#elif defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+
+	/*
+	 * The GNU Compiler Collection offers this builtin routine
+	 * starting with version 3.4, released 2004.
+	 * clzll() = Count of Leading Zeroes in a Long Long
+	 * NOTE: we rely on input constraint (n != 0).
+	 */
+	
+	return 63 - __builtin_clzll(n);
+	
 #else
 
 	/*
