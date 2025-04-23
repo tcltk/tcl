@@ -19,6 +19,11 @@
 #include "tclTomMath.h"
 #include <math.h>
 
+#if defined(_MSC_VER) && defined(_WIN64)
+#   include <intrin.h>
+#   pragma intrinsic(_BitScanReverse64)
+#endif
+
 /*
  * The absolute pathname of the executable in which this Tcl library is
  * running.
@@ -4644,6 +4649,24 @@ TclMSB(
 {
     /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long); */
 
+    /*
+     * Many platforms offer access to this functionality through
+     * compiler specific incantations that exploit processor
+     * instructions.  Add more as appropriate.
+     */
+
+#if defined(_MSC_VER) && defined(_WIN64)
+	/*
+	 * This candidate implementation for Microsoft compilers is
+	 * untested.  (Remove this comment when someone tests it and
+	 * either finds it working, or fixes any brokenness.)
+	 */
+	unsigned long result;
+
+	(void) _BitScanReverse64(&result, (unsigned __int64)n);
+	return (int)result;
+#else
+
 	/*
 	 * For a byte, consider two masks, C1 = 10000000 selecting just
 	 * the high bit, and C2 = 01111111 selecting all other bits.
@@ -4751,6 +4774,7 @@ TclMSB(
 
 #undef SUM
 #undef LEAD
+#endif
 }
 
 /*
