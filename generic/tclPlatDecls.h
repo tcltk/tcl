@@ -219,9 +219,9 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #undef Tcl_WinTCharToUtf
 #ifdef _WIN32
 #define Tcl_WinUtfToTChar(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
+	(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
 #define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+	Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
 #endif
 #endif
 
