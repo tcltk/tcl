@@ -2332,7 +2332,6 @@ IssueSwitchJumpTable(
     Tcl_Size numRealBodies = 0, i;
     Tcl_BytecodeLabel jumpLocation, jumpToDefault, *finalFixups;
     Tcl_DString buffer;
-    Tcl_HashEntry *hPtr;
 
     /*
      * If doing case-insensitive matching, convert to lower case and then do
@@ -2353,7 +2352,7 @@ IssueSwitchJumpTable(
      */
 
     jtPtr = AllocJumptable();
-    infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
+    infoIndex = RegisterJumptable(jtPtr, envPtr);
     finalFixups = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numArms);
     foundDefault = 0;
@@ -2402,16 +2401,8 @@ IssueSwitchJumpTable(
 		Tcl_Size slength = Tcl_UtfToLower(Tcl_DStringValue(&buffer));
 		Tcl_DStringSetLength(&buffer, slength);
 	    }
-	    hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
-		    Tcl_DStringValue(&buffer), &isNew);
-	    if (isNew) {
-		/*
-		 * First time we've encountered this match clause, so it must
-		 * point to here.
-		 */
-
-		Tcl_SetHashValue(hPtr, INT2PTR(CurrentOffset(envPtr) - jumpLocation));
-	    }
+	    CreateJumptableEntry(jtPtr, Tcl_DStringValue(&buffer),
+		    CurrentOffset(envPtr) - jumpLocation);
 	    Tcl_DStringFree(&buffer);
 	} else {
 	    /*
@@ -2676,7 +2667,8 @@ DisassembleJumptableNumInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	key = (Tcl_Size) Tcl_GetHashKey(&jtnPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	TclDictPut(NULL, mapping, Tcl_NewWideIntObj(key),
+	// Cannot fail: keys already known to be unique
+	Tcl_DictObjPut(NULL, mapping, Tcl_NewWideIntObj(key),
 		Tcl_NewWideIntObj(offset));
     }
     TclDictPut(NULL, dictObj, "mapping", mapping);
