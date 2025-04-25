@@ -939,6 +939,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Modify the dict by replacing/creating the key/value pair given,
 	 * pushing the result on the stack.
 	 * Stack:  ... dict key value => ... updatedDict */
+    TCL_INSTRUCTION_ENTRY(
+	"dictRemove",		-1),
+	/* Modify the dict by removing the key/value pair for the given key,
+	 * pushing the result on the stack.
+	 * Stack:  ... dict key => ... updatedDict */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -950,8 +955,7 @@ InstructionDesc const tclInstructionTable[] = {
 static void		CleanupByteCode(ByteCode *codePtr);
 static ByteCode *	CompileSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr);
+static void		DupByteCodeInternalRep(Tcl_Obj *, Tcl_Obj *);
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
 static void		EnterCmdExtentData(CompileEnv *envPtr,
