@@ -1334,7 +1334,7 @@ TclCompileDictRemoveCmd(
     /*
      * Don't compile [dict remove $dict]; it's an edge case.
      */
-    if (numWords <= 3 || numWords > UINT_MAX) {
+    if (numWords <= 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
