@@ -99,10 +99,16 @@ LocateTargetAddresses(
 	storeTarget:
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    break;
+	case INST_JUMP_TABLE_NUM:
+	    hPtr = Tcl_FirstHashEntry(
+		    &JUMPTABLENUMINFO(envPtr, currentInstPtr+1)->hashTable,
+		    &hSearch);
+	    goto storeJumpTableTargets;
 	case INST_JUMP_TABLE:
 	    hPtr = Tcl_FirstHashEntry(
 		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable,
 		    &hSearch);
+	storeJumpTableTargets:
 	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
 		targetInstPtr = currentInstPtr +
 			PTR2INT(Tcl_GetHashValue(hPtr));
