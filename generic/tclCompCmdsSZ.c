@@ -1514,8 +1514,9 @@ TclSubstCompile(
 	Tcl_Size length;
 	int literal;
 	Tcl_ExceptionRange catchRange;
-	Tcl_BytecodeLabel end, haveOk, haveReturn, haveBreak, haveContinue;
-	Tcl_BytecodeLabel haveOther;
+	Tcl_BytecodeLabel end, haveOk, haveOther, tableBase;
+	JumptableNumInfo *retCodeTable;
+	Tcl_AuxDataRef tableIdx;
 	char buf[4] = "";
 
 	switch (tokenPtr->type) {
@@ -1613,57 +1614,40 @@ TclSubstCompile(
 
 	/* Exceptional return codes processed here */
 	CATCH_TARGET(	catchRange);
-	OP(			PUSH_RETURN_OPTIONS);
-	OP(			PUSH_RESULT);
 	OP(			PUSH_RETURN_CODE);
-	OP(			END_CATCH);
-	OP(			RETURN_CODE_BRANCH);
 
-	/* ERROR -> reraise it; NB: can't require BREAK/CONTINUE handling */
-	OP(			RETURN_STK);
-	OP(			NOP);
-	OP(			NOP);
-	OP(			NOP);
-	OP(			NOP);
-
-	/* RETURN */
-	FWDJUMP(		JUMP, haveReturn);
-
-	/* BREAK */
-	FWDJUMP(		JUMP, haveBreak);
-
-	/* CONTINUE */
-	FWDJUMP(		JUMP, haveContinue);
-
-	/* OTHER */
+	retCodeTable = AllocJumptableNum();
+	tableIdx = RegisterJumptableNum(retCodeTable, envPtr);
+	tableBase = CurrentOffset(envPtr);
+	OP4(			JUMP_TABLE_NUM, tableIdx);
 	FWDJUMP(		JUMP, haveOther);
 
-	STKDELTA(+1);
-	/* BREAK destination */
-	FWDLABEL(	haveBreak);
-	OP(			POP);
-	OP(			POP);
+	/* ERROR -> reraise it; NB: can't require BREAK/CONTINUE handling */
+	CreateJumptableNumEntryToHere(retCodeTable, TCL_ERROR, tableBase);
+	OP(			PUSH_RETURN_OPTIONS);
+	OP(			PUSH_RESULT);
+	OP(			END_CATCH); // catchRange
+	OP(			RETURN_STK);
+	STKDELTA(-1);
 
+	/* BREAK destination */
+	CreateJumptableNumEntryToHere(retCodeTable, TCL_BREAK, tableBase);
+	OP(			END_CATCH); // catchRange
 	BACKJUMP(		JUMP, breakOffset);
 
-	STKDELTA(+2);
 	/* CONTINUE destination */
-	FWDLABEL(	haveContinue);
-	OP(			POP);
-	OP(			POP);
+	CreateJumptableNumEntryToHere(retCodeTable, TCL_CONTINUE, tableBase);
+	OP(			END_CATCH); // catchRange
 	FWDJUMP(		JUMP, end);
 
-	STKDELTA(+2);
 	/* RETURN + other destination */
-	FWDLABEL(	haveReturn);
 	FWDLABEL(	haveOther);
+	OP(			PUSH_RESULT);
+	OP(			END_CATCH); // catchRange
 
 	/*
 	 * Pull the result to top of stack, discard options dict.
 	 */
-
-	OP(			SWAP);
-	OP(			POP);
 
 	/* OK destination */
 	FWDLABEL(	haveOk);
