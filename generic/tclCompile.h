@@ -777,7 +777,7 @@ enum TclInstruction {
 
     /* For [subst] compilation */
     INST_NOP,
-    DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH1),
+    DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH),
 
     /* For [unset] compilation */
     INST_UNSET_SCALAR,
@@ -879,7 +879,6 @@ enum TclInstruction {
     INST_CONST_STK,
 
     /* Updated compilations with fewer arg size constraints for 9.1 */
-    INST_RETURN_CODE_BRANCH,
     INST_INCR_SCALAR,
     INST_INCR_ARRAY,
     INST_INCR_SCALAR_IMM,
@@ -1114,6 +1113,9 @@ CreateJumptableEntry(
     return isNew;
 }
 
+#define CreateJumptableEntryToHere(jtPtr, key, baseOffset) \
+    CreateJumptableEntry((jtPtr), (key), CurrentOffset(envPtr) - (baseOffset))
+
 typedef struct JumptableNumInfo {
     Tcl_HashTable hashTable;	/* Hash that maps Tcl_WideInt to signed ints
 				 * (PC offsets). */
@@ -1147,6 +1149,10 @@ CreateJumptableNumEntry(
     }
     return isNew;
 }
+
+#define CreateJumptableNumEntryToHere(jtnPtr, key, baseOffset) \
+    CreateJumptableNumEntry((jtnPtr), (key),				\
+	    CurrentOffset(envPtr) - (baseOffset))
 
 /*
  * Structure used to hold information about a [dict update] command that is

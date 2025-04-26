@@ -6982,10 +6982,10 @@ TEBCresume(
     break;
 
 #ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_RETURN_CODE_BRANCH1: {
+    case INST_RETURN_CODE_BRANCH: {
 	int code;
 
-	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH1);
+	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH);
 	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
 	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
 	}
@@ -6999,22 +6999,6 @@ TEBCresume(
 	NEXT_INST_F0(2*code - 1, 1);
     }
 #endif
-
-    case INST_RETURN_CODE_BRANCH: {
-	int code;
-
-	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
-	}
-	if (code == TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
-	}
-	if (code < TCL_ERROR || code > TCL_CONTINUE) {
-	    code = TCL_CONTINUE + 1;
-	}
-	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 5*code - 4));
-	NEXT_INST_F0(5*code - 4, 1);
-    }
 
     case INST_ERROR_PREFIX_EQ: {
 	/*

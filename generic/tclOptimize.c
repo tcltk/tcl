@@ -116,17 +116,12 @@ LocateTargetAddresses(
 	    }
 	    break;
 #ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_RETURN_CODE_BRANCH1:
+	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
 #endif
-	case INST_RETURN_CODE_BRANCH:
-	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
-		DefineTargetAddress(tablePtr, currentInstPtr + 5*i - 4);
-	    }
-	    break;
 	}
     }
 
