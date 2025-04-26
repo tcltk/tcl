@@ -3819,6 +3819,7 @@ MODULE_SCOPE CompileProc TclCompileDictIncrCmd;
 MODULE_SCOPE CompileProc TclCompileDictLappendCmd;
 MODULE_SCOPE CompileProc TclCompileDictMapCmd;
 MODULE_SCOPE CompileProc TclCompileDictMergeCmd;
+MODULE_SCOPE CompileProc TclCompileDictRemoveCmd;
 MODULE_SCOPE CompileProc TclCompileDictReplaceCmd;
 MODULE_SCOPE CompileProc TclCompileDictSetCmd;
 MODULE_SCOPE CompileProc TclCompileDictUnsetCmd;

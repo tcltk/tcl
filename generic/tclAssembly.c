@@ -362,6 +362,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"dictPut",		ASSEM_1BYTE,	INST_DICT_PUT,		3,	1},
     {"dictRecombineStk",ASSEM_1BYTE,	INST_DICT_RECOMBINE_STK,3,	0},
     {"dictRecombineImm",ASSEM_LVT,	INST_DICT_RECOMBINE_IMM,2,	0},
+    {"dictRemove",	ASSEM_1BYTE,	INST_DICT_REMOVE,	2,	1},
     {"dictSet",		ASSEM_DICT_SET, INST_DICT_SET,		INT_MIN,1},
     {"dictUnset",	ASSEM_DICT_UNSET,
 					INST_DICT_UNSET,	INT_MIN,1},

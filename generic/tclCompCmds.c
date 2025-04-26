@@ -1304,7 +1304,7 @@ TclCompileDictReplaceCmd(
 
     // Push starting dictionary
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PUSH_TOKEN(		tokenPtr, 1);
+    PUSH_TOKEN(			tokenPtr, 1);
 
     // Push the keys and values, and add them to the dictionary
     for (i=2; i<numWords; i+=2) {
@@ -1315,6 +1315,41 @@ TclCompileDictReplaceCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, i + 1);
 	OP(			DICT_PUT);
+    }
+
+    return TCL_OK;
+}
+
+int
+TclCompileDictRemoveCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Size i, numWords = parsePtr->numWords;
+    Tcl_Token *tokenPtr;
+    /* TODO: Consider support for compiling expanded args. */
+
+    /*
+     * Don't compile [dict remove $dict]; it's an edge case.
+     */
+    if (numWords <= 2 || numWords > UINT_MAX) {
+	return TCL_ERROR;
+    }
+
+    // Push starting dictionary
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PUSH_TOKEN(			tokenPtr, 1);
+
+    // Push the keys, and remove them from the dictionary
+    for (i=2; i<numWords; i++) {
+	// Push key
+	tokenPtr = TokenAfter(tokenPtr);
+	PUSH_TOKEN(		tokenPtr, i);
+	OP(			DICT_REMOVE);
     }
 
     return TCL_OK;
