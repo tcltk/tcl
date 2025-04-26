@@ -2401,7 +2401,7 @@ IssueSwitchJumpTable(
 		Tcl_Size slength = Tcl_UtfToLower(Tcl_DStringValue(&buffer));
 		Tcl_DStringSetLength(&buffer, slength);
 	    }
-	    CreateJumptableEntry(jtPtr, Tcl_DStringValue(&buffer),
+	    isNew = CreateJumptableEntry(jtPtr, Tcl_DStringValue(&buffer),
 		    CurrentOffset(envPtr) - jumpLocation);
 	    Tcl_DStringFree(&buffer);
 	} else {

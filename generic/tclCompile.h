@@ -1100,7 +1100,7 @@ AllocJumptable(void)
     return jtPtr;
 }
 
-static inline void
+static inline int
 CreateJumptableEntry(
     JumptableInfo *jtPtr,
     const char *keyPtr,
@@ -1111,6 +1111,7 @@ CreateJumptableEntry(
     if (isNew) {
 	Tcl_SetHashValue(hPtr, INT2PTR(offset));
     }
+    return isNew;
 }
 
 typedef struct JumptableNumInfo {
@@ -1132,7 +1133,7 @@ AllocJumptableNum(void)
     return jtnPtr;
 }
 
-static inline void
+static inline int
 CreateJumptableNumEntry(
     JumptableNumInfo *jtnPtr,
     Tcl_Size key,
@@ -1144,6 +1145,7 @@ CreateJumptableNumEntry(
     if (isNew) {
 	Tcl_SetHashValue(hPtr, INT2PTR(offset));
     }
+    return isNew;
 }
 
 /*
