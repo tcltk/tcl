@@ -1081,7 +1081,7 @@ test lseq-bug-7d3101bf28-2 {Bug 7d3101bf28 - crash on error in index syntax} -bo
     list \
         [try [list lindex [lseq 10] foo]] \
         [eval [list lindex [lseq 10] foo]]
-} -result {{} {}} -constraints bug_7d3101bf28
+} -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
 
 test lseq-bug-452b103a74-1 {Bug 452b103a74 - crash on nested indices} -body {
     lindex [lseq 10] 0 1
