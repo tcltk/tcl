@@ -2670,8 +2670,8 @@ TclLindexFlat(
 	Tcl_Obj *elemObj = listObj; /* for lindex without indices return list */
 	for (i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-		    &index) == TCL_OK) {
-		// TODO: ???
+		    &index) != TCL_OK) {
+		return NULL;
 	    }
 	    if (i==0) {
 		if (TclObjTypeIndex(interp, listObj, index, &elemObj) != TCL_OK) {
@@ -2720,6 +2720,7 @@ TclLindexFlat(
 		Tcl_IncrRefCount(listObj);
 	    } else {
 		Tcl_Obj *itemObj;
+		/* TODO - this will cause shimmering of inner abstract lists! */
 		/*
 		 * Must set the internal rep again because it may have been
 		 * changed by TclGetIntForIndexM. See test lindex-8.4.
