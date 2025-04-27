@@ -1083,14 +1083,29 @@ test lseq-bug-7d3101bf28-2 {Bug 7d3101bf28 - crash on error in index syntax} -bo
         [eval [list lindex [lseq 10] foo]]
 } -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
 
-test lseq-bug-452b103a74-1 {Bug 452b103a74 - crash on nested indices} -body {
+test lseq-bug-452b103a74-0 {Bug 452b103a74 - crash on nested indices} -body {
     lindex [lseq 10] 0 1
-} -result {} -constraints bug_452b103a74
+} -result {}
+
+test lseq-bug-452b103a74-1 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] 0 end
+} -result 0
 
 test lseq-bug-452b103a74-2 {Bug 452b103a74 - crash on nested indices} -body {
-    lindex [lseq 10] 0 end
-} -result {} -constraints bug_452b103a74
+    lindex [lseq 10] {0 1}
+} -result {}
 
+test lseq-bug-452b103a74-3 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] {0 end}
+} -result 0
+
+test lseq-bug-452b103a74-4 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] 1 0
+} -result 1
+
+test lseq-bug-452b103a74-5 {Bug 452b103a74 - crash on nested indices} -body {
+    lindex [lseq 10] {end 0}
+} -result 9
 
 # cleanup
 ::tcltest::cleanupTests
