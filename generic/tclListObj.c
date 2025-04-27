@@ -2664,7 +2664,7 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle AbstractList as special case */
-    if (TclObjTypeHasProc(listObj,indexProc)) {
+    if (indexCount == 1 && TclObjTypeHasProc(listObj,indexProc)) {
 	Tcl_Size listLen = TclObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = listObj; /* for lindex without indices return list */
