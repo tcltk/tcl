@@ -2684,6 +2684,13 @@ TclLindexFlat(
 		elemObj = e2Obj;
 	    }
 	}
+	if (elemObj == NULL) {
+	    /*
+	     * TclObjTypeIndex returns TCL_OK with NULL in elemObj if
+	     * index was out of bounds.
+	     */
+	    TclNewObj(elemObj);
+	}
 	Tcl_IncrRefCount(elemObj);
 	return elemObj;
     }
