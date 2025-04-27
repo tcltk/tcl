@@ -1069,13 +1069,13 @@ test lseq-bug-7d3101bf28-0 {Bug 7d3101bf28 - crash on negative index} -body {
     list \
         [try [list lindex [lseq 10] -1]] \
         [eval [list lindex [lseq 10] -1]]
-} -result {{} {}} -constraints bug_7d3101bf28
+} -result {{} {}}
 
 test lseq-bug-7d3101bf28-1 {Bug 7d3101bf28 - crash on out of bounds index} -body {
     list \
         [try [list lindex [lseq 10] 10]] \
         [eval [list lindex [lseq 10] 10]]
-} -result {{} {}} -constraints bug_7d3101bf28
+} -result {{} {}}
 
 test lseq-bug-7d3101bf28-2 {Bug 7d3101bf28 - crash on error in index syntax} -body {
     list \
