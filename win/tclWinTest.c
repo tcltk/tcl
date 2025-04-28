@@ -43,7 +43,7 @@ static Tcl_ObjCmdProc	TestvolumetypeCmd;
 static Tcl_ObjCmdProc	TestwinclockCmd;
 static Tcl_ObjCmdProc	TestwinsleepCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
-static int		TestplatformChmod(const char *nativePath, int pmode, Tcl_Encoding encoding);
+static int		TestplatformChmod(const char *nativePath, int pmode);
 static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
@@ -398,8 +398,7 @@ TestExceptionCmd(
 static int
 TestplatformChmod(
     const char *nativePath,
-    int pmode,
-    Tcl_Encoding encoding)
+    int pmode)
 {
     /*
      * Note FILE_DELETE_CHILD missing from dirWriteMask because we do
@@ -445,9 +444,9 @@ TestplatformChmod(
     res = -1; /* Assume failure */
 
     Tcl_DStringInit(&ds);
-    Tcl_UtfToExternalDString(encoding, nativePath, -1, &ds);
+    Tcl_UtfToChar16DString(nativePath, -1, &ds);
 
-    attr = GetFileAttributesA(Tcl_DStringValue(&ds));
+    attr = GetFileAttributesW((WCHAR *)Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
 	goto done; /* Not found */
     }
@@ -587,7 +586,7 @@ TestplatformChmod(
      * to remove inherited ACL (we need to overwrite the default ACL's in this case)
      */
 
-    if (SetNamedSecurityInfoA((LPSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
+    if (SetNamedSecurityInfoW((LPWSTR)Tcl_DStringValue(&ds), SE_FILE_OBJECT,
 	    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
 	    NULL, NULL, newAcl, NULL) == ERROR_SUCCESS) {
 	res = 0;
@@ -609,7 +608,7 @@ TestplatformChmod(
 
     if (res == 0) {
 	/* Run normal chmod command */
-	res = _chmod(Tcl_DStringValue(&ds), pmode);
+	res = _wchmod((WCHAR*)Tcl_DStringValue(&ds), pmode);
     }
     Tcl_DStringFree(&ds);
     return res;
@@ -642,7 +641,6 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
-    Tcl_DString ds;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
@@ -653,9 +651,6 @@ TestchmodCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Encoding encoding = Tcl_GetEncoding(interp, Tcl_GetEncodingNameForUser(&ds));
-	Tcl_DStringFree(&ds);
-
     for (i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
@@ -664,7 +659,7 @@ TestchmodCmd(
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TestplatformChmod(translated, mode, encoding) != 0) {
+	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    (char *)NULL);
 	    return TCL_ERROR;
