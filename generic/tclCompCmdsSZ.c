@@ -74,6 +74,9 @@ static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    Tcl_Size numHandlers, TryHandlerInfo *handlers);
+static int		IssueTryTraplessClausesInstructions(Tcl_Interp *interp,
+			    CompileEnv *envPtr, Tcl_Token *bodyToken,
+			    Tcl_Size numHandlers, TryHandlerInfo *handlers);
 static int		IssueTryClausesFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    Tcl_Size numHandlers, TryHandlerInfo *handlers,
@@ -2627,7 +2630,7 @@ PrintJumptableNumInfo(
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj,
-		"\"%"TCL_SIZE_MODIFIER"d\"->pc %" TCL_Z_MODIFIER "u",
+		"%"TCL_SIZE_MODIFIER"d->pc %" TCL_Z_MODIFIER "u",
 		key, pcOffset + offset);
     }
 }
@@ -2844,17 +2847,6 @@ TclCompileTryCmd(
     }
 
     bodyToken = TokenAfter(parsePtr->tokenPtr);
-
-    if (numWords == 2) {
-	/*
-	 * No handlers or finally; do nothing beyond evaluating the body.
-	 */
-
-	DefineLineInformation;	/* TIP #280 */
-	BODY(			bodyToken, 1);
-	return TCL_OK;
-    }
-
     numWords -= 2;
     tokenPtr = TokenAfter(bodyToken);
 
@@ -2995,6 +2987,10 @@ TclCompileTryCmd(
 	if (finallyToken->type != TCL_TOKEN_SIMPLE_WORD) {
 	    goto failedToCompile;
 	}
+	// Special case: empty finally clause
+	if (finallyToken[1].size == 0) {
+	    finallyToken = NULL;
+	}
     } else {
 	goto failedToCompile;
     }
@@ -3003,12 +2999,22 @@ TclCompileTryCmd(
      * Issue the bytecode.
      */
 
-    if (!finallyToken) {
+    if (!finallyToken && numHandlers == 0) {
+	/*
+	 * No handlers or finally; do nothing beyond evaluating the body.
+	 */
+
+	DefineLineInformation;	/* TIP #280 */
+	BODY(			bodyToken, 1);
+	result = TCL_OK;
+    } else if (!finallyToken) {
 	if (!anyTrapClauses) {
-	    // TODO: Use a JUMP_TABLE_NUM
+	    result = IssueTryTraplessClausesInstructions(interp, envPtr,
+		    bodyToken, numHandlers, handlers);
+	} else {
+	    result = IssueTryClausesInstructions(interp, envPtr, bodyToken,
+		    numHandlers, handlers);
 	}
-	result = IssueTryClausesInstructions(interp, envPtr, bodyToken,
-		numHandlers, handlers);
     } else if (numHandlers == 0) {
 	result = IssueTryFinallyInstructions(interp, envPtr, bodyToken,
 		finallyToken);
@@ -3061,11 +3067,11 @@ IssueTryClausesInstructions(
     DefineLineInformation;	/* TIP #280 */
     Tcl_LVTIndex resultVar, optionsVar;
     Tcl_Size i, j, len;
-    int forwardsNeedFixing = 0, trapZero = 0;
+    int continuationsPending = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
-    Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontChangeOptions;
-    Tcl_BytecodeLabel *forwardsToFix, *addrsToFix, *noError;
+    Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontSpliceDuring;
+    Tcl_BytecodeLabel *continuationJumps, *afterReturn0, *noError;
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
@@ -3127,13 +3133,15 @@ IssueTryClausesInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+    afterReturn0 = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 3);
-    forwardsToFix = addrsToFix + numHandlers;
-    noError = forwardsToFix + numHandlers;
+    continuationJumps = afterReturn0 + numHandlers;
+    noError = continuationJumps + numHandlers;
+    for (i=0; i<numHandlers*3; i++) {
+	afterReturn0[i] = -1;
+    }
 
     for (i=0 ; i<numHandlers ; i++) {
-	noError[i] = -1;
 	OP(			DUP);
 	PUSH_OBJ(		Tcl_NewIntObj(handlers[i].matchCode));
 	OP(			EQ);
@@ -3173,52 +3181,55 @@ IssueTryClausesInstructions(
 	    OP(			POP);
 	}
 	if (!handlers[i].tokenPtr) {
-	    forwardsNeedFixing = 1;
-	    FWDJUMP(		JUMP, forwardsToFix[i]);
+	    continuationsPending = 1;
+	    FWDJUMP(		JUMP, continuationJumps[i]);
 	    STKDELTA(+1);
 	} else {
-	    forwardsToFix[i] = -1;
-	    if (forwardsNeedFixing) {
-		forwardsNeedFixing = 0;
+	    if (continuationsPending) {
+		continuationsPending = 0;
 		for (j=0 ; j<i ; j++) {
-		    if (forwardsToFix[j] == -1) {
-			continue;
+		    if (continuationJumps[j] != -1) {
+			FWDLABEL(continuationJumps[j]);
 		    }
-		    FWDLABEL(forwardsToFix[j]);
-		    forwardsToFix[j] = -1;
+		    continuationJumps[j] = -1;
 		}
 	    }
 
-	    range = MAKE_CATCH_RANGE();
-	    OP4(		BEGIN_CATCH, range);
-	    CATCH_RANGE(range) {
-		BODY(		handlers[i].tokenPtr, 5 + i*4);
+	    if (handlers[i].tokenPtr[1].size == 0) {
+		// Empty handler body; can't generate non-trivial result tuple
+		PUSH(		"");
+		FWDJUMP(	JUMP, noError[i]);
+	    } else {
+		range = MAKE_CATCH_RANGE();
+		OP4(		BEGIN_CATCH, range);
+		CATCH_RANGE(range) {
+		    BODY(	handlers[i].tokenPtr, 5 + i*4);
+		}
+		OP(		END_CATCH);
+		FWDJUMP(	JUMP, noError[i]);
+
+		STKDELTA(-1);
+		CATCH_TARGET(range);
+		OP(		PUSH_RESULT);
+		OP(		PUSH_RETURN_OPTIONS);
+		OP(		PUSH_RETURN_CODE);
+		OP(		END_CATCH);
+
+		PUSH(		"1");
+		OP(		EQ);
+		FWDJUMP(	JUMP_FALSE, dontSpliceDuring);
+		// Next bit isn't DICT_SET; alter which dict is in optionsVar
+		PUSH(		"-during");
+		OP4(		LOAD_SCALAR, optionsVar);
+		OP(		DICT_PUT);
+		FWDLABEL(	dontSpliceDuring);
+
+		OP(		SWAP);
+		INVOKE(		RETURN_STK);
+		FWDJUMP(	JUMP, afterReturn0[i]);
 	    }
-	    OP(			END_CATCH);
-	    FWDJUMP(		JUMP, noError[i]);
-
-	    STKDELTA(-1);
-	    CATCH_TARGET(range);
-	    OP(			PUSH_RESULT);
-	    OP(			PUSH_RETURN_OPTIONS);
-	    OP(			PUSH_RETURN_CODE);
-	    OP(			END_CATCH);
-	    PUSH(		"1");
-	    OP(			EQ);
-	    FWDJUMP(		JUMP_FALSE, dontChangeOptions);
-
-	    // Next bit isn't DICT_SET; alter which dict is in optionsVar
-	    PUSH(		"-during");
-	    OP4(		LOAD_SCALAR, optionsVar);
-	    OP(			DICT_PUT);
-	    OP4(		STORE_SCALAR, optionsVar);
-
-	    FWDLABEL(	dontChangeOptions);
-	    OP(			SWAP);
-	    INVOKE(		RETURN_STK);
 	}
 
-	FWDJUMP(		JUMP, addrsToFix[i]);
 	if (handlers[i].matchClause) {
 	    FWDLABEL(	notECJumpSource);
 	}
@@ -3245,12 +3256,206 @@ IssueTryClausesInstructions(
 	FWDLABEL(	afterBody);
     }
     for (i=0 ; i<numHandlers ; i++) {
-	FWDLABEL(	addrsToFix[i]);
+	if (afterReturn0[i] != -1) {
+	    FWDLABEL(	afterReturn0[i]);
+	}
 	if (noError[i] != -1) {
 	    FWDLABEL(	noError[i]);
 	}
     }
-    TclStackFree(interp, addrsToFix);
+    TclStackFree(interp, afterReturn0);
+    return TCL_OK;
+}
+
+static int
+IssueTryTraplessClausesInstructions(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr,
+    Tcl_Token *bodyToken,
+    Tcl_Size numHandlers,
+    TryHandlerInfo *handlers)
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_LVTIndex resultVar, optionsVar;
+    Tcl_Size i, j;
+    int continuationsPending = 0, trapZero = 0;
+    Tcl_ExceptionRange range;
+    Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
+    Tcl_BytecodeLabel dontSpliceDuring, tableBase, haveOther;
+    Tcl_BytecodeLabel *continuationJumps, *afterReturn0, *noError;
+    JumptableNumInfo *tablePtr;
+    Tcl_AuxDataRef tableIdx;
+
+    resultVar = AnonymousLocal(envPtr);
+    optionsVar = AnonymousLocal(envPtr);
+    if (resultVar < 0 || optionsVar < 0) {
+	return TCL_ERROR;
+    }
+    afterReturn0 = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
+	    sizeof(Tcl_BytecodeLabel) * numHandlers * 3);
+    continuationJumps = afterReturn0 + numHandlers;
+    noError = continuationJumps + numHandlers;
+    for (i=0; i<numHandlers*3; i++) {
+	afterReturn0[i] = -1;
+    }
+    tablePtr = AllocJumptableNum();
+    tableIdx = RegisterJumptableNum(tablePtr, envPtr);
+
+    /*
+     * Check if we're supposed to trap a normal TCL_OK completion of the body.
+     * If not, we can handle that case much more efficiently.
+     */
+
+    for (i=0 ; i<numHandlers ; i++) {
+	if (handlers[i].matchCode == 0) {
+	    trapZero = 1;
+	    break;
+	}
+    }
+
+    /*
+     * Compile the body, trapping any error in it so that we can trap on it
+     * and/or run a finally clause. Note that there must be at least one
+     * on/trap clause; when none is present, this whole function is not called
+     * (and it's never called when there's a finally clause).
+     */
+
+    range = MAKE_CATCH_RANGE();
+    OP4(			BEGIN_CATCH, range);
+    CATCH_RANGE(range) {
+	BODY(			bodyToken, 1);
+    }
+    if (!trapZero) {
+	OP(			END_CATCH);
+	FWDJUMP(		JUMP, afterBody);
+	STKDELTA(-1);
+    } else {
+	PUSH(			"0");
+	OP(			SWAP);
+	FWDJUMP(		JUMP, pushReturnOptions);
+	STKDELTA(-2);
+    }
+    CATCH_TARGET(	range);
+    OP(				PUSH_RETURN_CODE);
+    OP(				PUSH_RESULT);
+    if (pushReturnOptions > 0) {
+	FWDLABEL(	pushReturnOptions);
+    }
+    OP(				PUSH_RETURN_OPTIONS);
+    OP(				END_CATCH);
+    OP4(			STORE_SCALAR, optionsVar);
+    OP(				POP);
+    OP4(			STORE_SCALAR, resultVar);
+    OP(				POP);
+
+    /*
+     * Now we handle all the registered 'on' handlers.
+     * For us to be here, there must be at least one handler.
+     *
+     * Slight overallocation, but reduces size of this function.
+     */
+
+    BACKLABEL(		tableBase);
+    OP4(			JUMP_TABLE_NUM, tableIdx);
+    FWDJUMP(		JUMP, haveOther);
+    for (i=0 ; i<numHandlers ; i++) {
+	CreateJumptableNumEntryToHere(tablePtr, handlers[i].matchCode, tableBase);
+
+	/*
+	 * There is no finally clause, so we can avoid wrapping a catch
+	 * context around the handler. That simplifies what instructions need
+	 * to be issued a lot since we can let errors just fall through.
+	 */
+
+	if (handlers[i].resultVar >= 0) {
+	    OP4(		LOAD_SCALAR, resultVar);
+	    OP4(		STORE_SCALAR, handlers[i].resultVar);
+	    OP(			POP);
+	}
+	if (handlers[i].optionVar >= 0) {
+	    OP4(		LOAD_SCALAR, optionsVar);
+	    OP4(		STORE_SCALAR, handlers[i].optionVar);
+	    OP(			POP);
+	}
+	if (!handlers[i].tokenPtr) {
+	    continuationsPending = 1;
+	    FWDJUMP(		JUMP, continuationJumps[i]);
+	} else {
+	    if (continuationsPending) {
+		continuationsPending = 0;
+		for (j=0 ; j<i ; j++) {
+		    if (continuationJumps[j] != -1) {
+			FWDLABEL(continuationJumps[j]);
+		    }
+		    continuationJumps[j] = -1;
+		}
+	    }
+
+	    if (handlers[i].tokenPtr[1].size == 0) {
+		// Empty handler body; can't generate non-trivial result tuple
+		PUSH(		"");
+		FWDJUMP(	JUMP, noError[i]);
+	    } else {
+		range = MAKE_CATCH_RANGE();
+		OP4(		BEGIN_CATCH, range);
+		CATCH_RANGE(range) {
+		    BODY(	handlers[i].tokenPtr, 5 + i*4);
+		}
+		OP(		END_CATCH);
+		FWDJUMP(	JUMP, noError[i]);
+
+		STKDELTA(-1);
+		CATCH_TARGET(range);
+		OP(		PUSH_RESULT);
+		OP(		PUSH_RETURN_OPTIONS);
+		OP(		PUSH_RETURN_CODE);
+		OP(		END_CATCH);
+
+		PUSH(		"1");
+		OP(		EQ);
+		FWDJUMP(	JUMP_FALSE, dontSpliceDuring);
+		// Next bit isn't DICT_SET; alter which dict is in optionsVar
+		PUSH(		"-during");
+		OP4(		LOAD_SCALAR, optionsVar);
+		OP(		DICT_PUT);
+		FWDLABEL(	dontSpliceDuring);
+
+		OP(		SWAP);
+		INVOKE(		RETURN_STK);
+		FWDJUMP(	JUMP, afterReturn0[i]);
+	    }
+	    STKDELTA(-1);
+	}
+    }
+
+    /*
+     * Drop the result code since it didn't match any clause, and reissue the
+     * exception. Note also that INST_RETURN_STK can proceed to the next
+     * instruction.
+     */
+
+    FWDLABEL(		haveOther);
+    OP4(			LOAD_SCALAR, optionsVar);
+    OP4(			LOAD_SCALAR, resultVar);
+    INVOKE(			RETURN_STK);
+
+    /*
+     * Fix all the jumps from taken clauses to here (which is the end of the
+     * [try]).
+     */
+
+    if (!trapZero) {
+	FWDLABEL(	afterBody);
+    }
+    for (i=0 ; i<numHandlers ; i++) {
+	if (afterReturn0[i] != -1) {
+	    FWDLABEL(	afterReturn0[i]);
+	}
+	if (noError[i] != -1) {
+	    FWDLABEL(	noError[i]);
+	}
+    }
+    TclStackFree(interp, afterReturn0);
     return TCL_OK;
 }
 
@@ -3269,7 +3474,7 @@ IssueTryClausesFinallyInstructions(
     int forwardsNeedFixing = 0, trapZero = 0;
     Tcl_ExceptionRange range;
     Tcl_BytecodeLabel *addrsToFix, *forwardsToFix;
-    Tcl_BytecodeLabel finalOK, finalError, noFinalError;
+    Tcl_BytecodeLabel finalOK, dontSpliceDuring;
     Tcl_BytecodeLabel pushReturnOptions = 0, endCatch = 0, afterBody = 0;
 
     resultLocal = AnonymousLocal(envPtr);
@@ -3341,8 +3546,7 @@ IssueTryClausesFinallyInstructions(
     forwardsToFix = addrsToFix + numHandlers;
 
     for (i=0 ; i<numHandlers ; i++) {
-	Tcl_BytecodeLabel noTrapError, trapError, codeNotMatched;
-	Tcl_BytecodeLabel notErrorCodeMatched = -1;
+	Tcl_BytecodeLabel codeNotMatched, notErrorCodeMatched = -1;
 
 	OP(			DUP);
 	PUSH_OBJ(		Tcl_NewIntObj(handlers[i].matchCode));
@@ -3460,21 +3664,18 @@ IssueTryClausesFinallyInstructions(
 	OP(			END_CATCH);
 	OP4(			STORE_SCALAR, resultLocal);
 	OP(			POP);
+
 	PUSH(			"1");
 	OP(			EQ);
-	FWDJUMP(		JUMP_FALSE, noTrapError);
-
+	FWDJUMP(		JUMP_FALSE, dontSpliceDuring);
 	// Next bit isn't DICT_SET; alter which dict is in optionsLocal
 	PUSH(			"-during");
 	OP4(			LOAD_SCALAR, optionsLocal);
 	OP(			DICT_PUT);
-	OP4(			STORE_SCALAR, optionsLocal);
-	FWDJUMP(		JUMP, trapError);
+	FWDLABEL(	dontSpliceDuring);
 
-	FWDLABEL(	noTrapError);
 	OP4(			STORE_SCALAR, optionsLocal);
 
-	FWDLABEL(	trapError);
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
 	    OP(			POP);
@@ -3531,23 +3732,16 @@ IssueTryClausesFinallyInstructions(
 
     PUSH(			"1");
     OP(				EQ);
-    FWDJUMP(			JUMP_FALSE, noFinalError);
-
+    FWDJUMP(			JUMP_FALSE, dontSpliceDuring);
     // Next bit isn't DICT_SET; alter which dict is in optionsLocal
     PUSH(			"-during");
     OP4(			LOAD_SCALAR, optionsLocal);
     OP(				DICT_PUT);
-    OP4(			STORE_SCALAR, optionsLocal);
-    OP(				POP);
-    // result
-    FWDJUMP(			JUMP, finalError);
+    FWDLABEL(		dontSpliceDuring);
 
-    STKDELTA(+1);
-    FWDLABEL(		noFinalError);
     OP4(			STORE_SCALAR, optionsLocal);
     OP(				POP);
 
-    FWDLABEL(		finalError);
     OP4(			STORE_SCALAR, resultLocal);
     OP(				POP);
 
@@ -3568,7 +3762,7 @@ IssueTryFinallyInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_ExceptionRange bodyRange, finallyRange;
-    Tcl_BytecodeLabel jumpOK, jumpSplice, endCatch;
+    Tcl_BytecodeLabel jumpOK, dontSpliceDuring, endCatch;
 
     /*
      * Note that this one is simple enough that we can issue it without
@@ -3612,11 +3806,12 @@ IssueTryFinallyInstructions(
     // Don't forget original error
     PUSH(			"1");
     OP(				EQ);
-    FWDJUMP(			JUMP_FALSE, jumpSplice);
+    FWDJUMP(			JUMP_FALSE, dontSpliceDuring);
     PUSH(			"-during");
     OP4(			OVER, 3);
     OP(				DICT_PUT);
-    FWDLABEL(		jumpSplice);
+    FWDLABEL(		dontSpliceDuring);
+
     OP4(			REVERSE, 4);
     OP(				POP);
     OP(				POP);
