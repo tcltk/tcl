@@ -43,7 +43,7 @@ static Tcl_ObjCmdProc	TestvolumetypeCmd;
 static Tcl_ObjCmdProc	TestwinclockCmd;
 static Tcl_ObjCmdProc	TestwinsleepCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
-static int		TestplatformChmod(const char *nativePath, int pmode);
+static int		TestplatformChmod(const char *nativePath, int pmode, Tcl_Encoding encoding);
 static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
@@ -398,7 +398,8 @@ TestExceptionCmd(
 static int
 TestplatformChmod(
     const char *nativePath,
-    int pmode)
+    int pmode,
+    Tcl_Encoding encoding)
 {
     /*
      * Note FILE_DELETE_CHILD missing from dirWriteMask because we do
@@ -444,7 +445,7 @@ TestplatformChmod(
     res = -1; /* Assume failure */
 
     Tcl_DStringInit(&ds);
-    Tcl_UtfToExternalDString(NULL, nativePath, -1, &ds);
+    Tcl_UtfToExternalDString(encoding, nativePath, -1, &ds);
 
     attr = GetFileAttributesA(Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
@@ -641,6 +642,7 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
+    Tcl_DString ds;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
@@ -651,6 +653,9 @@ TestchmodCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Encoding encoding = Tcl_GetEncoding(interp, Tcl_GetEncodingNameForUser(&ds));
+	Tcl_DStringFree(&ds);
+
     for (i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
@@ -659,7 +664,7 @@ TestchmodCmd(
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TestplatformChmod(translated, mode) != 0) {
+	if (TestplatformChmod(translated, mode, encoding) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    (char *)NULL);
 	    return TCL_ERROR;
