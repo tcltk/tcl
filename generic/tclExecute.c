@@ -155,22 +155,17 @@ typedef struct {
     ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
 
 static inline Var *
-VarHashCreateVar(
+VarHashFindVar(
     TclVarHashTable *tablePtr,
-    Tcl_Obj *key,
-    int *newPtr)
+    Tcl_Obj *key)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&tablePtr->table,
-	    key, newPtr);
-
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&tablePtr->table,
+	    key);
     if (!hPtr) {
 	return NULL;
     }
     return VarHashGetValue(hPtr);
 }
-
-#define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
@@ -4720,30 +4715,26 @@ TEBCresume(
 	if (TclObjTypeHasProc(valuePtr, indexProc)) {
 	    DECACHE_STACK_INFO();
 	    length = TclObjTypeLength(valuePtr);
-	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+	    if (TclGetIntForIndexM(NULL, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
-	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		/* Could be list of indices. Let TclLindexList handle it below */
+	    } else {
+		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
+		    TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
+		if (objResultPtr == NULL) {
+		    /* Index is out of range, return empty result. */
+		    TclNewObj(objResultPtr);
+		}
+		Tcl_IncrRefCount(objResultPtr); // reference held here
+		goto lindexDone;
 	    }
-	    CACHE_STACK_INFO();
-	    if (objResultPtr == NULL) {
-		/* Index is out of range, return empty result. */
-		TclNewObj(objResultPtr);
-	    }
-	    Tcl_IncrRefCount(objResultPtr); // reference held here
-	    goto lindexDone;
-	}
-
-	/*
-	 * Extract the desired list element.
-	 */
-
-	{
+	} else {
+	    /* Non-abstract list */
 	    Tcl_Size value2Length;
 	    Tcl_Obj *indexListPtr = value2Ptr;
 
