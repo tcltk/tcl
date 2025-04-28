@@ -2834,7 +2834,7 @@ TclCompileTryCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Size numHandlers, numWords = parsePtr->numWords;
-    int result = TCL_ERROR;
+    int result = TCL_ERROR, anyTrapClauses = 0;
     Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
     Tcl_Size handlerIdx = 0;
@@ -2893,6 +2893,7 @@ TclCompileTryCmd(
 		Tcl_ListObjReplace(NULL, tmpObj, 0, 0, 0, NULL);
 		Tcl_IncrRefCount(tmpObj);
 		handlers[handlerIdx].matchClause = tmpObj;
+		anyTrapClauses = 1;
 	    } else if (IS_TOKEN_LITERALLY(tokenPtr, "on")) {
 		int code;
 
@@ -3003,12 +3004,18 @@ TclCompileTryCmd(
      */
 
     if (!finallyToken) {
+	if (!anyTrapClauses) {
+	    // TODO: Use a JUMP_TABLE_NUM
+	}
 	result = IssueTryClausesInstructions(interp, envPtr, bodyToken,
 		numHandlers, handlers);
     } else if (numHandlers == 0) {
 	result = IssueTryFinallyInstructions(interp, envPtr, bodyToken,
 		finallyToken);
     } else {
+	if (!anyTrapClauses) {
+	    // TODO: Use a JUMP_TABLE_NUM
+	}
 	result = IssueTryClausesFinallyInstructions(interp, envPtr, bodyToken,
 		numHandlers, handlers, finallyToken);
     }
@@ -3040,8 +3047,6 @@ TclCompileTryCmd(
  *	just-finally and with-finally cases because so many of the details of
  *	generation vary between the three.
  *
- *	The macros below make the instruction issuing easier to follow.
- *
  *----------------------------------------------------------------------
  */
 
@@ -3058,8 +3063,9 @@ IssueTryClausesInstructions(
     Tcl_Size i, j, len;
     int forwardsNeedFixing = 0, trapZero = 0;
     Tcl_ExceptionRange range;
-    Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0, *forwardsToFix;
-    Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, *addrsToFix, *noError;
+    Tcl_BytecodeLabel afterBody = 0, pushReturnOptions = 0;
+    Tcl_BytecodeLabel notCodeJumpSource, notECJumpSource, dontChangeOptions;
+    Tcl_BytecodeLabel *forwardsToFix, *addrsToFix, *noError;
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
@@ -3160,19 +3166,17 @@ IssueTryClausesInstructions(
 	    OP4(		LOAD_SCALAR, resultVar);
 	    OP4(		STORE_SCALAR, handlers[i].resultVar);
 	    OP(			POP);
-	    if (handlers[i].optionVar >= 0) {
-		OP4(		LOAD_SCALAR, optionsVar);
-		OP4(		STORE_SCALAR, handlers[i].optionVar);
-		OP(		POP);
-	    }
+	}
+	if (handlers[i].optionVar >= 0) {
+	    OP4(		LOAD_SCALAR, optionsVar);
+	    OP4(		STORE_SCALAR, handlers[i].optionVar);
+	    OP(			POP);
 	}
 	if (!handlers[i].tokenPtr) {
 	    forwardsNeedFixing = 1;
 	    FWDJUMP(		JUMP, forwardsToFix[i]);
 	    STKDELTA(+1);
 	} else {
-	    Tcl_BytecodeLabel dontChangeOptions;
-
 	    forwardsToFix[i] = -1;
 	    if (forwardsNeedFixing) {
 		forwardsNeedFixing = 0;
@@ -3184,6 +3188,7 @@ IssueTryClausesInstructions(
 		    forwardsToFix[j] = -1;
 		}
 	    }
+
 	    range = MAKE_CATCH_RANGE();
 	    OP4(		BEGIN_CATCH, range);
 	    CATCH_RANGE(range) {
@@ -3366,15 +3371,18 @@ IssueTryClausesFinallyInstructions(
 	 * failed trap for the result from the main script.
 	 */
 
-	if (handlers[i].resultVar >= 0 || handlers[i].tokenPtr) {
+	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0
+		|| handlers[i].tokenPtr) {
 	    range = MAKE_CATCH_RANGE();
 	    OP4(		BEGIN_CATCH, range);
 	    ExceptionRangeStarts(envPtr, range);
 	}
-	if (handlers[i].resultVar >= 0) {
-	    OP4(		LOAD_SCALAR, resultLocal);
-	    OP4(		STORE_SCALAR, handlers[i].resultVar);
-	    OP(			POP);
+	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0) {
+	    if (handlers[i].resultVar >= 0) {
+		OP4(		LOAD_SCALAR, resultLocal);
+		OP4(		STORE_SCALAR, handlers[i].resultVar);
+		OP(		POP);
+	    }
 	    if (handlers[i].optionVar >= 0) {
 		OP4(		LOAD_SCALAR, optionsLocal);
 		OP4(		STORE_SCALAR, handlers[i].optionVar);
