@@ -4715,7 +4715,7 @@ TEBCresume(
 	if (TclObjTypeHasProc(valuePtr, indexProc)) {
 	    DECACHE_STACK_INFO();
 	    length = TclObjTypeLength(valuePtr);
-	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+	    if (TclGetIntForIndexM(NULL, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		/* Could be list of indices. Let TclLindexList handle it below */
 	    } else {
