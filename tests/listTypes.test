@@ -1,0 +1,183 @@
+# This file tests list command on each internal list representation.
+#
+# Copyright (c) 2025 Ashok P. Nadkarni
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# In Tcl 9, a list may have one of several list representations.
+# - "list" - the basic list (similar to 8.6 implementation)
+# - "list" with span - basic list with an attached span specifying a
+#    contained range.
+# - "arithseries" - an abstract list as produced by the lseq command
+# - "repeatedList" - an abstract list holding repeated elements
+# - "reversedList" - an abstract list that is the reverse of another list
+#
+# All list operations, loops, {*} expansion need to be tested with each of the
+# above types. The first three of these are already tested in cmdIL.test,
+# lseq.test, listrep.test etc. but are included here for completeness. Note the
+# tests here do not test command options to the commands as those are already
+# tested in the aforementioned files.
+#
+# For the abstract list types not tested elsewhere,
+#   - verify constructor commands return the expected type
+#   - generated string representations
+
+# Test list operations include combinations of
+# - Compiled / uncompiled operation
+# - Shared / unshared operands
+# - List internal representation types.
+#
+# TODO - see comments to testlistobj
+# TODO - see listobjmemcheck and indexmemcheck in listObj.test
+# TODO - lrepeat/lreverse string generation when starting with #
+# TODO -lrepeat/lreverse list of braces
+# TODO - nested lrepeat with index list and separate indices
+# TODO - nested list combinations. Verify none of the lists shimmer
+# TODO - [lreverse [lreverse]] should retrieve original list.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testobj [llength [info commands testobj]]
+testConstraint testlistobj [llength [info commands testobj]]
+
+namespace eval listtype {
+    variable listTypes {arithseries list repeatedList reversedList spanlist}
+
+    # Loop vars etc.
+    variable ltype
+    variable first
+    variable last
+
+    # Internal representation produced by a list operation may depend on list
+    # length. This is controlled by the *_LENGTH_THRESHOLD values in tclListTypes.c.
+    # In cases where it matters, assumes a length of smallListLength will always
+    # be less that these thresholds and largeListLength will be greater.
+    variable smallListLength 10
+    variable largeListLength 1000
+
+
+    proc getListType {l} {
+        set ltype [testobj objtype $l]
+        if {$ltype eq "list"} {
+            if {[dict exists [testlistrep describe $l] span]} {
+                return "spanlist"
+            }
+        }
+        return $ltype
+    }
+
+    # Raise error if list is not the expected type
+    proc assertListType {l type} {
+        set ltype [getListType $l]
+        if {$ltype ne $type} {
+            error "Assertion failed: list type was \"$ltype\", expected \"$type\""
+        }
+    }
+
+    # Returns a list of length $largeListLength of the specified type
+    proc makeList {type} {
+        variable largeListLength
+        set l [switch $type {
+            list {
+                testlistrep new $largeListLength
+            }
+            spanlist {
+                # Spanned list - force span by leaving 10 empty slots in front
+                testlistrep new $largeListLength 10
+            }
+            arithseries {
+                lseq $largeListLength
+            }
+            repeatedList {
+                lrepeat [expr {$largeListLength/4}] a b c d
+            }
+            reversedList {
+                lreverse [makeList list]
+            }
+        }]
+        assertListType $l $type
+        return $l
+    }
+
+    # Wrapper to generate compiled and uncompiled cases for a test. If $args does
+    # not contain a -body key, $comment is treated as the test body
+    proc testdef {id comment args} {
+        if {[dict exists $args -body]} {
+            set body [dict get $args -body]
+            dict unset args -body
+        } else {
+            set body $comment
+        }
+        dict lappend args -constraints testobj
+
+        uplevel 1 [list test $id.uncompiled "$comment (uncompiled)" \
+                       -body [list testevalex $body] \
+                       {*}$args]
+
+        uplevel 1 [list test $id.compiled-script "$comment (compiled script)" \
+                       -body [list try $body] \
+                       {*}$args]
+
+        dict append args -setup \n[list proc testxproc {ltype} $body]
+        dict append args -cleanup "\nrename testxproc {}"
+        uplevel 1 [list test $id.compiled-proc "$comment (compiled proc)" \
+                       -body {testxproc $ltype} \
+                       {*}$args]
+    }
+
+    # llength
+    foreach ltype $listTypes {
+        testdef llength-$ltype-0 "llength of type $ltype" -body {
+            set l [makeList $ltype]
+            list [getListType $l] [llength $l]
+        } -result [list $ltype $largeListLength]
+    }
+
+    # lindex
+    foreach ltype $listTypes {
+        switch $ltype {
+            repeatedList {
+                set first a
+                set last d
+            }
+            reversedList {
+                set last 0
+                set first [expr {$largeListLength-1}]
+            }
+            default {
+                set first 0
+                set last [expr {$largeListLength-1}]
+            }
+        }
+        testdef lindex-$ltype-0 "lindex 0 of type $ltype" -body {
+            set l [makeList $ltype]
+            list [getListType $l] [lindex $l 0]
+        } -result [list $ltype $first]
+
+        testdef lindex-$ltype-1 "lindex end of type $ltype" -body {
+            set l [makeList $ltype]
+            list [getListType $l] [lindex $l end]
+        } -result [list $ltype $last]
+
+        testdef lindex-$ltype-2 "lindex -1 of type $ltype" -body {
+            set l [makeList $ltype]
+            list [getListType $l] [lindex $l -1]
+        } -result [list $ltype {}]
+
+        testdef lindex-$ltype-2 "lindex -1 of type $ltype" -body {
+            set l [makeList $ltype]
+            list [getListType $l] [lindex $l [llength $l]]
+        } -result [list $ltype {}]
+    }
+
+}
+
+# All done
+::tcltest::cleanupTests 

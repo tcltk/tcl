@@ -214,7 +214,7 @@ static Tcl_ObjTypeReverseProc LreverseTypeReverse;
  * modification.
  */
 static const Tcl_ObjType lreverseType = {
-    "lreverse",                         /* name */
+    "reversedList",                     /* name */
     LreverseFreeIntrep,                 /* freeIntRepProc */
     LreverseDupIntrep,                  /* dupIntRepProc */
     TclAbstractListUpdateString,        /* updateStringProc */
@@ -394,7 +394,7 @@ static Tcl_ObjTypeIndexProc LrepeatTypeIndex;
  * may be shared must be checked before modification.
  */
 static const Tcl_ObjType lrepeatType = {
-    "lrepeat",                        /* name */
+    "repeatedList",                   /* name */
     LrepeatFreeIntrep,                /* freeIntRepProc */
     LrepeatDupIntrep,                 /* dupIntRepProc */
     TclAbstractListUpdateString,      /* updateStringProc */
