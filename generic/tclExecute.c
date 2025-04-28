@@ -4717,28 +4717,24 @@ TEBCresume(
 	    length = TclObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
-	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		/* Could be list of indices. Let TclLindexList handle it below */
+	    } else {
+		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
+		    TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
+		if (objResultPtr == NULL) {
+		    /* Index is out of range, return empty result. */
+		    TclNewObj(objResultPtr);
+		}
+		Tcl_IncrRefCount(objResultPtr); // reference held here
+		goto lindexDone;
 	    }
-	    CACHE_STACK_INFO();
-	    if (objResultPtr == NULL) {
-		/* Index is out of range, return empty result. */
-		TclNewObj(objResultPtr);
-	    }
-	    Tcl_IncrRefCount(objResultPtr); // reference held here
-	    goto lindexDone;
-	}
-
-	/*
-	 * Extract the desired list element.
-	 */
-
-	{
+	} else {
+	    /* Non-abstract list */
 	    Tcl_Size value2Length;
 	    Tcl_Obj *indexListPtr = value2Ptr;
 
