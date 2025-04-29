@@ -608,7 +608,7 @@ $(TCLSHC): $(TCLSHOBJS) $(TMP_DIR)\tclshc.res $(TCLSTUBLIB) $(TCLIMPLIB)
 	copy $(TMP_DIR)\tcl.dll.manifest $(TCLSHC).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
-	$(COPY) $@ $(TCLSHRAW)
+	$(COPY) $@ $(TCLSHCRAW)
 !endif
 
 
