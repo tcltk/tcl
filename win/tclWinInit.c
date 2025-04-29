@@ -115,7 +115,7 @@ static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
     static INIT_ONCE osInfoOnce = INIT_ONCE_STATIC_INIT;
     OSVERSIONINFOW *osInfoPtr = NULL;
     BOOL result = InitOnceExecuteOnce(
-	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, &osInfoPtr);
+	&osInfoOnce, TclpGetWindowsVersionOnce, NULL, (LPVOID *)&osInfoPtr);
     return result ? osInfoPtr : NULL;
 }
 
@@ -475,7 +475,7 @@ const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
-    OSVERSIONINFOW *osInfoPtr = TclpGetWindowsVersion();
+    const OSVERSIONINFOW *osInfoPtr = TclpGetWindowsVersion();
     /*
      * TIP 716 - for Build 18362 or higher, force utf-8. Note Windows build
      * numbers always increase, so no need to check major / minor versions.
