@@ -457,18 +457,20 @@ const char *
 Tcl_GetEncodingNameForUser(
     Tcl_DString *bufPtr)
 {
-    UINT acp = GetACP();
+    WCHAR buf[32] = L"cp";
+    DWORD type = -1;
+    DWORD size=sizeof(buf) - 2;
+    HKEY hKey;
 
-    Tcl_DStringInit(bufPtr);
-    if (acp == CP_UTF8) {
-	Tcl_DStringAppend(bufPtr, "utf-8", 5);
-    } else {
-	Tcl_DStringSetLength(bufPtr, 2 + TCL_INTEGER_SPACE);
-	snprintf(Tcl_DStringValue(bufPtr), 2 + TCL_INTEGER_SPACE, "cp%d",
-		GetACP());
-	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
+    RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+	    0, KEY_READ, &hKey);
+    RegQueryValueExW(hKey, L"ACP", NULL, &type, (BYTE *)&buf[2], &size);
+    RegCloseKey(hKey);
+    if (!wcscmp(buf, L"cp65001")) {
+	wcscpy(buf, L"utf-8");
     }
-    return Tcl_DStringValue(bufPtr);
+    Tcl_DStringInit(bufPtr);
+    return Tcl_WCharToUtfDString(buf, -1, bufPtr);
 }
 
 const char *
