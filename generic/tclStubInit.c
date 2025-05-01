@@ -45,8 +45,6 @@
 #undef Tcl_SetUnicodeObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
 #undef Tcl_Panic
 #undef Tcl_FindExecutable
 #undef Tcl_SetExitProc
