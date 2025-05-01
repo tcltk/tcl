@@ -35530,7 +35530,7 @@ test clock-29.1813 {cache consistency when deriving localized formats, bug [2c0f
 	::msgcat::mcset en_US_roman_xx_yy DATE_FORMAT "%Y|%m|%d"
     }
     list [clock format 86400 -format %x -gmt 1 -locale en_US_roman] \
-         [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx] \
+	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx] \
 	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx_yy]
 } {01/02/1970 02.01.1970 1970|01|02}
 # END testcases29
