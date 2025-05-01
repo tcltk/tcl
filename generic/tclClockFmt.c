@@ -565,7 +565,10 @@ ClockFmtScnStorageAllocProc(
 	allocsize -= sizeof(hPtr->key);
     }
 
-    fss = (ClockFmtScnStorage *)Tcl_Alloc(allocsize);
+    fss = (ClockFmtScnStorage *)Tcl_AttemptAlloc(allocsize);
+    if (!fss) {
+	return NULL;
+    }
 
     /* initialize */
     memset(fss, 0, sizeof(*fss));
@@ -841,7 +844,7 @@ FindOrCreateFmtScnStorage(
     }
 
     /* get or create entry (and alocate storage) */
-    hPtr = Tcl_CreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
+    hPtr = Tcl_AttemptCreateHashEntry(&FmtScnHashTable, strFmt, &isNew);
     if (hPtr != NULL) {
 	fss = FmtScn4HashEntry(hPtr);
 

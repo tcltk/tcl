@@ -1155,7 +1155,11 @@ struct Tcl_HashTable {
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
+#ifndef TCL_NO_DEPRECATED
     Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, const char *key);
+#else
+    void *unUsed;
+#endif
     Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, const char *key,
 	    int *newPtr);
     const Tcl_HashKeyType *typePtr;
@@ -2510,8 +2514,43 @@ TclBounceRefCount(
  */
 
 #define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
-#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), (int *)-1)
+
+#ifdef TCL_MEM_DEBUG
+static inline void *
+TclDbPanicIfNull(
+    void *entry,
+    const char *fn,
+    const char *file,
+    int line)
+{
+    if (!entry) {
+	Tcl_Panic("%s: Memory overflow in file %s:%d", fn, file, line);
+    }
+    return entry;
+}
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) ((newPtr != (int *)-1) \
+	? (Tcl_HashEntry *)TclDbPanicIfNull((*((tablePtr)->createProc))(tablePtr, \
+		(const char *)(key), (newPtr)), "Tcl_CreateHashEntry", __FILE__, __LINE__) \
+	: (*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)))
+#else
+static inline void *
+TclPanicIfNull(
+    void *entry,
+    const char *fn)
+{
+    if (!entry) {
+	Tcl_Panic("%s: Memory overflow", fn);
+    }
+    return entry;
+}
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) ((newPtr != (int *)-1) \
+	? (Tcl_HashEntry *)TclPanicIfNull((*((tablePtr)->createProc))(tablePtr, \
+		(const char *)(key), (newPtr)), "Tcl_CreateHashEntry") \
+	: (*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)))
+#endif
+
+#define Tcl_AttemptCreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
 #endif /* RC_INVOKED */
