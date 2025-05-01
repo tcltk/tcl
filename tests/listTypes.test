@@ -49,9 +49,13 @@ testConstraint testlistobj [llength [info commands testobj]]
 
 namespace eval listtype {
     variable listTypes {arithseries list repeatedList reversedList spanlist}
+    variable nestableTypes {list repeatedList reversedList spanlist}
 
     # Loop vars etc.
     variable ltype
+    variable ltype1
+    variable ltype2
+    variable ltype3
     variable first
     variable last
 
@@ -60,7 +64,7 @@ namespace eval listtype {
     # In cases where it matters, assumes a length of smallListLength will always
     # be less that these thresholds and largeListLength will be greater.
     variable smallListLength 10
-    variable largeListLength 1000
+    variable largeListLength 1000; # Multiple of 4 because of assumptions in tests
 
 
     proc getListType {l} {
@@ -82,21 +86,26 @@ namespace eval listtype {
     }
 
     # Returns a list of length $largeListLength of the specified type
-    proc makeList {type} {
+    proc makeList {type args} {
         variable largeListLength
+        if {[llength $args]} {
+            set len [lindex $args 0]
+        } else {
+            set len $largeListLength
+        }
         set l [switch $type {
             list {
-                testlistrep new $largeListLength
+                testlistrep new $len
             }
             spanlist {
                 # Spanned list - force span by leaving 10 empty slots in front
-                testlistrep new $largeListLength 10
+                testlistrep new $len 10
             }
             arithseries {
-                lseq $largeListLength
+                lseq $len
             }
             repeatedList {
-                lrepeat [expr {$largeListLength/4}] a b c d
+                lrepeat [expr {$len/4}] a b c d
             }
             reversedList {
                 lreverse [makeList list]
@@ -106,8 +115,84 @@ namespace eval listtype {
         return $l
     }
 
-    # Wrapper to generate compiled and uncompiled cases for a test. If $args does
-    # not contain a -body key, $comment is treated as the test body
+    # Return first and last elements of a list created with makeList
+    # assuming default lengths passed to makeList
+    proc getFirstAndLast {ltype} {
+        variable largeListLength
+        switch $ltype {
+            repeatedList {
+                set first a
+                set last d
+            }
+            reversedList {
+                set last 0
+                set first [expr {$largeListLength-1}]
+            }
+            default {
+                set first 0
+                set last [expr {$largeListLength-1}]
+            }
+        }
+        return [list $first $last]
+    }
+
+    proc makeNestedList {args} {
+        variable largeListLength
+        set nestedTypes [lassign $args thisType]
+        if {[llength $nestedTypes] == 0} {
+            return [makeList $thisType]
+        }
+        set nestedList [makeNestedList {*}$nestedTypes]
+        return [switch $thisType {
+            list {
+                for {set i 0} {$i < $largeListLength} {incr i} {
+                    lappend outerList $nestedList
+                }
+                set outerList
+            }
+            spanlist {
+                for {set i 0} {$i < (1+$largeListLength)} {incr i} {
+                    lappend outerList $nestedList
+                }
+                lrange $outerList 0 end-1
+            }
+            repeatedList {
+                lrepeat $largeListLength $nestedList
+            }
+            reversedList {
+                for {set i 0} {$i < $largeListLength} {incr i} {
+                    lappend outerList $nestedList
+                }
+                lreverse $outerList
+            }
+            default {
+                error "List type $thisType cannot nest"
+            }
+        }]
+    }
+
+    # Verify that list constructors return unshared Tcl_Obj's. Otherwise, unshared
+    # list tests below are invalid. These don't actually test Tcl itself, but rather
+    # the makeList constructors.
+    foreach ltype $listTypes {
+        test ltype-verify-unshared-makeList-$ltype "Verify makeList is unshared" -body {
+            regexp {refcount of 1,} [tcl::unsupported::representation [makeList $ltype]]
+        } -result 1
+    }
+    foreach ltype1 $nestableTypes {
+        foreach ltype2 $nestableTypes {
+            foreach ltype3 $listTypes {
+                test ltype-verify-makeNestedList-$ltype1-$ltype2-$ltype3 "Verify makeNestedList" -body {
+                    set l [makeNestedList $ltype1 $ltype2 $ltype3]
+                    list [getListType $l] [getListType [lindex $l 0]] [getListType [lindex $l 0 0]]
+                } -result [list $ltype1 $ltype2 $ltype3]
+            }
+        }
+    }
+
+    # Wrapper to generate uncompiled, compiled script, and proc cases for a
+    # test. If $args does not contain a -body key, $comment is treated as the
+    # test body
     proc testdef {id comment args} {
         if {[dict exists $args -body]} {
             set body [dict get $args -body]
@@ -125,57 +210,90 @@ namespace eval listtype {
                        -body [list try $body] \
                        {*}$args]
 
-        dict append args -setup \n[list proc testxproc {ltype} $body]
+        # Need to make namespace variables accessible to test body within proc
+        set procbody [string cat \
+                      "variable largeListLength\n" \
+                      "variable smallListLength\n" \
+                      "variable ltype\n" \
+                      "variable ltype1\n" \
+                      "variable ltype2\n" \
+                      "variable ltype3\n" \
+                      $body]
+
+        dict append args -setup \n[list proc testxproc {} $procbody]
         dict append args -cleanup "\nrename testxproc {}"
-        uplevel 1 [list test $id.compiled-proc "$comment (compiled proc)" \
-                       -body {testxproc $ltype} \
+        uplevel 1 [list test $id.proc "$comment (compiled proc)" \
+                       -body testxproc \
                        {*}$args]
     }
 
     # llength
     foreach ltype $listTypes {
-        testdef llength-$ltype-0 "llength of type $ltype" -body {
+        testdef llength-$ltype-shared-0 "llength of shared type $ltype" -body {
             set l [makeList $ltype]
             list [getListType $l] [llength $l]
         } -result [list $ltype $largeListLength]
+
+        testdef llength-$ltype-unshared-0 "llength of unshared type $ltype" -body {
+            llength [makeList $ltype]
+        } -result $largeListLength
     }
 
-    # lindex
+    ################################################################
+    # lindex tests - single index
     foreach ltype $listTypes {
-        switch $ltype {
-            repeatedList {
-                set first a
-                set last d
-            }
-            reversedList {
-                set last 0
-                set first [expr {$largeListLength-1}]
-            }
-            default {
-                set first 0
-                set last [expr {$largeListLength-1}]
-            }
-        }
-        testdef lindex-$ltype-0 "lindex 0 of type $ltype" -body {
+        lassign [getFirstAndLast $ltype] first last
+        testdef lindex-$ltype-shared-0 "lindex 0 of shared type $ltype" -body {
             set l [makeList $ltype]
             list [getListType $l] [lindex $l 0]
         } -result [list $ltype $first]
 
-        testdef lindex-$ltype-1 "lindex end of type $ltype" -body {
+        testdef lindex-$ltype-unshared-0 "lindex 0 of unshared type $ltype" -body {
+            lindex [makeList $ltype] 0
+        } -result $first
+
+        testdef lindex-$ltype-shared-1 "lindex end of shared type $ltype" -body {
             set l [makeList $ltype]
             list [getListType $l] [lindex $l end]
         } -result [list $ltype $last]
 
-        testdef lindex-$ltype-2 "lindex -1 of type $ltype" -body {
+        testdef lindex-$ltype-unshared-1 "lindex end of unshared type $ltype" -body {
+            lindex [makeList $ltype] end
+        } -result $last
+
+        testdef lindex-$ltype-shared-2 "lindex -1 of shared type $ltype" -body {
             set l [makeList $ltype]
             list [getListType $l] [lindex $l -1]
         } -result [list $ltype {}]
 
-        testdef lindex-$ltype-2 "lindex -1 of type $ltype" -body {
+        testdef lindex-$ltype-unshared-2 "lindex -1 of unshared type $ltype" -body {
+            lindex [makeList $ltype] -1
+        } -result {}
+
+        testdef lindex-$ltype-shared-3 "lindex last of shared type $ltype" -body {
             set l [makeList $ltype]
             list [getListType $l] [lindex $l [llength $l]]
         } -result [list $ltype {}]
+
+        testdef lindex-$ltype-unshared-3 "lindex last of unshared type $ltype" -body {
+           lindex [makeList $ltype] $largeListLength
+        } -result {}
     }
+
+    # lindex tests - nested indices
+    foreach ltype1 $nestableTypes {
+        foreach ltype2 $nestableTypes {
+            foreach ltype3 $listTypes {
+                lassign [getFirstAndLast $ltype3] first last
+                testdef ltype-lindex-nested-$ltype1-$ltype2-$ltype3 "lindex nested $ltype1 $ltype2 $ltype3 0" \
+                    -body {
+                        lindex [makeNestedList $ltype1 $ltype2 $ltype3] 0 0 0
+                    } -result $first
+            }
+        }
+    }
+
+
 
 }
 
