@@ -362,13 +362,12 @@ DupArithSeriesInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    ArithSeries *srcRepPtr = (ArithSeries *)
-	    srcPtr->internalRep.twoPtrValue.ptr1;
+    const Tcl_ObjInternalRep *irPtr
+		= Tcl_FetchInternalRep(srcPtr, &tclArithSeriesType);
+    ArithSeries *srcRepPtr = (ArithSeries *) irPtr->twoPtrValue.ptr1;
 
     srcRepPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = srcRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &tclArithSeriesType;
+    Tcl_StoreInternalRep(copyPtr, &tclArithSeriesType, irPtr);
 }
 
 /*
