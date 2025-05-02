@@ -385,7 +385,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    int line;		/* First line of the script, based on the
+    int line;			/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -777,7 +777,7 @@ enum TclInstruction {
 
     /* For [subst] compilation */
     INST_NOP,
-    DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH1),
+    DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH),
 
     /* For [unset] compilation */
     INST_UNSET_SCALAR,
@@ -878,8 +878,7 @@ enum TclInstruction {
     INST_CONST_IMM,
     INST_CONST_STK,
 
-    /* Updated compilations with fewer arg size constraints */
-    INST_RETURN_CODE_BRANCH,
+    /* Updated compilations with fewer arg size constraints for 9.1 */
     INST_INCR_SCALAR,
     INST_INCR_ARRAY,
     INST_INCR_SCALAR_IMM,
@@ -888,12 +887,14 @@ enum TclInstruction {
     INST_TCLOO_NEXT,
     INST_TCLOO_NEXT_CLASS,
 
+    /* Really new opcodes for 9.1 */
     INST_SWAP,
     INST_ERROR_PREFIX_EQ,
     INST_TCLOO_ID,
     INST_DICT_PUT,
     INST_DICT_REMOVE,
     INST_IS_EMPTY,
+    INST_JUMP_TABLE_NUM,
 
     /* The last opcode */
     LAST_INST_OPCODE
@@ -1076,7 +1077,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 /*
- * Structure used to hold information about a switch command that is needed
+ * Structures used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
  * ByteCode structures as auxiliary data.
  */
@@ -1090,6 +1091,69 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 #define JUMPTABLEINFO(envPtr, index) \
     ((JumptableInfo *) TclFetchAuxData((envPtr), TclGetUInt4AtPtr(index)))
+
+static inline JumptableInfo *
+AllocJumptable(void)
+{
+    JumptableInfo *jtPtr = (JumptableInfo *) Tcl_Alloc(sizeof(JumptableInfo));
+    Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
+    return jtPtr;
+}
+
+static inline int
+CreateJumptableEntry(
+    JumptableInfo *jtPtr,
+    const char *keyPtr,
+    Tcl_Size offset)
+{
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable, keyPtr, &isNew);
+    if (isNew) {
+	Tcl_SetHashValue(hPtr, INT2PTR(offset));
+    }
+    return isNew;
+}
+
+#define CreateJumptableEntryToHere(jtPtr, key, baseOffset) \
+    CreateJumptableEntry((jtPtr), (key), CurrentOffset(envPtr) - (baseOffset))
+
+typedef struct JumptableNumInfo {
+    Tcl_HashTable hashTable;	/* Hash that maps Tcl_WideInt to signed ints
+				 * (PC offsets). */
+} JumptableNumInfo;
+
+MODULE_SCOPE const AuxDataType tclJumptableNumericInfoType;
+
+#define JUMPTABLENUMINFO(envPtr, index) \
+    ((JumptableNumInfo *) TclFetchAuxData((envPtr), TclGetUInt4AtPtr(index)))
+
+static inline JumptableNumInfo *
+AllocJumptableNum(void)
+{
+    JumptableNumInfo *jtnPtr = (JumptableNumInfo *)
+	    Tcl_Alloc(sizeof(JumptableNumInfo));
+    Tcl_InitHashTable(&jtnPtr->hashTable, TCL_ONE_WORD_KEYS);
+    return jtnPtr;
+}
+
+static inline int
+CreateJumptableNumEntry(
+    JumptableNumInfo *jtnPtr,
+    Tcl_Size key,
+    Tcl_Size offset)
+{
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&jtnPtr->hashTable, INT2PTR(key),
+	    &isNew);
+    if (isNew) {
+	Tcl_SetHashValue(hPtr, INT2PTR(offset));
+    }
+    return isNew;
+}
+
+#define CreateJumptableNumEntryToHere(jtnPtr, key, baseOffset) \
+    CreateJumptableNumEntry((jtnPtr), (key),				\
+	    CurrentOffset(envPtr) - (baseOffset))
 
 /*
  * Structure used to hold information about a [dict update] command that is
@@ -1912,6 +1976,26 @@ enum Lreplace4Flags {
     TCL_LREPLACE4_SINGLE_INDEX = 2	/* Second index absent (pure insert) */
 };
 
+/*
+ * Helper functions for jump tables that call other internal API bits.
+ */
+
+static inline Tcl_Size
+RegisterJumptable(
+    JumptableInfo *jtPtr,
+    CompileEnv *envPtr)
+{
+    return TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
+}
+
+static inline Tcl_Size
+RegisterJumptableNum(
+    JumptableNumInfo *jtPtr,
+    CompileEnv *envPtr)
+{
+    return TclCreateAuxData(jtPtr, &tclJumptableNumericInfoType, envPtr);
+}
+
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
  */

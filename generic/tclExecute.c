@@ -4484,7 +4484,7 @@ TEBCresume(
 
 	/*
 	 * Jump to location looked up in a hashtable; fall through to next
-	 * instr if lookup fails.
+	 * instr if lookup fails. Lookup by string.
 	 */
 
 	opnd = TclGetInt4AtPtr(pc + 1);
@@ -4498,6 +4498,36 @@ TEBCresume(
 		    (pc - codePtr->codeStart + jumpOffset)));
 	    NEXT_INST_F0(jumpOffset, 1);
 	} else {
+	    TRACE_APPEND(("not found in table\n"));
+	    NEXT_INST_F0(5, 1);
+	}
+    }
+    break;
+    case INST_JUMP_TABLE_NUM: {
+	Tcl_HashEntry *hPtr;
+	JumptableNumInfo *jtnPtr;
+	Tcl_WideInt key;
+
+	/*
+	 * Jump to location looked up in a hashtable; fall through to next
+	 * instr if lookup fails. Lookup by integer.
+	 */
+
+	opnd = TclGetInt4AtPtr(pc + 1);
+	jtnPtr = (JumptableNumInfo *) codePtr->auxDataArrayPtr[opnd].clientData;
+	TRACE(("%d \"%.20s\" => ", opnd, O2S(OBJ_AT_TOS)));
+	if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &key) != TCL_OK) {
+	    goto jumpTableNumFallthrough;
+	}
+	hPtr = Tcl_FindHashEntry(&jtnPtr->hashTable, (void *)key);
+	if (hPtr != NULL) {
+	    Tcl_Size jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
+
+	    TRACE_APPEND(("found in table, new pc %" TCL_Z_MODIFIER "u\n",
+		    (pc - codePtr->codeStart + jumpOffset)));
+	    NEXT_INST_F0(jumpOffset, 1);
+	} else {
+	jumpTableNumFallthrough:
 	    TRACE_APPEND(("not found in table\n"));
 	    NEXT_INST_F0(5, 1);
 	}
@@ -6958,10 +6988,10 @@ TEBCresume(
     break;
 
 #ifndef REMOVE_DEPRECATED_OPCODES
-    case INST_RETURN_CODE_BRANCH1: {
+    case INST_RETURN_CODE_BRANCH: {
 	int code;
 
-	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH1);
+	DEPRECATED_OPCODE_MARK(INST_RETURN_CODE_BRANCH);
 	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
 	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
 	}
@@ -6975,22 +7005,6 @@ TEBCresume(
 	NEXT_INST_F0(2*code - 1, 1);
     }
 #endif
-
-    case INST_RETURN_CODE_BRANCH: {
-	int code;
-
-	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
-	}
-	if (code == TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
-	}
-	if (code < TCL_ERROR || code > TCL_CONTINUE) {
-	    code = TCL_CONTINUE + 1;
-	}
-	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 5*code - 4));
-	NEXT_INST_F0(5*code - 4, 1);
-    }
 
     case INST_ERROR_PREFIX_EQ: {
 	/*
