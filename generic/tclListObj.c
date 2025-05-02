@@ -3427,7 +3427,7 @@ SetListFromAny(
 
 	    TclNewObj(*elemPtrs);
 	    TclInvalidateStringRep(*elemPtrs);
-	    check = Tcl_InitStringRep(*elemPtrs, literal ? elemStart : NULL,
+	    check = Tcl_AttemptInitStringRep(*elemPtrs, literal ? elemStart : NULL,
 		    elemSize);
 	    if (elemSize && check == NULL) {
 		MemoryAllocationError(interp, elemSize);

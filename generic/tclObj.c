@@ -1745,7 +1745,7 @@ Tcl_GetStringFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStringRep --
+ * Tcl_AttemptInitStringRep --
  *
  *	This function is called in several configurations to provide all
  *	the tools needed to set an object's string representation. The
@@ -1787,7 +1787,7 @@ Tcl_GetStringFromObj(
  */
 
 char *
-Tcl_InitStringRep(
+Tcl_AttemptInitStringRep(
     Tcl_Obj *objPtr,		/* Object whose string rep is to be set */
     const char *bytes,
     size_t numBytes)

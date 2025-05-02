@@ -1703,8 +1703,8 @@ EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 /* 636 */
 EXTERN void		Tcl_FreeInternalRep(Tcl_Obj *objPtr);
 /* 637 */
-EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-				size_t numBytes);
+EXTERN char *		Tcl_AttemptInitStringRep(Tcl_Obj *objPtr,
+				const char *bytes, size_t numBytes);
 /* 638 */
 EXTERN Tcl_ObjInternalRep * Tcl_FetchInternalRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr);
@@ -2518,7 +2518,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const void *data, size_t datalen, const char *mountPoint, int copy); /* 635 */
     void (*tcl_FreeInternalRep) (Tcl_Obj *objPtr); /* 636 */
-    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, size_t numBytes); /* 637 */
+    char * (*tcl_AttemptInitStringRep) (Tcl_Obj *objPtr, const char *bytes, size_t numBytes); /* 637 */
     Tcl_ObjInternalRep * (*tcl_FetchInternalRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
     void (*tcl_StoreInternalRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjInternalRep *irPtr); /* 639 */
     int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
@@ -3795,8 +3795,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclZipfs_MountBuffer) /* 635 */
 #define Tcl_FreeInternalRep \
 	(tclStubsPtr->tcl_FreeInternalRep) /* 636 */
-#define Tcl_InitStringRep \
-	(tclStubsPtr->tcl_InitStringRep) /* 637 */
+#define Tcl_AttemptInitStringRep \
+	(tclStubsPtr->tcl_AttemptInitStringRep) /* 637 */
 #define Tcl_FetchInternalRep \
 	(tclStubsPtr->tcl_FetchInternalRep) /* 638 */
 #define Tcl_StoreInternalRep \

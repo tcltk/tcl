@@ -1454,7 +1454,7 @@ const TclStubs tclStubs = {
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
     Tcl_FreeInternalRep, /* 636 */
-    Tcl_InitStringRep, /* 637 */
+    Tcl_AttemptInitStringRep, /* 637 */
     Tcl_FetchInternalRep, /* 638 */
     Tcl_StoreInternalRep, /* 639 */
     Tcl_HasStringRep, /* 640 */

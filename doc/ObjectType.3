@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType, Tcl_FreeInternalRep, Tcl_InitStringRep, Tcl_HasStringRep, Tcl_StoreInternalRep, Tcl_FetchInternalRep  \- manipulate Tcl value types
+Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType, Tcl_FreeInternalRep, Tcl_InitStringRep, Tcl_AttemptInitStringRep, Tcl_HasStringRep, Tcl_StoreInternalRep, Tcl_FetchInternalRep  \- manipulate Tcl value types
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -29,6 +29,9 @@ void
 .sp
 char *
 \fBTcl_InitStringRep\fR(\fIobjPtr, bytes, numBytes\fR)
+.sp
+char *
+\fBTcl_AttemptInitStringRep\fR(\fIobjPtr, bytes, numBytes\fR)
 .sp
 int
 \fBTcl_HasStringRep\fR(\fIobjPtr\fR)

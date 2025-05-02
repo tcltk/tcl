@@ -2128,7 +2128,7 @@ declare 636 {
     void Tcl_FreeInternalRep(Tcl_Obj *objPtr)
 }
 declare 637 {
-    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+    char *Tcl_AttemptInitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    size_t numBytes)
 }
 declare 638 {

@@ -2533,6 +2533,8 @@ TclDbPanicIfNull(
 	? (Tcl_HashEntry *)TclDbPanicIfNull((*((tablePtr)->createProc))(tablePtr, \
 		(const char *)(key), (newPtr)), "Tcl_CreateHashEntry", __FILE__, __LINE__) \
 	: (*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)))
+#define Tcl_InitStringRep(objPtr, bytes, numBytes) (char *) \
+	TclDbPanicIfNull(Tcl_AttemptInitStringRep((objPtr), (bytes), (numBytes)), "Tcl_InitStringRep", __FILE__, __LINE__)
 #else
 static inline void *
 TclPanicIfNull(
@@ -2548,6 +2550,8 @@ TclPanicIfNull(
 	? (Tcl_HashEntry *)TclPanicIfNull((*((tablePtr)->createProc))(tablePtr, \
 		(const char *)(key), (newPtr)), "Tcl_CreateHashEntry") \
 	: (*((tablePtr)->createProc))(tablePtr, (const char *)(key), (newPtr)))
+#define Tcl_InitStringRep(objPtr, bytes, numBytes) (char *) \
+	TclPanicIfNull(Tcl_AttemptInitStringRep((objPtr), (bytes), (numBytes)), "Tcl_InitStringRep")
 #endif
 
 #define Tcl_AttemptCreateHashEntry(tablePtr, key, newPtr) \
