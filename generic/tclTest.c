@@ -5747,7 +5747,7 @@ TestbytestringCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     struct {
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
 	Tcl_Size n;
