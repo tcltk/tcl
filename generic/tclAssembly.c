@@ -23,9 +23,8 @@
  *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
  *-   dictUpdateStart, dictUpdateEnd
- *-   jumpTable testing
+ *-   jumpTable and jumpTableNum testing
  *-   syntax (?)
- *-   returnCodeBranch1, returnCodeBranch
  *-   tclooNext, tclooNextClass
  */
 
