@@ -1126,11 +1126,11 @@ UpdateStringOfArithSeries(
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)
 	    arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
-    char *p;
+    char *p, *srep;
     Tcl_Size i, bytlen = 0;
 
-    if (!arithSeriesRepPtr->len) {
-	TclInitEmptyStringRep(arithSeriesObjPtr);
+    if (arithSeriesRepPtr->len == 0) {
+	(void)Tcl_InitStringRep(arithSeriesObjPtr, NULL, 0);
 	return;
     }
 
@@ -1167,7 +1167,7 @@ UpdateStringOfArithSeries(
      * Pass 2: generate the string repr.
      */
 
-    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    p = srep = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
@@ -1186,8 +1186,7 @@ UpdateStringOfArithSeries(
 	    *p++ = ' ';
 	}
     }
-    *(--p) = '\0';
-    arithSeriesObjPtr->length = p - arithSeriesObjPtr->bytes;
+    (void) Tcl_InitStringRep(arithSeriesObjPtr, NULL, (--p - srep));
 }
 
 /*
