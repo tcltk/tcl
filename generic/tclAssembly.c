@@ -387,6 +387,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	INST_INVOKE_STK,	INT_MIN,1},
+    {"isEmpty",		ASSEM_1BYTE,	INST_IS_EMPTY,		1,	1},
     {"jump",		ASSEM_JUMP,	INST_JUMP,		0,	0},
     // For legacy code
     {"jump4",		ASSEM_JUMP,	INST_JUMP,		0,	0},
@@ -517,7 +518,8 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 167-169 */
     INST_NUM_TYPE,						/* 175 */
     INST_STR_LT, INST_STR_GT, INST_STR_LE, INST_STR_GE,		/* 184-187 */
-    INST_SWAP							/* 199 */
+    INST_SWAP,							/* 199 */
+    INST_IS_EMPTY						/* 204 */
 };
 
 /*

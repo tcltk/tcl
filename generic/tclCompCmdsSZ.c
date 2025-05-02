@@ -221,7 +221,7 @@ TclCompileStringCatCmd(
     /* Trivial case, no arg */
 
     if (numWords < 2) {
-	PUSH(		"");
+	PUSH(			"");
 	return TCL_OK;
     }
 
@@ -603,8 +603,8 @@ TclCompileStringIsCmd(
 	    PUSH(		"0");
 	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
-	    PUSH(		"");
-	    OP(			STR_NEQ);
+	    OP(			IS_EMPTY);
+	    OP(			LNOT);
 	    FWDLABEL(	over2);
 	}
 	return TCL_OK;
@@ -619,8 +619,7 @@ TclCompileStringIsCmd(
 	case STR_IS_BOOL:
 	    if (allowEmpty) {
 		FWDJUMP(	JUMP_TRUE, over);
-		PUSH(		"");
-		OP(		STR_EQ);
+		OP(		IS_EMPTY);
 		FWDJUMP(	JUMP, over2);
 		FWDLABEL(over);
 		OP(		POP);
@@ -634,27 +633,30 @@ TclCompileStringIsCmd(
 	case STR_IS_TRUE:
 	    FWDJUMP(		JUMP_TRUE, over);
 	    if (allowEmpty) {
-		PUSH(		"");
-		OP(		STR_EQ);
+		OP(		IS_EMPTY);
 	    } else {
 		OP(		POP);
 		PUSH(		"0");
 	    }
+	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
+	    // Normalize the boolean value
 	    OP(			LNOT);
 	    OP(			LNOT);
+	    FWDLABEL(	over2);
 	    return TCL_OK;
 	case STR_IS_FALSE:
 	    FWDJUMP(		JUMP_TRUE, over);
 	    if (allowEmpty) {
-		PUSH(		"");
-		OP(		STR_NEQ);
+		OP(		IS_EMPTY);
 	    } else {
 		OP(		POP);
-		PUSH(		"1");
+		PUSH(		"0");
 	    }
+	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
 	    OP(			LNOT);
+	    FWDLABEL(	over2);
 	    return TCL_OK;
 	default:
 	    break;
@@ -666,8 +668,7 @@ TclCompileStringIsCmd(
 
 	if (allowEmpty) {
 	    OP(			DUP);
-	    PUSH(		"");
-	    OP(			STR_EQ);
+	    OP(			IS_EMPTY);
 	    FWDJUMP(		JUMP_TRUE, isEmpty);
 	    OP(			NUM_TYPE);
 	    FWDJUMP(		JUMP_TRUE, satisfied);
@@ -700,8 +701,7 @@ TclCompileStringIsCmd(
 	    OP(			DUP);
 	    FWDJUMP(		JUMP_TRUE, testNumType);
 	    OP(			POP);
-	    PUSH(		"");
-	    OP(			STR_EQ);
+	    OP(			IS_EMPTY);
 	    FWDJUMP(		JUMP, end);
 	    STKDELTA(+1);
 	    FWDLABEL(	testNumType);

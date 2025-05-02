@@ -944,6 +944,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Modify the dict by removing the key/value pair for the given key,
 	 * pushing the result on the stack.
 	 * Stack:  ... dict key => ... updatedDict */
+    TCL_INSTRUCTION_ENTRY(
+	"isEmpty",		0),
+	/* Test if the value at the top of the stack is empty (via a call to
+	 * Tcl_IsEmpty).
+	 * Stack:  ... value => ... boolean */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
