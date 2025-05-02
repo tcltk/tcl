@@ -70,10 +70,11 @@
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
-#if defined(TCL_NO_DEPRECATED)
+#ifdef TCL_NO_DEPRECATED
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
+# define TclVarHashCreateVar 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -86,7 +87,7 @@
 #undef TclListObjGetElements
 #undef TclListObjLength
 
-#if defined(TCL_NO_DEPRECATED)
+#ifdef TCL_NO_DEPRECATED
 # define TclListObjGetElements 0
 # define TclListObjLength 0
 # define TclDictObjSize 0
@@ -95,7 +96,7 @@
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
 # define TclGetAliasObj 0
-#else /* !defined(TCL_NO_DEPRECATED) */
+#else /* !TCL_NO_DEPRECATED */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
@@ -205,7 +206,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     }
     return result;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d

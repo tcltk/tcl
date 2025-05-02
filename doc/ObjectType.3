@@ -128,6 +128,17 @@ When \fInumBytes\fR is greater than zero, and the returned pointer is
 representation.
 The caller may then choose whether to raise an error or panic.
 .PP
+\fBTcl_InitStringRep\fR performs the function of the existing internal macro
+\fBTclInitStringRep\fR, but is extended to return a pointer to the string rep,
+and to accept \fBNULL\fR as a value for bytes.
+When \fIbytes\fR is \fBNULL\fR and \fIobjPtr\fR has no string rep, an uninitialzed
+buffer of numBytes bytes is created for filling by the caller.
+When \fIbytes\fR is \fBNULL\fR and \fIobjPtr\fR has a string rep, the string
+rep will be truncated to a length of numBytes bytes.
+When numBytes is greater than zero, and the returned pointer is \fBNULL\fR, that
+indicates a failure to allocate memory for the string representation.
+The caller may then choose whether to raise an error or panic.
+.PP
 \fBTcl_HasStringRep\fR returns a boolean indicating whether or not a string
 rep is currently stored in \fIobjPtr\fR.
 This is used when the caller wants to act on \fIobjPtr\fR differently
