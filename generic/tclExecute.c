@@ -5957,6 +5957,12 @@ TEBCresume(
 
 	JUMP_PEEPHOLE_F(match, 2, 2);
     }
+    case INST_IS_EMPTY: {
+	int empty = Tcl_IsEmpty(OBJ_AT_TOS);
+	TRACE(("\"%.30s\" => %d", O2S(OBJ_AT_TOS), empty));
+	JUMP_PEEPHOLE_F(empty, 1, 1);
+    }
+    break;
 
     /*
      *	   End of string-related instructions.

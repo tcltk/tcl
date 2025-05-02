@@ -437,6 +437,71 @@ AdvanceJumps(
 /*
  * ----------------------------------------------------------------------
  *
+ * BetterEqualityTesting --
+ *
+ *	Convert PUSH("");OP(STR_EQ); into OP(IS_EMPTY); and some NOPs.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+BetterEqualityTesting(
+    CompileEnv *envPtr)
+{
+    unsigned char *currentInstPtr, *emptyPushInstPtr = NULL;
+    Tcl_HashTable targets;
+
+    LocateTargetAddresses(envPtr, &targets);
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext-1 ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
+	if (emptyPushInstPtr && IsTargetAddress(&targets, currentInstPtr)) {
+	    emptyPushInstPtr = NULL;
+	}
+	switch (*currentInstPtr) {
+	case INST_PUSH: {
+	    Tcl_Size idx = TclGetUInt4AtPtr(currentInstPtr + 1);
+	    Tcl_Obj *literal = TclFetchLiteral(envPtr, idx);
+	    if (literal->bytes && literal->length == 0) {
+		emptyPushInstPtr = currentInstPtr;
+	    } else {
+		emptyPushInstPtr = NULL;
+	    }
+	    break;
+	}
+	case INST_EQ:
+	case INST_STR_EQ:
+	    if (emptyPushInstPtr != NULL) {
+		while (emptyPushInstPtr < currentInstPtr) {
+		    *emptyPushInstPtr++ = INST_NOP;
+		}
+		*currentInstPtr = INST_IS_EMPTY;
+	    }
+	    emptyPushInstPtr = NULL;
+	    break;
+	case INST_NEQ:
+	case INST_STR_NEQ:
+	    if (emptyPushInstPtr != NULL) {
+		while (emptyPushInstPtr < currentInstPtr) {
+		    *emptyPushInstPtr++ = INST_NOP;
+		}
+		currentInstPtr[-1] = INST_IS_EMPTY;
+		currentInstPtr[0] = INST_LNOT;
+	    }
+	    emptyPushInstPtr = NULL;
+	    break;
+	case INST_NOP:
+	    break;
+	default:
+	    emptyPushInstPtr = NULL;
+	}
+    }
+    Tcl_DeleteHashTable(&targets);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOptimizeBytecode --
  *
  *	A very simple peephole optimizer for bytecode.
@@ -448,9 +513,11 @@ void
 TclOptimizeBytecode(
     void *envPtr)
 {
-    ConvertZeroEffectToNOP((CompileEnv *)envPtr);
-    AdvanceJumps((CompileEnv *)envPtr);
-    TrimUnreachable((CompileEnv *)envPtr);
+    CompileEnv *realEnvPtr = (CompileEnv *) envPtr;
+    ConvertZeroEffectToNOP(realEnvPtr);
+    BetterEqualityTesting(realEnvPtr);    
+    AdvanceJumps(realEnvPtr);
+    TrimUnreachable(realEnvPtr);
 }
 
 /*
