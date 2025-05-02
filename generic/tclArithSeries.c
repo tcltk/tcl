@@ -439,6 +439,7 @@ NewArithSeriesInt(
     Tcl_WideInt length;
     Tcl_Obj *arithSeriesObj;
     ArithSeriesInt *arithSeriesRepPtr;
+    Tcl_ObjInternalRep ir;
 
     length = len>=0 ? len : -1;
     if (length < 0) {
@@ -448,8 +449,11 @@ NewArithSeriesInt(
     TclNewObj(arithSeriesObj);
 
     if (length <= 0) {
+	/* An ordinary empty value. No markings of being ArithSeries */
 	return arithSeriesObj;
     }
+
+    Tcl_InvalidateStringRep(arithSeriesObj);
 
     arithSeriesRepPtr = (ArithSeriesInt *)ckalloc(sizeof(ArithSeriesInt));
     arithSeriesRepPtr->base.len = length;
@@ -458,12 +462,10 @@ NewArithSeriesInt(
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
-    arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
-    arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &tclArithSeriesType;
-    if (length > 0) {
-	Tcl_InvalidateStringRep(arithSeriesObj);
-    }
+
+    ir.twoPtrValue.ptr1 = arithSeriesRepPtr;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(arithSeriesObj, &tclArithSeriesType, &ir);
 
     return arithSeriesObj;
 }
@@ -494,6 +496,7 @@ NewArithSeriesDbl(
     Tcl_WideInt length;
     Tcl_Obj *arithSeriesObj;
     ArithSeriesDbl *arithSeriesRepPtr;
+    Tcl_ObjInternalRep ir;
 
     length = len>=0 ? len : -1;
     if (length < 0) {
@@ -503,8 +506,11 @@ NewArithSeriesDbl(
     TclNewObj(arithSeriesObj);
 
     if (length <= 0) {
+	/* An ordinary empty value. No markings of being ArithSeries */
 	return arithSeriesObj;
     }
+
+    Tcl_InvalidateStringRep(arithSeriesObj);
 
     arithSeriesRepPtr = (ArithSeriesDbl *)ckalloc(sizeof(ArithSeriesDbl));
     arithSeriesRepPtr->base.len = length;
@@ -514,13 +520,10 @@ NewArithSeriesDbl(
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
     arithSeriesRepPtr->precision = precision;
-    arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
-    arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &tclArithSeriesType;
 
-    if (length > 0) {
-	Tcl_InvalidateStringRep(arithSeriesObj);
-    }
+    ir.twoPtrValue.ptr1 = arithSeriesRepPtr;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(arithSeriesObj, &tclArithSeriesType, &ir);
 
     return arithSeriesObj;
 }
