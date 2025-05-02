@@ -1169,15 +1169,17 @@ UpdateStringOfArithSeries(
 	char tmp[TCL_DOUBLE_SPACE + 2];
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
+	    Tcl_Size elen;
 
 	    tmp[0] = '\0';
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    bytlen += strlen(tmp);
-	    if (bytlen > TCL_SIZE_MAX) {
+	    elen = strlen(tmp);
+	    if (bytlen > TCL_SIZE_MAX - elen) {
 		/* overflow, todo: check we could use some representation instead of the panic
 		 * to signal it is too large for string representation, because too heavy */
 		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
 	    }
+	    bytlen += elen;
 	}
     }
     bytlen += arithSeriesRepPtr->len; // Space for each separator
