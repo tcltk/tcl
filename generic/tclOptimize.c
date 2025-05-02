@@ -99,10 +99,16 @@ LocateTargetAddresses(
 	storeTarget:
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    break;
+	case INST_JUMP_TABLE_NUM:
+	    hPtr = Tcl_FirstHashEntry(
+		    &JUMPTABLENUMINFO(envPtr, currentInstPtr+1)->hashTable,
+		    &hSearch);
+	    goto storeJumpTableTargets;
 	case INST_JUMP_TABLE:
 	    hPtr = Tcl_FirstHashEntry(
 		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable,
 		    &hSearch);
+	storeJumpTableTargets:
 	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
 		targetInstPtr = currentInstPtr +
 			PTR2INT(Tcl_GetHashValue(hPtr));
@@ -110,17 +116,12 @@ LocateTargetAddresses(
 	    }
 	    break;
 #ifndef REMOVE_DEPRECATED_OPCODES
-	case INST_RETURN_CODE_BRANCH1:
+	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
 #endif
-	case INST_RETURN_CODE_BRANCH:
-	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
-		DefineTargetAddress(tablePtr, currentInstPtr + 5*i - 4);
-	    }
-	    break;
 	}
     }
 

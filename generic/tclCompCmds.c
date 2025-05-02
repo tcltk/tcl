@@ -101,6 +101,8 @@ TclGetAuxDataType(
 	return &dictUpdateInfoType;
     } else if (!strcmp(typeName, tclJumptableInfoType.name)) {
 	return &tclJumptableInfoType;
+    } else if (!strcmp(typeName, tclJumptableNumericInfoType.name)) {
+	return &tclJumptableNumericInfoType;
     }
     return NULL;
 }

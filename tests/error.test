@@ -1195,7 +1195,79 @@ test error-21.9 {Bug cee90e4e88} {
     # Just don't panic.
     apply {{} {try {} on ok {} - on return {} {}}}
 } {}
+test error-21.9.1 {Bug cee90e4e88 variant} {
+    # Just don't panic.
+    apply {{} {try {} on ok {} - trap return {} {}}}
+} {}
 
+test error-22.1 {try trapless} {
+    apply {{} {
+        try {
+	    error foo
+	} on error {} {
+	    incr x
+	}
+	return $x
+    }}
+} 1
+test error-22.2 {try trapless} {
+    apply {{} {
+        try {
+	    error foo
+	} on ok {} {
+	    set x gorp
+	} on error {} {
+	    incr x
+	}
+	return $x
+    }}
+} 1
+test error-22.3 {try trapless + finally} {
+    apply {{} {
+        try {
+	    error foo
+	} on error {} {
+	    incr x
+	} finally {
+	    incr y
+	}
+	return $x,$y
+    }}
+} 1,1
+test error-22.4 {try trapless + finally} {
+    apply {{} {
+        try {
+	    error foo
+	} on ok {} {
+	    set x gorp
+	} on error {} {
+	    incr x
+	} finally {
+	    incr y
+	}
+	return $x,$y
+    }}
+} 1,1
+test error-22.5 {try trapless + finally + empty} {
+    apply {{} {
+	try {error foo} on error {} {} finally {}
+    }}
+} {}
+test error-22.6 {try trapless + finally + empty} {
+    apply {{} {
+	try {error foo} on error {} {} finally {incr x}
+    }}
+} {}
+test error-22.7 {try trapless + finally + empty} {
+    apply {{} {
+	try {error 1} on error x {} finally {incr x}
+    }}
+} {}
+test error-22.8 {try trapless + finally + empty} -body {
+    apply {{} {
+	try {error gorp} on error x {} finally {incr x}
+    }}
+} -returnCodes error -result {expected integer but got "gorp"}
 
 # negative case try tests - bad "trap" handler
 # what is the effect if we attempt to trap an errorcode that is not a list?

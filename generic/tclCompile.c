@@ -477,6 +477,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Jump according to the jump-table (in AuxData as indicated by the
 	 * operand) and the argument popped from the list. Always executes the
 	 * next instruction if no match against the table's entries was found.
+	 * Keys are strings.
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
@@ -880,11 +881,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create constant. Variable name and value on stack.
 	 * Stack: ... varName value => ... */
 
-    TCL_INSTRUCTION_ENTRY(
-	"returnCodeBranch",	-1),
-	/* Jump to next instruction based on the return code on top of stack
-	 * ERROR: +1;	RETURN: +6;	BREAK: +11;	CONTINUE: +16;
-	 * Other non-OK: +21 */
     TCL_INSTRUCTION_ENTRY1(
 	"incrScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Incr scalar at index op1 in frame; incr amount is stktop */
@@ -949,6 +945,15 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Test if the value at the top of the stack is empty (via a call to
 	 * Tcl_IsEmpty).
 	 * Stack:  ... value => ... boolean */
+    TCL_INSTRUCTION_ENTRY1(
+	"jumpTableNum",	 5,	-1,	  OPERAND_AUX4),
+	/* Jump according to the jump-table (in AuxData as indicated by the
+	 * operand) and the argument popped from the list. Always executes the
+	 * next instruction if no match against the table's entries was found.
+	 * Keys are Tcl_WideInt.
+	 * Stack:  ... value => ...
+	 * Note that the jump table contains offsets relative to the PC when
+	 * it points to this instruction; the code is relocatable. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
