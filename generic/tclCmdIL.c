@@ -2752,22 +2752,12 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclObjTypeHasProc(objv[1], sliceProc)) {
-	Tcl_Obj *resultObj;
-	int status = TclObjTypeSlice(interp, objv[1], first, last, &resultObj);
-	if (status == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObj);
-	} else {
-	    return TCL_ERROR;
-	}
-    } else {
-	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
-	if (resultObj == NULL) {
-	    return TCL_ERROR;
-	}
+    Tcl_Obj *resultObj;
+    result = Tcl_ListObjRange(interp, objv[1], first, last, &resultObj);
+    if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultObj);
     }
-    return TCL_OK;
+    return result;
 }
 
 /*
