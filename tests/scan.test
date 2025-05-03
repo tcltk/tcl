@@ -869,6 +869,14 @@ test scan-14.2 {negative infinity} {
     return $d
 } -Inf
 
+test scan-15.1 {scan %g overflow for small numbers and big mantissa bug 42d14c495a (passes without fix)} {
+    scan "1.[string repeat 1 190]e-321" %g
+} 1.11e-321
+
+test scan-15.2 {scan %g overflow for small numbers and big mantissa bug 42d14c495a (requires fix)} {
+    scan "1.[string repeat 1 191]e-321" %g
+} 1.11e-321
+
 # TODO - also need to scan NaN's
 
 catch {rename int_range {}}
