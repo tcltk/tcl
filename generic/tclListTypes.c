@@ -20,7 +20,9 @@
  */
 #define LREVERSE_LENGTH_THRESHOLD 100
 #define LREPEAT_LENGTH_THRESHOLD 100
+#define LRANGE_LENGTH_THRESHOLD 100
 
+/* TODO - no used */
 static inline int
 TclAbstractListLength(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 {
@@ -191,6 +193,8 @@ static void TclAbstractListUpdateString (Tcl_Obj *objPtr)
 }
 
 /*
+ * lrepeatType -
+ *
  * ------------------------------------------------------------------------
  * lreverseType is an abstract list type that contains the same elements as a
  * given list but in reverse order. Implementation is straightforward with the
@@ -333,7 +337,7 @@ Tcl_ListObjReverse(
 
     Tcl_Obj *resultPtr;
     if (elemc >= LREVERSE_LENGTH_THRESHOLD || objPtr->typePtr != &tclListType) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	TclInvalidateStringRep(resultPtr);
 
 	Tcl_IncrRefCount(objPtr);
@@ -373,6 +377,8 @@ Tcl_ListObjReverse(
 }
 
 /*
+ * lrepeatType -
+ *
  * ------------------------------------------------------------------------
  * lrepeatType is an abstract list type that repeated elements.
  * Implementation is straightforward with the elements stored in
@@ -389,7 +395,7 @@ static Tcl_ObjTypeIndexProc LrepeatTypeIndex;
 
 /*
  * IMPORTANT - current implementation is read-only. That is, the
- * functions below that set or modify elements are not NULL. If you change
+ * functions below that set or modify elements are NULL. If you change
  * this, be aware that both the object and internal representation
  * may be shared must be checked before modification.
  */
@@ -491,7 +497,7 @@ Tcl_ListObjRepeat(
 
     Tcl_Size totalElems = objc * repeatCount;
     if (totalElems == 0) {
-	*resultPtrPtr = Tcl_NewObj();
+	TclNewObj(*resultPtrPtr);
 	return TCL_OK;
     }
 
@@ -506,7 +512,7 @@ Tcl_ListObjRepeat(
     Tcl_Obj *resultPtr;
     if (totalElems >= LREPEAT_LENGTH_THRESHOLD) {
 	TclObjArray *arrayPtr = TclObjArrayNew(objc, objv);
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	arrayPtr->refCount++;
 	TclInvalidateStringRep(resultPtr);
 	resultPtr->internalRep.ptrAndSize.ptr = arrayPtr;
@@ -557,3 +563,292 @@ Tcl_ListObjRepeat(
     *resultPtrPtr = resultPtr;
     return TCL_OK;
 }
+
+/*
+ * ------------------------------------------------------------------------
+ * lrangeType -
+ *
+ * lrangeType is an abstract list type holding a range of elements from a
+ * given list. The range is specified by a start and end index.
+ * The type is a descriptor stored in the otherValuePtr field of the Tcl_Obj.
+ * ------------------------------------------------------------------------
+ */
+typedef struct LrangeRep {
+    Tcl_Obj *srcListPtr; /* Source list */
+    Tcl_Size refCount;   /* Reference count */
+    Tcl_Size start;      /* Start index */
+    Tcl_Size end;        /* End index */
+} LrangeRep;
+
+static void LrangeFreeIntrep(Tcl_Obj *objPtr);
+static void LrangeDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj);
+static Tcl_ObjTypeLengthProc LrangeTypeLength;
+static Tcl_ObjTypeIndexProc LrangeTypeIndex;
+static Tcl_ObjTypeSliceProc LrangeSlice;
+
+/*
+ * IMPORTANT - current implementation is read-only. That is, the
+ * functions below that set or modify elements are NULL. If you change
+ * this, be aware that both the object and internal representation
+ * may be shared and must be checked before modification.
+ */
+static const Tcl_ObjType lrangeType = {
+    "rangeList",                     /* name */
+    LrangeFreeIntrep,                /* freeIntRepProc */
+    LrangeDupIntrep,                 /* dupIntRepProc */
+    TclAbstractListUpdateString,     /* updateStringProc */
+    NULL,                            /* setFromAnyProc */
+    TCL_OBJTYPE_V2(LrangeTypeLength, /* lengthProc */
+		   LrangeTypeIndex,  /* indexProc */
+		   LrangeSlice,      /* sliceProc */
+		   NULL,             /* reverseProc, see above comment */
+		   NULL,             /* getElementsProc */
+		   NULL,             /* setElementProc, see above comment */
+		   NULL,             /* replaceProc, see above comment */
+		   NULL)             /* inOperProc - TODO */
+};
+
+static inline int
+LrangeMeetsLengthCriteria(
+    Tcl_Size rangeLen,
+    Tcl_Size srcLen)
+{
+    /*
+     * To use lrangeType, the range length
+     * - must not be much smaller (1/2?) than the source list as else
+     *   it will potentially hold on to the Tcl_Obj's in the source list
+     *   that are not within the range longer than necessary after the
+     *   original source list is freed.
+     * - is at least LRANGE_LENGTH_THRESHOLD elements long as otherwise the
+     *   memory savings is (probably) not worth the extra overhead of the
+     *   accessing the abstract list.
+     */
+    return (rangeLen >= LRANGE_LENGTH_THRESHOLD &&
+            rangeLen >= srcLen / 2);
+}
+
+/* Returns a new lrangeType object that references the source list */
+static int
+LrangeNew(
+    Tcl_Obj *sourcePtr, /* Source for the range operation */
+    Tcl_Size start,     /* Start of range */
+    Tcl_Size end,       /* End of range */
+    Tcl_Obj **resultPtrPtr) /* Location to store range object */
+{
+    /* Create a lrangeType referencing the original source list */
+    LrangeRep *repPtr = (LrangeRep *)Tcl_Alloc(sizeof(LrangeRep));
+    Tcl_Obj *resultPtr;
+    Tcl_IncrRefCount(sourcePtr);
+    repPtr->srcListPtr = sourcePtr;
+    repPtr->refCount = 1;
+    repPtr->start = start;
+    repPtr->end = end;
+    TclNewObj(resultPtr);
+    TclInvalidateStringRep(resultPtr);
+    resultPtr->internalRep.otherValuePtr = repPtr;
+    resultPtr->typePtr = &lrangeType;
+    *resultPtrPtr = resultPtr;
+    return TCL_OK;
+
+}
+
+void
+LrangeFreeIntrep(Tcl_Obj *objPtr)
+{
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    if (repPtr->refCount <= 1) {
+	Tcl_DecrRefCount(repPtr->srcListPtr);
+	Tcl_Free(repPtr);
+    } else {
+	repPtr->refCount--;
+    }
+}
+
+void
+LrangeDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
+{
+    LrangeRep *repPtr = (LrangeRep *)srcObj->internalRep.otherValuePtr;
+    repPtr->refCount++;
+    dupObj->internalRep.otherValuePtr = repPtr;
+    dupObj->typePtr = srcObj->typePtr;
+}
+
+/* Implementation of Tcl_ObjType.lengthProc for lrangeType */
+Tcl_Size
+LrangeTypeLength(Tcl_Obj *objPtr)
+{
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    return repPtr->end - repPtr->start + 1;
+}
+
+/* Implementation of Tcl_ObjType.indexProc for lrangeType */
+int
+LrangeTypeIndex(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr, /* Source list */
+    Tcl_Size index,  /* Element index */
+    Tcl_Obj **elemPtrPtr) /* Returned element */
+{
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    Tcl_Size len = repPtr->end - repPtr->start + 1;
+    if (index < 0 || index >= len) {
+        *elemPtrPtr = NULL;
+        return TCL_OK;
+    }
+    return Tcl_ListObjIndex(
+	interp, repPtr->srcListPtr, repPtr->start + index, elemPtrPtr);
+}
+
+/* Implementation of Tcl_ObjType.sliceProc for lrangeType */
+int
+LrangeSlice(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr, /* Source for the range */
+    Tcl_Size start,  /* Start index */
+    Tcl_Size end,    /* End index */
+    Tcl_Obj **resultPtrPtr) /* Location to store result object */
+{
+    assert(objPtr->typePtr == &lrangeType);
+
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    Tcl_Size len = repPtr->end - repPtr->start + 1;
+
+    if (start < 0) {
+	start = 0;
+    }
+    if (end >= len) {
+	end = len - 1;
+    }
+    if (start > end) {
+	TclNewObj(*resultPtrPtr);
+	return TCL_OK;
+    }
+
+
+    /*
+     * If the original source list was also a lrangeType, we can reference
+     * *its* source directly. Moreover, if objPtr is unshared, reuse it.
+     * Do this recursively until we reach a non-lrangeType.
+     */
+    Tcl_Obj *sourcePtr = repPtr->srcListPtr;
+    while (sourcePtr->typePtr == &lrangeType) {
+	LrangeRep *sourceRepPtr = (LrangeRep *)sourcePtr->internalRep.otherValuePtr;
+        start += sourceRepPtr->start;
+        end += sourceRepPtr->start;
+        sourcePtr = sourceRepPtr->srcListPtr;
+    }
+    /*
+     * At this point, sourcePtr is a non-lrangeType that will be the source
+     * Tcl_Obj for the returned object. The start and end indices are indices
+     * into this. Note it is possible that sourcePtr is repPtr->srcListPtr.
+     */
+
+    /*
+     * We will only use the lrangeType abstract list if the following
+     * conditions are met:
+     *  1. The source list is not a non-abstract list since that has its
+     *     own range operation with better performance and additional features.
+     *  2. The length criteria for using rangeType are met.
+     */
+    if (TclListObjLength(interp, sourcePtr, &len) != TCL_OK) {
+        /* Cannot fail because how rangeType's are constructed but ... */
+        return TCL_ERROR;
+    }
+    Tcl_Size rangeLen = end - start + 1;
+    if (objPtr->typePtr == &tclListType ||
+	!LrangeMeetsLengthCriteria(rangeLen, len)) {
+	/* Conditions not met, create non-abstract list */
+	*resultPtrPtr = TclListObjRange(interp, objPtr, start, end);
+	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
+    }
+
+    if (!Tcl_IsShared(objPtr) && repPtr->refCount < 2) {
+	/* Reuse this objPtr */
+	repPtr->start = start;
+	repPtr->end = end;
+	repPtr->srcListPtr = sourcePtr;
+	Tcl_IncrRefCount(sourcePtr);
+	Tcl_InvalidateStringRep(objPtr);
+	*resultPtrPtr = objPtr;
+	return TCL_OK;
+    }
+    else {
+	return LrangeNew(sourcePtr, start, end, resultPtrPtr);
+    }
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_ListObjRange --
+ *
+ *    Returns a Tcl_Obj containing a list of elements from a given range
+ *    in a source list.
+ *
+ * Results:
+ *    Standard Tcl result.
+ *
+ * Side effects:
+ *    Stores the result in *resultPtrPtr. This may be the same as objPtr,
+ *    a new allocation, or a pointer to an internally stored object. In
+ *    all cases, the reference count of the returned object is not
+ *    incremented to account for the returned reference to it.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+Tcl_ListObjRange(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr, /* Source for the range */
+    Tcl_Size start,  /* Start index */
+    Tcl_Size end,    /* End index */
+    Tcl_Obj **resultPtrPtr) /* Location to store result object */
+{
+    int result;
+    Tcl_Size srcLen;
+
+    result = TclListObjLength(interp, objPtr, &srcLen);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    if (start < 0) {
+	start = 0;
+    }
+    if (end >= srcLen) {
+	end = srcLen - 1;
+    }
+    if (start > end) {
+	TclNewObj(*resultPtrPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * If the list is an AbstractList with a specialized slice, use it.
+     * Note this includes rangeType itself.
+     */
+    if (TclObjTypeHasProc(objPtr, sliceProc)) {
+	return TclObjTypeSlice(interp, objPtr, start, end, resultPtrPtr);
+    }
+
+    /*
+     * We will only use the lrangeType abstract list if the following
+     * conditions are met:
+     *  1. The source list is not a non-abstract list since that has its
+     *     own range operation with better performance and additional features.
+     *  2. The length criteria for using rangeType are met.
+     */
+    Tcl_Size rangeLen = end - start + 1;
+    if (objPtr->typePtr == &tclListType ||
+	!LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
+	/* Conditions not met, create non-abstract list */
+	*resultPtrPtr = TclListObjRange(interp, objPtr, start, end);
+	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
+    }
+
+    /* Create a lrangeType referencing the original source list */
+    return LrangeNew(objPtr, start, end, resultPtrPtr);
+}
+
+
+

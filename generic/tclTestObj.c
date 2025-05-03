@@ -1104,6 +1104,7 @@ TestobjCmd(
     static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
+	"objrefcount",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
@@ -1111,6 +1112,7 @@ TestobjCmd(
     enum testobjCmdIndex {
 	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
 	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_OBJREFCOUNT,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1207,6 +1209,13 @@ TestobjCmd(
 	    return TCL_ERROR;
 	}
 	SetVarToObj(varPtr, varIndex, objv[3]);
+	return TCL_OK;
+    case TESTOBJ_OBJREFCOUNT:
+	if (objc != 3) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(objv[2]->refCount));
+	}
 	return TCL_OK;
 
     default:

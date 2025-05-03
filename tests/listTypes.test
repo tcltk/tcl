@@ -58,6 +58,8 @@ namespace eval listtype {
     variable ltype3
     variable first
     variable last
+    variable indices
+    variable result
 
     # Internal representation produced by a list operation may depend on list
     # length. This is controlled by the *_LENGTH_THRESHOLD values in tclListTypes.c.
@@ -65,7 +67,6 @@ namespace eval listtype {
     # be less that these thresholds and largeListLength will be greater.
     variable smallListLength 10
     variable largeListLength 1000; # Multiple of 4 because of assumptions in tests
-
 
     proc getListType {l} {
         set ltype [testobj objtype $l]
@@ -278,20 +279,115 @@ namespace eval listtype {
         testdef lindex-$ltype-unshared-3 "lindex last of unshared type $ltype" -body {
            lindex [makeList $ltype] $largeListLength
         } -result {}
+
+        testdef lindex-$ltype-bad-index "lindex $ltype bad index" -body {
+            lindex [makeList $ltype] badindex
+        } -result {bad index "badindex": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
     }
 
-    # lindex tests - nested indices
+    # lindex tests - nested indices, both single indices arg and multiple args forms
     foreach ltype1 $nestableTypes {
         foreach ltype2 $nestableTypes {
             foreach ltype3 $listTypes {
                 lassign [getFirstAndLast $ltype3] first last
-                testdef ltype-lindex-nested-$ltype1-$ltype2-$ltype3 "lindex nested $ltype1 $ltype2 $ltype3 0" \
-                    -body {
-                        lindex [makeNestedList $ltype1 $ltype2 $ltype3] 0 0 0
-                    } -result $first
+                foreach {indices result} [list \
+                                              {0 0 0} $first \
+                                              {0 0 end} $last \
+                                              {0 0 -1} {} \
+                                              [list 0 0 $largeListLength] {} \
+                                              {0 -1 0} {} \
+                                              [list 0 $largeListLength 0] {} \
+                ] {
+                    testdef ltype-lindex-nested-onearg-$ltype1-$ltype2-$ltype3 "lindex nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
+                        -body {
+                            variable indices
+                            lindex [makeNestedList $ltype1 $ltype2 $ltype3] $indices
+                        } -result $result
+
+                    testdef ltype-lindex-nested-multiarg-$ltype1-$ltype2-$ltype3 "lindex nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
+                        -body {
+                            variable indices
+                            lindex [makeNestedList $ltype1 $ltype2 $ltype3] {*}$indices
+                        } -result $result
+                }
             }
         }
     }
+
+    ################################################################
+    # lappend tests
+    # lappend result is always a non-abstract list. All the tests below do is
+    # confirm abstract lists are converted to non-abstract and appended to
+    # and further that in the case of shared objects, they are not changed
+    # or shimmered.
+    # Test variations of lappend (multiple args etc) are not tested here.
+    # See listObj.test and listRep.test for those.
+    foreach ltype $listTypes {
+        testdef lappend-$ltype-unshared "lappend to unshared list of type $ltype " -body {
+            set result {}
+            set l [makeList $ltype]
+            lappend result [getListType $l]
+            lappend result [testobj objrefcount $l]; # 2 -> 1 for var l + 1 for arg
+            lappend l X
+            lappend result [getListType $l]
+            lappend result [testobj objrefcount $l]; # 2 -> 1 for var l + 1 for arg
+            lappend result [string equal $l [string cat [makeList $ltype] " X"]]
+        } -result [list $ltype 2 [expr {$ltype eq "spanlist" ? "spanlist" : "list"}] 2 1]
+
+        testdef lappend-$ltype-shared "lappend to shared list of type $ltype" -body {
+            set result {}
+            set l [makeList $ltype]
+            set l2 $l
+            lappend result [getListType $l]
+            lappend result [testobj objrefcount $l]; # 3: l, l2, arg
+            lappend result [testobj objrefcount $l2]; # ditto
+            lappend l X
+            lappend result [getListType $l]; # Will be list/spanlist
+            lappend result [getListType $l2]; # Should not have changed
+            lappend result [testobj objrefcount $l]; # Should drop by 1
+            lappend result [testobj objrefcount $l2]; # Should drop by 1
+            lappend result [string equal $l [string cat [makeList $ltype] " X"]]
+            lappend result [string equal $l2 [makeList $ltype]]
+        } -result [list $ltype 3 3 [expr {$ltype eq "spanlist" ? "spanlist" : "list"}] $ltype 2 2 1 1]
+    }
+
+    ################################################################
+    # lassign tests
+    # lassign result is always a spanlist except for arithseries which
+    # implements an optimized range operation.
+    foreach ltype $listTypes {
+    }
+
+    ################################################################
+    # ledit tests - TBD
+    ################################################################
+    # lreplace tests - TBD
+    ################################################################
+    # linsert tests - TBD
+    ################################################################
+    # lreverse tests - TBD
+    ################################################################
+    # lsearch tests - TBD
+    ################################################################
+    # lset tests - TBD
+    ################################################################
+    # lsort tests - TBD
+    ################################################################
+    # foreach tests - TBD
+    ################################################################
+    # lmap tests - TBD
+    ################################################################
+    # lrange tests - TBD
+    ################################################################
+    # concat tests - TBD
+    ################################################################
+    # join tests - TBD
+    ################################################################
+    # lrepeat tests - TBD
+    ################################################################
+    # lpop tests - TBD
+    ################################################################
+    # lremove tests - TBD
 
 
 
