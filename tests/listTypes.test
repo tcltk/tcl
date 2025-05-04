@@ -48,8 +48,8 @@ testConstraint testobj [llength [info commands testobj]]
 testConstraint testlistobj [llength [info commands testobj]]
 
 namespace eval listtype {
-    variable listTypes {arithseries list repeatedList reversedList spanlist}
-    variable nestableTypes {list repeatedList reversedList spanlist}
+    variable listTypes {arithseries list rangeList repeatedList reversedList spanlist}
+    variable nestableTypes {list rangeList repeatedList reversedList spanlist}
 
     # Loop vars etc.
     variable ltype
@@ -105,11 +105,16 @@ namespace eval listtype {
             arithseries {
                 lseq $len
             }
+            rangeList {
+                # lists and arithseries have their own specialized range
+                # implementations so have to use lreverse or lrepeat
+                lrange [makeList reversedList [expr $len+1]] 1 end
+            }
             repeatedList {
                 lrepeat [expr {$len/4}] a b c d
             }
             reversedList {
-                lreverse [makeList list]
+                lreverse [makeList list $len]
             }
         }]
         assertListType $l $type
@@ -125,6 +130,7 @@ namespace eval listtype {
                 set first a
                 set last d
             }
+            rangeList -
             reversedList {
                 set last 0
                 set first [expr {$largeListLength-1}]
@@ -155,6 +161,7 @@ namespace eval listtype {
                 for {set i 0} {$i < (1+$largeListLength)} {incr i} {
                     lappend outerList $nestedList
                 }
+                # lrange on a list or spanlist will return a spanlist, not rangeList
                 lrange $outerList 0 end-1
             }
             repeatedList {
@@ -165,6 +172,14 @@ namespace eval listtype {
                     lappend outerList $nestedList
                 }
                 lreverse $outerList
+            }
+            rangeList {
+                for {set i 0} {$i < (1+$largeListLength)} {incr i} {
+                    lappend outerList $nestedList
+                }
+                # lrange on a list or spanlist will return a spanlist, not rangeList
+                # so reverse it
+                lrange [lreverse $outerList] 0 end-1
             }
             default {
                 error "List type $thisType cannot nest"
@@ -353,9 +368,33 @@ namespace eval listtype {
 
     ################################################################
     # lassign tests
-    # lassign result is always a spanlist except for arithseries which
-    # implements an optimized range operation.
+    # The result of an lassign may be
+    #  - a list (small operand lengths)
+    #  - a spanlist (large operand lengths)
+    #  - arithseries (for arithseries operand)
+    #  - lrangeType (for operands other than lists, spanlists and arithseries)
     foreach ltype $listTypes {
+        lassign [getFirstAndLast $ltype] first last
+        switch $ltype {
+            list - spanlist {set ltype2 spanlist}
+            arithseries {set ltype2 arithseries}
+            default {set ltype2 rangeList}
+        }
+        testdef lassign-$ltype-unshared-0 "lassign unshared list of type $ltype" -body {
+            set l [lassign [makeList $ltype] x]
+            list [getListType $l] $l $x
+        } -result [list $ltype2 [lrange [makeList $ltype] 1 end] $first]
+        testdef lassign-$ltype-shared-0 "lassign shared list of type $ltype" -body {
+            set l0 [makeList $ltype]
+            set l [lassign $l0 x]
+            # The shared value should not shimmer
+            list [getListType $l0] $l0 [getListType $l] $l $x
+        } -result [list $ltype [makeList $ltype] $ltype2 [lrange [makeList $ltype] 1 end] $first]
+        # Except for arithseries, all small ranges are basic lists
+        testdef lassign-$ltype-smalllist-0 "lassign small list of type $ltype should always be non-abstract list" -body {
+            set l [lassign [makeList $ltype 100] x]
+            list [getListType $l] $l $x
+        } -result [list [expr {$ltype eq "arithseries" ? "arithseries" : "list"}] [lrange [makeList $ltype 100] 1 end] [lindex [makeList $ltype 100] 0]]
     }
 
     ################################################################

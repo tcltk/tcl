@@ -22,20 +22,6 @@
 #define LREPEAT_LENGTH_THRESHOLD 100
 #define LRANGE_LENGTH_THRESHOLD 100
 
-/* TODO - no used */
-static inline int
-TclAbstractListLength(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
-{
-    int ret;
-    if (TclObjTypeHasProc(objPtr, lengthProc)) {
-	*lengthPtr = TclObjTypeLength(objPtr);
-        ret = TCL_OK;
-    } else {
-	ret = TclListObjLength(interp, objPtr, lengthPtr);
-    }
-    return ret;
-}
-
 /*
  * TclObjArray stores a reference counted Tcl_Obj array.
  */
@@ -849,6 +835,3 @@ Tcl_ListObjRange(
     /* Create a lrangeType referencing the original source list */
     return LrangeNew(objPtr, start, end, resultPtrPtr);
 }
-
-
-
