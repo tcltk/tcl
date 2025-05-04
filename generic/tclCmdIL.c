@@ -2327,22 +2327,14 @@ Tcl_LassignObjCmd(
     }
 
     if (listObjc > 0) {
-	Tcl_Obj *resultObjPtr = NULL;
-	Tcl_Size fromIdx = origListObjc - listObjc;
-	Tcl_Size toIdx = origListObjc - 1;
-	if (TclObjTypeHasProc(listPtr, sliceProc)) {
-	    if (TclObjTypeSlice(
-		    interp, listPtr, fromIdx, toIdx, &resultObjPtr) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    resultObjPtr = TclListObjRange(
-		interp, listPtr, origListObjc - listObjc, origListObjc - 1);
-	    if (resultObjPtr == NULL) {
-		return TCL_ERROR;
-	    }
+	Tcl_Obj *resultObj = NULL;
+	Tcl_Size first = origListObjc - listObjc;
+	Tcl_Size last = origListObjc - 1;
+	int result = Tcl_ListObjRange(interp, listPtr, first, last, &resultObj);
+	if (result != TCL_OK) {
+	    return result;
 	}
-	Tcl_SetObjResult(interp, resultObjPtr);
+	Tcl_SetObjResult(interp, resultObj);
     }
 
     return TCL_OK;
