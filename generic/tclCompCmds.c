@@ -2536,19 +2536,17 @@ TclCompileErrorCmd(
      * Construct the options. Note that -code and -level are not here.
      */
 
-    if (numWords == 2) {
-	PUSH(			"");
-    } else {
-	PUSH(			"-errorinfo");
+    PUSH(			"");
+    if (numWords > 2) {
 	tokenPtr = TokenAfter(tokenPtr);
+	PUSH(			"-errorinfo");
 	PUSH_TOKEN(		tokenPtr, 2);
-	if (numWords == 3) {
-	    OP4(		LIST, 2);
-	} else {
-	    PUSH(		"-errorcode");
+	OP(			DICT_PUT);
+	if (numWords > 3) {
 	    tokenPtr = TokenAfter(tokenPtr);
+	    PUSH(		"-errorcode");
 	    PUSH_TOKEN(		tokenPtr, 3);
-	    OP4(		LIST, 4);
+	    OP(			DICT_PUT);
 	}
     }
 
