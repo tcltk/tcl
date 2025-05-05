@@ -388,8 +388,9 @@ UpdateStringOfIndex(
 {
     IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
     const char *indexStr = EXPAND_OF(indexRep);
+    size_t len = strlen(indexStr);
 
-    Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
+    TclOOM(Tcl_InitStringRep(objPtr, indexStr, len), len+1);
 }
 
 /*
