@@ -61,6 +61,11 @@ namespace eval ::tcl::test::brodnik {
 	incr i
     }
 
+    # Test out-of-range rejection
+    test brodnik-3.0 {TclMSB correctness} -constraints testmsb -body {
+	    testmsb [expr 1<<64]
+    } -returnCodes error -match glob -result *
+
     cleanupTests
 }
 namespace delete ::tcl::test::brodnik
