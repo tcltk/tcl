@@ -1805,6 +1805,13 @@ MakeHighPrecisionDouble(
      * for overflow. Convert back to a double, and test for underflow.
      */
 
+    /*
+     * TCL bug ca62367d61: the following two if-conditions handle the case,
+     * if the mantissa is to long to be represented.
+     * Very high numbers are returned, if this is not handled
+     */
+
+
     if (exponent < -511) {
 	mp_init_copy(&bntmp, significand);
 	shift = -exponent - 511;
