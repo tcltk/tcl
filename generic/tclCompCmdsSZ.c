@@ -9,7 +9,7 @@
  * Copyright © 1997-1998 Sun Microsystems, Inc.
  * Copyright © 2001 Kevin B. Kenny.  All rights reserved.
  * Copyright © 2002 ActiveState Corporation.
- * Copyright © 2004-2010 Donal K. Fellows.
+ * Copyright © 2004-2025 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -38,8 +38,8 @@ typedef struct TryHandlerInfo {
     Tcl_Token *tokenPtr;	// The handler body, or NULL for none.
     Tcl_Obj *matchClause;	// The [trap] clause, or NULL for none.
     int matchCode;		// The result code.
-    Tcl_LVTIndex resultVar;	// The result variable index, or -1 for none.
-    Tcl_LVTIndex optionVar;	// The option variable index, or -1 for none.
+    Tcl_LVTIndex resultVar;	// The result variable index, or TCL_INDEX_NONE
+    Tcl_LVTIndex optionVar;	// The option variable index, or TCL_INDEX_NONE
 } TryHandlerInfo;
 
 /*
@@ -1178,7 +1178,7 @@ TclCompileStringReplaceCmd(
 
 	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix too => empty result */
-		OP(		POP);		/* Pop  original */
+		OP(		POP);		/* Pop original */
 		PUSH(		"");
 		return TCL_OK;
 	    }
@@ -1436,9 +1436,9 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    objv = (Tcl_Obj **)TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp, numOpts * sizeof(Tcl_Obj *));
 
-    for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
+    for (objc = 0; objc < numOpts; objc++) {
 	TclNewObj(objv[objc]);
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
@@ -1456,10 +1456,10 @@ TclCompileSubstCmd(
 */
 
     /* TODO: Figure out expansion to cover WordKnownAtCompileTime
-     *	The difficulty is that WKACT makes a copy, and if TclSubstParse
-     *	below parses the copy of the original source string, some deep
-     *	parts of the compile machinery get upset.  They want all pointers
-     *	stored in Tcl_Tokens to point back to the same original string.
+     * The difficulty is that WKACT makes a copy, and if TclSubstParse
+     * below parses the copy of the original source string, some deep
+     * parts of the compile machinery get upset.  They want all pointers
+     * stored in Tcl_Tokens to point back to the same original string.
      */
     if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	code = TclSubstOptions(NULL, numOpts, objv, &flags);
@@ -1694,7 +1694,8 @@ TclSubstCompile(
 /*
  *----------------------------------------------------------------------
  *
- * HasDefaultClause, IsFallthroughToken, IsFallthroughArm, SetSwitchLineInformation --
+ * HasDefaultClause, IsFallthroughToken, IsFallthroughArm,
+ * SetSwitchLineInformation --
  *
  *	Support utilities for [switch] compilation.
  *
@@ -2111,8 +2112,6 @@ IssueSwitchChainedTests(
     int simple, exact;		/* For extracting the type of regexp. */
     Tcl_Size i, j;
 
-#define NO_PENDING_JUMP -1
-
     /*
      * Generate a test for each arm.
      */
@@ -2371,7 +2370,7 @@ IssueSwitchJumpTable(
 	 * term.
 	 */
 
-	if (i!=numArms-1 || !HasDefaultClause(numArms, arms)) {
+	if (i != numArms-1 || !HasDefaultClause(numArms, arms)) {
 	    /*
 	     * This is not a default clause, so insert the current location as
 	     * a target in the jump table (assuming it isn't already there,
@@ -2555,9 +2554,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
-	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
+	    if (i % 4 == 0) {
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_AUTO_LENGTH);
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
@@ -2940,7 +2939,7 @@ TclCompileTryCmd(
 		    goto failedToCompile;
 		}
 	    } else {
-		handlers[handlerIdx].resultVar = -1;
+		handlers[handlerIdx].resultVar = TCL_INDEX_NONE;
 	    }
 	    if (objc == 2) {
 		Tcl_Size len;
@@ -2952,7 +2951,7 @@ TclCompileTryCmd(
 		    goto failedToCompile;
 		}
 	    } else {
-		handlers[handlerIdx].optionVar = -1;
+		handlers[handlerIdx].optionVar = TCL_INDEX_NONE;
 	    }
 	    Tcl_BounceRefCount(tmpObj);
 
@@ -3053,8 +3052,8 @@ TclCompileTryCmd(
  *----------------------------------------------------------------------
  *
  * IssueTryClausesInstructions, IssueTryTraplessClausesInstructions,
- * IssueTryClausesFinallyInstructions, IssueTryTraplessClausesFinallyInstructions,
- * IssueTryFinallyInstructions --
+ * IssueTryClausesFinallyInstructions, IssueTryFinallyInstructions,
+ * IssueTryTraplessClausesFinallyInstructions --
  *
  *	The code generators for [try]. Split from the parsing engine for
  *	reasons of developer sanity, and also split between no-finally,
@@ -3146,7 +3145,7 @@ IssueTryClausesInstructions(
     continuationJumps = afterReturn0 + numHandlers;
     noError = continuationJumps + numHandlers;
     for (i=0; i<numHandlers*3; i++) {
-	afterReturn0[i] = -1;
+	afterReturn0[i] = NO_PENDING_JUMP;
     }
 
     for (i=0 ; i<numHandlers ; i++) {
@@ -3168,7 +3167,7 @@ IssueTryClausesInstructions(
 	    OP4(		ERROR_PREFIX_EQ, len);
 	    FWDJUMP(		JUMP_FALSE, notECJumpSource);
 	} else {
-	    notECJumpSource = -1;
+	    notECJumpSource = NO_PENDING_JUMP;
 	}
 	OP(			POP);
 
@@ -3178,12 +3177,12 @@ IssueTryClausesInstructions(
 	 * to be issued a lot since we can let errors just fall through.
 	 */
 
-	if (handlers[i].resultVar >= 0) {
+	if (handlers[i].resultVar != TCL_INDEX_NONE) {
 	    OP4(		LOAD_SCALAR, resultVar);
 	    OP4(		STORE_SCALAR, handlers[i].resultVar);
 	    OP(			POP);
 	}
-	if (handlers[i].optionVar >= 0) {
+	if (handlers[i].optionVar != TCL_INDEX_NONE) {
 	    OP4(		LOAD_SCALAR, optionsVar);
 	    OP4(		STORE_SCALAR, handlers[i].optionVar);
 	    OP(			POP);
@@ -3196,10 +3195,10 @@ IssueTryClausesInstructions(
 	    if (continuationsPending) {
 		continuationsPending = 0;
 		for (j=0 ; j<i ; j++) {
-		    if (continuationJumps[j] != -1) {
+		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
 		    }
-		    continuationJumps[j] = -1;
+		    continuationJumps[j] = NO_PENDING_JUMP;
 		}
 	    }
 
@@ -3264,10 +3263,10 @@ IssueTryClausesInstructions(
 	FWDLABEL(	afterBody);
     }
     for (i=0 ; i<numHandlers ; i++) {
-	if (afterReturn0[i] != -1) {
+	if (afterReturn0[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	afterReturn0[i]);
 	}
-	if (noError[i] != -1) {
+	if (noError[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	noError[i]);
 	}
     }
@@ -3304,7 +3303,7 @@ IssueTryTraplessClausesInstructions(
     continuationJumps = afterReturn0 + numHandlers;
     noError = continuationJumps + numHandlers;
     for (i=0; i<numHandlers*3; i++) {
-	afterReturn0[i] = -1;
+	afterReturn0[i] = NO_PENDING_JUMP;
     }
     tablePtr = AllocJumptableNum();
     tableIdx = RegisterJumptableNum(tablePtr, envPtr);
@@ -3375,12 +3374,12 @@ IssueTryTraplessClausesInstructions(
 	 * to be issued a lot since we can let errors just fall through.
 	 */
 
-	if (handlers[i].resultVar >= 0) {
+	if (handlers[i].resultVar != TCL_INDEX_NONE) {
 	    OP4(		LOAD_SCALAR, resultVar);
 	    OP4(		STORE_SCALAR, handlers[i].resultVar);
 	    OP(			POP);
 	}
-	if (handlers[i].optionVar >= 0) {
+	if (handlers[i].optionVar != TCL_INDEX_NONE) {
 	    OP4(		LOAD_SCALAR, optionsVar);
 	    OP4(		STORE_SCALAR, handlers[i].optionVar);
 	    OP(			POP);
@@ -3392,10 +3391,10 @@ IssueTryTraplessClausesInstructions(
 	    if (continuationsPending) {
 		continuationsPending = 0;
 		for (j=0 ; j<i ; j++) {
-		    if (continuationJumps[j] != -1) {
+		    if (continuationJumps[j] != NO_PENDING_JUMP) {
 			FWDLABEL(continuationJumps[j]);
 		    }
-		    continuationJumps[j] = -1;
+		    continuationJumps[j] = NO_PENDING_JUMP;
 		}
 	    }
 
@@ -3456,10 +3455,10 @@ IssueTryTraplessClausesInstructions(
 	FWDLABEL(	afterBody);
     }
     for (i=0 ; i<numHandlers ; i++) {
-	if (afterReturn0[i] != -1) {
+	if (afterReturn0[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	afterReturn0[i]);
 	}
-	if (noError[i] != -1) {
+	if (noError[i] != NO_PENDING_JUMP) {
 	    FWDLABEL(	noError[i]);
 	}
     }
@@ -3554,7 +3553,7 @@ IssueTryClausesFinallyInstructions(
     forwardsToFix = addrsToFix + numHandlers;
 
     for (i=0 ; i<numHandlers ; i++) {
-	Tcl_BytecodeLabel codeNotMatched, notErrorCodeMatched = -1;
+	Tcl_BytecodeLabel codeNotMatched, notErrorCodeMatched = NO_PENDING_JUMP;
 
 	OP(			DUP);
 	PUSH_OBJ(		Tcl_NewIntObj(handlers[i].matchCode));
@@ -3583,19 +3582,21 @@ IssueTryClausesFinallyInstructions(
 	 * failed trap for the result from the main script.
 	 */
 
-	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0
+	if (handlers[i].resultVar != TCL_INDEX_NONE
+		|| handlers[i].optionVar != TCL_INDEX_NONE
 		|| handlers[i].tokenPtr) {
 	    range = MAKE_CATCH_RANGE();
 	    OP4(		BEGIN_CATCH, range);
 	    ExceptionRangeStarts(envPtr, range);
 	}
-	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0) {
-	    if (handlers[i].resultVar >= 0) {
+	if (handlers[i].resultVar != TCL_INDEX_NONE
+		|| handlers[i].optionVar != TCL_INDEX_NONE) {
+	    if (handlers[i].resultVar != TCL_INDEX_NONE) {
 		OP4(		LOAD_SCALAR, resultLocal);
 		OP4(		STORE_SCALAR, handlers[i].resultVar);
 		OP(		POP);
 	    }
-	    if (handlers[i].optionVar >= 0) {
+	    if (handlers[i].optionVar != TCL_INDEX_NONE) {
 		OP4(		LOAD_SCALAR, optionsLocal);
 		OP4(		STORE_SCALAR, handlers[i].optionVar);
 		OP(		POP);
@@ -3636,11 +3637,11 @@ IssueTryClausesFinallyInstructions(
 	    forwardsNeedFixing = 0;
 	    FWDJUMP(		JUMP, bodyStart);
 	    for (j=0 ; j<i ; j++) {
-		if (forwardsToFix[j] == -1) {
+		if (forwardsToFix[j] == NO_PENDING_JUMP) {
 		    continue;
 		}
 		FWDLABEL(forwardsToFix[j]);
-		forwardsToFix[j] = -1;
+		forwardsToFix[j] = NO_PENDING_JUMP;
 	    }
 	    OP4(		BEGIN_CATCH, range);
 	    FWDLABEL(	bodyStart);
@@ -3652,7 +3653,7 @@ IssueTryClausesFinallyInstructions(
 	OP4(			REVERSE, 3);
 	FWDJUMP(		JUMP, endCatch);
 	STKDELTA(-3);
-	forwardsToFix[i] = -1;
+	forwardsToFix[i] = NO_PENDING_JUMP;
 
 	/*
 	 * Error in handler or setting of variables; replace the stored
@@ -3790,7 +3791,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	    sizeof(Tcl_BytecodeLabel) * numHandlers * 2);
     forwardsToFix = addrsToFix + numHandlers;
     for (i=0; i < numHandlers * 2; i++) {
-	addrsToFix[i] = -1;
+	addrsToFix[i] = NO_PENDING_JUMP;
     }
     tablePtr = AllocJumptableNum();
     tableIdx = RegisterJumptableNum(tablePtr, envPtr);
@@ -3865,19 +3866,21 @@ IssueTryTraplessClausesFinallyInstructions(
 	 * failed trap for the result from the main script.
 	 */
 
-	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0
+	if (handlers[i].resultVar != TCL_INDEX_NONE
+		|| handlers[i].optionVar != TCL_INDEX_NONE
 		|| handlers[i].tokenPtr) {
 	    range = MAKE_CATCH_RANGE();
 	    OP4(		BEGIN_CATCH, range);
 	    ExceptionRangeStarts(envPtr, range);
 	}
-	if (handlers[i].resultVar >= 0 || handlers[i].optionVar >= 0) {
-	    if (handlers[i].resultVar >= 0) {
+	if (handlers[i].resultVar != TCL_INDEX_NONE
+		|| handlers[i].optionVar != TCL_INDEX_NONE) {
+	    if (handlers[i].resultVar != TCL_INDEX_NONE) {
 		OP4(		LOAD_SCALAR, resultLocal);
 		OP4(		STORE_SCALAR, handlers[i].resultVar);
 		OP(		POP);
 	    }
-	    if (handlers[i].optionVar >= 0) {
+	    if (handlers[i].optionVar != TCL_INDEX_NONE) {
 		OP4(		LOAD_SCALAR, optionsLocal);
 		OP4(		STORE_SCALAR, handlers[i].optionVar);
 		OP(		POP);
@@ -3919,11 +3922,11 @@ IssueTryTraplessClausesFinallyInstructions(
 	    forwardsNeedFixing = 0;
 	    FWDJUMP(		JUMP, bodyStart);
 	    for (j=0 ; j<i ; j++) {
-		if (forwardsToFix[j] == -1) {
+		if (forwardsToFix[j] == NO_PENDING_JUMP) {
 		    continue;
 		}
 		FWDLABEL(forwardsToFix[j]);
-		forwardsToFix[j] = -1;
+		forwardsToFix[j] = NO_PENDING_JUMP;
 	    }
 	    OP4(		BEGIN_CATCH, range);
 	    FWDLABEL(	bodyStart);

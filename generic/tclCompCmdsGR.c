@@ -474,7 +474,7 @@ TclCompileIncrCmd(
      * Emit the instruction to increment the variable.
      */
 
-    if (isScalar) {	/* Simple scalar variable. */
+    if (isScalar) {		/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
 		OP41(		INCR_SCALAR_IMM, localIndex, immValue);
@@ -2243,7 +2243,8 @@ TclCompileReturnCmd(
      * Allocate some working space.
      */
 
-    objv = (Tcl_Obj **)TclStackAlloc(interp, numOptionWords * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp,
+	    numOptionWords * sizeof(Tcl_Obj *));
 
     /*
      * Scan through the return options. If any are unknown at compile time,
@@ -2661,7 +2662,7 @@ IndexTailVarIfKnown(
      */
 
     if (!EnvHasLVT(envPtr)) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     TclNewObj(tailPtr);
@@ -2674,7 +2675,7 @@ IndexTailVarIfKnown(
 
 	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
 	    Tcl_DecrRefCount(tailPtr);
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
@@ -2688,14 +2689,14 @@ IndexTailVarIfKnown(
 	     */
 
 	    Tcl_DecrRefCount(tailPtr);
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 
 	/*
 	 * Get the tail: immediately after the last '::'
 	 */
 
-	for (p = tailName + len -1; p > tailName; p--) {
+	for (p = tailName + len - 1; p > tailName; p--) {
 	    if ((p[0] == ':') && (p[- 1] == ':')) {
 		p++;
 		break;
@@ -2707,7 +2708,7 @@ IndexTailVarIfKnown(
 	     */
 
 	    Tcl_DecrRefCount(tailPtr);
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 	len -= p - tailName;
 	tailName = p;

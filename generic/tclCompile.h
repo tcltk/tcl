@@ -1107,7 +1107,8 @@ CreateJumptableEntry(
     Tcl_Size offset)
 {
     int isNew;
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable, keyPtr, &isNew);
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable, keyPtr,
+	    &isNew);
     if (isNew) {
 	Tcl_SetHashValue(hPtr, INT2PTR(offset));
     }
@@ -1859,7 +1860,8 @@ ExceptionRangeStarts(
     Tcl_Size offset;
 
     envPtr->exceptDepth++;
-    envPtr->maxExceptDepth = TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
+    envPtr->maxExceptDepth = TclMax(envPtr->exceptDepth,
+	    envPtr->maxExceptDepth);
     offset = CurrentOffset(envPtr);
     envPtr->exceptArrayPtr[index].codeOffset = offset;
     return (int) offset;
@@ -1939,8 +1941,11 @@ ExceptionRangeEnds(
     } while (0)
 
 #define PushVarNameWord(varTokenPtr,flags,localIndexPtr,isScalarPtr,wordIndex) \
-    SetLineInformation(wordIndex);						\
-    TclPushVarName(interp,varTokenPtr,envPtr,flags,localIndexPtr,isScalarPtr)
+    do {								\
+	SetLineInformation(wordIndex);					\
+	TclPushVarName(interp, varTokenPtr, envPtr, flags,		\
+		localIndexPtr, isScalarPtr);				\
+    } while (0)
 
 #define ClearFailedCompile(envPtr) \
     TclClearFailedCompile((envPtr), &lineInfo)
