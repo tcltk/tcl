@@ -11,7 +11,7 @@
  */
 
 #include "tclInt.h"
-#include "tclCompUtils.h"
+#include "tclCompile.h"
 
 /*
  * Declarations for functions local to this file:

@@ -2183,8 +2183,7 @@ CompileExpanded(
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		TclEmitInstInt4(INST_EXPAND_STKTOP, envPtr->currStackDepth,
-			envPtr);
+		OP4(		EXPAND_STKTOP, envPtr->currStackDepth);
 	    }
 	    continue;
 	}
@@ -2245,7 +2244,7 @@ CompileCmdCompileProc(
     case 0:
 	unwind = tclInstructionTable[INST_START_CMD].numBytes;
 	incrOffset = CurrentOffset(envPtr) + 5;
-	TclEmitInstInt44(	INST_START_CMD, 0, 0,		envPtr);
+	OP44(			START_CMD, 0, 0);
 	break;
     case 1:
 	if (envPtr->codeNext > envPtr->codeStart) {
@@ -2411,7 +2410,7 @@ CompileCommandTokens(
 
     Tcl_DecrRefCount(cmdObj);
 
-    TclEmitOpcode(		INST_POP,			envPtr);
+    OP(				POP);
     EnterCmdExtentData(envPtr, cmdIdx,
 	    parsePtr->term - parsePtr->commandStart,
 	    CurrentOffset(envPtr) - startCodeOffset);
@@ -2598,7 +2597,7 @@ TclCompileScript(
 	 * simple bytecode that makes that happen.
 	 */
 
-	PushStringLiteral(envPtr, "");
+	PUSH(			"");
     } else {
 	/*
 	 * We compiled at least one command to bytecode.  The routine
@@ -2692,16 +2691,16 @@ TclCompileVarSubst(
 
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
-	    TclEmitOpcode(	INST_LOAD_STK,			envPtr);
+	    OP(			LOAD_STK);
 	} else {
-	    TclEmitInstInt4(	INST_LOAD_SCALAR, localVar,	envPtr);
+	    OP4(		LOAD_SCALAR, localVar);
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
 	if (localVar < 0) {
-	    TclEmitOpcode(	INST_LOAD_ARRAY_STK,		envPtr);
+	    OP(			LOAD_ARRAY_STK);
 	} else {
-	    TclEmitInstInt4(	INST_LOAD_ARRAY, localVar,	envPtr);
+	    OP4(		LOAD_ARRAY, localVar);
 	}
     }
 }
@@ -2876,11 +2875,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(	INST_STR_CONCAT1, 255,		envPtr);
+	OP1(			STR_CONCAT1, 255);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(	INST_STR_CONCAT1, numObjsToConcat, envPtr);
+	OP1(			STR_CONCAT1, numObjsToConcat);
     }
 
     /*
@@ -2888,7 +2887,7 @@ TclCompileTokens(
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	PushStringLiteral(envPtr, "");
+	PUSH(			"");
     }
     Tcl_DStringFree(&textBuffer);
 
@@ -3005,19 +3004,19 @@ TclCompileExprWords(
     for (i = 0;  i < numWords;  i++) {
 	CompileTokens(envPtr, wordPtr, interp);
 	if (i + 1 < numWords) {
-	    PushStringLiteral(envPtr, " ");
+	    PUSH(		" ");
 	}
 	wordPtr += wordPtr->numComponents + 1;
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(	INST_STR_CONCAT1, 255,		envPtr);
+	OP1(			STR_CONCAT1, 255);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(	INST_STR_CONCAT1, concatItems,	envPtr);
+	OP1(			STR_CONCAT1, concatItems);
     }
-    TclEmitOpcode(		INST_EXPR_STK,			envPtr);
+    OP(				EXPR_STK);
 }
 
 /*
@@ -3055,10 +3054,10 @@ TclCompileNoOp(
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
-	    TclEmitOpcode(	INST_POP,			envPtr);
+	    OP(			POP);
 	}
     }
-    PushStringLiteral(envPtr, "");
+    PUSH(			"");
     return TCL_OK;
 }
 
@@ -3845,7 +3844,7 @@ TclAddLoopBreakFixup(
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
-    TclEmitInstInt4(		INST_JUMP, 0,			envPtr);
+    OP4(			JUMP, 0);
 }
 
 void
@@ -3872,7 +3871,7 @@ TclAddLoopContinueFixup(
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
 	    CurrentOffset(envPtr);
-    TclEmitInstInt4(		INST_JUMP, 0,			envPtr);
+    OP4(			JUMP, 0);
 }
 
 /*
@@ -3897,15 +3896,14 @@ TclCleanupStackForBreakContinue(
 
     if (toPop > 0) {
 	while (toPop --> 0) {
-	    TclEmitOpcode(	INST_EXPAND_DROP,		envPtr);
+	    OP(			EXPAND_DROP);
 	}
-	TclAdjustStackDepth((auxPtr->expandTargetDepth - envPtr->currStackDepth),
-		envPtr);
+	STKDELTA(auxPtr->expandTargetDepth - envPtr->currStackDepth);
 	envPtr->currStackDepth = auxPtr->expandTargetDepth;
     }
     toPop = envPtr->currStackDepth - auxPtr->stackDepth;
     while (toPop --> 0) {
-	TclEmitOpcode(		INST_POP,			envPtr);
+	OP(			POP);
     }
     envPtr->currStackDepth = savedStackDepth;
 }
@@ -3928,7 +3926,7 @@ StartExpanding(
 {
     Tcl_Size i;
 
-    TclEmitOpcode(		INST_EXPAND_START,		envPtr);
+    OP(				EXPAND_START);
 
     /*
      * Update inner exception ranges with information about the environment
@@ -4263,13 +4261,13 @@ TclEmitForwardJump(
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt4(	INST_JUMP, 0,			envPtr);
+	OP4(			JUMP, 0);
 	break;
     case TCL_TRUE_JUMP:
-	TclEmitInstInt4(	INST_JUMP_TRUE, 0,		envPtr);
+	OP4(			JUMP_TRUE, 0);
 	break;
     default: // TCL_FALSE_JUMP
-	TclEmitInstInt4(	INST_JUMP_FALSE, 0,		envPtr);
+	OP4(			JUMP_FALSE, 0);
 	break;
     }
 }
@@ -4429,7 +4427,7 @@ TclEmitInvoke(
     }
 
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
-	loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+	loopRange = MAKE_LOOP_RANGE();
 	ExceptionRangeStarts(envPtr, loopRange);
     }
 
@@ -4440,45 +4438,45 @@ TclEmitInvoke(
     switch (opcode) {
 #ifndef TCL_NO_DEPRECATED
     case INST_INVOKE_STK1:
-	TclEmitInstInt1(	INST_INVOKE_STK1, arg1,		envPtr);
+	OP1(			INVOKE_STK1, arg1);
 	break;
 #endif
     case INST_INVOKE_STK:
-	TclEmitInstInt4(	INST_INVOKE_STK, arg1,		envPtr);
+	OP4(			INVOKE_STK, arg1);
 	break;
     case INST_INVOKE_EXPANDED:
-	TclEmitOpcode(		INST_INVOKE_EXPANDED,		envPtr);
+	OP(			INVOKE_EXPANDED);
 	envPtr->expandCount--;
-	TclAdjustStackDepth(1 - arg1, envPtr);
+	STKDELTA(1 - arg1);
 	break;
     case INST_EVAL_STK:
-	TclEmitOpcode(		INST_EVAL_STK,			envPtr);
+	OP(			EVAL_STK);
 	break;
     case INST_RETURN_STK:
-	TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+	OP(			RETURN_STK);
 	break;
     case INST_INVOKE_REPLACE:
-	TclEmitInstInt41(	INST_INVOKE_REPLACE, arg1, arg2, envPtr);
+	OP41(			INVOKE_REPLACE, arg1, arg2);
 	break;
 #ifndef TCL_NO_DEPRECATED
     case INST_TCLOO_NEXT1:
-	TclEmitInstInt1(	INST_TCLOO_NEXT1, arg1,		envPtr);
+	OP1(			TCLOO_NEXT1, arg1);
 	break;
     case INST_TCLOO_NEXT_CLASS1:
-	TclEmitInstInt1(	INST_TCLOO_NEXT_CLASS1, arg1,	envPtr);
+	OP1(			TCLOO_NEXT_CLASS1, arg1);
 	break;
 #endif
     case INST_TCLOO_NEXT:
-	TclEmitInstInt4(	INST_TCLOO_NEXT, arg1,		envPtr);
+	OP4(			TCLOO_NEXT, arg1);
 	break;
     case INST_TCLOO_NEXT_CLASS:
-	TclEmitInstInt4(	INST_TCLOO_NEXT_CLASS, arg1,	envPtr);
+	OP4(			TCLOO_NEXT_CLASS, arg1);
 	break;
     case INST_YIELD:
-	TclEmitOpcode(		INST_YIELD,			envPtr);
+	OP(			YIELD);
 	break;
     case INST_YIELD_TO_INVOKE:
-	TclEmitOpcode(		INST_YIELD_TO_INVOKE,		envPtr);
+	OP(			YIELD_TO_INVOKE);
 	break;
     default:
 	Tcl_Panic("opcode %s not handled by TclEmitInvoke()",
@@ -4512,30 +4510,30 @@ TclEmitInvoke(
 	 */
 
 	if (auxBreakPtr != NULL) {
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 
-	    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+	    BREAK_TARGET(	loopRange);
 	    TclCleanupStackForBreakContinue(envPtr, auxBreakPtr);
 	    TclAddLoopBreakFixup(envPtr, auxBreakPtr);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(1);
 
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
 	}
 
 	if (auxContinuePtr != NULL) {
-	    TclAdjustStackDepth(-1, envPtr);
+	    STKDELTA(-1);
 
-	    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
+	    CONTINUE_TARGET(	loopRange);
 	    TclCleanupStackForBreakContinue(envPtr, auxContinuePtr);
 	    TclAddLoopContinueFixup(envPtr, auxContinuePtr);
-	    TclAdjustStackDepth(1, envPtr);
+	    STKDELTA(1);
 
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
 	}
 
-	TclFinalizeLoopExceptionRange(envPtr, loopRange);
+	FINALIZE_LOOP(		loopRange);
 	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup);
     }
     TclCheckStackDepth(depth+1-cleanup, envPtr);
