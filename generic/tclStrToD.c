@@ -1666,7 +1666,7 @@ MakeLowPrecisionDouble(
 		 */
 
 		retval =
-			((double)significand * pow10vals[exponent]);
+			((double)(Tcl_WideInt)significand * pow10vals[exponent]);
 		goto returnValue;
 	    } else {
 		int diff = QUICK_MAX - numSigDigs;
@@ -1680,7 +1680,7 @@ MakeLowPrecisionDouble(
 		     */
 
 		    volatile double factor =
-			    ((double)significand * pow10vals[diff]);
+			    ((double)(Tcl_WideInt)significand * pow10vals[diff]);
 		    retval = factor * pow10vals[exponent-diff];
 		    goto returnValue;
 		}
@@ -1694,7 +1694,7 @@ MakeLowPrecisionDouble(
 		 */
 
 		retval =
-			((double)significand / pow10vals[-exponent]);
+			((double)(Tcl_WideInt)significand / pow10vals[-exponent]);
 		goto returnValue;
 	    }
 	}
