@@ -15,7 +15,7 @@
  */
 
 #include "tclInt.h"
-#include "tclCompUtils.h"
+#include "tclCompile.h"
 #include <assert.h>
 
 /*

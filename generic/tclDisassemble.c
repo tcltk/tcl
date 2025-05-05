@@ -811,12 +811,14 @@ TclGetInnerContext(
 	break;
 
     case INST_INVOKE_STK:
-	objc = TclGetUInt4AtPtr(pc+1);
+	objc = TclGetUInt4AtPtr(pc + 1);
 	break;
 
+#ifndef REMOVE_DEPRECATED_OPCODES
     case INST_INVOKE_STK1:
-	objc = TclGetUInt1AtPtr(pc+1);
+	objc = TclGetUInt1AtPtr(pc + 1);
 	break;
+#endif
     }
 
     result = iPtr->innerContext;

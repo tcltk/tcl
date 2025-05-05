@@ -2271,7 +2271,7 @@ ExecConstantExprTree(
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
-    TclEmitOpcode(		INST_DONE,			envPtr);
+    OP(				DONE);
     byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
@@ -2370,7 +2370,7 @@ CompileExprTree(
 		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->jump);
-		TclAdjustStackDepth(-1, envPtr);
+		STKDELTA(-1);
 		if (convert) {
 		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
 		}
@@ -2393,7 +2393,7 @@ CompileExprTree(
 	    case START:
 	    case QUESTION:
 		if (convert && (nodePtr == rootPtr)) {
-		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC,	envPtr);
+		    OP(		TRY_CVT_TO_NUMERIC);
 		}
 		break;
 	    case OPEN_PAREN:
@@ -2449,7 +2449,7 @@ CompileExprTree(
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &pc2);
-		TclAdjustStackDepth(-1, envPtr);
+		STKDELTA(-1);
 		TclFixupForwardJumpToHere(envPtr, &pc1);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		TclEmitPush(TclRegisterLiteral(envPtr,
@@ -2518,7 +2518,7 @@ CompileExprTree(
 		 * that preserves internalreps.
 		 */
 
-		TclEmitPush(TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		PUSH_OBJ(	literal);
 	    }
 	    (*litObjvPtr)++;
 	    break;
