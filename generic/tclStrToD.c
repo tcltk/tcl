@@ -1822,6 +1822,8 @@ MakeHighPrecisionDouble(
     TCL_IEEE_DOUBLE_ROUNDING_DECL
 
     int machexp = 0;		/* Machine exponent of a power of 10. */
+    int shift, n;
+    mp_int bntmp;
 
     /*
      * With gcc on x86, the floating point rounding mode is double-extended.
@@ -1869,6 +1871,35 @@ MakeHighPrecisionDouble(
      * for overflow. Convert back to a double, and test for underflow.
      */
 
+    /*
+     * TCL bug ca62367d61: the following two if-conditions handle the case,
+     * if the mantissa is to long to be represented.
+     * Very high numbers are returned, if this is not handled
+     */
+
+
+    if (exponent < -511) {
+	mp_init_copy(&bntmp, significand);
+	shift = -exponent - 511;
+	exponent += shift;
+	while (shift > 0) {
+	    n = (shift > 9) ? 9 : shift;
+	    mp_div_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp, NULL);
+	    shift -= n;
+	}
+	significand = &bntmp;
+    } else if (exponent > 511) {
+	mp_init_copy(&bntmp, significand);
+	shift = exponent - 511;
+	exponent -= shift;
+	while (shift > 0) {
+	    n = (shift > 9) ? 9 : shift;
+	    mp_mul_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp);
+	    shift -= n;
+	}
+	significand = &bntmp;
+    }
+
     retval = BignumToBiasedFrExp(significand, &machexp);
     retval = Pow10TimesFrExp(exponent, retval, &machexp);
     if (machexp > DBL_MAX_EXP*log2FLT_RADIX) {
@@ -1896,6 +1927,9 @@ MakeHighPrecisionDouble(
      */
 
   returnValue:
+    if (significand == &bntmp) {
+	mp_clear(&bntmp);
+    }
     if (signum) {
 	retval = -retval;
     }
