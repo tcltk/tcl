@@ -43,6 +43,7 @@ static int traceInitialized = 0;
 #define TCL_INSTRUCTION_ENTRY2(name,size,stack,type1,type2) \
     {name,size,stack,2,{type1,type2}}
 
+/* TODO: Mark these differently when REMOVE_DEPRECATED_OPCODES is defined. */
 #define DEPRECATED_INSTRUCTION_ENTRY(name,stack) \
     {name,1,stack,0,{OPERAND_NONE,OPERAND_NONE}}
 #define DEPRECATED_INSTRUCTION_ENTRY1(name,size,stack,type1) \

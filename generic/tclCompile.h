@@ -564,9 +564,14 @@ typedef struct ByteCode {
  * deprecated in the bytecode execution engine, disassembler or (for now)
  * optimizer; if ALLOW_DEPRECATED_OPCODES is defined prior to including this
  * file, DEPRECATED_OPCODE doesn't apply the deprecation marker.
+ *
+ * If REMOVE_DEPRECATED_OPCODES is defined, the opcodes are removed entirely
+ * and will be wholly unusable, even by precompiled bytecode.
  */
 
-#ifdef ALLOW_DEPRECATED_OPCODES
+#ifdef REMOVE_DEPRECATED_OPCODES
+#define DEPRECATED_OPCODE(name) JOIN(INST_DEPRECATED_, __LINE__)
+#elif defined(ALLOW_DEPRECATED_OPCODES)
 #define DEPRECATED_OPCODE(name) \
     name
 #elif defined(_MSC_VER)
@@ -592,52 +597,52 @@ enum TclInstruction {
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
     DEPRECATED_OPCODE(INST_PUSH1),
-    INST_PUSH,
+    INST_PUSH = 2,
     INST_POP,
     INST_DUP,
     INST_STR_CONCAT1,
     DEPRECATED_OPCODE(INST_INVOKE_STK1),
-    INST_INVOKE_STK,
+    INST_INVOKE_STK = 7,
     INST_EVAL_STK,
     INST_EXPR_STK,
 
     /* Opcodes 10 to 23 */
     DEPRECATED_OPCODE(INST_LOAD_SCALAR1),
-    INST_LOAD_SCALAR,
+    INST_LOAD_SCALAR = 11,
     DEPRECATED_OPCODE(INST_LOAD_SCALAR_STK), // Not used
     DEPRECATED_OPCODE(INST_LOAD_ARRAY1),
-    INST_LOAD_ARRAY,
+    INST_LOAD_ARRAY = 14,
     INST_LOAD_ARRAY_STK,
     INST_LOAD_STK,
     DEPRECATED_OPCODE(INST_STORE_SCALAR1),
-    INST_STORE_SCALAR,
+    INST_STORE_SCALAR = 18,
     DEPRECATED_OPCODE(INST_STORE_SCALAR_STK), // Not used
     DEPRECATED_OPCODE(INST_STORE_ARRAY1),
-    INST_STORE_ARRAY,
+    INST_STORE_ARRAY = 21,
     INST_STORE_ARRAY_STK,
     INST_STORE_STK,
 
     /* Opcodes 24 to 33 */
     DEPRECATED_OPCODE(INST_INCR_SCALAR1),
-    INST_INCR_SCALAR_STK,
+    INST_INCR_SCALAR_STK = 25,
     DEPRECATED_OPCODE(INST_INCR_ARRAY1),
-    INST_INCR_ARRAY_STK,
+    INST_INCR_ARRAY_STK = 27,
     INST_INCR_STK,
     DEPRECATED_OPCODE(INST_INCR_SCALAR1_IMM),
-    INST_INCR_SCALAR_STK_IMM,
+    INST_INCR_SCALAR_STK_IMM = 30,
     DEPRECATED_OPCODE(INST_INCR_ARRAY1_IMM),
-    INST_INCR_ARRAY_STK_IMM,
+    INST_INCR_ARRAY_STK_IMM = 32,
     INST_INCR_STK_IMM,
 
     /* Opcodes 34 to 39 */
     DEPRECATED_OPCODE(INST_JUMP1),
-    INST_JUMP,
+    INST_JUMP = 35,
     DEPRECATED_OPCODE(INST_JUMP_TRUE1),
-    INST_JUMP_TRUE,
+    INST_JUMP_TRUE = 37,
     DEPRECATED_OPCODE(INST_JUMP_FALSE1),
-    INST_JUMP_FALSE,
+    INST_JUMP_FALSE = 39,
 
-    /* Opcodes 42 to 64 */
+    /* Opcodes 42 to 60 */
     INST_BITOR,
     INST_BITXOR,
     INST_BITAND,
@@ -660,17 +665,17 @@ enum TclInstruction {
     INST_LNOT,
     INST_TRY_CVT_TO_NUMERIC,
 
-    /* Opcodes 65 to 66 */
+    /* Opcodes 61 to 62 */
     INST_BREAK,
     INST_CONTINUE,
 
-    /* Opcodes 69 to 72 */
+    /* Opcodes 63 to 66 */
     INST_BEGIN_CATCH,
     INST_END_CATCH,
     INST_PUSH_RESULT,
     INST_PUSH_RETURN_CODE,
 
-    /* Opcodes 73 to 78 */
+    /* Opcodes 67 to 72 */
     INST_STR_EQ,
     INST_STR_NEQ,
     INST_STR_CMP,
@@ -678,24 +683,24 @@ enum TclInstruction {
     INST_STR_INDEX,
     INST_STR_MATCH,
 
-    /* Opcodes 79 to 81 */
+    /* Opcodes 73 to 75 */
     INST_LIST,
     INST_LIST_INDEX,
     INST_LIST_LENGTH,
 
-    /* Opcodes 82 to 87 */
+    /* Opcodes 76 to 81 */
     DEPRECATED_OPCODE(INST_APPEND_SCALAR1),
-    INST_APPEND_SCALAR,
+    INST_APPEND_SCALAR = 77,
     DEPRECATED_OPCODE(INST_APPEND_ARRAY1),
-    INST_APPEND_ARRAY,
+    INST_APPEND_ARRAY = 79,
     INST_APPEND_ARRAY_STK,
     INST_APPEND_STK,
 
-    /* Opcodes 88 to 93 */
+    /* Opcodes 82 to 87 */
     DEPRECATED_OPCODE(INST_LAPPEND_SCALAR1),
-    INST_LAPPEND_SCALAR,
+    INST_LAPPEND_SCALAR = 83,
     DEPRECATED_OPCODE(INST_LAPPEND_ARRAY1),
-    INST_LAPPEND_ARRAY,
+    INST_LAPPEND_ARRAY = 85,
     INST_LAPPEND_ARRAY_STK,
     INST_LAPPEND_STK,
 
@@ -781,7 +786,7 @@ enum TclInstruction {
     DEPRECATED_OPCODE(INST_RETURN_CODE_BRANCH),
 
     /* For [unset] compilation */
-    INST_UNSET_SCALAR,
+    INST_UNSET_SCALAR = 127,
     INST_UNSET_ARRAY,
     INST_UNSET_ARRAY_STK,
     INST_UNSET_STK,
@@ -806,7 +811,7 @@ enum TclInstruction {
     DEPRECATED_OPCODE(INST_TAILCALL1),
 
     /* For compilation of basic information operations */
-    INST_NS_CURRENT,
+    INST_NS_CURRENT = 144,
     INST_INFO_LEVEL_NUM,
     INST_INFO_LEVEL_ARGS,
     INST_RESOLVE_COMMAND,
@@ -852,7 +857,7 @@ enum TclInstruction {
     DEPRECATED_OPCODE(INST_TCLOO_NEXT1),
     DEPRECATED_OPCODE(INST_TCLOO_NEXT_CLASS1),
 
-    INST_YIELD_TO_INVOKE,
+    INST_YIELD_TO_INVOKE = 174,
 
     INST_NUM_TYPE,
     INST_TRY_CVT_TO_BOOLEAN,
