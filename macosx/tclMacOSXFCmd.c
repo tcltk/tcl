@@ -687,7 +687,7 @@ UpdateStringOfOSType(
     Tcl_Encoding encoding;
     char src[5];
 
-    TclOOM(dst, size);
+    TclOOM(dst, size+1);
 
     src[0] = (char) (osType >> 24);
     src[1] = (char) (osType >> 16);
