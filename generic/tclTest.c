@@ -4030,6 +4030,11 @@ TestmsbObjCmd(
     if (TCL_OK != Tcl_GetWideIntFromObj(interp, objv[1], &w)) {
 	return TCL_ERROR;
     }
+    if (w <= 0) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("argument must be positive",-1));
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB((unsigned long long)w)));
     return TCL_OK;
 }

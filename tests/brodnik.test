@@ -31,8 +31,13 @@ namespace eval ::tcl::test::brodnik {
 	}
     }
 
+    # Test out-of-range rejection
+    test brodnik-1.0 {TclMSB correctness} -constraints testmsb -body {
+	    testmsb 0
+    } -returnCodes error -match glob -result *
+
     # Tests for values with MSB in the low block
-    variable v 0
+    variable v 1
     while {$v < 1<<8} {
 	test brodnik-1.$v {TclMSB correctness} testmsb {
 	    testmsb $v
