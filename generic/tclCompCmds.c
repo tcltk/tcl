@@ -619,7 +619,7 @@ TclCompileCatchCmd(
      * refer to local scalars.
      */
 
-    resultIndex = optsIndex = -1;
+    resultIndex = optsIndex = TCL_INDEX_NONE;
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
@@ -709,7 +709,7 @@ TclCompileCatchCmd(
      * before INST_END_CATCH
      */
 
-    if (optsIndex != -1) {
+    if (optsIndex != TCL_INDEX_NONE) {
 	OP(			PUSH_RETURN_OPTIONS);
     }
 
@@ -724,11 +724,11 @@ TclCompileCatchCmd(
      * to happen after INST_END_CATCH (compile-3.6/7).
      */
 
-    if (optsIndex != -1) {
+    if (optsIndex != TCL_INDEX_NONE) {
 	OP4(			STORE_SCALAR, optsIndex);
 	OP(			POP);
     }
-    if (resultIndex != -1) {
+    if (resultIndex != TCL_INDEX_NONE) {
 	OP4(			STORE_SCALAR, resultIndex);
     }
     OP(				POP);
@@ -1629,7 +1629,8 @@ CompileDictEachCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
-    Tcl_LVTIndex keyVarIndex, valueVarIndex, infoIndex, collectVar = -1;
+    Tcl_LVTIndex keyVarIndex, valueVarIndex, infoIndex;
+    Tcl_LVTIndex collectVar = TCL_INDEX_NONE;
     Tcl_Size nameChars, numVars;
     Tcl_ExceptionRange loopRange, catchRange;
     Tcl_BytecodeLabel bodyTarget, emptyTarget, endTarget;
@@ -2277,7 +2278,8 @@ IssueDictWithBodied(
      * Start by allocating local (unnamed, untraced) working variables.
      */
 
-    Tcl_LVTIndex dictVar, varNameTmp = -1, pathTmp = -1, keysTmp;
+    Tcl_LVTIndex dictVar, keysTmp;
+    Tcl_LVTIndex varNameTmp = TCL_INDEX_NONE, pathTmp = TCL_INDEX_NONE;
     int gotPath;
     Tcl_Size i;
     Tcl_BytecodeLabel done;
@@ -2292,7 +2294,7 @@ IssueDictWithBodied(
     gotPath = (numWords > 3);
     dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
 
-    if (dictVar == -1) {
+    if (dictVar == TCL_INDEX_NONE) {
 	varNameTmp = AnonymousLocal(envPtr);
     }
     if (gotPath) {
@@ -2304,7 +2306,7 @@ IssueDictWithBodied(
      * Issue instructions. First, the part to expand the dictionary.
      */
 
-    if (dictVar == -1) {
+    if (dictVar == TCL_INDEX_NONE) {
 	PUSH_TOKEN(		varTokenPtr, 1);
 	OP4(			STORE_SCALAR, varNameTmp);
     }
@@ -2317,14 +2319,14 @@ IssueDictWithBodied(
 	OP4(			LIST, numWords - 3);
 	OP4(			STORE_SCALAR, pathTmp);
 	OP(			POP);
-	if (dictVar == -1) {
+	if (dictVar == TCL_INDEX_NONE) {
 	    OP(			LOAD_STK);
 	} else {
 	    OP4(		LOAD_SCALAR, dictVar);
 	}
 	OP4(			LOAD_SCALAR, pathTmp);
     } else {
-	if (dictVar == -1) {
+	if (dictVar == TCL_INDEX_NONE) {
 	    OP(			LOAD_STK);
 	} else {
 	    OP4(		LOAD_SCALAR, dictVar);
@@ -2350,7 +2352,7 @@ IssueDictWithBodied(
      * Now fold the results back into the dictionary in the OK case.
      */
 
-    if (dictVar == -1) {
+    if (dictVar == TCL_INDEX_NONE) {
 	OP4(			LOAD_SCALAR, varNameTmp);
 	if (gotPath) {
 	    OP4(		LOAD_SCALAR, pathTmp);
@@ -2379,7 +2381,7 @@ IssueDictWithBodied(
     OP(				PUSH_RETURN_OPTIONS);
     OP(				PUSH_RESULT);
     OP(				END_CATCH);
-    if (dictVar == -1) {
+    if (dictVar == TCL_INDEX_NONE) {
 	OP4(			LOAD_SCALAR, varNameTmp);
 	if (numWords > 3) {
 	    OP4(		LOAD_SCALAR, pathTmp);
@@ -2437,7 +2439,8 @@ DupDictUpdateInfo(
     size_t len;
 
     dui1Ptr = (DictUpdateInfo *)clientData;
-    len = offsetof(DictUpdateInfo, varIndices) + sizeof(size_t) * dui1Ptr->length;
+    len = offsetof(DictUpdateInfo, varIndices)
+	    + sizeof(size_t) * dui1Ptr->length;
     dui2Ptr = (DictUpdateInfo *)Tcl_Alloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
@@ -2461,10 +2464,9 @@ PrintDictUpdateInfo(
     Tcl_Size i;
 
     for (i=0 ; i<duiPtr->length ; i++) {
-	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
-	}
-	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
+	Tcl_AppendPrintfToObj(appendObj, "%s%%v%" TCL_Z_MODIFIER "u",
+		(i ? ", " : ""),
+		duiPtr->varIndices[i]);
     }
 }
 
@@ -2595,10 +2597,10 @@ TclCompileExprCmd(
      */
 
     envPtr->line = envPtr->extCmdMapPtr->loc[
-	    envPtr->extCmdMapPtr->nuloc-1].line[1];
+	    envPtr->extCmdMapPtr->nuloc - 1].line[1];
 
     firstWordPtr = TokenAfter(parsePtr->tokenPtr);
-    TclCompileExprWords(interp, firstWordPtr, parsePtr->numWords-1, envPtr);
+    TclCompileExprWords(interp, firstWordPtr, parsePtr->numWords - 1, envPtr);
     return TCL_OK;
 }
 
@@ -3124,11 +3126,11 @@ PrintForeachInfo(
     ForeachVarList *varsPtr;
     Tcl_Size i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
+    Tcl_AppendToObj(appendObj, "data=[", TCL_AUTO_LENGTH);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		(infoPtr->firstValueTemp + i));
@@ -3137,19 +3139,19 @@ PrintForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_AUTO_LENGTH);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%" TCL_Z_MODIFIER "u\t[",
 		(infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
+		Tcl_AppendToObj(appendObj, ", ", TCL_AUTO_LENGTH);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_AUTO_LENGTH);
     }
 }
 
@@ -3168,18 +3170,18 @@ PrintNewForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_AUTO_LENGTH);
 	}
-	Tcl_AppendToObj(appendObj, "[", -1);
+	Tcl_AppendToObj(appendObj, "[", TCL_AUTO_LENGTH);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ",", -1);
+		Tcl_AppendToObj(appendObj, ",", TCL_AUTO_LENGTH);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_AUTO_LENGTH);
     }
 }
 
@@ -3320,7 +3322,8 @@ TclCompileFormatCmd(
 	return TCL_ERROR;
     }
 
-    objv = (Tcl_Obj **)TclStackAlloc(interp, (numWords - 2) * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp,
+	    (numWords - 2) * sizeof(Tcl_Obj *));
     for (i=0 ; i+2 < numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	TclNewObj(objv[i]);
@@ -3498,7 +3501,7 @@ TclLocalScalarFromToken(
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
     if (!isScalar) {
-	index = -1;
+	index = TCL_INDEX_NONE;
     }
     return index;
 }
@@ -3554,7 +3557,7 @@ TclPushVarName(
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_ELEMENT. */
-    Tcl_Size *localIndexPtr,		/* Must not be NULL. */
+    Tcl_Size *localIndexPtr,	/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
 {
     const char *p;
@@ -3575,7 +3578,7 @@ TclPushVarName(
 
     name = elName = NULL;
     nameLen = elNameLen = 0;
-    localIndex = -1;
+    localIndex = TCL_INDEX_NONE;
 
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	/*
@@ -3587,11 +3590,11 @@ TclPushVarName(
 
 	name = varTokenPtr[1].start;
 	nameLen = varTokenPtr[1].size;
-	if (name[nameLen-1] == ')') {
+	if (name[nameLen - 1] == ')') {
 	    /*
 	     * last char is ')' => potential array reference.
 	     */
-	    last = &name[nameLen-1];
+	    last = &name[nameLen - 1];
 
 	    if (*last == ')') {
 		for (p = name;  p < last;  p++) {
@@ -3677,8 +3680,8 @@ TclPushVarName(
 		     * Copy the remaining tokens.
 		     */
 
-		    memcpy(elemTokenPtr+1, varTokenPtr+2,
-			    (n-1) * sizeof(Tcl_Token));
+		    memcpy(elemTokenPtr + 1, varTokenPtr + 2,
+			    (n - 1) * sizeof(Tcl_Token));
 		} else {
 		    /*
 		     * Use the already available tokens.

@@ -35,6 +35,11 @@ typedef Tcl_Size Tcl_LVTIndex;
 typedef Tcl_Size Tcl_AuxDataRef;
 
 /*
+ * Used to indicate that no jump is pending resolution.
+ */
+#define NO_PENDING_JUMP		((Tcl_Size) -1)
+
+/*
  * Shorthand macros for instruction issuing.
  */
 
@@ -111,17 +116,17 @@ typedef Tcl_Size Tcl_AuxDataRef;
     ((Tcl_Size) sizeof(str "") - 1)
 #define IS_TOKEN_LITERALLY(tokenPtr, str) \
     (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
-        && ((tokenPtr)[1].size == LENGTH_OF(str))			\
-	&& strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
+	    && ((tokenPtr)[1].size == LENGTH_OF(str))			\
+	    && strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
 #define IS_TOKEN_PREFIX(tokenPtr, minLength, str) \
     (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
-        && ((tokenPtr)[1].size >= (Tcl_Size)(minLength))		\
-        && ((tokenPtr)[1].size <= LENGTH_OF(str))			\
-	&& strncmp((tokenPtr)[1].start, str, (tokenPtr)[1].size) == 0)
+	    && ((tokenPtr)[1].size >= (Tcl_Size)(minLength))		\
+	    && ((tokenPtr)[1].size <= LENGTH_OF(str))			\
+	    && strncmp((tokenPtr)[1].start, str, (tokenPtr)[1].size) == 0)
 #define IS_TOKEN_PREFIXED_BY(tokenPtr, str) \
     (((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD)			\
-        && ((tokenPtr)[1].size > LENGTH_OF(str))			\
-	&& strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
+	    && ((tokenPtr)[1].size > LENGTH_OF(str))			\
+	    && strncmp((tokenPtr)[1].start, str, LENGTH_OF(str)) == 0)
 #endif
 
 /*
