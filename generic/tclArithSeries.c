@@ -1192,6 +1192,8 @@ UpdateStringOfArithSeries(
      */
 
     p = srep = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    TclOOM(p, bytlen+1);
+
     if (!arithSeriesRepPtr->isDouble) {
 	for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	    Tcl_WideInt d = ArithSeriesIndexInt(arithSeriesRepPtr, i);
