@@ -61,11 +61,11 @@ typedef struct {
  */
 
 enum OperandTypes {
-    OT_LITERAL = -3,	/* Operand is a literal in the literal list */
-    OT_TOKENS = -2,	/* Operand is sequence of Tcl_Tokens */
-    OT_EMPTY = -1	/* "Operand" is an empty string. This is a special
-			 * case used only to represent the EMPTY lexeme. See
-			 * below. */
+    OT_LITERAL = -3,		/* Operand is a literal in the literal list */
+    OT_TOKENS = -2,		/* Operand is sequence of Tcl_Tokens */
+    OT_EMPTY = -1		/* "Operand" is an empty string. This is a
+				 * special case used only to represent the
+				 * EMPTY lexeme. See below. */
 };
 
 /*
@@ -106,9 +106,9 @@ enum OperandTypes {
  */
 
 enum Marks {
-    MARK_LEFT,		/* Next step of traversal is to visit left subtree */
-    MARK_RIGHT,		/* Next step of traversal is to visit right subtree */
-    MARK_PARENT		/* Next step of traversal is to return to parent */
+    MARK_LEFT,			/* Next step of traversal is to visit left subtree */
+    MARK_RIGHT,			/* Next step of traversal is to visit right subtree */
+    MARK_PARENT			/* Next step of traversal is to return to parent */
 };
 
 /*
@@ -292,24 +292,24 @@ enum LexemeCodes {
  */
 
 enum Precedence {
-    PREC_END = 1,	/* END */
-    PREC_START,		/* START */
-    PREC_CLOSE_PAREN,	/* ")" */
-    PREC_OPEN_PAREN,	/* "(" */
-    PREC_COMMA,		/* "," */
-    PREC_CONDITIONAL,	/* "?", ":" */
-    PREC_OR,		/* "||" */
-    PREC_AND,		/* "&&" */
-    PREC_BIT_OR,	/* "|" */
-    PREC_BIT_XOR,	/* "^" */
-    PREC_BIT_AND,	/* "&" */
-    PREC_EQUAL,		/* "==", "!=", "eq", "ne", "in", "ni" */
-    PREC_COMPARE,	/* "<", ">", "<=", ">=" */
-    PREC_SHIFT,		/* "<<", ">>" */
-    PREC_ADD,		/* "+", "-" */
-    PREC_MULT,		/* "*", "/", "%" */
-    PREC_EXPON,		/* "**" */
-    PREC_UNARY		/* "+", "-", FUNCTION, "!", "~" */
+    PREC_END = 1,		/* END */
+    PREC_START,			/* START */
+    PREC_CLOSE_PAREN,		/* ")" */
+    PREC_OPEN_PAREN,		/* "(" */
+    PREC_COMMA,			/* "," */
+    PREC_CONDITIONAL,		/* "?", ":" */
+    PREC_OR,			/* "||" */
+    PREC_AND,			/* "&&" */
+    PREC_BIT_OR,		/* "|" */
+    PREC_BIT_XOR,		/* "^" */
+    PREC_BIT_AND,		/* "&" */
+    PREC_EQUAL,			/* "==", "!=", "eq", "ne", "in", "ni" */
+    PREC_COMPARE,		/* "<", ">", "<=", ">=" */
+    PREC_SHIFT,			/* "<<", ">>" */
+    PREC_ADD,			/* "+", "-" */
+    PREC_MULT,			/* "*", "/", "%" */
+    PREC_EXPON,			/* "**" */
+    PREC_UNARY			/* "+", "-", FUNCTION, "!", "~" */
 };
 
 /*
@@ -326,49 +326,49 @@ static const unsigned char prec[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,
     /* Binary operator lexemes */
-    PREC_ADD,		/* BINARY_PLUS */
-    PREC_ADD,		/* BINARY_MINUS */
-    PREC_COMMA,		/* COMMA */
-    PREC_MULT,		/* MULT */
-    PREC_MULT,		/* DIVIDE */
-    PREC_MULT,		/* MOD */
-    PREC_COMPARE,	/* LESS */
-    PREC_COMPARE,	/* GREATER */
-    PREC_BIT_AND,	/* BIT_AND */
-    PREC_BIT_XOR,	/* BIT_XOR */
-    PREC_BIT_OR,	/* BIT_OR */
-    PREC_CONDITIONAL,	/* QUESTION */
-    PREC_CONDITIONAL,	/* COLON */
-    PREC_SHIFT,		/* LEFT_SHIFT */
-    PREC_SHIFT,		/* RIGHT_SHIFT */
-    PREC_COMPARE,	/* LEQ */
-    PREC_COMPARE,	/* GEQ */
-    PREC_EQUAL,		/* EQUAL */
-    PREC_EQUAL,		/* NEQ */
-    PREC_AND,		/* AND */
-    PREC_OR,		/* OR */
-    PREC_EQUAL,		/* STREQ */
-    PREC_EQUAL,		/* STRNEQ */
-    PREC_EXPON,		/* EXPON */
-    PREC_EQUAL,		/* IN_LIST */
-    PREC_EQUAL,		/* NOT_IN_LIST */
-    PREC_CLOSE_PAREN,	/* CLOSE_PAREN */
-    PREC_COMPARE,	/* STR_LT */
-    PREC_COMPARE,	/* STR_GT */
-    PREC_COMPARE,	/* STR_LEQ */
-    PREC_COMPARE,	/* STR_GEQ */
-    PREC_END,		/* END */
+    PREC_ADD,			/* BINARY_PLUS */
+    PREC_ADD,			/* BINARY_MINUS */
+    PREC_COMMA,			/* COMMA */
+    PREC_MULT,			/* MULT */
+    PREC_MULT,			/* DIVIDE */
+    PREC_MULT,			/* MOD */
+    PREC_COMPARE,		/* LESS */
+    PREC_COMPARE,		/* GREATER */
+    PREC_BIT_AND,		/* BIT_AND */
+    PREC_BIT_XOR,		/* BIT_XOR */
+    PREC_BIT_OR,		/* BIT_OR */
+    PREC_CONDITIONAL,		/* QUESTION */
+    PREC_CONDITIONAL,		/* COLON */
+    PREC_SHIFT,			/* LEFT_SHIFT */
+    PREC_SHIFT,			/* RIGHT_SHIFT */
+    PREC_COMPARE,		/* LEQ */
+    PREC_COMPARE,		/* GEQ */
+    PREC_EQUAL,			/* EQUAL */
+    PREC_EQUAL,			/* NEQ */
+    PREC_AND,			/* AND */
+    PREC_OR,			/* OR */
+    PREC_EQUAL,			/* STREQ */
+    PREC_EQUAL,			/* STRNEQ */
+    PREC_EXPON,			/* EXPON */
+    PREC_EQUAL,			/* IN_LIST */
+    PREC_EQUAL,			/* NOT_IN_LIST */
+    PREC_CLOSE_PAREN,		/* CLOSE_PAREN */
+    PREC_COMPARE,		/* STR_LT */
+    PREC_COMPARE,		/* STR_GT */
+    PREC_COMPARE,		/* STR_LEQ */
+    PREC_COMPARE,		/* STR_GEQ */
+    PREC_END,			/* END */
     /* Expansion room for more binary operators */
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
-    PREC_UNARY,		/* UNARY_PLUS */
-    PREC_UNARY,		/* UNARY_MINUS */
-    PREC_UNARY,		/* FUNCTION */
-    PREC_START,		/* START */
-    PREC_OPEN_PAREN,	/* OPEN_PAREN */
-    PREC_UNARY,		/* NOT*/
-    PREC_UNARY,		/* BIT_NOT*/
+    PREC_UNARY,			/* UNARY_PLUS */
+    PREC_UNARY,			/* UNARY_MINUS */
+    PREC_UNARY,			/* FUNCTION */
+    PREC_START,			/* START */
+    PREC_OPEN_PAREN,		/* OPEN_PAREN */
+    PREC_UNARY,			/* NOT*/
+    PREC_UNARY,			/* BIT_NOT*/
 };
 
 /*
@@ -383,49 +383,49 @@ static const unsigned char instruction[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,
     /* Binary operator lexemes */
-    INST_ADD,		/* BINARY_PLUS */
-    INST_SUB,		/* BINARY_MINUS */
-    0,			/* COMMA */
-    INST_MULT,		/* MULT */
-    INST_DIV,		/* DIVIDE */
-    INST_MOD,		/* MOD */
-    INST_LT,		/* LESS */
-    INST_GT,		/* GREATER */
-    INST_BITAND,	/* BIT_AND */
-    INST_BITXOR,	/* BIT_XOR */
-    INST_BITOR,		/* BIT_OR */
-    0,			/* QUESTION */
-    0,			/* COLON */
-    INST_LSHIFT,	/* LEFT_SHIFT */
-    INST_RSHIFT,	/* RIGHT_SHIFT */
-    INST_LE,		/* LEQ */
-    INST_GE,		/* GEQ */
-    INST_EQ,		/* EQUAL */
-    INST_NEQ,		/* NEQ */
-    0,			/* AND */
-    0,			/* OR */
-    INST_STR_EQ,	/* STREQ */
-    INST_STR_NEQ,	/* STRNEQ */
-    INST_EXPON,		/* EXPON */
-    INST_LIST_IN,	/* IN_LIST */
-    INST_LIST_NOT_IN,	/* NOT_IN_LIST */
-    0,			/* CLOSE_PAREN */
-    INST_STR_LT,	/* STR_LT */
-    INST_STR_GT,	/* STR_GT */
-    INST_STR_LE,	/* STR_LEQ */
-    INST_STR_GE,	/* STR_GEQ */
-    0,			/* END */
+    INST_ADD,			/* BINARY_PLUS */
+    INST_SUB,			/* BINARY_MINUS */
+    0,				/* COMMA */
+    INST_MULT,			/* MULT */
+    INST_DIV,			/* DIVIDE */
+    INST_MOD,			/* MOD */
+    INST_LT,			/* LESS */
+    INST_GT,			/* GREATER */
+    INST_BITAND,		/* BIT_AND */
+    INST_BITXOR,		/* BIT_XOR */
+    INST_BITOR,			/* BIT_OR */
+    0,				/* QUESTION */
+    0,				/* COLON */
+    INST_LSHIFT,		/* LEFT_SHIFT */
+    INST_RSHIFT,		/* RIGHT_SHIFT */
+    INST_LE,			/* LEQ */
+    INST_GE,			/* GEQ */
+    INST_EQ,			/* EQUAL */
+    INST_NEQ,			/* NEQ */
+    0,				/* AND */
+    0,				/* OR */
+    INST_STR_EQ,		/* STREQ */
+    INST_STR_NEQ,		/* STRNEQ */
+    INST_EXPON,			/* EXPON */
+    INST_LIST_IN,		/* IN_LIST */
+    INST_LIST_NOT_IN,		/* NOT_IN_LIST */
+    0,				/* CLOSE_PAREN */
+    INST_STR_LT,		/* STR_LT */
+    INST_STR_GT,		/* STR_GT */
+    INST_STR_LE,		/* STR_LEQ */
+    INST_STR_GE,		/* STR_GEQ */
+    0,				/* END */
     /* Expansion room for more binary operators */
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
-    INST_UPLUS,		/* UNARY_PLUS */
-    INST_UMINUS,	/* UNARY_MINUS */
-    0,			/* FUNCTION */
-    0,			/* START */
-    0,			/* OPEN_PAREN */
-    INST_LNOT,		/* NOT*/
-    INST_BITNOT,	/* BIT_NOT*/
+    INST_UPLUS,			/* UNARY_PLUS */
+    INST_UMINUS,		/* UNARY_MINUS */
+    0,				/* FUNCTION */
+    0,				/* START */
+    0,				/* OPEN_PAREN */
+    INST_LNOT,			/* NOT*/
+    INST_BITNOT,		/* BIT_NOT*/
 };
 
 /*
@@ -785,14 +785,16 @@ ParseExpr(
 			    switch (start[1]) {
 			    case 'b':
 				Tcl_AppendToObj(post,
-					" (invalid binary number?)", -1);
+					" (invalid binary number?)",
+					TCL_AUTO_LENGTH);
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "BINARY";
 				break;
 			    case 'o':
 				Tcl_AppendToObj(post,
-					" (invalid octal number?)", -1);
+					" (invalid octal number?)",
+					TCL_AUTO_LENGTH);
 				parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				errCode = "BADNUMBER";
 				subErrCode = "OCTAL";
@@ -800,7 +802,8 @@ ParseExpr(
 			    default:
 				if (isdigit(UCHAR(start[1]))) {
 				    Tcl_AppendToObj(post,
-					    " (invalid octal number?)", -1);
+					    " (invalid octal number?)",
+					    TCL_AUTO_LENGTH);
 				    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 				    errCode = "BADNUMBER";
 				    subErrCode = "OCTAL";
@@ -1449,7 +1452,7 @@ ParseExpr(
 	 */
 
 	if (post != NULL) {
-	    Tcl_AppendToObj(msg, ";\n", -1);
+	    Tcl_AppendToObj(msg, ";\n", TCL_AUTO_LENGTH);
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
@@ -1856,10 +1859,10 @@ Tcl_ParseExpr(
 {
     int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
-    Tcl_Obj *litList;	/* List to hold the literals. */
-    Tcl_Obj *funcList;	/* List to hold the functon names. */
-    Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
-				/* Holds the Tcl_Tokens of substitutions. */
+    Tcl_Obj *litList;		/* List to hold the literals. */
+    Tcl_Obj *funcList;		/* List to hold the functon names. */
+    Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp,
+	    sizeof(Tcl_Parse));	/* Holds the Tcl_Tokens of substitutions. */
 
     TclNewObj(litList);
     TclNewObj(funcList);
@@ -2659,7 +2662,8 @@ TclSortingOpCmd(
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
 	Tcl_Obj **litObjv = (Tcl_Obj **)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(Tcl_Obj *));
-	OpNode *nodes = (OpNode *)TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
+	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
+		2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
@@ -2670,29 +2674,30 @@ TclSortingOpCmd(
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
 	for (i=2; i<objc-1; i++) {
-	    litObjv[2*(i-1)-1] = objv[i];
-	    nodes[2*(i-1)-1].lexeme = lexeme;
-	    nodes[2*(i-1)-1].mark = MARK_LEFT;
-	    nodes[2*(i-1)-1].left = OT_LITERAL;
-	    nodes[2*(i-1)-1].right = OT_LITERAL;
+	    int j = 2 * (i - 1);
+	    litObjv[j - 1] = objv[i];
+	    nodes[j - 1].lexeme = lexeme;
+	    nodes[j - 1].mark = MARK_LEFT;
+	    nodes[j - 1].left = OT_LITERAL;
+	    nodes[j - 1].right = OT_LITERAL;
 
-	    litObjv[2*(i-1)] = objv[i];
-	    nodes[2*(i-1)].lexeme = AND;
-	    nodes[2*(i-1)].mark = MARK_LEFT;
-	    nodes[2*(i-1)].left = lastAnd;
-	    nodes[lastAnd].p.parent = 2*(i-1);
+	    litObjv[j] = objv[i];
+	    nodes[j].lexeme = AND;
+	    nodes[j].mark = MARK_LEFT;
+	    nodes[j].left = lastAnd;
+	    nodes[lastAnd].p.parent = j;
 
-	    nodes[2*(i-1)].right = 2*(i-1)+1;
-	    nodes[2*(i-1)+1].p.parent= 2*(i-1);
+	    nodes[j].right = j + 1;
+	    nodes[j + 1].p.parent= j;
 
-	    lastAnd = 2*(i-1);
+	    lastAnd = j;
 	}
-	litObjv[2*(objc-2)-1] = objv[objc-1];
+	litObjv[2 *(objc - 2) - 1] = objv[objc - 1];
 
-	nodes[2*(objc-2)-1].lexeme = lexeme;
-	nodes[2*(objc-2)-1].mark = MARK_LEFT;
-	nodes[2*(objc-2)-1].left = OT_LITERAL;
-	nodes[2*(objc-2)-1].right = OT_LITERAL;
+	nodes[2 * (objc - 2) - 1].lexeme = lexeme;
+	nodes[2 * (objc - 2) - 1].mark = MARK_LEFT;
+	nodes[2 * (objc - 2) - 1].left = OT_LITERAL;
+	nodes[2 * (objc - 2) - 1].right = OT_LITERAL;
 
 	nodes[0].right = lastAnd;
 	nodes[lastAnd].p.parent = 0;
@@ -2786,7 +2791,8 @@ TclVariadicOpCmd(
 	return code;
     } else {
 	Tcl_Obj *const *litObjv = objv + 1;
-	OpNode *nodes = (OpNode *)TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
+	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
+		(objc - 1) * sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
