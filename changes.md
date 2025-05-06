@@ -25,6 +25,8 @@ to the userbase.
  - [proc with more than 2**31 variables](https://core.tcl-lang.org/tcl/tktview/92aeb8)
  - [scan "long mantissa" %g](https://core.tcl-lang.org/tcl/tktview/42d14c)
  - ["encoding system": wrong result without manifest](https://core.tcl-lang.org/tcl/tktview/8ffd8c)
+ - [lseq crash on out-of-range index](https://core.tcl-lang.org/tcl/tktview/7d3101)
+ - [lseq crash on nested indices](https://core.tcl-lang.org/tcl/tktview/452b10)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
