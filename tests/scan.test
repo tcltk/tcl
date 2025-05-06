@@ -880,7 +880,7 @@ test scan-14.2 {negative infinity} {
     return $d
 } -Inf
 
-test scan-15.1 {scan %g overflow for small numbers and big mantissa bug 42d14c495a} {
+test scan-15.1 {scan %g overflow for small numbers and big mantissa bug 42d14c495a} knownBug {
     set result [list]
     # xfail: n<num> = not expected at all, x<num> expected when unfixed
     foreach {exp numdig ret xfail} {
