@@ -506,7 +506,7 @@ static LiteralEntry *
 LookupLiteralEntry(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)	/* Points to a Tcl object holding a literal
+    Tcl_Obj *objPtr)		/* Points to a Tcl object holding a literal
 				 * that was previously created by a call to
 				 * TclRegisterLiteral. */
 {
@@ -552,7 +552,7 @@ void
 TclHideLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    CompileEnv *envPtr,/* Points to CompileEnv whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv whose literal array
 				 * contains the entry being hidden. */
     int index)			/* The index of the entry in the literal
 				 * array. */
@@ -669,7 +669,7 @@ TclAddLiteralObj(
 
 static size_t
 AddLocalLiteralEntry(
-    CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
     Tcl_Obj *objPtr,		/* The literal to add to the CompileEnv. */
     size_t localHash)		/* Hash value for the literal's string. */
@@ -748,7 +748,7 @@ AddLocalLiteralEntry(
 
 static void
 ExpandLocalLiteralArray(
-    CompileEnv *envPtr)/* Points to the CompileEnv whose object array
+    CompileEnv *envPtr)		/* Points to the CompileEnv whose object array
 				 * must be enlarged. */
 {
     /*
@@ -830,7 +830,7 @@ void
 TclReleaseLiteral(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
-    Tcl_Obj *objPtr)	/* Points to a literal object that was
+    Tcl_Obj *objPtr)		/* Points to a literal object that was
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
