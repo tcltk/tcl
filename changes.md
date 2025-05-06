@@ -11,8 +11,8 @@ to the userbase.
 
 # Bug fixes
  - [Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
- - [$interp eval $lambda] after [eval $lambda] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/98006f)
- - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/67d5f7)
+ - [\[$interp eval $lambda\] after \[eval $lambda\] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/67d5f7)
+ - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/98006f)
  - [test lseq hangs with -Os](https://core.tcl-lang.org/tcl/tktview/d2a3c5)
  - [exec does not handle app execution aliases on Windows](https://core.tcl-lang.org/tcl/tktview/4f0b57)
  - [auto_execok does not find several built-in cmd commands](https://core.tcl-lang.org/tcl/tktview/4e2c8b)
