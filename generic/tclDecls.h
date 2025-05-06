@@ -1094,8 +1094,13 @@ EXTERN void		Tcl_ClearChannelHandlers(Tcl_Channel channel);
 EXTERN int		Tcl_IsChannelExisting(const char *channelName);
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
-/* Slot 421 is reserved */
-/* Slot 422 is reserved */
+/* 421 */
+EXTERN Tcl_HashEntry *	Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
+				const void *key, int *newPtr,
+				const char *file, int line);
+/* 422 */
+EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+				const void *key, int *newPtr);
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -2302,8 +2307,8 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
     void (*reserved419)(void);
     void (*reserved420)(void);
-    void (*reserved421)(void);
-    void (*reserved422)(void);
+    Tcl_HashEntry * (*tcl_DbCreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr, const char *file, int line); /* 421 */
+    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     void * (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, void *prevClientData); /* 425 */
@@ -3368,8 +3373,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_IsChannelExisting) /* 418 */
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
-/* Slot 421 is reserved */
-/* Slot 422 is reserved */
+#define Tcl_DbCreateHashEntry \
+	(tclStubsPtr->tcl_DbCreateHashEntry) /* 421 */
+#define Tcl_CreateHashEntry \
+	(tclStubsPtr->tcl_CreateHashEntry) /* 422 */
 #define Tcl_InitCustomHashTable \
 	(tclStubsPtr->tcl_InitCustomHashTable) /* 423 */
 #define Tcl_InitObjHashTable \
