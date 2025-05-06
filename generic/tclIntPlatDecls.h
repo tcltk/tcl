@@ -547,7 +547,8 @@ EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 EXTERN Tcl_Size		TclpGetPid(Tcl_Pid pid);
 /* 9 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
-/* Slot 10 is reserved */
+/* 10 */
+EXTERN Tcl_Encoding	TclWinGetUserEncoding(Tcl_Interp *interp);
 /* 11 */
 EXTERN void		TclGetAndDetachPids(Tcl_Interp *interp,
 				Tcl_Channel chan);
@@ -600,7 +601,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
     Tcl_Size (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
-    void (*reserved10)(void);
+    Tcl_Encoding (*tclWinGetUserEncoding) (Tcl_Interp *interp); /* 10 */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     void (*reserved12)(void);
     void (*reserved13)(void);
@@ -654,7 +655,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
-/* Slot 10 is reserved */
+#define TclWinGetUserEncoding \
+	(tclIntPlatStubsPtr->tclWinGetUserEncoding) /* 10 */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */
 /* Slot 12 is reserved */
@@ -735,5 +737,13 @@ MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((Tcl_Size)(pid))
 #endif
+
+#ifdef USE_TCL_STUBS
+/* Protect TclWinGetUserEncoding() for environments it doen't exist, e.g. Tcl 9.0.0/9.0.1 */
+#undef TclWinGetUserEncoding
+#define TclWinGetUserEncoding(interp) \
+	(tclIntPlatStubsPtr->tclWinGetUserEncoding ? tclIntPlatStubsPtr->tclWinGetUserEncoding(interp) : NULL)
+#endif
+
 
 #endif /* _TCLINTPLATDECLS */
