@@ -201,16 +201,15 @@ CreateChildEntry(
     Namespace *nsPtr,		/* Parent namespace. */
     const char *name)		/* Simple name to look for. */
 {
-    int newEntry;
 #ifndef BREAK_NAMESPACE_COMPAT
-    return Tcl_CreateHashEntry(&nsPtr->childTable, name, &newEntry);
+    return Tcl_CreateHashEntry(&nsPtr->childTable, name, NULL);
 #else
     if (nsPtr->childTablePtr == NULL) {
 	nsPtr->childTablePtr = (Tcl_HashTable *)
 		Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(nsPtr->childTablePtr, TCL_STRING_KEYS);
     }
-    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, &newEntry);
+    return Tcl_CreateHashEntry(nsPtr->childTablePtr, name, NULL);
 #endif
 }
 

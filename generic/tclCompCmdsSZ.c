@@ -2562,13 +2562,12 @@ DupJumptableInfo(
     JumptableInfo *newJtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
-    int isNew;
 
     Tcl_InitHashTable(&newJtPtr->hashTable, TCL_STRING_KEYS);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	newHPtr = Tcl_CreateHashEntry(&newJtPtr->hashTable,
-		Tcl_GetHashKey(&jtPtr->hashTable, hPtr), &isNew);
+		Tcl_GetHashKey(&jtPtr->hashTable, hPtr), NULL);
 	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
     }
     return newJtPtr;

@@ -722,7 +722,7 @@ TclChanCreateObjCmd(
 #if TCL_THREADS
     rcmPtr = GetThreadReflectedChannelMap();
     hPtr = Tcl_CreateHashEntry(&rcmPtr->map, chanPtr->state->channelName,
-	    &isNew);
+	    NULL);
     Tcl_SetHashValue(hPtr, chan);
 #endif
 
