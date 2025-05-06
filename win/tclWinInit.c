@@ -453,6 +453,54 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
+static Tcl_Encoding userEncoding = NULL;
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclWinGetUserEncoding --
+ *
+ *	Determines the encoding corresponding to the GetACP() call.
+ *	Since GetACP() cannot be thrusted, poke the
+ *	value from the registry directly.
+ *
+ * Results:
+ *	The found encoding. Or NULL if the encoding cannot be found.
+ *
+ * Side effects:
+ *	The returned encoding is valid until a future TclWinGetUserEncoding()
+ *	call determines that the ACP encoding changed. That should never happen.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Encoding
+TclWinGetUserEncoding(Tcl_Interp *interp)
+{
+    WCHAR buf[32] = L"cp";
+
+    HKEY hKey;
+    DWORD type = -1;
+    DWORD size=sizeof(buf) - 2;
+    Tcl_DString ds;
+    RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+	    0, KEY_READ, &hKey);
+    RegQueryValueExW(hKey, L"ACP", NULL, &type, (BYTE *)&buf[2], &size);
+    RegCloseKey(hKey);
+    if (!wcscmp(buf, L"cp65001")) {
+	wcscpy(buf, L"utf-8");
+    }
+    Tcl_DStringInit(&ds);
+    Tcl_WCharToUtfDString(buf, -1, &ds);
+    if (!userEncoding || strcmp(Tcl_GetEncodingName(userEncoding), Tcl_DStringValue(&ds))) {
+	if (userEncoding) {
+	    Tcl_FreeEncoding(userEncoding);
+	}
+	userEncoding = Tcl_GetEncoding(interp, Tcl_DStringValue(&ds));
+    }
+    Tcl_DStringFree(&ds);
+    return userEncoding;
+}
+
 const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
