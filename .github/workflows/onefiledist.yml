@@ -153,6 +153,7 @@ jobs:
         run: |
           make binaries libraries
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+          rm tclsh*c*.exe
         working-directory: win
       - name: Get Exact Version
         run: |
