@@ -1150,6 +1150,16 @@ test encoding-30.3 {encoding convertfrom large strings > 4GB} -constraints {
     list [string length [set s [string repeat A 0x100000000]]] [string equal $s [encoding convertfrom ascii $s]]
 } -result {4294967296 1}
 
+# TIP 718 test
+test encoding-31.0 {encoding user} -constraints win -body {
+    package require registry
+    set acp cp[registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
+    if {$acp eq "cp65001"} {set acp utf-8}
+    string equal [encoding user] $acp
+} -cleanup {
+    unset acp
+} -result 1
+
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
     encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby
 } -result x\uFFFDy
