@@ -613,11 +613,11 @@ endif
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${DDE_DLL_FILE}.manifest
 
 ${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${REG_DLL_FILE}.manifest
 
 ${DDE_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinDde.$(OBJEXT)
 	@MAKE_DLL@ tcl8WinDde.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
