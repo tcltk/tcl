@@ -2319,10 +2319,10 @@ TclCompileReturnCmd(
 	int enclosingCatch = 0;
 
 	while (index >= 0) {
-	    ExceptionRange range = envPtr->exceptArrayPtr[index];
+	    const ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[index];
 
-	    if ((range.type == CATCH_EXCEPTION_RANGE)
-		    && (range.catchOffset == TCL_INDEX_NONE)) {
+	    if ((rangePtr->type == CATCH_EXCEPTION_RANGE)
+		    && (rangePtr->catchOffset == TCL_INDEX_NONE)) {
 		enclosingCatch = 1;
 		break;
 	    }
@@ -2425,7 +2425,7 @@ TclCompileSyntaxError(
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
-    TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
+    PUSH_OBJ(			msg);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
     Tcl_ResetResult(interp);
@@ -2750,7 +2750,7 @@ TclCompileObjectNextCmd(
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInvoke(envPtr,	INST_TCLOO_NEXT, i);
+    INVOKE4(			TCLOO_NEXT, i);
     return TCL_OK;
 }
 
@@ -2775,7 +2775,7 @@ TclCompileObjectNextToCmd(
 	PUSH_TOKEN(		tokenPtr, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInvoke(envPtr,	INST_TCLOO_NEXT_CLASS, i);
+    INVOKE4(			TCLOO_NEXT_CLASS, i);
     return TCL_OK;
 }
 

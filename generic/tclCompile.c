@@ -2097,23 +2097,18 @@ CompileCmdLiteral(
     Tcl_Obj *cmdObj,
     CompileEnv *envPtr)
 {
-    const char *bytes;
     Command *cmdPtr;
     int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
-    Tcl_Size length;
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = TclGetStringFromObj(cmdObj, &length);
-    cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
-
+    cmdLitIdx = PUSH_OBJ_FLAGS(cmdObj, extraLiteralFlags);
     if (cmdPtr && TclRoutineHasName(cmdPtr)) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
-    TclEmitPush(cmdLitIdx, envPtr);
 }
 
 void
@@ -2144,16 +2139,14 @@ TclCompileInvocation(
 	    continue;
 	}
 
-	objIdx = TclRegisterLiteral(envPtr,
-		tokenPtr[1].start, tokenPtr[1].size, 0);
+	objIdx = PUSH_SIMPLE_TOKEN(tokenPtr);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
 	}
-	TclEmitPush(objIdx, envPtr);
     }
 
-    TclEmitInvoke(envPtr, INST_INVOKE_STK, wordIdx);
+    INVOKE4(			INVOKE_STK, wordIdx);
     TclCheckStackDepth(depth+1, envPtr);
 }
 
@@ -2189,13 +2182,11 @@ CompileExpanded(
 	    continue;
 	}
 
-	objIdx = TclRegisterLiteral(envPtr,
-		tokenPtr[1].start, tokenPtr[1].size, 0);
+	objIdx = PUSH_SIMPLE_TOKEN(tokenPtr);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
 	}
-	TclEmitPush(objIdx, envPtr);
     }
 
     /*
@@ -2212,7 +2203,7 @@ CompileExpanded(
      * prepared and run, INST_EXPAND_STKTOP is not stack-neutral in general.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED, wordIdx);
+    INVOKE4(			INVOKE_EXPANDED, wordIdx);
     TclCheckStackDepth(depth + 1, envPtr);
 }
 
@@ -2809,12 +2800,10 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
+		int literal = TclPushDString(envPtr, &textBuffer);
 
-		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
-
 		if (numCL) {
 		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
 			    numCL, clPosition);
@@ -2835,10 +2824,7 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal;
-
-		literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
-		TclEmitPush(literal, envPtr);
+		TclPushDString(envPtr, &textBuffer);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
 	    }
@@ -2860,9 +2846,8 @@ TclCompileTokens(
      */
 
     if (Tcl_DStringLength(&textBuffer) > 0) {
-	int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
+	int literal = TclPushDString(envPtr, &textBuffer);
 
-	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 	if (numCL) {
 	    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
@@ -2949,7 +2934,7 @@ TclCompileCmdWord(
 	 */
 
 	TclCompileTokens(interp, tokenPtr, count, envPtr);
-	TclEmitInvoke(envPtr, INST_EVAL_STK);
+	INVOKE(			EVAL_STK);
     }
 }
 
@@ -3311,7 +3296,7 @@ TclInitByteCodeObj(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size
+Tcl_LVTIndex
 TclFindCompiledLocal(
     const char *name,		/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
@@ -3698,7 +3683,7 @@ EnterCmdWordData(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size
+Tcl_ExceptionRange
 TclCreateExceptRange(
     ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
     CompileEnv *envPtr)		/* Points to CompileEnv for which to create a
@@ -3723,10 +3708,10 @@ TclCreateExceptRange(
 	size_t newBytes2 = newElems * sizeof(ExceptionAux);
 
 	if (envPtr->mallocedExceptArray) {
-	    envPtr->exceptArrayPtr =
-		    (ExceptionRange *)Tcl_Realloc(envPtr->exceptArrayPtr, newBytes);
-	    envPtr->exceptAuxArrayPtr =
-		    (ExceptionAux *)Tcl_Realloc(envPtr->exceptAuxArrayPtr, newBytes2);
+	    envPtr->exceptArrayPtr = (ExceptionRange *)
+		    Tcl_Realloc(envPtr->exceptArrayPtr, newBytes);
+	    envPtr->exceptAuxArrayPtr = (ExceptionAux *)
+		    Tcl_Realloc(envPtr->exceptAuxArrayPtr, newBytes2);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a Tcl_Alloc'd pointer, so we must
@@ -3982,7 +3967,7 @@ StartExpanding(
 void
 TclFinalizeLoopExceptionRange(
     CompileEnv *envPtr,
-    Tcl_Size range)
+    Tcl_ExceptionRange range)
 {
     ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[range];
     ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[range];
@@ -4058,7 +4043,7 @@ TclFinalizeLoopExceptionRange(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size
+Tcl_AuxDataRef
 TclCreateAuxData(
     void *clientData,		/* The compilation auxiliary data to store in
 				 * the new aux data record. */
@@ -4068,8 +4053,7 @@ TclCreateAuxData(
 				 * aux data structure is to be allocated. */
 {
     Tcl_Size index;		/* Index for the new AuxData structure. */
-    AuxData *auxDataPtr;
-				/* Points to the new AuxData structure */
+    AuxData *auxDataPtr;	/* Points to the new AuxData structure */
 
     index = envPtr->auxDataArrayNext;
     if (index >= envPtr->auxDataArrayEnd) {
@@ -4347,7 +4331,7 @@ TclEmitInvoke(
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
     Tcl_Size arg1, arg2, wordCount = 0, expandCount = 0;
-    Tcl_Size loopRange = 0, breakRange = 0, continueRange = 0;
+    Tcl_ExceptionRange loopRange = 0, breakRange = 0, continueRange = 0;
     Tcl_Size cleanup, depth = TclGetStackDepth(envPtr);
 
     /*
@@ -4492,7 +4476,7 @@ TclEmitInvoke(
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
 	size_t savedStackDepth = envPtr->currStackDepth;
 	size_t savedExpandCount = envPtr->expandCount;
-	JumpFixup nonTrapFixup;
+	Tcl_BytecodeLabel noTrap;
 
 	if (auxBreakPtr != NULL) {
 	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;
@@ -4502,7 +4486,7 @@ TclEmitInvoke(
 	}
 
 	ExceptionRangeEnds(envPtr, loopRange);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &nonTrapFixup);
+	FWDJUMP(		JUMP, noTrap);
 
 	/*
 	 * Careful! When generating these stack unwinding sequences, the depth
@@ -4535,7 +4519,7 @@ TclEmitInvoke(
 	}
 
 	FINALIZE_LOOP(		loopRange);
-	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup);
+	FWDLABEL(		noTrap);
     }
     TclCheckStackDepth(depth+1-cleanup, envPtr);
 }

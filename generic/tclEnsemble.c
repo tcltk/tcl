@@ -3447,9 +3447,8 @@ CompileToInvokedCommand(
     DefineLineInformation;
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
-    const char *bytes;
     int cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    Tcl_Size i, numWords, length;
+    Tcl_Size i, numWords;
 
     /*
      * Push the words of the command. Take care; the command words may be
@@ -3467,8 +3466,7 @@ CompileToInvokedCommand(
 
 	SetLineInformation(i);
 	if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    int literal = TclRegisterLiteral(envPtr,
-		    tokPtr[1].start, tokPtr[1].size, 0);
+	    int literal = PUSH_SIMPLE_TOKEN(tokPtr);
 
 	    if (envPtr->clNext) {
 		TclContinuationsEnterDerived(
@@ -3476,7 +3474,6 @@ CompileToInvokedCommand(
 			tokPtr[1].start - envPtr->source,
 			envPtr->clNext);
 	    }
-	    TclEmitPush(literal, envPtr);
 	} else {
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
@@ -3489,21 +3486,17 @@ CompileToInvokedCommand(
 
     TclNewObj(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = TclGetStringFromObj(objPtr, &length);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
-    cmdLit = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
+    cmdLit = PUSH_OBJ_FLAGS(objPtr, extraLiteralFlags);
     TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
-    TclEmitPush(cmdLit, envPtr);
-    TclDecrRefCount(objPtr);
 
     /*
      * Do the replacing dispatch.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,
-	    numWords + 1);
+    INVOKE41(			INVOKE_REPLACE, parsePtr->numWords, numWords+1);
 }
 
 /*
