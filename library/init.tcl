@@ -44,7 +44,7 @@ package require -exact tcl 9.1a0
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
 	set auto_path [apply {{} {
-	    lmap path $::env(TCLLIBPATH) {
+	    lmap path [split $::env(TCLLIBPATH) $::tcl_platform(pathSeparator)] {
 		# Paths relative to unresolvable home dirs are ignored
 		if {[catch {file tildeexpand $path} expanded_path]} {
 		    continue
