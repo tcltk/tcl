@@ -954,7 +954,7 @@ AsyncHandlerProc(
     int code)			/* Current return code from command. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
     const char *listArgv[4];
     char *cmd;
     char string[TCL_INTEGER_SPACE];
@@ -1013,7 +1013,7 @@ AsyncThreadProc(
 				 * TestAsyncHandler, defined above. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
 
     Tcl_Sleep(1);
     Tcl_MutexLock(&asyncTestMutex);
@@ -1707,7 +1707,7 @@ DelCallbackProc(
     void *clientData,		/* Numerical value to append to delString. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
     char buffer[TCL_INTEGER_SPACE];
 
     TclFormatInt(buffer, id);
@@ -5791,7 +5791,7 @@ TestbytestringCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     struct {
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
 	Tcl_Size n;
@@ -5842,7 +5842,7 @@ TestsetCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments. */
 {
-    int flags = PTR2INT(data);
+    int flags = (int)PTR2INT(data);
     const char *value;
 
     if (objc == 2) {
@@ -5873,7 +5873,7 @@ Testset2Cmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int flags = PTR2INT(data);
+    int flags = (int)PTR2INT(data);
     const char *value;
 
     if (objc == 3) {

@@ -868,9 +868,9 @@ StatOpenFile(
      */
 
     mode = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR|S_IEXEC : S_IFREG;
-    mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD|S_IWRITE;
-    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
-    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
+    mode = mode | (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD|S_IWRITE;
+    mode = mode | (unsigned short)((mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3);
+    mode = mode | (unsigned short)((mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6);
 
     /*
      * We don't construct a Tcl_StatBuf; we're using the info immediately.
@@ -913,7 +913,7 @@ FileGetOptionProc(
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     int valid = 0;		/* Flag if valid option parsed. */
-    int len;
+    size_t len;
 
     if (optionName == NULL) {
 	len = 0;
