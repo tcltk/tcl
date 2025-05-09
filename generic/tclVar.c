@@ -223,7 +223,7 @@ static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
 MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
 			    Tcl_Obj *varNamePtr, int flags, int create,
-			    const char **errMsgPtr, int *indexPtr);
+			    const char **errMsgPtr, Tcl_Size *indexPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
 static Tcl_FreeInternalRepProc	FreeLocalVarName;
@@ -297,6 +297,7 @@ static const Tcl_ObjType parsedVarNameType = {
 	(elem) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;	\
     } while (0)
 
+#ifndef TCL_NO_DEPRECATED
 Var *
 TclVarHashCreateVar(
     TclVarHashTable *tablePtr,
@@ -313,6 +314,7 @@ TclVarHashCreateVar(
 
     return varPtr;
 }
+#endif
 
 static int
 LocateArray(
@@ -607,7 +609,7 @@ TclObjLookupVarEx(
     Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     const char *errMsg = NULL;
-    int index;
+    Tcl_Size index;
     int parsed = 0;
 
     Tcl_Size localIndex;
@@ -832,7 +834,7 @@ TclLookupSimpleVar(
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
     const char **errMsgPtr,
-    int *indexPtr)
+    Tcl_Size *indexPtr)
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -4618,7 +4620,7 @@ TclPtrObjMakeUpvarIdx(
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index)			/* If the variable to be linked is an indexed
+    Tcl_Size index)			/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;

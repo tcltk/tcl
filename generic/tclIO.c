@@ -6073,8 +6073,8 @@ DoReadChars(
 	     * is available (Bug 73bb42fb3f). Either way need to break out
 	     * of the loop.
 	     */
-	    if (GotFlag(statePtr, CHANNEL_EOF) ||
-	        GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	    if (GotFlag(statePtr, CHANNEL_EOF)
+		    || GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 		break;
 	    }
 

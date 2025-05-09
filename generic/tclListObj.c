@@ -2664,14 +2664,14 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle AbstractList as special case */
-    if (TclObjTypeHasProc(listObj,indexProc)) {
+    if (indexCount == 1 && TclObjTypeHasProc(listObj,indexProc)) {
 	Tcl_Size listLen = TclObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = listObj; /* for lindex without indices return list */
 	for (i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-		    &index) == TCL_OK) {
-		// TODO: ???
+		    &index) != TCL_OK) {
+		return NULL;
 	    }
 	    if (i==0) {
 		if (TclObjTypeIndex(interp, listObj, index, &elemObj) != TCL_OK) {
@@ -2683,6 +2683,13 @@ TclLindexFlat(
 		Tcl_DecrRefCount(elemObj);
 		elemObj = e2Obj;
 	    }
+	}
+	if (elemObj == NULL) {
+	    /*
+	     * TclObjTypeIndex returns TCL_OK with NULL in elemObj if
+	     * index was out of bounds.
+	     */
+	    TclNewObj(elemObj);
 	}
 	Tcl_IncrRefCount(elemObj);
 	return elemObj;
@@ -2720,6 +2727,7 @@ TclLindexFlat(
 		Tcl_IncrRefCount(listObj);
 	    } else {
 		Tcl_Obj *itemObj;
+		/* TODO - this will cause shimmering of inner abstract lists! */
 		/*
 		 * Must set the internal rep again because it may have been
 		 * changed by TclGetIntForIndexM. See test lindex-8.4.
@@ -3550,7 +3558,9 @@ UpdateStringOfList(
     start = dst = Tcl_InitStringRep(listObj, NULL, bytesNeeded);
     TclOOM(dst, bytesNeeded);
     for (i = 0; i < numElems; i++) {
-	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	if (i) {
+	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
+	}
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';

@@ -384,7 +384,7 @@ Tcl_GetBytesFromObj(
     return baPtr->bytes;
 }
 
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */

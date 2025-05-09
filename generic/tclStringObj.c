@@ -641,7 +641,7 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -669,7 +669,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
@@ -803,7 +803,7 @@ TclGetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;	 	/* The Tcl object to return that is the new
+    Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
 				 * range. */
     Tcl_Size length = 0;
 

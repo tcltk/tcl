@@ -1658,7 +1658,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#if !defined(TCL_NO_DEPRECATED)
+#ifndef TCL_NO_DEPRECATED
 #undef TclGetStringFromObj
 char *
 TclGetStringFromObj(
@@ -1702,7 +1702,7 @@ TclGetStringFromObj(
     }
     return objPtr->bytes;
 }
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* !TCL_NO_DEPRECATED */
 
 #undef Tcl_GetStringFromObj
 char *
