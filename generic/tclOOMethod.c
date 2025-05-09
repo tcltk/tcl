@@ -561,7 +561,7 @@ InitCmdFrame(
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
-		cfPtr->line = (Tcl_Size *) Tcl_Alloc(sizeof(Tcl_Size));
+		cfPtr->line = (int *) Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = context.line[context.nline - 1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;

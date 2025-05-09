@@ -833,8 +833,8 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
     int localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Tcl_ObjType const *typePtr = objPtr->typePtr;
     char *p;
-    int bytesNeeded = 0;
-    int llen, i;
+    Tcl_Size bytesNeeded = 0;
+    Tcl_Size llen, i;
 
 
     /*
@@ -1047,7 +1047,7 @@ UpdateStringOfLgen(Tcl_Obj *objPtr)
     LgenSeries *lgenSeriesRepPtr;
     Tcl_Obj *element;
     Tcl_Size i;
-    size_t bytlen;
+    Tcl_Size bytlen;
     Tcl_Obj *tmpstr = Tcl_NewObj();
 
     lgenSeriesRepPtr = (LgenSeries*)objPtr->internalRep.twoPtrValue.ptr1;
@@ -1062,8 +1062,9 @@ UpdateStringOfLgen(Tcl_Obj *objPtr)
 	}
     }
 
-    bytlen = Tcl_GetCharLength(tmpstr);
-    Tcl_InitStringRep(objPtr, Tcl_GetString(tmpstr), bytlen);
+    char *str = Tcl_GetStringFromObj(tmpstr, &bytlen);
+
+    TclOOM(Tcl_InitStringRep(objPtr, str, bytlen), bytlen+1);
     Tcl_DecrRefCount(tmpstr);
 
     return;

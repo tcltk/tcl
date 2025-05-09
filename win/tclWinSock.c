@@ -1762,7 +1762,7 @@ TcpConnect(
 	     */
 
 	    if (bind(statePtr->sockets->fd, statePtr->myaddr->ai_addr,
-		    statePtr->myaddr->ai_addrlen) == SOCKET_ERROR) {
+		    (socklen_t)statePtr->myaddr->ai_addrlen) == SOCKET_ERROR) {
 		Tcl_WinConvertError((DWORD) WSAGetLastError());
 		continue;
 	    }
@@ -1831,7 +1831,7 @@ TcpConnect(
 	     */
 
 	    connect(statePtr->sockets->fd, statePtr->addr->ai_addr,
-		    statePtr->addr->ai_addrlen);
+		    (socklen_t)statePtr->addr->ai_addrlen);
 
 	    error = WSAGetLastError();
 	    Tcl_WinConvertError(error);
@@ -2218,7 +2218,7 @@ Tcl_OpenTcpServerEx(
 	 */
 
 	if (bind(sock, addrPtr->ai_addr,
-		addrPtr->ai_addrlen) == SOCKET_ERROR) {
+		(socklen_t)addrPtr->ai_addrlen) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
 	    continue;

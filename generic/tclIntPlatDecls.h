@@ -232,7 +232,7 @@ MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
 #endif
 
 #if defined(_WIN32)
-#   if !defined(TCL_NO_DEPRECATED)
+#   ifndef TCL_NO_DEPRECATED
 #	define TclWinConvertError Tcl_WinConvertError
 #	define TclWinConvertWSAError Tcl_WinConvertError
 #	define TclWinNToHS ntohs
