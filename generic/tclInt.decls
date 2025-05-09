@@ -634,8 +634,7 @@ declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
-
-declare 259 {
+declare 258 {
     int TclMSB(unsigned long long n)
 }
 
