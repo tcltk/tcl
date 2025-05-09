@@ -53,11 +53,7 @@ static Tcl_ObjCmdProc	EncodingDirsObjCmd;
 static Tcl_ObjCmdProc	EncodingNamesObjCmd;
 static Tcl_ObjCmdProc	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc	EncodingSystemObjCmd;
-#ifdef _WIN32
 static Tcl_ObjCmdProc	EncodingUserObjCmd;
-#else
-#   define EncodingUserObjCmd EncodingSystemObjCmd
-#endif
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
@@ -847,7 +843,6 @@ EncodingSystemObjCmd(
  *-----------------------------------------------------------------------------
  */
 
-#ifdef _WIN32
 int
 EncodingUserObjCmd(
     TCL_UNUSED(void *),
@@ -859,13 +854,16 @@ EncodingUserObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
+#ifdef _WIN32
     const char *encodingName = Tcl_GetEncodingName(TclWinGetUserEncoding(interp));
     if (encodingName) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(encodingName, -1));
     }
     return TCL_OK;
-}
+#else
+    return EncodingSystemObjCmd(NULL, interp, objc, objv);
 #endif
+}
 
 /*
  *----------------------------------------------------------------------

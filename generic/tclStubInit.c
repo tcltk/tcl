@@ -69,7 +69,7 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
-#if !defined(_WIN32) /* TODO: implement for Cygwin too */
+#if !defined(_WIN32)
 # undef TclWinGetUserEncoding
 # define TclWinGetUserEncoding 0
 #endif

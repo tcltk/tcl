@@ -40,7 +40,7 @@
  * Rounding controls. (Thanks a lot, Intel!)
  */
 
-#ifdef __i386
+#if defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
 /*
  * gcc on x86 needs access to rounding controls, because of a questionable
  * feature where it retains intermediate results as IEEE 'long double' values
@@ -1252,7 +1252,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
@@ -1879,22 +1879,30 @@ MakeHighPrecisionDouble(
 
 
     if (exponent < -511) {
-	mp_init_copy(&bntmp, significand);
+	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
+	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	}
 	shift = -exponent - 511;
 	exponent += shift;
 	while (shift > 0) {
 	    n = (shift > 9) ? 9 : shift;
-	    mp_div_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp, NULL);
+	    if (mp_div_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp, NULL) != MP_OKAY) {
+		Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	    }
 	    shift -= n;
 	}
 	significand = &bntmp;
     } else if (exponent > 511) {
-	mp_init_copy(&bntmp, significand);
+	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
+	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	}
 	shift = exponent - 511;
 	exponent -= shift;
 	while (shift > 0) {
 	    n = (shift > 9) ? 9 : shift;
-	    mp_mul_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp);
+	    if (mp_mul_d(&bntmp, (mp_digit) pow10_wide[n], &bntmp) != MP_OKAY) {
+		Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
+	    }
 	    shift -= n;
 	}
 	significand = &bntmp;
