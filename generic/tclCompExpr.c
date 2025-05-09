@@ -2336,16 +2336,12 @@ CompileExprTree(
 
 	    switch (nodePtr->lexeme) {
 	    case FUNCTION: {
-		Tcl_DString cmdName;
+		Tcl_Obj *cmdName;
 
-		Tcl_DStringInit(&cmdName);
-		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
-		TclDStringAppendObj(&cmdName, *funcObjv);
+		TclNewLiteralStringObj(cmdName, "tcl::mathfunc::");
+		Tcl_AppendObjToObj(cmdName, *funcObjv);
 		funcObjv++;
-		TclEmitPush(TclRegisterLiteral(envPtr,
-			Tcl_DStringValue(&cmdName),
-			Tcl_DStringLength(&cmdName), LITERAL_CMD_NAME), envPtr);
-		Tcl_DStringFree(&cmdName);
+		PUSH_OBJ_FLAGS(cmdName, LITERAL_CMD_NAME);
 
 		/*
 		 * Start a count of the number of words in this function
@@ -2387,7 +2383,7 @@ CompileExprTree(
 	    }
 	} else {
 	    Tcl_Size target;
-	    JumpFixup pc1, pc2;
+	    Tcl_BytecodeLabel pc1, pc2;
 
 	    switch (nodePtr->lexeme) {
 	    case START:
@@ -2406,7 +2402,7 @@ CompileExprTree(
 		 * command with the correct number of arguments.
 		 */
 
-		TclEmitInvoke(envPtr, INST_INVOKE_STK, numWords);
+		INVOKE4(	INVOKE_STK, numWords);
 
 		/*
 		 * Restore any saved numWords value.
@@ -2443,18 +2439,18 @@ CompileExprTree(
 	    case AND:
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
-		TclEmitForwardJump(envPtr,
-			(nodePtr->lexeme == AND) ? TCL_FALSE_JUMP
-				: TCL_TRUE_JUMP, &pc1);
-		TclEmitPush(TclRegisterLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "1" : "0", 1, 0), envPtr);
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &pc2);
+		if (nodePtr->lexeme == AND) {
+		    FWDJUMP(	JUMP_FALSE, pc1);
+		} else {
+		    FWDJUMP(	JUMP_TRUE, pc1);
+		}
+		PUSH_STRING(	(nodePtr->lexeme == AND) ? "1" : "0");
+		FWDJUMP(	JUMP, pc2);
 		STKDELTA(-1);
-		TclFixupForwardJumpToHere(envPtr, &pc1);
+		FWDLABEL(pc1);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
-		TclEmitPush(TclRegisterLiteral(envPtr,
-			(nodePtr->lexeme == AND) ? "0" : "1", 1, 0), envPtr);
-		TclFixupForwardJumpToHere(envPtr, &pc2);
+		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
+		FWDLABEL(pc2);
 		convert = 0;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
@@ -2484,9 +2480,7 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		Tcl_Size length;
-		const char *bytes = TclGetStringFromObj(literal, &length);
-		int idx = TclRegisterLiteral(envPtr, bytes, length, 0);
+		int idx = PUSH_OBJ_FLAGS(literal, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
 
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
@@ -2507,7 +2501,6 @@ CompileExprTree(
 		    objPtr->internalRep = literal->internalRep;
 		    literal->typePtr = NULL;
 		}
-		TclEmitPush(idx, envPtr);
 	    } else {
 		/*
 		 * When optimize==0, we know the expression is a one-off and

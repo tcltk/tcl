@@ -1520,7 +1520,6 @@ TclSubstCompile(
     for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	Tcl_Size length;
-	int literal;
 	Tcl_ExceptionRange catchRange;
 	Tcl_BytecodeLabel end, haveOk, haveOther, tableBase;
 	JumptableNumInfo *retCodeTable;
@@ -1529,9 +1528,7 @@ TclSubstCompile(
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    literal = TclRegisterLiteral(envPtr,
-		    tokenPtr->start, tokenPtr->size, 0);
-	    TclEmitPush(literal, envPtr);
+	    PushLiteral(envPtr, tokenPtr->start, tokenPtr->size);
 	    TclAdvanceLines(&bline, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
 	    count++;
@@ -1539,8 +1536,7 @@ TclSubstCompile(
 	case TCL_TOKEN_BS:
 	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
 		    NULL, buf);
-	    literal = TclRegisterLiteral(envPtr, buf, length, 0);
-	    TclEmitPush(literal, envPtr);
+	    PushLiteral(envPtr, buf, length);
 	    count++;
 	    continue;
 	case TCL_TOKEN_VARIABLE:
@@ -2694,6 +2690,7 @@ TclCompileTailcallCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
+    /* TODO: Consider support for compiling expanded args. */
 
     if (numWords < 2 || numWords > UINT_MAX || envPtr->procPtr == NULL) {
 	return TCL_ERROR;
@@ -2702,6 +2699,7 @@ TclCompileTailcallCmd(
     OP(				NS_CURRENT);
     for (i=1 ; i<numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
+	// TODO: If the first token is a literal, add LITERAL_CMD_NAME to its flags
 	PUSH_TOKEN(		tokenPtr, i);
     }
     OP4(			TAILCALL, numWords);
