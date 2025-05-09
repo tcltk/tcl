@@ -570,7 +570,8 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
 				Tcl_LibraryInitProc *initProc,
 				Tcl_LibraryInitProc *safeInitProc);
-/* Slot 258 is reserved */
+/* 258 */
+EXTERN int		TclMSB(unsigned long long n);
 /* Slot 259 is reserved */
 /* Slot 260 is reserved */
 /* 261 */
@@ -838,7 +839,7 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
-    void (*reserved258)(void);
+    int (*tclMSB) (unsigned long long n); /* 258 */
     void (*reserved259)(void);
     void (*reserved260)(void);
     void (*tclUnusedStubEntry) (void); /* 261 */
@@ -1253,7 +1254,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticLibrary \
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
-/* Slot 258 is reserved */
+#define TclMSB \
+	(tclIntStubsPtr->tclMSB) /* 258 */
 /* Slot 259 is reserved */
 /* Slot 260 is reserved */
 #define TclUnusedStubEntry \
