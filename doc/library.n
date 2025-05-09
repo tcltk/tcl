@@ -447,12 +447,12 @@ files, as the value is baked in during the build or installation.
 .TP
 \fBenv(TCLLIBPATH)\fR
 .
-If set, then it must contain a valid Tcl list giving directories to
-search during auto-load operations.  Directories must be specified in
-Tcl format, using
-.QW /
-as the path separator, regardless of platform.
-This variable is only used when initializing the \fBauto_path\fR variable.
+If set, then it must contain a list of directories, separated by
+either \fB:\fR (Unix) or \fB;\fR (Windows), to search during
+auto-load operations. The standard zipfs prefix "//zipfs:/"
+is not allowed in env(TCLLIBPATH).
+This variable is only used when initializing the \fBauto_path\fR variable,
+which already contains the required zipfs entries.
 .RS
 .PP
 A key consequence of this variable is that it gives a way to let the user
