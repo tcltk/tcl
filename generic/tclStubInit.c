@@ -674,7 +674,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
-    0, /* 258 */
+    TclMSB, /* 258 */
     0, /* 259 */
     0, /* 260 */
     TclUnusedStubEntry, /* 261 */
