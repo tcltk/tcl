@@ -652,6 +652,48 @@ TclAddLiteralObj(
 /*
  *----------------------------------------------------------------------
  *
+ * TclRegisterLiteralObj --
+ *
+ *	Find, or if necessary create, an object in a CompileEnv literal array
+ *	that has a string representation matching the argument object.
+ *
+ * Results:
+ *	The index in the CompileEnv's literal array that references a shared
+ *	literal matching the string. The object is created if necessary.
+ *
+ * Side effects:
+ *	To maximize sharing, we look up the string in the interpreter's global
+ *	literal table. If not found, we create a new shared literal in the
+ *	global table. We then add a reference to the shared literal in the
+ *	CompileEnv's literal array.
+ *
+ *	The reference count of the argument object is bounced, so that the
+ *	normal case where the object is zero ref count (as it is really acting
+ *	as a local worker buffer) doesn't need explicit refcount handling by
+ *	the caller.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclRegisterLiteralObj(
+    CompileEnv *envPtr,		/* Points to CompileEnv in whose literal array
+				 * the object is to be inserted. */
+    Tcl_Obj *objPtr,		/* The object to insert into the array. */
+    int flags)			/* If LITERAL_CMD_NAME then the literal should
+				 * not be shared across namespaces.
+				 * LITERAL_ON_HEAP is unsupported/ignored. */
+{
+    Tcl_Size length;
+    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+    int num = TclRegisterLiteral(envPtr, bytes, length,
+	    flags & ~LITERAL_ON_HEAP);
+    Tcl_BounceRefCount(objPtr);
+    return num;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AddLocalLiteralEntry --
  *
  *	Insert a new literal into a CompileEnv's local literal array.
