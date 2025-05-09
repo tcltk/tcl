@@ -35,6 +35,12 @@ typedef struct {
     WORD wReserved;
 } OemId;
 
+typedef struct {
+    Tcl_Encoding userEncoding;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
 /*
  * The following arrays contain the human readable strings for the
  * processor values.
@@ -453,8 +459,6 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-static Tcl_Encoding userEncoding = NULL;
-
 /*
  *---------------------------------------------------------------------------
  *
@@ -486,19 +490,22 @@ TclWinGetUserEncoding(Tcl_Interp *interp)
 	    0, KEY_READ, &hKey);
     RegQueryValueExW(hKey, L"ACP", NULL, &type, (BYTE *)&buf[2], &size);
     RegCloseKey(hKey);
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     if (!wcscmp(buf, L"cp65001")) {
 	wcscpy(buf, L"utf-8");
     }
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString(buf, -1, &ds);
-    if (!userEncoding || strcmp(Tcl_GetEncodingName(userEncoding), Tcl_DStringValue(&ds))) {
-	if (userEncoding) {
-	    Tcl_FreeEncoding(userEncoding);
+    if (!tsdPtr->userEncoding
+	    || strcmp(Tcl_GetEncodingName(tsdPtr->userEncoding), Tcl_DStringValue(&ds))) {
+	if (tsdPtr->userEncoding) {
+	    Tcl_FreeEncoding(tsdPtr->userEncoding);
 	}
-	userEncoding = Tcl_GetEncoding(interp, Tcl_DStringValue(&ds));
+	tsdPtr->userEncoding = Tcl_GetEncoding(interp, Tcl_DStringValue(&ds));
     }
     Tcl_DStringFree(&ds);
-    return userEncoding;
+    return tsdPtr->userEncoding;
 }
 
 const char *
