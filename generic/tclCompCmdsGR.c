@@ -818,7 +818,8 @@ TclCompileLappendCmd(
     int isScalar;
     Tcl_LVTIndex localIndex;
 
-    /* TODO: Consider support for compiling expanded args. */
+    /* TODO: Consider support for compiling expanded args.
+     * REQUIRES: Fixing INST_LAPPEND_LIST (etc.) in zero-length list case. */
     if (numWords < 3 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
