@@ -4,19 +4,19 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testset2 [llength [info commands testset2]]
 
@@ -73,81 +73,81 @@ test set-1.10 {TclCompileSetCmd: only two args => just getting value} {
 
 test set-1.11 {TclCompileSetCmd: simple global name} {
     proc p {} {
-        global i
-        set i 54
-        set i
+	global i
+	set i 54
+	set i
     }
     p
 } {54}
 test set-1.12 {TclCompileSetCmd: simple local name} {
     proc p {bar} {
-        set foo $bar
-        set foo
+	set foo $bar
+	set foo
     }
     p 999
 } {999}
 test set-1.13 {TclCompileSetCmd: simple but new (unknown) local name} {
     proc p {} {
-        set bar
+	set bar
     }
     catch {p} msg
     set msg
 } {can't read "bar": no such variable}
 test set-1.14 {TclCompileSetCmd: simple local name, >255 locals} {
     proc 260locals {} {
-        # create 260 locals (the last ones with index > 255)
-        set a0 0; set a1 0; set a2 0; set a3 0; set a4 0
-        set a5 0; set a6 0; set a7 0; set a8 0; set a9 0
-        set b0 0; set b1 0; set b2 0; set b3 0; set b4 0
-        set b5 0; set b6 0; set b7 0; set b8 0; set b9 0
-        set c0 0; set c1 0; set c2 0; set c3 0; set c4 0
-        set c5 0; set c6 0; set c7 0; set c8 0; set c9 0
-        set d0 0; set d1 0; set d2 0; set d3 0; set d4 0
-        set d5 0; set d6 0; set d7 0; set d8 0; set d9 0
-        set e0 0; set e1 0; set e2 0; set e3 0; set e4 0
-        set e5 0; set e6 0; set e7 0; set e8 0; set e9 0
-        set f0 0; set f1 0; set f2 0; set f3 0; set f4 0
-        set f5 0; set f6 0; set f7 0; set f8 0; set f9 0
-        set g0 0; set g1 0; set g2 0; set g3 0; set g4 0
-        set g5 0; set g6 0; set g7 0; set g8 0; set g9 0
-        set h0 0; set h1 0; set h2 0; set h3 0; set h4 0
-        set h5 0; set h6 0; set h7 0; set h8 0; set h9 0
-        set i0 0; set i1 0; set i2 0; set i3 0; set i4 0
-        set i5 0; set i6 0; set i7 0; set i8 0; set i9 0
-        set j0 0; set j1 0; set j2 0; set j3 0; set j4 0
-        set j5 0; set j6 0; set j7 0; set j8 0; set j9 0
-        set k0 0; set k1 0; set k2 0; set k3 0; set k4 0
-        set k5 0; set k6 0; set k7 0; set k8 0; set k9 0
-        set l0 0; set l1 0; set l2 0; set l3 0; set l4 0
-        set l5 0; set l6 0; set l7 0; set l8 0; set l9 0
-        set m0 0; set m1 0; set m2 0; set m3 0; set m4 0
-        set m5 0; set m6 0; set m7 0; set m8 0; set m9 0
-        set n0 0; set n1 0; set n2 0; set n3 0; set n4 0
-        set n5 0; set n6 0; set n7 0; set n8 0; set n9 0
-        set o0 0; set o1 0; set o2 0; set o3 0; set o4 0
-        set o5 0; set o6 0; set o7 0; set o8 0; set o9 0
-        set p0 0; set p1 0; set p2 0; set p3 0; set p4 0
-        set p5 0; set p6 0; set p7 0; set p8 0; set p9 0
-        set q0 0; set q1 0; set q2 0; set q3 0; set q4 0
-        set q5 0; set q6 0; set q7 0; set q8 0; set q9 0
-        set r0 0; set r1 0; set r2 0; set r3 0; set r4 0
-        set r5 0; set r6 0; set r7 0; set r8 0; set r9 0
-        set s0 0; set s1 0; set s2 0; set s3 0; set s4 0
-        set s5 0; set s6 0; set s7 0; set s8 0; set s9 0
-        set t0 0; set t1 0; set t2 0; set t3 0; set t4 0
-        set t5 0; set t6 0; set t7 0; set t8 0; set t9 0
-        set u0 0; set u1 0; set u2 0; set u3 0; set u4 0
-        set u5 0; set u6 0; set u7 0; set u8 0; set u9 0
-        set v0 0; set v1 0; set v2 0; set v3 0; set v4 0
-        set v5 0; set v6 0; set v7 0; set v8 0; set v9 0
-        set w0 0; set w1 0; set w2 0; set w3 0; set w4 0
-        set w5 0; set w6 0; set w7 0; set w8 0; set w9 0
-        set x0 0; set x1 0; set x2 0; set x3 0; set x4 0
-        set x5 0; set x6 0; set x7 0; set x8 0; set x9 0
-        set y0 0; set y1 0; set y2 0; set y3 0; set y4 0
-        set y5 0; set y6 0; set y7 0; set y8 0; set y9 0
-        set z0 0; set z1 0; set z2 0; set z3 0; set z4 0
-        set z5 0; set z6 0; set z7 0; set z8 0; set z9 1234
+	# create 260 locals (the last ones with index > 255)
+	set a0 0; set a1 0; set a2 0; set a3 0; set a4 0
+	set a5 0; set a6 0; set a7 0; set a8 0; set a9 0
+	set b0 0; set b1 0; set b2 0; set b3 0; set b4 0
+	set b5 0; set b6 0; set b7 0; set b8 0; set b9 0
+	set c0 0; set c1 0; set c2 0; set c3 0; set c4 0
+	set c5 0; set c6 0; set c7 0; set c8 0; set c9 0
+	set d0 0; set d1 0; set d2 0; set d3 0; set d4 0
+	set d5 0; set d6 0; set d7 0; set d8 0; set d9 0
+	set e0 0; set e1 0; set e2 0; set e3 0; set e4 0
+	set e5 0; set e6 0; set e7 0; set e8 0; set e9 0
+	set f0 0; set f1 0; set f2 0; set f3 0; set f4 0
+	set f5 0; set f6 0; set f7 0; set f8 0; set f9 0
+	set g0 0; set g1 0; set g2 0; set g3 0; set g4 0
+	set g5 0; set g6 0; set g7 0; set g8 0; set g9 0
+	set h0 0; set h1 0; set h2 0; set h3 0; set h4 0
+	set h5 0; set h6 0; set h7 0; set h8 0; set h9 0
+	set i0 0; set i1 0; set i2 0; set i3 0; set i4 0
+	set i5 0; set i6 0; set i7 0; set i8 0; set i9 0
+	set j0 0; set j1 0; set j2 0; set j3 0; set j4 0
+	set j5 0; set j6 0; set j7 0; set j8 0; set j9 0
+	set k0 0; set k1 0; set k2 0; set k3 0; set k4 0
+	set k5 0; set k6 0; set k7 0; set k8 0; set k9 0
+	set l0 0; set l1 0; set l2 0; set l3 0; set l4 0
+	set l5 0; set l6 0; set l7 0; set l8 0; set l9 0
+	set m0 0; set m1 0; set m2 0; set m3 0; set m4 0
+	set m5 0; set m6 0; set m7 0; set m8 0; set m9 0
+	set n0 0; set n1 0; set n2 0; set n3 0; set n4 0
+	set n5 0; set n6 0; set n7 0; set n8 0; set n9 0
+	set o0 0; set o1 0; set o2 0; set o3 0; set o4 0
+	set o5 0; set o6 0; set o7 0; set o8 0; set o9 0
+	set p0 0; set p1 0; set p2 0; set p3 0; set p4 0
+	set p5 0; set p6 0; set p7 0; set p8 0; set p9 0
+	set q0 0; set q1 0; set q2 0; set q3 0; set q4 0
+	set q5 0; set q6 0; set q7 0; set q8 0; set q9 0
+	set r0 0; set r1 0; set r2 0; set r3 0; set r4 0
+	set r5 0; set r6 0; set r7 0; set r8 0; set r9 0
+	set s0 0; set s1 0; set s2 0; set s3 0; set s4 0
+	set s5 0; set s6 0; set s7 0; set s8 0; set s9 0
+	set t0 0; set t1 0; set t2 0; set t3 0; set t4 0
+	set t5 0; set t6 0; set t7 0; set t8 0; set t9 0
+	set u0 0; set u1 0; set u2 0; set u3 0; set u4 0
+	set u5 0; set u6 0; set u7 0; set u8 0; set u9 0
+	set v0 0; set v1 0; set v2 0; set v3 0; set v4 0
+	set v5 0; set v6 0; set v7 0; set v8 0; set v9 0
+	set w0 0; set w1 0; set w2 0; set w3 0; set w4 0
+	set w5 0; set w6 0; set w7 0; set w8 0; set w9 0
+	set x0 0; set x1 0; set x2 0; set x3 0; set x4 0
+	set x5 0; set x6 0; set x7 0; set x8 0; set x9 0
+	set y0 0; set y1 0; set y2 0; set y3 0; set y4 0
+	set y5 0; set y6 0; set y7 0; set y8 0; set y9 0
+	set z0 0; set z1 0; set z2 0; set z3 0; set z4 0
+	set z5 0; set z6 0; set z7 0; set z8 0; set z9 1234
     }
     260locals
 } {1234}
@@ -263,7 +263,7 @@ test set-2.4 {set command: runtime error, readonly variable} -setup {
 } -body {
     proc readonly args {error "variable is read-only"}
     set x 123
-    trace var x w readonly
+    trace add var x write readonly
     list [catch {set x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
@@ -348,17 +348,17 @@ test set-3.10 {uncompiled set command: only two args => just getting value} {
 test set-3.11 {uncompiled set command: simple global name} {
     proc p {} {
 	set z set
-        global i
-        $z i 54
-        $z i
+	global i
+	$z i 54
+	$z i
     }
     p
 } {54}
 test set-3.12 {uncompiled set command: simple local name} {
     proc p {bar} {
 	set z set
-        $z foo $bar
-        $z foo
+	$z foo $bar
+	$z foo
     }
     p 999
 } {999}
@@ -366,7 +366,7 @@ test set-3.13 {uncompiled set command: simple but new (unknown) local name} {
     set z set
     proc p {} {
 	set z set
-        $z bar
+	$z bar
     }
     catch {p} msg
     $z msg
@@ -374,59 +374,59 @@ test set-3.13 {uncompiled set command: simple but new (unknown) local name} {
 test set-3.14 {uncompiled set command: simple local name, >255 locals} {
     proc 260locals {} {
 	set z set
-        # create 260 locals (the last ones with index > 255)
-        $z a0 0; $z a1 0; $z a2 0; $z a3 0; $z a4 0
-        $z a5 0; $z a6 0; $z a7 0; $z a8 0; $z a9 0
-        $z b0 0; $z b1 0; $z b2 0; $z b3 0; $z b4 0
-        $z b5 0; $z b6 0; $z b7 0; $z b8 0; $z b9 0
-        $z c0 0; $z c1 0; $z c2 0; $z c3 0; $z c4 0
-        $z c5 0; $z c6 0; $z c7 0; $z c8 0; $z c9 0
-        $z d0 0; $z d1 0; $z d2 0; $z d3 0; $z d4 0
-        $z d5 0; $z d6 0; $z d7 0; $z d8 0; $z d9 0
-        $z e0 0; $z e1 0; $z e2 0; $z e3 0; $z e4 0
-        $z e5 0; $z e6 0; $z e7 0; $z e8 0; $z e9 0
-        $z f0 0; $z f1 0; $z f2 0; $z f3 0; $z f4 0
-        $z f5 0; $z f6 0; $z f7 0; $z f8 0; $z f9 0
-        $z g0 0; $z g1 0; $z g2 0; $z g3 0; $z g4 0
-        $z g5 0; $z g6 0; $z g7 0; $z g8 0; $z g9 0
-        $z h0 0; $z h1 0; $z h2 0; $z h3 0; $z h4 0
-        $z h5 0; $z h6 0; $z h7 0; $z h8 0; $z h9 0
-        $z i0 0; $z i1 0; $z i2 0; $z i3 0; $z i4 0
-        $z i5 0; $z i6 0; $z i7 0; $z i8 0; $z i9 0
-        $z j0 0; $z j1 0; $z j2 0; $z j3 0; $z j4 0
-        $z j5 0; $z j6 0; $z j7 0; $z j8 0; $z j9 0
-        $z k0 0; $z k1 0; $z k2 0; $z k3 0; $z k4 0
-        $z k5 0; $z k6 0; $z k7 0; $z k8 0; $z k9 0
-        $z l0 0; $z l1 0; $z l2 0; $z l3 0; $z l4 0
-        $z l5 0; $z l6 0; $z l7 0; $z l8 0; $z l9 0
-        $z m0 0; $z m1 0; $z m2 0; $z m3 0; $z m4 0
-        $z m5 0; $z m6 0; $z m7 0; $z m8 0; $z m9 0
-        $z n0 0; $z n1 0; $z n2 0; $z n3 0; $z n4 0
-        $z n5 0; $z n6 0; $z n7 0; $z n8 0; $z n9 0
-        $z o0 0; $z o1 0; $z o2 0; $z o3 0; $z o4 0
-        $z o5 0; $z o6 0; $z o7 0; $z o8 0; $z o9 0
-        $z p0 0; $z p1 0; $z p2 0; $z p3 0; $z p4 0
-        $z p5 0; $z p6 0; $z p7 0; $z p8 0; $z p9 0
-        $z q0 0; $z q1 0; $z q2 0; $z q3 0; $z q4 0
-        $z q5 0; $z q6 0; $z q7 0; $z q8 0; $z q9 0
-        $z r0 0; $z r1 0; $z r2 0; $z r3 0; $z r4 0
-        $z r5 0; $z r6 0; $z r7 0; $z r8 0; $z r9 0
-        $z s0 0; $z s1 0; $z s2 0; $z s3 0; $z s4 0
-        $z s5 0; $z s6 0; $z s7 0; $z s8 0; $z s9 0
-        $z t0 0; $z t1 0; $z t2 0; $z t3 0; $z t4 0
-        $z t5 0; $z t6 0; $z t7 0; $z t8 0; $z t9 0
-        $z u0 0; $z u1 0; $z u2 0; $z u3 0; $z u4 0
-        $z u5 0; $z u6 0; $z u7 0; $z u8 0; $z u9 0
-        $z v0 0; $z v1 0; $z v2 0; $z v3 0; $z v4 0
-        $z v5 0; $z v6 0; $z v7 0; $z v8 0; $z v9 0
-        $z w0 0; $z w1 0; $z w2 0; $z w3 0; $z w4 0
-        $z w5 0; $z w6 0; $z w7 0; $z w8 0; $z w9 0
-        $z x0 0; $z x1 0; $z x2 0; $z x3 0; $z x4 0
-        $z x5 0; $z x6 0; $z x7 0; $z x8 0; $z x9 0
-        $z y0 0; $z y1 0; $z y2 0; $z y3 0; $z y4 0
-        $z y5 0; $z y6 0; $z y7 0; $z y8 0; $z y9 0
-        $z z0 0; $z z1 0; $z z2 0; $z z3 0; $z z4 0
-        $z z5 0; $z z6 0; $z z7 0; $z z8 0; $z z9 1234
+	# create 260 locals (the last ones with index > 255)
+	$z a0 0; $z a1 0; $z a2 0; $z a3 0; $z a4 0
+	$z a5 0; $z a6 0; $z a7 0; $z a8 0; $z a9 0
+	$z b0 0; $z b1 0; $z b2 0; $z b3 0; $z b4 0
+	$z b5 0; $z b6 0; $z b7 0; $z b8 0; $z b9 0
+	$z c0 0; $z c1 0; $z c2 0; $z c3 0; $z c4 0
+	$z c5 0; $z c6 0; $z c7 0; $z c8 0; $z c9 0
+	$z d0 0; $z d1 0; $z d2 0; $z d3 0; $z d4 0
+	$z d5 0; $z d6 0; $z d7 0; $z d8 0; $z d9 0
+	$z e0 0; $z e1 0; $z e2 0; $z e3 0; $z e4 0
+	$z e5 0; $z e6 0; $z e7 0; $z e8 0; $z e9 0
+	$z f0 0; $z f1 0; $z f2 0; $z f3 0; $z f4 0
+	$z f5 0; $z f6 0; $z f7 0; $z f8 0; $z f9 0
+	$z g0 0; $z g1 0; $z g2 0; $z g3 0; $z g4 0
+	$z g5 0; $z g6 0; $z g7 0; $z g8 0; $z g9 0
+	$z h0 0; $z h1 0; $z h2 0; $z h3 0; $z h4 0
+	$z h5 0; $z h6 0; $z h7 0; $z h8 0; $z h9 0
+	$z i0 0; $z i1 0; $z i2 0; $z i3 0; $z i4 0
+	$z i5 0; $z i6 0; $z i7 0; $z i8 0; $z i9 0
+	$z j0 0; $z j1 0; $z j2 0; $z j3 0; $z j4 0
+	$z j5 0; $z j6 0; $z j7 0; $z j8 0; $z j9 0
+	$z k0 0; $z k1 0; $z k2 0; $z k3 0; $z k4 0
+	$z k5 0; $z k6 0; $z k7 0; $z k8 0; $z k9 0
+	$z l0 0; $z l1 0; $z l2 0; $z l3 0; $z l4 0
+	$z l5 0; $z l6 0; $z l7 0; $z l8 0; $z l9 0
+	$z m0 0; $z m1 0; $z m2 0; $z m3 0; $z m4 0
+	$z m5 0; $z m6 0; $z m7 0; $z m8 0; $z m9 0
+	$z n0 0; $z n1 0; $z n2 0; $z n3 0; $z n4 0
+	$z n5 0; $z n6 0; $z n7 0; $z n8 0; $z n9 0
+	$z o0 0; $z o1 0; $z o2 0; $z o3 0; $z o4 0
+	$z o5 0; $z o6 0; $z o7 0; $z o8 0; $z o9 0
+	$z p0 0; $z p1 0; $z p2 0; $z p3 0; $z p4 0
+	$z p5 0; $z p6 0; $z p7 0; $z p8 0; $z p9 0
+	$z q0 0; $z q1 0; $z q2 0; $z q3 0; $z q4 0
+	$z q5 0; $z q6 0; $z q7 0; $z q8 0; $z q9 0
+	$z r0 0; $z r1 0; $z r2 0; $z r3 0; $z r4 0
+	$z r5 0; $z r6 0; $z r7 0; $z r8 0; $z r9 0
+	$z s0 0; $z s1 0; $z s2 0; $z s3 0; $z s4 0
+	$z s5 0; $z s6 0; $z s7 0; $z s8 0; $z s9 0
+	$z t0 0; $z t1 0; $z t2 0; $z t3 0; $z t4 0
+	$z t5 0; $z t6 0; $z t7 0; $z t8 0; $z t9 0
+	$z u0 0; $z u1 0; $z u2 0; $z u3 0; $z u4 0
+	$z u5 0; $z u6 0; $z u7 0; $z u8 0; $z u9 0
+	$z v0 0; $z v1 0; $z v2 0; $z v3 0; $z v4 0
+	$z v5 0; $z v6 0; $z v7 0; $z v8 0; $z v9 0
+	$z w0 0; $z w1 0; $z w2 0; $z w3 0; $z w4 0
+	$z w5 0; $z w6 0; $z w7 0; $z w8 0; $z w9 0
+	$z x0 0; $z x1 0; $z x2 0; $z x3 0; $z x4 0
+	$z x5 0; $z x6 0; $z x7 0; $z x8 0; $z x9 0
+	$z y0 0; $z y1 0; $z y2 0; $z y3 0; $z y4 0
+	$z y5 0; $z y6 0; $z y7 0; $z y8 0; $z y9 0
+	$z z0 0; $z z1 0; $z z2 0; $z z3 0; $z z4 0
+	$z z5 0; $z z6 0; $z z7 0; $z z8 0; $z z9 1234
     }
     260locals
 } {1234}
@@ -521,7 +521,7 @@ test set-4.4 {uncompiled set command: runtime error, readonly variable} -body {
     set z set
     proc readonly args {error "variable is read-only"}
     $z x 123
-    trace var x w readonly
+    trace add var x write readonly
     list [catch {$z x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing

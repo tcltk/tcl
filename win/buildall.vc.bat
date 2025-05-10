@@ -38,7 +38,9 @@ if defined WINDOWSSDKDIR (goto :startBuilding)
 :: might not be correct.  You should call it yourself prior to running
 :: this batchfile.
 ::
-call "C:\Program Files\Microsoft Developer Studio\vc98\bin\vcvars32.bat"
+REM call "C:\Program Files\Microsoft Developer Studio\vc98\bin\vcvars32.bat"
+set "VSCMD_START_DIR=%CD%"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 if errorlevel 1 (goto no_vcvars)
 
 :startBuilding
@@ -66,8 +68,8 @@ if errorlevel 1 goto error
 
 :: Build the static core and shell.
 ::
-set OPTS=static,msvcrt
-if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt
+set OPTS=static
+if not %SYMBOLS%.==. set OPTS=symbols,static
 nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
 if errorlevel 1 goto error
 

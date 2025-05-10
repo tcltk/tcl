@@ -28,35 +28,28 @@ int
 int
 \fBTcl_LimitTypeEnabled\fR(\fIinterp, type\fR)
 .sp
-void
 \fBTcl_LimitTypeSet\fR(\fIinterp, type\fR)
 .sp
-void
 \fBTcl_LimitTypeReset\fR(\fIinterp, type\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_LimitGetCommands\fR(\fIinterp\fR)
 .sp
-void
 \fBTcl_LimitSetCommands\fR(\fIinterp, commandLimit\fR)
 .sp
-void
 \fBTcl_LimitGetTime\fR(\fIinterp, timeLimitPtr\fR)
 .sp
-void
 \fBTcl_LimitSetTime\fR(\fIinterp, timeLimitPtr\fR)
 .sp
 int
 \fBTcl_LimitGetGranularity\fR(\fIinterp, type\fR)
 .sp
-void
 \fBTcl_LimitSetGranularity\fR(\fIinterp, type, granularity\fR)
 .sp
-void
 \fBTcl_LimitAddHandler\fR(\fIinterp, type, handlerProc, clientData, deleteProc\fR)
 .sp
-void
 \fBTcl_LimitRemoveHandler\fR(\fIinterp, type, handlerProc, clientData\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_LimitHandlerDeleteProc commandLimit in/out
 .AP Tcl_Interp *interp in
@@ -65,7 +58,7 @@ its limits checked.
 .AP int type in
 The type of limit that the operation refers to.  This must be either
 \fBTCL_LIMIT_COMMANDS\fR or \fBTCL_LIMIT_TIME\fR.
-.AP int commandLimit in
+.AP Tcl_Size commandLimit in
 The maximum number of commands (as reported by \fBinfo cmdcount\fR)
 that may be executed in the interpreter.
 .AP Tcl_Time *timeLimitPtr in/out
@@ -83,7 +76,7 @@ the handler returns.  Many handlers may be attached to the same
 interpreter limit; their order of execution is not defined, and they
 must be identified by \fIhandlerProc\fR and \fIclientData\fR when they
 are deleted.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary pointer-sized word used to pass some context to the
 \fIhandlerProc\fR function.
 .AP Tcl_LimitHandlerDeleteProc *deleteProc in
@@ -116,7 +109,7 @@ execution of the callbacks is unspecified) execution in the limited
 interpreter is stopped by raising an error and setting a flag that
 prevents the \fBcatch\fR command in that interpreter from trapping
 that error.  It is up to the context that started execution in that
-interpreter (typically a master interpreter) to handle the error.
+interpreter (typically the main interpreter) to handle the error.
 .SH "LIMIT CHECKING API"
 .PP
 To check the resource limits for an interpreter, call
@@ -162,7 +155,7 @@ following prototype:
 .PP
 .CS
 typedef void \fBTcl_LimitHandlerProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
@@ -179,7 +172,7 @@ following prototype:
 .PP
 .CS
 typedef void \fBTcl_LimitHandlerDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 A limit handler may be deleted using \fBTcl_LimitRemoveHandler\fR; the

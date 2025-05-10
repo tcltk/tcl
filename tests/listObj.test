@@ -5,21 +5,25 @@
 # built-in commands. Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1995-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
+testConstraint memory [llength [info commands memory]]
+
+set INT_MAX 0x7fffffff; # Assumes sizeof(int) == 4
+set SIZE_MAX [expr {(1 << (8*$::tcl_platform(pointerSize) - 1)) - 1}]
 
 catch {unset x}
 test listobj-1.1 {Tcl_GetListObjType} emptyTest {
@@ -33,7 +37,7 @@ test listobj-2.1 {Tcl_SetListObj, use in lappend} {
 } {{1 abc def} {1 abc def 1 ghi jkl} {1 abc def 1 ghi jkl}}
 test listobj-2.2 {Tcl_SetListObj, use in ObjInterpProc} {
     proc return_args {args} {
-        return $args
+	return $args
     }
     list [return_args] [return_args x] [return_args x y]
 } {{} x {x y}}
@@ -60,7 +64,7 @@ test listobj-3.4 {Tcl_ListObjAppend, error in conversion} {
 test listobj-3.5 {Tcl_ListObjAppend, force internal rep array to grow} {
     set x ""
     list [lappend x 1 1] [lappend x 2 2] [lappend x 3 3] [lappend x 4 4] \
-        [lappend x 5 5] [lappend x 6 6] [lappend x 7 7] [lappend x 8 8] $x
+	[lappend x 5 5] [lappend x 6 6] [lappend x 7 7] [lappend x 8 8] $x
 } {{1 1} {1 1 2 2} {1 1 2 2 3 3} {1 1 2 2 3 3 4 4} {1 1 2 2 3 3 4 4 5 5} {1 1 2 2 3 3 4 4 5 5 6 6} {1 1 2 2 3 3 4 4 5 5 6 6 7 7} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}}
 
 test listobj-4.1 {Tcl_ListObjAppendElement, list conversion} {
@@ -82,7 +86,7 @@ test listobj-4.4 {Tcl_ListObjAppendElement, error in conversion} {
 test listobj-4.5 {Tcl_ListObjAppendElement, force internal rep array to grow} {
     set x ""
     list [lappend x 1] [lappend x 2] [lappend x 3] [lappend x 4] \
-        [lappend x 5] [lappend x 6] [lappend x 7] [lappend x 8] $x
+	[lappend x 5] [lappend x 6] [lappend x 7] [lappend x 8] $x
 } {1 {1 2} {1 2 3} {1 2 3 4} {1 2 3 4 5} {1 2 3 4 5 6} {1 2 3 4 5 6 7} {1 2 3 4 5 6 7 8} {1 2 3 4 5 6 7 8}}
 
 test listobj-5.1 {Tcl_ListObjIndex, basic tests} {
@@ -195,10 +199,133 @@ test listobj-10.1 {Bug [2971669]} {*}{
     }
     -result {{a b c d e} {} {a b c d e f}}
 }
+test listobj-10.2 {Tcl_ListObjReplace with negative start value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 -1 2 f
+    testlistobj get 1
+} {f c d e}
+test listobj-10.3 {Tcl_ListObjReplace with negative count value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 1 -1 f
+    testlistobj get 1
+} {a f b c d e}
+test listobj-10.4 {Tcl_ListObjReplace with $SIZE_MAX count value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 1 $SIZE_MAX f
+    testlistobj get 1
+} {a f}
+test listobj-10.5 {Tcl_ListObjReplace with SIZE_MAX-1 count value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 1 [expr {$SIZE_MAX -1}] f
+    testlistobj get 1
+} {a f}
 
 test listobj-11.1 {Bug 3598580: Tcl_ListObjReplace refcount management} testobj {
     testobj bug3598580
 } 123
+test listobj-11.2 {Bug e58d7e19e9: Upwards compatibility of TclObjTypeHasProc()} testobj {
+    set l [testobj buge58d7e19e9 "a x c"]
+    # Since $l is a V1 objType, it's lengthProc will be accessed, but not its indexProc.
+    list [llength $l] [lindex $l 2]
+} {100 c}
+
+# Stolen from dict.test
+proc listobjmemcheck script {
+    set end [lindex [split [memory info] \n] 3 3]
+    for {set i 0} {$i < 5} {incr i} {
+	uplevel 1 $script
+	set tmp $end
+	set end [lindex [split [memory info] \n] 3 3]
+    }
+    expr {$end - $tmp}
+}
+
+test listobj-12.1 {Tcl_ListObjIndex memory leaks for native lists} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [lrepeat 1000 x]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+test listobj-12.2 {Tcl_ListObjIndex memory leaks for native lists with spans} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [testlistrep new 1000 100 100]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+test listobj-12.3 {Tcl_ListObjIndex memory leaks for lseq} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [lseq 1000]
+	set errorMessage [testlistobj indexmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+
+test listobj-13.1 {Tcl_ListObjGetElements memory leaks for native lists} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [lrepeat 1000 x]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+test listobj-13.2 {Tcl_ListObjElements memory leaks for native lists with spans} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [testlistrep new 1000 100 100]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+test listobj-13.3 {Tcl_ListObjElements memory leaks for lseq} -constraints {
+    testobj memory
+} -body {
+    list [listobjmemcheck {
+	testobj set 1 [lseq 1000]
+	set errorMessage [testlistobj getelementsmemcheck 1]
+	testobj freeallvars
+    }] $errorMessage
+} -result {0 {}}
+
+# Tests for Tcl_ListObjIndex as sematics are different from lindex for
+# out of bounds indices. Out of bounds should return a null pointer and
+# not empty string.
+test listobj-14.1 {Tcl_ListObjIndex out-of-bounds index for native lists} -constraints {
+    testobj
+} -setup {
+    testobj set 1 [list a b c]
+} -cleanup {
+    testobj freeallvars
+} -body {
+    list [testlistobj index 1 -1] [testlistobj index 1 3]
+} -result {null null}
+
+test listobj-14.2 {Tcl_ListObjIndex out-of-bounds index for native lists with spans} -constraints {
+    testobj
+} -setup {
+    testobj set 1 [testlistrep new 1000 100 100]
+} -cleanup {
+    testobj freeallvars
+} -body {
+    list [testlistobj index 1 -1] [testlistobj index 1 1000]
+} -result {null null}
+
+test listobj-14.3 {Tcl_ListObjIndex out-of-bounds index for lseq} -constraints {bug_30e4e9102f testobj} -setup {
+    testobj set 1 [lseq 3]
+} -cleanup {
+    testobj freeallvars
+} -body {
+    list [testlistobj index 1 -1] [testlistobj index 1 3]
+} -result {null null}
 
 # cleanup
 ::tcltest::cleanupTests

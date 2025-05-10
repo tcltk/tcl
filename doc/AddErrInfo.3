@@ -9,11 +9,11 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
+Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
-.sp
+
 Tcl_Obj *
 \fBTcl_GetReturnOptions\fR(\fIinterp, code\fR)
 .sp
@@ -28,10 +28,9 @@ int
 .sp
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
-\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *) NULL\fR)
+\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *)NULL\fR)
 .sp
-\fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
-.sp
+int
 \fBTcl_GetErrorLine\fR(\fIinterp\fR)
 .sp
 \fBTcl_SetErrorLine\fR(\fIinterp, lineNum\fR)
@@ -39,8 +38,8 @@ int
 const char *
 \fBTcl_PosixError\fR(\fIinterp\fR)
 .sp
-void
 \fBTcl_LogCommandInfo\fR(\fIinterp, script, command, commandLength\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp commandLength
 .AP Tcl_Interp *interp in
@@ -49,7 +48,7 @@ Interpreter in which to record information.
 The code returned from script evaluation.
 .AP Tcl_Obj *options
 A dictionary of return options.
-.AP char *message in
+.AP "const char" *message in
 For \fBTcl_AddErrorInfo\fR,
 this is a conventional C string to append to the \fB\-errorinfo\fR return option.
 For \fBTcl_AddObjErrorInfo\fR,
@@ -60,26 +59,26 @@ unless \fIlength\fR is negative.
 .AP Tcl_Obj *objPtr in
 A message to be appended to the \fB\-errorinfo\fR return option
 in the form of a Tcl_Obj value.
-.AP int length in
+.AP Tcl_Size length in
 The number of bytes to copy from \fImessage\fR when
 appending to the \fB\-errorinfo\fR return option.
 If negative, all bytes up to the first null byte are used.
 .AP Tcl_Obj *errorObjPtr in
 The \fB\-errorcode\fR return option will be set to this value.
-.AP char *element in
+.AP "const char" *element in
 String to record as one element of the \fB\-errorcode\fR return option.
-Last \fIelement\fR argument must be NULL.
-.AP va_list argList in
-An argument list which must have been initialized using
-\fBva_start\fR, and cleared using \fBva_end\fR.
+Last \fIelement\fR argument must be (char *)NULL.
 .AP int lineNum
 The line number of a script where an error occurred.
 .AP "const char" *script in
-Pointer to first character in script containing command (must be <= command)
+Pointer to first character in script containing command
+(must be <= \fIcommand\fR).
 .AP "const char" *command in
-Pointer to first character in command that generated the error
-.AP int commandLength in
-Number of bytes in command; -1 means use all bytes up to first null byte
+Pointer to first character in the command that generated the error; must
+point within the string given by \fIscript\fR.
+.AP Tcl_Size commandLength in
+Number of bytes in command; a negative value means use all bytes up to the
+first null byte.
 .BE
 .SH DESCRIPTION
 .PP
@@ -245,9 +244,6 @@ The procedure \fBTcl_SetErrorCode\fR is also used to set the
 record instead of a value. Otherwise, it is similar to
 \fBTcl_SetObjErrorCode\fR in behavior.
 .PP
-\fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
-instead of taking a variable number of arguments it takes an argument list.
-.PP
 The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
 of the \fB\-errorline\fR return option without the overhead of a full
 call to \fBTcl_GetReturnOptions\fR.  Likewise, \fBTcl_SetErrorLine\fR
@@ -305,6 +301,22 @@ The global variables \fBerrorInfo\fR and
 \fBerrorCode\fR are not modified by \fBTcl_ResetResult\fR
 so they continue to hold a record of information about the
 most recent error seen in an interpreter.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The result of \fBTcl_GetReturnOptions\fR will have at least one
+reference to it from the Tcl interpreter. If not using it immediately,
+you should use \fBTcl_IncrRefCount\fR to add your own reference.
+.PP
+The \fIoptions\fR argument to \fBTcl_SetReturnOptions\fR will have a
+reference added by the Tcl interpreter; it may safely be called with a
+zero-reference value.
+.PP
+\fBTcl_AppendObjToErrorInfo\fR only reads its \fIobjPtr\fR argument;
+it does not modify its reference count at all.
+.PP
+The \fIerrorObjPtr\fR argument to \fBTcl_SetObjErrorCode\fR will have a
+reference added by the Tcl interpreter; it may safely be called with a
+zero-reference value.
 .SH "SEE ALSO"
 Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_Interp(3), Tcl_ResetResult(3),
 Tcl_SetErrno(3), errorCode(n), errorInfo(n)

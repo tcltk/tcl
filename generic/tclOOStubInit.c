@@ -35,6 +35,8 @@ static const TclOOIntStubs tclOOIntStubs = {
     TclOOClassSetFilters, /* 13 */
     TclOOObjectSetMixins, /* 14 */
     TclOOClassSetMixins, /* 15 */
+    TclOOMakeProcInstanceMethod2, /* 16 */
+    TclOOMakeProcMethod2, /* 17 */
 };
 
 static const TclOOStubHooks tclOOStubHooks = {
@@ -73,6 +75,12 @@ const TclOOStubs tclOOStubs = {
     Tcl_ClassSetConstructor, /* 26 */
     Tcl_ClassSetDestructor, /* 27 */
     Tcl_GetObjectName, /* 28 */
+    Tcl_MethodIsPrivate, /* 29 */
+    Tcl_GetClassOfObject, /* 30 */
+    Tcl_GetObjectClassName, /* 31 */
+    Tcl_MethodIsType2, /* 32 */
+    Tcl_NewInstanceMethod2, /* 33 */
+    Tcl_NewMethod2, /* 34 */
 };
 
 /* !END!: Do not edit above this line. */

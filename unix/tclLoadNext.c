@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	NeXTs rld_* dynamic loading. This file provided by Pedja Bogdanovich.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,14 +14,16 @@
 #include <mach-o/rld.h>
 #include <streams/streams.h>
 
-/* Static procedures defined within this file */
+/*
+ * Static procedures defined within this file.
+ */
 
 static void *		FindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char* symbol);
+			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclpDlopen --
  *
@@ -29,13 +31,13 @@ static void		UnloadFile(Tcl_LoadHandle loadHandle);
  *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error message
+ *	A standard Tcl completion code. If an error occurs, an error message
  *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -61,7 +63,7 @@ TclpDlopen(
 
     NXStream *errorStream = NXOpenMemory(0,0,NX_READWRITE);
 
-    fileName = Tcl_GetString(pathPtr);
+    fileName = TclGetString(pathPtr);
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -78,12 +80,16 @@ TclpDlopen(
 	/*
 	 * Let the OS loader examine the binary search path for whatever
 	 * string the user gave us which hopefully refers to a file on the
-	 * binary path
+	 * binary path.
 	 */
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	files = {native,NULL};
 	result = rld_load(errorStream, &header, files, NULL);
 	Tcl_DStringFree(&ds);
@@ -101,12 +107,12 @@ TclpDlopen(
     }
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
-    newHandle = ckalloc(sizeof(Tcl_LoadHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
-    *loadHandle = newHandle;
     *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
 
     return TCL_OK;
 }
@@ -133,7 +139,7 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
 
     if (symbol) {
 	char sym[strlen(symbol) + 2];
@@ -146,7 +152,7 @@ FindSymbol(
     if (proc == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\"", symbol));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;
 }
@@ -169,43 +175,13 @@ FindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
+    Tcl_Free(loadHandle);
 }
 
 /*

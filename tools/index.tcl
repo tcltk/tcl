@@ -4,7 +4,7 @@
 # the man page conversion.  It is used to extract information used to
 # generate a table of contents and a keyword list.
 #
-# Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright © 1996 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,12 +14,12 @@
 # state -	state variable that controls action of text proc.
 #
 # topics -	array indexed by (package,section,topic) with value
-# 		of topic ID.
+#		of topic ID.
 #
 # keywords -	array indexed by keyword string with value of topic ID.
 #
-# curID - 	current topic ID, starts at 0 and is incremented for
-# 		each new topic file.
+# curID -	current topic ID, starts at 0 and is incremented for
+#		each new topic file.
 #
 # curPkg -	current package name (e.g. Tcl).
 #

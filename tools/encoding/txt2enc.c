@@ -106,18 +106,18 @@ main(int argc, char **argv)
 	fputs("    -f\tfallback character (default: QUESTION MARK)\n", stderr);
 	fputs("    -t\toverride implicit type with single, double, or multi\n", stderr);
 	fputs("    -s\tsymbol+ascii encoding\n", stderr);
-	fputs("    -m\tdon't implicitly include range 0080 to 00FF\n", stderr);
+	fputs("    -m\tdon't implicitly include 007F\n", stderr);
 	return 1;
     }
 
     fp = fopen(argv[argc - 1], "r");
     if (fp == NULL) {
-        perror(argv[argc - 1]);
+	perror(argv[argc - 1]);
 	return 1;
     }
 
     for (i = 0; i < 256; i++) {
-        toUnicode[i] = NULL;
+	toUnicode[i] = NULL;
     }
 
     maxEnc = 0;
@@ -176,7 +176,7 @@ main(int argc, char **argv)
 	}
 
 	hi = enc >> 8;
-	lo = enc & 0xff;
+	lo = enc & 0xFF;
 	if (toUnicode[hi] == NULL) {
 	    toUnicode[hi] = (Rune *) malloc(256 * sizeof(Rune));
 	    memset(toUnicode[hi], 0, 256 * sizeof(Rune));
@@ -208,10 +208,8 @@ main(int argc, char **argv)
 	    toUnicode[0][i] = i;
 	}
 	if (fixmissing) {
-	    for (i = 0x7F; i < 0xa0; i++) {
-		if (toUnicode[i] == NULL && toUnicode[0][i] == 0) {
-		    toUnicode[0][i] = i;
-		}
+	    if (toUnicode[0x7F] == NULL && toUnicode[0][0x7F] == 0) {
+		toUnicode[0][0x7F] = 0x7F;
 	    }
 	}
     }
@@ -234,7 +232,7 @@ main(int argc, char **argv)
 	    printf("%02X\n", hi);
 	    for (lo = 0; lo < 256; lo++) {
 		printf("%04X", toUnicode[hi][lo]);
-		if ((lo & 0x0f) == 0x0f) {
+		if ((lo & 0x0F) == 0x0F) {
 		    putchar('\n');
 		}
 	    }
@@ -242,10 +240,10 @@ main(int argc, char **argv)
     }
 
     for (hi = 0; hi < 256; hi++) {
-        if (toUnicode[hi] != NULL) {
-            free(toUnicode[hi]);
-            toUnicode[hi] = NULL;
-        }
+	if (toUnicode[hi] != NULL) {
+	    free(toUnicode[hi]);
+	    toUnicode[hi] = NULL;
+	}
     }
     return 0;
 }

@@ -23,7 +23,7 @@ exception to occur.
 The exception causes the current script to be aborted
 out to the innermost containing loop command, which then
 continues with the next iteration of the loop.
-Catch exceptions are also handled in a few other situations, such
+Continue exceptions are also handled in a few other situations, such
 as the \fBcatch\fR command and the outermost scripts of procedure
 bodies.
 .SH EXAMPLE

@@ -8,13 +8,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateObjCommand, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
+Tcl_CreateObjCommand, Tcl_CreateObjCommand2, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Command
 \fBTcl_CreateObjCommand\fR(\fIinterp, cmdName, proc, clientData, deleteProc\fR)
+.sp
+Tcl_Command
+\fBTcl_CreateObjCommand2\fR(\fIinterp, cmdName, proc2, clientData, deleteProc\fR)
 .sp
 int
 \fBTcl_DeleteCommand\fR(\fIinterp, cmdName\fR)
@@ -37,21 +40,24 @@ int
 const char *
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .sp
-void
 \fBTcl_GetCommandFullName\fR(\fIinterp, token, objPtr\fR)
 .sp
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to create a new command or that contains a command.
-.AP char *cmdName in
+.AP "const char" *cmdName in
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
-.AP ClientData clientData in
+.AP Tcl_ObjCmdProc2 *proc2 in
+Implementation of the new command: \fIproc2\fR will be called whenever
+\fIcmdName\fR is invoked as a command.
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in
 Procedure to call before \fIcmdName\fR is deleted from the interpreter;
@@ -65,6 +71,9 @@ Pointer to structure containing various information about a
 Tcl command.
 .AP Tcl_Obj *objPtr in
 Value containing the name of a Tcl command.
+.AP "const char" *typeName in
+Indicates the name of the type of command implementation associated
+with a particular \fIproc\fR, or NULL to break the association.
 .BE
 .SH DESCRIPTION
 .PP
@@ -91,7 +100,7 @@ and it returns NULL.
 .PP
 .CS
 typedef int \fBTcl_ObjCmdProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
         Tcl_Obj *const \fIobjv\fR[]);
@@ -123,9 +132,10 @@ that \fIobjv\fR[\fB2\fR] points at, but will not change where
 .PP
 \fIproc\fR must return an integer code that is either \fBTCL_OK\fR,
 \fBTCL_ERROR\fR, \fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.
-See the Tcl overview man page
-for details on what these codes mean.  Most normal commands will only
-return \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+See the \fBreturn\fR man page for details on what these codes mean and the
+use of extended values for an extension's private use. Most normal commands
+will only return \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+.PP
 In addition, if \fIproc\fR needs to return a non-empty result,
 it can call \fBTcl_SetObjResult\fR to set the interpreter's result.
 In the case of a \fBTCL_OK\fR return code this gives the result
@@ -164,11 +174,22 @@ result that match the type \fBTcl_CmdDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdDeleteProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateObjCommand\fR.
+.PP
+\fBTcl_CreateObjCommand2\fR does the same as \fBTcl_CreateObjCommand\fR,
+except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR.
+.PP
+.CS
+typedef int \fBTcl_ObjCmdProc2\fR(
+        void *\fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_Size \fIobjc\fR,
+        Tcl_Obj *const \fIobjv\fR[]);
+.CE
 .PP
 \fBTcl_DeleteCommand\fR deletes a command from a command interpreter.
 Once the call completes, attempts to invoke \fIcmdName\fR in
@@ -203,24 +224,29 @@ pointed to by \fIinfoPtr\fR and returns 1.
 A \fBTcl_CmdInfo\fR structure has the following fields:
 .PP
 .CS
-typedef struct Tcl_CmdInfo {
+typedef struct {
     int \fIisNativeObjectProc\fR;
     Tcl_ObjCmdProc *\fIobjProc\fR;
-    ClientData \fIobjClientData\fR;
+    void *\fIobjClientData\fR;
     Tcl_CmdProc *\fIproc\fR;
-    ClientData \fIclientData\fR;
+    void *\fIclientData\fR;
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
-    ClientData \fIdeleteData\fR;
+    void *\fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
+    Tcl_ObjCmdProc2 *\fIobjProc2\fR;
+    void *\fIobjClientData2\fR;
 } \fBTcl_CmdInfo\fR;
 .CE
 .PP
-The \fIisNativeObjectProc\fR field has the value 1
-if \fBTcl_CreateObjCommand\fR was called to register the command;
-it is 0 if only \fBTcl_CreateCommand\fR was called.
+The \fIisNativeObjectProc\fR field has the value 2 if
+\fBTcl_CreateObjCommand2\fR was called to register the command;
+it has the value 1 if \fBTcl_CreateObjCommand\fR was called to
+register the command; it is 0 if only \fBTcl_CreateCommand\fR was called.
 It allows a program to determine whether it is faster to
-call \fIobjProc\fR or \fIproc\fR:
-\fIobjProc\fR is normally faster
+call \fIobjProc2\fR, \fIobjProc\fR or \fIproc\fR:
+\fIobjProc2\fR/\fIobjProc\fR is normally faster
+if \fIisNativeObjectProc\fR has the value 2;
+\fIobjProc\fR/\fIobjProc\fR is normally faster
 if \fIisNativeObjectProc\fR has the value 1.
 The fields \fIobjProc\fR and \fIobjClientData\fR
 have the same meaning as the \fIproc\fR and \fIclientData\fR
@@ -236,7 +262,7 @@ otherwise, this is a compatibility procedure
 registered by \fBTcl_CreateObjCommand\fR
 that simply calls the command's
 value-based procedure after converting its string arguments to Tcl values.
-The field \fIdeleteData\fR is the ClientData value
+The field \fIdeleteData\fR is the clientData value
 to pass to \fIdeleteProc\fR;  it is normally the same as
 \fIclientData\fR but may be set independently using the
 \fBTcl_SetCommandInfo\fR procedure.
@@ -250,7 +276,7 @@ from \fBTcl_CreateObjCommand\fR in place of the command name.  If the
 and fills in the structure designated by \fIinfoPtr\fR.
 .PP
 \fBTcl_SetCommandInfo\fR is used to modify the procedures and
-ClientData values associated with a command.
+clientData values associated with a command.
 Its \fIcmdName\fR argument is the name of a command in \fIinterp\fR.
 \fIcmdName\fR may include \fB::\fR namespace qualifiers
 to identify a command in a particular namespace.
@@ -266,11 +292,10 @@ copies the information from \fI*infoPtr\fR to Tcl's internal structure
 for the command and returns 1.
 .PP
 Note that \fBTcl_SetCommandInfo\fR and
-\fBTcl_SetCommandInfoFromToken\fR both allow the ClientData for a
+\fBTcl_SetCommandInfoFromToken\fR both allow the clientData for a
 command's deletion procedure to be given a different value than the
-ClientData for its command procedure.
-.PP
-Note that neither \fBTcl_SetCommandInfo\fR nor
+clientData for its command procedure.
+Note also that neither \fBTcl_SetCommandInfo\fR nor
 \fBTcl_SetCommandInfoFromToken\fR will change a command's namespace.
 Use \fBTcl_Eval\fR to call the \fBrename\fR command to do that.
 .PP
@@ -296,6 +321,22 @@ is appended to the value specified by \fIobjPtr\fR.
 specified by the name in a \fBTcl_Obj\fR.
 The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
+.PP
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When the \fIproc\fR passed to \fBTcl_CreateObjCommand\fR is called,
+the values in its \fIobjv\fR argument will have a reference count of
+at least 1, with that guaranteed reference being from the Tcl
+evaluation stack. You should not call \fBTcl_DecrRefCount\fR on any of
+those values unless you call \fBTcl_IncrRefCount\fR on them first.
+Also, when the \fIproc\fR is called, the interpreter result is
+guaranteed to be an empty string value with a reference count of 1.
+.PP
+\fBTcl_GetCommandFullName\fR does not modify the reference count of its
+\fIobjPtr\fR argument, but does require that the object be unshared.
+.PP
+\fBTcl_GetCommandFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads.
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_ResetResult(3), Tcl_SetObjResult(3)
 .SH KEYWORDS

@@ -19,12 +19,14 @@ trace \- Monitor variable accesses, command usages and command executions
 .PP
 This command causes Tcl commands to be executed whenever certain operations are
 invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
+.\" METHOD: add
 .TP
-\fBtrace add \fItype name ops ?args?\fR
+\fBtrace add \fItype name ops\fR ?\fIargs\fR?
+.
 Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
 .RS
 .TP
-\fBtrace add command\fR \fIname ops commandPrefix\fR
+\fBtrace add command\fI name ops commandPrefix\fR
 .
 Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
 whenever command \fIname\fR is modified in one of the ways given by the list
@@ -75,7 +77,7 @@ Both \fIoldName\fR and \fInewName\fR are fully qualified with any namespace(s)
 in which they appear.
 .RE
 .TP
-\fBtrace add execution\fR \fIname ops commandPrefix\fR
+\fBtrace add execution\fI name ops commandPrefix\fR
 .
 Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
 whenever command \fIname\fR is executed, with traces occurring at the points
@@ -88,10 +90,12 @@ an error will be thrown.
 one or more of the following items:
 .TP
 \fBenter\fR
+.
 Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
 just before the actual execution takes place.
 .TP
 \fBleave\fR
+.
 Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
 just after the actual execution takes place.
 .TP
@@ -155,6 +159,7 @@ the result string.
 \fIOp\fR indicates what operation is being performed on the
 command execution, and is one of \fBleave\fR or \fBleavestep\fR as
 defined above.
+.PP
 Note that the creation of many \fBenterstep\fR or
 \fBleavestep\fR traces can lead to unintuitive results, since the
 invoked commands from one trace can themselves lead to further
@@ -186,6 +191,7 @@ The behavior of execution traces is currently undefined for a command
 .RE
 .TP
 \fBtrace add variable\fI name ops commandPrefix\fR
+.
 Arrange for \fIcommandPrefix\fR to be executed whenever variable \fIname\fR
 is accessed in one of the ways given by the list \fIops\fR.  \fIName\fR may
 refer to a normal variable, an element of an array, or to an array
@@ -201,6 +207,7 @@ queries, but not to \fBinfo exists\fR queries.
 one or more of the following items:
 .TP
 \fBarray\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is accessed or modified via
 the \fBarray\fR command, provided that \fIname\fR is not a scalar
 variable at the time that the \fBarray\fR command is invoked.  If
@@ -208,12 +215,15 @@ variable at the time that the \fBarray\fR command is invoked.  If
 command will not trigger the trace.
 .TP
 \fBread\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is read.
 .TP
 \fBwrite\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is written.
 .TP
 \fBunset\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is unset.  Variables
 can be unset explicitly with the \fBunset\fR command, or
 implicitly when procedures return (all of their local variables
@@ -228,18 +238,18 @@ When the trace triggers, three arguments are appended to
 \fIcommandPrefix name1 name2 op\fR
 .CE
 .PP
-\fIName1\fR and \fIname2\fR give the name(s) for the variable
-being accessed:  if the variable is a scalar then \fIname1\fR
-gives the variable's name and \fIname2\fR is an empty string;
-if the variable is an array element then \fIname1\fR gives the
-name of the array and name2 gives the index into the array;
-if an entire array is being deleted and the trace was registered
+\fIName1\fR gives the name for the variable being accessed.
+This is not necessarily the same as the name used in the
+\fBtrace add variable\fR command:  the \fBupvar\fR command allows a
+procedure to reference a variable under a different name.
+If the trace was originally set on an array or array element,
+\fIname2\fR provides which index into the array was affected.
+This information is present even when \fIname1\fR refers to a
+scalar, which may happen if the \fBupvar\fR command was used to
+create a reference to a single array element.
+If an entire array is being deleted and the trace was registered
 on the overall array, rather than a single element, then \fIname1\fR
 gives the array name and \fIname2\fR is an empty string.
-\fIName1\fR and \fIname2\fR are not necessarily the same as the
-name used in the \fBtrace variable\fR command:  the \fBupvar\fR
-command allows a procedure to reference a variable under a
-different name.
 \fIOp\fR indicates what operation is being performed on the
 variable, and is one of \fBread\fR, \fBwrite\fR, or \fBunset\fR as
 defined above.
@@ -301,12 +311,15 @@ but will not remove traces on the overall array.
 This command returns an empty string.
 .RE
 .RE
+.\" METHOD: remove
 .TP
 \fBtrace remove \fItype name opList commandPrefix\fR
+.
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
 .RS
 .TP
 \fBtrace remove command\fI name opList commandPrefix\fR
+.
 If there is a trace set on command \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
@@ -314,6 +327,7 @@ an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
 .TP
 \fBtrace remove execution\fI name opList commandPrefix\fR
+.
 If there is a trace set on command \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
@@ -321,17 +335,21 @@ an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
 .TP
 \fBtrace remove variable\fI name opList commandPrefix\fR
+.
 If there is a trace set on variable \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
 an empty string.
 .RE
+.\" METHOD: info
 .TP
 \fBtrace info \fItype name\fR
+.
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
 .RS
 .TP
 \fBtrace info command\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 command \fIname\fR. Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
@@ -340,6 +358,7 @@ then the result of the command will be an empty string.  If \fIname\fR
 does not exist, the command will throw an error.
 .TP
 \fBtrace info execution\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 command \fIname\fR. Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
@@ -348,6 +367,7 @@ then the result of the command will be an empty string.  If \fIname\fR
 does not exist, the command will throw an error.
 .TP
 \fBtrace info variable\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 variable \fIname\fR.  Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
@@ -355,26 +375,6 @@ associated with the trace.  If \fIname\fR does not exist or does not
 have any traces set, then the result of the command will be an empty
 string.
 .RE
-.PP
-For backwards compatibility, three other subcommands are available:
-.RS
-.TP
-\fBtrace variable \fIname ops command\fR
-This is equivalent to \fBtrace add variable \fIname ops command\fR.
-.TP
-\fBtrace vdelete \fIname ops command\fR
-This is equivalent to \fBtrace remove variable \fIname ops command\fR
-.TP
-\fBtrace vinfo \fIname\fR
-This is equivalent to \fBtrace info variable \fIname\fR
-.RE
-.PP
-These subcommands are deprecated and will likely be removed in a
-future version of Tcl.  They use an older syntax in which \fBarray\fR,
-\fBread\fR, \fBwrite\fR, \fBunset\fR are replaced by \fBa\fR, \fBr\fR,
-\fBw\fR and \fBu\fR respectively, and the \fIops\fR argument is not a
-list, but simply a string concatenation of the operations, such as
-\fBrwua\fR.
 .SH EXAMPLES
 .PP
 Print a message whenever either of the global variables \fBfoo\fR and

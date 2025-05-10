@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	the "dlopen" and "dlsym" library procedures for dynamic loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -83,19 +83,19 @@ TclpDlopen(
      * relative path.
      */
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const char *)Tcl_FSGetNativePath(pathPtr);
     /*
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
     if (flags & TCL_LOAD_GLOBAL) {
-    	dlopenflags |= RTLD_GLOBAL;
+	dlopenflags |= RTLD_GLOBAL;
     } else {
-    	dlopenflags |= RTLD_LOCAL;
+	dlopenflags |= RTLD_LOCAL;
     }
     if (flags & TCL_LOAD_LAZY) {
-    	dlopenflags |= RTLD_LAZY;
+	dlopenflags |= RTLD_LAZY;
     } else {
-    	dlopenflags |= RTLD_NOW;
+	dlopenflags |= RTLD_NOW;
     }
     handle = dlopen(native, dlopenflags);
     if (handle == NULL) {
@@ -106,9 +106,13 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = TclGetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
@@ -127,11 +131,11 @@ TclpDlopen(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
-		    Tcl_GetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr));
 	}
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -168,7 +172,7 @@ FindSymbol(
     Tcl_DString newName, ds;	/* Buffers for converting the name to
 				 * system encoding and prepending an
 				 * underscore*/
-    void *handle = (void *) loadHandle->clientData;
+    void *handle = loadHandle->clientData;
 				/* Native handle to the loaded library */
     void *proc;			/* Address corresponding to the resolved
 				 * symbol */
@@ -179,15 +183,44 @@ FindSymbol(
      * the underscore.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
+#ifdef __cplusplus
+    if (proc == NULL) {
+	char buf[32];
+	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
+	Tcl_DStringInit(&newName);
+	TclDStringAppendLiteral(&newName, "__Z");
+	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
+	native = Tcl_DStringValue(&newName);
+	proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
+	if (proc == NULL) {
+	    TclDStringAppendLiteral(&newName, "i");
+	    native = Tcl_DStringValue(&newName);
+	    proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	}
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
+	Tcl_DStringFree(&newName);
+    }
+#endif
     Tcl_DStringFree(&ds);
     if (proc == NULL) {
 	const char *errorStr = dlerror();
@@ -199,7 +232,7 @@ FindSymbol(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "cannot find symbol \"%s\": %s", symbol, errorStr));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		    NULL);
+		    (char *)NULL);
 	}
     }
     return proc;
@@ -210,15 +243,14 @@ FindSymbol(
  *
  * UnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory. Code
- *	pointers in the formerly loaded file are no longer valid after calling
- *	this function.
+ *	Unloads a dynamic shared object, after which all pointers to functions
+ *	in the formerly-loaded object are no longer valid.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Code removed from memory.
+ *	Memory for the loaded object is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -232,38 +264,38 @@ UnloadFile(
     void *handle = loadHandle->clientData;
 
     dlclose(handle);
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
  */
 
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(size_t))
 {
-    return 0;
+    return NULL;
 }
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    TCL_UNUSED(void *),
+    TCL_UNUSED(size_t),
+    TCL_UNUSED(Tcl_Size),
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_LoadHandle *),
+    TCL_UNUSED(Tcl_FSUnloadFileProc **),
+    TCL_UNUSED(int))
+{
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:

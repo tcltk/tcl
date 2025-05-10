@@ -28,8 +28,9 @@ in the list, so if a sorted list is required the caller should use
 If the initial arguments to \fBglob\fR start with \fB\-\fR then
 they are treated as switches. The following switches are
 currently supported:
+.\" OPTION: -directory
 .TP
-\fB\-directory\fR \fIdirectory\fR
+\fB\-directory\fI directory\fR
 .
 Search for files which match the given patterns starting in the given
 \fIdirectory\fR. This allows searching of directories whose name
@@ -37,19 +38,22 @@ contains glob-sensitive characters without the need to quote such
 characters explicitly. This option may not be used in conjunction with
 \fB\-path\fR, which is used to allow searching for complete file paths
 whose names may contain glob-sensitive characters.
+.\" OPTION: -join
 .TP
 \fB\-join\fR
 .
 The remaining pattern arguments, after option processing, are treated
 as a single pattern obtained by joining the arguments with directory
 separators.
+.\" OPTION: -nocomplain
 .TP
 \fB\-nocomplain\fR
 .
-Allows an empty list to be returned without error; without this
-switch an error is returned if the result list would be empty.
+Allows an empty list to be returned without error; This is the
+default behavior in Tcl 9.0, so this switch has no effect any more.
+.\" OPTION: -path
 .TP
-\fB\-path\fR \fIpathPrefix\fR
+\fB\-path\fI pathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name
 matches the given patterns. This allows searching for files with names
@@ -61,6 +65,7 @@ as $path, but differing extensions, you should use
 .QW "\fBglob \-path [file rootname $path] .*\fR"
 which will work even if \fB$path\fR contains
 numerous glob-sensitive characters.
+.\" OPTION: -tails
 .TP
 \fB\-tails\fR
 .
@@ -72,10 +77,11 @@ is equivalent to
 .QW "\fBset pwd [pwd]; cd $dir; glob *; cd $pwd\fR" .
 For \fB\-path\fR specifications, the returned names will include the last
 path segment, so
-.QW "\fBglob \-tails \-path [file rootname ~/foo.tex] .*\fR"
+.QW "\fBglob \-tails \-path [file rootname /home/fred/foo.tex] .*\fR"
 will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
+.\" OPTION: -types
 .TP
-\fB\-types\fR \fItypeList\fR
+\fB\-types\fI typeList\fR
 .
 Only list files or directories which match \fItypeList\fR, where the items
 in the list have two forms. The first form is like the \-type option of
@@ -96,11 +102,11 @@ a directory will be returned if \fB\-types d\fR was specified.
 The second form specifies types where all the types given must match.
 These are \fIr\fR, \fIw\fR, \fIx\fR as file permissions, and
 \fIreadonly\fR, \fIhidden\fR as special permission cases. On the
-Macintosh, MacOS types and creators are also supported, where any item
-which is four characters long is assumed to be a MacOS type
+Macintosh, macOS types and creators are also supported, where any item
+which is four characters long is assumed to be a macOS type
 (e.g. \fBTEXT\fR). Items which are of the form \fI{macintosh type XXXX}\fR
 or \fI{macintosh creator XXXX}\fR will match types or creators
-respectively. Unrecognized types, or specifications of multiple MacOS
+respectively. Unrecognized types, or specifications of multiple macOS
 types/creators will signal an error.
 .PP
 The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
@@ -116,6 +122,7 @@ except that the first case doesn't return the trailing
 .QW /
 and is more platform independent.
 .RE
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .
@@ -126,27 +133,17 @@ be treated as a \fIpattern\fR even if it starts with a \fB\-\fR.
 The \fIpattern\fR arguments may contain any of the following
 special characters, which are a superset of those supported by
 \fBstring match\fR:
-.TP 10
-\fB?\fR
-.
+.IP \fB?\fR 10
 Matches any single character.
-.TP 10
-\fB*\fR
-.
+.IP \fB*\fR 10
 Matches any sequence of zero or more characters.
-.TP 10
-\fB[\fIchars\fB]\fR
-.
+.IP \fB[\fIchars\fB]\fR 10
 Matches any single character in \fIchars\fR. If \fIchars\fR
 contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will match.
-.TP 10
-\fB\e\fIx\fR
-.
+.IP \fB\e\fIx\fR 10
 Matches the character \fIx\fR.
-.TP 10
-\fB{\fIa\fB,\fIb\fB,\fI...\fR}
-.
+.IP \fB{\fIa\fB,\fIb\fB,\fI...\fB}\fR 10
 Matches any of the sub-patterns \fIa\fR, \fIb\fR, etc.
 .PP
 On Unix, as with csh, a
@@ -168,16 +165,6 @@ which must be matched explicitly (this is to avoid a recursive pattern like
 from recursing up the directory hierarchy as well as down). In addition, all
 .QW /
 characters must be matched explicitly.
-.LP
-If the first character in a \fIpattern\fR is
-.QW ~
-then it refers to the home directory for the user whose name follows the
-.QW ~ .
-If the
-.QW ~
-is followed immediately by
-.QW /
-then the value of the HOME environment variable is used.
 .PP
 The \fBglob\fR command differs from csh globbing in two ways.
 First, it does not sort its result list (use the \fBlsort\fR
@@ -185,26 +172,10 @@ command if you want the list sorted).
 Second, \fBglob\fR only returns the names of files that actually
 exist; in csh no check for existence is made unless a pattern
 contains a ?, *, or [] construct.
-.LP
-When the \fBglob\fR command returns relative paths whose filenames
-start with a tilde
-.QW ~
-(for example through \fBglob *\fR or \fBglob \-tails\fR, the returned
-list will not quote the tilde with
-.QW ./ .
-This means care must be taken if those names are later to
-be used with \fBfile join\fR, to avoid them being interpreted as
-absolute paths pointing to a given user's home directory.
 .SH "WINDOWS PORTABILITY ISSUES"
 .PP
 For Windows UNC names, the servername and sharename components of the path
-may not contain ?, *, or [] constructs. On Windows NT, if \fIpattern\fR is
-of the form
-.QW \fB~\fIusername\fB@\fIdomain\fR ,
-it refers to the home
-directory of the user whose account information resides on the specified NT
-domain server. Otherwise, user account information is obtained from
-the local computer.
+may not contain ?, *, or [] constructs.
 .PP
 Since the backslash character has a special meaning to the glob
 command, glob patterns containing Windows style path separators need
@@ -239,7 +210,7 @@ Find all the Tcl files in the user's home directory, irrespective of
 what the current directory is:
 .PP
 .CS
-\fBglob\fR \-directory ~ *.tcl
+\fBglob\fR \-directory [file home] *.tcl
 .CE
 .PP
 Find all subdirectories of the current directory:

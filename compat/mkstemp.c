@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 /*
  *----------------------------------------------------------------------
@@ -32,19 +33,19 @@
 
 int
 mkstemp(
-    char *template)		/* Template for filename. */
+    char *tmpl)		/* Template for filename. */
 {
     static const char alphanumerics[] =
 	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    register char *a, *b;
+    char *a, *b;
     int fd, count, alphanumericsLen = strlen(alphanumerics); /* == 62 */
 
-    a = template + strlen(template);
-    while (a > template && *(a-1) == 'X') {
+    a = tmpl + strlen(tmpl);
+    while (a > tmpl && *(a-1) == 'X') {
 	a--;
     }
 
-    if (a == template) {
+    if (a == tmpl) {
 	errno = ENOENT;
 	return -1;
     }
@@ -71,7 +72,7 @@ mkstemp(
 	 * Template is now realized; try to open (with correct options).
 	 */
 
-	fd = open(template, O_RDWR|O_CREAT|O_EXCL, 0600);
+	fd = open(tmpl, O_RDWR|O_CREAT|O_EXCL, 0600);
     } while (fd == -1 && errno == EEXIST && --count > 0);
 
     return fd;

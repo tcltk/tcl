@@ -73,82 +73,64 @@ The size modifier field is used only when scanning a substring into
 one of Tcl's integer values.  The size modifier field dictates the
 integer range acceptable to be stored in a variable, or, for the inline
 case, in a position in the result list.
-The syntactically valid values for the size modifier are \fBh\fR, \fBL\fR,
-\fBl\fR, and \fBll\fR.  The \fBh\fR size modifier value is equivalent
-to the absence of a size modifier in the the conversion specifier.
-Either one indicates the integer range to be stored is limited to
-the same range produced by the \fBint()\fR function of the \fBexpr\fR
-command.  The \fBL\fR size modifier is equivalent to the \fBl\fR size
-modifier. Either one indicates the integer range to be stored is
-limited to the same range produced by the \fBwide()\fR function of
-the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
-the integer range to be stored is unlimited.
+The syntactically valid values for the size modifier are \fBh\fR,
+\fBl\fR, \fBz\fR, \fBt\fR, \fBq\fR, \fBj\fR, \fBll\fR, and \fBL\fR.
+The \fBh\fR size modifier value is equivalent to the absence of a size
+modifier in the the conversion specifier.  Either one indicates the
+integer range to be stored is limited to the 32-bit range.  The \fBL\fR
+size modifier is equivalent to the \fBll\fR size modifier.  Either one
+indicates the integer range to be stored is unlimited.  The \fBl\fR (or
+\fBq\fR or \fBj\fR) size modifier indicates that the integer range to be
+stored is limited to the same range produced by the \fBwide()\fR function
+of the \fBexpr\fR command. The \fBz\fR and \fBt\fR modifiers indicate the
+integer range to be the same as for either \fBh\fR or \fBl\fR, depending
+on the value of the \fBpointerSize\fR element of the \fBtcl_platform\fR array.
 .SS "MANDATORY CONVERSION CHARACTER"
 .PP
 The following conversion characters are supported:
-.TP
-\fBd\fR
-.
+.IP \fBd\fR
 The input substring must be a decimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP
-\fBo\fR
-.
+.IP \fBo\fR
 The input substring must be an octal integer. It is read in and the
 integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP
-\fBx\fR or \fBX\fR
-.
+.IP "\fBx\fR or \fBX\fR"
 The input substring must be a hexadecimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP
-\fBb\fR
-.
+.IP \fBb\fR
 The input substring must be a binary integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP
-\fBu\fR
-.
+.IP \fBu\fR
 The input substring must be a decimal integer.
 The integer value is truncated as required by the size modifier
 value, and the corresponding unsigned value for that truncated
 range is computed and stored in the variable as a decimal string.
-The conversion makes no sense without reference to a truncation range,
-so the size modifier \fBll\fR is not permitted in combination
-with conversion character \fBu\fR.
-.TP
-\fBi\fR
-.
-The input substring must be an integer.  The base (i.e. decimal, octal, or hexadecimal) is determined by the C convention (leading 0 for octal; prefix 0x for hexadecimal).  The integer value is stored in the variable,
-truncated as required by the size modifier value.
-.TP
-\fBc\fR
-.
+.IP \fBi\fR
+The input substring must be an integer.  The base (i.e. decimal,
+octal, or hexadecimal) is determined by the C convention (leading
+0 for octal; prefix 0x for hexadecimal).  The integer value is
+stored in the variable, truncated as required by the size modifier
+value.
+.IP \fBc\fR
 A single character is read in and its Unicode value is stored in
 the variable as an integer value.
 Initial white space is not skipped in this case, so the input
 substring may be a white-space character.
-.TP
-\fBs\fR
-.
+.IP \fBs\fR
 The input substring consists of all the characters up to the next
 white-space character; the characters are copied to the variable.
-.TP
-\fBe\fR or \fBf\fR or \fBg\fR or \fBE\fR or \fBG\fR
-.
+.IP "\fBe\fR or \fBf\fR or \fBg\fR or \fBE\fR or \fBG\fR"
 The input substring must be a floating-point number consisting
 of an optional sign, a string of decimal digits possibly
 containing a decimal point, and an optional exponent consisting
 of an \fBe\fR or \fBE\fR followed by an optional sign and a string of
 decimal digits.
 It is read in and stored in the variable as a floating-point value.
-.TP
-\fB[\fIchars\fB]\fR
-.
+.IP \fB[\fIchars\fB]\fR
 The input substring consists of one or more characters in \fIchars\fR.
 The matching string is stored in the variable.
 If the first character between the brackets is a \fB]\fR then
@@ -159,9 +141,7 @@ contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will match.
 If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range.
-.TP
-\fB[^\fIchars\fB]\fR
-.
+.IP \fB[^\fIchars\fB]\fR
 The input substring consists of one or more characters not in \fIchars\fR.
 The matching string is stored in the variable.
 If the character immediately following the \fB^\fR is a \fB]\fR then it is
@@ -173,9 +153,7 @@ character between \fIa\fR and \fIb\fR (inclusive) will be excluded
 from the set.
 If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range value.
-.TP
-\fBn\fR
-.
+.IP \fBn\fR
 No input is consumed from the input string.  Instead, the total number
 of characters scanned from the input string so far is stored in the variable.
 .PP
@@ -224,12 +202,10 @@ set string "#08D03F"
 \fBscan\fR $string "#%2x%2x%2x" r g b
 .CE
 .PP
-Parse a \fIHH:MM\fR time string, noting that this avoids problems with
-octal numbers by forcing interpretation as decimals (if we did not
-care, we would use the \fB%i\fR conversion instead):
+Parse a \fIHH:MM\fR time string:
 .PP
 .CS
-set string "08:08"   ;# *Not* octal!
+set string "08:08"
 if {[\fBscan\fR $string "%d:%d" hours minutes] != 2} {
     error "not a valid time string"
 }
@@ -273,8 +249,6 @@ An interactive session demonstrating the truncation of integer
 values determined by size modifiers:
 .PP
 .CS
-\fI%\fR set tcl_platform(wordSize)
-4
 \fI%\fR scan 20000000000000000000 %d
 2147483647
 \fI%\fR scan 20000000000000000000 %ld

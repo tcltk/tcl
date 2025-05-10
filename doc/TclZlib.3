@@ -18,7 +18,7 @@ int
 \fBTcl_ZlibDeflate\fR(\fIinterp, format, dataObj, level, dictObj\fR)
 .sp
 int
-\fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, dictObj\fR)
+\fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, bufferSize, dictObj\fR)
 .sp
 unsigned int
 \fBTcl_ZlibCRC32\fR(\fIinitValue, bytes, length\fR)
@@ -85,10 +85,13 @@ section \fBGZIP OPTIONS DICTIONARY\fR for details about the contents of this
 dictionary.
 .AP "unsigned int" initValue in
 The initial value for the checksum algorithm.
+.AP "Tcl_Size" bufferSize in
+A hint as to what size of buffer is to be used to receive the data.
+Use 0 to use a geric guess based on the input data.
 .AP "unsigned char" *bytes in
 An array of bytes to run the checksum algorithm over, or NULL to get the
 recommended initial value for the checksum algorithm.
-.AP int length in
+.AP Tcl_Size length in
 The number of bytes in the array.
 .AP int mode in
 What mode to operate the stream in. Should be either
@@ -107,9 +110,9 @@ if the currently compressed data must be made available for access using
 into a state where the decompressor can recover from on corruption, or
 \fBTCL_ZLIB_FINALIZE\fR to ensure that the stream is finished and that any
 trailer demanded by the format is written.
-.AP int count in
-The maximum number of bytes to get from the stream, or -1 to get all remaining
-bytes from the stream's buffers.
+.AP Tcl_Size count in
+The maximum number of bytes to get from the stream, or -1 to get
+all remaining bytes from the stream's buffers.
 .AP Tcl_Obj *compDict in
 A byte array value that is the compression dictionary to use with the stream.
 Note that this is \fInot a Tcl dictionary\fR, and it is recommended that this
@@ -188,7 +191,7 @@ is used to initialize the compression engine rather than leaving it to create
 it on the fly from the data being compressed. Setting a compression dictionary
 allows for more efficient compression in the case where the start of the data
 is highly regular, but it does require both the compressor and the
-decompressor to agreee on the value to use. Compression dictionaries are only
+decompressor to agree on the value to use. Compression dictionaries are only
 fully supported for zlib-format data; on compression, they must be set before
 any data is sent in with \fBTcl_ZlibStreamPut\fR, and on decompression they
 should be set when \fBTcl_ZlibStreamGet\fR produces an \fBerror\fR with its
@@ -219,49 +222,60 @@ an unshared dictionary value).
 .PP
 The following fields in the dictionary value are understood. All other fields
 are ignored. No field is required when creating a gzip-format stream.
-.TP
-\fBcomment\fR
-.
+.IP \fBcomment\fR
 This holds the comment field of the header, if present. If absent, no comment
 was supplied (on decompression) or will be created (on compression).
-.TP
-\fBcrc\fR
-.
+.IP \fBcrc\fR
 A boolean value describing whether a CRC of the header is computed. Note that
 the \fBgzip\fR program does \fInot\fR use or allow a CRC on the header.
-.TP
-\fBfilename\fR
-.
+.IP \fBfilename\fR
 The name of the file that held the uncompressed data. This should not contain
 any directory separators, and should be sanitized before use on decompression
 with \fBfile tail\fR.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The operating system type code field from the header (if not the
 .QW unknown
 value). See RFC 1952 for the meaning of these codes. On compression, if this
 is absent then the field will be set to the
 .QW unknown
 value.
-.TP
-\fBsize\fR
-.
+.IP \fBsize\fR
 The size of the uncompressed data. This is ignored on compression; the size
 of the data compressed depends on how much data is supplied to the
 compression engine.
-.TP
-\fBtime\fR
-.
+.IP \fBtime\fR
 The time field from the header if non-zero, expected to be the time that the
 file named by the \fBfilename\fR field was modified. Suitable for use with
 \fBclock format\fR. On creation, the right value to use is that from
 \fBclock seconds\fR or \fBfile mtime\fR.
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 The type of the uncompressed data (either \fBbinary\fR or \fBtext\fR) if
 known.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_ZlibDeflate\fR and \fBTcl_ZlibInflate\fR take a value with arbitrary
+reference count for their \fIdataObj\fR and \fIdictObj\fR arguments (the
+latter often being NULL instead), and set the interpreter result with their
+output value (or an error).  The existing interpreter result should not be
+passed as any argument value unless an additional reference is held.
+.PP
+\fBTcl_ZlibStreamInit\fR takes a value with arbitrary reference count for its
+\fIdictObj\fR argument; it only reads from it. The existing interpreter result
+should not be passed unless an additional reference is held.
+.PP
+\fBTcl_ZlibStreamGetCommandName\fR returns a zero reference count value, much
+like \fBTcl_NewObj\fR.
+.PP
+The \fIdataObj\fR argument to \fBTcl_ZlibStreamPut\fR is a value with
+arbitrary reference count; it is only ever read from.
+.PP
+The \fIdataObj\fR argument to \fBTcl_ZlibStreamGet\fR is an unshared value
+(see \fBTcl_IsShared\fR) that will be updated by the function.
+.PP
+The \fIcompDict\fR argument to \fBTcl_ZlibStreamSetCompressionDictionary\fR,
+if non-NULL, may be duplicated or may have its reference count incremented.
+Using a zero reference count value is not recommended.
+
 .SH "PORTABILITY NOTES"
 These functions will fail gracefully if Tcl is not linked with the zlib
 library.

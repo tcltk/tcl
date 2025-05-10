@@ -4,12 +4,12 @@
 
 Name:          tcl
 Summary:       Tcl scripting language development environment
-Version:       8.7a0
+Version:       9.1a0
 Release:       2
 License:       BSD
 Group:         Development/Languages
-Source:        http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
-URL:           http://www.tcl.tk/
+Source:        https://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
+URL:           https://www.tcl-lang.org/
 Buildroot:     /var/tmp/%{name}%{version}
 
 %description

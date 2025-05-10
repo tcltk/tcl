@@ -5,19 +5,19 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2007 Andreas Kupries <andreask@activestate.com>
+# Copyright © 2007 Andreas Kupries <andreask@activestate.com>
 #                                    <akupries@shaw.ca>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Custom constraints used in this file
 testConstraint testchannel [llength [info commands testchannel]]
@@ -36,8 +36,8 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 # can access this variable.
 
 set helperscript {
-    if {[lsearch [namespace children] ::tcltest] == -1} {
-	package require tcltest 2
+    if {"::tcltest" ni [namespace children]} {
+	package require tcltest 2.5
 	namespace import -force ::tcltest::*
     }
 
@@ -114,7 +114,7 @@ test iortrans-1.1 {chan, unknown method} -returnCodes error -body {
 } -match glob -result {unknown or ambiguous subcommand "foo": must be*}
 
 # --- --- --- --------- --------- ---------
-# chan push, and method "initalize"
+# chan push, and method "initialize"
 
 test iortrans-2.0 {chan push, wrong#args, not enough} -returnCodes error -body {
     chan push
@@ -601,52 +601,107 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
 # Driver for a base channel that emits several short "files"
 # with each terminated by a fleeting EOF
     proc driver {cmd args} {
-        variable ::tcl::buffer
-        variable ::tcl::index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) .....
-                return {initialize finalize watch read}
-            }
-            finalize {
-                if {![info exists index($chan)]} {return}
-                unset index($chan) buffer($chan)
+	variable ::tcl::buffer
+	variable ::tcl::index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) .....
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		if {![info exists index($chan)]} {return}
+		unset index($chan) buffer($chan)
 		array unset index
 		array unset buffer
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                if {![info exists index($chan)]} {
-                    driver initialize $chan
-                }
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                if {[string length $result] == 0} {
-                    driver finalize $chan
-                }
-                return $result
-            }
-        }
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		if {![info exists index($chan)]} {
+		    driver initialize $chan
+		}
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		if {[string length $result] == 0} {
+		    driver finalize $chan
+		}
+		return $result
+	    }
+	}
     }
+
+
+
+namespace eval reflector {
+    proc initialize {_ chan mode} {
+	return {initialize finalize watch read}
+    }
+
+
+    proc finalize {_ chan} {
+	foreach id [after info] {
+	    after cancel $id
+	}
+	namespace delete $_
+    }
+
+
+    proc read {_ chan count} {
+	namespace upvar $_ source source
+	set res [string range $source 0 $count-1]
+	set source [string range $source $count end]
+	return $res
+    }
+
+
+    proc watch {_ chan events} {
+	after 0 [list chan postevent $chan read]
+	return read
+    }
+
+    namespace ensemble create -parameters _
+    namespace export *
+}
+
+
+
+
+namespace eval inputfilter {
+    proc initialize {chan mode} {
+	return {initialize finalize read}
+    }
+
+    proc read {chan buffer} {
+	return $buffer
+    }
+
+    proc finalize chan {
+	namespace delete $chan
+    }
+
+    namespace ensemble create
+    namespace export *
+}
+
+
 
 # Channel read transform that is just the identity - pass all through
     proc idxform {cmd handle args} {
       switch -- $cmd {
-        initialize {
-            return {initialize finalize read}
-        }
-        finalize {
-            return
-        }
-        read {
-            lassign $args buffer
-            return $buffer
-        }
+	initialize {
+	    return {initialize finalize read}
+	}
+	finalize {
+	    return
+	}
+	read {
+	    lassign $args buffer
+	    return $buffer
+	}
       }
     }
 
@@ -655,7 +710,7 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
 test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] idxform]
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -663,7 +718,7 @@ test iortrans-4.10.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] idxform]
     chan configure $chan -buffersize 3
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -671,7 +726,7 @@ test iortrans-4.10.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] idxform]
     chan configure $chan -buffersize 5
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -682,16 +737,16 @@ rename idxform {}
     proc delayxform {cmd handle args} {
       variable store
       switch -- $cmd {
-        initialize {
+	initialize {
 	    set store($handle) {}
-            return {initialize finalize read drain}
-        }
-        finalize {
+	    return {initialize finalize read drain}
+	}
+	finalize {
 	    unset store($handle)
-            return
-        }
-        read {
-            lassign $args buffer
+	    return
+	}
+	read {
+	    lassign $args buffer
 	    if {$store($handle) eq {}} {
 		set reply [string index $buffer 0]
 		set store($handle) [string range $buffer 1 end]
@@ -699,8 +754,8 @@ rename idxform {}
 		set reply $store($handle)
 		set store($handle) $buffer
 	    }
-            return $reply
-        }
+	    return $reply
+	}
 	drain {
 	    delayxform read $handle {}
 	}
@@ -712,7 +767,7 @@ rename idxform {}
 test iortrans-4.11 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] delayxform]
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -720,7 +775,7 @@ test iortrans-4.11.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] delayxform]
     chan configure $chan -buffersize 3
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -728,7 +783,7 @@ test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] delayxform]
     chan configure $chan -buffersize 5
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -739,20 +794,20 @@ test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
     proc delay2xform {cmd handle args} {
       variable store
       switch -- $cmd {
-        initialize {
+	initialize {
 	    set store($handle) {}
-            return {initialize finalize read drain}
-        }
-        finalize {
+	    return {initialize finalize read drain}
+	}
+	finalize {
 	    unset store($handle)
-            return
-        }
-        read {
-            lassign $args buffer
+	    return
+	}
+	read {
+	    lassign $args buffer
 		set reply $store($handle)
 		set store($handle) $buffer
-            return $reply
-        }
+	    return $reply
+	}
 	drain {
 	    delay2xform read $handle {}
 	}
@@ -762,7 +817,7 @@ test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
 test iortrans-4.12 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] delay2xform]
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
-        [read $chan] [eof $chan]
+	[read $chan] [eof $chan]
 } -cleanup {
     close $chan
 } -result {0 ..... 1 {} 0 ..... 1}
@@ -1162,7 +1217,7 @@ test iortrans-8.3 {chan flush, bug 2921116} -match glob -setup {
 test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
-    # Magic to get the test* commands in the slaves
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 } -constraints {testchannel} -match glob -body {
@@ -1200,11 +1255,12 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
     # without invoking the transform handler.
 } -cleanup {
     tempdone
+    interp delete $idb
 } -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 test iortrans-11.1 {origin interpreter of moved transform destroyed during access} -setup {
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
-    # Magic to get the test* commands in the slaves
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 } -constraints {testchannel} -match glob -body {
@@ -1239,19 +1295,20 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	set res
     }]
 } -cleanup {
+    interp delete $idb
     tempdone
 } -result {Owner lost}
 test iortrans-11.2 {delete interp of reflected transform} -setup {
-    interp create slave
-    # Magic to get the test* commands into the slave
-    load {} Tcltest slave
+    interp create child
+    # Magic to get the test* commands into the child
+    load {} Tcltest child
 } -constraints {testchannel} -body {
-    # Get base channel into the slave
+    # Get base channel into the child
     set c [tempchan]
     testchannel cut $c
-    interp eval slave [list testchannel splice $c]
-    interp eval slave [list set c $c]
-    slave eval {
+    interp eval child [list testchannel splice $c]
+    interp eval child [list set c $c]
+    child eval {
 	proc no-op args {}
 	proc driver {c sub args} {
 	    return {initialize finalize read write}
@@ -1259,7 +1316,7 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
 	set t [chan push $c [list driver $c]]
 	chan event $c readable no-op
     }
-    interp delete slave
+    interp delete child
 } -cleanup {
     tempdone
 } -result {}
@@ -1277,7 +1334,7 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
 
 # ### ### ### ######### ######### #########
 ## Helper command. Runs a script in a separate thread and returns the result.
-## A channel is transfered into the thread as well, and a list of configuation
+## A channel is transferred into the thread as well, and a list of configuration
 ## variables
 
 proc inthread {chan script args} {
@@ -1956,7 +2013,7 @@ test iortrans.tf-8.1 {seek flushes write buffers, ignores data} -setup {
 	# The close flushes again, this modifies the file!
 	lappend notes | [close $c] |
 	# NOTE: The flush generated by the close is recorded immediately, the
-	# other note's here are defered until after the thread is done. This
+	# other note's here are deferred until after the thread is done. This
 	# changes the order of the result a bit from the non-threaded case
 	# (The first | moves one to the right). This is an artifact of the
 	# 'inthread' framework, not of the transformation itself.
@@ -2039,8 +2096,6 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
     thread::release $tidb
 } -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
 
-testConstraint notValgrind [expr {![testConstraint valgrind]}]
-
 test iortrans.tf-11.1 {origin thread of moved transform destroyed during access} -setup {
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];	#puts <<$tida>>
@@ -2087,7 +2142,39 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
     thread::release $tidb
 } -result {Owner lost}
 
-# ### ### ### ######### ######### #########
+
+test iortrans-ea69b0258a9833cb {
+    Crash when using a channel transformation on TCP client socket
+
+    "line two" does not make it into result.  This issue should probably be
+    addressed, but it is outside the scope of this test.
+} -setup {
+    set res {}
+    set read 0
+} -body {
+    namespace eval reflector1 {
+	variable source "line one\nline two"
+	interp alias {} [namespace current]::dispatch {} [
+	    namespace parent]::reflector [namespace current]
+    }
+    set chan [chan create read [namespace which reflector1::dispatch]]
+    chan configure $chan -blocking 0
+    chan push $chan inputfilter
+    chan event $chan read [list ::apply [list chan {
+	variable res
+	variable read
+	set gets [gets $chan]
+	append res $gets
+	incr read
+    } [namespace current]] $chan]
+    vwait [namespace current]::read
+    chan pop $chan
+    vwait [namespace current]::read
+    return $res
+} -cleanup {
+    catch {unset read}
+    close $chan
+} -result {line one}
 
 cleanupTests
 return

@@ -40,6 +40,14 @@
 #   define _TCHAR_DEFINED
 #endif
 
+#ifndef MODULE_SCOPE
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -50,39 +58,27 @@ extern "C" {
  * Exported function declarations:
  */
 
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-/* 0 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
-				Tcl_DString *dsPtr);
-/* 1 */
-EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
-				Tcl_DString *dsPtr);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 0 */
-EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-				const char *bundleName, int hasResourceFile,
-				int maxPathLen, char *libraryPath);
+/* Slot 0 is reserved */
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
 				const char *bundleVersion,
-				int hasResourceFile, int maxPathLen,
+				int hasResourceFile, Tcl_Size maxPathLen,
 				char *libraryPath);
-#endif /* MACOSX */
+/* 2 */
+EXTERN void		Tcl_MacOSXNotifierAddRunLoopMode(
+				const void *runLoopMode);
+/* 3 */
+EXTERN void		Tcl_WinConvertError(unsigned errCode);
 
 typedef struct TclPlatStubs {
     int magic;
     void *hooks;
 
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
-    char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
-#endif /* MACOSX */
+    void (*reserved0)(void);
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath); /* 1 */
+    void (*tcl_MacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 2 */
+    void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
 } TclPlatStubs;
 
 extern const TclPlatStubs *tclPlatStubsPtr;
@@ -97,26 +93,41 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-#define Tcl_WinUtfToTChar \
-	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
-#define Tcl_WinTCharToUtf \
-	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define Tcl_MacOSXOpenBundleResources \
-	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
+/* Slot 0 is reserved */
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
-#endif /* MACOSX */
+#define Tcl_MacOSXNotifierAddRunLoopMode \
+	(tclPlatStubsPtr->tcl_MacOSXNotifierAddRunLoopMode) /* 2 */
+#define Tcl_WinConvertError \
+	(tclPlatStubsPtr->tcl_WinConvertError) /* 3 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
 
+#ifdef MAC_OSX_TCL /* MACOSX */
+#undef Tcl_MacOSXOpenBundleResources
+#define Tcl_MacOSXOpenBundleResources(a,b,c,d,e) Tcl_MacOSXOpenVersionedBundleResources(a,b,NULL,c,d,e)
+#endif
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#ifdef _WIN32
+#   undef Tcl_CreateFileHandler
+#   undef Tcl_DeleteFileHandler
+#   undef Tcl_GetOpenFile
+#endif
+#ifndef MAC_OSX_TCL
+#   undef Tcl_MacOSXOpenVersionedBundleResources
+#   undef Tcl_MacOSXNotifierAddRunLoopMode
+#endif
+
+#ifdef _WIN32
+#define Tcl_WinUtfToTChar(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
+	(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
+#define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
+	Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+#endif
+
 #endif /* _TCLPLATDECLS */
-
-

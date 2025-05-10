@@ -14,7 +14,6 @@ error \- Generate an error
 .SH SYNOPSIS
 \fBerror \fImessage\fR ?\fIinfo\fR? ?\fIcode\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Returns a \fBTCL_ERROR\fR code, which causes command interpretation to be

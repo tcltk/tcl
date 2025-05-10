@@ -4,20 +4,20 @@
 # procedures. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testdstring [llength [info commands testdstring]]
 if {[testConstraint testdstring]} {
@@ -180,16 +180,69 @@ test dstring-2.12 {appending list elements} -constraints testdstring -setup {
 } -cleanup {
     testdstring free
 } -result {x #}
-test dstring-2.13 {appending list elements} -constraints testdstring -body {
-    # This test shows lack of sophistication in Tcl_DStringAppendElement's
-    # decision about whether #-quoting can be disabled.
+test dstring-2.13 {appending list elements} -constraints testdstring -setup {
     testdstring free
+} -body {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
     testdstring append "x " -1
     testdstring element #
     testdstring get
 } -cleanup {
     testdstring free
-} -result {x {#}}
+} -result {x #}
+test dstring-2.14 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "  " -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {  {#}}
+test dstring-2.15 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring append "x  " -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x  #}
+test dstring-2.16 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\n"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result \\\\\\n
+test dstring-2.17 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\{"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \{]]
+test dstring-2.18 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\}"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \}]]
+test dstring-2.19 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\\\\"; # Will setfault
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result [list [list \\]]
 
 test dstring-3.1 {nested sublists} -constraints testdstring -setup {
     testdstring free
@@ -306,10 +359,11 @@ test dstring-3.9 {appending list elements} -constraints testdstring -setup {
 } -cleanup {
     testdstring free
 } -result {x {x #}}
-test dstring-3.10 {appending list elements} -constraints testdstring -body {
-    # This test shows lack of sophistication in Tcl_DStringAppendElement's
-    # decision about whether #-quoting can be disabled.
+test dstring-3.10 {appending list elements} -constraints testdstring -setup {
     testdstring free
+} -body {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
     testdstring append x -1
     testdstring start
     testdstring append "x " -1
@@ -318,7 +372,33 @@ test dstring-3.10 {appending list elements} -constraints testdstring -body {
     testdstring get
 } -cleanup {
     testdstring free
-} -result {x {x {#}}}
+} -result {x {x #}}
+test dstring-3.11 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring start
+    testdstring append "  " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {  {#}}}
+test dstring-3.12 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    # This test checks the sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring append x -1
+    testdstring start
+    testdstring append "x  " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {x  #}}
 
 test dstring-4.1 {truncation} -constraints testdstring -setup {
     testdstring free
@@ -334,6 +414,24 @@ test dstring-4.2 {truncation} -constraints testdstring -setup {
 } -body {
     testdstring append "xyzzy" -1
     testdstring trunc 0
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{} 0}
+test dstring-4.3 {truncation} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "xwvut" -1
+    # Pass a negative length to Tcl_DStringSetLength();
+    # if not caught, causing '\0' to be written out-of-bounds,
+    # try corrupting dsPtr->length which begins
+    # 2*sizeof(Tcl_Size) bytes before dsPtr->staticSpace[],
+    # so that the result is -256 (on little endian systems)
+    # rather than e.g. -8 or -16.
+    # (sizeof(Tcl_Size) does not seem to be available via Tcl,
+    # so assume sizeof(Tcl_Size) == sizeof(void*) for Tcl 9.)
+    testdstring trunc [expr {-2*([package vsatisfies $tcl_version 9.0-]
+	? $tcl_platform(pointerSize) : 4)}]
     list [testdstring get] [testdstring length]
 } -cleanup {
     testdstring free
@@ -425,6 +523,45 @@ test dstring-6.5 {Tcl_DStringGetResult} -constraints testdstring -body {
 } -cleanup {
     testdstring free
 } -result {{} {This is a specially-allocated stringz}}
+
+test dstring-7.1 {copying to Tcl_Obj} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append xyz -1
+    list [testdstring toobj] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {xyz 0}
+test dstring-7.2 {copying to a Tcl_Obj} -constraints testdstring -setup {
+    testdstring free
+    unset -nocomplain a
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
+    }
+    set a [testdstring toobj]
+    testdstring append abc -1
+    list $a [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{aaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbb
+ccccccccccccccccccccc
+ddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeee
+fffffffffffffffffffff
+ggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhhhhh
+iiiiiiiiiiiiiiiiiiiii
+jjjjjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkkkkk
+lllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnnnnn
+ooooooooooooooooooooo
+ppppppppppppppppppppp
+} abc}
+
 
 # cleanup
 if {[testConstraint testdstring]} {

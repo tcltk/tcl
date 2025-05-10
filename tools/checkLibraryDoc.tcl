@@ -3,7 +3,7 @@
 # This script attempts to determine what APIs exist in the source base that
 # have not been documented.  By grepping through all of the doc/*.3 man
 # pages, looking for "Pkg_*" (e.g., Tcl_ or Tk_), and comparing this list
-# against the list of Pkg_ APIs found in the source (e.g., tcl8.2/*/*.[ch])
+# against the list of Pkg_ APIs found in the source (e.g., tcl9.0/*/*.[ch])
 # we create six lists:
 #      1) APIs in Source not in Docs.
 #      2) APIs in Docs not in Source.
@@ -16,7 +16,7 @@
 # non-standard code, this script will produce erroneous results.  Each
 # list should be carefully checked for accuracy.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1998-1999 Scriptics Corporation.
 # All rights reserved.
 
 
@@ -43,15 +43,12 @@ set StructList {
     Tcl_Pid \
     Tcl_QueuePosition \
     Tcl_ResolvedVarInfo \
-    Tcl_SavedResult \
     Tcl_ThreadDataKey \
     Tcl_ThreadId \
     Tcl_Time \
     Tcl_TimerToken \
     Tcl_Token \
     Tcl_Trace \
-    Tcl_Value \
-    Tcl_ValueType \
     Tcl_Var \
     Tk_3DBorder \
     Tk_ArgvInfo \
@@ -69,6 +66,7 @@ set StructList {
     Tk_GeomMgr \
     Tk_Image \
     Tk_ImageMaster \
+    Tk_ImageModel \
     Tk_ImageType \
     Tk_Item \
     Tk_ItemType \
@@ -106,7 +104,6 @@ proc main {} {
     if {($len != 2) && ($len != 3)} {
 	puts "usage: $argv0 pkgName pkgDir \[outFile\]"
 	puts "   pkgName == Tcl,Tk"
-	puts "   pkgDir  == /home/surles/cvs/tcl8.2"
 	exit 1
     }
 

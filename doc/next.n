@@ -12,7 +12,7 @@
 next, nextto \- invoke superclass method implementations
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBnext\fR ?\fIarg ...\fR?
 \fBnextto\fI class\fR ?\fIarg ...\fR?
@@ -34,10 +34,10 @@ chain.
 .PP
 The \fBnextto\fR command is the same as the \fBnext\fR command, except that it
 takes an additional \fIclass\fR argument that identifies a class whose
-implementation of the current method chain (see \fBinfo object\fR \fBcall\fR) should
-be used; the method implementation selected will be the one provided by the
-given class, and it must refer to an existing non-filter invocation that lies
-further along the chain than the current implementation.
+implementation of the current method chain (see \fBinfo object\fR \fBcall\fR)
+should be used; the method implementation selected will be the one provided by
+the given class, and it must refer to an existing non-filter invocation that
+lies further along the chain than the current implementation.
 .SH "THE METHOD CHAIN"
 .PP
 When a method of an object is invoked, things happen in several stages:
@@ -96,7 +96,7 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are invoked when processing an invokation of the \fBunknown\fR
+Filters are invoked when processing an invocation of the \fBunknown\fR
 method because of a failure to locate a method implementation, but \fInot\fR
 when invoking either constructors or destructors. (Note however that the
 \fBdestroy\fR method is a conventional method, and filters are invoked as
@@ -112,6 +112,7 @@ oo::class create theSuperclass {
         puts "in the superclass, args = $args"
     }
 }
+
 oo::class create theSubclass {
     superclass theSuperclass
     method example {args} {
@@ -121,6 +122,7 @@ oo::class create theSubclass {
         puts "after chaining from subclass"
     }
 }
+
 theSubclass create obj
 oo::objdefine obj method example args {
     puts "per-object method, args = $args"
@@ -167,6 +169,7 @@ oo::class create cache {
         \fI# Compute value, insert into cache, and return it\fR
         return [set ValueCache($key) [\fBnext\fR {*}$args]]
     }
+
     method flushCache {} {
         my variable ValueCache
         unset ValueCache
@@ -178,10 +181,12 @@ oo::class create cache {
 oo::object create demo
 oo::objdefine demo {
     mixin cache
+
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a + $b * $c}]
     }
+
     method compute2 {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
         return [expr {$a * $b + $c}]

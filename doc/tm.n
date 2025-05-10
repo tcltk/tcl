@@ -15,7 +15,7 @@ tm \- Facilities for locating and loading of Tcl Modules
 \fB::tcl::tm::path add \fR?\fIpath\fR...?
 \fB::tcl::tm::path remove \fR?\fIpath\fR...?
 \fB::tcl::tm::path list\fR
-\fB::tcl::tm::roots \fR?\fIpath\fR...?
+\fB::tcl::tm::roots \fR\fIpaths\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -23,6 +23,8 @@ tm \- Facilities for locating and loading of Tcl Modules
 This document describes the facilities for locating and loading Tcl
 Modules (see \fBMODULE DEFINITION\fR for the definition of a Tcl Module).
 The following commands are supported:
+.\" COMMAND: path
+.\" METHOD: add
 .TP
 \fB::tcl::tm::path add \fR?\fIpath\fR...?
 .
@@ -45,21 +47,24 @@ list. As they are added to the front of the list they are searched in
 reverse order of addition. In other words, the paths added last are
 looked at first.
 .RE
+.\" METHOD: remove
 .TP
 \fB::tcl::tm::path remove \fR?\fIpath\fR...?
 .
 Removes the paths from the list of module paths. The command silently
 ignores all paths which are not on the list.
+.\" METHOD: list
 .TP
 \fB::tcl::tm::path list\fR
 .
 Returns a list containing all registered module paths, in the order
 that they are searched for modules.
+.\" COMMAND: roots
 .TP
-\fB::tcl::tm::roots \fR?\fIpath\fR...?
+\fB::tcl::tm::roots \fR\fIpaths\fR
 .
 Similar to \fBpath add\fR, and layered on top of it. This command
-takes a list of paths, extends each with
+takes a single argument containing a list of paths, extends each with
 .QW "\fBtcl\fIX\fB/site-tcl\fR" ,
 and
 .QW "\fBtcl\fIX\fB/\fIX\fB.\fIy\fR" ,
@@ -285,22 +290,23 @@ These paths are seen and therefore shared by all Tcl shells in the
 \fB$::env(PATH)\fR of the user.
 .PP
 Note that \fIX\fR and \fIy\fR follow the general rules set out
-above. In other words, Tcl 8.4, for example, will look at these 10
+above. In other words, Tcl 9.1, for example, will look at these 4
 environment variables:
 .PP
 .CS
-\fB$::env(TCL8.4_TM_PATH)\fR  \fB$::env(TCL8_4_TM_PATH)\fR
-\fB$::env(TCL8.3_TM_PATH)\fR  \fB$::env(TCL8_3_TM_PATH)\fR
-\fB$::env(TCL8.2_TM_PATH)\fR  \fB$::env(TCL8_2_TM_PATH)\fR
-\fB$::env(TCL8.1_TM_PATH)\fR  \fB$::env(TCL8_1_TM_PATH)\fR
-\fB$::env(TCL8.0_TM_PATH)\fR  \fB$::env(TCL8_0_TM_PATH)\fR
+\fB$::env(TCL9.1_TM_PATH)\fR  \fB$::env(TCL9_1_TM_PATH)\fR
+\fB$::env(TCL9.0_TM_PATH)\fR  \fB$::env(TCL9_0_TM_PATH)\fR
 .CE
+.PP
+Paths initialized from the environment variables undergo tilde
+substitution (see \fBfilename\fR). Any path whose tilde substitution
+fails because the user is unknown will be omitted from search paths.
 .SH "SEE ALSO"
 package(n), Tcl Improvement Proposal #189
 .QW "\fITcl Modules\fR"
-(online at http://tip.tcl.tk/189.html), Tcl Improvement Proposal #190
+(online at https://core.tcl-lang.org/tips/doc/trunk/tip/189.md), Tcl Improvement Proposal #190
 .QW "\fIImplementation Choices for Tcl Modules\fR"
-(online at http://tip.tcl.tk/190.html)
+(online at https://core.tcl-lang.org/tips/doc/trunk/tip/190.md)
 .SH "KEYWORDS"
 modules, package
 .\" Local Variables:

@@ -70,7 +70,7 @@ waitpid(
     int options)		/* OR'ed combination of WNOHANG and
 				 * WUNTRACED. */
 {
-    register WaitInfo *waitPtr, *prevPtr;
+    WaitInfo *waitPtr, *prevPtr;
     pid_t result;
     WAIT_STATUS_TYPE status;
 
@@ -100,7 +100,7 @@ waitpid(
 	} else {
 	    prevPtr->nextPtr = waitPtr->nextPtr;
 	}
-	ckfree(waitPtr);
+	Tcl_Free(waitPtr);
 	return result;
     }
 
@@ -156,7 +156,11 @@ waitpid(
 		goto waitAgain;
 	    }
 	}
-	waitPtr = (WaitInfo *) ckalloc(sizeof(WaitInfo));
+	waitPtr = (WaitInfo *) Tcl_AttemptAlloc(sizeof(WaitInfo));
+	if (!waitPtr) {
+	    errno = ENOMEM;
+	    return -1;
+	}
 	waitPtr->pid = result;
 	waitPtr->status = status;
 	waitPtr->nextPtr = deadList;

@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright © 1997 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -53,7 +53,7 @@ proc ::history {args} {
     }
 
     # Tricky stuff needed to make stack and errors come out right!
-    tailcall apply {arglist {tailcall history {*}$arglist} ::tcl} $args
+    tailcall apply {arglist {tailcall ::tcl::history {*}$arglist} ::tcl} $args
 }
 
 # (unnamed) --
@@ -89,7 +89,7 @@ trace add command ::history delete [list apply {{oldName newName op} {
 #	exec		(optional) a substring of "exec" causes the command to
 #			be evaled.
 # Results:
-# 	If executing, then the results of the command are returned
+#	If executing, then the results of the command are returned
 #
 # Side Effects:
 #	Adds to the history list
@@ -197,7 +197,7 @@ proc ::tcl::HistInfo {{count {}}} {
 	if {![info exists history($i)]} {
 	    continue
 	}
-        set cmd [string map [list \n \n\t] [string trimright $history($i) \ \n]]
+	set cmd [string map [list \n \n\t] [string trimright $history($i) \ \n]]
 	append result $newline[format "%6d  %s" $i $cmd]
 	set newline \n
     }
@@ -268,7 +268,7 @@ proc ::tcl::HistIndex {event} {
 	return -code error "event \"$event\" is too far in the past"
     }
     if {$i > $history(nextid)} {
-	return -code error "event \"$event\" hasn't occured yet"
+	return -code error "event \"$event\" hasn't occurred yet"
     }
     return $i
 }

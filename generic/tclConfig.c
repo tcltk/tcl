@@ -4,7 +4,7 @@
  *	This file provides the facilities which allow Tcl and other packages
  *	to embed configuration information into their binary libraries.
  *
- * Copyright (c) 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -31,7 +31,7 @@
  * the (Tcl_Interp *) in which it is stored, and the encoding.
  */
 
-typedef struct QCCD {
+typedef struct {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
     char *encoding;
@@ -41,13 +41,10 @@ typedef struct QCCD {
  * Static functions in this file:
  */
 
-static int		QueryConfigObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj *const *objv);
-static void		QueryConfigDelete(ClientData clientData);
+static Tcl_ObjCmdProc		QueryConfigObjCmd;
+static Tcl_CmdDeleteProc	QueryConfigDelete;
+static Tcl_InterpDeleteProc	ConfigDictDeleteProc;
 static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
-static void		ConfigDictDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -79,11 +76,11 @@ Tcl_RegisterConfig(
     Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
-    QCCD *cdPtr = ckalloc(sizeof(QCCD));
+    QCCD *cdPtr = (QCCD *)Tcl_Alloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
     if (valEncoding) {
-	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	cdPtr->encoding = (char *)Tcl_Alloc(strlen(valEncoding)+1);
 	strcpy(cdPtr->encoding, valEncoding);
     } else {
 	cdPtr->encoding = NULL;
@@ -130,7 +127,7 @@ Tcl_RegisterConfig(
      */
 
     for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+	TclDictPut(interp, pkgDict, cfg->key,
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
 
@@ -181,10 +178,10 @@ Tcl_RegisterConfig(
  * QueryConfigObjCmd --
  *
  *	Implementation of "::<package>::pkgconfig", the command to query
- *	configuration information embedded into a binary library.
+ *	configuration information embedded into a library.
  *
  * Results:
- *	A standard tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	See the manual for what this command does.
@@ -194,21 +191,21 @@ Tcl_RegisterConfig(
 
 static int
 QueryConfigObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
-    struct Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv)
 {
-    QCCD *cdPtr = clientData;
+    QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, index;
+    Tcl_Size m, n = 0;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
 	CFG_GET, CFG_LIST
-    };
+    } index;
     Tcl_DString conv;
     Tcl_Encoding venc = NULL;
     const char *value;
@@ -232,11 +229,11 @@ QueryConfigObjCmd(
 
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
-		TclGetString(pkgName), NULL);
+		TclGetString(pkgName), (char *)NULL);
 	return TCL_ERROR;
     }
 
-    switch ((enum subcmds) index) {
+    switch (index) {
     case CFG_GET:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "key");
@@ -247,7 +244,7 @@ QueryConfigObjCmd(
 		|| val == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
-		    TclGetString(objv[2]), NULL);
+		    TclGetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -261,7 +258,10 @@ QueryConfigObjCmd(
 	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
 	 * so we have to decode it first.
 	 */
-	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
+	value = (const char *) Tcl_GetBytesFromObj(interp, val, &n);
+	if (value == NULL) {
+	    return TCL_ERROR;
+	}
 	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
 		Tcl_DStringLength(&conv)));
@@ -274,17 +274,17 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_DictObjSize(interp, pkgDict, &n);
-	listPtr = Tcl_NewListObj(n, NULL);
+	Tcl_DictObjSize(interp, pkgDict, &m);
+	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "insufficient memory to create list", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
-	if (n) {
+	if (m) {
 	    Tcl_DictSearch s;
 	    Tcl_Obj *key;
 	    int done;
@@ -324,18 +324,18 @@ QueryConfigObjCmd(
 
 static void
 QueryConfigDelete(
-    ClientData clientData)
+    void *clientData)
 {
-    QCCD *cdPtr = clientData;
+    QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
 
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
     if (cdPtr->encoding) {
-	ckfree(cdPtr->encoding);
+	Tcl_Free(cdPtr->encoding);
     }
-    ckfree(cdPtr);
+    Tcl_Free(cdPtr);
 }
 
 /*
@@ -359,7 +359,7 @@ static Tcl_Obj *
 GetConfigDict(
     Tcl_Interp *interp)
 {
-    Tcl_Obj *pDB = Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
+    Tcl_Obj *pDB = (Tcl_Obj *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (pDB == NULL) {
 	pDB = Tcl_NewDictObj();
@@ -391,12 +391,10 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    ClientData clientData,	/* Pointer to Tcl_Obj. */
-    Tcl_Interp *interp)		/* Interpreter being deleted. */
+    void *clientData,		/* Pointer to Tcl_Obj. */
+    TCL_UNUSED(Tcl_Interp *))
 {
-    Tcl_Obj *pDB = clientData;
-
-    Tcl_DecrRefCount(pDB);
+    Tcl_DecrRefCount((Tcl_Obj *)clientData);
 }
 
 /*

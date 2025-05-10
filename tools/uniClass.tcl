@@ -16,33 +16,33 @@ proc emitRange {first last} {
     global ranges numranges chars numchars extchars extranges
 
     if {$first < ($last-1)} {
-	if {!$extranges && ($first) > 0xffff} {
+	if {!$extranges && ($first) > 0xFFFF} {
 	    set extranges 1
 	    set numranges 0
 	    set ranges [string trimright $ranges " \n\r\t,"]
-	    append ranges "\n#if TCL_UTF_MAX > 4\n    ,"
+	    append ranges "\n#if CHRBITS > 16\n    ,"
 	}
-	append ranges [format "{0x%x, 0x%x}, " \
+	append ranges [format "{0x%X, 0x%X}, " \
 		$first $last]
 	if {[incr numranges] % 4 == 0} {
 	    set ranges [string trimright $ranges]
 	    append ranges "\n    "
 	}
     } else {
-	if {!$extchars && ($first) > 0xffff} {
+	if {!$extchars && ($first) > 0xFFFF} {
 	    set extchars 1
 	    set numchars 0
 	    set chars [string trimright $chars " \n\r\t,"]
-	    append chars "\n#if TCL_UTF_MAX > 4\n    ,"
+	    append chars "\n#if CHRBITS > 16\n    ,"
 	}
-	append chars [format "0x%x, " $first]
+	append chars [format "0x%X, " $first]
 	incr numchars
 	if {$numchars % 9 == 0} {
 	    set chars [string trimright $chars]
 	    append chars "\n    "
 	}
 	if {$first != $last} {
-	    append chars [format "0x%x, " $last]
+	    append chars [format "0x%X, " $last]
 	    incr numchars
 	    if {$numchars % 9 == 0} {
 		append chars "\n    "
@@ -63,11 +63,15 @@ proc genTable {type} {
     set extchars 0
     set extranges 0
 
-    for {set i 0} {$i <= 0x10ffff} {incr i} {
-    if {$i == 0xd800} {
-	# Skip surrogates
-	set i 0xdc00
-    }
+    for {set i 0} {$i <= 0xEFFFF} {incr i} {
+	if {$i == 0xD800} {
+	    # Skip surrogates
+	    set i 0xE000
+	}
+	if {$i == 0xE000} {
+	    # Skip private
+	    set i 0xF900
+	}
 	if {[string is $type [format %c $i]]} {
 	    if {$i == ($last + 1)} {
 		set last $i
@@ -92,13 +96,13 @@ proc genTable {type} {
     }
     if {$ranges ne ""} {
 	puts "static const crange ${type}RangeTable\[\] = {\n$ranges\n};\n"
-	puts "#define NUM_[string toupper $type]_RANGE (sizeof(${type}RangeTable)/sizeof(crange))\n"
+	puts "#define NUM_[string toupper $type]_RANGE ((int)(sizeof(${type}RangeTable)/sizeof(crange)))\n"
     } else {
 	puts "/* no contiguous ranges of $type characters */\n"
     }
     if {$chars ne ""} {
 	puts "static const chr ${type}CharTable\[\] = {\n$chars\n};\n"
-	puts "#define NUM_[string toupper $type]_CHAR (sizeof(${type}CharTable)/sizeof(chr))\n"
+	puts "#define NUM_[string toupper $type]_CHAR ((int)(sizeof(${type}CharTable)/sizeof(chr)))\n"
     } else {
 	puts "/*\n * no singletons of $type characters.\n */\n"
     }

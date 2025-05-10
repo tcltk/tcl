@@ -4,20 +4,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testupvar [llength [info commands testupvar]]
 
@@ -187,26 +187,87 @@ test upvar-4.2 {nested upvars} {
 
 proc tproc {args} {global x; set x [list $args [uplevel info vars]]}
 test upvar-5.1 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add var c {read write} tproc; p2}
     proc p2 {} {upvar c x1; set x1 22}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} w} x1}
+} {{x1 {} write} x1}
 test upvar-5.2 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add var c {read write} tproc; p2}
     proc p2 {} {upvar c x1; set x1}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} r} x1}
+} {{x1 {} read} x1}
 test upvar-5.3 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rwu tproc; p2}
+    proc p1 {a b} {set c 22; set d 33; trace add var c {read write unset} tproc; p2}
     proc p2 {} {upvar c x1; unset x1}
     set x ---
     p1 foo bar
     set x
-} {{x1 {} u} x1}
+} {{x1 {} unset} x1}
+test upvar-5.4 {read trace on upvar array element} -body {
+    proc p1 {a b} {
+	array set foo {c 22 d 33}
+	trace add variable foo {read write unset} tproc
+	p2
+	trace remove variable foo {read write unset} tproc
+    }
+    proc p2 {} {
+	upvar foo(c) x1
+	set x1
+    }
+    set x ---
+    p1 foo bar
+    set x
+} -result {{x1 c read} x1}
+test upvar-5.5 {write trace on upvar array element} -body {
+    proc p1 {a b} {
+	array set foo {c 22 d 33}
+	trace add variable foo {read write unset} tproc
+	p2
+	trace remove variable foo {read write unset} tproc
+    }
+    proc p2 {} {
+	upvar foo(c) x1
+	set x1 22
+    }
+    set x ---
+    p1 foo bar
+    set x
+} -result {{x1 c write} x1}
+test upvar-5.6 {unset trace on upvar array element} -body {
+    proc p1 {a b} {
+	array set foo {c 22 d 33}
+	trace add variable foo {read write unset} tproc
+	p2
+	trace remove variable foo {read write unset} tproc
+    }
+    proc p2 {} {
+	upvar foo(c) x1
+	unset x1
+    }
+    set x ---
+    p1 foo bar
+    set x
+} -result {{x1 c unset} x1}
+test upvar-5.7 {trace on non-existent upvar array element} -body {
+    proc p1 {a b} {
+	array set foo {}
+	trace add variable foo {read write unset} tproc
+	p2
+	trace remove variable foo {read write unset} tproc
+	return [array get foo]
+    }
+    proc p2 {} {
+	upvar foo(hi) x1
+	set x1 there
+    }
+    set x ---
+    lappend x [p1 foo bar]
+    set x
+} -result {{x1 hi write} x1 {hi there}}
 
 test upvar-6.1 {retargeting an upvar} {
     proc p1 {} {
@@ -248,6 +309,33 @@ test upvar-6.3 {retargeting an upvar} {
     }
     p1
 } {abcde 44}
+
+
+
+test upvar-6.4 {
+	retargeting a variable created by upvar to itself is allowed
+} -body {
+	catch {
+		unset x
+	}
+	catch {
+		unset y
+	}
+	set res {}
+    set x abcde
+	set res [catch {
+		upvar 0 x x
+	} cres copts]
+	lappend res [dict get $copts -errorcode]
+	upvar 0 x y
+	lappend res $y
+	upvar 0 y y
+	lappend res $y
+	return $res
+} -cleanup {
+	upvar 0 {} y
+} -result {1 {TCL UPVAR SELF} abcde abcde}
+
 
 test upvar-7.1 {upvar to same level} {
     set x 44
@@ -304,6 +392,17 @@ test upvar-8.3 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar a b c}
     p1
 } -result {bad level "a"}
+test upvar-8.3.1 {bad level for upvar (upvar at top-level, bug [775ee88560])} -body {
+    proc p1 {} { uplevel { upvar b b; lappend b UNEXPECTED } }
+    uplevel #0 { p1 }
+} -returnCodes error -result {bad level "1"}
+test upvar-8.3.2 {bad level for upvar (upvar at top-level, bug [775ee88560])} -setup {
+    interp create i
+} -body {
+    i eval { upvar b b; lappend b UNEXPECTED }
+} -returnCodes error -result {bad level "1"} -cleanup {
+    interp delete i
+}
 test upvar-8.4 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar 0 b b}
     p1
@@ -317,7 +416,7 @@ test upvar-8.6 {errors in upvar command} -returnCodes error -body {
     p1
 } -result {variable "a" already exists}
 test upvar-8.7 {errors in upvar command} -returnCodes error -body {
-    proc p1 {} {trace variable a w foo; upvar b a}
+    proc p1 {} {trace add variable a write foo; upvar b a}
     p1
 } -result {variable "a" has traces: can't use for upvar}
 test upvar-8.8 {create nested array with upvar} -body {
@@ -355,7 +454,11 @@ test upvar-8.11 {upvar will not create a variable that looks like an array} -set
 
 test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
     list [catch {testupvar xyz a {} x global} msg] $msg
-} {1 {bad level "xyz"}}
+} {1 {bad level "1"}}
+test upvar-9.1.1 {TclGetFrame, via Tcl_UpVar2} testupvar {
+    apply {{} {testupvar xyz a {} x local; set x foo}}
+    set a
+} foo
 test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
     catch {unset a}
     catch {unset x}
@@ -418,8 +521,8 @@ test upvar-10.1 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        upvar 1 {*}{
-        } [return [incr n -[linenumber]]] x
+	upvar 1 {*}{
+	} [return [incr n -[linenumber]]] x
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -552,8 +655,8 @@ test upvar-NS-3.1 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        namespace upvar {*}{
-        } [return [incr n -[linenumber]]] x y
+	namespace upvar {*}{
+	} [return [incr n -[linenumber]]] x y
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -562,8 +665,8 @@ test upvar-NS-3.2 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        namespace upvar :: {*}{
-        } [return [incr n -[linenumber]]] x
+	namespace upvar :: {*}{
+	} [return [incr n -[linenumber]]] x
     }} [linenumber]
 } -cleanup {
     rename linenumber {}
@@ -572,8 +675,8 @@ test upvar-NS-3.3 {CompileWord OBOE} -setup {
     proc linenumber {} {dict get [info frame -1] line}
 } -body {
     apply {n {
-        variable x {*}{
-        } [return [incr n -[linenumber]]]
+	variable x {*}{
+	} [return [incr n -[linenumber]]]
     }} [linenumber]
 } -cleanup {
     rename linenumber {}

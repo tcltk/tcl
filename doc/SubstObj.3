@@ -15,6 +15,7 @@ Tcl_SubstObj \- perform substitutions on Tcl values
 .sp
 Tcl_Obj *
 \fBTcl_SubstObj\fR(\fIinterp, objPtr, flags\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp **termPtr
 .AP Tcl_Interp *interp in
@@ -24,7 +25,7 @@ message.
 .AP Tcl_Obj *objPtr in
 A Tcl value containing the string to perform substitutions on.
 .AP int flags in
-ORed combination of flag bits that specify which substitutions to
+OR'ed combination of flag bits that specify which substitutions to
 perform.  The flags \fBTCL_SUBST_COMMANDS\fR,
 \fBTCL_SUBST_VARIABLES\fR and \fBTCL_SUBST_BACKSLASHES\fR are
 currently supported, and \fBTCL_SUBST_ALL\fR is provided as a
@@ -62,6 +63,13 @@ result of the whole substitution on \fIobjPtr\fR will be truncated at
 the point immediately before the start of the command substitution,
 and no characters will be added to the result or substitutions
 performed after that point.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjPtr\fR argument to \fBTcl_SubstObj\fR must not have a reference
+count of zero. This function modifies the interpreter result, both on success
+and on failure; the result of this function on success is exactly the current
+interpreter result. Successful results should have their reference count
+incremented if they are to be retained.
 .SH "SEE ALSO"
 subst(n)
 .SH KEYWORDS

@@ -22,21 +22,28 @@ of one or more subprocesses to execute.
 The arguments take the form of a standard shell pipeline
 where each \fIarg\fR becomes one word of a command, and
 each distinct command becomes a subprocess.
+The result of the command is the standard output of the final subprocess in
+the pipeline, interpreted using the system \fBencoding\fR; to use any other
+encoding (especially including binary data), the pipeline must be
+\fBopen\fRed, configured and read explicitly.
 .PP
 If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
 of the pipeline specification.  The following switches are
 currently supported:
+.\" OPTION: -ignorestderr
 .TP 13
 \fB\-ignorestderr\fR
 .
 Stops the \fBexec\fR command from treating the output of messages to the
 pipeline's standard error channel as an error case.
+.\" OPTION: -keepnewline
 .TP 13
 \fB\-keepnewline\fR
 .
 Retains a trailing newline in the pipeline's output.
 Normally a trailing newline will be deleted.
+.\" OPTION: --
 .TP 13
 \fB\-\|\-\fR
 .
@@ -48,7 +55,7 @@ described below then it is used by \fBexec\fR to control the
 flow of input and output among the subprocess(es).
 Such arguments will not be passed to the subprocess(es).  In forms
 such as
-.QW "\fB<\fR \fIfileName\fR" ,
+.QW "\fB<\fI fileName\fR" ,
 \fIfileName\fR may either be in a separate argument from
 .QW \fB<\fR
 or in the same argument with no intervening space (i.e.
@@ -81,7 +88,9 @@ It is used as the standard input for the first command in the pipeline.
 .TP 15
 \fB<<\0\fIvalue\fR
 .
-\fIValue\fR is passed to the first command as its standard input.
+\fIValue\fR is encoded using the system encoding, newlines
+replaced by platform-specific line ending sequences, and then
+passed to the first command as its standard input.
 .TP 15
 \fB>\0\fIfileName\fR
 .
@@ -194,7 +203,7 @@ the commands in the pipeline will go to the application's
 standard error file unless redirected.
 .PP
 The first word in each command is taken as the command name;
-tilde-substitution is performed on it, and if the result contains
+if the result contains
 no slashes then the directories
 in the PATH environment variable are searched for
 an executable by the given name.
@@ -217,6 +226,49 @@ information is instead sent to the console, if one is present, or is
 discarded.
 .RS
 .PP
+Note that the current escape resp. quoting of arguments for windows works only
+with executables using CommandLineToArgv, CRT-library or similar, as well as
+with the windows batch files (excepting the newline, see below).
+Although it is the common escape algorithm, but, in fact, the way how the
+executable parses the command-line (resp. splits it into single arguments)
+is decisive.
+.PP
+Unfortunately, there is currently no way to supply newline character within
+an argument to the batch files (\fB.cmd\fR or \fB.bat\fR) or to the command
+processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
+(also the argument chain) on the first newline character.
+But it works properly with an executable (using CommandLineToArgv, etc).
+.PP
+\fBArgument quoting\fR
+.RS
+The arguments of the \fBexec\fR command are mapped to the arguments of the called
+program. Additional quote characters (\fB"\fR) are automatically  added around
+arguments if expected. Special characters are escaped by inserting backslash
+characters.
+.PP
+The MS-Windows environment does execute programs mentioned in the arguments and
+called batch files (conspec) replace environment variables, which may have side
+effects (vulnerabilities) or break any already existing quoting (for example,
+if the environment variable contains a special character like a \fB"\fR).
+Examples are:
+.CS
+% exec my-echo.cmd {test&whoami}
+  test
+  mylogin
+% exec my-echo.cmd "ENV X:%X%"
+  ENV X: CONTENT OF X
+.CE
+The following formatting is automatically performed on any
+argument item to avoid subprogram execution:
+Any special character argument containing a special character (\fB&\fR, \fB|\fR,
+\fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
+is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
+insertion of backslash characters.
+.PP
+The automatic resolving of environment variables using "\fB%var%\fR" is critical,
+but has more use than danger and is not escaped.
+.RE
+.PP
 The Tk console text widget does not provide real standard IO capabilities.
 Under Tk, when redirecting from standard input, all applications will see an
 immediate end-of-file; information redirected to standard output or standard
@@ -232,15 +284,6 @@ path name with forward slashes will not automatically be converted to use
 the backslash character.  If an argument contains forward slashes as the
 path separator, it may or may not be recognized as a path name, depending on
 the program.
-.PP
-Additionally, when calling a 16-bit DOS or Windows 3.X application, all path
-names must use the short, cryptic, path format (e.g., using
-.QW applba~1.def
-instead of
-.QW applbakery.default ),
-which can be obtained with the
-.QW "\fBfile attributes\fI fileName \fB\-shortname\fR"
-command.
 .PP
 Two or more forward or backward slashes in a row in a path refer to a
 network path.  For example, a simple concatenation of the root directory
@@ -282,11 +325,9 @@ The directory from which the Tcl executable was loaded.
 .IP \(bu 3
 The current directory.
 .IP \(bu 3
-The Windows NT 32-bit system directory.
+The Windows 32-bit system directory.
 .IP \(bu 3
-The Windows NT 16-bit system directory.
-.IP \(bu 3
-The Windows NT home directory.
+The Windows home directory.
 .IP \(bu 3
 The directories listed in the path.
 .PP
@@ -296,7 +337,7 @@ the caller must prepend the desired command with
 because built-in commands are not implemented using executables.
 .RE
 .TP
-\fBUnix\fR (including Mac OS X)
+\fBUnix\fR (including macOS)
 .
 The \fBexec\fR command is fully functional and works as described.
 .SH "UNIX EXAMPLES"
@@ -325,7 +366,6 @@ if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
     }
 }
 .CE
-.VS 8.6
 .PP
 This is more easily written using the \fBtry\fR command, as that makes
 it simpler to trap specific types of errors. This is
@@ -339,7 +379,6 @@ try {
     set status [lindex [dict get $options -errorcode] 2]
 }
 .CE
-.VE 8.6
 .SS "WORKING WITH QUOTED ARGUMENTS"
 .PP
 When translating a command from a Unix shell invocation, care should
@@ -409,6 +448,12 @@ that sometimes pop up:
 With the file \fIcmp.bat\fR looking something like:
 .PP
 .CS
+@gcc %*
+.CE
+.PP
+or like another variant using single parameters:
+.PP
+.CS
 @gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
 .CE
 .SS "WORKING WITH COMMAND BUILT-INS"
@@ -439,7 +484,7 @@ encrypted so that only the current user can access it requires use of
 the \fICIPHER\fR command, like this:
 .PP
 .CS
-set secureDir "~/Desktop/Secure Directory"
+set secureDir [file join [file home] Desktop/SecureDirectory]
 file mkdir $secureDir
 \fBexec\fR CIPHER /e /s:[file nativename $secureDir]
 .CE

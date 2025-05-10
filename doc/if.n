@@ -14,7 +14,6 @@ if \- Execute scripts conditionally
 .SH SYNOPSIS
 \fBif \fIexpr1 \fR?\fBthen\fR? \fIbody1 \fBelseif \fIexpr2 \fR?\fBthen\fR? \fIbody2\fR \fBelseif\fR ... ?\fBelse\fR? ?\fIbodyN\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fIif\fR command evaluates \fIexpr1\fR as an expression (in the

@@ -43,36 +43,37 @@ TCL_DECLARE_MUTEX(netdbMutex)
 static size_t
 strlcpy(char *dst, const char *src, size_t siz)
 {
-        char *d = dst;
-        const char *s = src;
-        size_t n = siz;
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
 
-        /* Copy as many bytes as will fit */
-        if (n != 0 && --n != 0) {
-                do {
-                        if ((*d++ = *s++) == 0)
-                                break;
-                } while (--n != 0);
-        }
+	/* Copy as many bytes as will fit */
+	if (n != 0 && --n != 0) {
+		do {
+			if ((*d++ = *s++) == 0)
+				break;
+		} while (--n != 0);
+	}
 
-        /* Not enough room in dst, add NUL and traverse rest of src */
-        if (n == 0) {
-                if (siz != 0)
-                        *d = '\0';              /* NUL-terminate dst */
-                while (*s++)
-                        ;
-        }
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';	      /* NUL-terminate dst */
+		while (*s++)
+			;
+	}
 
-        return(s - src - 1);    /* count does not include NUL */
+	return(s - src - 1);    /* count does not include NUL */
 }
 #endif
 
 int fake_getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
-                size_t hostlen, char *serv, size_t servlen, int flags)
+	size_t hostlen, char *serv, size_t servlen, int flags)
 {
 	struct sockaddr_in *sin = (struct sockaddr_in *)sa;
 	struct hostent *hp;
 	char tmpserv[16];
+	(void)salen;
 
 	if (sa->sa_family != AF_UNSPEC && sa->sa_family != AF_INET)
 		return (EAI_FAMILY);
@@ -153,7 +154,7 @@ addrinfo *malloc_ai(int port, u_long addr, const struct addrinfo *hints)
 {
 	struct addrinfo *ai;
 
-	ai = malloc(sizeof(*ai) + sizeof(struct sockaddr_in));
+	ai = (struct addrinfo *)malloc(sizeof(*ai) + sizeof(struct sockaddr_in));
 	if (ai == NULL)
 		return (NULL);
 
@@ -217,7 +218,7 @@ fake_getaddrinfo(const char *hostname, const char *servname,
 	}
 
 	if (!hostname) {
-		*res = malloc_ai(port, htonl(0x7f000001), hints);
+		*res = malloc_ai(port, htonl(0x7F000001), hints);
 		if (*res == NULL)
 			return (EAI_MEMORY);
 		return (0);

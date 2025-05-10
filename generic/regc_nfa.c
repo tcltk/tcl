@@ -2,7 +2,7 @@
  * NFA utilities.
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -108,7 +108,7 @@ freenfa(
     }
 
     nfa->slast = NULL;
-    nfa->nstates = -1;
+    nfa->nstates = FREESTATE;
     nfa->pre = NULL;
     nfa->post = NULL;
     FREE(nfa);
@@ -143,7 +143,7 @@ newstate(
 	s->noas = 0;
     }
 
-    assert(nfa->nstates >= 0);
+    assert(nfa->nstates != FREESTATE);
     s->no = nfa->nstates++;
     s->flag = 0;
     if (nfa->states == NULL) {
@@ -487,7 +487,7 @@ freearc(
 /*
  * changearctarget - flip an arc to have a different to state
  *
- * Caller must have verified that there is no pre-existing duplicate arc.
+ * Caller must have verified that there is no preexisting duplicate arc.
  *
  * Note that because we store arcs in their from state, we can't easily have
  * a similar changearcsource function.
@@ -570,7 +570,7 @@ findarc(
 /*
  - cparc - allocate a new arc within an NFA, copying details from old one
  ^ static void cparc(struct nfa *, struct arc *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 cparc(
@@ -592,8 +592,8 @@ sortins(
 {
     struct arc **sortarray;
     struct arc *a;
-    int n = s->nins;
-    int i;
+    size_t n = s->nins;
+    size_t i;
 
     if (n <= 1) {
 	return;		/* nothing to do */
@@ -641,19 +641,19 @@ sortins_cmp(
 	return -1;
     }
     if (aa->from->no > bb->from->no) {
- 	return 1;
+	return 1;
     }
     if (aa->co < bb->co) {
- 	return -1;
+	return -1;
     }
     if (aa->co > bb->co) {
- 	return 1;
+	return 1;
     }
     if (aa->type < bb->type) {
- 	return -1;
+	return -1;
     }
     if (aa->type > bb->type) {
- 	return 1;
+	return 1;
     }
     return 0;
 }
@@ -668,8 +668,8 @@ sortouts(
 {
     struct arc **sortarray;
     struct arc *a;
-    int	n = s->nouts;
-    int	i;
+    size_t	n = s->nouts;
+    size_t	i;
 
     if (n <= 1) {
 	return;					/* nothing to do */
@@ -1118,7 +1118,7 @@ copyouts(
 	    cparc(nfa, a, newState, a->to);
 	}
     } else {
- 	/*
+	/*
 	 * With many arcs, use a sort-merge approach.  Note that createarc()
 	 * will put new arcs onto the front of newState's chain, so it does
 	 * not break our walk through the sorted part of the chain.
@@ -1177,7 +1177,7 @@ copyouts(
 /*
  - cloneouts - copy out arcs of a state to another state pair, modifying type
  ^ static void cloneouts(struct nfa *, struct state *, struct state *,
- ^ 	struct state *, int);
+ ^	struct state *, int);
  */
 static void
 cloneouts(
@@ -1267,7 +1267,7 @@ deltraverse(
  * well as mark already-seen states. (You knew there was a reason why it's a
  * state pointer, didn't you? :-))
  ^ static void dupnfa(struct nfa *, struct state *, struct state *,
- ^ 	struct state *, struct state *);
+ ^	struct state *, struct state *);
  */
 static void
 dupnfa(
@@ -1515,7 +1515,7 @@ pullback(
  * Returns 1 if successful (which it always is unless the source is the
  * start state or we have an internal error), 0 if nothing happened.
  *
- * A significant property of this function is that it deletes no pre-existing
+ * A significant property of this function is that it deletes no preexisting
  * states, and no outarcs of the constraint's from state other than the given
  * constraint arc.  This makes the loops in pullback() safe, at the cost that
  * we may leave useless states behind.  Therefore, we leave it to pullback()
@@ -1599,10 +1599,10 @@ pull(
 		s->tmp = *intermediates;
 		*intermediates = s;
 	    }
-  	    cparc(nfa, con, a->from, s);
+	    cparc(nfa, con, a->from, s);
 	    cparc(nfa, a, s, to);
- 	    freearc(nfa, a);
-  	    break;
+	    freearc(nfa, a);
+	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -1694,7 +1694,7 @@ pushfwd(
  * Returns 1 if successful (which it always is unless the destination is the
  * post state or we have an internal error), 0 if nothing happened.
  *
- * A significant property of this function is that it deletes no pre-existing
+ * A significant property of this function is that it deletes no preexisting
  * states, and no inarcs of the constraint's to state other than the given
  * constraint arc.  This makes the loops in pushfwd() safe, at the cost that
  * we may leave useless states behind.  Therefore, we leave it to pushfwd()
@@ -1779,9 +1779,9 @@ push(
 		*intermediates = s;
 	    }
 	    cparc(nfa, con, s, a->to);
-  	    cparc(nfa, a, from, s);
-  	    freearc(nfa, a);
-  	    break;
+	    cparc(nfa, a, from, s);
+	    freearc(nfa, a);
+	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -1872,12 +1872,12 @@ fixempties(
     struct state *nexts;
     struct arc *a;
     struct arc *nexta;
-    int totalinarcs;
+    size_t totalinarcs;
     struct arc **inarcsorig;
     struct arc **arcarray;
     int arccount;
-    int prevnins;
-    int nskip;
+    size_t prevnins;
+    size_t nskip;
 
     /*
      * First, get rid of any states whose sole out-arc is an EMPTY,
@@ -2021,11 +2021,11 @@ fixempties(
 		}
 	    }
 
-  	    /* Reset the tmp fields as we walk back */
-  	    nexts = s2->tmp;
-  	    s2->tmp = NULL;
-  	}
-  	s->tmp = NULL;
+	    /* Reset the tmp fields as we walk back */
+	    nexts = s2->tmp;
+	    s2->tmp = NULL;
+	}
+	s->tmp = NULL;
 	assert(arccount <= totalinarcs);
 
 	/* Remember how many original inarcs this state has */
@@ -2185,12 +2185,12 @@ fixconstraintloops(
 		    freearc(nfa, a);
 		} else {
 		    hasconstraints = 1;
- 		}
+		}
 	    }
 	}
- 	/* If we removed all the outarcs, the state is useless. */
- 	if (s->nouts == 0 && !s->flag) {
- 	    dropstate(nfa, s);
+	/* If we removed all the outarcs, the state is useless. */
+	if (s->nouts == 0 && !s->flag) {
+	    dropstate(nfa, s);
 	}
     }
 
@@ -2235,7 +2235,7 @@ fixconstraintloops(
     }
 
     if (f != NULL) {
- 	dumpnfa(nfa, f);
+	dumpnfa(nfa, f);
     }
 }
 
@@ -2467,7 +2467,7 @@ breakconstraintloop(struct nfa * nfa, struct state * sinitial)
  * have multiple redundant arc pathways).  Each donemap is a char array
  * indexed by state number.  The donemaps are all of the same size "nstates",
  * which is nfa->nstates as of the start of the recursion.  This is enough to
- * have entries for all pre-existing states, but *not* entries for clone
+ * have entries for all preexisting states, but *not* entries for clone
  * states created during the recursion.  That's okay since we have no need to
  * mark those.
  *
@@ -2494,7 +2494,7 @@ clonesuccessorstates(
     struct arc * refarc,
     char *curdonemap,
     char *outerdonemap,
-    int nstates)
+    size_t nstates)
 {
     char *donemap;
     struct arc *a;
@@ -2691,7 +2691,7 @@ cleanup(
 {
     struct state *s;
     struct state *nexts;
-    int n;
+    size_t n;
 
     /*
      * Clear out unreachable or dead-end states. Use pre to mark reachable,
@@ -2725,7 +2725,7 @@ cleanup(
 /*
  - markreachable - recursive marking of reachable states
  ^ static void markreachable(struct nfa *, struct state *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 markreachable(
@@ -2749,7 +2749,7 @@ markreachable(
 /*
  - markcanreach - recursive marking of states which can reach here
  ^ static void markcanreach(struct nfa *, struct state *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 markcanreach(
@@ -2774,7 +2774,7 @@ markcanreach(
  - analyze - ascertain potentially-useful facts about an optimized NFA
  ^ static long analyze(struct nfa *);
  */
-static long			/* re_info bits to be ORed in */
+static long			/* re_info bits to be OR'ed in */
 analyze(
     struct nfa *nfa)
 {
@@ -2847,7 +2847,7 @@ compact(
 
     ca = cnfa->arcs;
     for (s = nfa->states; s != NULL; s = s->next) {
-	assert((size_t) s->no < nstates);
+	assert(s->no < nstates);
 	cnfa->stflags[s->no] = 0;
 	cnfa->states[s->no] = ca;
 	first = ca;
@@ -2951,10 +2951,10 @@ dumpnfa(
 {
 #ifdef REG_DEBUG
     struct state *s;
-    int nstates = 0;
-    int narcs = 0;
+    size_t nstates = 0;
+    size_t narcs = 0;
 
-    fprintf(f, "pre %d, post %d", nfa->pre->no, nfa->post->no);
+    fprintf(f, "pre %" TCL_Z_MODIFIER "u, post %" TCL_Z_MODIFIER "u", nfa->pre->no, nfa->post->no);
     if (nfa->bos[0] != COLORLESS) {
 	fprintf(f, ", bos [%ld]", (long) nfa->bos[0]);
     }
@@ -2973,11 +2973,14 @@ dumpnfa(
 	nstates++;
 	narcs += s->nouts;
     }
-    fprintf(f, "total of %d states, %d arcs\n", nstates, narcs);
+    fprintf(f, "total of %" TCL_Z_MODIFIER "u states, %" TCL_Z_MODIFIER "u arcs\n", nstates, narcs);
     if (nfa->parent == NULL) {
 	dumpcolors(nfa->cm, f);
     }
     fflush(f);
+#else
+    (void)nfa;
+    (void)f;
 #endif
 }
 
@@ -2997,7 +3000,7 @@ dumpstate(
 {
     struct arc *a;
 
-    fprintf(f, "%d%s%c", s->no, (s->tmp != NULL) ? "T" : "",
+    fprintf(f, "%" TCL_Z_MODIFIER "u%s%c", s->no, (s->tmp != NULL) ? "T" : "",
 	    (s->flag) ? s->flag : '.');
     if (s->prev != NULL && s->prev->next != s) {
 	fprintf(f, "\tstate chain bad\n");
@@ -3010,7 +3013,7 @@ dumpstate(
     fflush(f);
     for (a = s->ins; a != NULL; a = a->inchain) {
 	if (a->to != s) {
-	    fprintf(f, "\tlink from %d to %d on %d's in-chain\n",
+	    fprintf(f, "\tlink from %" TCL_Z_MODIFIER "u to %" TCL_Z_MODIFIER "u on %" TCL_Z_MODIFIER "u's in-chain\n",
 		    a->from->no, a->to->no, s->no);
 	}
     }
@@ -3088,7 +3091,7 @@ dumparc(
 	break;
     }
     if (a->from != s) {
-	fprintf(f, "?%d?", a->from->no);
+	fprintf(f, "?%" TCL_Z_MODIFIER "u?", a->from->no);
     }
     for (ab = &a->from->oas; ab != NULL; ab = ab->next) {
 	for (aa = &ab->a[0]; aa < &ab->a[ABSIZE]; aa++) {
@@ -3108,7 +3111,7 @@ dumparc(
 	fprintf(f, "NULL");
 	return;
     }
-    fprintf(f, "%d", a->to->no);
+    fprintf(f, "%" TCL_Z_MODIFIER "u", a->to->no);
     for (aa = a->to->ins; aa != NULL; aa = aa->inchain) {
 	if (aa == a) {
 	    break;		/* NOTE BREAK OUT */
@@ -3134,9 +3137,9 @@ dumpcnfa(
     FILE *f)
 {
 #ifdef REG_DEBUG
-    int st;
+    size_t st;
 
-    fprintf(f, "pre %d, post %d", cnfa->pre, cnfa->post);
+    fprintf(f, "pre %" TCL_Z_MODIFIER "u, post %" TCL_Z_MODIFIER "u", cnfa->pre, cnfa->post);
     if (cnfa->bos[0] != COLORLESS) {
 	fprintf(f, ", bos [%ld]", (long) cnfa->bos[0]);
     }
@@ -3157,6 +3160,9 @@ dumpcnfa(
 	dumpcstate(st, cnfa, f);
     }
     fflush(f);
+#else
+    (void)cnfa;
+    (void)f;
 #endif
 }
 
@@ -3176,15 +3182,15 @@ dumpcstate(
     FILE *f)
 {
     struct carc *ca;
-    int pos;
+    size_t pos;
 
     fprintf(f, "%d%s", st, (cnfa->stflags[st] & CNFA_NOPROGRESS) ? ":" : ".");
     pos = 1;
     for (ca = cnfa->states[st]; ca->co != COLORLESS; ca++) {
 	if (ca->co < cnfa->ncolors) {
-	    fprintf(f, "\t[%ld]->%d", (long) ca->co, ca->to);
+	    fprintf(f, "\t[%d]->%" TCL_Z_MODIFIER "u", ca->co, ca->to);
 	} else {
-	    fprintf(f, "\t:%ld:->%d", (long) (ca->co - cnfa->ncolors), ca->to);
+	    fprintf(f, "\t:%d:->%" TCL_Z_MODIFIER "u", ca->co - cnfa->ncolors, ca->to);
 	}
 	if (pos == 5) {
 	    fprintf(f, "\n");

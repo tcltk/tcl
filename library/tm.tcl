@@ -22,10 +22,10 @@
 #
 #      This covers the possibility that the application asked for a package
 #      late, and the package was actually added to the installation after the
-#      application was started. It shoukld still be able to find it.
+#      application was started. It should still be able to find it.
 #
 #   2) It still is not there: Either way, you don't get it, but the rescan
-#      takes time. This is however an error case and we dont't care that much
+#      takes time. This is however an error case and we don't care that much
 #      about it
 #
 #   3) It was there the first time; but for some reason a "package forget" has
@@ -70,9 +70,9 @@ namespace eval ::tcl::tm {
 #	No result for subcommands 'add' and 'remove'. A list of paths for
 #	'list'.
 #
-# Sideeffects
+# Side effects
 #	The subcommands 'add' and 'remove' manipulate the list of paths to
-#	search for Tcl Modules. The subcommand 'list' has no sideeffects.
+#	search for Tcl Modules. The subcommand 'list' has no side effects.
 
 proc ::tcl::tm::add {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
@@ -81,7 +81,7 @@ proc ::tcl::tm::add {args} {
     #
     # The command enforces the restriction that no path may be an ancestor
     # directory of any other path on the list. If the new path violates this
-    # restriction an error wil be raised.
+    # restriction an error will be raised.
     #
     # If the path is already present as is no error will be raised and no
     # action will be taken.
@@ -97,8 +97,8 @@ proc ::tcl::tm::add {args} {
 
     set newpaths $paths
     foreach p $args {
-	if {$p in $newpaths} {
-	    # Ignore a path already on the list.
+	if {($p eq "") || ($p in $newpaths)} {
+	    # Ignore any path which is empty or already on the list.
 	    continue
 	}
 
@@ -166,7 +166,7 @@ proc ::tcl::tm::list {} {
 #	name		- Name of desired package.
 #	version		- Version of desired package. Can be the
 #			  empty string.
-#	exact		- Either -exact or ommitted.
+#	exact		- Either -exact or omitted.
 #
 #	Name, version, and exact are used to determine satisfaction. The
 #	original is called iff no satisfaction was achieved. The name is also
@@ -175,7 +175,7 @@ proc ::tcl::tm::list {} {
 # Results
 #	None.
 #
-# Sideeffects
+# Side effects
 #	May populate the package ifneeded database with additional provide
 #	scripts.
 
@@ -212,11 +212,12 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 	    }
 	    set strip [llength [file split $path]]
 
-	    # We can't use glob in safe interps, so enclose the following in a
-	    # catch statement, where we get the module files out of the
-	    # subdirectories. In other words, Tcl Modules are not-functional
-	    # in such an interpreter. This is the same as for the command
-	    # "tclPkgUnknown", i.e. the search for regular packages.
+	    # Get the module files out of the subdirectories.
+	    # - Safe Base interpreters have a restricted "glob" command that
+	    #   works in this case.
+	    # - The "catch" was essential when there was no safe glob and every
+	    #   call in a safe interp failed; it is retained only for corner
+	    #   cases in which the eventual call to glob returns an error.
 
 	    catch {
 		# We always look for _all_ possible modules in the current
@@ -238,12 +239,16 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 			continue
 		    }
 
-		    if {[package ifneeded $pkgname $pkgversion] ne {}} {
+		    if {([package ifneeded $pkgname $pkgversion] ne {})
+			    && (![interp issafe])
+		    } {
 			# There's already a provide script registered for
 			# this version of this package.  Since all units of
 			# code claiming to be the same version of the same
 			# package ought to be identical, just stick with
 			# the one we already have.
+			# This does not apply to Safe Base interpreters because
+			# the token-to-directory mapping may have changed.
 			continue
 		    }
 
@@ -262,7 +267,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # of the package file is the last element in the list.
 
 		    package ifneeded $pkgname $pkgversion \
-			"[::list package provide $pkgname $pkgversion];[::list source -encoding utf-8 $file]"
+			"[::list package provide $pkgname $pkgversion];[::list source $file]"
 
 		    # We abort in this unknown handler only if we got a
 		    # satisfying candidate for the requested package.
@@ -305,13 +310,13 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 # Results
 #	None.
 #
-# Sideeffects
+# Side effects
 #	May add paths to the list of defaults.
 
 proc ::tcl::tm::Defaults {} {
     global env tcl_platform
 
-    lassign [split [info tclversion] .] major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     set exe [file normalize [info nameofexecutable]]
 
     # Note that we're using [::list], not [list] because [list] means
@@ -321,19 +326,17 @@ proc ::tcl::tm::Defaults {} {
 	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 
-    if {$tcl_platform(platform) eq "windows"} {
-	set sep ";"
-    } else {
-	set sep ":"
-    }
     for {set n $minor} {$n >= 0} {incr n -1} {
 	foreach ev [::list \
 			TCL${major}.${n}_TM_PATH \
 			TCL${major}_${n}_TM_PATH \
-        ] {
+	] {
 	    if {![info exists env($ev)]} continue
-	    foreach p [split $env($ev) $sep] {
-		path add $p
+	    foreach p [split $env($ev) $::tcl_platform(pathSeparator)] {
+		# Paths relative to unresolvable home dirs are ignored
+		if {![catch {file tildeexpand $p} expanded_path]} {
+		    path add $expanded_path
+		}
 	    }
 	}
     }
@@ -350,11 +353,11 @@ proc ::tcl::tm::Defaults {} {
 # Results
 #	No result.
 #
-# Sideeffects
+# Side effects
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {
-    regexp {^(\d+)\.(\d+)} [package present Tcl] - major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {

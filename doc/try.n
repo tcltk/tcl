@@ -87,11 +87,28 @@ Handle different reasons for a file to not be openable for reading:
 .PP
 .CS
 \fBtry\fR {
-    set f [open /some/file/name w]
+    set f [open /some/file/name r]
 } \fBtrap\fR {POSIX EISDIR} {} {
     puts "failed to open /some/file/name: it's a directory"
 } \fBtrap\fR {POSIX ENOENT} {} {
     puts "failed to open /some/file/name: it doesn't exist"
+}
+.CE
+.PP
+Proc to read a file in utf-8 encoding and return its contents.
+The file is closed in success and error case by the finally clause.
+It is allowed to call \fBreturn\fR within the \fBtry\fR block.
+Remark that with tcl 9, the read command may also throw utf-8 conversion errors:
+.PP
+.CS
+proc readfile {filename} {
+    set f [open $filename r]
+    \fBtry\fR {
+        fconfigure $f -encoding utf-8 -profile strict
+        \fBreturn\fR [read $f]
+    } \fBfinally\fR {
+        close $f
+    }
 }
 .CE
 .SH "SEE ALSO"

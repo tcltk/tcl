@@ -26,7 +26,7 @@
  *
  *	John Robert LoVerso <loverso@freebsd.osf.org>
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -37,15 +37,15 @@
 #include <loader.h>
 
 /*
- * Static functions defined within this file.
+ * Static procedures defined within this file.
  */
 
 static void *		FindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char* symbol);
-static void		UnloadFile(Tcl_LoadHandle handle);
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclpDlopen --
  *
@@ -53,13 +53,13 @@ static void		UnloadFile(Tcl_LoadHandle handle);
  *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error message
+ *	A standard Tcl completion code. If an error occurs, an error message
  *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -79,17 +79,17 @@ TclpDlopen(
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
     char *pkg;
-    char *fileName = Tcl_GetString(pathPtr);
+    char *fileName = TclGetString(pathPtr);
     const char *native;
 
     /*
-     * First try the full path the user gave us.  This is particularly
+     * First try the full path the user gave us. This is particularly
      * important if the cwd is inside a vfs, and we are trying to load using a
      * relative path.
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
-    lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+    lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 
     if (lm == LDR_NULL_MODULE) {
 	/*
@@ -100,8 +100,12 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-	lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
+	lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 	Tcl_DStringFree(&ds);
     }
 
@@ -124,16 +128,17 @@ TclpDlopen(
      */
 
     if ((pkg = strrchr(fileName, '/')) == NULL) {
-        pkg = fileName;
+	pkg = fileName;
     } else {
 	pkg++;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
-    *loadHandle = newHandle;
     *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
+
     return TCL_OK;
 }
 
@@ -147,7 +152,7 @@ TclpDlopen(
  *
  * Results:
  *	Returns a pointer to the function associated with 'symbol' if it is
- *	found.  Otherwise returns NULL and may leave an error message in the
+ *	found. Otherwise returns NULL and may leave an error message in the
  *	interp's result.
  *
  *----------------------------------------------------------------------
@@ -159,14 +164,14 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    void *retval = ldr_lookup_package((char *) loadHandle, symbol);
+    void *proc = ldr_lookup_package((char *) loadHandle, symbol);
 
-    if (retval == NULL && interp != NULL) {
+    if (proc == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\"", symbol));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
-    return retval;
+    return proc;
 }
 
 /*
@@ -193,37 +198,7 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this function is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name.  A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
+    Tcl_Free(loadHandle);
 }
 
 /*

@@ -4,15 +4,15 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -45,6 +45,11 @@ test join-3.1 {joinString is binary ok} {
 test join-3.2 {join is binary ok} {
   string length [join "a\0b a\0b a\0b"]
 } 11
+
+test join-4.1 {shimmer segfault prevention} {
+    set l {0 0}
+    join $l $l
+} {00 00}
 
 # cleanup
 ::tcltest::cleanupTests

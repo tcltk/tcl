@@ -4,7 +4,7 @@
 package require msgcat
 set d [file dirname [file dirname [info script]]]
 puts "getting transition data from [file join $d library tzdata America Detroit]"
-source [file join $d library/tzdata/America/Detroit]
+source -encoding utf-8 [file join $d library/tzdata/America/Detroit]
 
 namespace eval ::tcl::clock {
     ::msgcat::mcmset en_US_roman {
@@ -215,7 +215,7 @@ proc testcases2 { f2 } {
     # Define the roman numerals
 
     set roman {
- 	? i ii iii iv v vi vii viii ix
+	? i ii iii iv v vi vii viii ix
 	x xi xii xiii xiv xv xvi xvii xviii xix
 	xx xxi xxii xxiii xxiv xxv xxvi xxvii xxviii xxix
 	xxx xxxi xxxii xxxiii xxxiv xxxv xxxvi xxxvii xxxviii xxxix
@@ -228,7 +228,7 @@ proc testcases2 { f2 } {
 	c
     }
     set romanc {
- 	? c cc ccc cd d dc dcc dccc cm
+	? c cc ccc cd d dc dcc dccc cm
 	m mc mcc mccc mcd md mdc mdcc mdccc mcm
 	mm mmc mmcc mmccc mmcd mmd mmdc mmdcc mmdccc mmcm
 	mmm mmmc mmmcc mmmccc mmmcd mmmd mmmdc mmmdcc mmmdccc mmmcm
@@ -473,11 +473,11 @@ proc testISO { f2 G V u secs } {
     puts $f2 "test clock-3.[incr case] {ISO week-based calendar [format %04d-W%02d-%d $G $V $u]} {"
     puts $f2 "    clock format $secs -format {%a %A %g %G %u %U %V %w %W} -gmt true; \# $G-W[format %02d $V]-$u"
     puts $f2 "} {[lindex $shortdays $u] [lindex $longdays $u]\
-             [format %02d [expr { $G % 100 }]] $G\
-             $u\
-             [clock format $secs -format %U -gmt true]\
-             [format %02d $V] [expr { $u % 7 }]\
-             [clock format $secs -format %W -gmt true]}"
+	     [format %02d [expr { $G % 100 }]] $G\
+	     $u\
+	     [clock format $secs -format %U -gmt true]\
+	     [format %02d $V] [expr { $u % 7 }]\
+	     [clock format $secs -format %W -gmt true]}"
 
 }
 
@@ -592,7 +592,7 @@ proc testcases5 { f2 } {
 	foreach { t offset isdst tzname } $row break
 	if { $t > -4000000000000 } {
 	    set conds [list detroit]
-	    if { $t > wide(0x7fffffff) } {
+	    if { $t > wide(0x7FFFFFFF) } {
 		set conds [list detroit y2038]
 	    }
 	    incr t -1
