@@ -66,7 +66,7 @@ namespace eval listtype {
     # In cases where it matters, assumes a length of smallListLength will always
     # be less that these thresholds and largeListLength will be greater.
     variable smallListLength 10
-    variable largeListLength 1000; # Multiple of 4 because of assumptions in tests
+    variable largeListLength 120; # Multiple of 4 because of assumptions in tests
 
     proc getListType {l} {
         set ltype [testobj objtype $l]
@@ -84,6 +84,10 @@ namespace eval listtype {
         if {$ltype ne $type} {
             error "Assertion failed: list type was \"$ltype\", expected \"$type\""
         }
+    }
+
+    proc isAbstractList {l} {
+        return [expr {[getListType $l] ni {list spanlist}}]
     }
 
     # Returns a list of length $largeListLength of the specified type
@@ -178,7 +182,7 @@ namespace eval listtype {
                     lappend outerList $nestedList
                 }
                 # lrange on a list or spanlist will return a spanlist, not rangeList
-                # so reverse it
+                # so reverse it first.
                 lrange [lreverse $outerList] 0 end-1
             }
             default {
@@ -380,27 +384,141 @@ namespace eval listtype {
             arithseries {set ltype2 arithseries}
             default {set ltype2 rangeList}
         }
-        testdef lassign-$ltype-unshared-0 "lassign unshared list of type $ltype" -body {
+
+        testdef lassign-$ltype-unshared "lassign unshared list of type $ltype" -body {
             set l [lassign [makeList $ltype] x]
             list [getListType $l] $l $x
         } -result [list $ltype2 [lrange [makeList $ltype] 1 end] $first]
-        testdef lassign-$ltype-shared-0 "lassign shared list of type $ltype" -body {
+
+        testdef lassign-$ltype-shared "lassign shared list of type $ltype" -body {
             set l0 [makeList $ltype]
             set l [lassign $l0 x]
             # The shared value should not shimmer
             list [getListType $l0] $l0 [getListType $l] $l $x
         } -result [list $ltype [makeList $ltype] $ltype2 [lrange [makeList $ltype] 1 end] $first]
+
         # Except for arithseries, all small ranges are basic lists
-        testdef lassign-$ltype-smalllist-0 "lassign small list of type $ltype should always be non-abstract list" -body {
+        testdef lassign-$ltype-smalllist "lassign small list of type $ltype should always be non-abstract list" -body {
             set l [lassign [makeList $ltype 100] x]
             list [getListType $l] $l $x
         } -result [list [expr {$ltype eq "arithseries" ? "arithseries" : "list"}] [lrange [makeList $ltype 100] 1 end] [lindex [makeList $ltype 100] 0]]
     }
 
     ################################################################
-    # ledit tests - TBD
+    # ledit tests
+    # Any modification operation will result in a shimmer to a list or spanlist.
+    # General variations of ledit operations on lists and spanlists are tested
+    # in lreplace.test.
+    foreach ltype $listTypes {
+        # prepend an element
+        set expected [list X {*}[makeList $ltype]]
+        testdef ledit-$ltype-prepend-unshared "ledit -1 -1 unshared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            list [ledit l -1 -1 X] [isAbstractList $l] $l
+        } -result [list $expected 0 $expected]
+        testdef ledit-$ltype-prepend-shared "ledit -1 -1 shared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            set l2 $l
+            list [ledit l -1 -1 X] [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list $expected 0 $expected $ltype [makeList $ltype]]
+
+        # append an element
+        set expected [list {*}[makeList $ltype] X]
+        testdef ledit-$ltype-append-unshared "ledit end+1 end unshared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            list [ledit l end+1 end X] [isAbstractList $l] $l
+        } -result [list $expected 0 $expected]
+        testdef ledit-$ltype-append-shared "ledit end+1 end+1 shared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            set l2 $l
+            list [ledit l end+1 end+1 X] [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list $expected 0 $expected $ltype [makeList $ltype]]
+
+        # replace an element
+        set expected [list X {*}[lrange [makeList $ltype] 1 end]]
+        testdef ledit-$ltype-replace-unshared "ledit 0 0 unshared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            list [ledit l 0 0 X] [isAbstractList $l] $l
+        } -result [list $expected 0 $expected]
+        testdef ledit-$ltype-replace-shared "ledit 0 0 shared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            set l2 $l
+            list [ledit l 0 0 X] [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list $expected 0 $expected $ltype [makeList $ltype]]
+
+        # Remove an element
+        set expected [list {*}[makeList $ltype]]
+        set expected [list {*}[lrange $expected 0 9] {*}[lrange $expected 11 end]]
+        testdef ledit-$ltype-remove-unshared "ledit 10 10 unshared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            list [ledit l 10 10] [isAbstractList $l] $l
+        } -result [list $expected 0 $expected]
+        testdef ledit-$ltype-remove-shared "ledit 10 10 shared $ltype shimmers to list" -body {
+            set l [makeList $ltype]
+            set l2 $l
+            list [ledit l 10 10] [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list $expected 0 $expected $ltype [makeList $ltype]]
+
+    }
+
     ################################################################
-    # lreplace tests - TBD
+    # lreplace tests
+    # Any modification operation will result in a shimmer to a list or spanlist.
+    # General variations of lreplace operations on lists and spanlists are tested
+    # in lreplace.test.
+    foreach ltype $listTypes {
+        # prepend an element
+        set expected [list X {*}[makeList $ltype]]
+        testdef lreplace-$ltype-prepend-unshared "lreplace -1 -1 unshared $ltype shimmers to list" -body {
+            set l [lreplace [makeList $ltype] -1 -1 X]
+            list [isAbstractList $l] $l
+        } -result [list 0 $expected]
+        testdef lreplace-$ltype-prepend-shared "lreplace -1 -1 shared $ltype shimmers to list" -body {
+            set l2 [makeList $ltype]
+            set l [lreplace $l2 -1 -1 X]
+            list [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list 0 $expected $ltype [makeList $ltype]]
+
+        # append an element
+        set expected [list {*}[makeList $ltype] X]
+        testdef lreplace-$ltype-append-unshared "lreplace end+1 end unshared $ltype shimmers to list" -body {
+            set l [lreplace [makeList $ltype] end+1 end X]
+            list  [isAbstractList $l] $l
+        } -result [list 0 $expected]
+        testdef lreplace-$ltype-append-shared "lreplace end+1 end+1 shared $ltype shimmers to list" -body {
+            set l2 [makeList $ltype]
+            set l [lreplace $l2 end+1 end+1 X]
+            list [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list 0 $expected $ltype [makeList $ltype]]
+
+        # replace an element
+        set expected [list X {*}[lrange [makeList $ltype] 1 end]]
+        testdef lreplace-$ltype-replace-unshared "lreplace 0 0 unshared $ltype shimmers to list" -body {
+            set l [lreplace [makeList $ltype] 0 0 X]
+            list  [isAbstractList $l] $l
+        } -result [list 0 $expected]
+
+        testdef lreplace-$ltype-replace-shared "lreplace 0 0 shared $ltype shimmers to list" -body {
+            set l2 [makeList $ltype]
+            set l [lreplace $l2 0 0 X]
+            list [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list 0 $expected $ltype [makeList $ltype]]
+
+        # Remove an element
+        set expected [list {*}[makeList $ltype]]
+        set expected [list {*}[lrange $expected 0 9] {*}[lrange $expected 11 end]]
+        testdef lreplace-$ltype-remove-unshared "lreplace 10 10 unshared $ltype shimmers to list" -body {
+            set l [lreplace [makeList $ltype] 10 10]
+            list [isAbstractList $l] $l
+        } -result [list 0 $expected]
+        testdef lreplace-$ltype-remove-shared "lreplace 10 10 shared $ltype shimmers to list" -body {
+            set l2 [makeList $ltype]
+            set l [lreplace $l2 10 10]
+            list [isAbstractList $l] $l [getListType $l2] $l2
+        } -result [list 0 $expected $ltype [makeList $ltype]]
+
+    }
+
     ################################################################
     # linsert tests - TBD
     ################################################################
