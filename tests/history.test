@@ -4,15 +4,15 @@
 # commands.  Sourcing this file into Tcl runs the tests and generates output
 # for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -40,7 +40,7 @@ test history-1.1 {event option} history {history event -1} \
 	{set b [format {A test %s} string]}
 test history-1.2 {event option} history {history event $num} \
 	{set a 12345}
-test history-1.3 {event option} history {history event [expr $num+2]} \
+test history-1.3 {event option} history {history event [expr {$num+2}]} \
 	{Another test}
 test history-1.4 {event option} history {history event set} \
 	{set b [format {A test %s} string]}
@@ -54,10 +54,10 @@ test history-1.7 {event option} history {
 test history-1.8 {event option} history {history event} \
 	{set b [format {A test %s} string]}
 test history-1.9 {event option} history {catch {history event 123 456} msg} 1
-test history-1.10 {event option} history {
+test history-1.10 {event option} -constraints history -body {
     catch {history event 123 456} msg
     set msg
-} {wrong # args: should be "history event ?event?"}
+} -match glob -result {wrong # args: should be "*history event \?event\?"}
 
 # "history redo"
 
@@ -72,10 +72,10 @@ if {[testConstraint history]} {
 }
 test history-2.2 {redo option} history {set b} {A test string}
 test history-2.3 {redo option} history {catch {history redo -3 -4}} 1
-test history-2.4 {redo option} history {
+test history-2.4 {redo option} -constraints history -body {
     catch {history redo -3 -4} msg
     set msg
-} {wrong # args: should be "history redo ?event?"}
+} -match glob -result {wrong # args: should be "*history redo \?event\?"}
 
 # "history add"
 
@@ -102,10 +102,10 @@ if {[testConstraint history]} {
 }
 test history-3.7 {add option} history {set a} 555
 test history-3.8 {add option} history {catch {history add "set a 666" e f} msg} 1
-test history-3.9 {add option} history {
+test history-3.9 {add option} -constraints history -body {
     catch {history add "set a 666" e f} msg
     set msg
-} {wrong # args: should be "history add event ?exec?"}
+} -match glob -result {wrong # args: should be "*history add event \?exec\?"}
 
 # "history change"
 
@@ -121,10 +121,10 @@ test history-4.2 {change option} history {history e} "Another test"
 test history-4.3 {change option} history {history event [expr {[history n]-1}]} \
 	"A test value"
 test history-4.4 {change option} history {catch {history change Foo 4 10}} 1
-test history-4.5 {change option} history {
+test history-4.5 {change option} -constraints history -body {
     catch {history change Foo 4 10} msg
     set msg
-} {wrong # args: should be "history change newValue ?event?"}
+} -match glob -result {wrong # args: should be "*history change newValue \?event\?"}
 test history-4.6 {change option} history {
     catch {history change Foo [expr {[history n]-4}]}
 } 1
@@ -149,22 +149,22 @@ test history-5.1 {info option} history {history info} [format {%6d  set a {b
 %6d  set b 1234
 %6d  set c {a
 	b
-	c}} $num [expr $num+1] [expr $num+2]]
+	c}} $num [expr {$num+1}] [expr {$num+2}]]
 test history-5.2 {info option} history {history i 2} [format {%6d  set b 1234
 %6d  set c {a
 	b
-	c}} [expr $num+1] [expr $num+2]]
+	c}} [expr {$num+1}] [expr {$num+2}]]
 test history-5.3 {info option} history {catch {history i 2 3}} 1
-test history-5.4 {info option} history {
+test history-5.4 {info option} -constraints history -body {
     catch {history i 2 3} msg
     set msg
-} {wrong # args: should be "history info ?count?"}
+} -match glob -result {wrong # args: should be "*history info \?count\?"}
 test history-5.5 {info option} history {history} [format {%6d  set a {b
 	c d e}
 %6d  set b 1234
 %6d  set c {a
 	b
-	c}} $num [expr $num+1] [expr $num+2]]
+	c}} $num [expr {$num+1}] [expr {$num+2}]]
 
 # "history keep"
 
@@ -174,7 +174,9 @@ if {[testConstraint history]} {
     history add "foo3"
     history keep 2
 }
-test history-6.1 {keep option} history {history event [expr [history n]-1]} foo3
+test history-6.1 {keep option} history {
+    history event [expr {[history n]-1}]
+} foo3
 test history-6.2 {keep option} history {history event -1} foo2
 test history-6.3 {keep option} history {catch {history event -3}} 1
 test history-6.4 {keep option} history {
@@ -190,10 +192,10 @@ test history-6.7 {keep option} history {history event -3} {}
 test history-6.8 {keep option} history {history event -4} {}
 test history-6.9 {keep option} history {catch {history event -5}} 1
 test history-6.10 {keep option} history {catch {history keep 4 6}} 1
-test history-6.11 {keep option} history {
+test history-6.11 {keep option} -constraints history -body {
     catch {history keep 4 6} msg
     set msg
-} {wrong # args: should be "history keep ?count?"}
+} -match glob -result {wrong # args: should be "*history keep \?count\?"}
 test history-6.12 {keep option} history {catch {history keep}} 0
 test history-6.13 {keep option} history {
     history keep
@@ -216,12 +218,12 @@ if {[testConstraint history]} {
     history add "Testing2"
 }
 test history-7.1 {nextid option} history {history event} "Testing"
-test history-7.2 {nextid option} history {history next} [expr $num+2]
+test history-7.2 {nextid option} history {history next} [expr {$num+2}]
 test history-7.3 {nextid option} history {catch {history nextid garbage}} 1
-test history-7.4 {nextid option} history {
+test history-7.4 {nextid option} -constraints history -body {
     catch {history nextid garbage} msg
     set msg
-} {wrong # args: should be "history nextid"}
+} -match glob -result {wrong # args: should be "*history nextid"}
 
 # "history clear"
 
@@ -262,7 +264,7 @@ test history-10.1 {references kept by history} -constraints history -setup {
 } -body {
     histtest eval {
 	# A fresh object, refcount 1 from the variable we write it to
-	set obj [expr rand()]
+	set obj [expr {rand()}]
 	set baseline [refcount $obj]
 	lappend result [refcount $obj]
 	history add [list list $obj]
@@ -288,7 +290,7 @@ test history-10.2 {references kept by history} -constraints history -setup {
 } -body {
     histtest eval {
 	# A fresh object, refcount 1 from the variable we write it to
-	set obj [expr rand()]
+	set obj [expr {rand()}]
 	set baseline [refcount $obj]
 	lappend result [refcount $obj]
 	history add [list list $obj]

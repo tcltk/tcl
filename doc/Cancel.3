@@ -17,6 +17,7 @@ int
 .sp
 int
 \fBTcl_Canceled\fR(\fIinterp, flags\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
@@ -26,11 +27,11 @@ Error message to use in the cancellation, or NULL to use a default message. If
 not NULL, this object will have its reference count decremented before
 \fBTcl_CancelEval\fR returns.
 .AP int flags in
-ORed combination of flag bits that specify additional options.
+OR'ed combination of flag bits that specify additional options.
 For \fBTcl_CancelEval\fR, only \fBTCL_CANCEL_UNWIND\fR is currently
 supported.  For \fBTcl_Canceled\fR, only \fBTCL_LEAVE_ERR_MSG\fR and
 \fBTCL_CANCEL_UNWIND\fR are currently supported.
-.AP ClientData clientData in
+.AP void *clientData in
 Currently reserved for future use.
 It should be set to NULL.
 .BE
@@ -47,7 +48,7 @@ Extensions can use this function to check to see if they should abort a long
 running command.  This function is thread sensitive and may only be called
 from the thread the interpreter was created in.
 .SS "FLAG BITS"
-Any ORed combination of the following values may be used for the
+Any OR'ed combination of the following values may be used for the
 \fIflags\fR argument to procedures such as \fBTcl_CancelEval\fR:
 .TP 20
 \fBTCL_CANCEL_UNWIND\fR
@@ -67,8 +68,15 @@ other procedures.  If an error is returned and this bit is set in
 result, where it can be retrieved with \fBTcl_GetObjResult\fR or
 \fBTcl_GetStringResult\fR.  If this flag bit is not set then no error
 message is left and the interpreter's result will not be modified.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_CancelEval\fR always decrements the reference count of its
+\fIresultObjPtr\fR argument (if that is non-NULL). It is expected to
+be usually called with an object with zero reference count. If the
+object is shared with some other location (including the Tcl
+evaluation stack) it should have its reference count incremented
+before calling this function.
 .SH "SEE ALSO"
-interp(n), Tcl_Eval(3),
-TIP 285
+interp(n), Tcl_Eval(3)
 .SH KEYWORDS
 cancel, unwind

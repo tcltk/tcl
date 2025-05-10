@@ -35,14 +35,19 @@ TclOOInitializeStubs(
     const char *version)
 {
     int exact = 0;
-    const char *packageName = "TclOO";
+    const char *packageName = "tcl::oo";
     const char *errMsg = NULL;
     TclOOStubs *stubsPtr = NULL;
     const char *actualVersion = tclStubsPtr->tcl_PkgRequireEx(interp,
 	    packageName, version, exact, &stubsPtr);
 
     if (actualVersion == NULL) {
-	return NULL;
+	packageName = "TclOO";
+	actualVersion = tclStubsPtr->tcl_PkgRequireEx(interp,
+		packageName, version, exact, &stubsPtr);
+	if (actualVersion == NULL) {
+	    return NULL;
+	}
     }
     if (stubsPtr == NULL) {
 	errMsg = "missing stub table pointer";

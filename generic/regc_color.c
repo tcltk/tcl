@@ -2,7 +2,7 @@
  * colorings of characters
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -412,7 +412,7 @@ newsub(
     sco = cm->cd[co].sub;
     if (sco == NOSUB) {		/* color has no open subcolor */
 	if (cm->cd[co].nchrs == 1) {	/* optimization */
-	    return co;
+	    return (color)co;
 	}
 	sco = newcolor(cm);	/* must create subcolor */
 	if (sco == COLORLESS) {
@@ -430,7 +430,7 @@ newsub(
 /*
  - subrange - allocate new subcolors to this range of chrs, fill in arcs
  ^ static void subrange(struct vars *, pchr, pchr, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 subrange(
@@ -689,7 +689,7 @@ uncolorchain(
 /*
  - rainbow - add arcs of all full colors (but one) between specified states
  ^ static void rainbow(struct nfa *, struct colormap *, int, pcolor,
- ^ 	struct state *, struct state *);
+ ^	struct state *, struct state *);
  */
 static void
 rainbow(
@@ -716,7 +716,7 @@ rainbow(
  - colorcomplement - add arcs of complementary colors
  * The calling sequence ought to be reconciled with cloneouts().
  ^ static void colorcomplement(struct nfa *, struct colormap *, int,
- ^ 	struct state *, struct state *, struct state *);
+ ^	struct state *, struct state *, struct state *);
  */
 static void
 colorcomplement(
@@ -759,9 +759,9 @@ dumpcolors(
     struct colordesc *end;
     color co;
     chr c;
-    char *has;
+    const char *has;
 
-    fprintf(f, "max %ld\n", (long) cm->max);
+    fprintf(f, "max %" TCL_Z_MODIFIER "u\n", cm->max);
     if (NBYTS > 1) {
 	fillcheck(cm, cm->tree, 0, f);
     }

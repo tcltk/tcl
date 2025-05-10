@@ -22,8 +22,8 @@ namespace eval ::tcl::clock {
         "maalis"\
         "huhti"\
         "touko"\
-        "kes\u00e4"\
-        "hein\u00e4"\
+        "kesä"\
+        "heinä"\
         "elo"\
         "syys"\
         "loka"\
@@ -36,8 +36,8 @@ namespace eval ::tcl::clock {
         "maaliskuu"\
         "huhtikuu"\
         "toukokuu"\
-        "kes\u00e4kuu"\
-        "hein\u00e4kuu"\
+        "kesäkuu"\
+        "heinäkuu"\
         "elokuu"\
         "syyskuu"\
         "lokakuu"\

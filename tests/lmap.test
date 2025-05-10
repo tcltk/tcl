@@ -4,9 +4,9 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 2011 Trevor Davel
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 2011 Trevor Davel
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,7 +14,7 @@
 # RCS: @(#) $Id: $
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -149,17 +149,17 @@ test lmap-3.1 {continue tests} {
 test lmap-3.2 {continue tests} {
     set x 0
     list [lmap i {a b c d} {
-    	incr x
-    	if {[string compare $i "b"] != 0} continue
-    	set i
+	incr x
+	if {[string compare $i "b"] != 0} continue
+	set i
     }] $x
 } {b 4}
 test lmap-3.3 {break tests} {
     set x 0
     list [lmap i {a b c d} {
 	incr x
-    	if {[string compare $i "c"] == 0} break
-    	set i
+	if {[string compare $i "c"] == 0} break
+	set i
     }] $x
 } {{a b} 3}
 # Check for bug similar to #406709
@@ -293,14 +293,14 @@ test lmap-5.8 {parallel lmap tests} {
 } {{.1.1.1.1 2} .2.2.2. .3..3. ...4.}
 test lmap-5.9 {lmap only sets vars if repeating loop} {
     apply {{} {
-        set rgb {65535 0 0}
-        lmap {r g b} [set rgb] {}
-        return "r=$r, g=$g, b=$b"
+	set rgb {65535 0 0}
+	lmap {r g b} [set rgb] {}
+	return "r=$r, g=$g, b=$b"
     }}
 } {r=65535, g=0, b=0}
 test lmap-5.10 {lmap only supports local scalar variables} {
     apply {{} {
-        lmap {a(3)} {1 2 3 4} {set {a(3)}}
+	lmap {a(3)} {1 2 3 4} {set {a(3)}}
     }}
 } {1 2 3 4}
 
@@ -346,18 +346,18 @@ test lmap-7.1 {compiled lmap backward jump works correctly} -setup {
 } -body {
     array set x {0 zero 1 one 2 two 3 three}
     lsort [apply {{arrayName} {
-        upvar 1 $arrayName a
-        lmap member [array names a] {
-            list $member [set a($member)]
-        }
+	upvar 1 $arrayName a
+	lmap member [array names a] {
+	    list $member [set a($member)]
+	}
     }} x]
 } -result [lsort {{0 zero} {1 one} {2 two} {3 three}}]
 test lmap-7.2 {noncompiled lmap and shared variable or value list objects that are converted to another type} -setup {
     unset -nocomplain x
 } -body {
     lmap {12.0} {a b c} {
-        set x 12.0
-        set x [expr $x + 1]
+	set x 12.0
+	set x [expr {$x + 1}]
     }
 } -result {13.0 13.0 13.0}
 # Test for incorrect "double evaluation" semantics
@@ -365,7 +365,7 @@ test lmap-7.3 {delayed substitution of body} {
     apply {{} {
        set a 0
        lmap a [list 1 2 3] "
-           set x $a
+	   set x $a
        "
        return $x
     }}

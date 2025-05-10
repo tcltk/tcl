@@ -2,7 +2,7 @@
 #
 # mkdepend : generate dependency information from C/C++ files
 #
-# Copyright (c) 1998, Nat Pryce
+# Copyright © 1998, Nat Pryce
 #
 # Permission is hereby granted, without written agreement and without
 # license or royalty fees, to use, copy, modify, and distribute this
@@ -70,7 +70,7 @@ proc openOutput {file} {
 proc closeOutput {} {
     global output
     if {[string match stdout $output] != 0} {
-        close $output
+	close $output
     }
 }
 
@@ -88,26 +88,26 @@ proc readDepends {chan} {
     set line ""
     array set depends {}
 
-    while {[gets $chan line] != -1} {
-        if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
+    while {[gets $chan line] >= 0} {
+	if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
 	    set fname [file normalize $fname]
-            if {![info exists target]} {
+	    if {![info exists target]} {
 		# this is ourself
 		set target $fname
 		puts stderr "processing [file tail $fname]"
-            } else {
+	    } else {
 		# don't include ourselves as a dependency of ourself.
 		if {![string compare $fname $target]} {continue}
-		# store in an array so multiple occurances are not counted.
-                set depends($target|$fname) ""
-            }
-        }
+		# store in an array so multiple occurrences are not counted.
+		set depends($target|$fname) ""
+	    }
+	}
     }
 
     set result {}
     foreach n [array names depends] {
-        set pair [split $n "|"]
-        lappend result [list [lindex $pair 0] [lindex $pair 1]]
+	set pair [split $n "|"]
+	lappend result [list [lindex $pair 0] [lindex $pair 1]]
     }
 
     return $result
@@ -126,7 +126,7 @@ proc readDepends {chan} {
 
 proc writeDepends {out depends} {
     foreach pair $depends {
-        puts $out "[lindex $pair 0] : \\\n\t[join [lindex $pair 1] " \\\n\t"]"
+	puts $out "[lindex $pair 0] : \\\n\t[join [lindex $pair 1] " \\\n\t"]"
     }
 }
 
@@ -144,7 +144,7 @@ proc writeDepends {out depends} {
 proc stringStartsWith {str prefix} {
     set front [string range $str 0 [expr {[string length $prefix] - 1}]]
     return [expr {[string compare [string tolower $prefix] \
-                                  [string tolower $front]] == 0}]
+				  [string tolower $front]] == 0}]
 }
 
 # filterExcludes --
@@ -162,19 +162,19 @@ proc filterExcludes {depends excludes} {
     set filtered {}
 
     foreach pair $depends {
-        set excluded 0
-        set file [lindex $pair 1]
+	set excluded 0
+	set file [lindex $pair 1]
 
-        foreach dir $excludes {
-            if [stringStartsWith $file $dir] {
-                set excluded 1
-                break;
-            }
-        }
+	foreach dir $excludes {
+	    if [stringStartsWith $file $dir] {
+		set excluded 1
+		break;
+	    }
+	}
 
-        if {!$excluded} {
-            lappend filtered $pair
-        }
+	if {!$excluded} {
+	    lappend filtered $pair
+	}
     }
 
     return $filtered
@@ -213,8 +213,8 @@ proc replacePrefix {file} {
 proc rebaseFiles {depends} {
     set rebased {}
     foreach pair $depends {
-        lappend rebased [list \
-                [replacePrefix [lindex $pair 0]] \
+	lappend rebased [list \
+		[replacePrefix [lindex $pair 0]] \
 		[replacePrefix [lindex $pair 1]]]
 
     }
@@ -241,7 +241,7 @@ proc compressDeps {depends} {
 
     set result [list]
     foreach n [array names compressed] {
-        lappend result [list $n [lsort $compressed($n)]]
+	lappend result [list $n [lsort $compressed($n)]]
     }
 
     return $result
@@ -252,7 +252,7 @@ proc compressDeps {depends} {
 #	Adds a new set of path and replacement string to the global list.
 #
 # Arguments:
-#	newPathInfo	comma seperated path and replacement string
+#	newPathInfo	comma separated path and replacement string
 #
 # Results:
 #	None.
@@ -296,7 +296,7 @@ proc readInputListFile {objectListFile} {
     set fl [read $f]
     close $f
 
-    # fix native path seperator so it isn't treated as an escape.
+    # fix native path separator so it isn't treated as an escape.
     regsub -all {\\} $fl {/} fl
 
     # Treat the string as a list so filenames between double quotes are

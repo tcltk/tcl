@@ -16,6 +16,7 @@ Tcl_DoOneEvent \- wait for events and invoke event handlers
 .sp
 int
 \fBTcl_DoOneEvent\fR(\fIflags\fR)
+.fi
 .SH ARGUMENTS
 .AS int flags
 .AP int flags in
@@ -53,24 +54,18 @@ If the \fIflags\fR argument to \fBTcl_DoOneEvent\fR is non-zero,
 it restricts the kinds of events that will be processed by
 \fBTcl_DoOneEvent\fR.
 \fIFlags\fR may be an OR-ed combination of any of the following bits:
-.TP 27
-\fBTCL_WINDOW_EVENTS\fR \-
+.IP \fBTCL_WINDOW_EVENTS\fR
 Process window system events.
-.TP 27
-\fBTCL_FILE_EVENTS\fR \-
+.IP \fBTCL_FILE_EVENTS\fR
 Process file events.
-.TP 27
-\fBTCL_TIMER_EVENTS\fR \-
+.IP \fBTCL_TIMER_EVENTS\fR
 Process timer events.
-.TP 27
-\fBTCL_IDLE_EVENTS\fR \-
+.IP \fBTCL_IDLE_EVENTS\fR
 Process idle callbacks.
-.TP 27
-\fBTCL_ALL_EVENTS\fR \-
+.IP \fBTCL_ALL_EVENTS\fR
 Process all kinds of events:  equivalent to OR-ing together all of the
 above flags or specifying none of them.
-.TP 27
-\fBTCL_DONT_WAIT\fR \-
+.IP \fBTCL_DONT_WAIT\fR
 Do not sleep:  process only events that are ready at the time of the
 call.
 .LP

@@ -4,14 +4,14 @@
 # commands.  Sourcing this file into Tcl runs the tests and generates output
 # for errors.  No output means no errors were found.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -32,13 +32,13 @@ test while-1.2 {TclCompileWhileCmd: error in test expression} -body {
 } -match glob -result {*"while {$i<} break"}
 test while-1.3 {TclCompileWhileCmd: error in test expression} -body {
     while {"a"+"b"} {error "loop aborted"}
-} -returnCodes error -result {can't use non-numeric string as operand of "+"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "+"}
 test while-1.4 {TclCompileWhileCmd: multiline test expr} -body {
     set value 1
     while {($tcl_platform(platform) != "foobar1") && \
 	    ($tcl_platform(platform) != "foobar2")} {
-        incr value
-        break
+	incr value
+	break
     }
     return $value
 } -cleanup {
@@ -77,9 +77,9 @@ test while-1.9 {TclCompileWhileCmd: simple command body} -body {
     set a {}
     set i 1
     while {$i<6} {
-	if $i==4 break
+	if {$i==4} break
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -112,8 +112,8 @@ test while-1.12 {TclCompileWhileCmd: long command body} -body {
     set a {}
     set i 1
     while {$i<6} {
-	if $i==4 break
-	if $i>5 continue
+	if {$i==4} break
+	if {$i>5} continue
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -140,7 +140,7 @@ test while-1.12 {TclCompileWhileCmd: long command body} -body {
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -155,7 +155,7 @@ test while-1.13 {TclCompileWhileCmd: while command result} -body {
 } -result {}
 test while-1.14 {TclCompileWhileCmd: while command result} -body {
     set i 0
-    set a [while {$i < 5} {if $i==3 break; incr i}]
+    set a [while {$i < 5} {if {$i==3} break; incr i}]
     return $a
 } -cleanup {
     unset a i
@@ -167,7 +167,7 @@ test while-2.1 {continue tests} -body {
     set a {}
     set i 1
     while {$i <= 4} {
-        incr i
+	incr i
 	if {$i == 3} continue
 	set a [concat $a $i]
     }
@@ -179,7 +179,7 @@ test while-2.2 {continue tests} -body {
     set a {}
     set i 1
     while {$i <= 4} {
-        incr i
+	incr i
 	if {$i != 2} continue
 	set a [concat $a $i]
     }
@@ -191,13 +191,13 @@ test while-2.3 {continue tests, nested loops} -body {
     set msg {}
     set i 1
     while {$i <= 4} {
-        incr i
-        set a 1
+	incr i
+	set a 1
 	while {$a <= 2} {
-            incr a
-            if {$i>=3 && $a>=3} continue
-            set msg [concat $msg "$i.$a"]
-        }
+	    incr a
+	    if {$i>=3 && $a>=3} continue
+	    set msg [concat $msg "$i.$a"]
+	}
     }
     return $msg
 } -cleanup {
@@ -207,9 +207,9 @@ test while-2.4 {continue tests, long command body} -body {
     set a {}
     set i 1
     while {$i<6} {
-	if $i==2 {incr i; continue}
-	if $i==4 break
-	if $i>5 continue
+	if {$i==2} {incr i; continue}
+	if {$i==4} break
+	if {$i>5} continue
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -236,7 +236,7 @@ test while-2.4 {continue tests, long command body} -body {
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -251,7 +251,7 @@ test while-3.1 {break tests} -body {
     while {$i <= 4} {
 	if {$i == 3} break
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -261,13 +261,13 @@ test while-3.2 {break tests, nested loops} -body {
     set msg {}
     set i 1
     while {$i <= 4} {
-        set a 1
+	set a 1
 	while {$a <= 2} {
-            if {$i>=2 && $a>=2} break
-            set msg [concat $msg "$i.$a"]
-            incr a
-        }
-        incr i
+	    if {$i>=2 && $a>=2} break
+	    set msg [concat $msg "$i.$a"]
+	    incr a
+	}
+	incr i
     }
     return $msg
 } -cleanup {
@@ -277,9 +277,9 @@ test while-3.3 {break tests, long command body} -body {
     set a {}
     set i 1
     while {$i<6} {
-	if $i==2 {incr i; continue}
-	if $i==5 break
-	if $i>5 continue
+	if {$i==2} {incr i; continue}
+	if {$i==5} break
+	if {$i>5} continue
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -295,7 +295,7 @@ test while-3.3 {break tests, long command body} -body {
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if $i==4 break
+	if {$i==4} break
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -307,7 +307,7 @@ test while-3.3 {break tests, long command body} -body {
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -320,7 +320,7 @@ test while-4.1 {while and computed command names} -body {
     set i 0
     set z while
     $z {$i < 10} {
-        incr i
+	incr i
     }
     return $i
 } -cleanup {
@@ -343,14 +343,14 @@ test while-4.3 {while (not compiled): error in test expression} -body {
 test while-4.4 {while (not compiled): error in test expression} -body {
     set z while
     $z {"a"+"b"} {error "loop aborted"}
-} -returnCodes error -result {can't use non-numeric string as operand of "+"}
+} -returnCodes error -result {cannot use non-numeric string "a" as left operand of "+"}
 test while-4.5 {while (not compiled): multiline test expr} -body {
     set value 1
     set z while
     $z {($tcl_platform(platform) != "foobar1") && \
 	    ($tcl_platform(platform) != "foobar2")} {
-        incr value
-        break
+	incr value
+	break
     }
     return $value
 } -cleanup {
@@ -401,9 +401,9 @@ test while-4.10 {while (not compiled): simple command body} -body {
     set i 1
     set z while
     $z {$i<6} {
-	if $i==4 break
+	if {$i==4} break
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -439,8 +439,8 @@ test while-4.13 {while (not compiled): long command body} -body {
     set z while
     set i 1
     $z {$i<6} {
-	if $i==4 break
-	if $i>5 continue
+	if {$i==4} break
+	if {$i>5} continue
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -467,7 +467,7 @@ test while-4.13 {while (not compiled): long command body} -body {
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -484,7 +484,7 @@ test while-4.14 {while (not compiled): while command result} -body {
 test while-4.15 {while (not compiled): while command result} -body {
     set i 0
     set z while
-    set a [$z {$i < 5} {if $i==3 break; incr i}]
+    set a [$z {$i < 5} {if {$i==3} break; incr i}]
     return $a
 } -cleanup {
     unset a i z
@@ -496,8 +496,8 @@ test while-5.1 {break and computed command names} -body {
     set i 0
     set z break
     while 1 {
-        if {$i > 10} $z
-        incr i
+	if {$i > 10} $z
+	incr i
     }
     return $i
 } -cleanup {
@@ -510,7 +510,7 @@ test while-5.2 {break tests with computed command names} -body {
     while {$i <= 4} {
 	if {$i == 3} $z
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -521,13 +521,13 @@ test while-5.3 {break tests, nested loops with computed command names} -body {
     set i 1
     set z break
     while {$i <= 4} {
-        set a 1
+	set a 1
 	while {$a <= 2} {
-            if {$i>=2 && $a>=2} $z
-            set msg [concat $msg "$i.$a"]
-            incr a
-        }
-        incr i
+	    if {$i>=2 && $a>=2} $z
+	    set msg [concat $msg "$i.$a"]
+	    incr a
+	}
+	incr i
     }
     return $msg
 } -cleanup {
@@ -538,9 +538,9 @@ test while-5.4 {break tests, long command body with computed command names} -bod
     set i 1
     set z break
     while {$i<6} {
-	if $i==2 {incr i; continue}
-	if $i==5 $z
-	if $i>5 continue
+	if {$i==2} {incr i; continue}
+	if {$i==5} $z
+	if {$i>5} continue
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -556,7 +556,7 @@ test while-5.4 {break tests, long command body with computed command names} -bod
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if $i==4 $z
+	if {$i==4} $z
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -568,7 +568,7 @@ test while-5.4 {break tests, long command body with computed command names} -bod
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {
@@ -581,9 +581,9 @@ test while-6.1 {continue and computed command names} -body {
     set i 0
     set z continue
     while 1 {
-        incr i
-        if {$i < 10} $z
-        break
+	incr i
+	if {$i < 10} $z
+	break
     }
     return $i
 } -cleanup {
@@ -594,7 +594,7 @@ test while-6.2 {continue tests} -body {
     set i 1
     set z continue
     while {$i <= 4} {
-        incr i
+	incr i
 	if {$i == 3} $z
 	set a [concat $a $i]
     }
@@ -607,7 +607,7 @@ test while-6.3 {continue tests with computed command names} -body {
     set i 1
     set z continue
     while {$i <= 4} {
-        incr i
+	incr i
 	if {$i != 2} $z
 	set a [concat $a $i]
     }
@@ -620,13 +620,13 @@ test while-6.4 {continue tests, nested loops with computed command names} -body 
     set i 1
     set z continue
     while {$i <= 4} {
-        incr i
-        set a 1
+	incr i
+	set a 1
 	while {$a <= 2} {
-            incr a
-            if {$i>=3 && $a>=3} $z
-            set msg [concat $msg "$i.$a"]
-        }
+	    incr a
+	    if {$i>=3 && $a>=3} $z
+	    set msg [concat $msg "$i.$a"]
+	}
     }
     return $msg
 } -cleanup {
@@ -637,9 +637,9 @@ test while-6.5 {continue tests, long command body with computed command names} -
     set i 1
     set z continue
     while {$i<6} {
-	if $i==2 {incr i; continue}
-	if $i==4 break
-	if $i>5 $z
+	if {$i==2} {incr i; continue}
+	if {$i==4} break
+	if {$i>5} $z
 	if {$i>6 && $tcl_platform(machine)=="xxx"} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
@@ -666,7 +666,7 @@ test while-6.5 {continue tests, long command body with computed command names} -
 	    catch {incr i -5} msg
 	}
 	set a [concat $a $i]
-        incr i
+	incr i
     }
     return $a
 } -cleanup {

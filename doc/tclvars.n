@@ -10,13 +10,14 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_wordchars, tcl_version \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP
 The following global variables are created and managed automatically
 by the Tcl library.  Except where noted below, these variables should
 normally be treated as read-only by application-specific code and by users.
+.\" VARIABLE: auto_path
 .TP
 \fBauto_path\fR
 .
@@ -27,15 +28,21 @@ This variable is initialized during startup to contain, in order:
 the directories listed in the \fBTCLLIBPATH\fR environment variable,
 the directory named by the \fBtcl_library\fR global variable,
 the parent directory of \fBtcl_library\fR,
+\fB[file dirname [file dirname [info nameofexecutable]]]/lib\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
 Additional locations to look for files and package indices should
 normally be added to this variable using \fBlappend\fR.
+Initialization of auto_path from the TCLLIBPATH environment
+variable undergoes tilde substitution (see \fBfilename\fR) on each
+path. Any tilde substitution that fails because the user is unknown
+will be omitted from auto_path.
 .RS
 .PP
 Additional variables relating to package management exist. More
 details are listed in the \fBVARIABLES\fR section of the \fBlibrary\fR
 manual page.
 .RE
+.\" VARIABLE: env
 .TP
 \fBenv\fR
 .
@@ -73,11 +80,11 @@ The following elements of \fBenv\fR are special to Tcl:
 \fBenv(HOME)\fR
 .
 This environment variable, if set, gives the location of the directory
-considered to be the current user's home directory, and to which a
-call of \fBcd\fR without arguments or with just
-.QW ~
-as an argument will change into. Most platforms set this correctly by
-default; it does not normally need to be set by user code.
+considered to be the current user's home directory. The value of this variable
+is returned by the \fBfile home\fR command. Most platforms set this correctly by
+default; it does not normally need to be set by user code. On Windows, if not
+already set, it is set to the value of the \fBUSERPROFILE\fR environment
+variable.
 .TP
 \fBenv(TCL_LIBRARY)\fR
 .
@@ -117,6 +124,7 @@ If existing, it has the same effect as running \fBinterp debug\fR
 \fB{} -frame 1\fR
 as the very first command of each new Tcl interpreter.
 .RE
+.\" VARIABLE: errorCode
 .TP
 \fBerrorCode\fR
 .
@@ -213,6 +221,7 @@ If none of these methods for setting the error code has been used,
 the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
+.\" VARIABLE: errorInfo
 .TP
 \fBerrorInfo\fR
 .
@@ -223,6 +232,7 @@ identifying the Tcl commands and procedures that were being executed
 when the most recent error occurred.
 Its contents take the form of a stack trace showing the various
 nested Tcl commands that had been invoked at the time of the error.
+.\" VARIABLE: tcl_library
 .TP
 \fBtcl_library\fR
 .
@@ -245,6 +255,7 @@ If \fBTCL_LIBRARY\fR is not set or doesn't refer to an appropriate
 directory, then Tcl checks several other directories based on a
 compiled-in default location, the location of the binary containing
 the application, and the current working directory.
+.\" VARIABLE: tcl_patchLevel
 .TP
 \fBtcl_patchLevel\fR
 .
@@ -254,6 +265,7 @@ hold a string giving the current patch level for Tcl, such as
 \fB8.5b3\fR for the third beta release of Tcl 8.5.
 The value of this variable is returned by the \fBinfo patchlevel\fR
 command.
+.\" VARIABLE: tcl_pkgPath
 .TP
 \fBtcl_pkgPath\fR
 .
@@ -273,6 +285,7 @@ value is added to \fBauto_path\fR at startup; changes to \fBtcl_pkgPath\fR
 are not reflected in \fBauto_path\fR.  If you want Tcl to search additional
 directories for packages you should add the names of those directories to
 \fBauto_path\fR, not \fBtcl_pkgPath\fR.
+.\" VARIABLE: tcl_platform
 .TP
 \fBtcl_platform\fR
 .
@@ -285,131 +298,51 @@ retrieve any relevant information.  In addition, extensions
 and applications may add additional values to the array.  The
 predefined elements are:
 .RS
-.TP
-\fBbyteOrder\fR
-.
+.IP \fBbyteOrder\fR
 The native byte order of this machine: either \fBlittleEndian\fR or
 \fBbigEndian\fR.
-.TP
-\fBdebug\fR
-.
+.IP \fBdebug\fR
 If this variable exists, then the interpreter was compiled with and linked
 to a debug-enabled C run-time.  This variable will only exist on Windows,
 so extension writers can specify which package to load depending on the
 C run-time library that is in use.  This is not an indication that this core
 contains symbols.
-.TP
-\fBengine\fR
-.
+.IP \fBengine\fR
 The name of the Tcl language implementation.  When the interpreter is first
 created, this is always set to the string \fBTcl\fR.
-.TP
-\fBmachine\fR
-.
+.IP \fBmachine\fR
 The instruction set executed by this machine, such as
 \fBintel\fR, \fBPPC\fR, \fB68k\fR, or \fBsun4m\fR.  On UNIX machines, this
 is the value returned by \fBuname -m\fR.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The name of the operating system running on this machine,
 such as \fBWindows NT\fR or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
-.TP
-\fBosVersion\fR
-.
+.IP \fBosVersion\fR
 The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.
-.TP
-\fBpathSeparator\fR
-.VS 8.6
-'\" Defined by TIP #315
+.IP \fBpathSeparator\fR
 The character that should be used to \fBsplit\fR PATH-like environment
 variables into their corresponding list of directory names.
-.VE 8.6
-.TP
-\fBplatform\fR
-.
+.IP \fBplatform\fR
 Either \fBwindows\fR, or \fBunix\fR.  This identifies the
 general operating environment of the machine.
-.TP
-\fBpointerSize\fR
-.
+.IP \fBpointerSize\fR
 This gives the size of the native-machine pointer in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(void*)\fR in C.)
-.TP
-\fBthreaded\fR
-.
+.IP \fBthreaded\fR
 If this variable exists, then the interpreter
 was compiled with threads enabled.
-.TP
-\fBuser\fR
-.
+.IP \fBuser\fR
 This identifies the
 current user based on the login information available on the platform.
 This value comes from the getuid() and getpwuid() system calls on Unix,
 and the value from the GetUserName() system call on Windows.
-.TP
-\fBwordSize\fR
-.
+.IP \fBwordSize\fR
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .RE
-.TP
-\fBtcl_precision\fR
-.
-This variable controls the number of digits to generate
-when converting floating-point values to strings.  It defaults
-to 0.  \fIApplications should not change this value;\fR it is
-provided for compatibility with legacy code.
-.PP
-.RS
-The default value of 0 is special, meaning that Tcl should
-convert numbers using as few digits as possible while still
-distinguishing any floating point number from its nearest
-neighbours.  It differs from using an arbitrarily high value
-for \fItcl_precision\fR in that an inexact number like \fI1.4\fR
-will convert as \fI1.4\fR rather than \fI1.3999999999999999\fR
-even though the latter is nearer to the exact value of the
-binary number.
-.RE
-.PP
-.RS
-If \fBtcl_precision\fR is not zero, then when Tcl converts a floating
-point number, it creates a decimal representation of at most
-\fBtcl_precision\fR significant digits; the result may be shorter if
-the shorter result represents the original number exactly. If no
-result of at most \fBtcl_precision\fR digits is an exact representation
-of the original number, the one that is closest to the original
-number is chosen.
-If the original number lies precisely between two equally accurate
-decimal representations, then the one with an even value for the least
-significant digit is chosen; for instance, if \fBtcl_precision\fR is 3, then
-0.3125 will convert to 0.312, not 0.313, while 0.6875 will convert to
-0.688, not 0.687. Any string of trailing zeroes that remains is trimmed.
-.RE
-.PP
-.RS
-a \fBtcl_precision\fR value of 17 digits is
-.QW perfect
-for IEEE floating-point in that it allows
-double-precision values to be converted to strings and back to
-binary with no loss of information. For this reason, you will often
-see it as a value in legacy code that must run on Tcl versions before
-8.5. It is no longer recommended; as noted above, a zero value is the
-preferred method.
-.RE
-.PP
-.RS
-All interpreters in a thread share a single \fBtcl_precision\fR value:
-changing it in one interpreter will affect all other interpreters as
-well.  Safe interpreters are not allowed to modify the
-variable.
-.RE
-.PP
-.RS
-Valid values for \fBtcl_precision\fR range from 0 to 17.
-.RE
+.\" VARIABLE: tcl_rcFileName
 .TP
 \fBtcl_rcFileName\fR
 .
@@ -419,6 +352,7 @@ initialization, then the Tcl startup code will check for the existence
 of this file and \fBsource\fR it if it exists.  For example, for \fBwish\fR
 the variable is set to \fB~/.wishrc\fR for Unix and \fB~/wishrc.tcl\fR
 for Windows.
+.\" VARIABLE: tcl_traceCompile
 .TP
 \fBtcl_traceCompile\fR
 .
@@ -436,7 +370,9 @@ tracking down suspected problems with the Tcl compiler.
 .RS
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
+.\" tcl::unsupported::disassemble always works, but we don't document it
 .RE
+.\" VARIABLE: tcl_traceExec
 .TP
 \fBtcl_traceExec\fR
 .
@@ -463,28 +399,7 @@ and interpreter.
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .RE
-.TP
-\fBtcl_wordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\eS\fR, meaning anything
-but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
-which is any Unicode word character (number, letter, or underscore).
-.TP
-\fBtcl_nonwordchars\fR
-.
-The value of this variable is a regular expression that can be set to
-control what are considered
-.QW non-word
-characters, for instances like
-selecting a word by double-clicking in text in Tk.  It is platform
-dependent.  On Windows, it defaults to \fB\es\fR, meaning any Unicode space
-character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
-Unicode word character (number, letter, or underscore).
+.\" VARIABLE: tcl_version
 .TP
 \fBtcl_version\fR
 .
@@ -500,20 +415,24 @@ command.
 The following variables are only guaranteed to exist in \fBtclsh\fR
 and \fBwish\fR executables; the Tcl library does not define them
 itself but many Tcl environments do.
+.\" VARIABLE: argc
 .TP 6
 \fBargc\fR
 .
 The number of arguments to \fBtclsh\fR or \fBwish\fR.
+.\" VARIABLE: argv
 .TP 6
 \fBargv\fR
 .
 Tcl list of arguments to \fBtclsh\fR or \fBwish\fR.
+.\" VARIABLE: argv0
 .TP 6
 \fBargv0\fR
 .
 The script that \fBtclsh\fR or \fBwish\fR started executing (if it was
 specified) or otherwise the name by which \fBtclsh\fR or \fBwish\fR
 was invoked.
+.\" VARIABLE: tcl_interactive
 .TP 6
 \fBtcl_interactive\fR
 .

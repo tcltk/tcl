@@ -2,15 +2,18 @@
 # command. Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 2005 Donal K. Fellows
+# Copyright © 2005 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
+
+package require tcltests
 
 #
 # Note: The tests for the chan methods "create" and "postevent"
@@ -26,10 +29,10 @@ test chan-1.2 {chan command general syntax} -body {
 
 test chan-2.1 {chan command: blocked subcommand} -body {
     chan blocked foo bar
-} -returnCodes error -result "wrong # args: should be \"chan blocked channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan blocked channel\""
 test chan-3.1 {chan command: close subcommand} -body {
     chan close foo bar zet
-} -returnCodes error -result "wrong # args: should be \"chan close channelId ?direction?\""
+} -returnCodes error -result "wrong # args: should be \"chan close channel ?direction?\""
 test chan-3.2 {chan command: close subcommand} -setup {
     set chan [open [info script] r]
 } -body {
@@ -46,22 +49,22 @@ test chan-3.3 {chan command: close subcommand} -setup {
 } -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
 test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
-} -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
+} -returnCodes error -result "wrong # args: should be \"chan configure channel ?-option value ...?\""
 test chan-4.2 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0100
-} -returnCodes error -match glob -result {bad value*}
+    chan configure stdout -eofchar Ā
+} -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
 test chan-4.3 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0000
-} -returnCodes error -match glob -result {bad value*}
-test chan-4.4 {chan command: check valid inValue, no outValue} -body {
+    chan configure stdout -eofchar \x00
+} -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
+test chan-4.4 {chan command: check valid inValue, no outValue} -constraints deprecated -body {
     chan configure stdout -eofchar [list \x27 {}]
-} -returnCodes ok -result {}
+} -result {}
 test chan-4.5 {chan command: check valid inValue, invalid outValue} -body {
     chan configure stdout -eofchar [list \x27 \x80]
-} -returnCodes error -match glob -result {bad value for -eofchar:*}
+} -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
 test chan-4.6 {chan command: check no inValue, valid outValue} -body {
     chan configure stdout -eofchar [list {} \x27]
-} -returnCodes ok -result {} -cleanup {chan configure stdout -eofchar [list {} {}]}
+} -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
 
 test chan-5.1 {chan command: copy subcommand} -body {
     chan copy foo
@@ -69,19 +72,19 @@ test chan-5.1 {chan command: copy subcommand} -body {
 
 test chan-6.1 {chan command: eof subcommand} -body {
     chan eof foo bar
-} -returnCodes error -result "wrong # args: should be \"chan eof channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan eof channel\""
 
 test chan-7.1 {chan command: event subcommand} -body {
     chan event foo
-} -returnCodes error -result "wrong # args: should be \"chan event channelId event ?script?\""
+} -returnCodes error -result "wrong # args: should be \"chan event channel event ?script?\""
 
 test chan-8.1 {chan command: flush subcommand} -body {
     chan flush foo bar
-} -returnCodes error -result "wrong # args: should be \"chan flush channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan flush channel\""
 
 test chan-9.1 {chan command: gets subcommand} -body {
     chan gets
-} -returnCodes error -result "wrong # args: should be \"chan gets channelId ?varName?\""
+} -returnCodes error -result "wrong # args: should be \"chan gets channel ?varName?\""
 
 test chan-10.1 {chan command: names subcommand} -body {
     chan names foo bar
@@ -89,23 +92,23 @@ test chan-10.1 {chan command: names subcommand} -body {
 
 test chan-11.1 {chan command: puts subcommand} -body {
     chan puts foo bar foo bar
-} -returnCodes error -result "wrong # args: should be \"chan puts ?-nonewline? ?channelId? string\""
+} -returnCodes error -result "wrong # args: should be \"chan puts ?-nonewline? ?channel? string\""
 
 test chan-12.1 {chan command: read subcommand} -body {
     chan read
-} -returnCodes error -result "wrong # args: should be \"chan read channelId ?numChars?\" or \"chan read ?-nonewline? channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan read channel ?numChars?\" or \"chan read ?-nonewline? channel\""
 
 test chan-13.1 {chan command: seek subcommand} -body {
     chan seek foo bar foo bar
-} -returnCodes error -result "wrong # args: should be \"chan seek channelId offset ?origin?\""
+} -returnCodes error -result "wrong # args: should be \"chan seek channel offset ?origin?\""
 
 test chan-14.1 {chan command: tell subcommand} -body {
     chan tell foo bar
-} -returnCodes error -result "wrong # args: should be \"chan tell channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan tell channel\""
 
 test chan-15.1 {chan command: truncate subcommand} -body {
     chan truncate foo bar foo bar
-} -returnCodes error -result "wrong \# args: should be \"chan truncate channelId ?length?\""
+} -returnCodes error -result "wrong \# args: should be \"chan truncate channel ?length?\""
 test chan-15.2 {chan command: truncate subcommand} -setup {
     set file [makeFile {} testTruncate]
     set f [open $file w+]
@@ -120,17 +123,27 @@ test chan-15.2 {chan command: truncate subcommand} -setup {
     catch {close $f}
     catch {removeFile $file}
 }
+test chan-15.3 {chan command: isbinary subcommand} -setup {
+    set file [makeFile {} testIsBinary]
+    set f [open $file w+]
+    fconfigure $f -translation binary
+} -body {
+    chan isbinary $f
+} -result 1 -cleanup {
+    catch {close $f}
+    catch {removeFile $file}
+}
 
 # TIP 287: chan pending
 test chan-16.1 {chan command: pending subcommand} -body {
     chan pending
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.2 {chan command: pending subcommand} -body {
     chan pending stdin
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.3 {chan command: pending subcommand} -body {
     chan pending stdin stdout stderr
-} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channel\""
 test chan-16.4 {chan command: pending subcommand} -body {
     chan pending {input output} stdout
 } -returnCodes error -result "bad mode \"input output\": must be input or output"
@@ -160,33 +173,33 @@ test chan-16.8 {chan command: pending input subcommand} -setup {
 }
 test chan-16.9 {chan command: pending input subcommand} -setup {
     proc chan-16.9-accept {sock addr port} {
-        chan configure $sock -blocking 0 -buffering line -buffersize 32
-        chan event $sock readable [list chan-16.9-readable $sock]
+	chan configure $sock -blocking 0 -buffering line -buffersize 32
+	chan event $sock readable [list chan-16.9-readable $sock]
     }
 
     proc chan-16.9-readable {sock} {
-        set r [chan gets $sock line]
-        set l [string length $line]
-        set e [chan eof $sock]
-        set b [chan blocked $sock]
-        set i [chan pending input $sock]
+	set r [chan gets $sock line]
+	set l [string length $line]
+	set e [chan eof $sock]
+	set b [chan blocked $sock]
+	set i [chan pending input $sock]
 
-        lappend ::chan-16.9-data $r $l $e $b $i
+	lappend ::chan-16.9-data $r $l $e $b $i
 
-        if {$r != -1 || $e || $l || !$b || $i > 128} {
-            set data [read $sock $i]
-            lappend ::chan-16.9-data [string range $data 0 2]
-            lappend ::chan-16.9-data [string range $data end-2 end]
-            set ::chan-16.9-done 1
-            chan event $sock readable {}
-        } else {
+	if {$r >= 0 || $e || $l || !$b || $i > 128} {
+	    set data [read $sock $i]
+	    lappend ::chan-16.9-data [string range $data 0 2]
+	    lappend ::chan-16.9-data [string range $data end-2 end]
+	    set ::chan-16.9-done 1
+	    chan event $sock readable {}
+	} else {
 	    after idle chan-16.9-client
 	}
     }
 
     proc chan-16.9-client {} {
-        chan puts -nonewline $::client ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
-        chan flush $::client
+	chan puts -nonewline $::client ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
+	chan flush $::client
     }
 
     set ::server [socket -server chan-16.9-accept -myaddr 127.0.0.1 0]

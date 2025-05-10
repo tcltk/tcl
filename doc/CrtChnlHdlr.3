@@ -12,15 +12,12 @@
 Tcl_CreateChannelHandler, Tcl_DeleteChannelHandler \- call a procedure when a channel becomes readable or writable
 .SH SYNOPSIS
 .nf
-.nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_CreateChannelHandler\fR(\fIchannel, mask, proc, clientData\fR)
 .sp
-void
 \fBTcl_DeleteChannelHandler\fR(\fIchannel, proc, clientData\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_ChannelProc clientData
 .AP Tcl_Channel channel in
@@ -29,10 +26,10 @@ Tcl channel such as returned by \fBTcl_CreateChannel\fR.
 Conditions under which \fIproc\fR should be called: OR-ed combination of
 \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR and \fBTCL_EXCEPTION\fR. Specify
 a zero value to temporarily disable an existing handler.
-.AP Tcl_FileProc *proc in
+.AP Tcl_ChannelProc *proc in
 Procedure to invoke whenever the channel indicated by \fIchannel\fR meets
 the conditions specified by \fImask\fR.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -48,7 +45,7 @@ what it means for a channel to be readable or writable.
 .PP
 .CS
 typedef void \fBTcl_ChannelProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         int \fImask\fR);
 .CE
 .PP
@@ -84,6 +81,6 @@ is invoked.
 For this reason it may be useful to use nonblocking I/O on channels
 for which there are event handlers.
 .SH "SEE ALSO"
-Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
+Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n)
 .SH KEYWORDS
-blocking, callback, channel, events, handler, nonblocking.
+blocking, callback, channel, events, handler, nonblocking

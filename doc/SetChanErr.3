@@ -14,18 +14,14 @@ Tcl_SetChannelError, Tcl_SetChannelErrorInterp, Tcl_GetChannelError, Tcl_GetChan
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_SetChannelError\fR(\fIchan, msg\fR)
 .sp
-void
 \fBTcl_SetChannelErrorInterp\fR(\fIinterp, msg\fR)
 .sp
-void
 \fBTcl_GetChannelError\fR(\fIchan, msgPtr\fR)
 .sp
-void
 \fBTcl_GetChannelErrorInterp\fR(\fIinterp, msgPtr\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_Channel chan
 .AP Tcl_Channel chan in
@@ -35,20 +31,20 @@ Refers to the Tcl interpreter whose bypass area is accessed.
 .AP Tcl_Obj* msg in
 Error message put into a bypass area. A list of return options and values,
 followed by a string message. Both message and the option/value information
-are optional.
+are optional. This \fImust\fR be a well-formed list.
 .AP Tcl_Obj** msgPtr out
 Reference to a place where the message stored in the accessed bypass area can
 be stored in.
 .BE
 .SH DESCRIPTION
 .PP
-The current definition of a Tcl channel driver does not permit the direct
+The standard definition of a Tcl channel driver does not permit the direct
 return of arbitrary error messages, except for the setting and retrieval of
 channel options. All other functions are restricted to POSIX error codes.
 .PP
 The functions described here overcome this limitation. Channel drivers are
 allowed to use \fBTcl_SetChannelError\fR and \fBTcl_SetChannelErrorInterp\fR
-to place arbitrary error messages in \fBbypass areas\fR defined for channels
+to place arbitrary error messages in \fIbypass areas\fR defined for channels
 and interpreters. And the generic I/O layer uses \fBTcl_GetChannelError\fR and
 \fBTcl_GetChannelErrorInterp\fR to look for messages in the bypass areas and
 arrange for their return as errors. The POSIX error codes set by a driver are
@@ -87,13 +83,9 @@ the value.
 Which functions of a channel driver are allowed to use which bypass function
 is listed below, as is which functions of the public channel API may leave a
 messages in the bypass areas.
-.IP \fBTcl_DriverCloseProc\fR
-May use \fBTcl_SetChannelErrorInterp\fR, and only this function.
 .IP \fBTcl_DriverInputProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.
 .IP \fBTcl_DriverOutputProc\fR
-May use \fBTcl_SetChannelError\fR, and only this function.
-.IP \fBTcl_DriverSeekProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.
 .IP \fBTcl_DriverWideSeekProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.
@@ -134,6 +126,15 @@ leave all their error information in the interpreter result.
 .ta 1.9i 4i
 \fBTcl_Close\fR	\fBTcl_UnstackChannel\fR	\fBTcl_UnregisterChannel\fR
 .DE
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fImsg\fR argument to \fBTcl_SetChannelError\fR and
+\fBTcl_SetChannelErrorInterp\fR, if not NULL, may have any reference count;
+these functions will copy.
+.PP
+\fBTcl_GetChannelError\fR and \fBTcl_GetChannelErrorInterp\fR write a value
+reference into their \fImsgPtr\fR, but do not manipulate its reference count.
+The reference count will be at least 1 (unless the reference is NULL).
 .SH "SEE ALSO"
 Tcl_Close(3), Tcl_OpenFileChannel(3), Tcl_SetErrno(3)
 .SH KEYWORDS

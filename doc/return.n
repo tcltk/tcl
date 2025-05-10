@@ -13,11 +13,11 @@
 .SH NAME
 return \- Return from a procedure, or set return code of a script
 .SH SYNOPSIS
+.nf
 \fBreturn \fR?\fIresult\fR?
-.sp
 \fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
-.sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -54,7 +54,7 @@ of the procedure is 0 (\fBTCL_OK\fR).
 .
 Error return: the return code of the procedure is 1 (\fBTCL_ERROR\fR).
 The procedure command behaves in its calling context as if it
-were the command \fBerror\fR \fIresult\fR.  See below for additional
+were the command \fBerror\fI result\fR.  See below for additional
 options.
 .TP 13
 \fBreturn\fR (or \fB2\fR)
@@ -78,7 +78,10 @@ were the command \fBcontinue\fR.
 \fIvalue\fR
 .
 \fIValue\fR must be an integer;  it will be returned as the
-return code for the current procedure.
+return code for the current procedure. Applications
+and packages should use values in the range 5 to 1073741823 (0x3fffffff)
+for their own purposes. Values outside this range are reserved
+for use by Tcl.
 .LP
 When a procedure wants to signal that it has received invalid
 arguments from its caller, it may use \fBreturn -code error\fR
@@ -105,6 +108,7 @@ script.
 As documented above, the \fB\-code\fR entry in the return options dictionary
 receives special treatment by Tcl.  There are other return options also
 recognized and treated specially by Tcl.  They are:
+.\" OPTION: -errorcode
 .TP
 \fB\-errorcode \fIlist\fR
 .
@@ -117,6 +121,7 @@ the \fB\-code error\fR option is provided, Tcl will set the value
 of the \fB\-errorcode\fR entry in the return options dictionary
 to the default value of \fBNONE\fR.  The \fB\-errorcode\fR return
 option will also be stored in the global variable \fBerrorCode\fR.
+.\" OPTION: -errorinfo
 .TP
 \fB\-errorinfo \fIinfo\fR
 .
@@ -135,12 +140,14 @@ the procedure.  Typically the \fIinfo\fR value is supplied from
 the value of \fB\-errorinfo\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information
 stored in the global variable \fBerrorInfo\fR).
+.\" OPTION: -errorstack
 .TP
 \fB\-errorstack \fIlist\fR
-.VS 8.6
+.
 The \fB\-errorstack\fR option receives special treatment only when the value
 of the \fB\-code\fR option is \fBTCL_ERROR\fR.  Then \fIlist\fR is the initial
-error stack, recording actual argument values passed to each proc level.  The error stack will
+error stack, recording actual argument values passed to each proc level.
+The error stack will
 also be reachable through \fBinfo errorstack\fR.
 If no \fB\-errorstack\fR option is provided to \fBreturn\fR when
 the \fB\-code error\fR option is provided, Tcl will provide its own
@@ -152,7 +159,7 @@ the procedure.  Typically the \fIlist\fR value is supplied from
 the value of \fB\-errorstack\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information from
 \fBinfo errorstack\fR).
-.VE 8.6
+.\" OPTION: -level
 .TP
 \fB\-level \fIlevel\fR
 .
@@ -165,6 +172,7 @@ be \fIcode\fR.  If no \fB\-level\fR option is provided, the default value
 of \fIlevel\fR is 1, so that \fBreturn\fR sets the return code that the
 current procedure returns to its caller, 1 level up the call stack.  The
 mechanism by which these options work is described in more detail below.
+.\" OPTION: -options
 .TP
 \fB\-options \fIoptions\fR
 .
@@ -257,16 +265,8 @@ proc factorial {n} {
     if {$n < 2} {
         \fBreturn\fR 1
     }
-    set m [expr {$n - 1}]
-    set code [catch {factorial $m} factor]
-    if {$code != 0} {
-        \fBreturn\fR -code $code $factor
-    }
+    set factor [factorial [expr {$n - 1}]]
     set product [expr {$n * $factor}]
-    if {$product < 0} {
-        \fBreturn\fR -code error \e
-                "overflow computing factorial of $n"
-    }
     \fBreturn\fR $product
 }
 .CE

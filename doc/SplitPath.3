@@ -20,19 +20,25 @@ char *
 .sp
 Tcl_PathType
 \fBTcl_GetPathType\fR(\fIpath\fR)
+.fi
 .SH ARGUMENTS
 .AS "const char *const" ***argvPtr in/out
 .AP "const char" *path in
 File path in a form appropriate for the current platform (see the
 \fBfilename\fR manual entry for acceptable forms for path names).
-.AP int *argcPtr out
+.AP "Tcl_Size \&| int" *argcPtr out
 Filled in with number of path elements in \fIpath\fR.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, argcPtr will be filled
+with -1 for paths with more than INT_MAX elements (which should
+trigger proper error-handling), otherwise expect it to crash.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIpath\fR.
 There will be \fI*argcPtr\fR valid entries in the array, followed by
 a NULL entry.
-.AP int argc in
+.AP Tcl_Size argc in
 Number of elements in \fIargv\fR.
 .AP "const char *const" *argv in
 Array of path elements to merge together into a single path.
@@ -61,7 +67,7 @@ For example, suppose that you have called \fBTcl_SplitPath\fR with the
 following code:
 .PP
 .CS
-int argc;
+Tcl_Size argc;
 char *path;
 char **argv;
 \&...
@@ -72,7 +78,7 @@ Then you should eventually free the storage with a call like the
 following:
 .PP
 .CS
-Tcl_Free((char *) argv);
+Tcl_Free(argv);
 .CE
 .PP
 \fBTcl_JoinPath\fR is the inverse of \fBTcl_SplitPath\fR: it takes a

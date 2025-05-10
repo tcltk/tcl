@@ -2,7 +2,7 @@
  * re_*comp and friends - compile REs
  * This file #includes several others (see the bottom).
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -39,7 +39,7 @@
 /* automatically gathered by fwd; do not hand-edit */
 /* === regcomp.c === */
 int compile(regex_t *, const chr *, size_t, int);
-static void moresubs(struct vars *, int);
+static void moresubs(struct vars *, size_t);
 static int freev(struct vars *, int);
 static void makesearch(struct vars *, struct nfa *);
 static struct subre *parse(struct vars *, int, int, struct state *, struct state *);
@@ -48,7 +48,7 @@ static void parseqatom(struct vars *, int, int, struct state *, struct state *, 
 static void nonword(struct vars *, int, struct state *, struct state *);
 static void word(struct vars *, int, struct state *, struct state *);
 static int scannum(struct vars *);
-static void repeat(struct vars *, struct state *, struct state *, int, int);
+static void repeat(struct vars *, struct state *, struct state *, size_t, size_t);
 static void bracket(struct vars *, struct state *, struct state *);
 static void cbracket(struct vars *, struct state *, struct state *);
 static void brackpart(struct vars *, struct state *, struct state *);
@@ -56,17 +56,16 @@ static const chr *scanplain(struct vars *);
 static void onechr(struct vars *, pchr, struct state *, struct state *);
 static void dovec(struct vars *, struct cvec *, struct state *, struct state *);
 static void wordchrs(struct vars *);
-static struct subre *subre(struct vars *, int, int, struct state *, struct state *);
+static struct subre *sub_re(struct vars *, int, int, struct state *, struct state *);
 static void freesubre(struct vars *, struct subre *);
 static void freesrnode(struct vars *, struct subre *);
-static void optst(struct vars *, struct subre *);
 static int numst(struct subre *, int);
 static void markst(struct subre *);
 static void cleanst(struct vars *);
 static long nfatree(struct vars *, struct subre *, FILE *);
 static long nfanode(struct vars *, struct subre *, FILE *);
-static int newlacon(struct vars *, struct state *, struct state *, int);
-static void freelacons(struct subre *, int);
+static size_t newlacon(struct vars *, struct state *, struct state *, size_t);
+static void freelacons(struct subre *, size_t);
 static void rfree(regex_t *);
 static void dump(regex_t *, FILE *);
 static void dumpst(struct subre *, FILE *, int);
@@ -157,7 +156,7 @@ static void fixconstraintloops(struct nfa *, FILE *);
 static int	findconstraintloop(struct nfa *, struct state *);
 static void breakconstraintloop(struct nfa *, struct state *);
 static void clonesuccessorstates(struct nfa *, struct state *, struct state *,
-		 struct state *, struct arc *, char *, char *, int);
+		 struct state *, struct arc *, char *, char *, size_t);
 static void cleanup(struct nfa *);
 static void markreachable(struct nfa *, struct state *, struct state *, struct state *);
 static void markcanreach(struct nfa *, struct state *, struct state *, struct state *);
@@ -180,8 +179,8 @@ static void dumpcstate(int, struct cnfa *, FILE *);
 static struct cvec *clearcvec(struct cvec *);
 static void addchr(struct cvec *, pchr);
 static void addrange(struct cvec *, pchr, pchr);
-static struct cvec *newcvec(int, int);
-static struct cvec *getcvec(struct vars *, int, int);
+static struct cvec *newcvec(size_t, size_t);
+static struct cvec *getcvec(struct vars *, size_t, size_t);
 static void freecvec(struct cvec *);
 /* === regc_locale.c === */
 static celt element(struct vars *, const chr *, const chr *);
@@ -208,7 +207,7 @@ struct vars {
     int nexttype;		/* type of next token */
     chr nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
-    int nsubexp;		/* subexpression count */
+    size_t nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
     size_t nsubs;		/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
@@ -223,7 +222,7 @@ struct vars {
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
-    int nlacons;		/* size of lacons */
+    size_t nlacons;		/* size of lacons */
     size_t spaceused;		/* approx. space used for compilation */
 };
 
@@ -244,6 +243,7 @@ struct vars {
 #define	EMPTYARC(x, y)	newarc(v->nfa, EMPTY, 0, x, y)
 
 /* token type codes, some also used as NFA arc types */
+#undef	DIGIT /* prevent conflict with libtommath */
 #define	EMPTY	'n'		/* no token present */
 #define	EOS	'e'		/* end of string */
 #define	PLAIN	'p'		/* ordinary character */
@@ -287,8 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i;
-    size_t j;
+    size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -339,7 +338,6 @@ compile(
     v->spaceused = 0;
     re->re_magic = REMAGIC;
     re->re_info = 0;		/* bits get set during parse */
-    re->re_csize = sizeof(chr);
     re->re_guts = NULL;
     re->re_fns = (void*)(&functions);
 
@@ -395,7 +393,6 @@ compile(
 	dumpnfa(v->nfa, debug);
 	dumpst(v->tree, debug, 1);
     }
-    optst(v, v->tree);
     v->ntree = numst(v->tree, 1);
     markst(v->tree);
     cleanst(v);
@@ -413,7 +410,7 @@ compile(
     assert(v->nlacons == 0 || v->lacons != NULL);
     for (i = 1; i < v->nlacons; i++) {
 	if (debug != NULL) {
-	    fprintf(debug, "\n\n\n========= LA%d ==========\n", i);
+	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "u ==========\n", i);
 	}
 	nfanode(v, &v->lacons[i], debug);
     }
@@ -469,18 +466,18 @@ compile(
 
 /*
  - moresubs - enlarge subRE vector
- ^ static void moresubs(struct vars *, int);
+ ^ static void moresubs(struct vars *, size_t);
  */
 static void
 moresubs(
     struct vars *v,
-    int wanted)			/* want enough room for this one */
+    size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
     size_t n;
 
-    assert(wanted > 0 && (size_t)wanted >= v->nsubs);
-    n = (size_t)wanted * 3 / 2 + 1;
+    assert(wanted > 0 && wanted >= v->nsubs);
+    n = wanted * 3 / 2 + 1;
     if (v->subs == v->sub10) {
 	p = (struct subre **) MALLOC(n * sizeof(struct subre *));
 	if (p != NULL) {
@@ -499,7 +496,7 @@ moresubs(
 	*p = NULL;
     }
     assert(v->nsubs == n);
-    assert((size_t)wanted < v->nsubs);
+    assert(wanted < v->nsubs);
 }
 
 /*
@@ -513,7 +510,7 @@ freev(
     struct vars *v,
     int err)
 {
-    register int ret;
+    int ret;
 
     if (v->re != NULL) {
 	rfree(v->re);
@@ -647,7 +644,7 @@ makesearch(
  * together with '|'. They appear in the tree as the left children of a chain
  * of '|' subres.
  ^ static struct subre *parse(struct vars *, int, int, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static struct subre *
 parse(
@@ -665,7 +662,7 @@ parse(
 
     assert(stopper == ')' || stopper == EOS);
 
-    branches = subre(v, '|', LONGER, init, final);
+    branches = sub_re(v, '|', LONGER, init, final);
     NOERRN();
     branch = branches;
     firstbranch = 1;
@@ -675,7 +672,7 @@ parse(
 	     * Need a place to hang the branch.
 	     */
 
-	    branch->right = subre(v, '|', LONGER, init, final);
+	    branch->right = sub_re(v, '|', LONGER, init, final);
 	    NOERRN();
 	    branch = branch->right;
 	}
@@ -688,7 +685,7 @@ parse(
 	NOERRN();
 	branch->left = parsebranch(v, stopper, type, left, right, 0);
 	NOERRN();
-	branch->flags |= UP(branch->flags | branch->left->flags);
+	branch->flags |= (char)(UP(branch->flags | branch->left->flags));
 	if ((branch->flags &~ branches->flags) != 0) {	/* new flags */
 	    for (t = branches; t != branch; t = t->right) {
 		t->flags |= branch->flags;
@@ -729,7 +726,7 @@ parse(
  * Concatenated things are bundled up as much as possible, with separate
  * ',' nodes introduced only when necessary due to substructure.
  ^ static struct subre *parsebranch(struct vars *, int, int, struct state *,
- ^ 	struct state *, int);
+ ^	struct state *, int);
  */
 static struct subre *
 parsebranch(
@@ -746,7 +743,7 @@ parsebranch(
 
     lp = left;
     seencontent = 0;
-    t = subre(v, '=', 0, left, right);	/* op '=' is tentative */
+    t = sub_re(v, '=', 0, left, right);	/* op '=' is tentative */
     NOERRN();
     while (!SEE('|') && !SEE(stopper) && !SEE(EOS)) {
 	if (seencontent) {	/* implicit concat operator */
@@ -778,7 +775,7 @@ parsebranch(
  * particular, it contains a recursion that can involve parsing the rest of
  * the branch, making this function's name somewhat inaccurate.
  ^ static void parseqatom(struct vars *, int, int, struct state *,
- ^ 	struct state *, struct subre *);
+ ^	struct state *, struct subre *);
  */
 static void
 parseqatom(
@@ -791,13 +788,13 @@ parseqatom(
 {
     struct state *s;		/* temporaries for new states */
     struct state *s2;
-#define	ARCV(t, val)	newarc(v->nfa, t, val, lp, rp)
-    int m, n;
+#define	ARCV(t, val)	newarc(v->nfa, (t), (pcolor)(val), lp, rp)
+    size_t m, n;
     struct subre *atom;		/* atom's subtree */
     struct subre *t;
-    int cap;			/* capturing parens? */
-    int pos;			/* positive lookahead? */
-    int subno;			/* capturing-parens or backref number */
+    size_t cap;			/* capturing parens? */
+    size_t pos;			/* positive lookahead? */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;
@@ -810,7 +807,7 @@ parseqatom(
     atom = NULL;
     assert(lp->nouts == 0);	/* must string new code */
     assert(rp->nins == 0);	/* between lp and rp */
-    subno = 0;			/* just to shut lint up */
+    subno = 0;
 
     /*
      * An atom or constraint...
@@ -923,7 +920,7 @@ parseqatom(
 	 */
 
 	NOTE(REG_UPBOTCH);
-	/* fallthrough into case PLAIN */
+	/* FALLTHRU */
     case PLAIN:
 	onechr(v, v->nextvalue, lp, rp);
 	okcolors(v->nfa, v->cm);
@@ -954,10 +951,10 @@ parseqatom(
 	if (cap) {
 	    v->nsubexp++;
 	    subno = v->nsubexp;
-	    if ((size_t)subno >= v->nsubs) {
+	    if (subno >= v->nsubs) {
 		moresubs(v, subno);
 	    }
-	    assert((size_t)subno < v->nsubs);
+	    assert(subno < v->nsubs);
 	} else {
 	    atomtype = PLAIN;	/* something that's not '(' */
 	}
@@ -979,7 +976,7 @@ parseqatom(
 	NOERR();
 	if (cap) {
 	    v->subs[subno] = atom;
-	    t = subre(v, '(', atom->flags|CAP, lp, rp);
+	    t = sub_re(v, '(', atom->flags|CAP, lp, rp);
 	    NOERR();
 	    t->subno = subno;
 	    t->left = atom;
@@ -993,11 +990,11 @@ parseqatom(
 	break;
     case BACKREF:		/* the Feature From The Black Lagoon */
 	INSIST(type != LACON, REG_ESUBREG);
-	INSIST(v->nextvalue < v->nsubs, REG_ESUBREG);
+	INSIST((size_t)v->nextvalue < v->nsubs, REG_ESUBREG);
 	INSIST(v->subs[v->nextvalue] != NULL, REG_ESUBREG);
 	NOERR();
 	assert(v->nextvalue > 0);
-	atom = subre(v, 'b', BACKR, lp, rp);
+	atom = sub_re(v, 'b', BACKR, lp, rp);
 	NOERR();
 	subno = v->nextvalue;
 	atom->subno = subno;
@@ -1097,7 +1094,7 @@ parseqatom(
 	if (atom != NULL) {
 	    freesubre(v, atom);
 	}
-	top->flags = f;
+	top->flags = (char)f;
 	return;
     }
 
@@ -1112,7 +1109,7 @@ parseqatom(
      */
 
     if (atom == NULL) {
-	atom = subre(v, '=', 0, lp, rp);
+	atom = sub_re(v, '=', 0, lp, rp);
 	NOERR();
     }
 
@@ -1149,7 +1146,7 @@ parseqatom(
      * Break remaining subRE into x{...} and what follows.
      */
 
-    t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+    t = sub_re(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
     NOERR();
     t->left = atom;
     atomp = &t->left;
@@ -1163,7 +1160,7 @@ parseqatom(
      */
 
     assert(top->op == '=' && top->left == NULL && top->right == NULL);
-    top->left = subre(v, '=', top->flags, top->begin, lp);
+    top->left = sub_re(v, '=', top->flags, top->begin, lp);
     NOERR();
     top->op = '.';
     top->right = t;
@@ -1207,7 +1204,7 @@ parseqatom(
 	repeat(v, atom->begin, atom->end, m, n);
 	atom->min = (short) m;
 	atom->max = (short) n;
-	atom->flags |= COMBINE(qprefer, atom->flags);
+	atom->flags |= (char)COMBINE(qprefer, atom->flags);
 	/* rest of branch can be strung starting from atom->end */
 	s2 = atom->end;
     } else if (m == 1 && n == 1) {
@@ -1232,9 +1229,9 @@ parseqatom(
 	assert(m >= 1 && m != DUPINF && n >= 1);
 	repeat(v, s, atom->begin, m-1, (n == DUPINF) ? n : n-1);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '.', f, s, atom->end);	/* prefix and atom */
+	t = sub_re(v, '.', f, s, atom->end);	/* prefix and atom */
 	NOERR();
-	t->left = subre(v, '=', PREF(f), s, atom->begin);
+	t->left = sub_re(v, '=', PREF(f), s, atom->begin);
 	NOERR();
 	t->right = atom;
 	*atomp = t;
@@ -1249,7 +1246,7 @@ parseqatom(
 	dupnfa(v->nfa, atom->begin, atom->end, s, s2);
 	repeat(v, s, s2, m, n);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '*', f, s, s2);
+	t = sub_re(v, '*', f, s, s2);
 	NOERR();
 	t->min = (short) m;
 	t->max = (short) n;
@@ -1267,12 +1264,12 @@ parseqatom(
 	t->right = parsebranch(v, stopper, type, s2, rp, 1);
     } else {
 	EMPTYARC(s2, rp);
-	t->right = subre(v, '=', 0, s2, rp);
+	t->right = sub_re(v, '=', 0, s2, rp);
     }
     NOERR();
     assert(SEE('|') || SEE(stopper) || SEE(EOS));
-    t->flags |= COMBINE(t->flags, t->right->flags);
-    top->flags |= COMBINE(top->flags, t->flags);
+    t->flags |= (char)COMBINE(t->flags, t->right->flags);
+    top->flags |= (char)COMBINE(top->flags, t->flags);
 }
 
 /*
@@ -1349,13 +1346,13 @@ repeat(
     struct vars *v,
     struct state *lp,
     struct state *rp,
-    int m,
-    int n)
+    size_t m,
+    size_t n)
 {
 #define	SOME		2
 #define	INF		3
 #define	PAIR(x, y)	((x)*4 + (y))
-#define	REDUCE(x)	( ((x) == DUPINF) ? INF : (((x) > 1) ? SOME : (x)) )
+#define	REDUCE(x)	( ((x) == DUPINF) ? INF : (((x) > 1) ? SOME : (int)(x)) )
     const int rm = REDUCE(m);
     const int rn = REDUCE(n);
     struct state *s, *s2;
@@ -1652,7 +1649,7 @@ onechr(
 /*
  - dovec - fill in arcs for each element of a cvec
  ^ static void dovec(struct vars *, struct cvec *, struct state *,
- ^ 	struct state *);
+ ^	struct state *);
  */
 static void
 dovec(
@@ -1663,7 +1660,7 @@ dovec(
 {
     chr ch, from, to;
     const chr *p;
-    int i;
+    size_t i;
 
     for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
 	ch = *p;
@@ -1719,12 +1716,12 @@ wordchrs(
 }
 
 /*
- - subre - allocate a subre
- ^ static struct subre *subre(struct vars *, int, int, struct state *,
+ - sub_re - allocate a subre
+ ^ static struct subre *sub_re(struct vars *, int, int, struct state *,
  ^	struct state *);
  */
 static struct subre *
-subre(
+sub_re(
     struct vars *v,
     int op,
     int flags,
@@ -1747,8 +1744,8 @@ subre(
 
     assert(strchr("=b|.*(", op) != NULL);
 
-    ret->op = op;
-    ret->flags = flags;
+    ret->op = (char)op;
+    ret->flags = (char)flags;
     ret->id = 0;		/* will be assigned later */
     ret->subno = 0;
     ret->min = ret->max = 1;
@@ -1809,25 +1806,6 @@ freesrnode(
     } else {
 	FREE(sr);
     }
-}
-
-/*
- - optst - optimize a subRE subtree
- ^ static void optst(struct vars *, struct subre *);
- */
-static void
-optst(
-    struct vars *v,
-    struct subre *t)
-{
-    /*
-     * DGP (2007-11-13): I assume it was the programmer's intent to eventually
-     * come back and add code to optimize subRE trees, but the routine coded
-     * just spends effort traversing the tree and doing nothing. We can do
-     * nothing with less effort.
-     */
-
-    return;
 }
 
 /*
@@ -1966,16 +1944,16 @@ nfanode(
 
 /*
  - newlacon - allocate a lookahead-constraint subRE
- ^ static int newlacon(struct vars *, struct state *, struct state *, int);
+ ^ static size_t newlacon(struct vars *, struct state *, struct state *, size_t);
  */
-static int			/* lacon number */
+static size_t		/* lacon number */
 newlacon(
     struct vars *v,
     struct state *begin,
     struct state *end,
-    int pos)
+    size_t pos)
 {
-    int n;
+    size_t n;
     struct subre *newlacons;
     struct subre *sub;
 
@@ -2010,10 +1988,10 @@ newlacon(
 static void
 freelacons(
     struct subre *subs,
-    int n)
+    size_t n)
 {
     struct subre *sub;
-    int i;
+    size_t i;
 
     assert(n > 0);
     for (sub=subs+1, i=n-1; i>0; sub++, i--) {	/* no 0th */
@@ -2069,7 +2047,7 @@ dump(
 {
 #ifdef REG_DEBUG
     struct guts *g;
-    int i;
+    size_t i;
 
     if (re->re_magic != REMAGIC) {
 	fprintf(f, "bad magic number (0x%x not 0x%x)\n",
@@ -2086,8 +2064,8 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
-	    (int) re->re_nsub, re->re_info, re->re_csize, g->ntree);
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %" TCL_Z_MODIFIER "u\n",
+	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);
     if (!NULLCNFA(g->search)) {
@@ -2095,12 +2073,15 @@ dump(
 	dumpcnfa(&g->search, f);
     }
     for (i = 1; i < g->nlacons; i++) {
-	fprintf(f, "\nla%d (%s):\n", i,
+	fprintf(f, "\nla%" TCL_Z_MODIFIER "u (%s):\n", i,
 		(g->lacons[i].subno) ? "positive" : "negative");
 	dumpcnfa(&g->lacons[i].cnfa, f);
     }
     fprintf(f, "\n");
     dumpst(g->tree, f, 0);
+#else
+    (void)re;
+    (void)f;
 #endif
 }
 
@@ -2154,7 +2135,7 @@ stdump(
 	fprintf(f, " UNUSED");
     }
     if (t->subno != 0) {
-	fprintf(f, " (#%d)", t->subno);
+	fprintf(f, " (#%" TCL_Z_MODIFIER "d)", t->subno);
     }
     if (t->min != 1 || t->max != 1) {
 	fprintf(f, " {%d,", t->min);
@@ -2164,7 +2145,7 @@ stdump(
 	fprintf(f, "}");
     }
     if (nfapresent) {
-	fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
+	fprintf(f, " %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u", t->begin->no, t->end->no);
     }
     if (t->left != NULL) {
 	fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));
@@ -2203,9 +2184,9 @@ stid(
 	return "unable";
     }
     if (t->id != 0) {
-	sprintf(buf, "%d", t->id);
+	snprintf(buf, bufsize, "%d", t->id);
     } else {
-	sprintf(buf, "%p", t);
+	snprintf(buf, bufsize, "%p", t);
     }
     return buf;
 }

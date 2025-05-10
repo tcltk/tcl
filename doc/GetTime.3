@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 2001 by Kevin B. Kenny <kennykb@acm.org>.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,6 +18,7 @@ Tcl_GetTime, Tcl_SetTimeProc, Tcl_QueryTimeProc \- get date and time
 \fBTcl_SetTimeProc\fR(\fIgetProc, scaleProc, clientData\fR)
 .sp
 \fBTcl_QueryTimeProc\fR(\fIgetProcPtr, scaleProcPtr, clientDataPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_GetTimeProc *getProc in
 .AP Tcl_Time *timePtr out
@@ -27,13 +28,13 @@ Pointer to handler function replacing \fBTcl_GetTime\fR's access to the OS.
 .AP Tcl_ScaleTimeProc scaleProc in
 Pointer to handler function for the conversion of time delays in the
 virtual domain to real-time.
-.AP ClientData clientData in
+.AP void *clientData in
 Value passed through to the two handler functions.
 .AP Tcl_GetTimeProc *getProcPtr out
 Pointer to place the currently registered get handler function into.
 .AP Tcl_ScaleTimeProc *scaleProcPtr out
 Pointer to place the currently registered scale handler function into.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Pointer to place the currently registered pass-through value into.
 .BE
 .SH DESCRIPTION
@@ -43,8 +44,8 @@ The \fBTcl_GetTime\fR function retrieves the current time as a
 structure has the following definition:
 .PP
 .CS
-typedef struct Tcl_Time {
-    long \fIsec\fR;
+typedef struct {
+    long long \fIsec\fR;
     long \fIusec\fR;
 } \fBTcl_Time\fR;
 .CE
@@ -52,7 +53,7 @@ typedef struct Tcl_Time {
 On return, the \fIsec\fR member of the structure is filled in with the
 number of seconds that have elapsed since the \fIepoch:\fR the epoch
 is the point in time of 00:00 UTC, 1 January 1970.  This number does
-\fInot\fR count leap seconds \- an interval of one day advances it by
+\fInot\fR count leap seconds; an interval of one day advances it by
 86400 seconds regardless of whether a leap second has been inserted.
 .PP
 The \fIusec\fR member of the structure is filled in with the number of
@@ -83,10 +84,10 @@ The signatures of the handler functions are as follows:
 .CS
 typedef void \fBTcl_GetTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 typedef void \fBTcl_ScaleTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .PP
 The \fItimebuf\fR fields contain the time to manipulate, and the

@@ -4,60 +4,20 @@
  *	This file implements functions that inspect CFBundle structures on
  *	MacOS X.
  *
- * Copyright 2001-2009, Apple Inc.
- * Copyright (c) 2003-2009 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2001-2009 Apple Inc.
+ * Copyright © 2003-2009 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclPort.h"
+#include "tclInt.h"
 
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 
-#ifndef TCL_DYLD_USE_DLFCN
-/*
- * Use preferred dlfcn API on 10.4 and later
- */
-#   if !defined(NO_DLFCN_H) && MAC_OS_X_VERSION_MAX_ALLOWED >= 1040
-#	define TCL_DYLD_USE_DLFCN 1
-#   else
-#	define TCL_DYLD_USE_DLFCN 0
-#   endif
-#endif /* TCL_DYLD_USE_DLFCN */
-
-#ifndef TCL_DYLD_USE_NSMODULE
-/*
- * Use deprecated NSModule API only to support 10.3 and earlier:
- */
-#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-#	define TCL_DYLD_USE_NSMODULE 1
-#   else
-#	define TCL_DYLD_USE_NSMODULE 0
-#   endif
-#endif /* TCL_DYLD_USE_NSMODULE */
-
-#if TCL_DYLD_USE_DLFCN
 #include <dlfcn.h>
-#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-/*
- * Support for weakly importing dlfcn API.
- */
-extern void *		dlsym(void *handle, const char *symbol)
-			    WEAK_IMPORT_ATTRIBUTE;
-extern char *		dlerror(void) WEAK_IMPORT_ATTRIBUTE;
-#endif
-#endif /* TCL_DYLD_USE_DLFCN */
-
-#if TCL_DYLD_USE_NSMODULE
-#include <mach-o/dyld.h>
-#endif
-
-#if (TCL_DYLD_USE_DLFCN && MAC_OS_X_VERSION_MIN_REQUIRED < 1040) || \
-	(MAC_OS_X_VERSION_MIN_REQUIRED < 1050)
-MODULE_SCOPE long	tclMacOSXDarwinRelease;
-#endif
 
 #ifdef TCL_DEBUG_LOAD
 #define TclLoadDbgMsg(m, ...) \
@@ -101,12 +61,8 @@ OpenResourceMap(
     static short (*openresourcemap)(CFBundleRef) = NULL;
 
     if (!initialized) {
-#if TCL_DYLD_USE_DLFCN
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
-	if (tclMacOSXDarwinRelease >= 8)
-#endif
 	{
-	    openresourcemap = dlsym(RTLD_NEXT,
+	    openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
 		    "CFBundleOpenBundleResourceMap");
 #ifdef TCL_DEBUG_LOAD
 	    if (!openresourcemap) {
@@ -115,21 +71,6 @@ OpenResourceMap(
 		TclLoadDbgMsg("dlsym() failed: %s", errMsg);
 	    }
 #endif /* TCL_DEBUG_LOAD */
-	}
-	if (!openresourcemap)
-#endif /* TCL_DYLD_USE_DLFCN */
-	{
-#if TCL_DYLD_USE_NSMODULE
-	    if (NSIsSymbolNameDefinedWithHint(
-		    "_CFBundleOpenBundleResourceMap", "CoreFoundation")) {
-		NSSymbol nsSymbol = NSLookupAndBindSymbolWithHint(
-			"_CFBundleOpenBundleResourceMap", "CoreFoundation");
-
-		if (nsSymbol) {
-		    openresourcemap = NSAddressOfSymbol(nsSymbol);
-		}
-	    }
-#endif /* TCL_DYLD_USE_NSMODULE */
 	}
 	initialized = TRUE;
     }
@@ -141,38 +82,6 @@ OpenResourceMap(
 }
 
 #endif /* HAVE_COREFOUNDATION */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_MacOSXOpenBundleResources --
- *
- *	Given the bundle name for a shared library, this routine sets
- *	libraryPath to the Resources/Scripts directory in the framework
- *	package. If hasResourceFile is true, it will also open the main
- *	resource file for the bundle.
- *
- * Results:
- *	TCL_OK if the bundle could be opened, and the Scripts folder found.
- *	TCL_ERROR otherwise.
- *
- * Side effects:
- *	libraryVariableName may be set, and the resource file opened.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_MacOSXOpenBundleResources(
-    Tcl_Interp *interp,
-    const char *bundleName,
-    int hasResourceFile,
-    int maxPathLen,
-    char *libraryPath)
-{
-    return Tcl_MacOSXOpenVersionedBundleResources(interp, bundleName, NULL,
-	    hasResourceFile, maxPathLen, libraryPath);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -197,11 +106,11 @@ Tcl_MacOSXOpenBundleResources(
 
 int
 Tcl_MacOSXOpenVersionedBundleResources(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,
-    int maxPathLen,
+    Tcl_Size maxPathLen,
     char *libraryPath)
 {
 #ifdef HAVE_COREFOUNDATION
@@ -283,13 +192,6 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFRelease(libURL);
 	}
 	if (versionedBundleRef) {
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-	    /*
-	     * Workaround CFBundle bug in Tiger and earlier. [Bug 2569449]
-	     */
-
-	    if (tclMacOSXDarwinRelease >= 9)
-#endif
 	    {
 		CFRelease(versionedBundleRef);
 	    }

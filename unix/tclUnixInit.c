@@ -3,23 +3,14 @@
  *
  *	Contains the Unix-specific interpreter initialization functions.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation.
  * All rights reserved.
  */
 
 #include "tclInt.h"
-#include <stddef.h>
-#include <locale.h>
 #ifdef HAVE_LANGINFO
 #   include <langinfo.h>
-#   ifdef __APPLE__
-#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
-	    /* Support for weakly importing nl_langinfo on Darwin. */
-#	    define WEAK_IMPORT_NL_LANGINFO
-	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
-#       endif
-#    endif
 #endif
 #include <sys/resource.h>
 #if defined(__FreeBSD__) && defined(__GNUC__)
@@ -33,49 +24,53 @@
 #endif
 
 #ifdef __CYGWIN__
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
 DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
-DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
+DLLIMPORT extern __stdcall void *GetModuleHandleW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
 DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+#ifdef __cplusplus
+}
+#endif
 
-#define NUMPLATFORMS 4
-static const char *const platforms[NUMPLATFORMS] = {
-    "Win32s", "Windows 95", "Windows NT", "Windows CE"
+#define NUMPROCESSORS 15
+static const char *const processors[NUMPROCESSORS] = {
+    "i686", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
+    "x86_64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
-#define NUMPROCESSORS 11
-static const char *const  processors[NUMPROCESSORS] = {
-    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
-};
-
-typedef struct _SYSTEM_INFO {
-  union {
-    DWORD  dwOemId;
-    struct {
-      int wProcessorArchitecture;
-      int wReserved;
+typedef struct {
+    union {
+	unsigned int  dwOemId;
+	struct {
+	    int wProcessorArchitecture;
+	    int wReserved;
+	};
     };
-  };
-  DWORD     dwPageSize;
-  void *lpMinimumApplicationAddress;
-  void *lpMaximumApplicationAddress;
-  void *dwActiveProcessorMask;
-  DWORD     dwNumberOfProcessors;
-  DWORD     dwProcessorType;
-  DWORD     dwAllocationGranularity;
-  int      wProcessorLevel;
-  int      wProcessorRevision;
+    unsigned int     dwPageSize;
+    void *lpMinimumApplicationAddress;
+    void *lpMaximumApplicationAddress;
+    void *dwActiveProcessorMask;
+    unsigned int     dwNumberOfProcessors;
+    unsigned int     dwProcessorType;
+    unsigned int     dwAllocationGranularity;
+    int      wProcessorLevel;
+    int      wProcessorRevision;
 } SYSTEM_INFO;
 
-typedef struct _OSVERSIONINFOW {
-  DWORD dwOSVersionInfoSize;
-  DWORD dwMajorVersion;
-  DWORD dwMinorVersion;
-  DWORD dwBuildNumber;
-  DWORD dwPlatformId;
-  wchar_t szCSDVersion[128];
+typedef struct {
+    unsigned int dwOSVersionInfoSize;
+    unsigned int dwMajorVersion;
+    unsigned int dwMinorVersion;
+    unsigned int dwBuildNumber;
+    unsigned int dwPlatformId;
+    wchar_t szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
 
@@ -90,7 +85,7 @@ typedef struct _OSVERSIONINFOW {
  */
 
 #ifndef TCL_DEFAULT_ENCODING
-#define TCL_DEFAULT_ENCODING "iso8859-1"
+#define TCL_DEFAULT_ENCODING "utf-8"
 #endif
 
 /*
@@ -98,7 +93,7 @@ typedef struct _OSVERSIONINFOW {
  * defined by Makefile.
  */
 
-static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
+static const char defaultLibraryDir[] = TCL_LIBRARY;
 
 /*
  * Directory in which to look for packages (each package is typically
@@ -106,7 +101,7 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
  * Makefile.
  */
 
-static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
+static const char pkgPath[] = TCL_PACKAGE_PATH;
 
 /*
  * The following table is used to map from Unix locale strings to encoding
@@ -131,9 +126,9 @@ typedef struct {
  */
 
 static const LocaleTable localeTable[] = {
-	    {"",		"iso8859-1"},
-		    {"ansi-1251",	"cp1251"},
-	    {"ansi_x3.4-1968",	"iso8859-1"},
+    {"",		"iso8859-1"},
+    {"ansi-1251",	"cp1251"},
+    {"ansi_x3.4-1968",	"iso8859-1"},
     {"ascii",		"ascii"},
     {"big5",		"big5"},
     {"cp1250",		"cp1250"},
@@ -170,61 +165,61 @@ static const LocaleTable localeTable[] = {
     {"euc-cn",		"euc-cn"},
     {"euc-jp",		"euc-jp"},
     {"euc-kr",		"euc-kr"},
-		    {"eucjp",		"euc-jp"},
-		    {"euckr",		"euc-kr"},
-		    {"euctw",		"euc-cn"},
+    {"eucjp",		"euc-jp"},
+    {"euckr",		"euc-kr"},
+    {"euctw",		"euc-cn"},
     {"gb12345",		"gb12345"},
     {"gb1988",		"gb1988"},
     {"gb2312",		"gb2312"},
-		    {"gb2312-1980",	"gb2312"},
+    {"gb2312-1980",	"gb2312"},
     {"gb2312-raw",	"gb2312-raw"},
-		    {"greek8",		"cp869"},
-	    {"ibm1250",		"cp1250"},
-	    {"ibm1251",		"cp1251"},
-	    {"ibm1252",		"cp1252"},
-	    {"ibm1253",		"cp1253"},
-	    {"ibm1254",		"cp1254"},
-	    {"ibm1255",		"cp1255"},
-	    {"ibm1256",		"cp1256"},
-	    {"ibm1257",		"cp1257"},
-	    {"ibm1258",		"cp1258"},
-	    {"ibm437",		"cp437"},
-	    {"ibm737",		"cp737"},
-	    {"ibm775",		"cp775"},
-	    {"ibm850",		"cp850"},
-	    {"ibm852",		"cp852"},
-	    {"ibm855",		"cp855"},
-	    {"ibm857",		"cp857"},
-	    {"ibm860",		"cp860"},
-	    {"ibm861",		"cp861"},
-	    {"ibm862",		"cp862"},
-	    {"ibm863",		"cp863"},
-	    {"ibm864",		"cp864"},
-	    {"ibm865",		"cp865"},
-	    {"ibm866",		"cp866"},
-	    {"ibm869",		"cp869"},
-	    {"ibm874",		"cp874"},
-	    {"ibm932",		"cp932"},
-	    {"ibm936",		"cp936"},
-	    {"ibm949",		"cp949"},
-	    {"ibm950",		"cp950"},
-	    {"iso-2022",	"iso2022"},
-	    {"iso-2022-jp",	"iso2022-jp"},
-	    {"iso-2022-kr",	"iso2022-kr"},
-	    {"iso-8859-1",	"iso8859-1"},
-	    {"iso-8859-10",	"iso8859-10"},
-	    {"iso-8859-13",	"iso8859-13"},
-	    {"iso-8859-14",	"iso8859-14"},
-	    {"iso-8859-15",	"iso8859-15"},
-	    {"iso-8859-16",	"iso8859-16"},
-	    {"iso-8859-2",	"iso8859-2"},
-	    {"iso-8859-3",	"iso8859-3"},
-	    {"iso-8859-4",	"iso8859-4"},
-	    {"iso-8859-5",	"iso8859-5"},
-	    {"iso-8859-6",	"iso8859-6"},
-	    {"iso-8859-7",	"iso8859-7"},
-	    {"iso-8859-8",	"iso8859-8"},
-	    {"iso-8859-9",	"iso8859-9"},
+    {"greek8",		"cp869"},
+    {"ibm1250",		"cp1250"},
+    {"ibm1251",		"cp1251"},
+    {"ibm1252",		"cp1252"},
+    {"ibm1253",		"cp1253"},
+    {"ibm1254",		"cp1254"},
+    {"ibm1255",		"cp1255"},
+    {"ibm1256",		"cp1256"},
+    {"ibm1257",		"cp1257"},
+    {"ibm1258",		"cp1258"},
+    {"ibm437",		"cp437"},
+    {"ibm737",		"cp737"},
+    {"ibm775",		"cp775"},
+    {"ibm850",		"cp850"},
+    {"ibm852",		"cp852"},
+    {"ibm855",		"cp855"},
+    {"ibm857",		"cp857"},
+    {"ibm860",		"cp860"},
+    {"ibm861",		"cp861"},
+    {"ibm862",		"cp862"},
+    {"ibm863",		"cp863"},
+    {"ibm864",		"cp864"},
+    {"ibm865",		"cp865"},
+    {"ibm866",		"cp866"},
+    {"ibm869",		"cp869"},
+    {"ibm874",		"cp874"},
+    {"ibm932",		"cp932"},
+    {"ibm936",		"cp936"},
+    {"ibm949",		"cp949"},
+    {"ibm950",		"cp950"},
+    {"iso-2022",	"iso2022"},
+    {"iso-2022-jp",	"iso2022-jp"},
+    {"iso-2022-kr",	"iso2022-kr"},
+    {"iso-8859-1",	"iso8859-1"},
+    {"iso-8859-10",	"iso8859-10"},
+    {"iso-8859-13",	"iso8859-13"},
+    {"iso-8859-14",	"iso8859-14"},
+    {"iso-8859-15",	"iso8859-15"},
+    {"iso-8859-16",	"iso8859-16"},
+    {"iso-8859-2",	"iso8859-2"},
+    {"iso-8859-3",	"iso8859-3"},
+    {"iso-8859-4",	"iso8859-4"},
+    {"iso-8859-5",	"iso8859-5"},
+    {"iso-8859-6",	"iso8859-6"},
+    {"iso-8859-7",	"iso8859-7"},
+    {"iso-8859-8",	"iso8859-8"},
+    {"iso-8859-9",	"iso8859-9"},
     {"iso2022",		"iso2022"},
     {"iso2022-jp",	"iso2022-jp"},
     {"iso2022-kr",	"iso2022-kr"},
@@ -242,47 +237,47 @@ static const LocaleTable localeTable[] = {
     {"iso8859-7",	"iso8859-7"},
     {"iso8859-8",	"iso8859-8"},
     {"iso8859-9",	"iso8859-9"},
-		    {"iso88591",	"iso8859-1"},
-		    {"iso885915",	"iso8859-15"},
-		    {"iso88592",	"iso8859-2"},
-		    {"iso88595",	"iso8859-5"},
-		    {"iso88596",	"iso8859-6"},
-		    {"iso88597",	"iso8859-7"},
-		    {"iso88598",	"iso8859-8"},
-		    {"iso88599",	"iso8859-9"},
+    {"iso88591",	"iso8859-1"},
+    {"iso885915",	"iso8859-15"},
+    {"iso88592",	"iso8859-2"},
+    {"iso88595",	"iso8859-5"},
+    {"iso88596",	"iso8859-6"},
+    {"iso88597",	"iso8859-7"},
+    {"iso88598",	"iso8859-8"},
+    {"iso88599",	"iso8859-9"},
 #ifdef hpux
-		    {"ja",		"shiftjis"},
+    {"ja",		"shiftjis"},
 #else
-		    {"ja",		"euc-jp"},
+    {"ja",		"euc-jp"},
 #endif
-		    {"ja_jp",		"euc-jp"},
-		    {"ja_jp.euc",	"euc-jp"},
-		    {"ja_jp.eucjp",	"euc-jp"},
-		    {"ja_jp.jis",	"iso2022-jp"},
-		    {"ja_jp.mscode",	"shiftjis"},
-		    {"ja_jp.sjis",	"shiftjis"},
-		    {"ja_jp.ujis",	"euc-jp"},
-		    {"japan",		"euc-jp"},
+    {"ja_jp",		"euc-jp"},
+	{"ja_jp.euc",	"euc-jp"},
+    {"ja_jp.eucjp",	"euc-jp"},
+    {"ja_jp.jis",	"iso2022-jp"},
+    {"ja_jp.mscode",	"shiftjis"},
+    {"ja_jp.sjis",	"shiftjis"},
+    {"ja_jp.ujis",	"euc-jp"},
+    {"japan",		"euc-jp"},
 #ifdef hpux
-		    {"japanese",	"shiftjis"},
+    {"japanese",	"shiftjis"},
 #else
-		    {"japanese",	"euc-jp"},
+    {"japanese",	"euc-jp"},
 #endif
-		    {"japanese-sjis",	"shiftjis"},
-		    {"japanese-ujis",	"euc-jp"},
-		    {"japanese.euc",	"euc-jp"},
-		    {"japanese.sjis",	"shiftjis"},
+    {"japanese-sjis",	"shiftjis"},
+    {"japanese-ujis",	"euc-jp"},
+    {"japanese.euc",	"euc-jp"},
+    {"japanese.sjis",	"shiftjis"},
     {"jis0201",		"jis0201"},
     {"jis0208",		"jis0208"},
     {"jis0212",		"jis0212"},
-		    {"jp_jp",		"shiftjis"},
-		    {"ko",		"euc-kr"},
-		    {"ko_kr",		"euc-kr"},
-		    {"ko_kr.euc",	"euc-kr"},
-		    {"ko_kw.euckw",	"euc-kr"},
+    {"jp_jp",		"shiftjis"},
+    {"ko",		"euc-kr"},
+    {"ko_kr",		"euc-kr"},
+    {"ko_kr.euc",	"euc-kr"},
+    {"ko_kw.euckw",	"euc-kr"},
     {"koi8-r",		"koi8-r"},
     {"koi8-u",		"koi8-u"},
-		    {"korean",		"euc-kr"},
+    {"korean",		"euc-kr"},
     {"ksc5601",		"ksc5601"},
     {"maccenteuro",	"macCentEuro"},
     {"maccroatian",	"macCroatian"},
@@ -296,51 +291,36 @@ static const LocaleTable localeTable[] = {
     {"macthai",		"macThai"},
     {"macturkish",	"macTurkish"},
     {"macukraine",	"macUkraine"},
-		    {"roman8",		"iso8859-1"},
-		    {"ru",		"iso8859-5"},
-		    {"ru_ru",		"iso8859-5"},
-		    {"ru_su",		"iso8859-5"},
+    {"roman8",		"iso8859-1"},
+    {"ru",		"iso8859-5"},
+    {"ru_ru",		"iso8859-5"},
+    {"ru_su",		"iso8859-5"},
     {"shiftjis",	"shiftjis"},
-		    {"sjis",		"shiftjis"},
+    {"sjis",		"shiftjis"},
     {"symbol",		"symbol"},
     {"tis-620",		"tis-620"},
-		    {"tis620",		"tis-620"},
-		    {"turkish8",	"cp857"},
-		    {"utf8",		"utf-8"},
-		    {"zh",		"cp936"},
-		    {"zh_cn.gb2312",	"euc-cn"},
-		    {"zh_cn.gbk",	"euc-cn"},
-		    {"zh_cz.gb2312",	"euc-cn"},
-		    {"zh_tw",		"euc-tw"},
-		    {"zh_tw.big5",	"big5"},
+    {"tis620",		"tis-620"},
+    {"turkish8",	"cp857"},
+    {"utf8",		"utf-8"},
+    {"zh",		"cp936"},
+    {"zh_cn.gb2312",	"euc-cn"},
+    {"zh_cn.gbk",	"euc-cn"},
+    {"zh_cz.gb2312",	"euc-cn"},
+    {"zh_tw",		"euc-tw"},
+    {"zh_tw.big5",	"big5"},
 };
 
 #ifdef HAVE_COREFOUNDATION
 static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
-#if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
-	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
-	(defined(TCL_THREADS) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
-	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
-	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
-	)))
-/*
- * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
- * initialize release global at startup from uname().
- */
-#define GET_DARWIN_RELEASE 1
-MODULE_SCOPE long tclMacOSXDarwinRelease;
-long tclMacOSXDarwinRelease = 0;
-#endif
-
 
 /*
  *---------------------------------------------------------------------------
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals and
+ *	Initialize all the platform-dependent things like signals and
  *	floating-point error handling.
  *
  *	Called at process initialization time.
@@ -367,13 +347,13 @@ TclpInitPlatform(void)
      * Make sure, that the standard FDs exist. [Bug 772288]
      */
 
-    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(0, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_RDONLY);
     }
-    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(1, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
-    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(2, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
 
@@ -416,21 +396,11 @@ TclpInitPlatform(void)
     /*
      * In case the initial locale is not "C", ensure that the numeric
      * processing is done in "C" locale regardless. This is needed because Tcl
-     * relies on routines like strtod, but should not have locale dependent
+     * relies on routines like strtol/strtoul, but should not have locale dependent
      * behavior.
      */
 
     setlocale(LC_NUMERIC, "C");
-
-#ifdef GET_DARWIN_RELEASE
-    {
-	struct utsname name;
-
-	if (!uname(&name)) {
-	    tclMacOSXDarwinRelease = strtol(name.release, NULL, 10);
-	}
-    }
-#endif
 }
 
 /*
@@ -461,22 +431,22 @@ TclpInitLibraryPath(
     const char *str;
     Tcl_DString buffer;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -488,13 +458,13 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, TCL_INDEX_NONE));
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -508,9 +478,9 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_DStringToObj(&ds));
 	}
-	ckfree(pathv);
+	Tcl_Free(pathv);
     }
 
     /*
@@ -535,17 +505,24 @@ TclpInitLibraryPath(
 	    str = defaultLibraryDir;
 	}
 	if (str[0] != '\0') {
-	    objPtr = Tcl_NewStringObj(str, -1);
+	    objPtr = Tcl_NewStringObj(str, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	}
     }
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
-    *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, str, *lengthPtr + 1);
+
+    /*
+     * Note lengthPtr is (size_t *) which is unsigned so cannot
+     * pass directly to Tcl_GetStringFromObj.
+     * TODO - why is the type size_t anyways?
+     */
+    Tcl_Size length;
+    str = TclGetStringFromObj(pathPtr, &length);
+    *lengthPtr = length;
+    *valuePtr = (char *)Tcl_Alloc(length + 1);
+    memcpy(*valuePtr, str, length + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -582,12 +559,6 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void
-TclpSetInterfaces(void)
-{
-    /* do nothing */
-}
-
 static const char *
 SearchKnownEncodings(
     const char *encoding)
@@ -595,17 +566,21 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
+    /* Here, search for i in the interval left <= i < right. */
     while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 
 	if (code == 0) {
+	    /* Found it at i == test. */
 	    return localeTable[test].encoding;
 	}
 	if (code < 0) {
+	    /* Restrict the search to the interval test < i < right. */
 	    left = test+1;
 	} else {
-	    right = test-1;
+	    /* Restrict the search to the interval left <= i < test. */
+	    right = test;
 	}
     }
     return NULL;
@@ -639,13 +614,13 @@ Tcl_GetEncodingNameFromEnvironment(
 	 */
 
 	Tcl_DStringInit(&ds);
-	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
+	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	Tcl_DStringFree(&ds);
 	if (Tcl_DStringLength(bufPtr)) {
@@ -677,14 +652,14 @@ Tcl_GetEncodingNameFromEnvironment(
 
 	Tcl_DStringInit(&ds);
 	p = encoding;
-	encoding = Tcl_DStringAppend(&ds, p, -1);
+	encoding = Tcl_DStringAppend(&ds, p, TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	if (Tcl_DStringLength(bufPtr)) {
 	    Tcl_DStringFree(&ds);
@@ -705,9 +680,9 @@ Tcl_GetEncodingNameFromEnvironment(
 	if (*p != '\0') {
 	    knownEncoding = SearchKnownEncodings(p);
 	    if (knownEncoding != NULL) {
-		Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	    } else if (NULL != Tcl_GetEncoding(NULL, p)) {
-		Tcl_DStringAppend(bufPtr, p, -1);
+		Tcl_DStringAppend(bufPtr, p, TCL_INDEX_NONE);
 	    }
 	}
 	Tcl_DStringFree(&ds);
@@ -715,7 +690,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	    return Tcl_DStringValue(bufPtr);
 	}
     }
-    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, -1);
+    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
 }
 
 /*
@@ -737,6 +712,43 @@ Tcl_GetEncodingNameFromEnvironment(
  *----------------------------------------------------------------------
  */
 
+#if defined(HAVE_COREFOUNDATION)
+/*
+ * Helper because whether CFLocaleCopyCurrent and CFLocaleGetIdentifier are
+ * strongly or weakly bound varies by version of OSX, triggering warnings.
+ */
+
+static inline void
+InitMacLocaleInfoVar(
+    CFLocaleRef (*localeCopyCurrent)(void),
+    CFStringRef (*localeGetIdentifier)(CFLocaleRef),
+    Tcl_Interp *interp)
+{
+    CFLocaleRef localeRef;
+    CFStringRef locale;
+    char loc[256];
+
+    if (localeCopyCurrent == NULL || localeGetIdentifier == NULL) {
+	return;
+    }
+
+    localeRef = localeCopyCurrent();
+    if (!localeRef) {
+	return;
+    }
+
+    locale = localeGetIdentifier(localeRef);
+    if (locale && CFStringGetCString(locale, loc, 256,
+	    kCFStringEncodingUTF8)) {
+	if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
+	    Tcl_ResetResult(interp);
+	}
+	Tcl_SetVar2(interp, "::tcl::mac::locale", NULL, loc, TCL_GLOBAL_ONLY);
+    }
+    CFRelease(localeRef);
+}
+#endif /*defined(HAVE_COREFOUNDATION)*/
+
 void
 TclpSetVariables(
     Tcl_Interp *interp)
@@ -750,62 +762,35 @@ TclpSetVariables(
     struct utsname name;
 #endif
     int unameOK;
-    Tcl_DString ds;
+    const char *p, *q;
+    Tcl_Obj *pkgListObj = Tcl_NewObj();
 
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED > 1020
     /*
      * Set msgcat fallback locale to current CFLocale identifier.
      */
 
-    CFLocaleRef localeRef;
-
-    if (&CFLocaleCopyCurrent != NULL && &CFLocaleGetIdentifier != NULL &&
-	    (localeRef = CFLocaleCopyCurrent())) {
-	CFStringRef locale = CFLocaleGetIdentifier(localeRef);
-
-	if (locale) {
-	    char loc[256];
-
-	    if (CFStringGetCString(locale, loc, 256, kCFStringEncodingUTF8)) {
-		if (!Tcl_CreateNamespace(interp, "::tcl::mac", NULL, NULL)) {
-		    Tcl_ResetResult(interp);
-		}
-		Tcl_SetVar2(interp, "::tcl::mac::locale", NULL, loc, TCL_GLOBAL_ONLY);
-	    }
-	}
-	CFRelease(localeRef);
-    }
-#endif /* MAC_OS_X_VERSION_MAX_ALLOWED > 1020 */
+    InitMacLocaleInfoVar(CFLocaleCopyCurrent, CFLocaleGetIdentifier, interp);
 
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
 	const char *str;
 	CFBundleRef bundleRef;
+	Tcl_DString ds;
 
 	Tcl_SetVar2(interp, "tclDefaultLibrary", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath, TCL_GLOBAL_ONLY);
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 	str = TclGetEnv("DYLD_FRAMEWORK_PATH", &ds);
 	if ((str != NULL) && (str[0] != '\0')) {
-	    char *p = Tcl_DStringValue(&ds);
-
-	    /*
-	     * Convert DYLD_FRAMEWORK_PATH from colon to space separated.
-	     */
-
-	    do {
-		if (*p == ':') {
-		    *p = ' ';
-		}
-	    } while (*p++);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, Tcl_DStringValue(&ds),
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-	    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-		    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+	    p = Tcl_DStringValue(&ds);
+	    while ((q = strchr(p, ':')) != NULL) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+		p = q+1;
+	    }
+	    if (*p) {
+		Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+	    }
 	    Tcl_DStringFree(&ds);
 	}
 	bundleRef = CFBundleGetMainBundle();
@@ -819,10 +804,7 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
@@ -832,20 +814,32 @@ TclpSetVariables(
 			(unsigned char*) tclLibPath, MAXPATHLEN) &&
 			! TclOSstat(tclLibPath, &statBuf) &&
 			S_ISDIR(statBuf.st_mode)) {
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, tclLibPath,
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-		    Tcl_SetVar2(interp, "tcl_pkgPath", NULL, " ",
-			    TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+		    Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(tclLibPath, -1));
 		}
 		CFRelease(frameworksURL);
 	    }
 	}
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath,
-		TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
-    } else
+    }
 #endif /* HAVE_COREFOUNDATION */
+    p = pkgPath;
+    while ((q = strchr(p, ':')) != NULL) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, q-p));
+	p = q+1;
+    }
+    if (*p) {
+	Tcl_ListObjAppendElement(NULL, pkgListObj, Tcl_NewStringObj(p, -1));
+    }
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_pkgPath", -1), NULL, pkgListObj, TCL_GLOBAL_ONLY);
     {
-	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
+	/* Some platforms build configure scripts expect ~ expansion so do that */
+	Tcl_Obj *origPaths;
+	Tcl_Obj *resolvedPaths;
+
+	origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+	resolvedPaths = TclResolveTildePathList(origPaths);
+	if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+	    Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+	}
     }
 
 #ifdef DJGPP
@@ -858,26 +852,23 @@ TclpSetVariables(
 #ifdef __CYGWIN__
 	unameOK = 1;
     if (!osInfoInitialized) {
-	HANDLE handle = LoadLibraryW(L"NTDLL");
+	void *handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
 	}
-	if (handle) {
-	    FreeLibrary(handle);
-	}
 	osInfoInitialized = 1;
     }
 
     GetSystemInfo(&sysInfo);
 
-    if (osInfo.dwPlatformId < NUMPLATFORMS) {
-	Tcl_SetVar2(interp, "tcl_platform", "os",
-		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
     }
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -888,10 +879,11 @@ TclpSetVariables(
 #elif !defined NO_UNAME
     if (uname(&name) >= 0) {
 	const char *native;
+	Tcl_DString ds;
 
 	unameOK = 1;
 
-	native = Tcl_ExternalToUtfDString(NULL, name.sysname, -1, &ds);
+	native = Tcl_ExternalToUtfDString(NULL, name.sysname, TCL_INDEX_NONE, &ds);
 	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);
 	Tcl_DStringFree(&ds);
 
@@ -949,12 +941,13 @@ TclpSetVariables(
     {
 	struct passwd *pwEnt = TclpGetPwUid(getuid());
 	const char *user;
+	Tcl_DString ds;
 
 	if (pwEnt == NULL) {
 	    user = "";
 	    Tcl_DStringInit(&ds);	/* ensure cleanliness */
 	} else {
-	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, -1, &ds);
+	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, TCL_INDEX_NONE, &ds);
 	}
 
 	Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
@@ -974,7 +967,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensetive, on Windows this matches mixed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
@@ -988,22 +981,22 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    int *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, result = -1;
-    register const char *env, *p1, *p2;
+    Tcl_Size i, result = -1;
+    const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);
     for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
-	p1 = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p1 = Tcl_ExternalToUtfDString(NULL, env, TCL_INDEX_NONE, &envString);
 	p2 = name;
 
 	for (; *p2 == *p1; p1++, p2++) {
@@ -1025,7 +1018,6 @@ TclpFindVariable(
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1044,22 +1036,27 @@ TclpFindVariable(
  */
 
 #ifdef HAVE_COREFOUNDATION
+#ifdef TCL_FRAMEWORK
 static int
 MacOSXGetLibraryPath(
     Tcl_Interp *interp,
     int maxPathLen,
     char *tclLibPath)
 {
-    int foundInFramework = TCL_ERROR;
-
-#ifdef TCL_FRAMEWORK
-    foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp,
+    return Tcl_MacOSXOpenVersionedBundleResources(interp,
 	    "com.tcltk.tcllibrary", TCL_FRAMEWORK_VERSION, 0, maxPathLen,
 	    tclLibPath);
-#endif
-
-    return foundInFramework;
 }
+#else
+static int
+MacOSXGetLibraryPath(
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(char *))
+{
+    return TCL_ERROR;
+}
+#endif
 #endif /* HAVE_COREFOUNDATION */
 
 /*

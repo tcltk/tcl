@@ -9,10 +9,10 @@ namespace eval ::tcl::clock {
         "Pk"\
         "S"]
     ::msgcat::mcset lv DAYS_OF_WEEK_FULL [list \
-        "sv\u0113tdiena"\
+        "svētdiena"\
         "pirmdiena"\
         "otrdiena"\
-        "tre\u0161diena"\
+        "trešdiena"\
         "ceturdien"\
         "piektdiena"\
         "sestdiena"]
@@ -22,8 +22,8 @@ namespace eval ::tcl::clock {
         "Mar"\
         "Apr"\
         "Maijs"\
-        "J\u016bn"\
-        "J\u016bl"\
+        "Jūn"\
+        "Jūl"\
         "Aug"\
         "Sep"\
         "Okt"\
@@ -31,21 +31,21 @@ namespace eval ::tcl::clock {
         "Dec"\
         ""]
     ::msgcat::mcset lv MONTHS_FULL [list \
-        "janv\u0101ris"\
-        "febru\u0101ris"\
+        "janvāris"\
+        "februāris"\
         "marts"\
-        "apr\u012blis"\
+        "aprīlis"\
         "maijs"\
-        "j\u016bnijs"\
-        "j\u016blijs"\
+        "jūnijs"\
+        "jūlijs"\
         "augusts"\
         "septembris"\
         "oktobris"\
         "novembris"\
         "decembris"\
         ""]
-    ::msgcat::mcset lv BCE "pm\u0113"
-    ::msgcat::mcset lv CE "m\u0113"
+    ::msgcat::mcset lv BCE "pmē"
+    ::msgcat::mcset lv CE "mē"
     ::msgcat::mcset lv DATE_FORMAT "%Y.%e.%m"
     ::msgcat::mcset lv TIME_FORMAT "%H:%M:%S"
     ::msgcat::mcset lv DATE_TIME_FORMAT "%Y.%e.%m %H:%M:%S %z"

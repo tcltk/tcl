@@ -3,7 +3,7 @@
  *
  *	Common routines used by all socket based channel types.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -11,14 +11,14 @@
 
 #include "tclInt.h"
 
-#if defined(_WIN32) && defined(UNICODE)
+#if defined(_WIN32)
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
 
 typedef struct {
     int initialized;
-    Tcl_DString errorMsg; /* UTF-8 encoded error-message */
+    Tcl_DString errorMsg;	/* UTF-8 encoded error-message */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -30,11 +30,12 @@ gai_strerror(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->initialized) {
-	Tcl_DStringFree(&tsdPtr->errorMsg);
+	Tcl_DStringSetLength(&tsdPtr->errorMsg, 0);
     } else {
+	Tcl_DStringInit(&tsdPtr->errorMsg);
 	tsdPtr->initialized = 1;
     }
-    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    Tcl_WCharToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
 }
 #endif
@@ -74,7 +75,12 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, string, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds,
+		NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	sp = getservbyname(native, proto);		/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 	if (sp != NULL) {
@@ -116,25 +122,29 @@ TclSockGetPort(
 int
 TclSockMinimumBuffers(
     void *sock,			/* Socket file descriptor */
-    int size)			/* Minimum buffer size */
+    Tcl_Size size1)		/* Minimum buffer size */
 {
     int current;
     socklen_t len;
+    int size = size1;
 
+    if (size != size1) {
+	return TCL_ERROR;
+    }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_SNDBUF,
 		(char *) &size, len);
     }
     len = sizeof(int);
-    getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+    getsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 	    (char *) &current, &len);
     if (current < size) {
 	len = sizeof(int);
-	setsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_RCVBUF,
+	setsockopt((SOCKET)(size_t)sock, SOL_SOCKET, SO_RCVBUF,
 		(char *) &size, len);
     }
     return TCL_OK;
@@ -179,7 +189,12 @@ TclCreateSocketAddress(
     int result;
 
     if (host != NULL) {
-	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
+		NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+	    return 0;
+	}
+	native = Tcl_DStringValue(&ds);
     }
 
     /*
@@ -223,7 +238,7 @@ TclCreateSocketAddress(
      * using AI_ADDRCONFIG is probably low even in situations where it works,
      * we'll leave it out for now. After all, it is just an optimisation.
      *
-     * Missing on: OpenBSD, NetBSD.
+     * Missing on NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
 
@@ -248,7 +263,7 @@ TclCreateSocketAddress(
 		(result == EAI_SYSTEM) ? Tcl_PosixError(interp) :
 #endif /* EAI_SYSTEM */
 		gai_strerror(result);
-        return 0;
+	return 0;
     }
 
     /*
@@ -312,13 +327,13 @@ Tcl_OpenTcpServer(
     int port,
     const char *host,
     Tcl_TcpAcceptProc *acceptProc,
-    ClientData callbackData)
+    void *callbackData)
 {
     char portbuf[TCL_INTEGER_SPACE];
 
     TclFormatInt(portbuf, port);
     return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
-	    acceptProc, callbackData);
+	    -1, acceptProc, callbackData);
 }
 
 /*

@@ -4,20 +4,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testdel [llength [info commands testdel]]
 
@@ -156,10 +156,10 @@ set SAVED_UNKNOWN "proc unknown "
 append SAVED_UNKNOWN [list [info args unknown.old] [info body unknown.old]]
 test rename-5.1 {repeated rename deletion and redefinition of same command} {
     for {set i 0} {$i < 10} {incr i} {
-        eval $SAVED_UNKNOWN
-        tcl_wordBreakBefore "" 0
-        rename tcl_wordBreakBefore {}
-        rename unknown {}
+	eval $SAVED_UNKNOWN
+	tcl_wordBreakBefore "" 0
+	rename tcl_wordBreakBefore {}
+	rename unknown {}
     }
 } {}
 
@@ -168,8 +168,8 @@ catch {rename unknown.old unknown}
 
 test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile proc is renamed} -body {
     proc x {} {
-        set a 123
-        set b [incr a]
+	set a 123
+	set b [incr a]
     }
     x
     rename incr incr.old

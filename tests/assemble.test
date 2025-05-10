@@ -2,8 +2,8 @@
 #
 #	Test suite for the 'tcl::unsupported::assemble' command
 #
-# Copyright (c) 2010 by Ozgur Dogan Ugurlu.
-# Copyright (c) 2010 by Kevin B. Kenny.
+# Copyright © 2010 Ozgur Dogan Ugurlu.
+# Copyright © 2010 Kevin B. Kenny.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -12,7 +12,7 @@
 # Commands covered: assemble
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 namespace eval tcl::unsupported {namespace export assemble}
@@ -141,6 +141,7 @@ test assemble-3.1 {wrong # args, compiled path} {
     -returnCodes error
     -match glob
     -result {wrong # args:*}
+    -cleanup {rename x {}}
 }
 test assemble-3.2 {wrong # args, compiled path} {
     -body {
@@ -235,6 +236,7 @@ test assemble-5.3 {unsupported substitution} {
 	list [catch {x} result] $result $::errorCode
     }
     -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {rename x {}}
 }
 test assemble-5.4 {backslash substitution} {
     -body {
@@ -279,9 +281,9 @@ test assemble-6.3 {push} {
 test assemble-6.4 {push4} {
     -body {
 	proc x {} "
-            [fillTables]
-            assemble {push hello}
-        "
+	    [fillTables]
+	    assemble {push hello}
+	"
 	x
     }
     -cleanup {
@@ -532,18 +534,6 @@ test assemble-7.16 {incrStk} {
     -result 12
     -cleanup {rename x {}}
 }
-test assemble-7.17 {land/lor} {
-    -body {
-	proc x {a b} {
-	    list \
-		[assemble {load a; load b; land}] \
-		[assemble {load a; load b; lor}]
-	}
-	list [x 0 0] [x 0 23] [x 35 0] [x 47 59]
-    }
-    -result {{0 0} {0 1} {0 1} {1 1}}
-    -cleanup {rename x {}}
-}
 test assemble-7.18 {lappendArrayStk} {
     -body {
 	proc x {} {
@@ -634,6 +624,7 @@ test assemble-7.24 {lsetList} {
 	x
     }
     -result {{a b} {c d} {e i} {g h}}
+    -cleanup {rename x {}}
 }
 test assemble-7.25 {lshift} {
     -body {
@@ -781,7 +772,7 @@ test assemble-7.43 {uplus} {
 	}
     }
     -returnCodes error
-    -result {can't use non-numeric floating-point value as operand of "+"}
+    -result {cannot use non-numeric floating-point value "NaN" as operand of "+"}
 }
 test assemble-7.43.1 {tryCvtToNumeric} {
     -body {
@@ -852,10 +843,11 @@ test assemble-8.5 {bad context} {
     -body {
 	namespace eval assem {
 	    set x 1
-	    list [catch {assemble {load x}} result] $result $errorCode
+	    assemble {load x}
 	}
     }
-    -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
+    -result {cannot use this instruction to create a variable in a non-proc context}
+    -errorCode {TCL ASSEM LVT}
     -cleanup {namespace delete assem}
 }
 test assemble-8.6 {load1} {
@@ -874,9 +866,9 @@ test assemble-8.7 {load4} {
     -body {
 	proc x {a} "
 	    [fillTables]
-            set b \$a
-            assemble {load b}
-        "
+	    set b \$a
+	    assemble {load b}
+	"
 	x able
     }
     -result able
@@ -899,7 +891,7 @@ test assemble-8.8 {loadArray1} {
 test assemble-8.9 {loadArray4} {
     -body "
 	proc x {} {
-            [fillTables]
+	    [fillTables]
 	    set able(baker) charlie
 	    assemble {
 		push baker
@@ -927,7 +919,7 @@ test assemble-8.10 {append1} {
 test assemble-8.11 {append4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y {hello, }
 	    assemble {
 		push world; append y
@@ -954,7 +946,7 @@ test assemble-8.12 {appendArray1} {
 test assemble-8.13 {appendArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y(z) {hello, }
 	    assemble {
 		push z; push world; appendArray y
@@ -981,7 +973,7 @@ test assemble-8.14 {lappend1} {
 test assemble-8.15 {lappend4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y {hello,}
 	    assemble {
 		push world; lappend y
@@ -1008,7 +1000,7 @@ test assemble-8.16 {lappendArray1} {
 test assemble-8.17 {lappendArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    set y(z) {hello,}
 	    assemble {
 		push z; push world; lappendArray y
@@ -1035,11 +1027,11 @@ test assemble-8.18 {store1} {
 test assemble-8.19 {store4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    assemble {
 		push test; store y
 	    }
-            set y
+	    set y
 	"
 	x
     }
@@ -1062,7 +1054,7 @@ test assemble-8.20 {storeArray1} {
 test assemble-8.21 {storeArray4} {
     -body {
 	proc x {} "
-            [fillTables]
+	    [fillTables]
 	    assemble {
 		push z; push test; storeArray y
 	    }
@@ -1110,10 +1102,10 @@ test assemble-9.6 {concat} {
 }
 test assemble-9.7 {concat} {
     -body {
-	list [catch {assemble {concat 0}} result] $result $::errorCode
+	assemble {concat 0}
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
-    -cleanup {unset result}
+    -result {operand must be positive}
+    -errorCode {TCL ASSEM POSITIVE}
 }
 
 # assemble-10 -- eval and expr
@@ -1360,9 +1352,9 @@ test assemble-12.6 {incr, stupid stack restriction} {
     -body {
 	proc x {} "
 	    [fillTables]
-            set y 5
-            assemble {push 3; incr y}
-        "
+	    set y 5
+	    assemble {push 3; incr y}
+	"
 	list [catch {x} result] $result $errorCode
     }
     -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
@@ -1451,9 +1443,9 @@ test assemble-13.9 {incrImm, stupid stack restriction} {
     -body {
 	proc x {} "
 	    [fillTables]
-            set y 5
-            assemble {incrImm y 3}
-        "
+	    set y 5
+	    assemble {incrImm y 3}
+	"
 	list [catch {x} result] $result $errorCode
     }
     -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
@@ -1535,55 +1527,35 @@ test assemble-14.7 {incrArrayStkImm} {
 
 # assemble-15 - listIndexImm
 
-test assemble-15.1 {listIndexImm - wrong # args} {
-    -body {
-	assemble {listIndexImm}
-    }
-    -returnCodes error
-    -match glob
-    -result {wrong # args*}
-}
-test assemble-15.2 {listIndexImm - wrong # args} {
-    -body {
-	assemble {listIndexImm too many}
-    }
-    -returnCodes error
-    -match glob
-    -result {wrong # args*}
-}
-test assemble-15.3 {listIndexImm - bad substitution} {
-    -body {
-	list [catch {assemble {listIndexImm $foo}} result] $result $::errorCode
-    }
-    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
-    -cleanup {unset result}
-}
-test assemble-15.4 {listIndexImm - invalid index} {
-    -body {
-	assemble {listIndexImm rubbish}
-    }
-    -returnCodes error
-    -match glob
-    -result {bad index "rubbish"*}
-}
-test assemble-15.5 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm 2}
-    }
-    -result c
-}
-test assemble-15.6 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm end-1}
-    }
-    -result b
-}
-test assemble-15.7 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm end}
-    }
-    -result c
-}
+test assemble-15.1 {listIndexImm - wrong # args} -body {
+    assemble {listIndexImm}
+} -returnCodes error -match glob -result {wrong # args*}
+test assemble-15.2 {listIndexImm - wrong # args} -body {
+    assemble {listIndexImm too many}
+} -returnCodes error -match glob -result {wrong # args*}
+test assemble-15.3 {listIndexImm - bad substitution} -body {
+    list [catch {assemble {listIndexImm $foo}} result] $result $::errorCode
+} -cleanup {
+    unset result
+} -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+test assemble-15.4 {listIndexImm - invalid index} -body {
+    assemble {listIndexImm rubbish}
+} -returnCodes error -match glob -result {bad index "rubbish"*}
+test assemble-15.5 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm 2}
+} -result c
+test assemble-15.6 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm end-1}
+} -result b
+test assemble-15.7 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm end}
+} -result c
+test assemble-15.8 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm end+2}
+} -result {}
+test assemble-15.9 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm -1-1}
+} -result {}
 
 # assemble-16 - invokeStk
 
@@ -3124,6 +3096,7 @@ test assemble-41.1 {Inconsistent stack usage} {*}{
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 10)*}
+    -cleanup {rename x {}}
 }
 test assemble-41.2 {Inconsistent stack, jumptable and default} {
     -body {
@@ -3142,6 +3115,7 @@ test assemble-41.2 {Inconsistent stack, jumptable and default} {
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 6)*}
+    -cleanup {rename x {}}
 }
 test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
     -body {
@@ -3161,6 +3135,7 @@ test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 7)*}
+    -cleanup {rename x {}}
 }
 
 test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
@@ -3213,6 +3188,7 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 	set result
     }
     -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
+    -cleanup {rename ulam {}}
 }
 
 test assemble-51.1 {memory leak testing} memory {
@@ -3368,6 +3344,10 @@ test assemble-52.1 {Bug 3154ea2759} {
 
 rename fillTables {}
 rename assemble {}
+if {[testConstraint memory]} {
+    rename getbytes {}
+    rename leaktest {}
+}
 
 ::tcltest::cleanupTests
 return

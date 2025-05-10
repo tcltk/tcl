@@ -45,34 +45,35 @@ int
 .sp
 int
 \fBTcl_UniCharIsWordChar\fR(\fIch\fR)
+.fi
 .SH ARGUMENTS
 .AS int ch
 .AP int ch in
-The Tcl_UniChar to be examined.
+The Unicode character to be examined.
 .BE
 
 .SH DESCRIPTION
 .PP
-All of the routines described examine Tcl_UniChars and return a
+All of the routines described examine Unicode characters and return a
 boolean value. A non-zero return value means that the character does
 belong to the character class associated with the called routine. The
 rest of this document just describes the character classes associated
 with the various routines.
-.PP
-Note: A Tcl_UniChar is a Unicode character represented as an unsigned,
-fixed-size quantity.
 
 .SH "CHARACTER CLASSES"
 .PP
-\fBTcl_UniCharIsAlnum\fR tests if the character is an alphanumeric Unicode character.
+\fBTcl_UniCharIsAlnum\fR tests if the character is an alphanumeric Unicode
+character.
 .PP
-\fBTcl_UniCharIsAlpha\fR tests if the character is an alphabetic Unicode character.
+\fBTcl_UniCharIsAlpha\fR tests if the character is an alphabetic Unicode
+character.
 .PP
 \fBTcl_UniCharIsControl\fR tests if the character is a Unicode control character.
 .PP
 \fBTcl_UniCharIsDigit\fR tests if the character is a numeric Unicode character.
 .PP
-\fBTcl_UniCharIsGraph\fR tests if the character is any Unicode print character except space.
+\fBTcl_UniCharIsGraph\fR tests if the character is any Unicode print character
+except space.
 .PP
 \fBTcl_UniCharIsLower\fR tests if the character is a lowercase Unicode character.
 .PP

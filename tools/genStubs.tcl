@@ -4,8 +4,8 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -191,19 +191,28 @@ proc genStubs::declare {args} {
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
 
-    foreach platform $platformList {
-	if {$decl ne ""} {
-	    set stubs($curName,$platform,$index) $decl
-	    if {![info exists stubs($curName,$platform,lastNum)] \
-		    || ($index > $stubs($curName,$platform,lastNum))} {
-		set stubs($curName,$platform,lastNum) $index
-	    }
+    if {([lindex $platformList 0] eq "deprecated")} {
+	set stubs($curName,deprecated,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
 	}
-	if {$platformList eq "deprecated"} {
-	    set stubs($curName,generic,$index) $decl
-	    if {![info exists stubs($curName,generic,lastNum)] \
-		    || ($index > $stubs($curName,generic,lastNum))} {
-		set stubs($curName,$platform,lastNum) $index
+    } elseif {([lindex $platformList 0] eq "nostub")} {
+	set stubs($curName,nostub,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
+	}
+    } else {
+	foreach platform $platformList {
+	    if {$decl ne ""} {
+		set stubs($curName,$platform,$index) $decl
+		    if {![info exists stubs($curName,$platform,lastNum)] \
+			    || ($index > $stubs($curName,$platform,lastNum))} {
+			set stubs($curName,$platform,lastNum) $index
+		}
 	    }
 	}
     }
@@ -248,8 +257,9 @@ proc genStubs::rewriteFile {file text} {
 	return
     }
     set in [open ${file} r]
+    fconfigure $in -eofchar "\x1A {}" -encoding utf-8
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -468,12 +478,17 @@ proc genStubs::makeDecl {name decl index} {
 
     append text "/* $index */\n"
     if {[info exists stubs($name,deprecated,$index)]} {
-    set line "[string toupper $libraryName]_DEPRECATED $rtype"
+	append text "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n"
+	set line "$rtype"
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	set line "$scspec [string trim [string range $rtype 0 end-6]]"
     } else {
-    set line "$scspec $rtype"
+	set line "$scspec $rtype"
     }
     set count [expr {2 - ([string length $line] / 8)}]
-    append line [string range "\t\t\t" 0 $count]
+    if {$count >= 0} {
+	append line [string range "\t\t\t" 0 $count]
+    }
     set pad [expr {24 - [string length $line]}]
     if {$pad <= 0} {
 	append line " "
@@ -513,7 +528,7 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append line " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -537,6 +552,9 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ")"
 	}
+    }
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append line " MP_WUR"
     }
     return "$text$line;\n"
 }
@@ -582,11 +600,17 @@ proc genStubs::makeMacro {name decl index} {
 
 proc genStubs::makeSlot {name decl index} {
     lassign $decl rtype fname args
+    variable stubs
 
     set lfname [string tolower [string index $fname 0]]
     append lfname [string range $fname 1 end]
 
     set text "    "
+    if {[info exists stubs($name,deprecated,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,deprecated,$index)\") "
+    } elseif {[info exists stubs($name,nostub,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,nostub,$index)\") "
+    }
     if {$args eq ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
@@ -595,6 +619,8 @@ proc genStubs::makeSlot {name decl index} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
     } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
 	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text [string trim [string range $rtype 0 end-6]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -615,7 +641,7 @@ proc genStubs::makeSlot {name decl index} {
 	    }
 	    append text ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append text " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -632,6 +658,9 @@ proc genStubs::makeSlot {name decl index} {
 	}
     }
 
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text " MP_WUR"
+    }
     append text "; /* $index */\n"
     return $text
 }
@@ -696,6 +725,9 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    set slots [array names stubs $name,*,$i]
 	    set emit 0
 	    if {[info exists stubs($name,deprecated,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,nostub,$i)]} {
 		append text [$slotProc $name $stubs($name,generic,$i) $i]
 		set emit 1
 	    } elseif {[info exists stubs($name,generic,$i)]} {
@@ -790,9 +822,9 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			# TkIntStubs entry 113 for aqua is in fact at position
 			# 114 in the table, entry 114 at position 116 etc).
 			eval {append temp} $skipString
-			set temp "[string range $temp 0 end-1] /*\
+			set temp "# if TCL_MAJOR_VERSION < 9\n[string range $temp 0 end-1] /*\
 				Dummy entry for stubs table backwards\
-				compatibility */\n"
+				compatibility */\n# endif /* TCL_MAJOR_VERSION < 9 */\n"
 		    }
 		    if {$slot($plat)} {
 			append temp [$slotProc $name $stubs($name,$plat,$i) $i]
@@ -1069,7 +1101,7 @@ proc genStubs::emitInit {name textVar} {
     }
     foreach intf [array names interfaces] {
 	if {[info exists hooks($intf)]} {
-	    if {[lsearch -exact $hooks($intf) $name] >= 0} {
+	    if {$name in $hooks($intf)} {
 		set root 0
 		break
 	    }
@@ -1160,7 +1192,7 @@ proc genStubs::init {} {
     set outDir [lindex $argv 0]
 
     foreach file [lrange $argv 1 end] {
-	source $file
+	source -encoding utf-8 $file
     }
 
     foreach name [lsort [array names interfaces]] {
@@ -1182,7 +1214,7 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-if {[string length [namespace which lassign]] == 0} {
+if {[namespace which lassign] ne ""} {
     proc lassign {valueList args} {
 	if {[llength $args] == 0} {
 	    error "wrong # args: should be \"lassign list varName ?varName ...?\""

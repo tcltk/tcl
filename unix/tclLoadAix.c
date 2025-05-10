@@ -9,7 +9,7 @@
  *	different from the notice used elsewhere in Tcl. The file has been
  *	modified to incorporate the file dlfcn.h in-line.
  *
- *	Copyright (c) 1992,1993,1995,1996, Jens-Uwe Mager, Helios Software GmbH
+ *	Copyright © 1992,1993,1995,1996, Jens-Uwe Mager, Helios Software GmbH
  *	Not derived from licensed software.
  *
  *	Permission is granted to freely use, copy, modify, and redistribute
@@ -23,7 +23,7 @@
 
 /*
  * @(#)dlfcn.c	1.7 revision of 95/08/14  19:08:38
- * This is an unpublished work copyright (c) 1992 HELIOS Software GmbH
+ * This is an unpublished work copyright © 1992 HELIOS Software GmbH
  * 30159 Hannover, Germany
  */
 
@@ -98,7 +98,7 @@ dlopen(
     const char *path,
     int mode)
 {
-    register ModulePtr mp;
+    ModulePtr mp;
     static void *mainModule;
 
     /*
@@ -122,7 +122,7 @@ dlopen(
     for (mp = modList; mp; mp = mp->next) {
 	if (strcmp(mp->name, path) == 0) {
 	    mp->refCnt++;
-	    return (void *) mp;
+	    return (void *)mp;
 	}
     }
 
@@ -134,7 +134,7 @@ dlopen(
 	return NULL;
     }
 
-    mp->name = malloc((unsigned) (strlen(path) + 1));
+    mp->name = malloc(strlen(path) + 1);
     strcpy(mp->name, path);
 
     /*
@@ -142,7 +142,7 @@ dlopen(
      * a normal char *. Ugly.
      */
 
-    mp->entry = (void *) load((char *)path, L_NOAUTODEFER, NULL);
+    mp->entry = (void *)load((char *)path, L_NOAUTODEFER, NULL);
     if (mp->entry == NULL) {
 	free(mp->name);
 	free(mp);
@@ -191,7 +191,7 @@ dlopen(
      */
 
     if (mode & RTLD_GLOBAL) {
-	register ModulePtr mp1;
+	ModulePtr mp1;
 
 	for (mp1 = mp->next; mp1; mp1 = mp1->next) {
 	    if (loadbind(0, mp1->entry, mp->entry) == -1) {
@@ -231,7 +231,7 @@ dlopen(
 	errvalid = 0;
     }
 
-    return (void *) mp;
+    return (void *)mp;
 }
 
 /*
@@ -243,7 +243,7 @@ static void
 caterr(
     char *s)
 {
-    register char *p = s;
+    char *p = s;
 
     while (*p >= '0' && *p <= '9') {
 	p++;
@@ -253,11 +253,11 @@ caterr(
 	strcat(errbuf, "to many errors");
 	break;
     case L_ERROR_NOLIB:
-	strcat(errbuf, "can't load library");
+	strcat(errbuf, "cannot load library");
 	strcat(errbuf, p);
 	break;
     case L_ERROR_UNDEF:
-	strcat(errbuf, "can't find symbol");
+	strcat(errbuf, "cannot find symbol");
 	strcat(errbuf, p);
 	break;
     case L_ERROR_RLDBAD:
@@ -282,9 +282,9 @@ dlsym(
     void *handle,
     const char *symbol)
 {
-    register ModulePtr mp = (ModulePtr)handle;
-    register ExportPtr ep;
-    register int i;
+    ModulePtr mp = (ModulePtr)handle;
+    ExportPtr ep;
+    int i;
 
     /*
      * Could speed up the search, but I assume that one assigns the result to
@@ -317,9 +317,9 @@ int
 dlclose(
     void *handle)
 {
-    register ModulePtr mp = (ModulePtr)handle;
+    ModulePtr mp = (ModulePtr)handle;
     int result;
-    register ModulePtr mp1;
+    ModulePtr mp1;
 
     if (--mp->refCnt > 0) {
 	return 0;
@@ -343,8 +343,8 @@ dlclose(
     }
 
     if (mp->exports) {
-	register ExportPtr ep;
-	register int i;
+	ExportPtr ep;
+	int i;
 	for (ep = mp->exports, i = mp->nExports; i; i--, ep++) {
 	    if (ep->name) {
 		free(ep->name);
@@ -541,7 +541,7 @@ readExports(
 	    tmpsym[SYMNMLEN] = '\0';
 	    symname = tmpsym;
 	}
-	ep->name = malloc((unsigned) (strlen(symname) + 1));
+	ep->name = malloc(strlen(symname) + 1);
 	strcpy(ep->name, symname);
 	ep->addr = (void *)((unsigned long)
 		mp->entry + ls->l_value - shdata.s_vaddr);

@@ -1,7 +1,5 @@
-if {([info commands ::tcl::pkgconfig] eq "")
-	|| ([info sharedlibextension] ne ".dll")} return
-if {[::tcl::pkgconfig get debug]} {
-    package ifneeded dde 1.4.0 [list load [file join $dir tcldde14g.dll] dde]
-} else {
-    package ifneeded dde 1.4.0 [list load [file join $dir tcldde14.dll] dde]
-}
+if {![package vsatisfies [package provide Tcl] 9.0-]} return
+if {[info sharedlibextension] != ".dll"} return
+package ifneeded dde 1.5a0 \
+	[list load [file join $dir tcl9dde15.dll] Dde]
+

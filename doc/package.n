@@ -12,7 +12,7 @@
 package \- Facilities for package loading and version control
 .SH SYNOPSIS
 .nf
-\fBpackage files\fR \fIpackage\fR
+\fBpackage files\fI package\fR
 \fBpackage forget\fR ?\fIpackage package ...\fR?
 \fBpackage ifneeded \fIpackage version\fR ?\fIscript\fR?
 \fBpackage names\fR
@@ -43,19 +43,22 @@ primarily by system scripts that maintain the package database.
 .PP
 The behavior of the \fBpackage\fR command is determined by its first argument.
 The following forms are permitted:
+.\" METHOD: files
 .TP
-\fBpackage files\fR \fIpackage\fR
+\fBpackage files \fIpackage\fR
 .
 Lists all files forming part of \fIpackage\fR. Auto-loaded files are not
 included in this list, only files which were directly sourced during package
 initialization. The list order corresponds with the order in which the
 files were sourced.
+.\" METHOD: forget
 .TP
 \fBpackage forget\fR ?\fIpackage package ...\fR?
 .
 Removes all information about each specified package from this interpreter,
 including information provided by both \fBpackage ifneeded\fR and
 \fBpackage provide\fR.
+.\" METHOD: ifneeded
 .TP
 \fBpackage ifneeded \fIpackage version\fR ?\fIscript\fR?
 .
@@ -78,6 +81,7 @@ If the \fIscript\fR argument is omitted, the current script for
 version \fIversion\fR of package \fIpackage\fR is returned,
 or an empty string if no \fBpackage ifneeded\fR command has
 been invoked for this \fIpackage\fR and \fIversion\fR.
+.\" METHOD: names
 .TP
 \fBpackage names\fR
 .
@@ -86,11 +90,13 @@ interpreter for which a version has been provided (via
 \fBpackage provide\fR) or for which a \fBpackage ifneeded\fR
 script is available.
 The order of elements in the list is arbitrary.
+.\" METHOD: present
 .TP
 \fBpackage present\fR ?\fB\-exact\fR? \fIpackage\fR ?\fIrequirement...\fR?
 .
 This command is equivalent to \fBpackage require\fR except that it
 does not try and load the package if it is not already loaded.
+.\" METHOD: provide
 .TP
 \fBpackage provide \fIpackage \fR?\fIversion\fR?
 .
@@ -104,6 +110,7 @@ If the \fIversion\fR argument is omitted, then the command
 returns the version number that is currently provided, or an
 empty string if no \fBpackage provide\fR command has been
 invoked for \fIpackage\fR in this interpreter.
+.\" METHOD: require
 .TP
 \fBpackage require \fR\fIpackage \fR?\fIrequirement...\fR?
 .
@@ -116,8 +123,8 @@ loaded;  otherwise it generates an error.
 .RS
 .PP
 A suitable version of the package is any version which satisfies at
-least one of the requirements, per the rules of \fBpackage
-vsatisfies\fR. If multiple versions are suitable the implementation
+least one of the requirements as defined in the section \fBREQUIREMENT\fR below.
+If multiple versions are suitable the implementation
 with the highest version is chosen. This last part is additionally
 influenced by the selection mode set with \fBpackage prefer\fR.
 .PP
@@ -156,6 +163,7 @@ package, then the command returns an error.
 This form of the command is used when only the given \fIversion\fR
 of \fIpackage\fR is acceptable to the caller.  This command is
 equivalent to \fBpackage require \fIpackage version\fR-\fIversion\fR.
+.\" METHOD: unknown
 .TP
 \fBpackage unknown \fR?\fIcommand\fR?
 .
@@ -178,90 +186,30 @@ argument, then the current \fBpackage unknown\fR script is returned,
 or an empty string if there is none.
 If \fIcommand\fR is specified as an empty string, then the current
 \fBpackage unknown\fR script is removed, if there is one.
+.\" METHOD: vcompare
 .TP
 \fBpackage vcompare \fIversion1 version2\fR
 .
 Compares the two version numbers given by \fIversion1\fR and \fIversion2\fR.
 Returns -1 if \fIversion1\fR is an earlier version than \fIversion2\fR,
 0 if they are equal, and 1 if \fIversion1\fR is later than \fIversion2\fR.
+.\" METHOD: versions
 .TP
 \fBpackage versions \fIpackage\fR
 .
 Returns a list of all the version numbers of \fIpackage\fR
 for which information has been provided by \fBpackage ifneeded\fR
 commands.
+.\" METHOD: vsatisfies
 .TP
 \fBpackage vsatisfies \fIversion requirement...\fR
 .
 Returns 1 if the \fIversion\fR satisfies at least one of the given
-requirements, and 0 otherwise. Each \fIrequirement\fR is allowed to
-have any of the forms:
-.RS
-.TP
-min
-.
-This form is called
-.QW min-bounded .
-.TP
-min-
-.
-This form is called
-.QW min-unbound .
-.TP
-min-max
-.
-This form is called
-.QW bounded .
-.RE
-.RS
-.PP
-where
-.QW min
-and
-.QW max
-are valid version numbers. The legacy syntax is
-a special case of the extended syntax, keeping backward
-compatibility. Regarding satisfaction the rules are:
-.RE
-.RS
-.IP [1]
-The \fIversion\fR has to pass at least one of the listed
-\fIrequirement\fRs to be satisfactory.
-.IP [2]
-A version satisfies a
-.QW bounded
-requirement when
-.RS
-.IP [a]
-For \fImin\fR equal to the \fImax\fR if, and only if the \fIversion\fR
-is equal to the \fImin\fR.
-.IP [b]
-Otherwise if, and only if the \fIversion\fR is greater than or equal
-to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
-and \fImax\fR have been padded internally with
-.QW a0 .
-Note that while the comparison to \fImin\fR is inclusive, the
-comparison to \fImax\fR is exclusive.
-.RE
-.IP [3]
-A
-.QW min-bounded
-requirement is a
-.QW bounded
-requirement in disguise,
-with the \fImax\fR part implicitly specified as the next higher major
-version number of the \fImin\fR part. A version satisfies it per the
-rules above.
-.IP [4]
-A \fIversion\fR satisfies a
-.QW min-unbound
-requirement if, and only if it is greater than or equal to the
-\fImin\fR, where the \fImin\fR has been padded internally with
-.QW a0 .
-There is no constraint to a maximum.
-.RE
+requirements, and 0 otherwise. \fIrequirements\fR are defined in the \fBREQUIREMENT\fR section below.
+.\" METHOD: prefer
 .TP
 \fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
+.
 With no arguments, the commands returns either
 .QW latest
 or
@@ -347,6 +295,66 @@ and \fBpackage provide\fR commands in scripts, and use the procedure
 Once you have done this, packages will be loaded automatically
 in response to \fBpackage require\fR commands.
 See the documentation for \fBpkg_mkIndex\fR for details.
+.SH "REQUIREMENT"
+.PP
+A \fIrequirement\fR string checks, if a compatible version number of a package is present.
+Most commands accept a list of requirement strings where the highest suitable version is matched.
+.PP
+Each \fIrequirement\fR is allowed to have any of the forms:
+.RS
+.IP \fImin\fR
+This form is called
+.QW min-bounded .
+.IP \fImin\fB\-\fR
+This form is called
+.QW min-unbound .
+.IP \fImin\fB\-\fImax\fR
+This form is called
+.QW bounded .
+.PP
+where
+.QW \fImin\fR
+and
+.QW \fImax\fR
+are valid version numbers. The legacy syntax is
+a special case of the extended syntax, keeping backward
+compatibility. Regarding satisfaction the rules are:
+.IP [1]
+The \fIversion\fR has to pass at least one of the listed
+\fIrequirement\fRs to be satisfactory.
+.IP [2]
+A version satisfies a
+.QW bounded
+requirement when
+.RS
+.IP [a]
+For \fImin\fR equal to the \fImax\fR if, and only if the \fIversion\fR
+is equal to the \fImin\fR.
+.IP [b]
+Otherwise if, and only if the \fIversion\fR is greater than or equal
+to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
+and \fImax\fR have been padded internally with
+.QW a0 .
+Note that while the comparison to \fImin\fR is inclusive, the
+comparison to \fImax\fR is exclusive.
+.RE
+.IP [3]
+A
+.QW min-bounded
+requirement is a
+.QW bounded
+requirement in disguise,
+with the \fImax\fR part implicitly specified as the next higher major
+version number of the \fImin\fR part. A version satisfies it per the
+rules above.
+.IP [4]
+A \fIversion\fR satisfies a
+.QW min-unbound
+requirement if, and only if it is greater than or equal to the
+\fImin\fR, where the \fImin\fR has been padded internally with
+.QW a0 .
+There is no constraint to a maximum.
+.RE
 .SH EXAMPLES
 .PP
 To state that a Tcl script requires the Tk and http packages, put this

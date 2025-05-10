@@ -6,8 +6,8 @@
  *	Original version of his file (superseded long ago) provided by
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
- * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995 Apple Computer, Inc.
+ * Copyright © 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,35 +20,15 @@
 #endif
 
 /*
- * Use preferred dlfcn API on 10.4 and later
- */
-
-#ifndef TCL_DYLD_USE_DLFCN
-#   ifdef NO_DLFCN_H
-#	define TCL_DYLD_USE_DLFCN 0
-#   else
-#	define TCL_DYLD_USE_DLFCN 1
-#   endif
-#endif
-
-/*
- * Use deprecated NSModule API only to support 10.3 and earlier:
- */
-
-#ifndef TCL_DYLD_USE_NSMODULE
-#   define TCL_DYLD_USE_NSMODULE 0
-#endif
-
-/*
  * Use includes for the API we're using.
  */
 
-#if TCL_DYLD_USE_DLFCN
-#   include <dlfcn.h>
-#endif /* TCL_DYLD_USE_DLFCN */
+#include <dlfcn.h>
 
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
+#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include <mach-o/dyld.h>
 #include <mach-o/fat.h>
 #include <mach-o/swap.h>
@@ -60,19 +40,15 @@ typedef struct Tcl_DyldModuleHandle {
     struct Tcl_DyldModuleHandle *nextPtr;
     NSModule module;
 } Tcl_DyldModuleHandle;
-#endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 typedef struct {
     void *dlHandle;
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
     const struct mach_header *dyldLibHeader;
     Tcl_DyldModuleHandle *modulePtr;
 #endif
 } Tcl_DyldLoadHandle;
-
-#if TCL_DYLD_USE_DLFCN || defined(TCL_LOAD_FROM_MEMORY)
-MODULE_SCOPE long	tclMacOSXDarwinRelease;
-#endif
 
 /*
  * Static functions defined in this file.
@@ -81,47 +57,6 @@ MODULE_SCOPE long	tclMacOSXDarwinRelease;
 static void *		FindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		UnloadFile(Tcl_LoadHandle handle);
-
-/*
- *----------------------------------------------------------------------
- *
- * DyldOFIErrorMsg --
- *
- *	Converts a numerical NSObjectFileImage error into an error message
- *	string.
- *
- * Results:
- *	Error message string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
-static const char *
-DyldOFIErrorMsg(
-    int err)
-{
-    switch(err) {
-    case NSObjectFileImageSuccess:
-	return NULL;
-    case NSObjectFileImageFailure:
-	return "object file setup failure";
-    case NSObjectFileImageInappropriateFile:
-	return "not a Mach-O MH_BUNDLE file";
-    case NSObjectFileImageArch:
-	return "no object for this architecture";
-    case NSObjectFileImageFormat:
-	return "bad object file format";
-    case NSObjectFileImageAccess:
-	return "can't read object file";
-    default:
-	return "unknown error";
-    }
-}
-#endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
 
 /*
  *----------------------------------------------------------------------
@@ -146,7 +81,7 @@ TclpDlopen(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr,
@@ -158,22 +93,15 @@ TclpDlopen(
     Tcl_DyldLoadHandle *dyldLoadHandle;
     Tcl_LoadHandle newHandle;
     void *dlHandle = NULL;
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
     const struct mach_header *dyldLibHeader = NULL;
     Tcl_DyldModuleHandle *modulePtr = NULL;
 #endif
-#if TCL_DYLD_USE_NSMODULE
-    NSLinkEditErrors editError;
-    int errorNumber;
-    const char *errorName, *objFileImageErrMsg = NULL;
-#endif /* TCL_DYLD_USE_NSMODULE */
     const char *errMsg = NULL;
     int result;
     Tcl_DString ds;
     const char *nativePath, *nativeFileName = NULL;
-#if TCL_DYLD_USE_DLFCN
     int dlopenflags = 0;
-#endif /* TCL_DYLD_USE_DLFCN */
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -181,24 +109,27 @@ TclpDlopen(
      * relative path.
      */
 
-    nativePath = Tcl_FSGetNativePath(pathPtr);
-    nativeFileName = Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr),
-	    -1, &ds);
+    nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, TclGetString(pathPtr),
+	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
+    nativeFileName = Tcl_DStringValue(&ds);
 
-#if TCL_DYLD_USE_DLFCN
     /*
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
 
     if (flags & TCL_LOAD_GLOBAL) {
-    	dlopenflags |= RTLD_GLOBAL;
+	dlopenflags |= RTLD_GLOBAL;
     } else {
-    	dlopenflags |= RTLD_LOCAL;
+	dlopenflags |= RTLD_LOCAL;
     }
     if (flags & TCL_LOAD_LAZY) {
-    	dlopenflags |= RTLD_LAZY;
+	dlopenflags |= RTLD_LAZY;
     } else {
-    	dlopenflags |= RTLD_NOW;
+	dlopenflags |= RTLD_NOW;
     }
     dlHandle = dlopen(nativePath, dlopenflags);
     if (!dlHandle) {
@@ -213,76 +144,15 @@ TclpDlopen(
 	    errMsg = dlerror();
 	}
     }
-#endif /* TCL_DYLD_USE_DLFCN */
 
-    if (!dlHandle) {
-#if TCL_DYLD_USE_NSMODULE
-	dyldLibHeader = NSAddImage(nativePath,
-		NSADDIMAGE_OPTION_RETURN_ON_ERROR);
-	if (!dyldLibHeader) {
-	    NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	    if (editError == NSLinkEditFileAccessError) {
-		/*
-		 * The requested file was not found. Let the OS loader examine
-		 * the binary search path for whatever string the user gave us
-		 * which hopefully refers to a file on the binary path.
-		 */
-
-		dyldLibHeader = NSAddImage(nativeFileName,
-			NSADDIMAGE_OPTION_WITH_SEARCHING |
-			NSADDIMAGE_OPTION_RETURN_ON_ERROR);
-		if (!dyldLibHeader) {
-		    NSLinkEditError(&editError, &errorNumber, &errorName,
-			    &errMsg);
-		}
-	    } else if ((editError == NSLinkEditFileFormatError
-		    && errorNumber == EBADMACHO)
-		    || editError == NSLinkEditOtherError){
-		NSObjectFileImageReturnCode err;
-		NSObjectFileImage dyldObjFileImage;
-		NSModule module;
-
-		/*
-		 * The requested file was found but was not of type MH_DYLIB,
-		 * attempt to load it as a MH_BUNDLE.
-		 */
-
-		err = NSCreateObjectFileImageFromFile(nativePath,
-			&dyldObjFileImage);
-		if (err == NSObjectFileImageSuccess && dyldObjFileImage) {
-		    int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
-		    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-		    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
-		    module = NSLinkModule(dyldObjFileImage, nativePath, nsflags);
-		    NSDestroyObjectFileImage(dyldObjFileImage);
-		    if (module) {
-			modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
-			modulePtr->module = module;
-			modulePtr->nextPtr = NULL;
-		    } else {
-			NSLinkEditError(&editError, &errorNumber, &errorName,
-				&errMsg);
-		    }
-		} else {
-		    objFileImageErrMsg = DyldOFIErrorMsg(err);
-		}
-	    }
-	}
-#endif /* TCL_DYLD_USE_NSMODULE */
-    }
-
-    if (dlHandle
-#if TCL_DYLD_USE_NSMODULE
-	    || dyldLibHeader || modulePtr
-#endif /* TCL_DYLD_USE_NSMODULE */
-    ) {
-	dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
+    if (dlHandle) {
+	dyldLoadHandle = (Tcl_DyldLoadHandle *)Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
 	dyldLoadHandle->dlHandle = dlHandle;
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
 	dyldLoadHandle->dyldLibHeader = dyldLibHeader;
 	dyldLoadHandle->modulePtr = modulePtr;
-#endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
-	newHandle = ckalloc(sizeof(*newHandle));
+#endif /* TCL_LOAD_FROM_MEMORY */
+	newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
 	newHandle->clientData = dyldLoadHandle;
 	newHandle->findSymbolProcPtr = &FindSymbol;
 	newHandle->unloadFileProcPtr = &UnloadFile;
@@ -290,18 +160,12 @@ TclpDlopen(
 	*loadHandle = newHandle;
 	result = TCL_OK;
     } else {
-	Tcl_Obj *errObj = Tcl_NewObj();
+	Tcl_Obj *errObj;
 
+	TclNewObj(errObj);
 	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, -1);
+	    Tcl_AppendToObj(errObj, errMsg, TCL_INDEX_NONE);
 	}
-#if TCL_DYLD_USE_NSMODULE
-	if (objFileImageErrMsg) {
-	    Tcl_AppendPrintfToObj(errObj,
-		    "\nNSCreateObjectFileImageFromFile() error: %s",
-		    objFileImageErrMsg);
-	}
-#endif /* TCL_DYLD_USE_NSMODULE */
 	Tcl_SetObjResult(interp, errObj);
 	result = TCL_ERROR;
     }
@@ -332,22 +196,24 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
     const char *symbol)		/* Symbol name to look up. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
+    Tcl_LibraryInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     if (dyldLoadHandle->dlHandle) {
-#if TCL_DYLD_USE_DLFCN
-	proc = dlsym(dyldLoadHandle->dlHandle, native);
+	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
 	if (!proc) {
 	    errMsg = dlerror();
 	}
-#endif /* TCL_DYLD_USE_DLFCN */
     } else {
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
 	NSSymbol nsSymbol = NULL;
 	Tcl_DString newName;
 
@@ -357,7 +223,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	if (dyldLoadHandle->dyldLibHeader) {
 	    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyldLibHeader,
 		    native, NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW |
@@ -379,7 +245,7 @@ FindSymbol(
 		    modulePtr = modulePtr->nextPtr;
 		}
 		if (modulePtr == NULL) {
-		    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
+		    modulePtr = (Tcl_DyldModuleHandle *)Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
 		    modulePtr->module = module;
 		    modulePtr->nextPtr = dyldLoadHandle->modulePtr;
 		    dyldLoadHandle->modulePtr = modulePtr;
@@ -397,19 +263,19 @@ FindSymbol(
 		    dyldLoadHandle->modulePtr->module, native);
 	}
 	if (nsSymbol) {
-	    proc = NSAddressOfSymbol(nsSymbol);
+	    proc = (Tcl_LibraryInitProc *)NSAddressOfSymbol(nsSymbol);
 	}
 	Tcl_DStringFree(&newName);
-#endif /* TCL_DYLD_USE_NSMODULE */
+#endif /* TCL_LOAD_FROM_MEMORY */
     }
     Tcl_DStringFree(&ds);
     if (errMsg && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\": %s", symbol, errMsg));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		NULL);
+		(char *)NULL);
     }
-    return proc;
+    return (void *)proc;
 }
 
 /*
@@ -438,14 +304,12 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = loadHandle->clientData;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
 
     if (dyldLoadHandle->dlHandle) {
-#if TCL_DYLD_USE_DLFCN
 	(void) dlclose(dyldLoadHandle->dlHandle);
-#endif /* TCL_DYLD_USE_DLFCN */
     } else {
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if defined(TCL_LOAD_FROM_MEMORY)
 	Tcl_DyldModuleHandle *modulePtr = dyldLoadHandle->modulePtr;
 
 	while (modulePtr != NULL) {
@@ -454,42 +318,12 @@ UnloadFile(
 	    (void) NSUnLinkModule(modulePtr->module,
 		    NSUNLINKMODULE_OPTION_RESET_LAZY_REFERENCES);
 	    modulePtr = modulePtr->nextPtr;
-	    ckfree(ptr);
+	    Tcl_Free(ptr);
 	}
-#endif /* TCL_DYLD_USE_NSMODULE */
+#endif /* TCL_LOAD_FROM_MEMORY */
     }
-    ckfree(dyldLoadHandle);
-    ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
+    Tcl_Free(dyldLoadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*
@@ -511,25 +345,18 @@ TclGuessPackageName(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    int size)			/* Size of desired buffer. */
+    size_t size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
 
     /*
-     * NSCreateObjectFileImageFromMemory is available but always fails
-     * prior to Darwin 7.
+     * We must allocate the buffer using vm_allocate, because
+     * NSCreateObjectFileImageFromMemory will dispose of it using
+     * vm_deallocate.
      */
-    if (tclMacOSXDarwinRelease >= 7) {
-	/*
-	 * We must allocate the buffer using vm_allocate, because
-	 * NSCreateObjectFileImageFromMemory will dispose of it using
-	 * vm_deallocate.
-	 */
 
-	if (vm_allocate(mach_task_self(), (vm_address_t *) &buffer, size, 1)) {
-	    buffer = NULL;
-	}
+    if (vm_allocate(mach_task_self(), (vm_address_t *) &buffer, size, 1)) {
+	buffer = NULL;
     }
     return buffer;
 }
@@ -556,14 +383,14 @@ TclpLoadMemoryGetBuffer(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE int
 TclpLoadMemory(
-    Tcl_Interp *interp,		/* Used for error reporting. */
     void *buffer,		/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
-    int size,			/* Allocation size of buffer. */
-    int codeSize,		/* Size of code data read into buffer or -1 if
+    size_t size,		/* Allocation size of buffer. */
+    Tcl_Size codeSize,		/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
-    Tcl_LoadHandle *loadHandle, /* Filled with token for dynamically loaded
+    const char *path,
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr,
@@ -577,7 +404,6 @@ TclpLoadMemory(
     NSObjectFileImage dyldObjFileImage = NULL;
     Tcl_DyldModuleHandle *modulePtr;
     NSModule module;
-    const char *objFileImageErrMsg = NULL;
     int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
 
     /*
@@ -586,7 +412,7 @@ TclpLoadMemory(
 
     if (codeSize >= 0) {
 	NSObjectFileImageReturnCode err = NSObjectFileImageSuccess;
-	const struct fat_header *fh = buffer;
+	const struct fat_header *fh = (const struct fat_header *)buffer;
 	uint32_t ms = 0;
 #ifndef __LP64__
 	const struct mach_header *mh = NULL;
@@ -598,9 +424,9 @@ TclpLoadMemory(
 #	define mh_size  sizeof(struct mach_header_64)
 #	define mh_magic MH_MAGIC_64
 #	define arch_abi CPU_ARCH_ABI64
-#endif /*  __LP64__ */
+#endif /* __LP64__ */
 
-	if ((size_t) codeSize >= sizeof(struct fat_header)
+	if ((size_t)codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
 	    uint32_t fh_nfat_arch = OSSwapBigToHostInt32(fh->nfat_arch);
 
@@ -608,25 +434,25 @@ TclpLoadMemory(
 	     * Fat binary, try to find mach_header for our architecture
 	     */
 
-	    if ((size_t) codeSize >= sizeof(struct fat_header) +
+	    if ((size_t)codeSize >= sizeof(struct fat_header) +
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
-		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
+		void *fatarchs = (char *)buffer + sizeof(struct fat_header);
 		const NXArchInfo *arch = NXGetLocalArchInfo();
 		struct fat_arch *fa;
 
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
 		}
 		fa = NXFindBestFatArch(arch->cputype | arch_abi,
-			arch->cpusubtype, fatarchs, fh_nfat_arch);
+			arch->cpusubtype, (struct fat_arch *)fatarchs, fh_nfat_arch);
 		if (fa) {
-		    mh = (void *)((char *) buffer + fa->offset);
+		    mh = (const struct mach_header_64 *)((char *) buffer + fa->offset);
 		    ms = fa->size;
 		} else {
 		    err = NSObjectFileImageInappropriateFile;
 		}
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
 		}
 	    } else {
 		err = NSObjectFileImageInappropriateFile;
@@ -636,7 +462,7 @@ TclpLoadMemory(
 	     * Thin binary
 	     */
 
-	    mh = buffer;
+	    mh = (const struct mach_header_64 *)buffer;
 	    ms = codeSize;
 	}
 	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
@@ -646,26 +472,16 @@ TclpLoadMemory(
 	if (err == NSObjectFileImageSuccess) {
 	    err = NSCreateObjectFileImageFromMemory(buffer, codeSize,
 		    &dyldObjFileImage);
-	    if (err != NSObjectFileImageSuccess) {
-		objFileImageErrMsg = DyldOFIErrorMsg(err);
-	    }
-	} else {
-	    objFileImageErrMsg = DyldOFIErrorMsg(err);
 	}
     }
 
     /*
      * If it went wrong (or we were asked to just deallocate), get rid of the
-     * memory block and create an error message.
+     * memory block.
      */
 
     if (dyldObjFileImage == NULL) {
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
-	if (objFileImageErrMsg != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "NSCreateObjectFileImageFromMemory() error: %s",
-		    objFileImageErrMsg));
-	}
 	return TCL_ERROR;
     }
 
@@ -673,9 +489,13 @@ TclpLoadMemory(
      * Extract the module we want from the image of the object file.
      */
 
-    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
-    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
-    module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]", nsflags);
+    if (!(flags & 1)) {
+	nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+    }
+    if (!(flags & 2)) {
+	nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    }
+    module = NSLinkModule(dyldObjFileImage, (path ? path : "[Memory Based Bundle]"), nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {
 	NSLinkEditErrors editError;
@@ -683,7 +503,6 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
 	return TCL_ERROR;
     }
 
@@ -691,14 +510,14 @@ TclpLoadMemory(
      * Stash the module reference within the load handle we create and return.
      */
 
-    modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
+    modulePtr = (Tcl_DyldModuleHandle *)Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
     modulePtr->module = module;
     modulePtr->nextPtr = NULL;
-    dyldLoadHandle = ckalloc(sizeof(Tcl_DyldLoadHandle));
+    dyldLoadHandle = (Tcl_DyldLoadHandle *)Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
     dyldLoadHandle->dlHandle = NULL;
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = dyldLoadHandle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;

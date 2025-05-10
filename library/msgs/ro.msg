@@ -9,13 +9,13 @@ namespace eval ::tcl::clock {
         "V"\
         "S"]
     ::msgcat::mcset ro DAYS_OF_WEEK_FULL [list \
-        "duminic\u0103"\
+        "duminică"\
         "luni"\
-        "mar\u0163i"\
+        "marţi"\
         "miercuri"\
         "joi"\
         "vineri"\
-        "s\u00eemb\u0103t\u0103"]
+        "sîmbătă"]
     ::msgcat::mcset ro MONTHS_ABBREV [list \
         "Ian"\
         "Feb"\
@@ -45,7 +45,7 @@ namespace eval ::tcl::clock {
         "decembrie"\
         ""]
     ::msgcat::mcset ro BCE "d.C."
-    ::msgcat::mcset ro CE "\u00ee.d.C."
+    ::msgcat::mcset ro CE "î.d.C."
     ::msgcat::mcset ro DATE_FORMAT "%d.%m.%Y"
     ::msgcat::mcset ro TIME_FORMAT "%H:%M:%S"
     ::msgcat::mcset ro DATE_TIME_FORMAT "%d.%m.%Y %H:%M:%S %z"

@@ -5,17 +5,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint exec       [llength [info commands exec]]
 testConstraint memory     [llength [info commands memory]]
@@ -36,13 +39,13 @@ test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} -se
 } -body {
     set x 123
     namespace eval test_ns_compile {
-        proc set {args} {
-            global x
-            lappend x test_ns_compile::set
-        }
-        proc p {} {
-            set 0
-        }
+	proc set {args} {
+	    global x
+	    lappend x test_ns_compile::set
+	}
+	proc p {} {
+	    set 0
+	}
     }
     list [test_ns_compile::p] [set x]
 } -result {{123 test_ns_compile::set} {123 test_ns_compile::set}}
@@ -61,8 +64,8 @@ test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset y}
 } -body {
     proc p {} {
-        set ::y 789
-        return $::y
+	set ::y 789
+	return $::y
     }
     list [p] $::y [expr {"y" in [info globals]}]
 } -result {789 789 1}
@@ -76,8 +79,8 @@ test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} -setup {
     catch {unset a}
 } -body {
     proc p {} {
-        set ::a(1) 1
-        return $::a($::a(1))
+	set ::a(1) 1
+	return $::a($::a(1))
     }
     list [p] $::a(1) [expr {"a" in [info globals]}]
 } -result {1 1 1}
@@ -86,8 +89,8 @@ test compile-2.5 {TclCompileDollarVar: global array, called as ${arrName(0)}} -s
 } -body {
     proc p {} {
 	global a
-        set a(1) 1
-        return ${a(1)}$::a(1)$a(1)
+	set a(1) 1
+	return ${a(1)}$::a(1)$a(1)
     }
     list [p] $::a(1) [expr {"a" in [info globals]}]
 } -result {111 1 1}
@@ -97,8 +100,8 @@ test compile-3.1 {TclCompileCatchCmd: only catch cmds with scalar vars are compi
 } -body {
     set a(1) xyzzyx
     proc p {} {
-        global a
-        catch {set x 123} a(1)
+	global a
+	catch {set x 123} a(1)
     }
     list [p] $a(1)
 } -result {0 123}
@@ -201,7 +204,7 @@ test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    for {} [expr $i < 3] {} {
+    for {} [expr {$i < 3}] {} {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -242,19 +245,19 @@ test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
 } -body {
     set x 123
     proc p {} {
-        set ::y 789
-        return $::y
+	set ::y 789
+	return $::y
     }
     list $::x [expr {"x" in [info globals]}] \
-         [p] $::y [expr {"y" in [info globals]}]
+	 [p] $::y [expr {"y" in [info globals]}]
 } -result {123 1 789 789 1}
 test compile-6.2 {TclCompileSetCmd: global array names with ::s} -setup {
     catch {unset a}
 } -body {
     set ::a(1) 2
     proc p {} {
-        set ::a(1) 1
-        return $::a($::a(1))
+	set ::a(1) 1
+	return $::a($::a(1))
     }
     list $::a(1) [p] [set ::a($::a(1)) 3] $::a(1) [expr {"a" in [info globals]}]
 } -result {2 1 3 3 1}
@@ -263,9 +266,9 @@ test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} -setup {
     catch {unset x}
 } -body {
     namespace eval test_ns_compile {
-        variable v hello
-        variable arr
-        set ::x $::test_ns_compile::v
+	variable v hello
+	variable arr
+	set ::x $::test_ns_compile::v
 	set ::test_ns_compile::arr(1) 123
     }
     list $::x $::test_ns_compile::arr(1)
@@ -275,7 +278,7 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    while [expr $i < 3] {
+    while [expr {$i < 3}] {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -283,10 +286,10 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
 } {4}
 
 test compile-8.1 {CollectArgInfo: binary data} {
-    list [catch "string length \000foo" msg] $msg
+    list [catch "string length \x00foo" msg] $msg
 } {0 4}
 test compile-8.2 {CollectArgInfo: binary data} {
-    list [catch "string length foo\000" msg] $msg
+    list [catch "string length foo\x00" msg] $msg
 } {0 4}
 test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
     set x ]
@@ -294,10 +297,10 @@ test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
 
 test compile-9.1 {UpdateStringOfByteCode: called for duplicate of compiled empty object} {
     proc p {} {
-        set x {}
-        eval $x
-        append x { }
-        eval $x
+	set x {}
+	eval $x
+	append x { }
+	eval $x
     }
     p
 } {}
@@ -323,7 +326,7 @@ test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
 } -returnCodes error -result {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; string index a 0o9 }}
-} -returnCodes error -match glob -result {*invalid octal number*}
+} -returnCodes error -match glob -result {*}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; array set var {one two many} }}
 } -returnCodes error -result {list must have an even number of elements}
@@ -334,7 +337,7 @@ test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; incr}}
 } -returnCodes error -result {wrong # args: should be "incr varName ?increment?"}
 test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
-    apply {{} { set r [list foobar] ; expr !a }}
+    apply {{} { set r [list foobar] ; expr [concat !a] }}
 } -returnCodes error -match glob -result *
 test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; expr {!a} }}
@@ -466,6 +469,75 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
+# Tests of nested compile (body in body compilation), should not generate stack overflow
+# (with abnormal program termination), bug [fec0c17d39]:
+proc _ti_gencode {} {
+    # creates test interpreter on demand with [gencode] generator:
+    if {[interp exists ti]} {
+	return
+    }
+    interp create ti
+    ti eval {proc gencode {nr {cmd eval} {nl 0}} {
+	set code ""
+	set e ""; if {$nl} {set e "\n"}
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "$cmd \{$e"
+	}
+	append code "lappend result 1$e"
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "\}$e"
+	}
+	#puts [format "%% %.40s ... %d bytes" $code [string length $code]]
+	return $code
+    }}
+}
+test compile-13.2 {TclCompileScript: testing expected nested scripts compilation} -setup {
+    # dynamic constraint - ensure the stack is large enough on this box for this test:
+    if {
+      [testConstraint unix] &&
+      ![catch { exec sh -c {ulimit -s} } stsz] &&
+      $stsz ne "unlimited" && $stsz <= 2048
+    } {
+	tcltest::Skip "too small stack limit ($stsz <= 2048)"
+    }
+    _ti_gencode
+    interp recursionlimit ti [expr {10000+50}]
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
+    # boxes or systems, please don't decrease it (either provide new or extend a constraint above)
+    ti eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode [expr {[tcl::build-info debug] ? 1500 : 1000}] $cmd]
+	if 1 $c
+    }}
+    ti eval {set result}
+} -result {1 1 1 1}
+test compile-13.3 {TclCompileScript: testing check of max depth by nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti 100
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 500 nested scripts (bodies). It must generate "too many nested compilations"
+    # error for any variant we're testing here:
+    ti eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode 500 $cmd]
+	lappend errors [catch $c e] $e
+    }}
+    #puts $errors
+    # all of nested calls exceed the limit, so must end with "too many nested compilations"
+    # (or evaluations, depending on compile method/instruction and "mixed" compile within
+    # evaluation), so no one succeeds, the result must be empty:
+    ti eval {set result}
+} -result {}
+#
+# clean up:
+if {[interp exists ti]} {
+    interp delete ti
+}
+rename _ti_gencode {}
+
 # Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
@@ -499,9 +571,10 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     apply {{} {catch {set a 1}; return}}
 } ""
 
-for {set noComp 0} {$noComp <= 1} {incr noComp} {
+# Do all tests once byte compiled and once with direct string evaluation
+foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
@@ -587,26 +660,26 @@ test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<10}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<20}]
+}  -result [expr {1<<20}]
 test compile-16.19.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<11}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<11}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<22}]
+}  -result [expr {1<<22}]
 test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<12}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<12}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<24}]
+}  -result [expr {1<<24}]
 # This is the one that should cause overflow
 test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<16}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<16}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {wide(1)<<32}]
+}  -result [expr {wide(1)<<32}]
 test compile-16.22.$noComp {
     Bug 845412: TclCompileScript: word expansion not mandatory
 } -body {
@@ -615,7 +688,7 @@ test compile-16.22.$noComp {
     run "ReturnResults [string repeat {x } 260]"
 } -constraints $constraints -cleanup {
     rename ReturnResults {}
-} -returnCodes ok -result [string trim [string repeat {x } 260]]
+} -result [string trim [string repeat {x } 260]]
 test compile-16.23.$noComp {
     Bug 1032805: defer parse error until run time
 } -constraints $constraints -body {
@@ -627,7 +700,7 @@ test compile-16.23.$noComp {
     }
 } -cleanup {
     namespace delete x
-} -returnCodes ok -result {syntax {}{}}
+} -result {syntax {}{}}
 test compile-16.24.$noComp {
     Bug 1638414: bad list constant as first expanded term
 } -constraints $constraints -body {
@@ -762,6 +835,7 @@ test compile-18.19 {disassembler - basics} -setup {
 # There never was a compile-18.20.
 # The keys of the dictionary produced by [getbytecode] are defined.
 set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth exceptdepth}
+set allbytecodekeys [list {*}$bytecodekeys initiallinenumber sourcefile]
 test compile-18.21 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode
 } -match glob -result {wrong # args: should be "*"}
@@ -776,7 +850,7 @@ test compile-18.24 {disassembler - basics} -returnCodes error -body {
 } -result "can't interpret \"\{\" as a lambda expression"
 test compile-18.25 {disassembler - basics} -body {
     dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.26 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode proc
 } -match glob -result {wrong # args: should be "* proc procName"}
@@ -789,7 +863,7 @@ test compile-18.28 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode proc chewonthis]
 } -cleanup {
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.28.1 {disassembler - tricky bit} -setup {
     eval [list proc chewonthis {} {}]
 } -body {
@@ -803,7 +877,7 @@ test compile-18.28.2 {disassembler - tricky bit} -setup {
     dict keys [tcl::unsupported::getbytecode proc chewonthis]
 } -cleanup {
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.28.3 {disassembler - tricky bit} -setup {
     proc Proc {n a b} {
 	proc $n $a $b
@@ -825,7 +899,7 @@ test compile-18.28.4 {disassembler - tricky bit} -setup {
 } -cleanup {
     rename Proc {}
     rename chewonthis {}
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.29 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode script
 } -match glob -result {wrong # args: should be "* script script"}
@@ -854,7 +928,7 @@ test compile-18.35 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode method foo bar]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.36 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode objmethod
 } -match glob -result {wrong # args: should be "* objmethod objectName methodName"}
@@ -871,7 +945,7 @@ test compile-18.39 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode objmethod foo bar]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys initiallinenumber sourcefile"
+} -result $allbytecodekeys
 test compile-18.40 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble constructor
 } -match glob -result {wrong # args: should be "* constructor className"}
@@ -919,7 +993,7 @@ test compile-18.48 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode constructor foo]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys"
+} -result $allbytecodekeys
 # There is no compile-18.49
 test compile-18.50 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble destructor
@@ -968,7 +1042,7 @@ test compile-18.58 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode destructor foo]
 } -cleanup {
     foo destroy
-} -result "$bytecodekeys"
+} -result $allbytecodekeys
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.

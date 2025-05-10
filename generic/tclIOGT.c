@@ -4,8 +4,8 @@
  *	Implements a generic transformation exposing the underlying API at the
  *	script level. Contributed by Andreas Kupries.
  *
- * Copyright (c) 2000 Ajuba Solutions
- * Copyright (c) 1999-2000 Andreas Kupries (a.kupries@westend.com)
+ * Copyright © 2000 Ajuba Solutions
+ * Copyright © 1999-2000 Andreas Kupries (a.kupries@westend.com)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,35 +19,33 @@
  * the transformation.
  */
 
-static int		TransformBlockModeProc(ClientData instanceData,
+static int		TransformBlockModeProc(void *instanceData,
 			    int mode);
-static int		TransformCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		TransformInputProc(ClientData instanceData, char *buf,
+static int		TransformCloseProc(void *instanceData,
+			    Tcl_Interp *interp, int flags);
+static int		TransformInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		TransformOutputProc(ClientData instanceData,
+static int		TransformOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCodePtr);
-static int		TransformSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCodePtr);
-static int		TransformSetOptionProc(ClientData instanceData,
+static int		TransformSetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
-static int		TransformGetOptionProc(ClientData instanceData,
+static int		TransformGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static void		TransformWatchProc(ClientData instanceData, int mask);
-static int		TransformGetFileHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		TransformNotifyProc(ClientData instanceData, int mask);
-static Tcl_WideInt	TransformWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static void		TransformWatchProc(void *instanceData, int mask);
+static int		TransformGetFileHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
+static int		TransformNotifyProc(void *instanceData, int mask);
+static long long	TransformWideSeekProc(void *instanceData,
+			    long long offset, int mode, int *errorCodePtr);
 
 /*
  * Forward declarations of internal procedures. Secondly the procedures for
  * handling and generating fileeevents.
  */
 
-static void		TransformChannelHandlerTimer(ClientData clientData);
+static void		TransformChannelHandlerTimer(void *clientData);
 
 /*
  * Forward declarations of internal procedures. Third, helper procedures
@@ -58,7 +56,7 @@ typedef struct TransformChannelData TransformChannelData;
 
 static int		ExecuteCallback(TransformChannelData *ctrl,
 			    Tcl_Interp *interp, unsigned char *op,
-			    unsigned char *buf, int bufLen, int transmit,
+			    unsigned char *buf, Tcl_Size bufLen, int transmit,
 			    int preserve);
 
 /*
@@ -106,7 +104,7 @@ typedef struct ResultBuffer ResultBuffer;
 static inline void	ResultClear(ResultBuffer *r);
 static inline void	ResultInit(ResultBuffer *r);
 static inline int	ResultEmpty(ResultBuffer *r);
-static inline int	ResultCopy(ResultBuffer *r, unsigned char *buf,
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 			    size_t toRead);
 static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 			    size_t toWrite);
@@ -117,23 +115,23 @@ static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
  */
 
 static const Tcl_ChannelType transformChannelType = {
-    "transform",		/* Type name. */
-    TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TransformCloseProc,		/* Close proc. */
-    TransformInputProc,		/* Input proc. */
-    TransformOutputProc,	/* Output proc. */
-    TransformSeekProc,		/* Seek proc. */
-    TransformSetOptionProc,	/* Set option proc. */
-    TransformGetOptionProc,	/* Get option proc. */
-    TransformWatchProc,		/* Initialize notifier. */
-    TransformGetFileHandleProc,	/* Get OS handles out of channel. */
-    NULL,			/* close2proc */
-    TransformBlockModeProc,	/* Set blocking/nonblocking mode.*/
+    "transform",
+    TCL_CHANNEL_VERSION_5,
+    NULL,			/* Deprecated. */
+    TransformInputProc,
+    TransformOutputProc,
+    NULL,			/* Deprecated. */
+    TransformSetOptionProc,
+    TransformGetOptionProc,
+    TransformWatchProc,
+    TransformGetFileHandleProc,
+    TransformCloseProc,
+    TransformBlockModeProc,
     NULL,			/* Flush proc. */
-    TransformNotifyProc,	/* Handling of events bubbling up. */
-    TransformWideSeekProc,	/* Wide seek proc. */
-    NULL,			/* Thread action. */
-    NULL			/* Truncate. */
+    TransformNotifyProc,
+    TransformWideSeekProc,
+    NULL,			/* Thread action proc. */
+    NULL			/* Truncate proc. */
 };
 
 /*
@@ -230,7 +228,7 @@ ReleaseData(
     }
     ResultClear(&dataPtr->result);
     Tcl_DecrRefCount(dataPtr->command);
-    ckfree(dataPtr);
+    Tcl_Free(dataPtr);
 }
 
 /*
@@ -251,7 +249,6 @@ ReleaseData(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 TclChannelTransform(
     Tcl_Interp *interp,		/* Interpreter for result. */
@@ -261,7 +258,7 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
-    int objc;
+    Tcl_Size objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
@@ -269,7 +266,7 @@ TclChannelTransform(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != Tcl_ListObjLength(interp, cmdObjPtr, &objc)) {
+    if (TCL_OK != TclListObjLength(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
@@ -287,7 +284,7 @@ TclChannelTransform(
      * regime of the underlying channel and to use the same for us too.
      */
 
-    dataPtr = ckalloc(sizeof(TransformChannelData));
+    dataPtr = (TransformChannelData *)Tcl_Alloc(sizeof(TransformChannelData));
 
     dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
@@ -369,7 +366,7 @@ ExecuteCallback(
     Tcl_Interp *interp,		/* Current interpreter, possibly NULL. */
     unsigned char *op,		/* Operation invoking the callback. */
     unsigned char *buf,		/* Buffer to give to the script. */
-    int bufLen,			/* And its length. */
+    Tcl_Size bufLen,		/* And its length. */
     int transmit,		/* Flag, determines whether the result of the
 				 * callback is sent to the underlying channel
 				 * or not. */
@@ -378,7 +375,7 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    int resLen;
+    Tcl_Size resLen = 0;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
@@ -400,11 +397,16 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    res = Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    if (res != TCL_OK) {
+	Tcl_DecrRefCount(command);
+	Tcl_Release(eval);
+	return res;
+    }
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming
-     * through as UTF while at the tcl level.
+     * through as Utf while at the tcl level.
      */
 
     Tcl_ListObjAppendElement(NULL, command, Tcl_NewByteArrayObj(buf, bufLen));
@@ -412,7 +414,7 @@ ExecuteCallback(
     /*
      * Step 2, execute the command at the global level of the interpreter used
      * to create the transformation. Destroy the command afterward. If an
-     * error occured and the current interpreter is defined and not equal to
+     * error occurred and the current interpreter is defined and not equal to
      * the interpreter for the callback, then copy the error message into
      * current interpreter. Don't copy if in preservation mode.
      */
@@ -443,25 +445,38 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
-		resLen);
-	break;
+	resBuf = Tcl_GetBytesFromObj(NULL, resObj, &resLen);
+	if (resBuf) {
+	    Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self),
+		    (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_SELF:
 	if (dataPtr->self == NULL) {
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
-	break;
+	resBuf = Tcl_GetBytesFromObj(NULL, resObj, &resLen);
+	if (resBuf) {
+	    Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	ResultAdd(&dataPtr->result, resBuf, resLen);
-	break;
+	resBuf = Tcl_GetBytesFromObj(NULL, resObj, &resLen);
+	if (resBuf) {
+	    ResultAdd(&dataPtr->result, resBuf, resLen);
+	    break;
+	}
+	nonBytes:
+	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
+		(char *)NULL);
+	Tcl_Release(eval);
+	return TCL_ERROR;
 
     case TRANSMIT_NUM:
 	/*
@@ -500,10 +515,10 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    ClientData instanceData,	/* State of transformation. */
+    void *instanceData,		/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
 	dataPtr->flags |= CHANNEL_ASYNC;
@@ -532,10 +547,15 @@ TransformBlockModeProc(
 
 static int
 TransformCloseProc(
-    ClientData instanceData,
-    Tcl_Interp *interp)
+    void *instanceData,
+    Tcl_Interp *interp,
+	int flags)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     /*
      * Important: In this procedure 'dataPtr->self' already points to the
@@ -558,7 +578,7 @@ TransformCloseProc(
      * Now flush data waiting in internal buffers to output and input. The
      * input must be done despite the fact that there is no real receiver for
      * it anymore. But the scripts might have sideeffects other parts of the
-     * system rely on (f.e. signaling the close to interested parties).
+     * system rely on (f.e. signalling the close to interested parties).
      */
 
     PreserveData(dataPtr);
@@ -611,13 +631,14 @@ TransformCloseProc(
 
 static int
 TransformInputProc(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errorCodePtr)
 {
-    TransformChannelData *dataPtr = instanceData;
-    int gotBytes, read, copied;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
+    int gotBytes, copied;
+    Tcl_Size read;
     Tcl_Channel downChan;
 
     /*
@@ -778,12 +799,12 @@ TransformInputProc(
 
 static int
 TransformOutputProc(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Should assert(dataPtr->mode & TCL_WRITABLE);
@@ -811,73 +832,6 @@ TransformOutputProc(
 /*
  *----------------------------------------------------------------------
  *
- * TransformSeekProc --
- *
- *	This procedure is called by the generic IO level to move the access
- *	point in a channel.
- *
- * Side effects:
- *	Moves the location at which the channel will be accessed in future
- *	operations. Flushes all transformation buffers, then forwards it to
- *	the underlying channel.
- *
- * Result:
- *	-1 if failed, the new position if successful. An output argument
- *	contains the POSIX error code if an error occurred, or zero.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TransformSeekProc(
-    ClientData instanceData,	/* The channel to manipulate. */
-    long offset,		/* Size of movement. */
-    int mode,			/* How to move. */
-    int *errorCodePtr)		/* Location of error flag. */
-{
-    TransformChannelData *dataPtr = instanceData;
-    Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
-    const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
-    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
-
-    if ((offset == 0) && (mode == SEEK_CUR)) {
-	/*
-	 * This is no seek but a request to tell the caller the current
-	 * location. Simply pass the request down.
-	 */
-
-	return parentSeekProc(Tcl_GetChannelInstanceData(parent), offset,
-		mode, errorCodePtr);
-    }
-
-    /*
-     * It is a real request to change the position. Flush all data waiting for
-     * output and discard everything in the input buffers. Then pass the
-     * request down, unchanged.
-     */
-
-    PreserveData(dataPtr);
-    if (dataPtr->mode & TCL_WRITABLE) {
-	ExecuteCallback(dataPtr, NULL, A_FLUSH_WRITE, NULL, 0, TRANSMIT_DOWN,
-		P_NO_PRESERVE);
-    }
-
-    if (dataPtr->mode & TCL_READABLE) {
-	ExecuteCallback(dataPtr, NULL, A_CLEAR_READ, NULL, 0, TRANSMIT_DONT,
-		P_NO_PRESERVE);
-	ResultClear(&dataPtr->result);
-	dataPtr->readIsFlushed = 0;
-	dataPtr->eofPending = 0;
-    }
-    ReleaseData(dataPtr);
-
-    return parentSeekProc(Tcl_GetChannelInstanceData(parent), offset, mode,
-	    errorCodePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TransformWideSeekProc --
  *
  *	This procedure is called by the generic IO level to move the access
@@ -895,22 +849,21 @@ TransformSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 TransformWideSeekProc(
-    ClientData instanceData,	/* The channel to manipulate. */
-    Tcl_WideInt offset,		/* Size of movement. */
+    void *instanceData,		/* The channel to manipulate. */
+    long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
-    const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
-    Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
+    const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
-    ClientData parentData = Tcl_GetChannelInstanceData(parent);
+    void *parentData = Tcl_GetChannelInstanceData(parent);
 
-    if ((offset == Tcl_LongAsWide(0)) && (mode == SEEK_CUR)) {
+    if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
 	 * This is no seek but a request to tell the caller the current
 	 * location. Simply pass the request down.
@@ -918,10 +871,10 @@ TransformWideSeekProc(
 
 	if (parentWideSeekProc != NULL) {
 	    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+	} else {
+	    *errorCodePtr = EINVAL;
+	    return -1;
 	}
-
-	return Tcl_LongAsWide(parentSeekProc(parentData, 0, mode,
-		errorCodePtr));
     }
 
     /*
@@ -949,25 +902,11 @@ TransformWideSeekProc(
      * If we have a wide seek capability, we should stick with that.
      */
 
-    if (parentWideSeekProc != NULL) {
-	return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
+    if (parentWideSeekProc == NULL) {
+	*errorCodePtr = EINVAL;
+	return -1;
     }
-
-    /*
-     * We're transferring to narrow seeks at this point; this is a bit complex
-     * because we have to check whether the seek is possible first (i.e.
-     * whether we are losing information in truncating the bits of the
-     * offset). Luckily, there's a defined error for what happens when trying
-     * to go out of the representable range.
-     */
-
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
-	*errorCodePtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
-    }
-
-    return Tcl_LongAsWide(parentSeekProc(parentData, Tcl_WideAsLong(offset),
-	    mode, errorCodePtr));
+    return parentWideSeekProc(parentData, offset, mode, errorCodePtr);
 }
 
 /*
@@ -990,12 +929,12 @@ TransformWideSeekProc(
 
 static int
 TransformSetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     const char *value)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan = Tcl_GetStackedChannel(dataPtr->self);
     Tcl_DriverSetOptionProc *setOptionProc;
 
@@ -1028,12 +967,12 @@ TransformSetOptionProc(
 
 static int
 TransformGetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan = Tcl_GetStackedChannel(dataPtr->self);
     Tcl_DriverGetOptionProc *getOptionProc;
 
@@ -1073,17 +1012,16 @@ TransformGetOptionProc(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 TransformWatchProc(
-    ClientData instanceData,	/* Channel to watch. */
+    void *instanceData,		/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan;
 
     /*
-     * The caller expressed interest in events occuring for this channel. We
+     * The caller expressed interest in events occurring for this channel. We
      * are forwarding the call to the underlying channel now.
      */
 
@@ -1154,11 +1092,11 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    ClientData instanceData,	/* Channel to query. */
+    void *instanceData,		/* Channel to query. */
     int direction,		/* Direction of interest. */
-    ClientData *handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)		/* Place to store the handle into. */
 {
-    TransformChannelData *dataPtr = instanceData;
+    TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
     /*
      * Return the handle belonging to parent channel. IOW, pass the request
@@ -1188,14 +1126,14 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    ClientData clientData,	/* The state of the notified
+    void *clientData,		/* The state of the notified
 				 * transformation. */
-    int mask)			/* The mask of occuring events. */
+    int mask)			/* The mask of occurring events. */
 {
-    TransformChannelData *dataPtr = clientData;
+    TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     /*
-     * An event occured in the underlying channel. This transformation doesn't
+     * An event occurred in the underlying channel. This transformation doesn't
      * process such events thus returns the incoming mask unchanged.
      */
 
@@ -1233,9 +1171,9 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    ClientData clientData)	/* Transformation to query. */
+    void *clientData)		/* Transformation to query. */
 {
-    TransformChannelData *dataPtr = clientData;
+    TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     dataPtr->timer = NULL;
     if (!(dataPtr->watchMask&TCL_READABLE) || ResultEmpty(&dataPtr->result)) {
@@ -1273,7 +1211,7 @@ ResultClear(
     r->used = 0;
 
     if (r->allocated) {
-	ckfree(r->buf);
+	Tcl_Free(r->buf);
 	r->buf = NULL;
 	r->allocated = 0;
     }
@@ -1285,7 +1223,7 @@ ResultClear(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.
@@ -1347,13 +1285,13 @@ ResultEmpty(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 ResultCopy(
     ResultBuffer *r,		/* The buffer to read from. */
     unsigned char *buf,		/* The buffer to copy into. */
     size_t toRead)		/* Number of requested bytes. */
 {
-    if (r->used == 0) {
+    if (ResultEmpty(r)) {
 	/*
 	 * Nothing to copy in the case of an empty buffer.
 	 */
@@ -1410,17 +1348,17 @@ ResultAdd(
     unsigned char *buf,		/* The buffer to read from. */
     size_t toWrite)		/* The number of bytes in 'buf'. */
 {
-    if (r->used + toWrite > r->allocated) {
+    if ((r->used + toWrite + 1) > r->allocated) {
 	/*
 	 * Extension of the internal buffer is required.
 	 */
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + INCREMENT;
-	    r->buf = ckalloc(r->allocated);
+	    r->buf = (unsigned char *)Tcl_Alloc(r->allocated);
 	} else {
 	    r->allocated += toWrite + INCREMENT;
-	    r->buf = ckrealloc(r->buf, r->allocated);
+	    r->buf = (unsigned char *)Tcl_Realloc(r->buf, r->allocated);
 	}
     }
 

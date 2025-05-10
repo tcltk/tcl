@@ -56,3 +56,7 @@ proc accum {string} {
 namespace(n), upvar(n), variable(n)
 .SH KEYWORDS
 global, namespace, procedure, variable
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

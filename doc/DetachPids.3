@@ -20,9 +20,10 @@ Tcl_DetachPids, Tcl_ReapDetachedProcs, Tcl_WaitPid \- manage child processes in 
 .sp
 Tcl_Pid
 \fBTcl_WaitPid\fR(\fIpid, statusPtr, options\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Pid *statusPtr out
-.AP int numPids in
+.AP Tcl_Size numPids in
 Number of process ids contained in the array pointed to by \fIpidPtr\fR.
 .AP int *pidPtr in
 Address of array containing \fInumPids\fR process ids.

@@ -5,7 +5,7 @@ namespace eval ::tcl::clock {
         "pon"\
         "uto"\
         "sri"\
-        "\u010det"\
+        "čet"\
         "pet"\
         "sub"]
     ::msgcat::mcset hr DAYS_OF_WEEK_FULL [list \
@@ -13,13 +13,13 @@ namespace eval ::tcl::clock {
         "ponedjeljak"\
         "utorak"\
         "srijeda"\
-        "\u010detvrtak"\
+        "četvrtak"\
         "petak"\
         "subota"]
     ::msgcat::mcset hr MONTHS_ABBREV [list \
         "sij"\
         "vel"\
-        "o\u017eu"\
+        "ožu"\
         "tra"\
         "svi"\
         "lip"\
@@ -31,9 +31,9 @@ namespace eval ::tcl::clock {
         "pro"\
         ""]
     ::msgcat::mcset hr MONTHS_FULL [list \
-        "sije\u010danj"\
-        "velja\u010da"\
-        "o\u017eujak"\
+        "siječanj"\
+        "veljača"\
+        "ožujak"\
         "travanj"\
         "svibanj"\
         "lipanj"\

@@ -7,7 +7,7 @@
  *	file that contains #ifdefs to handle different flavors of UNIX. This
  *	file sets up the union of all UNIX-related things needed by any of the
  *	Tcl core files. This file depends on configuration #defines such as
- *	NO_DIRENT_H that are set up by the "configure" script.
+ *	HAVE_SYS_PARAM_H that are set up by the "configure" script.
  *
  *	Much of the material in this file was originally contributed by Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
@@ -40,15 +40,7 @@
 #   include <sys/param.h>
 #endif
 #include <sys/types.h>
-#ifdef USE_DIRENT2_H
-#   include "../compat/dirent2.h"
-#else
-#ifdef NO_DIRENT_H
-#   include "../compat/dirent.h"
-#else
-#   include <dirent.h>
-#endif
-#endif
+#include <dirent.h>
 
 /*
  *---------------------------------------------------------------------------
@@ -57,11 +49,22 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
-typedef struct dirent64	Tcl_DirEntry;
+typedef struct dirent64		Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
 #else
-typedef struct dirent	Tcl_DirEntry;
+typedef struct dirent		Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#endif
+#ifdef HAVE_DIR64
+typedef DIR64			TclDIR;
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
+#else
+typedef DIR			TclDIR;
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -75,43 +78,47 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
+#ifdef __cplusplus
+extern "C" {
+#endif
     /* Make some symbols available without including <windows.h> */
-#   define DWORD unsigned int
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-#   define HANDLE void *
-#   define HINSTANCE void *
+#   define HMODULE void *
+#   define MAX_PATH 260
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
-    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-	    const char *, int, const char *, const char *);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
+    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const void *, int);
+    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
+	    char *, int, const char *, void *);
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
-    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int IsDebuggerPresent(void);
+    __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#ifndef __x86_64__
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
+#ifdef __clang__
+#pragma clang diagnostic pop
 #endif
 #   define timezone _timezone
+    extern int TclOSfstat(int fd, void *statBuf);
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
+#ifdef __cplusplus
+}
+#endif
 #else
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
+#   define TclOSfstat(fd, buf) fstat(fd, (struct stat *)buf)
+#   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
+#   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
 
 /*
@@ -125,33 +132,20 @@ typedef off_t		Tcl_SeekOffset;
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
-#if TIME_WITH_SYS_TIME
+#ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
-#   include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#   include <sys/time.h>
-#else
-#   include <time.h>
 #endif
-#endif
+#include <time.h>
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
 #endif
-#if HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
 #include <limits.h>
-#if HAVE_STDINT_H
-#   include <stdint.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#   include <unistd.h>
-#else
-#   include "../compat/unistd.h"
-#endif
+#include <unistd.h>
 
-extern int TclUnixSetBlockingMode(int fd, int mode);
+MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #include <utime.h>
 
@@ -181,13 +175,7 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  *---------------------------------------------------------------------------
  */
 
-#ifndef NO_FLOAT_H
-#   include <float.h>
-#else
-#ifndef NO_VALUES_H
-#   include <values.h>
-#endif
-#endif
+#include <float.h>
 
 #ifndef FLT_MAX
 #   ifdef MAXFLOAT
@@ -239,29 +227,29 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xFF) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 #ifndef WIFSIGNALED
 #   define WIFSIGNALED(stat) \
 	(((*((int *) &(stat)))) && ((*((int *) &(stat))) \
-		== ((*((int *) &(stat))) & 0x00ff)))
+		== ((*((int *) &(stat))) & 0x00FF)))
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xFF) == 0177)
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -496,7 +484,7 @@ extern int	gettimeofday(struct timeval *tp,
 
 /*
  *---------------------------------------------------------------------------
- * Not all systems declare the errno variable in errno.h. so this file does it
+ * Not all systems declare the errno variable in errno.h, so this file does it
  * explicitly. The list of system error messages also isn't generally declared
  * in a header file anywhere.
  *---------------------------------------------------------------------------
@@ -571,9 +559,7 @@ extern char **		environ;
  *---------------------------------------------------------------------------
  */
 
-#   ifdef HAVE_AVAILABILITYMACROS_H
-#	include <AvailabilityMacros.h>
-#   endif
+#    include <AvailabilityMacros.h>
 
 /*
  *---------------------------------------------------------------------------
@@ -582,60 +568,18 @@ extern char **		environ;
  */
 
 #   ifdef HAVE_WEAK_IMPORT
-#	if !defined(HAVE_AVAILABILITYMACROS_H) || !defined(MAC_OS_X_VERSION_MIN_REQUIRED)
-#	    undef HAVE_WEAK_IMPORT
-#	else
-#	    ifndef WEAK_IMPORT_ATTRIBUTE
-#		define WEAK_IMPORT_ATTRIBUTE	__attribute__((weak_import))
-#	    endif
+#	ifndef WEAK_IMPORT_ATTRIBUTE
+#	    define WEAK_IMPORT_ATTRIBUTE	__attribute__((weak_import))
 #	endif
 #   endif /* HAVE_WEAK_IMPORT */
 
-/*
- *---------------------------------------------------------------------------
- * Support for MAC_OS_X_VERSION_MAX_ALLOWED define from AvailabilityMacros.h:
- * only use API available in the indicated OS version or earlier.
- *---------------------------------------------------------------------------
- */
-
-#   ifdef MAC_OS_X_VERSION_MAX_ALLOWED
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1050 && defined(__LP64__)
-#	    undef HAVE_COREFOUNDATION
-#	endif
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1040
-#	    undef HAVE_OSSPINLOCKLOCK
-#	    undef HAVE_PTHREAD_ATFORK
-#	    undef HAVE_COPYFILE
-#	endif
-#	if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-#	    ifdef TCL_THREADS
-		/* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
-#		define NO_REALPATH 1
-#	    endif
-#	    undef HAVE_LANGINFO
-#	endif
-#   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
-#   if defined(HAVE_COREFOUNDATION) && defined(__LP64__) && \
-	    defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050
-#	warning "Weak import of 64-bit CoreFoundation is not supported, will not run on Mac OS X < 10.5."
-#   endif
-
-/*
- *---------------------------------------------------------------------------
- * At present, using vfork() instead of fork() causes execve() to fail
- * intermittently on Darwin x86_64. rdar://4685553
- *---------------------------------------------------------------------------
- */
-
-#   if defined(__x86_64__) && !defined(FIXED_RDAR_4685553)
-#	undef USE_VFORK
-#   endif /* __x86_64__ */
-/* Workaround problems with vfork() when building with llvm-gcc-4.2 */
-#   if defined (__llvm__) && \
-	    (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ > 2 || \
-	    (__GNUC_MINOR__ == 2 && __GNUC_PATCHLEVEL__ > 0))))
-#	undef USE_VFORK
-#   endif /* __llvm__ */
+    /*
+     * For now, test exec-17.1 fails (I/O setup after closing stdout) with
+     * posix_spawnp(), but the classic implementation (based on fork()+execvp())
+     * works well under macOS.
+     */
+#   undef HAVE_POSIX_SPAWNP
+#   undef HAVE_VFORK
 #endif /* __APPLE__ */
 
 /*
@@ -648,14 +592,12 @@ extern char **		environ;
 #   undef HAVE_CLOCK_GETTIME
 #endif
 
-#ifdef TCL_THREADS
 #   ifndef HAVE_CLOCK_GETTIME
 #	undef HAVE_PTHREAD_CONDATTR_SETCLOCK
 #   endif
 #   ifndef HAVE_PTHREAD_CONDATTR_SETCLOCK
 #	undef HAVE_CLOCK_GETTIME
 #   endif
-#endif
 
 
 /*
@@ -692,9 +634,9 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpSysAlloc(size, isBin)	malloc((size_t)(size))
-#define TclpSysFree(ptr)		free((char *)(ptr))
-#define TclpSysRealloc(ptr, size)	realloc((char *)(ptr), (size_t)(size))
+#define TclpSysAlloc(size)		malloc(size)
+#define TclpSysFree(ptr)		free(ptr)
+#define TclpSysRealloc(ptr, size)	realloc(ptr, size)
 
 /*
  *---------------------------------------------------------------------------
@@ -702,9 +644,7 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpExit	exit
-
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
 #endif /* TCL_THREADS */
 
@@ -724,14 +664,14 @@ typedef int socklen_t;
 #include <pwd.h>
 #include <grp.h>
 
-extern struct passwd *	TclpGetPwNam(const char *name);
-extern struct group *	TclpGetGrNam(const char *name);
-extern struct passwd *	TclpGetPwUid(uid_t uid);
-extern struct group *	TclpGetGrGid(gid_t gid);
-extern struct hostent *	TclpGetHostByName(const char *name);
-extern struct hostent *	TclpGetHostByAddr(const char *addr,
+MODULE_SCOPE struct passwd *	TclpGetPwNam(const char *name);
+MODULE_SCOPE struct group *	TclpGetGrNam(const char *name);
+MODULE_SCOPE struct passwd *	TclpGetPwUid(uid_t uid);
+MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
+MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
+MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-extern void *TclpMakeTcpClientChannelMode(
+MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */

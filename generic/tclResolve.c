@@ -6,7 +6,7 @@
  *	name resolution rules to the Tcl language. Rules can be applied to a
  *	particular namespace, to the interpreter as a whole, or both.
  *
- * Copyright (c) 1998 Lucent Technologies, Inc.
+ * Copyright © 1998 Lucent Technologies, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -65,7 +65,7 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
-    unsigned len;
+    size_t len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code
@@ -101,9 +101,9 @@ Tcl_AddInterpResolvers(
      * list, so that it overrides existing schemes.
      */
 
-    resPtr = ckalloc(sizeof(ResolverScheme));
+    resPtr = (ResolverScheme *)Tcl_Alloc(sizeof(ResolverScheme));
     len = strlen(name) + 1;
-    resPtr->name = ckalloc(len);
+    resPtr->name = (char *)Tcl_Alloc(len);
     memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
@@ -225,8 +225,8 @@ Tcl_RemoveInterpResolvers(
 	}
 
 	*prevPtrPtr = resPtr->nextPtr;
-	ckfree(resPtr->name);
-	ckfree(resPtr);
+	Tcl_Free(resPtr->name);
+	Tcl_Free(resPtr);
 
 	return 1;
     }
@@ -265,7 +265,7 @@ BumpCmdRefEpochs(
 #ifndef BREAK_NAMESPACE_COMPAT
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	Namespace *childNsPtr = Tcl_GetHashValue(entry);
+	Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
 	BumpCmdRefEpochs(childNsPtr);
     }
@@ -273,7 +273,7 @@ BumpCmdRefEpochs(
     if (nsPtr->childTablePtr != NULL) {
 	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
 		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	    Namespace *childNsPtr = Tcl_GetHashValue(entry);
+	    Namespace *childNsPtr = (Namespace *)Tcl_GetHashValue(entry);
 
 	    BumpCmdRefEpochs(childNsPtr);
 	}

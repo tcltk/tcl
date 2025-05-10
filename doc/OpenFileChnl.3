@@ -32,7 +32,6 @@ int
 int
 \fBTcl_GetChannelNamesEx\fR(\fIinterp, pattern\fR)
 .sp
-void
 \fBTcl_RegisterChannel\fR(\fIinterp, channel\fR)
 .sp
 int
@@ -47,34 +46,34 @@ int
 int
 \fBTcl_Close\fR(\fIinterp, channel\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_ReadChars\fR(\fIchannel, readObjPtr, charsToRead, appendFlag\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_Read\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_GetsObj\fR(\fIchannel, lineObjPtr\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_Gets\fR(\fIchannel, lineRead\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_Ungets\fR(\fIchannel, input, inputLen, addAtEnd\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_WriteObj\fR(\fIchannel, writeObjPtr\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_WriteChars\fR(\fIchannel, charBuf, bytesToWrite\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_Write\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_ReadRaw\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_WriteRaw\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
 int
@@ -92,10 +91,10 @@ int
 int
 \fBTcl_OutputBuffered\fR(\fIchannel\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_Tell\fR(\fIchannel\fR)
 .sp
 int
@@ -106,7 +105,7 @@ int
 .sp
 int
 \fBTcl_SetChannelOption\fR(\fIinterp, channel, optionName, newValue\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_DString *channelName in/out
 .AP Tcl_Interp *interp in
@@ -119,7 +118,7 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
 POSIX-style permission flags such as 0644.  If a new file is created, these
 permissions will be set on the created file.
-.AP int argc in
+.AP Tcl_Size argc in
 The number of elements in \fIargv\fR.
 .AP "const char" **argv in
 Arguments for constructing a command pipeline.  These values have the same
@@ -134,7 +133,7 @@ input of the invoking process; likewise for \fBTCL_STDOUT\fR and
 redirect stdio handles to override the stdio handles for which
 \fBTCL_STDIN\fR, \fBTCL_STDOUT\fR and \fBTCL_STDERR\fR have been set.  If it
 is set, then such redirections cause an error.
-.AP ClientData handle in
+.AP void *handle in
 Operating system specific handle for I/O to a file. For Unix this is a
 file descriptor, for Windows it is a HANDLE.
 .AP int readOrWrite in
@@ -154,7 +153,7 @@ from a procedure such as \fBTcl_OpenFileChannel\fR.
 .AP Tcl_Obj *readObjPtr in/out
 A pointer to a Tcl value in which to store the characters read from the
 channel.
-.AP int charsToRead in
+.AP Tcl_Size charsToRead in
 The number of characters to read from the channel.  If the channel's encoding
 is \fBbinary\fR, this is equivalent to the number of bytes to read from the
 channel.
@@ -163,7 +162,7 @@ If non-zero, data read from the channel will be appended to the value.
 Otherwise, the data will replace the existing contents of the value.
 .AP char *readBuf out
 A buffer in which to store the bytes read from the channel.
-.AP int bytesToRead in
+.AP Tcl_Size bytesToRead in
 The number of bytes to read from the channel.  The buffer \fIreadBuf\fR must
 be large enough to hold this many bytes.
 .AP Tcl_Obj *lineObjPtr in/out
@@ -176,7 +175,7 @@ channel.  Must have been initialized by the caller.  The line read will be
 appended to any data already in the dynamic string.
 .AP "const char" *input in
 The input to add to a channel buffer.
-.AP int inputLen in
+.AP Tcl_Size inputLen in
 Length of the input
 .AP int addAtEnd in
 Flag indicating whether the input should be added to the end or
@@ -187,10 +186,10 @@ A pointer to a Tcl value whose contents will be output to the channel.
 A buffer containing the characters to output to the channel.
 .AP "const char" *byteBuf in
 A buffer containing the bytes to output to the channel.
-.AP int bytesToWrite in
+.AP Tcl_Size bytesToWrite in
 The number of bytes to consume from \fIcharBuf\fR or \fIbyteBuf\fR and
 output to the channel.
-.AP Tcl_WideInt offset in
+.AP "long long" offset in
 How far to move the access point in the channel at which the next input or
 output operation will be applied, measured in bytes from the position
 given by \fIseekMode\fR.  May be either positive or negative.
@@ -198,7 +197,7 @@ given by \fIseekMode\fR.  May be either positive or negative.
 Relative to which point to seek; used with \fIoffset\fR to calculate the new
 access point for the channel. Legal values are \fBSEEK_SET\fR,
 \fBSEEK_CUR\fR, and \fBSEEK_END\fR.
-.AP Tcl_WideInt length in
+.AP "long long" length in
 The (non-negative) length to truncate the channel the channel to.
 .AP "const char" *optionName in
 The name of an option applicable to this channel, such as \fB\-blocking\fR.
@@ -277,7 +276,7 @@ If an error occurs while opening the channel, \fBTcl_OpenCommandChannel\fR
 returns NULL and records a POSIX error code that can be retrieved with
 \fBTcl_GetErrno\fR.
 In addition, \fBTcl_OpenCommandChannel\fR leaves an error message in
-the interpreter's result if \fIinterp\fR is not NULL.
+the interpreter's result. \fIinterp\fR cannot be NULL.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR, described below.
@@ -391,7 +390,7 @@ If the channel is being closed synchronously and an error occurs during
 closing of the channel and \fIinterp\fR is not NULL, an error message is
 left in the interpreter's result.
 .PP
-Note: it is not safe to call \fBTcl_Close\fR on a channel that has been
+Note that it is not safe to call \fBTcl_Close\fR on a channel that has been
 registered using \fBTcl_RegisterChannel\fR; see the documentation for
 \fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
 been given as the \fBchan\fR argument in a call to
@@ -406,19 +405,21 @@ to UTF-8 based on the channel's encoding and storing the produced data in
 \fIreadObjPtr\fR's string representation.  The return value of
 \fBTcl_ReadChars\fR is the number of characters, up to \fIcharsToRead\fR,
 that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
-return value is \-1 and \fBTcl_ReadChars\fR records a POSIX error code that
-can be retrieved with \fBTcl_GetErrno\fR.
+return value is -1 and \fBTcl_ReadChars\fR records a POSIX error
+code that can be retrieved with \fBTcl_GetErrno\fR. If an encoding error happens
+while the channel is in blocking mode with -profile strict, the characters
+retrieved until the encoding error happened will be stored in \fIreadObjPtr\fR.
 .PP
-Setting \fIcharsToRead\fR to \fB\-1\fR will cause the command to read
+Setting \fIcharsToRead\fR to -1 will cause the command to read
 all characters currently available (non-blocking) or everything until
 eof (blocking mode).
 .PP
 The return value may be smaller than the value to read, indicating that less
 data than requested was available.  This is called a \fIshort read\fR.  In
 blocking mode, this can only happen on an end-of-file.  In nonblocking mode,
-a short read can also occur if there is not enough input currently
-available:  \fBTcl_ReadChars\fR returns a short count rather than waiting
-for more data.
+a short read can also occur if an encoding error is encountered (with -profile
+strict) or if there is not enough input currently available:
+\fBTcl_ReadChars\fR returns a short count rather than waiting for more data.
 .PP
 If the channel is in blocking mode, a return value of zero indicates an
 end-of-file condition.  If the channel is in nonblocking mode, a return
@@ -471,14 +472,14 @@ character(s) are read and discarded.
 .PP
 If a line was successfully read, the return value is greater than or equal
 to zero and indicates the number of bytes stored in \fIlineObjPtr\fR.  If an
-error occurs, \fBTcl_GetsObj\fR returns \-1 and records a POSIX error code
+error occurs, \fBTcl_GetsObj\fR returns -1 and records a POSIX error code
 that can be retrieved with \fBTcl_GetErrno\fR.  \fBTcl_GetsObj\fR also
-returns \-1 if the end of the file is reached; the \fBTcl_Eof\fR procedure
+returns -1 if the end of the file is reached; the \fBTcl_Eof\fR procedure
 can be used to distinguish an error from an end-of-file condition.
 .PP
-If the channel is in nonblocking mode, the return value can also be \-1 if
-no data was available or the data that was available did not contain an
-end-of-line character.  When \-1 is returned, the \fBTcl_InputBlocked\fR
+If the channel is in nonblocking mode, the return value can also be -1
+if no data was available or the data that was available did not contain an
+end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
@@ -496,7 +497,7 @@ head of the queue.  If \fIchannel\fR has a
 .QW sticky
 EOF set, no data will be
 added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
-\-1 if an error occurs.
+-1 if an error occurs.
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
 \fBTcl_WriteChars\fR accepts \fIbytesToWrite\fR bytes of character data at
@@ -513,10 +514,10 @@ to appear as soon as a complete line is accepted for output, set the
 \fB\-buffering\fR option on the channel to \fBline\fR mode.
 .PP
 The return value of \fBTcl_WriteChars\fR is a count of how many bytes were
-accepted for output to the channel.  This is either greater than zero to
-indicate success or \-1 to indicate that an error occurred.  If an error
-occurs, \fBTcl_WriteChars\fR records a POSIX error code that may be
-retrieved with \fBTcl_GetErrno\fR.
+accepted for output to the channel.  This is either -1 to
+indicate that an error occurred or another number greater than
+zero to indicate success.  If an error occurs, \fBTcl_WriteChars\fR records
+a POSIX error code that may be retrieved with \fBTcl_GetErrno\fR.
 .PP
 Newline characters in the output data are translated to platform-specific
 end-of-line sequences according to the \fB\-translation\fR option for the
@@ -599,7 +600,7 @@ their possible values are described in the manual entry for the Tcl
 \fBfconfigure\fR command. Other options can be added by each channel type.
 These channel type specific options are described in the manual entry for
 the Tcl command that creates a channel of that type; for example, the
-additional options for TCP based channels are described in the manual entry
+additional options for TCP-based channels are described in the manual entry
 for the Tcl \fBsocket\fR command.
 The procedure normally returns \fBTCL_OK\fR. If an error occurs, it returns
 \fBTCL_ERROR\fR and calls \fBTcl_SetErrno\fR to store an appropriate POSIX
@@ -641,6 +642,24 @@ the channel was created with \fBTcl_OpenFileChannel\fR,
 \fBTcl_OpenCommandChannel\fR, or \fBTcl_MakeFileChannel\fR.  Other
 channel types may return a different type of handle on Windows
 platforms.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIreadObjPtr\fR argument to \fBTcl_ReadChars\fR must be an unshared
+value; it will be modified by this function.  Using the interpreter result for
+this purpose is \fIstrongly\fR not recommended; the preferred pattern is to
+use a new value from \fBTcl_NewObj\fR to receive the data and only to pass it
+to \fBTcl_SetObjResult\fR if this function succeeds.
+.PP
+The \fIlineObjPtr\fR argument to \fBTcl_GetsObj\fR must be an unshared value;
+it will be modified by this function.  Using the interpreter result for this
+purpose is \fIstrongly\fR not recommended; the preferred pattern is to use a
+new value from \fBTcl_NewObj\fR to receive the data and only to pass it to
+\fBTcl_SetObjResult\fR if this function succeeds.
+.PP
+The \fIwriteObjPtr\fR argument to \fBTcl_WriteObj\fR should be a value with
+any reference count. This function will not modify the reference count. Using
+the interpreter result without adding an additional reference to it is not
+recommended.
 .SH "SEE ALSO"
 DString(3), fconfigure(n), filename(n), fopen(3), Tcl_CreateChannel(3)
 .SH KEYWORDS

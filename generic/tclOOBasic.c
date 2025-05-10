@@ -4,7 +4,7 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2013 by Donal K. Fellows
+ * Copyright © 2005-2013 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -15,6 +15,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include "tclTomMath.h"
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static Tcl_NRPostProc	AfterNRDestructor;
@@ -51,11 +52,11 @@ AddConstructionFinalizer(
 
 static int
 FinalizeConstruction(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
-    Object *oPtr = data[0];
+    Object *oPtr = (Object *) data[0];
 
     if (result != TCL_OK) {
 	return result;
@@ -76,20 +77,41 @@ FinalizeConstruction(
 
 int
 TclOO_Class_Constructor(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj **invoke;
+    Tcl_Obj **invoke, *nameObj;
 
-    if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    if ((size_t) objc > skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
-    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+    }
+
+    /*
+     * Make the class definition delegate. This is special; it doesn't reenter
+     * here (and the class definition delegate doesn't run any constructors).
+     *
+     * This needs to be done before consideration of whether to pass the script
+     * argument to [oo::define]. [Bug 680503]
+     */
+
+    nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+	    oPtr->namespacePtr->fullName);
+    Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
+	    TclGetString(nameObj), NULL, TCL_INDEX_NONE, NULL, 0);
+    Tcl_BounceRefCount(nameObj);
+
+    /*
+     * If there's nothing else to do, we're done.
+     */
+
+    if ((size_t) objc == skip) {
 	return TCL_OK;
     }
 
@@ -97,10 +119,10 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
-    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
+    invoke = (Tcl_Obj **) TclStackAlloc(interp, 3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
-    invoke[2] = objv[objc-1];
+    invoke[2] = objv[objc - 1];
 
     /*
      * Must add references or errors in configuration script will cause
@@ -111,7 +133,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
     TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke, NULL, NULL, NULL);
+	    invoke, oPtr, NULL, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -123,17 +145,32 @@ TclOO_Class_Constructor(
 
 static int
 DecrRefsPostClassConstructor(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **invoke = data[0];
+    Tcl_Obj **invoke = (Tcl_Obj **) data[0];
+    Object *oPtr = (Object *) data[1];
+    Tcl_InterpState saved;
+    int code;
 
     TclDecrRefCount(invoke[0]);
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
-    ckfree(invoke);
-    return result;
+    invoke[0] = oPtr->fPtr->mcdName;
+    invoke[1] = TclOOObjectName(interp, oPtr);
+    Tcl_IncrRefCount(invoke[0]);
+    Tcl_IncrRefCount(invoke[1]);
+    saved = Tcl_SaveInterpState(interp, result);
+    code = Tcl_EvalObjv(interp, 2, invoke, 0);
+    TclDecrRefCount(invoke[0]);
+    TclDecrRefCount(invoke[1]);
+    TclStackFree(interp, invoke);
+    if (code != TCL_OK) {
+	Tcl_DiscardInterpState(saved);
+	return code;
+    }
+    return Tcl_RestoreInterpState(interp, saved);
 }
 
 /*
@@ -148,7 +185,7 @@ DecrRefsPostClassConstructor(
 
 int
 TclOO_Class_Create(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -157,7 +194,7 @@ TclOO_Class_Create(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName;
-    int len;
+    Tcl_Size len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -169,7 +206,7 @@ TclOO_Class_Create(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"object \"%s\" is not a class", TclGetString(cmdnameObj)));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
+	OO_ERROR(interp, INSTANTIATE_NONCLASS);
 	return TCL_ERROR;
     }
 
@@ -177,7 +214,7 @@ TclOO_Class_Create(
      * Check we have the right number of (sensible) arguments.
      */
 
-    if (objc - Tcl_ObjectContextSkippedArgs(context) < 1) {
+    if (objc < 1 + Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"objectName ?arg ...?");
 	return TCL_ERROR;
@@ -186,8 +223,8 @@ TclOO_Class_Create(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object name must not be empty", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
+		"object name must not be empty", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, EMPTY_NAME);
 	return TCL_ERROR;
     }
 
@@ -213,7 +250,7 @@ TclOO_Class_Create(
 
 int
 TclOO_Class_CreateNs(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -222,7 +259,7 @@ TclOO_Class_CreateNs(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName, *nsName;
-    int len;
+    Tcl_Size len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -234,7 +271,7 @@ TclOO_Class_CreateNs(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"object \"%s\" is not a class", TclGetString(cmdnameObj)));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
+	OO_ERROR(interp, INSTANTIATE_NONCLASS);
 	return TCL_ERROR;
     }
 
@@ -242,7 +279,7 @@ TclOO_Class_CreateNs(
      * Check we have the right number of (sensible) arguments.
      */
 
-    if (objc - Tcl_ObjectContextSkippedArgs(context) < 2) {
+    if (objc + 1 < Tcl_ObjectContextSkippedArgs(context) + 3) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"objectName namespaceName ?arg ...?");
 	return TCL_ERROR;
@@ -251,16 +288,16 @@ TclOO_Class_CreateNs(
 	    objv[Tcl_ObjectContextSkippedArgs(context)], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object name must not be empty", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
+		"object name must not be empty", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, EMPTY_NAME);
 	return TCL_ERROR;
     }
     nsName = Tcl_GetStringFromObj(
-	    objv[Tcl_ObjectContextSkippedArgs(context)+1], &len);
+	    objv[Tcl_ObjectContextSkippedArgs(context) + 1], &len);
     if (len == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"namespace name must not be empty", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "EMPTY_NAME", NULL);
+		"namespace name must not be empty", TCL_AUTO_LENGTH));
+	OO_ERROR(interp, EMPTY_NAME);
 	return TCL_ERROR;
     }
 
@@ -270,7 +307,7 @@ TclOO_Class_CreateNs(
 
     return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, nsName, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+2,
+	    Tcl_ObjectContextSkippedArgs(context) + 2,
 	    AddConstructionFinalizer(interp));
 }
 
@@ -286,7 +323,7 @@ TclOO_Class_CreateNs(
 
 int
 TclOO_Class_New(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -305,7 +342,7 @@ TclOO_Class_New(
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"object \"%s\" is not a class", TclGetString(cmdnameObj)));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS", NULL);
+	OO_ERROR(interp, INSTANTIATE_NONCLASS);
 	return TCL_ERROR;
     }
 
@@ -330,7 +367,7 @@ TclOO_Class_New(
 
 int
 TclOO_Object_Destroy(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -340,14 +377,15 @@ TclOO_Object_Destroy(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
 
-    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc != (int) Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
     if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
 	oPtr->flags |= DESTRUCTOR_CALLED;
-	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+	contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL, NULL,
+		NULL);
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
@@ -365,11 +403,11 @@ TclOO_Object_Destroy(
 
 static int
 AfterNRDestructor(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *) data[0];
 
     if (contextPtr->oPtr->command) {
 	Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
@@ -390,7 +428,7 @@ AfterNRDestructor(
 
 int
 TclOO_Object_Eval(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -399,12 +437,12 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    register const int skip = Tcl_ObjectContextSkippedArgs(context);
+    size_t skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     CmdFrame *invoker;
 
-    if (objc-1 < skip) {
+    if ((size_t) objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
@@ -415,7 +453,8 @@ TclOO_Object_Eval(
      */
 
     (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    Tcl_GetObjectNamespace(object), 0);
+	    Tcl_GetObjectNamespace(object), FRAME_IS_METHOD);
+    framePtr->clientData = context;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
@@ -432,7 +471,7 @@ TclOO_Object_Eval(
      * object when it decrements its refcount after eval'ing it.
      */
 
-    if (objc != skip+1) {
+    if ((size_t) objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	invoker = NULL;
     } else {
@@ -451,12 +490,12 @@ TclOO_Object_Eval(
 
 static int
 FinalizeEval(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     if (result == TCL_ERROR) {
-	Object *oPtr = data[0];
+	Object *oPtr = (Object *) data[0];
 	const char *namePtr;
 
 	if (oPtr) {
@@ -491,7 +530,7 @@ FinalizeEval(
 
 int
 TclOO_Object_Unknown(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -499,9 +538,13 @@ TclOO_Object_Unknown(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     CallContext *contextPtr = (CallContext *) context;
+    Object *callerObj = NULL;
+    Class *callerCls = NULL;
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
-    int numMethodNames, i, skip = Tcl_ObjectContextSkippedArgs(context);
+    int numMethodNames, i;
+    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     Tcl_Obj *errorMsg;
 
     /*
@@ -510,16 +553,37 @@ TclOO_Object_Unknown(
      * name without an error).
      */
 
-    if (objc < skip+1) {
+    if ((size_t) objc < skip + 1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
+    }
+
+    /*
+     * Determine if the calling context should know about extra private
+     * methods, and if so, which.
+     */
+
+    if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	CallContext *callerContext = (CallContext *) framePtr->clientData;
+	Method *mPtr = callerContext->callPtr->chain[
+		    callerContext->index].mPtr;
+
+	if (mPtr->declaringObjectPtr) {
+	    if (oPtr == mPtr->declaringObjectPtr) {
+		callerObj = mPtr->declaringObjectPtr;
+	    }
+	} else {
+	    if (TclOOIsReachable(mPtr->declaringClassPtr, oPtr->selfCls)) {
+		callerCls = mPtr->declaringClassPtr;
+	    }
+	}
     }
 
     /*
      * Get the list of methods that we want to know about.
      */
 
-    numMethodNames = TclOOGetSortedMethodList(oPtr,
+    numMethodNames = TclOOGetSortedMethodList(oPtr, callerObj, callerCls,
 	    contextPtr->callPtr->flags & PUBLIC_METHOD, &methodNames);
 
     /*
@@ -538,7 +602,7 @@ TclOO_Object_Unknown(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"object \"%s\" has no %s", TclGetString(tmpBuf), piece));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		TclGetString(objv[skip]), NULL);
+		TclGetString(objv[skip]), (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -546,18 +610,18 @@ TclOO_Object_Unknown(
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(errorMsg, ", ", -1);
+	    Tcl_AppendToObj(errorMsg, ", ", TCL_AUTO_LENGTH);
 	}
-	Tcl_AppendToObj(errorMsg, methodNames[i], -1);
+	Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
     }
     if (i) {
-	Tcl_AppendToObj(errorMsg, " or ", -1);
+	Tcl_AppendToObj(errorMsg, " or ", TCL_AUTO_LENGTH);
     }
-    Tcl_AppendToObj(errorMsg, methodNames[i], -1);
-    ckfree(methodNames);
+    Tcl_AppendToObj(errorMsg, methodNames[i], TCL_AUTO_LENGTH);
+    Tcl_Free((void *)methodNames);
     Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-	    TclGetString(objv[skip]), NULL);
+	    TclGetString(objv[skip]), (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -573,7 +637,7 @@ TclOO_Object_Unknown(
 
 int
 TclOO_Object_LinkVar(
-    ClientData clientData,	/* Ignored. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -583,9 +647,9 @@ TclOO_Object_LinkVar(
     Interp *iPtr = (Interp *) interp;
     Tcl_Object object = Tcl_ObjectContextObject(context);
     Namespace *savedNsPtr;
-    int i;
+    Tcl_Size i;
 
-    if (objc-Tcl_ObjectContextSkippedArgs(context) < 0) {
+    if (objc < Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"?varName ...?");
 	return TCL_ERROR;
@@ -601,7 +665,7 @@ TclOO_Object_LinkVar(
 	return TCL_OK;
     }
 
-    for (i=Tcl_ObjectContextSkippedArgs(context) ; i<objc ; i++) {
+    for (i = Tcl_ObjectContextSkippedArgs(context) ; i < objc ; i++) {
 	Var *varPtr, *aryPtr;
 	const char *varName = TclGetString(objv[i]);
 
@@ -614,7 +678,7 @@ TclOO_Object_LinkVar(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "variable name \"%s\" illegal: must not contain namespace"
 		    " separator", varName));
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -643,7 +707,7 @@ TclOO_Object_LinkVar(
 
 	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -666,33 +730,27 @@ TclOO_Object_LinkVar(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOO_Object_VarName --
+ * TclOOLookupObjectVar --
  *
- *	Implementation of the oo::object->varname method.
+ *	Look up a variable in an object. Tricky because of private variables.
+ *
+ * Returns:
+ *	Handle to the variable if it can be found, or NULL if there's an error.
  *
  * ----------------------------------------------------------------------
  */
-
-int
-TclOO_Object_VarName(
-    ClientData clientData,	/* Ignored. */
-    Tcl_Interp *interp,		/* Interpreter in which to create the object;
-				 * also used for error reporting. */
-    Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* The actual arguments. */
+Tcl_Var
+TclOOLookupObjectVar(
+    Tcl_Interp *interp,
+    Tcl_Object object,		/* Object we're looking up within. */
+    Tcl_Obj *varName,		/* User-visible name we're looking up. */
+    Tcl_Var *aryPtr)		/* Where to write the handle to the array
+				 * containing the element; if not an element,
+				 * then the variable this points to is set to
+				 * NULL. */
 {
-    Var *varPtr, *aryVar;
-    Tcl_Obj *varNamePtr, *argPtr;
-    const char *arg;
-
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"varName");
-	return TCL_ERROR;
-    }
-    argPtr = objv[objc-1];
-    arg = Tcl_GetString(argPtr);
+    const char *arg = TclGetString(varName);
+    Tcl_Obj *varNamePtr;
 
     /*
      * Convert the variable name to fully-qualified form if it wasn't already.
@@ -704,22 +762,125 @@ TclOO_Object_VarName(
      */
 
     if (arg[0] == ':' && arg[1] == ':') {
-	varNamePtr = argPtr;
+	varNamePtr = varName;
     } else {
-	Tcl_Namespace *namespacePtr =
-		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
+	Tcl_Namespace *namespacePtr = Tcl_GetObjectNamespace(object);
+	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
-	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
-	Tcl_AppendToObj(varNamePtr, "::", 2);
-	Tcl_AppendObjToObj(varNamePtr, argPtr);
+	/*
+	 * Private method handling. [TIP 500]
+	 *
+	 * If we're in a context that can see some private methods of an
+	 * object, we may need to precede a variable name with its prefix.
+	 * This is a little tricky as we need to check through the inheritance
+	 * hierarchy when the method was declared by a class to see if the
+	 * current object is an instance of that class.
+	 */
+
+	if (framePtr->isProcCallFrame & FRAME_IS_METHOD) {
+	    Object *oPtr = (Object *) object;
+	    CallContext *callerContext = (CallContext *) framePtr->clientData;
+	    Method *mPtr = callerContext->callPtr->chain[
+		    callerContext->index].mPtr;
+	    PrivateVariableMapping *pvPtr;
+	    Tcl_Size i;
+
+	    if (mPtr->declaringObjectPtr == oPtr) {
+		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {
+		    if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
+			    TCL_INDEX_NONE)) {
+			varName = pvPtr->fullNameObj;
+			break;
+		    }
+		}
+	    } else if (mPtr->declaringClassPtr &&
+		    mPtr->declaringClassPtr->privateVariables.num) {
+		Class *clsPtr = mPtr->declaringClassPtr;
+		int isInstance = TclOOIsReachable(clsPtr, oPtr->selfCls);
+		Class *mixinCls;
+
+		if (!isInstance) {
+		    FOREACH(mixinCls, oPtr->mixins) {
+			if (TclOOIsReachable(clsPtr, mixinCls)) {
+			    isInstance = 1;
+			    break;
+			}
+		    }
+		}
+		if (isInstance) {
+		    FOREACH_STRUCT(pvPtr, clsPtr->privateVariables) {
+			if (!TclStringCmp(pvPtr->variableObj, varName, 1, 0,
+				TCL_INDEX_NONE)) {
+			    varName = pvPtr->fullNameObj;
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+
+	// The namespace isn't the global one; necessarily true for any object!
+	varNamePtr = Tcl_ObjPrintf("%s::%s",
+		namespacePtr->fullName, TclGetString(varName));
     }
     Tcl_IncrRefCount(varNamePtr);
-    varPtr = TclObjLookupVar(interp, varNamePtr, NULL,
-	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1, &aryVar);
+    Tcl_Var var = (Tcl_Var) TclObjLookupVar(interp, varNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1,
+	    (Var **) aryPtr);
     Tcl_DecrRefCount(varNamePtr);
-    if (varPtr == NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, NULL);
+    if (var == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, (void *) NULL);
+    } else if (*aryPtr == NULL && TclIsVarArrayElement((Var *) var)) {
+	/*
+	 * If the varPtr points to an element of an array but we don't already
+	 * have the array, find it now. Note that this can't be easily
+	 * backported; the arrayPtr field is new in Tcl 9.0. [Bug 2da1cb0c80]
+	 */
+	*aryPtr = (Tcl_Var) TclVarParentArray(var);
+    }
+
+    return var;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Object_VarName --
+ *
+ *	Implementation of the oo::object->varname method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOO_Object_VarName(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter in which to create the object;
+				 * also used for error reporting. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Tcl_Var varPtr, aryVar;
+    Tcl_Obj *varNamePtr;
+
+    if ((int) Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"varName");
 	return TCL_ERROR;
+    }
+
+    varPtr = TclOOLookupObjectVar(interp, Tcl_ObjectContextObject(context),
+	    objv[objc - 1], &aryVar);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * The variable reference must not disappear too soon. [Bug 74b6110204]
+     */
+    if (!TclIsVarArrayElement((Var *) varPtr)) {
+	TclSetVarNamespaceVar((Var *) varPtr);
     }
 
     /*
@@ -727,30 +888,14 @@ TclOO_Object_VarName(
      * (including traversing variable links), convert back to a name.
      */
 
-    varNamePtr = Tcl_NewObj();
+    TclNewObj(varNamePtr);
+
     if (aryVar != NULL) {
-	Tcl_HashEntry *hPtr;
-	Tcl_HashSearch search;
-
-	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
-
-	/*
-	 * WARNING! This code pokes inside the implementation of hash tables!
-	 */
-
-	hPtr = Tcl_FirstHashEntry((Tcl_HashTable *) aryVar->value.tablePtr,
-		&search);
-	while (hPtr != NULL) {
-	    if (varPtr == Tcl_GetHashValue(hPtr)) {
-		Tcl_AppendToObj(varNamePtr, "(", -1);
-		Tcl_AppendObjToObj(varNamePtr, hPtr->key.objPtr);
-		Tcl_AppendToObj(varNamePtr, ")", -1);
-		break;
-	    }
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
+	Tcl_GetVariableFullName(interp, aryVar, varNamePtr);
+	Tcl_AppendPrintfToObj(varNamePtr, "(%s)", Tcl_GetString(
+		VarHashGetKey(varPtr)));
     } else {
-	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+	Tcl_GetVariableFullName(interp, varPtr, varNamePtr);
     }
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
@@ -770,7 +915,7 @@ TclOO_Object_VarName(
 
 int
 TclOONextObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -789,10 +934,10 @@ TclOONextObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s may only be called from inside a method",
 		TclGetString(objv[0])));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	OO_ERROR(interp, CONTEXT_REQUIRED);
 	return TCL_ERROR;
     }
-    context = framePtr->clientData;
+    context = (Tcl_ObjectContext) framePtr->clientData;
 
     /*
      * Invoke the (advanced) method call context in the caller context. Note
@@ -806,7 +951,7 @@ TclOONextObjCmd(
 
 int
 TclOONextToObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -815,7 +960,7 @@ TclOONextToObjCmd(
     CallFrame *framePtr = iPtr->varFramePtr;
     Class *classPtr;
     CallContext *contextPtr;
-    int i;
+    Tcl_Size i;
     Tcl_Object object;
     const char *methodType;
 
@@ -829,10 +974,10 @@ TclOONextToObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s may only be called from inside a method",
 		TclGetString(objv[0])));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	OO_ERROR(interp, CONTEXT_REQUIRED);
 	return TCL_ERROR;
     }
-    contextPtr = framePtr->clientData;
+    contextPtr = (CallContext *) framePtr->clientData;
 
     /*
      * Sanity check the arguments; we need the first one to refer to a class.
@@ -846,11 +991,11 @@ TclOONextToObjCmd(
     if (object == NULL) {
 	return TCL_ERROR;
     }
-    classPtr = ((Object *)object)->classPtr;
+    classPtr = ((Object *) object)->classPtr;
     if (classPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"%s\" is not a class", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+	OO_ERROR(interp, CLASS_REQUIRED);
 	return TCL_ERROR;
     }
 
@@ -861,7 +1006,7 @@ TclOONextToObjCmd(
      */
 
     for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
-	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
+	MInvoke *miPtr = &contextPtr->callPtr->chain[i];
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
 	    /*
@@ -871,7 +1016,7 @@ TclOONextToObjCmd(
 
 	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
 		    contextPtr, INT2PTR(contextPtr->index), NULL);
-	    contextPtr->index = i-1;
+	    contextPtr->index = i - 1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    return TclNRObjectContextInvokeNext(interp,
 		    (Tcl_ObjectContext) contextPtr, objc, objv, 2);
@@ -891,37 +1036,36 @@ TclOONextToObjCmd(
 	methodType = "method";
     }
 
-    for (i=contextPtr->index ; i>=0 ; i--) {
-	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
+    for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+	MInvoke *miPtr = &contextPtr->callPtr->chain[i];
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s implementation by \"%s\" not reachable from here",
 		    methodType, TclGetString(objv[1])));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-		    NULL);
+	    OO_ERROR(interp, CLASS_NOT_REACHABLE);
 	    return TCL_ERROR;
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "%s has no non-filter implementation by \"%s\"",
 	    methodType, TclGetString(objv[1])));
-    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+    OO_ERROR(interp, CLASS_NOT_THERE);
     return TCL_ERROR;
 }
 
 static int
 NextRestoreFrame(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    CallContext *contextPtr = data[1];
+    CallContext *contextPtr = (CallContext *) data[1];
 
-    iPtr->varFramePtr = data[0];
+    iPtr->varFramePtr = (CallFrame *) data[0];
     if (contextPtr != NULL) {
-	contextPtr->index = PTR2INT(data[2]);
+	contextPtr->index = PTR2UINT(data[2]);
     }
     return result;
 }
@@ -939,7 +1083,7 @@ NextRestoreFrame(
 
 int
 TclOOSelfObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -951,12 +1095,11 @@ TclOOSelfObjCmd(
     enum SelfCmds {
 	SELF_CALL, SELF_CALLER, SELF_CLASS, SELF_FILTER, SELF_METHOD, SELF_NS,
 	SELF_NEXT, SELF_OBJECT, SELF_TARGET
-    };
+    } index;
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *result[3];
-    int index;
 
 #define CurrentlyInvoked(contextPtr) \
     ((contextPtr)->callPtr->chain[(contextPtr)->index])
@@ -969,11 +1112,11 @@ TclOOSelfObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s may only be called from inside a method",
 		TclGetString(objv[0])));
-	Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	OO_ERROR(interp, CONTEXT_REQUIRED);
 	return TCL_ERROR;
     }
 
-    contextPtr = framePtr->clientData;
+    contextPtr = (CallContext *) framePtr->clientData;
 
     /*
      * Now we do "conventional" argument parsing for a while. Note that no
@@ -990,21 +1133,21 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum SelfCmds) index) {
+    switch (index) {
     case SELF_OBJECT:
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;
     case SELF_NS:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->oPtr->namespacePtr->fullName,-1));
+	Tcl_SetObjResult(interp,
+		TclNewNamespaceObj(contextPtr->oPtr->namespacePtr));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
 
 	if (clsPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "method not defined by a class", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
+		    "method not defined by a class", TCL_AUTO_LENGTH));
+	    OO_ERROR(interp, UNMATCHED_CONTEXT);
 	    return TCL_ERROR;
 	}
 
@@ -1024,11 +1167,11 @@ TclOOSelfObjCmd(
     case SELF_FILTER:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "not inside a filtering context", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
+		    "not inside a filtering context", TCL_AUTO_LENGTH));
+	    OO_ERROR(interp, UNMATCHED_CONTEXT);
 	    return TCL_ERROR;
 	} else {
-	    register struct MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
+	    MInvoke *miPtr = &CurrentlyInvoked(contextPtr);
 	    Object *oPtr;
 	    const char *type;
 
@@ -1041,7 +1184,7 @@ TclOOSelfObjCmd(
 	    }
 
 	    result[0] = TclOOObjectName(interp, oPtr);
-	    result[1] = Tcl_NewStringObj(type, -1);
+	    result[1] = Tcl_NewStringObj(type, TCL_AUTO_LENGTH);
 	    result[2] = miPtr->mPtr->namePtr;
 	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
@@ -1050,11 +1193,12 @@ TclOOSelfObjCmd(
 	if ((framePtr->callerVarPtr == NULL) ||
 		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)){
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "caller is not an object", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+		    "caller is not an object", TCL_AUTO_LENGTH));
+	    OO_ERROR(interp, CONTEXT_REQUIRED);
 	    return TCL_ERROR;
 	} else {
-	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
+	    CallContext *callerPtr = (CallContext *)
+		    framePtr->callerVarPtr->clientData;
 	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
 	    Object *declarerPtr;
 
@@ -1068,7 +1212,7 @@ TclOOSelfObjCmd(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
+			"method without declarer!", TCL_AUTO_LENGTH));
 		return TCL_ERROR;
 	    }
 
@@ -1085,9 +1229,9 @@ TclOOSelfObjCmd(
 	    return TCL_OK;
 	}
     case SELF_NEXT:
-	if (contextPtr->index < contextPtr->callPtr->numChain-1) {
+	if (contextPtr->index < contextPtr->callPtr->numChain - 1) {
 	    Method *mPtr =
-		    contextPtr->callPtr->chain[contextPtr->index+1].mPtr;
+		    contextPtr->callPtr->chain[contextPtr->index + 1].mPtr;
 	    Object *declarerPtr;
 
 	    if (mPtr->declaringClassPtr != NULL) {
@@ -1100,7 +1244,7 @@ TclOOSelfObjCmd(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
+			"method without declarer!", TCL_AUTO_LENGTH));
 		return TCL_ERROR;
 	    }
 
@@ -1118,15 +1262,15 @@ TclOOSelfObjCmd(
     case SELF_TARGET:
 	if (!CurrentlyInvoked(contextPtr).isFilter) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "not inside a filtering context", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "UNMATCHED_CONTEXT", NULL);
+		    "not inside a filtering context", TCL_AUTO_LENGTH));
+	    OO_ERROR(interp, UNMATCHED_CONTEXT);
 	    return TCL_ERROR;
 	} else {
 	    Method *mPtr;
 	    Object *declarerPtr;
-	    int i;
+	    Tcl_Size i;
 
-	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++){
+	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++) {
 		if (!contextPtr->callPtr->chain[i].isFilter) {
 		    break;
 		}
@@ -1145,7 +1289,7 @@ TclOOSelfObjCmd(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"method without declarer!", -1));
+			"method without declarer!", TCL_AUTO_LENGTH));
 		return TCL_ERROR;
 	    }
 	    result[0] = TclOOObjectName(interp, declarerPtr);
@@ -1155,7 +1299,7 @@ TclOOSelfObjCmd(
 	}
     case SELF_CALL:
 	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
-	result[1] = Tcl_NewIntObj(contextPtr->index);
+	TclNewIndexObj(result[1], contextPtr->index);
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
     }
@@ -1176,15 +1320,16 @@ TclOOSelfObjCmd(
 
 int
 TclOOCopyObjectCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Object oPtr, o2Ptr;
 
-    if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "sourceName ?targetName?");
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"sourceName ?targetName? ?targetNamespace?");
 	return TCL_ERROR;
     }
 
@@ -1204,24 +1349,32 @@ TclOOCopyObjectCmd(
     if (objc == 2) {
 	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL, NULL);
     } else {
-	const char *name;
-	Tcl_DString buffer;
+	const char *name, *namespaceName;
 
 	name = TclGetString(objv[2]);
-	Tcl_DStringInit(&buffer);
-	if (name[0]!=':' || name[1]!=':') {
-	    Interp *iPtr = (Interp *) interp;
-
-	    if (iPtr->varFramePtr != NULL) {
-		Tcl_DStringAppend(&buffer,
-			iPtr->varFramePtr->nsPtr->fullName, -1);
-	    }
-	    TclDStringAppendLiteral(&buffer, "::");
-	    Tcl_DStringAppend(&buffer, name, -1);
-	    name = Tcl_DStringValue(&buffer);
+	if (name[0] == '\0') {
+	    name = NULL;
 	}
-	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name, NULL);
-	Tcl_DStringFree(&buffer);
+
+	/*
+	 * Choose a unique namespace name if the user didn't supply one.
+	 */
+
+	namespaceName = NULL;
+	if (objc == 4) {
+	    namespaceName = TclGetString(objv[3]);
+
+	    if (namespaceName[0] == '\0') {
+		namespaceName = NULL;
+	    } else if (Tcl_FindNamespace(interp, namespaceName, NULL,
+		    0) != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"%s refers to an existing namespace", namespaceName));
+		return TCL_ERROR;
+	    }
+	}
+
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name, namespaceName);
     }
 
     if (o2Ptr == NULL) {

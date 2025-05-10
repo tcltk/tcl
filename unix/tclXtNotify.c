@@ -4,7 +4,7 @@
  *	This file contains the notifier driver implementation for the Xt
  *	intrinsics.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@
 #include "tclInt.h"
 
 /*
- * This structure is used to keep track of the notifier info for a a
+ * This structure is used to keep track of the notifier info for a
  * registered file.
  */
 
@@ -33,7 +33,7 @@ typedef struct FileHandler {
     XtInputId except;		/* Xt exception callback handle. */
     Tcl_FileProc *proc;		/* Procedure to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;		/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -79,10 +79,10 @@ static int initialized = 0;
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		FileProc(XtPointer clientData, int *source,
 			    XtInputId *id);
-static void		NotifierExitHandler(ClientData clientData);
+static void		NotifierExitHandler(void *clientData);
 static void		TimerProc(XtPointer clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
-			    Tcl_FileProc *proc, ClientData clientData);
+			    Tcl_FileProc *proc, void *clientData);
 static void		DeleteFileHandler(int fd);
 static void		SetTimer(const Tcl_Time * timePtr);
 static int		WaitForEvent(const Tcl_Time * timePtr);
@@ -91,7 +91,7 @@ static int		WaitForEvent(const Tcl_Time * timePtr);
  * Functions defined in this file for use by users of the Xt Notifier:
  */
 
-MODULE_SCOPE void InitNotifier(void);
+MODULE_SCOPE void	InitNotifier(void);
 MODULE_SCOPE XtAppContext TclSetAppContext(XtAppContext ctx);
 
 /*
@@ -132,7 +132,7 @@ TclSetAppContext(
 	     * after initialization, so we panic.
 	     */
 
-	    Tcl_Panic("TclSetAppContext:  multiple application contexts");
+	    Tcl_Panic("TclSetAppContext: multiple application contexts");
 	}
     } else {
 	/*
@@ -181,7 +181,13 @@ TclSetAppContext(
 void
 InitNotifier(void)
 {
-    Tcl_NotifierProcs np;
+    static const Tcl_NotifierProcs np =
+	SetTimer,
+	WaitForEvent,
+	CreateFileHandler,
+	DeleteFileHandler,
+	NULL, NULL, NULL, NULL
+    };
 
     /*
      * Only reinitialize if we are not in exit handling. The notifier can get
@@ -193,14 +199,6 @@ InitNotifier(void)
 	return;
     }
 
-    np.createFileHandlerProc = CreateFileHandler;
-    np.deleteFileHandlerProc = DeleteFileHandler;
-    np.setTimerProc = SetTimer;
-    np.waitForEventProc = WaitForEvent;
-    np.initNotifierProc = Tcl_InitNotifier;
-    np.finalizeNotifierProc = Tcl_FinalizeNotifier;
-    np.alertNotifierProc = Tcl_AlertNotifier;
-    np.serviceModeHookProc = Tcl_ServiceModeHook;
     Tcl_SetNotifier(&np);
 
     /*
@@ -209,7 +207,6 @@ InitNotifier(void)
      */
 
     initialized = 1;
-    memset(&np, 0, sizeof(np));
     Tcl_CreateExitHandler(NotifierExitHandler, NULL);
 }
 
@@ -232,7 +229,7 @@ InitNotifier(void)
 
 static void
 NotifierExitHandler(
-    ClientData clientData)	/* Not used. */
+    TCL_UNUSED(void *))
 {
     if (notifier.currentTimeout != 0) {
 	XtRemoveTimeOut(notifier.currentTimeout);
@@ -266,9 +263,9 @@ NotifierExitHandler(
 
 static void
 SetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
-    long timeout;
+    unsigned long timeout;
 
     if (!initialized) {
 	InitNotifier();
@@ -281,7 +278,7 @@ SetTimer(
     if (timePtr) {
 	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
 	notifier.currentTimeout = XtAppAddTimeOut(notifier.appContext,
-		(unsigned long) timeout, TimerProc, NULL);
+		timeout, TimerProc, NULL);
     } else {
 	notifier.currentTimeout = 0;
     }
@@ -305,7 +302,7 @@ SetTimer(
 
 static void
 TimerProc(
-    XtPointer clientData, /* Not used. */
+    TCL_UNUSED(XtPointer),
     XtIntervalId *id)
 {
     if (*id != notifier.currentTimeout) {
@@ -342,7 +339,7 @@ CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Procedure to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     FileHandler *filePtr;
 
@@ -359,7 +356,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -470,7 +467,7 @@ DeleteFileHandler(
     if (filePtr->mask & TCL_EXCEPTION) {
 	XtRemoveInput(filePtr->except);
     }
-    ckfree(filePtr);
+    Tcl_Free(filePtr);
 }
 
 /*
@@ -496,7 +493,7 @@ FileProc(
     int *fd,
     XtInputId *id)
 {
-    FileHandler *filePtr = (FileHandler *)clientData;
+    FileHandler *filePtr = (FileHandler *) clientData;
     FileHandlerEvent *fileEvPtr;
     int mask = 0;
 
@@ -525,7 +522,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = (FileHandlerEvent *) Tcl_Alloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
@@ -630,7 +627,7 @@ FileHandlerEventProc(
 
 static int
 WaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     int timeout;
 

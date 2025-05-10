@@ -14,25 +14,19 @@ Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_ConditionNotify\fR(\fIcondPtr\fR)
 .sp
-void
 \fBTcl_ConditionWait\fR(\fIcondPtr, mutexPtr, timePtr\fR)
 .sp
-void
 \fBTcl_ConditionFinalize\fR(\fIcondPtr\fR)
 .sp
-Void *
+void *
 \fBTcl_GetThreadData\fR(\fIkeyPtr, size\fR)
 .sp
-void
 \fBTcl_MutexLock\fR(\fImutexPtr\fR)
 .sp
-void
 \fBTcl_MutexUnlock\fR(\fImutexPtr\fR)
 .sp
-void
 \fBTcl_MutexFinalize\fR(\fImutexPtr\fR)
 .sp
 int
@@ -40,12 +34,15 @@ int
 .sp
 int
 \fBTcl_JoinThread\fR(\fIid, result\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_CreateThreadProc proc out
 .AP Tcl_Condition *condPtr in
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
-A mutex lock.
+.VS TIP509
+A recursive mutex lock.
+.VE TIP509
 .AP "const Tcl_Time" *timePtr in
 A time limit on the condition wait.  NULL to wait forever.
 Note that a polling value of 0 seconds does not make much sense.
@@ -65,9 +62,9 @@ Id of the thread waited upon.
 .AP Tcl_ThreadCreateProc *proc in
 This procedure will act as the \fBmain()\fR of the newly created
 thread. The specified \fIclientData\fR will be its sole argument.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary information. Passed as sole argument to the \fIproc\fR.
-.AP int stackSize in
+.AP size_t stackSize in
 The size of the stack given to the new thread.
 .AP int flags in
 Bitmask containing flags allowing the caller to modify behavior of
@@ -79,10 +76,7 @@ waited upon into it.
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
 allows you to incorporate Tcl into multithreaded applications without
-customizing the Tcl core.  Starting with the 8.6 release, Tcl
-multithreading support is on by default. To disable Tcl multithreading
-support, you must include the \fB\-\|\-disable-threads\fR option to
-\fBconfigure\fR when you configure and compile your Tcl core.
+customizing the Tcl core.
 .PP
 An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that
@@ -140,8 +134,12 @@ of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
 A mutex can be destroyed after its use by calling \fBTcl_MutexFinalize\fR.
-The result of locking a mutex twice from the same thread is undefined.
-On some platforms it will result in a deadlock.
+.VS TIP509
+Mutexes are reentrant: they can be locked several times from the same
+thread. However there must be exactly one call to
+\fBTcl_MutexUnlock\fR for each call to \fBTcl_MutexLock\fR in order
+for a thread to release a mutex completely.
+.VE TIP509
 The \fBTcl_MutexLock\fR, \fBTcl_MutexUnlock\fR and \fBTcl_MutexFinalize\fR
 procedures are defined as empty macros if not compiling with threads enabled.
 For declaration of mutexes the \fBTCL_DECLARE_MUTEX\fR macro should be used.
@@ -202,7 +200,7 @@ value and then finishes.
 .CS
 static \fBTcl_ThreadCreateType\fR
 MyThreadImplFunc(
-    ClientData clientData)
+    void *clientData)
 {
     int i, limit = (int) clientData;
     for (i=0 ; i<limit ; i++) {
@@ -217,7 +215,7 @@ would do this:
 .PP
 .CS
 int limit = 1000000000;
-ClientData limitData = (void*)((intptr_t) limit);
+void *limitData = (void*)((intptr_t) limit);
 Tcl_ThreadId id;    \fI/* holds identity of thread created */\fR
 int result;
 

@@ -20,6 +20,11 @@ Append all of the \fIvalue\fR arguments to the current value
 of variable \fIvarName\fR.  If \fIvarName\fR does not exist,
 it is given a value equal to the concatenation of all the
 \fIvalue\fR arguments.
+.VS TIP508
+If \fIvarName\fR indicate an element that does not exist of an array that has
+a default value set, the concatenation of the default value and all the
+\fIvalue\fR arguments will be stored in the array element.
+.VE TIP508
 The result of this command is the new value stored in variable
 \fIvarName\fR.
 This command provides an efficient way to build up long
@@ -44,6 +49,7 @@ puts $var
 concat(n), lappend(n)
 .SH KEYWORDS
 append, variable
-'\" Local Variables:
-'\" mode: nroff
-'\" End:
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:
