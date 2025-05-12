@@ -9554,10 +9554,8 @@ TclLog2(
     long long value)			/* The integer for which to compute the log
 				 * base 2. The maximum output is 31 */
 {
-   return (value > 0) ?  (
-		(value > 0x7FFFFFFF) ?
-			31 : TclMSB((unsigned long long) value)
-		) : 0;
+    return (value > 0x7FFFFFFF) ? 31
+	    : TclMSB((unsigned long long) value | 1);
 }
 
 /*
