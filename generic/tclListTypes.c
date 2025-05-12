@@ -36,7 +36,7 @@ typedef struct TclObjArray {
  * given Tcl_Obj elements, incrementing their reference counts.
  * The reference count of the array itself is initialized to 0.
  */
-static inline TclObjArray *
+static TclObjArray *
 TclObjArrayNew(size_t nelems, Tcl_Obj * const elemPtrs[])
 {
     TclObjArray *arrayPtr = (TclObjArray *)Tcl_Alloc(
@@ -57,6 +57,16 @@ TclObjArrayRef(TclObjArray *arrayPtr)
     arrayPtr->refCount++;
 }
 
+/* Frees a TclObjArray structure irrespective of the reference count. */
+static void
+TclObjArrayFree(TclObjArray *arrayPtr)
+{
+    for (Tcl_Size i = 0; i < arrayPtr->nelems; i++) {
+	Tcl_DecrRefCount(arrayPtr->elemPtrs[i]);
+    }
+    Tcl_Free(arrayPtr);
+}
+
 /*
  * Remove a reference from an TclObjArray, freeing it if no more remain.
  * The reference count of the elements is decremented as well in that case.
@@ -65,23 +75,22 @@ static inline void
 TclObjArrayUnref(TclObjArray *arrayPtr)
 {
     if (arrayPtr->refCount <= 1) {
-	for (Tcl_Size i = 0; i < arrayPtr->nelems; i++) {
-	    Tcl_DecrRefCount(arrayPtr->elemPtrs[i]);
-	}
-	Tcl_Free(arrayPtr);
+	TclObjArrayFree(arrayPtr);
     } else {
 	arrayPtr->refCount--;
     }
 }
 
+
 /* Returns count of elements in array and pointer to them in objPtrPtr */
-static inline Tcl_Size TclObjArrayElems(TclObjArray *arrayPtr, Tcl_Obj ***objPtrPtr)
+static inline Tcl_Size
+TclObjArrayElems(TclObjArray *arrayPtr, Tcl_Obj ***objPtrPtr)
 {
     *objPtrPtr = arrayPtr->elemPtrs;
     return arrayPtr->nelems;
 }
 
-/* TODO - move to tclInt and use in other files as well */
+/* TODO - move to tclInt.h and use in other list implementations as well */
 static inline Tcl_Size
 TclNormalizeRangeLimits(Tcl_Size *startPtr, Tcl_Size *endPtr, Tcl_Size len)
 {
@@ -196,7 +205,7 @@ static void TclAbstractListUpdateString (Tcl_Obj *objPtr)
 }
 
 /*
- * lrepeatType -
+ * lreverseType -
  *
  * ------------------------------------------------------------------------
  * lreverseType is an abstract list type that contains the same elements as a
