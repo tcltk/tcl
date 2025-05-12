@@ -818,12 +818,15 @@ TclCompileLappendCmd(
     int isScalar;
     Tcl_LVTIndex localIndex;
 
-    /* TODO: Consider support for compiling expanded args.
-     * REQUIRES: Fixing INST_LAPPEND_LIST (etc.) in zero-length list case. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords < 2 || numWords > UINT_MAX) {
 	return TCL_ERROR;
     }
 
+    /*
+     * The weird cluster of bugs around INST_LAPPEND_STK without a LVT ought
+     * to be sorted out. INST_LAPPEND_LIST_STK does the right thing.
+     */
     if (numWords != 3 || !EnvHasLVT(envPtr)) {
 	goto lappendMultiple;
     }

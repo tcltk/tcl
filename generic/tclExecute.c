@@ -3440,7 +3440,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (TclIsVarDirectReadable(varPtr)
+	if (objc && TclIsVarDirectReadable(varPtr)
 		&& TclIsVarDirectWritable(varPtr)) {
 	    goto lappendListDirect;
 	}
@@ -3466,7 +3466,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)
+	if (objc && TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)
 		&& !WriteTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr && TclIsVarDirectReadable(varPtr)
@@ -3524,8 +3524,7 @@ TEBCresume(
 
     lappendList:
 	opnd = -1;
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
-		!= TCL_OK) {
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -3557,26 +3556,31 @@ TEBCresume(
 	}
 
 	{
-	    int createdNewObj = 0;
 	    Tcl_Obj *valueToAssign;
 
 	    if (!objResultPtr) {
-		valueToAssign = valuePtr;
+		if (objc == 0) {
+		    /*
+		     * The variable doesn't exist yet. Just create it with an
+		     * empty initial value.
+		     */
+		    TclNewObj(valueToAssign);
+		} else {
+		    valueToAssign = valuePtr;
+		}
 	    } else if (TclListObjLength(interp, objResultPtr, &len)!=TCL_OK) {
-		TRACE_ERROR(interp);
-		goto gotError;
+		goto errorInLappendListPtr;
+	    } else if (objc == 0) {
+		goto skipLappendListAssign;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
-		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
 		}
-		if (TclListObjAppendElements(interp, valueToAssign,
+		if (Tcl_ListObjReplace(interp, valueToAssign, len, 0,
 			objc, objv) != TCL_OK) {
-		    if (createdNewObj) {
-			TclDecrRefCount(valueToAssign);
-		    }
+		    Tcl_BounceRefCount(valueToAssign);
 		    goto errorInLappendListPtr;
 		}
 	    }
@@ -3584,14 +3588,16 @@ TEBCresume(
 	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr,
 		    part2Ptr, valueToAssign, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
-	    if (!objResultPtr) {
-	    errorInLappendListPtr:
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	}
+    skipLappendListAssign:
+	if (!objResultPtr) {
+	    goto errorInLappendListPtr;
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
+    errorInLappendListPtr:
+	TRACE_ERROR(interp);
+	goto gotError;
     }
 
     /*
