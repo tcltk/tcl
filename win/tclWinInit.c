@@ -119,15 +119,6 @@ static const OSVERSIONINFOW *TclpGetWindowsVersion(void)
     return result ? osInfoPtr : NULL;
 }
 
-
-#ifdef WIN32_USE_TICKCOUNT
-typedef ULONGLONG WINAPI (GetTickCount64Proc)(void);
-static GetTickCount64Proc *GetTickCount64ProcPtr = NULL;
-static CRITICAL_SECTION TickMutex;
-static DWORD TickOffset, LastTick;
-static ULONGLONG TickUpper;
-#endif
-
 
 /*
  *---------------------------------------------------------------------------
@@ -164,29 +155,6 @@ TclpInitPlatform(void)
      * can never fail.
      */
     WSAStartup(wVersionRequested, &wsaData);
-
-#ifdef WIN32_USE_TICKCOUNT
-    /*
-     * Check for availability of the GetTickCount64() API.
-     */
-
-    handle = GetModuleHandleA("KERNEL32");
-    if (handle != NULL) {
-	GetTickCount64ProcPtr = (GetTickCount64Proc *)
-		GetProcAddress(handle, "GetTickCount64");
-    }
-
-    InitializeCriticalSection(&TickMutex);
-
-    /*
-     * Force a wrap around within the first few seconds when
-     * we need to fall back to GetTickCount(), e.g. on XP.
-     */
-
-    TickOffset = 0xffffe000 - GetTickCount();
-    LastTick = TickOffset;
-    TickUpper = 0;
-#endif
 
 #ifdef STATIC_BUILD
     /*
@@ -754,22 +722,7 @@ TclpGetMonotonicTime(Tcl_Time *timePtr)
     ULONGLONG ms;
     DWORD tick;
 
-    if (GetTickCount64ProcPtr != NULL) {
-	ms = GetTickCount64ProcPtr();
-    } else {
-	/*
-	 * Emulate 64 bit wide tick counter, e.g. on XP.
-	 */
-
-	EnterCriticalSection(&TickMutex);
-	tick = GetTickCount() + TickOffset;
-	if ((LastTick & 0x80000000) && !(tick & 0x80000000)) {
-	    TickUpper += 0x100000000ULL;
-	}
-	LastTick = tick;
-	ms = TickUpper | LastTick;
-	LeaveCriticalSection(&TickMutex);
-    }
+    ms = GetTickCount64();
     timePtr->sec = (long)(ms/1000);
     timePtr->usec = ((long)(ms%1000))*1000;
     return 1;
