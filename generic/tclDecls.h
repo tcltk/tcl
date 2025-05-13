@@ -894,8 +894,7 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
-/* 340 */
-EXTERN char *		Tcl_GetString(Tcl_Obj *objPtr);
+/* Slot 340 is reserved */
 /* Slot 341 is reserved */
 /* Slot 342 is reserved */
 /* 343 */
@@ -2221,7 +2220,7 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
-    char * (*tcl_GetString) (Tcl_Obj *objPtr); /* 340 */
+    void (*reserved340)(void);
     void (*reserved341)(void);
     void (*reserved342)(void);
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
@@ -3215,8 +3214,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
-#define Tcl_GetString \
-	(tclStubsPtr->tcl_GetString) /* 340 */
+/* Slot 340 is reserved */
 /* Slot 341 is reserved */
 /* Slot 342 is reserved */
 #define Tcl_AlertNotifier \
@@ -4003,8 +4001,6 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
-#undef Tcl_GetString
-#undef Tcl_GetUnicode
 #define Tcl_GetString(objPtr) \
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \

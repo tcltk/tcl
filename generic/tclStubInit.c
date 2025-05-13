@@ -39,26 +39,13 @@
 #undef Tcl_DbNewLongObj
 #undef Tcl_NewObj
 #undef Tcl_NewStringObj
-#undef Tcl_GetUnicode
-#undef Tcl_GetUnicodeFromObj
-#undef Tcl_NewUnicodeObj
-#undef Tcl_SetUnicodeObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-#undef Tcl_Panic
 #undef Tcl_FindExecutable
-#undef Tcl_SetExitProc
-#undef Tcl_SetPanicProc
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef Tcl_SetLongObj
-#undef Tcl_ListObjGetElements
-#undef Tcl_ListObjLength
-#undef Tcl_DictObjSize
-#undef Tcl_SplitList
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
@@ -1160,7 +1147,7 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    Tcl_GetString, /* 340 */
+    0, /* 340 */
     0, /* 341 */
     0, /* 342 */
     Tcl_AlertNotifier, /* 343 */

@@ -4659,11 +4659,6 @@ TclMSB(
      */
 
 #if defined(_MSC_VER) && defined(_WIN64)
-	/*
-	 * This candidate implementation for Microsoft compilers is
-	 * untested.  (Remove this comment when someone tests it and
-	 * either finds it working, or fixes any brokenness.)
-	 */
 	unsigned long result;
 
 	(void) _BitScanReverse64(&result, (unsigned __int64)n);
