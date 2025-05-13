@@ -476,21 +476,10 @@ TclpWaitForEvent(
      */
 
     if (timePtr) {
-	/*
-	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
-	 * real-time.
-	 */
-
-	Tcl_Time myTime;
-
-	myTime.sec  = timePtr->sec;
-	myTime.usec = timePtr->usec;
-
-	if (myTime.sec != 0 || myTime.usec != 0) {
-	    TclScaleTime(&myTime);
-	}
-
-	timeout = (DWORD)myTime.sec * 1000 + (unsigned long)myTime.usec / 1000;
+	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	if (timeout == INFINITE) {
+	    timeout--;
+	} 
     } else {
 	timeout = INFINITE;
     }
@@ -597,7 +586,7 @@ Tcl_Sleep(
     vdelay.sec  = ms / 1000;
     vdelay.usec = (ms % 1000) * 1000;
 
-    Tcl_GetTime(&now);
+    TclpGetMonotonicTime(&now);
     desired.sec  = now.sec  + vdelay.sec;
     desired.usec = now.usec + vdelay.usec;
     if (desired.usec > 1000000) {
@@ -611,10 +600,13 @@ Tcl_Sleep(
 
     TclScaleTime(&vdelay);
     sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+    if (sleepTime == INFINITE) {
+	--sleepTime;
+    }
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
+	TclpGetMonotonicTime(&now);
 	if (now.sec > desired.sec) {
 	    break;
 	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
@@ -626,6 +618,9 @@ Tcl_Sleep(
 
 	TclScaleTime(&vdelay);
 	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+	if (sleepTime == INFINITE) {
+	    --sleepTime;
+	}
     }
 }
 

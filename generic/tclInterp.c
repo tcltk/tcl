@@ -3444,7 +3444,16 @@ Tcl_LimitCheck(
 		(ticker % iPtr->limit.timeGranularity == 0))) {
 	Tcl_Time now;
 
+	/*
+	 * Monotonic time independent on the wall clock
+	 * MS-WIndows part extracted from ticket [3328635fff]
+	 */
+
+#ifdef WIN32
+	TclpGetMonotonicTime(&now);
+#else
 	Tcl_GetTime(&now);
+#endif
 	if (iPtr->limit.time.sec < now.sec ||
 		(iPtr->limit.time.sec == now.sec &&
 		iPtr->limit.time.usec < now.usec)) {
@@ -3998,6 +4007,32 @@ Tcl_LimitSetTime(
     Interp *iPtr = (Interp *) interp;
     Tcl_Time nextMoment;
 
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+    Tcl_Time mono, real, limit;
+    if (TclpGetMonotonicTime(&mono)) {
+	Tcl_GetTime(&real);
+	limit = *timeLimitPtr;
+	limit.sec -= real.sec;
+	limit.usec -= real.usec;
+	if (limit.usec < 0) {
+	    limit.sec -= 1;
+	    limit.usec += 1000000;
+	}
+	limit.sec += mono.sec;
+	limit.usec += mono.usec;
+	if (limit.usec >= 1000000) {
+	    limit.sec += 1;
+	    limit.usec -= 1000000;
+	}
+	timeLimitPtr = &limit;
+    }
+#endif
+
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
@@ -4082,6 +4117,33 @@ Tcl_LimitGetTime(
 {
     Interp *iPtr = (Interp *) interp;
 
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+    Tcl_Time mono, real, limit;
+
+    if (TclpGetMonotonicTime(&mono)) {
+	Tcl_GetTime(&real);
+	limit = iPtr->limit.time;
+	limit.sec -= mono.sec;
+	limit.usec -= mono.usec;
+	if (limit.usec < 0) {
+	    limit.sec -= 1;
+	    limit.usec += 1000000;
+	}
+	limit.sec += real.sec;
+	limit.usec += real.usec;
+	if (limit.usec >= 1000000) {
+	    limit.sec += 1;
+	    limit.usec -= 1000000;
+	}
+	memcpy(timeLimitPtr, &limit, sizeof(Tcl_Time));
+	return;
+    }
+#endif
     memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
 }
 

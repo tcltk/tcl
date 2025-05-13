@@ -1199,9 +1199,6 @@ Tcl_SetTimeProc(
     Tcl_ScaleTimeProc *scaleProc,
     void *clientData)
 {
-    tclGetTimeProcPtr = getProc;
-    tclScaleTimeProcPtr = scaleProc;
-    tclTimeClientData = clientData;
 }
 
 /*

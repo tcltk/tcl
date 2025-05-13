@@ -696,6 +696,33 @@ TclpFindVariable(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetMononoticTime --
+ *
+ *	Like Tcl_GetTime() but return a monotonic clock source,
+ *
+ * Results:
+ *	1 if monotonic.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpGetMonotonicTime(Tcl_Time *timePtr)
+{
+    ULONGLONG ms;
+
+    ms = GetTickCount64();
+    timePtr->sec = (long)(ms/1000);
+    timePtr->usec = ((long)(ms%1000))*1000;
+    return 1;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
