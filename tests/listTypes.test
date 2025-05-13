@@ -27,16 +27,16 @@
 #  - List internal representation types.
 # as these all vary in the executed code paths.
 #
+# Some tests assume correct operation on non-abstract lists as they are tested
+# independently in other test files.
+#
 # For the abstract list types not tested elsewhere,
 #   - verify constructor commands return the expected type
 #   - generated string representations
 # TODO - see comments to testlistobj
 # TODO - see listobjmemcheck and indexmemcheck in listObj.test
-# TODO - lrepeat/lreverse string generation when starting with #
+# TODO - lrepeat string generation when starting with #
 # TODO - lrepeat/lreverse list of braces
-# TODO - nested lrepeat with index list and separate indices
-# TODO - nested list combinations. Verify none of the lists shimmer
-# TODO - [lreverse [lreverse]] should retrieve original list.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -65,9 +65,9 @@ namespace eval listtype {
 
     # Compiled bytecode depends on whether arguments are literals or
     # variables. So test variations are needed for both.
-    variable zero 0
-    variable minusOne -1
-    variable ten 10
+    const zero 0
+    const minusOne -1
+    const ten 10
 
     # Internal representation produced by a list operation may depend on list
     # length. This is controlled by the *_LENGTH_THRESHOLD values in tclListTypes.c.
@@ -100,7 +100,9 @@ namespace eval listtype {
 
     # Convert the given list to non abstract
     proc makeNonAbstract {l} {
-        list {*}$l
+        set l [lmap v $l {set v}]
+        assertListType $l list
+        return $l
     }
 
     # Returns a list of length $largeListLength of the specified type
@@ -138,8 +140,14 @@ namespace eval listtype {
         return $l
     }
 
+    # Returns a non-abstract list with values from a given list type
+    proc getNonAbstract {type args} {
+        return [makeNonAbstract [makeList $type {*}$args]]
+    }
+
     # Return first and last elements of a list created with makeList
-    # assuming default lengths passed to makeList
+    # assuming default lengths passed to makeList. Hardcoded to avoid use of
+    # list operations as that is what is being tested.
     proc getFirstAndLast {ltype} {
         variable largeListLength
         switch $ltype {
@@ -347,13 +355,13 @@ namespace eval listtype {
                                               {0 -1 0} {} \
                                               [list 0 $largeListLength 0] {} \
                 ] {
-                    testdef ltype-lindex-nested-onearg-$ltype1-$ltype2-$ltype3 "lindex nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
+                    testdef lindex-nested-onearg-$ltype1-$ltype2-$ltype3 "lindex nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
                         -body {
                             variable indices
                             lindex [makeNestedList $ltype1 $ltype2 $ltype3] $indices
                         } -result $result
 
-                    testdef ltype-lindex-nested-multiarg-$ltype1-$ltype2-$ltype3 "lindex nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
+                    testdef lindex-nested-multiarg-$ltype1-$ltype2-$ltype3 "lindex nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
                         -body {
                             variable indices
                             lindex [makeNestedList $ltype1 $ltype2 $ltype3] {*}$indices
@@ -593,11 +601,81 @@ namespace eval listtype {
     }
 
     ################################################################
-    # lreverse tests - TBD
+    # lsearch tests
+    # Will shimmer to a list or spanlist.
+    foreach ltype $listTypes {
+        testdef lsearch-$ltype "lsearch $ltype" -body {
+            set l [makeList $ltype]
+            set needle [lindex $l 10]
+            list [expr {
+                  [lsearch $l $needle] == [lsearch [makeNonAbstract $l] $needle]
+              }] [isAbstractList $l]
+        } -result [list 1 [expr {$ltype eq "arithseries" ? 1 : 0}]]
+    }
+
     ################################################################
-    # lsearch tests - TBD
-    ################################################################
-    # lset tests - TBD
+    # lset tests
+    # Any modification operation will result in a shimmer to a list or spanlist.
+    foreach ltype $listTypes {
+        set expected [makeNonAbstract [makeList $ltype]]
+        set expected [list {*}[lrange $expected 0 9] X {*}[lrange $expected 11 end]]
+        testdef lset-$ltype-unshared "lset 0 unshared" -body {
+            set l [makeList $ltype]
+            list [lset l 10 X] [isAbstractList $l]
+        } -result [list $expected 0]
+        testdef lset-$ltype-shared "lset 0 shared" -body {
+            set l2 [makeList $ltype]
+            set l $l2
+            list [lset l 10 X] [isAbstractList $l] $l2 [getListType $l2]
+        } -result [list $expected 0 [makeList $ltype] $ltype]
+
+        # appending is a special case
+        set expected [makeNonAbstract [makeList $ltype]]
+        lappend expected X
+        testdef lset-$ltype-unshared-append "lset end+1 unshared" -body {
+            set l [makeList $ltype]
+            list [lset l end+1 X] [isAbstractList $l]
+        } -result [list $expected 0]
+        testdef lset-$ltype-shared-first "lset end+1 shared" -body {
+            set l2 [makeList $ltype]
+            set l $l2
+            list [lset l end+1 X] [isAbstractList $l] $l2 [getListType $l2]
+        } -result [list $expected 0 [makeList $ltype] $ltype]
+
+    }
+    # lset - nested indices
+    foreach ltype1 $nestableTypes {
+        foreach ltype2 $nestableTypes {
+            foreach ltype3 $listTypes {
+                foreach {indices resultIndices} \
+                    [list \
+                         {0 0 0} {0 0 0} \
+                         {10 10 10} {10 10 10} \
+                         {end end end} {end end end} \
+                         {end+1 end+1 end+1} {end end end} \
+                ] {
+                    testdef lset-nested-onearg-$ltype1-$ltype2-$ltype3-[join $indices ,] \
+                        "lset nested single indices argument $ltype1 $ltype2 $ltype3 $indices" \
+                        -body {
+                            variable indices
+                            variable resultIndices
+                            set l [makeNestedList $ltype1 $ltype2 $ltype3]
+                            lset l $indices X
+                            list [isAbstractList $l] [lindex $l $resultIndices]
+                        } -result {0 X}
+
+                    testdef lset-nested-multiarg-$ltype1-$ltype2-$ltype3-[join $indices ,] "lset nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
+                        -body {
+                            variable indices
+                            variable resultIndices
+                            set l [makeNestedList $ltype1 $ltype2 $ltype3]
+                            lset l {*}$indices X
+                            list [isAbstractList $l] [lindex $l $resultIndices]
+                        } -result {0 X}
+                }
+            }
+        }
+    }
 
     ################################################################
     # lsort tests
@@ -657,7 +735,6 @@ namespace eval listtype {
         } -result [list {*}[makeList $ltype] {*}[lrepeat [expr (7-$largeListLength%7)] {}]]
     }
 
-
     ################################################################
     # lmap tests
     # Aside from correct results, should not shimmer original
@@ -682,19 +759,87 @@ namespace eval listtype {
 
     }
 
-
     ################################################################
     # lrange tests - TBD
+
     ################################################################
-    # concat tests - TBD
+    # concat tests
+    # TODO - the concat command shimmers all args except first because it calls
+    # Tcl_ListObjAppendList under the covers. Should fix to not shimmer and then
+    # add a check in test below for that.
+    foreach ltype1 $listTypes {
+        foreach ltype2 $listTypes {
+            testdef concat-$ltype1-$ltype2 "concat $ltype1 $ltype2" -body {
+                set l1 [makeList $ltype1]
+                set l2 [makeList $ltype2]
+                list \
+                    [concat $l1 $l2] \
+                    [getListType $l1]
+            } -result [list [concat [getNonAbstract $ltype1] [getNonAbstract $ltype2]] $ltype1]
+        }
+    }
+
     ################################################################
-    # join tests - TBD
+    # join tests
+    # TODO - join shimmers its argument. Modify to avoid and add a check
+    # to the test below.
+    foreach ltype $listTypes {
+            testdef join-$ltype "join $ltype" -body {
+                set l [makeList $ltype]
+                join $l ,
+            } -result [join [getNonAbstract $ltype] ,]
+    }
+
     ################################################################
     # lrepeat tests - TBD
 
     ################################################################
-    # lpop tests - TBD
+    # lpop tests
+    # Always shimmers to non-abstract list.
+    foreach ltype $listTypes {
+        lassign [getFirstAndLast $ltype] first last
+        testdef lpop-$ltype-noargs "lpop $ltype" -body {
+            set l [makeList $ltype]
+            list [lpop l] [isAbstractList $l] $l
+        } -result [list $last 0 [lrange [getNonAbstract $ltype] 0 end-1]]
+        testdef lpop-$ltype-first "lpop $ltype 0" -body {
+            set l [makeList $ltype]
+            list [lpop l 0] [isAbstractList $l] $l
+        } -result [list $first 0 [lrange [getNonAbstract $ltype] 1 end]]
 
+        testdef lpop-$ltype-middle "lpop $ltype 10" -body {
+            set l [makeList $ltype]
+            list [lpop l 10] [isAbstractList $l] $l
+        } -result [list [lindex [makeList $ltype] 10] \
+                       0 \
+                       [list \
+                            {*}[lrange [getNonAbstract $ltype] 0 9] \
+                            {*}[lrange [getNonAbstract $ltype] 11 end]]]
+    }
+
+    # lpop - nested indices
+    foreach ltype1 $nestableTypes {
+        foreach ltype2 $nestableTypes {
+            foreach ltype3 $listTypes {
+                lassign [getFirstAndLast $ltype3] first last
+                foreach indices [list {0 0 0} {3 3 3} {end end end} ] {
+                    set index [lindex $indices 0]
+                    set expected [makeNestedList $ltype1 $ltype2 $ltype3]
+                    set elem [lindex $expected $indices]
+                    set inner [lindex $expected [lrange $indices 0 1]]
+                    set inner [lremove $inner $index]
+                    lset expected [lrange $indices 0 1] $inner
+                    testdef lpop-nested-$ltype1-$ltype2-$ltype3-[join $indices ,] \
+                        "lpop nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
+                        -body {
+                            variable indices
+                            set l [makeNestedList $ltype1 $ltype2 $ltype3]
+                            list [lpop l {*}$indices] $l
+                        } -result [list $elem $expected]
+                }
+            }
+        }
+    }
 
     ################################################################
     # lremove tests
@@ -754,6 +899,56 @@ namespace eval listtype {
         } -result [list 0 $expected $ltype [makeList $ltype]]
     }
 
+    ################################################################
+    # lreverse tests
+    #
+    proc doReverse {l} {
+        set r [list ]
+        foreach v $l {
+            set r [linsert $r 0 $v]
+        }
+        return $r
+    }
+    foreach ltype $listTypes {
+        lassign [getFirstAndLast $ltype] first last
+        switch $ltype {
+            reversedList {
+                # reversing reversedList will give back the original
+                set expectedType list
+            }
+            arithseries {
+                set expectedType arithseries
+            }
+            default {
+                set expectedType reversedList
+            }
+        }
+        testdef lreverse-$ltype "lreverse $ltype" -body {
+            set l [lreverse [makeList $ltype]]
+            list [getListType $l] [lindex $l 0] [lindex $l end] $l
+        } -result [list $expectedType $last $first [doReverse [makeList $ltype]]]
+    }
+    testdef lreverse-small-list "lreverse of small non-abstract list is a non-abstract list" -body {
+        set l [lreverse [makeList list $smallListLength]]
+        list [getListType $l] $l
+    } -result [list list [doReverse [makeList list $smallListLength]]]
+
+    testdef lreverse-small-spanlist "lreverse of small spanlist is a non-abstract list" -body {
+        set l [lreverse [makeList spanlist $smallListLength]]
+        list [getListType $l] $l
+    } -result [list list [doReverse [makeList list $smallListLength]]]
+
+
+    testdef lreverse-hashchar "Verify string representation of lrepeat when first char is #" -body {
+        set l [lreverse [lrepeat $largeListLength #]]
+        list [getListType $l] $l
+    } -result [list reversedList [string cat "{#}" [string repeat " #" [expr {$largeListLength-1}]]]]
+
+    testdef lreverse-brace "Verify string representation of lrepeat when first char is brace" -body {
+        set l [lreverse [lrepeat $largeListLength \{]]
+        list [getListType $l] $l
+    } -result [list reversedList [lreverse [makeNonAbstract [lrepeat $largeListLength \{]]]]
+    
 }
 
 # All done
