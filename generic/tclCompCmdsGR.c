@@ -824,14 +824,6 @@ TclCompileLappendCmd(
     }
 
     /*
-     * The weird cluster of bugs around INST_LAPPEND_STK without a LVT ought
-     * to be sorted out. INST_LAPPEND_LIST_STK does the right thing.
-     */
-    if (numWords != 3 || !EnvHasLVT(envPtr)) {
-	goto lappendMultiple;
-    }
-
-    /*
      * Decide if we can use a frame slot for the var/array name or if we
      * need to emit code to compute and push the name at runtime. We use a
      * frame slot (entry in the array of local vars) if we are compiling a
@@ -841,22 +833,25 @@ TclCompileLappendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
-
+ 
     /*
-     * If we are doing an assignment, push the new value. In the no values
-     * case, create an empty object.
+     * The weird cluster of bugs around INST_LAPPEND_STK without a LVT ought
+     * to be sorted out. INST_LAPPEND_LIST_STK does the right thing.
      */
-
-    if (numWords > 2) {
-	valueTokenPtr = TokenAfter(varTokenPtr);
-	PUSH_TOKEN(		valueTokenPtr, 2);
+    if (numWords != 3 || !EnvHasLVT(envPtr)) {
+	goto lappendMultiple;
     }
 
     /*
-     * Emit instructions to set/get the variable.
+     * We are doing an assignment, so push the new value.
      */
 
+    valueTokenPtr = TokenAfter(varTokenPtr);
+    PUSH_TOKEN(			valueTokenPtr, 2);
+
     /*
+     * Emit instructions to set/get the variable.
+     *
      * The *_STK opcodes should be refactored to make better use of existing
      * LOAD/STORE instructions.
      */
@@ -874,18 +869,39 @@ TclCompileLappendCmd(
 	    OP4(		LAPPEND_ARRAY, localIndex);
 	}
     }
-
     return TCL_OK;
 
+    /*
+     * In the cases where there's not a single value to append to the list in
+     * the variable, we use a different strategy. This is to turn the arguments
+     * into a list and then append that list's elements. The downside is that
+     * this allocates a temporary working list, but at least it simplifies the
+     * code issuing a lot.
+     */
+
   lappendMultiple:
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
-    valueTokenPtr = TokenAfter(varTokenPtr);
-    for (i = 2 ; i < numWords ; i++) {
-	PUSH_TOKEN(		valueTokenPtr, i);
-	valueTokenPtr = TokenAfter(valueTokenPtr);
+
+    /*
+     * Concatenate all our remaining arguments into a list.
+     * TODO: Turn this into an expand-handling list building sequence.
+     */
+
+    if (numWords == 2) {
+	PUSH(			"");
+    } else {
+	valueTokenPtr = TokenAfter(varTokenPtr);
+	for (i = 2 ; i < numWords ; i++) {
+	    PUSH_TOKEN(		valueTokenPtr, i);
+	    valueTokenPtr = TokenAfter(valueTokenPtr);
+	}
+	OP4(			LIST, numWords - 2);
     }
-    OP4(			LIST, numWords - 2);
+
+    /*
+     * Append the items of the list to the variable. The implementation of
+     * these opcodes handles all the special cases that [lappend] knows about.
+     */
+
     if (isScalar) {
 	if (localIndex < 0) {
 	    OP(			LAPPEND_LIST_STK);
