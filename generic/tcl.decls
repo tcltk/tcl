@@ -1038,9 +1038,6 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
-declare 340 {
-    char *Tcl_GetString(Tcl_Obj *objPtr)
-}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -2360,7 +2357,7 @@ declare 689 {
     void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
+# ----- BASELINE -- FOR -- 9.0.0 ----- #
 
 declare 690 {
     int Tcl_IsEmpty(Tcl_Obj *obj)

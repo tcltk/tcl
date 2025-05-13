@@ -1583,61 +1583,6 @@ TclSetDuplicateObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetString --
- *
- *	Returns the string representation byte array pointer for an object.
- *
- * Results:
- *	Returns a pointer to the string representation of objPtr. The byte
- *	array referenced by the returned pointer must not be modified by the
- *	caller. Furthermore, the caller must copy the bytes if they need to
- *	retain them since the object's string rep can change as a result of
- *	other operations.
- *
- * Side effects:
- *	May call the object's updateStringProc to update the string
- *	representation from the internal representation.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_GetString
-char *
-Tcl_GetString(
-    Tcl_Obj *objPtr)	/* Object whose string rep byte pointer should
-				 * be returned. */
-{
-    if (objPtr->bytes == NULL) {
-	/*
-	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
-	 * of a properly maintained Tcl_Obj is that at least  one of
-	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
-	 * extensions fail to maintain that invariant, we can crash here.
-	 */
-
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    /*
-	     * Those Tcl_ObjTypes which choose not to define an
-	     * updateStringProc must be written in such a way that
-	     * (objPtr->bytes) never becomes NULL.
-	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
-		|| objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
-		    objPtr->typePtr->name);
-	}
-    }
-    return objPtr->bytes;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetStringFromObj/TclGetStringFromObj --
  *
  *	Returns the string representation's byte array pointer and length for
