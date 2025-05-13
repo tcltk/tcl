@@ -3659,6 +3659,15 @@ MODULE_SCOPE int	TclIsSpaceProc(int byte);
     (((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
 /*
+ * Monotonic time independent on the wall clock
+ * MS-WIndows part extracted from ticket [3328635fff]
+ */
+
+#ifdef WIN32
+MODULE_SCOPE int	TclpGetMonotonicTime(Tcl_Time *timePtr);
+#endif
+
+/*
  *----------------------------------------------------------------
  * Command procedures in the generic core:
  *----------------------------------------------------------------

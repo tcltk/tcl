@@ -259,7 +259,16 @@ Tcl_CreateTimerHandler(
      * Compute when the event should fire.
      */
 
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+    TclpGetMonotonicTime(&time);
+#else
     Tcl_GetTime(&time);
+#endif
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
     if (time.usec >= 1000000) {
@@ -417,7 +426,16 @@ TimerSetupProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+	TclpGetMonotonicTime(&blockTime);
+#else
 	Tcl_GetTime(&blockTime);
+#endif
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -468,7 +486,16 @@ TimerCheckProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+	TclpGetMonotonicTime(&blockTime);
+#else
 	Tcl_GetTime(&blockTime);
+#endif
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -564,7 +591,17 @@ TimerHandlerEventProc(
 
     tsdPtr->timerPending = 0;
     currentTimerId = tsdPtr->lastTimerId;
+
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+    TclpGetMonotonicTime(&time);
+#else
     Tcl_GetTime(&time);
+#endif
     while (1) {
 	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
@@ -865,7 +902,17 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
+
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+	TclpGetMonotonicTime(&wakeup);
+#else
 	Tcl_GetTime(&wakeup);
+#endif
 	wakeup.sec += ms / 1000;
 	wakeup.usec += ms % 1000 * 1000;
 	if (wakeup.usec > 1000000) {
@@ -1012,7 +1059,17 @@ AfterDelay(
     Tcl_Time endTime, now;
     Tcl_WideInt diff;
 
+
+    /*
+     * Monotonic time independent on the wall clock
+     * MS-WIndows part extracted from ticket [3328635fff]
+     */
+
+#ifdef WIN32
+    TclpGetMonotonicTime(&now);
+#else
     Tcl_GetTime(&now);
+#endif
     endTime = now;
     endTime.sec += (ms / 1000);
     endTime.usec += (ms % 1000) * 1000;
@@ -1074,7 +1131,12 @@ AfterDelay(
 		return TCL_ERROR;
 	    }
 	}
+
+#ifdef WIN32
+	TclpGetMonotonicTime(&now);
+#else
 	Tcl_GetTime(&now);
+#endif
     } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }
