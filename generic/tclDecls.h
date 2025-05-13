@@ -1102,7 +1102,9 @@ EXTERN int		Tcl_IsChannelExisting(const char *channelName);
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
 /* Slot 421 is reserved */
-/* Slot 422 is reserved */
+/* 422 */
+EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+				const void *key, int *newPtr);
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -2308,7 +2310,7 @@ typedef struct TclStubs {
     void (*reserved419)(void);
     void (*reserved420)(void);
     void (*reserved421)(void);
-    void (*reserved422)(void);
+    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     void * (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, void *prevClientData); /* 425 */
@@ -3377,7 +3379,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 419 is reserved */
 /* Slot 420 is reserved */
 /* Slot 421 is reserved */
-/* Slot 422 is reserved */
+#define Tcl_CreateHashEntry \
+	(tclStubsPtr->tcl_CreateHashEntry) /* 422 */
 #define Tcl_InitCustomHashTable \
 	(tclStubsPtr->tcl_InitCustomHashTable) /* 423 */
 #define Tcl_InitObjHashTable \
@@ -4028,6 +4031,7 @@ extern const TclStubs *tclStubsPtr;
 
 #undef Tcl_GetString
 #undef Tcl_GetUnicode
+#undef Tcl_CreateHashEntry
 #define Tcl_GetString(objPtr) \
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \

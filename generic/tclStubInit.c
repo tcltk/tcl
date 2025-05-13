@@ -207,6 +207,17 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
+#define Tcl_CreateHashEntry createHashEntry
+static Tcl_HashEntry *
+Tcl_CreateHashEntry(
+    Tcl_HashTable *tablePtr,
+    const void *key,
+    int *newPtr)
+{
+    return (*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr);
+}
+
+
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
 #define TclBN_mp_and mp_and
@@ -1241,7 +1252,7 @@ const TclStubs tclStubs = {
     0, /* 419 */
     0, /* 420 */
     0, /* 421 */
-    0, /* 422 */
+    Tcl_CreateHashEntry, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */
