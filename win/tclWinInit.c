@@ -144,9 +144,6 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-#ifdef WIN32_USE_TICKCOUNT
-    HMODULE handle;
-#endif
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -720,7 +717,6 @@ TclpGetMonotonicTime(Tcl_Time *timePtr)
 {
 #ifdef WIN32_USE_TICKCOUNT
     ULONGLONG ms;
-    DWORD tick;
 
     ms = GetTickCount64();
     timePtr->sec = (long)(ms/1000);
