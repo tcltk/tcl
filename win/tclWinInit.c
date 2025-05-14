@@ -701,10 +701,9 @@ TclpFindVariable(
  * TclpGetMononoticTime --
  *
  *	Like Tcl_GetTime() but return a monotonic clock source,
- *	if possible. Otherwise fall back to real (wall clock) time.
  *
  * Results:
- *	1 if monotonic, 0 otherwise.
+ *	1 if monotonic.
  *
  * Side effects:
  *	None.
@@ -715,17 +714,12 @@ TclpFindVariable(
 int
 TclpGetMonotonicTime(Tcl_Time *timePtr)
 {
-#ifdef WIN32_USE_TICKCOUNT
     ULONGLONG ms;
 
     ms = GetTickCount64();
     timePtr->sec = (long)(ms/1000);
     timePtr->usec = ((long)(ms%1000))*1000;
     return 1;
-#else
-    Tcl_GetTime(timePtr);
-    return 0;
-#endif
 }
 
 /*

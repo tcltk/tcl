@@ -155,16 +155,6 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
-
-AC_ARG_WITH(tickcount,
-    AC_HELP_STRING([--with-tickcount],
-	[use GetTickCount for timers, turns off TIP #233]),
-    [tcl_ok=$withval], [tcl_ok=no])
-AC_MSG_RESULT([$tcl_ok])
-if test $tcl_ok = yes; then
-    AC_DEFINE(WIN32_USE_TICKCOUNT, 1, [Use GetTickCount for timers?])
-fi
-
   AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])

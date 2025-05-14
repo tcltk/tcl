@@ -1199,11 +1199,9 @@ Tcl_SetTimeProc(
     Tcl_ScaleTimeProc *scaleProc,
     void *clientData)
 {
-#ifndef WIN32_USE_TICKCOUNT
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
     tclTimeClientData = clientData;
-#endif
 }
 
 /*

@@ -3054,7 +3054,6 @@ MODULE_SCOPE char *tclNativeExecutableName;
 MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 /*
  * Declarations related to internal encoding functions.
@@ -3658,6 +3657,9 @@ MODULE_SCOPE void	TclZipfsFinalize(void);
 MODULE_SCOPE int	TclIsSpaceProc(int byte);
 #define TclIsSpaceProcM(byte) \
     (((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
+/*
+ * Monotonic time independent on the wall clock
+ */
 MODULE_SCOPE int	TclpGetMonotonicTime(Tcl_Time *timePtr);
 
 /*
