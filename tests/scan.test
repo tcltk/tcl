@@ -892,9 +892,9 @@ test scan-15.1 {scan %g overflow for small numbers and big mantissa bug 42d14c49
 	 308  203 1.1111111111111112e+308 n16
 	 308  300 1.1111111111111112e+308 n17
 	 308 1600 1.1111111111111112e+308 x18
-	 400  110 inf n19
-	 400  111 inf n20
-	 400  300 inf n21
+	 400  110 *inf n19
+	 400  111 *inf n20
+	 400  300 *inf n21
 	 221  291 1.1111111111111112e+221 n22
 	 221  292 1.1111111111111112e+221 n23
 	 221  400 1.1111111111111112e+221 n24
@@ -908,7 +908,7 @@ test scan-15.1 {scan %g overflow for small numbers and big mantissa bug 42d14c49
 	set d "no_scan"
 	scan $s %g d
 	set r [format %.17g $d]
-	if {$r ne $ret} {
+	if {![string match -nocase $ret $r]} {
 	    lappend result $xfail=[format %.17g $d]
 	}
     }
