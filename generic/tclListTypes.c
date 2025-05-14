@@ -705,7 +705,6 @@ LrangeTypeIndex(
     Tcl_Obj **elemPtrPtr) /* Returned element */
 {
     LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
-    Tcl_Size len = repPtr->rangeLen;
     if (index < 0 || index >= repPtr->rangeLen) {
 	*elemPtrPtr = NULL;
 	return TCL_OK;
