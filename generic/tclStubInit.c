@@ -1228,8 +1228,8 @@ const TclStubs tclStubs = {
     Tcl_IsChannelExisting, /* 418 */
     0, /* 419 */
     0, /* 420 */
-    0, /* 421 */
-    0, /* 422 */
+    Tcl_DbCreateHashEntry, /* 421 */
+    Tcl_CreateHashEntry, /* 422 */
     Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */

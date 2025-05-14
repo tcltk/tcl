@@ -8508,7 +8508,6 @@ MyCompiledVarFetch(
 {
     MyResolvedVarInfo *resVarInfo = (MyResolvedVarInfo *) vinfoPtr;
     Tcl_Var var = resVarInfo->var;
-    int isNewVar;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
 
@@ -8529,7 +8528,7 @@ MyCompiledVarFetch(
     }
 
     hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
-	    resVarInfo->nameObj, &isNewVar);
+	    resVarInfo->nameObj, NULL);
     if (hPtr) {
 	var = (Tcl_Var) TclVarHashGetValue(hPtr);
     } else {
