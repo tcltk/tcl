@@ -872,6 +872,7 @@ lexescape(
 	NOTE(REG_ULOCALE);
 	RETV(NWBDRY, 0);
 	break;
+    case CHR('z'):
     case CHR('Z'):
 	RETV(SEND, 0);
 	break;
