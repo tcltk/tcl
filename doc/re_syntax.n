@@ -707,11 +707,12 @@ expressions using \fB^\fR will never match the newline character (so
 that matches will never cross newlines unless the RE explicitly
 arranges it) and \fB^\fR and \fB$\fR will match the empty string after
 and before a newline respectively, in addition to matching at
-beginning and end of string respectively. ARE \fB\eA\fR and \fB\eZ\fR
+beginning and end of string respectively. ARE \fB\eA\fR and
+\fB\ez\fR and \fB\eZ\fR
 continue to match beginning or end of string \fIonly\fR.
 .PP
 If partial newline-sensitive matching is specified, this affects
-\fB.\fR and bracket expressions as with newline-sensitive matching,
+bwb\fB.\fR and bracket expressions as with newline-sensitive matching,
 but not \fB^\fR and \fB$\fR.
 .PP
 If inverse partial newline-sensitive matching is specified, this
