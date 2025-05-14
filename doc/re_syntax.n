@@ -712,7 +712,7 @@ beginning and end of string respectively. ARE \fB\eA\fR and
 continue to match beginning or end of string \fIonly\fR.
 .PP
 If partial newline-sensitive matching is specified, this affects
-bwb\fB.\fR and bracket expressions as with newline-sensitive matching,
+\fB.\fR and bracket expressions as with newline-sensitive matching,
 but not \fB^\fR and \fB$\fR.
 .PP
 If inverse partial newline-sensitive matching is specified, this
