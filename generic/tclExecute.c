@@ -7119,6 +7119,9 @@ TEBCresume(
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (Tcl_DictObjPut(interp, dictPtr, OBJ_UNDER_TOS, OBJ_AT_TOS) != TCL_OK) {
+	    if (allocateDict) {
+		Tcl_BounceRefCount(dictPtr);
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -7138,6 +7141,9 @@ TEBCresume(
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (Tcl_DictObjRemove(interp, dictPtr, OBJ_AT_TOS) != TCL_OK) {
+	    if (allocateDict) {
+		Tcl_BounceRefCount(dictPtr);
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
