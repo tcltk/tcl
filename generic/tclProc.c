@@ -2455,7 +2455,7 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, result;
+    int result;
     Tcl_Size objc;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
@@ -2595,7 +2595,7 @@ SetLambdaFromAny(
 	TclStackFree(interp, contextPtr);
     }
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
-	    &isNew), cfPtr);
+	    NULL), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
