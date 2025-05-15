@@ -90,7 +90,7 @@ TclObjArrayElems(TclObjArray *arrayPtr, Tcl_Obj ***objPtrPtr)
     return arrayPtr->nelems;
 }
 
-/* TODO - move to tclInt.h and use in other list implementations as well */
+/* FUTURES - move to tclInt.h and use in other list implementations as well */
 static inline Tcl_Size
 TclNormalizeRangeLimits(Tcl_Size *startPtr, Tcl_Size *endPtr, Tcl_Size len)
 {
@@ -240,9 +240,9 @@ static const Tcl_ObjType lreverseType = {
 		   NULL,                /* sliceProc */
 		   LreverseTypeReverse, /* reverseProc */
 		   NULL,                /* getElementsProc */
-		   NULL,                /* setElementProc - TODO */
-		   NULL,                /* replaceProc - TODO */
-		   NULL)                /* inOperProc - TODO */
+		   NULL,                /* setElementProc - FUTURES */
+		   NULL,                /* replaceProc - FUTURES */
+		   NULL)                /* inOperProc - FUTURES */
 };
 
 void
@@ -424,7 +424,7 @@ static const Tcl_ObjType lrepeatType = {
 		   NULL,              /* getElementsProc */
 		   NULL,              /* Must be NULL - see above comment */
 		   NULL,              /* Must be NULL - see above comment */
-		   NULL)              /* inOperProc - TODO */
+		   NULL)              /* inOperProc - FUTURES */
 };
 
 void
@@ -617,7 +617,7 @@ static const Tcl_ObjType lrangeType = {
 		   NULL,             /* getElementsProc */
 		   NULL,             /* setElementProc, see above comment */
 		   NULL,             /* replaceProc, see above comment */
-		   NULL)             /* inOperProc - TODO */
+		   NULL)             /* inOperProc - FUTURES */
 };
 
 static inline int
@@ -738,38 +738,28 @@ LrangeSlice(
     }
 
     /*
-     * If the original source list was also a lrangeType, we can reference
-     * *its* source directly. Do this recursively until we reach a
-     * non-lrangeType.
-     * TODO - this loop not needed!
+     * Because of how ranges are constructed, they are never recursive.
+     * Not that the code below cares...
      */
+    CLANG_ASSERT(sourcePtr->typePtr != &lrangeType);
+
+    Tcl_Size sourceLen;
     Tcl_Size newSrcIndex = start + repPtr->srcIndex;
-    while (sourcePtr->typePtr == &lrangeType) {
-	LrangeRep *nextRepPtr = (LrangeRep *)sourcePtr->internalRep.twoPtrValue.ptr1;
-        newSrcIndex += nextRepPtr->srcIndex;
-        sourcePtr = nextRepPtr->srcListPtr;
+    if (TclListObjLength(interp, sourcePtr, &sourceLen) != TCL_OK) {
+	/* Cannot fail because how rangeType's are constructed but ... */
+        return TCL_ERROR;
     }
 
     /*
      * At this point, sourcePtr is a non-lrangeType that will be the source
      * Tcl_Obj for the returned object. newSrcIndex is an index into this.
-     * Note it is possible that sourcePtr is repPtr->srcListPtr if the range
-     * target is not itself a range.
      */
 
-    Tcl_Size sourceLen;
-    if (TclListObjLength(interp, sourcePtr, &sourceLen) != TCL_OK) {
-	/* Cannot fail because how rangeType's are constructed but ... */
-        return TCL_ERROR;
-    }
     /*
      * A range is always smaller than its source thus the following must
      * hold even for recursive ranges.
-     * TODO - change to an assert()
      */
-    if ((newSrcIndex+rangeLen) > sourceLen) {
-	Tcl_Panic("lrangeType: (newSrcIndec+rangeLen) > sourceLen");
-    }
+    CLANG_ASSERT((newSrcIndex + rangeLen) > sourceLen);
 
     /*
      * We will only use the lrangeType abstract list if the following
