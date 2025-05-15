@@ -107,7 +107,10 @@ EXTERN void		Tcl_DbIncrRefCount(Tcl_Obj *objPtr, const char *file,
 /* 21 */
 EXTERN int		Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file,
 				int line);
-/* Slot 22 is reserved */
+/* 22 */
+EXTERN char *		Tcl_DbGetStringFromObj(Tcl_Obj *objPtr,
+				Tcl_Size *lengthPtr, const char *file,
+				int line);
 /* 23 */
 EXTERN Tcl_Obj *	Tcl_DbNewByteArrayObj(const unsigned char *bytes,
 				Tcl_Size numBytes, const char *file,
@@ -895,7 +898,9 @@ EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 /* 339 */
 EXTERN Tcl_Size		Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr);
 /* Slot 340 is reserved */
-/* Slot 341 is reserved */
+/* 341 */
+EXTERN char *		Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr,
+				Tcl_Size *lengthPtr);
 /* Slot 342 is reserved */
 /* 343 */
 EXTERN void		Tcl_AlertNotifier(void *clientData);
@@ -1907,7 +1912,7 @@ typedef struct TclStubs {
     void (*tcl_DbDecrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 19 */
     void (*tcl_DbIncrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 20 */
     int (*tcl_DbIsShared) (Tcl_Obj *objPtr, const char *file, int line); /* 21 */
-    void (*reserved22)(void);
+    char * (*tcl_DbGetStringFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr, const char *file, int line); /* 22 */
     Tcl_Obj * (*tcl_DbNewByteArrayObj) (const unsigned char *bytes, Tcl_Size numBytes, const char *file, int line); /* 23 */
     Tcl_Obj * (*tcl_DbNewDoubleObj) (double doubleValue, const char *file, int line); /* 24 */
     Tcl_Obj * (*tcl_DbNewListObj) (Tcl_Size objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
@@ -2226,7 +2231,7 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
     void (*reserved340)(void);
-    void (*reserved341)(void);
+    char * (*tcl_AttemptGetStringFromObj) (Tcl_Obj *objPtr, Tcl_Size *lengthPtr); /* 341 */
     void (*reserved342)(void);
     void (*tcl_AlertNotifier) (void *clientData); /* 343 */
     void (*tcl_ServiceModeHook) (int mode); /* 344 */
@@ -2635,7 +2640,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbIncrRefCount) /* 20 */
 #define Tcl_DbIsShared \
 	(tclStubsPtr->tcl_DbIsShared) /* 21 */
-/* Slot 22 is reserved */
+#define Tcl_DbGetStringFromObj \
+	(tclStubsPtr->tcl_DbGetStringFromObj) /* 22 */
 #define Tcl_DbNewByteArrayObj \
 	(tclStubsPtr->tcl_DbNewByteArrayObj) /* 23 */
 #define Tcl_DbNewDoubleObj \
@@ -3220,7 +3226,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_WriteObj \
 	(tclStubsPtr->tcl_WriteObj) /* 339 */
 /* Slot 340 is reserved */
-/* Slot 341 is reserved */
+#define Tcl_AttemptGetStringFromObj \
+	(tclStubsPtr->tcl_AttemptGetStringFromObj) /* 341 */
 /* Slot 342 is reserved */
 #define Tcl_AlertNotifier \
 	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
@@ -4010,6 +4017,8 @@ extern const TclStubs *tclStubsPtr;
 
 #define Tcl_GetString(objPtr) \
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
+#define Tcl_AttemptGetString(objPtr) \
+	Tcl_AttemptGetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetIndexFromObjStruct
@@ -4063,6 +4072,11 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_AttemptRealloc
 #   define Tcl_AttemptRealloc(x,y) \
     (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
+#   define Tcl_Alloc(x) \
+    (Tcl_DbCkalloc((x), __FILE__, __LINE__))
+#   undef Tcl_GetStringFromObj
+#   define Tcl_GetStringFromObj(x,y) \
+    (Tcl_DbGetStringFromObj((x), (y), __FILE__, __LINE__))
 #endif /* !TCL_MEM_DEBUG */
 
 #define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))

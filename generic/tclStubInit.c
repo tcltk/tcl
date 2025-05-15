@@ -829,7 +829,7 @@ const TclStubs tclStubs = {
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
-    0, /* 22 */
+    Tcl_DbGetStringFromObj, /* 22 */
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
@@ -1148,7 +1148,7 @@ const TclStubs tclStubs = {
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
     0, /* 340 */
-    0, /* 341 */
+    Tcl_AttemptGetStringFromObj, /* 341 */
     0, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
