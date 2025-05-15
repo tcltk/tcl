@@ -33,8 +33,6 @@
 # For the abstract list types not tested elsewhere,
 #   - verify constructor commands return the expected type
 #   - generated string representations
-# TODO - see comments to testlistobj
-# TODO - see listobjmemcheck and indexmemcheck in listObj.test
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -43,9 +41,11 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
+source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testlistobj [llength [info commands testobj]]
+testConstraint memory [llength [info commands memory]]
 
 namespace eval listtype {
     variable listTypes {arithseries list rangeList repeatedList reversedList spanlist}
@@ -239,11 +239,9 @@ namespace eval listtype {
         } else {
             set body $comment
         }
-        dict lappend args -constraints testobj
 
-        set cleanup [dict getwithdefault $args -cleanup {}]
-        dict unset args -cleanup
-        append cleanup "\nunset -nocomplain l l1 l2 l3 a b c d e f g"
+        dict lappend args -constraints testobj
+        dict append args -cleanup "\nunset -nocomplain l l1 l2 l3 a b c d e f g"
 
         uplevel 1 [list test $id.uncompiled "$comment (uncompiled)" \
                        -body [list testevalex $body] \
@@ -269,7 +267,7 @@ namespace eval listtype {
         dict append args -setup \n[list proc testxproc {} $procbody]
         dict append args -cleanup "\nrename testxproc {}"
         uplevel 1 [list test $id.proc "$comment (compiled proc)" \
-                       -body testxproc -cleanup $cleanup \
+                       -body testxproc \
                        {*}$args]
     }
 
@@ -367,6 +365,23 @@ namespace eval listtype {
                 }
             }
         }
+    }
+
+    # Tests for Tcl_ListObjIndex as sematics are different from lindex for
+    # out of bounds (oob) indices. Out of bounds should return a null pointer and
+    # not empty string.
+    foreach ltype $listTypes {
+        test lindex-oob-$ltype "Tcl_ListObjIndex out of bounds index for $ltype lists" -setup {
+            set l [makeList $ltype]
+            testobj set 1 $l
+            set len [llength $l]
+        } -body {
+            list [lindex $l -1] [lindex $l $len] \
+                [testlistobj index 1 -1] [testlistobj index 1 $len]
+        } -cleanup {
+            testobj freeallvars
+            unset -nocomplain l len
+        } -result [list {} {} null null]
     }
 
     ################################################################
@@ -810,26 +825,24 @@ namespace eval listtype {
     }
 
     # lpop - nested indices
+    # Only two levels. Three levels takes too long with memdbg or valgrind
     foreach ltype1 $nestableTypes {
-        foreach ltype2 $nestableTypes {
-            foreach ltype3 $listTypes {
-                continue; # XXX
-                lassign [getFirstAndLast $ltype3] first last
-                foreach indices [list {0 0 0} {3 3 3} {end end end} ] {
-                    set index [lindex $indices 0]
-                    set expected [makeNestedList $ltype1 $ltype2 $ltype3]
-                    set elem [lindex $expected $indices]
-                    set inner [lindex $expected [lrange $indices 0 1]]
-                    set inner [lremove $inner $index]
-                    lset expected [lrange $indices 0 1] $inner
-                    testdef lpop-nested-$ltype1-$ltype2-$ltype3-[join $indices ,] \
-                        "lpop nested multiple index arguments $ltype1 $ltype2 $ltype3 $indices" \
-                        -body {
-                            variable indices
-                            set l [makeNestedList $ltype1 $ltype2 $ltype3]
-                            list [lpop l {*}$indices] $l
-                        } -result [list $elem $expected]
-                }
+        foreach ltype2 $listTypes {
+            lassign [getFirstAndLast $ltype2] first last
+            foreach indices [list {0 0} {3 3} {end end} ] {
+                set index [lindex $indices 0]
+                set expected [makeNestedList $ltype1 $ltype2]
+                set elem [lindex $expected $indices]
+                set inner [lindex $expected [lindex $indices 0]]
+                set inner [lremove $inner $index]
+                lset expected [lindex $indices 0] $inner
+                testdef lpop-nested-$ltype1-$ltype2-[join $indices ,] \
+                    "lpop nested multiple index arguments $ltype1 $ltype2 $indices" \
+                    -body {
+                        variable indices
+                        set l [makeNestedList $ltype1 $ltype2]
+                        list [lpop l {*}$indices] $l
+                    } -result [list $elem $expected]
             }
         }
     }
@@ -1032,7 +1045,154 @@ namespace eval listtype {
                        [expr {$ltype eq "arithseries" ? "arithseries" : "list"}] \
                        [lrange [getNonAbstract $ltype] 1 10]]
     }
+
+    ################################################################
+    # Checks for memory leaks in raw C API
+    # If Tcl has been compiled with memory checking, use it, else will rely
+    # on valgrind -DPURIFY builds.
+    if {[namespace which ::memory] eq {}} {
+        set memcheckcmd [list ::apply [list script {
+            uplevel 1 $script
+            return 0
+        } [namespace current]]]
+    } else {
+        set memcheckcmd ::tcltests::scriptmemcheck
+    }
+
+    ## Test Tcl_ListObjIndex does not leak memory
+
+    test memcheck-lindex-list {Tcl_ListObjIndex memory leaks for native lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [testlistrep new 1000]
+            assertListType [testobj duplicate 1 2] list
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-lindex-spanlist {Tcl_ListObjIndex memory leaks for native lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [testlistrep new 1000 10 10]
+            assertListType [testobj duplicate 1 2] spanlist
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-lindex-arithseries {Tcl_ListObjIndex memory leaks for lseq} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lseq 1000]
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-lindex-repeatedList {Tcl_ListObjIndex memory leaks for lists of type repeatedList} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lrepeat $largeListLength [testobj new 2]]
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-lindex-reversedList {Tcl_ListObjIndex memory leaks for reversedList lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lreverse [testlistrep new 1000]]
+            assertListType [testobj duplicate 1 2] reversedList
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-lindex-rangeList {Tcl_ListObjIndex memory leaks for rangeList lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lrange [lrepeat $largeListLength [testobj new 2]] 1 end-1]
+            assertListType [testobj duplicate 1 2] rangeList
+            set errorMessage [testlistobj indexmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    ## Test Tcl_ListObjGetElements does not leak memory
+
+    test memcheck-getelements-list {Tcl_ListObjElements memory leaks for native lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [testlistrep new 1000]
+            assertListType [testobj duplicate 1 2] list
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-getelements-spanlist {Tcl_ListObjElements memory leaks for native lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [testlistrep new 1000 10 10]
+            assertListType [testobj duplicate 1 2] spanlist
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-getelements-arithseries {Tcl_ListObjElements memory leaks for lseq} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lseq 1000]
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-getelements-repeatedList "Tcl_ListObjElements memory leaks for lists of type repeatedList" -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lrepeat $largeListLength [testobj new 2]]
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-getelements-reversedList {Tcl_ListObjElements memory leaks for reversedList lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lreverse [testlistrep new 1000]]
+            assertListType [testobj duplicate 1 2] reversedList
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+    test memcheck-getelements-rangeList {Tcl_ListObjElements memory leaks for rangeList lists} -constraints {
+        testobj memory
+    } -body {
+        list [{*}$memcheckcmd {
+            testobj set 1 [lrange [lrepeat $largeListLength [testobj new 2]] 1 end-1]
+            assertListType [testobj duplicate 1 2] rangeList
+            set errorMessage [testlistobj getelementsmemcheck 1]
+            testobj freeallvars
+        }] $errorMessage
+    } -result {0 {}}
+
+
 }
 
 # All done
-::tcltest::cleanupTests 
+::tcltest::cleanupTests
