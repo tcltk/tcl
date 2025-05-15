@@ -582,7 +582,7 @@ Tcl_ListObjRepeat(
  *
  * lrangeType is an abstract list type holding a range of elements from a
  * given list. The range is specified by a start index and count of elements.
- * The type is a descriptor stored in the otherValuePtr field of the Tcl_Obj.
+ * The type is a descriptor stored in the twoPtrValue.ptr1 field of Tcl_Obj.
  * ------------------------------------------------------------------------
  */
 typedef struct LrangeRep {
@@ -660,7 +660,8 @@ LrangeNew(
     repPtr->rangeLen = rangeLen;
     TclNewObj(resultPtr);
     TclInvalidateStringRep(resultPtr);
-    resultPtr->internalRep.otherValuePtr = repPtr;
+    resultPtr->internalRep.twoPtrValue.ptr1 = repPtr;
+    resultPtr->internalRep.twoPtrValue.ptr2 = NULL;
     resultPtr->typePtr = &lrangeType;
     *resultPtrPtr = resultPtr;
     return TCL_OK;
@@ -670,7 +671,7 @@ LrangeNew(
 void
 LrangeFreeIntrep(Tcl_Obj *objPtr)
 {
-    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.twoPtrValue.ptr1;
     if (repPtr->refCount <= 1) {
 	Tcl_DecrRefCount(repPtr->srcListPtr);
 	Tcl_Free(repPtr);
@@ -682,9 +683,10 @@ LrangeFreeIntrep(Tcl_Obj *objPtr)
 void
 LrangeDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
 {
-    LrangeRep *repPtr = (LrangeRep *)srcObj->internalRep.otherValuePtr;
+    LrangeRep *repPtr = (LrangeRep *)srcObj->internalRep.twoPtrValue.ptr1;
     repPtr->refCount++;
-    dupObj->internalRep.otherValuePtr = repPtr;
+    dupObj->internalRep.twoPtrValue.ptr1 = repPtr;
+    dupObj->internalRep.twoPtrValue.ptr2 = NULL;
     dupObj->typePtr = srcObj->typePtr;
 }
 
@@ -692,7 +694,7 @@ LrangeDupIntrep(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
 Tcl_Size
 LrangeTypeLength(Tcl_Obj *objPtr)
 {
-    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.twoPtrValue.ptr1;
     return repPtr->rangeLen;
 }
 
@@ -704,7 +706,7 @@ LrangeTypeIndex(
     Tcl_Size index,  /* Element index */
     Tcl_Obj **elemPtrPtr) /* Returned element */
 {
-    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.twoPtrValue.ptr1;
     if (index < 0 || index >= repPtr->rangeLen) {
 	*elemPtrPtr = NULL;
 	return TCL_OK;
@@ -725,7 +727,7 @@ LrangeSlice(
     assert(objPtr->typePtr == &lrangeType);
 
     Tcl_Size rangeLen;
-    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.otherValuePtr;
+    LrangeRep *repPtr = (LrangeRep *)objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *sourcePtr = repPtr->srcListPtr;
 
     rangeLen =
@@ -739,10 +741,11 @@ LrangeSlice(
      * If the original source list was also a lrangeType, we can reference
      * *its* source directly. Do this recursively until we reach a
      * non-lrangeType.
+     * TODO - this loop not needed!
      */
     Tcl_Size newSrcIndex = start + repPtr->srcIndex;
     while (sourcePtr->typePtr == &lrangeType) {
-	LrangeRep *nextRepPtr = (LrangeRep *)sourcePtr->internalRep.otherValuePtr;
+	LrangeRep *nextRepPtr = (LrangeRep *)sourcePtr->internalRep.twoPtrValue.ptr1;
         newSrcIndex += nextRepPtr->srcIndex;
         sourcePtr = nextRepPtr->srcListPtr;
     }
