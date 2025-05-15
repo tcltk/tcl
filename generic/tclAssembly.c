@@ -3026,7 +3026,6 @@ ResolveJumpTableTargets(
 				 * the actual code */
     BasicBlock* jumpTargetBBPtr;
 				/* Basic block that the jump proceeds to */
-    int junk;
 
     if (bbPtr->jtPtr) {
 	int auxDataIndex;	/* Index of the auxdata */
@@ -3058,7 +3057,7 @@ ResolveJumpTableTargets(
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
 
 	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
-		    Tcl_GetHashKey(symHash, symEntryPtr), &junk);
+		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
 	    DEBUG_PRINT("  %s -> %s -> bb %p (pc %d)    hash entry %p\n",
 		    (char *)Tcl_GetHashKey(symHash, symEntryPtr),
 		    TclGetString(symbolObj), jumpTargetBBPtr,
@@ -3099,7 +3098,7 @@ ResolveJumpTableTargets(
 	    jumpTargetBBPtr = (BasicBlock*)Tcl_GetHashValue(valEntryPtr);
  
 	    realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
-		    Tcl_GetHashKey(symHash, symEntryPtr), &junk);
+		    Tcl_GetHashKey(symHash, symEntryPtr), NULL);
 	    DEBUG_PRINT(
 		    "  %" TCL_SIZE_MODIFIER "d -> %s -> bb %p (pc %d)"
 		    "    hash entry %p\n",

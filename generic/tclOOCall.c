@@ -776,9 +776,7 @@ AddPrivateMethodNames(
 
     FOREACH_HASH(namePtr, mPtr, methodsTablePtr) {
 	if (IS_PRIVATE(mPtr)) {
-	    int isNew;
-
-	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, &isNew);
+	    hPtr = Tcl_CreateHashEntry(namesPtr, namePtr, NULL);
 	    Tcl_SetHashValue(hPtr, INT2PTR(IN_LIST));
 	}
     }
@@ -1554,14 +1552,13 @@ TclOOGetStereotypeCallChain(
 	}
     } else {
 	if (hPtr == NULL) {
-	    int isNew;
 	    if (clsPtr->classChainCache == NULL) {
 		clsPtr->classChainCache = (Tcl_HashTable *)
 			Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
-		    methodNameObj, &isNew);
+		    methodNameObj, NULL);
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);

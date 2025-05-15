@@ -1285,6 +1285,14 @@ declare 417 {
 declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
+declare 421 {
+    Tcl_HashEntry *Tcl_DbCreateHashEntry(Tcl_HashTable *tablePtr,
+	    const void *key, int *newPtr, const char *file, int line)
+}
+declare 422 {
+    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+	    const void *key, int *newPtr)
+}
 declare 423 {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
 	    const Tcl_HashKeyType *typePtr)
