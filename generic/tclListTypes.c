@@ -372,7 +372,7 @@ Tcl_ListObjReverse(
     ListRep listRep;
     ListObjGetRep(resultPtr, &listRep);
     dataArray = ListRepElementsBase(&listRep);
-    CLANG_ASSERT(dataArray);
+    assert(dataArray);
     listRep.storePtr->numUsed = elemc;
     if (listRep.spanPtr) {
 	/* Future proofing in case Tcl_NewListObj returns a span */
@@ -556,7 +556,7 @@ Tcl_ListObjRepeat(
      * number of times.
      */
 
-    CLANG_ASSERT(dataArray || totalElems == 0 );
+    assert(dataArray || totalElems == 0 );
     if (objc == 1) {
 	Tcl_Obj *tmpPtr = objv[0];
 
@@ -741,7 +741,7 @@ LrangeSlice(
      * Because of how ranges are constructed, they are never recursive.
      * Not that the code below cares...
      */
-    CLANG_ASSERT(sourcePtr->typePtr != &lrangeType);
+    assert(sourcePtr->typePtr != &lrangeType);
 
     Tcl_Size sourceLen;
     Tcl_Size newSrcIndex = start + repPtr->srcIndex;
@@ -759,7 +759,7 @@ LrangeSlice(
      * A range is always smaller than its source thus the following must
      * hold even for recursive ranges.
      */
-    CLANG_ASSERT((newSrcIndex + rangeLen) > sourceLen);
+    assert((newSrcIndex + rangeLen) <= sourceLen);
 
     /*
      * We will only use the lrangeType abstract list if the following
