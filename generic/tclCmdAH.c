@@ -53,6 +53,7 @@ static Tcl_ObjCmdProc	EncodingDirsObjCmd;
 static Tcl_ObjCmdProc	EncodingNamesObjCmd;
 static Tcl_ObjCmdProc	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc	EncodingSystemObjCmd;
+static Tcl_ObjCmdProc	EncodingUserObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
@@ -394,6 +395,7 @@ TclInitEncodingCmd(
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"profiles",    EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+	{"user",        EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 1},
 	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
     };
 
@@ -828,6 +830,41 @@ EncodingSystemObjCmd(
     return TCL_OK;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingUserObjCmd --
+ *
+ *	This command retrieves the encoding as per the user settings.
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingUserObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp* interp,     /* Tcl interpreter */
+    int objc,		    /* Number of command line args */
+    Tcl_Obj* const objv[])  /* Vector of command line args */
+{
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+#ifdef _WIN32
+    const char *encodingName = Tcl_GetEncodingName(TclWinGetUserEncoding(interp));
+    if (encodingName) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(encodingName, -1));
+    }
+    return TCL_OK;
+#else
+    return EncodingSystemObjCmd(NULL, interp, objc, objv);
+#endif
+}
+
 /*
  *----------------------------------------------------------------------
  *

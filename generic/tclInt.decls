@@ -686,6 +686,9 @@ declare 8 {
 declare 9 {
     TclFile TclpCreateTempFile(const char *contents)
 }
+declare 10 {
+    Tcl_Encoding TclWinGetUserEncoding(Tcl_Interp *interp)
+}
 declare 11 {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }

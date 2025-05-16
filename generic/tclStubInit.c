@@ -69,6 +69,10 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
+#if !defined(_WIN32)
+# undef TclWinGetUserEncoding
+# define TclWinGetUserEncoding 0
+#endif
 #undef TclGetStringFromObj
 #if defined(TCL_NO_DEPRECATED)
 # define TclGetStringFromObj 0
@@ -703,7 +707,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclpGetPid, /* 8 */
     TclpCreateTempFile, /* 9 */
-    0, /* 10 */
+    TclWinGetUserEncoding, /* 10 */
     TclGetAndDetachPids, /* 11 */
     0, /* 12 */
     0, /* 13 */

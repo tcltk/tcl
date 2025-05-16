@@ -171,6 +171,7 @@ SHARED_LIBRARIES	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
+TCLSHC			= tclsh$(VER)c${EXESUFFIX}
 WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
 
@@ -532,7 +533,7 @@ tcltest.sh: tcltest.cmd
 
 tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH) $(TCLSHC)
 
 winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE} ${DDE_DLL_FILE8} ${REG_DLL_FILE8}
 
@@ -568,6 +569,15 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_
 		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
 	fi
 
+$(TCLSHC): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclshc.$(RES) ${TCL_ZIP_FILE}
+	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+	tclshc.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	$(COPY) tcl.dll.manifest $(TCLSHC).manifest
+	@VC_MANIFEST_EMBED_EXE@
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
+	fi
+
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
@@ -585,7 +595,7 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
 ${TCL_DLL_FILE}: ${TCL_LIB_FILE} ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${TCL_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${TCL_DLL_FILE}.manifest
 	@VC_MANIFEST_EMBED_DLL@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
@@ -603,24 +613,24 @@ endif
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${DDE_DLL_FILE}.manifest
 
 ${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${REG_DLL_FILE}.manifest
 
 ${DDE_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinDde.$(OBJEXT)
 	@MAKE_DLL@ tcl8WinDde.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE8}.manifest
+	$(COPY) tcl.dll.manifest ${DDE_DLL_FILE8}.manifest
 
 ${REG_DLL_FILE8}: ${TCL_STUB_LIB_FILE} tcl8WinReg.$(OBJEXT)
 	@MAKE_DLL@ -DTCL_MAJOR_VERSION=8 tcl8WinReg.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE8}.manifest
+	$(COPY) tcl.dll.manifest ${REG_DLL_FILE8}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${TEST_DLL_FILE}.manifest
+	$(COPY) tcl.dll.manifest ${TEST_DLL_FILE}.manifest
 
 ${TEST_EXE_FILE}: @LIBRARIES@ ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
@@ -860,7 +870,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TOMMATH_DLL_FILE) $(TCLSH); \
+	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TOMMATH_DLL_FILE) $(TCLSH) $(TCLSHC); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
@@ -1056,10 +1066,10 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
+	$(RM) $(TCLSH) $(TCLSHC) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
 	# remaining binaries (inclusive manifests) by version/branch switch, but retain tclsh.exe.manifest (that created on configure phase)
 	find . -maxdepth 1 -type f -regex '\./tcl\(sh[^.]+\|test\|[^.]+.dll\)\.[^.]*\(\.manifest\)?' \
-		-a -not -name 'tclsh.exe.manifest' -exec rm {} \;
+		-a -not -name 'tclsh.exe.manifest' -a -not -name 'tcl.dll.manifest' -exec rm {} \;
 	$(RM) *.pch *.ilk *.pdb *.zip
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
 	$(RMDIR) *.vfs

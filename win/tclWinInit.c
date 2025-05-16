@@ -35,6 +35,12 @@ typedef struct {
     WORD wReserved;
 } OemId;
 
+typedef struct {
+    Tcl_Encoding userEncoding;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
 /*
  * The following arrays contain the human readable strings for the
  * processor values.
@@ -451,6 +457,55 @@ TclpSetInitialEncodings(void)
     Tcl_SetSystemEncoding(NULL,
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclWinGetUserEncoding --
+ *
+ *	Determines the encoding corresponding to the GetACP() call.
+ *	Since GetACP() cannot be thrusted, poke the
+ *	value from the registry directly.
+ *
+ * Results:
+ *	The found encoding. Or NULL if the encoding cannot be found.
+ *
+ * Side effects:
+ *	The returned encoding is valid until a future TclWinGetUserEncoding()
+ *	call determines that the ACP encoding changed. That should never happen.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Encoding
+TclWinGetUserEncoding(Tcl_Interp *interp)
+{
+    WCHAR buf[32] = L"cp";
+
+    HKEY hKey;
+    DWORD type = -1;
+    DWORD size=sizeof(buf) - 2;
+    Tcl_DString ds;
+    RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+	    0, KEY_READ, &hKey);
+    RegQueryValueExW(hKey, L"ACP", NULL, &type, (BYTE *)&buf[2], &size);
+    RegCloseKey(hKey);
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (!wcscmp(buf, L"cp65001")) {
+	wcscpy(buf, L"utf-8");
+    }
+    Tcl_DStringInit(&ds);
+    Tcl_WCharToUtfDString(buf, -1, &ds);
+    if (!tsdPtr->userEncoding
+	    || strcmp(Tcl_GetEncodingName(tsdPtr->userEncoding), Tcl_DStringValue(&ds))) {
+	if (tsdPtr->userEncoding) {
+	    Tcl_FreeEncoding(tsdPtr->userEncoding);
+	}
+	tsdPtr->userEncoding = Tcl_GetEncoding(interp, Tcl_DStringValue(&ds));
+    }
+    Tcl_DStringFree(&ds);
+    return tsdPtr->userEncoding;
 }
 
 const char *

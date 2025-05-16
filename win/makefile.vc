@@ -145,7 +145,12 @@ RCFILE = tcl.rc
 # The tclsh executable without the embedded libzip. We need this
 # separately from tclsh to have dependency and build order work right.
 # Ditto for the DLL and tcltest
+
+TCLSHCNAME       = $(PROJECT)sh$(VERSION)c$(SUFX).exe
+TCLSHC		= $(OUT_DIR)\$(TCLSHCNAME)
+
 TCLSHRAW=$(TCLSH:.exe=-raw.exe)
+TCLSHCRAW=$(TCLSHC:.exe=-raw.exe)
 TCLLIBRAW=$(TCLLIB:.dll=-raw.dll)
 
 # Tcl version info based on macros set up by rules.vc
@@ -226,7 +231,6 @@ TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
-	$(TMP_DIR)\tclsh.res
 
 TCLTESTOBJS = \
 	$(TMP_DIR)\tclTest.obj \
@@ -528,10 +532,11 @@ core:	    libtclzip
 	@$(COPY) /b "$(TCLLIBRAW)"+"$(TCLSCRIPTZIP)" "$(TCLLIB)"
 !endif
 
-shell:	    setup core $(TCLSH)
+shell:	    setup core $(TCLSH) $(TCLSHC)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
+	@$(COPY) /b "$(TCLSHCRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSHC)"
 !endif
 
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
@@ -590,12 +595,20 @@ $(TCLIMPLIB): $(TCLLIB)
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
 
-$(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
+$(TCLSH): $(TCLSHOBJS) $(TMP_DIR)\tclsh.res $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
 	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLSHRAW)
+!endif
+
+$(TCLSHC): $(TCLSHOBJS) $(TMP_DIR)\tclshc.res $(TCLSTUBLIB) $(TCLIMPLIB)
+	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tcl.dll.manifest $(TCLSHC).manifest
+	$(_VC_MANIFEST_EMBED_EXE)
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+	$(COPY) $@ $(TCLSHCRAW)
 !endif
 
 
@@ -654,7 +667,7 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-$(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
+$(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) $(TCLSHC) dlls
 	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
@@ -982,6 +995,12 @@ $(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
 
+$(TMP_DIR)\tcl.dll.manifest: $(WIN_DIR)\tcl.dll.manifest.in
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+@TCL_WIN_VERSION@  $(DOTVERSION).0.0
+<<
+
 #---------------------------------------------------------------------
 # Generate the source dependencies.  Having dependency rules will
 # improve incremental build accuracy without having to resort to a
@@ -1034,6 +1053,8 @@ $<
 <<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
+
+$(TMP_DIR)\tclshc.res: $(TMP_DIR)\tcl.dll.manifest $(WIN_DIR)\tclshc.rc
 
 $(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
