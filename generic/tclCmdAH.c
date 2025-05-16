@@ -855,9 +855,9 @@ EncodingUserObjCmd(
 	return TCL_ERROR;
     }
 #ifdef _WIN32
-    const char *encodingName = Tcl_GetEncodingName(TclWinGetUserEncoding(interp));
-    if (encodingName) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(encodingName, -1));
+    Tcl_Encoding encoding = TclWinGetUserEncoding(interp);
+    if (encoding) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingName(encoding), -1));
     }
     return TCL_OK;
 #else
