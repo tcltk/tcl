@@ -5,7 +5,7 @@
 # for errors. No output means no errors were found.
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1999 by Scriptics Corporation.
+# Copyright (c) 1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,6 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -747,9 +748,9 @@ test filename-11.12 {Tcl_GlobCmd} -constraints {testsetplatform} -setup {
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
-test filename-11.13 {Tcl_GlobCmd} {
+test filename-11.13 {Tcl_GlobCmd} -body {
     file join [lindex [glob ~] 0]
-} [file join $env(HOME)]
+} -result [file join $env(HOME)]
 set oldpwd [pwd]
 set oldhome $env(HOME)
 catch {cd [makeDirectory tcl[pid]]}
@@ -767,12 +768,12 @@ touch globTest/a1/b1/x2.c
 touch globTest/a1/b2/y2.c
 touch globTest/.1
 touch globTest/x,z1.c
-test filename-11.14 {Tcl_GlobCmd} {
+test filename-11.14 {Tcl_GlobCmd} -body {
     glob ~/globTest
-} [list [file join $env(HOME) globTest]]
-test filename-11.15 {Tcl_GlobCmd} {
+} -result [list [file join $env(HOME) globTest]]
+test filename-11.15 {Tcl_GlobCmd} -body {
     glob ~\\/globTest
-} [list [file join $env(HOME) globTest]]
+} -result [list [file join $env(HOME) globTest]]
 test filename-11.16 {Tcl_GlobCmd} {
     glob globTest
 } {globTest}
@@ -1095,42 +1096,42 @@ file delete -force $tildeglobname
 set globname globTest
 unset horribleglobname tildeglobname
 
-test filename-12.1 {simple globbing} {unixOrWin} {
+test filename-12.1 {simple globbing} -constraints {unixOrWin} -body {
     glob {}
-} {.}
+} -result {.}
 test filename-12.1.1 {simple globbing} -constraints {unixOrWin} -body {
     glob -types f {}
 } -returnCodes error -result {no files matched glob pattern ""}
-test filename-12.1.2 {simple globbing} {unixOrWin} {
+test filename-12.1.2 {simple globbing} -constraints {unixOrWin} -body {
     glob -types d {}
-} {.}
-test filename-12.1.3 {simple globbing} {unix} {
+} -result {.}
+test filename-12.1.3 {simple globbing} -constraints {unix} -body {
     glob -types hidden {}
-} {.}
+} -result {.}
 test filename-12.1.4 {simple globbing} -constraints {win} -body {
     glob -types hidden {}
 } -returnCodes error -result {no files matched glob pattern ""}
 test filename-12.1.5 {simple globbing} -constraints {win} -body {
     glob -types hidden c:/
 } -returnCodes error -result {no files matched glob pattern "c:/"}
-test filename-12.1.6 {simple globbing} {win} {
+test filename-12.1.6 {simple globbing} -constraints  {win} -body {
     glob c:/
-} {c:/}
-test filename-12.3 {simple globbing} {
+} -result {c:/}
+test filename-12.3 {simple globbing} -body {
     glob -nocomplain \{a1,a2\}
-} {}
+} -result {}
 set globPreResult globTest/
 set x1 x1.c
 set y1 y1.c
-test filename-12.4 {simple globbing} {unixOrWin} {
+test filename-12.4 {simple globbing} -constraints {unixOrWin} -body {
     lsort [glob globTest/x1.c globTest/y1.c globTest/foo]
-} "$globPreResult$x1 $globPreResult$y1"
-test filename-12.5 {simple globbing} {
+} -result "$globPreResult$x1 $globPreResult$y1"
+test filename-12.5 {simple globbing} -body {
     glob globTest\\/x1.c
-} "$globPreResult$x1"
-test filename-12.6 {simple globbing} {
+} -result "$globPreResult$x1"
+test filename-12.6 {simple globbing} -body {
     glob globTest\\/\\x1.c
-} "$globPreResult$x1"
+} -result "$globPreResult$x1"
 test filename-12.7 {globbing at filesystem root} -constraints {unix} -body {
     list [glob -nocomplain /*] [glob -path / *]
 } -match compareWords -result equal
@@ -1311,8 +1312,8 @@ test filename-14.31 {Bug 2918610} -setup {
     makeFile {} bar.soom $d
 } -body {
     foreach fn [glob $d/bar.soom] {
-        set root [file rootname $fn]
-        close [open $root {WRONLY CREAT}]
+	set root [file rootname $fn]
+	close [open $root {WRONLY CREAT}]
     }
     llength [glob -directory $d *]
 } -cleanup {
@@ -1448,7 +1449,7 @@ test filename-16.13 {windows specific globbing} {win sharedCdrive} {
     cd //[info hostname]/c
     glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
 } //[info hostname]/c/globTest
-test filename-16.14 {windows specific globbing} {win} {
+test filename-16.14 {windows specific globbing} {win sharedCdrive} {
     cd [lindex [glob -types d -dir C:/ *] 0]
     expr {".." in [glob {{.,*}*}]}
 } {1}
@@ -1484,12 +1485,12 @@ if {[testConstraint testsetplatform]} {
 test filename-17.2 {windows specific glob with executable} -body {
     makeDirectory execglob
     foreach ext {exe com cmd bat notexecutable} {
-        makeFile contents execglob/abc.$ext
+	makeFile contents execglob/abc.$ext
     }
     lsort [glob -nocomplain -dir [temporaryDirectory]/execglob -tails -types x *]
 } -constraints {win} -cleanup {
     foreach ext {exe com cmd bat ps1 notexecutable} {
-        removeFile execglob/abc.$ext
+	removeFile execglob/abc.$ext
     }
     removeDirectory execglob
 } -result {abc.bat abc.cmd abc.com abc.exe}
