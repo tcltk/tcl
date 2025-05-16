@@ -3494,7 +3494,7 @@ TEBCresume(
     case INST_INCR_ARRAY_STK_IMM:
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
-	increment = TclGetInt1AtPtr(pc+1);
+	increment = TclGetInt1AtPtr(pc + 1);
 	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 2;
@@ -7186,7 +7186,7 @@ TEBCresume(
     case INST_DICT_UPDATE_START:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
 	opnd = TclGetUInt4AtPtr(pc + 5);
-	TRACE(("%u => ", (unsigned)varIdx));
+	TRACE(("%u %u => ", (unsigned)varIdx, opnd));
 	varPtr = LOCAL(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[opnd].clientData;
 	while (TclIsVarLink(varPtr)) {
@@ -7245,8 +7245,8 @@ TEBCresume(
 
     case INST_DICT_UPDATE_END:
 	varIdx = TclGetUInt4AtPtr(pc + 1);
-	opnd = TclGetUInt4AtPtr(pc+5);
-	TRACE(("%u => ", (unsigned)varIdx));
+	opnd = TclGetUInt4AtPtr(pc + 5);
+	TRACE(("%u %u => ", (unsigned)varIdx, opnd));
 	varPtr = LOCAL(varIdx);
 	duiPtr = (DictUpdateInfo *)codePtr->auxDataArrayPtr[opnd].clientData;
 	while (TclIsVarLink(varPtr)) {
@@ -7716,11 +7716,13 @@ TEBCresume(
 	}
 
 	if (tosPtr < initTosPtr) {
+#ifdef TCL_COMPILE_DEBUG
 	    fprintf(stderr,
 		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_T_MODIFIER "d: "
 		    "stack top %" TCL_SIZE_MODIFIER "d < entry stack top %d\n",
 		    (pc - codePtr->codeStart),
 		    CURR_DEPTH, 0);
+#endif
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
 	CLANG_ASSERT(bcFramePtr);
