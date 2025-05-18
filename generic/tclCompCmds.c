@@ -377,7 +377,7 @@ TclCompileArraySetCmd(
 	    OP(			POP);
 	    FWDLABEL(	arrayMade);
 	}
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	goto done;
     }
 
@@ -389,7 +389,7 @@ TclCompileArraySetCmd(
 
 	localIndex = TclFindCompiledLocal(varTokenPtr->start,
 		varTokenPtr->size, 1, envPtr);
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			SWAP);
 	OP4(			UPVAR, localIndex);
 	OP(			POP);
@@ -433,7 +433,7 @@ TclCompileArraySetCmd(
 	Tcl_BytecodeLabel ok;
 	OP(			DUP);
 	OP(			LIST_LENGTH);
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	OP(			BITAND);
 	FWDJUMP(		JUMP_FALSE, ok);
 	PUSH(			"list must have an even number of elements");
@@ -453,7 +453,7 @@ TclCompileArraySetCmd(
     OP( 			FOREACH_STEP);
     OP( 			FOREACH_END);
     STKDELTA(-3);
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
 
   done:
     Tcl_DecrRefCount(literalObj);
@@ -501,7 +501,7 @@ TclCompileArrayUnsetCmd(
 	OP(			POP);
     }
     FWDLABEL(		end);
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -680,7 +680,7 @@ TclCompileCatchCmd(
      */
 
     TclCheckStackDepth(depth+1, envPtr);
-    PUSH(			"0");
+    OP1(			PUSH_CONST, 0);
     OP(				SWAP);
     FWDJUMP(			JUMP, haveResultAndCode);
 
@@ -863,7 +863,7 @@ TclCompileConcatCmd(
 	 * [concat] without arguments just pushes an empty object.
 	 */
 
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     } else if (numWords > UINT_MAX) {
 	return TCL_ERROR;
@@ -978,7 +978,7 @@ TclCompileConstCmd(
     /*
      * The const command's result is an empty string.
      */
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -1469,7 +1469,7 @@ TclCompileDictCreateCmd(
      */
 
   nonConstant:
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     keyToken = TokenAfter(parsePtr->tokenPtr);
     for (i=1 ; i<numWords ; i+=2) {
 	valueToken = TokenAfter(keyToken);
@@ -1504,7 +1504,7 @@ TclCompileDictMergeCmd(
 
     /* TODO: Consider support for compiling expanded args. (less likely) */
     if (numWords < 2) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     } else if (numWords == 2) {
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1716,7 +1716,7 @@ CompileDictEachCmd(
      */
 
     if (collect == TCL_EACH_COLLECT) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	OP4(			STORE_SCALAR, collectVar);
 	OP(			POP);
     }
@@ -1822,7 +1822,7 @@ CompileDictEachCmd(
 	OP4(			LOAD_SCALAR, collectVar);
 	OP14(			UNSET_SCALAR, 0, collectVar);
     } else {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
     return TCL_OK;
 }
@@ -2221,9 +2221,9 @@ IssueDictWithEmpty(
 	     * Case: Direct dict in LVT with empty body.
 	     */
 
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	    OP4(		LOAD_SCALAR, dictVar);
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	    OP(			DICT_EXPAND);
 	    OP4(		DICT_RECOMBINE_IMM, dictVar);
 	}
@@ -2252,14 +2252,14 @@ IssueDictWithEmpty(
 	    PUSH_TOKEN(		varTokenPtr, 1);
 	    OP(			DUP);
 	    OP(			LOAD_STK);
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	    OP(			DICT_EXPAND);
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	    OP(			SWAP);
 	    OP(			DICT_RECOMBINE_STK);
 	}
     }
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
 }
 
 /*
@@ -2331,8 +2331,8 @@ IssueDictWithBodied(
 	} else {
 	    OP4(		LOAD_SCALAR, dictVar);
 	}
-	PUSH(			"");
-    }
+	OP(			PUSH_EMPTY);
+}
     OP(				DICT_EXPAND);
     OP4(			STORE_SCALAR, keysTmp);
     OP(				POP);
@@ -2357,7 +2357,7 @@ IssueDictWithBodied(
 	if (gotPath) {
 	    OP4(		LOAD_SCALAR, pathTmp);
 	} else {
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	}
 	OP4(			LOAD_SCALAR, keysTmp);
 	OP(			DICT_RECOMBINE_STK);
@@ -2365,7 +2365,7 @@ IssueDictWithBodied(
 	if (gotPath) {
 	    OP4(		LOAD_SCALAR, pathTmp);
 	} else {
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	}
 	OP4(			LOAD_SCALAR, keysTmp);
 	OP4(			DICT_RECOMBINE_IMM, dictVar);
@@ -2386,7 +2386,7 @@ IssueDictWithBodied(
 	if (numWords > 3) {
 	    OP4(		LOAD_SCALAR, pathTmp);
 	} else {
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	}
 	OP4(			LOAD_SCALAR, keysTmp);
 	OP(			DICT_RECOMBINE_STK);
@@ -2394,7 +2394,7 @@ IssueDictWithBodied(
 	if (numWords > 3) {
 	    OP4(		LOAD_SCALAR, pathTmp);
 	} else {
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	}
 	OP4(			LOAD_SCALAR, keysTmp);
 	OP4(			DICT_RECOMBINE_IMM, dictVar);
@@ -2538,7 +2538,7 @@ TclCompileErrorCmd(
      * Construct the options. Note that -code and -level are not here.
      */
 
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     if (numWords > 2) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH(			"-errorinfo");
@@ -2732,7 +2732,7 @@ TclCompileForCmd(
      * The for command's result is an empty string.
      */
 
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -3001,7 +3001,7 @@ CompileEachloopCmd(
      */
 
     if (collect != TCL_EACH_COLLECT) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
   done:
@@ -3731,7 +3731,7 @@ TclPushVarName(
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
-		PUSH(		"");
+		OP(		PUSH_EMPTY);
 	    }
 	}
     } else if (interp) {

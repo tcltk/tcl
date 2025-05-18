@@ -251,6 +251,19 @@ ConvertZeroEffectToNOP(
 		}
 	    }
 	    break;
+	case INST_PUSH_EMPTY:
+	    if (nextInst == INST_POP) {
+		blank = size + InstLength(nextInst);
+	    } else if (nextInst == INST_STR_CONCAT1
+		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
+		blank = size + InstLength(nextInst);
+	    }
+	    break;
+	case INST_PUSH_CONST:
+	    if (nextInst == INST_POP) {
+		blank = size + InstLength(nextInst);
+	    }
+	    break;
 	case INST_PUSH:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
@@ -470,6 +483,9 @@ BetterEqualityTesting(
 	    }
 	    break;
 	}
+	case INST_PUSH_EMPTY:
+	    emptyPushInstPtr = currentInstPtr;
+	    break;
 	case INST_EQ:
 	case INST_STR_EQ:
 	    if (emptyPushInstPtr != NULL) {

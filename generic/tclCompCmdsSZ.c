@@ -240,7 +240,7 @@ TclCompileStringCatCmd(
     /* Trivial case, no arg */
 
     if (numWords < 2) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     }
 
@@ -619,7 +619,7 @@ TclCompileStringIsCmd(
 	    OP1(		STR_CLASS, strClassType);
 	    FWDJUMP(		JUMP_TRUE, over);
 	    OP(			POP);
-	    PUSH(		"0");
+	    OP1(		PUSH_CONST, 0);
 	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
 	    OP(			IS_EMPTY);
@@ -642,7 +642,7 @@ TclCompileStringIsCmd(
 		FWDJUMP(	JUMP, over2);
 		FWDLABEL(over);
 		OP(		POP);
-		PUSH(		"1");
+		OP1(		PUSH_CONST, 1);
 		FWDLABEL(over2);
 	    } else {
 		OP(		SWAP);
@@ -655,7 +655,7 @@ TclCompileStringIsCmd(
 		OP(		IS_EMPTY);
 	    } else {
 		OP(		POP);
-		PUSH(		"0");
+		OP1(		PUSH_CONST, 0);
 	    }
 	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
@@ -670,7 +670,7 @@ TclCompileStringIsCmd(
 		OP(		IS_EMPTY);
 	    } else {
 		OP(		POP);
-		PUSH(		"0");
+		OP1(		PUSH_CONST, 0);
 	    }
 	    FWDJUMP(		JUMP, over2);
 	    FWDLABEL(	over);
@@ -691,7 +691,7 @@ TclCompileStringIsCmd(
 	    FWDJUMP(		JUMP_TRUE, isEmpty);
 	    OP(			NUM_TYPE);
 	    FWDJUMP(		JUMP_TRUE, satisfied);
-	    PUSH(		"0");
+	    OP1(		PUSH_CONST, 0);
 	    FWDJUMP(		JUMP, end);
 	    FWDLABEL(	isEmpty);
 	    OP(			POP);
@@ -699,12 +699,12 @@ TclCompileStringIsCmd(
 	} else {
 	    OP(			NUM_TYPE);
 	    FWDJUMP(		JUMP_TRUE, satisfied);
-	    PUSH(		"0");
+	    OP1(		PUSH_CONST, 0);
 	    FWDJUMP(		JUMP, end);
 	    STKDELTA(-1);
 	    FWDLABEL(	satisfied);
 	}
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	FWDLABEL(	end);
 	return TCL_OK;
     }
@@ -980,7 +980,7 @@ TclCompileStringRangeCmd(
     if (idx1 == (int)TCL_INDEX_NONE) {
 	/* [string range $s end+1 $last] must be empty string */
 	OP(			POP);
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     }
 
@@ -995,7 +995,7 @@ TclCompileStringRangeCmd(
     if (idx2 == (int)TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(			POP);
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     }
 
@@ -1179,7 +1179,7 @@ TclCompileStringReplaceCmd(
 	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix too => empty result */
 		OP(		POP);		/* Pop original */
-		PUSH(		"");
+		OP(		PUSH_EMPTY);
 		return TCL_OK;
 	    }
 	    OP44(		STR_RANGE_IMM, last + 1, TCL_INDEX_END);
@@ -1208,7 +1208,7 @@ TclCompileStringReplaceCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 4);
     } else {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
     OP(				STR_REPLACE);
     return TCL_OK;
@@ -1513,7 +1513,7 @@ TclSubstCompile(
 
     tokenPtr = parse.tokenPtr;
     if (tokenPtr->type != TCL_TOKEN_TEXT && tokenPtr->type != TCL_TOKEN_BS) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	count++;
     }
 
@@ -2154,7 +2154,7 @@ IssueSwitchChainedTests(
 			 * when the RE == "".
 			 */
 
-			PUSH(	"1");
+			OP1(	PUSH_CONST, 1);
 			break;
 		    }
 
@@ -2271,7 +2271,7 @@ IssueSwitchChainedTests(
 
     if (!foundDefault) {
 	OP(			POP);
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
     /*
@@ -2454,7 +2454,7 @@ IssueSwitchJumpTable(
 
     if (!foundDefault) {
 	FWDLABEL(	jumpToDefault);
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
     /*
@@ -3111,7 +3111,7 @@ IssueTryClausesInstructions(
 	FWDJUMP(		JUMP, afterBody);
 	STKDELTA(-1);
     } else {
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			SWAP);
 	FWDJUMP(		JUMP, pushReturnOptions);
 	STKDELTA(-2);
@@ -3200,7 +3200,7 @@ IssueTryClausesInstructions(
 
 	    if (handlers[i].tokenPtr[1].size == 0) {
 		// Empty handler body; can't generate non-trivial result tuple
-		PUSH(		"");
+		OP(		PUSH_EMPTY);
 		FWDJUMP(	JUMP, noError[i]);
 	    } else {
 		range = MAKE_CATCH_RANGE();
@@ -3218,7 +3218,7 @@ IssueTryClausesInstructions(
 		OP(		PUSH_RETURN_CODE);
 		OP(		END_CATCH);
 
-		PUSH(		"1");
+		OP1(		PUSH_CONST, 1);
 		OP(		EQ);
 		FWDJUMP(	JUMP_FALSE, dontSpliceDuring);
 		// Next bit isn't DICT_SET; alter which dict is in optionsVar
@@ -3333,7 +3333,7 @@ IssueTryTraplessClausesInstructions(
 	FWDJUMP(		JUMP, afterBody);
 	STKDELTA(-1);
     } else {
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			SWAP);
 	FWDJUMP(		JUMP, pushReturnOptions);
 	STKDELTA(-2);
@@ -3396,7 +3396,7 @@ IssueTryTraplessClausesInstructions(
 
 	    if (handlers[i].tokenPtr[1].size == 0) {
 		// Empty handler body; can't generate non-trivial result tuple
-		PUSH(		"");
+		OP(		PUSH_EMPTY);
 		FWDJUMP(	JUMP, noError[i]);
 	    } else {
 		range = MAKE_CATCH_RANGE();
@@ -3414,7 +3414,7 @@ IssueTryTraplessClausesInstructions(
 		OP(		PUSH_RETURN_CODE);
 		OP(		END_CATCH);
 
-		PUSH(		"1");
+		OP1(		PUSH_CONST, 1);
 		OP(		EQ);
 		FWDJUMP(	JUMP_FALSE, dontSpliceDuring);
 		// Next bit isn't DICT_SET; alter which dict is in optionsVar
@@ -3520,7 +3520,7 @@ IssueTryClausesFinallyInstructions(
 	/*
 	 * Fake a return code to go with our result.
 	 */
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			SWAP);
 	FWDJUMP(		JUMP, pushReturnOptions);
 	STKDELTA(-2);
@@ -3644,7 +3644,7 @@ IssueTryClausesFinallyInstructions(
 	}
 	BODY(			handlers[i].tokenPtr, 5 + i*4);
 	ExceptionRangeEnds(envPtr, range);
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			PUSH_RETURN_OPTIONS);
 	OP4(			REVERSE, 3);
 	FWDJUMP(		JUMP, endCatch);
@@ -3670,7 +3670,7 @@ IssueTryClausesFinallyInstructions(
 	OP4(			STORE_SCALAR, resultLocal);
 	OP(			POP);
 
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	OP(			EQ);
 	FWDJUMP(		JUMP_FALSE, dontSpliceDuring);
 	// Next bit isn't DICT_SET; alter which dict is in optionsLocal
@@ -3735,7 +3735,7 @@ IssueTryClausesFinallyInstructions(
     OP(				PUSH_RETURN_CODE);
     OP(				END_CATCH);
 
-    PUSH(			"1");
+    OP1(			PUSH_CONST, 1);
     OP(				EQ);
     FWDJUMP(			JUMP_FALSE, dontSpliceDuring);
     // Next bit isn't DICT_SET; alter which dict is in optionsLocal
@@ -3826,7 +3826,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	/*
 	 * Fake a return code to go with our result.
 	 */
-	PUSH(			"0");
+	OP1(			PUSH_CONST, 0);
 	OP(			SWAP);
 	FWDJUMP(		JUMP, pushReturnOptions);
 	STKDELTA(-2);
@@ -3948,7 +3948,7 @@ IssueTryTraplessClausesFinallyInstructions(
 	OP(			PUSH_RETURN_CODE);
 	OP(			END_CATCH);
 
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	OP(			EQ);
 	FWDJUMP(		JUMP_FALSE, dontSpliceDuring);
 	// Next bit isn't DICT_SET; alter which dict is in optionsLocal
@@ -4008,7 +4008,7 @@ IssueTryTraplessClausesFinallyInstructions(
     OP(				PUSH_RETURN_CODE);
     OP(				END_CATCH);
 
-    PUSH(			"1");
+    OP1(			PUSH_CONST, 1);
     OP(				EQ);
     FWDJUMP(			JUMP_FALSE, dontSpliceDuring);
     // Next bit isn't DICT_SET; alter which dict is in optionsLocal
@@ -4082,7 +4082,7 @@ IssueTryFinallyInstructions(
     OP(				END_CATCH);
 
     // Don't forget original error
-    PUSH(			"1");
+    OP1(			PUSH_CONST, 1);
     OP(				EQ);
     FWDJUMP(			JUMP_FALSE, dontSpliceDuring);
     PUSH(			"-during");
@@ -4240,7 +4240,7 @@ TclCompileUnsetCmd(
 
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -4397,7 +4397,7 @@ TclCompileWhileCmd(
      */
 
   pushResult:
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -4432,7 +4432,7 @@ TclCompileYieldCmd(
     }
 
     if (parsePtr->numWords == 1) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     } else {
 	DefineLineInformation;	/* TIP #280 */
 	Tcl_Token *valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -4651,7 +4651,7 @@ CompileComparisonOpCmd(
 	return TCL_ERROR;
     }
     if (parsePtr->numWords < 3) {
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
     } else if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 1);
@@ -4818,7 +4818,7 @@ TclCompilePowOpCmd(
 	PUSH_TOKEN(		tokenPtr, words);
     }
     if (parsePtr->numWords <= 2) {
-	PUSH(			"1");
+	OP1(			PUSH_CONST, 1);
 	words++;
     }
     while (--words > 1) {

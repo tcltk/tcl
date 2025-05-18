@@ -2444,12 +2444,12 @@ CompileExprTree(
 		} else {
 		    FWDJUMP(	JUMP_TRUE, pc1);
 		}
-		PUSH_STRING(	(nodePtr->lexeme == AND) ? "1" : "0");
+		OP1(		PUSH_CONST, nodePtr->lexeme == AND);
 		FWDJUMP(	JUMP, pc2);
 		STKDELTA(-1);
 		FWDLABEL(pc1);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
-		PUSH_STRING(	(nodePtr->lexeme == AND) ? "0" : "1");
+		OP1(		PUSH_CONST, nodePtr->lexeme == OR);
 		FWDLABEL(pc2);
 		convert = 0;
 		freePtr = jumpPtr;
