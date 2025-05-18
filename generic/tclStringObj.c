@@ -724,7 +724,7 @@ Tcl_GetRange(
     Tcl_Size last)		/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
-					 * range. */
+				 * range. */
     String *stringPtr;
     Tcl_Size length = 0;
 
@@ -803,8 +803,8 @@ TclGetRange(
     Tcl_Size first,		/* First index of the range. */
     Tcl_Size last)		/* Last index of the range. */
 {
-    Tcl_Obj *newObjPtr;	 	/* The Tcl object to return that is the new
-					 * range. */
+    Tcl_Obj *newObjPtr;		/* The Tcl object to return that is the new
+				 * range. */
     Tcl_Size length = 0;
 
     if (first < 0) {

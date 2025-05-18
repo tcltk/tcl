@@ -29,7 +29,7 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 if {[testConstraint win] && ![info exists ::env(CI)] &&
     [info exists ::env(LOCALAPPDATA)] &&
     [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
-        testConstraint haveWinget 1
+	testConstraint haveWinget 1
 }
 
 unset -nocomplain path
@@ -761,11 +761,11 @@ foreach cmdBuiltin {
     title type ver vol
 } {
     test auto_execok-$cmdBuiltin-1.0 "auto_execok $cmdBuiltin" \
-        -constraints win \
-        -body {
-            string equal [auto_execok $cmdBuiltin] \
-                "[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
-        } -result 1
+	-constraints win \
+	-body {
+	    string equal [auto_execok $cmdBuiltin] \
+		"[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
+	} -result 1
 }
 unset cmdBuiltin
 

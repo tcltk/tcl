@@ -1067,20 +1067,20 @@ test lseq-bug-f4a4bd7f1070-1 {} -body {
 
 test lseq-bug-7d3101bf28-0 {Bug 7d3101bf28 - crash on negative index} -body {
     list \
-        [try [list lindex [lseq 10] -1]] \
-        [eval [list lindex [lseq 10] -1]]
+	[try [list lindex [lseq 10] -1]] \
+	[eval [list lindex [lseq 10] -1]]
 } -result {{} {}}
 
 test lseq-bug-7d3101bf28-1 {Bug 7d3101bf28 - crash on out of bounds index} -body {
     list \
-        [try [list lindex [lseq 10] 10]] \
-        [eval [list lindex [lseq 10] 10]]
+	[try [list lindex [lseq 10] 10]] \
+	[eval [list lindex [lseq 10] 10]]
 } -result {{} {}}
 
 test lseq-bug-7d3101bf28-2 {Bug 7d3101bf28 - crash on error in index syntax} -body {
     list \
-        [try [list lindex [lseq 10] foo]] \
-        [eval [list lindex [lseq 10] foo]]
+	[try [list lindex [lseq 10] foo]] \
+	[eval [list lindex [lseq 10] foo]]
 } -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
 
 test lseq-bug-452b103a74-0 {Bug 452b103a74 - crash on nested indices} -body {

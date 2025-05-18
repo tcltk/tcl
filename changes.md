@@ -11,8 +11,8 @@ to the userbase.
 
 # Bug fixes
  - [Better error-message than "interpreter uses an incompatible stubs mechanism"](https://core.tcl-lang.org/tcl/tktview/fc3509)
- - [$interp eval $lambda] after [eval $lambda] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/98006f)
- - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/67d5f7)
+ - [\[$interp eval $lambda\] after \[eval $lambda\] or vice versa fails](https://core.tcl-lang.org/tcl/tktview/67d5f7)
+ - [tcl::mathfunc::isunordered inconsistency with some integer values](https://core.tcl-lang.org/tcl/tktview/98006f)
  - [test lseq hangs with -Os](https://core.tcl-lang.org/tcl/tktview/d2a3c5)
  - [exec does not handle app execution aliases on Windows](https://core.tcl-lang.org/tcl/tktview/4f0b57)
  - [auto_execok does not find several built-in cmd commands](https://core.tcl-lang.org/tcl/tktview/4e2c8b)
@@ -23,6 +23,10 @@ to the userbase.
  - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f)
  - [Tcl_InitStubs compatibility for 9.1](https://core.tcl-lang.org/tcl/tktview/fd8341)
  - [proc with more than 2**31 variables](https://core.tcl-lang.org/tcl/tktview/92aeb8)
+ - [scan "long mantissa" %g](https://core.tcl-lang.org/tcl/tktview/42d14c)
+ - ["encoding system": wrong result without manifest](https://core.tcl-lang.org/tcl/tktview/8ffd8c)
+ - [lseq crash on out-of-range index](https://core.tcl-lang.org/tcl/tktview/7d3101)
+ - [lseq crash on nested indices](https://core.tcl-lang.org/tcl/tktview/452b10)
 
 # Incompatibilities
  - No known incompatibilities with the Tcl 9.0.0 public interface.
