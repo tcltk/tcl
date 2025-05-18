@@ -7112,7 +7112,7 @@ TEBCresume(
     }
     case INST_DICT_PUT:
 	dictPtr = OBJ_AT_DEPTH(2);
-	TRACE(("\"%.30s\" "\"%.30s\" "\"%.30s\" => ",
+	TRACE(("\"%.30s\" \"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	allocateDict = Tcl_IsShared(dictPtr);
 	if (allocateDict) {
@@ -7134,7 +7134,7 @@ TEBCresume(
 	}
     case INST_DICT_REMOVE:
 	dictPtr = OBJ_UNDER_TOS;
-	TRACE(("\"%.30s\" "\"%.30s\" => ",
+	TRACE(("\"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_AT_TOS)));
 	allocateDict = Tcl_IsShared(dictPtr);
 	if (allocateDict) {
