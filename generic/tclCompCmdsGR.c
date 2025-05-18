@@ -140,7 +140,7 @@ TclCompileGlobalCmd(
      */
 
     OP(				POP);
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -381,7 +381,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    PUSH(		"");
+	    OP(			PUSH_EMPTY);
 	}
     }
 
@@ -887,7 +887,7 @@ TclCompileLappendCmd(
      */
 
     if (numWords == 2) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     } else {
 	valueTokenPtr = TokenAfter(varTokenPtr);
 	for (i = 2 ; i < numWords ; i++) {
@@ -1151,7 +1151,7 @@ TclCompileListCmd(
 	 * [list] without arguments just pushes an empty object.
 	 */
 
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
 	return TCL_OK;
     }
 
@@ -1715,12 +1715,12 @@ TclCompileNamespaceQualifiersCmd(
     }
 
     PUSH_TOKEN(			tokenPtr, 1);
-    PUSH(			"0");
+    OP1(			PUSH_CONST, 0);
     PUSH(			"::");
     OP4(			OVER, 2);
     OP(				STR_FIND_LAST);
     BACKLABEL(		off);
-    PUSH(			"1");
+    OP1(			PUSH_CONST, 1);
     OP(				SUB);
     OP4(			OVER, 2);
     OP4(			OVER, 1);
@@ -1757,7 +1757,7 @@ TclCompileNamespaceTailCmd(
     OP4(			OVER, 1);
     OP(				STR_FIND_LAST);
     OP(				DUP);
-    PUSH(			"0");
+    OP1(			PUSH_CONST, 0);
     OP(				GE);
     FWDJUMP(			JUMP_FALSE, dontSkipSeparator);
     PUSH(			"2");
@@ -1824,7 +1824,7 @@ TclCompileNamespaceUpvarCmd(
      */
 
     OP(				POP);
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -1976,7 +1976,7 @@ TclCompileRegexpCmd(
 	     * The semantics of regexp are always match on re == "".
 	     */
 
-	    PUSH(		"1");
+	    OP1(		PUSH_CONST, 1);
 	    return TCL_OK;
 	}
 
@@ -2321,7 +2321,7 @@ TclCompileReturnCmd(
 	 * No explict result argument, so default result is empty string.
 	 */
 
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
     /*
@@ -2395,7 +2395,7 @@ TclCompileReturnCmd(
     if (explicitResult) {
 	PUSH_TOKEN(		wordTokenPtr, numWords - 1);
     } else {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
 
     /*
@@ -2522,7 +2522,7 @@ TclCompileUpvarCmd(
 	    if (!(numWords % 2)) {
 		return TCL_ERROR;
 	    }
-	    PUSH(		"1");
+	    OP1(		PUSH_CONST, 1);
 	    otherTokenPtr = tokenPtr;
 	    i = 1;
 	}
@@ -2553,7 +2553,7 @@ TclCompileUpvarCmd(
      */
 
     OP(				POP);
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 
@@ -2636,7 +2636,7 @@ TclCompileVariableCmd(
      * Set the result to empty
      */
 
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 

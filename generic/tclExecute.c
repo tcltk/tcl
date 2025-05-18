@@ -872,6 +872,8 @@ TclCreateExecEnv(
     Tcl_IncrRefCount(eePtr->constants[0]);
     TclNewIntObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
+    TclNewObj(eePtr->constants[2]);
+    Tcl_IncrRefCount(eePtr->constants[2]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
     eePtr->corPtr = NULL;
@@ -950,6 +952,7 @@ TclDeleteExecEnv(
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
+    TclDecrRefCount(eePtr->constants[2]);
     if (eePtr->callbackPtr && !cachedInExit) {
 	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
     }
@@ -2068,6 +2071,7 @@ TEBCresume(
 
 #define LOCAL(i)	(&compiledLocals[(i)])
 #define TCONST(i)	(constants[(i)])
+#define EMPTY_CONST()	(constants[2])
 
     /*
      * These macros are just meant to save some global variables that are not
@@ -2343,6 +2347,17 @@ TEBCresume(
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt4AtPtr(pc + 1)]);
 	TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc + 1)), OBJ_AT_TOS);
 	inst = *(pc += 5);
+	goto peepholeStart;
+    } else if (inst == INST_PUSH_EMPTY) {
+	PUSH_OBJECT(EMPTY_CONST());	// The empty object
+	TRACE(("=> OK"));
+	inst = *(pc += 1);
+	goto peepholeStart;
+    } else if (inst == INST_PUSH_CONST) {
+	unsigned idx = TclGetUInt1AtPtr(pc + 1);
+	PUSH_OBJECT(TCONST(idx != 0 ? 1 : 0));
+	TRACE_WITH_OBJ(("%u => ", idx), OBJ_AT_TOS);
+	inst = *(pc += 2);
 	goto peepholeStart;
     } else if (inst == INST_START_CMD) {
 	/*
@@ -2641,6 +2656,19 @@ TEBCresume(
 	NEXT_INST_F(5, 0, 1);
     break;
 
+    case INST_PUSH_EMPTY:
+	objResultPtr = EMPTY_CONST();
+	TRACE(("=> OK"));
+	NEXT_INST_F(1, 0, 1);
+    break;
+    case INST_PUSH_CONST: {
+	unsigned idx = TclGetUInt1AtPtr(pc + 1);
+	objResultPtr = TCONST(idx != 0 ? 1 : 0);
+	TRACE_WITH_OBJ(("%u => ", idx), objResultPtr);
+	NEXT_INST_F(2, 0, 1);
+    }
+    break;
+
     case INST_POP:
 	TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
 	objPtr = POP_OBJECT();
@@ -2866,7 +2894,7 @@ TEBCresume(
 	 * Nothing was expanded, return {}.
 	 */
 
-	TclNewObj(objResultPtr);
+	objResultPtr = EMPTY_CONST();
 	NEXT_INST_F(1, 0, 1);
     break;
 
@@ -3564,7 +3592,7 @@ TEBCresume(
 		     * The variable doesn't exist yet. Just create it with an
 		     * empty initial value.
 		     */
-		    TclNewObj(valueToAssign);
+		    valueToAssign = EMPTY_CONST();
 		} else {
 		    valueToAssign = valuePtr;
 		}
@@ -4985,7 +5013,7 @@ TEBCresume(
 		CACHE_STACK_INFO();
 		if (objResultPtr == NULL) {
 		    /* Index is out of range, return empty result. */
-		    TclNewObj(objResultPtr);
+		    objResultPtr = EMPTY_CONST();
 		}
 		Tcl_IncrRefCount(objResultPtr); // reference held here
 		goto lindexDone;
@@ -5072,7 +5100,7 @@ TEBCresume(
 		}
 		CACHE_STACK_INFO();
 	    } else {
-		TclNewObj(objResultPtr);
+		objResultPtr = EMPTY_CONST();
 	    }
 
 	    pcAdjustment = 5;
@@ -5094,7 +5122,7 @@ TEBCresume(
 	if (index >= 0 && index < objc) {
 	    objResultPtr = objv[index];
 	} else {
-	    TclNewObj(objResultPtr);
+	    objResultPtr = EMPTY_CONST();
 	}
 
     lindexFastPath2:
@@ -5258,7 +5286,7 @@ TEBCresume(
 
 	if (toIdx == TCL_INDEX_NONE) {
 	emptyList:
-	    TclNewObj(objResultPtr);
+	    objResultPtr = EMPTY_CONST();
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
@@ -5616,7 +5644,7 @@ TEBCresume(
 	CACHE_STACK_INFO();
 
 	if (index < 0 || index >= slength) {
-	    TclNewObj(objResultPtr);
+	    objResultPtr = EMPTY_CONST();
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
 		    Tcl_GetBytesFromObj(NULL, valuePtr, (Tcl_Size *)NULL)+index, 1);
@@ -5633,7 +5661,7 @@ TEBCresume(
 	     * practical use.
 	     */
 	    if (ch == -1) {
-		TclNewObj(objResultPtr);
+		objResultPtr = EMPTY_CONST();
 	    } else {
 		slength = Tcl_UniCharToUtf(ch, buf);
 		objResultPtr = Tcl_NewStringObj(buf, slength);
@@ -5662,7 +5690,7 @@ TEBCresume(
 	CACHE_STACK_INFO();
 
 	if (toIdx == TCL_INDEX_NONE) {
-	    TclNewObj(objResultPtr);
+	    objResultPtr = EMPTY_CONST();
 	} else {
 	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	}
@@ -5687,7 +5715,7 @@ TEBCresume(
 	toIdx = TclIndexDecode((int)toIdx, slength - 1);
 	fromIdx = TclIndexDecode((int)fromIdx, slength - 1);
 	if (toIdx == TCL_INDEX_NONE) {
-	    TclNewObj(objResultPtr);
+	    objResultPtr = EMPTY_CONST();
 	} else {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	}
@@ -6842,7 +6870,7 @@ TEBCresume(
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
 		    if (valIndex >= listLen) {
-			TclNewObj(valuePtr);
+			valuePtr = EMPTY_CONST();
 		    } else {
 			DECACHE_STACK_INFO();
 			if (elements) {
@@ -6857,7 +6885,7 @@ TEBCresume(
 			    }
 			    if (valuePtr == NULL) {
 				/* Permitted for Tcl_LOI to return NULL */
-				TclNewObj(valuePtr);
+				valuePtr = EMPTY_CONST();
 			    }
 			}
 			CACHE_STACK_INFO();
@@ -7516,7 +7544,7 @@ TEBCresume(
 	}
     pushDictIteratorResult:
 	if (done) {
-	    TclNewObj(emptyPtr);
+	    emptyPtr = EMPTY_CONST();
 	    PUSH_OBJECT(emptyPtr);
 	    PUSH_OBJECT(emptyPtr);
 	} else {
@@ -8134,6 +8162,7 @@ TEBCresume(
 #undef auxObjList
 #undef catchTop
 #undef TCONST
+#undef EMPTY_CONST
 #undef esPtr
 
 static int

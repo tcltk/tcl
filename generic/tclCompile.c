@@ -955,6 +955,12 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
+    TCL_INSTRUCTION_ENTRY(
+	"pushEmpty",		+1),
+	/* Pushes an empty string. */
+    TCL_INSTRUCTION_ENTRY1(
+	"pushConstant", 2,	+1,	  OPERAND_UINT1),
+	/* Pushes either a constant 0 or 1. Operand must be 0 or 1. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2589,7 +2595,7 @@ TclCompileScript(
 	 * simple bytecode that makes that happen.
 	 */
 
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     } else {
 	/*
 	 * We compiled at least one command to bytecode.  The routine
@@ -2873,7 +2879,7 @@ TclCompileTokens(
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	PUSH(			"");
+	OP(			PUSH_EMPTY);
     }
     Tcl_DStringFree(&textBuffer);
 
@@ -3043,7 +3049,7 @@ TclCompileNoOp(
 	    OP(			POP);
 	}
     }
-    PUSH(			"");
+    OP(				PUSH_EMPTY);
     return TCL_OK;
 }
 

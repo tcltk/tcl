@@ -1619,7 +1619,7 @@ typedef struct CoroutineData {
 typedef struct ExecEnv {
     ExecStack *execStackPtr;	/* Points to the first item in the evaluation
 				 * stack on the heap. */
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
+    Tcl_Obj *constants[3];	/* Pointers to constant "0", "1" and "" objs. */
     struct Tcl_Interp *interp;	/* Owning interpreter. */
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
