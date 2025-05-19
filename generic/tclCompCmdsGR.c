@@ -280,14 +280,12 @@ TclCompileIfCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    if (IS_TOKEN_LITERALLY(tokenPtr, "then")) {
-		tokenPtr = TokenAfter(tokenPtr);
-		wordIdx++;
-		if (wordIdx >= numWords) {
-		    code = TCL_ERROR;
-		    goto done;
-		}
+	if (IS_TOKEN_LITERALLY(tokenPtr, "then")) {
+	    tokenPtr = TokenAfter(tokenPtr);
+	    wordIdx++;
+	    if (wordIdx >= numWords) {
+		code = TCL_ERROR;
+		goto done;
 	    }
 	}
 
@@ -296,7 +294,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    BODY(tokenPtr, wordIdx);
+	    BODY(		tokenPtr, wordIdx);
 	}
 
 	if (realCond) {
@@ -363,7 +361,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    BODY(tokenPtr, wordIdx);
+	    BODY(		tokenPtr, wordIdx);
 	}
 
 	/*
