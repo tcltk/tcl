@@ -15,7 +15,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include "tclParse.h"
 #include <assert.h>
 
 /*
@@ -2079,28 +2078,6 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
-/*
- * Test if the token is empty.
- * We don't test if it's just comments. Fixes please, if you care.
- */
-static inline int
-IsEmptyToken(
-    const Tcl_Token *tokenPtr)
-{
-    const char *ptr, *end;
-    int ucs4, chLen = 0;
-
-    end = tokenPtr[1].start + tokenPtr[1].size;
-    for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
-	chLen = TclUtfToUniChar(ptr, &ucs4);
-	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
-	if (ucs4 < 0 || ucs4 > 255 || tclCharTypeTable[ucs4] != TYPE_SPACE) {
-	    return 0;
-	}
-    }
-    return 1;
-}
-
 /* Compile [dict with]. Delegates code issuing to IssueDictWithEmpty() and
  * IssueDictWithBodied(). */
 int
@@ -2143,11 +2120,9 @@ TclCompileDictWithCmd(
      * Test if the last word is an empty script; if so, we can compile it in
      * all cases, but if it is non-empty we need local variable table entries
      * to hold the temporary variables (used to keep stack usage simple).
-     *
-     * We don't test if it's just comments. Fixes please, if you care.
      */
 
-    if (!IsEmptyToken(tokenPtr)) {
+    if (!TclIsEmptyToken(tokenPtr)) {
 	if (!EnvHasLVT(envPtr)) {
 	    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
 		    envPtr);
@@ -2673,7 +2648,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    BODY(startTokenPtr, 1);
+    BODY(			startTokenPtr, 1);
     OP(				POP);
 
     /*
@@ -2708,7 +2683,7 @@ TclCompileForCmd(
      */
 
     CONTINUE_TARGET(	bodyRange);
-    if (!IsEmptyToken(nextTokenPtr)) {
+    if (!TclIsEmptyToken(nextTokenPtr)) {
 	nextRange = MAKE_LOOP_RANGE();
 	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
 	CATCH_RANGE(nextRange) {
