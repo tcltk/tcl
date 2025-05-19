@@ -603,11 +603,11 @@ typedef struct ByteCode {
 #elif defined(ALLOW_DEPRECATED_OPCODES)
 #define DEPRECATED_OPCODE(name) \
     name
-#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
-	|| (defined(_MSC_VER) && (_MSC_VER >= 1900))
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #define DEPRECATED_OPCODE(name) \
     name [[deprecated("use 4-byte operand version instead")]]
 #elif defined(__GNUC__) || defined(__clang__)
+/* Technically missing guards for some very old gcc/clang versions. */
 #define DEPRECATED_OPCODE(name) \
     name __attribute__((deprecated ("use 4-byte operand version instead")))
 #else
