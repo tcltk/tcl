@@ -15,6 +15,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclParse.h"
 #include <assert.h>
 
 /*
@@ -2078,6 +2079,10 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
+/*
+ * Test if the token is empty.
+ * We don't test if it's just comments. Fixes please, if you care.
+ */
 static inline int
 IsEmptyToken(
     const Tcl_Token *tokenPtr)
@@ -2088,7 +2093,8 @@ IsEmptyToken(
     end = tokenPtr[1].start + tokenPtr[1].size;
     for (ptr = tokenPtr[1].start; ptr < end; ptr += chLen) {
 	chLen = TclUtfToUniChar(ptr, &ucs4);
-	if (!Tcl_UniCharIsSpace(ucs4)) {
+	// Can't use Tcl_UniCharIsSpace; see test dict-22.24
+	if (ucs4 < 0 || ucs4 > 255 || tclCharTypeTable[ucs4] != TYPE_SPACE) {
 	    return 0;
 	}
     }
