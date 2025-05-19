@@ -2638,7 +2638,7 @@ TclCompileForCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    Tcl_ExceptionRange bodyRange, nextRange;
+    Tcl_ExceptionRange bodyRange, nextRange = -1;
     Tcl_BytecodeLabel evalBody, testCondition;
 
     if (parsePtr->numWords != 5) {
@@ -2707,13 +2707,15 @@ TclCompileForCmd(
      * TCL_CONTINUE but rather just TCL_BREAK.
      */
 
-    nextRange = MAKE_LOOP_RANGE();
-    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     CONTINUE_TARGET(	bodyRange);
-    CATCH_RANGE(nextRange) {
-	BODY(			nextTokenPtr, 3);
+    if (!IsEmptyToken(nextTokenPtr)) {
+	nextRange = MAKE_LOOP_RANGE();
+	envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
+	CATCH_RANGE(nextRange) {
+	    BODY(		nextTokenPtr, 3);
+	}
+	OP(			POP);
     }
-    OP(				POP);
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -2730,9 +2732,11 @@ TclCompileForCmd(
      */
 
     BREAK_TARGET(	bodyRange);
-    BREAK_TARGET(	nextRange);
     FINALIZE_LOOP(bodyRange);
-    FINALIZE_LOOP(nextRange);
+    if (nextRange != -1) {
+	BREAK_TARGET(	nextRange);
+	FINALIZE_LOOP(nextRange);
+    }
 
     /*
      * The for command's result is an empty string.
