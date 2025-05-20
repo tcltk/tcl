@@ -104,6 +104,9 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
+declare 22 {
+    char *Tcl_DbGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr, const char *file, int line)
+}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
 	    Tcl_Size numBytes, const char *file, int line)
@@ -1037,6 +1040,9 @@ declare 338 {
 }
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+}
+declare 341 {
+    char *Tcl_AttemptGetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
