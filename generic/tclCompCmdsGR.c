@@ -2106,7 +2106,7 @@ TclCompileRegsubCmd(
 	    goto done;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
-	Tcl_DecrRefCount(patternObj);
+	Tcl_BounceRefCount(patternObj);
 	TclNewObj(patternObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	    goto done;
@@ -2186,12 +2186,8 @@ TclCompileRegsubCmd(
 
   done:
     Tcl_DStringFree(&pattern);
-    if (patternObj) {
-	Tcl_DecrRefCount(patternObj);
-    }
-    if (replacementObj) {
-	Tcl_BounceRefCount(replacementObj);
-    }
+    Tcl_BounceRefCount(patternObj);
+    Tcl_BounceRefCount(replacementObj);
     return result;
 }
 
