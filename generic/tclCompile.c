@@ -1998,6 +1998,7 @@ TclFreeCompileEnv(
  * Side effects:
  *	When returning true, appends the known value of the word to the
  *	unshared Tcl_Obj (*valuePtr), unless valuePtr is NULL.
+ *	NB: Does *NOT* manipulate the refCount of valuePtr.
  *
  *----------------------------------------------------------------------
  */
