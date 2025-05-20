@@ -825,7 +825,7 @@ TclCompileClockReadingCmd(
 	return TCL_ERROR;
     }
 
-    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData), envPtr);
+    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData2), envPtr);
 
     return TCL_OK;
 }

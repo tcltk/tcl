@@ -10,6 +10,6 @@ Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
 writing Tcl scripts.
 
-# Bug fixes
- - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
+## Continued 64-bit capacity: Command line arguments larger than 2Gb
+
 

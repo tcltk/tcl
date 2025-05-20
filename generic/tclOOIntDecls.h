@@ -5,6 +5,10 @@
 #ifndef _TCLOOINTDECLS
 #define _TCLOOINTDECLS
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_MethodType void
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -181,5 +185,11 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #endif /* defined(USE_TCLOO_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodType
+#   undef TclOOMakeProcInstanceMethod
+#   undef tclOOMakeProcMethod
+#endif
 
 #endif /* _TCLOOINTDECLS */
