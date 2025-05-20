@@ -1450,7 +1450,6 @@ TclCompileDictCreateCmd(
 	keyToken = TokenAfter(valueToken);
 	Tcl_DictObjPut(NULL, dictObj, keyObj, valueObj);
 	Tcl_BounceRefCount(keyObj);
-	Tcl_BounceRefCount(valueObj);
     }
 
     /*
