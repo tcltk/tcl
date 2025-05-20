@@ -7115,16 +7115,14 @@ TEBCresume(
     }
     case INST_DICT_PUT:
 	dictPtr = OBJ_AT_DEPTH(2);
-	TRACE(("\"%.30s\" "\"%.30s\" "\"%.30s\" => ",
+	TRACE(("\"%.30s\" \"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	allocateDict = Tcl_IsShared(dictPtr);
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (Tcl_DictObjPut(interp, dictPtr, OBJ_UNDER_TOS, OBJ_AT_TOS) != TCL_OK) {
-	    if (allocateDict) {
-		Tcl_BounceRefCount(dictPtr);
-	    }
+	    Tcl_BounceRefCount(dictPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -7137,16 +7135,14 @@ TEBCresume(
 	}
     case INST_DICT_REMOVE:
 	dictPtr = OBJ_UNDER_TOS;
-	TRACE(("\"%.30s\" "\"%.30s\" => ",
+	TRACE(("\"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_AT_TOS)));
 	allocateDict = Tcl_IsShared(dictPtr);
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
 	if (Tcl_DictObjRemove(interp, dictPtr, OBJ_AT_TOS) != TCL_OK) {
-	    if (allocateDict) {
-		Tcl_BounceRefCount(dictPtr);
-	    }
+	    Tcl_BounceRefCount(dictPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -7356,9 +7352,7 @@ TEBCresume(
 
 	if (Tcl_DictObjGet(interp, dictPtr, OBJ_UNDER_TOS,
 		&valuePtr) != TCL_OK) {
-	    if (allocateDict) {
-		TclDecrRefCount(dictPtr);
-	    }
+	    Tcl_BounceRefCount(dictPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -7405,9 +7399,7 @@ TEBCresume(
 		if (Tcl_ListObjAppendElement(interp, valuePtr,
 			OBJ_AT_TOS) != TCL_OK) {
 		    TclDecrRefCount(valuePtr);
-		    if (allocateDict) {
-			TclDecrRefCount(dictPtr);
-		    }
+		    Tcl_BounceRefCount(dictPtr);
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
@@ -7415,9 +7407,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_ListObjAppendElement(interp, valuePtr,
 			OBJ_AT_TOS) != TCL_OK) {
-		    if (allocateDict) {
-			TclDecrRefCount(dictPtr);
-		    }
+		    Tcl_BounceRefCount(dictPtr);
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
