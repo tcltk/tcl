@@ -62,8 +62,6 @@ InstructionDesc const tclInstructionTable[] = {
 	"done",			-1),
 	/* Finish ByteCode execution and return stktop (top stack item) */
 
-    REMOVED_INSTRUCTION("push1"),
-	/* Push object at ByteCode objArray[op1] */
     TCL_INSTRUCTION_ENTRY1(
 	"push",		  5,	+1,	  OPERAND_LIT4),
 	/* Push object at ByteCode objArray[op4] */
@@ -76,8 +74,6 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY1(
 	"strcat",	  2,	INT_MIN,  OPERAND_UINT1),
 	/* Concatenate the top op1 items and push result */
-    REMOVED_INSTRUCTION("invokeStk1"),
-	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
     TCL_INSTRUCTION_ENTRY1(
 	"invokeStk",	  5,	INT_MIN,  OPERAND_UINT4),
 	/* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
@@ -88,16 +84,9 @@ InstructionDesc const tclInstructionTable[] = {
 	"exprStk",		0),
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
 
-    REMOVED_INSTRUCTION("loadScalar1"),
-	/* Load scalar variable at index op1 <= 255 in call frame */
     TCL_INSTRUCTION_ENTRY1(
 	"loadScalar",	  5,	1,	  OPERAND_LVT4),
 	/* Load scalar variable at index op1 >= 256 in call frame */
-    TCL_INSTRUCTION_ENTRY(
-	"loadScalarStk",	0),
-	/* Load scalar variable; scalar's name is stktop */
-    REMOVED_INSTRUCTION("loadArray1"),
-	/* Load array element; array at slot op1<=255, element is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"loadArray",	  5,	0,	  OPERAND_LVT4),
 	/* Load array element; array at slot op1 > 255, element is stktop */
@@ -107,16 +96,9 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"loadStk",		0),
 	/* Load general variable; unparsed variable name is stktop */
-    REMOVED_INSTRUCTION("storeScalar1"),
-	/* Store scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"storeScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Store scalar variable at op1 > 255 in frame; value is stktop */
-    TCL_INSTRUCTION_ENTRY(
-	"storeScalarStk",	-1),
-	/* Store scalar; value is stktop, scalar name is stknext */
-    REMOVED_INSTRUCTION("storeArray1"),
-	/* Store array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"storeArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Store array element; array at op1>=256, value is top then elem */
@@ -127,27 +109,18 @@ InstructionDesc const tclInstructionTable[] = {
 	"storeStk",		-1),
 	/* Store general variable; value is stktop, then unparsed name */
 
-    REMOVED_INSTRUCTION("incrScalar1"),
-	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
     TCL_INSTRUCTION_ENTRY(
 	"incrScalarStk",	-1),
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    REMOVED_INSTRUCTION("incrArray1"),
-	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
     TCL_INSTRUCTION_ENTRY(
 	"incrArrayStk",		-2),
 	/* Incr array element; amount is top then elem then array names */
     TCL_INSTRUCTION_ENTRY(
 	"incrStk",		-1),
 	/* Incr general variable; amount is stktop then unparsed var name */
-    REMOVED_INSTRUCTION("incrScalar1Imm"),
-	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
 	"incrScalarStkImm",2,	0,	  OPERAND_INT1),
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    REMOVED_INSTRUCTION("incrArray1Imm"),
-	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
-	 * amount is 2nd operand byte */
     TCL_INSTRUCTION_ENTRY1(
 	"incrArrayStkImm",2,	-1,	  OPERAND_INT1),
 	/* Incr array element; elem is top then array name, amount is op1 */
@@ -155,18 +128,12 @@ InstructionDesc const tclInstructionTable[] = {
 	"incrStkImm",	  2,	0,	  OPERAND_INT1),
 	/* Incr general variable; unparsed name is top, amount is op1 */
 
-    REMOVED_INSTRUCTION("jump1"),
-	/* Jump relative to (pc + op1) */
     TCL_INSTRUCTION_ENTRY1(
 	"jump",		  5,	0,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) */
-    REMOVED_INSTRUCTION("jumpTrue1"),
-	/* Jump relative to (pc + op1) if stktop expr object is true */
     TCL_INSTRUCTION_ENTRY1(
 	"jumpTrue",	  5,	-1,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    REMOVED_INSTRUCTION("jumpFalse1"),
-	/* Jump relative to (pc + op1) if stktop expr object is false */
     TCL_INSTRUCTION_ENTRY1(
 	"jumpFalse",	  5,	-1,	  OPERAND_OFFSET4),
 	/* Jump relative to (pc + op4) if stktop expr object is false */
@@ -287,13 +254,9 @@ InstructionDesc const tclInstructionTable[] = {
 	"listLength",		0),
 	/* List Len:	push (listlength stktop) */
 
-    REMOVED_INSTRUCTION("appendScalar1"),
-	/* Append scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"appendScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Append scalar variable at op1 > 255 in frame; value is stktop */
-    REMOVED_INSTRUCTION("appendArray1"),
-	/* Append array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"appendArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Append array element; array at op1>=256, value is top then elem */
@@ -303,13 +266,9 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"appendStk",		-1),
 	/* Append general variable; value is stktop, then unparsed name */
-    REMOVED_INSTRUCTION("lappendScalar1"),
-	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
     TCL_INSTRUCTION_ENTRY1(
 	"lappendScalar",  5,	0,	  OPERAND_LVT4),
 	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
-    REMOVED_INSTRUCTION("lappendArray1"),
-	/* Lappend array element; array at op1<=255, value is top then elem */
     TCL_INSTRUCTION_ENTRY1(
 	"lappendArray",	  5,	-1,	  OPERAND_LVT4),
 	/* Lappend array element; array at op1>=256, value is top then elem */
@@ -501,10 +460,6 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY(
 	"nop",			0),
 	/* Do nothing */
-    REMOVED_INSTRUCTION("returnCodeBranch1"),
-	/* Jump to next instruction based on the return code on top of stack
-	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
-	 * Other non-OK: +9 */
 
     TCL_INSTRUCTION_ENTRY2(
 	"unsetScalar",	 6,	0,	  OPERAND_UNSF1, OPERAND_LVT4),
@@ -585,10 +540,6 @@ InstructionDesc const tclInstructionTable[] = {
 	"coroName",		+1),
 	/* Push the name of the interpreter's current coroutine as an object
 	 * on the stack. */
-    REMOVED_INSTRUCTION("tailcall"),
-	/* Do a tailcall with the opnd items on the stack as the thing to
-	 * tailcall to; opnd must be greater than 0 for the semantics to work
-	 * right. */
 
     TCL_INSTRUCTION_ENTRY(
 	"currentNamespace",	+1),
@@ -756,20 +707,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Reports which command was the origin (via namespace import chain)
 	 * of the command named on the top of the stack.
 	 * Stack:  ... cmdName => ... fullOriginalCmdName */
-
-    REMOVED_INSTRUCTION("tclooNext"),
-	/* Call the next item on the TclOO call chain, passing opnd arguments
-	 * (min 1, max 255, *includes* "next").  The result of the invoked
-	 * method implementation will be pushed on the stack in place of the
-	 * arguments (similar to invokeStk).
-	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
-    REMOVED_INSTRUCTION("tclooNextClass"),
-	/* Call the following item on the TclOO call chain defined by class
-	 * className, passing opnd arguments (min 2, max 255, *includes*
-	 * "nextto" and the class name). The result of the invoked method
-	 * implementation will be pushed on the stack in place of the
-	 * arguments (similar to invokeStk).
-	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
     TCL_INSTRUCTION_ENTRY(
 	"yieldToInvoke",	0),

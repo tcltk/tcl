@@ -598,36 +598,36 @@ typedef struct ByteCode {
 enum TclInstruction {
     /* Opcodes 0 to 9 */
     INST_DONE = 0,
-    INST_PUSH = 2,
+    INST_PUSH,
     INST_POP,
     INST_DUP,
     INST_STR_CONCAT1,
-    INST_INVOKE_STK = 7,
+    INST_INVOKE_STK,
     INST_EVAL_STK,
     INST_EXPR_STK,
 
     /* Opcodes 10 to 23 */
-    INST_LOAD_SCALAR = 11,
-    INST_LOAD_ARRAY = 14,
+    INST_LOAD_SCALAR,
+    INST_LOAD_ARRAY,
     INST_LOAD_ARRAY_STK,
     INST_LOAD_STK,
-    INST_STORE_SCALAR = 18,
-    INST_STORE_ARRAY = 21,
+    INST_STORE_SCALAR,
+    INST_STORE_ARRAY,
     INST_STORE_ARRAY_STK,
     INST_STORE_STK,
 
     /* Opcodes 24 to 33 */
-    INST_INCR_SCALAR_STK = 25,
-    INST_INCR_ARRAY_STK = 27,
+    INST_INCR_SCALAR_STK,
+    INST_INCR_ARRAY_STK,
     INST_INCR_STK,
-    INST_INCR_SCALAR_STK_IMM = 30,
-    INST_INCR_ARRAY_STK_IMM = 32,
+    INST_INCR_SCALAR_STK_IMM,
+    INST_INCR_ARRAY_STK_IMM,
     INST_INCR_STK_IMM,
 
     /* Opcodes 34 to 39 */
-    INST_JUMP = 35,
-    INST_JUMP_TRUE = 37,
-    INST_JUMP_FALSE = 39,
+    INST_JUMP,
+    INST_JUMP_TRUE,
+    INST_JUMP_FALSE,
 
     /* Opcodes 42 to 60 */
     INST_BITOR,
@@ -676,14 +676,14 @@ enum TclInstruction {
     INST_LIST_LENGTH,
 
     /* Opcodes 76 to 81 */
-    INST_APPEND_SCALAR = 77,
-    INST_APPEND_ARRAY = 79,
+    INST_APPEND_SCALAR,
+    INST_APPEND_ARRAY,
     INST_APPEND_ARRAY_STK,
     INST_APPEND_STK,
 
     /* Opcodes 82 to 87 */
-    INST_LAPPEND_SCALAR = 83,
-    INST_LAPPEND_ARRAY = 85,
+    INST_LAPPEND_SCALAR,
+    INST_LAPPEND_ARRAY,
     INST_LAPPEND_ARRAY_STK,
     INST_LAPPEND_STK,
 
@@ -768,7 +768,7 @@ enum TclInstruction {
     INST_NOP,
 
     /* For [unset] compilation */
-    INST_UNSET_SCALAR = 127,
+    INST_UNSET_SCALAR,
     INST_UNSET_ARRAY,
     INST_UNSET_ARRAY_STK,
     INST_UNSET_STK,
@@ -792,7 +792,7 @@ enum TclInstruction {
     INST_COROUTINE_NAME,
 
     /* For compilation of basic information operations */
-    INST_NS_CURRENT = 144,
+    INST_NS_CURRENT,
     INST_INFO_LEVEL_NUM,
     INST_INFO_LEVEL_ARGS,
     INST_RESOLVE_COMMAND,
@@ -835,7 +835,7 @@ enum TclInstruction {
 
     INST_ORIGIN_COMMAND,
 
-    INST_YIELD_TO_INVOKE = 174,
+    INST_YIELD_TO_INVOKE,
 
     INST_NUM_TYPE,
     INST_TRY_CVT_TO_BOOLEAN,
