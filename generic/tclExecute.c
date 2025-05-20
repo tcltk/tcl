@@ -4734,6 +4734,7 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 		    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 			Tcl_Size j;
+			Tcl_Size j;
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
@@ -7197,7 +7198,7 @@ TEBCresume(
 		    &OBJ_AT_DEPTH(numArgs), DICT_PATH_EXISTS);
 	    if (dictPtr == NULL) {
 		TRACE_APPEND((
-			"ERROR tracing dictionary path into \"%.30s\": ",
+			"ERROR tracing dictionary path into \"%.30s\": %s",
 			O2S(OBJ_AT_DEPTH(numArgs + 1)),
 			O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
@@ -7748,22 +7749,22 @@ TEBCresume(
 	Tcl_WideInt wval;
 	Tcl_Time now;
 	switch (TclGetUInt1AtPtr(pc + 1)) {
-	case CLOCK_READ_CLICKS:	/* clicks */
+	case CLOCK_READ_CLICKS:
 #ifdef TCL_WIDE_CLICKS
 	    wval = TclpGetWideClicks();
 #else
 	    wval = (Tcl_WideInt)TclpGetClicks();
 #endif
 	    break;
-	case CLOCK_READ_MICROS:	/* microseconds */
+	case CLOCK_READ_MICROS:
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
 	    break;
-	case CLOCK_READ_MILLIS:	/* milliseconds */
+	case CLOCK_READ_MILLIS:
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
 	    break;
-	case CLOCK_READ_SECS:	/* seconds */
+	case CLOCK_READ_SECS:
 	    Tcl_GetTime(&now);
 	    wval = (Tcl_WideInt)now.sec;
 	    break;
