@@ -3539,14 +3539,25 @@ UpdateStringOfList(
 	flagPtr = localFlags;
     } else {
 	/* We know numElems <= LIST_MAX, so this is safe. */
-	flagPtr = (char *)Tcl_Alloc(numElems);
+	flagPtr = (char *)Tcl_AttemptAlloc(numElems);
+	if (!flagPtr) {
+	    listObj->length = numElems;
+	allocError:
+	    /* Allocation error. Just give up. */
+	    if (listObj->bytes) {
+		Tcl_Free(listObj->bytes);
+		listObj->bytes = NULL;
+	    }
+	    return;
+	}
     }
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	elem = TclGetStringFromObj(elemPtrs[i], &length);
+	elem = TclAttemptGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded > SIZE_MAX - numElems) {
-	    Tcl_Panic("max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", SIZE_MAX);
+	    listObj->length = bytesNeeded;
+	    goto allocError;
 	}
     }
     bytesNeeded += numElems - 1;
@@ -3555,13 +3566,20 @@ UpdateStringOfList(
      * Pass 2: copy into string rep buffer.
      */
 
-    start = dst = Tcl_InitStringRep(listObj, NULL, bytesNeeded);
-    TclOOM(dst, bytesNeeded);
+    start = dst = TclAttemptInitStringRep(listObj, NULL, bytesNeeded);
+    if (!start) {
+	listObj->length = bytesNeeded;
+	goto allocError;
+    }
     for (i = 0; i < numElems; i++) {
 	if (i) {
 	    flagPtr[i] |= TCL_DONT_QUOTE_HASH;
 	}
-	elem = TclGetStringFromObj(elemPtrs[i], &length);
+	elem = TclAttemptGetStringFromObj(elemPtrs[i], &length);
+	if (!elem) {
+		listObj->length = elemPtrs[i]->length;
+		goto allocError;
+	}
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
     }
