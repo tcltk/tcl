@@ -4734,7 +4734,6 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 		    if (tclTraceExec >= TCL_TRACE_BYTECODE_EXEC_COMMANDS) {
 			Tcl_Size j;
-			Tcl_Size j;
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
