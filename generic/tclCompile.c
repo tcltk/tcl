@@ -93,8 +93,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY1(
 	"loadScalar",	  5,	1,	  OPERAND_LVT4),
 	/* Load scalar variable at index op1 >= 256 in call frame */
-    TCL_INSTRUCTION_ENTRY(
-	"loadScalarStk",	0),
+    REMOVED_INSTRUCTION("loadScalarStk"),
 	/* Load scalar variable; scalar's name is stktop */
     REMOVED_INSTRUCTION("loadArray1"),
 	/* Load array element; array at slot op1<=255, element is stktop */
@@ -112,8 +111,7 @@ InstructionDesc const tclInstructionTable[] = {
     TCL_INSTRUCTION_ENTRY1(
 	"storeScalar",	  5,	0,	  OPERAND_LVT4),
 	/* Store scalar variable at op1 > 255 in frame; value is stktop */
-    TCL_INSTRUCTION_ENTRY(
-	"storeScalarStk",	-1),
+    REMOVED_INSTRUCTION("storeScalarStk"),
 	/* Store scalar; value is stktop, scalar name is stknext */
     REMOVED_INSTRUCTION("storeArray1"),
 	/* Store array element; array at op1<=255, value is top then elem */
